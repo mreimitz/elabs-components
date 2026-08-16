@@ -1,0 +1,145 @@
+# Publish a version tag to the public npm registry.
+#
+# THE DIVISION OF LABOUR: you prepare and verify locally, CI publishes. This is
+# the only place `pnpm publish` runs — no release ever originates from a laptop
+# or an unverified tree.
+#
+# It does NOT re-run the quality battery. Since #103 the release requires the
+# battery's VERDICT for the exact commit under the tag: `release-verdict:check`
+# refuses unless every blocking job of the newest `CI` run for this SHA concluded
+# success. Re-running it here cost 29 of a 38-minute release proving something
+# `main`'s own CI was proving concurrently on the identical commit.
+#
+# Two positions are asserted by `pnpm release-gates:check` rung 1 and must not
+# be reordered: `release-verdict:check` runs BEFORE `pnpm -r publish`, in the
+# publishing job. A verdict read after an immutable publish stops nothing.
+#
+# PRACTICAL CONSEQUENCE: push `main`, let CI go green on that commit, THEN tag.
+# A tag pushed ahead of its CI run fails at step 0 with "still pending" — which
+# is the correct answer, not a flake.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the GitHub Release and attach assets
+  id-token: write # npm provenance (best-effort; see the publish step)
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # ── step 0: the battery already passed on THIS commit, and here is the run
+      - name: Require the battery's verdict for this commit
+        run: pnpm release-verdict:check --out release-verdict.json
+
+      # ── the PACKAGES only. ci.yml already ran the full `pnpm build` on this
+      #    commit, but on a different runner, and publishConfig.exports points at
+      #    dist/ — so this job needs its own copy. Building apps/docs here would
+      #    add ~3 minutes for a Storybook site nothing publishes.
+      - name: Build the packages
+        run: pnpm build:packages
+
+      # ── the tag and the tree must name the same version ─────────────────────
+      - name: Tag agrees with the tree
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          tree="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$tree" ]; then
+            echo "::error::tag v$tag does not match the tree's version $tree — run 'pnpm version:set' first"
+            exit 1
+          fi
+          pnpm version:check
+
+      - name: Publish preflight
+        run: |
+          pnpm publish-ready:check
+          pnpm publish-ready:check:test
+
+      # RELEASE_NOTES.md is a REQUIRED Release asset and is extracted from the
+      # `## v<version>` section, so an un-renamed changelog must fail here —
+      # before the publish — not at `gh release create` afterwards.
+      - name: Changelog is release-ready
+        run: pnpm changelog:check
+
+      # ── the plugin pointer consumers follow must already name this version.
+      #    Needs nothing the publish produces, so it runs while a fix is still
+      #    "push main and re-tag" rather than 12 immutable versions.
+      #
+      #    The `if:` is redundant against the current `on:` (tags only) and is
+      #    kept deliberately: it is what lets `write-release-report.mjs` record
+      #    this step as `skipped` rather than `passed` on any non-tag invocation,
+      #    so a dry run can never produce a report claiming a check that never
+      #    executed. Removing it fails `pnpm release-report:test`.
+      - name: Marketplace pointer preflight
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: pnpm marketplace:check
+
+      - name: Write the validation report
+        run: pnpm release:report
+
+      # ── the irreversible step ──────────────────────────────────────────────
+      #
+      # `--access public` is explicit rather than inherited: a scoped package
+      # defaults to restricted, and the failure mode is a release that publishes
+      # but nobody can install.
+      #
+      # NPM_CONFIG_PROVENANCE is BEST-EFFORT. Provenance needs npm's OIDC support
+      # and a public repo; if the pnpm version in use ignores the setting the
+      # publish still succeeds, unattested. It is deliberately an env var and not
+      # a `--provenance` flag, because an unrecognised FLAG would abort the
+      # publish mid-release.
+      - name: Publish
+        run: pnpm -r publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      # ── the record: agent kit, plugin, rollback tarballs, ground truth ──────
+      - name: Build the release record
+        run: |
+          pnpm release:agent-kit
+          pnpm release:plugin
+          pnpm release:snapshot
+
+      - name: Create the GitHub Release
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file "release/v$version/RELEASE_NOTES.md" \
+            release/v$version/*.tgz \
+            release/v$version/*.zip \
+            release/v$version/release-manifest.json \
+            release/v$version/validation-report.json \
+            release/v$version/validation-report.md
+
+      # ── the check `npm view` cannot make: install what the registry SERVES.
+      #    Run in this job, not a dependent one, because it reads the snapshot
+      #    folder — `release/` is git-ignored and the runner is discarded when
+      #    the job ends.
+      - name: Post-release fresh-install smoke
+        run: pnpm release:smoke --manifest "release/v${GITHUB_REF_NAME#v}/release-manifest.json"

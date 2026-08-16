@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — the static-audit detector (token/style/anti-slop lint).
+ * @elabs-ai/components-cli — the static-audit detector (token/style/anti-slop lint).
  *
  * Extracted from `bin/brand-ui.mjs` so the rule set is (a) unit-testable
  * (`test/audit.test.mjs`) and (b) reusable by the WP-15 anti-slop CI gate

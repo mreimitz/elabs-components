@@ -1,0 +1,27 @@
+# The battery, run on every PR and every push to `main`.
+#
+# The FILE NAME is load-bearing: `scripts/check-release-verdict.mjs` looks up
+# runs of `ci.yml` for the exact commit under a release tag (CI_WORKFLOW_FILE),
+# and refuses to publish unless every blocking job of the newest such run
+# concluded success. Renaming this file silently removes the release's only
+# proof — change CI_WORKFLOW_FILE in the same commit if it ever moves.
+#
+# All gate steps live in the reusable `gates.yml`, never here: one place to add
+# a gate, and `pnpm release-gates:check` can follow the `uses:` edge to see the
+# whole set.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel superseded runs on a branch, but never on `main` — a `main` run is the
+# verdict a future tag inherits, so it must be allowed to finish.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  gates:
+    uses: ./.github/workflows/gates.yml

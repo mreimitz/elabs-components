@@ -16,7 +16,7 @@
  * document that can be read.
  */
 
-import { MatchHighlight } from "@elabs/components-ui";
+import { MatchHighlight } from "@elabs-ai/components-ui";
 
 import { localizeRanges, type MarkRanges } from "../core/highlight-marks";
 

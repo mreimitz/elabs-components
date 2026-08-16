@@ -18,7 +18,7 @@
  * mandate — the same contract as check-raw-palette.mjs / check-anti-slop.mjs:
  *
  *   - the committed baseline (`scripts/loading-states-baseline.json`, a list of
- *     "@elabs/components-pkg::Component" keys) is the allowed set of pre-existing gaps;
+ *     "@elabs-ai/components-pkg::Component" keys) is the allowed set of pre-existing gaps;
  *   - any component missing a story that is NOT already baselined FAILS (a new
  *     `loading`/`isStreaming`/chart-`status` prop must ship its story);
  *   - when a baselined component gains its story, run `--update` to ratchet the

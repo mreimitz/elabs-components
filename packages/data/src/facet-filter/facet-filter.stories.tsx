@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { FacetFilter } from "./facet-filter";
 
 const options = [

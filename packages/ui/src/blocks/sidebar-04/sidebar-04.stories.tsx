@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
-import { SidebarInset, SidebarProvider } from "@elabs/components-ui";
+import { SidebarInset, SidebarProvider } from "@elabs-ai/components-ui";
 import { AppSidebar } from "./app-sidebar";
 import { MailProvider, useMail } from "./mail-context";
 

@@ -1,7 +1,7 @@
 /**
- * @elabs/components-editor/markdown — the opt-in markdown suite.
+ * @elabs-ai/components-editor/markdown — the opt-in markdown suite.
  *
- * Kept on its own subpath so Monaco-only consumers of `@elabs/components-editor` never pull
+ * Kept on its own subpath so Monaco-only consumers of `@elabs-ai/components-editor` never pull
  * the markdown/WYSIWYG dependency tree (Milkdown, Streamdown, remark). Everything
  * markdown-shaped — the WYSIWYG editor, the branded preview renderer, the prose /
  * timeline / metric primitives the preview composes, and the shared remark
@@ -139,7 +139,7 @@ export {
   type MarkdownExtensions,
 } from "../lib/markdown/directives";
 // Monaco-free markdown parser (gfm + directives + frontmatter). The canonical
-// dependency-light import is `@elabs/components-editor/markdown/parse`; re-exported here for
+// dependency-light import is `@elabs-ai/components-editor/markdown/parse`; re-exported here for
 // convenience when you're already pulling the full markdown suite.
 export { parseMarkdown } from "./parse";
 // Re-export the frontmatter utils from the `./frontmatter` subpath barrel (NOT

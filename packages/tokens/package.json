@@ -1,7 +1,12 @@
 {
-  "name": "@elabs/components-tokens",
+  "name": "@elabs-ai/components-tokens",
   "version": "3.1.0",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreimitz/elabs-components.git",
+    "directory": "packages/tokens"
+  },
   "type": "module",
   "files": [
     "dist",
@@ -20,6 +25,8 @@
     "./themes/dark.css": "./src/themes/dark.css"
   },
   "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -51,8 +58,8 @@
     "tailwindcss": "^4.0.0"
   },
   "devDependencies": {
-    "@elabs/components-eslint-config": "workspace:*",
-    "@elabs/components-typescript-config": "workspace:*",
+    "@elabs-ai/components-eslint-config": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "eslint": "^9.17.0",

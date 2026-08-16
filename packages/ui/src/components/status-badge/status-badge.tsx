@@ -2,7 +2,7 @@
  * StatusBadge — the canonical execution-status vocabulary (#189, research 10 §B.1).
  *
  * One CLOSED 7-state enum unifies the five status idioms across the agent
- * trace components (`@elabs/components-ai` Tool / ChainOfThought / Confirmation /
+ * trace components (`@elabs-ai/components-ai` Tool / ChainOfThought / Confirmation /
  * TestResults / Sandbox), so one agent run reads as one author and an agent
  * picks a status by MEANING — it cannot emit a color or a freeform string.
  *
@@ -146,7 +146,7 @@ const STATUS_ICONS: Record<Status, LucideIcon> = {
 /**
  * Lucide glyph per out-of-vocabulary TONE — the same five-tone escape hatch
  * `CustomStatus` uses (`STATUS_TONES`). A consumer that encodes a bare TONE
- * with no fuller `Status` semantics (e.g. `@elabs/components-flow`'s `FlowNode.tone`,
+ * with no fuller `Status` semantics (e.g. `@elabs-ai/components-flow`'s `FlowNode.tone`,
  * #387) derives its non-colour cue from here instead of inventing a second
  * icon vocabulary — each entry reuses the SAME icon `STATUS_ICONS` already
  * pairs with that tone's one canonical status (`success`→`complete`'s
@@ -309,7 +309,7 @@ export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(functio
   );
 });
 
-/** The editor/markdown `Timeline` 3-state vocabulary (`@elabs/components-editor`). */
+/** The editor/markdown `Timeline` 3-state vocabulary (`@elabs-ai/components-editor`). */
 export type TimelineStatus = "done" | "active" | "pending";
 
 const TIMELINE_STATUS_MAP: Record<TimelineStatus, Status> = {
@@ -322,7 +322,7 @@ const TIMELINE_STATUS_MAP: Record<TimelineStatus, Status> = {
  * Map the Timeline `done|active|pending` vocabulary onto the canonical
  * `Status` (research 10 §B.1 mapping b — lossless; the timeline only
  * expresses 3 of the 7 states). The AI-SDK `ToolUIPart` mapper lives in
- * `@elabs/components-ai` (`statusFromToolState`, tool.tsx) so `@elabs/components-ui` stays free of
+ * `@elabs-ai/components-ai` (`statusFromToolState`, tool.tsx) so `@elabs-ai/components-ui` stays free of
  * the `ai` dependency (D6).
  */
 export function fromTimelineStatus(status: TimelineStatus): Status {

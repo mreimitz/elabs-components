@@ -1,8 +1,8 @@
-# @elabs/components-tokens
+# @elabs-ai/components-tokens
 
 > Semantic CSS-variable themes + ThemeProvider/useTheme.
 
-Import from `@elabs/components-tokens`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-tokens`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

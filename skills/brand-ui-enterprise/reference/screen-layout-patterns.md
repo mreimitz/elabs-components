@@ -15,7 +15,7 @@ implementation of this whole anatomy is `../assets/detail-hub.tsx`.
 3. **Importance** — which region matters most, and does its space/emphasis/interaction match?
    Component choice is _this_ file; emphasis & proportion are `information-priority-and-emphasis.md`.
 
-## Component selection — structural job → `@elabs/components-*`
+## Component selection — structural job → `@elabs-ai/components-*`
 
 | Structural job                        | Use                                                          | Not                                       |
 | ------------------------------------- | ------------------------------------------------------------ | ----------------------------------------- |
@@ -27,7 +27,7 @@ implementation of this whole anatomy is `../assets/detail-hub.tsx`.
 | Resizable two-pane                    | `ResizablePanelGroup` + `ResizablePanel` + `ResizableHandle` | hand-rolled flex, no resize               |
 | Read-only attributes                  | `Descriptions` / `DescriptionsItem`                          | a card of label/value `<div>`s            |
 | The list itself (searchable)          | `DataTable` + `SearchInput` + `FilterBar` + a count          | a hand-rolled stack of cards              |
-| KPI row                               | `MetricGrid` + `MetricCard` (`@elabs/components-charts`)     | cards of numbers in raw markup            |
+| KPI row                               | `MetricGrid` + `MetricCard` (`@elabs-ai/components-charts`)  | cards of numbers in raw markup            |
 | Empty / loading / error               | `StatePanel` (`kind=empty/error/loading`) / `EmptyState`     | a blank region                            |
 | Body scroll region                    | `ScrollArea`                                                 | the whole page scrolling under the header |
 
@@ -86,7 +86,7 @@ selection, down to read it.
 Real findings from a brand-ui app (built _before_ this skill). Each maps to a structural
 component:
 
-| #   | What the agent did ✗                                                                      | Fix ✓ (`@elabs/components-*`)                                                           |
+| #   | What the agent did ✗                                                                      | Fix ✓ (`@elabs-ai/components-*`)                                                        |
 | --- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | 1   | Server **list** has an Add button but **no search, no count/footer**                      | `SearchInput` + a count footer (or a `DataTable` list)                                  |
 | 2   | Detail **header scrolls away**                                                            | `PageShell` + a **sticky** `SectionHeader`                                              |
@@ -101,6 +101,6 @@ data.
 
 ---
 
-_Grounded in `@elabs/components-*` v1.0.0 source: `PageShell` (`header`, `width`), `SectionHeader`,
+_Grounded in `@elabs-ai/components-*` v1.0.0 source: `PageShell` (`header`, `width`), `SectionHeader`,
 `ButtonGroup`, `Tabs`, `SplitPanel` (`start`/`end`/`startSize`/`direction`), `Descriptions`,
 `DataTable`, `StatePanel`. Confirm props with `brand-ui docs`._

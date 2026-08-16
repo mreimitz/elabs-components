@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
-import { DecorationProvider, type DecorationLevel } from "@elabs/components-tokens";
+import { DecorationProvider, type DecorationLevel } from "@elabs-ai/components-tokens";
 import { Button } from "./components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/card";
 import { Badge } from "./components/badge";
@@ -8,7 +8,7 @@ import { Input } from "./components/input";
 
 /**
  * Foundation/Decoration — the decoration DIAL (`--decoration`, 0–10), orthogonal
- * to color. The SAME real `@elabs/components-ui` components are rendered across the ramp.
+ * to color. The SAME real `@elabs-ai/components-ui` components are rendered across the ramp.
  *
  * WHAT THE DIAL TOUCHES: backgrounds, and nothing else. It fades a drafting
  * sheet in behind the page (faded, never flat — see `Fade` below) and, at 8–10,

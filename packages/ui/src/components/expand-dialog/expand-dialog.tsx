@@ -17,7 +17,7 @@ import { useLocale } from "../locale-provider";
  * ExpandDialog — the one "make this bigger" modal: enlarged content on the
  * inline-start, its context on the inline-end.
  *
- * The shape was invented inside `@elabs/components-charts`'
+ * The shape was invented inside `@elabs-ai/components-charts`'
  * `ChartFrame` (chart left, data summary right) and then hand-rolled a second
  * and third time — a chat lightbox, an in-place CSS breakout in a consuming
  * app — because it was trapped in a package the other surfaces cannot import.

@@ -111,7 +111,7 @@ describe("renderModule", () => {
 describe("the committed generated module", () => {
   it("matches what the generator would write from the real themes.css", () => {
     // Same property `pnpm token-contract:check` gates in CI, asserted here too so
-    // a local `pnpm --filter @elabs/components-tokens test` catches the drift.
+    // a local `pnpm --filter @elabs-ai/components-tokens test` catches the drift.
     const contract = themeTokenContract(readThemesCss());
     expect([...THEME_TOKEN_NAMES]).toEqual(contract);
   });

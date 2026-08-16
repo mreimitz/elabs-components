@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { DocumentAddressKind } from "@elabs/components-ui";
+import type { DocumentAddressKind } from "@elabs-ai/components-ui";
 
 import type { DocumentHighlight } from "../core/highlight";
 import { createRegistry } from "../core/registry";

@@ -6,7 +6,7 @@
  *
  * The convergence compound of the execution-trace grammar: sequenced,
  * status-bearing agent steps render on ONE visual spine — the canonical
- * `@elabs/components-ui` Timeline rail (`TimelineRoot`/`TimelineItem`, #190) — speaking
+ * `@elabs-ai/components-ui` Timeline rail (`TimelineRoot`/`TimelineItem`, #190) — speaking
  * ONE status vocabulary — the closed 7-state `Status` enum (`StatusBadge`,
  * #189). `ChainOfThought`'s steps and `Task`'s body compose this instead of
  * hand-rolling rails; an inspect-only `Tool` call renders as an `AgentStep`
@@ -19,15 +19,15 @@
  * The shared rail is motion-free; the gated entrance animation lives here,
  * in the composing consumer (research 10 §B.2).
  */
-import { StatusBadge, TimelineItem, TimelineRoot, type Status } from "@elabs/components-ui";
-import type { TimelineItemProps, TimelineRootProps } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { StatusBadge, TimelineItem, TimelineRoot, type Status } from "@elabs-ai/components-ui";
+import type { TimelineItemProps, TimelineRootProps } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { LucideIcon } from "lucide-react";
 import { forwardRef, memo, type ReactNode } from "react";
 
 export type AgentTimelineProps = TimelineRootProps;
 
-/** The `<ol>` rail an agent run's steps sit on (canonical @elabs/components-ui spine). */
+/** The `<ol>` rail an agent run's steps sit on (canonical @elabs-ai/components-ui spine). */
 export const AgentTimeline = forwardRef<HTMLOListElement, AgentTimelineProps>(
   function AgentTimeline({ className, ...props }, ref) {
     return <TimelineRoot ref={ref} className={cn("not-prose w-full", className)} {...props} />;

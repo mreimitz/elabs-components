@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Button } from "@elabs/components-ui";
+import { Button } from "@elabs-ai/components-ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   MessageEdit,

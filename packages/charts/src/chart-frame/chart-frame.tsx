@@ -6,12 +6,12 @@
  * Architecture notes:
  * - `data`/`columns` are PRIMARY inputs; `useChart` is unreachable here (ChartFrame
  *   is the chart's parent, above the provider — see chart-context.tsx:356-388).
- * - Flip-to-table uses @elabs/components-ui Table primitive (NOT @elabs/components-data DataTable) to
+ * - Flip-to-table uses @elabs-ai/components-ui Table primitive (NOT @elabs-ai/components-data DataTable) to
  *   preserve the one-way dep rule: charts → ui is allowed; charts → data is not.
  * - CSV download uses the local serializer below. The canonical reusable serializer
- *   is @elabs/components-data's `toCsv`; ChartFrame intentionally does NOT import it to keep
- *   @elabs/components-charts dependency-clean. For the full interactive table (sortable
- *   @elabs/components-data DataTable + downloadCsv on flip), use the `chart-frame-data`
+ *   is @elabs-ai/components-data's `toCsv`; ChartFrame intentionally does NOT import it to keep
+ *   @elabs-ai/components-charts dependency-clean. For the full interactive table (sortable
+ *   @elabs-ai/components-data DataTable + downloadCsv on flip), use the `chart-frame-data`
  *   registry block: `npx shadcn add chart-frame-data` (composes both siblings in
  *   copy-owned app code, which the charts↛data rule permits).
  */
@@ -43,7 +43,7 @@ import {
   TooltipTrigger,
   cn,
   useLocale,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import {
   ChartFrameProvider,
   useChartFrame,
@@ -54,8 +54,8 @@ import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 
 // ── Minimal local CSV serializer (RFC 4180 + injection guard) ─────────────────
-// The canonical reusable version lives in @elabs/components-data (`toCsv`). This local
-// copy keeps @elabs/components-charts free of a sibling dependency.
+// The canonical reusable version lives in @elabs-ai/components-data (`toCsv`). This local
+// copy keeps @elabs-ai/components-charts free of a sibling dependency.
 
 const INJECTION_PREFIXES = ["=", "+", "-", "@"];
 
@@ -322,7 +322,7 @@ function ChartFrameModal({
 
   /*
    * The two-pane expand layout is NOT local any more — it is
-   * `ExpandDialog` in `@elabs/components-ui`, so a chat table,
+   * `ExpandDialog` in `@elabs-ai/components-ui`, so a chat table,
    * an image and a chart all open the same surface. What stays here is
    * chart-domain: the title fallback, the data summary, and the view↔table
    * crossfade below.
@@ -379,12 +379,12 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   loading?: boolean;
   /**
    * Custom table renderer for the flip-to-table view.
-   * Defaults to the @elabs/components-ui Table primitive.
+   * Defaults to the @elabs-ai/components-ui Table primitive.
    */
   renderTable?: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   /**
    * Custom CSV download handler. Defaults to the local RFC-4180 serializer
-   * (injection-guarded). The canonical reusable version is @elabs/components-data `toCsv`;
+   * (injection-guarded). The canonical reusable version is @elabs-ai/components-data `toCsv`;
    * wire it here, or use the `chart-frame-data` registry block
    * (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv.
    */

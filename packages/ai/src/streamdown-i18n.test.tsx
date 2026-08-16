@@ -9,7 +9,7 @@
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { LocaleProvider } from "@elabs/components-ui";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import { MessageResponse } from "./message";
 import { MarkdownView } from "./markdown-view";
 import { Reasoning, ReasoningContent } from "./reasoning";

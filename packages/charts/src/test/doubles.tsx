@@ -1,10 +1,10 @@
 /**
- * doubles.tsx — the jsdom-safe chart components behind `@elabs/components-charts/test`
+ * doubles.tsx — the jsdom-safe chart components behind `@elabs-ai/components-charts/test`
  * (issue #364).
  *
  * WHY THIS EXISTS: `@visx/*` (SVG measurement — `ParentSize`/`ResizeObserver`,
  * `getTotalLength()`, …) does not render meaningfully under jsdom, so consumers
- * were mocking the whole `@elabs/components-charts` barrel as a no-op — which hid real
+ * were mocking the whole `@elabs-ai/components-charts` barrel as a no-op — which hid real
  * chart-prop bugs from their quality gate (a fully green suite shipped the
  * item-8 `RangeError: Invalid time value` crash). Each double here is a FRESH,
  * dependency-free React implementation (never the real `@visx`-backed
@@ -28,7 +28,7 @@
  * supplies those inert stand-ins; see its header. If your test asserts on the
  * actual rendered markup of a series/axis/legend part, the double cannot help —
  * that is what the Storybook interaction/a11y suite
- * (`pnpm --filter @elabs/components-docs test-storybook`) is for.
+ * (`pnpm --filter @elabs-ai/components-docs test-storybook`) is for.
  *
  * ENGINE ISOLATION (enforced by `pnpm charts:test-double:check`): every
  * cross-module import from `../charts/**`/`../gantt/**`/`../auto-chart/**` in
@@ -50,10 +50,10 @@ import {
 } from "./contract";
 
 // Real, already-jsdom-safe components (verified: their import graphs touch only
-// `react`, `lucide-react` and `@elabs/components-ui` — zero `@visx`/`d3`/`motion`). Re-exporting
+// `react`, `lucide-react` and `@elabs-ai/components-ui` — zero `@visx`/`d3`/`motion`). Re-exporting
 // the REAL implementation here means zero drift risk for these five — there is
 // nothing to fake.
-export { MetricCard, type MetricCardProps } from "@elabs/components-ui";
+export { MetricCard, type MetricCardProps } from "@elabs-ai/components-ui";
 export { MetricGrid } from "../metric-grid/metric-grid";
 export type { MetricGridProps } from "../metric-grid/metric-grid";
 export { ChartCard } from "../chart-card/chart-card";

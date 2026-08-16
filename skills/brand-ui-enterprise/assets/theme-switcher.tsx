@@ -2,7 +2,7 @@
 /**
  * Theme switcher — System / Light / Dark (the baseline default).
  *
- * PREFER the library `<ThemeSwitcher />` from @elabs/components-ui: it renders the
+ * PREFER the library `<ThemeSwitcher />` from @elabs-ai/components-ui: it renders the
  * PROVIDER's theme registry (ADR 0029) with no `themes` prop at all, and `showSystem`
  * defaults to true, so it ALREADY renders exactly System / Light / Dark (whole-screen
  * animated, reduced-motion safe) — and picks up any theme you registered yourself. This
@@ -13,14 +13,14 @@
  * registry too; the `light`/`dark` constants below name the two REFERENCE themes and
  * are what you change if your app ships different ones.
  */
-import { useTheme, type ThemeName } from "@elabs/components-tokens";
+import { useTheme, type ThemeName } from "@elabs-ai/components-tokens";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { useEffect, useState } from "react";
 
 const MODE_KEY = "ui.themeMode";

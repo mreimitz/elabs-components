@@ -7,7 +7,7 @@
  * was invented (every gap is a `TODO(spec):`), that the emitted app is token-clean,
  * and that plan-only mode writes nothing at all.
  *
- * Run in CI via `pnpm --filter @elabs/components-cli test` (node --test).
+ * Run in CI via `pnpm --filter @elabs-ai/components-cli test` (node --test).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -162,7 +162,7 @@ test("emitScaffold: the manifest-derived context file ships with the app (#123 A
 
   const ctx = readFileSync(join(dir, "brand-ui-context.md"), "utf8");
   assert.match(ctx, /<!-- brand-ui:context:start -->/, "the regenerable marker block");
-  assert.match(ctx, /### @elabs\/components-ui/, "the real component inventory");
+  assert.match(ctx, /### @elabs-ai\/components-ui/, "the real component inventory");
   assert.match(ctx, /\bDataTable\b/, "a component an agent would otherwise guess at");
   assert.match(
     readFileSync(join(dir, "CLAUDE.md"), "utf8"),
@@ -189,9 +189,9 @@ for (const archetype of ["ai-assistant", "flow-workspace", "data-app"]) {
       .join("\n");
     const imported = [
       ...new Set(
-        [...source.matchAll(/from\s+["'](@elabs\/[^"']+)["']/g)]
+        [...source.matchAll(/from\s+["'](@elabs-ai\/[^"']+)["']/g)]
           .map((m) => m[1])
-          .concat([...source.matchAll(/^import\s+["'](@elabs\/[^"']+)["']/gm)].map((m) => m[1]))
+          .concat([...source.matchAll(/^import\s+["'](@elabs-ai\/[^"']+)["']/gm)].map((m) => m[1]))
           // a subpath import (…-editor/monaco-environment) is still that package
           .map((s) => s.split("/").slice(0, 2).join("/")),
       ),
@@ -408,21 +408,22 @@ test("emitScaffold(standalone): package.json + CLAUDE.md carry the real install 
   );
 
   const css = readFileSync(join(dir, "src/styles.css"), "utf8");
-  assert.match(css, /@import "@elabs\/components-tokens\/styles\.css";/);
+  assert.match(css, /@import "@elabs-ai\/components-tokens\/styles\.css";/);
   for (const line of r.plan.install.css.sources)
     assert.ok(css.includes(line), `styles.css: ${line}`);
 
   const claude = readFileSync(join(dir, "CLAUDE.md"), "utf8");
-  // The scope is unpublished, so the handoff a standalone app inherits is the
-  // local-tarball recipe — not a registry the app could never reach.
-  assert.doesNotMatch(claude, /npm\.pkg\.github\.com|_authToken/);
-  assert.match(
+  // The scope is public on npmjs.org, so the handoff a standalone app inherits
+  // is the plain `pnpm add` recipe — no registry mapping, and above all no token
+  // placeholder for packages that install anonymously.
+  assert.doesNotMatch(claude, /npm\.pkg\.github\.com|_authToken|read:packages/);
+  assert.match(claude, /public on npmjs\.org/, "the agent contract says where the packages live");
+  assert.match(claude, /pnpm add "@elabs-ai\/components-/);
+  assert.doesNotMatch(
     claude,
-    /private and unpublished/,
-    "the agent contract says why there is no registry",
+    /pnpm\.overrides|gh release download|file:\.\.\//,
+    "the local-tarball fallback is not the documented path any more",
   );
-  assert.match(claude, /pnpm add /);
-  assert.doesNotMatch(claude, /pnpm\.overrides|gh release download/);
 
   rmSync(dir, { recursive: true, force: true });
 });

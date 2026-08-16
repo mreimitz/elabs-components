@@ -1,4 +1,4 @@
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface LegendItem {
   label: string;

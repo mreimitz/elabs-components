@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — core logic (dependency-free).
+ * @elabs-ai/components-cli — core logic (dependency-free).
  *
  * The deterministic backend the brand-ui skills lean on. Keeps the skills thin:
  * the skill teaches judgment + rules, this reads the actual code so the agent
@@ -13,9 +13,9 @@ import { collectAgentOutput } from "./agent-output.mjs";
 import { mergeResolvedProps } from "./docgen.mjs";
 
 const CONFIG_PKGS = new Set([
-  "@elabs/components-eslint-config",
-  "@elabs/components-typescript-config",
-  "@elabs/components-cli",
+  "@elabs-ai/components-eslint-config",
+  "@elabs-ai/components-typescript-config",
+  "@elabs-ai/components-cli",
 ]);
 
 /** Walk up from `start` until we find the monorepo root (pnpm-workspace.yaml). */
@@ -52,10 +52,10 @@ function resolveModule(fromDir, rel) {
  * i.e. every key OTHER than the `.` root barrel (already crawled) that points at
  * a `.ts`/`.tsx` source. Each entry is { subpath: "./markdown", file: "<abs>" }
  * so callers can tag exports with the subpath consumers actually import from
- * (e.g. `@elabs/components-editor/markdown/frontmatter#parseFrontmatter`). Non-source
+ * (e.g. `@elabs-ai/components-editor/markdown/frontmatter#parseFrontmatter`). Non-source
  * targets (`./styles.css`) are skipped — they carry no TS exports.
  *
- * `./test` (and any subpath ENDING in `/test`, e.g. a future `@elabs/components-ai/test`)
+ * `./test` (and any subpath ENDING in `/test`, e.g. a future `@elabs-ai/components-ai/test`)
  * is deliberately EXCLUDED from the crawl — architect decision recorded in issue
  * #364's design record. `brand-ui.manifest.json` is the agent-facing BUILD-WITH
  * catalogue (`.claude/rules/storybook-mcp.md`: "brand-ui MCP to know what exists
@@ -979,7 +979,7 @@ export function generateManifest(repoRoot, opts = {}) {
     } catch {
       continue;
     }
-    if (!name || !name.startsWith("@elabs/components-") || CONFIG_PKGS.has(name)) continue;
+    if (!name || !name.startsWith("@elabs-ai/components-") || CONFIG_PKGS.has(name)) continue;
     // Root `.` barrel — the primary import surface.
     const barrel = resolveModule(join(pkgDir, "src"), "./index");
     const all = collectBarrelExports(barrel, repoRoot);
@@ -990,7 +990,7 @@ export function generateManifest(repoRoot, opts = {}) {
     for (const { subpath, file } of readSubpathBarrels(pkgDir, exportsMap)) {
       const subAll = collectBarrelExports(file, repoRoot);
       if (!subAll.length) continue; // side-effect modules (e.g. ./monaco-environment) carry no exports
-      // e.g. "@elabs/components-editor/markdown/frontmatter"
+      // e.g. "@elabs-ai/components-editor/markdown/frontmatter"
       const importPath = `${name}/${subpath.replace(/^\.\//, "")}`;
       subpaths[importPath] = bucketExports(subAll);
     }
@@ -1061,7 +1061,7 @@ export function generateManifest(repoRoot, opts = {}) {
     // from each playbook's own front matter so a new docs/playbooks/<a>.md is
     // auto-registered here (and therefore in `search`, `context` and the MCP server).
     playbooks: loadPlaybooks(repoRoot),
-    // The agent-output contract (how an agent structures output for the @elabs/components-ai
+    // The agent-output contract (how an agent structures output for the @elabs-ai/components-ai
     // GenUI components to render it). Path-keyed, cross-package; authored sidecar
     // (lib/agent-output.mjs), gate-verified against source (`agent-output:check`).
     agentOutput: collectAgentOutput(),
@@ -1072,7 +1072,7 @@ export function generateManifest(repoRoot, opts = {}) {
 /**
  * Load the manifest, in priority order:
  *   1. the monorepo root's committed `brand-ui.manifest.json` (dev / CI);
- *   2. the manifest bundled INSIDE the installed `@elabs/components-cli` package — consumer
+ *   2. the manifest bundled INSIDE the installed `@elabs-ai/components-cli` package — consumer
  *      mode has no repoRoot, so the copy shipped next to this file (see the
  *      package `files` field + the `prepack` copy) is the only ground truth;
  *   3. generate it on the fly from source (only possible inside the monorepo).
@@ -1131,7 +1131,7 @@ export function writeManifest(repoRoot, manifest) {
   writeFileSync(file, JSON.stringify(manifest, null, 2) + "\n");
 }
 
-/** Consumer-mode context: which @elabs/components-* packages a project depends on. */
+/** Consumer-mode context: which @elabs-ai/components-* packages a project depends on. */
 export function consumerContext(cwd = process.cwd()) {
   const pkg = read(join(cwd, "package.json"));
   if (!pkg) return null;
@@ -1142,7 +1142,7 @@ export function consumerContext(cwd = process.cwd()) {
     return null;
   }
   const deps = { ...(json.dependencies || {}), ...(json.devDependencies || {}) };
-  const brand = Object.keys(deps).filter((d) => d.startsWith("@elabs/components-"));
+  const brand = Object.keys(deps).filter((d) => d.startsWith("@elabs-ai/components-"));
   if (brand.length === 0) return null;
   return { installed: brand, name: json.name };
 }

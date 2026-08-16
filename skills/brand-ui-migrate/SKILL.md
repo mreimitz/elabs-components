@@ -1,10 +1,10 @@
 ---
 name: brand-ui-migrate
-description: Bring an app that already exists onto brand-ui (@elabs/components-*). Use when someone wants to migrate, port, adopt or "move to" the design system in a codebase they already have ("migrate this project to brand-ui", "we use MUI, can we switch", "adopt your design system in our admin app", "replace our components with yours"). Profiles the repo, maps every component it finds to a brand-ui verdict, writes a phased migration plan, and then walks the phases with the user approving each one. Read-only until the plan is approved. For a brand-new app use `brand-ui-new-app`; for using components in an app already on brand-ui use `brand-ui`.
+description: Bring an app that already exists onto brand-ui (@elabs-ai/components-*). Use when someone wants to migrate, port, adopt or "move to" the design system in a codebase they already have ("migrate this project to brand-ui", "we use MUI, can we switch", "adopt your design system in our admin app", "replace our components with yours"). Profiles the repo, maps every component it finds to a brand-ui verdict, writes a phased migration plan, and then walks the phases with the user approving each one. Read-only until the plan is approved. For a brand-new app use `brand-ui-new-app`; for using components in an app already on brand-ui use `brand-ui`.
 user-invocable: true
 argument-hint: "[path to the project, defaults to the current directory]"
 allowed-tools:
-  - Bash(npx @elabs/components-cli *)
+  - Bash(npx @elabs-ai/components-cli *)
   - Bash(pnpm brand-ui *)
   - Bash(npx brand-ui *)
   - Bash(pnpm exec brand-ui *)

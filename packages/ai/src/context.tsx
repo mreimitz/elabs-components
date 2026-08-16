@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@elabs/components-ui";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs/components-ui";
-import { Progress } from "@elabs/components-ui";
-import { useLocale } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button } from "@elabs-ai/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs-ai/components-ui";
+import { Progress } from "@elabs-ai/components-ui";
+import { useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { LanguageModelUsage } from "ai";
 import type { ComponentProps } from "react";
 import { createContext, useContext, useMemo } from "react";

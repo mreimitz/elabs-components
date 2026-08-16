@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 import type { RiveParameters } from "@rive-app/react-webgl2";
 import type { FC, ReactNode } from "react";
 import { lazy, memo, Suspense, useCallback, useState } from "react";

@@ -138,7 +138,7 @@ describe("MessageAvatar role=agent — branded Bot icon, not a text initial", ()
   // `generic`), and ARIA PROHIBITS `aria-label` on `generic`: axe's
   // `aria-prohibited-attr` rejected it and the name was never exposed. The name
   // has to sit on an element permitted to carry one — `role="img"`, the same
-  // precedent a titled `@elabs/components-icons` `Icon` uses
+  // precedent a titled `@elabs-ai/components-icons` `Icon` uses
   // (.claude/rules/icons.md). Deliberately NOT mocking `Avatar`: a stand-in that
   // happens to honour `aria-label` masks exactly this bug (#34/#46).
   it("exposes the agent avatar's name on an element allowed to carry one (role=img)", () => {

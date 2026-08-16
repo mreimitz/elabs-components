@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { ThemeProvider } from "@elabs/components-tokens";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { Bar } from "./bar";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { BarChart } from "./bar-chart";
@@ -342,7 +342,7 @@ export const KeyboardDrilldown: Story = {
  * Storybook's DEFAULT theme (`light`) only, and a hand-toggled sweep
  * leaves no durable evidence — so these wrap the SAME render/play pair in an
  * explicit `<ThemeProvider>` (the `markdown-editor.stories.tsx` #223 idiom).
- * `pnpm --filter @elabs/components-docs test-storybook` therefore
+ * `pnpm --filter @elabs-ai/components-docs test-storybook` therefore
  * renders AND axe-asserts the focus ring, the target boxes and the detail panel
  * in `dark` and at decoration 10 on every run, with zero manual steps.
  * `storageKey={null}` keeps the override out of localStorage.

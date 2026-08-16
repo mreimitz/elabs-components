@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { type ComponentProps, useCallback } from "react";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 
 /**
  * @ncdai/shimmering-text — https://chanhdai.com/components/shimmering-text

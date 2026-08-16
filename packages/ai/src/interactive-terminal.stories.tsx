@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { Button } from "@elabs/components-ui";
+import { Button } from "@elabs-ai/components-ui";
 import { InteractiveTerminal, type InteractiveTerminalHandle } from "./interactive-terminal";
 
 const meta = {

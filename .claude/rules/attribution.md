@@ -3,7 +3,7 @@
 This repo is built on other people's work and is headed for public release. Every
 project we take from is credited in **one dataset**, which generates both the public
 [`ATTRIBUTION.md`](../../ATTRIBUTION.md) and the in-product `AttributionPanel`
-(`@elabs/components-ui`) — so the page and the product cannot disagree.
+(`@elabs-ai/components-ui`) — so the page and the product cannot disagree.
 
 ## The rule
 
@@ -30,7 +30,7 @@ gated; a credit nobody can follow is not a credit. Also give it:
 - `license` — the SPDX identifier read from the upstream's actual LICENSE file.
 - `copyright` — the upstream copyright line, **verbatim**. Retyping from memory is how
   a notice drifts from the file it describes.
-- `usedBy` — the `@elabs/components-*` packages it reaches a consumer through.
+- `usedBy` — the `@elabs-ai/components-*` packages it reaches a consumer through.
 - `note` — one sentence: what we actually took.
 - `required: true` **only** when a license or provider terms _oblige_ the notice to be
   displayed (ODbL, the OFL, provider terms) — as opposed to a courtesy credit. A

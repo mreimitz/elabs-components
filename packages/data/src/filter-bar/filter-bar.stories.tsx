@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@elabs/components-ui";
+import { Button } from "@elabs-ai/components-ui";
 import { FilterBar } from "./filter-bar";
 import { SearchInput } from "../search-input";
 import { FacetFilter } from "../facet-filter";

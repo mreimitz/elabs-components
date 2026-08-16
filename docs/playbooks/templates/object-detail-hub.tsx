@@ -16,7 +16,7 @@
  *   • A high-value task (Run) promoted to its own focused Dialog surface.
  *   • A real empty state (StatePanel kind="empty") when nothing is selected.
  *
- * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in
+ * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in
  * light AND dark. Verify with globals=theme:<slug>.
  */
 import { useState } from "react";
@@ -50,7 +50,7 @@ import {
   Toaster,
   toast,
   type Status,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 /* -------------------------------------------------------------------------- */
 /*  Object model — a "Pipeline" with attributes, runs (children) and settings  */

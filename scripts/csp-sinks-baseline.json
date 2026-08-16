@@ -9,19 +9,19 @@
   "packages": [
     {
       "package": "@number-flow/react",
-      "reachedFrom": ["@elabs/components-charts"]
+      "reachedFrom": ["@elabs-ai/components-charts"]
     },
     {
       "package": "media-chrome",
-      "reachedFrom": ["@elabs/components-ai"]
+      "reachedFrom": ["@elabs-ai/components-ai"]
     },
     {
       "package": "mermaid",
-      "reachedFrom": ["@elabs/components-ai", "@elabs/components-editor"]
+      "reachedFrom": ["@elabs-ai/components-ai", "@elabs-ai/components-editor"]
     },
     {
       "package": "streamdown",
-      "reachedFrom": ["@elabs/components-ai", "@elabs/components-editor"]
+      "reachedFrom": ["@elabs-ai/components-ai", "@elabs-ai/components-editor"]
     }
   ]
 }

@@ -5,13 +5,13 @@ import {
   DEFAULT_DENSITY,
   DEFAULT_MOTION_PREFERENCE,
   DEFAULT_THEME,
-} from "@elabs/components-tokens";
+} from "@elabs-ai/components-tokens";
 import { useEffect, type ReactNode } from "react";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
 import "@xyflow/react/dist/style.css";
-// Wire Monaco's language workers so @elabs/components-editor stories get IntelliSense.
-import "@elabs/components-editor/monaco-environment";
+// Wire Monaco's language workers so @elabs-ai/components-editor stories get IntelliSense.
+import "@elabs-ai/components-editor/monaco-environment";
 
 /**
  * Writes `data-motion-pref` onto the iframe root (`:root`), exactly as

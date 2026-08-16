@@ -5,7 +5,7 @@
  * A package's CSS is only usable by a CONSUMER if everything it references
  * resolves from the artifact that actually ships. Two ways that silently broke:
  *
- *   1. `@elabs/components-tokens`' build ran `cp -r src/fonts dist/fonts`, which is not
+ *   1. `@elabs-ai/components-tokens`' build ran `cp -r src/fonts dist/fonts`, which is not
  *      idempotent — tsup's `clean` removes files but leaves empty dirs, so the
  *      second build nested the fonts at `dist/fonts/fonts/…` while
  *      `dist/themes.css` still asked for `./fonts/inter/…`. Every consumer
@@ -27,7 +27,7 @@
  *
  *   3. A component imports its own stylesheet (`import "./maps.css"`). esbuild
  *      EXTRACTS that CSS to a sibling artifact and DROPS the import from the JS,
- *      so `@elabs/components-maps` shipped without its popup overrides and `@elabs/components-editor`
+ *      so `@elabs-ai/components-maps` shipped without its popup overrides and `@elabs-ai/components-editor`
  *      shipped with no markdown-editor styles at all. Nothing failed — the
  *      components just rendered unstyled for every consumer.
  *
@@ -72,7 +72,7 @@ function blankComments(cssText) {
  * `url\(([^)]*)\)` truncates it and then reports a bogus violation.
  *
  * COMMENTS ARE BLANKED FIRST. A stylesheet's own docblock routinely shows the
- * consumer how to import it (`@import "@elabs/components-tokens/themes/dark.css"`),
+ * consumer how to import it (`@import "@elabs-ai/components-tokens/themes/dark.css"`),
  * and counting that as a real edge reports a dependency the package must declare
  * on ITSELF. Same comment-blindness class as #401.
  *
@@ -178,7 +178,7 @@ export function findUndeclaredBareImports(bareRefs, pkgJson) {
  *   a. the package names it in `publishConfig.exports` (consumer imports it), or
  *   b. its sibling entry chunk imports it (link-dist-css re-inserts the import
  *      esbuild dropped), or
- *   c. an already-reachable stylesheet `@import`s it — how `@elabs/components-tokens` ships
+ *   c. an already-reachable stylesheet `@import`s it — how `@elabs-ai/components-tokens` ships
  *      decoration/density/rtl.css, which only themes.css pulls in.
  *
  * So: seed from (a) and (b), then walk relative `@import`s to a fixpoint.

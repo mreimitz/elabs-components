@@ -42,7 +42,7 @@ import {
   renderMigrationDocs,
 } from "../lib/engine.mjs";
 // NOTE: `../lib/gen.mjs` is imported lazily inside `cmdGen` (monorepo-only) — it
-// pulls in `prettier` (a devDependency), which is absent when `@elabs/components-cli` is
+// pulls in `prettier` (a devDependency), which is absent when `@elabs-ai/components-cli` is
 // installed as a consumer dependency. Keeping it out of the top-level import
 // graph is what lets `info`/`search`/`docs` run in a consuming project.
 
@@ -112,7 +112,7 @@ function cmdInfo() {
   const consumer = consumerContext();
   const manifest = loadManifest(root);
   // In the monorepo, the package set IS the manifest. Only fall back to a
-  // consuming project's declared @elabs/components-* deps when we're outside the monorepo.
+  // consuming project's declared @elabs-ai/components-* deps when we're outside the monorepo.
   const installed = root && manifest ? Object.keys(manifest.packages) : (consumer?.installed ?? []);
   const ctx = {
     mode: root ? "monorepo" : consumer ? "consumer" : "unknown",
@@ -255,7 +255,7 @@ function cmdSearch() {
   const manifest = loadManifest(root);
   if (!manifest)
     return console.error(
-      "search: no manifest (run inside the monorepo or install @elabs/components-cli).",
+      "search: no manifest (run inside the monorepo or install @elabs-ai/components-cli).",
     );
   if (!q) return console.error("usage: brand-ui search <query>");
   const rows = flat(manifest).filter(
@@ -617,20 +617,26 @@ function flagValue(...names) {
 /** The "make it runnable" block a STANDALONE scaffold ends with (#263). */
 function installLines(install) {
   if (!install?.standalone) return [];
+  // The registry step only exists for a PRIVATE or mirrored scope. On public
+  // npm `install.npmrc` is empty, and printing an "authenticate" heading over
+  // nothing would send the reader hunting for a token that does not exist — so
+  // the step is dropped and the remaining ones renumber.
+  const steps = [
+    ...(install.npmrc ? [["registry (.npmrc)", install.npmrc.split("\n")]] : []),
+    ["install", [install.addCommand, install.peerCommand]],
+    [
+      "CSS entry (skip the @source lines and it renders UNSTYLED)",
+      [install.css.import, ...install.css.sources],
+    ],
+    ...(install.extras.length ? [["one-time side-effect imports", install.extras]] : []),
+  ];
   return [
     "",
     "  Make it runnable (standalone)",
-    "  ── 1. authenticate (.npmrc — classic PAT with read:packages) ──",
-    ...install.npmrc.split("\n").map((l) => `     ${l}`),
-    "  ── 2. install ──",
-    `     ${install.addCommand}`,
-    `     ${install.peerCommand}`,
-    "  ── 3. CSS entry (skip the @source lines and it renders UNSTYLED) ──",
-    `     ${install.css.import}`,
-    ...install.css.sources.map((l) => `     ${l}`),
-    ...(install.extras.length
-      ? ["  ── 4. one-time side-effect imports ──", ...install.extras.map((l) => `     ${l}`)]
-      : []),
+    ...steps.flatMap(([title, lines], i) => [
+      `  ── ${i + 1}. ${title} ──`,
+      ...lines.map((l) => `     ${l}`),
+    ]),
     `  Full recipe: ${install.docs}`,
   ];
 }

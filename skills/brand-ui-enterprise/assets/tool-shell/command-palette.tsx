@@ -10,7 +10,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { useUiState } from "./ui-state";
 
 export type PaletteCommand = {

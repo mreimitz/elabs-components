@@ -21,7 +21,7 @@
  * documentation that rides with the values.
  *
  * Re-run ONLY to re-seed from a known-good themes.css (it OVERWRITES the JSON).
- * Day-to-day, edit the JSON and run `pnpm --filter @elabs/components-tokens tokens:build`.
+ * Day-to-day, edit the JSON and run `pnpm --filter @elabs-ai/components-tokens tokens:build`.
  *
  * Usage:  node packages/tokens/scripts/extract-tokens.mjs
  * Dependency-free; ESM.
@@ -167,7 +167,7 @@ function main() {
   const modesInline = "[" + THEME_NAMES.map((m) => JSON.stringify(m)).join(", ") + "]";
   const manifest =
     "{\n" +
-    `  "$description": "DTCG theme modes for @elabs/components-tokens.",\n` +
+    `  "$description": "DTCG theme modes for @elabs-ai/components-tokens.",\n` +
     `  "modes": ${modesInline}\n` +
     "}\n";
   writeFileSync(join(TOKENS_DIR, "$themes.json"), manifest, "utf8");

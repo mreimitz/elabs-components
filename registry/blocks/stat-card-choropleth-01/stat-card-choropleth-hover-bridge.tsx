@@ -1,6 +1,6 @@
 "use client";
 
-import { useChoropleth } from "@elabs/components-charts";
+import { useChoropleth } from "@elabs-ai/components-charts";
 import { useEffect } from "react";
 import { computeVisitorTrend, getVisitorValue } from "./data/visitors";
 import type { StatCardHoverState } from "@/components/stat-card-parts/stat-card-chart";

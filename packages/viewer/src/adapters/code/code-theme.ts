@@ -11,7 +11,7 @@
  * maps a fixed, smaller scope set and cannot reach `--code-type` or
  * `--code-tag`, which this design system does define.
  *
- * `@elabs/components-ai`'s `CodeBlock` resolves the same tokens
+ * `@elabs-ai/components-ai`'s `CodeBlock` resolves the same tokens
  * the other way round (oklch → hex, re-derived per theme change) because
  * `@streamdown/code` freezes its themes at import time and cannot take a live
  * `var()`. Nothing here needs that, so nothing here pays for it.

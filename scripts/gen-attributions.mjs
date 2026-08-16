@@ -19,7 +19,7 @@
  * reminders" rule in .claude/rules/quality-gates.md).
  *
  * Three inputs, two of them derived:
- *   1. npm dependencies  — every non-`@elabs/*` runtime `dependencies`
+ *   1. npm dependencies  — every non-`@elabs-ai/*` runtime `dependencies`
  *      entry of every DISTRIBUTABLE package, with its licence/author/version read
  *      from the installed `node_modules` copy. Runtime deps only: a devDependency
  *      is not shipped to anyone, so crediting it would overstate what we ship.
@@ -125,7 +125,7 @@ export function collectDependencies(packagesDir) {
   const byName = new Map();
   for (const { path, json } of distributablePackages(packagesDir)) {
     for (const dep of Object.keys(json.dependencies || {})) {
-      if (dep.startsWith("@elabs/")) continue; // first-party, not an attribution
+      if (dep.startsWith("@elabs-ai/")) continue; // first-party, not an attribution
       const manifest = resolveDepManifest(dep, path);
       const existing = byName.get(dep);
       if (existing) {
@@ -240,7 +240,7 @@ export function collectFonts(fontsDir) {
         license: "OFL-1.1",
         copyright,
         url: upstream.url ?? null,
-        usedBy: ["@elabs/components-tokens"],
+        usedBy: ["@elabs-ai/components-tokens"],
         required: true, // the OFL requires the notice to ship with the font
         note: "Self-hosted webfont shipped in the tokens package.",
       };
@@ -339,7 +339,7 @@ const SECTIONS = [
   {
     category: "font",
     heading: "Fonts",
-    lead: "Self-hosted webfaces shipped in `@elabs/components-tokens`. The OFL asks that the notice travel with the font.",
+    lead: "Self-hosted webfaces shipped in `@elabs-ai/components-tokens`. The OFL asks that the notice travel with the font.",
     columns: ["Font", "Licence", "Copyright", "Upstream"],
     row: (e) => [cell(e.name), cell(e.license), cell(e.copyright), e.url ? `<${e.url}>` : "—"],
   },
@@ -426,7 +426,7 @@ that cannot be derived — source we adapted, data we serve) plus the repo's own
 dependency manifests and the licence files shipped with each vendored font. Run
 \`pnpm gen:attributions\` to regenerate it; \`pnpm attributions:check\` fails on a
 stale copy. The same dataset drives the in-app \`AttributionPanel\`
-(\`@elabs/components-ui\`), so the page and the product cannot disagree.
+(\`@elabs-ai/components-ui\`), so the page and the product cannot disagree.
 
 ## Adding an attribution
 

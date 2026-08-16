@@ -17,7 +17,7 @@ shadcn CLI. Schema: `registry/registry.json` (validated by `pnpm registry:valida
 
 **Decision rule — package vs. registry:**
 
-- **Package (`@elabs/components-*` import)** — stable, reusable primitives and well-defined
+- **Package (`@elabs-ai/components-*` import)** — stable, reusable primitives and well-defined
   components that many apps share. Versioned, imported, updated centrally.
 - **Registry item (`npx shadcn add`)** — prototype-specific blocks/templates a
   team will tweak per app. Copy-owned; divergence is expected and fine.
@@ -27,14 +27,14 @@ shadcn CLI. Schema: `registry/registry.json` (validated by `pnpm registry:valida
 Every item is a `registry:block` (a route file inside one may be `registry:page`).
 Two categories are deliberately **not** in the registry:
 
-- **Primitives.** D4 already routes stable primitives to `@elabs/components-ui`,
+- **Primitives.** D4 already routes stable primitives to `@elabs-ai/components-ui`,
   so a `registry:ui` item would be a second copy of something the package already
   owns. The one that shipped (`button`) was a stale fork of the package Button —
   missing variants and motion tokens, breaking four current rules — and it also
   **shadowed the upstream shadcn `button` name**, so a block declaring
   `registryDependencies: ["button"]` silently resolved to the fork instead of
-  upstream. Deleted. Import from `@elabs/components-ui` instead.
-- **Themes.** A theme ships as a stylesheet from `@elabs/components-tokens`. A
+  upstream. Deleted. Import from `@elabs-ai/components-ui` instead.
+- **Themes.** A theme ships as a stylesheet from `@elabs-ai/components-tokens`. A
   `registry:theme` item hand-copies token values into `cssVars`, which is a second
   home for the same colours; both shipped items had already drifted from
   `themes.css`, and neither name matched a shipped theme. Deleted. A consumer who
@@ -51,8 +51,8 @@ derived from the block source by `pnpm gen:registry`
 - `files[]` — the block folder tree, minus `*.stories.*` / `*.test.*` / `*.spec.*`.
 - `files[].target` — `components/<item-name>/<path within the block>`.
 - `dependencies[]` — parsed from the actual imports, plus the transitive closure
-  of `@elabs/*` **peer** dependencies (a block that imports
-  `@elabs/components-charts` needs `@elabs/components-tokens` installed too).
+  of `@elabs-ai/*` **peer** dependencies (a block that imports
+  `@elabs-ai/components-charts` needs `@elabs-ai/components-tokens` installed too).
 - `registryDependencies[]` — only cross-item `@/components/<item>/…` references
   that name a real item.
 
@@ -72,7 +72,7 @@ Two authored escape hatches, both narrow:
 - **`fileOverrides`** — per-file `type`/`target`, for a route that must land at
   `app/(app)/page.tsx` rather than under `components/`.
 - **`extraDependencies`** — a **third-party peer** a block genuinely needs at
-  runtime but never imports by name (`@elabs/components-editor` owns
+  runtime but never imports by name (`@elabs-ai/components-editor` owns
   `globalThis.MonacoEnvironment` and cannot render without `monaco-editor`).
   Brand peers are automatic; only third-party ones are declared.
 

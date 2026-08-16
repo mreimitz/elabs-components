@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { Reveal } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Reveal } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface CTASectionProps {
   title: ReactNode;

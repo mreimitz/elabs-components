@@ -136,7 +136,7 @@ that work shipped, was rejected, or was rescoped.
 Work the backlog in this order — do **not** just take issues by number:
 
 1. **`consumer-handover`** — filed from a real consuming app's handover pack. These are places the
-   "every visible element is `@elabs/components-*`" rule could not be honoured, so each one
+   "every visible element is `@elabs-ai/components-*`" rule could not be honoured, so each one
    is a live blocker for a downstream project. **Always the first wave.** Within the label, order by
    `severity:P0` → `P1` → `P2`.
 2. Any other `severity:P0`, then `type:a11y`, then `type:bug` / `type:regression`.

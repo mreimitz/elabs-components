@@ -107,7 +107,7 @@ theme lives in _their_ repo, where our gates cannot reach.
 So the contract ships as data:
 
 ```ts
-import { THEME_TOKEN_NAMES } from "@elabs/components-tokens";
+import { THEME_TOKEN_NAMES } from "@elabs-ai/components-tokens";
 ```
 
 `packages/tokens/scripts/gen-theme-token-names.mjs` derives it from the active
@@ -133,7 +133,7 @@ half-guarantee.
 | **Keep the union, add a `CustomThemeName` escape hatch**        | Every consumer theme still needs a cast, and `THEME_META[theme]` still throws. Half-open is the worst of both: the types claim a closure the runtime does not have.                                                                                                 |
 | **Widen `ThemeName` but keep the registry lookup for darkness** | Passes typecheck, passes every switcher test, and still renders a light Monaco/basemap/toast inside a consumer's dark theme. This is the regression the `resolveThemeIsDark` tests are written to catch specifically.                                               |
 | **A `registerTheme()` global side-effect registry**             | Order-dependent, invisible to React, impossible to scope to a region, and untestable in parallel. A prop is scoped, explicit and already how `allowedThemes` works.                                                                                                 |
-| **A separate `@elabs/components-themes` package**               | The reference themes are two CSS blocks and two descriptors. A package boundary for that adds a version to keep in lockstep and a dependency edge, for no consumer benefit. Subpath exports of the tokens package cover it (ADR [0006](./0006-subpath-exports.md)). |
+| **A separate `@elabs-ai/components-themes` package**            | The reference themes are two CSS blocks and two descriptors. A package boundary for that adds a version to keep in lockstep and a dependency edge, for no consumer benefit. Subpath exports of the tokens package cover it (ADR [0006](./0006-subpath-exports.md)). |
 | **Runtime validation of the token contract in `defineTheme`**   | Would need computed styles for every token at mount, in every environment including SSR and jsdom. Exporting the contract lets the consumer assert it once, statically, where it is cheap.                                                                          |
 
 ## Consequences

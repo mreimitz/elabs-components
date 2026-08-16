@@ -1,4 +1,4 @@
-import { normalizeQuoteTextWithOffsets, type DocumentAddress } from "@elabs/components-ui";
+import { normalizeQuoteTextWithOffsets, type DocumentAddress } from "@elabs-ai/components-ui";
 import { describe, expect, it } from "vitest";
 
 import type { DocumentHighlight, HighlightSupport } from "./highlight";

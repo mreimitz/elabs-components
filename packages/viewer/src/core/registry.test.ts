@@ -1,4 +1,4 @@
-import type { FileCategory } from "@elabs/components-ui";
+import type { FileCategory } from "@elabs-ai/components-ui";
 import { describe, expect, it, vi } from "vitest";
 
 import { isViewerError, ViewerError } from "./errors";

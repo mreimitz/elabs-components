@@ -24,17 +24,17 @@ are two different jobs, and only one of them touches this package:
 defineTheme({ value, label, dark })]}>`, and assert coverage against the exported
   `THEME_TOKEN_NAMES` in your own test. No fork, no PR into this repo. Recipe:
   `docs/CONSUMING.md` §5.1.
-- **A REFERENCE theme shipped from `@elabs/components-tokens`** — rare. That is
+- **A REFERENCE theme shipped from `@elabs-ai/components-tokens`** — rare. That is
   the "Add a reference theme" section below.
 
 ## Where everything lives
 
-`@elabs/components-tokens/styles.css` is the **engine**: `:root` (a complete
+`@elabs-ai/components-tokens/styles.css` is the **engine**: `:root` (a complete
 neutral light palette — an app importing only this renders correctly), the
 `@theme inline` token→utility map, the dials, the base layer.
 
 Each reference theme is its own **opt-in** file, exported as
-`@elabs/components-tokens/themes/<name>.css`. `styles.css` does not import them;
+`@elabs-ai/components-tokens/themes/<name>.css`. `styles.css` does not import them;
 a consumer imports the ones they want, or none.
 
 `theme-types.ts` holds the built-in registry — `BUILT_IN_THEMES`,
@@ -52,7 +52,7 @@ list, token set, and current `--radius`.
 2. Add the `BUILT_IN_THEMES` + `BUILT_IN_THEME_META` entries; set `DEFAULT_THEME`
    only if it should be the default.
 3. Export it: `"./themes/<name>.css"` in `exports` **and** `publishConfig.exports`,
-   then `pnpm --filter @elabs/components-tokens tokens:extract` for the DTCG
+   then `pnpm --filter @elabs-ai/components-tokens tokens:extract` for the DTCG
    round-trip. Import it in `apps/docs/.storybook/preview.css`,
    `fixtures/consumer-smoke`, and the scaffold CSS in `packages/cli/lib/engine.mjs`.
 4. Optionally ship a `registry:theme` item (`brand-ui-registry`).
@@ -78,7 +78,7 @@ lower `--radius` in each block — don't touch components.
   (oklch-aware, rendered) — don't eyeball. Watch the brand hue as small text on a
   light surface, and the `*-foreground` ink on filled brand plates.
 - Re-render the playground/Storybook in the new theme.
-- `pnpm --filter @elabs/components-tokens typecheck` and keep
+- `pnpm --filter @elabs-ai/components-tokens typecheck` and keep
   `BUILT_IN_THEMES`/`BUILT_IN_THEME_META` in sync with the theme stylesheets.
 - **Read the counts the gates print, not just their exit code.** Anything that
   parses theme blocks must read the whole file SET; a parser that quietly reads

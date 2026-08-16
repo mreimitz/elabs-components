@@ -1,17 +1,17 @@
 "use client";
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import { Button } from "@elabs/components-ui";
+import { Button } from "@elabs-ai/components-ui";
 import {
   Command,
   CommandEmpty,
   CommandInput,
   CommandItem,
   CommandList,
-} from "@elabs/components-ui";
-import { Popover, PopoverContent, PopoverTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import { Popover, PopoverContent, PopoverTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 import { ChevronsUpDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import {

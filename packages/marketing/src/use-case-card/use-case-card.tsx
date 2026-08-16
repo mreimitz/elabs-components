@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { Card, CardContent } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Card, CardContent } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface UseCaseCardProps {
   title: ReactNode;

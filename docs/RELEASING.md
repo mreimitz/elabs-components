@@ -1,26 +1,29 @@
 # Releasing brand-ui
 
-**Distribution model: private npm packages on [GitHub Packages](https://npm.pkg.github.com),
-published by CI from a version tag.** Tarballs are still attached to each GitHub
-Release, but only as a rollback path for consumers who cannot reach the registry —
-they are no longer the primary channel.
+**Distribution model: public npm packages on
+[npmjs.org](https://registry.npmjs.org/) under the `@elabs-ai` scope, published by CI
+from a version tag** (ADR [0030](./ADR/0030-public-npm-distribution.md)). Tarballs
+are still attached to each GitHub Release, but only as a rollback path for
+consumers who cannot reach the registry — they are not the primary channel.
 
 Run **`/release <version>`** and it walks the whole flow. This document is the
 reference for what that command does and why each step exists.
 
-> **Status.** This pipeline is live. `v2.0.0` was published through it on
-> 2026-08-01, to GitHub Packages plus a GitHub Release with the agent-kit,
-> plugin and rollback tarballs attached. The release set is **12 packages** as
-> of 2026-08-10 — `@elabs/components-viewer` joined it. Consumers
-> stay on the `2.1.1` they already have.
+> **Status.** The pipeline is wired but has **not yet published to npmjs.org**.
+> `v2.0.0` went out on 2026-08-01 through the previous, GitHub Packages model; the
+> fork then disabled publishing entirely (ADR 0028) before re-targeting it here.
+> The `@elabs-ai` scope is registered on npmjs.org by this maintainer (`elabs` was
+> already taken, which is why the scope is `@elabs-ai`). One thing is still owed
+> before the first public release: `NPM_TOKEN` — an npm **granular automation**
+> token with publish rights on that scope — as a repository secret. The release
+> set is **12 packages**.
 
 ## The division of labour
 
 **You prepare and verify locally; CI publishes.** `.github/workflows/release.yml`
-fires on a `v*` tag and is the only thing that runs `pnpm publish`. It holds
-`packages: write` through `secrets.GITHUB_TOKEN`, so no maintainer needs a
-personal token with `write:packages`, and no publish can originate from an
-unverified working tree. **Never run `pnpm publish` by hand.**
+fires on a `v*` tag and is the only thing that runs `pnpm publish`. No publish can
+originate from a laptop or an unverified working tree. **Never run `pnpm publish`
+by hand.**
 
 ## 1. Preflight
 
@@ -29,18 +32,23 @@ pnpm publish-ready:check   # can these packages reach the registry at all?
 pnpm version:check         # do all 16 lockstep sites agree?
 ```
 
-`publish-ready:check` exists because GitHub Packages fails for reasons that are
-invisible locally, late in a release, after some packages have already published
-— and npm versions are immutable, so a half-published release cannot be undone.
-It verifies:
+`publish-ready:check` exists because a registry rejects a publish for reasons that
+are invisible locally, late in a release, after some packages have already
+published — and npm versions are immutable, so a half-published release cannot be
+undone. It verifies:
 
-- the npm **scope equals the repository owner** (GitHub Packages' hard requirement),
 - no distributable is still `private: true`,
-- every package has `repository` + `directory` (how the package links to the repo
-  and inherits its private visibility),
+- every package has `repository` + `directory`, so the published package links
+  back to its source,
 - every package has `publishConfig.registry`,
-- the root `.npmrc` maps the scope, or every consumer install silently resolves
-  from npmjs.org instead.
+- the root `.npmrc` maps every published scope to that registry.
+
+One rule is **conditional on the host**: the npm scope must equal the repository
+owner on **GitHub Packages only**, which is that registry's own requirement. This
+repo publishes `@elabs-ai/*` from `mreimitz/elabs-components`, so the rule is skipped
+here — see `requiresOwnerScope()` in `scripts/check-publish-ready.mjs`. It stays
+wired because a future GitHub Packages release would otherwise fail after its
+first package had already published irreversibly.
 
 ## 2. Set the version
 
@@ -77,7 +85,7 @@ is usable: every export resolves, `use client` boundaries are correct in both
 directions, fonts resolve, no engine resolved at two versions.
 
 This matters more than it sounds. Every app and every other gate in this repo
-resolves `@elabs/components-*` to TypeScript **source** via the `exports` map, while
+resolves `@elabs-ai/components-*` to TypeScript **source** via the `exports` map, while
 consumers get `publishConfig.exports` → `dist/`. Four defects lived in that blind
 spot simultaneously — stripped `use client` directives, fonts copied one level too
 deep, esbuild-orphaned stylesheets, and a subpath pointing at raw `.ts` — all with
@@ -161,7 +169,13 @@ other state (no run, still queued, still running, `failure`, `cancelled`,
    `release-verdict:check --out`. Without it a reader could not follow "these
    gates passed" to any evidence, so a report written with no provenance says so
    in its own first paragraph instead of implying otherwise,
-6. `pnpm -r publish --no-git-checks --access restricted` to GitHub Packages,
+6. `pnpm -r publish --access public --no-git-checks` to npmjs.org. Public access is
+   explicit rather than inherited, because a scoped package defaults to
+   _restricted_ — the failure mode is a release that publishes but nobody can
+   install. Provenance is requested through
+   `NPM_CONFIG_PROVENANCE` (an env var, never a `--provenance`
+   flag: an unrecognised flag would abort the publish mid-release), so it is
+   **best-effort** — an unattested publish still succeeds,
 7. builds the agent-kit + plugin zips (`release:agent-kit`, `release:plugin`),
 8. `pnpm release:snapshot` — packs the `.tgz` rollback tarballs for the **derived**
    distributable set, writes the record half of the snapshot (`RELEASE_NOTES.md`
@@ -182,36 +196,28 @@ other state (no run, still queued, still running, `failure`, `cancelled`,
    cannot write (a missing `RELEASE_NOTES.md`) **fails** the step rather than
    warning past it,
 9. creates the GitHub Release with all of it attached,
-10. **post-release verify** — resolves every published package from
-    `https://npm.pkg.github.com` at the released version and asserts every asset the
-    manifest names is actually attached. A half-published release ends **red**.
-11. **post-release fresh-install smoke** (`pnpm release:smoke`) — a **separate
-    job**, `needs: release`, so the Release is created and the packages are
-    resolvable the moment the publish job ends rather than two minutes later. It
-    is the check
-    `npm view` cannot make. It installs every published package **from the
-    registry** into a scratch dir outside the workspace with a consumer-shaped
-    `.npmrc`, asserts each package's `exports` entry is really inside the tarball
-    and non-empty, imports the published CLI and runs its consumer commands
-    (`brand-ui info --json`, `brand-ui docs Button`), and **re-**confirms the
-    plugin pointer a `/plugin marketplace add` consumer follows names the released
-    version (step 4 already asserted it pre-publish; a revert can land in
-    between). `consumer:check` covers the artifact **before** publish, from local
-    tarballs; this is the only step that installs what the registry actually
-    serves.
+10. **post-release fresh-install smoke** (`pnpm release:smoke`) — the last step of
+    the **same job**, not a dependent one, because it reads the snapshot folder:
+    `release/` is git-ignored and the runner is discarded when the job ends, so a
+    `needs:` job would have to re-download every asset to find the manifest it
+    already had. It is the check `npm view` cannot make. It installs every
+    published package **from the registry** into a scratch dir outside the
+    workspace, asserts each package's `exports` entry is really inside the tarball
+    and non-empty, asserts every asset `release-manifest.json` names is actually
+    attached to the Release, imports the published CLI and runs its consumer
+    commands (`brand-ui info --json`, `brand-ui docs Button`), and
+    **re-**confirms the plugin pointer a `/plugin marketplace add` consumer
+    follows names the released version (step 4 already asserted it pre-publish; a
+    revert can land in between). `consumer:check` covers the artifact **before**
+    publish, from local tarballs; this is the only step that installs what the
+    registry actually serves.
 
-    Two details it gets right that are easy to get wrong, and were:
-    - **The registry is mapped per scope, never process-wide.** The `.npmrc` it
-      writes is the one `CONSUMING.md` hands a consumer
-      (`@elabs:registry=…` + auth). An `npm install --registry=…` override
-      would make GitHub Packages the default for every _transitive_ dependency
-      too, and it does not proxy npmjs.org — so the install 404s on the first
-      public dep and the smoke fails every release, after the publish.
-    - **The marketplace pointer is read from the DEFAULT BRANCH**, over the GitHub
-      API, not from the tag this job checked out. The tag's own copy is forced to
-      agree by `pnpm version:check` two steps earlier, so comparing it proves
-      nothing — while a `/plugin marketplace add` consumer follows `main`, which
-      § 4 pushes as a _separate_ command and a revert can move afterwards.
+    One detail it gets right that is easy to get wrong, and was: **the marketplace
+    pointer is read from the DEFAULT BRANCH**, over the GitHub API, not from the
+    tag this job checked out. The tag's own copy is forced to agree by
+    `pnpm version:check` two steps earlier, so comparing it proves nothing — while
+    a `/plugin marketplace add` consumer follows `main`, which § 4 pushes as a
+    _separate_ command and a revert can move afterwards.
 
     `npx shadcn add` is deliberately **not** smoked: a release does not build,
     publish or host the shadcn registry (see below), so there is no URL to test.
@@ -225,11 +231,12 @@ other state (no run, still queued, still running, `failure`, `cancelled`,
     pointer-side failure, for which the remedy is § 7 Rollback (patch forward),
     never an undo.
 
-    **Status: field-proven since v3.0.0** (2026-08-10), which is the first
-    release that ran it against the real registry — it installed the whole
-    published set from `https://npm.pkg.github.com` and passed. Before that it had
-    only its self-test (`pnpm release:smoke:test`, 27 assertions driven with
-    injected fakes). Still read its output rather than assuming it.
+    **Status: field-proven against the PREVIOUS registry, not this one.** The
+    v3.0.0 run (2026-08-10) installed the whole published set from GitHub Packages
+    and passed; it has never run against npmjs.org. Its self-test
+    (`pnpm release:smoke:test`, 27 assertions on injected fakes) covers the logic,
+    not the target. Read its output on the first public release rather than
+    assuming it.
 
 Watch it with `gh run watch` or `gh run list --workflow=Release`.
 
@@ -309,14 +316,13 @@ fail the run if either does not hold. To check by hand:
 ```bash
 gh release view v2.1.0
 # and resolve a package from the registry, from outside the monorepo:
-npm view @elabs/components-ui@2.1.0 --registry=https://npm.pkg.github.com
+npm view @elabs-ai/components-ui@2.1.0
 # the real thing — a fresh install of the published artifact in a scratch dir.
-# GITHUB_REPOSITORY (or --repo) + an authenticated `gh` let it read the plugin
-# pointer off the DEFAULT BRANCH; without them it falls back to this checkout and
-# says so, because that comparison is tautological here.
-NODE_AUTH_TOKEN=<a PAT with read:packages> \
-GITHUB_REPOSITORY=<owner>/<repo> \
-  pnpm release:smoke
+# No token: the packages are public. GITHUB_REPOSITORY (or --repo) + an
+# authenticated `gh` let it read the plugin pointer off the DEFAULT BRANCH;
+# without them it falls back to this checkout and says so, because that
+# comparison is tautological here.
+GITHUB_REPOSITORY=mreimitz/elabs-components pnpm release:smoke
 ```
 
 ## 7. Rollback
@@ -336,11 +342,12 @@ forward_, never _undo_. Three cases:
    hand-kept literal here is exactly what shipped v1.7.0 without `@brand/maps`.
 
    ```bash
-   # needs a classic PAT with write:packages; this is the ONE npm command the repo
-   # permits by hand, precisely because CI cannot un-publish for you.
+   # needs `npm login` as a user with publish rights on the @elabs-ai scope; this is
+   # the ONE npm command the repo permits by hand, precisely because CI cannot
+   # un-publish for you.
    manifest=release/v1.10.0/release-manifest.json   # or the asset from that Release
    for p in $(node -p "JSON.parse(require('fs').readFileSync('$manifest','utf8')).packages.map(x=>x.name).join('\n')"); do
-     npm deprecate "$p@1.10.0" "broken — use 1.10.1" --registry=https://npm.pkg.github.com
+     npm deprecate "$p@1.10.0" "broken — use 1.10.1"
    done
    ```
 
@@ -381,8 +388,8 @@ was `CHANGELOG.md` (the release commit moved its `## Unreleased` heading); resol
 it in favour of the current file — the changelog is not a rollback surface.
 
 The `npm deprecate` path has **not** been rehearsed. It needs a real published bad
-version and a PAT with `write:packages`, and manufacturing one to practise is worse
-than the risk it covers. Treat the commands above as untested-in-anger.
+version and publish rights on the scope, and manufacturing one to practise is
+worse than the risk it covers. Treat the commands above as untested-in-anger.
 
 ### A consumer who must downgrade offline
 
@@ -403,8 +410,9 @@ validated it, and what an agent consuming that version was told.
 
 ## Consuming
 
-See **[`CONSUMING.md`](./CONSUMING.md)** — registry auth (a classic PAT with
-`read:packages`), the dependency block, and the Tailwind v4 + token wiring.
+See **[`CONSUMING.md`](./CONSUMING.md)** — the dependency block and the Tailwind
+v4 + token wiring. There is no registry auth step any more: the packages are
+public.
 
 ## Deprecations & support
 

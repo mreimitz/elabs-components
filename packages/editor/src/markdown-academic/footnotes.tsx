@@ -18,8 +18,8 @@
  * nodes — and we keep every `id`/`href` on our React output (post-sanitization),
  * never on raw hast the sanitizer could strip.
  */
-import { Separator } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Separator } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, useId, type HTMLAttributes, type ReactNode } from "react";
 import { visit } from "unist-util-visit";
 

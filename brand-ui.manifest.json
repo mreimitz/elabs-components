@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T19:14:14.154Z",
+  "generatedAt": "2026-08-16T23:25:51.286Z",
   "name": "brand-ui",
   "themes": [
     "dark"
@@ -231,13 +231,13 @@
       "name": "chart-frame-data",
       "type": "registry:block",
       "title": "ChartFrame + data table",
-      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs/components-data: full TanStack DataTable on flip and downloadCsv on export."
+      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs-ai/components-data: full TanStack DataTable on flip and downloadCsv on export."
     },
     {
       "name": "ai-chart",
       "type": "registry:block",
       "title": "AI chart in conversation",
-      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs/components-charts) composed with Tool/ToolOutput from @elabs/components-ai. The canonical copy-owned home for @elabs/components-ai + @elabs/components-charts cross-sibling composition."
+      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs-ai/components-charts) composed with Tool/ToolOutput from @elabs-ai/components-ai. The canonical copy-owned home for @elabs-ai/components-ai + @elabs-ai/components-charts cross-sibling composition."
     },
     {
       "name": "flow-canvas",
@@ -261,7 +261,7 @@
       "name": "code-workspace",
       "type": "registry:block",
       "title": "Code workspace",
-      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs/components-editor/monaco-environment once at the app entry)."
+      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs-ai/components-editor/monaco-environment once at the app entry)."
     },
     {
       "name": "sidebar-02",
@@ -342,9 +342,9 @@
       "title": "Patterns/Templates/AI Assistant",
       "description": "AI assistant template — the canonical full-screen AI assistant composition (app-shell + chat shell: Conversation + PromptInput). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-ai",
-        "@elabs/components-icons",
-        "@elabs/components-ui"
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/ai/src/templates-ai-assistant.stories.tsx",
       "file": "templates/ai-assistant.tsx"
@@ -354,9 +354,9 @@
       "title": "Patterns/Templates/Dashboard",
       "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-charts",
-        "@elabs/components-icons",
-        "@elabs/components-ui"
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/charts/src/templates-dashboard.stories.tsx",
       "file": "templates/dashboard.tsx"
@@ -366,9 +366,9 @@
       "title": "Patterns/Templates/Data App",
       "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-data",
-        "@elabs/components-icons",
-        "@elabs/components-ui"
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/data/src/templates-data-app.stories.tsx",
       "file": "templates/data-app.tsx"
@@ -378,9 +378,9 @@
       "title": "Patterns/Templates/Flow Workspace",
       "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-flow",
-        "@elabs/components-icons",
-        "@elabs/components-ui"
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/flow/src/templates-flow-workspace.stories.tsx",
       "file": "templates/flow-workspace.tsx"
@@ -388,10 +388,10 @@
     {
       "name": "marketing",
       "title": "Patterns/Templates/Marketing",
-      "description": "Marketing landing template — the canonical full-screen presales/landing composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row + LogoStrip + CTASection + footer (the standard section order). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/marketing.tsx`) from it. Verify across both themes with globals=theme:<slug> (light | dark). The marketing package ships no icons by design (sections take `icon?: ReactNode` from the consumer), so this story passes inline currentColor glyphs — the same way a consumer would hand in Lucide / @elabs/components-icons.",
+      "description": "Marketing landing template — the canonical full-screen presales/landing composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row + LogoStrip + CTASection + footer (the standard section order). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/marketing.tsx`) from it. Verify across both themes with globals=theme:<slug> (light | dark). The marketing package ships no icons by design (sections take `icon?: ReactNode` from the consumer), so this story passes inline currentColor glyphs — the same way a consumer would hand in Lucide / @elabs-ai/components-icons.",
       "packages": [
-        "@elabs/components-marketing",
-        "@elabs/components-ui"
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/marketing/src/templates-marketing.stories.tsx",
       "file": "templates/marketing.tsx"
@@ -399,9 +399,9 @@
     {
       "name": "object-detail-hub",
       "title": "Patterns/Templates/Object Detail Hub",
-      "description": "Object Detail Hub — the master-detail screen the library was missing. The single most common enterprise screen: a list of objects on the left drives a rich DETAIL HUB on the right. It demonstrates the structural choices the enterprise rulebook insists on, so an end-user copies the right anatomy instead of dumping everything on one page or stacking detail *below* the list: • SplitPanel master-detail (list drives detail — never detail below list). • A detail hub = sticky SectionHeader (identity + status) + a ButtonGroup toolbar + Tabs for the object's sections (Overview / Activity / Settings). • Descriptions for the object's attributes; a related list for its children. • A high-value task (Run) promoted to its own focused Dialog surface. • A real empty state (StatePanel kind=\"empty\") when nothing is selected. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in light AND dark. Verify with globals=theme:<slug>.",
+      "description": "Object Detail Hub — the master-detail screen the library was missing. The single most common enterprise screen: a list of objects on the left drives a rich DETAIL HUB on the right. It demonstrates the structural choices the enterprise rulebook insists on, so an end-user copies the right anatomy instead of dumping everything on one page or stacking detail *below* the list: • SplitPanel master-detail (list drives detail — never detail below list). • A detail hub = sticky SectionHeader (identity + status) + a ButtonGroup toolbar + Tabs for the object's sections (Overview / Activity / Settings). • Descriptions for the object's attributes; a related list for its children. • A high-value task (Run) promoted to its own focused Dialog surface. • A real empty state (StatePanel kind=\"empty\") when nothing is selected. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in light AND dark. Verify with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-ui"
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/ui/src/templates-object-detail-hub.stories.tsx",
       "file": "templates/object-detail-hub.tsx"
@@ -409,9 +409,9 @@
     {
       "name": "screen-states",
       "title": "Patterns/Templates/Screen States",
-      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all three themes. Verify with globals=theme:<slug>.",
+      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all three themes. Verify with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-ui"
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/ui/src/templates-screen-states.stories.tsx",
       "file": "templates/screen-states.tsx"
@@ -421,7 +421,7 @@
       "title": "Patterns/Templates/Settings",
       "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@elabs/components-ui"
+        "@elabs-ai/components-ui"
       ],
       "sourceStory": "packages/ui/src/templates-settings.stories.tsx",
       "file": "templates/settings.tsx"
@@ -444,8 +444,8 @@
         "sources"
       ],
       "packages": [
-        "@elabs/components-ui",
-        "@elabs/components-ai"
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-ai"
       ],
       "file": "docs/playbooks/ai-assistant.md",
       "template": "templates/ai-assistant.tsx"
@@ -465,9 +465,9 @@
         "drill-down"
       ],
       "packages": [
-        "@elabs/components-ui",
-        "@elabs/components-charts",
-        "@elabs/components-data"
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-data"
       ],
       "file": "docs/playbooks/dashboard.md",
       "template": "templates/dashboard.tsx"
@@ -489,8 +489,8 @@
         "back-office"
       ],
       "packages": [
-        "@elabs/components-ui",
-        "@elabs/components-data"
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-data"
       ],
       "file": "docs/playbooks/data-app.md",
       "template": "templates/data-app.tsx"
@@ -512,9 +512,9 @@
         "inspector"
       ],
       "packages": [
-        "@elabs/components-ui",
-        "@elabs/components-flow",
-        "@elabs/components-ai"
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-flow",
+        "@elabs-ai/components-ai"
       ],
       "file": "docs/playbooks/flow-workspace.md",
       "template": "templates/flow-workspace.tsx"
@@ -535,9 +535,9 @@
         "website"
       ],
       "packages": [
-        "@elabs/components-ui",
-        "@elabs/components-marketing",
-        "@elabs/components-icons"
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-marketing",
+        "@elabs-ai/components-icons"
       ],
       "file": "docs/playbooks/marketing.md",
       "template": "templates/marketing.tsx"
@@ -557,8 +557,8 @@
         "team management"
       ],
       "packages": [
-        "@elabs/components-ui",
-        "@elabs/components-data"
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-data"
       ],
       "file": "docs/playbooks/settings.md",
       "template": "templates/settings.tsx"
@@ -569,7 +569,7 @@
       "conversation": {
         "status": "shipped",
         "title": "Conversation — the AI SDK UIMessage (the default)",
-        "summary": "Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs/components-ai renders it. ~the default for any chat.",
+        "summary": "Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs-ai/components-ai renders it. ~the default for any chat.",
         "model": "ai/UIMessage",
         "modelAuthority": "Vercel AI SDK — import type only (D6). brand-ui does NOT redefine UIMessage/ToolUIPart; the SDK is authoritative for their shape.",
         "owns": "brand-ui owns ONLY the projection: the tool-state→Status mapping, the role narrowing, the fields its components consume, and SourceListItem.",
@@ -654,7 +654,7 @@
           }
         ],
         "example": "const messages = [\n  { id: \"m1\", role: \"user\", parts: [{ type: \"text\", text: \"Weather in Berlin?\" }] },\n  {\n    id: \"m2\",\n    role: \"assistant\",\n    parts: [\n      { type: \"reasoning\", text: \"User wants current weather — call the tool.\" },\n      {\n        type: \"tool-getWeather\",        // `tool-<name>`, or { type: \"dynamic-tool\", toolName }\n        toolCallId: \"call_1\",\n        state: \"output-available\",      // 7-state machine → StatusBadge\n        input: { city: \"Berlin\" },\n        output: { tempC: 18, summary: \"Partly cloudy\" },\n      },\n      { type: \"text\", text: \"It is 18°C and partly cloudy in Berlin.\" },\n      { type: \"source-url\", sourceId: \"s1\", url: \"https://example.com/berlin\", title: \"Berlin forecast\" },\n    ],\n  },\n];",
-        "wiring": "Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs/components-ai never calls the model."
+        "wiring": "Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs-ai/components-ai never calls the model."
       },
       "jsxPreview": {
         "status": "shipped",
@@ -682,7 +682,7 @@
       }
     },
     "donts": [
-      "Don't expect @elabs/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
+      "Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
       "Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.",
       "Don't emit tags outside the JSXPreview `components` allow-list.",
       "Don't emit A2UI surfaces — not shipped (WP-11).",
@@ -691,11 +691,11 @@
     ]
   },
   "packages": {
-    "@elabs/components-ai": {
+    "@elabs-ai/components-ai": {
       "path": "packages/ai",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
         "ai": "^6.0.0",
         "react": "^18.2.0 || ^19.0.0",
@@ -4322,7 +4322,7 @@
               "name": "renderPreview",
               "optional": true,
               "type": "AssetPreviewRenderer",
-              "description": "Draw an asset's preview body yourself. The seam that lets this package show formats it cannot parse — a PDF, a spreadsheet, a video — without importing a domain sibling (`@elabs/components-ai` and `@elabs/components-viewer` are peers in the layer graph and may never import each other). The consuming app owns the edge: ```tsx <ContextPanelProvider renderPreview={(asset) => asset.source ? <FileViewer source={asset.source} /> : null } > ``` Return `null` to decline, and the built-in type-keyed rendering runs exactly as before — so an injection is additive, never a replacement."
+              "description": "Draw an asset's preview body yourself. The seam that lets this package show formats it cannot parse — a PDF, a spreadsheet, a video — without importing a domain sibling (`@elabs-ai/components-ai` and `@elabs-ai/components-viewer` are peers in the layer graph and may never import each other). The consuming app owns the edge: ```tsx <ContextPanelProvider renderPreview={(asset) => asset.source ? <FileViewer source={asset.source} /> : null } > ``` Return `null` to decline, and the built-in type-keyed rendering runs exactly as before — so an injection is additive, never a replacement."
             }
           ]
         },
@@ -6450,10 +6450,10 @@
             ]
           },
           "stateTokens": {
-            "status": "the rail NODE, owned by the composed @elabs/components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted"
+            "status": "the rail NODE, owned by the composed @elabs-ai/components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted"
           },
           "antiPatterns": [
-            "Hand-rolling a connector + status-map rail — reuse the @elabs/components-ui Timeline (the timeline-fork gate blocks a second one).",
+            "Hand-rolling a connector + status-map rail — reuse the @elabs-ai/components-ui Timeline (the timeline-fork gate blocks a second one).",
             "Reaching for a border-s-* accent rail to show step status — AgentTimeline is a thin TimelineRoot/TimelineItem wrapper; status is the node dot (plus the StatusBadge), never a left rail.",
             "Encoding step status by color alone — pair the color with an icon or label.",
             "Rendering a blank rail while the run is starting — show the not-ready state, never an empty region."
@@ -6650,7 +6650,7 @@
           },
           "stateTokens": {},
           "antiPatterns": [
-            "Calling a model inside the component — @elabs/components-ai is presentational/runtime-agnostic; wire useChat in the app.",
+            "Calling a model inside the component — @elabs-ai/components-ai is presentational/runtime-agnostic; wire useChat in the app.",
             "Hand-rolling the composer footer inside the shell — compose Composer; it is the shipped chat input.",
             "Putting an animated/collapsible context rail in ChatShell.aside — the aside is for a STATIC rail; compose ContextPanelProvider + ContextPanel as a SIBLING of the shell."
           ]
@@ -7130,7 +7130,7 @@
             "Adding a bg-card fill to the assistant turn — the assistant branch is deliberately unfilled; reach for AgentMessage emphasis=\"answer\" (a left rail), not a redundant surface.",
             "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
             "Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.",
-            "Calling a model inside the component — @elabs/components-ai is presentational; the app owns useChat/transport (D5)."
+            "Calling a model inside the component — @elabs-ai/components-ai is presentational; the app owns useChat/transport (D5)."
           ]
         },
         "MessageEdit": {
@@ -7324,7 +7324,7 @@
           },
           "antiPatterns": [
             "Using it as the canvas-wide toolbar — it is a NODE toolbar and is positioned against the selected node.",
-            "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @elabs/components-ui.",
+            "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @elabs-ai/components-ui.",
             "Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.",
             "Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name."
           ]
@@ -7851,7 +7851,7 @@
             "Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.",
             "Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.",
             "Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.",
-            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs/components-ai."
+            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs-ai/components-ai."
           ]
         },
         "ToolResultCard": {
@@ -7938,11 +7938,11 @@
         }
       }
     },
-    "@elabs/components-charts": {
+    "@elabs-ai/components-charts": {
       "path": "packages/charts",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -10157,13 +10157,13 @@
               "name": "renderTable",
               "optional": true,
               "type": "(rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode",
-              "description": "Custom table renderer for the flip-to-table view. Defaults to the @elabs/components-ui Table primitive."
+              "description": "Custom table renderer for the flip-to-table view. Defaults to the @elabs-ai/components-ui Table primitive."
             },
             {
               "name": "onDownload",
               "optional": true,
               "type": "(rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => void",
-              "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @elabs/components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
+              "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @elabs-ai/components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
             },
             {
               "name": "children",
@@ -13078,7 +13078,7 @@
           "stateTokens": {},
           "antiPatterns": [
             "Expecting ChartFrame to read the chart's context — it is the PARENT of the chart's provider; pass the same data to both via props.",
-            "Importing @elabs/components-data into a chart — charts → ui only; flip-to-table uses the @elabs/components-ui Table.",
+            "Importing @elabs-ai/components-data into a chart — charts → ui only; flip-to-table uses the @elabs-ai/components-ui Table.",
             "Expecting the table/download controls with no `data` — they hide by design when data is absent or empty; pass the same rows you gave the chart."
           ]
         },
@@ -13257,7 +13257,7 @@
           "antiPatterns": [
             "Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.",
             "Encoding up/down by color alone — pair with an arrow/sign.",
-            "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012)."
+            "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs-ai/components-ui; charts and editor re-export it (ADR 0012)."
           ]
         },
         "MetricGrid": {
@@ -13281,7 +13281,7 @@
           "antiPatterns": [
             "More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.",
             "Numbers without tabular-nums — figures jitter across the row.",
-            "Re-declaring a KPI tile locally — MetricCard is owned by @elabs/components-ui and re-exported here (ADR 0012)."
+            "Re-declaring a KPI tile locally — MetricCard is owned by @elabs-ai/components-ui and re-exported here (ADR 0012)."
           ]
         },
         "PieChart": {
@@ -13390,12 +13390,12 @@
         }
       }
     },
-    "@elabs/components-data": {
+    "@elabs-ai/components-data": {
       "path": "packages/data",
       "peerDependencies": {
-        "@elabs/components-icons": "workspace:*",
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-icons": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -13820,11 +13820,11 @@
         }
       }
     },
-    "@elabs/components-editor": {
+    "@elabs-ai/components-editor": {
       "path": "packages/editor",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "monaco-editor": "^0.55.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -13920,13 +13920,13 @@
           "stateTokens": {},
           "antiPatterns": [
             "Passing Monaco a hardcoded theme — the bridge reads the active data-theme tokens; never override it.",
-            "Using CodeEditor for read-only display — use CodeBlock (@elabs/components-ai, Shiki) for non-editable code.",
-            "Forgetting the worker setup (import \"@elabs/components-editor/monaco-environment\") — IntelliSense is off without it."
+            "Using CodeEditor for read-only display — use CodeBlock (@elabs-ai/components-ai, Shiki) for non-editable code.",
+            "Forgetting the worker setup (import \"@elabs-ai/components-editor/monaco-environment\") — IntelliSense is off without it."
           ]
         }
       },
       "subpaths": {
-        "@elabs/components-editor/markdown": {
+        "@elabs-ai/components-editor/markdown": {
           "components": [
             {
               "name": "Bibliography",
@@ -14323,7 +14323,7 @@
             "wrapSelection"
           ]
         },
-        "@elabs/components-editor/markdown/frontmatter": {
+        "@elabs-ai/components-editor/markdown/frontmatter": {
           "components": [],
           "hooks": [],
           "types": [],
@@ -14333,7 +14333,7 @@
             "typeParsedDocument"
           ]
         },
-        "@elabs/components-editor/markdown/parse": {
+        "@elabs-ai/components-editor/markdown/parse": {
           "components": [],
           "hooks": [],
           "types": [],
@@ -14343,11 +14343,11 @@
         }
       }
     },
-    "@elabs/components-flow": {
+    "@elabs-ai/components-flow": {
       "path": "packages/flow",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -14667,7 +14667,7 @@
               "name": "open",
               "optional": true,
               "type": "boolean",
-              "description": "Collapse (research 09 step 3 — converged on the shared `@elabs/components-ui` `useCollapsiblePanel` base; the panel stays single-view, drill-in is ContextPanel-only). Controlled `open` / uncontrolled `defaultOpen`."
+              "description": "Collapse (research 09 step 3 — converged on the shared `@elabs-ai/components-ui` `useCollapsiblePanel` base; the panel stays single-view, drill-in is ContextPanel-only). Controlled `open` / uncontrolled `defaultOpen`."
             },
             {
               "name": "defaultOpen",
@@ -14818,7 +14818,7 @@
         }
       }
     },
-    "@elabs/components-icons": {
+    "@elabs-ai/components-icons": {
       "path": "packages/icons",
       "peerDependencies": {
         "react": "^18.2.0 || ^19.0.0"
@@ -15132,11 +15132,11 @@
         }
       }
     },
-    "@elabs/components-maps": {
+    "@elabs-ai/components-maps": {
       "path": "packages/maps",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "maplibre-gl": "^5.15.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -15883,11 +15883,11 @@
         }
       }
     },
-    "@elabs/components-marketing": {
+    "@elabs-ai/components-marketing": {
       "path": "packages/marketing",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -16177,7 +16177,7 @@
         }
       }
     },
-    "@elabs/components-tokens": {
+    "@elabs-ai/components-tokens": {
       "path": "packages/tokens",
       "peerDependencies": {
         "react": "^18.2.0 || ^19.0.0",
@@ -16384,7 +16384,7 @@
               "name": "allowedThemes",
               "optional": true,
               "type": "readonly ThemeName[]",
-              "description": "Restrict this provider to a SUBSET of its registry (#355). When set: `useTheme().themes` lists only these, a persisted value outside the list is rejected during the same mount pass that applies the theme (so there is no flash of a theme the product doesn't ship), and `setTheme` with a disallowed name is a no-op that warns in development. Omit it (the default) for the whole registry. Names not in the registry and an empty list are ignored — a provider always exposes at least one theme. With an open registry this is now the NARROWER of the two knobs, and mostly redundant: pass the themes you ship as `themes` and you rarely need it. It stays for the case it was built for (#355) — one registry, several products each surfacing a slice of it. `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this subset (#384): it narrows its offered themes to the intersection of its own `themes` prop and the provider's allowed list whenever the provider is genuinely restricting (a strict subset of its registry). A non-restricting provider leaves the prop untouched for backward compatibility."
+              "description": "Restrict this provider to a SUBSET of its registry (#355). When set: `useTheme().themes` lists only these, a persisted value outside the list is rejected during the same mount pass that applies the theme (so there is no flash of a theme the product doesn't ship), and `setTheme` with a disallowed name is a no-op that warns in development. Omit it (the default) for the whole registry. Names not in the registry and an empty list are ignored — a provider always exposes at least one theme. With an open registry this is now the NARROWER of the two knobs, and mostly redundant: pass the themes you ship as `themes` and you rarely need it. It stays for the case it was built for (#355) — one registry, several products each surfacing a slice of it. `ThemeSwitcher` (`@elabs-ai/components-ui`) automatically inherits this subset (#384): it narrows its offered themes to the intersection of its own `themes` prop and the provider's allowed list whenever the provider is genuinely restricting (a strict subset of its registry). A non-restricting provider leaves the prop untouched for backward compatibility."
             },
             {
               "name": "defaultMotionPreference",
@@ -16482,10 +16482,10 @@
         }
       }
     },
-    "@elabs/components-ui": {
+    "@elabs-ai/components-ui": {
       "path": "packages/ui",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -20499,7 +20499,7 @@
               "name": "evidence",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs/components-ai`). Rendered subdued (`text-meta text-muted-foreground`) under the tile body."
+              "description": "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs-ai/components-ai`). Rendered subdued (`text-meta text-muted-foreground`) under the tile body."
             },
             {
               "name": "loading",
@@ -20731,7 +20731,7 @@
               "name": "headerVariant",
               "optional": true,
               "type": "\"default\" | \"toolbar\"",
-              "description": "\"default\" (unset) — `header` renders inline, scrolls with the body. Byte-identical to today. \"toolbar\" — for a `<ViewToolbar>` header (`@elabs/components-ui`, `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container with an opaque/blurred fill and a bottom hairline, so it stays pinned while the body scrolls beneath it. PLACES whatever node `header` is — it does not reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see `Docs/View Toolbar Contract` R7)."
+              "description": "\"default\" (unset) — `header` renders inline, scrolls with the body. Byte-identical to today. \"toolbar\" — for a `<ViewToolbar>` header (`@elabs-ai/components-ui`, `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container with an opaque/blurred fill and a bottom hairline, so it stays pinned while the body scrolls beneath it. PLACES whatever node `header` is — it does not reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see `Docs/View Toolbar Contract` R7)."
             },
             {
               "name": "width",
@@ -21556,7 +21556,7 @@
               "name": "detail",
               "optional": true,
               "type": "ReactNode",
-              "description": "Rich block content under the title/description, indented with the rail — the slot composing consumers (e.g. `@elabs/components-ai`'s `AgentStep`, #192) interleave per node. Block-level, so it must NOT ride the inline title slot (`children`)."
+              "description": "Rich block content under the title/description, indented with the rail — the slot composing consumers (e.g. `@elabs-ai/components-ai`'s `AgentStep`, #192) interleave per node. Block-level, so it must NOT ride the inline title slot (`children`)."
             }
           ]
         },
@@ -22254,7 +22254,7 @@
           "antiPatterns": [
             "Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.",
             "Encoding up/down by color alone — pair with an arrow/sign.",
-            "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012)."
+            "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs-ai/components-ui; charts and editor re-export it (ADR 0012)."
           ]
         },
         "Popover": {
@@ -22408,7 +22408,7 @@
             "Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.",
             "Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.",
             "Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.",
-            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs/components-ai."
+            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs-ai/components-ai."
           ]
         },
         "Tooltip": {
@@ -22430,7 +22430,7 @@
         }
       },
       "subpaths": {
-        "@elabs/components-ui/lib/cn": {
+        "@elabs-ai/components-ui/lib/cn": {
           "components": [],
           "hooks": [],
           "types": [],
@@ -22440,11 +22440,11 @@
         }
       }
     },
-    "@elabs/components-viewer": {
+    "@elabs-ai/components-viewer": {
       "path": "packages/viewer",
       "peerDependencies": {
-        "@elabs/components-tokens": "workspace:*",
-        "@elabs/components-ui": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
         "papaparse": "^5.4.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0",
@@ -22687,7 +22687,7 @@
               "name": "baseHeadingLevel",
               "optional": true,
               "type": "ProseHeadingLevel",
-              "description": "The rung a viewed document's own top-level heading renders at. Default `2`. A file carries its OWN heading tree, and that tree is only correct relative to the page hosting it: a README's `#` rendered as an `<h1>` inside an app that already has one puts two `h1`s in a screen reader's flat heading list, and the frame's `<section aria-label>` does not fix that — most screen readers list headings flat, not per landmark. The default assumes the common case, a viewer embedded BELOW the page's own heading; pass `1` when the viewer genuinely is the page. Adapters that render no headings ignore it. Same seam as `@elabs/components-ai`'s `MarkdownView baseHeadingLevel`."
+              "description": "The rung a viewed document's own top-level heading renders at. Default `2`. A file carries its OWN heading tree, and that tree is only correct relative to the page hosting it: a README's `#` rendered as an `<h1>` inside an app that already has one puts two `h1`s in a screen reader's flat heading list, and the frame's `<section aria-label>` does not fix that — most screen readers list headings flat, not per landmark. The default assumes the common case, a viewer embedded BELOW the page's own heading; pass `1` when the viewer genuinely is the page. Adapters that render no headings ignore it. Same seam as `@elabs-ai/components-ai`'s `MarkdownView baseHeadingLevel`."
             },
             {
               "name": "highlights",
@@ -22818,7 +22818,7 @@
             "Adding a per-format branch to FileViewerContent — a format is an adapter registration (registry.register), never a switch in the shell.",
             "Making a parser a plain dependency — every parser engine is an OPTIONAL peer, so a consumer who skips it gets the panel naming the package instead of a build error.",
             "Returning HTML from an adapter — adapters emit a DATA model that brand-ui components render; that is the only reason an arbitrary file inherits the theme.",
-            "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@elabs/components-editor).",
+            "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@elabs-ai/components-editor).",
             "Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure."
           ]
         }

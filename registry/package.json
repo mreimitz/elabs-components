@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@elabs/components-registry-blocks",
+  "name": "@elabs-ai/components-registry-blocks",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -8,15 +8,15 @@
   },
   "description": "Not a shipped package — a workspace member that exists so the copy-own registry blocks can RESOLVE their own dependencies. Storybook renders these files straight from `registry/blocks/**` (see apps/docs/stories/blocks/), and a tree outside apps/docs cannot reach apps/docs/node_modules; making registry/ a workspace member gives it a real node_modules instead of a parallel list of tsconfig paths and Vite aliases. Every entry below must also appear in some item's derived `dependencies` in registry.json — asserted by scripts/gen-registry.test.mjs.",
   "dependencies": {
-    "@elabs/components-ai": "workspace:*",
-    "@elabs/components-charts": "workspace:*",
-    "@elabs/components-data": "workspace:*",
-    "@elabs/components-editor": "workspace:*",
-    "@elabs/components-flow": "workspace:*",
-    "@elabs/components-icons": "workspace:*",
-    "@elabs/components-marketing": "workspace:*",
-    "@elabs/components-tokens": "workspace:*",
-    "@elabs/components-ui": "workspace:*",
+    "@elabs-ai/components-ai": "workspace:*",
+    "@elabs-ai/components-charts": "workspace:*",
+    "@elabs-ai/components-data": "workspace:*",
+    "@elabs-ai/components-editor": "workspace:*",
+    "@elabs-ai/components-flow": "workspace:*",
+    "@elabs-ai/components-icons": "workspace:*",
+    "@elabs-ai/components-marketing": "workspace:*",
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
     "@visx/curve": "4.0.1-alpha.0",
     "@xyflow/react": "^12.3.6",
     "lucide-react": "^0.577.0",
@@ -25,7 +25,7 @@
     "topojson-client": "3.1.0"
   },
   "devDependencies": {
-    "@elabs/components-typescript-config": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",

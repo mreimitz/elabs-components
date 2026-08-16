@@ -1,5 +1,5 @@
 /**
- * @elabs/components-tokens — rtl.css
+ * @elabs-ai/components-tokens — rtl.css
  * --------------------------------------------------------------------------
  * RTL directional-icon flip overlay. A minimal, targeted rule that mirrors
  * navigational chevrons and arrows under right-to-left document direction.
@@ -15,7 +15,7 @@
  *   `transform: scaleX(-1)`, mirroring the icon horizontally. The rule fires
  *   at ANY nesting depth; it is inert in `dir="ltr"` contexts.
  *
- * Copied to dist/ by the @elabs/components-tokens build.
+ * Copied to dist/ by the @elabs-ai/components-tokens build.
  */
 
 [dir="rtl"] [data-rtl-flip] {

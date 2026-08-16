@@ -15,7 +15,7 @@
  *    registration, not with an undefined property at render.
  */
 
-import { type FileKind, resolveFileKind } from "@elabs/components-ui";
+import { type FileKind, resolveFileKind } from "@elabs-ai/components-ui";
 
 import { ViewerError, isModuleNotFound, parserMissingError, toViewerError } from "./errors";
 import {

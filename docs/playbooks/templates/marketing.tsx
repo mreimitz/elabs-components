@@ -13,9 +13,9 @@
  *
  * The marketing package ships no icons by design (sections take `icon?:
  * ReactNode` from the consumer), so this story passes inline currentColor
- * glyphs — the same way a consumer would hand in Lucide / @elabs/components-icons.
+ * glyphs — the same way a consumer would hand in Lucide / @elabs-ai/components-icons.
  */
-import { Badge, Button } from "@elabs/components-ui";
+import { Badge, Button } from "@elabs-ai/components-ui";
 import {
   CTASection,
   FeatureGrid,
@@ -25,7 +25,7 @@ import {
   UseCaseCard,
   type Feature,
   type Stat,
-} from "@elabs/components-marketing";
+} from "@elabs-ai/components-marketing";
 
 // ---------------------------------------------------------------------------
 // Decorative glyphs — inline, currentColor, sized by the host (`[&_svg]:size-5`)

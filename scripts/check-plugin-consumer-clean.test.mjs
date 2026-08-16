@@ -12,7 +12,7 @@ import { checkConsumerClean, BANNED_TOKENS } from "./check-plugin-consumer-clean
 
 const CLEAN_AGENT = `---
 name: brand-ui-reviewer
-description: Review a UI built with @elabs/components-* for quality and accessibility.
+description: Review a UI built with @elabs-ai/components-* for quality and accessibility.
 tools: Read, Grep, Glob
 ---
 Report findings directly to the user with token-referenced fixes. Read-only.`;
@@ -94,7 +94,7 @@ test("FLAGS as error: a coupled SKILL fails the gate (enforced, like agents)", (
 
 test("PASSES: a consumer-clean SKILL yields no errors and no warnings", () => {
   const text =
-    "Use @elabs/components-tokens/styles.css; report findings to the user with token fixes.";
+    "Use @elabs-ai/components-tokens/styles.css; report findings to the user with token fixes.";
   const { errors, warnings } = checkConsumerClean({
     docs: [{ path: "skills/brand-ui-audit/SKILL.md", text, enforced: true }],
   });

@@ -374,7 +374,7 @@ export function renderArtifact(cssText, shippedThemes) {
     "  actually composes (a component may put `--muted-foreground` on `--card`, an ungated pair), text",
     "  over images/gradients/scrims, disabled and placeholder states, focus-ring visibility, hit-target",
     "  size, and whether a screen simply *reads* well. Those come from the Storybook axe pass",
-    "  (`pnpm --filter @elabs/components-docs test-storybook`, blocking in CI since #280 —",
+    "  (`pnpm --filter @elabs-ai/components-docs test-storybook`, blocking in CI since #280 —",
     "  though axe's own `test` mode is still advisory, ratcheting in #316) and from a",
     "  `brand-ui-visual-ux-reviewer` three-theme sweep.",
     "",

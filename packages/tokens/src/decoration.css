@@ -1,5 +1,5 @@
 /**
- * @elabs/components-tokens — decoration.css
+ * @elabs-ai/components-tokens — decoration.css
  * --------------------------------------------------------------------------
  * The DECORATION overlay: the drafting texture that rides the `--decoration`
  * dial defined in themes.css. Orthogonal to color.
@@ -8,7 +8,7 @@
  *   • BACKGROUNDS. The ambient ground behind the page, and opt-in region
  *     grounds. That is it.
  *   • CHART FILLS. Charts pick a pattern instead of a flat colour at high
- *     decoration; that lives in @elabs/components-charts (SVG <pattern> defs
+ *     decoration; that lives in @elabs-ai/components-charts (SVG <pattern> defs
  *     can't be driven from CSS), keyed off the same `--decoration` value.
  *
  * WHAT IT MUST NEVER TOUCH: the inside of a control. No hatch on buttons,

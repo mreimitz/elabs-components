@@ -11,7 +11,7 @@ import {
   serializeMentions,
   type MentionOption,
   type MentionValue,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import {
   PromptInput,
   PromptInputBody,
@@ -19,11 +19,11 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from "@elabs/components-ai";
+} from "@elabs-ai/components-ai";
 
 /**
- * `MentionInput` (`@elabs/components-ui`) wrapped around
- * `PromptInputTextarea` (`@elabs/components-ai`) — the composer keeps its own
+ * `MentionInput` (`@elabs-ai/components-ui`) wrapped around
+ * `PromptInputTextarea` (`@elabs-ai/components-ai`) — the composer keeps its own
  * submit contract while the field gains an `@`-mention roster.
  *
  * ### Why this composes at all

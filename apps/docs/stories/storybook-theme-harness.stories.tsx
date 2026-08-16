@@ -14,7 +14,7 @@
 // harness's own DEFAULT behavior under test.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
-import { DEFAULT_THEME } from "@elabs/components-tokens";
+import { DEFAULT_THEME } from "@elabs-ai/components-tokens";
 
 const meta = {
   title: "Providers/Storybook Theme Harness",

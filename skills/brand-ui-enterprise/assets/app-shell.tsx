@@ -9,7 +9,7 @@
  * A (tool/workspace) add a status bar, navigator/inspector panes, and a ⌘K palette.
  */
 import { useState, type ReactNode } from "react";
-import { AppIcon } from "@elabs/components-icons";
+import { AppIcon } from "@elabs-ai/components-icons";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -29,7 +29,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
   TopNav,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { Settings, type LucideIcon } from "lucide-react";
 import { ThemeSwitcher } from "./theme-switcher";
 import { SettingsDialog } from "./settings-dialog";
@@ -138,9 +138,9 @@ export function AppShell({
       </SidebarInset>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-      {/* Right-side detail panel: generic → a right <Sheet/> or <Drawer/> (@elabs/components-ui,
+      {/* Right-side detail panel: generic → a right <Sheet/> or <Drawer/> (@elabs-ai/components-ui,
           side="right") or an inspector <aside>. For an AI workspace use the ContextPanel
-          family from @elabs/components-ai (ContextPanelProvider + <ContextPanel/>). */}
+          family from @elabs-ai/components-ai (ContextPanelProvider + <ContextPanel/>). */}
     </SidebarProvider>
   );
 }

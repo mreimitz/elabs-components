@@ -76,7 +76,7 @@ test("catches a multi-line import block", () => {
 // ── Things that must NOT trip it ─────────────────────────────────────────────
 test("PASSES: unrelated packages and lookalike names", () => {
   const src = `
-    import { cn } from "@elabs/components-ui/lib/cn";
+    import { cn } from "@elabs-ai/components-ui/lib/cn";
     import { code } from "@streamdown/code";
     import { mermaidHelper } from "./mermaid-utils";
     import { thing } from "mermaid-lookalike";

@@ -12,7 +12,7 @@
  * Keyboard: ⌘K palette · ⌘\ navigator · ⌘I inspector · ⌘. focus mode.
  */
 import { useEffect, type ReactNode } from "react";
-import { SidebarInset, SidebarProvider } from "@elabs/components-ui";
+import { SidebarInset, SidebarProvider } from "@elabs-ai/components-ui";
 import { useUiState } from "./ui-state";
 import { StatusBar } from "./status-bar";
 import { CommandPalette, type PaletteCommand } from "./command-palette";

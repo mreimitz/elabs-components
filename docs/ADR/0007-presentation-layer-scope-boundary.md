@@ -5,7 +5,7 @@
 
 ## Context
 
-As brand-ui added AI/agent surfaces (`@elabs/components-ai`) and the generative-UI roadmap
+As brand-ui added AI/agent surfaces (`@elabs-ai/components-ai`) and the generative-UI roadmap
 (A2UI, WP-11) came into view, a recurring pressure appeared: should the component
 packages also own the _runtime_ — model calls, streaming, transport, the chat loop,
 protocol engines (AG-UI/A2UI transport)? The convenience argument ("just add
@@ -27,7 +27,7 @@ accessibility, theming, and composition. They do **not** own:
 
 Those belong to the **consuming app / runtime**. A batteries-included runtime, if
 ever wanted, ships as an **example app** or a **registry template** — copy-owned,
-swappable — never inside the `@elabs/components-*` component packages.
+swappable — never inside the `@elabs-ai/components-*` component packages.
 
 The human-facing statement of this lives in `PROJECT.md` **Non-goals**; the
 operational rule is [`.claude/rules/scope-and-non-goals.md`](../../.claude/rules/scope-and-non-goals.md).
@@ -51,7 +51,7 @@ The dependency half (the AI SDK is types-only) is its own decision — see
 
 ## Consequences
 
-- `@elabs/components-ai` (and peers) stay presentational + runtime-agnostic; the app owns
+- `@elabs-ai/components-ai` (and peers) stay presentational + runtime-agnostic; the app owns
   `useChat`/providers/transport. This is enforced for the AI SDK by ADR 0008's hook.
 - "Should this live in the component?" has a durable answer: if it is a model/
   transport/protocol concern, no — it goes in the app or a registry template.

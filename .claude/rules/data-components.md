@@ -6,7 +6,7 @@ paths:
   - "packages/data/**"
 ---
 
-# Data components (@elabs/components-data)
+# Data components (@elabs-ai/components-data)
 
 - **TanStack Table is the engine.** `DataTable` owns the table instance
   (`useReactTable`) with core/sorted/filtered row models, optional client
@@ -94,4 +94,4 @@ paths:
   server is running, validate
   interaction + a11y/contrast across both themes via `mcp__storybook__run-story-tests`
   - `mcp__storybook__preview-stories` (`globals=theme:<slug>`); otherwise
-    `pnpm --filter @elabs/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
+    `pnpm --filter @elabs-ai/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.

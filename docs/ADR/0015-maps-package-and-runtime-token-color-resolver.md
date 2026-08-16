@@ -1,4 +1,4 @@
-# ADR 0015 — @elabs/components-maps (wrap-an-engine leaf) + a shared runtime token→color resolver in @elabs/components-tokens
+# ADR 0015 — @elabs-ai/components-maps (wrap-an-engine leaf) + a shared runtime token→color resolver in @elabs-ai/components-tokens
 
 - **Status:** accepted (2026-07-03)
 - **Deciders:** brand-ui-design-system-architect review, maps package work
@@ -15,34 +15,34 @@ clusters) for dashboards and presales demos. The MIT-licensed
 [mapcn](https://github.com/AnmolSaini16/mapcn) provides a proven MapLibre GL
 component model to adapt. Two structural questions:
 
-1. **Where do maps live?** A new package vs. inside `@elabs/components-charts`.
+1. **Where do maps live?** A new package vs. inside `@elabs-ai/components-charts`.
 2. **How do WebGL layer defaults get brand colors?** MapLibre paint properties
    accept concrete color strings only — CSS custom properties (`var(--primary)`)
    cannot be used, so "semantic tokens only" needs a runtime bridge.
 
 At decision time the repo already had **three package-private** "token →
-concrete sRGB color" implementations, all inside `@elabs/components-editor`:
+concrete sRGB color" implementations, all inside `@elabs-ai/components-editor`:
 `lib/oklch.ts` (`oklchToHex`, pure math), `lib/monaco-theme-bridge.ts`
 (`resolveCssColor`, canvas rasterization), and `mermaid-diagram.tsx`
-(`normalizeColor`). `@elabs/components-maps` cannot import any of them (sibling leaf; the
+(`normalizeColor`). `@elabs-ai/components-maps` cannot import any of them (sibling leaf; the
 one-way dependency rule forbids `maps → editor`).
 
 ## Decision
 
-1. **Ship `@elabs/components-maps` as a separate wrap-an-engine leaf package**
-   (`tokens → ui → maps`), the established pattern of `@elabs/components-flow` (React
-   Flow), `@elabs/components-editor` (Monaco) and `@elabs/components-data` (TanStack). MapLibre is a
+1. **Ship `@elabs-ai/components-maps` as a separate wrap-an-engine leaf package**
+   (`tokens → ui → maps`), the established pattern of `@elabs-ai/components-flow` (React
+   Flow), `@elabs-ai/components-editor` (Monaco) and `@elabs-ai/components-data` (TanStack). MapLibre is a
    heavyweight WebGL engine with its own CSS and paint model; folding it into
-   `@elabs/components-charts` would put the map engine on every KPI consumer's dependency
+   `@elabs-ai/components-charts` would put the map engine on every KPI consumer's dependency
    graph and break the charts charter. Root component is **`MapCanvas`** (not
    `Map` — bare `Map` shadows the JS global); marker parts are prefix-flat
    (`MapMarkerContent`, …) per the `Card`/`CardHeader` convention.
-2. **Promote the runtime resolver into `@elabs/components-tokens`:** `oklchToHex(value)`
+2. **Promote the runtime resolver into `@elabs-ai/components-tokens`:** `oklchToHex(value)`
    (built on the `color-contrast.ts` math that already lives there) and
-   `resolveTokenColor(name, { el, fallback })`. `@elabs/components-tokens` is upstream of
+   `resolveTokenColor(name, { el, fallback })`. `@elabs-ai/components-tokens` is upstream of
    every leaf and owns color as the source of truth, so any engine wrapper
    (maps, editor, mermaid, future canvas/GL surfaces) can share one
-   implementation. `@elabs/components-maps` consumes it (via its internal `useTokenColor`
+   implementation. `@elabs-ai/components-maps` consumes it (via its internal `useTokenColor`
    hook, re-resolving on `data-theme` changes) for default route/arc/cluster/
    GeoJSON paints; consumer-passed paint always wins.
 3. **Basemap follows the brand theme:** `THEME_META[data-theme].dark` is
@@ -61,11 +61,11 @@ one-way dependency rule forbids `maps → editor`).
 
 ## Consequences
 
-- The D3 routing map gains a "geospatial → `@elabs/components-maps`" row; registration
+- The D3 routing map gains a "geospatial → `@elabs-ai/components-maps`" row; registration
   surfaces are generated from `PKG_ORDER`/`PKG_PURPOSE` as usual.
-- **Fast-follow (done, follow-up PR to #281):** `@elabs/components-editor`'s private
+- **Fast-follow (done, follow-up PR to #281):** `@elabs-ai/components-editor`'s private
   copies are migrated — `lib/oklch.ts` is deleted, `mermaid-diagram` imports
-  `oklchToHex` from `@elabs/components-tokens`, and `monaco-theme-bridge` uses the shared
+  `oklchToHex` from `@elabs-ai/components-tokens`, and `monaco-theme-bridge` uses the shared
   helper first (its tolerant `%`/`deg` channel parsing was ported into the
   tokens helper so it is a strict superset). The 1×1-canvas rasterize remains
   in the bridge ONLY as the fallback for non-oklch CSS colors (`rgb()`,

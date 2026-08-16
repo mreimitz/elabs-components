@@ -10,7 +10,7 @@
   "scripts": {
     "a11y:baseline:check": "node scripts/check-a11y-baseline.mjs",
     "a11y:baseline:check:test": "node --test scripts/check-a11y-baseline.test.mjs",
-    "a11y:baseline:run": "STORYBOOK_A11Y_MODE=todo pnpm --filter @elabs/components-docs exec vitest --project storybook run --reporter=default --reporter=../../scripts/a11y-baseline-reporter.mjs",
+    "a11y:baseline:run": "STORYBOOK_A11Y_MODE=todo pnpm --filter @elabs-ai/components-docs exec vitest --project storybook run --reporter=default --reporter=../../scripts/a11y-baseline-reporter.mjs",
     "agent-docs": "pnpm gen:templates && pnpm plugin:agents && pnpm manifest && pnpm inventory && pnpm llms && pnpm context && pnpm gen",
     "agent-docs-cascade:check:test": "node --test scripts/run-agent-docs-cascade.test.mjs",
     "agent-docs:check": "pnpm templates:check && pnpm manifest:check && pnpm inventory:check && pnpm llms:check && pnpm context:check && pnpm gen:check && pnpm agent-output:check && pnpm gen:readmes:check && pnpm playbooks:check && pnpm intent:check",
@@ -169,7 +169,7 @@
     "slop:check:test": "node --test scripts/check-anti-slop.test.mjs",
     "states:check": "node scripts/check-state-coverage.mjs",
     "states:check:test": "node --test scripts/check-state-coverage.test.mjs",
-    "storybook": "pnpm --filter @elabs/components-docs dev",
+    "storybook": "pnpm --filter @elabs-ai/components-docs dev",
     "surface-elevation:check": "node scripts/check-surface-elevation.mjs",
     "surface-elevation:check:test": "node --test scripts/check-surface-elevation.test.mjs",
     "surface:preview": "node scripts/build-surface-preview.mjs",
@@ -201,11 +201,11 @@
     "viewer-highlight:check:test": "node --test scripts/check-viewer-highlight-coverage.test.mjs",
     "worktree-branch:check": "node scripts/check-worktree-branch.mjs",
     "worktree-branch:check:test": "node --test scripts/check-worktree-branch.test.mjs",
-    "token-contract:check": "pnpm --filter @elabs/components-tokens tokens:names:check"
+    "token-contract:check": "pnpm --filter @elabs-ai/components-tokens tokens:names:check"
   },
   "devDependencies": {
-    "@elabs/components-eslint-config": "workspace:*",
-    "@elabs/components-typescript-config": "workspace:*",
+    "@elabs-ai/components-eslint-config": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.3"

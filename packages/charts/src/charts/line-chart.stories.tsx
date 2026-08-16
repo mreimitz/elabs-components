@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
 import { useState } from "react";
 import { expect, waitFor } from "storybook/test";
-import { ThemeProvider } from "@elabs/components-tokens";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";

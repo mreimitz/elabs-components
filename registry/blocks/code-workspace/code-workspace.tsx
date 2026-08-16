@@ -3,15 +3,15 @@
  *
  * A multi-file Monaco editor with brand-ui tabs + token theming. Wire Monaco's
  * language workers once at the app entry (Vite):
- *   import "@elabs/components-editor/monaco-environment";
+ *   import "@elabs-ai/components-editor/monaco-environment";
  *
- * Depends on installed @elabs/components-editor (+ its peers @elabs/components-ui, @elabs/components-tokens, and
+ * Depends on installed @elabs-ai/components-editor (+ its peers @elabs-ai/components-ui, @elabs-ai/components-tokens, and
  * monaco-editor).
  */
 "use client";
 
 import { useState } from "react";
-import { CodeWorkspace, type EditorFile } from "@elabs/components-editor";
+import { CodeWorkspace, type EditorFile } from "@elabs-ai/components-editor";
 
 const initialFiles: EditorFile[] = [
   {

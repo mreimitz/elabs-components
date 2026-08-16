@@ -18,7 +18,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Formatting chrome for the markdown SOURCE pane, composed from @elabs/components-ui. " +
+          "Formatting chrome for the markdown SOURCE pane, composed from @elabs-ai/components-ui. " +
           "The Insert menu is driven by the slash-command registry, so source mode " +
           "reaches the same brand blocks as the WYSIWYG `/` menu.",
       },

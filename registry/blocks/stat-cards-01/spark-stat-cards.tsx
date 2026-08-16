@@ -1,7 +1,7 @@
 "use client";
 
-import { MetricCard } from "@elabs/components-ui";
-import { Sparkline } from "@elabs/components-charts";
+import { MetricCard } from "@elabs-ai/components-ui";
+import { Sparkline } from "@elabs-ai/components-charts";
 import { ordersSeries, refundRateSeries, revenueSeries } from "./data/spark-series";
 
 /** A row of KPI tiles with an inline trend `Sparkline` in the MetricCard `visual` slot. */

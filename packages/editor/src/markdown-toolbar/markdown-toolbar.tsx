@@ -2,7 +2,7 @@
 
 /**
  * MarkdownToolbar — formatting chrome for the markdown SOURCE pane, composed
- * entirely from @elabs/components-ui (Button, Tooltip, Separator, DropdownMenu). Actions run
+ * entirely from @elabs-ai/components-ui (Button, Tooltip, Separator, DropdownMenu). Actions run
  * against a Monaco editor instance via the pure commands in markdown-commands.ts.
  * Buttons disable when no editor is mounted.
  */
@@ -19,8 +19,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   Bold,
   ChevronDown,

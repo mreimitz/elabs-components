@@ -15,7 +15,7 @@ keywords:
     bulk actions,
     back-office,
   ]
-packages: ["@elabs/components-ui", "@elabs/components-data"]
+packages: ["@elabs-ai/components-ui", "@elabs-ai/components-data"]
 ---
 
 # Playbook — Data app / admin console
@@ -25,14 +25,14 @@ facets, column control, row + bulk actions. Template source: `templates/data-app
 
 ## Building blocks
 
-| Layer   | Components                                                   | From                     |
-| ------- | ------------------------------------------------------------ | ------------------------ |
-| Shell   | `SidebarProvider` + `Sidebar` + `SidebarInset`               | `@elabs/components-ui`   |
-| Table   | `DataTable` (TanStack-backed)                                | `@elabs/components-data` |
-| Toolbar | `FilterBar` + `SearchInput` + `FacetFilter` + `ColumnPicker` | `@elabs/components-data` |
-| Detail  | `Dialog` (row detail) · `DropdownMenu` (row actions)         | `@elabs/components-ui`   |
-| Guard   | `AlertDialog` for destructive/bulk actions                   | `@elabs/components-ui`   |
-| States  | `Skeleton` · `EmptyState` · `Badge` (status)                 | `@elabs/components-ui`   |
+| Layer   | Components                                                   | From                        |
+| ------- | ------------------------------------------------------------ | --------------------------- |
+| Shell   | `SidebarProvider` + `Sidebar` + `SidebarInset`               | `@elabs-ai/components-ui`   |
+| Table   | `DataTable` (TanStack-backed)                                | `@elabs-ai/components-data` |
+| Toolbar | `FilterBar` + `SearchInput` + `FacetFilter` + `ColumnPicker` | `@elabs-ai/components-data` |
+| Detail  | `Dialog` (row detail) · `DropdownMenu` (row actions)         | `@elabs-ai/components-ui`   |
+| Guard   | `AlertDialog` for destructive/bulk actions                   | `@elabs-ai/components-ui`   |
+| States  | `Skeleton` · `EmptyState` · `Badge` (status)                 | `@elabs-ai/components-ui`   |
 
 ## Wiring diagram
 

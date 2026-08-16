@@ -197,7 +197,7 @@ test("renderMarkdown: every entry is a followable link, and empty usedBy renders
       license: "MIT",
       copyright: "Copyright (c) 2025 Anmoldeep Singh",
       url: "https://github.com/AnmolSaini16/mapcn",
-      usedBy: ["@elabs/components-maps"],
+      usedBy: ["@elabs-ai/components-maps"],
       required: false,
       note: "Adapted.",
       version: null,

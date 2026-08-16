@@ -2,7 +2,7 @@
 // -----------------------------------------------------------------------------
 // Locks: (1) a local Timeline* runtime declaration flags; (2) re-exports /
 // imports / type-only declarations do NOT; (3) the hand-rolled rail signature
-// (absolute w-px connector + status-keyed style map) flags; (4) a @elabs/components-ui
+// (absolute w-px connector + status-keyed style map) flags; (4) a @elabs-ai/components-ui
 // TimelineItem consumer does NOT; (5) commented-out code never flags; (6) the
 // exemption covers the canonical dirs ONLY (the chain-of-thought allowlist
 // entry was removed when #192 converged it onto AgentTimeline).
@@ -36,9 +36,9 @@ test("local Timeline* runtime declarations flag", () => {
 
 test("imports, re-exports, and type-only declarations do NOT flag", () => {
   const cases = [
-    'import { Timeline, TimelineItem } from "@elabs/components-ui";',
-    'export { Timeline, type TimelineProps } from "@elabs/components-ui";',
-    'export { Timeline, type TimelineEntry as TimelineItem } from "@elabs/components-ui";',
+    'import { Timeline, TimelineItem } from "@elabs-ai/components-ui";',
+    'export { Timeline, type TimelineProps } from "@elabs-ai/components-ui";',
+    'export { Timeline, type TimelineEntry as TimelineItem } from "@elabs-ai/components-ui";',
     "export type TimelineThing = { id: string };",
     "export interface TimelineConfig { dense?: boolean }",
     "const items: TimelineEntry[] = [];", // usage of a Timeline-prefixed TYPE
@@ -72,8 +72,8 @@ test("the hand-rolled rail signature (connector + status map) flags", () => {
   assert.ok(v[0].line > 0);
 });
 
-test("a @elabs/components-ui rail consumer with extra absolute w-px decoration does NOT flag", () => {
-  const consumer = `import { TimelineRoot, TimelineItem } from "@elabs/components-ui";\n${HAND_ROLLED_RAIL}`;
+test("a @elabs-ai/components-ui rail consumer with extra absolute w-px decoration does NOT flag", () => {
+  const consumer = `import { TimelineRoot, TimelineItem } from "@elabs-ai/components-ui";\n${HAND_ROLLED_RAIL}`;
   assert.deepEqual(findTimelineForkViolations(consumer), []);
 });
 

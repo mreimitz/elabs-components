@@ -26,7 +26,7 @@
       "license": "ODbL-1.0",
       "copyright": "© OpenStreetMap contributors",
       "url": "https://www.openstreetmap.org/copyright",
-      "usedBy": ["@elabs/components-maps"],
+      "usedBy": ["@elabs-ai/components-maps"],
       "required": true,
       "note": "Map data behind the default Carto basemap. ODbL obliges the credit wherever the tiles are shown."
     },
@@ -37,7 +37,7 @@
       "license": "CARTO basemap terms",
       "copyright": "© CARTO",
       "url": "https://carto.com/about-carto/",
-      "usedBy": ["@elabs/components-maps"],
+      "usedBy": ["@elabs-ai/components-maps"],
       "required": true,
       "note": "Default light/dark basemap styles and tiles (positron / dark-matter)."
     },
@@ -48,7 +48,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2023 shadcn",
       "url": "https://github.com/shadcn-ui/ui",
-      "usedBy": ["@elabs/components-ui"],
+      "usedBy": ["@elabs-ai/components-ui"],
       "required": false,
       "note": "The owned-source component model and many primitive implementations; the registry is shadcn-compatible (ADR 0001)."
     },
@@ -59,9 +59,9 @@
       "license": "Apache-2.0",
       "copyright": "Copyright 2023 Vercel, Inc.",
       "url": "https://github.com/vercel/ai-elements",
-      "usedBy": ["@elabs/components-ai"],
+      "usedBy": ["@elabs-ai/components-ai"],
       "required": true,
-      "note": "Vendored into @elabs/components-ai and rewired onto brand-ui primitives and tokens. Apache-2.0, NOT MIT: §4 obliges us to carry the notice and to state that we modified the files."
+      "note": "Vendored into @elabs-ai/components-ai and rewired onto brand-ui primitives and tokens. Apache-2.0, NOT MIT: §4 obliges us to carry the notice and to state that we modified the files."
     },
     {
       "id": "assistant-ui",
@@ -70,7 +70,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2025 AgentbaseAI Inc.",
       "url": "https://github.com/assistant-ui/assistant-ui",
-      "usedBy": ["@elabs/components-ai"],
+      "usedBy": ["@elabs-ai/components-ai"],
       "required": false,
       "note": "The message-part grouping design behind part-groups.ts, re-expressed in this library's idiom."
     },
@@ -81,7 +81,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2020-present Mirone",
       "url": "https://github.com/Milkdown/milkdown",
-      "usedBy": ["@elabs/components-editor"],
+      "usedBy": ["@elabs-ai/components-editor"],
       "required": false,
       "note": "The @milkdown/react integration is vendored under markdown-editor/milkdown-react/ and adapted; Milkdown itself is also a runtime dependency."
     },
@@ -92,9 +92,9 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2025 Anmoldeep Singh",
       "url": "https://github.com/AnmolSaini16/mapcn",
-      "usedBy": ["@elabs/components-maps"],
+      "usedBy": ["@elabs-ai/components-maps"],
       "required": false,
-      "note": "The MapLibre component set @elabs/components-maps was adapted from (ADR 0015)."
+      "note": "The MapLibre component set @elabs-ai/components-maps was adapted from (ADR 0015)."
     },
     {
       "id": "anyview",
@@ -103,7 +103,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2026 harshpreet931",
       "url": "https://github.com/harshpreet931/anyview",
-      "usedBy": ["@elabs/components-viewer"],
+      "usedBy": ["@elabs-ai/components-viewer"],
       "required": false,
       "note": "The pluggable adapter-registry architecture behind the file viewer (ADR 0024)."
     },
@@ -114,7 +114,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2026 CrowdView Inc, dba Extend; portions Copyright (c) 2023 shadcn",
       "url": "https://github.com/extend-hq/ui",
-      "usedBy": ["@elabs/components-viewer"],
+      "usedBy": ["@elabs-ai/components-viewer"],
       "required": false,
       "note": "The view-state seam and chrome-part inversion the viewer adopted (ADR 0026). Its LICENSE.md carries two copyright lines; both are reproduced."
     },
@@ -125,7 +125,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2025 Ephraim Duncan",
       "url": "https://github.com/ephraimduncan/blocks",
-      "usedBy": ["@elabs/components-ui"],
+      "usedBy": ["@elabs-ai/components-ui"],
       "required": false,
       "note": "The sidebar-02 / sidebar-04 / sidebar-05 copy-owned blocks, re-tokenized with Tabler icons mapped to Lucide."
     },
@@ -136,7 +136,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2026 Florian Kiem",
       "url": "https://github.com/flornkm/shadow-plugin",
-      "usedBy": ["@elabs/components-tokens"],
+      "usedBy": ["@elabs-ai/components-tokens"],
       "required": false,
       "note": "The stacked, layered elevation-ramp technique behind the shadow tokens (ADR 0020)."
     },
@@ -147,7 +147,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2026 Chánh Đại",
       "url": "https://github.com/ncdai/chanhdai.com",
-      "usedBy": ["@elabs/components-charts"],
+      "usedBy": ["@elabs-ai/components-charts"],
       "required": false,
       "note": "The ShimmeringText component, from the ncdai shadcn registry. Its TRADEMARK.md grants no right to the author's name or brand assets — the code is adopted, the branding is not."
     },
@@ -158,7 +158,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2025-2026 Benji Taylor",
       "url": "https://github.com/benjitaylor/liveline",
-      "usedBy": ["@elabs/components-charts"],
+      "usedBy": ["@elabs-ai/components-charts"],
       "required": false,
       "note": "The live-axis tick-interval picker behind live-y-axis.tsx. Upstream now names that function niceTimeInterval."
     },
@@ -169,7 +169,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2026 uixmat",
       "url": "https://github.com/bklit/bklit-ui",
-      "usedBy": ["@elabs/components-charts"],
+      "usedBy": ["@elabs-ai/components-charts"],
       "required": false,
       "note": "Sample datasets in the bar / composed / candlestick chart stories. Attributed to bklit-ui (MIT, the charts library) rather than the archived bklit app (CC BY-NC 4.0) — see the note in ATTRIBUTION.md."
     },
@@ -180,7 +180,7 @@
       "license": "MIT",
       "copyright": "Copyright (c) 2022 WorkOS",
       "url": "https://github.com/radix-ui/primitives",
-      "usedBy": ["@elabs/components-ui"],
+      "usedBy": ["@elabs-ai/components-ui"],
       "required": false,
       "note": "Beyond the npm dependency below, the shipped dist of react-scroll-area and react-select is modified in patches/ — disclosed here so the change is not invisible."
     },

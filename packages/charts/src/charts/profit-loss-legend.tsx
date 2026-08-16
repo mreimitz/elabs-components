@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { Legend, LegendItem, LegendLabel, LegendMarker } from "./legend/index";
 import { PROFIT_LOSS_NEGATIVE_COLOR, PROFIT_LOSS_POSITIVE_COLOR } from "./profit-loss-line";
 

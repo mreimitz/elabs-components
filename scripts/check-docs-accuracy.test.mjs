@@ -10,8 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import {
@@ -26,9 +25,6 @@ import {
   themeCountFromSource,
   THEME_COUNT_EXEMPT_PREFIXES,
   WALK_SKIP_DIRS,
-  findCliPreconditionViolations,
-  collectCliPreconditionFiles,
-  scanCliPreconditions,
 } from "./check-docs-accuracy.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -46,7 +42,7 @@ test("FLAGS: gh release download vN.N.N mismatching the current version", () => 
 });
 
 test("FLAGS: -N.N.N.tgz tarball filename mismatching the current version", () => {
-  const text = '"@elabs/components-ui": "file:vendor/brand-ui/brand-ui-9.9.9.tgz",';
+  const text = '"@elabs-ai/components-ui": "file:vendor/brand-ui/brand-ui-9.9.9.tgz",';
   const violations = findVersionLiteralViolations(text, CURRENT);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].match, "-9.9.9.tgz");
@@ -59,12 +55,12 @@ test("FLAGS: -N.N.N.zip agent-kit filename mismatching the current version", () 
   assert.equal(violations[0].match, "-9.9.9.zip");
 });
 
-test("FLAGS: @elabs/components-x@N.N.N package pin mismatching the current version", () => {
+test("FLAGS: @elabs-ai/components-x@N.N.N package pin mismatching the current version", () => {
   const text =
-    "cross-package peers (`@elabs/components-ui -> @elabs/components-tokens@9.9.9`, etc.)";
+    "cross-package peers (`@elabs-ai/components-ui -> @elabs-ai/components-tokens@9.9.9`, etc.)";
   const violations = findVersionLiteralViolations(text, CURRENT);
   assert.equal(violations.length, 1);
-  assert.equal(violations[0].match, "@elabs/components-tokens@9.9.9");
+  assert.equal(violations[0].match, "@elabs-ai/components-tokens@9.9.9");
 });
 
 test("multiple violations on one line are all reported", () => {
@@ -81,9 +77,9 @@ test("PASSES: the vX.Y.Z placeholder", () => {
 
 test("PASSES: the -X.Y.Z.tgz / -X.Y.Z.zip placeholder", () => {
   const text = [
-    '"@elabs/components-ui": "file:vendor/brand-ui/brand-ui-X.Y.Z.tgz",',
+    '"@elabs-ai/components-ui": "file:vendor/brand-ui/brand-ui-X.Y.Z.tgz",',
     "brand-ui-agent-kit-X.Y.Z.zip",
-    "@elabs/components-tokens@X.Y.Z",
+    "@elabs-ai/components-tokens@X.Y.Z",
   ].join("\n");
   assert.deepEqual(findVersionLiteralViolations(text, CURRENT), []);
 });
@@ -93,9 +89,9 @@ test("PASSES: the -X.Y.Z.tgz / -X.Y.Z.zip placeholder", () => {
 test("PASSES: a literal EQUAL to the current version", () => {
   const text = [
     `gh release download v${CURRENT} -R mreimitz/elabs-components -D vendor/brand-ui`,
-    `"@elabs/components-ui": "file:vendor/brand-ui/brand-ui-${CURRENT}.tgz",`,
+    `"@elabs-ai/components-ui": "file:vendor/brand-ui/brand-ui-${CURRENT}.tgz",`,
     `brand-ui-agent-kit-${CURRENT}.zip`,
-    `@elabs/components-tokens@${CURRENT}`,
+    `@elabs-ai/components-tokens@${CURRENT}`,
   ].join("\n");
   assert.deepEqual(findVersionLiteralViolations(text, CURRENT), []);
 });
@@ -106,21 +102,21 @@ test("VERSION_LITERAL_EXEMPT names docs/RELEASING.md (worked-example literals)",
   assert.ok(VERSION_LITERAL_EXEMPT.has("docs/RELEASING.md"));
 });
 
-// ── DUAL-CANVAS DECISION (#183) — @elabs/components-ai vs @elabs/components-flow ────────
+// ── DUAL-CANVAS DECISION (#183) — @elabs-ai/components-ai vs @elabs-ai/components-flow ────────
 
-// The real row always includes `chat → @elabs/components-ai` — a naive "does the
+// The real row always includes `chat → @elabs-ai/components-ai` — a naive "does the
 // line contain -ai anywhere" check would always pass because of THAT clause, even
 // with single-surface canvas routing. These fixtures include the chat clause so
 // the test actually exercises that trap.
 const GOOD_D3_LINE =
-  "| **D3** | Which package | chat → `@elabs/components-ai` · " +
-  "canvas → `@elabs/components-flow` (author-built diagrams) · " +
-  "in-chat agent workspace graph → `@elabs/components-ai` (ADR 0018) | detail |";
+  "| **D3** | Which package | chat → `@elabs-ai/components-ai` · " +
+  "canvas → `@elabs-ai/components-flow` (author-built diagrams) · " +
+  "in-chat agent workspace graph → `@elabs-ai/components-ai` (ADR 0018) | detail |";
 const SINGLE_SURFACE_D3_LINE =
-  "| **D3** | Which package | chat → `@elabs/components-ai` · " +
-  "canvas → `@elabs/components-flow` | detail |";
+  "| **D3** | Which package | chat → `@elabs-ai/components-ai` · " +
+  "canvas → `@elabs-ai/components-flow` | detail |";
 const GOOD_ADR_TITLES = [
-  "# ADR 0018 — Dual React Flow canvas surfaces (`@elabs/components-ai` and `@elabs/components-flow`)",
+  "# ADR 0018 — Dual React Flow canvas surfaces (`@elabs-ai/components-ai` and `@elabs-ai/components-flow`)",
 ];
 
 test("PASSES: a dual-canvas ADR title + a D3 row naming both -flow and -ai", () => {
@@ -168,9 +164,9 @@ test("PASSES: an ADR title matching /two.*canvas/i (not just 'dual')", () => {
 // ── THEME COUNT (#64) — derived from THEMES, word AND numeric forms ────────────
 
 test("the count is DERIVED from packages/tokens/src/theme-types.ts", () => {
-  const src = 'export const THEMES = ["light", "dark", "drafting"] as const;';
+  const src = 'export const BUILT_IN_THEMES = ["light", "dark", "drafting"] as const;';
   assert.equal(themeCountFromSource(src), 3);
-  assert.equal(themeCountFromSource('export const THEMES = ["a", "b"] as const;'), 2);
+  assert.equal(themeCountFromSource('export const BUILT_IN_THEMES = ["a", "b"] as const;'), 2);
   assert.equal(themeCountFromSource("no themes here"), null);
 });
 
@@ -402,213 +398,4 @@ test("the REAL repo currently passes docs:check (CLI run)", () => {
   assert.match(out, /version literals/);
   assert.match(out, /release-set counts/);
   assert.match(out, /dual-canvas decision consistent/);
-});
-
-// ── 6. CONSUMING-PROJECT CLI PRECONDITION (#265) ────────────────────────────────
-
-test("FLAGS: a bare npx @elabs/components-cli line with no precondition anywhere in the file", () => {
-  const text = ["# Some skill", "", "Run `npx @elabs/components-cli info` first."].join("\n");
-  const violations = findCliPreconditionViolations(text);
-  assert.equal(violations.length, 1);
-  assert.equal(violations[0].line, 3);
-});
-
-test("PASSES: the same bare line, plus a docs/CONSUMING.md precondition cue in the file", () => {
-  const text = [
-    "# Some skill",
-    "",
-    "Install the CLI first — see docs/CONSUMING.md §1 + §7a.",
-    "",
-    "Run `npx @elabs/components-cli info` first.",
-  ].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test("PASSES: the same bare line, plus a `.npmrc`/`read:packages`/`pnpm add -D` cue", () => {
-  for (const cue of [
-    "Add the scope mapping to your project's .npmrc.",
-    "Use a classic PAT with the read:packages scope.",
-    "This package is published to GitHub Packages.",
-    "Run `pnpm add -D @elabs/components-cli` first.",
-  ]) {
-    const text = [cue, "", "npx @elabs/components-cli search <query>"].join("\n");
-    assert.deepEqual(findCliPreconditionViolations(text), [], `cue: ${cue}`);
-  }
-});
-
-test("PASSES: an `allowed-tools:` frontmatter line only — a permission, not an instruction", () => {
-  const text = [
-    "---",
-    "name: some-skill",
-    "allowed-tools:",
-    "  - Bash(npx @elabs/components-cli *)",
-    "  - Bash(pnpm brand-ui *)",
-    "---",
-    "",
-    "# Some skill",
-    "",
-    "No bare CLI example here.",
-  ].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test("FLAGS: a bare npx line AFTER an allowed-tools frontmatter block with no other precondition", () => {
-  const text = [
-    "---",
-    "name: some-skill",
-    "allowed-tools:",
-    "  - Bash(npx @elabs/components-cli *)",
-    "---",
-    "",
-    "Run `npx @elabs/components-cli info` to get started.",
-  ].join("\n");
-  const violations = findCliPreconditionViolations(text);
-  assert.equal(violations.length, 1);
-  assert.equal(violations[0].line, 7);
-});
-
-test("PASSES: an mcp launch-wiring line (npx ... mcp) is not a usage example", () => {
-  const text = ["printf '...' | npx @elabs/components-cli mcp"].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test('PASSES: the JSON .mcp.json wiring form (args array ending in "mcp")', () => {
-  const text = [
-    '"brand-ui": {',
-    '  "type": "stdio",',
-    '  "command": "npx",',
-    '  "args": ["-y", "@elabs/components-cli", "mcp"]',
-    "}",
-  ].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test("PASSES: a file with no CLI mention at all", () => {
-  assert.deepEqual(findCliPreconditionViolations("# Just some prose.\n"), []);
-});
-
-// ── 6b. The `brand-ui` BIN-ALIAS form (#265 AC4 names it explicitly) ────────────
-// `npx brand-ui <cmd>` 404s identically to the scoped name and is pre-authorized
-// in several skills' `allowed-tools`, so the detector must match it too.
-
-test("FLAGS: a bare `npx brand-ui info` alias line with no precondition anywhere in the file", () => {
-  const text = ["# Some skill", "", "Run `npx brand-ui info` first."].join("\n");
-  const violations = findCliPreconditionViolations(text);
-  assert.equal(violations.length, 1);
-  assert.equal(violations[0].line, 3);
-});
-
-test("FLAGS: `npx -y brand-ui audit <path>` (the -y alias form)", () => {
-  assert.equal(findCliPreconditionViolations("npx -y brand-ui audit src/").length, 1);
-});
-
-test("PASSES: the alias line plus a precondition cue in the same file", () => {
-  const text = [
-    "The CLI is a private GitHub Packages dependency — install it first.",
-    "",
-    "Run `npx brand-ui info` first.",
-  ].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test("PASSES: an alias mcp launch-wiring line (`npx -y brand-ui mcp`)", () => {
-  const text = "claude mcp add brand-ui --scope project -- npx -y brand-ui mcp";
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test("PASSES: an `allowed-tools:` frontmatter line for the alias — a permission, not an instruction", () => {
-  const text = [
-    "---",
-    "name: brand-ui-audit",
-    "allowed-tools:",
-    "  - Bash(npx @elabs/components-cli *)",
-    "  - Bash(pnpm brand-ui *)",
-    "  - Bash(npx brand-ui *)",
-    "---",
-    "",
-    "# brand-ui-audit",
-    "",
-    "Run `brand-ui info` once (no bare npx here).",
-  ].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-test("PASSES: the monorepo runner form (`pnpm brand-ui …` / `pnpm exec brand-ui …`) is never flagged", () => {
-  const text = ["pnpm brand-ui info", "pnpm exec brand-ui docs Button"].join("\n");
-  assert.deepEqual(findCliPreconditionViolations(text), []);
-});
-
-// ── 6c. SCOPE: rule 6 covers docs/ + agents/ too, not just skills/ + stories/ ────
-// #265's Test-to-add requires "skills/**, apps/docs/stories/**, plus existing
-// docs/**"; AC2 additionally names `*/agents/**`. Planted end-to-end on a temp
-// root so the scope can't silently narrow again.
-
-function plantTree() {
-  const root = mkdtempSync(path.join(tmpdir(), "docs-accuracy-scope-"));
-  const bare = "# Fixture\n\nRun `npx @elabs/components-cli info` first.\n";
-  const bareAlias = "# Fixture\n\nRun `npx brand-ui info` first.\n";
-  const write = (rel, body) => {
-    const p = path.join(root, rel);
-    mkdirSync(path.dirname(p), { recursive: true });
-    writeFileSync(p, body);
-  };
-  write("docs/__probe_docs__.md", bare);
-  write("agents/__probe_agents__.md", bare);
-  write(".claude/agents/__probe_claude_agents__.md", bareAlias);
-  write("skills/__probe_skill__/SKILL.md", bareAlias);
-  write("apps/docs/stories/__probe_story__.mdx", bare);
-  // OUT of scope: design notes may quote historical state (see the module header).
-  write("research/__probe_research__.md", bare);
-  return root;
-}
-
-test("FLAGS a bare CLI line planted under docs/, agents/, .claude/agents/, skills/ and stories/", () => {
-  const root = plantTree();
-  try {
-    const found = scanCliPreconditions(root);
-    for (const rel of [
-      "docs/__probe_docs__.md",
-      "agents/__probe_agents__.md",
-      path.join(".claude", "agents", "__probe_claude_agents__.md"),
-      path.join("skills", "__probe_skill__", "SKILL.md"),
-      path.join("apps", "docs", "stories", "__probe_story__.mdx"),
-    ]) {
-      assert.ok(
-        found.some((v) => v.startsWith(`${rel}:`)),
-        `expected a violation for ${rel}, got: ${JSON.stringify(found)}`,
-      );
-    }
-    assert.ok(
-      !found.some((v) => v.startsWith("research/")),
-      "research/ is intentionally out of scope",
-    );
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test("the REAL repo's rule-6 scope includes docs/, agents/, .claude/agents/, skills/ and stories/", () => {
-  const repoRoot = path.dirname(HERE);
-  const rel = collectCliPreconditionFiles(repoRoot).map((f) => f.slice(repoRoot.length + 1));
-  for (const prefix of [
-    "docs/",
-    "agents/",
-    path.join(".claude", "agents") + path.sep,
-    "skills/",
-    path.join("apps", "docs", "stories") + path.sep,
-  ]) {
-    assert.ok(
-      rel.some((f) => f.startsWith(prefix)),
-      `rule-6 scope must include ${prefix} (got ${rel.length} files)`,
-    );
-  }
-});
-
-// ── CLI: the docs:check gate currently passes on the REAL tree ──────────────────
-
-test("the REAL repo's docs/ + skills/ + agents/ + stories/ currently pass the CLI-precondition rule", () => {
-  const out = execFileSync("node", [path.join(HERE, "check-docs-accuracy.mjs")], {
-    encoding: "utf8",
-  });
-  assert.match(out, /consuming-project CLI preconditions/);
 });

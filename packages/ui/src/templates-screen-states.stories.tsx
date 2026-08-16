@@ -14,7 +14,7 @@
  *   • Error     — StatePanel kind="error" with a retry action (role="alert").
  *   • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA.
  *
- * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all
+ * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all
  * three themes. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";

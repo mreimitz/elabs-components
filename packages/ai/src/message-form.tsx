@@ -17,7 +17,7 @@
  *   submit; a submitted form renders inert with its values visible (a chat
  *   message is a historical record).
  *
- * Composes `@elabs/components-ui` inputs — it does NOT re-invent field primitives.
+ * Composes `@elabs-ai/components-ui` inputs — it does NOT re-invent field primitives.
  *
  * Compound structure (named exports, the Card/CardHeader convention):
  *   <MessageFormProvider>   — lifted state (values + errors + actions)
@@ -54,9 +54,9 @@ import {
   Skeleton,
   Spinner,
   Textarea,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 
 import {
   fieldLabel,

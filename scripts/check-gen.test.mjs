@@ -76,12 +76,12 @@ const AGENT_OUTPUT_FIXTURE = {
 /** A minimal product-only manifest (two packages is enough to exercise ordering). */
 const MANIFEST = {
   packages: {
-    "@elabs/components-tokens": {
+    "@elabs-ai/components-tokens": {
       path: "packages/tokens",
       components: [],
       hooks: [{ name: "useTheme" }],
     },
-    "@elabs/components-ui": {
+    "@elabs-ai/components-ui": {
       path: "packages/ui",
       components: [{ name: "Button" }, { name: "Card" }],
       hooks: [],
@@ -99,7 +99,7 @@ const MANIFEST = {
       archetype: "dashboard",
       intent: "KPI overview screen",
       keywords: ["dashboard", "kpi"],
-      packages: ["@elabs/components-ui"],
+      packages: ["@elabs-ai/components-ui"],
       file: "docs/playbooks/dashboard.md",
       template: "templates/dashboard.tsx",
     },
@@ -263,12 +263,12 @@ test("PRESERVES: hand prose outside the markers survives a write", async () => {
     assert.ok(agents.includes("Bottom prose."));
     // The packages region was populated with the manifest packages.
     assert.ok(
-      agents.includes("@elabs/components-tokens"),
+      agents.includes("@elabs-ai/components-tokens"),
       "package table must be generated into AGENTS.md",
     );
     // Infra rows (scope:"all") are present in AGENTS.md.
     assert.ok(
-      agents.includes("@elabs/components-eslint-config"),
+      agents.includes("@elabs-ai/components-eslint-config"),
       "infra rows must appear in AGENTS.md",
     );
     // The MDX target keeps MDX-comment markers (HTML comments break MDX) and is populated.
@@ -278,7 +278,7 @@ test("PRESERVES: hand prose outside the markers survives a write", async () => {
       "the .mdx target must use MDX-comment markers, not HTML comments",
     );
     assert.ok(
-      intro.includes("@elabs/components-tokens"),
+      intro.includes("@elabs-ai/components-tokens"),
       "the .mdx package list must be generated",
     );
   } finally {
@@ -335,7 +335,7 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
     assert.ok(md.includes("name: brand-ui"), "the skill frontmatter must survive");
     // The factual catalogue is generated from the manifest: packages + counts.
     assert.ok(
-      md.includes("@elabs/components-ui"),
+      md.includes("@elabs-ai/components-ui"),
       "the package catalogue must be generated into the skill",
     );
     assert.ok(
@@ -348,7 +348,7 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
 
     // A manifest change (add a component) must make the skill catalogue stale.
     const m2 = JSON.parse(readFileSync(join(root, "brand-ui.manifest.json"), "utf8"));
-    m2.packages["@elabs/components-ui"].components.push({ name: "Dialog" });
+    m2.packages["@elabs-ai/components-ui"].components.push({ name: "Dialog" });
     writeFileSync(join(root, "brand-ui.manifest.json"), JSON.stringify(m2));
     const stale = await checkGen(root);
     assert.ok(

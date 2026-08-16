@@ -1,11 +1,11 @@
 "use client";
 
-import { Badge } from "@elabs/components-ui";
-import type { CarouselApi } from "@elabs/components-ui";
-import { Carousel, CarouselContent, CarouselItem } from "@elabs/components-ui";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+import { Badge } from "@elabs-ai/components-ui";
+import type { CarouselApi } from "@elabs-ai/components-ui";
+import { Carousel, CarouselContent, CarouselItem } from "@elabs-ai/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 import { ArrowLeftIcon, ArrowRightIcon, BadgeCheckIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";

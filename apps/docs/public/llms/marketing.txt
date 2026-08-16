@@ -1,8 +1,8 @@
-# @elabs/components-marketing
+# @elabs-ai/components-marketing
 
 > Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
 
-Import from `@elabs/components-marketing`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-marketing`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

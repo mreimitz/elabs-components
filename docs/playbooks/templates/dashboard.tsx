@@ -22,9 +22,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
   MetricCard,
-} from "@elabs/components-ui";
-import { AppIcon } from "@elabs/components-icons";
-import { MetricGrid } from "@elabs/components-charts";
+} from "@elabs-ai/components-ui";
+import { AppIcon } from "@elabs-ai/components-icons";
+import { MetricGrid } from "@elabs-ai/components-charts";
 import { BarChart3, Home, Settings, Users } from "lucide-react";
 
 const nav = [

@@ -80,8 +80,8 @@ satisfy `app-spec.schema.json`:
   (`{name, fields:[{name, type, rendersAs?, filterable?}]}`, `type` ∈ text ·
   number · date · status · boolean).
 
-Mirrors the `planScaffold` input in the `@elabs/components-cli` scaffold engine. See
+Mirrors the `planScaffold` input in the `@elabs-ai/components-cli` scaffold engine. See
 `app-spec.example.md` for a filled-in block; validate any spec with
 `pnpm app-spec:check <path>` (in a consuming project: install
-`@elabs/components-cli` — a private GitHub Packages dependency, see
+`@elabs-ai/components-cli` — a private GitHub Packages dependency, see
 `docs/CONSUMING.md` §1 + §7a — then use its bundled schema).

@@ -1,5 +1,5 @@
 /**
- * @elabs/components-tokens — themes.css
+ * @elabs-ai/components-tokens — themes.css
  * --------------------------------------------------------------------------
  * Single source of truth for the design system's semantic tokens.
  *
@@ -25,7 +25,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 /* Decoration dial overlay rules (grid / hatch / drawn controls / shadow), driven
-   by the --decoration knob below. Copied to dist/ by the @elabs/components-tokens build. */
+   by the --decoration knob below. Copied to dist/ by the @elabs-ai/components-tokens build. */
 @import "./decoration.css";
 /* Density dial overlay — overrides --spacing to rescale all spacing utilities. */
 @import "./density.css";
@@ -36,7 +36,7 @@
 @import "./radix-viewport.css";
 
 /* Inter — self-hosted variable sans (SIL OFL 1.1). Vendored under ./fonts/inter/
-   and copied into dist/ by the @elabs/components-tokens build. The default --font-sans.
+   and copied into dist/ by the @elabs-ai/components-tokens build. The default --font-sans.
    NOTE: shipped as .woff (the sandbox couldn't run the woff2/brotli step); to
    shrink ~30%, regenerate woff2 and add a format("woff2") src first. */
 @font-face {
@@ -233,7 +233,7 @@
      clears WCAG AA (≥4.5:1) as body text in EVERY theme (proven in
      themes-contrast.test.ts). A dedicated pair so consumers stop improvising with
      `bg-warning/40` (sub-AA in dark, 3.48:1). Consumed by `MatchHighlight`
-     (@elabs/components-ui). See #296 + #284. */
+     (@elabs-ai/components-ui). See #296 + #284. */
   --highlight: oklch(0.865 0.155 90);
   --highlight-foreground: oklch(0.27 0.05 90);
   /* The CURRENT match among many (ADR 0025). A second pair, not an opacity
@@ -328,7 +328,7 @@
 
   /* Chart / legend token bridge — CH-01 (#112). Pure aliases to existing
      semantic tokens so every theme inherits the correct palette automatically.
-     Components from @elabs/components-charts reference these via var(--…) or Tailwind
+     Components from @elabs-ai/components-charts reference these via var(--…) or Tailwind
      utilities (bg-chart-grid, text-legend-foreground, etc.). */
   --chart-grid: var(--border);
   --chart-foreground: var(--foreground);
@@ -391,7 +391,7 @@
   --calc-comment: oklch(0.5 0.02 264);
   --calc-warning: oklch(0.5 0.2 27);
 
-  /* CodeBlock (@elabs/components-ai, Shiki) syntax-highlight roles (#315). The
+  /* CodeBlock (@elabs-ai/components-ai, Shiki) syntax-highlight roles (#315). The
      surface is a raised panel (alias --card/--foreground, already AA-proven); the
      9 hue roles below reuse the calc-block palette's exact values (already
      AA-audited ≥4.5:1 vs --card/--background in every theme — see
@@ -555,7 +555,7 @@
   --t-base: max(calc(var(--duration-base) * var(--motion-factor)), var(--motion-min));
   --t-slow: max(calc(var(--duration-slow) * var(--motion-factor)), var(--motion-min));
   --t-slower: max(calc(var(--duration-slower) * var(--motion-factor)), var(--motion-min));
-  /* Brand mark — the two inks `BrandLogo` (@elabs/components-icons) paints with:
+  /* Brand mark — the two inks `BrandLogo` (@elabs-ai/components-icons) paints with:
      `-ring` is the drawn linework (hatched circle, register dots), `-tail` the
      construction square. Neutral here, matching this fallback base's own
      blue-hued identity rather than either reference theme — a consumer overrides
@@ -602,8 +602,8 @@
 /* ========================================================================
    THE TWO REFERENCE THEMES LIVE IN THEIR OWN FILES (ADR 0029)
 
-     src/themes/light.css   →  @elabs/components-tokens/themes/light.css
-     src/themes/dark.css    →  @elabs/components-tokens/themes/dark.css
+     src/themes/light.css   →  @elabs-ai/components-tokens/themes/light.css
+     src/themes/dark.css    →  @elabs-ai/components-tokens/themes/dark.css
 
    They are NOT imported from here, and that is the point: theming is open, so
    the themes this package happens to ship are opt-in reference material, not a
@@ -766,7 +766,7 @@
   --color-calc-comment: var(--calc-comment);
   --color-calc-warning: var(--calc-warning);
 
-  /* CodeBlock (@elabs/components-ai, Shiki) syntax-highlight roles (#315) —
+  /* CodeBlock (@elabs-ai/components-ai, Shiki) syntax-highlight roles (#315) —
      `bg-code-background`, `text-code-keyword`, etc. become valid utilities.
      Primarily consumed at runtime via `resolveTokenColor` (the derived Shiki
      theme needs literal hex, not CSS vars), but mapped here too so the tokens
@@ -1341,7 +1341,7 @@
 }
 
 /* Backstop for THIRD-PARTY engines that ignore our --t-* tokens (Monaco /
-   @elabs/components-editor, @xyflow/react / @elabs/components-flow, Streamdown / @elabs/components-ai): under an
+   @elabs-ai/components-editor, @xyflow/react / @elabs-ai/components-flow, Streamdown / @elabs-ai/components-ai): under an
    OS reduce request, clamp every animation/transition to a non-zero epsilon and
    cap infinite loops. Scoped with :not([data-motion-pref="full"]) so a user who
    explicitly chose "full" still gets motion. KNOWN GAP: this fires on OS-reduce
@@ -1400,7 +1400,7 @@
 }
 
 /* ========================================================================
-   VIEW TRANSITIONS — animated theme switch (powers @elabs/components-ui ThemeSwitcher)
+   VIEW TRANSITIONS — animated theme switch (powers @elabs-ai/components-ui ThemeSwitcher)
    ------------------------------------------------------------------------
    The `useThemeTransition` hook wraps `setTheme` in `document.startViewTransition`
    and sets two attributes on <html>: `data-vt="to-dark|to-light"` (direction,

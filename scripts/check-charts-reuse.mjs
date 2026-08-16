@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 /**
- * check-charts-reuse.mjs — @elabs/components-charts reuse-audit gate (#169).
+ * check-charts-reuse.mjs — @elabs-ai/components-charts reuse-audit gate (#169).
  *
- * Enforces that `@elabs/components-charts` does NOT define its own component with the same
- * name as a component already exported by `@elabs/components-ui`. A name collision causes
+ * Enforces that `@elabs-ai/components-charts` does NOT define its own component with the same
+ * name as a component already exported by `@elabs-ai/components-ui`. A name collision causes
  * ambiguous imports and the exact collision that was fixed in issue #168
  * (TooltipContent). This gate prevents it from recurring.
  *
  * Also blocks any import from `@base-ui/react` or `@base-ui/*` in charts source —
- * charts must only import from allowed deps (no @base-ui bypass of @elabs/components-ui).
+ * charts must only import from allowed deps (no @base-ui bypass of @elabs-ai/components-ui).
  *
  * NOTE on type-only exclusion: `export interface` / `export type` are intentionally
  * NOT flagged — the gate targets runtime value declarations only to avoid incidental
  * type-name false positives (e.g. a shared `ButtonProps` interface).
  *
- *   Class-1 (ui-name collision): flags a LOCAL runtime declaration whose name ∈ @elabs/components-ui:
+ *   Class-1 (ui-name collision): flags a LOCAL runtime declaration whose name ∈ @elabs-ai/components-ui:
  *     export function <Name>(        — function component / utility
  *     export const|let|var <Name> =  — component or value export
  *     export class <Name>            — class component
  *     export default <Identifier>    — when <Identifier> has a local fn/const/class decl
  *   Does NOT flag:
- *     import { X } from "@elabs/components-ui"  — usage (pass-through is fine)
- *     export { X } from "@elabs/components-ui"  — pass-through re-export
+ *     import { X } from "@elabs-ai/components-ui"  — usage (pass-through is fine)
+ *     export { X } from "@elabs-ai/components-ui"  — pass-through re-export
  *     export interface / export type  — types only
  *     aliased imports
  *
@@ -81,7 +81,7 @@ function listFiles(dir, acc) {
 }
 
 /**
- * Load @elabs/components-ui component names from the manifest.
+ * Load @elabs-ai/components-ui component names from the manifest.
  * Returns a Set<string> of component names.
  */
 function loadUiNames() {
@@ -99,10 +99,10 @@ function loadUiNames() {
     console.error(`✖ charts-reuse gate: failed to parse ${MANIFEST_PATH}: ${e.message}`);
     process.exit(1);
   }
-  const uiPkg = manifest?.packages?.["@elabs/components-ui"];
+  const uiPkg = manifest?.packages?.["@elabs-ai/components-ui"];
   if (!uiPkg) {
     console.error(
-      `✖ charts-reuse gate: manifest missing packages["@elabs/components-ui"] — run \`pnpm manifest\`.`,
+      `✖ charts-reuse gate: manifest missing packages["@elabs-ai/components-ui"] — run \`pnpm manifest\`.`,
     );
     process.exit(1);
   }
@@ -113,7 +113,7 @@ function loadUiNames() {
  * Find reuse violations in a source string.
  *
  * @param {string} src       - raw source (comments will be stripped internally)
- * @param {Set<string>} uiNames - set of @elabs/components-ui component names to check against
+ * @param {Set<string>} uiNames - set of @elabs-ai/components-ui component names to check against
  * @returns {{ kind: 'collision'|'base-ui', name?: string, statement: string }[]}
  */
 export function findChartsReuseViolations(src, uiNames) {
@@ -139,7 +139,7 @@ export function findChartsReuseViolations(src, uiNames) {
     add("base-ui", m[1], m[0]);
   }
 
-  // ── Class 1: local runtime declarations whose name is in @elabs/components-ui ───────
+  // ── Class 1: local runtime declarations whose name is in @elabs-ai/components-ui ───────
   //
   // We look for LOCAL runtime declarations — not imports/re-exports from another module.
   //
@@ -232,7 +232,7 @@ function main(argv) {
           : (v.file ?? "<inline>");
       if (v.kind === "collision") {
         console.error(
-          `  - ${rel}: declares "${v.name}" which collides with @elabs/components-ui\n` +
+          `  - ${rel}: declares "${v.name}" which collides with @elabs-ai/components-ui\n` +
             `      ${v.statement}`,
         );
       } else {
@@ -243,7 +243,7 @@ function main(argv) {
       }
     }
     console.error(
-      `\n@elabs/components-charts must not define components whose names collide with @elabs/components-ui exports,\n` +
+      `\n@elabs-ai/components-charts must not define components whose names collide with @elabs-ai/components-ui exports,\n` +
         `and must not import from @base-ui/react or @base-ui/*. Rename the local export\n` +
         `to a chart-scoped name (e.g. ChartTooltipContent instead of TooltipContent).\n` +
         `See GitHub issue #168 / #169.`,
@@ -255,7 +255,7 @@ function main(argv) {
   if (!warnOnly) {
     const scope = fileArgs.length ? `${files.length} file(s)` : "packages/charts/src";
     console.log(
-      `✔ charts-reuse: no collisions with @elabs/components-ui, no @base-ui imports (${scope}).`,
+      `✔ charts-reuse: no collisions with @elabs-ai/components-ui, no @base-ui imports (${scope}).`,
     );
   }
 }

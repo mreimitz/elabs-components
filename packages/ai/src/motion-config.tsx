@@ -1,12 +1,12 @@
 "use client";
 
-import { useReducedMotion } from "@elabs/components-tokens";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { MotionConfig, type Transition } from "motion/react";
 import type { ReactNode } from "react";
 
 /**
  * Default transition fed to descendant Motion components — mirrors the
- * `--duration-base` (180ms) and `--ease-standard` tokens in @elabs/components-tokens so
+ * `--duration-base` (180ms) and `--ease-standard` tokens in @elabs-ai/components-tokens so
  * JS-driven motion matches the CSS layer's timing. Override via the `transition`
  * prop. (Motion durations are in SECONDS; ease is a cubic-bezier [x1,y1,x2,y2].)
  */

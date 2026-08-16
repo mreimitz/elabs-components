@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@elabs/components-ui";
-import { Separator } from "@elabs/components-ui";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button } from "@elabs-ai/components-ui";
+import { Separator } from "@elabs-ai/components-ui";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { LucideProps } from "lucide-react";
 import { BookmarkIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";

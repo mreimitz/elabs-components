@@ -10,7 +10,7 @@ const meta = {
         component:
           "Low-level static table primitives (header/body/row/cell styling). For sorting, filtering, " +
           "pagination, virtualization, row selection and column management, use the TanStack-powered " +
-          "DataTable (see Data/DataTable, @elabs/components-data) instead.",
+          "DataTable (see Data/DataTable, @elabs-ai/components-data) instead.",
       },
     },
   },

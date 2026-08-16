@@ -6,8 +6,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 import { CopyButton } from "../copy-button";
 import { EDITOR_LANGUAGES, type EditorLanguage } from "../lib/languages";

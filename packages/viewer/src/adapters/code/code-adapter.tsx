@@ -14,8 +14,8 @@
  * falls through to text, and so does every file when Shiki is not installed.
  */
 
-import { MatchHighlight, cn, StatePanel, useLocale } from "@elabs/components-ui";
-import type { ResolvedFileSource } from "@elabs/components-ui";
+import { MatchHighlight, cn, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import type { ResolvedFileSource } from "@elabs-ai/components-ui";
 import { Fragment, useMemo, useRef } from "react";
 import type { BundledLanguage, ThemedToken } from "shiki";
 

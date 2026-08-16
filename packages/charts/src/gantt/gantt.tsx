@@ -7,7 +7,7 @@
  *   <Gantt>                 — root provider + layout
  *     <Gantt.Toolbar>       — view-mode switcher
  *     <Gantt.Body>          — single-scroll-container layout
- *       <Gantt.RowList>     — left task-hierarchy pane (uses @elabs/components-ui Tree)
+ *       <Gantt.RowList>     — left task-hierarchy pane (uses @elabs-ai/components-ui Tree)
  *       <Gantt.Canvas>      — right time-canvas pane
  *         <Gantt.Timescale> — sticky tick-header row
  *         <Gantt.Bars>      — bar rows
@@ -33,7 +33,7 @@
  * The component NEVER mutates the task source — emit-only (D5).
  *
  * Architecture references:
- *   - Tree: @elabs/components-ui Tree component for the left pane (keyboard nav, roving tabindex, a11y)
+ *   - Tree: @elabs-ai/components-ui Tree component for the left pane (keyboard nav, roving tabindex, a11y)
  *   - ChartFrame: GanttProvider compound-component lifted-state pattern (doc-13)
  *   - bar.tsx AnimatedBar: grow animation pattern (motion/react)
  */
@@ -58,7 +58,7 @@ import {
   Skeleton,
   Tree,
   type TreeNode,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { GanttProvider, useGantt, type ResolvedTask } from "./gantt-context";
 import { GanttTimescale, getHeaderHeight } from "./gantt-timescale";
 import { GanttColumnHeader, GanttGridOverlay, overlayColumnsWidth } from "./gantt-grid";
@@ -82,7 +82,7 @@ export type GanttStatus =
 
 /**
  * @deprecated Use {@link GanttStatus} instead. `Status` is an over-generic name
- * that risks colliding in a consumer's `import { … } from "@elabs/components-charts"`; it is
+ * that risks colliding in a consumer's `import { … } from "@elabs-ai/components-charts"`; it is
  * kept as an alias for one minor for backward-compat and will be removed. (#262)
  */
 export type Status = GanttStatus;
@@ -186,7 +186,7 @@ export function pickGanttTimeUnit(spanMs: number): GanttTimeUnit {
 
 /**
  * A single column in the left task grid (P1 — multi-column grid).
- * Read-only cells. Echoes `@elabs/components-data` column ergonomics WITHOUT importing it
+ * Read-only cells. Echoes `@elabs-ai/components-data` column ergonomics WITHOUT importing it
  * (charts → ui only).
  */
 export interface GanttColumn {
@@ -218,7 +218,7 @@ export interface GanttColumn {
 
 /**
  * A column sort descriptor (P2 — emit-only; the consumer sorts the source data).
- * Intentionally echoes `@elabs/components-data` sort ergonomics with a friendlier shape
+ * Intentionally echoes `@elabs-ai/components-data` sort ergonomics with a friendlier shape
  * (`columnId`/`direction` rather than TanStack's `id`/`desc`) — mirrored, not
  * imported (charts ↛ data).
  */
@@ -474,7 +474,7 @@ function computeDomain(tasks: GanttTask[]): { start: Date; end: Date } {
 }
 
 /**
- * Build a TreeNode[] hierarchy from flat ResolvedTask[] for the @elabs/components-ui Tree.
+ * Build a TreeNode[] hierarchy from flat ResolvedTask[] for the @elabs-ai/components-ui Tree.
  * Preserves the same depth-first order that buildFlatTasks produces so that
  * tree visible order matches canvas visibleTasks order.
  */
@@ -739,7 +739,7 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   );
 }
 
-// ── Gantt.RowList (left pane — uses @elabs/components-ui Tree) ───────────────────────────
+// ── Gantt.RowList (left pane — uses @elabs-ai/components-ui Tree) ───────────────────────────
 
 export interface GanttRowListProps extends HTMLAttributes<HTMLDivElement> {
   labelColumnWidth: number;

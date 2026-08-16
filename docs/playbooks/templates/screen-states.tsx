@@ -17,7 +17,7 @@
  *   • Error     — StatePanel kind="error" with a retry action (role="alert").
  *   • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA.
  *
- * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all
+ * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all
  * three themes. Verify with globals=theme:<slug>.
  */
 import { Inbox, Plus, RotateCcw, Search, UploadCloud, UserPlus } from "lucide-react";
@@ -37,7 +37,7 @@ import {
   TableRow,
   Toaster,
   toast,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 type ScreenState = "ready" | "loading" | "empty" | "error" | "first-run";
 

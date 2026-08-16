@@ -2,7 +2,7 @@
 # check-charts-reuse.sh — PostToolUse(Write|Edit)
 # -----------------------------------------------------------------------------
 # NON-BLOCKING (always exit 0). Dev-time heads-up for the charts reuse gate (#169):
-# `@elabs/components-charts` must not define components whose names collide with `@elabs/components-ui`
+# `@elabs-ai/components-charts` must not define components whose names collide with `@elabs-ai/components-ui`
 # exports, and must not import from `@base-ui/react` or `@base-ui/*`.
 #
 # Detection logic lives ONCE in scripts/check-charts-reuse.mjs (shared with the

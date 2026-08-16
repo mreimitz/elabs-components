@@ -3,7 +3,7 @@
 /**
  * `FileViewer` — the compound shell.
  *
- * Every part is composed from `@elabs/components-ui` primitives;
+ * Every part is composed from `@elabs-ai/components-ui` primitives;
  * this package contributes file LOGIC (detection, parsing, the page model) and
  * never a parallel widget set. There is no `showToolbar` boolean: compose the
  * parts you want, or render `<FileViewer>` for the batteries-included default.
@@ -31,7 +31,7 @@ import {
   useLocale,
   type FileSource,
   type ProseHeadingLevel,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { DownloadIcon, EyeOffIcon, SearchXIcon } from "lucide-react";
 import {
   forwardRef,
@@ -111,7 +111,7 @@ export interface FileViewerProviderProps {
    * the viewer genuinely is the page.
    *
    * Adapters that render no headings ignore it. Same seam as
-   * `@elabs/components-ai`'s `MarkdownView baseHeadingLevel`.
+   * `@elabs-ai/components-ai`'s `MarkdownView baseHeadingLevel`.
    */
   baseHeadingLevel?: ProseHeadingLevel;
   /**

@@ -1,6 +1,6 @@
 # Consuming brand-ui from another project
 
-How to install and use the `@elabs/components-*` packages — and
+How to install and use the `@elabs-ai/components-*` packages — and
 make your coding agent brand-ui-aware — in a project **outside** this monorepo.
 
 This is the guide shipped as every package's README and attached to each
@@ -14,60 +14,54 @@ release. You should never need anything else to get started.
 > the ranges those packages declare, and the CSS `@import`/`@source` lines. Set
 > `"standalone": true` in the app-spec so it knows the target is outside this
 > monorepo. It needs **only the CLI** (`pnpm add -D
-@elabs/components-cli`, §1) — the archetype templates and the
+@elabs-ai/components-cli`, §1) — the archetype templates and the
 > component manifest ship inside it, so no brand-ui checkout is required. The
 > sections below are the manual version, and the reference the generated block is
 > built from.
 
-## Distribution model — private packages on GitHub Packages
+## Distribution model — public packages on npmjs.org
 
-The packages are published to **[GitHub Packages](https://npm.pkg.github.com)**
-under the `@elabs` scope, from the
-`<owner>/<repo>`
-repo. They are **private** — visibility follows the repo — so you need a token
-to install, but otherwise they behave like any other npm dependency: real semver
-ranges, lockfile integrity, `pnpm update`.
+The packages are published to the **public npm registry** under the `@elabs-ai`
+scope, from the
+[`mreimitz/elabs-components`](https://github.com/mreimitz/elabs-components)
+repo. They behave like any other npm dependency: real semver ranges, lockfile
+integrity, `pnpm update` — and, because they are public, **no registry
+configuration and no token**.
 
-> **Upgrading from the tarball flow?** The packages were renamed
-> (`@brand/<pkg>` → `@elabs/components-<pkg>`) because GitHub
-> Packages only accepts a scope matching the repo owner. **Delete your entire
-> `pnpm.overrides` / `resolutions` mirror block** — it only existed so
-> `workspace:*` peers in a hand-copied tarball had something to resolve against.
-> Real registry resolution makes it unnecessary. See CHANGELOG.md.
+> **Coming from the private GitHub Packages flow?** Delete the `@elabs-ai:registry=`
+> line and the `//npm.pkg.github.com/:_authToken=` line from your `.npmrc`, and
+> drop the `read:packages` PAT from your CI secrets. Both are now inert: npmjs.org
+> is npm's default registry and the packages resolve anonymously. Package names
+> and versions are unchanged, so nothing else in your dependency block moves.
 
-## 1. Authenticate
+## 1. Authenticate — nothing to do
 
-GitHub Packages has no anonymous read for private packages. Add the scope
-mapping to your project's `.npmrc`:
+Public packages install anonymously. There is no `.npmrc` to write, no token to
+provision, and another repo's CI needs no grant to read them.
+
+The one case that still needs configuration is a project pointed at a **private
+mirror or proxy** (an internal Verdaccio, Artifactory, an offline cache). Map the
+scope explicitly there, never process-wide:
 
 ```ini
-@elabs:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+@elabs-ai:registry=https://your-mirror.example.com
 ```
 
-Then provide `GITHUB_TOKEN`. **Use a classic PAT with the `read:packages` scope**
-— fine-grained PATs do not reliably work with the GitHub Packages npm registry.
-Never commit the token; keep it in your shell profile or CI secrets, and note
-that `${VAR}` in `.npmrc` is expanded by npm/pnpm at install time.
-
-- **Local dev:** put the `_authToken` line in your `~/.npmrc` instead, so the
-  repo's `.npmrc` carries only the scope mapping.
-- **Another repo's CI:** that repo's own `GITHUB_TOKEN` **cannot** read this
-  repo's packages. Either grant it access under the package's _Manage Actions
-  access_ settings, or use an org-level PAT / GitHub App token as a secret.
+A bare `registry=` line would send every _transitive_ dependency to that host
+too, which is the defect that broke installs under the old private flow.
 
 ## 2. Install the packages
 
 ```bash
-pnpm add @elabs/components-tokens @elabs/components-ui
+pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
 ```
 
 ```jsonc
 {
   "dependencies": {
-    "@elabs/components-tokens": "^2.0.0",
-    "@elabs/components-ui": "^2.0.0",
-    "@elabs/components-data": "^2.0.0",
+    "@elabs-ai/components-tokens": "^2.0.0",
+    "@elabs-ai/components-ui": "^2.0.0",
+    "@elabs-ai/components-data": "^2.0.0",
   },
 }
 ```
@@ -97,14 +91,14 @@ pnpm add @xyflow/react      # only if you use …-flow or the …-ai canvas
 
 Per-package peers worth knowing:
 
-| Package                    | Extra peer you must provide                                                                                                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@elabs/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
-| `@elabs/components-ai`     | `ai` (Vercel AI SDK) `^6` — your app owns the model calls; `@xyflow/react` if you render the agent canvas                                                                             |
-| `@elabs/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
-| `@elabs/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs/components-editor/monaco-environment` once (Vite)                                                               |
-| `@elabs/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
-| everything else            | `@elabs/components-tokens` + `@elabs/components-ui` (already in your deps)                                                                                                            |
+| Package                       | Extra peer you must provide                                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
+| `@elabs-ai/components-ai`     | `ai` (Vercel AI SDK) `^6` — your app owns the model calls; `@xyflow/react` if you render the agent canvas                                                                             |
+| `@elabs-ai/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
+| `@elabs-ai/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                            |
+| `@elabs-ai/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
+| everything else               | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                      |
 
 All packages are **ESM-only** (`"type": "module"`) — use a bundler that handles
 ESM (Vite, Next, webpack 5, esbuild).
@@ -122,20 +116,20 @@ to produce styles in your app, do **two** things in your app's CSS entry:
    tailwind.config.js.
 
    It also pulls in `tw-animate-css` (the animation utilities the motion system
-   retimes). That ships INSIDE @elabs/components-tokens as a real dependency — you do not
+   retimes). That ships INSIDE @elabs-ai/components-tokens as a real dependency — you do not
    install it yourself. `tailwindcss` is the one peer you provide (see §3). */
-@import "@elabs/components-tokens/styles.css";
+@import "@elabs-ai/components-tokens/styles.css";
 
 /* The two REFERENCE themes are OPT-IN, one import each (ADR 0029). Take the ones
    you want; take neither if you author your own — see §5.1. */
-@import "@elabs/components-tokens/themes/light.css";
-@import "@elabs/components-tokens/themes/dark.css";
+@import "@elabs-ai/components-tokens/themes/light.css";
+@import "@elabs-ai/components-tokens/themes/dark.css";
 
-/* Tailwind ignores node_modules unless you @source it — list every @elabs/components-*
+/* Tailwind ignores node_modules unless you @source it — list every @elabs-ai/components-*
    package you render so its utility classes get generated: */
-@source "../node_modules/@elabs/components-ui/dist";
-@source "../node_modules/@elabs/components-data/dist";
-/* …one @source per @elabs/components-* package you use */
+@source "../node_modules/@elabs-ai/components-ui/dist";
+@source "../node_modules/@elabs-ai/components-data/dist";
+/* …one @source per @elabs-ai/components-* package you use */
 ```
 
 > Skip the `@source` lines and the components render **unstyled** — that's the
@@ -175,10 +169,10 @@ Import the CSS once and wrap the tree. The two REFERENCE themes are `light`
 (the default) and `dark`:
 
 ```tsx
-import "@elabs/components-tokens/styles.css";
-import { ThemeProvider } from "@elabs/components-tokens";
-import { Button, Card, CardHeader, CardTitle } from "@elabs/components-ui";
-import { DataTable } from "@elabs/components-data";
+import "@elabs-ai/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { Button, Card, CardHeader, CardTitle } from "@elabs-ai/components-ui";
+import { DataTable } from "@elabs-ai/components-data";
 
 export default function App() {
   return (
@@ -204,7 +198,7 @@ Three steps.
 
 **1. Write the CSS.** One block per theme, declaring every token in
 `THEME_TOKEN_NAMES` plus a `color-scheme`. Copy
-`node_modules/@elabs/components-tokens/dist/themes/light.css` as the starting
+`node_modules/@elabs-ai/components-tokens/dist/themes/light.css` as the starting
 point — that is what it is there for.
 
 ```css
@@ -225,7 +219,7 @@ theme. Native scrollbars and form controls follow it too.
 **2. Register it.**
 
 ```tsx
-import { defineTheme, ThemeProvider, BUILT_IN_THEME_DEFINITIONS } from "@elabs/components-tokens";
+import { defineTheme, ThemeProvider, BUILT_IN_THEME_DEFINITIONS } from "@elabs-ai/components-tokens";
 import "./themes/midnight.css";
 
 const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
@@ -242,7 +236,7 @@ no `themes` prop of its own.
 needs no CSS parsing beyond your own file:
 
 ```ts
-import { THEME_TOKEN_NAMES } from "@elabs/components-tokens";
+import { THEME_TOKEN_NAMES } from "@elabs-ai/components-tokens";
 
 const css = readFileSync("src/themes/midnight.css", "utf8");
 const missing = THEME_TOKEN_NAMES.filter((t) => !new RegExp(`${t}\\s*:`).test(css));
@@ -254,15 +248,15 @@ usually looks _almost_ right — which is why this is worth one test.
 
 ## 6. Per-package extras
 
-- **`@elabs/components-flow`** — `import "@xyflow/react/dist/style.css"` once.
-- **`@elabs/components-editor`** — `import "@elabs/components-editor/monaco-environment"`
+- **`@elabs-ai/components-flow`** — `import "@xyflow/react/dist/style.css"` once.
+- **`@elabs-ai/components-editor`** — `import "@elabs-ai/components-editor/monaco-environment"`
   once at the app entry to enable Monaco's language workers (completions,
   diagnostics). Vite-only; other bundlers wire `self.MonacoEnvironment.getWorker`
   themselves. Without it the editor still renders and highlights.
   Subpaths: `…/markdown` (the authoring + preview suite), `…/markdown/parse` and
   `…/markdown/frontmatter` (pure, Monaco-free, server-safe).
   You do **not** import the editor's CSS — the bundles import their own.
-- **`@elabs/components-viewer`** — formats are **opt-in**. Every parser
+- **`@elabs-ai/components-viewer`** — formats are **opt-in**. Every parser
   engine is an OPTIONAL peer dependency, so the package installs and builds with
   none of them; a format whose parser is absent renders an error panel naming the
   package to install rather than failing the build.
@@ -282,7 +276,7 @@ usually looks _almost_ right — which is why this is worth one test.
   ship is a `registry.register(manifest, () => import(…))` call, not a fork.
 
   **Markdown and code cost nothing extra if you already render chat.** Both peers
-  are ones `@elabs/components-ai` already depends on, so an app with
+  are ones `@elabs-ai/components-ai` already depends on, so an app with
   a chat surface has them installed. Skip them and a `.md` or `.ts` file shows the
   panel naming the package — it does not silently fall back to plain text, because
   a highlighted file quietly arriving unhighlighted is a worse answer than being
@@ -297,7 +291,7 @@ usually looks _almost_ right — which is why this is worth one test.
   start:
 
   ```ts
-  import { configurePdfEngine } from "@elabs/components-viewer";
+  import { configurePdfEngine } from "@elabs-ai/components-viewer";
 
   configurePdfEngine({
     workerSrc: "/pdfjs/pdf.worker.min.mjs",
@@ -327,11 +321,11 @@ usually looks _almost_ right — which is why this is worth one test.
   peer at the vendor CDN build yourself. Every other viewer format is unaffected;
   skip the peer and you skip the exposure.
 
-- **`@elabs/components-maps`** — no CSS import needed; `MapCanvas`
+- **`@elabs-ai/components-maps`** — no CSS import needed; `MapCanvas`
   pulls in MapLibre's stylesheet and the brand overrides itself.
-- **`@elabs/components-ui`** — the class-merge helper is at
-  `@elabs/components-ui/lib/cn` (server-safe).
-- **`@elabs/components-ai`** — `MarkdownPreview` math needs
+- **`@elabs-ai/components-ui`** — the class-merge helper is at
+  `@elabs-ai/components-ui/lib/cn` (server-safe).
+- **`@elabs-ai/components-ai`** — `MarkdownPreview` math needs
   `import "katex/dist/katex.min.css"` once, only if you enable it.
 
 ## 7. Make your coding agent brand-ui-aware
@@ -344,7 +338,7 @@ CLI at minimum.**
 ### 7a. The CLI — ground truth about the API (install this first)
 
 ```bash
-pnpm add -D @elabs/components-cli
+pnpm add -D @elabs-ai/components-cli
 ```
 
 The binary is `brand-ui`. It ships the component manifest **inside the package**,
@@ -390,7 +384,7 @@ consumption. `docs`'s default is its markdown card — written to be read by a
 model as-is, and returning far more than a prop list:
 
 ```
-# Button  (@elabs/components-ui)
+# Button  (@elabs-ai/components-ui)
 purpose: Primary action trigger — the canonical way to invoke an action.  [action]
   used inside: Form, Dialog, Card, AlertDialog, Toolbar
   pairs with: Spinner
@@ -525,7 +519,7 @@ of the project you want to migrate:
 
 ```text
 Migrate this project to the brand-ui design system
-(@elabs/components-*). Work in phases and stop for my approval
+(@elabs-ai/components-*). Work in phases and stop for my approval
 between each one.
 
 PHASE 1 — Understand, change nothing.
@@ -605,14 +599,13 @@ full picture, including the touch-device gating, is in
 ## Troubleshooting
 
 - **Components render unstyled** → you're missing the `@source` line for that
-  package (§4), or `@elabs/components-tokens/styles.css` isn't
+  package (§4), or `@elabs-ai/components-tokens/styles.css` isn't
   imported. This is the single most common mistake.
-- **`401 Unauthorized` / `404 Not Found` on install** → the registry or the token
-  is missing (§1). Confirm with
-  `npm view @elabs/components-ui --registry=https://npm.pkg.github.com`.
-  Use a **classic** PAT with `read:packages` — fine-grained PATs are unreliable
-  here. In another repo's CI, its own `GITHUB_TOKEN` cannot read this repo's
-  packages; grant package access or use an org-level token.
+- **`404 Not Found` on install** → the version you asked for is not published, or
+  your project resolves `@elabs-ai/*` somewhere other than npmjs.org. Confirm what
+  the registry actually serves with `npm view @elabs-ai/components-ui versions`, then
+  check for a leftover `@elabs-ai:registry=` line or a process-wide `registry=`
+  override in your `.npmrc` (§1). Nothing here needs a token.
 - **`require() of ES Module` / CJS error** → the packages are ESM-only; use an
   ESM-capable bundler and TypeScript `moduleResolution: "bundler"` (or `node16`).
 - **`useReactFlow`/Monaco/MapLibre misbehaving** → you likely have two copies of
@@ -622,8 +615,8 @@ full picture, including the touch-device gating, is in
   `"use client"`, so this usually means a stale install; reinstall. The
   deliberately server-safe entries are `…-ui/lib/cn`,
   `…-editor/markdown/parse` and `…/frontmatter`.
-- **Fonts missing** → they ship inside `@elabs/components-tokens` with relative `@font-face`
-  URLs; importing `@elabs/components-tokens/styles.css` from the installed package is enough.
+- **Fonts missing** → they ship inside `@elabs-ai/components-tokens` with relative `@font-face`
+  URLs; importing `@elabs-ai/components-tokens/styles.css` from the installed package is enough.
 
 ## Upgrading
 
@@ -633,7 +626,7 @@ full picture, including the touch-device gating, is in
 Ordinary npm upgrades now:
 
 ```bash
-pnpm update "@elabs/components-*"
+pnpm update "@elabs-ai/components-*"
 ```
 
 All packages are released in **lockstep** — every distributable package shares

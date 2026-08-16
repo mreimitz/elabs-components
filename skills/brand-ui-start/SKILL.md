@@ -5,13 +5,13 @@ user-invocable: true
 argument-hint: "[what you want to do, e.g. 'build a sales dashboard' or 'help me get started']"
 allowed-tools:
   - Bash(pnpm brand-ui *)
-  - Bash(npx @elabs/components-cli *)
+  - Bash(npx @elabs-ai/components-cli *)
   - Bash(npx brand-ui *)
 ---
 
 # brand-ui-start (the front door)
 
-One obvious entry point for working with **brand-ui** (`@elabs/components-*`). Figure out
+One obvious entry point for working with **brand-ui** (`@elabs-ai/components-*`). Figure out
 what the person actually wants, then hand them to the flow that does it — don't
 do the work here. This skill is a **router**, not a builder.
 
@@ -42,7 +42,7 @@ options (the harness adds "Other" for free text):
 >   short guided interview, write a spec, and scaffold a born-on-brand app.
 > - **Improve an existing app** — bring a UI that already exists onto brand-ui:
 >   profile it, map its components, and migrate in reviewable steps.
-> - **Just help me use brand-ui** — the app already uses `@elabs/components-*`; help me
+> - **Just help me use brand-ui** — the app already uses `@elabs-ai/components-*`; help me
 >   discover, compose, theme, and correctly use components.
 
 Then hand off per the table below. After routing, **invoke the target skill**
@@ -62,7 +62,7 @@ reviewed migration. Invoke it and let it do the work.
 
 1. Run the **deterministic profile** (read-only, edits nothing):
    `pnpm brand-ui scan <path> --json` (or, in a consuming project, install the CLI
-   first — `pnpm add -D @elabs/components-cli`, see `docs/CONSUMING.md` §1 + §7a — then
+   first — `pnpm add -D @elabs-ai/components-cli`, see `docs/CONSUMING.md` §1 + §7a — then
    `pnpm exec brand-ui scan …`) → framework, UI library, styling, component-usage inventory.
 2. Map what it found against brand-ui: `pnpm brand-ui map <scan.json> --json`
    → which existing components have a `direct` brand-ui equivalent vs a `gap`.
@@ -121,7 +121,7 @@ reviewed migration. Invoke it and let it do the work.
 Subagents and hooks only light up in Claude Code and Cowork; in plain chat (and
 anywhere the other skills aren't installed), this router still works as guidance:
 ask the routing question, then describe the chosen flow and point at the
-`brand-ui` consumer skill and the `@elabs/components-cli` commands (`brand-ui info` /
+`brand-ui` consumer skill and the `@elabs-ai/components-cli` commands (`brand-ui info` /
 `search` / `docs`) the person can run themselves. Never block on a capability
 that isn't present — route with what's available.
 

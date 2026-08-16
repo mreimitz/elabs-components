@@ -34,10 +34,10 @@ import {
   Skeleton,
   downloadUrl,
   type CarouselApi,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
-import { useReducedMotion } from "@elabs/components-tokens";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { Download, ImageOff, Maximize2 } from "lucide-react";
 import {
   createContext,

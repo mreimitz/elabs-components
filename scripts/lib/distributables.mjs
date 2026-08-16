@@ -56,7 +56,7 @@ export function distributablePackages(root = REPO_ROOT) {
   return out;
 }
 
-/** `@elabs/components-ui` @ 2.0.0 → `elabs-components-ui-2.0.0.tgz`. */
+/** `@elabs-ai/components-ui` @ 2.0.0 → `elabs-components-ui-2.0.0.tgz`. */
 export function tarballName(pkgName, version) {
   return `${String(pkgName).replace(/^@/, "").replace(/\//g, "-")}-${version}.tgz`;
 }

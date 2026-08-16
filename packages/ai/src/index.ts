@@ -1,5 +1,5 @@
 /**
- * @elabs/components-ai — AI Elements ported onto the brand-ui design system.
+ * @elabs-ai/components-ai — AI Elements ported onto the brand-ui design system.
  *
  * Components are presentational and render the Vercel AI SDK's `UIMessage`
  * data model; the consuming app still owns model calls (e.g. `useChat`).
@@ -12,8 +12,8 @@
  *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * MODIFICATIONS: these files have been changed from the originals — rewired to
- * import primitives from `@elabs/components-ui` and tokens from
- * `@elabs/components-tokens`, re-tokenized, and extended with surfaces that do
+ * import primitives from `@elabs-ai/components-ui` and tokens from
+ * `@elabs-ai/components-tokens`, re-tokenized, and extended with surfaces that do
  * not exist upstream. Stating that is an Apache-2.0 §4(b) obligation, not a
  * courtesy — this is the notice that discharges it for the whole package.
  *

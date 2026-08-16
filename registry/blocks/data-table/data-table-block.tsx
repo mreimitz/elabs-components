@@ -1,18 +1,18 @@
 /**
  * Data table scaffold (copy-owned block). Swap the row type, columns and data.
- * Depends on installed @elabs/components-data + @elabs/components-ui + @tanstack/react-table.
+ * Depends on installed @elabs-ai/components-data + @elabs-ai/components-ui + @tanstack/react-table.
  */
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@elabs/components-ui";
+import { Badge } from "@elabs-ai/components-ui";
 import {
   ColumnPicker,
   DataTable,
   FilterBar,
   SearchInput,
   type ColumnDef,
-} from "@elabs/components-data";
+} from "@elabs-ai/components-data";
 
 interface Row {
   name: string;

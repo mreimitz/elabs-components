@@ -8,8 +8,8 @@
  * (debounced so keystrokes don't thrash the engine). Controlled
  * (`value`/`onChange`) or uncontrolled (`defaultValue`).
  */
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, useEffect, useState, type HTMLAttributes } from "react";
 
 import { CodeEditor } from "../code-editor";

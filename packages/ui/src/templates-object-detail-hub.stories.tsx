@@ -13,7 +13,7 @@
  *   • A high-value task (Run) promoted to its own focused Dialog surface.
  *   • A real empty state (StatePanel kind="empty") when nothing is selected.
  *
- * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in
+ * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in
  * light AND dark. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -449,7 +449,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The canonical master-detail enterprise screen: a searchable object list (SplitPanel `start`) drives a detail HUB (`end`) with a sticky SectionHeader identity + status, a ButtonGroup toolbar, Tabs for the object's sections (Overview / Activity / Settings), Descriptions for attributes, a related-runs list, and a high-value Run task promoted to its own Dialog. Selecting nothing shows a real StatePanel empty state. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all three themes.",
+          "The canonical master-detail enterprise screen: a searchable object list (SplitPanel `start`) drives a detail HUB (`end`) with a sticky SectionHeader identity + status, a ButtonGroup toolbar, Tabs for the object's sections (Overview / Activity / Settings), Descriptions for attributes, a related-runs list, and a high-value Run task promoted to its own Dialog. Selecting nothing shows a real StatePanel empty state. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all three themes.",
       },
     },
   },

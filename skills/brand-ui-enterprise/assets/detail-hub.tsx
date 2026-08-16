@@ -26,7 +26,7 @@
  * Adapt the object model (server → tool → scan) to your domain (e.g. Country → Customer →
  * Order). The judgment is the asset; the data is illustrative.
  *
- * PROPS: structural props used here are source-verified against the vendored `@elabs/components-*` v1.0.0
+ * PROPS: structural props used here are source-verified against the vendored `@elabs-ai/components-*` v1.0.0
  * types and `../reference/screen-layout-patterns.md` (PageShell `header`/`width`; SplitPanel `start`/`end`/`startSize`;
  * Tabs*; Dialog* — see settings-dialog.tsx; ScrollArea). Confirm the exact slot/prop names of
  * SectionHeader, ButtonGroup/ButtonGroupText, Descriptions/DescriptionsItem,
@@ -73,7 +73,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { ChevronDown, Pencil, Play, FlaskConical, MoreHorizontal, Trash2 } from "lucide-react";
 
 /* ---------------------------------------------------------------- types + fixtures */
@@ -608,7 +608,7 @@ export function McpServerDetailHub() {
         <TabsContent value="scans" className="min-h-0 flex-1">
           <ScrollArea className="h-full">
             {/* A related list (the object's child objects) is a DataTable + search + count.
-                Compose it from @elabs/components-data — see object-and-navigation-patterns.md §8. */}
+                Compose it from @elabs-ai/components-data — see object-and-navigation-patterns.md §8. */}
             <div className="p-6 text-sm text-muted-foreground">Scan history → DataTable.</div>
           </ScrollArea>
         </TabsContent>

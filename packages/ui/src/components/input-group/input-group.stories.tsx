@@ -58,7 +58,7 @@ export const WithButton: Story = {
   ),
 };
 // The composer look (#194, research 08 §C.1): soft `bg-surface-muted` fill +
-// the focus-within ring — no hard border. Used by `PromptInput` in @elabs/components-ai.
+// the focus-within ring — no hard border. Used by `PromptInput` in @elabs-ai/components-ai.
 export const Surface: Story = {
   render: () => (
     <InputGroup variant="surface" className="max-w-sm">

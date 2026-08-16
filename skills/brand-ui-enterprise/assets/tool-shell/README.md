@@ -5,7 +5,7 @@ bar**, an optional **right inspector** pane, a **⌘K command palette**, and **f
 mode** (⌘.). Generalized from a shipping workbench app. Archetype **B** (enterprise admin) is
 the default and lives at `../app-shell.tsx`; use A for editors, inspectors, canvases.
 
-> Starting points — verify every `@elabs/components-*` prop with `brand-ui docs <Component>`.
+> Starting points — verify every `@elabs-ai/components-*` prop with `brand-ui docs <Component>`.
 
 | File                  | Role                                                                                   |
 | --------------------- | -------------------------------------------------------------------------------------- |
@@ -24,7 +24,7 @@ the default and lives at `../app-shell.tsx`; use A for editors, inspectors, canv
 import { AppProviders } from "../app-providers"; // Theme → Tooltip → Sidebar → ContextPanel + Toaster
 import { UiStateProvider } from "./ui-state";
 import { ToolShell } from "./tool-shell";
-import { Sidebar /* … */ } from "@elabs/components-ui";
+import { Sidebar /* … */ } from "@elabs-ai/components-ui";
 
 <AppProviders>
   <UiStateProvider>

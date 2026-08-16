@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { useLegendItem } from "./legend-context";
 
 export interface LegendLabelProps {

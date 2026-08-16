@@ -3,7 +3,7 @@
  * non-CSS rendering surfaces.
  *
  * Some engines can't read CSS custom properties: WebGL paint (MapLibre in
- * @elabs/components-maps), Monaco themes, mermaid. They need a resolved color STRING at
+ * @elabs-ai/components-maps), Monaco themes, mermaid. They need a resolved color STRING at
  * call time. This is the shared, dependency-free resolver: read the custom
  * property off an element, convert `oklch(...)` (how themes.css authors every
  * color) to hex via the color-contrast math already in this package.

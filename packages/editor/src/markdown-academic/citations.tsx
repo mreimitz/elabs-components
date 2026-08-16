@@ -15,8 +15,8 @@
  * as the wikilink resolver. Numbering is owned by `collectCitations` (a single
  * pre-pass over the source) so an inline `[1]` and bibliography entry 1 always agree.
  */
-import { cn } from "@elabs/components-ui/lib/cn";
-import { Separator } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { Separator } from "@elabs-ai/components-ui";
 import {
   createContext,
   forwardRef,

@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — the experience engine (scaffold / scan / map / codemod).
+ * @elabs-ai/components-cli — the experience engine (scaffold / scan / map / codemod).
  *
  * The deterministic backend the vibe-coder-plugin flows call so they are
  * repeatable, reviewable code paths — NOT hand-wavy LLM steps (VP-01 #121).
@@ -141,15 +141,40 @@ function walkSource(dir, { exts, cap = 4000, acc = [] } = {}) {
 // ---- scaffold (greenfield; VP-02 #123 / #55 / #263) ------------------------
 
 /** The npm scope every brand-ui package lives under. */
-export const PKG_SCOPE = "@elabs/components-";
+export const PKG_SCOPE = "@elabs-ai/components-";
 /**
- * No registry is configured. The `@elabs` scope is private and unpublished, so a
- * standalone scaffold cannot `pnpm add` it — it consumes local tarballs instead
- * (`pnpm pack`). Setting this to a registry URL, together with a matching scope
- * mapping in the repo `.npmrc`, is what re-enables the published install path.
- * See ADR 0016 and `docs/CONSUMING.md`.
+ * Where a scaffolded app resolves `@elabs-ai/*` from: the PUBLIC npm registry.
+ *
+ * Was `null` while the scope was unpublished, which forced every standalone
+ * scaffold onto local `pnpm pack` tarballs. The packages are public now, so an
+ * ordinary `pnpm add` works with no configuration at all — see `npmrcFor()` for
+ * why that means the scaffold still emits an EMPTY `.npmrc`.
  */
-export const REGISTRY_URL = null;
+export const REGISTRY_URL = "https://registry.npmjs.org/";
+
+/** npm's own default registry — the one host that needs no scope mapping. */
+const PUBLIC_REGISTRY_HOSTS = new Set(["registry.npmjs.org"]);
+
+/**
+ * The `.npmrc` a standalone app needs to resolve this scope — usually nothing.
+ *
+ * A scope mapping is what a PRIVATE or mirrored registry requires. Emitting one
+ * for npmjs.org would be worse than redundant: it hands every generated app a
+ * `${NPM_TOKEN}` placeholder to provision for packages that install
+ * anonymously, and the first thing a reader does with an unexplained token line
+ * is go looking for the secret. Pure.
+ */
+export function npmrcFor(registry) {
+  if (!registry) return "";
+  let host;
+  try {
+    host = new URL(registry).host;
+  } catch {
+    return "";
+  }
+  if (PUBLIC_REGISTRY_HOSTS.has(host)) return "";
+  return [`@elabs-ai:registry=${registry}`, `//${host}/:_authToken=\${NPM_TOKEN}`].join("\n");
+}
 /** Every scaffold installs at least these two (tokens = the theme, ui = the shell). */
 export const BASE_PACKAGES = [`${PKG_SCOPE}tokens`, `${PKG_SCOPE}ui`];
 
@@ -229,7 +254,7 @@ export function templateImports(archetype, opts = {}) {
 }
 
 /**
- * The `@elabs/components-*` package set a scaffold needs.
+ * The `@elabs-ai/components-*` package set a scaffold needs.
  *
  *  - `fromTemplate` — DERIVED from the archetype template's import specifiers.
  *  - `extra`        — packages the SPEC pulls in (entities ⇒ the data package, for
@@ -250,7 +275,7 @@ export function scaffoldPackages(archetype, spec = {}, { root, bundledDir } = {}
         `cannot derive the package set — ${templatePath(archetype)} is unreachable ` +
         `(looked in the repo root${root ? ` \`${root}\`` : " (none found)"} and in the ` +
         `templates bundled with the CLI). Run from a brand-ui checkout (\`pnpm gen:templates\` ` +
-        `if the file is missing) or reinstall @elabs/components-cli.`,
+        `if the file is missing) or reinstall @elabs-ai/components-cli.`,
     };
   }
   const fromTemplate = imports.filter((s) => s.startsWith(PKG_SCOPE));
@@ -267,7 +292,7 @@ export function scaffoldPackages(archetype, spec = {}, { root, bundledDir } = {}
  *  2. the manifest's `peerDependencies` (bundled with the CLI) — the only one
  *     reachable in consumer mode, outside the monorepo.
  *
- * Intra-scope peers (`@elabs/…`) are dropped — they are the brand-ui
+ * Intra-scope peers (`@elabs-ai/…`) are dropped — they are the brand-ui
  * packages themselves, already in the dependency block — as are the base peers
  * every app installs anyway (react / react-dom / tailwindcss).
  */
@@ -277,7 +302,9 @@ export function packagePeers(pkgName, { root, manifest } = {}) {
   const fromDisk = root ? readPkgJson(join(root, dir))?.peerDependencies : null;
   const peers = fromDisk ?? entry?.peerDependencies ?? {};
   return Object.fromEntries(
-    Object.entries(peers).filter(([name]) => !name.startsWith("@elabs/") && !(name in BASE_PEERS)),
+    Object.entries(peers).filter(
+      ([name]) => !name.startsWith("@elabs-ai/") && !(name in BASE_PEERS),
+    ),
   );
 }
 
@@ -358,14 +385,9 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
     peers,
     peerRanges,
     dependencyRange: range,
-    // Empty while REGISTRY_URL is null — there is no registry to point a scope at
-    // and nothing to authenticate against.
-    npmrc: REGISTRY_URL
-      ? [
-          `@elabs:registry=${REGISTRY_URL}`,
-          `//${new URL(REGISTRY_URL).host}/:_authToken=\${NPM_TOKEN}`,
-        ].join("\n")
-      : "",
+    // Empty for the public registry: npmjs.org is npm's default, so there is
+    // nothing to map and nothing to authenticate against.
+    npmrc: npmrcFor(REGISTRY_URL),
     // Quoted: `^` and `@` are glob/history characters in some shells, and a
     // copy-pasted install line has to work in the shell the user actually has.
     addCommand: `pnpm add ${packages.map((p) => `"${p}@${range}"`).join(" ")}`,
@@ -775,7 +797,7 @@ export default defineConfig({
 
 /**
  * `tsconfig.json` — the same shape as the monorepo's own Vite apps
- * (`@elabs/components-typescript-config/vite-app.json`), inlined
+ * (`@elabs-ai/components-typescript-config/vite-app.json`), inlined
  * because that config package is private + unpublished. `noUnusedLocals` /
  * `noUnusedParameters` are deliberately NOT on: a scaffold legitimately carries
  * imports for the `TODO(spec):` wiring that isn't done yet, and a fresh app that
@@ -820,18 +842,13 @@ function buildTsConfig() {
  * ships the CI job that runs it (#123 AC2 "gates").
  */
 function buildWorkflow(install) {
-  const auth = install.standalone
-    ? `
-          registry-url: https://npm.pkg.github.com
-          scope: "@elabs"`
-    : "";
-  const env = install.standalone
-    ? `
-        env:
-          # brand-ui ships from GitHub Packages (private). A repo-scoped
-          # GITHUB_TOKEN can read packages in the same org.
-          NODE_AUTH_TOKEN: \${{ secrets.GITHUB_TOKEN }}`
-    : "";
+  // brand-ui publishes PUBLIC packages to npmjs.org, so a scaffolded app needs
+  // no registry mapping and no token: npmjs.org is npm's default and the
+  // packages resolve anonymously. The `registry-url` / `NODE_AUTH_TOKEN` pair
+  // this used to emit is what a PRIVATE registry needs — emitting it now would
+  // hand every generated app a secret it must provision and can never use.
+  const auth = "";
+  const env = "";
   return `name: quality
 
 on:
@@ -861,7 +878,7 @@ jobs:
  * `brand-ui-context.md` — the manifest-derived component inventory (the same
  * block `brand-ui context` generates, WP-03 #82). #123 AC2 asks for a context
  * file next to CLAUDE.md/AGENTS.md: this is it, so a later agent session knows
- * what exists across `@elabs/components-*` without a running
+ * what exists across `@elabs-ai/components-*` without a running
  * Storybook, an MCP server, or a guess.
  */
 function buildContextFile(root) {
@@ -878,7 +895,7 @@ live, queryable API is \`brand-ui docs <Component>\` / \`brand-ui search <concep
       `
 > The component manifest was not reachable when this app was scaffolded, so the
 > inventory below is empty. Run \`brand-ui context\` from a brand-ui checkout, or
-> reinstall \`@elabs/components-cli\` (it ships the manifest), then
+> reinstall \`@elabs-ai/components-cli\` (it ships the manifest), then
 > re-run to fill it in.
 `
     );
@@ -914,7 +931,7 @@ function buildStyles(install) {
  *    separate, opt-in imports — keep the ones you use, or drop both and import
  *    your own theme stylesheet instead (see docs/CONSUMING.md §5.1).
  * 2) Tailwind ignores node_modules unless you @source it — one line per
- *    @elabs/components-* package you render. Delete a line and those
+ *    @elabs-ai/components-* package you render. Delete a line and those
  *    components render UNSTYLED. See docs/CONSUMING.md §4.
  */
 ${install.css.import}
@@ -968,31 +985,27 @@ function buildClaudeMd(spec, plan, install) {
   const installSection = install.standalone
     ? `## Install / make it runnable
 
-The \`@elabs/components-*\` packages are **private and unpublished** — there is no
-registry to install them from. Build local tarballs in the brand-ui repo
-(\`pnpm build && pnpm -r pack\`) and add them by path:
+The \`@elabs-ai/components-*\` packages are **public on npmjs.org** — no registry
+configuration, no token:
 
 \`\`\`bash
-pnpm add ${install.packages.map((p) => `"file:../brand-ui/${p.replace(/^@/, "").replace(/\//g, "-")}-<version>.tgz"`).join(" ")}
+${install.addCommand}
 ${install.peerCommand}
 \`\`\`
-
-If you later configure a registry for the scope, set \`REGISTRY_URL\` in
-\`packages/cli/lib/engine.mjs\` and the ordinary \`pnpm add\` path comes back.
 
 \`src/styles.css\` already carries the token import and one \`@source\` line per
 installed package — **do not delete them**, the components render unstyled without
 them. Full recipe: ${install.docs} in the brand-ui repo.`
     : `## Install / make it runnable
 
-This app lives inside the brand-ui monorepo: \`@elabs/components-*\`
+This app lives inside the brand-ui monorepo: \`@elabs-ai/components-*\`
 dependencies stay \`workspace:*\` and \`pnpm install\` at the repo root wires them.
 \`src/styles.css\` carries the token import and one \`@source\` line per package —
 **do not delete them**, the components render unstyled without them.`;
 
   return `# CLAUDE.md — ${title}
 
-This app is built on **brand-ui** (\`@elabs/components-*\`). It was
+This app is built on **brand-ui** (\`@elabs-ai/components-*\`). It was
 scaffolded from the **${archetype}** template; the spec is in \`./app-spec.md\` — read
 it before making structural changes.
 
@@ -1028,7 +1041,7 @@ src\`) — the static token/anti-slop pass; the rendered cross-theme + contrast 
 ## What exists (don't guess an API)
 
 \`./brand-ui-context.md\` is the generated inventory of every component in every
-\`@elabs/components-*\` package — read it before inventing a
+\`@elabs-ai/components-*\` package — read it before inventing a
 component. For the real props of one component: \`pnpm exec brand-ui docs <Name>\`
 (or \`mcp__brand-ui__docs\`). Refresh the inventory after upgrading the packages
 with \`pnpm exec brand-ui context\`.
@@ -1073,7 +1086,7 @@ boundary). This file exists so agents that look for \`AGENTS.md\` find the same 
 
 The short version:
 
-- Compose from \`@elabs/components-*\`; don't hand-roll tables, dialogs,
+- Compose from \`@elabs-ai/components-*\`; don't hand-roll tables, dialogs,
   chat bubbles or KPI tiles.
 - Type is a **role** (\`text-title\`/\`text-body\`/…), colour is a **token**
   (\`bg-primary\`, \`text-muted-foreground\`) — never a raw size or hex.
@@ -1375,7 +1388,7 @@ const FRAMEWORK_DEPS = [
   ["react", "react"],
 ];
 const UI_LIB_DEPS = [
-  [/^@elabs\/components-/, "brand-ui"],
+  [/^@elabs-ai\/components-/, "brand-ui"],
   ["@mui/material", "mui"],
   ["antd", "antd"],
   ["@chakra-ui/react", "chakra"],

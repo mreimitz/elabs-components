@@ -1,10 +1,10 @@
 /**
  * Gantt smoke tests.
  *
- * Uses the real @elabs/components-ui Tree component (it works in jsdom — no layout
+ * Uses the real @elabs-ai/components-ui Tree component (it works in jsdom — no layout
  * measurement needed for the non-virtualized path). We only mock:
  *   - motion/react  → no-op so jsdom doesn't choke on animations
- *   - @elabs/components-ui Tooltip primitives → passthrough (no Radix portal/ResizeObserver)
+ *   - @elabs-ai/components-ui Tooltip primitives → passthrough (no Radix portal/ResizeObserver)
  *   - @tanstack/react-virtual → minimal fixed-window (still used by Tree internally
  *     when virtualize=true, but Gantt always passes virtualize={false})
  *
@@ -66,28 +66,31 @@ vi.mock("@tanstack/react-virtual", () => ({
   }),
 }));
 
-// Mock @elabs/components-ui — pass through all except portal/browser components.
+// Mock @elabs-ai/components-ui — pass through all except portal/browser components.
 // Tree, Button, Skeleton, cn etc. resolve from the real package.
 // Only Tooltip primitives and ScrollArea need stubbing (Radix portal/ResizeObserver).
-vi.mock("@elabs/components-ui", async (importOriginal: () => Promise<Record<string, unknown>>) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    TooltipTrigger: ({
-      children,
-      asChild: _asChild,
-    }: {
-      children: React.ReactNode;
-      asChild?: boolean;
-    }) => <>{children}</>,
-    TooltipContent: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="tooltip-content">{children}</div>
-    ),
-  };
-});
+vi.mock(
+  "@elabs-ai/components-ui",
+  async (importOriginal: () => Promise<Record<string, unknown>>) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+      TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+      Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+      TooltipTrigger: ({
+        children,
+        asChild: _asChild,
+      }: {
+        children: React.ReactNode;
+        asChild?: boolean;
+      }) => <>{children}</>,
+      TooltipContent: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="tooltip-content">{children}</div>
+      ),
+    };
+  },
+);
 
 import {
   Gantt,

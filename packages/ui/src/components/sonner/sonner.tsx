@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Toaster as SonnerToaster, toast } from "sonner";
-import { resolveThemeIsDark } from "@elabs/components-tokens";
+import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { cn } from "../../lib/cn";
 
 /**

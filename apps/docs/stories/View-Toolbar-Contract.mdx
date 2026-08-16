@@ -7,7 +7,7 @@ import * as ViewToolbarStories from "../../../packages/ui/src/components/view-to
 
 Every list, table and board view needs **one row**: what you are looking at on the
 left, what you can do about it on the right. `ViewToolbar`
-(`@elabs/components-ui`) is that row.
+(`@elabs-ai/components-ui`) is that row.
 
 This page is the deliverable, not documentation of one. The failure it fixes was
 **ambiguity, not capability**: with no named contract, one consuming app grew — across
@@ -38,7 +38,7 @@ import {
   StatusBadge,
   ViewToolbar,
   ViewToolbarFilters,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 <ViewToolbar
   info="Every pipeline run in this workspace from the last 30 days, newest first."
@@ -90,7 +90,7 @@ two, a target ≥24px (WCAG 2.5.8) with no dead zone, Enter/Space for free from 
 native element, and an accessible name — "Remove filter: Status: Failed" — that
 _contains_ the visible label (WCAG 2.5.3 Label in Name).
 A chip that must **edit** a filter rather than remove it is a different control:
-reach for `FacetFilter` (`@elabs/components-data`). Do not fork `FilterChip` to do both.
+reach for `FacetFilter` (`@elabs-ai/components-data`). Do not fork `FilterChip` to do both.
 
 **R4 — One count, and it never lies.** Pass `total` whenever a filter is active, so
 the row reads `24 of 128`; a bare `24` misrepresents a filtered view. Omit `total`
@@ -183,13 +183,13 @@ view must explain itself on mobile. Making the ⓘ tap-reachable (a click-opened
 - **`SectionHeader`** — the title + description + actions block. It answers "what is
   this page"; `ViewToolbar` answers "what is this view showing right now". A screen
   may legitimately have both, in that order.
-- **`FilterBar`** (`@elabs/components-data`) — the DataTable-scoped toolbar handed the table
+- **`FilterBar`** (`@elabs-ai/components-data`) — the DataTable-scoped toolbar handed the table
   instance by `toolbar={(table) => …}`. It stays; it is not a general per-view row,
   and the one-way package dependency (`ui` → `data`) means it never can be.
-- **`FacetFilter`, `SearchInput`, `ColumnPicker`** (`@elabs/components-data`) — the controls a
+- **`FacetFilter`, `SearchInput`, `ColumnPicker`** (`@elabs-ai/components-data`) — the controls a
   user _picks_ filters with. They go in `actions` (or a `Filters` popover); what they
   produce shows up on the left as `FilterChip`s.
-- **`StatusBadge`, `StatePanel`, `Pagination`, `TagInput`** (`@elabs/components-ui`) — status
+- **`StatusBadge`, `StatePanel`, `Pagination`, `TagInput`** (`@elabs-ai/components-ui`) — status
   vocabulary, the below-the-row empty/error panel, page navigation, and multi-value
   text entry respectively. None of them is a filter chip.
 

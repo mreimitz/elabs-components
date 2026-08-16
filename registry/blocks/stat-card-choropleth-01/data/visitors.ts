@@ -1,4 +1,4 @@
-import type { ChoroplethFeature } from "@elabs/components-charts";
+import type { ChoroplethFeature } from "@elabs-ai/components-charts";
 
 export const visitorsByCountry: Record<string, number> = {
   "United States": 18,

@@ -7,7 +7,7 @@
  * a fixed 280×280 and mock motion/react to render plain DOM elements.
  *
  * Real render fidelity + a11y are covered by the co-located Storybook story
- * (same precedent as @elabs/components-editor's CodeEditor tests and @elabs/components-flow's node
+ * (same precedent as @elabs-ai/components-editor's CodeEditor tests and @elabs-ai/components-flow's node
  * tests).
  */
 

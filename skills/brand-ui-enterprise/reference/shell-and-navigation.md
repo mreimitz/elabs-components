@@ -97,12 +97,12 @@ Set the **favicon** to the same brand mark (head-level asset).
 
 ### 3b. Theme switcher — System / Light / Dark — preferred + alternative
 
-**Verified against `@elabs/components-*` v1.0.0 source.** Two good options.
+**Verified against `@elabs-ai/components-*` v1.0.0 source.** Two good options.
 
 **Preferred — the library component already does it:**
 
 ```tsx
-import { ThemeSwitcher } from "@elabs/components-ui";
+import { ThemeSwitcher } from "@elabs-ai/components-ui";
 // With no `themes` prop it renders the ThemeProvider's whole registry (the two
 // reference themes by default); `showSystem` defaults to true → renders exactly
 // System / Light / Dark (whole-screen animated, reduce-motion safe).

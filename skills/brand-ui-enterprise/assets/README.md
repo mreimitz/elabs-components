@@ -3,7 +3,7 @@
 Starting points for the enterprise app baseline (SKILL.md step 3). **Starting points,
 not a library** — grounded in two shipping enterprise apps (a workbench app,
 `mcp-token-footprint`) and the brand-ui v1.0.0 manifest. Before shipping, confirm every
-`@elabs/components-*` prop with `brand-ui docs <Component>`.
+`@elabs-ai/components-*` prop with `brand-ui docs <Component>`.
 
 | File                  | What it gives you                                                                                                                                                             |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

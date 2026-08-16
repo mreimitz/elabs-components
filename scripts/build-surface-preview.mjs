@@ -211,7 +211,7 @@ export function readComposition(source) {
   const pkgOf = new Map();
   const packages = [];
   for (const { source: mod, specifiers } of scanImports(source)) {
-    if (!mod.startsWith("@elabs/components-")) continue;
+    if (!mod.startsWith("@elabs-ai/components-")) continue;
     if (!packages.includes(mod)) packages.push(mod);
     for (const s of specifiers) if (/^[A-Z]/.test(s)) pkgOf.set(s, mod);
   }
@@ -273,7 +273,7 @@ const esc = (s) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-/** Short package label, e.g. `@elabs/components-ui` → `ui`. */
+/** Short package label, e.g. `@elabs-ai/components-ui` → `ui`. */
 const shortPkg = (pkg) => (pkg ? pkg.replace(/^.*\/components-/, "") : "local");
 
 /**

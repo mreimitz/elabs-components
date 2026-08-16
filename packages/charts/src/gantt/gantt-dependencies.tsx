@@ -12,7 +12,7 @@
  */
 
 import { useMemo } from "react";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { dateToX } from "./gantt-bar";
 import type { ResolvedTask } from "./gantt-context";
 

@@ -57,7 +57,7 @@ import {
   SidebarMenuItem,
   TeamSwitcher,
   cn,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 const data = {
   user: { name: "ephraim", email: "ephraim@blocks.so", avatar: "" },

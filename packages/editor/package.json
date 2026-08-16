@@ -1,7 +1,12 @@
 {
-  "name": "@elabs/components-editor",
+  "name": "@elabs-ai/components-editor",
   "version": "3.1.0",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreimitz/elabs-components.git",
+    "directory": "packages/editor"
+  },
   "type": "module",
   "files": [
     "dist",
@@ -34,6 +39,8 @@
     }
   },
   "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -85,17 +92,17 @@
     "unist-util-visit": "^5.0.0"
   },
   "peerDependencies": {
-    "@elabs/components-tokens": "workspace:*",
-    "@elabs/components-ui": "workspace:*",
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
     "monaco-editor": "^0.55.1",
     "react": "^18.2.0 || ^19.0.0",
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@elabs/components-eslint-config": "workspace:*",
-    "@elabs/components-tokens": "workspace:*",
-    "@elabs/components-typescript-config": "workspace:*",
-    "@elabs/components-ui": "workspace:*",
+    "@elabs-ai/components-eslint-config": "workspace:*",
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",

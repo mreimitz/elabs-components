@@ -5,7 +5,7 @@
  *
  * Why a tree and not a pretty-printed `<pre>`: the whole reason to open a JSON
  * file in a viewer rather than an editor is to find something in it. A tree
- * collapses the parts you are not reading, and `@elabs/components-ui`'s
+ * collapses the parts you are not reading, and `@elabs-ai/components-ui`'s
  * `Tree` already ships the keyboard model, roving tabindex and virtualization,
  * so this adapter contributes the MAPPING and nothing else.
  *
@@ -14,8 +14,8 @@
  * the one fact the user needs.
  */
 
-import { cn, Tree, type TreeNode, useLocale } from "@elabs/components-ui";
-import type { ResolvedFileSource } from "@elabs/components-ui";
+import { cn, Tree, type TreeNode, useLocale } from "@elabs-ai/components-ui";
+import type { ResolvedFileSource } from "@elabs-ai/components-ui";
 
 import { ViewerError, toViewerError } from "../../core/errors";
 import type {

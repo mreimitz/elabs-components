@@ -16,7 +16,7 @@
  * honest answer is to download the file, which the toolbar already offers.
  */
 
-import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs/components-ui";
+import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs-ai/components-ui";
 import {
   cn,
   ProseHeading,
@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
   useLocale,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 import { useMemo, useRef } from "react";
 

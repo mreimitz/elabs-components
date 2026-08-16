@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Card, CardContent } from "@elabs/components-ui";
+import { Badge, Card, CardContent } from "@elabs-ai/components-ui";
 
 /** A comparison tile — this period vs last, with the delta. */
 export function ComparisonStatCard() {

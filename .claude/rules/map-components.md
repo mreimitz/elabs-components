@@ -6,11 +6,11 @@ paths:
   - "packages/maps/**"
 ---
 
-# Map components (@elabs/components-maps)
+# Map components (@elabs-ai/components-maps)
 
-`@elabs/components-maps` wraps **MapLibre GL** (`maplibre-gl`, BSD-3-Clause) as brand-ui
-components — the same wrap-an-engine pattern as `@elabs/components-flow` (React Flow) and
-`@elabs/components-editor` (Monaco). Adapted from the MIT-licensed
+`@elabs-ai/components-maps` wraps **MapLibre GL** (`maplibre-gl`, BSD-3-Clause) as brand-ui
+components — the same wrap-an-engine pattern as `@elabs-ai/components-flow` (React Flow) and
+`@elabs-ai/components-editor` (Monaco). Adapted from the MIT-licensed
 [mapcn](https://github.com/AnmolSaini16/mapcn) (© 2025 Anmoldeep Singh) —
 keep that attribution in the package barrel/README.
 
@@ -29,7 +29,7 @@ keep that attribution in the package barrel/README.
   `prefers-color-scheme`, are fallbacks for non-brand hosts. Pass `theme` to pin
   it, `styles` for custom basemaps, `blank` for a tile-less data-viz canvas.
 - **Token paints (WebGL can't read CSS variables):** default layer paints
-  resolve semantic tokens at runtime via `resolveTokenColor` (`@elabs/components-tokens`)
+  resolve semantic tokens at runtime via `resolveTokenColor` (`@elabs-ai/components-tokens`)
   through the internal `useTokenColor` hook, keyed on the map context's
   `themeKey` so they re-resolve on theme change. Route/arc default to
   `--primary`; clusters step `--success` → `--warning` → `--destructive` with
@@ -61,7 +61,7 @@ default` + the consumer-override case), so a future agent that flips the default
 - **Server safety:** everything is `"use client"`; MapLibre needs WebGL, so
   render behind a client boundary in RSC/SSR apps.
 - **Testing:** MapLibre can't render in jsdom — unit tests mock the engine
-  (`src/test-utils/maplibre-mock.ts`, the `@elabs/components-flow` pattern) and pure
+  (`src/test-utils/maplibre-mock.ts`, the `@elabs-ai/components-flow` pattern) and pure
   helpers (`arc-math`, `merge-hover-paint`) are unit-tested; real rendering +
   a11y come from Storybook story tests. Sweep stories across both themes
   (`globals=theme:<slug>`) — watch the dark basemap + token paints.

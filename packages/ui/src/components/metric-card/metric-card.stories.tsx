@@ -11,9 +11,9 @@ const meta = {
     docs: {
       description: {
         component:
-          "The canonical KPI tile, owned by @elabs/components-ui (ADR 0012). @elabs/components-charts re-exports this exact " +
-          "component as Charts/MetricCard — they are the same component, so import from @elabs/components-ui for app " +
-          "UI, or from @elabs/components-charts when already in a charts context. Don't fork a second KPI tile.",
+          "The canonical KPI tile, owned by @elabs-ai/components-ui (ADR 0012). @elabs-ai/components-charts re-exports this exact " +
+          "component as Charts/MetricCard — they are the same component, so import from @elabs-ai/components-ui for app " +
+          "UI, or from @elabs-ai/components-charts when already in a charts context. Don't fork a second KPI tile.",
       },
     },
   },

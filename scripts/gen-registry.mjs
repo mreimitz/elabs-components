@@ -8,7 +8,7 @@
  * "sidebar"]` — copied verbatim from shadcn's own sidebar-02 — while its files
  * import none of them, so `shadcn add sidebar-02` installed five primitives the
  * copied code never uses. A `registry:ui` `button` item shadowed the upstream
- * shadcn name with a stale fork of `@elabs/components-ui`'s Button. Both are
+ * shadcn name with a stale fork of `@elabs-ai/components-ui`'s Button. Both are
  * the same class of bug: a hand-maintained description of code that drifted
  * from the code.
  *
@@ -60,11 +60,11 @@ const AMBIENT_PACKAGES = new Set(["react", "react-dom"]);
 /** `from "x"` / `import("x")` / `require("x")` / bare `import "x"`. */
 const IMPORT_RE = /(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+)["']([^"']+)["']/g;
 
-const BRAND_SCOPE = "@elabs/";
+const BRAND_SCOPE = "@elabs-ai/";
 
 /**
- * Map every `@elabs/*` package name to its declared peerDependencies, read from
- * the workspace manifests. A block that imports `@elabs/components-editor` does
+ * Map every `@elabs-ai/*` package name to its declared peerDependencies, read from
+ * the workspace manifests. A block that imports `@elabs-ai/components-editor` does
  * not work unless the consumer also installs that package's peers — they are
  * not transitive installs, that is what "peer" means — so the registry item has
  * to name them even though no copied file imports them directly.
@@ -92,7 +92,7 @@ export function readBrandPeers(
 }
 
 /**
- * Close a dependency set over the `@elabs/*` peer graph. Only BRAND peers are
+ * Close a dependency set over the `@elabs-ai/*` peer graph. Only BRAND peers are
  * added automatically: they are unconditional (nothing renders without
  * `-tokens`/`-ui`). A third-party peer like `monaco-editor` or `@xyflow/react`
  * is conditional on what the block actually renders, so it stays a judgment the

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { useRef, useState } from "react";
-import { Button, ToggleGroup, ToggleGroupItem } from "@elabs/components-ui";
+import { Button, ToggleGroup, ToggleGroupItem } from "@elabs-ai/components-ui";
 import type { EditorCompletionProvider } from "../lib/editor-completions";
 import { BRAND_SLASH_COMMANDS, type SlashCommand } from "../markdown-editor/slash";
 import { MarkdownWorkspace, type MarkdownWorkspaceHandle } from "./markdown-workspace";
@@ -28,7 +28,7 @@ const meta = {
         component:
           "The hybrid markdown surface: one value, three modes (Source = Monaco, Split = " +
           "source + branded preview, Preview-edit = Milkdown WYSIWYG), switched via a " +
-          "@elabs/components-ui ToggleGroup. The MarkdownToolbar is exercised in Source/Split modes.",
+          "@elabs-ai/components-ui ToggleGroup. The MarkdownToolbar is exercised in Source/Split modes.",
       },
     },
   },

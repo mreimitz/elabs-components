@@ -470,7 +470,7 @@ function main(argv) {
       `\nTwo semantic roles that can appear on screen together have collapsed onto\n` +
         `one colour, so the distinction they carry is gone. Fix it by retuning ONE\n` +
         `side in packages/tokens/tokens/themes/<theme>.tokens.json and re-running\n` +
-        `\`pnpm --filter @elabs/components-tokens tokens:build\`.\n\n` +
+        `\`pnpm --filter @elabs-ai/components-tokens tokens:build\`.\n\n` +
         `If the equality is genuinely BY DESIGN, add it to EXEMPTIONS in\n` +
         `scripts/check-role-distinctness.mjs WITH the decision that justifies it\n` +
         `(the rule for what qualifies is documented beside that list).\n` +

@@ -6,10 +6,10 @@ paths:
   - "packages/ai/**"
 ---
 
-# AI / chat components (@elabs/components-ai)
+# AI / chat components (@elabs-ai/components-ai)
 
-`@elabs/components-ai` vendors **Vercel AI Elements** onto brand-ui — rewired to import
-primitives from `@elabs/components-ui` and tokens from `@elabs/components-tokens`. Components are
+`@elabs-ai/components-ai` vendors **Vercel AI Elements** onto brand-ui — rewired to import
+primitives from `@elabs-ai/components-ui` and tokens from `@elabs-ai/components-tokens`. Components are
 **presentational** and render the AI SDK `UIMessage` data model; the consuming
 app still owns model calls (e.g. `useChat`). Source lives as flat files in
 `packages/ai/src/*.tsx` (no per-component folders).
@@ -63,7 +63,7 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   **A format `AssetPreview` cannot draw arrives by INJECTION, never by growing
   `ContextAssetType`** — `renderPreview?: (asset) => ReactNode | null` on
   `AssetPreview`, or once for the whole rail on `ContextPanelProvider`.
-  `@elabs/components-viewer` is a layer PEER of this package, so
+  `@elabs-ai/components-viewer` is a layer PEER of this package, so
   the app owns the edge (`renderPreview={(a) => a.source ? <FileViewer source={a.source} /> : null}`);
   a renderer returning `null` declines and the built-in switch runs unchanged, and
   Raw mode is never intercepted. Same shape as `ChartFrame`'s `renderTable`
@@ -75,9 +75,9 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   than throwing), `Shimmer` (loading), and the
   workspace/agent set (`Artifact`, `Sandbox`, `WebPreview`, `Canvas`/`Node`/`Edge`,
   media `AudioPlayer`/`VoiceSelector`/`Transcription`, `Terminal`, etc.).
-- **Not to be confused with `@elabs/components-flow`.** `Canvas`/`Node`/`Edge`/
+- **Not to be confused with `@elabs-ai/components-flow`.** `Canvas`/`Node`/`Edge`/
   `Connection`/`Controls`/`Panel`/`Toolbar` are the **IN-CHAT agent workspace graph**;
-  for an author-built diagram screen use `@elabs/components-flow`'s `CanvasShell`
+  for an author-built diagram screen use `@elabs-ai/components-flow`'s `CanvasShell`
   instead — see [ADR 0018](../../docs/ADR/0018-dual-react-flow-canvas-surfaces.md) and
   @.claude/rules/react-flow-components.md.
 
@@ -96,7 +96,7 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   interactive/streaming states unique to chat (message append, tool-call, reasoning
   reveal). When the Storybook dev server is running, catch render/streaming/a11y
   regressions via `mcp__storybook__run-story-tests`; otherwise
-  `pnpm --filter @elabs/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
+  `pnpm --filter @elabs-ai/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
 - **No duplicate APIs.** When replacing an old component with an AI Element,
   delete the superseded file and update `src/index.ts` — never leave an orphaned
   folder or a flat-file-vs-folder name collision (e.g. `prompt-input.tsx` vs
@@ -107,7 +107,7 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
 User-visible strings go through the locale seam, not a literal:
 
 ```tsx
-const { t } = useLocale(); // from @elabs/components-ui — provider-OPTIONAL
+const { t } = useLocale(); // from @elabs-ai/components-ui — provider-OPTIONAL
 <button aria-label={t("ai.message.nextBranch")} />;
 ```
 

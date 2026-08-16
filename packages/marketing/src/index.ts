@@ -1,6 +1,6 @@
 /**
- * @elabs/components-marketing — landing-page sections, kept separate from app UI.
- * Compose with @elabs/components-ui primitives (Button, Card) for actions.
+ * @elabs-ai/components-marketing — landing-page sections, kept separate from app UI.
+ * Compose with @elabs-ai/components-ui primitives (Button, Card) for actions.
  */
 export * from "./hero";
 export * from "./feature-grid";

@@ -1,6 +1,6 @@
 ---
 name: brand-ui-component
-description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs/components-ui, @elabs/components-data, @elabs/components-ai, @elabs/components-flow, @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing, @elabs/components-editor, or @elabs/components-viewer, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
+description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs-ai/components-ui, @elabs-ai/components-data, @elabs-ai/components-ai, @elabs-ai/components-flow, @elabs-ai/components-maps, @elabs-ai/components-charts, @elabs-ai/components-marketing, @elabs-ai/components-editor, or @elabs-ai/components-viewer, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
 user-invocable: true
 argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
@@ -24,16 +24,16 @@ registry. If something close exists, decide with the user: **reuse**, **extend**
 
 ## 2. Place it correctly
 
-App UI → `@elabs/components-ui`; data-dense → `@elabs/components-data`; chat/AI → `@elabs/components-ai`; canvas →
-`@elabs/components-flow`; geospatial/MapLibre map → `@elabs/components-maps`; KPI/chart → `@elabs/components-charts`;
-landing → `@elabs/components-marketing`; code
-editor (Monaco) → `@elabs/components-editor` (markdown authoring/preview + frontmatter utils
-on the `@elabs/components-editor/markdown` + `@elabs/components-editor/markdown/frontmatter` subpaths);
-displaying a file the app did not write (upload, signed URL, agent output) → `@elabs/components-viewer`
+App UI → `@elabs-ai/components-ui`; data-dense → `@elabs-ai/components-data`; chat/AI → `@elabs-ai/components-ai`; canvas →
+`@elabs-ai/components-flow`; geospatial/MapLibre map → `@elabs-ai/components-maps`; KPI/chart → `@elabs-ai/components-charts`;
+landing → `@elabs-ai/components-marketing`; code
+editor (Monaco) → `@elabs-ai/components-editor` (markdown authoring/preview + frontmatter utils
+on the `@elabs-ai/components-editor/markdown` + `@elabs-ai/components-editor/markdown/frontmatter` subpaths);
+displaying a file the app did not write (upload, signed URL, agent output) → `@elabs-ai/components-viewer`
 (a new FORMAT is an adapter registration, not a new component);
 One direction of dependency:
 `tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer`.
-Import across packages via `@elabs/components-*`, never relative paths.
+Import across packages via `@elabs-ai/components-*`, never relative paths.
 
 ## 3. Build to the rules
 
@@ -51,7 +51,7 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 
 ## 4. Quality gate + manifest
 
-- `pnpm --filter @elabs/components-<pkg> typecheck test` (and `lint`) must pass.
+- `pnpm --filter @elabs-ai/components-<pkg> typecheck test` (and `lint`) must pass.
 - Verify it renders in both themes (Storybook).
 - Run `pnpm agent-docs` so the new component lands in the manifest AND its 5
   downstream generators (inventory/llms/context/gen — `component-inventory.md`,

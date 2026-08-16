@@ -14,7 +14,7 @@ import {
   DialogTitle,
   Label,
   Separator,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { ThemeSwitcher } from "./theme-switcher";
 
 export function SettingsDialog({

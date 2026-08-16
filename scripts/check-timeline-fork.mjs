@@ -3,7 +3,7 @@
  * check-timeline-fork.mjs — Timeline-rail fork-prevention gate (#190,
  * research 10 §F).
  *
- * Issue #190 moved the `Timeline` rail from `@elabs/components-editor` to `@elabs/components-ui`
+ * Issue #190 moved the `Timeline` rail from `@elabs-ai/components-editor` to `@elabs-ai/components-ui`
  * (`packages/ui/src/components/timeline/` — the canonical rail/node/connector
  * spine; the editor keeps a re-export shim). Before that, the repo had TWO
  * hand-rolled rails (the editor's + ChainOfThought's) — research 10 §A.1.
@@ -22,10 +22,10 @@
  *       b) a status-keyed style map (`Record<…Status…, string>` or a
  *          `const …[Ss]tatus… = {` object literal)
  *     …in a file that does NOT import the rail parts
- *     (`Timeline`/`TimelineRoot`/`TimelineItem`) from `@elabs/components-ui`.
+ *     (`Timeline`/`TimelineRoot`/`TimelineItem`) from `@elabs-ai/components-ui`.
  *
  * ALLOWLIST: empty since #192 — `chain-of-thought.tsx`'s legacy rail converged
- * onto `AgentTimeline` (built on the @elabs/components-ui rail), so the gate now locks it
+ * onto `AgentTimeline` (built on the @elabs-ai/components-ui rail), so the gate now locks it
  * like every other file. New entries need an exit ticket.
  *
  * Scope: packages/*\/src/**\/*.{ts,tsx} excluding *.test.* and *.stories.*,
@@ -71,9 +71,9 @@ export const CONNECTOR_STRING_RE =
 export const STATUS_MAP_RE =
   /Record<[^\n]*Status|\b(?:const|let|var)\s+[A-Za-z_$]*[Ss]tatus[A-Za-z0-9_$]*\s*(?::[^=\n]+)?=\s*\{/;
 
-/** Reuse, not fork: importing the rail parts from @elabs/components-ui exempts class 2. */
+/** Reuse, not fork: importing the rail parts from @elabs-ai/components-ui exempts class 2. */
 export const RAIL_IMPORT_RE =
-  /import\s+(?:type\s+)?\{[^}]*\bTimeline(?:Root|Item)?\b[^}]*\}\s*from\s*["']@elabs\/components-ui["']/;
+  /import\s+(?:type\s+)?\{[^}]*\bTimeline(?:Root|Item)?\b[^}]*\}\s*from\s*["']@elabs-ai\/components-ui["']/;
 
 /**
  * Strip block + line comments so commented-out code never counts as violations.
@@ -242,7 +242,7 @@ function main(argv) {
           : (v.file ?? "<inline>");
       if (v.kind === "name") {
         console.error(
-          `  ${rel}:${v.line}  "${v.name}" is declared locally — the Timeline rail lives in @elabs/components-ui`,
+          `  ${rel}:${v.line}  "${v.name}" is declared locally — the Timeline rail lives in @elabs-ai/components-ui`,
         );
       } else {
         console.error(
@@ -255,7 +255,7 @@ function main(argv) {
       `\nThe Timeline rail/node/connector spine lives ONCE, in\n` +
         `packages/ui/src/components/timeline (issue #190 / research 10 §B.2).\n` +
         `Compose \`TimelineRoot\`/\`TimelineItem\` (or the array \`Timeline\`) from\n` +
-        `@elabs/components-ui instead of re-declaring a Timeline* component or re-rolling the\n` +
+        `@elabs-ai/components-ui instead of re-declaring a Timeline* component or re-rolling the\n` +
         `absolute w-px connector + status-map idiom.`,
     );
     if (!warnOnly) process.exit(1);

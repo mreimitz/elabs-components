@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { useRef, useState } from "react";
-import { ThemeProvider } from "@elabs/components-tokens";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./markdown-editor";
 import { IterationBuilderProvider } from "../markdown-iteration/iteration-builder-dialog";
 
@@ -510,7 +510,7 @@ export const IterationContextMenu: Story = {
  * per-story from the global decorator alone, and toggling `preview.tsx` by hand
  * for a manual three-run sweep leaves no durable, re-runnable evidence. These
  * four stories wrap the SAME render/play pairs in an explicit `<ThemeProvider>`
- * instead, so `pnpm --filter @elabs/components-docs test-storybook`
+ * instead, so `pnpm --filter @elabs-ai/components-docs test-storybook`
  * (or `mcp__storybook__run-story-tests`) exercises `dark` and decoration 10
  * on every run, with zero manual steps. `<ThemeProvider>` (not a plain
  * `data-theme` wrapper div) because it writes the attribute onto the DOCUMENT

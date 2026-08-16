@@ -6,7 +6,7 @@ paths:
   - "packages/flow/**"
 ---
 
-# React Flow components (@elabs/components-flow)
+# React Flow components (@elabs-ai/components-flow)
 
 - **Library:** `@xyflow/react` (React Flow v12). Consumers must import its CSS
   once: `import "@xyflow/react/dist/style.css"`.
@@ -14,10 +14,10 @@ paths:
   (`--canvas`, `--canvas-grid`) and sensible defaults. Pass `nodes`, `edges`,
   handlers and `nodeTypes`/`edgeTypes` through as normal props. Children render
   inside the flow context (so `ZoomControls` and `<Panel>` work).
-- **Not to be confused with `@elabs/components-ai`'s `Canvas`.** That is a
+- **Not to be confused with `@elabs-ai/components-ai`'s `Canvas`.** That is a
   SEPARATE, vendored (Vercel AI Elements) in-chat agent workspace graph — use
   `CanvasShell` here for an author-built diagram screen or dashboard canvas; use
-  `@elabs/components-ai`'s `Canvas` to render an agent's workflow graph live inside a
+  `@elabs-ai/components-ai`'s `Canvas` to render an agent's workflow graph live inside a
   chat surface. See [ADR 0018](../../docs/ADR/0018-dual-react-flow-canvas-surfaces.md)
   and @.claude/rules/ai-chat-components.md.
 - **Custom node:** register `nodeTypes={{ brand: FlowNode }}` and create nodes
@@ -32,8 +32,8 @@ paths:
 - **Theming:** never hardcode node/edge colors — use the tokens so canvases match
   the active theme.
 - **Attribution: hidden on both canvas surfaces — do NOT "restore" it.**
-  `CanvasShell` (`@elabs/components-flow`) and `Canvas`
-  (`@elabs/components-ai`) both pass
+  `CanvasShell` (`@elabs-ai/components-flow`) and `Canvas`
+  (`@elabs-ai/components-ai`) both pass
   `proOptions={{ hideAttribution: true }}`. This reverses the earlier rule, which
   told every agent to leave the badge visible — so the badge kept reappearing
   after it was removed, because each agent was following the rule. It is a

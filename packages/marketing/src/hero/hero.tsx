@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { Reveal, RevealGroup } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Reveal, RevealGroup } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface HeroProps {
   /** Small label above the headline. */

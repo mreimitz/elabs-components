@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * auto-chart.tsx — Smart, data-driven chart renderer for @elabs/components-charts.
+ * auto-chart.tsx — Smart, data-driven chart renderer for @elabs-ai/components-charts.
  *
  * Given a serializable `ChartSpec` (the shape an LLM tool-call emits),
  * AutoChart picks and renders the correct existing chart container.
@@ -17,7 +17,7 @@
  */
 
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { cn, Skeleton, useLocale } from "@elabs/components-ui";
+import { cn, Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 
 import {

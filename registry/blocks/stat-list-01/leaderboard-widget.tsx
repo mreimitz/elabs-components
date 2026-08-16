@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { PERFORMERS } from "./data/performers";
 
 /** A leaderboard (Top performers) — rank + avatar + name/role + a tone Badge. */

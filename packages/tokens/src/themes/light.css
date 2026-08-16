@@ -1,13 +1,13 @@
 /**
  * light.css — the light REFERENCE theme (ADR 0029).
  *
- * OPT-IN. `@elabs/components-tokens/styles.css` does NOT import this file — it
+ * OPT-IN. `@elabs-ai/components-tokens/styles.css` does NOT import this file — it
  * ships the engine (Tailwind bridge, base layer, dials) plus a neutral light
  * `:root` fallback, and nothing else. Import this only if you want the light
  * reference theme:
  *
- *     @import "@elabs/components-tokens/styles.css";
- *     @import "@elabs/components-tokens/themes/light.css";
+ *     @import "@elabs-ai/components-tokens/styles.css";
+ *     @import "@elabs-ai/components-tokens/themes/light.css";
  *
  * An app that authors its own themes imports neither, and pays no bytes for
  * palettes it does not use. Every token declared here is part of the contract

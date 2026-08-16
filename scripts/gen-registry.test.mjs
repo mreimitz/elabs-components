@@ -30,13 +30,13 @@ const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 test("extractImports: finds every specifier form", () => {
   const src = `
-    import { A } from "@elabs/components-ui";
+    import { A } from "@elabs-ai/components-ui";
     import "./side-effect.css";
     const m = await import("@/components/shared/x");
     const r = require("topojson-client");
   `;
   assert.deepEqual(extractImports(src), [
-    "@elabs/components-ui",
+    "@elabs-ai/components-ui",
     "./side-effect.css",
     "@/components/shared/x",
     "topojson-client",
@@ -44,7 +44,7 @@ test("extractImports: finds every specifier form", () => {
 });
 
 test("packageRoot: scoped and unscoped subpaths collapse to the installable name", () => {
-  assert.equal(packageRoot("@elabs/components-ui/lib/cn"), "@elabs/components-ui");
+  assert.equal(packageRoot("@elabs-ai/components-ui/lib/cn"), "@elabs-ai/components-ui");
   assert.equal(packageRoot("lucide-react"), "lucide-react");
   assert.equal(packageRoot("topojson-client/dist/x"), "topojson-client");
 });
@@ -100,28 +100,30 @@ test("classifyImports: react/react-dom are ambient, everything else is declared"
 // ── peer closure ────────────────────────────────────────────────────────────
 
 const PEERS = new Map([
-  ["@elabs/components-editor", ["@elabs/components-ui", "monaco-editor", "react"]],
-  ["@elabs/components-ui", ["@elabs/components-tokens", "react"]],
-  ["@elabs/components-tokens", []],
+  ["@elabs-ai/components-editor", ["@elabs-ai/components-ui", "monaco-editor", "react"]],
+  ["@elabs-ai/components-ui", ["@elabs-ai/components-tokens", "react"]],
+  ["@elabs-ai/components-tokens", []],
 ]);
 
-test("withBrandPeers: closes transitively over @elabs peers", () => {
-  assert.deepEqual(withBrandPeers(["@elabs/components-editor"], PEERS), [
-    "@elabs/components-editor",
-    "@elabs/components-tokens",
-    "@elabs/components-ui",
+test("withBrandPeers: closes transitively over @elabs-ai peers", () => {
+  assert.deepEqual(withBrandPeers(["@elabs-ai/components-editor"], PEERS), [
+    "@elabs-ai/components-editor",
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-ui",
   ]);
 });
 
 test("withBrandPeers: a THIRD-PARTY peer is never auto-added — it is conditional", () => {
   // monaco-editor is a peer of -editor but only matters if the block renders an
   // editor, so it stays an authored `extraDependencies` judgment, not a fact.
-  assert.ok(!withBrandPeers(["@elabs/components-editor"], PEERS).includes("monaco-editor"));
+  assert.ok(!withBrandPeers(["@elabs-ai/components-editor"], PEERS).includes("monaco-editor"));
 });
 
 test("withBrandPeers: an authored extra dependency survives the closure", () => {
   assert.ok(
-    withBrandPeers(["@elabs/components-editor", "monaco-editor"], PEERS).includes("monaco-editor"),
+    withBrandPeers(["@elabs-ai/components-editor", "monaco-editor"], PEERS).includes(
+      "monaco-editor",
+    ),
   );
 });
 

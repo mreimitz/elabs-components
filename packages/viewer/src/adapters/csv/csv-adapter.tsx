@@ -11,7 +11,7 @@
  *   handles quoting, escapes, embedded newlines and delimiter detection.
  * - **Theming.** anyview's CSV adapter emits an HTML string with `#ddd` and
  *   `#f5f5f5` baked in (`CsvAdapter.ts:184`). This one emits ROWS and hands them
- *   to `@elabs/components-ui`'s `Table`, so the grid is tokened and
+ *   to `@elabs-ai/components-ui`'s `Table`, so the grid is tokened and
  *   re-themes with everything else.
  *
  * `papaparse` is an OPTIONAL peer, reached only through the dynamic import
@@ -20,7 +20,7 @@
  * (`isModuleNotFound` in `core/errors.ts`).
  */
 
-import type { ResolvedFileSource } from "@elabs/components-ui";
+import type { ResolvedFileSource } from "@elabs-ai/components-ui";
 import { useMemo } from "react";
 
 import { gridToText, type GridRef } from "../../components/grid-text";
@@ -40,7 +40,7 @@ import { csvManifest } from "./csv-manifest";
 
 /**
  * Rows rendered before truncation. A preview pane is for looking, not for
- * analysis — past this, reach for `@elabs/components-data`'s
+ * analysis — past this, reach for `@elabs-ai/components-data`'s
  * `DataTable`, which virtualizes.
  */
 export const CSV_ROW_LIMIT = 5_000;

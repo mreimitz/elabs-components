@@ -1,5 +1,5 @@
 {
-  "extends": "@elabs/components-typescript-config/vite-app.json",
+  "extends": "@elabs-ai/components-typescript-config/vite-app.json",
   "compilerOptions": {
     "types": ["react", "react-dom"],
     "allowImportingTsExtensions": false,

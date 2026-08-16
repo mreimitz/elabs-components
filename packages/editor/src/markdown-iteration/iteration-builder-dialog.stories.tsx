@@ -1,4 +1,4 @@
-import { Button } from "@elabs/components-ui";
+import { Button } from "@elabs-ai/components-ui";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
@@ -24,8 +24,8 @@ const evaluateCalc: EvaluateCalc = (source) => ({
 /**
  * Room between a focused child's border box and its scroll-container ancestor's
  * SCROLLPORT — see `packages/ui/src/components/dialog/dialog-focus-ring-clearance.stories.tsx`
- * for the full derivation. Reused here (not imported — `@elabs/components-editor`
- * doesn't depend on `@elabs/components-ui`'s story files) to confirm #425's fix
+ * for the full derivation. Reused here (not imported — `@elabs-ai/components-editor`
+ * doesn't depend on `@elabs-ai/components-ui`'s story files) to confirm #425's fix
  * reaches this dialog now that its scroll region is a real `DialogBody`.
  */
 const room = (child: HTMLElement, box: HTMLElement) => {

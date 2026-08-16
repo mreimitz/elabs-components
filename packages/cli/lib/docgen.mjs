@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — resolved prop tables via `react-docgen-typescript` (WP-03 #79).
+ * @elabs-ai/components-cli — resolved prop tables via `react-docgen-typescript` (WP-03 #79).
  *
  * This is the INHERITED-prop-resolution half of #79 (ADR 0013). The
  * dependency-free regex extractor (`extractPropTable`/`extractVariants` in
@@ -30,9 +30,9 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const CONFIG_PKGS = new Set([
-  "@elabs/components-eslint-config",
-  "@elabs/components-typescript-config",
-  "@elabs/components-cli",
+  "@elabs-ai/components-eslint-config",
+  "@elabs-ai/components-typescript-config",
+  "@elabs-ai/components-cli",
 ]);
 
 /**
@@ -267,8 +267,8 @@ export function mergeResolvedProps(table, resolvedMap) {
 
 /**
  * Orchestrate the docgen pass across the whole monorepo: load the engine ONCE,
- * then resolve props per `@elabs/components-*` package. Returns a map keyed by package name
- * (`@elabs/components-ui` → { ComponentName → { propName → resolvedFields } }) — or `null`
+ * then resolve props per `@elabs-ai/components-*` package. Returns a map keyed by package name
+ * (`@elabs-ai/components-ui` → { ComponentName → { propName → resolvedFields } }) — or `null`
  * if the engine is absent (the no-dep floor) or nothing resolved.
  *
  * `generateManifest` passes the returned map back into itself (as the `resolved`
@@ -303,7 +303,7 @@ export async function resolveAllProps(repoRoot) {
     } catch {
       continue;
     }
-    if (!name || !name.startsWith("@elabs/components-") || CONFIG_PKGS.has(name)) continue;
+    if (!name || !name.startsWith("@elabs-ai/components-") || CONFIG_PKGS.has(name)) continue;
 
     // Discover the package's exported components the same way the manifest does:
     // walk the root barrel for `value` exports starting with an uppercase letter.

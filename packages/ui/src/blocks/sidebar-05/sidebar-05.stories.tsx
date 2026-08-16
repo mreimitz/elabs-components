@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { SidebarProvider } from "@elabs/components-ui";
+import { SidebarProvider } from "@elabs-ai/components-ui";
 import { AppSidebar } from "./app-sidebar";
 
 const meta = {

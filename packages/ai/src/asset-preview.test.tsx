@@ -56,8 +56,8 @@ describe("AssetPreview (#193, research 04 §5 ASSET-4)", () => {
 
 /**
  * The seam that lets a format this package cannot parse (a PDF, a spreadsheet,
- * a video) show up in the rail without `@elabs/components-ai`
- * importing `@elabs/components-viewer` — they are layer peers
+ * a video) show up in the rail without `@elabs-ai/components-ai`
+ * importing `@elabs-ai/components-viewer` — they are layer peers
  * (ADR 0024 §6). The injection stands in for `FileViewer` here.
  */
 describe("AssetPreview — renderPreview injection", () => {

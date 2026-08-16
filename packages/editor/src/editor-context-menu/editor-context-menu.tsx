@@ -7,7 +7,7 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuTrigger,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import type * as Monaco from "monaco-editor";
 import { type ReactNode } from "react";
 

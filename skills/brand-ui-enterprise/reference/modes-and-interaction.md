@@ -8,12 +8,12 @@ and never re-ask what's already known or stated.
 
 ## The four modes
 
-| Mode                    | You're in it when…                                               | Goal                                                                        | Hands off to                                                                                                          |
-| ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Create** (greenfield) | "build / new / scaffold X"; empty or fresh repo                  | classify → archetype → baseline → screens                                   | `brand-ui-new-app` (scaffold — **feed it the picked archetype: A tool/workspace or B enterprise admin**) + `brand-ui` |
-| **Extend**              | existing brand-ui app + "add a page / view / feature"            | match the app; add the surface consistently                                 | `brand-ui` (compose)                                                                                                  |
-| **Audit & fix**         | existing app + "review / fix / looks off / a11y / issues"        | assess vs baseline + principles → report → remediate                        | `brand-ui-audit` (score — **register = product/professional**)                                                        |
-| **Retrofit**            | UI exists but **not** on brand-ui + "migrate / make it brand-ui" | map to `@elabs/components-*`, stand up baseline, replace surface-by-surface | `brand-ui` + `brand-ui-theme`                                                                                         |
+| Mode                    | You're in it when…                                               | Goal                                                                           | Hands off to                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| **Create** (greenfield) | "build / new / scaffold X"; empty or fresh repo                  | classify → archetype → baseline → screens                                      | `brand-ui-new-app` (scaffold — **feed it the picked archetype: A tool/workspace or B enterprise admin**) + `brand-ui` |
+| **Extend**              | existing brand-ui app + "add a page / view / feature"            | match the app; add the surface consistently                                    | `brand-ui` (compose)                                                                                                  |
+| **Audit & fix**         | existing app + "review / fix / looks off / a11y / issues"        | assess vs baseline + principles → report → remediate                           | `brand-ui-audit` (score — **register = product/professional**)                                                        |
+| **Retrofit**            | UI exists but **not** on brand-ui + "migrate / make it brand-ui" | map to `@elabs-ai/components-*`, stand up baseline, replace surface-by-surface | `brand-ui` + `brand-ui-theme`                                                                                         |
 
 **Advise** is the read-only stop of _Audit & fix_: produce findings + recommendations and
 stop, making no edits. Use it when the user wants an opinion, not changes.
@@ -21,12 +21,12 @@ stop, making no edits. Use it when the user wants an opinion, not changes.
 ## Step 0 — detect the mode (infer; ask only if unclear)
 
 - Empty/fresh repo, or "build / new / create / scaffold" → **Create**.
-- `@elabs/components-*` already in `package.json` + "add / new surface / another view" → **Extend**.
+- `@elabs-ai/components-*` already in `package.json` + "add / new surface / another view" → **Extend**.
 - App exists + "audit / review / fix / improve / looks wrong / accessibility" → **Audit & fix**.
-- UI present but no `@elabs/components-*` (raw Tailwind / another kit) + "move to brand-ui" → **Retrofit**.
+- UI present but no `@elabs-ai/components-*` (raw Tailwind / another kit) + "move to brand-ui" → **Retrofit**.
 - Genuinely ambiguous → **one** `AskUserQuestion`: which mode (Create / Extend / Audit / Retrofit).
 
-Detect by looking: check `package.json` for `@elabs/components-*`, scan for an existing shell
+Detect by looking: check `package.json` for `@elabs-ai/components-*`, scan for an existing shell
 (`AppShell`/`SidebarProvider`), themes, and routes before deciding.
 
 ## The universal gate — classify + register (every mode)
@@ -85,7 +85,7 @@ Then: scan → **prioritized findings (P0–P3)** across:
 1. **Scope & order** — which screens first; incremental (surface-by-surface) vs big-bang.
 2. **Constraints** — keep routes/behavior? which theme? what is allowed to change?
 
-Then: map the current UI → `@elabs/components-*` components, stand up the baseline, replace
+Then: map the current UI → `@elabs-ai/components-*` components, stand up the baseline, replace
 surface-by-surface, strip raw colors / ad-hoc components (lean on tokens), verify per theme.
 
 ## Interaction principles (all modes)

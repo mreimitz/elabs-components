@@ -29,7 +29,7 @@ import { TrendUpIcon } from "./trend-up";
 import { TrendDownIcon } from "./trend-down";
 
 /**
- * A gallery of all sample icons shipped with @elabs/components-icons. Each icon is created
+ * A gallery of all sample icons shipped with @elabs-ai/components-icons. Each icon is created
  * via the `createIcon` factory so they all share the same size, stroke-width,
  * color-inheritance and accessibility behaviour as the base `Icon` component.
  *

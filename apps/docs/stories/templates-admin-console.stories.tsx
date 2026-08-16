@@ -17,18 +17,18 @@
  *   1e. Right-side detail panel (Sheet, side="right") that preserves the work
  *       surface instead of a page jump.
  *
- * Compose-only: every element is an existing @elabs/components-* primitive, semantic
+ * Compose-only: every element is an existing @elabs-ai/components-* primitive, semantic
  * tokens only, and it must read in light AND dark. Verify both themes with
  * globals=theme:<slug>.
  *
- * Home: this is a cross-package COMPOSITION demo (@elabs/components-ui + @elabs/components-icons), so
+ * Home: this is a cross-package COMPOSITION demo (@elabs-ai/components-ui + @elabs-ai/components-icons), so
  * it lives in apps/docs/stories — no single library package may own it under the
  * one-way dep rule (apps compose siblings freely). See .storybook/main.ts.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { ThemeProvider } from "@elabs/components-tokens";
-import { AppIcon } from "@elabs/components-icons";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { AppIcon } from "@elabs-ai/components-icons";
 import {
   Bell,
   Cable,
@@ -95,7 +95,7 @@ import {
   ViewToolbar,
   ViewToolbarFilters,
   toast,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 /* -------------------------------------------------------------------------- */
 /*  Fixtures — a small "Integrations admin" object model                       */
@@ -501,8 +501,8 @@ function PlaceholderView({ label }: { label: string }) {
       <h2 className="text-body font-semibold text-foreground">{label}</h2>
       <p className="mt-1 text-body text-muted-foreground">
         This view is a placeholder in the baseline scenario. Swap in your real {label.toLowerCase()}{" "}
-        surface (a DataTable from <code>@elabs/components-data</code>, a canvas from{" "}
-        <code>@elabs/components-flow</code>, …).
+        surface (a DataTable from <code>@elabs-ai/components-data</code>, a canvas from{" "}
+        <code>@elabs-ai/components-flow</code>, …).
       </p>
     </div>
   );
@@ -618,7 +618,7 @@ function AuditView() {
 const meta = {
   title: "Patterns/Templates/Enterprise Admin Console",
   component: AdminConsole,
-  // <ThemeSwitcher /> reads the @elabs/components-tokens React context, so the screen needs
+  // <ThemeSwitcher /> reads the @elabs-ai/components-tokens React context, so the screen needs
   // a real <ThemeProvider> (the global decorator only sets the data-theme
   // attribute). In a consuming app this provider sits at the root.
   decorators: [
@@ -633,7 +633,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app. It wires the entire mandatory enterprise baseline in one screen: a collapsible brand app icon (lockup ↔ mark), a primary view sidebar with breadcrumb, a TopNav `end` slot with <ThemeSwitcher /> (System / Light / Dark), a Settings modal whose Appearance section hosts the switcher, a Sonner <Toaster /> mounted once, and a right-side Sheet detail panel that preserves the work surface. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in both themes.",
+          "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app. It wires the entire mandatory enterprise baseline in one screen: a collapsible brand app icon (lockup ↔ mark), a primary view sidebar with breadcrumb, a TopNav `end` slot with <ThemeSwitcher /> (System / Light / Dark), a Settings modal whose Appearance section hosts the switcher, a Sonner <Toaster /> mounted once, and a right-side Sheet detail panel that preserves the work surface. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in both themes.",
       },
     },
   },

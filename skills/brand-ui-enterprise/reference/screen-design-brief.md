@@ -6,7 +6,7 @@ assembled because they exist rather than chosen ("list + card slop"), no referen
 looked at, no illustration/motion/voice pass, states retrofitted instead of designed.
 Run this checklist before scaffolding **any** net-new screen, page, or major surface —
 it is the per-screen gate step 4 of the main procedure requires before composing from
-`@elabs/components-*`.
+`@elabs-ai/components-*`.
 
 ## 1 · Intent, in one sentence
 

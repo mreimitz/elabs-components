@@ -92,7 +92,7 @@ test("QUIET: English words starting 'coe' are not the org slug", () => {
 });
 
 test("QUIET: the repo's own scope is not a hit", () => {
-  const content = 'import { Button } from "@elabs/components-ui"; // elabs-components';
+  const content = 'import { Button } from "@elabs-ai/components-ui"; // elabs-components';
   assert.deepEqual(scan([{ file: "packages/ui/src/a.tsx", content }]), []);
 });
 

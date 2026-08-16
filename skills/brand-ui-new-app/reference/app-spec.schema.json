@@ -84,7 +84,7 @@
       "default": false
     },
     "release": {
-      "description": "The @elabs/components-* release a standalone app installs (e.g. \"2.0.0\"). Defaults to the version of the monorepo the scaffold runs in.",
+      "description": "The @elabs-ai/components-* release a standalone app installs (e.g. \"2.0.0\"). Defaults to the version of the monorepo the scaffold runs in.",
       "type": "string",
       "minLength": 1
     },

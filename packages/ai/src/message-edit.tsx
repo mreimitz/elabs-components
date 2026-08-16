@@ -36,9 +36,9 @@ import {
   type ReactNode,
 } from "react";
 import { Check, Pencil, X } from "lucide-react";
-import { Button, Textarea } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+import { Button, Textarea } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 
 // ─── Context ────────────────────────────────────────────────────────────────
 

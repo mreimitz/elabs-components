@@ -16,8 +16,8 @@
 
 import { useMemo, useRef } from "react";
 
-import { MatchHighlight, cn, useLocale } from "@elabs/components-ui";
-import type { ResolvedFileSource } from "@elabs/components-ui";
+import { MatchHighlight, cn, useLocale } from "@elabs-ai/components-ui";
+import type { ResolvedFileSource } from "@elabs-ai/components-ui";
 
 import { toViewerError } from "../../core/errors";
 import { toMarkRanges } from "../../core/highlight-marks";

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import type { ChartBrushSelection } from "./chart-brush";
 import { resolveDataXExtent } from "./filter-data-by-x-domain";
 

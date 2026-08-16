@@ -14,7 +14,8 @@ keywords:
     testimonial,
     website,
   ]
-packages: ["@elabs/components-ui", "@elabs/components-marketing", "@elabs/components-icons"]
+packages:
+  ["@elabs-ai/components-ui", "@elabs-ai/components-marketing", "@elabs-ai/components-icons"]
 ---
 
 # Playbook — Marketing / presales landing page
@@ -24,15 +25,15 @@ ask. Template source: `templates/marketing.tsx` (generated from this Storybook s
 
 ## Building blocks
 
-| Section    | Component                                        | From                                               |
-| ---------- | ------------------------------------------------ | -------------------------------------------------- |
-| Nav        | sticky header + `BrandLogo` + `Button` CTA       | `@elabs/components-ui` / `@elabs/components-icons` |
-| Hero       | `Hero` (eyebrow/title/description/actions/media) | `@elabs/components-marketing`                      |
-| Proof      | `StatsBand` (3–4 numbers)                        | `@elabs/components-marketing`                      |
-| Capability | `FeatureGrid` (6 items, 3 columns)               | `@elabs/components-marketing`                      |
-| Relevance  | `UseCaseCard` ×3 (industry cards)                | `@elabs/components-marketing`                      |
-| Trust      | `LogoStrip` (customer logos)                     | `@elabs/components-marketing`                      |
-| Ask        | `CTASection` (one action)                        | `@elabs/components-marketing`                      |
+| Section    | Component                                        | From                                                     |
+| ---------- | ------------------------------------------------ | -------------------------------------------------------- |
+| Nav        | sticky header + `BrandLogo` + `Button` CTA       | `@elabs-ai/components-ui` / `@elabs-ai/components-icons` |
+| Hero       | `Hero` (eyebrow/title/description/actions/media) | `@elabs-ai/components-marketing`                         |
+| Proof      | `StatsBand` (3–4 numbers)                        | `@elabs-ai/components-marketing`                         |
+| Capability | `FeatureGrid` (6 items, 3 columns)               | `@elabs-ai/components-marketing`                         |
+| Relevance  | `UseCaseCard` ×3 (industry cards)                | `@elabs-ai/components-marketing`                         |
+| Trust      | `LogoStrip` (customer logos)                     | `@elabs-ai/components-marketing`                         |
+| Ask        | `CTASection` (one action)                        | `@elabs-ai/components-marketing`                         |
 
 ## Section order (and why)
 
@@ -104,7 +105,7 @@ owns the primary surface) · responsive behavior of every section.
 
 ## Common mistakes
 
-- Inventing section layouts with raw Tailwind when a `@elabs/components-marketing`
+- Inventing section layouts with raw Tailwind when a `@elabs-ai/components-marketing`
   component covers it.
 - More than one ask in `CTASection` — one action converts.
 - `<img>` without `width`/`height` (CLS) — applies to hero media and logos.

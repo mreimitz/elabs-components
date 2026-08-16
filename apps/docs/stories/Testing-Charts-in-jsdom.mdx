@@ -4,9 +4,9 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # Testing charts in jsdom
 
-`@elabs/components-charts` renders with `@visx/*` — real SVG measurement
+`@elabs-ai/components-charts` renders with `@visx/*` — real SVG measurement
 (`ParentSize`/`ResizeObserver`, `getTotalLength()`, …) that jsdom does not implement. Consumers
-have historically dealt with this by mocking the whole `@elabs/components-charts`
+have historically dealt with this by mocking the whole `@elabs-ai/components-charts`
 barrel as a no-op — which hides real chart-prop bugs from the quality gate: a fully green test
 suite has shipped a `RangeError: Invalid time value` crash from a chart rendered with an
 unparsable date, because every test that touched a chart was asserting against a stub that
@@ -16,10 +16,10 @@ didn't validate its props (issue #364).
 
 ```ts
 // vitest.setup.ts
-vi.mock("@elabs/components-charts", async () => import("@elabs/components-charts/test"));
+vi.mock("@elabs-ai/components-charts", async () => import("@elabs-ai/components-charts/test"));
 ```
 
-That's it — every existing `import { LineChart } from "@elabs/components-charts"` in
+That's it — every existing `import { LineChart } from "@elabs-ai/components-charts"` in
 your app code now resolves to the jsdom-safe double, with no other code changes.
 
 ## Why this is not just another no-op stub
@@ -40,8 +40,8 @@ all — it hides exactly the bug class this page opens with. Every double in `./
 
 ```tsx
 import { render, screen } from "@testing-library/react";
-import { LineChart } from "@elabs/components-charts/test";
-import { readChartDoubleProps } from "@elabs/components-charts/test";
+import { LineChart } from "@elabs-ai/components-charts/test";
+import { readChartDoubleProps } from "@elabs-ai/components-charts/test";
 
 test("dashboard passes a valid xDataKey", () => {
   const { container } = render(
@@ -84,7 +84,7 @@ namespace is **complete**. That is not cosmetic — `vi.mock`'s factory result i
 proxy that throws
 
 ```
-[vitest] No "Line" export is defined on the "@elabs/components-charts" mock.
+[vitest] No "Line" export is defined on the "@elabs-ai/components-charts" mock.
 ```
 
 the moment your module reads the binding, so without them the canonical
@@ -104,9 +104,9 @@ markup.
 For any of those, compose the two modules instead of replacing one with the other:
 
 ```ts
-vi.mock("@elabs/components-charts", async (importOriginal) => ({
+vi.mock("@elabs-ai/components-charts", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  ...(await import("@elabs/components-charts/test")),
+  ...(await import("@elabs-ai/components-charts/test")),
 }));
 ```
 
@@ -115,12 +115,12 @@ it is just slower, because the real engine lands in your test's module graph. Pr
 form above.
 
 For real render, interaction and a11y coverage, use the Storybook story in a real browser
-(`pnpm --filter @elabs/components-docs test-storybook`) — the double is for **unit
+(`pnpm --filter @elabs-ai/components-docs test-storybook`) — the double is for **unit
 tests that assert on props**, not a replacement for visual verification.
 
 ## Not in the component manifest — on purpose
 
-`@elabs/components-charts/test` does not show up in `brand-ui.manifest.json` or the
+`@elabs-ai/components-charts/test` does not show up in `brand-ui.manifest.json` or the
 `brand-ui` MCP/CLI's component search. The manifest is the agent-facing **build-with**
 catalogue — listing a second `LineChart` reachable from a `/test` import path would cause exactly
 the hallucination it exists to prevent (an agent importing a jsdom test double into product

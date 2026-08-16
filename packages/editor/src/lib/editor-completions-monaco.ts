@@ -14,7 +14,7 @@
  *
  * Suggestions are scoped to the models THIS module attached (a `REGISTRY` keyed
  * by `ITextModel`) — any other "markdown" model in the app (one the host built
- * itself, outside `@elabs/components-editor`) is ignored, never suggested into.
+ * itself, outside `@elabs-ai/components-editor`) is ignored, never suggested into.
  *
  * `getProviders` is read fresh from the registry on every `provideCompletionItems`
  * call — NOT captured as a closure at registration time — so a rebuilt provider

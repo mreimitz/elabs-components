@@ -19,7 +19,7 @@
  * compute the would-be output WITHOUT mutating the real file.
  *
  * Usage:  node packages/tokens/scripts/build-themes-css.mjs   (writes src/themes.css)
- * Wired as: pnpm --filter @elabs/components-tokens tokens:build
+ * Wired as: pnpm --filter @elabs-ai/components-tokens tokens:build
  */
 import { writeFileSync } from "node:fs";
 import { relative } from "node:path";

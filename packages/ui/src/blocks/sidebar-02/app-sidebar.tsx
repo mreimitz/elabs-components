@@ -18,7 +18,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { AppSidebar, SidebarTrigger, cn, useSidebar } from "@elabs/components-ui";
+import { AppSidebar, SidebarTrigger, cn, useSidebar } from "@elabs-ai/components-ui";
 import { Logo } from "./logo";
 import DashboardNavigation, { type Route } from "./nav-main";
 import { NotificationsPopover } from "./nav-notifications";

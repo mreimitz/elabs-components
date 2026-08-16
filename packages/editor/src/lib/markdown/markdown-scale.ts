@@ -10,7 +10,7 @@
  * machine-consumable scale they drift: switching Source → Split → Preview-edit
  * visibly re-skins headings / measure (issue #18).
  *
- * Since #188 the numbers are DERIVED, not re-hardcoded: @elabs/components-ui owns the canonical
+ * Since #188 the numbers are DERIVED, not re-hardcoded: @elabs-ai/components-ui owns the canonical
  * reading scale (`PROSE_HEADING_REM` in `components/typography/prose.tsx`, itself
  * pinned to the `--text-<role>` tokens where the rungs coincide). This module is the
  * editor-side seam: it re-exports those numbers and emits them as CSS variables (set
@@ -21,21 +21,21 @@ import {
   PROSE_HEADING_REM,
   PROSE_HEADING_TRACKING,
   PROSE_HEADING_WEIGHT,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 export type MarkdownHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
- * Canonical heading font-size per level, in rem — derived from the @elabs/components-ui
+ * Canonical heading font-size per level, in rem — derived from the @elabs-ai/components-ui
  * prose reading scale (h2/h4/h5/h6 == the title/subtitle/body role rems;
  * h1/h3 are intermediate reading rungs).
  */
 export const MARKDOWN_HEADING_REM: Record<MarkdownHeadingLevel, number> = PROSE_HEADING_REM;
 
-/** Canonical heading weight (Tailwind `font-semibold`) — derived from @elabs/components-ui. */
+/** Canonical heading weight (Tailwind `font-semibold`) — derived from @elabs-ai/components-ui. */
 export const MARKDOWN_HEADING_WEIGHT = PROSE_HEADING_WEIGHT;
 
-/** Canonical heading letter-spacing (Tailwind `tracking-tight`) — derived from @elabs/components-ui. */
+/** Canonical heading letter-spacing (Tailwind `tracking-tight`) — derived from @elabs-ai/components-ui. */
 export const MARKDOWN_HEADING_TRACKING = PROSE_HEADING_TRACKING;
 
 /** Canonical reading measure (max content width). Mirrors `max-w-3xl`. */

@@ -16,7 +16,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import {
   type ChoroplethFeature,

@@ -6,7 +6,7 @@
  * `useMarkdownOutline`, drive `activeId` from your scroll observer, and handle
  * `onSelect` (e.g. scroll the matching `data-sourcepos` block into view).
  */
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, useMemo, type HTMLAttributes, type ReactNode } from "react";
 
 import { parseMarkdownOutline, type MarkdownOutlineItem } from "./markdown-outline";

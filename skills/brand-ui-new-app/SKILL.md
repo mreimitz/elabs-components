@@ -4,7 +4,7 @@ description: Define-to-build — scaffold a new brand-ui app from a plain-langua
 user-invocable: true
 argument-hint: "[description of the app, e.g. 'sales pipeline dashboard, dark']"
 allowed-tools:
-  - Bash(npx @elabs/components-cli *)
+  - Bash(npx @elabs-ai/components-cli *)
   - Bash(pnpm brand-ui *)
   - Bash(pnpm exec brand-ui *)
   - Bash(npx brand-ui *)
@@ -110,7 +110,7 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
    ```
 
    (`pnpm brand-ui …` inside the brand-ui repo; `pnpm exec brand-ui …` in a project
-   that installed `@elabs/components-cli` — the CLI **ships the
+   that installed `@elabs-ai/components-cli` — the CLI **ships the
    archetype templates and the manifest**, so `--write` works with no brand-ui
    checkout anywhere. `--write <target>` may point at any directory.) It writes:
 
@@ -231,6 +231,6 @@ domain-specific, drawn from the spec's `intent`/`entities`; never "John Doe",
 "99.99%", "Acme", or a filler verb ("Elevate", "Seamless"), and the audit above
 enforces it · **taste comes from the dials** — the profile is applied via
 `ThemeProvider` props + `brand-ui.config.json`, never hardcoded per component ·
-import via `@elabs/components-*` · Lucide for generic glyphs ·
+import via `@elabs-ai/components-*` · Lucide for generic glyphs ·
 loading/empty/error states wired, never blank regions · brand-ui never owns
 model calls or data fetching (D5) — scaffold stubs, not transport.

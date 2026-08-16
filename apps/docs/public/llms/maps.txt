@@ -1,8 +1,8 @@
-# @elabs/components-maps
+# @elabs-ai/components-maps
 
 > MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
 
-Import from `@elabs/components-maps`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-maps`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

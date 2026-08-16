@@ -26,7 +26,7 @@ export interface AppIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "tit
   title?: string;
 }
 
-/** Lightweight class joiner — @elabs/components-icons stays dependency-free (no clsx/tailwind-merge). */
+/** Lightweight class joiner — @elabs-ai/components-icons stays dependency-free (no clsx/tailwind-merge). */
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }

@@ -138,8 +138,8 @@ test("readComposition reads a template as a composition manifest, not as code", 
   const source = `/**
  * Demo template — a made-up composition.
  */
-import { Card, CardHeader, Sidebar, SidebarMenuItem } from "@elabs/components-ui";
-import { MetricGrid } from "@elabs/components-charts";
+import { Card, CardHeader, Sidebar, SidebarMenuItem } from "@elabs-ai/components-ui";
+import { MetricGrid } from "@elabs-ai/components-charts";
 
 const nav = [
   { id: "a", label: "Overview" },
@@ -169,8 +169,8 @@ export function Demo() {
     ["MetricGrid", "Card"],
     "sidebar chrome and sub-parts are not composed regions",
   );
-  assert.equal(c.regions[0].pkg, "@elabs/components-charts");
-  assert.deepEqual(c.packages.sort(), ["@elabs/components-charts", "@elabs/components-ui"]);
+  assert.equal(c.regions[0].pkg, "@elabs-ai/components-charts");
+  assert.deepEqual(c.packages.sort(), ["@elabs-ai/components-charts", "@elabs-ai/components-ui"]);
 });
 
 test("roleFor sizes a region by what it is", () => {

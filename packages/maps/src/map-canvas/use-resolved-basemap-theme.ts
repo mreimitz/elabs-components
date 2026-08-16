@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveThemeIsDark } from "@elabs/components-tokens";
+import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { useEffect, useState } from "react";
 
 import type { BasemapTheme } from "./map-context";

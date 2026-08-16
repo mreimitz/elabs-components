@@ -28,7 +28,7 @@ import {
   TagInput,
   ToggleGroup,
   ToggleGroupItem,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 
 import { type EvaluateCalc } from "../calc-block";

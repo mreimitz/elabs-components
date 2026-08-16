@@ -27,7 +27,7 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
 // jsdom does not implement `ResizeObserver`. Radix's `useSize` hook (Slider,
 // and other size-observing primitives) calls it unconditionally on mount, so
 // rendering one under jsdom would otherwise throw. Standard no-op stub,
-// mirroring the setup in @elabs/components-data / -ai.
+// mirroring the setup in @elabs-ai/components-data / -ai.
 if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
     observe() {}
@@ -37,8 +37,8 @@ if (typeof globalThis.ResizeObserver === "undefined") {
 }
 
 // NOTE: deliberately NO `Element.prototype.scrollIntoView` stub here. A stub in
-// THIS package's setup would only make @elabs/components-ui's own
-// tests pass while every other jsdom consumer of a `@elabs/components-ui`
+// THIS package's setup would only make @elabs-ai/components-ui's own
+// tests pass while every other jsdom consumer of a `@elabs-ai/components-ui`
 // component (editor, charts, flow, …) still crashed. Components must therefore
 // feature-detect scroll APIs themselves — see `scrollTriggerIntoStrip` in
 // `src/components/tabs/tabs.tsx`.

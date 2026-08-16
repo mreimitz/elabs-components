@@ -79,12 +79,12 @@ that; the `GateFloorNeverZero` story locks it.
 3. **`reduced != none`** — where a component _moves_, neutralize only the
    movement under OS reduce, keeping color/opacity feedback:
    `active:scale-[0.98] motion-reduce:active:scale-100` (see `Button`).
-4. **JS / Motion** — call `useReducedMotion()` (from `@elabs/components-tokens`) and stop
+4. **JS / Motion** — call `useReducedMotion()` (from `@elabs-ai/components-tokens`) and stop
    loops / swap transforms for fades; or wrap the subtree in `<BrandMotionConfig>`
-   (from `@elabs/components-ai`). Motion's own `reducedMotion` only drops transform/layout,
+   (from `@elabs-ai/components-ai`). Motion's own `reducedMotion` only drops transform/layout,
    so looping properties (e.g. `Shimmer`'s `backgroundPosition`) must still branch.
 
-## Built-in animated components (`@elabs/components-ui`)
+## Built-in animated components (`@elabs-ai/components-ui`)
 
 Reach for these instead of hand-rolling — they're gated and reduced-motion-safe:
 
@@ -150,7 +150,7 @@ We never silently override an OS reduce request — only an explicit `full` does
 ## Verifying
 
 `packages/ui/src/motion.stories.tsx` ("Foundation/Motion") demos the system and
-asserts the gate in a real browser (`pnpm --filter @elabs/components-docs test-storybook
+asserts the gate in a real browser (`pnpm --filter @elabs-ai/components-docs test-storybook
 motion.stories`). Use the Storybook **Motion** toolbar global to sweep
 system/reduced/full across both themes.
 

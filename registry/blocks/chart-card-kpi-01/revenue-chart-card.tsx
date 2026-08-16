@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { curveNatural } from "@visx/curve";
-import { Area, AreaChart, ChartTooltip, Grid, XAxis } from "@elabs/components-charts";
+import { Area, AreaChart, ChartTooltip, Grid, XAxis } from "@elabs-ai/components-charts";
 import {
   Badge,
   Card,
@@ -11,7 +11,7 @@ import {
   Separator,
   ToggleGroup,
   ToggleGroupItem,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { HEADLINE, SERIES, type Period } from "./data/revenue-period-series";
 
 const BREAKDOWN = [

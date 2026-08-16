@@ -6,32 +6,32 @@
  * data/ai/flow/charts/marketing/editor` (CLAUDE.md "Architecture
  * rules", .claude/rules/design-system.md "One direction of dependency") — was
  * stated in prose only; `typecheck`/`lint`/`build` all pass for a sideways or
- * upward `@elabs/components-*` import. This gate makes the DAG a deterministic check.
+ * upward `@elabs-ai/components-*` import. This gate makes the DAG a deterministic check.
  *
  * `package.json` alone is sufficient: a package can only consume a sibling's
  * runtime surface if it declares the dependency (pnpm workspace resolution),
  * so no AST/source scan is needed. This also means legitimate story/test
- * composition (which lives in `devDependencies` — e.g. `@elabs/components-ai`/`@elabs/components-data`
- * dev-depending on `@elabs/components-charts` for Storybook compositions) is never
+ * composition (which lives in `devDependencies` — e.g. `@elabs-ai/components-ai`/`@elabs-ai/components-data`
+ * dev-depending on `@elabs-ai/components-charts` for Storybook compositions) is never
  * false-flagged: only `dependencies` + `peerDependencies` (the RUNTIME
  * surfaces) are checked.
  *
  * Layer model (the allowed-edges DAG):
- *   Layer 0 (foundation, no @brand deps):  @elabs/components-tokens, @elabs/components-icons
- *   Layer 1 (foundation UI):               @elabs/components-ui (may depend on: tokens, icons)
- *   Layer 2 (domain, mutually exclusive):  @elabs/components-data, @elabs/components-ai, @elabs/components-flow,
- *                                           @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing,
- *                                           @elabs/components-editor
+ *   Layer 0 (foundation, no @brand deps):  @elabs-ai/components-tokens, @elabs-ai/components-icons
+ *   Layer 1 (foundation UI):               @elabs-ai/components-ui (may depend on: tokens, icons)
+ *   Layer 2 (domain, mutually exclusive):  @elabs-ai/components-data, @elabs-ai/components-ai, @elabs-ai/components-flow,
+ *                                           @elabs-ai/components-maps, @elabs-ai/components-charts, @elabs-ai/components-marketing,
+ *                                           @elabs-ai/components-editor
  *                                           (may depend on: ui, tokens, icons)
  *
- * `@elabs/components-charts` must NOT depend on `@elabs/components-data` (.claude/rules/chart-components.md
+ * `@elabs-ai/components-charts` must NOT depend on `@elabs-ai/components-data` (.claude/rules/chart-components.md
  * "charts → ui ONLY"; ADR 0012). No domain package may depend on a domain sibling.
  *
- * Tooling packages (`@elabs/components-eslint-config`, `@elabs/components-typescript-config`) are config,
+ * Tooling packages (`@elabs-ai/components-eslint-config`, `@elabs-ai/components-typescript-config`) are config,
  * not layer participants, and are ignored entirely (not required to appear in
  * ALLOWED, never flagged as a source or a target).
  *
- * Any `@elabs/components-*` package name absent from ALLOWED is itself a violation — forces
+ * Any `@elabs-ai/components-*` package name absent from ALLOWED is itself a violation — forces
  * the map to be updated when a new package is added (ties into the "Adding a new
  * package" registration discipline, quality-gates.md).
  *
@@ -52,60 +52,60 @@ const PACKAGES_DIR = join(REPO_ROOT, "packages");
 
 /**
  * Tooling / infra packages — config or build tooling, not layer participants
- * in the visual/component DAG. Never flagged either way. `@elabs/components-cli` is the
+ * in the visual/component DAG. Never flagged either way. `@elabs-ai/components-cli` is the
  * deterministic manifest/docs/search backend (packages/cli) — it has no
- * `@elabs/components-*` runtime deps and sits outside the tokens→ui→domain layering.
+ * `@elabs-ai/components-*` runtime deps and sits outside the tokens→ui→domain layering.
  */
 export const TOOLING_PACKAGES = new Set([
-  "@elabs/components-eslint-config",
-  "@elabs/components-typescript-config",
-  "@elabs/components-cli",
+  "@elabs-ai/components-eslint-config",
+  "@elabs-ai/components-typescript-config",
+  "@elabs-ai/components-cli",
 ]);
 
-/** ALLOWED @elabs/components-* runtime targets per package — the source of truth for the DAG. */
+/** ALLOWED @elabs-ai/components-* runtime targets per package — the source of truth for the DAG. */
 export const ALLOWED = {
-  "@elabs/components-tokens": [], // foundation
-  "@elabs/components-icons": [], // foundation
-  "@elabs/components-ui": ["@elabs/components-tokens", "@elabs/components-icons"],
-  "@elabs/components-data": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-tokens": [], // foundation
+  "@elabs-ai/components-icons": [], // foundation
+  "@elabs-ai/components-ui": ["@elabs-ai/components-tokens", "@elabs-ai/components-icons"],
+  "@elabs-ai/components-data": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ],
-  "@elabs/components-ai": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-ai": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ],
-  "@elabs/components-flow": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-flow": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ],
-  "@elabs/components-maps": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-maps": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ],
-  "@elabs/components-charts": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
-  ], // NOT @elabs/components-data (ADR 0012 / chart rule)
-  "@elabs/components-marketing": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-charts": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
+  ], // NOT @elabs-ai/components-data (ADR 0012 / chart rule)
+  "@elabs-ai/components-marketing": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ],
-  "@elabs/components-editor": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-editor": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ],
-  "@elabs/components-viewer": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
+  "@elabs-ai/components-viewer": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
   ], // NOT -ai (ADR 0024 §6: AssetPreview reaches new formats by injection, not import)
 };
 
@@ -120,14 +120,14 @@ export function findDepDirectionViolations(manifests) {
   const violations = [];
   for (const manifest of manifests) {
     const name = manifest?.name;
-    if (!name || !name.startsWith("@elabs/components-")) continue;
+    if (!name || !name.startsWith("@elabs-ai/components-")) continue;
     if (TOOLING_PACKAGES.has(name)) continue;
 
     const runtimeDeps = {
       ...(manifest.dependencies ?? {}),
       ...(manifest.peerDependencies ?? {}),
     };
-    const brandDeps = Object.keys(runtimeDeps).filter((d) => d.startsWith("@elabs/components-"));
+    const brandDeps = Object.keys(runtimeDeps).filter((d) => d.startsWith("@elabs-ai/components-"));
 
     if (!(name in ALLOWED)) {
       violations.push({
@@ -192,9 +192,9 @@ function main(argv) {
       "\nThe one-way package dependency DAG (tokens → ui/icons → " +
         "data/ai/flow/charts/marketing/editor) is documented in CLAUDE.md " +
         '"Architecture rules" and .claude/rules/design-system.md. A sideways or ' +
-        "upward @elabs/components-* edge in `dependencies`/`peerDependencies` violates it. If a " +
+        "upward @elabs-ai/components-* edge in `dependencies`/`peerDependencies` violates it. If a " +
         "shared piece is genuinely needed across domain packages, lift it into " +
-        "@elabs/components-ui or a registry block — do not relax this gate. See GitHub issue #184.",
+        "@elabs-ai/components-ui or a registry block — do not relax this gate. See GitHub issue #184.",
     );
     if (!warnOnly) process.exit(1);
     return;
@@ -202,7 +202,7 @@ function main(argv) {
 
   if (!warnOnly) {
     console.log(
-      `✔ dep-direction: no @elabs/components-* layer violations (${manifests.length} package(s)).`,
+      `✔ dep-direction: no @elabs-ai/components-* layer violations (${manifests.length} package(s)).`,
     );
   }
 }

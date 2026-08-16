@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Locate, Maximize, Minus, Plus } from "lucide-react";
-import { Spinner } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Spinner } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 import { useMap } from "../map-canvas/map-context";
 

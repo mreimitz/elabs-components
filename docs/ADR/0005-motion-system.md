@@ -40,7 +40,7 @@ both the CSS gate and the JS (motion.dev) layer.**
   `[data-motion-pref]` rules sit at the end of `themes.css` to win the
   specificity tie. Only an explicit `full` overrides an OS reduce request.
 - **JS layer:** motion.dev stays the _complementary_ layer (already a dep of
-  `@elabs/components-ai`), not the general framework. `@elabs/components-ai`'s `BrandMotionConfig`
+  `@elabs-ai/components-ai`), not the general framework. `@elabs-ai/components-ai`'s `BrandMotionConfig`
   bridges the same preference into `<MotionConfig reducedMotion>`.
 
 ## Alternatives considered

@@ -95,13 +95,13 @@ test("FLAGS: statusEnum drift from STATUSES", () => {
   assert.ok(run(ao).some((p) => p.includes("statusEnum")));
 });
 
-test("FLAGS: a consumedBy name not exported by @elabs/components-ai", () => {
+test("FLAGS: a consumedBy name not exported by @elabs-ai/components-ai", () => {
   const ao = makeAgentOutput();
   ao.paths.conversation.consumedBy = ["Conversation", "Nonexistent"];
   assert.ok(run(ao).some((p) => p.includes("Nonexistent")));
 });
 
-test("FLAGS: jsxPreview.component not exported by @elabs/components-ai", () => {
+test("FLAGS: jsxPreview.component not exported by @elabs-ai/components-ai", () => {
   const ao = makeAgentOutput();
   ao.paths.jsxPreview.component = "NotAComponent";
   assert.ok(run(ao).some((p) => p.includes("NotAComponent")));

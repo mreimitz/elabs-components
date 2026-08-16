@@ -2,7 +2,7 @@
 /**
  * build-agent-kit.mjs — assemble the brand-ui "agent kit" for external consumers.
  *
- * The released `@elabs/components-*` tarballs carry the components; this kit carries the
+ * The released `@elabs-ai/components-*` tarballs carry the components; this kit carries the
  * AGENT-LEGIBILITY layer so a coding agent in a CONSUMING project knows what
  * brand-ui offers and how to compose it (the gap RELEASING.md used to miss). It
  * is attached to the GitHub Release alongside the tarballs, version-pinned.
@@ -59,10 +59,10 @@ const SKILLS = [
 // Rewrite monorepo-internal references → consumer equivalents. Applied in order
 // (specific before general), to every *.md in the staged skills tree.
 const SANITIZE = [
-  ["packages/tokens/src/themes.css", "@elabs/components-tokens/styles.css"],
+  ["packages/tokens/src/themes.css", "@elabs-ai/components-tokens/styles.css"],
   [
     "packages/charts/src/charts/area-chart.stories.tsx",
-    "the @elabs/components-charts area-chart example",
+    "the @elabs-ai/components-charts area-chart example",
   ],
   // Generator-provenance notes in the generated SKILL.md prose ("edit the source,
   // not here") — meaningless in a vendored kit; rewrite to consumer-neutral text.
@@ -150,13 +150,13 @@ writeFileSync(
   join(stage, "KIT-README.md"),
   `# brand-ui agent kit — v${version}
 
-The coding-agent layer for the brand-ui design system, pinned to the \`@elabs/components-*\`
+The coding-agent layer for the brand-ui design system, pinned to the \`@elabs-ai/components-*\`
 v${version} packages. Install it so your AI coding agent knows **what brand-ui
 offers and how to compose it** — instead of guessing component names and props.
 
-Pairs with the \`@elabs/components-*\` packages published to GitHub Packages — see
-\`docs/CONSUMING.md\` in the repo for installing them (an \`.npmrc\` scope mapping +
-a \`read:packages\` PAT).
+Pairs with the \`@elabs-ai/components-*\` packages, published publicly on npmjs.org
+— \`pnpm add @elabs-ai/components-ui\`, no registry configuration and no token. See
+\`docs/CONSUMING.md\` in the repo.
 
 ## Contents
 
@@ -183,17 +183,16 @@ Either install the plugin (live, repo-backed):
 \`llms.txt\` alongside them.
 
 Then install the CLI so the skills' \`brand-ui\` commands work in your project.
-It is a **private GitHub Packages** dependency (see \`docs/CONSUMING.md\` §1+§7a
-for the \`.npmrc\` scope mapping + a \`read:packages\` PAT):
+It is a public npm package — nothing to configure first:
 
 \`\`\`
-pnpm add -D @elabs/components-cli
-pnpm exec brand-ui info            # themes, tokens, installed @elabs/components-* packages
+pnpm add -D @elabs-ai/components-cli
+pnpm exec brand-ui info            # themes, tokens, installed @elabs-ai/components-* packages
 pnpm exec brand-ui search <query>  # find a component / hook / registry item
 pnpm exec brand-ui docs <Name>     # real props + intent for a component
 \`\`\`
 
-The CLI reads the manifest bundled inside \`@elabs/components-cli\`, so \`search\`/\`docs\`
+The CLI reads the manifest bundled inside \`@elabs-ai/components-cli\`, so \`search\`/\`docs\`
 work with no monorepo present. (\`docs\` omits the raw source snippet outside the
 monorepo; the resolved props + intent come from the manifest.)
 

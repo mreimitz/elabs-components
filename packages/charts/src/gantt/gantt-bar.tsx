@@ -38,7 +38,7 @@ import {
 import { createPortal } from "react-dom";
 import { cva } from "class-variance-authority";
 import { motion, useReducedMotion } from "motion/react";
-import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs/components-ui";
+import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs-ai/components-ui";
 import { useGantt } from "./gantt-context";
 import type { ResolvedTask } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";

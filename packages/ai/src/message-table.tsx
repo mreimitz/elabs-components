@@ -5,7 +5,7 @@
  *
  * The model emits a serializable, column-oriented `TableSpec` (see
  * `message-table-spec.ts`); MessageTable renders a lightweight table (NOT the
- * app-chrome `@elabs/components-data` DataTable — this is message content).
+ * app-chrome `@elabs-ai/components-data` DataTable — this is message content).
  *
  * Design bar (mirrors AutoChart):
  * - Spec-driven, zod-validated; the model never chooses the look.
@@ -17,7 +17,7 @@
  * - Optional client-side sort (controlled OR uncontrolled) and an optional
  *   per-cell `renderCell` override for consumer composition.
  *
- * Composes the `@elabs/components-ui` `Table` primitive.
+ * Composes the `@elabs-ai/components-ui` `Table` primitive.
  */
 
 import { forwardRef, useId, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
@@ -32,9 +32,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 
 import {
   badgeToneForValue,
@@ -126,7 +126,7 @@ export interface MessageTableProps extends Omit<HTMLAttributes<HTMLDivElement>, 
  * `ChartFrame` re-implemented inside this package.
  *
  * **To make it expandable, wrap it in `ExpandDialog`**
- * (`@elabs/components-ui`) — the shared two-pane expand surface,
+ * (`@elabs-ai/components-ui`) — the shared two-pane expand surface,
  * the same one a chart opens. Do NOT hand-roll a lightbox or a full-screen
  * breakout; four of those already existed before the component was shared, and
  * each one taught users a different meaning for the same button.

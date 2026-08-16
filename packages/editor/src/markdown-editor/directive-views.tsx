@@ -46,8 +46,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { editorViewCtx, parserCtx, serializerCtx } from "@milkdown/kit/core";
 import type { MilkdownPlugin } from "@milkdown/kit/ctx";
 import type { Node as ProseNode } from "@milkdown/kit/prose/model";
@@ -80,7 +80,7 @@ import { useInstance } from "./milkdown-react";
 
 type Attrs = Record<string, string>;
 
-/** Map a callout `type` to an @elabs/components-ui Alert variant (mirrors the preview). */
+/** Map a callout `type` to an @elabs-ai/components-ui Alert variant (mirrors the preview). */
 const CALLOUT_VARIANT: Record<string, "default" | "info" | "success" | "warning" | "destructive"> =
   {
     info: "info",

@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — `brand-ui context` generator (WP-03 #82).
+ * @elabs-ai/components-cli — `brand-ui context` generator (WP-03 #82).
  *
  * Generates the manifest's ground truth into the files coding agents read,
  * as the AgnosticUI `ag context` pattern: a portable, MCP-free, version-controlled

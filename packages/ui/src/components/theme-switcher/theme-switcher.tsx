@@ -2,7 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useState, type HTMLAttributes } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
-import { useTheme, type ThemeDefinition, type ThemeName } from "@elabs/components-tokens";
+import { useTheme, type ThemeDefinition, type ThemeName } from "@elabs-ai/components-tokens";
 
 import { Button } from "../button";
 import {

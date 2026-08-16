@@ -1,8 +1,8 @@
-# @elabs/components-ui
+# @elabs-ai/components-ui
 
 > Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).
 
-Import from `@elabs/components-ui`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 
@@ -238,7 +238,7 @@ Import from `@elabs/components-ui`. Part of brand-ui — see the root `llms.txt`
 - MetricCard — Single KPI tile — label, value, delta/trend.
   - avoid: Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.
   - avoid: Encoding up/down by color alone — pair with an arrow/sign.
-  - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012).
+  - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @elabs-ai/components-ui; charts and editor re-export it (ADR 0012).
 - ModelPicker
 - NavigationMenu
 - NavigationMenuContent
@@ -384,7 +384,7 @@ Import from `@elabs/components-ui`. Part of brand-ui — see the root `llms.txt`
   - avoid: Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.
   - avoid: Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.
   - avoid: Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.
-  - avoid: Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs/components-ai.
+  - avoid: Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs-ai/components-ai.
 - ToolbarButton
 - ToolbarSeparator
 - ToolbarSlot

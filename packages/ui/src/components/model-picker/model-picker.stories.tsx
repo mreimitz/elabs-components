@@ -62,7 +62,7 @@ const meta = {
       description: {
         component:
           "A compact pill that opens a grouped, searchable target list anchored under itself — " +
-          "sized for a composer footer. The inline sibling of `@elabs/components-ai`'s " +
+          "sized for a composer footer. The inline sibling of `@elabs-ai/components-ai`'s " +
           "`ModelSelector`, which is the same `Command` internals in a modal `Dialog`.\n\n" +
           "**`Command` lives in a `Popover`, never a `DropdownMenu`.** `DropdownMenuContent` owns " +
           "roving tabindex and its own typeahead; both fight a real `<input>` in its subtree, so " +

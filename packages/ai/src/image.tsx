@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton, useLocale } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Experimental_GeneratedImage } from "ai";
 import { ImageOff } from "lucide-react";
 import type { ImgHTMLAttributes } from "react";

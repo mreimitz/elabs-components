@@ -1,8 +1,8 @@
 "use client";
 
-import { Alert, AlertDescription, AlertTitle, StatusBadge } from "@elabs/components-ui";
-import { Button } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Alert, AlertDescription, AlertTitle, StatusBadge } from "@elabs-ai/components-ui";
+import { Button } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { ToolUIPart } from "ai";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, useContext, useId, useMemo } from "react";

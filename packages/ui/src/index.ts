@@ -1,9 +1,9 @@
 /**
- * @elabs/components-ui — foundation + app UI components.
+ * @elabs-ai/components-ui — foundation + app UI components.
  *
  * Source-owned shadcn-style components built on Radix primitives and the
- * @elabs/components-tokens semantic theme. Import the token stylesheet once at the app
- * root ("import \"@elabs/components-tokens/styles.css\"") and wrap in <ThemeProvider>.
+ * @elabs-ai/components-tokens semantic theme. Import the token stylesheet once at the app
+ * root ("import \"@elabs-ai/components-tokens/styles.css\"") and wrap in <ThemeProvider>.
  *
  * NOTE: this barrel is generated to include every component folder. Some
  * components require their own peer libs (declared in package.json), e.g.

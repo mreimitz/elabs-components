@@ -35,7 +35,7 @@
  * check-loading-states.mjs / check-state-coverage.mjs:
  *
  *   - the committed baseline (`scripts/variant-coverage-baseline.json`, a list
- *     of "@elabs/components-pkg::Component::axis=value" keys) is the allowed set of
+ *     of "@elabs-ai/components-pkg::Component::axis=value" keys) is the allowed set of
  *     pre-existing gaps;
  *   - any gap that is NOT already baselined FAILS (a component that gains a
  *     new variant value must ship the story that exercises it);

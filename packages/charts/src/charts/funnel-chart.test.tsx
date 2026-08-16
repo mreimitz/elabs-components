@@ -6,11 +6,11 @@
  * zero dimensions, so the chart renders its outer container but holds the SVG
  * content behind a `W > 0 && H > 0` guard — nothing is painted. A full render
  * + interaction pass lives in the co-located Storybook story (funnel-chart.stories.tsx),
- * which is exercised by `pnpm --filter @elabs/components-docs test-storybook` in CI.
+ * which is exercised by `pnpm --filter @elabs-ai/components-docs test-storybook` in CI.
  *
  * This file therefore: (a) asserts the named export is a React component, and
  * (b) verifies the container mounts without throwing, following the same
- * precedent used for @elabs/components-editor (Monaco) and @elabs/components-flow (React Flow).
+ * precedent used for @elabs-ai/components-editor (Monaco) and @elabs-ai/components-flow (React Flow).
  */
 
 import { describe, expect, it, vi, beforeAll } from "vitest";

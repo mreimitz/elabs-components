@@ -8,7 +8,7 @@ DON'T already cover. Don't duplicate `accessibility.md` / `MOTION_GUIDELINES.md`
 
 ## Library vs app (the dividing line)
 
-This rule governs **component-level** behaviour (what a primitive in `@elabs/components-*`
+This rule governs **component-level** behaviour (what a primitive in `@elabs-ai/components-*`
 must do). **App-level** concerns — URL/query-param state (`nuqs`), RSC hydration
 specifics, `env(safe-area-inset-*)`, `<meta name="theme-color">`, `Accept-Language`
 detection — are NOT library rules; they belong to the **apps** (`apps/*`) and the
@@ -67,7 +67,7 @@ component packages.
 - No layout reads in render (`getBoundingClientRect`/`offsetHeight`/`scrollTop`);
   batch reads then writes. Prefer **uncontrolled** inputs; a controlled input must
   be cheap per keystroke. Preload critical fonts (`font-display: swap`; the Inter
-  faces ship self-hosted in `@elabs/components-tokens`).
+  faces ship self-hosted in `@elabs-ai/components-tokens`).
 
 ## Touch & overscroll
 

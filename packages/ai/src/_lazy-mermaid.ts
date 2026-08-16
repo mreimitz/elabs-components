@@ -6,7 +6,7 @@
  * ---------------
  * `@streamdown/mermaid`'s dist opens with a static `import n from "mermaid"`, and
  * neither it nor `mermaid`/`dompurify`/`d3` declares `sideEffects`, so a bundler
- * must keep the whole edge. `@elabs/components-ai` imported that plugin from three modules
+ * must keep the whole edge. `@elabs-ai/components-ai` imported that plugin from three modules
  * (`message`, `reasoning`, `markdown-view`), which put Mermaid + d3 + DOMPurify —
  * several MB — in the **entry chunk** of every consumer, including the vast
  * majority that never render a diagram.
@@ -110,7 +110,7 @@ export const createLazyMermaidPlugin = (
 };
 
 /**
- * The shared lazy Mermaid plugin — the `@elabs/components-ai` replacement for
+ * The shared lazy Mermaid plugin — the `@elabs-ai/components-ai` replacement for
  * `@streamdown/mermaid`'s eager `mermaid` export. One instance for the whole
  * app, so the engine and its initialize-once state are shared.
  */

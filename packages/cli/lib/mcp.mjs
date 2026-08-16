@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — persistent `brand-ui mcp` stdio server (WP-03 #81).
+ * @elabs-ai/components-cli — persistent `brand-ui mcp` stdio server (WP-03 #81).
  *
  * An always-on Model Context Protocol server that exposes the SAME engine
  * (lib/core.mjs) the CLI uses, so an agent gets brand-ui ground truth in ANY
@@ -9,8 +9,8 @@
  * results.
  *
  * DEPENDENCY-FREE on purpose: MCP's stdio transport is newline-delimited JSON-RPC
- * 2.0, which is small enough to implement directly. That keeps `@elabs/components-cli`
- * dependency-light (it runs in any consuming project via `npx @elabs/components-cli mcp`) and
+ * 2.0, which is small enough to implement directly. That keeps `@elabs-ai/components-cli`
+ * dependency-light (it runs in any consuming project via `npx @elabs-ai/components-cli mcp`) and
  * keeps the protocol handler a PURE function (`handleMessage`) we can unit-test
  * without spawning a process.
  *
@@ -35,7 +35,7 @@ export const TOOLS = [
   {
     name: "info",
     description:
-      "Project context: which @elabs/components-* packages are present, the themes + default, the token count, the registry size, and the ACTIVE taste profile (register × density × motion × expressiveness). Call once at the start of a session.",
+      "Project context: which @elabs-ai/components-* packages are present, the themes + default, the token count, the registry size, and the ACTIVE taste profile (register × density × motion × expressiveness). Call once at the start of a session.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
@@ -103,7 +103,7 @@ function toolInfo(root) {
   const manifest = root ? loadManifest(root) : null;
   if (!manifest)
     return textContent(
-      "No manifest — run inside the brand-ui monorepo or install @elabs/components-cli.",
+      "No manifest — run inside the brand-ui monorepo or install @elabs-ai/components-cli.",
     );
   const pkgs = Object.keys(manifest.packages);
   const taste = activeTaste(root, manifest);

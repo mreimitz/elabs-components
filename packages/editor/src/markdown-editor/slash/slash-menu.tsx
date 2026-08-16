@@ -6,7 +6,7 @@
  * Presentational + controlled: the ProseMirror plugin owns the keyboard
  * (↑/↓/Enter/Esc) and the open/query/active state, so this component just renders
  * the filtered, grouped commands and exposes `onSelect`. It is a token-styled
- * `listbox`/`option` list (NOT `@elabs/components-ui` `Command`/cmdk): a cmdk instance would
+ * `listbox`/`option` list (NOT `@elabs-ai/components-ui` `Command`/cmdk): a cmdk instance would
  * fight the editor for DOM focus and arrow-key handling, since the caret must stay
  * in the ProseMirror `textbox` while the user types `/query`. The plugin keeps the
  * active option in view and wires `aria-activedescendant` on the editor surface.
@@ -14,7 +14,7 @@
  * Semantic tokens only; matches the `Command` popover look (bg-popover, accent
  * selection, muted group headings).
  */
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes } from "react";
 
 import { groupSlashCommands, type SlashCommand } from "./brand-slash-commands";

@@ -14,7 +14,7 @@
  * a contained error, never crashes the page). a11y: `output: "htmlAndMathml"`
  * emits MathML (read by assistive tech) alongside the visual HTML.
  */
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import katex from "katex";
 import { useMemo, type HTMLAttributes } from "react";
 import { visit } from "unist-util-visit";

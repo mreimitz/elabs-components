@@ -71,8 +71,8 @@ test("ignores an @import shown inside a COMMENT (a docblock usage example)", () 
   const css = `/**
  * Import this only if you want the dark reference theme:
  *
- *     @import "@elabs/components-tokens/styles.css";
- *     @import "@elabs/components-tokens/themes/dark.css";
+ *     @import "@elabs-ai/components-tokens/styles.css";
+ *     @import "@elabs-ai/components-tokens/themes/dark.css";
  *
  * The mask below is documented as url("./nope.svg") too.
  */
@@ -202,7 +202,7 @@ test("PASSES: a stylesheet reachable only via publishConfig.exports", () => {
   assert.equal(v.length, 0);
 });
 
-test("PASSES: transitively — @elabs/components-tokens ships rtl/density only via themes.css @import", () => {
+test("PASSES: transitively — @elabs-ai/components-tokens ships rtl/density only via themes.css @import", () => {
   const files = {
     "/pkg/dist/themes.css":
       '@import "./decoration.css";\n@import "./density.css";\n@import "./rtl.css";',

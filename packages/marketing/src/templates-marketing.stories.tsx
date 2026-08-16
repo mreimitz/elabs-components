@@ -10,10 +10,10 @@
  *
  * The marketing package ships no icons by design (sections take `icon?:
  * ReactNode` from the consumer), so this story passes inline currentColor
- * glyphs — the same way a consumer would hand in Lucide / @elabs/components-icons.
+ * glyphs — the same way a consumer would hand in Lucide / @elabs-ai/components-icons.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Badge, Button } from "@elabs/components-ui";
+import { Badge, Button } from "@elabs-ai/components-ui";
 import {
   CTASection,
   FeatureGrid,

@@ -11,7 +11,7 @@ const meta = {
       description: {
         component:
           "Compact KPI tile (label · value · description · optional delta). The branded " +
-          "target for the `::metric` directive. Thin alias for `@elabs/components-ui` MetricCard " +
+          "target for the `::metric` directive. Thin alias for `@elabs-ai/components-ui` MetricCard " +
           "(see ADR 0012).",
       },
     },
@@ -35,6 +35,6 @@ export const NoDelta: Story = {
   args: {
     label: "Open gaps",
     value: "2",
-    description: "in @elabs/components-data + @elabs/components-icons",
+    description: "in @elabs-ai/components-data + @elabs-ai/components-icons",
   },
 };

@@ -1,5 +1,5 @@
 /**
- * @elabs/components-flow — branded React Flow (@xyflow/react) building blocks.
+ * @elabs-ai/components-flow — branded React Flow (@xyflow/react) building blocks.
  *
  * Import the React Flow stylesheet once at the app root:
  *   import "@xyflow/react/dist/style.css";

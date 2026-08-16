@@ -5,10 +5,10 @@
 
 ## Context
 
-`@elabs/components-ai` renders the Vercel AI SDK data model — it `import type`s `UIMessage`,
+`@elabs-ai/components-ai` renders the Vercel AI SDK data model — it `import type`s `UIMessage`,
 `ToolUIPart`, `FileUIPart`, and friends so its components are typed to the same
 message shape the app's runtime produces. Verified at the time of this ADR: **12 of
-51 `@elabs/components-ai` source files** import from `ai`, **all `import type`, zero runtime
+51 `@elabs-ai/components-ai` source files** import from `ai`, **all `import type`, zero runtime
 imports** (no `useChat`, no `@ai-sdk/*` providers, no `streamText`); `ai` is declared
 a **peer** dependency at `^6.0.0`.
 
@@ -23,7 +23,7 @@ in [`docs/DECISIONS.md`](../DECISIONS.md).
 
 **The Vercel AI SDK (`ai`) is a types-only, peer dependency — never a runtime one.**
 
-- `@elabs/components-ai` may `import type` the message model from `ai`. It must **never** import
+- `@elabs-ai/components-ai` may `import type` the message model from `ai`. It must **never** import
   a runtime value from `ai` or any `@ai-sdk/*` package — no `useChat`, `streamText`,
   `generateText`, providers, default/namespace/side-effect/dynamic imports, or value
   re-exports.
@@ -53,10 +53,10 @@ in [`docs/DECISIONS.md`](../DECISIONS.md).
 - The trade is explicit: brand-ui stays **downstream of Vercel's message model** (a
   major SDK bump is a planned migration) in exchange for ecosystem alignment and a
   thin, swappable coupling.
-- Adding a runtime value import to `@elabs/components-ai` now fails CI with a pointer to this
+- Adding a runtime value import to `@elabs-ai/components-ai` now fails CI with a pointer to this
   ADR — the regression is blocked, not merely discouraged.
 - Revisit trigger: a **vendor-neutral message standard**, or a **second message
-  model** (A2UI/AG-UI) arriving in `@elabs/components-ai`, would justify promoting the aliased
+  model** (A2UI/AG-UI) arriving in `@elabs-ai/components-ai`, would justify promoting the aliased
   seam into a real abstraction layer (and possibly relaxing the single-vendor pin).
 - See `docs/DECISIONS.md` (D6) and the rule above; the boundary it protects is
   ADR 0007 (D5).

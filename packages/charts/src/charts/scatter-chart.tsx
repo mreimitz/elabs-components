@@ -3,7 +3,7 @@
 import type { Transition } from "motion/react";
 import { Children, forwardRef, isValidElement, type ReactNode, useMemo, useRef } from "react";
 import useMeasure from "react-use-measure";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { defaultScatterColors, type LineConfig, type Margin } from "./chart-context";

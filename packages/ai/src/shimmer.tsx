@@ -1,7 +1,7 @@
 "use client";
 
-import { useReducedMotion } from "@elabs/components-tokens";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { MotionProps } from "motion/react";
 import { motion } from "motion/react";
 import type { CSSProperties, ElementType, JSX } from "react";

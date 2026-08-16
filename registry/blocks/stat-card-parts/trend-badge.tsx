@@ -1,8 +1,8 @@
 "use client";
 
 import { ArrowDown, ArrowUp } from "lucide-react";
-import { Badge } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Badge } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export function TrendBadge({ value, className }: { value: number; className?: string }) {
   const positive = value >= 0;
