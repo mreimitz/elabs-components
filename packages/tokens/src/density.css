@@ -58,21 +58,20 @@
  *   CAVEAT — the REAL constraint is x-height ≥ ~5.5px, not nominal px. A px
  *   floor is font-blind: what a reader resolves is the x-height, and faces
  *   differ by ~13% at the same nominal size. Measured on the SELF-HOSTED faces
- *   in a browser (canvas `actualBoundingBox` of "x"; the `--font-sans` stacks
- *   name "Source Sans Pro" but the shipped @font-face is "Source Sans 3"):
+ *   in a browser (canvas `actualBoundingBox` of "x"):
  *
  *     face                                  11.25px    12px
- *     Source Sans 3   (qlik --font-sans)     5.47px   5.83px
+ *     Source Sans 3   (retired)              5.47px   5.83px
  *     IBM Plex Mono   (blueprint sans/mono)  5.81px   6.19px
- *     Inter           (:root --font-sans)    6.14px   6.55px
+ *     Inter           (every --font-sans)    6.14px   6.55px
  *
- *   So blueprint's mono at compact-`meta` (5.81px) is still OPTICALLY LARGER
- *   than the qlik sans at the comfortable 12px shipping today (5.83px ≈ equal),
- *   while the qlik sans at compact-`meta` sets the new system minimum at
- *   5.47px. That 5.47px — not "11px" — is what the floor is really defending.
- *   A narrower brand face swapped into `--font-sans` could clear the 11px
- *   nominal floor and still fall under it, so re-check x-height (not px) before
- *   lowering `--type-factor` or re-basing `--type-size-meta` for a new brand.
+ *   Every shipped theme now sets `--font-sans: Inter`, so the system minimum is
+ *   Inter at compact-`meta`: 6.14px, comfortably clear of the ~5.5px bar. The
+ *   retired Source Sans 3 row is kept because it is the worst case this floor
+ *   was actually derived against (5.47px — not "11px" — is what the floor is
+ *   really defending). A narrower brand face swapped into `--font-sans` could
+ *   clear the 11px nominal floor and still fall under it, so re-check x-height
+ *   (not px) before lowering `--type-factor` or re-basing `--type-size-meta`.
  *
  * SCOPING
  *   Apply `data-density` on any element (or the document root via ThemeProvider)

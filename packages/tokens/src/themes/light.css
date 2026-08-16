@@ -19,65 +19,83 @@
  */
 
 /* ========================================================================
-   LIGHT (light) — Qlik Cloud "Sprout" register. Primary = Qlik Green on
-   near-white neutral surfaces; neutral grey text (#404040); tight 4px base
-   radius; neutral low-contrast hairlines; a BLUE focus ring; the Qlik
-   categorical chart palette; Source Sans Pro / Source Code Pro fonts.
+   LIGHT — the light reference theme. A near-white canvas under a DARK charcoal
+   app chrome (the reference's light-sheet / dark-rail shell), a neo-yellow
+   (lime) brand primary that carries near-black ink, powder blue as the accent
+   and second chart series, and a deep-olive focus ring in the primary's own
+   hue family. Cool low-chroma neutrals (hue 257, taken from the charcoal), a
+   tight 4px base radius, and Inter / Source Code Pro fonts.
+
+   The lime splits across three rungs on purpose: a bright lime is ~1.1:1
+   against white and could never be a focus ring or on-surface text, so
+   --primary is the plate, --primary-text is the AA text rung (6.5:1 on every
+   surface it lands on) and --ring is the 1.4.11 mark rung. The text rung sits
+   BELOW the ring rather than beside it: both are bound to the same hue family,
+   so leaving them level made them one colour with two names. See
+   .claude/rules/styling-and-tokens.md.
    ======================================================================== */
 [data-theme="light"] {
   color-scheme: light;
 
-  /* Qlik's tight 4px (subtle) base radius. */
+  /* Tight 4px (subtle) base radius. */
   --radius-base: 0.25rem;
 
-  /* Qlik fonts: Source Sans Pro (UI) + Source Code Pro (data/mono). */
-  --font-sans: "Source Sans Pro", "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-display:
-    "Source Sans Pro", "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Inter (UI, vendored in this package and already the :root base) +
+     Source Code Pro (data/mono). */
+  --font-sans: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-family: var(--font-sans);
 
   /* Neutral near-white ground; white cards. */
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.37 0 0); /* #404040 neutral grey — not blue */
+  --background: oklch(0.985 0.002 257);
+  --foreground: oklch(0.3 0.021 257); /* #404040 neutral grey — not blue */
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.37 0 0);
+  --card-foreground: oklch(0.3 0.021 257);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.37 0 0);
+  --popover-foreground: oklch(0.3 0.021 257);
 
-  /* Qlik SaaS light primary #00873D */
-  --primary: oklch(0.553 0.143 153);
-  --primary-foreground: oklch(0.985 0 0);
-  /* #399 — On-surface TEXT variant of the Qlik green. The fill above measured
-     3.87-4.48:1 as bare text on the five content surfaces (sub-AA everywhere in
-     the DEFAULT shipped theme); deepened by ~0.06 L, hue/chroma unchanged, so
-     the brand reads the same but clears 4.99-5.78:1. Does NOT retune --primary
-     itself — the fill's contract is 3:1 (#381) and its ink pairing is the #180
-     brand exemption. */
-  --primary-text: oklch(0.49 0.14 153);
+  /* Neo-yellow (lime) brand primary, #D0E268 sampled from the reference.
+     The INK FLIPS: at L 0.875 this plate is far too light for white, so
+     --primary-foreground is near-black. Every filled primary surface in the
+     library (Button, Badge, StatusBadge, CTASection, Calendar's selected day,
+     the flow-node primary tone) now carries dark ink — that flip is the one
+     structural consequence of the lime, not a per-component override. */
+  --primary: oklch(0.875 0.148 116.5);
+  --primary-foreground: oklch(0.24 0.015 285);
+  /* #399 — On-surface TEXT variant of the brand hue. The plate above is a 3:1
+     MARK rung (#381) and measures ~1.1:1 as bare text, so it can never be the
+     text rung: this is a deep olive at the same hue that clears AA (≥4.5:1) on
+     all five content surfaces. Does NOT retune --primary. */
+  --primary-text: oklch(0.44 0.14 116.5);
 
-  --secondary: oklch(0.95 0 0);
-  --secondary-foreground: oklch(0.37 0 0);
+  --secondary: oklch(0.95 0.003 257);
+  --secondary-foreground: oklch(0.3 0.021 257);
 
-  --muted: oklch(0.968 0 0);
-  --muted-foreground: oklch(0.5 0 0); /* neutral, AA-safe caption grey */
+  --muted: oklch(0.968 0.002 257);
+  --muted-foreground: oklch(0.5 0.012 257); /* neutral, AA-safe caption grey */
 
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.37 0 0);
+  /* Powder blue (#B1C6D7 sampled) as a hover/selected tint. The reference uses
+     this blue as a peer SURFACE, so it lands on --accent and --chart-2 — NOT on
+     --secondary (which components use as a neutral grey surface) and NOT on
+     --info, which keeps its own distinct blue so status stays separable. */
+  --accent: oklch(0.93 0.025 242);
+  --accent-foreground: oklch(0.3 0.021 257);
 
-  /* Qlik danger — pink-red #D7004B */
+  /* Danger — pink-red. Outside the reference's three-colour range, kept as its
+     own hue precisely because it must never be confused with the brand. */
   --destructive: oklch(0.55 0.21 8);
   --destructive-foreground: oklch(0.985 0 0);
   --destructive-text: oklch(0.5 0.2 8);
 
-  /* #334 — a DEEPER, COOLER green than the Qlik-brand --primary (which stays
-     #008947 / oklch(0.553 0.143 153)). These were byte-identical, so a success
-     chip was indistinguishable from a primary button by the only signal these
-     tokens carry. The brand green stays reserved for the ACTION role; success
-     is its own pine/emerald. Side effect: white on this fill is 5.46:1 (AA), up
-     from 4.29:1 — without touching --primary's brand exemption (#180). */
+  /* #334 — success is its own pine/emerald, never the brand hue: a success chip
+     that reads as a primary button collapses two different messages onto one
+     signal. It survived the Phase-4 debrand unchanged because the brand moved
+     the OTHER way — --primary went from green 153° to lime 116.5° and --ring to
+     a deep olive, so this token's separation only improved (ΔE 0.41 from
+     --primary, 0.17 from --ring). White on this fill is 5.46:1 (AA). */
   --success: oklch(0.49 0.12 170);
   --success-foreground: oklch(0.985 0 0);
   --success-text: oklch(0.46 0.12 170);
@@ -92,7 +110,7 @@
   --warning: oklch(0.555 0.12 67);
   --warning-foreground: oklch(0.985 0 0);
   --warning-text: oklch(0.52 0.13 70);
-  /* Qlik blue #5daef1, DEEPENED from `oklch(0.6 0.13 245)` by #406. #383 chose
+  /* Status blue, DEEPENED from `oklch(0.6 0.13 245)` by #406. #383 chose
      the other exit from the L 0.6 dead zone (white on that fill was 3.74:1, and
      AA-Large never applies at the 12px `Badge`/`StatusBadge` call sites) by
      flipping the INK dark — correct in isolation, but it made `--info` the only
@@ -122,68 +140,87 @@
   --highlight-active-foreground: oklch(0.99 0.005 90);
 
   /* Neutral hairlines; --border-strong darkened to clear WCAG 1.4.11 (≥3:1) vs --card/--background. */
-  --border: oklch(0.88 0 0);
-  --border-strong: oklch(0.65 0 0);
-  --input: oklch(0.88 0 0);
-  /* BRAND-DERIVED focus indicator (ADR 0027, #427). --ring is the same hue family
-     as --primary — 140 vs 153, a 13° gap — at a deliberately DISTINCT rung
-     (ΔE 0.157), never an alias. It is a graphical MARK, so it clears WCAG 1.4.11
-     (≥3:1) on every mark surface: 8.39:1 vs --background, 7.57:1 at its worst
-     (--secondary). It stays ΔE ≥ 0.05 from --primary / --chart-1 /
-     --accent-foreground (MUST_DIFFER), --info (ROLE_PAIRS, #334) and --success.
-     Hue 140 rather than the exact brand 153 because this theme's green band is
-     already full between L 0.42-0.60; 13° off buys real headroom. #334 moved this
-     token OFF --info and out of the palette entirely — that half is now reversed.
+  --border: oklch(0.88 0.004 257);
+  --border-strong: oklch(0.65 0.008 257);
+  --input: oklch(0.88 0.004 257);
+  /* BRAND-DERIVED focus indicator (ADR 0027, #427). --ring sits at --primary's
+     EXACT hue (116.5, a 0° gap — well inside the ~20° contract) but a
+     deliberately DISTINCT rung, never an alias: the lime plate is L 0.875 and
+     this is L 0.50, ΔE 0.40 apart. The depth is not a style choice — a focus
+     ring is a graphical MARK that must clear WCAG 1.4.11 (≥3:1) on all five
+     mark surfaces, and the bright lime measures ~1.1:1 on white, so the ring
+     had to leave the plate's rung entirely.
+     It also stays ΔE ≥ 0.05 from --chart-1 and --accent-foreground
+     (MUST_DIFFER), --info (ROLE_PAIRS, #334) and --success.
+     WHY IT SITS BELOW --chart-1 (0.62): both are bound by the same 3:1 floor on
+     a white ground, which caps them near L 0.62 — so they cannot both live at
+     the top of that band without collapsing. Series 1 takes the lighter slot
+     (it is the data mark), the ring takes the deeper one.
      The --sidebar-ring alias below is the sanctioned mirror of this token, so an
      override reaches sidebar focus for free — never re-declare it with a literal. */
-  --ring: oklch(0.4 0.13 140);
+  --ring: oklch(0.5 0.13 116.5);
 
-  --surface: oklch(0.985 0 0);
-  --surface-muted: oklch(0.96 0 0);
+  --surface: oklch(0.985 0.002 257);
+  --surface-muted: oklch(0.96 0.003 257);
   --surface-elevated: oklch(1 0 0);
 
-  /* Chrome recessed BELOW the content canvas (--background 0.985) so chrome reads
-     as the most-recessed app-frame surface: chrome(0.96) < canvas(0.985) < card(1.0).
-     Was a fully FLAT 0.985 == --background (Δ0); now ΔL≈0.025 vs canvas. */
-  --sidebar: oklch(0.96 0 0);
-  --sidebar-foreground: oklch(0.37 0 0);
-  --sidebar-muted-foreground: oklch(0.5 0 0);
-  /* Deepened a step so the divider stays visible against the recessed chrome. */
-  --sidebar-border: oklch(0.85 0 0);
-  /* Deepened so hover/selected stays perceptible (ΔL≈0.045) against the recessed
-     --sidebar (0.96) — at the old 0.95 it would be only Δ0.01, too subtle. */
-  --sidebar-accent: oklch(0.915 0 0);
-  --sidebar-accent-foreground: var(--accent-foreground);
+  /* DARK CHARCOAL CHROME under a light canvas — the reference's shell, where a
+     full charcoal panel sits as a peer surface beside the light one. The
+     chrome < canvas < raised hierarchy is preserved and then some:
+     chrome(0.30) < canvas(0.985) < card(1.0), ΔL 0.685 (the invariant
+     `pnpm surface-elevation:check` enforces needs only ≥0.02).
+     Everything below is re-tuned FOR A DARK GROUND — the sidebar family is the
+     one part of a light theme that is not a light surface. */
+  --sidebar: oklch(0.3 0.021 257);
+  --sidebar-foreground: oklch(0.95 0.004 257);
+  --sidebar-muted-foreground: oklch(0.72 0.008 257);
+  /* Lifted (not deepened) a step: on dark chrome a divider reads by going
+     LIGHTER than its ground. */
+  --sidebar-border: oklch(0.38 0.018 257);
+  /* Hover/selected lifts ΔL≈0.06 off the chrome, same direction as the border. */
+  --sidebar-accent: oklch(0.36 0.02 257);
+  /* UN-MIRRORED, deliberately (#385). Everywhere else this is
+     `var(--accent-foreground)`, but --accent-foreground is the dark charcoal ink
+     the LIGHT canvas needs; on dark chrome that mirror would paint dark ink on a
+     dark ground. This is the case the #385 rule names: a mirror is for an
+     intentional shared decision, and this one stopped being shared the moment
+     the chrome went dark. Kept as a literal with the reason attached. */
+  --sidebar-accent-foreground: oklch(0.95 0.004 257);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-ring: var(--ring);
 
-  --canvas: oklch(0.97 0 0);
-  --canvas-grid: oklch(0.9 0 0);
+  --canvas: oklch(0.97 0.002 257);
+  --canvas-grid: oklch(0.9 0.004 257);
   --flow-node: oklch(1 0 0);
-  --flow-node-foreground: oklch(0.37 0 0);
-  --flow-edge: oklch(0.62 0.04 245);
+  --flow-node-foreground: oklch(0.3 0.021 257);
+  --flow-edge: oklch(0.62 0.04 242);
   --flow-helper-line: var(--primary);
-  --flow-group: oklch(0.94 0.018 153);
+  /* Lime-tinted group wash, re-hued 153 -> 116.5 with the brand. */
+  --flow-group: oklch(0.94 0.018 116.5);
   --flow-group-border: var(--border-strong);
   --flow-minimap-node: var(--muted-foreground);
   --flow-minimap-mask: oklch(1 0 0 / 0.65);
 
-  /* NEUTRAL grey bubble. Was `oklch(0.95 0.03 153)` — a mint-green tint that
-     read as a Qlik-brand/success wash rather than "the other speaker". The user
+  /* NEUTRAL grey bubble. Was a mint-green tint that read as a brand/success
+     wash rather than "the other speaker". The user
      turn is a FILL channel (surface separation), not a status: its job is to
      sit one step below the assistant turn (0.97) and the card (1.0) so the
      conversation reads as two alternating grounds. Hue belongs to the brand and
      status roles, not to whose turn it is. */
-  --chat-user: oklch(0.93 0 0);
-  --chat-user-foreground: oklch(0.37 0 0);
-  --chat-assistant: oklch(0.97 0 0);
-  --chat-assistant-foreground: oklch(0.37 0 0);
+  --chat-user: oklch(0.93 0.003 257);
+  --chat-user-foreground: oklch(0.3 0.021 257);
+  --chat-assistant: oklch(0.97 0.002 257);
+  --chat-assistant-foreground: oklch(0.3 0.021 257);
 
-  /* Qlik categorical: green, deep blue, ocean, plum, gold */
-  --chart-1: oklch(0.594 0.163 150);
-  --chart-2: oklch(0.45 0.11 252);
-  --chart-3: oklch(0.55 0.1 224);
+  /* Categorical ramp, re-derived from the reference: olive-lime (the brand hue
+     at the deepest rung a WHITE chart ground allows — see --ring), the powder
+     blue deepened into a real series colour, ocean, plum, gold. Every series
+     clears 3:1 on --chart-background, which is what caps series 1 at L 0.62
+     rather than letting it be the bright lime plate (that measures 1.70:1). */
+  --chart-1: oklch(0.62 0.16 124);
+  --chart-2: oklch(0.55 0.1 242);
+  --chart-3: oklch(0.62 0.1 220);
   --chart-4: oklch(0.552 0.124 323);
   --chart-5: oklch(0.62 0.135 85);
 
@@ -220,39 +257,55 @@
   --shadow-strength: 1;
   --shadow-ring-color: oklch(0 0 0 / 0.05);
 
-  --rule: oklch(0.88 0 0);
-  --rule-strong: oklch(0.74 0 0);
-  --grid-line: oklch(0.9 0 0);
-  --grid-line-major: oklch(0.82 0 0);
+  --rule: oklch(0.88 0.004 257);
+  --rule-strong: oklch(0.74 0.006 257);
+  --grid-line: oklch(0.9 0.004 257);
+  --grid-line-major: oklch(0.82 0.006 257);
 
-  /* Calc syntax — neutralised foreground; Qlik-ish role hues retained. */
-  --calc-foreground: oklch(0.37 0 0);
+  /* Calc syntax — neutralised foreground; role hues retained, currency
+     re-hued onto the brand lime. */
+  --calc-foreground: oklch(0.3 0.021 257);
   --calc-number: oklch(0.4 0.15 240);
   --calc-unit: oklch(0.42 0.12 200);
-  --calc-currency: oklch(0.42 0.143 153);
+  --calc-currency: oklch(0.45 0.13 116.5);
   --calc-variable: oklch(0.38 0.14 300);
   --calc-reference: oklch(0.4 0.15 264);
   --calc-function: oklch(0.42 0.12 55);
-  --calc-operator: oklch(0.3 0 0);
+  --calc-operator: oklch(0.3 0.01 257);
   --calc-result: oklch(0.38 0.16 264);
-  --calc-comment: oklch(0.5 0 0);
+  --calc-comment: oklch(0.5 0.012 257);
   --calc-warning: oklch(0.5 0.2 27);
 
   /* CodeBlock syntax-highlight roles (#315) — see the :root comment for why
      these are separate literal tokens, not var(--calc-*) aliases. */
   --code-background: var(--card);
   --code-foreground: var(--foreground);
-  --code-comment: oklch(0.5 0 0);
-  --code-string: oklch(0.42 0.143 153);
+  --code-comment: oklch(0.5 0.012 257);
+  --code-string: oklch(0.45 0.13 116.5);
   --code-number: oklch(0.4 0.15 240);
   --code-constant: oklch(0.42 0.12 200);
   --code-keyword: oklch(0.38 0.16 264);
   --code-function: oklch(0.42 0.12 55);
   --code-type: oklch(0.38 0.14 300);
   --code-tag: oklch(0.42 0.16 336);
-  --code-property: oklch(0.3 0 0);
+  --code-property: oklch(0.3 0.01 257);
 
-  /* Brand mark (Qlik logo). */
-  --brand-mark-ring: #54565a;
-  --brand-mark-tail: #00873d;
+  /* Brand mark — the reference logo's two inks: `-ring` is the DRAWN linework
+     (hatched circle, register dots, stray strokes), `-tail` the construction
+     square that carries the brand hue.
+
+     The ring is `currentColor` ON PURPOSE. A fixed charcoal would vanish on this
+     theme's own dark sidebar chrome, which is exactly where an app puts its
+     logo; following the surface's text colour makes the mark correct on the
+     canvas, in the chrome, and on a surface a consumer invents, with no per-place
+     override. It is still a token, so a brand that needs one fixed ink can set
+     one.
+
+     The plane mirrors `--primary` — the BRIGHT brand plate, deliberately, not the
+     muted `--primary-text` rung. A logotype is exempt from WCAG contrast (the mark
+     is identity, not UI), and the identity is the lime itself; the drawn linework
+     above is what carries the mark's legibility on any ground. Declared with
+     `var()` so retuning the brand plate moves the logo with it. */
+  --brand-mark-ring: currentColor;
+  --brand-mark-tail: var(--primary);
 }

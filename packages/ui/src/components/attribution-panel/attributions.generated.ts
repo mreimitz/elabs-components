@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 118 entries (data: 2, source: 16, font: 4, dependency: 96).
+// 117 entries (data: 2, source: 16, font: 3, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -256,19 +256,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright:
       "Copyright 2010-2020 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'. All Rights Reserved.",
     url: "https://github.com/adobe-fonts/source-code-pro",
-    usedBy: ["@elabs/components-tokens"],
-    required: true,
-    note: "Self-hosted webfont shipped in the tokens package.",
-  },
-  {
-    id: "font:source-sans-3",
-    category: "font",
-    name: "Source Sans 3",
-    version: null,
-    license: "OFL-1.1",
-    copyright:
-      "Copyright 2010-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'. All Rights Reserved.",
-    url: "https://github.com/adobe-fonts/source-sans",
     usedBy: ["@elabs/components-tokens"],
     required: true,
     note: "Self-hosted webfont shipped in the tokens package.",

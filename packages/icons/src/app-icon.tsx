@@ -1,15 +1,20 @@
 import { forwardRef, type CSSProperties, type HTMLAttributes } from "react";
 
-import { BrandLogo, type BrandLogoProps } from "./brand-logo";
+import {
+  BRAND_MARK_VIEWBOX_SIZE,
+  BrandLogo,
+  brandLockupWidth,
+  type BrandLogoProps,
+} from "./brand-logo";
 
 export type AppIconMorph = "auto" | "mark" | "lockup";
 
 export interface AppIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "title"> {
   /**
-   * - `"auto"` (default): renders the full Qlik lockup and **morphs to the Q
-   *   mark when inside a collapsed `Sidebar`** (`group-data-[collapsible=icon]`) —
-   *   a crossfade + width transition. Outside a collapsible sidebar it just
-   *   shows the lockup.
+   * - `"auto"` (default): renders the full lockup (glyph + wordmark) and
+   *   **morphs to the glyph alone when inside a collapsed `Sidebar`**
+   *   (`group-data-[collapsible=icon]`) — a crossfade + width transition.
+   *   Outside a collapsible sidebar it just shows the lockup.
    * - `"mark"` / `"lockup"`: force a fixed variant (no morph).
    */
   morph?: AppIconMorph;
@@ -17,13 +22,9 @@ export interface AppIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "tit
   height?: number;
   /** Color treatment, forwarded to `BrandLogo`. "auto" reads the per-theme brand tokens. */
   tone?: BrandLogoProps["tone"];
-  /** Accessible name. Default "Qlik". */
+  /** Accessible name, and the wordmark rendered in the lockup. Default "Brand". */
   title?: string;
 }
-
-// Aspect ratios baked into BrandLogo's viewBoxes (see brand-logo.tsx).
-const RATIO_LOCKUP = 662 / 278;
-const RATIO_MARK = 298 / 288;
 
 /** Lightweight class joiner — @elabs/components-icons stays dependency-free (no clsx/tailwind-merge). */
 function cx(...parts: Array<string | false | null | undefined>): string {
@@ -35,22 +36,23 @@ const MORPH_MOTION = "transition-opacity duration-base ease-standard motion-redu
 
 /**
  * AppIcon — the standard product/brand mark for app chrome (sidebar headers, top
- * navs, app shells). The single source of truth for "the Qlik logo in the corner":
+ * navs, app shells). The single source of truth for "the logo in the corner":
  *
  *  1. **Theme-correct automatically** — built on `BrandLogo`, so it renders the
- *     approved Qlik colorway for the active theme (green+gray on light, green+white
- *     on dark, white on blueprint) via the per-theme brand-mark tokens. No manual
- *     per-theme switching.
- *  2. **Morphs with available space** — `morph="auto"` shows the full "Qlik" lockup
- *     and collapses to the Q mark when the enclosing `Sidebar` collapses to its icon
+ *     active theme's approved colorway via the per-theme brand-mark tokens. No
+ *     manual per-theme switching.
+ *  2. **Morphs with available space** — `morph="auto"` shows the full lockup and
+ *     collapses to the glyph when the enclosing `Sidebar` collapses to its icon
  *     rail, animating the width + crossfading the two marks.
+ *  3. **Carries the product's own name** — `title` is the wordmark as well as the
+ *     accessible name, so nothing here is brand-locked but the glyph.
  *
  * Use it everywhere an app icon appears instead of hand-rolling `BrandLogo` (or a
  * lucide glyph in a colored box). Drop it into a `SidebarMenuButton`/`SidebarHeader`
  * and it just works.
  */
 export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIcon(
-  { morph = "auto", height = 24, tone = "auto", title = "Qlik", className, ...props },
+  { morph = "auto", height = 24, tone = "auto", title = "Brand", className, ...props },
   ref,
 ) {
   // Fixed variants: a single BrandLogo carries its own accessible name + <title>.
@@ -66,8 +68,12 @@ export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIco
   // The wrapper animates its width (overflow-hidden clips the wordmark); the two
   // marks crossfade so each resting state is the canonical glyph. The wrapper owns
   // the single accessible name; the inner SVGs are decorative.
-  const lockupWidth = Math.round(height * RATIO_LOCKUP);
-  const markWidth = Math.round(height * RATIO_MARK);
+  // Both endpoints are derived from BrandLogo's own geometry, never a baked-in
+  // ratio: the mark's viewBox is square (so its width == its height) and the
+  // lockup's width follows the wordmark. If these two disagreed with what
+  // BrandLogo actually renders, the morph would animate to the wrong width.
+  const lockupWidth = Math.round((height * brandLockupWidth(title)) / BRAND_MARK_VIEWBOX_SIZE);
+  const markWidth = height;
 
   return (
     <span
@@ -94,6 +100,7 @@ export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIco
         variant="lockup"
         height={height}
         tone={tone}
+        title={title}
         className={cx(
           "col-start-1 row-start-1 justify-self-start",
           MORPH_MOTION,
@@ -105,6 +112,7 @@ export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIco
         variant="mark"
         height={height}
         tone={tone}
+        title={title}
         className={cx(
           "col-start-1 row-start-1 justify-self-start opacity-0",
           MORPH_MOTION,

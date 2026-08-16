@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="brand-ui">
+  <!-- Kept in sync BY HAND with BrandLogo (packages/icons/src/brand-logo.tsx):
+       a browser tab renders this file outside the app, so it can neither use the
+       component nor read the token stylesheet. The component's two inks become
+       literals here.
+
+       Only the INK follows the browser's colour scheme (the closest available
+       stand-in for currentColor). The plane is the bright brand plate in both,
+       exactly as the brand-mark-tail token resolves in the component. The hexes
+       are the sRGB of the light/dark foreground token and of the primary token.
+
+       Stroke and fill are SEPARATE classes on purpose. A CSS rule beats a
+       presentation attribute, so a single ".ink { fill; stroke }" would override
+       fill="none" on the circle and hatch and paint the mark as a solid disc.
+
+       NOTE: an XML comment may not contain a double hyphen, so token names are
+       written here without their CSS custom-property prefix. A stray "- -" pair
+       makes this file unparseable as an image and the tab icon silently blank. -->
+  <style>
+    .ink-stroke { stroke: #404040; }
+    .ink-fill { fill: #404040; }
+    .plane { fill: #D0E268; stroke: #D0E268; }
+    @media (prefers-color-scheme: dark) {
+      .ink-stroke { stroke: #F1F2F4; }
+      .ink-fill { fill: #F1F2F4; }
+    }
+  </style>
+  <defs>
+    <clipPath id="brand-favicon-hatch">
+      <circle cx="42" cy="23" r="19.5" />
+    </clipPath>
+  </defs>
+  <rect class="plane" x="5.5" y="21.5" width="37" height="37" fill-opacity="0.22" stroke-width="2.2" stroke-dasharray="4.5 4.5" stroke-linecap="square" />
+  <g class="ink-stroke" fill="none" stroke-width="1.8" clip-path="url(#brand-favicon-hatch)">
+    <line x1="-22" y1="64" x2="42" y2="0" />
+    <line x1="-15" y1="64" x2="49" y2="0" />
+    <line x1="-8" y1="64" x2="56" y2="0" />
+    <line x1="-1" y1="64" x2="63" y2="0" />
+    <line x1="6" y1="64" x2="70" y2="0" />
+    <line x1="13" y1="64" x2="77" y2="0" />
+    <line x1="20" y1="64" x2="84" y2="0" />
+    <line x1="27" y1="64" x2="91" y2="0" />
+  </g>
+  <circle class="ink-stroke" cx="42" cy="23" r="19.5" fill="none" stroke-width="2.4" />
+  <circle class="ink-fill" cx="34.5" cy="30" r="2.2" />
+  <circle class="ink-fill" cx="44.5" cy="47" r="2.2" />
+  <g class="ink-stroke" fill="none" stroke-width="1.8" stroke-linecap="round">
+    <line x1="48" y1="58" x2="53.5" y2="52.5" />
+    <line x1="55" y1="50" x2="60.5" y2="44.5" />
+  </g>
+</svg>

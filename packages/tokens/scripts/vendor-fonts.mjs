@@ -5,15 +5,15 @@
  * @elabs/components-tokens ships its faces rather than pulling a CDN at runtime, so a
  * consumer gets correct typography with no network dependency and no CSP hole.
  * Inter and IBM Plex Mono were vendored by hand; this script does the same job
- * reproducibly for the Qlik-theme faces and can re-run to add weights.
+ * reproducibly for the remaining faces and can re-run to add weights.
  *
- * WHY: `light` / `dark` (the DEFAULT themes) ask for Source Sans Pro
- * and Source Code Pro, but only Storybook ever loaded them — from Google Fonts,
- * with a comment admitting the gap. Every external consumer silently fell back
- * to Helvetica. These are the exact families/weights Storybook was fetching, so
- * self-hosting makes consumers match Storybook rather than restyling anything.
+ * WHY: `light` / `dark` (the DEFAULT themes) ask for Source Code Pro as their
+ * mono, but only Storybook ever loaded it — from Google Fonts, with a comment
+ * admitting the gap. Every external consumer silently fell back to a system
+ * mono. These are the exact weights Storybook was fetching, so self-hosting
+ * makes consumers match Storybook rather than restyling anything.
  *
- * Both families are SIL OFL 1.1, which permits redistribution; the licence is
+ * The family is SIL OFL 1.1, which permits redistribution; the licence is
  * vendored next to the files.
  *
  * Usage: node packages/tokens/scripts/vendor-fonts.mjs [--force]
@@ -29,10 +29,7 @@ const FONTS_DIR = join(dirname(dirname(fileURLToPath(import.meta.url))), "src", 
 const CDN = "https://cdn.jsdelivr.net/npm";
 
 /** Weights match what apps/docs/.storybook/preview.css used to fetch. */
-const FAMILIES = [
-  { pkg: "source-sans-3", dir: "source-sans-3", weights: [400, 600, 700] },
-  { pkg: "source-code-pro", dir: "source-code-pro", weights: [400, 500, 600] },
-];
+const FAMILIES = [{ pkg: "source-code-pro", dir: "source-code-pro", weights: [400, 500, 600] }];
 
 const WOFF2_MAGIC = "wOF2";
 const force = process.argv.includes("--force");

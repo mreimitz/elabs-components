@@ -157,9 +157,9 @@ const CODE_TEXT_TOKENS = [
  * sites render it at 12-14px, weight 400-500 (`Badge` fixes `text-xs`/weight
  * 500, `Button` `text-sm`/weight 500, `StatusBadge`, `Alert`; `Calendar`'s
  * selected-day cell — `calendar.tsx`, `selected:` classNames — renders the
- * `light/--primary` INK_EXEMPT pair at `text-sm`/weight 400, #430), so
- * AA-Large never applies (it needs ≥18.66px bold or ≥24px regardless of
- * weight) and 4.5:1 is the operative floor at 100% of them.
+ * `--primary` pair at `text-sm`/weight 400, #430), so AA-Large never applies
+ * (it needs ≥18.66px bold or ≥24px regardless of weight) and 4.5:1 is the
+ * operative floor at 100% of them.
  */
 const INK_TONES = [
   "--primary",
@@ -171,28 +171,34 @@ const INK_TONES = [
 ] as const;
 
 /**
- * The ONLY accepted sub-AA ink pair, keyed by `(theme, tone)` — NOT by tone.
+ * Sub-AA ink pairs accepted on a brand argument, keyed by `(theme, tone)` — NOT
+ * by tone. **Currently empty, and that is a result, not an oversight.**
  *
- * #180 is closed won't-fix for white-on-Qlik-green **in light
- * specifically**: a brand argument about that one theme's brand hue. Keying it
- * by the tone name instead would be wrong twice over:
- *   - it would travel to `:root`'s genuine `--primary` failure and to any future
- *     theme's, silently green-lighting them; and
- *   - it would have to name `--success` too (as #180 and #383's original
- *     proposal did), freezing a token that #334 already moved OFF the brand
- *     green to `oklch(0.49 0.12 170)` and which now measures 5.46:1 — a pass.
- * The live footprint of #180 is exactly one pair. Keep it that way.
+ * #180 was closed won't-fix for white-on-Qlik-green in `light` specifically: at
+ * `oklch(0.553 0.143 153)` the brand green was too light to carry white ink at
+ * 4.5:1, and too dark to carry black, so the brand hue itself was the argument.
+ * The Phase-4 debrand retired that green. `--primary` is now the lime
+ * `oklch(0.875 0.148 116.5)`, which is light enough that its ink FLIPS to
+ * near-black — and near-black on lime measures well past AA. The exemption is
+ * not re-pinned to the new literal because there is no longer anything to
+ * exempt: the pair passes `INK_TONES` on its own merits.
+ *
+ * The keying rule stands for whoever adds the next one. Keyed by tone alone it
+ * would travel to `:root`'s genuine `--primary` failure and to every future
+ * theme, silently green-lighting them; it would also have to name `--success`,
+ * freezing a token #334 already moved off the brand hue. Scope an exemption to
+ * ONE `(theme, tone)` and cite the argument, or do not add it.
  */
-const INK_EXEMPT = new Set(["light/--primary"]);
+const INK_EXEMPT = new Set<string>([]);
 
 /**
- * The literal #180 accepted, so the exemption cannot rot silently. If the brand
- * green is ever retuned, this row fails and forces whoever moves it to re-derive
- * the exemption deliberately (it may well no longer be needed).
+ * The literal each exemption was granted against, so an exemption cannot rot
+ * silently: retuning the tone fails this row and forces whoever moved it to
+ * re-derive the exemption deliberately. That is exactly how the #180 row
+ * behaved when Phase 4 moved `--primary` — it failed, and re-deriving it showed
+ * the exemption was no longer needed at all.
  */
-const INK_EXEMPT_LITERALS: Record<string, string> = {
-  "light/--primary": "oklch(0.553 0.143 153)",
-};
+const INK_EXEMPT_LITERALS: Record<string, string> = {};
 
 /**
  * #334 — pairs of DISTINCT semantic roles that must never collapse onto one
@@ -539,17 +545,23 @@ describe("themes.css — --ring is brand-derived (ADR 0027, #427)", () => {
   );
 });
 
-// #321/#383 — change-detector on the ONE `INK_EXEMPT` pair. The exemption above
-// suppresses a real AA failure, so it must not be able to outlive its own
-// justification: if the light brand green moves, this fails and the mover
-// has to re-measure the pair and decide whether #180 still applies at all.
-describe("themes.css — the #180 ink exemption is pinned to its literal", () => {
+// #321/#383 — change-detector on every `INK_EXEMPT` pair. An exemption suppresses
+// a real AA failure, so it must not be able to outlive its own justification: if
+// the exempted tone moves, this fails and the mover has to re-measure the pair and
+// decide whether the exemption still applies at all. `INK_EXEMPT` is empty today
+// (Phase 4 retired the #180 pair — see its comment), so the guard below is what
+// keeps the two structures honest while there is nothing to pin.
+describe("themes.css — every ink exemption is pinned to its literal", () => {
+  it("INK_EXEMPT and INK_EXEMPT_LITERALS describe the same set of pairs", () => {
+    expect([...INK_EXEMPT].sort()).toEqual(Object.keys(INK_EXEMPT_LITERALS).sort());
+  });
+
   it.each(Object.entries(INK_EXEMPT_LITERALS))("%s still holds %s", (key, literal) => {
     const [theme, tone] = key.split("/") as [string, string];
     expect(INK_EXEMPT.has(key), `${key} is not in INK_EXEMPT`).toBe(true);
     expect(
       token(theme, tone),
-      `${key} moved off the #180-accepted literal — re-measure ` +
+      `${key} moved off the exemption-accepted literal — re-measure ` +
         `${tone}-foreground on ${tone} and decide whether the exemption still applies`,
     ).toBe(literal);
   });

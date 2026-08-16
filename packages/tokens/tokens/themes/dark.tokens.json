@@ -1,63 +1,63 @@
 {
   "background": {
     "$type": "color",
-    "$value": "oklch(0.21 0.005 75)"
+    "$value": "oklch(0.21 0.012 257)"
   },
   "foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "card": {
     "$type": "color",
-    "$value": "oklch(0.25 0.005 75)"
+    "$value": "oklch(0.25 0.014 257)"
   },
   "card-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "popover": {
     "$type": "color",
-    "$value": "oklch(0.27 0.006 75)"
+    "$value": "oklch(0.27 0.014 257)"
   },
   "popover-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "primary": {
     "$type": "color",
-    "$value": "oklch(0.75 0.14 153)"
+    "$value": "oklch(0.875 0.148 116.5)"
   },
   "primary-foreground": {
     "$type": "color",
-    "$value": "oklch(0.22 0.005 75)"
+    "$value": "oklch(0.24 0.015 285)"
   },
   "primary-text": {
     "$type": "color",
-    "$value": "oklch(0.82 0.14 153)"
+    "$value": "oklch(0.86 0.14 116.5)"
   },
   "secondary": {
     "$type": "color",
-    "$value": "oklch(0.28 0.006 75)"
+    "$value": "oklch(0.28 0.014 257)"
   },
   "secondary-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "muted": {
     "$type": "color",
-    "$value": "oklch(0.27 0.006 75)"
+    "$value": "oklch(0.27 0.012 257)"
   },
   "muted-foreground": {
     "$type": "color",
-    "$value": "oklch(0.72 0.008 85)"
+    "$value": "oklch(0.72 0.01 257)"
   },
   "accent": {
     "$type": "color",
-    "$value": "oklch(0.31 0.007 75)"
+    "$value": "oklch(0.32 0.03 242)"
   },
   "accent-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "destructive": {
     "$type": "color",
@@ -65,7 +65,7 @@
   },
   "destructive-foreground": {
     "$type": "color",
-    "$value": "oklch(0.22 0.005 75)"
+    "$value": "oklch(0.22 0.01 257)"
   },
   "destructive-text": {
     "$type": "color",
@@ -77,7 +77,7 @@
   },
   "success-foreground": {
     "$type": "color",
-    "$value": "oklch(0.22 0.005 75)"
+    "$value": "oklch(0.22 0.01 257)"
   },
   "success-text": {
     "$type": "color",
@@ -101,7 +101,7 @@
   },
   "info-foreground": {
     "$type": "color",
-    "$value": "oklch(0.22 0.005 75)"
+    "$value": "oklch(0.22 0.01 257)"
   },
   "info-text": {
     "$type": "color",
@@ -109,51 +109,51 @@
   },
   "border": {
     "$type": "color",
-    "$value": "oklch(0.32 0.006 75)"
+    "$value": "oklch(0.32 0.012 257)"
   },
   "border-strong": {
     "$type": "color",
-    "$value": "oklch(0.54 0.007 75)"
+    "$value": "oklch(0.54 0.014 257)"
   },
   "input": {
     "$type": "color",
-    "$value": "oklch(0.38 0.006 75)"
+    "$value": "oklch(0.38 0.012 257)"
   },
   "ring": {
     "$type": "color",
-    "$value": "oklch(0.89 0.2 140)"
+    "$value": "oklch(0.78 0.16 116.5)"
   },
   "surface": {
     "$type": "color",
-    "$value": "oklch(0.23 0.005 75)"
+    "$value": "oklch(0.23 0.012 257)"
   },
   "surface-muted": {
     "$type": "color",
-    "$value": "oklch(0.28 0.006 75)"
+    "$value": "oklch(0.28 0.012 257)"
   },
   "surface-elevated": {
     "$type": "color",
-    "$value": "oklch(0.29 0.006 75)"
+    "$value": "oklch(0.29 0.014 257)"
   },
   "sidebar": {
     "$type": "color",
-    "$value": "oklch(0.18 0.005 75)"
+    "$value": "oklch(0.18 0.012 257)"
   },
   "sidebar-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "sidebar-muted-foreground": {
     "$type": "color",
-    "$value": "oklch(0.72 0.008 85)"
+    "$value": "oklch(0.72 0.01 257)"
   },
   "sidebar-border": {
     "$type": "color",
-    "$value": "oklch(0.3 0.006 75)"
+    "$value": "oklch(0.3 0.014 257)"
   },
   "sidebar-accent": {
     "$type": "color",
-    "$value": "oklch(0.28 0.006 75)"
+    "$value": "oklch(0.28 0.014 257)"
   },
   "sidebar-accent-foreground": {
     "$type": "color",
@@ -173,55 +173,55 @@
   },
   "canvas": {
     "$type": "color",
-    "$value": "oklch(0.18 0.005 75)"
+    "$value": "oklch(0.18 0.012 257)"
   },
   "canvas-grid": {
     "$type": "color",
-    "$value": "oklch(0.28 0.006 75)"
+    "$value": "oklch(0.28 0.012 257)"
   },
   "flow-node": {
     "$type": "color",
-    "$value": "oklch(0.27 0.006 75)"
+    "$value": "oklch(0.27 0.014 257)"
   },
   "flow-node-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "flow-edge": {
     "$type": "color",
-    "$value": "oklch(0.62 0.1 245)"
+    "$value": "oklch(0.62 0.1 242)"
   },
   "chat-user": {
     "$type": "color",
-    "$value": "oklch(0.33 0.006 75)"
+    "$value": "oklch(0.33 0.01 257)"
   },
   "chat-user-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "chat-assistant": {
     "$type": "color",
-    "$value": "oklch(0.26 0.006 75)"
+    "$value": "oklch(0.26 0.012 257)"
   },
   "chat-assistant-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "chart-1": {
     "$type": "color",
-    "$value": "oklch(0.7 0.16 150)"
+    "$value": "oklch(0.86 0.16 116)"
   },
   "chart-2": {
     "$type": "color",
-    "$value": "oklch(0.7 0.12 252)"
+    "$value": "oklch(0.7 0.11 242)"
   },
   "chart-3": {
     "$type": "color",
-    "$value": "oklch(0.72 0.1 224)"
+    "$value": "oklch(0.78 0.09 205)"
   },
   "chart-4": {
     "$type": "color",
-    "$value": "oklch(0.68 0.13 323)"
+    "$value": "oklch(0.72 0.13 323)"
   },
   "chart-5": {
     "$type": "color",
@@ -333,23 +333,23 @@
   },
   "rule": {
     "$type": "color",
-    "$value": "oklch(0.32 0.006 75)"
+    "$value": "oklch(0.32 0.012 257)"
   },
   "rule-strong": {
     "$type": "color",
-    "$value": "oklch(0.45 0.006 75)"
+    "$value": "oklch(0.45 0.012 257)"
   },
   "grid-line": {
     "$type": "color",
-    "$value": "oklch(0.28 0.006 75)"
+    "$value": "oklch(0.28 0.012 257)"
   },
   "grid-line-major": {
     "$type": "color",
-    "$value": "oklch(0.36 0.006 75)"
+    "$value": "oklch(0.36 0.012 257)"
   },
   "calc-foreground": {
     "$type": "color",
-    "$value": "oklch(0.95 0.006 90)"
+    "$value": "oklch(0.95 0.004 257)"
   },
   "calc-number": {
     "$type": "color",
@@ -361,7 +361,7 @@
   },
   "calc-currency": {
     "$type": "color",
-    "$value": "oklch(0.75 0.14 153)"
+    "$value": "oklch(0.82 0.14 116.5)"
   },
   "calc-variable": {
     "$type": "color",
@@ -377,7 +377,7 @@
   },
   "calc-operator": {
     "$type": "color",
-    "$value": "oklch(0.88 0.006 90)"
+    "$value": "oklch(0.88 0.006 257)"
   },
   "calc-result": {
     "$type": "color",
@@ -385,7 +385,7 @@
   },
   "calc-comment": {
     "$type": "color",
-    "$value": "oklch(0.64 0.006 85)"
+    "$value": "oklch(0.72 0.01 257)"
   },
   "calc-warning": {
     "$type": "color",
@@ -401,11 +401,11 @@
   },
   "code-comment": {
     "$type": "color",
-    "$value": "oklch(0.64 0.006 85)"
+    "$value": "oklch(0.72 0.01 257)"
   },
   "code-string": {
     "$type": "color",
-    "$value": "oklch(0.75 0.14 153)"
+    "$value": "oklch(0.82 0.14 116.5)"
   },
   "code-number": {
     "$type": "color",
@@ -433,6 +433,6 @@
   },
   "code-property": {
     "$type": "color",
-    "$value": "oklch(0.88 0.006 90)"
+    "$value": "oklch(0.88 0.006 257)"
   }
 }

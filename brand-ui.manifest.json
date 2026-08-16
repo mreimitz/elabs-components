@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-16T12:48:25.358Z",
+  "generatedAt": "2026-08-16T16:46:41.216Z",
   "name": "brand-ui",
   "themes": [
     "dark"
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 154,
+  "tokenCount": 161,
   "tokens": [
     "--font-sans",
     "--font-mono",
@@ -145,6 +145,13 @@
     "--bp-grid",
     "--bp-hatch",
     "--bp-hatch-strong",
+    "--paper-dot-ink",
+    "--paper-dot-pitch",
+    "--paper-dot-size",
+    "--paper-rule-ink",
+    "--paper-rule-pitch",
+    "--paper-grain-scale",
+    "--paper-grain",
     "--bp-fade-top",
     "--bp-fade-bottom",
     "--bp-fade-edges",
@@ -14985,7 +14992,7 @@
               "name": "morph",
               "optional": true,
               "type": "AppIconMorph",
-              "description": "- `\"auto\"` (default): renders the full Qlik lockup and **morphs to the Q mark when inside a collapsed `Sidebar`** (`group-data-[collapsible=icon]`) — a crossfade + width transition. Outside a collapsible sidebar it just shows the lockup. - `\"mark\"` / `\"lockup\"`: force a fixed variant (no morph)."
+              "description": "- `\"auto\"` (default): renders the full lockup (glyph + wordmark) and **morphs to the glyph alone when inside a collapsed `Sidebar`** (`group-data-[collapsible=icon]`) — a crossfade + width transition. Outside a collapsible sidebar it just shows the lockup. - `\"mark\"` / `\"lockup\"`: force a fixed variant (no morph)."
             },
             {
               "name": "height",
@@ -15003,7 +15010,7 @@
               "name": "title",
               "optional": true,
               "type": "string",
-              "description": "Accessible name. Default \"Qlik\"."
+              "description": "Accessible name, and the wordmark rendered in the lockup. Default \"Brand\"."
             }
           ]
         },
@@ -15016,7 +15023,7 @@
               "name": "variant",
               "optional": true,
               "type": "BrandLogoVariant",
-              "description": "\"mark\" = the Q glyph only; \"lockup\" = Q + \"Qlik\" wordmark. Defaults to \"lockup\"."
+              "description": "\"mark\" = the circle-and-square glyph only; \"lockup\" = glyph + wordmark. Defaults to \"lockup\"."
             },
             {
               "name": "height",
@@ -15028,13 +15035,13 @@
               "name": "tone",
               "optional": true,
               "type": "\"auto\" | \"white\"",
-              "description": "Color treatment. \"auto\" (default) reads the per-theme brand-mark tokens — green + Qlik-gray on light themes, green + white on dark, fully white on blueprint. \"white\" forces the fully-white lockup for placing ON a colored surface (e.g. a green button or a dark brand chip)."
+              "description": "Color treatment. \"auto\" (default) reads the per-theme brand-mark tokens, so the mark takes the active theme's approved colorway. \"white\" forces the fully-white mark for placing ON a colored surface (a primary button, a dark brand chip)."
             },
             {
               "name": "title",
               "optional": true,
               "type": "string",
-              "description": "Accessible name. Defaults to \"Qlik\"."
+              "description": "Accessible name — AND, in the `lockup` variant, the wordmark that is rendered beside the glyph. Defaults to \"Brand\". This is the seam that makes the logo unbranded: a consumer passes their own name and gets their own lockup, with no SVG path data to edit. The glyph itself is the only fixed part."
             }
           ]
         },

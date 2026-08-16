@@ -121,7 +121,17 @@ export const SidebarProvider = forwardRef<
             } as CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper flex min-h-svh w-full text-sidebar-foreground has-data-[variant=inset]:bg-sidebar",
+            // The wrapper spans the WHOLE app frame — chrome AND content — so its
+            // ink is the ordinary page ink, not the chrome's. `Sidebar` (desktop
+            // and mobile) sets `text-sidebar-foreground` on itself, so the chrome
+            // is covered without painting chrome ink onto the canvas. Putting the
+            // chrome ink here was invisible only while a theme happened to give
+            // `--sidebar` and `--background` the same polarity: a theme with dark
+            // chrome under a light canvas rendered near-white text on the canvas
+            // for every element that inherits its colour (outline Buttons, list
+            // rows). See the chrome<canvas elevation invariant in
+            // .claude/rules/styling-and-tokens.md.
+            "group/sidebar-wrapper flex min-h-svh w-full text-foreground has-data-[variant=inset]:bg-sidebar",
             className,
           )}
           {...props}

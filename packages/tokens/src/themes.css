@@ -79,37 +79,16 @@
   src: url("./fonts/inter/Inter-Italic-Variable.woff") format("woff");
 }
 
-/* Source Sans 3 + Source Code Pro — the faces the light / dark
-   (DEFAULT) themes ask for, self-hosted (SIL OFL 1.1). Vendored under ./fonts/
-   by `node scripts/vendor-fonts.mjs` and copied into dist/ by the build.
+/* Source Code Pro — the mono face the light / dark themes ask for, self-hosted
+   (SIL OFL 1.1). Vendored under ./fonts/ by `node scripts/vendor-fonts.mjs` and
+   copied into dist/ by the build.
 
-   These used to be loaded ONLY by Storybook, from Google Fonts, so every
-   external consumer of the default theme silently fell back to Helvetica.
-   Weights match exactly what Storybook fetched, so this makes consumers match
-   Storybook rather than changing the design. `--font-sans` still lists
-   "Source Sans Pro" first, which wins if the user has it installed locally;
-   "Source Sans 3" is the shipped, always-available sibling. */
-@font-face {
-  font-family: "Source Sans 3";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/source-sans-3/source-sans-3-latin-400-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Source Sans 3";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/source-sans-3/source-sans-3-latin-600-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Source Sans 3";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("./fonts/source-sans-3/source-sans-3-latin-700-normal.woff2") format("woff2");
-}
+   Self-hosting is the point: these used to be loaded ONLY by Storybook, from
+   Google Fonts, so every external consumer of the default theme silently fell
+   back to a system mono. Weights match exactly what Storybook fetched, so this
+   makes consumers match Storybook rather than changing the design. (The
+   companion UI sans, Source Sans 3, was dropped when the themes moved to Inter
+   — an unreferenced face is dead weight in every consumer's install.) */
 @font-face {
   font-family: "Source Code Pro";
   font-style: normal;
@@ -479,6 +458,41 @@
     transparent 1px var(--bp-hatch-pitch)
   );
 
+  /* PAPER TEXTURE — the opt-in "drafting sheet" ground for a panel, card or
+     section (`bg-dot-grid` / `bg-paper`, defined with the other background
+     utilities at the end of this file).
+
+     DELIBERATELY NOT ON THE DECORATION DIAL. `--bp-*` above is the AMBIENT
+     texture: it rides `--decoration-factor`, so it fades in across whole
+     screens and is inert at 0. This family is the opposite contract — you ask
+     for it on one element and you get it, at any decoration level, in any
+     theme. Two mechanisms, because "the whole app reads as a blueprint" and
+     "this card is a sheet of paper" are different requests; keep them apart.
+
+     Root-only machinery like the rest of this block: the inks are RELATIVE
+     colours off `--foreground`, so every theme (including one a consumer
+     authors) re-tints them for free and no theme block has to declare them —
+     which is also why they are invisible to the theme-token-parity gate. */
+  --paper-dot-ink: oklch(from var(--foreground) l c h / 0.16);
+  --paper-dot-pitch: 12px;
+  --paper-dot-size: 1px;
+  /* The sparse construction rules the sketch draws over the dot field. */
+  --paper-rule-ink: oklch(from var(--foreground) l c h / 0.06);
+  --paper-rule-pitch: 96px;
+  /* Paper tooth. `feTurbulence` is greyscale (saturate 0) so it stays hue-neutral,
+     and it is blended `soft-light` at the utility so it darkens a light sheet and
+     lightens a dark one from ONE declaration — a `multiply` grain is invisible on
+     a dark theme. Self-contained data-URI: no network, CSP-safe.
+
+     STRENGTH LIVES INSIDE THE URL (the `opacity` on the <rect>), not in a
+     companion token: `url()` is an opaque string to CSS, so a var() inside it is
+     never substituted and a `--paper-grain-opacity` knob would silently do
+     nothing. To retune the tooth, replace this whole declaration. It is kept low
+     on purpose — at 0.5 the sheet stopped reading as paper and started reading
+     as a grey panel in light and a lighter, noisy one in dark. */
+  --paper-grain-scale: 140px;
+  --paper-grain: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="140" height="140" filter="url(%23g)" opacity="0.18"/></svg>');
+
   /* GROUND-FADE masks (#257) — consumed by the opt-in `[data-decoration-fade]`
      region hook in decoration.css, which paints --bp-grid on a ::before layer and
      masks THAT (never the host, whose children would be masked too). A mask reads
@@ -524,9 +538,20 @@
   --t-base: max(calc(var(--duration-base) * var(--motion-factor)), var(--motion-min));
   --t-slow: max(calc(var(--duration-slow) * var(--motion-factor)), var(--motion-min));
   --t-slower: max(calc(var(--duration-slower) * var(--motion-factor)), var(--motion-min));
-  /* Brand mark (Qlik logo) — green + Qlik gray (light). Consumed by @elabs/components-icons BrandLogo. */
-  --brand-mark-ring: #54565a;
-  --brand-mark-tail: #009845;
+  /* Brand mark — the two inks `BrandLogo` (@elabs/components-icons) paints with:
+     `-ring` is the drawn linework (hatched circle, register dots), `-tail` the
+     construction square. Neutral here, matching this fallback base's own
+     blue-hued identity rather than either reference theme — a consumer overrides
+     both in their own theme block.
+
+     `-ring` is `currentColor` so the mark stays correct on ANY surface it is
+     dropped on, including chrome whose ink is the inverse of the page's (a dark
+     sidebar under a light canvas). `-tail` mirrors `--primary` — the bright brand
+     plate, since a logotype is exempt from WCAG contrast and the plate IS the
+     identity; declared with `var()` so retuning the brand moves the mark with
+     it. */
+  --brand-mark-ring: currentColor;
+  --brand-mark-tail: var(--primary);
 }
 
 /* ========================================================================
@@ -1379,6 +1404,59 @@
       transparent 1px,
       transparent 8px
     );
+}
+
+/* Dot matrix — the drafting-paper dot field. The quietest of the three ground
+   utilities: a dot reads as "measured surface" without ruling lines across the
+   content the way bg-grid-paper does, so it is the one that survives under text.
+   Inks come from the --paper-* tokens (relative colours off --foreground), so it
+   re-tints per theme. Transparent ground — it composes over whatever fill the
+   element already has (bg-card, bg-surface-muted, …); it does not paint one. */
+@utility bg-dot-grid {
+  background-image: radial-gradient(var(--paper-dot-ink) var(--paper-dot-size), transparent 0);
+  background-size: var(--paper-dot-pitch) var(--paper-dot-pitch);
+  background-position: center center;
+}
+
+/* Paper — the full sheet: dot field + sparse construction rules + paper tooth.
+   The reference's drafting-sheet ground, as ONE opt-in class for a panel, card
+   or section: `<Card className="bg-paper">`.
+
+   `soft-light` on the grain layer is what makes this theme-agnostic — it darkens
+   a light sheet and lightens a dark one, so the same declaration works in both
+   reference themes and in a consumer's. The other two layers blend `normal`;
+   the list is positional, matching background-image's own order.
+
+   Reach for `bg-dot-grid` when the surface carries dense text (the grain costs
+   legibility at small sizes), and for `bg-grid-paper` when you want the ruled
+   engineering grid rather than a sheet. One focal ground per region — see
+   .claude/rules/blueprint-decoration.md ("The budget"). */
+@utility bg-paper {
+  background-image:
+    var(--paper-grain),
+    repeating-linear-gradient(
+      to right,
+      var(--paper-rule-ink) 0,
+      var(--paper-rule-ink) 1px,
+      transparent 1px,
+      transparent var(--paper-rule-pitch)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--paper-rule-ink) 0,
+      var(--paper-rule-ink) 1px,
+      transparent 1px,
+      transparent var(--paper-rule-pitch)
+    ),
+    radial-gradient(var(--paper-dot-ink) var(--paper-dot-size), transparent 0);
+  background-size:
+    var(--paper-grain-scale) var(--paper-grain-scale),
+    auto,
+    auto,
+    var(--paper-dot-pitch) var(--paper-dot-pitch);
+  background-position: center center;
+  background-blend-mode: soft-light, normal, normal, normal;
+  opacity: 1;
 }
 
 /* Diagonal hatch — the striped "fill" of a blueprint (emphasis bands, selected

@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+### The default themes and the logo are no longer someone else's brand
+
+The two reference themes shipped a specific company's colour system, typeface and
+logotype under generic names. They are now a brand-neutral system in their own
+right — lime primary, powder-blue accent, charcoal chrome, warm-white paper — and
+the logo is a mark this repo owns.
+
+- **Both reference themes are re-toned.** Every semantic token in `light` and
+  `dark` was re-derived against the same contrast, role-distinctness and
+  surface-elevation gates the old palette had to pass, so nothing regressed on
+  accessibility: body text still clears AA on every surface, status marks still
+  clear 3:1, and no two independent roles collapsed onto one colour. Two visible
+  consequences: the light theme's sidebar is now dark charcoal chrome under a
+  bright canvas, and the primary plate takes near-black ink instead of white —
+  which retires the one contrast exemption the previous palette needed.
+- **`BrandLogo` carries YOUR name, not ours.** The mark is a hatched circle swung
+  over a dashed construction square — the repo's own drafting language rather than
+  a generic app glyph — and the lockup's wordmark is whatever `title` you pass: no
+  SVG path editing, no forked component. `AppIcon` passes its own `title` straight
+  through, so the sidebar lockup in an app shell is the product's own.
+- **The mark adapts to whatever it is dropped on, with no prop and no
+  `prefers-color-scheme` branch.** It is exactly two inks. The drawn linework
+  (circle, hatch, register dots, stray strokes) is `--brand-mark-ring`, which
+  defaults to `currentColor` — grey on a light surface, white on dark chrome, right
+  on a surface a consumer invents. The construction square is `--brand-mark-tail`,
+  now declared as `var(--primary)` in every shipped theme, so re-toning the brand
+  moves the logo with it instead of stranding a hard-coded hex. `tone="white"`
+  still forces the monochrome mark for a colored plate. The browser-tab favicon and
+  the Storybook manager logo carry the same drawing as literals, since neither can
+  read the token stylesheet.
+- **Inter is the UI face in every theme.** Source Sans 3 is no longer referenced
+  by any theme and its vendored faces are dropped from the package, so consumers
+  stop installing a font nothing asks for. Source Code Pro stays as the mono.
+- **New opt-in paper grounds: `bg-dot-grid` and `bg-paper`.** A drafting-paper
+  dot field, and the full sheet (dots + construction rules + paper tooth), as one
+  class on any panel, card or section. They ink themselves from `--foreground`,
+  so they work in any theme including one you author, and they are deliberately
+  independent of the `--decoration` dial: the dial is ambient texture across a
+  screen, these are a property of one surface. Retune with the `--paper-*` tokens
+  rather than new classes.
+
 ### The copy-own registry is now generated, blocks-only, and actually rendered
 
 `npx shadcn add <item>` used to install code that three separate places described

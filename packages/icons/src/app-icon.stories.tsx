@@ -1,10 +1,11 @@
 /**
  * AppIcon — the standard product/brand mark for app chrome.
  *
- * Built on `BrandLogo`, so it's theme-correct automatically (the approved Qlik
- * colorway per theme). In `morph="auto"` it shows the full "Qlik" lockup and
- * collapses to the Q mark when its enclosing `Sidebar` collapses to the icon rail
- * — a width + crossfade morph. Use it everywhere an app icon appears.
+ * Built on `BrandLogo`, so it's theme-correct automatically (each theme's approved
+ * colorway). In `morph="auto"` it shows the full lockup — the gear-and-hull glyph
+ * plus `title` as the wordmark — and collapses to the glyph alone when its enclosing
+ * `Sidebar` collapses to the icon rail, a width + crossfade morph. Use it everywhere
+ * an app icon appears; pass your own `title` to get your own lockup.
  *
  * The morph keys off the `Sidebar`'s `group-data-[collapsible=icon]` signal.
  * @elabs/components-icons can't import `Sidebar` (sibling package), so these stories simulate
@@ -29,18 +30,18 @@ const meta = {
     height: { control: { type: "range", min: 16, max: 64, step: 2 } },
     tone: { control: "inline-radio", options: ["auto", "white"] },
   },
-  args: { morph: "auto", height: 24, tone: "auto", title: "Qlik" },
+  args: { morph: "auto", height: 24, tone: "auto", title: "Brand" },
   tags: ["autodocs"],
 } satisfies Meta<typeof AppIcon>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The default: the full Qlik lockup (theme-aware). */
+/** The default: the full lockup, glyph + wordmark (theme-aware). */
 export const Default: Story = {};
 
 /**
- * The collapse morph — toggle to watch the lockup morph to the Q mark, exactly as
+ * The collapse morph — toggle to watch the lockup morph to the glyph, exactly as
  * it does when a `Sidebar` collapses. (The `.group` + `data-collapsible` wrapper
  * stands in for the real `Sidebar` here.)
  */
@@ -92,7 +93,7 @@ export const Endpoints: Story = {
 /** Forced full lockup (no morph). */
 export const Lockup: Story = { args: { morph: "lockup" } };
 
-/** Forced Q mark (no morph). */
+/** Forced glyph-only mark (no morph). */
 export const Mark: Story = { args: { morph: "mark" } };
 
 /** Scales proportionally with `height`. */
@@ -100,7 +101,7 @@ export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
       {[20, 24, 32, 48].map((h) => (
-        <AppIcon key={h} morph="lockup" height={h} title={`Qlik ${h}px`} />
+        <AppIcon key={h} morph="lockup" height={h} title={`Brand ${h}px`} />
       ))}
     </div>
   ),

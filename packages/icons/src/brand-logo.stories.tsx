@@ -56,3 +56,31 @@ export const Variants: Story = {
     </div>
   ),
 };
+
+/**
+ * The mark is background-adaptive with no prop: the drawn linework is
+ * `currentColor`, so it inks itself from whatever surface it lands on. Switch the
+ * theme toolbar to see the same three surfaces re-ink. `tone="white"` is the one
+ * override, for a colored plate where `currentColor` would be the plate's own ink.
+ */
+export const OnEverySurface: Story = {
+  render: () => (
+    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+      <div style={{ padding: "16px", background: "var(--background)" }}>
+        <BrandLogo variant="mark" height={40} title="On the canvas" />
+      </div>
+      <div
+        style={{
+          padding: "16px",
+          background: "var(--sidebar)",
+          color: "var(--sidebar-foreground)",
+        }}
+      >
+        <BrandLogo variant="mark" height={40} title="On the chrome" />
+      </div>
+      <div style={{ padding: "16px", background: "var(--primary)" }}>
+        <BrandLogo variant="mark" height={40} tone="white" title="On a primary plate" />
+      </div>
+    </div>
+  ),
+};

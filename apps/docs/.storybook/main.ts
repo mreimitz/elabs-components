@@ -61,7 +61,7 @@ const config: StorybookConfig = {
   staticDirs: ["../public"],
   managerHead: (head) =>
     `${head}
-    <link rel="icon" type="image/svg+xml" href="./qlik-favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="./brand-favicon.svg" />
     <style>
       /* Hide the addon-vitest "Run tests" testing-module bar at the sidebar
          bottom. UI-only: the CLI test-storybook script and the MCP

@@ -61,13 +61,16 @@ const THEME_NAMES = [ROOT_MODE, ...ACTIVE_THEMES];
  * `--decoration` matches but unrelated tokens don't:
  *   --decoration, --decoration-factor   (decoration($|-))
  *   --bp-*                              (blueprint overlay vars)
+ *   --paper-*                           (opt-in paper-ground texture; its inks
+ *                                        are relative colours off --foreground,
+ *                                        so every theme re-tints them for free)
  *   --duration-*                        (motion timing scale)
  *   --t-*                               (motion duration tokens)
  *   --motion-*                          (motion factor/knob)
  *   --radius, --radius-base, --radius-* (radius scale)
  *   --font-sans, --font-*               (font families)
  */
-const ROOT_ONLY_RE = /^--(decoration($|-)|bp-|duration-|t-|motion-|radius($|-)|font-)/;
+const ROOT_ONLY_RE = /^--(decoration($|-)|bp-|paper-|duration-|t-|motion-|radius($|-)|font-)/;
 
 /**
  * Extract the FIRST block body for a theme using the contrast-test regex.
