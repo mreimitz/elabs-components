@@ -61,7 +61,7 @@
   },
   "destructive": {
     "$type": "color",
-    "$value": "oklch(0.68 0.18 5)"
+    "$value": "oklch(0.637 0.208 25.3)"
   },
   "destructive-foreground": {
     "$type": "color",
@@ -69,11 +69,11 @@
   },
   "destructive-text": {
     "$type": "color",
-    "$value": "oklch(0.74 0.16 5)"
+    "$value": "oklch(0.72 0.16 25.3)"
   },
   "success": {
     "$type": "color",
-    "$value": "oklch(0.82 0.12 170)"
+    "$value": "oklch(0.696 0.149 162.5)"
   },
   "success-foreground": {
     "$type": "color",
@@ -81,11 +81,11 @@
   },
   "success-text": {
     "$type": "color",
-    "$value": "oklch(0.84 0.12 170)"
+    "$value": "oklch(0.745 0.135 162.5)"
   },
   "warning": {
     "$type": "color",
-    "$value": "oklch(0.8 0.15 70)"
+    "$value": "oklch(0.769 0.165 70.1)"
   },
   "warning-foreground": {
     "$type": "color",
@@ -93,11 +93,11 @@
   },
   "warning-text": {
     "$type": "color",
-    "$value": "oklch(0.82 0.15 70)"
+    "$value": "oklch(0.79 0.15 70.1)"
   },
   "info": {
     "$type": "color",
-    "$value": "oklch(0.7 0.13 245)"
+    "$value": "oklch(0.685 0.148 237.3)"
   },
   "info-foreground": {
     "$type": "color",
@@ -105,7 +105,7 @@
   },
   "info-text": {
     "$type": "color",
-    "$value": "oklch(0.74 0.12 245)"
+    "$value": "oklch(0.745 0.13 237.3)"
   },
   "border": {
     "$type": "color",
@@ -121,7 +121,7 @@
   },
   "ring": {
     "$type": "color",
-    "$value": "oklch(0.78 0.16 116.5)"
+    "$value": "var(--primary)"
   },
   "surface": {
     "$type": "color",
@@ -209,23 +209,23 @@
   },
   "chart-1": {
     "$type": "color",
-    "$value": "oklch(0.86 0.16 116)"
+    "$value": "oklch(0.892 0.172 115.2)"
   },
   "chart-2": {
     "$type": "color",
-    "$value": "oklch(0.7 0.11 242)"
+    "$value": "oklch(0.715 0.084 241.8)"
   },
   "chart-3": {
     "$type": "color",
-    "$value": "oklch(0.78 0.09 205)"
+    "$value": "oklch(0.705 0.009 247.7)"
   },
   "chart-4": {
     "$type": "color",
-    "$value": "oklch(0.72 0.13 323)"
+    "$value": "oklch(0.817 0.158 117.6)"
   },
   "chart-5": {
     "$type": "color",
-    "$value": "oklch(0.8 0.13 85)"
+    "$value": "oklch(0.895 0.058 239.4)"
   },
   "chart-grid": {
     "$type": "color",
@@ -434,5 +434,33 @@
   "code-property": {
     "$type": "color",
     "$value": "oklch(0.88 0.006 257)"
+  },
+  "chart-6": {
+    "$type": "color",
+    "$value": "oklch(0.595 0.004 253.2)"
+  },
+  "chart-7": {
+    "$type": "color",
+    "$value": "oklch(0.917 0.095 113.8)"
+  },
+  "chart-8": {
+    "$type": "color",
+    "$value": "oklch(0.612 0.077 241.4)"
+  },
+  "chart-9": {
+    "$type": "color",
+    "$value": "oklch(0.78 0.046 248.5)"
+  },
+  "chart-10": {
+    "$type": "color",
+    "$value": "oklch(0.949 0.006 238.9)"
+  },
+  "chart-11": {
+    "$type": "color",
+    "$value": "oklch(0.539 0.054 254.3)"
+  },
+  "chart-12": {
+    "$type": "color",
+    "$value": "oklch(0.843 0.004 248.4)"
   }
 }

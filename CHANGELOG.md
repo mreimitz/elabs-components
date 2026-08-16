@@ -2,6 +2,45 @@
 
 ## Unreleased
 
+### One signal palette, a twelve-series chart ramp, and a brand-coloured focus ring
+
+The status colours, the chart palette and the focus indicator were all retuned
+against an authored source palette. Two of the three are straightforward
+improvements; the third ships a deliberate accessibility regression, described
+in full below.
+
+- **Status colours are one palette across every theme.** Success is emerald,
+  info is sky blue, warning is amber, error is a vivid red — authored as
+  `#10B981` / `#0EA5E9` / `#F59E0B` / `#EF4444`. The dark theme carries those
+  four literals exactly. The light theme and the `:root` base carry the same four
+  **hues** at a deeper rung, because a mid-brightness plate is invisible as a
+  status dot or a node stroke on a near-white canvas — three of the four measure
+  under the 3:1 bar there. Hue is the shared identity; the rung is per-theme.
+  Two hues moved noticeably: success from pine to emerald, and error from a
+  pink-leaning crimson to an orange-leaning red.
+- **The chart palette grew from five series to twelve.** Three hue families —
+  the brand yellow, a blue and a grey — interleaved so the first three series
+  drawn are one per family, and every one of the 66 pairs is perceptibly
+  separated. As with the status tones, the dark theme carries the authored hexes
+  and the light theme holds the same families at rungs a white plot ground can
+  actually show. Two members had to move on their own account: the deep slate was
+  invisible on a dark card and was lifted a rung, and one grey took on a little
+  blue to stay apart from its neighbour.
+- **The focus ring is now the primary brand colour.** In the dark theme this is
+  unambiguously good — the ring is bright lime on charcoal.
+  **In the light theme it is a regression, and an intentional one:** the lime
+  measures 1.23–1.42:1 against every light surface, which means a keyboard user
+  cannot see which control has focus. That fails WCAG 2.4.7 and 1.4.11. It was
+  chosen with the cost known; it is recorded at the token, in the tests, and in
+  ADR 0027's amendment. The fix that would keep the brand colour AND a visible
+  ring is a compound indicator (the lime plus a dark contour), which is a change
+  to how components draw focus, not to a token.
+- **For anyone maintaining their own theme:** the token contract grew by seven
+  entries (`--chart-6` … `--chart-12`). A theme that does not define them will
+  fail the parity check. The `:root` base is unchanged in one respect on purpose
+  — it keeps an independent, visible focus ring rather than following the
+  reference themes into the alias.
+
 ### Decoration is a background texture again — never inside a control, never flat
 
 The decoration dial used to reach everywhere: it hatched buttons, menu items,

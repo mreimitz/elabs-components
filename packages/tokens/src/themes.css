@@ -169,12 +169,18 @@
   --accent: oklch(0.96 0.02 264);
   --accent-foreground: oklch(0.3 0.04 264);
 
-  --destructive: oklch(0.58 0.22 27);
+  /* The four status tones share ONE authored signal palette across every theme
+     in this repo — #10B981 emerald / #0EA5E9 sky / #F59E0B amber / #EF4444 red.
+     Those literals are the DARK theme's fills verbatim; this base and the light
+     theme hold the same four HUES at a deeper rung, because a Tailwind-500
+     plate clears 3:1 against nothing on a near-white ground (#381). Hue is the
+     shared identity; the rung is per-theme. */
+  --destructive: oklch(0.575 0.225 25.3);
   --destructive-foreground: oklch(0.985 0 0);
   /* On-surface TEXT variant of destructive: darkened so red TEXT clears AA
      (4.5:1) on --background/--card/--surface-muted. The fill token above stays
      tuned for white ink on a red plate. See issue #20 + TOKEN_GUIDELINES. */
-  --destructive-text: oklch(0.5 0.2 27);
+  --destructive-text: oklch(0.555 0.224 25.3);
 
   /* Status tokens (extension beyond the base spec — used by data/status UI). */
   /* #406 — DEEPENED from `oklch(0.6 0.14 150)`. #321/#383 escaped the L 0.6 dead
@@ -185,11 +191,12 @@
      `--warning`, restores one polarity for the whole family. Deepening a fill can
      only RAISE its 1.4.11 mark rung: 4.60-5.61:1 on the content surfaces, up
      from 3.36-4.10:1. */
-  --success: oklch(0.52 0.14 150);
-  /* #406 — back to white, the polarity the rest of the family uses. 4.95:1. */
+     Hue moved 150 -> EMERALD 162.5 with the authored signal palette. */
+  --success: oklch(0.535 0.115 162.5);
+  /* #406 — back to white, the polarity the rest of the family uses. */
   --success-foreground: oklch(0.985 0 0);
   /* On-surface TEXT variant of success (green TEXT clears AA on surfaces). */
-  --success-text: oklch(0.5 0.15 150);
+  --success-text: oklch(0.515 0.112 162.5);
   /* #381 — DEEP amber, not the old light `oklch(0.78 0.15 80)` plate. A warning
      mark whose colour is its ONLY cue (a status dot, a node stroke, a rating
      star) has to clear WCAG 1.4.11 non-text contrast (≥3:1) against every
@@ -200,18 +207,20 @@
      destructive siblings) — one token cannot be both a light plate under dark
      ink AND a mark on a light surface. Now 4.29-4.82:1 on the content surfaces
      and 4.62:1 for its own ink. */
-  --warning: oklch(0.555 0.115 80);
+     Hue 80 -> 70.1, the authored AMBER. */
+  --warning: oklch(0.555 0.12 70.1);
   --warning-foreground: oklch(0.985 0 0);
   /* On-surface TEXT variant of warning (amber TEXT clears AA on surfaces).
      Sibling of success/destructive-text; a shade lighter than the fill. */
-  --warning-text: oklch(0.52 0.13 80);
+  --warning-text: oklch(0.535 0.114 70.1);
   /* #406 — DEEPENED from `oklch(0.6 0.15 240)`, same one-polarity reasoning as
      `--success` above. Mark rung 4.68-5.71:1, up from 3.42-4.17:1. */
-  --info: oklch(0.52 0.15 240);
-  /* #406 — back to white. 5.03:1. */
+     Hue 240 -> 237.3, the authored SKY blue. */
+  --info: oklch(0.545 0.12 237.3);
+  /* #406 — back to white. */
   --info-foreground: oklch(0.985 0 0);
   /* On-surface TEXT variant of info (blue TEXT clears AA on surfaces). */
-  --info-text: oklch(0.5 0.15 240);
+  --info-text: oklch(0.525 0.114 237.3);
 
   /* Search / find-in-page match highlight. `bg-highlight` is the `<mark>` plate;
      `text-highlight-foreground` is the ink on it — tuned so the matched text
@@ -291,12 +300,25 @@
   --chat-assistant: oklch(0.97 0.004 264);
   --chat-assistant-foreground: oklch(0.21 0.02 264);
 
-  /* Categorical data palette */
-  --chart-1: oklch(0.62 0.17 264);
-  --chart-2: oklch(0.6 0.14 180);
-  --chart-3: oklch(0.65 0.15 140);
-  --chart-4: oklch(0.63 0.16 70);
-  --chart-5: oklch(0.6 0.2 20);
+  /* Categorical data palette — TWELVE series, three hue families (yellow, blue,
+     grey) interleaved so the first three drawn are one per family. Identical to
+     the light theme's ramp: this base is a light ground, and a fallback that
+     disagreed with the reference light theme would make an unregistered
+     consumer's charts a different palette from a registered one. The authored
+     source hexes live in themes/dark.css; here, as in light, they are held at
+     the deeper rung a white chart ground requires. */
+  --chart-1: oklch(0.613 0.142 118); /* yellow */
+  --chart-2: oklch(0.478 0.077 239.8); /* blue */
+  --chart-3: oklch(0.457 0.004 248.3); /* grey */
+  --chart-4: oklch(0.538 0.126 118.5); /* yellow */
+  --chart-5: oklch(0.553 0.077 240.7); /* blue */
+  --chart-6: oklch(0.382 0.008 253.6); /* grey */
+  --chart-7: oklch(0.592 0.07 113.7); /* yellow */
+  --chart-8: oklch(0.402 0.083 241.5); /* blue */
+  --chart-9: oklch(0.533 0.004 248.2); /* grey */
+  --chart-10: oklch(0.63 0.076 237.6); /* blue */
+  --chart-11: oklch(0.308 0.021 254); /* slate */
+  --chart-12: oklch(0.609 0.004 247.4); /* grey */
 
   /* Chart / legend token bridge — CH-01 (#112). Pure aliases to existing
      semantic tokens so every theme inherits the correct palette automatically.
@@ -686,6 +708,13 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
+  --color-chart-11: var(--chart-11);
+  --color-chart-12: var(--chart-12);
 
   /* Chart / legend Tailwind utility bridge — CH-01 (#112).
      Enables bg-chart-grid, text-chart-foreground, bg-chart-tooltip-background,

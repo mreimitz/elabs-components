@@ -76,7 +76,7 @@
   },
   "destructive": {
     "$type": "color",
-    "$value": "oklch(0.58 0.22 27)",
+    "$value": "oklch(0.575 0.225 25.3)",
     "$description": "Danger/error fill (destructive buttons, error plates)."
   },
   "destructive-foreground": {
@@ -86,12 +86,12 @@
   },
   "destructive-text": {
     "$type": "color",
-    "$value": "oklch(0.5 0.2 27)",
+    "$value": "oklch(0.555 0.224 25.3)",
     "$description": "On-surface error TEXT color; ≥4.5:1 on content surfaces."
   },
   "success": {
     "$type": "color",
-    "$value": "oklch(0.52 0.14 150)",
+    "$value": "oklch(0.535 0.115 162.5)",
     "$description": "Success/positive fill. #406 — DEEPENED out of the L 0.6 dead zone so the whole :root status family carries ONE ink polarity (white), the same move #381 made for --warning. Deepening only RAISES the mark-surface rung: 4.60:1 at worst (was 3.36:1)."
   },
   "success-foreground": {
@@ -101,12 +101,12 @@
   },
   "success-text": {
     "$type": "color",
-    "$value": "oklch(0.5 0.15 150)",
+    "$value": "oklch(0.515 0.112 162.5)",
     "$description": "On-surface success TEXT color; ≥4.5:1 on content surfaces."
   },
   "warning": {
     "$type": "color",
-    "$value": "oklch(0.555 0.115 80)",
+    "$value": "oklch(0.555 0.12 70.1)",
     "$description": "Warning/caution fill. Deep amber: a colour-only warning mark must clear WCAG 1.4.11 (≥3:1) on every content surface (#381)."
   },
   "warning-foreground": {
@@ -116,12 +116,12 @@
   },
   "warning-text": {
     "$type": "color",
-    "$value": "oklch(0.52 0.13 80)",
+    "$value": "oklch(0.535 0.114 70.1)",
     "$description": "On-surface warning TEXT color; ≥4.5:1 on content surfaces."
   },
   "info": {
     "$type": "color",
-    "$value": "oklch(0.52 0.15 240)",
+    "$value": "oklch(0.545 0.12 237.3)",
     "$description": "Informational fill. #406 — DEEPENED out of the L 0.6 dead zone for the same one-polarity reason as --success. Mark-surface rung rises to 4.68:1 at worst (was 3.42:1)."
   },
   "info-foreground": {
@@ -131,7 +131,7 @@
   },
   "info-text": {
     "$type": "color",
-    "$value": "oklch(0.5 0.15 240)",
+    "$value": "oklch(0.525 0.114 237.3)",
     "$description": "On-surface info TEXT color; ≥4.5:1 on content surfaces."
   },
   "border": {
@@ -261,27 +261,27 @@
   },
   "chart-1": {
     "$type": "color",
-    "$value": "oklch(0.62 0.17 264)",
+    "$value": "oklch(0.613 0.142 118)",
     "$description": "Categorical data series 1. A lighter, chart-tuned cousin of the brand accent rather than a copy of it (#385): as a byte-identical duplicate of --primary/--ring it was also the darkest, highest-contrast member of its own ramp (5.02:1 vs --card against 2.87-4.37 for the rest) — never tuned as a ramp step. Now 3.73:1, evening the ramp, and ΔE 0.175 from --ring."
   },
   "chart-2": {
     "$type": "color",
-    "$value": "oklch(0.6 0.14 180)",
+    "$value": "oklch(0.478 0.077 239.8)",
     "$description": "Categorical data series 2."
   },
   "chart-3": {
     "$type": "color",
-    "$value": "oklch(0.65 0.15 140)",
+    "$value": "oklch(0.457 0.004 248.3)",
     "$description": "Categorical data series 3."
   },
   "chart-4": {
     "$type": "color",
-    "$value": "oklch(0.63 0.16 70)",
+    "$value": "oklch(0.538 0.126 118.5)",
     "$description": "Categorical data series 4."
   },
   "chart-5": {
     "$type": "color",
-    "$value": "oklch(0.6 0.2 20)",
+    "$value": "oklch(0.553 0.077 240.7)",
     "$description": "Categorical data series 5."
   },
   "chart-grid": {
@@ -543,5 +543,33 @@
     "$type": "color",
     "$value": "oklch(0.25 0.02 264)",
     "$description": "CodeBlock syntax: attribute / object-property-key color."
+  },
+  "chart-6": {
+    "$type": "color",
+    "$value": "oklch(0.382 0.008 253.6)"
+  },
+  "chart-7": {
+    "$type": "color",
+    "$value": "oklch(0.592 0.07 113.7)"
+  },
+  "chart-8": {
+    "$type": "color",
+    "$value": "oklch(0.402 0.083 241.5)"
+  },
+  "chart-9": {
+    "$type": "color",
+    "$value": "oklch(0.533 0.004 248.2)"
+  },
+  "chart-10": {
+    "$type": "color",
+    "$value": "oklch(0.63 0.076 237.6)"
+  },
+  "chart-11": {
+    "$type": "color",
+    "$value": "oklch(0.308 0.021 254)"
+  },
+  "chart-12": {
+    "$type": "color",
+    "$value": "oklch(0.609 0.004 247.4)"
   }
 }

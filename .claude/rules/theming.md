@@ -114,18 +114,35 @@ example and the default registry, not the menu.
     rewrote every `.bg-<tone>` to one declaration set would render non-aliased
     status roles identically (#391 owns that half; `pnpm decoration-collapse:check`
     guards against reintroducing one). Keep both.
-- **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427).**
+- **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427),
+  AMENDED 2026-08-16: the reference themes now alias `--ring: var(--primary)`.**
   `--ring` had no stated contract, only a negative comment ("distinct from the
   green brand AND `--info`"), which is why #334's fix was free to leave the
   brand palette entirely and land a blue ring in both reference themes with every
-  gate green. A theme's `--ring` must satisfy all of:
-  1. **Brand family** — within ~20° of that theme's `--primary` hue, at a
-     clearly different lightness/chroma rung (never an alias).
+  gate green. The contract below is what a theme's `--ring` must satisfy — with
+  clauses 1 and 3 **relaxed in the two reference themes only**, by the decision
+  recorded in the ADR's Amendment:
+  1. **Brand family** — within ~20° of that theme's `--primary` hue. The
+     "clearly different rung, never an alias" half is **withdrawn for the
+     reference themes**, which alias the plate outright; the hue bound still
+     holds and is still asserted.
   2. **1.4.11 (≥3:1)** against `--background`, `--card`, `--surface-muted`,
-     `--muted` and `--secondary` — a focus ring lands on all five.
-  3. **Distinctness (ΔE ≥ 0.05 OKLab)** from `--primary`, `--chart-1`,
-     `--accent-foreground` (`MUST_DIFFER`), `--info` (`ROLE_PAIRS`) and
-     `--success` (new row, Part C).
+     `--muted` and `--secondary` — a focus ring lands on all five. **The `light`
+     reference theme knowingly FAILS this** (1.23–1.42:1, so WCAG 2.4.7 and
+     1.4.11 both fail) as the accepted cost of the alias; `dark` (10.26–12.46:1)
+     and `:root` still pass and are still gated. A theme you author should
+     satisfy it — the exemption is a signed-off regression in one shipped theme,
+     not a licence.
+  3. **Distinctness (ΔE ≥ 0.05 OKLab)** from `--accent-foreground`
+     (`MUST_DIFFER`), `--info` (`ROLE_PAIRS`) and `--success`. The
+     `(--ring, --primary)` and `(--ring, --chart-1)` rows were **deleted** — the
+     first is what the alias intentionally breaks, the second collapses into
+     `(--primary, --chart-1)`, which this repo declines to gate.
+  - **The compliant way to have a brand-coloured ring on a light canvas is a
+    COMPOUND indicator** — the lime plus a dark contour layer, so one edge
+    clears 3:1 against both the lime and the page. That is a call-site sweep
+    behind a shared focus utility, not a token change. Reach for it before
+    reaching for another exemption.
   4. **`--sidebar-ring: var(--ring)`** is the sanctioned mirror — an override
      reaches sidebar focus automatically. Never re-declare it with a literal.
   5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
@@ -134,7 +151,8 @@ example and the default registry, not the menu.
      forking the theme (`/new-theme`) over patching one token.**
   6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
      blue (264°) and its ring is the same hue at a distinct rung (ΔE 0.1044).
-     It already satisfies this contract.
+     It already satisfies this contract, and is deliberately **left un-aliased**
+     so a consumer falling through to the base gets a focus ring they can see.
   - **`(--ring, --info-text)` / `(--ring, --success-text)` / `(--ring, --primary-text)`
     are knowingly declined from `MUST_DIFFER`** — a 2px transient stroke and a
     word of static text are different channels, the same reasoning that drops

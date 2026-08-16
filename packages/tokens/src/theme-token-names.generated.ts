@@ -31,10 +31,17 @@ export const THEME_TOKEN_NAMES = [
   "--card",
   "--card-foreground",
   "--chart-1",
+  "--chart-10",
+  "--chart-11",
+  "--chart-12",
   "--chart-2",
   "--chart-3",
   "--chart-4",
   "--chart-5",
+  "--chart-6",
+  "--chart-7",
+  "--chart-8",
+  "--chart-9",
   "--chart-background",
   "--chart-brush-border",
   "--chart-crosshair",
@@ -133,5 +140,5 @@ export const THEME_TOKEN_NAMES = [
   "--warning-text",
 ] as const;
 
-/** One of the 123 semantic tokens a complete theme defines. */
+/** One of the 130 semantic tokens a complete theme defines. */
 export type ThemeTokenName = (typeof THEME_TOKEN_NAMES)[number];

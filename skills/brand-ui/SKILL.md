@@ -37,7 +37,7 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (1):** dark · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 162 · **Registry blocks:** 21
+**Themes (1):** dark · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 169 · **Registry blocks:** 21
 
 **Exported surface:** 1050 components · 76 hooks across 11 packages.
 

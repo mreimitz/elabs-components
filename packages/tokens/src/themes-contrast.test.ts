@@ -48,13 +48,55 @@ function extractThemeBlock(name: string): string {
   return extractBlock(re);
 }
 
-/** All `--token: oklch(...)` declarations in a block body → map. */
+/**
+ * All `--token: oklch(...)` declarations in a block body → map, with
+ * single-level `var(--other)` aliases RESOLVED to the literal they point at.
+ *
+ * Alias resolution is not a convenience — it closes a hole. This regex used to
+ * match `oklch(` only, so a token declared as `var(--other)` was simply absent
+ * from the map, and every assertion about it either threw "missing" or was never
+ * written because the token "did not parse". That put the theming rule's two
+ * halves in direct conflict: "an INTENTIONAL mirror is declared with `var()`,
+ * never copy-pasted" (#385) versus "anything themes-contrast asserts on must
+ * stay a literal". A theme author following the first rule silently dropped the
+ * token out of this gate. `scripts/check-role-distinctness.mjs` already resolves
+ * `var()` before comparing, for exactly this reason; this brings the two into
+ * agreement.
+ *
+ * Resolution is scoped to the SAME block, which is what the cascade actually
+ * does for a mirror like `--sidebar-ring: var(--ring)` or `--ring:
+ * var(--primary)`. A `var()` pointing at a token the block does not declare is
+ * left unresolved and therefore still absent — that case IS a fall-through to
+ * `:root`, and the "missing" error it produces is the correct answer.
+ */
 function tokenMap(body: string): Record<string, string> {
-  const map: Record<string, string> = {};
-  for (const m of body.matchAll(/(--[\w-]+):\s*(oklch\([^;]+\))\s*;/g)) {
+  const literals: Record<string, string> = {};
+  const aliases: Record<string, string> = {};
+  for (const m of body.matchAll(/(--[\w-]+):\s*(oklch\([^;]+\)|var\(\s*--[\w-]+\s*\))\s*;/g)) {
     const name = m[1];
-    const value = m[2];
-    if (name != null && value != null) map[name] = value.trim();
+    const value = m[2]?.trim();
+    if (name == null || value == null) continue;
+    if (value.startsWith("var(")) {
+      const target = value.match(/var\(\s*(--[\w-]+)\s*\)/)?.[1];
+      if (target != null) aliases[name] = target;
+    } else {
+      literals[name] = value;
+    }
+  }
+  const map: Record<string, string> = { ...literals };
+  // One resolution pass per alias, following chains but refusing to loop.
+  for (const [name, firstTarget] of Object.entries(aliases)) {
+    let target: string | undefined = firstTarget;
+    const seen = new Set<string>([name]);
+    while (target != null && !seen.has(target)) {
+      seen.add(target);
+      const literal = literals[target];
+      if (literal != null) {
+        map[name] = literal;
+        break;
+      }
+      target = aliases[target];
+    }
   }
   return map;
 }
@@ -401,15 +443,49 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // control inside a `--muted` well), so 1.4.11 applies to it exactly as it
     // does to the status fills above. Value-independent on purpose — it survives
     // any future retune of the ring.
-    it("ring ≥ 3:1 on every mark surface (WCAG 1.4.11 — the focus indicator)", () => {
-      for (const surface of MARK_SURFACES) {
-        const ratio = contrast(token(theme, "--ring"), token(theme, surface));
+    //
+    // EXEMPTED FOR `light` SINCE 2026-08-16 — and the exemption is a record of a
+    // known failure, not a statement that the theme is fine.
+    //
+    // The reference themes now declare `--ring: var(--primary)`, an explicit
+    // maintainer decision that the focus indicator IS the brand plate
+    // (superseding ADR 0027 clauses 1 and 3). On `dark` that alias is sound:
+    // the lime measures 10.26-12.46:1 on the mark surfaces and the assertion
+    // below still runs there, unweakened. On `light` the same lime measures
+    // 1.23-1.42:1 — a focus indicator a keyboard user cannot see, failing WCAG
+    // 2.4.7 (Focus Visible) and 1.4.11 (Non-text Contrast).
+    //
+    // The exemption is scoped to the one theme that fails, and the test asserts
+    // the failure is still the one we signed off on: if `light`'s ring ever
+    // clears 3:1, the row below fails and this whole block should be deleted
+    // rather than adjusted. That is what stops the exemption from silently
+    // outliving the decision. The compliant repair is a COMPOUND indicator (a
+    // dark contour layer under the lime), which is a call-site sweep, not a
+    // token change — see the long note on `--ring` in `themes/light.css`.
+    const RING_1411_EXEMPT = new Set(["light"]);
+    if (RING_1411_EXEMPT.has(theme)) {
+      it("ring is KNOWINGLY below 3:1 on the mark surfaces (accepted 2.4.7/1.4.11 failure)", () => {
+        const ratios = MARK_SURFACES.map((surface) =>
+          contrast(token(theme, "--ring"), token(theme, surface)),
+        );
         expect(
-          ratio,
-          `--ring vs ${surface} in ${theme} = ${ratio.toFixed(2)}`,
-        ).toBeGreaterThanOrEqual(AA_NONTEXT);
-      }
-    });
+          Math.max(...ratios),
+          `--ring in ${theme} now clears 3:1 on a mark surface — delete this exemption ` +
+            `and restore the assertion, plus the two MUST_DIFFER rows in ` +
+            `scripts/check-role-distinctness.mjs`,
+        ).toBeLessThan(AA_NONTEXT);
+      });
+    } else {
+      it("ring ≥ 3:1 on every mark surface (WCAG 1.4.11 — the focus indicator)", () => {
+        for (const surface of MARK_SURFACES) {
+          const ratio = contrast(token(theme, "--ring"), token(theme, surface));
+          expect(
+            ratio,
+            `--ring vs ${surface} in ${theme} = ${ratio.toFixed(2)}`,
+          ).toBeGreaterThanOrEqual(AA_NONTEXT);
+        }
+      });
+    }
 
     // #321/#383 — the INK rung, generalized to EVERY status tone.
     //
@@ -516,33 +592,67 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
   });
 });
 
-// ADR 0027 — `--ring` is BRAND-DERIVED: the same hue family as `--primary`, at a
-// DISTINCT rung. Both halves are load-bearing. Without the hue bound, the next
-// maintainer resolving the next distinctness collision can walk the ring out of
-// the palette again with every other gate green — which is exactly what #334 did
-// and what this row exists to prevent. Without the ΔE bound, "same family" could
-// collapse into an undeclared alias of the primary action.
+// ADR 0027 — `--ring` is BRAND-DERIVED. The hue bound survives; the DISTINCT-RUNG
+// bound does not.
 //
-// Scoped to the two SHIPPING themes: `:root`'s `--primary` is a blue and its ring
-// is already the same hue at a distinct rung, so it satisfies the contract on
-// its own terms.
+// As shipped 2026-08-16 the reference themes declare `--ring: var(--primary)`
+// outright — the focus indicator IS the brand plate. That is a deliberate
+// maintainer decision (ADR 0027 amendment) and it makes the old ΔE assertion
+// below self-contradictory: it demanded the ring be perceptibly separated from
+// the very token it now aliases.
+//
+// What is KEPT is the half that still protects something. #334's failure mode was
+// a maintainer resolving a distinctness collision by walking the ring out of the
+// palette entirely — a blue ring on a lime brand, with every other gate green.
+// An alias cannot drift that way, but a future value CAN, so the hue-family bound
+// stays and is written to hold whether the ring is an alias or a literal.
+//
+// What is LOST is the guarantee that a focused control never reads as the default
+// button. That is now intended, not prevented. The visibility cost of the alias
+// (1.23-1.42:1 in `light`) is recorded on the exemption inside the per-theme
+// block above, which fails if the ring ever clears 3:1 there.
+//
+// Scoped to the two SHIPPING themes: `:root` keeps an independent, compliant ring
+// (its `--primary` is a blue and the ring is that hue at a distinct rung), so it
+// satisfies the original contract on its own terms and is deliberately NOT
+// aliased — an unregistered consumer falling through to the base should get a
+// focus indicator they can see.
 describe("themes.css — --ring is brand-derived (ADR 0027, #427)", () => {
-  it.each(["light", "dark"])(
-    "%s: --ring is in --primary's hue family but a distinct rung",
-    (theme) => {
-      const ring = parseOklch(token(theme, "--ring"));
-      const primary = parseOklch(token(theme, "--primary"));
-      const hueGap = Math.min(Math.abs(ring.h - primary.h), 360 - Math.abs(ring.h - primary.h));
-      expect(
-        hueGap,
-        `${theme}: --ring is ${hueGap.toFixed(0)}° from --primary`,
-      ).toBeLessThanOrEqual(20);
-      expect(
-        oklabDistance(token(theme, "--ring"), token(theme, "--primary")),
-        `${theme}: --ring vs --primary must be a DISTINCT rung`,
-      ).toBeGreaterThanOrEqual(ROLE_SEPARATION_DELTA_E);
-    },
-  );
+  it.each(["light", "dark"])("%s: --ring is in --primary's hue family", (theme) => {
+    const ring = parseOklch(token(theme, "--ring"));
+    const primary = parseOklch(token(theme, "--primary"));
+    const hueGap = Math.min(Math.abs(ring.h - primary.h), 360 - Math.abs(ring.h - primary.h));
+    expect(hueGap, `${theme}: --ring is ${hueGap.toFixed(0)}° from --primary`).toBeLessThanOrEqual(
+      20,
+    );
+  });
+
+  // The alias is the shipped intent, so assert it structurally: a maintainer who
+  // replaces `var(--primary)` with a hand-copied literal of the same colour has
+  // broken the mirror (#385 — a duplicated literal cannot be told apart from an
+  // accidental collision, and drifts the moment one side is retuned) even though
+  // every ratio above still passes.
+  it.each(["light", "dark"])("%s: --ring is declared as the var() mirror, not a copy", (theme) => {
+    const block = THEME_BLOCKS[theme] ?? "";
+    expect(
+      /--ring:\s*var\(\s*--primary\s*\)\s*;/.test(block),
+      `${theme}: --ring must be declared \`var(--primary)\`. If the ring is being ` +
+        `given an independent value again, restore the DISTINCT-RUNG assertion here, ` +
+        `the 1.4.11 row in the per-theme block, and the two MUST_DIFFER rows in ` +
+        `scripts/check-role-distinctness.mjs.`,
+    ).toBe(true);
+  });
+
+  // `:root` must NOT follow them into the alias — see the scoping note above.
+  it("root keeps an independent focus ring that clears 3:1", () => {
+    expect(/--ring:\s*var\(/.test(THEME_BLOCKS.root ?? "")).toBe(false);
+    for (const surface of MARK_SURFACES) {
+      const ratio = contrast(token("root", "--ring"), token("root", surface));
+      expect(ratio, `root --ring vs ${surface} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(
+        AA_NONTEXT,
+      );
+    }
+  });
 });
 
 // #321/#383 — change-detector on every `INK_EXEMPT` pair. An exemption suppresses

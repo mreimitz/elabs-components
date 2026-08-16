@@ -1,12 +1,12 @@
 /**
  * charts-contrast.test.ts — deterministic, browser-free WCAG gate on the chart
- * palette (`--chart-1..5` + chart text/label tokens) across all themes.
+ * palette (`--chart-1..12` + chart text/label tokens) across all themes.
  *
  * Sibling to themes-contrast.test.ts (CH-01 #113, the theme AA audit). It
  * parses themes.css, extracts each theme's chart tokens (resolving `var(--x)`
  * aliases — `--chart-background` is `var(--card)`, `--chart-foreground` is
  * `var(--foreground)`, …), and asserts:
- *   - series colors `--chart-1..5` clear the WCAG 1.4.11 non-text bar (≥ 3:1)
+ *   - series colors `--chart-1..12` clear the WCAG 1.4.11 non-text bar (≥ 3:1)
  *     against the chart surface they render on (`--chart-background`), so a bar /
  *     line / point is visible on its own;
  *   - chart text `--chart-foreground` / `--chart-label` clears AA body text
@@ -82,7 +82,26 @@ const TOKENS: Record<string, Record<string, string>> = Object.fromEntries(
   Object.entries(THEME_BLOCKS).map(([n, b]) => [n, tokenMap(b)]),
 );
 const THEMES = Object.keys(THEME_BLOCKS);
-const SERIES = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"] as const;
+/**
+ * All twelve categorical series. The ramp grew 5 → 12 on 2026-08-16; every new
+ * member is gated on the same 1.4.11 bar as the original five, which is what
+ * forced `--chart-11` (authored `#434C57`, 1.84:1 on the dark card) up a rung —
+ * see the note on that token in `themes/dark.css`.
+ */
+const SERIES = [
+  "--chart-1",
+  "--chart-2",
+  "--chart-3",
+  "--chart-4",
+  "--chart-5",
+  "--chart-6",
+  "--chart-7",
+  "--chart-8",
+  "--chart-9",
+  "--chart-10",
+  "--chart-11",
+  "--chart-12",
+] as const;
 
 /** Resolve a token to a concrete `oklch(...)` literal, following `var(--x)`
  *  aliases within the theme (then the `root`/`:root` base as fallback). */

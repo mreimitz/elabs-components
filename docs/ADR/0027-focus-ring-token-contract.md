@@ -1,7 +1,50 @@
 # ADR 0027 — The `--ring` focus-indicator contract
 
-- Status: Accepted
+- Status: Accepted, **partially superseded 2026-08-16** (see Amendment)
 - Date: 2026-08-10
+
+## Amendment (2026-08-16) — the reference themes now alias `--ring: var(--primary)`
+
+**Clauses 1 and 3 of the Decision below no longer describe what ships**, and the
+section "Why not simply `--primary`" argues against the value the reference
+themes now carry. Read this amendment before acting on anything further down.
+
+**What changed.** Both reference themes declare `--ring: var(--primary)` — the
+focus indicator is the brand plate itself, by explicit maintainer decision, taken
+with the cost below stated and accepted. `:root` is deliberately NOT aliased and
+keeps an independent, compliant ring.
+
+**The cost, plainly.** In the `light` theme the lime plate measures **1.23–1.42:1**
+against the five mark surfaces. A keyboard user cannot see where focus is. This
+fails **WCAG 2.4.7 (Focus Visible)** and **1.4.11 (Non-text Contrast)**. The `dark`
+theme renders the same token at 10.26–12.46:1 and is unaffected. This is a known,
+signed-off regression, not an oversight — do not "discover" it and quietly deepen
+the token back.
+
+**What was removed to let it land**, so that nothing warns you:
+
+| Guard                                    | Where                     | State                                                                                      |
+| ---------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| `(--ring, --primary)`                    | `MUST_DIFFER`             | deleted — the pair the alias intentionally breaks                                          |
+| `(--ring, --chart-1)`                    | `MUST_DIFFER`             | deleted — with the alias it IS `(--primary, --chart-1)`, a pair this repo declines to gate |
+| `ring ≥ 3:1 on every mark surface`       | `themes-contrast.test.ts` | exempted for `light` only; still asserted for `dark` and `root`                            |
+| `--ring is … a distinct rung` (clause 3) | `themes-contrast.test.ts` | deleted — it demanded separation from the token the ring now aliases                       |
+
+**What still holds.** Clause 1 (hue family) is kept and still asserted: #334's
+failure mode was a maintainer walking the ring out of the palette entirely while
+every other gate stayed green, and that is still worth preventing. Clause 4
+(`--sidebar-ring: var(--ring)`) is unchanged. Two new assertions replace what was
+lost — the `light` exemption fails if that theme's ring ever _clears_ 3:1 (so the
+exemption cannot outlive the decision), and a structural check requires the token
+to be the `var(--primary)` mirror rather than a hand-copied literal (#385).
+
+**The compliant repair, if this is revisited.** A **compound indicator**: keep the
+lime and add a dark contour layer so one edge of the ring clears 3:1 against both
+the lime and the page. That is a sweep of every `focus-visible:ring-ring` call
+site behind a shared utility — an implementation change, not a token change. It is
+the only known way to have both the brand colour and a visible focus indicator on
+a near-white canvas; deepening the token is the other way, and it is the thing
+this amendment decided against.
 
 ## Context
 
@@ -84,6 +127,11 @@ exact literals — a future retune inside the same hue family is a value change,
 not a contract change.
 
 ### Why not simply `--primary`
+
+> **Superseded 2026-08-16 — the reference themes now do exactly this.** The
+> reasoning below is why the original contract forbade it, and it is still an
+> accurate description of what aliasing costs; it is no longer a description of
+> what ships. See the Amendment at the top.
 
 `(--ring, --primary)` is a row in `scripts/check-role-distinctness.mjs`'s
 `MUST_DIFFER` array, for a reason stated in the gate's own comment there:

@@ -102,12 +102,34 @@ export const ROLE_SEPARATION_DELTA_E = 0.05;
  *     "no two tokens share a literal" scan.
  */
 export const MUST_DIFFER = [
-  // A focus ring must never read as the primary action: "this is focused" and
-  // "this is the default button" are different messages on the same screen.
-  ["--ring", "--primary"],
-  // …nor as chart series 1. A focused control sitting beside a chart is the
-  // ordinary dashboard case.
-  ["--ring", "--chart-1"],
+  // REMOVED 2026-08-16 — (--ring, --primary) and (--ring, --chart-1).
+  //
+  // The reference themes now declare `--ring: var(--primary)` outright: an
+  // explicit maintainer decision that the focus indicator IS the brand plate,
+  // superseding ADR 0027 clauses 1 and 3 (see that ADR's amendment, and the long
+  // note on `--ring` in packages/tokens/src/themes/light.css).
+  //
+  // (--ring, --primary) could not survive as an exemption. This file's own rule
+  // says an exemption is scoped to one (theme, pair) and must cite that theme's
+  // design contract; a pair that needs exempting in a POLYCHROME theme is not an
+  // invariant, so it is deleted rather than laundered. Both reference themes
+  // alias it, so there was no theme left for the row to protect.
+  //
+  // (--ring, --chart-1) went with it as a direct consequence: with the ring
+  // aliased to the plate, that row IS (--primary, --chart-1) — a pair this list
+  // deliberately declines to gate (see THE RULE below: series 1 ships as a
+  // chart-tuned cousin of the brand hue on purpose). Keeping it would have
+  // enforced, through a renamed left-hand side, exactly what the file argues
+  // must not be enforced.
+  //
+  // WHAT IS NO LONGER GUARDED, in plain terms: nothing here now stops a focus
+  // ring from rendering in the primary colour, because that is the shipped
+  // intent. What that costs — a 1.23-1.42:1 focus indicator in the LIGHT theme,
+  // failing WCAG 2.4.7 and 1.4.11 — is recorded at the token, not here, and the
+  // "ring ≥ 3:1 on every mark surface" assertion in themes-contrast.test.ts now
+  // carries a light-theme exemption saying the same thing. If the ring is ever
+  // given an independent value again, restore BOTH rows.
+  //
   // A hovered/selected row's ink vs the focus ring — both are "attention" cues
   // that must be told apart.
   ["--accent-foreground", "--ring"],
@@ -124,17 +146,84 @@ export const MUST_DIFFER = [
   // an invariant rather than a comment.
   ["--highlight-active", "--destructive"],
   // Categorical series are, by definition, distinguished from each other. Any
-  // two collapsing makes two series one.
+  // two collapsing makes two series one. All 66 pairs of the twelve-series ramp
+  // are enumerated below, not generated, so that a reviewer reading this list
+  // sees the same thing the gate enforces.
+  //
+  // ENUMERATED, NOT LOOPED, ON PURPOSE. The ramp is authored as three hue
+  // FAMILIES (yellow 1/4/7, blue 2/5/8/10, grey 3/6/9/11/12) interleaved so the
+  // first three series drawn are one per family. The tempting shortcut — gate
+  // cross-family pairs and exempt the within-family ones — is what this list
+  // refuses: an intra-family exemption would make the palette ordinal, and a
+  // chart that draws series 1 and 4 as independent categories would then be
+  // free to draw them in two shades of the same lime. Every pair is real
+  // because any two can co-occur.
   ["--chart-1", "--chart-2"],
   ["--chart-1", "--chart-3"],
   ["--chart-1", "--chart-4"],
   ["--chart-1", "--chart-5"],
+  ["--chart-1", "--chart-6"],
+  ["--chart-1", "--chart-7"],
+  ["--chart-1", "--chart-8"],
+  ["--chart-1", "--chart-9"],
+  ["--chart-1", "--chart-10"],
+  ["--chart-1", "--chart-11"],
+  ["--chart-1", "--chart-12"],
   ["--chart-2", "--chart-3"],
   ["--chart-2", "--chart-4"],
   ["--chart-2", "--chart-5"],
+  ["--chart-2", "--chart-6"],
+  ["--chart-2", "--chart-7"],
+  ["--chart-2", "--chart-8"],
+  ["--chart-2", "--chart-9"],
+  ["--chart-2", "--chart-10"],
+  ["--chart-2", "--chart-11"],
+  ["--chart-2", "--chart-12"],
   ["--chart-3", "--chart-4"],
   ["--chart-3", "--chart-5"],
+  ["--chart-3", "--chart-6"],
+  ["--chart-3", "--chart-7"],
+  ["--chart-3", "--chart-8"],
+  ["--chart-3", "--chart-9"],
+  ["--chart-3", "--chart-10"],
+  ["--chart-3", "--chart-11"],
+  ["--chart-3", "--chart-12"],
   ["--chart-4", "--chart-5"],
+  ["--chart-4", "--chart-6"],
+  ["--chart-4", "--chart-7"],
+  ["--chart-4", "--chart-8"],
+  ["--chart-4", "--chart-9"],
+  ["--chart-4", "--chart-10"],
+  ["--chart-4", "--chart-11"],
+  ["--chart-4", "--chart-12"],
+  ["--chart-5", "--chart-6"],
+  ["--chart-5", "--chart-7"],
+  ["--chart-5", "--chart-8"],
+  ["--chart-5", "--chart-9"],
+  ["--chart-5", "--chart-10"],
+  ["--chart-5", "--chart-11"],
+  ["--chart-5", "--chart-12"],
+  ["--chart-6", "--chart-7"],
+  ["--chart-6", "--chart-8"],
+  ["--chart-6", "--chart-9"],
+  ["--chart-6", "--chart-10"],
+  ["--chart-6", "--chart-11"],
+  ["--chart-6", "--chart-12"],
+  ["--chart-7", "--chart-8"],
+  ["--chart-7", "--chart-9"],
+  ["--chart-7", "--chart-10"],
+  ["--chart-7", "--chart-11"],
+  ["--chart-7", "--chart-12"],
+  ["--chart-8", "--chart-9"],
+  ["--chart-8", "--chart-10"],
+  ["--chart-8", "--chart-11"],
+  ["--chart-8", "--chart-12"],
+  ["--chart-9", "--chart-10"],
+  ["--chart-9", "--chart-11"],
+  ["--chart-9", "--chart-12"],
+  ["--chart-10", "--chart-11"],
+  ["--chart-10", "--chart-12"],
+  ["--chart-11", "--chart-12"],
 ];
 
 /**

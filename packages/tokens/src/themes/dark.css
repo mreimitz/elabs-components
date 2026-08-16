@@ -67,8 +67,16 @@
   --accent: oklch(0.32 0.03 242);
   --accent-foreground: oklch(0.95 0.004 257);
 
-  /* Danger pink on dark — its own hue, never confusable with the brand. */
-  --destructive: oklch(0.68 0.18 5);
+  /* Danger — VIVID RED (#EF4444 verbatim, hue 25.3), replacing the former pink
+     at hue 5. Its own hue, never confusable with the brand.
+     THIS THEME CARRIES THE AUTHORED SIGNAL PALETTE AS LITERALS:
+     #10B981 emerald / #0EA5E9 sky / #F59E0B amber / #EF4444 red. All four clear
+     3:1 as marks on every dark surface (3.88-8.26:1) and take this theme's
+     warm-dark ink at AA. The LIGHT theme cannot use these literals — on a
+     near-white canvas three of the four measure under 3:1 — so it holds the
+     same four hues at a deeper rung. Hue is the shared identity; the rung is
+     per-theme. See themes/light.css. */
+  --destructive: oklch(0.637 0.208 25.3);
   /* #321 — the warm-dark ink this theme's OTHER bright status fills already use
      (--primary/--success/--info-foreground are the same literal). Destructive
      was the sole holdout still carrying light's near-white ink verbatim,
@@ -76,21 +84,25 @@
      on every error badge in the theme where errors matter most. Not a new
      colour: the theme's own established pattern, finally applied. 5.50:1. */
   --destructive-foreground: oklch(0.22 0.01 257);
-  --destructive-text: oklch(0.74 0.16 5);
+  --destructive-text: oklch(0.72 0.16 25.3);
 
   /* #334 — success is its own emerald, never the brand hue. Same role split as
      light: the brand is the ACTION, success is a status. Unchanged by the
      Phase-4 debrand for the same reason as light — the brand moved away from
      it, not toward it. */
-  --success: oklch(0.82 0.12 170);
+     #10B981 verbatim; hue moved pine 170 -> emerald 162.5 with it. */
+  --success: oklch(0.696 0.149 162.5);
   --success-foreground: oklch(0.22 0.01 257);
-  --success-text: oklch(0.84 0.12 170);
-  --warning: oklch(0.8 0.15 70);
+  --success-text: oklch(0.745 0.135 162.5);
+  /* #F59E0B verbatim (hue 70.1). Deliberately not pure yellow — it has to stay
+     separable from the lime brand hue at 116.5. */
+  --warning: oklch(0.769 0.165 70.1);
   --warning-foreground: oklch(0.25 0.02 75);
-  --warning-text: oklch(0.82 0.15 70);
-  --info: oklch(0.7 0.13 245);
+  --warning-text: oklch(0.79 0.15 70.1);
+  /* #0EA5E9 verbatim; hue 245 -> 237.3, a cooler sky than the old status blue. */
+  --info: oklch(0.685 0.148 237.3);
   --info-foreground: oklch(0.22 0.01 257);
-  --info-text: oklch(0.74 0.12 245);
+  --info-text: oklch(0.745 0.13 237.3);
 
   /* Match highlight — bright amber plate reads as a marker on the dark UI; dark
      ink clears AA (see themes-contrast.test.ts). */
@@ -107,20 +119,17 @@
   --border: oklch(0.32 0.012 257);
   --border-strong: oklch(0.54 0.014 257);
   --input: oklch(0.38 0.012 257);
-  /* BRAND-DERIVED focus indicator (ADR 0027, #427). --primary's EXACT hue
-     (116.5, a 0° gap) at a DISTINCT rung (ΔE 0.096), never an alias. A
-     dark theme LIFTS a focus halo rather than deepening it, so this sits at the
-     light, high-chroma end of the green band: 13.52:1 vs --background, 11.14:1 at
-     its worst (--surface-muted / --secondary), comfortably past WCAG 1.4.11's
-     ≥3:1 for a graphical mark. NOTE the direction is opposite to light's ring
-     (L 0.50): on a dark ground the mark has to LIFT, not deepen — the hue is
-     held across both themes, the rung is not.
-     Stays ΔE ≥ 0.05 from --primary / --chart-1 /
-     --accent-foreground (MUST_DIFFER), --info (ROLE_PAIRS, #334) and --success.
-     Hue is held constant across the two themes, as the rest of the palette does.
+  /* THE FOCUS RING IS THE BRAND PLATE ITSELF — see the long note in
+     themes/light.css, which supersedes ADR 0027 clauses 1 and 3. Was
+     `oklch(0.78 0.16 116.5)`, the same hue one rung below the plate.
+
+     ON THIS THEME THE ALIAS IS SOUND: the lime measures 10.26-12.46:1 against
+     every dark mark surface, well past WCAG 1.4.11. The accepted regression is
+     the LIGHT theme's (1.23-1.42:1) — do not read this token's health as
+     evidence about that one.
      The --sidebar-ring alias below is the sanctioned mirror of this token, so an
      override reaches sidebar focus for free — never re-declare it with a literal. */
-  --ring: oklch(0.78 0.16 116.5);
+  --ring: var(--primary);
 
   --surface: oklch(0.23 0.012 257);
   --surface-muted: oklch(0.28 0.012 257);
@@ -157,13 +166,41 @@
   --chat-assistant: oklch(0.26 0.012 257);
   --chat-assistant-foreground: oklch(0.95 0.004 257);
 
-  /* Categorical ramp (brightened for dark): lime, powder blue, ocean, plum,
-     gold — the same five roles as light, lifted for the charcoal ground. */
-  --chart-1: oklch(0.86 0.16 116);
-  --chart-2: oklch(0.7 0.11 242);
-  --chart-3: oklch(0.78 0.09 205);
-  --chart-4: oklch(0.72 0.13 323);
-  --chart-5: oklch(0.8 0.13 85);
+  /* TWELVE-SERIES categorical ramp — the AUTHORED source palette, on the ground
+     it was designed for. Three hue families (yellow ~114-118, blue ~238-242,
+     grey ~248-254) INTERLEAVED so the first three series drawn are one per
+     family. The light theme holds the same families and the same within-family
+     ramp order at rungs a white ground can carry; see themes/light.css.
+
+     Each value is its authored hex, moved only where a hard constraint forced
+     it (minimum-drift repair). Two members moved materially, and both are
+     deliberate:
+       - --chart-11 (#434C57, deep slate) measured 1.84:1 on --chart-background.
+         A series that dark is invisible on a 0.25 card, so it was lifted to
+         L 0.539 / 3.15:1. It is still the deepest member; it is no longer deep.
+       - --chart-9 (#BCC3CA) took chroma 0.013 -> 0.046 to hold ΔE against
+         --chart-12. Separating five near-neutrals inside one lightness band
+         costs either lightness spread or chroma; this spends chroma, so the
+         member reads blue-grey rather than grey. Revisit together with
+         --chart-3/6/11/12 or not at all.
+
+     Invariants, both machine-checked: ≥3:1 vs --chart-background
+     (charts-contrast.test.ts; worst is --chart-11 at 3.15:1) and ≥0.05 OKLab ΔE
+     across all 66 pairs (roles:check; worst is (--chart-5, --chart-10) at
+     0.0751). Retuning one member can break a pair it is not adjacent to —
+     re-run `pnpm roles:check`, never eyeball it. */
+  --chart-1: oklch(0.892 0.172 115.2); /* yellow — #D0E268, the brand lime */
+  --chart-2: oklch(0.715 0.084 241.8); /* blue — #7FA9C8 */
+  --chart-3: oklch(0.705 0.009 247.7); /* grey — #98A1AA */
+  --chart-4: oklch(0.817 0.158 117.6); /* yellow — #BFD651 */
+  --chart-5: oklch(0.895 0.058 239.4); /* blue — #AFCDE3 */
+  --chart-6: oklch(0.595 0.004 253.2); /* grey — #6F7883 */
+  --chart-7: oklch(0.917 0.095 113.8); /* yellow — #E0EA95 */
+  --chart-8: oklch(0.612 0.077 241.4); /* blue — #5F87A5 */
+  --chart-9: oklch(0.78 0.046 248.5); /* grey — #BCC3CA, chroma lifted */
+  --chart-10: oklch(0.949 0.006 238.9); /* blue — #DAEBF7 */
+  --chart-11: oklch(0.539 0.054 254.3); /* slate — #434C57, lifted for 3:1 */
+  --chart-12: oklch(0.843 0.004 248.4); /* grey — #D9DDE1 */
 
   --chart-grid: var(--border);
   --chart-foreground: var(--foreground);
