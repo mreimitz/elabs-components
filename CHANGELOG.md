@@ -28,11 +28,21 @@ in full below.
 - **The chart palette grew from five series to twelve.** Three hue families —
   the brand yellow, a blue and a grey — interleaved so the first three series
   drawn are one per family, and every one of the 66 pairs is perceptibly
-  separated. As with the status tones, the dark theme carries the authored hexes
-  and the light theme holds the same families at rungs a white plot ground can
-  actually show. Two members had to move on their own account: the deep slate was
-  invisible on a dark card and was lifted a rung, and one grey took on a little
-  blue to stay apart from its neighbour.
+  separated. **Series 1 is the brand colour itself** — it follows the primary
+  token, so re-branding moves the first chart series with it. Both themes carry
+  the same ramp, so a chart looks like the same chart whichever theme it is in.
+  Two members had to move on their own account: the deep slate was invisible on
+  a dark card and was lifted a rung, and one grey took on a little blue to stay
+  apart from its neighbour.
+- **The light theme's charts pay for that, and it was a deliberate call.** The
+  palette is built for a mid or dark plot ground. On the light theme's white
+  card, nine of the twelve series are too pale for someone with low vision to
+  make out — the palest measures 1.22:1 where 3:1 is the bar. The alternative was
+  a light-only re-tune, which satisfied the bar and turned the brand colour into
+  an olive; that was rejected on sight. The palette wins, the cost is recorded at
+  the token and in the tests, and the fix if it is ever revisited is to darken
+  the plot ground rather than lighten the palette. The neutral base that a
+  consumer gets when they import no theme at all keeps a legible ramp.
 - **Charts actually use all twelve now.** Every chart family that assigns colours
   automatically — pies, rings, radars, scatter series and the spec-driven
   auto-chart — cycles through the full twelve before repeating, where it used to

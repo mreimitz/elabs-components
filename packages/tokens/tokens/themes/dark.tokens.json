@@ -209,7 +209,7 @@
   },
   "chart-1": {
     "$type": "color",
-    "$value": "oklch(0.892 0.172 115.2)"
+    "$value": "var(--primary)"
   },
   "chart-2": {
     "$type": "color",

@@ -251,35 +251,51 @@
      therefore maximally separable. Series 4+ walk back through the families at
      successively different rungs.
 
-     THIS THEME'S VALUES ARE NOT THE AUTHORED HEXES. The source palette
-     (#D0E268 #7FA9C8 #98A1AA #BFD651 #AFCDE3 #6F7883 #E0EA95 #5F87A5 #BCC3CA
-     #DAEBF7 #434C57 #D9DDE1) is the DARK theme's ramp verbatim; nine of its
-     twelve members measure under 3:1 on a white chart ground (#DAEBF7 is
-     1.22:1), so this theme takes the same hue families and the same
-     within-family ramp ORDER, mapped into the band a white ground can carry.
-     Anything above L ~0.63 cannot be a data mark here — the same physics that
-     deepened the status fills above.
+     THIS RAMP IS THE DARK THEME'S, VALUE FOR VALUE — one palette, both themes.
+     That is a deliberate, signed-off WCAG 1.4.11 regression, decided
+     2026-08-16, and it is the whole reason this comment is long.
 
-     Two invariants bind every value below, both machine-checked:
-       - ≥3:1 against --chart-background (charts-contrast.test.ts). Worst here
-         is --chart-10 at 3.45:1.
-       - ≥0.05 OKLab ΔE between all 66 pairs (roles:check MUST_DIFFER). Worst
-         here is (--chart-3, --chart-6) at 0.0751.
-     Derived by minimum-drift repair: each value sits as close to its authored
-     anchor as those two constraints allow. Retuning one member can break a pair
-     it is not adjacent to — re-run `pnpm roles:check`, never eyeball it. */
-  --chart-1: oklch(0.613 0.142 118); /* yellow — the brand lime, deepened */
-  --chart-2: oklch(0.478 0.077 239.8); /* blue */
-  --chart-3: oklch(0.457 0.004 248.3); /* grey */
-  --chart-4: oklch(0.538 0.126 118.5); /* yellow */
-  --chart-5: oklch(0.553 0.077 240.7); /* blue */
-  --chart-6: oklch(0.382 0.008 253.6); /* grey */
-  --chart-7: oklch(0.592 0.07 113.7); /* yellow */
-  --chart-8: oklch(0.402 0.083 241.5); /* blue */
-  --chart-9: oklch(0.533 0.004 248.2); /* grey */
-  --chart-10: oklch(0.63 0.076 237.6); /* blue — the palest source rung */
-  --chart-11: oklch(0.308 0.021 254); /* slate — the deepest rung */
-  --chart-12: oklch(0.609 0.004 247.4); /* grey — the palest source rung */
+     This theme used to carry a re-tuned ramp: same hue families, same
+     within-family order, every member deepened into the band a white ground can
+     carry. It satisfied the ≥3:1 mark bar on every one of the twelve. It also
+     turned the brand lime into an olive that read as mud, and the maintainer
+     rejected it on sight — twice on the same axis, which is the signal that the
+     MODEL was wrong (a contrast bar was driving the palette) and not the values.
+
+     The decision: the authored palette ships verbatim, and the light theme takes
+     the cost. Measured against this theme's --chart-background (--card, white),
+     NINE of the twelve are under 3:1:
+       chart-1 1.42 · chart-2 2.50 · chart-3 2.62 · chart-4 1.62 · chart-5 1.66
+       chart-7 1.28 · chart-9 1.78 · chart-10 1.22 · chart-12 1.37
+       (passing: chart-6 4.48 · chart-8 3.82 · chart-11 8.71)
+     A pale series on a white card is a data mark a low-vision user cannot see.
+     `charts-contrast.test.ts` exempts THIS THEME ONLY, via CHART_1411_EXEMPT,
+     and the exempt branch asserts the ramp is still identical to dark's — so if
+     someone later re-tunes it, the exemption fails loudly instead of going
+     quietly stale. `:root` deliberately KEEPS its own compliant ramp, so a
+     consumer who imports no theme stylesheet still gets legible charts.
+
+     The systemic repair, if this is ever revisited: darken the plot ground
+     (point --chart-background at a dark panel) rather than lighten the palette.
+     Charts would render as a dark card inside a light app; the palette would
+     need no change at all. That is a design decision, not a token edit.
+
+     The ≥0.05 OKLab ΔE floor across all 66 pairs (roles:check) is NOT exempted
+     and still holds — worst pair is (--chart-1, --chart-4) at 0.0589. Retuning
+     one member can break a pair it is not adjacent to; re-run `pnpm roles:check`,
+     never eyeball it. */
+  --chart-1: var(--primary); /* yellow — the brand lime */
+  --chart-2: oklch(0.715 0.084 241.8); /* blue — #7FA9C8 */
+  --chart-3: oklch(0.705 0.009 247.7); /* grey — #98A1AA */
+  --chart-4: oklch(0.817 0.158 117.6); /* yellow — #BFD651 */
+  --chart-5: oklch(0.895 0.058 239.4); /* blue — #AFCDE3 */
+  --chart-6: oklch(0.595 0.004 253.2); /* grey — #6F7883 */
+  --chart-7: oklch(0.917 0.095 113.8); /* yellow — #E0EA95 */
+  --chart-8: oklch(0.612 0.077 241.4); /* blue — #5F87A5 */
+  --chart-9: oklch(0.78 0.046 248.5); /* grey — #BCC3CA, chroma lifted */
+  --chart-10: oklch(0.949 0.006 238.9); /* blue — #DAEBF7 */
+  --chart-11: oklch(0.539 0.054 254.3); /* slate — #434C57, lifted for 3:1 */
+  --chart-12: oklch(0.843 0.004 248.4); /* grey — #D9DDE1 */
 
   --chart-grid: var(--border);
   --chart-foreground: var(--foreground);

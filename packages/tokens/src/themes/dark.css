@@ -189,7 +189,12 @@
      across all 66 pairs (roles:check; worst is (--chart-5, --chart-10) at
      0.0751). Retuning one member can break a pair it is not adjacent to —
      re-run `pnpm roles:check`, never eyeball it. */
-  --chart-1: oklch(0.892 0.172 115.2); /* yellow — #D0E268, the brand lime */
+  /* Series 1 IS the brand plate, declared as the alias so a re-brand reaches the
+     first chart series for free (#385 — an intentional mirror is `var()`, never
+     a copied literal). The authored #D0E268 was a near-neighbour of --primary
+     (ΔE 0.032); collapsing the two is the decision, not an accident. This is why
+     `(--primary, --chart-1)` is deliberately absent from MUST_DIFFER. */
+  --chart-1: var(--primary); /* yellow — the brand lime */
   --chart-2: oklch(0.715 0.084 241.8); /* blue — #7FA9C8 */
   --chart-3: oklch(0.705 0.009 247.7); /* grey — #98A1AA */
   --chart-4: oklch(0.817 0.158 117.6); /* yellow — #BFD651 */

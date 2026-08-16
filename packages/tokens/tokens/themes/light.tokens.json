@@ -209,23 +209,23 @@
   },
   "chart-1": {
     "$type": "color",
-    "$value": "oklch(0.613 0.142 118)"
+    "$value": "var(--primary)"
   },
   "chart-2": {
     "$type": "color",
-    "$value": "oklch(0.478 0.077 239.8)"
+    "$value": "oklch(0.715 0.084 241.8)"
   },
   "chart-3": {
     "$type": "color",
-    "$value": "oklch(0.457 0.004 248.3)"
+    "$value": "oklch(0.705 0.009 247.7)"
   },
   "chart-4": {
     "$type": "color",
-    "$value": "oklch(0.538 0.126 118.5)"
+    "$value": "oklch(0.817 0.158 117.6)"
   },
   "chart-5": {
     "$type": "color",
-    "$value": "oklch(0.553 0.077 240.7)"
+    "$value": "oklch(0.895 0.058 239.4)"
   },
   "chart-grid": {
     "$type": "color",
@@ -437,30 +437,30 @@
   },
   "chart-6": {
     "$type": "color",
-    "$value": "oklch(0.382 0.008 253.6)"
+    "$value": "oklch(0.595 0.004 253.2)"
   },
   "chart-7": {
     "$type": "color",
-    "$value": "oklch(0.592 0.07 113.7)"
+    "$value": "oklch(0.917 0.095 113.8)"
   },
   "chart-8": {
     "$type": "color",
-    "$value": "oklch(0.402 0.083 241.5)"
+    "$value": "oklch(0.612 0.077 241.4)"
   },
   "chart-9": {
     "$type": "color",
-    "$value": "oklch(0.533 0.004 248.2)"
+    "$value": "oklch(0.78 0.046 248.5)"
   },
   "chart-10": {
     "$type": "color",
-    "$value": "oklch(0.63 0.076 237.6)"
+    "$value": "oklch(0.949 0.006 238.9)"
   },
   "chart-11": {
     "$type": "color",
-    "$value": "oklch(0.308 0.021 254)"
+    "$value": "oklch(0.539 0.054 254.3)"
   },
   "chart-12": {
     "$type": "color",
-    "$value": "oklch(0.609 0.004 247.4)"
+    "$value": "oklch(0.843 0.004 248.4)"
   }
 }

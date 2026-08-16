@@ -115,15 +115,51 @@ function resolve(theme: string, name: string, seen: string[] = []): string {
   return raw;
 }
 
+/**
+ * Themes whose SERIES ramp is exempt from the ≥3:1 1.4.11 mark bar.
+ *
+ * `light` only, and it is a signed-off regression decided 2026-08-16, not an
+ * oversight: the authored twelve-colour palette is tuned for a mid/dark plot
+ * ground, and the maintainer chose to ship it verbatim in BOTH reference themes
+ * rather than keep the re-tuned light ramp that satisfied this bar and read as
+ * mud. Nine of the twelve measure under 3:1 on this theme's white
+ * `--chart-background` (worst: `--chart-10` at 1.22:1). Full measurements and
+ * the systemic repair (darken the plot ground, not the palette) are recorded on
+ * the ramp in `themes/light.css`.
+ *
+ * The exemption is NOT a hole: the exempt branch below asserts the ramp is still
+ * value-identical to `dark`'s, so a later re-tune of the light ramp — the exact
+ * change that would make this exemption stale — fails the suite instead of
+ * passing quietly. `:root` is deliberately NOT exempt; it keeps its own
+ * compliant ramp so a consumer who imports no theme stylesheet still gets
+ * legible charts.
+ */
+const CHART_1411_EXEMPT = new Set(["light"]);
+
 describe("themes.css — chart palette WCAG contrast (all themes)", () => {
   describe.each(THEMES)("%s", (theme) => {
-    it.each(SERIES)("%s ≥ 3:1 on --chart-background", (s) => {
-      const ratio = contrast(resolve(theme, s), resolve(theme, "--chart-background"));
-      expect(
-        ratio,
-        `${s} vs --chart-background in ${theme} = ${ratio.toFixed(2)}`,
-      ).toBeGreaterThanOrEqual(NON_TEXT);
-    });
+    if (CHART_1411_EXEMPT.has(theme)) {
+      it.each(SERIES)("%s mirrors the dark ramp (1.4.11 exemption)", (s) => {
+        expect(
+          resolve(theme, s),
+          `${s}: the ${theme} exemption is only valid while its ramp IS dark's`,
+        ).toBe(resolve("dark", s));
+      });
+      it("is still below the 3:1 bar (delete the exemption once it is not)", () => {
+        const failing = SERIES.filter(
+          (s) => contrast(resolve(theme, s), resolve(theme, "--chart-background")) < NON_TEXT,
+        );
+        expect(failing.length, `${theme} series now clearing 3:1: ${failing.length}/12`).toBe(9);
+      });
+    } else {
+      it.each(SERIES)("%s ≥ 3:1 on --chart-background", (s) => {
+        const ratio = contrast(resolve(theme, s), resolve(theme, "--chart-background"));
+        expect(
+          ratio,
+          `${s} vs --chart-background in ${theme} = ${ratio.toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(NON_TEXT);
+      });
+    }
     it("--chart-foreground ≥ 4.5:1 on --chart-background", () => {
       const ratio = contrast(
         resolve(theme, "--chart-foreground"),

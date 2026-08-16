@@ -108,7 +108,10 @@ example and the default registry, not the menu.
     a pair needs an exemption in a _polychrome_
     theme, the pair is the mistake — delete it from `MUST_DIFFER`. That is why
     `(--primary, --chart-1)` is deliberately absent: shipping series 1 as a
-    chart-tuned cousin of the brand hue is a convention, not a collision.
+    chart-tuned cousin of the brand hue is a convention, not a collision. Since
+    2026-08-16 both reference themes go further and declare
+    `--chart-1: var(--primary)` outright, so a re-brand reaches the first chart
+    series for free — which is exactly the case that row would have forbidden.
   - **This gate is token-level only.** It proves the tokens differ; it cannot
     prove the difference survives to the pixel — a downstream override that
     rewrote every `.bg-<tone>` to one declaration set would render non-aliased
