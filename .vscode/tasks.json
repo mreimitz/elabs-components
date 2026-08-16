@@ -1,0 +1,125 @@
+{
+  // Start/stop tasks backing the debug profiles in launch.json.
+  // The two dev-server tasks are `isBackground` with a ready-matcher so a Chrome
+  // debug launch waits until the server is actually up before attaching.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: playground",
+      "detail": "Start the Vite playground dev server on http://localhost:5173",
+      "type": "shell",
+      "command": "pnpm playground",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "source": "vite",
+        "fileLocation": "absolute",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(VITE|building|Forced re-optimization|hmr).*",
+          "endsPattern": ".*(Local:|ready in|localhost:5173).*"
+        }
+      },
+      "presentation": {
+        "group": "apps",
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "dev: storybook",
+      "detail": "Start Storybook (docs) on http://localhost:6006, or reuse one that is already running",
+      "type": "shell",
+      // The wrapper owns the readiness handshake and prints its own markers — see the
+      // comment block at the top of .vscode/start-storybook.mjs for why this does NOT
+      // match on Storybook's own banner.
+      "command": "node .vscode/start-storybook.mjs",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "storybook",
+        "source": "storybook",
+        "fileLocation": "absolute",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          // Markers printed by .vscode/start-storybook.mjs. __STORYBOOK_BOOT__ is printed
+          // once, BEFORE the server starts; nothing printed afterwards can match it, so the
+          // matcher can never re-arm and strand the task in its "active" state.
+          "beginsPattern": "__STORYBOOK_BOOT__",
+          "endsPattern": "__STORYBOOK_READY__"
+        }
+      },
+      "presentation": {
+        "group": "apps",
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "dev: workbench",
+      "detail": "Start the Vite workbench dev server on http://localhost:5174",
+      "type": "shell",
+      "command": "pnpm --filter @qlik-coe-emea/qlabs-components-workbench dev",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "source": "vite",
+        "fileLocation": "absolute",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(VITE|building|Forced re-optimization|hmr).*",
+          "endsPattern": ".*(Local:|ready in|localhost:5174).*"
+        }
+      },
+      "presentation": {
+        "group": "apps",
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "stop: playground",
+      "detail": "Kill whatever is listening on :5173 (used as a postDebugTask)",
+      "type": "shell",
+      "command": "npx --yes kill-port 5173",
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
+    },
+    {
+      "label": "stop: storybook",
+      "detail": "Kill the Storybook server on :6006 AND the task wrapper that started it",
+      "type": "shell",
+      // kill-port alone only kills the SERVER. The wrapper process keeps running, so VS Code
+      // still considers the "dev: storybook" task active and silently reuses that stale
+      // execution on the next F5 — which never re-runs the command and never re-signals
+      // ready, leaving the debug session stuck with nothing in the call stack.
+      "command": "pkill -f 'start-storybook\\.mjs' ; npx --yes kill-port 6006",
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
+    },
+    {
+      "label": "stop: workbench",
+      "detail": "Kill whatever is listening on :5174 (used as a postDebugTask)",
+      "type": "shell",
+      "command": "npx --yes kill-port 5174",
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
+    },
+    {
+      "label": "stop: all apps",
+      "detail": "Kill the playground (:5173), Storybook (:6006) and workbench (:5174) dev servers",
+      "type": "shell",
+      "command": "npx --yes kill-port 5173 6006 5174",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared", "close": false }
+    }
+  ]
+}

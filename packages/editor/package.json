@@ -1,0 +1,122 @@
+{
+  "name": "@qlik-coe-emea/qlabs-components-editor",
+  "version": "3.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
+    "directory": "packages/editor"
+  },
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": [
+    "./src/lib/monaco-environment.ts",
+    "./dist/lib/monaco-environment.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./markdown": {
+      "types": "./src/markdown/index.ts",
+      "default": "./src/markdown/index.ts"
+    },
+    "./markdown/frontmatter": {
+      "types": "./src/markdown/frontmatter.ts",
+      "default": "./src/markdown/frontmatter.ts"
+    },
+    "./markdown/parse": {
+      "types": "./src/markdown/parse.ts",
+      "default": "./src/markdown/parse.ts"
+    },
+    "./monaco-environment": {
+      "types": "./src/lib/monaco-environment.ts",
+      "default": "./src/lib/monaco-environment.ts"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./markdown": {
+        "types": "./dist/markdown/index.d.ts",
+        "default": "./dist/markdown/index.js"
+      },
+      "./markdown/frontmatter": {
+        "types": "./dist/markdown/frontmatter.d.ts",
+        "default": "./dist/markdown/frontmatter.js"
+      },
+      "./markdown/parse": {
+        "types": "./dist/markdown/parse.d.ts",
+        "default": "./dist/markdown/parse.js"
+      },
+      "./monaco-environment": {
+        "types": "./dist/lib/monaco-environment.d.ts",
+        "default": "./dist/lib/monaco-environment.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsup && node ../../scripts/link-dist-css.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist .turbo coverage"
+  },
+  "dependencies": {
+    "@milkdown/kit": "^7.21.2",
+    "@prosemirror-adapter/react": "^0.5.0",
+    "@streamdown/code": "^1.1.0",
+    "class-variance-authority": "^0.7.1",
+    "js-yaml": "^4.1.0",
+    "katex": "^0.16.11",
+    "lucide-react": "^0.577.0",
+    "mermaid": "^11.15.0",
+    "remark-directive": "^4.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "shiki": "^3.22.0",
+    "streamdown": "^2.4.0",
+    "unified": "^11.0.0",
+    "unist-util-visit": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "monaco-editor": "^0.55.1",
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/js-yaml": "^4.0.9",
+    "@types/mdast": "^4.0.4",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
+    "jsdom": "^25.0.1",
+    "monaco-editor": "^0.55.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.2"
+  }
+}

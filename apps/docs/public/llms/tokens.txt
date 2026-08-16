@@ -1,0 +1,40 @@
+# @qlik-coe-emea/qlabs-components-tokens
+
+> Semantic CSS-variable themes + ThemeProvider/useTheme.
+
+Import from `@qlik-coe-emea/qlabs-components-tokens`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- DECORATION_LEVELS
+- DecorationProvider — Sets the `--decoration` dial (0–10) for a region — reprographic texture, orthogonal to color.
+  - avoid: Raising decoration on a dense data surface — decoration density goes DOWN as information density goes UP.
+  - avoid: Minting a second expressiveness knob — `--decoration` IS the expressiveness axis (ADR 0020); never add a parallel dial.
+- DEFAULT_DECORATION_LEVEL
+- DEFAULT_DENSITY
+- DEFAULT_MOTION_PREFERENCE
+- DEFAULT_TASTE_PROFILE
+- DEFAULT_TASTE_REGISTER
+- DEFAULT_THEME
+- DENSITIES
+- DENSITY_META
+- MOTION_PREFERENCE_META
+- MOTION_PREFERENCES
+- PAUSED_THEMES
+- TASTE_REGISTER_META
+- TASTE_REGISTERS
+- THEME_META
+- ThemeProvider — Writes `data-theme` on a root element and persists the choice; `useTheme()` reads/sets it.
+  - avoid: Fixing a flat or wrong-looking surface inside a component — change the theme's token, not the component.
+  - avoid: Adding `dark:` overrides in a component — semantic tokens make every theme work, not only dark.
+  - avoid: Assuming a Storybook decorator supplies this context — the global decorator only sets data-theme, so a useTheme story must wrap itself.
+- THEMES
+
+## Hooks
+
+- useDecoration
+- useDensity
+- useMotionPreference
+- useReducedMotion
+- useTasteProfile
+- useTheme

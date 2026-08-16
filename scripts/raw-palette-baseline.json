@@ -1,0 +1,11 @@
+{
+  "packages/ai/src/commit.tsx": 12,
+  "packages/ai/src/package-info.tsx": 20,
+  "packages/ai/src/schema-display.tsx": 34,
+  "packages/ai/src/speech-input.tsx": 1,
+  "packages/ai/src/terminal.tsx": 12,
+  "packages/ai/src/web-preview.tsx": 1,
+  "packages/charts/src/charts/live-x-axis.tsx": 3,
+  "packages/charts/src/charts/tooltip/date-ticker.tsx": 6,
+  "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx": 8
+}

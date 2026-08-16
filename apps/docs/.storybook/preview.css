@@ -1,0 +1,23 @@
+/* Source Sans 3 + Source Code Pro (the Qlik Cloud faces used by qlik-bright /
+   qlik-dark) are now SELF-HOSTED by @qlik-coe-emea/qlabs-components-tokens, so the Google Fonts @import
+   that used to lead this file is gone. Storybook and a real consumer render the
+   same faces from the same @font-face rules — previously Storybook fetched them
+   from a CDN and every consumer silently fell back to Helvetica. */
+
+/* Token stylesheet (pulls in Tailwind v4 + tw-animate-css) */
+@import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
+
+/* Tailwind v4 cannot auto-scan workspace packages resolved via node_modules,
+   so point it at each package's source explicitly. Add new packages here. */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/data/src/**/*.{ts,tsx}";
+@source "../../../packages/ai/src/**/*.{ts,tsx}";
+@source "../../../packages/flow/src/**/*.{ts,tsx}";
+@source "../../../packages/maps/src/**/*.{ts,tsx}";
+@source "../../../packages/charts/src/**/*.{ts,tsx}";
+@source "../../../packages/marketing/src/**/*.{ts,tsx}";
+@source "../../../packages/icons/src/**/*.{ts,tsx}";
+@source "../../../packages/editor/src/**/*.{ts,tsx}";
+@source "../../../packages/viewer/src/**/*.{ts,tsx}";
+/* Cross-package composition demos live in apps/docs/stories — scan them too. */
+@source "../stories/**/*.{ts,tsx}";

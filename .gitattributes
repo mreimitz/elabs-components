@@ -1,0 +1,10 @@
+# .gitattributes
+#
+# CHANGELOG.md diff=markdown — git's built-in "markdown" userdiff driver picks
+# heading lines (`## …`) for the `@@ … @@ <funcname>` hunk-header annotation, so
+# a human reviewing a diff of a deep `## Unreleased` entry sees which section
+# it's under at a glance. This is a READABILITY aid, not a correctness
+# dependency: `scripts/check-changelog-entry.mjs` (#380) resolves section
+# membership from absolute post-image line numbers, not from this annotation,
+# so `pnpm changelog-entry:check` behaves identically with or without this file.
+CHANGELOG.md diff=markdown

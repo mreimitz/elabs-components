@@ -1,0 +1,69 @@
+{
+  "name": "@qlik-coe-emea/qlabs-components-tokens",
+  "version": "3.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
+    "directory": "packages/tokens"
+  },
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./styles.css": "./src/themes.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./styles.css": "./dist/themes.css"
+    }
+  },
+  "scripts": {
+    "build": "tsup && cp src/themes.css dist/themes.css && cp src/decoration.css dist/decoration.css && cp src/density.css dist/density.css && cp src/rtl.css dist/rtl.css && cp src/radix-viewport.css dist/radix-viewport.css && rm -rf dist/fonts && cp -r src/fonts dist/fonts",
+    "tokens:build": "node scripts/build-themes-css.mjs",
+    "tokens:extract": "node scripts/extract-tokens.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "tw-animate-css": "^1.4.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.17.0",
+    "jsdom": "^25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "style-dictionary": "^5.4.4",
+    "tailwindcss": "^4.0.0",
+    "tsup": "^8.3.5",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.2"
+  }
+}

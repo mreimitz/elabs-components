@@ -1,0 +1,28 @@
+diff --git a/dist/index.js b/dist/index.js
+index dc37ac4a018a086c4244a09a67215dbaa9b4de65..47ab6ecf9d87780abcd5010afdc8a43e3ea6684a 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -784,9 +784,6 @@ var SelectViewport = React.forwardRef(
+       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+         "style",
+         {
+-          dangerouslySetInnerHTML: {
+-            __html: `[data-radix-select-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-select-viewport]::-webkit-scrollbar{display:none}`
+-          },
+           nonce
+         }
+       ),
+diff --git a/dist/index.mjs b/dist/index.mjs
+index f9b94f39dfddef678ef3086354f8d7413ae27e52..dbf87b0178ac0f92f2090b22294348f56e7509a9 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -717,9 +717,6 @@ var SelectViewport = React.forwardRef(
+       /* @__PURE__ */ jsx(
+         "style",
+         {
+-          dangerouslySetInnerHTML: {
+-            __html: `[data-radix-select-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-select-viewport]::-webkit-scrollbar{display:none}`
+-          },
+           nonce
+         }
+       ),

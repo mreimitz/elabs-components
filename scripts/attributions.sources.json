@@ -1,0 +1,83 @@
+{
+  "$comment": [
+    "Curated half of the attribution dataset — the notices that CANNOT be derived",
+    "from package.json / node_modules, because the thing being credited is not an",
+    "npm dependency: source we adapted or vendored, and DATA served at runtime.",
+    "",
+    "The derived half (npm dependencies, vendored fonts) is read from the repo by",
+    "scripts/gen-attributions.mjs — do NOT hand-add a dependency here; it would",
+    "duplicate the generated entry and go stale the moment the dep is removed.",
+    "",
+    "`required: true` marks a notice that a LICENCE obliges us to display (ODbL,",
+    "provider terms), as opposed to one we show because it is right to credit.",
+    "The panel renders required notices first and the gate refuses to drop one."
+  ],
+  "sources": [
+    {
+      "id": "openstreetmap",
+      "category": "data",
+      "name": "OpenStreetMap",
+      "license": "ODbL-1.0",
+      "copyright": "© OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright",
+      "usedBy": ["@qlik-coe-emea/qlabs-components-maps"],
+      "required": true,
+      "note": "Map data behind the default Carto basemap. ODbL obliges the credit wherever the tiles are shown."
+    },
+    {
+      "id": "carto",
+      "category": "data",
+      "name": "CARTO",
+      "license": "CARTO basemap terms",
+      "copyright": "© CARTO",
+      "url": "https://carto.com/about-carto/",
+      "usedBy": ["@qlik-coe-emea/qlabs-components-maps"],
+      "required": true,
+      "note": "Default light/dark basemap styles and tiles (positron / dark-matter)."
+    },
+    {
+      "id": "shadcn-ui",
+      "category": "source",
+      "name": "shadcn/ui",
+      "license": "MIT",
+      "copyright": "© shadcn",
+      "url": "https://ui.shadcn.com",
+      "usedBy": ["@qlik-coe-emea/qlabs-components-ui"],
+      "required": false,
+      "note": "The owned-source component model and many primitive implementations; the registry is shadcn-compatible (ADR 0001)."
+    },
+    {
+      "id": "vercel-ai-elements",
+      "category": "source",
+      "name": "Vercel AI Elements",
+      "license": "MIT",
+      "copyright": "© Vercel, Inc.",
+      "url": "https://github.com/vercel/ai-elements",
+      "usedBy": ["@qlik-coe-emea/qlabs-components-ai"],
+      "required": false,
+      "note": "Vendored into @qlik-coe-emea/qlabs-components-ai and rewired onto brand-ui primitives and tokens."
+    },
+    {
+      "id": "mapcn",
+      "category": "source",
+      "name": "mapcn",
+      "license": "MIT",
+      "copyright": "© 2025 Anmoldeep Singh",
+      "url": "https://github.com/AnmolSaini16/mapcn",
+      "usedBy": ["@qlik-coe-emea/qlabs-components-maps"],
+      "required": false,
+      "note": "The MapLibre component set @qlik-coe-emea/qlabs-components-maps was adapted from (ADR 0015)."
+    },
+    {
+      "id": "shadow-plugin",
+      "category": "source",
+      "name": "shadow-plugin",
+      "license": "MIT",
+      "copyright": "© Florian Kiem",
+      "url": "https://github.com/flornkm/shadow-plugin",
+      "usedBy": ["@qlik-coe-emea/qlabs-components-tokens"],
+      "required": false,
+      "note": "The stacked, layered elevation-ramp technique behind the shadow tokens (ADR 0020)."
+    }
+  ]
+}

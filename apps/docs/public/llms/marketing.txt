@@ -1,0 +1,21 @@
+# @qlik-coe-emea/qlabs-components-marketing
+
+> Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
+
+Import from `@qlik-coe-emea/qlabs-components-marketing`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- CTASection — Closing conversion band — one message, one action.
+  - avoid: Two competing primary Buttons in the band — demote one to secondary/outline.
+  - avoid: Manufactured urgency or scarcity copy — that is a dark pattern, not a conversion technique.
+- FeatureGrid — Grid of capability cards below the hero.
+  - avoid: Three identical icon-tile-above-heading cards — the canonical landing-page tell; vary the structure (bento, split, asymmetry).
+  - avoid: Shipping placeholder feature copy as real content — a dead showcase reads as a demo.
+- Hero — Above-the-fold marketing headline, subcopy and the primary call to action.
+  - avoid: Filler verbs in the headline — name what the product literally does instead.
+  - avoid: A hero image without explicit width/height (and fetchpriority) — it is the page's largest layout-shift risk.
+  - avoid: Version/beta eyebrows in the hero — a marketing-surface tell; drop it unless the brief is about the launch.
+- LogoStrip
+- StatsBand
+- UseCaseCard

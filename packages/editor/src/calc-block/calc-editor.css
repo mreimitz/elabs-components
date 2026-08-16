@@ -1,0 +1,123 @@
+/**
+ * Calc authoring decorations (#220) — shared by the Monaco source surface
+ * (decoration `inlineClassName`) and the Milkdown WYSIWYG surface (ProseMirror
+ * inline decorations + result-inlay widgets).
+ *
+ * Colors come from the `--calc-*` syntax tokens — the SAME tokens `CalcBlock`
+ * paints with (#221), already AA-verified against `--background` (the editor
+ * surface) and `--card` in all three themes — so highlighting tracks the theme via
+ * the cascade with no hardcoded hex. The compound `.brand-calc-tok.brand-calc-tok--x`
+ * selector raises specificity above Monaco's own token color class (`.mtkN`) so
+ * the calc color wins regardless of stylesheet load order (no `!important`).
+ *
+ * Hue is never the SOLE cue (var-def = weight, unresolved = dotted underline), so
+ * roles stay distinct in the high-contrast theme where the calc colors collapse
+ * toward the foreground — mirroring `CalcBlock.tokenClass`.
+ */
+
+.brand-calc-tok.brand-calc-tok--number,
+.brand-calc-tok.brand-calc-tok--constant {
+  color: var(--calc-number);
+}
+.brand-calc-tok.brand-calc-tok--unit {
+  color: var(--calc-unit);
+}
+.brand-calc-tok.brand-calc-tok--currency {
+  color: var(--calc-currency);
+}
+.brand-calc-tok.brand-calc-tok--operator {
+  color: var(--calc-operator);
+}
+.brand-calc-tok.brand-calc-tok--function {
+  color: var(--calc-function);
+}
+.brand-calc-tok.brand-calc-tok--var-ref {
+  color: var(--calc-variable);
+}
+.brand-calc-tok.brand-calc-tok--var-def {
+  color: var(--calc-variable);
+  font-weight: 500;
+}
+.brand-calc-tok.brand-calc-tok--line-ref {
+  color: var(--calc-reference);
+  font-variant-numeric: tabular-nums;
+}
+.brand-calc-tok.brand-calc-tok--comment {
+  color: var(--calc-comment);
+  font-style: italic;
+}
+.brand-calc-tok.brand-calc-tok--unknown {
+  color: var(--calc-warning);
+}
+
+/* Non-hue cue for unresolved identifiers / dangling refs — carries the role in
+   high-contrast, where hue is flattened. */
+.brand-calc-tok.brand-calc-tok--unresolved {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/**
+ * WYSIWYG result inlay — a ProseMirror widget after each calc line showing the
+ * computed answer. The number IS the signal (shown as text), color is only an
+ * enhancement, and it is non-editable / non-selectable so it never enters the
+ * document. (The Monaco surface uses Monaco's own inlay hints, themed via the
+ * theme bridge's `editorInlayHint.*` colors — not this class.)
+ */
+.brand-calc-inlay {
+  /* Full strength (no opacity de-emphasis): the result is the answer, and the
+     `--calc-result` token is AA-verified at FULL opacity (#221) — reducing it
+     would drop effective contrast below what the contrast gate models. */
+  margin-inline-start: 1ch;
+  color: var(--calc-result);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  white-space: pre;
+}
+.brand-calc-inlay--error {
+  color: var(--calc-warning);
+}
+
+/* ----------------------------------------------------------------------------
+ * Non-hue role cues for the LOW-CHROMA blueprint theme (#226).
+ *
+ * blueprint is near-monochrome — so color alone can't tell number from unit from
+ * currency from a variable / line reference. Back each role with a redundant,
+ * color-independent signature (weight / style / underline style) so the roles stay
+ * distinguishable WITHOUT hue. The compound `.brand-calc-tok` selector keeps
+ * specificity above the base color rules; result / inlay use their own classes.
+ * Both the editor decorations and the rendered CalcBlock carry these classes, so
+ * the two surfaces read identically.
+ * ------------------------------------------------------------------------- */
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--number,
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--constant {
+  font-weight: 700;
+}
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--unit {
+  font-style: italic;
+}
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--currency {
+  text-decoration: underline solid;
+  text-underline-offset: 2px;
+}
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--var-ref {
+  text-decoration: underline dashed;
+  text-underline-offset: 2px;
+}
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--var-def {
+  font-weight: 700;
+}
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--line-ref {
+  text-decoration: underline double;
+  text-underline-offset: 2px;
+}
+[data-theme="blueprint"] .brand-calc-tok.brand-calc-tok--unknown {
+  text-decoration: underline wavy;
+  text-underline-offset: 2px;
+}
+[data-theme="blueprint"] .brand-calc-tok--result,
+[data-theme="blueprint"] .brand-calc-inlay {
+  font-weight: 700;
+  font-style: italic;
+}

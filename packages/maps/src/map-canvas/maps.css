@@ -1,0 +1,15 @@
+/*
+ * MapLibre popup chrome reset — @qlik-coe-emea/qlabs-components-maps popups paint their own surface
+ * (bg-popover, border, shadow), so MapLibre's white bubble + tip must not
+ * render underneath. Imported by <MapCanvas> alongside maplibre-gl's CSS.
+ */
+.maplibregl-popup-content {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.maplibregl-popup-tip {
+  display: none;
+}

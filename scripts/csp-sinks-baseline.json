@@ -1,0 +1,33 @@
+{
+  "$comment": "Modules and packages carrying a Trusted-Types-fatal sink. Ratchets DOWN only (--update). This is precisely the set a renderer under require-trusted-types-for 'script' must avoid or cover with a policy.",
+  "ourSource": [
+    "packages/ai/src/schema-display.tsx",
+    "packages/editor/src/markdown-academic/math.tsx",
+    "packages/editor/src/mermaid-diagram/mermaid-diagram.tsx",
+    "packages/editor/src/mermaid-diagram/mermaid-viewer.tsx"
+  ],
+  "packages": [
+    {
+      "package": "@number-flow/react",
+      "reachedFrom": ["@qlik-coe-emea/qlabs-components-charts"]
+    },
+    {
+      "package": "media-chrome",
+      "reachedFrom": ["@qlik-coe-emea/qlabs-components-ai"]
+    },
+    {
+      "package": "mermaid",
+      "reachedFrom": [
+        "@qlik-coe-emea/qlabs-components-ai",
+        "@qlik-coe-emea/qlabs-components-editor"
+      ]
+    },
+    {
+      "package": "streamdown",
+      "reachedFrom": [
+        "@qlik-coe-emea/qlabs-components-ai",
+        "@qlik-coe-emea/qlabs-components-editor"
+      ]
+    }
+  ]
+}

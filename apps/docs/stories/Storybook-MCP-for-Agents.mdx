@@ -1,0 +1,103 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Storybook MCP for Agents" />
+
+# Storybook MCP for Agents
+
+`@storybook/addon-mcp` runs a **Model-Context-Protocol server inside the Storybook
+dev server**, at `http://localhost:6006/mcp`. It gives coding agents a ground-truth
+view of brand-ui as it actually renders — real props, real stories, live previews,
+and real interaction + a11y tests — instead of guessing from source. It's wired in
+`apps/docs/.storybook/main.ts`; the client is registered in repo-root `.mcp.json`
+under the server name **`storybook`** (so tools are `mcp__storybook__<name>`).
+React-only and experimental (the API may change).
+
+## Prerequisite & the golden rule
+
+The tools exist **only while `pnpm storybook` is running**
+(`storybook dev -p 6006 --exact-port`). When it's down, the `mcp__storybook__*` tools
+are simply unavailable — that's normal, not an error.
+
+> **Golden rule:** _if_ the tools are available, prefer them; _otherwise_ fall back —
+> read `*.stories.tsx` + component source, and run
+> `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`. Never block waiting on the server, and
+> don't start it unless the task is about Storybook.
+
+## The six tools (all active here because `addon-vitest` + `addon-a11y` are installed)
+
+**Docs / discovery**
+
+- `mcp__storybook__list-all-documentation` — enumerate every documented component
+  (pass `withStoryIds: true` for exact story IDs). The discovery + dedupe entry point.
+- `mcp__storybook__get-documentation` — one component's **real** prop/TS types + its
+  first stories. Verify a prop exists here before using it (anti-hallucination).
+- `mcp__storybook__get-documentation-for-story` — full code for one specific variant.
+
+**Dev**
+
+- `mcp__storybook__get-storybook-story-instructions` — the framework-correct story +
+  interaction-test patterns. Call it **before** writing a `*.stories.tsx`.
+- `mcp__storybook__preview-stories` — live preview URLs; pass a `theme` global to render
+  a specific theme. Always surface the URL to the user.
+
+**Test**
+
+- `mcp__storybook__run-story-tests` — runs the given stories as real-browser interaction
+  tests **+ axe a11y** and returns a markdown report (passing / failing / a11y
+  violations / unhandled errors). Same engine as the `test-storybook` script. **Always
+  scope it to specific stories — never "run all".**
+
+## Story IDs
+
+Derived from each story's `title`: kebab-cased, segments joined by `-`, with `--`
+before the export. Examples:
+
+- `title: "Core/Button"` &rarr; `core-button--default`
+- `title: "Disclosure/Accordion"` &rarr; `disclosure-accordion--default`
+
+Use `list-all-documentation` with `withStoryIds: true` for exact IDs.
+
+## Themes (three; default `qlik-bright`)
+
+Always pass the **CSS slug**, never the display name:
+
+```text
+qlik-bright · qlik-dark · blueprint
+```
+
+- `preview-stories`: pass the theme global `{ theme: "qlik-dark" }`.
+- Manual URL: `/?path=/story/<storyId>&globals=theme:<slug>`
+  (iframe: `iframe.html?id=<storyId>&globals=theme:<slug>`).
+
+## The agent loop
+
+- **ADD / DEV** — `list-all-documentation` (dedupe) &rarr; `get-documentation` /
+  `get-documentation-for-story` (real props) &rarr; `get-storybook-story-instructions`
+  &rarr; build &rarr; `preview-stories` (show the user).
+- **TEST (self-healing)** — `run-story-tests` scoped to the touched stories &rarr; fix
+  &rarr; re-run until green.
+- **REVIEW** — `run-story-tests` + `preview-stories` across both themes; cite the
+  exact **story ID + theme slug** in findings.
+
+## Connecting an agent
+
+Claude Code reads repo-root `.mcp.json` (server `storybook`,
+`http://localhost:6006/mcp`); confirm it's connected with `/mcp` (a session reload may
+be needed). To add it manually:
+
+```bash
+claude mcp add storybook --transport http http://localhost:6006/mcp --scope project
+```
+
+If the server is ever renamed, every `mcp__storybook__*` reference — `CLAUDE.md`,
+`.claude/rules/storybook-mcp.md`, and the subagent `tools:` allowlists — must change.
+
+## See also
+
+- [brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs) — the **always-on**
+  companion (works with this dev server down): the API ground truth (props, variants,
+  tokens, search, audit) over `npx @qlik-coe-emea/qlabs-components-cli mcp` (private GitHub
+  Packages dependency — see `docs/CONSUMING.md` §1 for the one-time auth setup).
+- Enforcement rule (source of truth): `.claude/rules/storybook-mcp.md`
+- Story tests as a script: `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`
+- Functional / visual finders: `/qa-flows`, `/visual-review`

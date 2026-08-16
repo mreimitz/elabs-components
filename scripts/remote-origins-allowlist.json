@@ -1,0 +1,124 @@
+{
+  "basemaps.cartocdn.com": {
+    "directive": "connect-src + img-src",
+    "kind": "fetch",
+    "note": "MapCanvas' default light/dark basemap style JSON and its raster/vector tiles.",
+    "escapeHatch": "Pass `mapStyle` to point at a self-hosted style, or `blank` to render no basemap.",
+    "usedBy": ["packages/maps/src/map-canvas/map-canvas.tsx"]
+  },
+  "carto.com": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "AttributionPanel link for the CARTO basemap credit. An <a href> the user clicks — not a fetch. The tiles themselves are basemaps.cartocdn.com, declared separately.",
+    "escapeHatch": "Don't render AttributionPanel's `data` category (it is only required while the Carto basemap is in use).",
+    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
+  },
+  "chanhdai.com": {
+    "directive": "none",
+    "kind": "comment",
+    "note": "Attribution comment for the component ShimmeringText was adapted from. Never fetched.",
+    "escapeHatch": "n/a",
+    "usedBy": ["packages/charts/src/charts/shimmering-text.tsx"]
+  },
+  "chatgpt.com": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "OpenInChatGPT deep link. An <a href> the user clicks — not a fetch, so connect-src does not apply. It DOES carry the prompt text in the query string, so user content leaves your perimeter on click.",
+    "escapeHatch": "Don't render the OpenInChatGPT component.",
+    "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "claude.ai": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "OpenInClaude deep link; carries the prompt in the query string.",
+    "escapeHatch": "Don't render the OpenInClaude component.",
+    "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "cursor.com": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "OpenInCursor deep link; carries the prompt in the query string.",
+    "escapeHatch": "Don't render the OpenInCursor component.",
+    "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "doi.org": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "Citation links built as https://doi.org/<doi> when a reference has no explicit url. An href, not a fetch.",
+    "escapeHatch": "Give each reference an explicit `url`.",
+    "usedBy": ["packages/editor/src/markdown-academic/citations.tsx"]
+  },
+  "ejiidnob33g9ap1r.public.blob.vercel-storage.com": {
+    "directive": "connect-src",
+    "kind": "fetch",
+    "note": "Persona's six Rive .riv artwork files, fetched at runtime by the Rive WebGL2 runtime.",
+    "escapeHatch": "Self-host the files (see PERSONA_SOURCES) and pass `<Persona src={…}>`; a blocked load renders the fallback orb.",
+    "usedBy": ["packages/ai/src/persona-sources.ts"]
+  },
+  "elements.ai-sdk.dev": {
+    "directive": "none",
+    "kind": "comment",
+    "note": "Attribution comment — @qlik-coe-emea/qlabs-components-ai is vendored from Vercel AI Elements. Never fetched.",
+    "escapeHatch": "n/a",
+    "usedBy": ["packages/ai/src/index.ts"]
+  },
+  "github.com": {
+    "directive": "none",
+    "kind": "comment",
+    "note": "Attribution comments (mapcn, Milkdown). Never fetched.",
+    "escapeHatch": "n/a",
+    "usedBy": [
+      "packages/editor/src/markdown-editor/milkdown-react/types.ts",
+      "packages/maps/src/index.ts"
+    ]
+  },
+  "models.dev": {
+    "directive": "img-src",
+    "kind": "fetch",
+    "note": "ModelSelectorLogo's default provider logo SVGs.",
+    "escapeHatch": "Pass `src` for a self-hosted asset, or `fallback`; a blocked load renders a neutral glyph.",
+    "usedBy": ["packages/ai/src/model-selector.tsx"]
+  },
+  "scira.ai": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "OpenInScira deep link; carries the prompt in the query string.",
+    "escapeHatch": "Don't render the OpenInScira component.",
+    "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "t3.chat": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "OpenInT3 deep link; carries the prompt in the query string.",
+    "escapeHatch": "Don't render the OpenInT3 component.",
+    "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "ui.shadcn.com": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "AttributionPanel provenance link for shadcn/ui, which @qlik-coe-emea/qlabs-components-ui's owned-source model is adapted from. Never fetched.",
+    "escapeHatch": "Don't render AttributionPanel's `source` category.",
+    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
+  },
+  "v0.app": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "OpenInv0 deep link; carries the prompt in the query string.",
+    "escapeHatch": "Don't render the OpenInv0 component.",
+    "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "www.npmjs.com": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "AttributionPanel links every OSS dependency to its npm page. Deliberately ONE origin for all ~95 dependencies (see npmUrl in scripts/gen-attributions.mjs) — linking each package's own homepage would inject dozens of arbitrary origins into this inventory and bury the entries that describe real fetches.",
+    "escapeHatch": "Don't render AttributionPanel's `dependency` category; the licence-required notices are in `data`/`font`.",
+    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
+  },
+  "www.openstreetmap.org": {
+    "directive": "none",
+    "kind": "navigation",
+    "note": "AttributionPanel link for the ODbL copyright page behind the OpenStreetMap credit. Required attribution while the Carto basemap is in use; an <a href>, never fetched.",
+    "escapeHatch": "Change the basemap (MapCanvas `styles`/`blank`) — the notice is only owed while OSM-derived tiles render.",
+    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
+  }
+}

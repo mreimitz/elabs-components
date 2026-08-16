@@ -1,0 +1,407 @@
+/**
+ * @qlik-coe-emea/qlabs-components-tokens — decoration.css
+ * --------------------------------------------------------------------------
+ * The DECORATION overlay: the reprographic "drawn-ness" (graph paper, hatch,
+ * drawn-not-filled controls, shadowless surfaces, squared corners) that rides
+ * the `--decoration` dial defined in themes.css. Orthogonal to color.
+ *
+ * SCOPING. Every rule fires when decoration is ON — either the THEME preset
+ * (`[data-theme="blueprint"]` ships at --decoration:10) OR any element carrying
+ * `[data-decoration="N"]` (a region, or the document via ThemeProvider). So a
+ * gentle blueprint can appear in ANY theme and ANY color.
+ *
+ * TWO KINDS OF AXIS:
+ *   • CONTINUOUS (grid, hover/active hatch) — the ink ALPHA rides
+ *     --decoration-factor, so at decoration 0 these are fully transparent and
+ *     inert even though the selector matches. Hue comes from the active theme.
+ *   • BINARY (drawn-not-filled controls, shadowless, squared xl/2xl/3xl) — these
+ *     can't fade continuously, so they switch in only at HIGH decoration (8–10)
+ *     or the blueprint preset. Below that you get "gentle" decoration (grid +
+ *     hatch + softened radius) while fills, shadows and brand font stay.
+ *
+ * Overlays (.bg-popover, dialogs, tooltips) are deliberately NOT grid/hatched so
+ * they pop above the page. Focus rings (--tw-ring-shadow) are never touched.
+ * See .claude/rules/blueprint-decoration.md.
+ */
+
+/* ---- THE SHADOWLESS DIAL (binary: decoration ≥ 8) ------------------------- */
+/* Drawn-not-filled surfaces are not lit, so at high decoration every stacked
+ * shadow layer is mixed to transparent by ONE knob: `--shadow-strength: 0`
+ * (themes.css § ELEVATION RAMP). Custom properties inherit, so this covers the
+ * host, its whole subtree, every rung of the ramp, and any rung added later —
+ * where the per-class list it replaces silently missed whatever it did not
+ * enumerate (it never knew about `shadow-ring-*`).
+ *
+ * The 1px hairline `shadow-ring-*` bakes in is deliberately NOT dialled: a drawn
+ * surface keeps its edge, it just stops being lit. So it is re-pointed at the
+ * theme's own rule ink — which is exactly what a reprographic edge is.
+ *
+ * TWO THINGS HERE ARE LOAD-BEARING, and `pnpm elevation:check` enforces both:
+ *   • UNLAYERED. `ThemeProvider` writes `data-theme` and `data-decoration` onto
+ *     the SAME element (documentElement), and the theme blocks in themes.css are
+ *     unlayered. A layered rule loses to an unlayered one on the same element no
+ *     matter how specific it is, so moving this into `@layer base/utilities`
+ *     would silently break the document-level dial (a region dial would still
+ *     work — which is what makes the breakage easy to miss).
+ *   • THE DOUBLED `[data-decoration]`. It lifts specificity to (0,2,0) so it
+ *     beats the theme block's (0,1,0) on that same element.
+ * `[data-theme="blueprint"]` is intentionally absent: the blueprint block sets
+ * its own knobs, so a theme owns its elevation the same way it owns its color.
+ * Focus rings (--tw-ring-shadow) are a different slot and are never touched. */
+:is([data-decoration="8"], [data-decoration="9"], [data-decoration="10"])[data-decoration] {
+  --shadow-strength: 0;
+  --shadow-ring-color: var(--rule);
+}
+
+/* ---- GROUND: graph paper under the document + page surfaces (continuous) ---- */
+@layer base {
+  :is([data-theme="blueprint"], [data-decoration]) body {
+    background-color: var(--canvas);
+    background-image: var(--bp-grid);
+    /* NOTE: `background-attachment: fixed` (what makes the grid ONE continuous
+       sheet across panels) is applied in the pointer-device media block below —
+       see "PIN THE SHEET". Do not re-add it here. */
+  }
+  /* Content surfaces get the grid — EXCEPT portal overlays (dialogs, sheets,
+     drawers, popovers/menus/tooltips). Per blueprint-decoration.md § GROUND,
+     overlays must stay CLEAN so they pop above the page / read as margins; only
+     the in-page drawing field is gridded. The exclusions below catch BOTH the
+     overlay root (e.g. DialogContent on .bg-card) AND any gridded descendant
+     (e.g. a SplitPanel .bg-surface pane nested inside the dialog), so the grid
+     never bleeds into an overlay subtree. Overlay roots at runtime:
+       • [role="dialog"]                    — Dialog + Sheet (Radix Dialog Content, on .bg-card)
+       • [role="alertdialog"]               — AlertDialog (Radix AlertDialog Content, on .bg-card)
+       • [data-vaul-drawer]                 — Drawer (vaul Content, on .bg-card)
+       • [data-radix-popper-content-wrapper] — Popover/HoverCard/DropdownMenu/
+         ContextMenu/Menubar/Select/Command popper wrapper (mostly .bg-popover,
+         which isn't in the list above, but its gridded descendants would be).
+     A faded region (see GROUND FADE below) is excluded the same way — host AND
+     descendants — because the fade OWNS that region's ground: a nested .bg-card
+     that kept ruling itself would punch a crisp, full-strength rectangle into the
+     field the fade just faded out. One region, one ground, one gesture.
+     Purely theme-/dial-scoped (no per-component edits) and inert in the other
+     5 themes (selector requires [data-theme="blueprint"] or [data-decoration]). */
+  :is([data-theme="blueprint"], [data-decoration])
+    :is(
+      .bg-background,
+      .bg-card,
+      .bg-surface,
+      .bg-surface-muted,
+      .bg-surface-elevated,
+      .bg-canvas
+    ):not(
+      [role="dialog"],
+      [role="dialog"] *,
+      [role="alertdialog"],
+      [role="alertdialog"] *,
+      [data-vaul-drawer],
+      [data-vaul-drawer] *,
+      [data-radix-popper-content-wrapper],
+      [data-radix-popper-content-wrapper] *,
+      [data-decoration-fade],
+      [data-decoration-fade] *
+    ) {
+    background-image: var(--bp-grid);
+  }
+
+  /* ---- PIN THE SHEET — pointer devices only (#29 item 3) ----
+     `background-attachment: fixed` is what makes the grid read as ONE continuous
+     sheet the panels are cut out of, instead of a per-element swatch. It is also
+     the classic touch-scroll jank source: the fixed layer can't be composited
+     with the scrolled content, so every frame repaints the viewport (and iOS
+     Safari ignores it inside scroll containers anyway, which is where the sheet
+     illusion breaks first). So it is gated to hover-capable, fine-pointer
+     devices; touch keeps the grid, it just scrolls WITH the element.
+     Do NOT "restore" this to an unconditional declaration — `pnpm decoration:check`
+     fails if a `background-attachment: fixed` appears outside this media block. */
+  @media (hover: hover) and (pointer: fine) {
+    :is([data-theme="blueprint"], [data-decoration]) body,
+    :is([data-theme="blueprint"], [data-decoration])
+      :is(
+        .bg-background,
+        .bg-card,
+        .bg-surface,
+        .bg-surface-muted,
+        .bg-surface-elevated,
+        .bg-canvas
+      ):not(
+        [role="dialog"],
+        [role="dialog"] *,
+        [role="alertdialog"],
+        [role="alertdialog"] *,
+        [data-vaul-drawer],
+        [data-vaul-drawer] *,
+        [data-radix-popper-content-wrapper],
+        [data-radix-popper-content-wrapper] *,
+        [data-decoration-fade],
+        [data-decoration-fade] *
+      ),
+    :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade]::before {
+      background-attachment: fixed;
+    }
+  }
+
+  /* ---- GROUND FADE — opt-in region gesture (#257) ----
+     `data-decoration-fade="top|bottom|edges|center"` fades the ground grid out
+     across a region instead of ruling it edge to edge. Two things make this a
+     DECORATION-system gesture rather than an ad-hoc background:
+       • it paints `--bp-grid`, so the ink still rides `--decoration-factor` and
+         the region is inert at decoration 0 — no second, un-dialled grid; and
+       • it lives on a decorative `::before` layer, NOT on the host. A
+         `mask-image` on the surface itself would mask the host's CHILDREN
+         (text, controls) too — the failure this hook exists to avoid.
+     The host AND its descendants are excluded from the plain-grid rule above, so
+     the grid is painted exactly once across the whole region — a nested surface
+     inside a faded band does not re-rule it at full strength. For a one-off fade
+     on a single element, reach for Tailwind's own `mask-t-from-*` /
+     `mask-radial-*` utilities instead — this hook is for the ambient ground.
+     See .claude/rules/blueprint-decoration.md § GROUND. */
+  :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade] {
+    position: relative;
+    isolation: isolate; /* keep the z-index:-1 layer inside this subtree */
+  }
+  :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1; /* above the host's own background, below its content */
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: var(--bp-grid);
+    -webkit-mask-image: var(--bp-fade);
+    mask-image: var(--bp-fade);
+  }
+  :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade="top"] {
+    --bp-fade: var(--bp-fade-top);
+  }
+  :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade="bottom"] {
+    --bp-fade: var(--bp-fade-bottom);
+  }
+  :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade="edges"] {
+    --bp-fade: var(--bp-fade-edges);
+  }
+  :is([data-theme="blueprint"], [data-decoration]) [data-decoration-fade="center"] {
+    --bp-fade: var(--bp-fade-center);
+  }
+}
+
+@layer utilities {
+  /* ---- CONTINUOUS: interaction hatch (alpha rides the dial; inert at 0) ---- */
+  /* Hover highlight = a gentle diagonal hatch wash over the element's own bg. */
+  :is([data-theme="blueprint"], [data-decoration])
+    :is(
+      button,
+      [role="button"],
+      [role="menuitem"],
+      [role="tab"],
+      [role="option"],
+      [role="link"],
+      a,
+      summary
+    ):hover {
+    background-image: var(--bp-hatch);
+  }
+  /* Active / selected / current = persistent, slightly stronger hatch. */
+  :is([data-theme="blueprint"], [data-decoration])
+    :is(
+      [data-active="true"],
+      [aria-selected="true"],
+      [aria-current]:not([aria-current="false"]),
+      [data-state="active"],
+      [data-state="on"]
+    ) {
+    background-image: var(--bp-hatch-strong);
+  }
+
+  /* ---- BINARY: only at HIGH decoration (8–10) or the blueprint preset ---- */
+  /* Shadowless: see THE SHADOWLESS DIAL at the top of this file. It cannot live
+     in here — a layered rule always loses to the unlayered theme blocks when the
+     document root carries `data-theme` AND `data-decoration` at once. */
+  /* Inset shadows can't ride the dial — `--tw-inset-shadow` is a per-element
+     Tailwind slot (@property … inherits: false), so it still needs the class
+     match. Kept narrow: inset utilities only. */
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is([class~="shadow-inner"], [class*="inset-shadow-"]) {
+    --tw-inset-shadow: 0 0 transparent;
+  }
+  /* Filled controls become DRAWN controls — transparent ground + hairline +
+     hatch + ink, never solid plates. Hue-independent (ink = theme foreground). */
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(.bg-primary, .bg-secondary, .bg-destructive, .bg-success, .bg-warning, .bg-info) {
+    background-color: transparent;
+    background-image: var(--bp-hatch);
+    color: var(--foreground);
+    border: 1px solid var(--rule-strong);
+  }
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(.bg-primary, .bg-secondary, .bg-destructive, .bg-success, .bg-warning, .bg-info):hover {
+    background-color: transparent;
+    background-image: var(--bp-hatch-strong);
+  }
+  /* Square the large radii that don't track --radius (xl/2xl/3xl) at full dial. */
+  :is(
+    [data-theme="blueprint"],
+    [data-decoration="8"],
+    [data-decoration="9"],
+    [data-decoration="10"]
+  ) {
+    --radius-xl: 0rem;
+    --radius-2xl: 0rem;
+    --radius-3xl: 0rem;
+  }
+  /* Polarity mark (favorable/unfavorable). In blueprint/high decoration good vs
+     bad cannot ride hue, so reveal a non-color glyph (filled = favorable, hollow =
+     unfavorable) from the theme-agnostic [data-polarity] hook — any component that
+     sets it gets the cue for free. The lightness ramp (themes.css) reinforces it;
+     the real meaning lives in the element's aria-label, so the glyph is decorative
+     and aria-hidden by the label override. Chromatic themes never match → color
+     stays the cue. Issue #162. */
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    [data-polarity="good"]::before {
+    content: "● ";
+  }
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    [data-polarity="bad"]::before {
+    content: "○ ";
+  }
+
+  /* Status mark (execution status, #391). "Filled controls become DRAWN
+     controls" above collapses all six role fills (bg-primary/secondary/
+     destructive/success/warning/info) to ONE identical declaration set —
+     deliberate (drawn-not-filled is hue-independent) — and the sanctioned
+     `bg-<status>/10` wash escapes that override but still only separates by
+     LIGHTNESS in blueprint's low-chroma palette (ΔE ≈0.012, unusable). Neither
+     idiom can carry status meaning here, so blueprint/high-decoration gets a
+     non-colour channel instead: LINE TYPE, keyed off the theme-agnostic
+     `[data-status]` hook `StatusBadge`/`StatusIcon`/`Timeline` already emit —
+     zero component changes needed. Layered AFTER the drawn-controls rule above
+     so `border-style`/`border-width` compose on top of its `border: 1px solid
+     var(--rule-strong)` shorthand (same specificity, later source wins the
+     `border-style` sub-property only; width/color are untouched unless a rule
+     below says otherwise).
+
+     TWO SHAPES OF CONSUMER, ONE SELECTOR PAIR PER STATUS: `StatusBadge`/
+     `StatusIcon` set `data-status` on the SAME element that carries the
+     border (direct match). `Timeline` sets it on the `<li>`, one level above
+     the actual bordered node — its `<span>` dot has no data hook of its own,
+     so the descendant branch matches it by the two Tailwind utility classes
+     that uniquely identify it (`rounded-full` + `border-2`), the same
+     class-string-matching technique `[class~="shadow-inner"]` above already
+     uses for an element with no semantic hook.
+
+     Capped at 5 distinguishable steps (pattern-encoding research + #30's own
+     spec cap categorical channels around 5–7): pending=dotted · running=dashed
+     · complete=solid · awaiting-approval=solid+2px (heavier rule) ·
+     failed=double+3px. `denied`/`skipped` deliberately SHARE the dotted step
+     (Timeline's own NODE_STYLE already renders them identically) but are kept
+     a distinct (style, width, hatch) TUPLE from `pending` by dropping the
+     hatch — locked by packages/tokens/src/decoration-status-channel.test.ts
+     and packages/tokens/src/decoration.css's own `pnpm decoration-collapse:check`
+     (#391), which fails if a role-fill collapse ever ships again with no
+     compensating non-colour rule in this scope. Verify Timeline's 12px dot at
+     real size — a 1px dashed/dotted stroke on that small a circle is a named
+     risk; see the #391 result writeup. */
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(
+      [data-status="pending"],
+      [data-status="pending"] [class~="rounded-full"][class~="border-2"]
+    ) {
+    border-style: dotted;
+  }
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(
+      [data-status="running"],
+      [data-status="running"] [class~="rounded-full"][class~="border-2"]
+    ) {
+    border-style: dashed;
+  }
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(
+      [data-status="complete"],
+      [data-status="complete"] [class~="rounded-full"][class~="border-2"]
+    ) {
+    border-style: solid;
+  }
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(
+      [data-status="awaiting-approval"],
+      [data-status="awaiting-approval"] [class~="rounded-full"][class~="border-2"]
+    ) {
+    border-style: solid;
+    border-width: 2px;
+  }
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is([data-status="failed"], [data-status="failed"] [class~="rounded-full"][class~="border-2"]) {
+    border-style: double;
+    border-width: 3px;
+  }
+  /* denied/skipped deliberately share the dotted step — see the file-level
+     comment above — but stay a distinct (style, width, hatch) tuple from
+     `pending` by dropping the hatch (background-image), reusing the hatch
+     itself as the density axis the #391 proposal names. */
+  :is(
+      [data-theme="blueprint"],
+      [data-decoration="8"],
+      [data-decoration="9"],
+      [data-decoration="10"]
+    )
+    :is(
+      [data-status="denied"],
+      [data-status="denied"] [class~="rounded-full"][class~="border-2"],
+      [data-status="skipped"],
+      [data-status="skipped"] [class~="rounded-full"][class~="border-2"]
+    ) {
+    border-style: dotted;
+    background-image: none;
+  }
+}

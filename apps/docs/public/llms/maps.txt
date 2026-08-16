@@ -1,0 +1,33 @@
+# @qlik-coe-emea/qlabs-components-maps
+
+> MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
+
+Import from `@qlik-coe-emea/qlabs-components-maps`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- MapArc
+- MapCanvas — Root MapLibre canvas — theme-aware basemap; the ref is the raw MapLibre Map.
+  - avoid: Hiding MapLibre's attribution control — the default Carto basemap styles/tiles require it.
+  - avoid: Importing maplibre-gl CSS in the app — MapCanvas imports its own CSS plus the brand popup overrides.
+  - avoid: Rendering it in an RSC/SSR path with no client boundary — MapLibre needs WebGL.
+- MapClusterLayer — Clusters dense point data into count bubbles that split apart as you zoom in.
+  - avoid: Hardcoding the cluster step colors — the steps resolve from the status tokens.
+  - avoid: Clustering a handful of points — plain MapMarkers read better below roughly 50 points.
+- MapControls
+- MapGeoJSON
+- MapMarker — A point on the map, optionally carrying content, a label, a popup or a tooltip.
+  - avoid: Hardcoding a marker color — resolve a semantic token; WebGL can't read CSS variables directly.
+  - avoid: Hundreds of individual markers — switch to MapClusterLayer above roughly 50 points.
+- MapMarkerContent
+- MapMarkerLabel
+- MapMarkerPopup
+- MapMarkerTooltip
+- MapPopup — Standalone anchored popup on the map (not bound to a marker).
+  - avoid: Putting essential information only in a popup — it is transient; keep critical content on the page.
+  - avoid: Styling the popup with raw colors — the brand popup overrides are token-driven (maps.css).
+- MapRoute
+
+## Hooks
+
+- useMap

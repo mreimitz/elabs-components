@@ -1,0 +1,704 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "brand-ui",
+  "homepage": "https://github.com/Qlik-CoE-EMEA/qlabs-components",
+  "items": [
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Source-owned button with variants and sizes (Radix Slot for asChild).",
+      "dependencies": [
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "files": [
+        {
+          "path": "registry/components/button.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "app-shell",
+      "type": "registry:block",
+      "title": "App shell",
+      "description": "Sidebar + top nav + page layout scaffold for an internal app.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@qlik-coe-emea/qlabs-components-icons"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/app-shell/app-shell-page.tsx",
+          "type": "registry:page",
+          "target": "app/(app)/page.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "ai-chat-shell",
+      "type": "registry:block",
+      "title": "AI chat shell",
+      "description": "Chat surface with transcript, composer, tool calls and a context rail.",
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ai", "@qlik-coe-emea/qlabs-components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/ai-chat-shell/ai-chat.tsx",
+          "type": "registry:component",
+          "target": "components/ai-chat.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "data-table",
+      "type": "registry:block",
+      "title": "Data table",
+      "description": "Filterable, sortable, paginated TanStack data table with toolbar.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-data",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@tanstack/react-table"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/data-table/data-table-block.tsx",
+          "type": "registry:component",
+          "target": "components/data-table-block.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-frame-data",
+      "type": "registry:block",
+      "title": "ChartFrame + data table",
+      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @qlik-coe-emea/qlabs-components-data: full TanStack DataTable on flip and downloadCsv on export.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-charts",
+        "@qlik-coe-emea/qlabs-components-data"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-frame-data/chart-frame-data-block.tsx",
+          "type": "registry:component",
+          "target": "components/chart-frame-data-block.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "ai-chart",
+      "type": "registry:block",
+      "title": "AI chart in conversation",
+      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@qlik-coe-emea/qlabs-components-charts) composed with Tool/ToolOutput from @qlik-coe-emea/qlabs-components-ai. The canonical copy-owned home for @qlik-coe-emea/qlabs-components-ai + @qlik-coe-emea/qlabs-components-charts cross-sibling composition.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-ai",
+        "@qlik-coe-emea/qlabs-components-charts"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/ai-chart/ai-chart-block.tsx",
+          "type": "registry:component",
+          "target": "components/ai-chart-block.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "flow-canvas",
+      "type": "registry:block",
+      "title": "Flow canvas",
+      "description": "Branded React Flow canvas with custom nodes, edges and controls.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-flow",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@xyflow/react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/flow-canvas/flow-canvas.tsx",
+          "type": "registry:component",
+          "target": "components/flow-canvas.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "flow-builder",
+      "type": "registry:block",
+      "title": "Flow builder",
+      "description": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-flow",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@xyflow/react",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/flow-builder/flow-builder.tsx",
+          "type": "registry:component",
+          "target": "components/flow-builder.tsx"
+        },
+        {
+          "path": "registry/blocks/flow-builder/use-undo-redo.ts",
+          "type": "registry:component",
+          "target": "components/use-undo-redo.ts"
+        },
+        {
+          "path": "registry/blocks/flow-builder/use-copy-paste.ts",
+          "type": "registry:component",
+          "target": "components/use-copy-paste.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "marketing-hero",
+      "type": "registry:block",
+      "title": "Marketing hero",
+      "description": "Landing hero section with eyebrow, headline, CTAs and logo strip.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-marketing",
+        "@qlik-coe-emea/qlabs-components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/marketing-hero/marketing-hero.tsx",
+          "type": "registry:component",
+          "target": "components/marketing-hero.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "code-workspace",
+      "type": "registry:block",
+      "title": "Code workspace",
+      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @qlik-coe-emea/qlabs-components-editor/monaco-environment once at the app entry).",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-editor",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@qlik-coe-emea/qlabs-components-tokens",
+        "monaco-editor"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/code-workspace/code-workspace.tsx",
+          "type": "registry:component",
+          "target": "components/code-workspace.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "default-theme",
+      "type": "registry:theme",
+      "title": "Default theme",
+      "description": "Neutral enterprise SaaS light + dark token set.",
+      "cssVars": {
+        "light": {
+          "background": "oklch(1 0 0)",
+          "foreground": "oklch(0.21 0.02 264)",
+          "primary": "oklch(0.55 0.18 264)",
+          "primary-foreground": "oklch(0.985 0 0)",
+          "muted": "oklch(0.967 0.008 264)",
+          "muted-foreground": "oklch(0.55 0.02 264)",
+          "border": "oklch(0.92 0.008 264)",
+          "ring": "oklch(0.55 0.18 264)",
+          "radius": "0.625rem"
+        },
+        "dark": {
+          "background": "oklch(0.18 0.02 264)",
+          "foreground": "oklch(0.96 0.01 264)",
+          "primary": "oklch(0.7 0.16 264)",
+          "primary-foreground": "oklch(0.18 0.02 264)",
+          "muted": "oklch(0.28 0.02 264)",
+          "muted-foreground": "oklch(0.7 0.02 264)",
+          "border": "oklch(0.32 0.02 264)",
+          "ring": "oklch(0.7 0.16 264)"
+        }
+      }
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "qlik-bright-theme",
+      "type": "registry:theme",
+      "title": "Qlik Bright theme",
+      "description": "Qlik brand theme — Qlik Green primary, deep-blue text, bright surfaces (light) with a deep-blue qlik-dark companion. Derived from the Qlik brand palette.",
+      "cssVars": {
+        "light": {
+          "background": "oklch(1 0 0)",
+          "foreground": "oklch(0.25 0.04 252)",
+          "card": "oklch(1 0 0)",
+          "card-foreground": "oklch(0.25 0.04 252)",
+          "popover": "oklch(1 0 0)",
+          "popover-foreground": "oklch(0.25 0.04 252)",
+          "primary": "oklch(0.594 0.163 150)",
+          "primary-foreground": "oklch(0.985 0 0)",
+          "secondary": "oklch(0.95 0.012 252)",
+          "secondary-foreground": "oklch(0.3 0.05 252)",
+          "muted": "oklch(0.972 0.005 258)",
+          "muted-foreground": "oklch(0.5 0.03 252)",
+          "accent": "oklch(0.95 0.03 150)",
+          "accent-foreground": "oklch(0.35 0.09 150)",
+          "destructive": "oklch(0.58 0.22 27)",
+          "destructive-foreground": "oklch(0.985 0 0)",
+          "destructive-text": "oklch(0.5 0.2 27)",
+          "success": "oklch(0.594 0.163 150)",
+          "success-foreground": "oklch(0.985 0 0)",
+          "success-text": "oklch(0.48 0.163 150)",
+          "warning": "oklch(0.8 0.15 80)",
+          "warning-foreground": "oklch(0.3 0.05 80)",
+          "info": "oklch(0.5 0.1 224)",
+          "info-foreground": "oklch(0.985 0 0)",
+          "border": "oklch(0.9 0.01 252)",
+          "input": "oklch(0.9 0.01 252)",
+          "ring": "oklch(0.594 0.163 150)",
+          "surface": "oklch(0.985 0.004 258)",
+          "surface-muted": "oklch(0.96 0.008 258)",
+          "surface-elevated": "oklch(1 0 0)",
+          "sidebar": "oklch(0.972 0.005 258)",
+          "sidebar-foreground": "oklch(0.25 0.04 252)",
+          "sidebar-muted-foreground": "oklch(0.48 0.04 252)",
+          "sidebar-border": "oklch(0.9 0.01 252)",
+          "sidebar-accent": "oklch(0.95 0.03 150)",
+          "sidebar-accent-foreground": "oklch(0.35 0.09 150)",
+          "canvas": "oklch(0.97 0.006 258)",
+          "canvas-grid": "oklch(0.9 0.012 252)",
+          "flow-node": "oklch(1 0 0)",
+          "flow-node-foreground": "oklch(0.25 0.04 252)",
+          "flow-edge": "oklch(0.55 0.07 224)",
+          "chat-user": "oklch(0.95 0.04 150)",
+          "chat-user-foreground": "oklch(0.32 0.08 150)",
+          "chat-assistant": "oklch(0.972 0.005 258)",
+          "chat-assistant-foreground": "oklch(0.25 0.04 252)",
+          "chart-1": "oklch(0.594 0.163 150)",
+          "chart-2": "oklch(0.45 0.11 252)",
+          "chart-3": "oklch(0.55 0.1 224)",
+          "chart-4": "oklch(0.552 0.124 323)",
+          "chart-5": "oklch(0.72 0.13 85)",
+          "radius": "0.5rem"
+        },
+        "dark": {
+          "background": "oklch(0.2 0.04 252)",
+          "foreground": "oklch(0.96 0.01 220)",
+          "card": "oklch(0.24 0.045 252)",
+          "card-foreground": "oklch(0.96 0.01 220)",
+          "popover": "oklch(0.24 0.045 252)",
+          "popover-foreground": "oklch(0.96 0.01 220)",
+          "primary": "oklch(0.7 0.16 150)",
+          "primary-foreground": "oklch(0.2 0.04 252)",
+          "secondary": "oklch(0.3 0.04 252)",
+          "secondary-foreground": "oklch(0.96 0.01 220)",
+          "muted": "oklch(0.3 0.04 252)",
+          "muted-foreground": "oklch(0.72 0.03 220)",
+          "accent": "oklch(0.34 0.06 150)",
+          "accent-foreground": "oklch(0.96 0.02 150)",
+          "destructive": "oklch(0.62 0.2 25)",
+          "destructive-foreground": "oklch(0.985 0 0)",
+          "destructive-text": "oklch(0.7 0.19 25)",
+          "success": "oklch(0.7 0.16 150)",
+          "success-foreground": "oklch(0.2 0.04 252)",
+          "success-text": "oklch(0.7 0.16 150)",
+          "warning": "oklch(0.8 0.15 80)",
+          "warning-foreground": "oklch(0.25 0.05 80)",
+          "info": "oklch(0.7 0.1 224)",
+          "info-foreground": "oklch(0.2 0.04 252)",
+          "border": "oklch(0.34 0.04 252)",
+          "input": "oklch(0.34 0.04 252)",
+          "ring": "oklch(0.7 0.16 150)",
+          "surface": "oklch(0.22 0.04 252)",
+          "surface-muted": "oklch(0.27 0.04 252)",
+          "surface-elevated": "oklch(0.28 0.045 252)",
+          "sidebar": "oklch(0.17 0.04 252)",
+          "sidebar-foreground": "oklch(0.96 0.01 220)",
+          "sidebar-muted-foreground": "oklch(0.72 0.015 220)",
+          "sidebar-border": "oklch(0.32 0.04 252)",
+          "sidebar-accent": "oklch(0.32 0.06 150)",
+          "sidebar-accent-foreground": "oklch(0.96 0.02 150)",
+          "canvas": "oklch(0.17 0.04 252)",
+          "canvas-grid": "oklch(0.3 0.04 252)",
+          "flow-node": "oklch(0.26 0.045 252)",
+          "flow-node-foreground": "oklch(0.96 0.01 220)",
+          "flow-edge": "oklch(0.6 0.08 200)",
+          "chat-user": "oklch(0.34 0.07 150)",
+          "chat-user-foreground": "oklch(0.96 0.02 150)",
+          "chat-assistant": "oklch(0.26 0.04 252)",
+          "chat-assistant-foreground": "oklch(0.96 0.01 220)",
+          "chart-1": "oklch(0.7 0.16 150)",
+          "chart-2": "oklch(0.7 0.12 252)",
+          "chart-3": "oklch(0.72 0.1 224)",
+          "chart-4": "oklch(0.68 0.13 323)",
+          "chart-5": "oklch(0.8 0.13 85)",
+          "radius": "0.5rem"
+        }
+      }
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "sidebar-02",
+      "type": "registry:block",
+      "title": "App shell — dashboard inset",
+      "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so.",
+      "registryDependencies": ["avatar", "button", "collapsible", "dropdown-menu", "sidebar"],
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "packages/ui/src/blocks/sidebar-02/app-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-02/app-sidebar.tsx"
+        },
+        {
+          "path": "packages/ui/src/blocks/sidebar-02/logo.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-02/logo.tsx"
+        },
+        {
+          "path": "packages/ui/src/blocks/sidebar-02/nav-main.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-02/nav-main.tsx"
+        },
+        {
+          "path": "packages/ui/src/blocks/sidebar-02/nav-notifications.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-02/nav-notifications.tsx"
+        },
+        {
+          "path": "packages/ui/src/blocks/sidebar-02/team-switcher.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-02/team-switcher.tsx"
+        }
+      ],
+      "categories": ["sidebar", "app-shell"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "sidebar-04",
+      "type": "registry:block",
+      "title": "App shell — mail (double-sided)",
+      "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so.",
+      "registryDependencies": ["avatar", "dropdown-menu", "sidebar"],
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-04/app-sidebar.tsx"
+        },
+        {
+          "path": "packages/ui/src/blocks/sidebar-04/mail-context.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-04/mail-context.tsx"
+        }
+      ],
+      "categories": ["sidebar", "app-shell"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "sidebar-05",
+      "type": "registry:block",
+      "title": "App shell — double-sided nav",
+      "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
+      "registryDependencies": ["avatar", "dropdown-menu", "sidebar"],
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "packages/ui/src/blocks/sidebar-05/app-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/app-sidebar.tsx"
+        }
+      ],
+      "categories": ["sidebar", "app-shell"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "stat-card-area-01",
+      "type": "registry:block",
+      "title": "Stat Card — Area",
+      "description": "KPI stat card with a live area chart sparkline, hover-driven value/label updates, and a tokenized trend badge.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-charts",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@visx/curve",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/stat-card-area-01/components/stat-card-area.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-area-01/stat-card-area.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-area-01/components/stat-card-chart.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-area-01/stat-card-chart.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-area-01/components/stat-card-hover-bridge.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-area-01/stat-card-hover-bridge.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-area-01/components/trend-badge.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-area-01/trend-badge.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-area-01/components/data/revenue-series.ts",
+          "type": "registry:component",
+          "target": "components/stat-card-area-01/data/revenue-series.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "stat-card-line-01",
+      "type": "registry:block",
+      "title": "Stat Card — Line",
+      "description": "KPI stat card with an inline line chart, hover-driven value/label updates, and a tokenized trend badge.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-charts",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@visx/curve",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/stat-card-line-01/components/stat-card-line.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-line-01/stat-card-line.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-line-01/components/stat-card-chart.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-line-01/stat-card-chart.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-line-01/components/stat-card-hover-bridge.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-line-01/stat-card-hover-bridge.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-line-01/components/trend-badge.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-line-01/trend-badge.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-line-01/components/data/sessions-series.ts",
+          "type": "registry:component",
+          "target": "components/stat-card-line-01/data/sessions-series.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "stat-card-choropleth-01",
+      "type": "registry:block",
+      "title": "Stat Card — Choropleth Map",
+      "description": "KPI stat card with a choropleth world-map chart, hover-driven country value/label updates, and a tokenized trend badge.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-charts",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "topojson-client",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/stat-card-choropleth-01/components/stat-card-choropleth.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-choropleth-01/stat-card-choropleth.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-choropleth-01/components/stat-card-chart.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-choropleth-01/stat-card-chart.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-choropleth-01/components/stat-card-choropleth-hover-bridge.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-choropleth-01/stat-card-choropleth-hover-bridge.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-choropleth-01/components/trend-badge.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-choropleth-01/trend-badge.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-card-choropleth-01/components/data/visitors.ts",
+          "type": "registry:component",
+          "target": "components/stat-card-choropleth-01/data/visitors.ts"
+        },
+        {
+          "path": "registry/blocks/stat-card-choropleth-01/components/lib/use-world-data.tsx",
+          "type": "registry:component",
+          "target": "components/stat-card-choropleth-01/lib/use-world-data.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "stat-cards-01",
+      "type": "registry:block",
+      "title": "Stat Cards — elevated KPI tiles",
+      "description": "Elevated KPI tiles beyond a flat number: MetricCard + inline Sparkline (bar or line, coloured by a --chart-* token), a goal/progress tile, and a this-vs-last comparison tile.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-charts",
+        "@qlik-coe-emea/qlabs-components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/stat-cards-01/components/stat-cards.tsx",
+          "type": "registry:component",
+          "target": "components/stat-cards-01/stat-cards.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-cards-01/components/spark-stat-cards.tsx",
+          "type": "registry:component",
+          "target": "components/stat-cards-01/spark-stat-cards.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-cards-01/components/goal-stat-card.tsx",
+          "type": "registry:component",
+          "target": "components/stat-cards-01/goal-stat-card.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-cards-01/components/comparison-stat-card.tsx",
+          "type": "registry:component",
+          "target": "components/stat-cards-01/comparison-stat-card.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-cards-01/components/data/spark-series.ts",
+          "type": "registry:component",
+          "target": "components/stat-cards-01/data/spark-series.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-card-kpi-01",
+      "type": "registry:block",
+      "title": "Chart Card — KPI header",
+      "description": "An elevated chart-in-a-card: a header with a headline KPI + delta + a segmented period control (ToggleGroup), a token-coloured AreaChart, and a footer breakdown legend. The period control re-renders the chart.",
+      "dependencies": [
+        "@qlik-coe-emea/qlabs-components-charts",
+        "@qlik-coe-emea/qlabs-components-ui",
+        "@visx/curve"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-card-kpi-01/components/revenue-chart-card.tsx",
+          "type": "registry:component",
+          "target": "components/chart-card-kpi-01/revenue-chart-card.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-card-kpi-01/components/data/revenue-period-series.ts",
+          "type": "registry:component",
+          "target": "components/chart-card-kpi-01/data/revenue-period-series.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "stat-list-01",
+      "type": "registry:block",
+      "title": "Stat List — ranked list, leaderboard, activity feed",
+      "description": "Compact summary widgets: a ranked list with share bars + delta (Sales by country), a leaderboard (Top performers), and a transaction/activity feed with signed amounts.",
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/stat-list-01/components/stat-list.tsx",
+          "type": "registry:component",
+          "target": "components/stat-list-01/stat-list.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-list-01/components/ranked-list-widget.tsx",
+          "type": "registry:component",
+          "target": "components/stat-list-01/ranked-list-widget.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-list-01/components/leaderboard-widget.tsx",
+          "type": "registry:component",
+          "target": "components/stat-list-01/leaderboard-widget.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-list-01/components/transaction-feed-widget.tsx",
+          "type": "registry:component",
+          "target": "components/stat-list-01/transaction-feed-widget.tsx"
+        },
+        {
+          "path": "registry/blocks/stat-list-01/components/data/countries.ts",
+          "type": "registry:component",
+          "target": "components/stat-list-01/data/countries.ts"
+        },
+        {
+          "path": "registry/blocks/stat-list-01/components/data/performers.ts",
+          "type": "registry:component",
+          "target": "components/stat-list-01/data/performers.ts"
+        },
+        {
+          "path": "registry/blocks/stat-list-01/components/data/transactions.ts",
+          "type": "registry:component",
+          "target": "components/stat-list-01/data/transactions.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "integration-grid-01",
+      "type": "registry:block",
+      "title": "Integration Grid",
+      "description": "A responsive grid of integration cards (icon + name + description + connect/manage action + connection status) under a page header with an Add action — the canonical ‘connect your tools’ surface. Logos are consumer-supplied (Lucide placeholders here).",
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "files": [
+        {
+          "path": "registry/blocks/integration-grid-01/components/integration-grid.tsx",
+          "type": "registry:component",
+          "target": "components/integration-grid-01/integration-grid.tsx"
+        },
+        {
+          "path": "registry/blocks/integration-grid-01/components/integration-card.tsx",
+          "type": "registry:component",
+          "target": "components/integration-grid-01/integration-card.tsx"
+        },
+        {
+          "path": "registry/blocks/integration-grid-01/components/data/integrations.ts",
+          "type": "registry:component",
+          "target": "components/integration-grid-01/data/integrations.ts"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "form-wizard-01",
+      "type": "registry:block",
+      "title": "Form Wizard — checkout flow",
+      "description": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step.",
+      "dependencies": ["@qlik-coe-emea/qlabs-components-ui"],
+      "files": [
+        {
+          "path": "registry/blocks/form-wizard-01/components/checkout-wizard.tsx",
+          "type": "registry:component",
+          "target": "components/form-wizard-01/checkout-wizard.tsx"
+        },
+        {
+          "path": "registry/blocks/form-wizard-01/components/field.tsx",
+          "type": "registry:component",
+          "target": "components/form-wizard-01/field.tsx"
+        },
+        {
+          "path": "registry/blocks/form-wizard-01/components/data/steps.ts",
+          "type": "registry:component",
+          "target": "components/form-wizard-01/data/steps.ts"
+        }
+      ]
+    }
+  ]
+}

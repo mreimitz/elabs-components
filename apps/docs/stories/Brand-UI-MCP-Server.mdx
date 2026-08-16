@@ -1,0 +1,122 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/brand-ui MCP Server" />
+
+# brand-ui MCP Server
+
+`brand-ui mcp` is a **persistent, dependency-free Model-Context-Protocol server**
+that exposes the brand-ui CLI engine to coding agents — so an agent gets brand-ui
+ground truth **in any session, with the Storybook dev server down**. It is the
+always-on complement to the [Storybook MCP](?path=/docs/docs-storybook-mcp-for-agents--docs),
+which only exists while `pnpm storybook` runs.
+
+|                 | **brand-ui MCP** (this page)                                   | **Storybook MCP**                                         |
+| --------------- | -------------------------------------------------------------- | --------------------------------------------------------- |
+| Source of truth | the committed `brand-ui.manifest.json`                         | the live-rendered stories                                 |
+| Availability    | **always** (no dev server)                                     | only while `pnpm storybook` runs                          |
+| Best for        | the API: props, variants, intent, tokens, search, static audit | the **rendered** view: previews, interaction + a11y tests |
+| Transport       | stdio (`npx @qlik-coe-emea/qlabs-components-cli mcp`)          | HTTP (`localhost:6006/mcp`)                               |
+| Tool prefix     | `mcp__brand-ui__*`                                             | `mcp__storybook__*`                                       |
+
+> Rule of thumb: reach for **brand-ui MCP** to know _what exists and how to use it_
+> (anti-hallucination), and **Storybook MCP** to _see it render and test it_. When
+> both are up, use both; when Storybook is down, brand-ui MCP still answers.
+
+## How it works
+
+```
+your component source ──pnpm manifest──▶ brand-ui.manifest.json ──▶ brand-ui MCP ──▶ agent
+                         (committed artifact, CI-gated)            (reads it live)
+```
+
+The server is a thin **transport over the engine** — it re-reads
+`brand-ui.manifest.json` on every call (`loadManifest`), so it never serves stale
+data once the manifest is regenerated, and never needs a restart. The manifest is a
+committed, deterministic artifact kept fresh automatically:
+
+- a **pre-commit hook** regenerates + stages the manifest when component/token/registry
+  inputs change,
+- the **`manifest:check` CI gate** fails the build if the committed manifest is stale,
+- the `/new-component` & `brand-ui-component` workflows run `pnpm manifest`.
+
+So adding or changing a component flows to the MCP automatically — there is nothing to
+hand-maintain. (During active dev, run `pnpm manifest` to reflect _uncommitted_ edits
+immediately.)
+
+The protocol is plain newline-delimited JSON-RPC 2.0, implemented directly (no SDK
+dependency), so `@qlik-coe-emea/qlabs-components-cli` stays dependency-light and runs in any consuming project.
+
+## The five tools
+
+| Tool     | Arguments   | Returns                                                                                                                                                                                                              |
+| -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `info`   | —           | which `@qlik-coe-emea/qlabs-components-*` packages are present, themes + default, token count, registry size. Call once per session.                                                                                 |
+| `search` | `query`     | components/hooks/registry items matching a name or concept — **before** writing UI.                                                                                                                                  |
+| `docs`   | `component` | the real API: own-declared props (type/default/description), **expanded** cva variant values, per-component intent (purpose/relationships/anti-patterns), resolved inherited props when enriched. Never guess props. |
+| `tokens` | —           | the theme/token summary: themes, default theme, base radius, semantic token count.                                                                                                                                   |
+| `audit`  | `path`      | static token/style/anti-slop lint of a file or directory. (The rendered cross-theme + WCAG pass lives in the `brand-ui-audit` skill.)                                                                                |
+
+## Set it up
+
+**In the monorepo** — already wired in repo-root `.mcp.json` under the server name
+`brand-ui`:
+
+```json
+{
+  "mcpServers": {
+    "brand-ui": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["packages/cli/bin/brand-ui.mjs", "mcp"]
+    }
+  }
+}
+```
+
+Confirm it's connected in Claude Code with `/mcp` (a session reload may be needed). The
+tools then appear as `mcp__brand-ui__info`, `mcp__brand-ui__docs`, etc.
+
+**In a consuming project** — run the published CLI (the brand-ui plugin ships this entry
+automatically). `@qlik-coe-emea/qlabs-components-cli` is a **private GitHub Packages** package, so
+`npx` only resolves it once your project's npm config maps the `@qlik-coe-emea` scope to
+`npm.pkg.github.com` and carries a `read:packages` token — see `docs/CONSUMING.md`
+§1 for the one-time `.npmrc` + PAT setup:
+
+```json
+{
+  "mcpServers": {
+    "brand-ui": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@qlik-coe-emea/qlabs-components-cli", "mcp"]
+    }
+  }
+}
+```
+
+Or add it from the CLI:
+
+```bash
+claude mcp add brand-ui --scope project -- npx -y @qlik-coe-emea/qlabs-components-cli mcp
+```
+
+## Try it without an agent
+
+The server speaks stdio, so you can drive it with a pipe:
+
+```bash
+printf '%s\n%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"docs","arguments":{"component":"Button"}}}' \
+  | npx @qlik-coe-emea/qlabs-components-cli mcp
+```
+
+The ready banner prints to **stderr** (stdout carries only the JSON-RPC stream, so it
+isn't corrupted).
+
+## See also
+
+- [Storybook MCP for Agents](?path=/docs/docs-storybook-mcp-for-agents--docs) — the
+  rendered/preview/test companion.
+- Enforcement rule (source of truth): `.claude/rules/storybook-mcp.md`.
+- The engine behind it: `npx @qlik-coe-emea/qlabs-components-cli info | search <q> | docs <Component> | tokens | audit <path>`.

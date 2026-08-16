@@ -1,0 +1,3 @@
+{
+  "components": ["collapsible-panel", "nav-main", "nav-notifications", "nav-user", "team-switcher"]
+}

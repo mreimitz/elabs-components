@@ -1,0 +1,229 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as ViewToolbarStories from "../../../packages/ui/src/components/view-toolbar/view-toolbar.stories";
+
+<Meta title="Docs/View Toolbar Contract" />
+
+# View toolbar contract
+
+Every list, table and board view needs **one row**: what you are looking at on the
+left, what you can do about it on the right. `ViewToolbar`
+(`@qlik-coe-emea/qlabs-components-ui`) is that row.
+
+This page is the deliverable, not documentation of one. The failure it fixes was
+**ambiguity, not capability**: with no named contract, one consuming app grew — across
+about 40 routes — six filter-chip idioms, five result-count renderings and roughly
+11px of control-height scatter inside a single filter row. Every one of those was
+buildable from existing primitives. That is exactly the point: when the row has no
+grammar, drift is the expected outcome, not carelessness.
+
+So read this page as **rules**, and treat a deviation as a bug in the screen.
+
+## Anatomy
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ⓘ  [status]  [chip ✕] [chip ✕] [Clear all]   24 of 128 runs   [ ][ ][ New ] │
+└──────────────────────────────────────────────────────────────────────────────┘
+  │        └──────────── left cluster: what you are looking at ───────────┘  │
+  info                                                                  actions
+```
+
+<Canvas of={ViewToolbarStories.Default} />
+
+```tsx
+import {
+  Button,
+  FilterChip,
+  ResultCount,
+  StatusBadge,
+  ViewToolbar,
+  ViewToolbarFilters,
+} from "@qlik-coe-emea/qlabs-components-ui";
+
+<ViewToolbar
+  info="Every pipeline run in this workspace from the last 30 days, newest first."
+  actions={
+    <Button size="sm">
+      <Plus aria-hidden="true" />
+      New run
+    </Button>
+  }
+>
+  <StatusBadge status="running" size="sm" />
+  {filters.length > 0 && (
+    <ViewToolbarFilters onClearAll={clearFilters}>
+      {filters.map((f) => (
+        <FilterChip key={f.id} label={f.label} onRemove={() => remove(f.id)} />
+      ))}
+    </ViewToolbarFilters>
+  )}
+  <ResultCount count={24} total={128}>
+    runs
+  </ResultCount>
+</ViewToolbar>;
+```
+
+## The vocabulary (four parts, nothing else)
+
+| Part                 | Is for                                                            | Is **not**                                                                                            |
+| -------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ViewToolbar`        | the row shell: `info` slot, left cluster (`children`), `actions`  | a page header (that is `SectionHeader`), a nav bar (`TopNav`), or a page frame (`PageShell`)          |
+| `ViewToolbarFilters` | the one home for active-filter chips + the "clear all" affordance | a filter _picker_ — choosing a filter is `FacetFilter` / `Combobox` / a `Filters` button in `actions` |
+| `FilterChip`         | one removable active filter, label-in-value                       | a toggle, a tag editor (`TagInput`), a status pill (`StatusBadge`), or a chip that _edits_ a filter   |
+| `ResultCount`        | how many rows the view shows, honestly                            | a KPI (`MetricCard`), a badge, or a pagination control (`Pagination`)                                 |
+
+## The rules
+
+**R1 — One row per view, at the top of the view.** Not two rows, not a row per
+section. If a second row seems necessary, the view is doing two jobs.
+
+**R2 — Left is state, right is verbs.** Anything that answers _"what am I looking
+at?"_ (status, active filters, count, a view switcher) goes in `children`. Anything
+that answers _"what can I do?"_ goes in `actions`. Nothing that mutates data lives on
+the left; nothing that describes the current view lives on the right.
+
+**R3 — One chip idiom, label-in-value, and the whole chip removes.**
+`label="Status: Failed"` — never `"Status = failed"`, never a bare `"Failed"`. The
+caller composes the string, because only the caller knows the field's display name.
+The chip is a single `<button>` whose action is _remove_: one tab stop instead of
+two, a target ≥24px (WCAG 2.5.8) with no dead zone, Enter/Space for free from the
+native element, and an accessible name — "Remove filter: Status: Failed" — that
+_contains_ the visible label (WCAG 2.5.3 Label in Name).
+A chip that must **edit** a filter rather than remove it is a different control:
+reach for `FacetFilter` (`@qlik-coe-emea/qlabs-components-data`). Do not fork `FilterChip` to do both.
+
+**R4 — One count, and it never lies.** Pass `total` whenever a filter is active, so
+the row reads `24 of 128`; a bare `24` misrepresents a filtered view. Omit `total`
+when nothing is filtered — `128 of 128` is noise. `ResultCount` is `tabular-nums` and
+formats through the active `LocaleProvider`, so digits do not jitter as a live count
+updates and grouping follows the locale. Give it a trailing noun
+(`<ResultCount count={24} total={128}>runs</ResultCount>`) so the number is never
+announced bare; it is joined with a non-breaking space.
+
+**R5 — No filters applied means the region is ABSENT.** Render
+`<ViewToolbarFilters>` only when at least one filter is active. An empty bordered box
+labelled "no filters" is not an empty state, it is clutter.
+
+**R6 — Two control-height rungs, and only two.** The filters group runs at chip
+height (24px) — including its "clear all". The `actions` cluster runs at button
+height; use `size="sm"` (32px) unless a view has a single, genuinely primary action.
+The row itself holds a `min-h-9` floor (36px, the default `Button` height) so a view
+with no filters still lines up with its sibling views. This split is the direct fix
+for the control-height scatter that motivated the contract — do not introduce a third
+rung.
+
+**R7 — The row wraps; it never scrolls and never clips.** At narrow widths the two
+clusters stack, the chip run wraps and long chip labels truncate; below roughly a
+320px viewport the `actions` cluster wraps onto a second line of its own rather than
+pushing past the row's edge. The action cluster stays inside the row's box at every
+width — asserted by a play function that squeezes the row to a phone width in a real
+browser, not by inspection. Do not add `overflow-hidden` to the row or anything
+inside it, do not put `shrink-0` back on the action cluster, and do not swap the wrap
+for a horizontal scroller (a scroller hides active filters behind an invisible
+affordance).
+
+<Canvas of={ViewToolbarStories.Overflowing} />
+
+**R8 — While the count is unknown, show a placeholder, not a number.**
+`<ResultCount loading />` renders a layout-shaped placeholder and announces the wait
+once at the region (`role="status"`). A `0` rendered during a fetch is the same class
+of bug as a bare count on a filtered view.
+
+**R9 — Empty and error states live BELOW the row, not in it.** When a filter empties
+the view, the count still reads `0 of 128` and the chips **stay**, because the filter
+that emptied the view is the thing the user needs to undo. The "nothing here" message
+is a `StatePanel kind="empty"` under the toolbar.
+
+**R10 — The row deliberately does not claim `role="toolbar"`.** That role promises
+roving-tabindex arrow-key navigation, which this row does not implement; claiming it
+would mislead assistive tech. Every control is an ordinary tab stop instead, and the
+one region that benefits from a name — the chip run — carries `role="group"` with the
+accessible name "Active filters". Override that name with `aria-label` when a screen
+has more than one filter group.
+
+## Decisions you might otherwise re-litigate
+
+**"Clear all" is a prop, not an exported component.** `ViewToolbarFilters
+onClearAll={…}` renders the affordance in the one place it belongs (after the chip
+run, at chip height). Exporting a `ClearAllButton` would let it drift somewhere else
+in the row and re-open the placement question the contract exists to close. Omit the
+prop for a view with no bulk reset.
+
+**There are no `cva` variants.** No part has a second visual axis today, and the
+repo's rules forbid dead variants. A bounded / sticky bar is a caller recipe, not a
+variant:
+
+```tsx
+<ViewToolbar
+  className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 backdrop-blur"
+  …
+/>
+```
+
+**The `info` tooltip replaces the in-page title block.** A view that already sits
+under a page heading does not need a second `<h1>` + paragraph. Put the one-sentence
+description in `info` and let the ⓘ trigger carry it; omit `info` entirely when the
+surrounding page already says what the view is.
+
+**KNOWN LIMITATION — `info` is not reachable by touch.** A Radix tooltip opens on
+hover and on keyboard focus, but deliberately not on tap, and Radix suppresses the
+focus-open when focus arrived from a pointer. Verified in a real browser on an
+emulated touch device: tap, double-tap and long-press all leave the trigger at
+`data-state="closed"` and never set `aria-describedby`. So `info` is a **progressive
+enhancement for pointer and keyboard users** — do not put anything a phone user
+cannot do without in it, and keep a real heading/description on the page when the
+view must explain itself on mobile. Making the ⓘ tap-reachable (a click-opened
+`Popover`, or a tooltip that also toggles on a coarse-pointer tap) is a follow-up.
+
+## Where it sits next to its neighbours
+
+- **`PageShell`** — the page frame. Its generic `header` slot is where this row goes
+  on a full page. A future toolbar header variant for `PageShell` should **place** a
+  `<ViewToolbar>`, not invent a second row concept.
+- **`SectionHeader`** — the title + description + actions block. It answers "what is
+  this page"; `ViewToolbar` answers "what is this view showing right now". A screen
+  may legitimately have both, in that order.
+- **`FilterBar`** (`@qlik-coe-emea/qlabs-components-data`) — the DataTable-scoped toolbar handed the table
+  instance by `toolbar={(table) => …}`. It stays; it is not a general per-view row,
+  and the one-way package dependency (`ui` → `data`) means it never can be.
+- **`FacetFilter`, `SearchInput`, `ColumnPicker`** (`@qlik-coe-emea/qlabs-components-data`) — the controls a
+  user _picks_ filters with. They go in `actions` (or a `Filters` popover); what they
+  produce shows up on the left as `FilterChip`s.
+- **`StatusBadge`, `StatePanel`, `Pagination`, `TagInput`** (`@qlik-coe-emea/qlabs-components-ui`) — status
+  vocabulary, the below-the-row empty/error panel, page navigation, and multi-value
+  text entry respectively. None of them is a filter chip.
+
+## Anti-patterns this contract closes
+
+| Instead of…                                                          | Do                                                       |
+| -------------------------------------------------------------------- | -------------------------------------------------------- |
+| a hand-rolled `Badge` + ghost ✕                                      | `FilterChip`                                             |
+| a split button with an attached ✕                                    | `FilterChip`                                             |
+| a `ToggleGroup` or inline `Label` + `Checkbox` standing in for chips | a filter picker in `actions` + `FilterChip`s on the left |
+| `Badge variant="secondary"` holding a number                         | `ResultCount`                                            |
+| a bare `<span className="tabular-nums">` holding a number            | `ResultCount`                                            |
+| a count with no total on a filtered view                             | `<ResultCount count={n} total={m} />`                    |
+| mixed 24 / 28 / 32 / 36px controls in one filter row                 | chips at chip height, `actions` at `size="sm"`           |
+| an in-page `<h1>` + paragraph explaining the view                    | the `info` tooltip — on pointer/keyboard surfaces only   |
+
+## Accessibility contract
+
+- Every control in the row is a real `<button>` and an ordinary tab stop; the chip
+  run is a named `role="group"`.
+- A chip's accessible name contains its visible label, so speech input ("click Status
+  Failed") works.
+- The ⓘ trigger is a button with the accessible name "About this view"; its tooltip
+  opens on keyboard focus as well as on hover — but **not on tap** (see the known
+  limitation above).
+- The loading placeholder is announced once at the region, never per skeleton box.
+- All microcopy (`Remove filter: {label}`, `Clear all`, `Active filters`, `About this
+view`, `{count} of {total}`) goes through `LocaleProvider`'s `t()`, so it
+  translates; numbers go through `Intl.NumberFormat`.
+- Verified as rendered — screenshot + axe-core, in a real browser — for every story on
+  this page in both themes, plus `dir="rtl"` (logical properties hold: the ⓘ moves
+  to the row's right, `actions` to its left, and each chip's ✕ to its inline end) and
+  viewports down to 280px. The one remaining axe finding on `qlik-bright` is the
+  primary `Button`'s own white-on-Qlik-green contrast (it reproduces identically on
+  `Core/Button`), not anything this row introduces.
+- **Not** verified: the touch behaviour of anything except the ⓘ trigger, and the
+  `data-density` / `data-decoration` dials at settings other than their defaults.

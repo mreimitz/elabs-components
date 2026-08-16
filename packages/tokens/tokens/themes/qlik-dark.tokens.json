@@ -1,0 +1,438 @@
+{
+  "background": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.005 75)"
+  },
+  "foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "card": {
+    "$type": "color",
+    "$value": "oklch(0.25 0.005 75)"
+  },
+  "card-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "popover": {
+    "$type": "color",
+    "$value": "oklch(0.27 0.006 75)"
+  },
+  "popover-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "primary": {
+    "$type": "color",
+    "$value": "oklch(0.75 0.14 153)"
+  },
+  "primary-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.22 0.005 75)"
+  },
+  "primary-text": {
+    "$type": "color",
+    "$value": "oklch(0.82 0.14 153)"
+  },
+  "secondary": {
+    "$type": "color",
+    "$value": "oklch(0.28 0.006 75)"
+  },
+  "secondary-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "muted": {
+    "$type": "color",
+    "$value": "oklch(0.27 0.006 75)"
+  },
+  "muted-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.008 85)"
+  },
+  "accent": {
+    "$type": "color",
+    "$value": "oklch(0.31 0.007 75)"
+  },
+  "accent-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "destructive": {
+    "$type": "color",
+    "$value": "oklch(0.68 0.18 5)"
+  },
+  "destructive-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.22 0.005 75)"
+  },
+  "destructive-text": {
+    "$type": "color",
+    "$value": "oklch(0.74 0.16 5)"
+  },
+  "success": {
+    "$type": "color",
+    "$value": "oklch(0.82 0.12 170)"
+  },
+  "success-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.22 0.005 75)"
+  },
+  "success-text": {
+    "$type": "color",
+    "$value": "oklch(0.84 0.12 170)"
+  },
+  "warning": {
+    "$type": "color",
+    "$value": "oklch(0.8 0.15 70)"
+  },
+  "warning-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.25 0.02 75)"
+  },
+  "warning-text": {
+    "$type": "color",
+    "$value": "oklch(0.82 0.15 70)"
+  },
+  "info": {
+    "$type": "color",
+    "$value": "oklch(0.7 0.13 245)"
+  },
+  "info-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.22 0.005 75)"
+  },
+  "info-text": {
+    "$type": "color",
+    "$value": "oklch(0.74 0.12 245)"
+  },
+  "border": {
+    "$type": "color",
+    "$value": "oklch(0.32 0.006 75)"
+  },
+  "border-strong": {
+    "$type": "color",
+    "$value": "oklch(0.54 0.007 75)"
+  },
+  "input": {
+    "$type": "color",
+    "$value": "oklch(0.38 0.006 75)"
+  },
+  "ring": {
+    "$type": "color",
+    "$value": "oklch(0.89 0.2 140)"
+  },
+  "surface": {
+    "$type": "color",
+    "$value": "oklch(0.23 0.005 75)"
+  },
+  "surface-muted": {
+    "$type": "color",
+    "$value": "oklch(0.28 0.006 75)"
+  },
+  "surface-elevated": {
+    "$type": "color",
+    "$value": "oklch(0.29 0.006 75)"
+  },
+  "sidebar": {
+    "$type": "color",
+    "$value": "oklch(0.18 0.005 75)"
+  },
+  "sidebar-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "sidebar-muted-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.008 85)"
+  },
+  "sidebar-border": {
+    "$type": "color",
+    "$value": "oklch(0.3 0.006 75)"
+  },
+  "sidebar-accent": {
+    "$type": "color",
+    "$value": "oklch(0.28 0.006 75)"
+  },
+  "sidebar-accent-foreground": {
+    "$type": "color",
+    "$value": "var(--accent-foreground)"
+  },
+  "sidebar-primary": {
+    "$type": "color",
+    "$value": "var(--primary)"
+  },
+  "sidebar-primary-foreground": {
+    "$type": "color",
+    "$value": "var(--primary-foreground)"
+  },
+  "sidebar-ring": {
+    "$type": "color",
+    "$value": "var(--ring)"
+  },
+  "canvas": {
+    "$type": "color",
+    "$value": "oklch(0.18 0.005 75)"
+  },
+  "canvas-grid": {
+    "$type": "color",
+    "$value": "oklch(0.28 0.006 75)"
+  },
+  "flow-node": {
+    "$type": "color",
+    "$value": "oklch(0.27 0.006 75)"
+  },
+  "flow-node-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "flow-edge": {
+    "$type": "color",
+    "$value": "oklch(0.62 0.1 245)"
+  },
+  "chat-user": {
+    "$type": "color",
+    "$value": "oklch(0.33 0.006 75)"
+  },
+  "chat-user-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "chat-assistant": {
+    "$type": "color",
+    "$value": "oklch(0.26 0.006 75)"
+  },
+  "chat-assistant-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "chart-1": {
+    "$type": "color",
+    "$value": "oklch(0.7 0.16 150)"
+  },
+  "chart-2": {
+    "$type": "color",
+    "$value": "oklch(0.7 0.12 252)"
+  },
+  "chart-3": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.1 224)"
+  },
+  "chart-4": {
+    "$type": "color",
+    "$value": "oklch(0.68 0.13 323)"
+  },
+  "chart-5": {
+    "$type": "color",
+    "$value": "oklch(0.8 0.13 85)"
+  },
+  "chart-grid": {
+    "$type": "color",
+    "$value": "var(--border)"
+  },
+  "chart-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)"
+  },
+  "chart-foreground-muted": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)"
+  },
+  "chart-background": {
+    "$type": "color",
+    "$value": "var(--card)"
+  },
+  "chart-label": {
+    "$type": "color",
+    "$value": "var(--foreground)"
+  },
+  "chart-crosshair": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)"
+  },
+  "chart-line-primary": {
+    "$type": "color",
+    "$value": "var(--chart-1)"
+  },
+  "chart-line-secondary": {
+    "$type": "color",
+    "$value": "var(--chart-2)"
+  },
+  "chart-brush-border": {
+    "$type": "color",
+    "$value": "var(--border)"
+  },
+  "chart-indicator-color": {
+    "$type": "color",
+    "$value": "var(--chart-1)"
+  },
+  "chart-indicator-secondary-color": {
+    "$type": "color",
+    "$value": "var(--chart-2)"
+  },
+  "chart-marker-background": {
+    "$type": "color",
+    "$value": "var(--card)"
+  },
+  "chart-marker-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)"
+  },
+  "chart-marker-border": {
+    "$type": "color",
+    "$value": "var(--border)"
+  },
+  "chart-marker-badge-background": {
+    "$type": "color",
+    "$value": "var(--primary)"
+  },
+  "chart-marker-badge-foreground": {
+    "$type": "color",
+    "$value": "var(--primary-foreground)"
+  },
+  "chart-ring-background": {
+    "$type": "color",
+    "$value": "var(--background)"
+  },
+  "chart-segment-background": {
+    "$type": "color",
+    "$value": "var(--muted)"
+  },
+  "chart-segment-line": {
+    "$type": "color",
+    "$value": "var(--border)"
+  },
+  "chart-tooltip-background": {
+    "$type": "color",
+    "$value": "var(--popover)"
+  },
+  "chart-tooltip-foreground": {
+    "$type": "color",
+    "$value": "var(--popover-foreground)"
+  },
+  "chart-tooltip-muted": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)"
+  },
+  "legend-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)"
+  },
+  "legend-muted": {
+    "$type": "color",
+    "$value": "var(--muted)"
+  },
+  "legend-muted-foreground": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)"
+  },
+  "legend-track": {
+    "$type": "color",
+    "$value": "var(--muted)"
+  },
+  "rule": {
+    "$type": "color",
+    "$value": "oklch(0.32 0.006 75)"
+  },
+  "rule-strong": {
+    "$type": "color",
+    "$value": "oklch(0.45 0.006 75)"
+  },
+  "grid-line": {
+    "$type": "color",
+    "$value": "oklch(0.28 0.006 75)"
+  },
+  "grid-line-major": {
+    "$type": "color",
+    "$value": "oklch(0.36 0.006 75)"
+  },
+  "calc-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.006 90)"
+  },
+  "calc-number": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.14 240)"
+  },
+  "calc-unit": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.1 200)"
+  },
+  "calc-currency": {
+    "$type": "color",
+    "$value": "oklch(0.75 0.14 153)"
+  },
+  "calc-variable": {
+    "$type": "color",
+    "$value": "oklch(0.75 0.12 300)"
+  },
+  "calc-reference": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.14 264)"
+  },
+  "calc-function": {
+    "$type": "color",
+    "$value": "oklch(0.78 0.13 60)"
+  },
+  "calc-operator": {
+    "$type": "color",
+    "$value": "oklch(0.88 0.006 90)"
+  },
+  "calc-result": {
+    "$type": "color",
+    "$value": "oklch(0.7 0.16 264)"
+  },
+  "calc-comment": {
+    "$type": "color",
+    "$value": "oklch(0.64 0.006 85)"
+  },
+  "calc-warning": {
+    "$type": "color",
+    "$value": "oklch(0.74 0.16 5)"
+  },
+  "code-background": {
+    "$type": "color",
+    "$value": "var(--card)"
+  },
+  "code-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)"
+  },
+  "code-comment": {
+    "$type": "color",
+    "$value": "oklch(0.64 0.006 85)"
+  },
+  "code-string": {
+    "$type": "color",
+    "$value": "oklch(0.75 0.14 153)"
+  },
+  "code-number": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.14 240)"
+  },
+  "code-constant": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.1 200)"
+  },
+  "code-keyword": {
+    "$type": "color",
+    "$value": "oklch(0.7 0.16 264)"
+  },
+  "code-function": {
+    "$type": "color",
+    "$value": "oklch(0.78 0.13 60)"
+  },
+  "code-type": {
+    "$type": "color",
+    "$value": "oklch(0.75 0.12 300)"
+  },
+  "code-tag": {
+    "$type": "color",
+    "$value": "oklch(0.78 0.14 336)"
+  },
+  "code-property": {
+    "$type": "color",
+    "$value": "oklch(0.88 0.006 90)"
+  }
+}

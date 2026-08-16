@@ -1,0 +1,107 @@
+{
+  "name": "@qlik-coe-emea/qlabs-components-charts",
+  "version": "3.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
+    "directory": "packages/charts"
+  },
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./test": {
+      "types": "./src/test/index.ts",
+      "default": "./src/test/index.ts"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./test": {
+        "types": "./dist/test/index.d.ts",
+        "default": "./dist/test/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist .turbo coverage"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.14.2",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.577.0",
+    "@number-flow/react": "^0.5.4",
+    "@visx/brush": "3.12.0",
+    "@visx/curve": "4.0.1-alpha.0",
+    "@visx/event": "4.0.1-alpha.0",
+    "@visx/geo": "4.0.1-alpha.0",
+    "@visx/gradient": "4.0.1-alpha.0",
+    "@visx/grid": "4.0.1-alpha.0",
+    "@visx/group": "4.0.1-alpha.0",
+    "@visx/pattern": "4.0.1-alpha.0",
+    "@visx/responsive": "4.0.1-alpha.0",
+    "@visx/sankey": "4.0.1-alpha.0",
+    "@visx/scale": "4.0.1-alpha.0",
+    "@visx/shape": "4.0.1-alpha.0",
+    "@visx/zoom": "4.0.1-alpha.0",
+    "d3-array": "3.2.4",
+    "d3-geo": "3.1.0",
+    "d3-sankey": "^0.12.3",
+    "d3-scale": "4.0.2",
+    "d3-shape": "^3.2.0",
+    "motion": "^12.0.0",
+    "react-use-measure": "^2.1.7"
+  },
+  "peerDependencies": {
+    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-icons": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
+    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/d3-array": "^3.2.1",
+    "@types/d3-geo": "^3.1.0",
+    "@types/d3-sankey": "^0.12.5",
+    "@types/d3-scale": "^4.0.9",
+    "@types/d3-shape": "^3.1.6",
+    "@types/geojson": "^7946.0.16",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@types/topojson-client": "^3.1.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
+    "jsdom": "^25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "topojson-client": "3.1.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.2",
+    "world-atlas": "^2.0.2"
+  }
+}

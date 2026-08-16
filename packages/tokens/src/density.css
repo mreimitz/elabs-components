@@ -1,0 +1,160 @@
+/**
+ * @qlik-coe-emea/qlabs-components-tokens — density.css
+ * --------------------------------------------------------------------------
+ * The DENSITY overlay: rescales the system's two size channels — SPACING and
+ * TYPE — so a whole surface tightens or opens up together, across ALL packages,
+ * with zero component edits. Orthogonal to color and decoration.
+ *
+ * MECHANISM — spacing
+ *   Tailwind v4 compiles every spacing utility to `calc(var(--spacing) * N)`
+ *   (default `--spacing: 0.25rem`). A `[data-density]` attribute on any
+ *   ancestor element overrides `--spacing` for that subtree.
+ *
+ * MECHANISM — type (#340)
+ *   The eight semantic type roles are native Tailwind `--text-<role>` keys, and
+ *   a utility reads `var(--text-body)` directly — so the roles have to be
+ *   REDECLARED per density block; a single `--type-factor` folded into the
+ *   `@theme` values would be substituted once at `:root` and never re-evaluate
+ *   for a subtree (custom properties resolve `var()` at the element that
+ *   DECLARES them). Each block therefore multiplies the unscaled base scale
+ *   (`--type-size-*` / `--type-leading-*`, declared in themes.css § TYPE SCALE
+ *   BASE) by `--type-factor`. Because the base layer is separate, this is not a
+ *   cycle even when `[data-density]` lands on `:root` itself (which is exactly
+ *   what `ThemeProvider` does), and nested density regions scale from the base
+ *   rather than compounding.
+ *
+ *   Only SIZE and LINE-HEIGHT are rescaled. `--text-*--font-weight` and
+ *   `--text-*--letter-spacing` are deliberately NOT redeclared: weight is a
+ *   semantic rung (a title stays 600 at every density) and the tracking values
+ *   are already tuned per role. Tracking is authored in `em`, so its RESOLVED
+ *   px follows the scaled size on its own (-0.02em of 30px → of 28.125px) —
+ *   that is the correct optical behaviour, and it is why the token itself must
+ *   not also be multiplied.
+ *
+ * LEVELS
+ *                 --spacing            --type-factor
+ *   compact       0.222rem (−11.2%)    0.9375 = 15/16 (−6.25%)
+ *   comfortable   0.25rem  (identity)  1              (identity)
+ *   spacious      0.28rem  (+12.0%)    1.0625 = 17/16 (+6.25%)
+ *
+ *   `comfortable` is the exact identity on BOTH channels, so the default render
+ *   is pixel-identical to pre-density builds (locked by density-type-scale.test.ts).
+ *
+ * WHY TYPE SHRINKS AT HALF THE RATE OF SPACING
+ *   Whitespace can be cut hard before a layout stops working; text cannot.
+ *   Type therefore moves one sixteenth per step (±6.25%) against spacing's
+ *   ~11–12% — the same direction, roughly half the amplitude, symmetric either
+ *   way so compact and spacious read as one dial rather than two tunings.
+ *
+ * LEGIBILITY FLOOR
+ *   `--text-body` is 0.875rem (14px at a 16px root). 13px is the floor for
+ *   sustained reading of dense enterprise data screens, so compact may not take
+ *   body below it: 14 × 0.9375 = 13.125px, which clears the floor with headroom
+ *   instead of sitting on it. The scale's SMALLEST rung, `meta` (12px), lands at
+ *   11.25px — a secondary 11px floor for non-reading metadata, and the reason
+ *   the factor is not pushed further toward spacing's −11%.
+ *   Both floors are asserted by density-type-scale.test.ts.
+ *
+ *   CAVEAT — the REAL constraint is x-height ≥ ~5.5px, not nominal px. A px
+ *   floor is font-blind: what a reader resolves is the x-height, and faces
+ *   differ by ~13% at the same nominal size. Measured on the SELF-HOSTED faces
+ *   in a browser (canvas `actualBoundingBox` of "x"; the `--font-sans` stacks
+ *   name "Source Sans Pro" but the shipped @font-face is "Source Sans 3"):
+ *
+ *     face                                  11.25px    12px
+ *     Source Sans 3   (qlik --font-sans)     5.47px   5.83px
+ *     IBM Plex Mono   (blueprint sans/mono)  5.81px   6.19px
+ *     Inter           (:root --font-sans)    6.14px   6.55px
+ *
+ *   So blueprint's mono at compact-`meta` (5.81px) is still OPTICALLY LARGER
+ *   than the qlik sans at the comfortable 12px shipping today (5.83px ≈ equal),
+ *   while the qlik sans at compact-`meta` sets the new system minimum at
+ *   5.47px. That 5.47px — not "11px" — is what the floor is really defending.
+ *   A narrower brand face swapped into `--font-sans` could clear the 11px
+ *   nominal floor and still fall under it, so re-check x-height (not px) before
+ *   lowering `--type-factor` or re-basing `--type-size-meta` for a new brand.
+ *
+ * SCOPING
+ *   Apply `data-density` on any element (or the document root via ThemeProvider)
+ *   to scope density to a region. Omitting the attribute leaves BOTH channels at
+ *   the Tailwind/`@theme` default; setting `comfortable` explicitly restores the
+ *   identity inside a denser region (which is why that block redeclares
+ *   everything rather than being empty).
+ *
+ * Copied to dist/ by the @qlik-coe-emea/qlabs-components-tokens build. See theme-provider.tsx for the
+ * ThemeProvider/useDensity surface and theme-types.ts for type constants.
+ */
+
+/* The dial's declared identity. Nothing at rest reads it — the `@theme` roles
+   alias the unscaled base directly — but declaring it keeps the knob
+   inspectable (`getComputedStyle(root).getPropertyValue("--type-factor")`) and
+   gives a consumer scaling their own role a defined value to multiply by. */
+:root {
+  --type-factor: 1;
+}
+
+[data-density="compact"] {
+  --spacing: 0.222rem;
+  --type-factor: 0.9375;
+
+  --text-display: calc(var(--type-size-display) * var(--type-factor));
+  --text-display--line-height: calc(var(--type-leading-display) * var(--type-factor));
+  --text-title: calc(var(--type-size-title) * var(--type-factor));
+  --text-title--line-height: calc(var(--type-leading-title) * var(--type-factor));
+  --text-subtitle: calc(var(--type-size-subtitle) * var(--type-factor));
+  --text-subtitle--line-height: calc(var(--type-leading-subtitle) * var(--type-factor));
+  --text-body: calc(var(--type-size-body) * var(--type-factor));
+  --text-body--line-height: calc(var(--type-leading-body) * var(--type-factor));
+  --text-caption: calc(var(--type-size-caption) * var(--type-factor));
+  --text-caption--line-height: calc(var(--type-leading-caption) * var(--type-factor));
+  --text-meta: calc(var(--type-size-meta) * var(--type-factor));
+  --text-meta--line-height: calc(var(--type-leading-meta) * var(--type-factor));
+  --text-kpi: calc(var(--type-size-kpi) * var(--type-factor));
+  --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
+  --text-code: calc(var(--type-size-code) * var(--type-factor));
+  --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+}
+
+[data-density="comfortable"] {
+  --spacing: 0.25rem;
+  --type-factor: 1;
+
+  --text-display: calc(var(--type-size-display) * var(--type-factor));
+  --text-display--line-height: calc(var(--type-leading-display) * var(--type-factor));
+  --text-title: calc(var(--type-size-title) * var(--type-factor));
+  --text-title--line-height: calc(var(--type-leading-title) * var(--type-factor));
+  --text-subtitle: calc(var(--type-size-subtitle) * var(--type-factor));
+  --text-subtitle--line-height: calc(var(--type-leading-subtitle) * var(--type-factor));
+  --text-body: calc(var(--type-size-body) * var(--type-factor));
+  --text-body--line-height: calc(var(--type-leading-body) * var(--type-factor));
+  --text-caption: calc(var(--type-size-caption) * var(--type-factor));
+  --text-caption--line-height: calc(var(--type-leading-caption) * var(--type-factor));
+  --text-meta: calc(var(--type-size-meta) * var(--type-factor));
+  --text-meta--line-height: calc(var(--type-leading-meta) * var(--type-factor));
+  --text-kpi: calc(var(--type-size-kpi) * var(--type-factor));
+  --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
+  --text-code: calc(var(--type-size-code) * var(--type-factor));
+  --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+}
+
+[data-density="spacious"] {
+  --spacing: 0.28rem;
+  --type-factor: 1.0625;
+
+  --text-display: calc(var(--type-size-display) * var(--type-factor));
+  --text-display--line-height: calc(var(--type-leading-display) * var(--type-factor));
+  --text-title: calc(var(--type-size-title) * var(--type-factor));
+  --text-title--line-height: calc(var(--type-leading-title) * var(--type-factor));
+  --text-subtitle: calc(var(--type-size-subtitle) * var(--type-factor));
+  --text-subtitle--line-height: calc(var(--type-leading-subtitle) * var(--type-factor));
+  --text-body: calc(var(--type-size-body) * var(--type-factor));
+  --text-body--line-height: calc(var(--type-leading-body) * var(--type-factor));
+  --text-caption: calc(var(--type-size-caption) * var(--type-factor));
+  --text-caption--line-height: calc(var(--type-leading-caption) * var(--type-factor));
+  --text-meta: calc(var(--type-size-meta) * var(--type-factor));
+  --text-meta--line-height: calc(var(--type-leading-meta) * var(--type-factor));
+  --text-kpi: calc(var(--type-size-kpi) * var(--type-factor));
+  --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
+  --text-code: calc(var(--type-size-code) * var(--type-factor));
+  --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+}

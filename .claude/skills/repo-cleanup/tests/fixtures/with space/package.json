@@ -1,0 +1,6 @@
+{
+  "name": "spaced",
+  "scripts": {
+    "test": "echo ok"
+  }
+}

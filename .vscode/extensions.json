@@ -1,0 +1,10 @@
+{
+  // Recommended extensions for debugging/working in this repo.
+  // The Chrome web-app debug profiles use VS Code's built-in JS debugger
+  // (no extension needed); the Playwright extension adds gutter run/debug.
+  "recommendations": [
+    "ms-playwright.playwright",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ]
+}

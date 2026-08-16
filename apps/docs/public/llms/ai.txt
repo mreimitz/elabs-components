@@ -1,0 +1,692 @@
+# @qlik-coe-emea/qlabs-components-ai
+
+> ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.
+
+Import from `@qlik-coe-emea/qlabs-components-ai`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- Agent — Accordion-shaped disclosure describing a sub-agent: its instructions, tools and output.
+  - avoid: Confusing it with AgentTimeline — Agent describes WHO ran, the timeline shows WHAT happened step by step.
+  - avoid: Invoking the described tools from the component — it renders the AI SDK `Tool` definitions; the app executes them (D5).
+  - avoid: Leaving every sub-agent expanded — the accordion exists so a multi-agent transcript stays readable.
+- AgentContent
+- AgentHeader
+- AgentInstructions
+- AgentMessage (emphasis=default*|answer)
+- AgentOutput
+- AgentStep
+- AgentTimeline — Chronological rail of agent steps and checkpoints — what the agent did, in order.
+  - avoid: Hand-rolling a connector + status-map rail — reuse the @qlik-coe-emea/qlabs-components-ui Timeline (the timeline-fork gate blocks a second one).
+  - avoid: Reaching for a border-s-* accent rail to show step status — AgentTimeline is a thin TimelineRoot/TimelineItem wrapper; status is the node dot (plus the StatusBadge), never a left rail.
+  - avoid: Encoding step status by color alone — pair the color with an icon or label.
+  - avoid: Rendering a blank rail while the run is starting — show the not-ready state, never an empty region.
+- AgentTool
+- AgentTools
+- ApprovalCard — The named human-in-the-loop variant of Confirmation — a titled, described approve/deny card.
+  - avoid: Building a second approve/deny widget — ApprovalCard and Confirmation ship from the same module; extend, don't fork.
+  - avoid: Running the action the card describes on render — the card emits a decision; the app performs it (D5).
+  - avoid: Leaving the request mounted after the human answers — swap to ApprovalCardAccepted/ApprovalCardRejected so the outcome stays legible.
+- ApprovalCardAccepted
+- ApprovalCardAction
+- ApprovalCardActions
+- ApprovalCardApprove
+- ApprovalCardDeny
+- ApprovalCardDescription
+- ApprovalCardRejected
+- ApprovalCardRequest
+- ApprovalCardTitle
+- Artifact — Panel surface for a durable object the agent produced (document, code, preview) with title, description and actions.
+  - avoid: Using an Artifact for a short inline answer — keep that in the Message; an Artifact is for a produced object.
+  - avoid: Dropping Artifact's border because it reads redundant on light — under decoration the shadow is zeroed and the border becomes the sole structural cue.
+  - avoid: Nesting an Artifact inside a message bubble — place it beside the conversation (ChatShell.aside or a sibling panel).
+- ArtifactAction
+- ArtifactActions
+- ArtifactClose
+- ArtifactContent
+- ArtifactDescription
+- ArtifactHeader
+- ArtifactTitle
+- AssetPreview — Type-keyed preview of ONE produced asset — markdown/code/sql/csv/image — inside the Artifact chrome.
+  - avoid: Rendering produced markdown through CodeBlock/Shiki — a document is a document; only the explicit Raw toggle shows source.
+  - avoid: Holding the selected asset in local state — selection lives in ContextPanelProvider, which the tree and the preview both read.
+  - avoid: Switching on the file extension in the consumer — pass the `ContextAsset` and let the preview key off `type`.
+- Attachment — One user-supplied file/source chip — media-category icon, preview, hover details and a remove affordance.
+  - avoid: Hand-rolling the remove button — AttachmentRemove owns the hit target and its accessible name.
+  - avoid: Using Attachment for something the AGENT produced — that is an AssetPreview/ProducedAssetTree, not an attachment.
+  - avoid: Rendering a file list with no AttachmentEmpty — an empty attachment strip must render a real empty state, never nothing.
+- AttachmentEmpty
+- AttachmentHoverCard
+- AttachmentHoverCardContent
+- AttachmentHoverCardTrigger
+- AttachmentInfo
+- AttachmentPreview
+- AttachmentRemove
+- Attachments
+- AudioPlayer — Themed audio transport for generated/recorded speech, built on media-chrome's MediaController.
+  - avoid: Restyling it with utility classes or raw colors — the skin is the `--media-*` custom properties, already mapped to brand tokens.
+  - avoid: Autoplaying agent audio — playback is a user action; start it from a control, not on mount.
+  - avoid: Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible.
+- AudioPlayerControlBar
+- AudioPlayerDurationDisplay
+- AudioPlayerElement
+- AudioPlayerMuteButton
+- AudioPlayerPlayButton
+- AudioPlayerSeekBackwardButton
+- AudioPlayerSeekForwardButton
+- AudioPlayerTimeDisplay
+- AudioPlayerTimeRange
+- AudioPlayerVolumeRange
+- BrandMotionConfig — Feeds descendant Motion components the brand transition (duration/ease mirrored from the motion tokens).
+  - avoid: Passing a hand-picked duration/ease per animation — the point of the provider is one tokened default.
+  - avoid: Assuming milliseconds — Motion durations are SECONDS here, unlike the CSS `--duration-*` tokens.
+  - avoid: Relying on it for reduced motion — it sets timing, not preference; movement still needs its `motion-reduce:` neutralizer.
+- Canvas — The in-chat agent workspace graph surface (React Flow) — the canvas an agent renders inside a conversation (ADR 0018).
+  - avoid: Reaching for it to build an author-made diagram — that is CanvasShell/FlowNode in the flow package; this one is the agent's in-chat graph.
+  - avoid: Re-enabling pan-on-drag — it pans on scroll and drags a SELECTION, so a drag that pans would break rubber-band select.
+  - avoid: Repainting the backdrop with a literal colour — the background is already painted from the theme's canvas token.
+- ChainOfThought — Step-by-step live reasoning trace with per-step status and search results.
+  - avoid: Using it as the model's transport — it renders steps the app already has; it never calls a model (D5).
+  - avoid: Duplicating Reasoning — Reasoning is the collapsed thinking disclosure, ChainOfThought is the enumerated step ledger; pick one per turn.
+  - avoid: Emitting an error step for a step that simply has not arrived yet — suppress transient errors while streaming.
+- ChainOfThoughtContent
+- ChainOfThoughtHeader
+- ChainOfThoughtImage
+- ChainOfThoughtSearchResult
+- ChainOfThoughtSearchResults
+- ChainOfThoughtStep
+- ChatGreeting
+- ChatShell — Assistant/chat application frame composing the conversation + composer surfaces.
+  - avoid: Calling a model inside the component — @qlik-coe-emea/qlabs-components-ai is presentational/runtime-agnostic; wire useChat in the app.
+  - avoid: Hand-rolling the composer footer inside the shell — compose Composer; it is the shipped chat input.
+  - avoid: Putting an animated/collapsible context rail in ChatShell.aside — the aside is for a STATIC rail; compose ContextPanelProvider + ContextPanel as a SIBLING of the shell.
+- Checkpoint — A restore-point divider in a transcript — a labelled rule the user can jump back to.
+  - avoid: Using a Checkpoint as an executed step — it is a divider/restore point; a step that RAN is an AgentStep on the AgentTimeline rail.
+  - avoid: Colouring it by status — a checkpoint has no outcome; keep it muted so real status stays legible.
+  - avoid: Restoring without confirmation — jumping back discards later turns, so it is a destructive action (confirm or offer undo).
+- CheckpointIcon
+- CheckpointTrigger
+- CodeBlock — Shiki-highlighted code block with a copy button, filename and language selector.
+  - avoid: Rendering a produced document with it — markdown assets go through MarkdownView; CodeBlock is for code.
+  - avoid: Hand-rolling a copy button — CodeBlockCopyButton already handles the copied-state swap and its label.
+  - avoid: Loading the highlighter eagerly on a page that may never show code — Shiki is a heavy dependency (heavy-deps:check).
+- CodeBlockActions
+- CodeBlockContainer
+- CodeBlockContent
+- CodeBlockCopyButton
+- CodeBlockFilename
+- CodeBlockHeader
+- CodeBlockLanguageSelector
+- CodeBlockLanguageSelectorContent
+- CodeBlockLanguageSelectorItem
+- CodeBlockLanguageSelectorTrigger
+- CodeBlockLanguageSelectorValue
+- CodeBlockTitle
+- Commit — A version-control commit rendered in chat — hash, author, message and changed files.
+  - avoid: Expanding every commit by default — the file list is behind the collapsible for a reason; long diffs drown the turn.
+  - avoid: Signalling additions/deletions with color alone — the +/− counts carry the meaning, so keep the glyph and the number.
+  - avoid: Re-implementing copy-to-clipboard — CommitCopyButton already owns the copy affordance and its feedback state.
+- CommitActions
+- CommitAuthor
+- CommitAuthorAvatar
+- CommitContent
+- CommitCopyButton
+- CommitFile
+- CommitFileAdditions
+- CommitFileChanges
+- CommitFileDeletions
+- CommitFileIcon
+- CommitFileInfo
+- CommitFilePath
+- CommitFiles
+- CommitFileStatus
+- CommitHash
+- CommitHeader
+- CommitInfo
+- CommitMessage
+- CommitMetadata
+- CommitSeparator
+- CommitTimestamp
+- Composer — The standard chat input — a PromptInput pre-assembled with attachments, tools and submit.
+  - avoid: Hand-rolling a PromptInput footer per app — Composer is the shipped assembly; reach for it first.
+  - avoid: Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.
+  - avoid: Treating the composer as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.
+  - avoid: Reaching for surfaceClassName on Composer — it has no such prop; className styles the outer card frame and Composer owns the inner well's shape (surfaceClassName lives on PromptInput).
+- Confirmation — In-conversation approve/deny request for an action the agent wants a human to authorize.
+  - avoid: Performing the action on render or auto-approving — the point is the human decision; emit the choice, don't act.
+  - avoid: Focusing the approve/destructive action by default — focus the safe choice first.
+  - avoid: Leaving the request rendered after a decision — swap to ConfirmationAccepted/ConfirmationRejected so the outcome is legible.
+- ConfirmationAccepted
+- ConfirmationAction
+- ConfirmationActions
+- ConfirmationApprove
+- ConfirmationDeny
+- ConfirmationDescription
+- ConfirmationRejected
+- ConfirmationRequest
+- ConfirmationTitle
+- Connection — The in-flight connection line drawn while the user drags a new edge on the Canvas.
+  - avoid: Styling it like a committed Edge — the pending line must read as provisional until it lands.
+  - avoid: Hard-coding its stroke — it draws with the focus/ring token so it stays visible in every theme.
+  - avoid: Rendering it outside a Canvas — it is React Flow's connection-line slot, not a standalone SVG.
+- Context — Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.
+  - avoid: Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.
+  - avoid: Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.
+  - avoid: Putting it inside the transcript — usage is composer chrome, not message content.
+- ContextCacheUsage
+- ContextContent
+- ContextContentBody
+- ContextContentFooter
+- ContextContentHeader
+- ContextInputUsage
+- ContextOutputUsage
+- ContextPanel — The chat workspace's right context rail — sources, produced assets and a root↔detail drill-in.
+  - avoid: Conditionally mounting the panel to hide it — it stays mounted and collapses by width, because an unmounted panel cannot animate.
+  - avoid: Keeping open/view/selection state outside the provider — an external trigger drives the panel through ContextPanelProvider, not through prop-drilling.
+  - avoid: Building a second collapse mechanism — the canonical width tween is the one collapse implementation.
+- ContextPanelBody
+- ContextPanelDetail
+- ContextPanelHeader
+- ContextPanelProvider
+- ContextPanelSection
+- ContextPanelTrigger
+- ContextReasoningUsage
+- ContextTrigger
+- Controls — Zoom / fit / lock controls for the agent workspace Canvas.
+  - avoid: Building a second zoom control in a Panel — one control cluster per canvas, or the two disagree.
+  - avoid: Dropping the keyboard path — every canvas action must stay reachable without a pointer.
+  - avoid: Stacking it under the canvas content — it is chrome and must stay above the graph and clickable.
+- Conversation — Auto-stick-to-bottom chat transcript region.
+  - avoid: Giving Conversation no sized flex parent — it needs a bounded, flex parent to stick to bottom.
+  - avoid: Rendering [] with no ConversationEmptyState — every list needs a real empty state.
+  - avoid: Driving scroll position by hand — Conversation owns stick-to-bottom; ConversationScrollButton is the escape hatch.
+- ConversationContent
+- ConversationDownload
+- ConversationEmptyState
+- ConversationScrollButton
+- Edge — A connection between two workspace-graph nodes — animated/temporary or committed.
+  - avoid: Encoding edge meaning in colour alone — a dashed/solid distinction survives a monochrome theme; a hue does not.
+  - avoid: Labelling every edge — labels are for the edges whose relation is not obvious from the nodes.
+  - avoid: Routing edges by hand — the bezier path is derived from the handles; move the node, not the path.
+- EMPTY_CELL
+- EnvironmentVariable — One environment variable row — name, masked value, required flag and copy.
+  - avoid: Rendering secrets unmasked by default — reveal is an explicit user action (the group's show-values switch).
+  - avoid: Logging or echoing the value elsewhere in the transcript — the masked row exists precisely so the secret is not in the scrollback.
+  - avoid: Marking required-ness with color only — the required flag is a Badge with text, not a red dot.
+- EnvironmentVariableCopyButton
+- EnvironmentVariableGroup
+- EnvironmentVariableName
+- EnvironmentVariableRequired
+- EnvironmentVariables
+- EnvironmentVariablesContent
+- EnvironmentVariablesHeader
+- EnvironmentVariablesTitle
+- EnvironmentVariablesToggle
+- EnvironmentVariableValue
+- EvidenceChip
+- FileTree — Hierarchical file/folder list for a workspace — `code` (IDE source tree) or `document` (produced assets) look.
+  - avoid: Using the `code` visual for produced documents — `document` drops the mono/box treatment so a report does not read as source.
+  - avoid: Boxing the document variant back up — spacing and a section label separate it; a border there is the redundant-border anti-pattern.
+  - avoid: Treating it as a file picker — it is presentational; selection and open live with the consumer.
+- FileTreeActions
+- FileTreeFile
+- FileTreeFolder
+- FileTreeIcon
+- FileTreeName
+- Gallery — Image/asset grid with a +N overflow tile that opens a lightbox Dialog (carousel + metadata).
+  - avoid: Letting images pop in with no per-image skeleton — reserve each box (AspectRatio + Skeleton) until onLoad or the grid shifts.
+  - avoid: Rendering a bare grid for an empty list — every list needs a real empty state.
+  - avoid: <img> without explicit width/height — it is the grid's largest CLS source.
+- GroupedParts — Renders an ordered message part list, folding adjacent reasoning/tool parts into collapsible traces.
+  - avoid: Asking the model to emit groups — grouping is a client-side view transform, never an output format.
+  - avoid: Reordering parts to make the grouping tidier — the part order is the record of what happened.
+  - avoid: Rebuilding the reasoning/tool rendering in the render-prop — omit it and the defaults compose Reasoning and Tool for you.
+- Image — Renders a model-generated image from its base64 payload.
+  - avoid: Omitting `alt` — a generated image with no accessible name is invisible to assistive tech.
+  - avoid: Rendering it with no reserved box — a data URI decodes late, so give the image its width/height (or an aspect box) to avoid layout shift.
+  - avoid: Using it for a remote URL — it builds a `data:` src from base64; a hosted image is a plain <img>/Gallery item.
+- InlineCitation — Inline source marker whose hover card carries the quote and the source carousel.
+  - avoid: Assuming a citation is a URL — an opaque id or a label is legitimate and renders verbatim; don't `new URL()` it.
+  - avoid: Putting essential information only in the hover card — hover content is supplementary and unreachable on touch.
+  - avoid: Opening an external source without `rel="noopener noreferrer"` on the `target="_blank"` link.
+- InlineCitationCard
+- InlineCitationCardBody
+- InlineCitationCardTrigger
+- InlineCitationCarousel
+- InlineCitationCarouselContent
+- InlineCitationCarouselHeader
+- InlineCitationCarouselIndex
+- InlineCitationCarouselItem
+- InlineCitationCarouselNext
+- InlineCitationCarouselPrev
+- InlineCitationQuote
+- InlineCitationSource
+- InlineCitationText
+- InteractiveTerminal — Streaming terminal surface for agent shell output, with an optional input line.
+  - avoid: Spawning a shell or process from the component — it renders a stream; the app owns the runtime (D5).
+  - avoid: Looking for an isStreaming/output prop — this surface is imperative: hold the InteractiveTerminalHandle ref and call write() per chunk (the declarative sibling is Terminal).
+  - avoid: Reaching the terminal engine through a static import — heavy engines must be reached by a dynamic import() (the heavy-deps ratchet).
+- JSXPreview — Escape-hatch renderer for agent-emitted JSX STRINGS — maximum flexibility, least safety (D2).
+  - avoid: Making JSXPreview the default generative path — render a conversation (UIMessage) or, once it lands, A2UI; this is the escape hatch (D2).
+  - avoid: Rendering JSXPreviewError on a half-arrived tag — an incomplete tag is not an error; suppress it until the input settles.
+  - avoid: Omitting JSXPreviewSkeleton — the preview must reserve its final space instead of popping in.
+  - avoid: Passing untrusted JSX without deciding the trust boundary in the app — the component renders what it is given.
+- JSXPreviewContent
+- JSXPreviewError
+- JSXPreviewSkeleton
+- LocalReferencedSourcesContext
+- MarkdownView — Branded, read-only renderer for a produced markdown document (not a code view).
+  - avoid: Rendering a produced document with CodeBlock instead — documents are read, not syntax-highlighted (research 09).
+  - avoid: Passing untrusted HTML through it expecting sanitization — it renders markdown; the app owns what it trusts.
+  - avoid: Using it for streamed chat prose — that is MessageResponse; MarkdownView is for a settled asset.
+- Message — One conversation turn — `from` decides the side, fill and slot; wraps the turn's content.
+  - avoid: Hand-rolling a bubble div — Message already encodes the user/assistant fork (side, fill, data-slot).
+  - avoid: Adding a bg-card fill to the assistant turn — the assistant branch is deliberately unfilled; reach for AgentMessage emphasis="answer" (a left rail), not a redundant surface.
+  - avoid: Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.
+  - avoid: Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.
+  - avoid: Calling a model inside the component — @qlik-coe-emea/qlabs-components-ai is presentational; the app owns useChat/transport (D5).
+- MessageAction
+- MessageActions (appearance=plain*|bar · reveal=always*|hover)
+- MessageAvatar
+- MessageBranch
+- MessageBranchContent
+- MessageBranchNext
+- MessageBranchPage
+- MessageBranchPrevious
+- MessageBranchSelector
+- MessageContent
+- MessageEdit — Edit-in-place for a user message — swaps the bubble between content and an editor.
+  - avoid: Mutating the original message on edit — it emits `onEditSubmit(newText)`; the consumer creates a branch.
+  - avoid: Leaving the edited turn as the only history — pair it with MessageBranch so the earlier version stays reachable.
+  - avoid: Re-implementing the key handling — Enter submits, Shift+Enter newlines, Esc cancels, and focus returns to the trigger.
+- MessageEditContent
+- MessageEditForm
+- MessageEditProvider
+- MessageEditTrigger
+- MessageFeedback (compact=true|false*) — Thumbs up/down on a single assistant message.
+  - avoid: Expecting it to persist the vote — it emits `onSubmit({ type })`; storage is the host's.
+  - avoid: Re-enabling the buttons after a vote — feedback is submit-once, and the root reports it via `data-submitted`.
+  - avoid: Putting it on a user turn — feedback is about the assistant's answer.
+- MessageForm — A model-emitted, zod-validated form rendered inside a chat message; returns structured values on submit.
+  - avoid: Letting a malformed spec throw — model output is untrusted; an invalid spec renders MessageFormFallback.
+  - avoid: Surfacing validation errors while the spec is still streaming — half-arrived fields are dropped, not reported as errors.
+  - avoid: Letting the model choose the look — it authors the spec; the component owns layout, tokens and focus handling.
+- MessageFormDescription
+- MessageFormFallback
+- MessageFormField
+- MessageFormFields
+- MessageFormProvider
+- MessageFormRoot
+- MessageFormSubmit
+- MessageFormTitle
+- MessageHeader
+- MessageResponse — Renders streamed assistant markdown (Streamdown) inside a Message.
+  - avoid: External links without target="_blank" rel="noopener noreferrer".
+  - avoid: Using MessageResponse for arbitrary nodes — it renders streamed MARKDOWN; put non-markdown children in MessageContent.
+  - avoid: Surfacing a parse error on half-arrived markdown — an unclosed fence is not an error; let the stream settle first.
+- MessageTable — A model-emitted, column-oriented data table rendered as message content.
+  - avoid: Reaching for the DataTable instead — that is app chrome; this is message content, deliberately lighter.
+  - avoid: Throwing on a malformed spec — it falls back (MessageTableFallback), renders an em-dash for a missing cell, and drops half-arrived rows.
+  - avoid: Start-aligning numeric columns — numerics are end-aligned with tabular-nums so they compare down the column.
+- MessageTableFallback
+- MessageToolbar
+- MicSelector — Input-device picker for voice capture — a searchable Command list in a Popover.
+  - avoid: Enumerating devices before the user asks — device labels need permission, so an unprompted list reads as empty/garbled.
+  - avoid: Rendering the raw `deviceId` — show the human label; the id is machine detail.
+  - avoid: Skipping MicSelectorEmpty — no devices (or no permission) is a real state, not a blank popover.
+- MicSelectorContent
+- MicSelectorEmpty
+- MicSelectorInput
+- MicSelectorItem
+- MicSelectorLabel
+- MicSelectorList
+- MicSelectorTrigger
+- MicSelectorValue
+- MODEL_SELECTOR_LOGO_BASE_URL
+- ModelSelector — Command-palette picker for the active model, grouped by provider.
+  - avoid: Calling a provider API from the selector — it emits a selection; the app owns model configuration (D5).
+  - avoid: Using a plain Select for a long provider list — ModelSelector gives typeahead and grouping.
+  - avoid: Translating provider/model brand names — mark them i18n-exempt instead.
+- ModelSelectorContent
+- ModelSelectorDialog
+- ModelSelectorEmpty
+- ModelSelectorGroup
+- ModelSelectorInput
+- ModelSelectorItem
+- ModelSelectorList
+- ModelSelectorLogo
+- ModelSelectorLogoGroup
+- ModelSelectorName
+- ModelSelectorSeparator
+- ModelSelectorShortcut
+- ModelSelectorTrigger
+- Node — A workspace-graph node — a Card with source/target handles, headed and slotted.
+  - avoid: Confusing it with FlowNode — FlowNode is the author-built canvas node in the flow package; this is the in-chat agent graph's node (ADR 0018).
+  - avoid: Declaring handles it does not use — `handles` drives the connectable sides, so a stray one invites an impossible edge.
+  - avoid: Pouring a whole document into the body — a node is a summary; the detail belongs in a panel or an Artifact.
+- NodeAction
+- NodeContent
+- NodeDescription
+- NodeFooter
+- NodeHeader
+- NodeTitle
+- NodeToolbar — The contextual action bar attached to a selected workspace-graph node.
+  - avoid: Using it as the canvas-wide toolbar — it is a NODE toolbar and is positioned against the selected node.
+  - avoid: Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @qlik-coe-emea/qlabs-components-ui.
+  - avoid: Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.
+  - avoid: Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name.
+- OpenIn — A menu that hands the current prompt off to an external chat product via a deep link.
+  - avoid: Adding a provider by pasting a new origin inline — every shipped https origin has to be allow-listed and documented (`pnpm origins:check`).
+  - avoid: Sending anything but the prompt — the deep link leaves your app, so it must not carry conversation or user data.
+  - avoid: Presenting it as a primary action — it is an escape hatch beside the answer, not the way to continue the chat.
+- OpenInChatGPT
+- OpenInClaude
+- OpenInContent
+- OpenInCursor
+- OpenInItem
+- OpenInLabel
+- OpenInScira
+- OpenInSeparator
+- OpenInT3
+- OpenInTrigger
+- OpenInv0
+- PackageInfo — A dependency and its version change — name, current→new version and change type.
+  - avoid: Showing the change type as a coloured dot — major/minor/patch is a Badge with the word in it.
+  - avoid: Rendering a version bump with only the new version — the current→new pair is the whole point.
+  - avoid: Using it for a package LIST with no grouping — a long flat list of bumps is unreadable; group by change type.
+- PackageInfoChangeType
+- PackageInfoContent
+- PackageInfoDependencies
+- PackageInfoDependency
+- PackageInfoDescription
+- PackageInfoHeader
+- PackageInfoName
+- PackageInfoVersion
+- Panel — A floating overlay panel pinned to a corner of the workspace Canvas.
+  - avoid: Using it as the app's side rail — that is ContextPanel; this floats over the graph.
+  - avoid: Filling a corner panel with a long scrollable list — it overlays the graph the user is trying to read.
+  - avoid: Stacking several panels in one corner — they occlude each other; give each corner one job.
+- Persona — The animated agent avatar/presence mark (Rive), used as the assistant's identity.
+  - avoid: Statically importing the Rive runtime — it is behind a dynamic import so the WebGL2 runtime and its .wasm stay out of every consumer's entry chunk (ADR 0019).
+  - avoid: Using it as the only in-progress signal — pair it with a real streaming affordance (Shimmer) that survives reduced motion.
+  - avoid: Dropping it in as decoration on every surface — it is the agent's identity, not a spinner.
+- PERSONA_SOURCES
+- Plan — A Card-shaped, collapsible plan the agent proposes before it starts executing.
+  - avoid: Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (loading-states.md).
+  - avoid: Using Plan for a finished run — a settled trace is a Task; Plan is the intent, not the record.
+  - avoid: Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it.
+- PlanAction
+- PlanContent
+- PlanDescription
+- PlanFooter
+- PlanHeader
+- PlanTitle
+- PlanTrigger
+- PRODUCED_ASSET_ICONS
+- ProducedAssetTree — The `document`-flavoured tree of assets the agent produced, for the context rail.
+  - avoid: Using the source-code FileTree look for produced documents — this is the document tree; the mono/box treatment belongs to source.
+  - avoid: Rendering it without a preview target — the tree is one half of a two-level pattern; selection drives AssetPreview.
+  - avoid: Inferring the icon from the file extension — the asset `type` selects it.
+- PromptInput — Chat composer FORM (Enter submits) emitting a message to the app's runtime.
+  - avoid: Treating PromptInput as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.
+  - avoid: Submitting model calls from the component — emit the message; the app owns transport.
+  - avoid: Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.
+  - avoid: Expecting className to land on the visible well — className styles the outer <form>; use surfaceClassName to reach the well.
+- PromptInputActionAddAttachments
+- PromptInputActionAddScreenshot
+- PromptInputActionMenu
+- PromptInputActionMenuContent
+- PromptInputActionMenuItem
+- PromptInputActionMenuTrigger
+- PromptInputBody
+- PromptInputButton
+- PromptInputCommand
+- PromptInputCommandEmpty
+- PromptInputCommandGroup
+- PromptInputCommandInput
+- PromptInputCommandItem
+- PromptInputCommandList
+- PromptInputCommandSeparator
+- PromptInputFooter
+- PromptInputHeader
+- PromptInputHoverCard
+- PromptInputHoverCardContent
+- PromptInputHoverCardTrigger
+- PromptInputProvider
+- PromptInputSelect
+- PromptInputSelectContent
+- PromptInputSelectItem
+- PromptInputSelectTrigger
+- PromptInputSelectValue
+- PromptInputStop
+- PromptInputSubmit
+- PromptInputTab
+- PromptInputTabBody
+- PromptInputTabItem
+- PromptInputTabLabel
+- PromptInputTabsList
+- PromptInputTextarea
+- PromptInputTools
+- Queue — The pending work list — queued user messages and agent to-dos, grouped and collapsible.
+  - avoid: Using the Queue as a plan — a Plan is what the agent INTENDS; the queue is what is waiting to be sent/done.
+  - avoid: Rendering a queued message with no way to remove it — queued work must stay cancellable.
+  - avoid: Nesting it in the transcript — the queue is composer-adjacent chrome, not a turn.
+- QueueItem
+- QueueItemAction
+- QueueItemActions
+- QueueItemAttachment
+- QueueItemContent
+- QueueItemDescription
+- QueueItemFile
+- QueueItemImage
+- QueueItemIndicator
+- QueueList
+- QueueSection
+- QueueSectionContent
+- QueueSectionLabel
+- QueueSectionTrigger
+- Reasoning — Collapsible 'thinking' disclosure that auto-opens while the model streams and reports elapsed duration.
+  - avoid: Leaving Reasoning permanently expanded — it is a disclosure; collapse it once the answer lands.
+  - avoid: Passing an array of strings to ReasoningContent expecting markdown — only a single string is parsed as markdown; any other node renders as-is.
+  - avoid: Surfacing a parse error on half-streamed reasoning — suppress transient errors while isStreaming.
+- ReasoningContent
+- ReasoningTrigger
+- Sandbox — Collapsible, tabbed view of the files/commands a code-running tool worked on.
+  - avoid: Executing anything — Sandbox renders a tool's reported state; it is not a runtime (D5).
+  - avoid: Passing a free-form status string — the header takes the AI SDK `ToolUIPart['state']`, so the badge stays consistent with Tool.
+  - avoid: Using it for a single file — reach for CodeBlock; the tab bar is only worth it for a multi-file result.
+- SandboxContent
+- SandboxHeader
+- SandboxTabContent
+- SandboxTabs
+- SandboxTabsBar
+- SandboxTabsList
+- SandboxTabsTrigger
+- SchemaDisplay — An HTTP endpoint contract in chat — method, path, parameters, request and response shapes.
+  - avoid: Pasting the raw OpenAPI JSON instead — that is a CodeBlock; this renders the contract as a readable table.
+  - avoid: Signalling the method with color only — the method is a Badge with its verb spelled out.
+  - avoid: Expanding every nested property — deep shapes stay behind the collapsible so the endpoint stays scannable.
+- SchemaDisplayBody
+- SchemaDisplayContent
+- SchemaDisplayDescription
+- SchemaDisplayExample
+- SchemaDisplayHeader
+- SchemaDisplayMethod
+- SchemaDisplayParameter
+- SchemaDisplayParameters
+- SchemaDisplayPath
+- SchemaDisplayProperty
+- SchemaDisplayRequest
+- SchemaDisplayResponse
+- SelectionToolbar — A floating toolbar over selected transcript text, offering Quote as the default action.
+  - avoid: Keeping it visible after the selection collapses — it is anchored to the selection rect and dismisses with it.
+  - avoid: Writing into the composer from the toolbar — it emits `onQuote(selectedText)`; the consumer decides what to insert.
+  - avoid: Wrapping the whole app in it — wrap the transcript region, or every selection in the UI sprouts a toolbar.
+- Shimmer — Motion-aware shimmering TEXT affordance for an in-progress ("Thinking…") line.
+  - avoid: Using it as a skeleton — a layout-shaped placeholder is `Skeleton`; Shimmer is text-only (loading-states.md).
+  - avoid: Wrapping non-string children — it takes a string; anything else defeats the per-character sweep.
+  - avoid: Adding your own animation on top — the sweep already gates on `useReducedMotion`; a second one will not.
+- Snippet — One-line copyable command or value, built on the ui InputGroup.
+  - avoid: Using it for multi-line code — it is a single-line input group; reach for CodeBlock.
+  - avoid: Making the field editable — it is a copy affordance, not a form control; don't wire it to form state.
+  - avoid: Duplicating the copy button — the shipped SnippetCopyButton owns the copied-state feedback.
+- SnippetAddon
+- SnippetCopyButton
+- SnippetInput
+- SnippetText
+- Source
+- SourceList
+- Sources — Collapsible citation list for the sources an answer was grounded in.
+  - avoid: Scattering bare links through the message body — use Sources so the count collapses and the list stays scannable.
+  - avoid: Passing a Source without an href — SourceProps is ComponentProps<'a'> and it always renders an <a>; there is no id/label shape and nothing renders verbatim.
+  - avoid: Hand-counting the sources into SourcesTrigger — pass SourceList `sources={[{ href, title }]}` and let it own the count and the trigger copy.
+  - avoid: Overriding a Source's target/rel — it already ships target="_blank" rel="noopener noreferrer".
+- SourcesContent
+- SourcesTrigger
+- SpeechInput — Push-to-talk capture for the composer — Web Speech API where available, MediaRecorder elsewhere.
+  - avoid: Assuming the Web Speech API exists — Firefox/Safari take the MediaRecorder path, which returns a Blob your host must transcribe.
+  - avoid: Leaving recording running with no visible state — capture is a privacy-relevant mode and must be obvious and stoppable.
+  - avoid: Treating a transcription round-trip as instant — show the in-flight state; a silent pause reads as a broken button.
+- StackTrace — A parsed error stack — error type, message and frames, with internals folded away.
+  - avoid: Dumping the raw stack into a CodeBlock — pass the string here and the frames become readable and copyable.
+  - avoid: Expanding internal frames by default — the app frames are the signal; runtime internals stay collapsed.
+  - avoid: Rendering a stack while the tool call is still streaming — an error slot fires only on a terminal, settled failure.
+- StackTraceActions
+- StackTraceContent
+- StackTraceCopyButton
+- StackTraceError
+- StackTraceErrorMessage
+- StackTraceErrorType
+- StackTraceExpandButton
+- StackTraceFrames
+- StackTraceHeader
+- StreamingSuggestions — The suggestion strip while the set is still being generated.
+  - avoid: Rendering an empty strip until the first suggestion lands — show the loading affordance so the row holds its space.
+  - avoid: Letting a half-arrived suggestion be clickable — a partial label is not an action.
+  - avoid: Animating the shimmer without a reduced-motion path — the streaming affordance is motion-gated.
+- Suggestion — One tappable follow-up prompt the user can send with a click.
+  - avoid: Styling a suggestion as a primary Button — it is an optional shortcut, not the turn's main action.
+  - avoid: Offering a long paragraph as a suggestion — it must read at a glance; truncation hides the meaning.
+  - avoid: Leaving suggestions on screen after the user has typed — they are a starting affordance, not permanent chrome.
+- SuggestionLoading
+- Suggestions
+- Task — Collapsed "what got done" run summary, rendered on the canonical AgentTimeline rail.
+  - avoid: Hand-rolling a `border-s-2` content rail — the execution trace rides AgentTimeline/AgentStep (#192).
+  - avoid: Leaving every Task expanded in a settled transcript — only the produced artifact and the final answer stay open.
+  - avoid: Bordering the inline file chip — the fill is the gesture; a border on a filled chip is the redundant-border anti-pattern.
+- TaskContent
+- TaskItem
+- TaskItemFile
+- TaskTrigger
+- Terminal — Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.
+  - avoid: Reaching for it when the user must TYPE — that is InteractiveTerminal; Terminal is output-only.
+  - avoid: Stripping the ANSI codes before passing them — the component renders them; pre-stripping throws away the colour.
+  - avoid: Re-implementing auto-scroll in the consumer — `autoScroll` is owned by the component and must yield when the user scrolls up.
+- TerminalActions
+- TerminalClearButton
+- TerminalContent
+- TerminalCopyButton
+- TerminalHeader
+- TerminalStatus
+- TerminalTitle
+- Test — One test-case row inside a test-results block — name, status and duration.
+  - avoid: Inventing a status string — the row speaks the closed 7-state status vocabulary, the same one StatusBadge uses.
+  - avoid: Colour-coding pass/fail with no icon or label — status must survive a monochrome theme.
+  - avoid: Showing the failure stack inline for every row — the error detail belongs behind the row's disclosure.
+- TestDuration
+- TestError
+- TestErrorMessage
+- TestErrorStack
+- TestName
+- TestResults
+- TestResultsContent
+- TestResultsDuration
+- TestResultsHeader
+- TestResultsMeta
+- TestResultsProgress
+- TestResultsSummary
+- TestStatus
+- TestSuite
+- TestSuiteContent
+- TestSuiteName
+- TestSuiteStats
+- Tool — Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error.
+  - avoid: Rendering a tool call as plain text — use Tool so the state, input and output stay legible and collapsible.
+  - avoid: Showing ToolOutput errorText while the call is still streaming — errors fire only on a terminal, settled failure.
+  - avoid: Executing the tool inside the component — Tool renders the part; the app's runtime runs the tool (D5).
+  - avoid: Dumping raw JSON into ToolOutput with no empty state — a tool that returned nothing still needs a rendered result.
+- Toolbar — A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.
+  - avoid: Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.
+  - avoid: Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.
+  - avoid: Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.
+  - avoid: Reaching for it to attach actions to a canvas node — that is NodeToolbar in @qlik-coe-emea/qlabs-components-ai.
+- ToolContent
+- ToolDetails
+- ToolHeader
+- ToolInput
+- ToolOutput
+- ToolResultCard — The artifact a tool PRODUCED, presented as the headline — raised surface, no border, children carry the payload. Its header row is title | actions | status, where actions are scoped to the whole artifact (expand, download, open).
+  - avoid: Adding a border to it — elevation IS the separation gesture here; a border on a raised fill is the redundant-border anti-pattern.
+  - avoid: Using it for a step that merely ran — that is Tool (rail + inspect); this hosts the produced object.
+  - avoid: Importing a chart/table package to render the payload inside it — it stays dependency-light; the consumer passes the node.
+  - avoid: Putting the payload's own controls in actions — actions is scoped to the artifact as a whole (expand, download, open); a chart's flip/zoom belongs to the chart's own frame.
+- Transcription — Time-coded speech segments, highlighted against playback position and seekable.
+  - avoid: Rendering the transcript as one paragraph — the segments carry the timings that make it seekable.
+  - avoid: Driving playback from the transcript's own state — it emits seeks; the player owns the clock.
+  - avoid: Marking the active segment with colour alone — the current segment must be identifiable without hue.
+- TranscriptionSegment
+- UserMessage
+- VoiceSelector — Voice picker for speech output — searchable list with per-voice attributes and preview.
+  - avoid: Listing voices with no preview — a name tells the user nothing about how the voice sounds.
+  - avoid: Auto-playing a preview on hover — playback is a click, not a pointer side effect.
+  - avoid: Describing a voice by gender/age alone — the attributes are supplementary; the label is the identity.
+- VoiceSelectorAccent
+- VoiceSelectorAge
+- VoiceSelectorAttributes
+- VoiceSelectorBullet
+- VoiceSelectorContent
+- VoiceSelectorDescription
+- VoiceSelectorDialog
+- VoiceSelectorEmpty
+- VoiceSelectorGender
+- VoiceSelectorGroup
+- VoiceSelectorInput
+- VoiceSelectorItem
+- VoiceSelectorList
+- VoiceSelectorName
+- VoiceSelectorPreview
+- VoiceSelectorSeparator
+- VoiceSelectorShortcut
+- VoiceSelectorTrigger
+- WebPreview — Framed preview of a URL the agent produced, with a URL bar and a console drawer.
+  - avoid: Fetching or proxying the URL yourself — the body is an iframe; the app decides what is safe to frame.
+  - avoid: Framing an untrusted origin without a sandbox attribute — the component styles the frame, it does not sandbox it for you.
+  - avoid: Treating the console drawer as a log store — it renders what you pass; keep the buffer in the app.
+- WebPreviewBody
+- WebPreviewConsole
+- WebPreviewNavigation
+- WebPreviewNavigationButton
+- WebPreviewUrl
+
+## Hooks
+
+- useAssetPreviewRenderer
+- useAttachmentContext
+- useAttachmentsContext
+- useAudioDevices
+- useContextPanel
+- useJSXPreview
+- useMessageEdit
+- usePromptInputAttachments
+- usePromptInputController
+- usePromptInputReferencedSources
+- useProviderAttachments
+- useReasoning
+- useVoiceSelector
+
+## Agent output contract (what shape to emit)
+
+- Conversation → ai/UIMessage (shipped). Parts: text, reasoning, tool, source-url; rendered by Conversation, Message, Tool, Reasoning, Sources. Your app owns useChat (D5).
+- Ad-hoc JSX → JSXPreview (shipped); renders only tags present in the components allow-list.
+- A2UI → not-shipped (WP-11); not usable yet.
+- Tool state → Status: input-streaming=pending, input-available=running, approval-requested=awaiting-approval, approval-responded=running, output-available=complete, output-denied=denied, output-error=failed.

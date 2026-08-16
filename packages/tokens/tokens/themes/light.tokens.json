@@ -1,0 +1,547 @@
+{
+  "background": {
+    "$type": "color",
+    "$value": "oklch(0.978 0.005 264)",
+    "$description": "Page/document ground — the lowest surface everything sits on. Recessed slightly below the white --card so cards/panels lift off the page by ground offset (ΔL≈0.022). See research/structural-design 08 §H + #187."
+  },
+  "foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Default body text color on --background."
+  },
+  "card": {
+    "$type": "color",
+    "$value": "oklch(1 0 0)",
+    "$description": "Card/panel surface raised off the page ground."
+  },
+  "card-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Text color on --card."
+  },
+  "popover": {
+    "$type": "color",
+    "$value": "oklch(1 0 0)",
+    "$description": "Floating overlay surface (menus, popovers, tooltips)."
+  },
+  "popover-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Text color on --popover."
+  },
+  "primary": {
+    "$type": "color",
+    "$value": "oklch(0.55 0.18 264)",
+    "$description": "Brand accent — primary action fill (buttons, active state)."
+  },
+  "primary-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.985 0 0)",
+    "$description": "Ink on a --primary fill."
+  },
+  "primary-text": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.18 264)",
+    "$description": "On-surface brand-accent TEXT color; ≥4.5:1 on content surfaces."
+  },
+  "secondary": {
+    "$type": "color",
+    "$value": "oklch(0.967 0.008 264)",
+    "$description": "Low-emphasis action/secondary surface fill."
+  },
+  "secondary-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.3 0.02 264)",
+    "$description": "Ink on --secondary."
+  },
+  "muted": {
+    "$type": "color",
+    "$value": "oklch(0.967 0.008 264)",
+    "$description": "Muted surface for de-emphasized regions."
+  },
+  "muted-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.02 264)",
+    "$description": "De-emphasized text; ≥4.5:1 on --muted/--surface-muted."
+  },
+  "accent": {
+    "$type": "color",
+    "$value": "oklch(0.96 0.02 264)",
+    "$description": "Subtle accent surface (hover rows, highlighted cells)."
+  },
+  "accent-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.3 0.04 264)",
+    "$description": "Text color on --accent."
+  },
+  "destructive": {
+    "$type": "color",
+    "$value": "oklch(0.58 0.22 27)",
+    "$description": "Danger/error fill (destructive buttons, error plates)."
+  },
+  "destructive-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.985 0 0)",
+    "$description": "Ink on a --destructive fill."
+  },
+  "destructive-text": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.2 27)",
+    "$description": "On-surface error TEXT color; ≥4.5:1 on content surfaces."
+  },
+  "success": {
+    "$type": "color",
+    "$value": "oklch(0.52 0.14 150)",
+    "$description": "Success/positive fill. #406 — DEEPENED out of the L 0.6 dead zone so the whole :root status family carries ONE ink polarity (white), the same move #381 made for --warning. Deepening only RAISES the mark-surface rung: 4.60:1 at worst (was 3.36:1)."
+  },
+  "success-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.985 0 0)",
+    "$description": "Ink on a --success fill. #406 — back to white, matching --primary/--destructive/--warning/--info here. The earlier dark ink (#321/#383) was the other way out of the L 0.6 dead zone, but it left :root's five status plates split across two ink polarities. 4.95:1."
+  },
+  "success-text": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.15 150)",
+    "$description": "On-surface success TEXT color; ≥4.5:1 on content surfaces."
+  },
+  "warning": {
+    "$type": "color",
+    "$value": "oklch(0.555 0.115 80)",
+    "$description": "Warning/caution fill. Deep amber: a colour-only warning mark must clear WCAG 1.4.11 (≥3:1) on every content surface (#381)."
+  },
+  "warning-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.985 0 0)",
+    "$description": "Ink on a --warning fill. Light, because the fill is a deep amber plate (#381) — same polarity as its success/info/destructive siblings."
+  },
+  "warning-text": {
+    "$type": "color",
+    "$value": "oklch(0.52 0.13 80)",
+    "$description": "On-surface warning TEXT color; ≥4.5:1 on content surfaces."
+  },
+  "info": {
+    "$type": "color",
+    "$value": "oklch(0.52 0.15 240)",
+    "$description": "Informational fill. #406 — DEEPENED out of the L 0.6 dead zone for the same one-polarity reason as --success. Mark-surface rung rises to 4.68:1 at worst (was 3.42:1)."
+  },
+  "info-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.985 0 0)",
+    "$description": "Ink on an --info fill. #406 — back to white, matching the rest of the :root status family. 5.03:1."
+  },
+  "info-text": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.15 240)",
+    "$description": "On-surface info TEXT color; ≥4.5:1 on content surfaces."
+  },
+  "border": {
+    "$type": "color",
+    "$value": "oklch(0.92 0.008 264)",
+    "$description": "Subtle/redundant hairline boundary (the default border color)."
+  },
+  "border-strong": {
+    "$type": "color",
+    "$value": "oklch(0.65 0.012 264)",
+    "$description": "Load-bearing divider/outline; ≥3:1 vs --card/--background (WCAG 1.4.11)."
+  },
+  "input": {
+    "$type": "color",
+    "$value": "oklch(0.92 0.008 264)",
+    "$description": "Form-control outline on the SUBTLE hairline rung (== --border) per ADR 0010 amendment (2026-06-20). Resting <3:1 is an accepted internal-use tradeoff — field identity rests on the recessed fill + focus ring + control glyphs + hover."
+  },
+  "ring": {
+    "$type": "color",
+    "$value": "oklch(0.45 0.21 264)",
+    "$description": "Focus ring color. DEEPER + more saturated than --primary on purpose (#385): the two were byte-identical, so 'this control is focused' and 'this is the primary action' were one signal. Same move qlik-bright already made for its own ring. ΔE(OKLab) 0.104 from --primary and 0.178 from --info; 7.42:1 vs --background."
+  },
+  "surface": {
+    "$type": "color",
+    "$value": "oklch(0.978 0.005 264)",
+    "$description": "Layered neutral surface for shells/panels. Recessed to match --background (08 §H / #187)."
+  },
+  "surface-muted": {
+    "$type": "color",
+    "$value": "oklch(0.96 0.008 264)",
+    "$description": "Muted layered surface (toolbars, table headers)."
+  },
+  "surface-elevated": {
+    "$type": "color",
+    "$value": "oklch(1 0 0)",
+    "$description": "Most-elevated neutral surface."
+  },
+  "sidebar": {
+    "$type": "color",
+    "$value": "oklch(0.955 0.005 264)",
+    "$description": "App-chrome sidebar ground. Recessed BELOW the content canvas (--background 0.978) so chrome reads as the most-recessed app-frame surface: chrome(0.955) < canvas(0.978) < card(1.0). ΔL≈0.023 vs canvas is a clearly perceptible elevation step."
+  },
+  "sidebar-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Text color on --sidebar."
+  },
+  "sidebar-muted-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.45 0.02 264)",
+    "$description": "Muted sidebar nav text; ≥4.5:1 vs --sidebar."
+  },
+  "sidebar-border": {
+    "$type": "color",
+    "$value": "oklch(0.88 0.01 264)",
+    "$description": "Sidebar border/divider. Deepened a hairline step as --sidebar recessed so the divider stays visible against the recessed chrome ground."
+  },
+  "sidebar-accent": {
+    "$type": "color",
+    "$value": "oklch(0.915 0.014 264)",
+    "$description": "Sidebar hover/active surface. Deepened so hover/selected stays perceptible (ΔL≈0.04) against the recessed --sidebar (0.955)."
+  },
+  "sidebar-accent-foreground": {
+    "$type": "color",
+    "$value": "var(--accent-foreground)",
+    "$description": "Text color on --sidebar-accent."
+  },
+  "sidebar-primary": {
+    "$type": "color",
+    "$value": "var(--primary)",
+    "$description": "Primary accent within the sidebar."
+  },
+  "sidebar-primary-foreground": {
+    "$type": "color",
+    "$value": "var(--primary-foreground)",
+    "$description": "Ink on --sidebar-primary. #406/#385 — a DECLARED mirror of --primary-foreground, the partner of the --sidebar-primary: var(--primary) alias. It was a duplicated literal, which cannot be told apart from an accidental collision and drifts the moment one side is retuned."
+  },
+  "sidebar-ring": {
+    "$type": "color",
+    "$value": "var(--ring)",
+    "$description": "Focus ring within the sidebar."
+  },
+  "canvas": {
+    "$type": "color",
+    "$value": "oklch(0.975 0.006 264)",
+    "$description": "React Flow / drawing canvas ground."
+  },
+  "canvas-grid": {
+    "$type": "color",
+    "$value": "oklch(0.9 0.01 264)",
+    "$description": "Canvas grid line color."
+  },
+  "flow-node": {
+    "$type": "color",
+    "$value": "oklch(1 0 0)",
+    "$description": "React Flow node surface."
+  },
+  "flow-node-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Text color on a flow node."
+  },
+  "flow-edge": {
+    "$type": "color",
+    "$value": "oklch(0.62 0.02 264)",
+    "$description": "React Flow edge/connector color."
+  },
+  "chat-user": {
+    "$type": "color",
+    "$value": "oklch(0.95 0.03 264)",
+    "$description": "AI chat — user message bubble surface."
+  },
+  "chat-user-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.25 0.04 264)",
+    "$description": "Text color on a user message bubble."
+  },
+  "chat-assistant": {
+    "$type": "color",
+    "$value": "oklch(0.97 0.004 264)",
+    "$description": "AI chat — assistant message bubble surface."
+  },
+  "chat-assistant-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Text color on an assistant message bubble."
+  },
+  "chart-1": {
+    "$type": "color",
+    "$value": "oklch(0.62 0.17 264)",
+    "$description": "Categorical data series 1. A lighter, chart-tuned cousin of the brand accent rather than a copy of it (#385): as a byte-identical duplicate of --primary/--ring it was also the darkest, highest-contrast member of its own ramp (5.02:1 vs --card against 2.87-4.37 for the rest) — never tuned as a ramp step. Now 3.73:1, evening the ramp, and ΔE 0.175 from --ring."
+  },
+  "chart-2": {
+    "$type": "color",
+    "$value": "oklch(0.6 0.14 180)",
+    "$description": "Categorical data series 2."
+  },
+  "chart-3": {
+    "$type": "color",
+    "$value": "oklch(0.65 0.15 140)",
+    "$description": "Categorical data series 3."
+  },
+  "chart-4": {
+    "$type": "color",
+    "$value": "oklch(0.63 0.16 70)",
+    "$description": "Categorical data series 4."
+  },
+  "chart-5": {
+    "$type": "color",
+    "$value": "oklch(0.6 0.2 20)",
+    "$description": "Categorical data series 5."
+  },
+  "chart-grid": {
+    "$type": "color",
+    "$value": "var(--border)",
+    "$description": "Chart gridlines (alias)."
+  },
+  "chart-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)",
+    "$description": "Chart foreground text/lines (alias)."
+  },
+  "chart-foreground-muted": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)",
+    "$description": "Muted chart foreground (alias)."
+  },
+  "chart-background": {
+    "$type": "color",
+    "$value": "var(--card)",
+    "$description": "Chart plotting background (alias)."
+  },
+  "chart-label": {
+    "$type": "color",
+    "$value": "var(--foreground)",
+    "$description": "Chart axis/label text (alias)."
+  },
+  "chart-crosshair": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)",
+    "$description": "Chart crosshair color (alias)."
+  },
+  "chart-line-primary": {
+    "$type": "color",
+    "$value": "var(--chart-1)",
+    "$description": "Primary chart line (alias of --chart-1)."
+  },
+  "chart-line-secondary": {
+    "$type": "color",
+    "$value": "var(--chart-2)",
+    "$description": "Secondary chart line (alias of --chart-2)."
+  },
+  "chart-brush-border": {
+    "$type": "color",
+    "$value": "var(--border)",
+    "$description": "Chart brush/selection border (alias)."
+  },
+  "chart-indicator-color": {
+    "$type": "color",
+    "$value": "var(--chart-1)",
+    "$description": "Chart indicator color (alias)."
+  },
+  "chart-indicator-secondary-color": {
+    "$type": "color",
+    "$value": "var(--chart-2)",
+    "$description": "Secondary chart indicator color (alias)."
+  },
+  "chart-marker-background": {
+    "$type": "color",
+    "$value": "var(--card)",
+    "$description": "Chart marker background (alias)."
+  },
+  "chart-marker-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)",
+    "$description": "Chart marker foreground (alias)."
+  },
+  "chart-marker-border": {
+    "$type": "color",
+    "$value": "var(--border)",
+    "$description": "Chart marker border (alias)."
+  },
+  "chart-marker-badge-background": {
+    "$type": "color",
+    "$value": "var(--primary)",
+    "$description": "Chart marker badge background (alias)."
+  },
+  "chart-marker-badge-foreground": {
+    "$type": "color",
+    "$value": "var(--primary-foreground)",
+    "$description": "Chart marker badge ink (alias)."
+  },
+  "chart-ring-background": {
+    "$type": "color",
+    "$value": "var(--background)",
+    "$description": "Chart ring/gauge background (alias)."
+  },
+  "chart-segment-background": {
+    "$type": "color",
+    "$value": "var(--muted)",
+    "$description": "Chart segment background (alias)."
+  },
+  "chart-segment-line": {
+    "$type": "color",
+    "$value": "var(--border)",
+    "$description": "Chart segment divider (alias)."
+  },
+  "chart-tooltip-background": {
+    "$type": "color",
+    "$value": "var(--popover)",
+    "$description": "Chart tooltip surface (alias)."
+  },
+  "chart-tooltip-foreground": {
+    "$type": "color",
+    "$value": "var(--popover-foreground)",
+    "$description": "Chart tooltip text (alias)."
+  },
+  "chart-tooltip-muted": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)",
+    "$description": "Muted chart tooltip text (alias)."
+  },
+  "legend-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)",
+    "$description": "Chart legend text (alias)."
+  },
+  "legend-muted": {
+    "$type": "color",
+    "$value": "var(--muted)",
+    "$description": "Muted chart legend surface (alias)."
+  },
+  "legend-muted-foreground": {
+    "$type": "color",
+    "$value": "var(--muted-foreground)",
+    "$description": "Muted chart legend text (alias)."
+  },
+  "legend-track": {
+    "$type": "color",
+    "$value": "var(--muted)",
+    "$description": "Chart legend track/rail (alias)."
+  },
+  "rule": {
+    "$type": "color",
+    "$value": "oklch(0.92 0.008 264)",
+    "$description": "Reprographic drawn rule (hairline)."
+  },
+  "rule-strong": {
+    "$type": "color",
+    "$value": "oklch(0.82 0.012 264)",
+    "$description": "Stronger reprographic rule."
+  },
+  "grid-line": {
+    "$type": "color",
+    "$value": "oklch(0.9 0.01 264)",
+    "$description": "Graph-paper minor grid line."
+  },
+  "grid-line-major": {
+    "$type": "color",
+    "$value": "oklch(0.84 0.012 264)",
+    "$description": "Graph-paper major grid line."
+  },
+  "calc-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.21 0.02 264)",
+    "$description": "Calc syntax: default token color (plain identifiers, punctuation)."
+  },
+  "calc-number": {
+    "$type": "color",
+    "$value": "oklch(0.4 0.15 240)",
+    "$description": "Calc syntax: numeric literal color."
+  },
+  "calc-unit": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.12 200)",
+    "$description": "Calc syntax: unit suffix color (px, %, em, …)."
+  },
+  "calc-currency": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.14 150)",
+    "$description": "Calc syntax: currency / monetary value color."
+  },
+  "calc-variable": {
+    "$type": "color",
+    "$value": "oklch(0.38 0.14 300)",
+    "$description": "Calc syntax: variable / definition name color."
+  },
+  "calc-reference": {
+    "$type": "color",
+    "$value": "oklch(0.4 0.15 264)",
+    "$description": "Calc syntax: reference to another field / cell color."
+  },
+  "calc-function": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.12 55)",
+    "$description": "Calc syntax: function name color."
+  },
+  "calc-operator": {
+    "$type": "color",
+    "$value": "oklch(0.25 0.02 264)",
+    "$description": "Calc syntax: operator color (+, -, *, /, =, …)."
+  },
+  "calc-result": {
+    "$type": "color",
+    "$value": "oklch(0.38 0.16 264)",
+    "$description": "Calc syntax: computed result / answer emphasis color."
+  },
+  "calc-comment": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.02 264)",
+    "$description": "Calc syntax: comment / annotation color (muted/desaturated)."
+  },
+  "calc-warning": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.2 27)",
+    "$description": "Calc syntax: warning / unresolved reference color (error hue)."
+  },
+  "code-background": {
+    "$type": "color",
+    "$value": "var(--card)",
+    "$description": "CodeBlock (Shiki) surface — raised panel (alias)."
+  },
+  "code-foreground": {
+    "$type": "color",
+    "$value": "var(--foreground)",
+    "$description": "CodeBlock (Shiki) default token color (alias)."
+  },
+  "code-comment": {
+    "$type": "color",
+    "$value": "oklch(0.5 0.02 264)",
+    "$description": "CodeBlock syntax: comment color."
+  },
+  "code-string": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.14 150)",
+    "$description": "CodeBlock syntax: string literal color."
+  },
+  "code-number": {
+    "$type": "color",
+    "$value": "oklch(0.4 0.15 240)",
+    "$description": "CodeBlock syntax: numeric literal color."
+  },
+  "code-constant": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.12 200)",
+    "$description": "CodeBlock syntax: language/other constant color."
+  },
+  "code-keyword": {
+    "$type": "color",
+    "$value": "oklch(0.38 0.16 264)",
+    "$description": "CodeBlock syntax: keyword / storage-type color."
+  },
+  "code-function": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.12 55)",
+    "$description": "CodeBlock syntax: function / call name color."
+  },
+  "code-type": {
+    "$type": "color",
+    "$value": "oklch(0.38 0.14 300)",
+    "$description": "CodeBlock syntax: type / class name color."
+  },
+  "code-tag": {
+    "$type": "color",
+    "$value": "oklch(0.42 0.16 336)",
+    "$description": "CodeBlock syntax: markup tag color. Its own hue — deliberately NOT --calc-warning/--destructive-text's red-orange, so a valid <tag> never reads as an error (#315 follow-up)."
+  },
+  "code-property": {
+    "$type": "color",
+    "$value": "oklch(0.25 0.02 264)",
+    "$description": "CodeBlock syntax: attribute / object-property-key color."
+  }
+}

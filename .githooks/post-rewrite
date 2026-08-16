@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# .githooks/post-rewrite — after a `git rebase` / `commit --amend` that changed
+# pnpm-lock.yaml, resync node_modules (same rationale as post-merge). Non-blocking.
+# git feeds the rewritten-commit list on stdin; drain it so git doesn't see SIGPIPE.
+set -u
+
+cat >/dev/null 2>&1 || true
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+command -v node >/dev/null 2>&1 || exit 0
+
+# ORIG_HEAD = the pre-rewrite tip (set by rebase); HEAD = after.
+old="$(git rev-parse -q --verify ORIG_HEAD 2>/dev/null)" || exit 0
+new="$(git rev-parse -q --verify HEAD 2>/dev/null)" || exit 0
+
+node scripts/ensure-deps-synced.mjs "$old" "$new" --reason "a git rebase/amend" || true
+exit 0

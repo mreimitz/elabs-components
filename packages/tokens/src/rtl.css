@@ -1,0 +1,23 @@
+/**
+ * @qlik-coe-emea/qlabs-components-tokens — rtl.css
+ * --------------------------------------------------------------------------
+ * RTL directional-icon flip overlay. A minimal, targeted rule that mirrors
+ * navigational chevrons and arrows under right-to-left document direction.
+ *
+ * USAGE
+ *   Add `data-rtl-flip` to any icon whose visual direction changes between
+ *   LTR and RTL (chevron-right/left, forward/back arrows, breadcrumb
+ *   separators). Purely decorative icons and bi-directional glyphs (e.g.
+ *   search, close, settings) must NOT carry the attribute.
+ *
+ * MECHANISM
+ *   When the nearest `dir="rtl"` ancestor is present the element receives
+ *   `transform: scaleX(-1)`, mirroring the icon horizontally. The rule fires
+ *   at ANY nesting depth; it is inert in `dir="ltr"` contexts.
+ *
+ * Copied to dist/ by the @qlik-coe-emea/qlabs-components-tokens build.
+ */
+
+[dir="rtl"] [data-rtl-flip] {
+  transform: scaleX(-1);
+}

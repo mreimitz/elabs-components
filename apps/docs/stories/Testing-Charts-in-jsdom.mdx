@@ -1,0 +1,134 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Testing Charts in jsdom" />
+
+# Testing charts in jsdom
+
+`@qlik-coe-emea/qlabs-components-charts` renders with `@visx/*` — real SVG measurement
+(`ParentSize`/`ResizeObserver`, `getTotalLength()`, …) that jsdom does not implement. Consumers
+have historically dealt with this by mocking the whole `@qlik-coe-emea/qlabs-components-charts`
+barrel as a no-op — which hides real chart-prop bugs from the quality gate: a fully green test
+suite has shipped a `RangeError: Invalid time value` crash from a chart rendered with an
+unparsable date, because every test that touched a chart was asserting against a stub that
+didn't validate its props (issue #364).
+
+## The swap
+
+```ts
+// vitest.setup.ts
+vi.mock(
+  "@qlik-coe-emea/qlabs-components-charts",
+  async () => import("@qlik-coe-emea/qlabs-components-charts/test"),
+);
+```
+
+That's it — every existing `import { LineChart } from "@qlik-coe-emea/qlabs-components-charts"` in
+your app code now resolves to the jsdom-safe double, with no other code changes.
+
+## Why this is not just another no-op stub
+
+A test double that silently swallows whatever props it is given is worse than no double at
+all — it hides exactly the bug class this page opens with. Every double in `./test`:
+
+1. **Validates the real component's runtime contract before rendering** — required props
+   present, `data` is an array of plain objects, the x-axis key exists on every row and is
+   coercible to a valid `Date` (the flagship check — this is the exact
+   `RangeError: Invalid time value` class), and a declared series `dataKey` (from a child like
+   `<Line dataKey="revenue" />`) exists on the rows.
+2. **Throws a `ChartContractError`** on a violation — so a test with the SAME broken input that
+   used to pass green against a no-op stub now fails, at the same place the real chart would
+   crash.
+3. **Exposes what it received** — `data-chart="LineChart"` and a `data-chart-props` JSON
+   attribute a consumer's assertions can read back with `readChartDoubleProps(el)`.
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import { LineChart } from "@qlik-coe-emea/qlabs-components-charts/test";
+import { readChartDoubleProps } from "@qlik-coe-emea/qlabs-components-charts/test";
+
+test("dashboard passes a valid xDataKey", () => {
+  const { container } = render(
+    <LineChart data={[{ date: new Date("2024-01-01"), revenue: 10 }]} xDataKey="date">
+      {null}
+    </LineChart>,
+  );
+  const payload = readChartDoubleProps(container.querySelector('[data-chart="LineChart"]'));
+  expect(payload.xDataKey).toBe("date");
+});
+
+test("a broken x-axis key fails loudly, not silently", () => {
+  // The exact shape that used to pass a no-op mock while crashing in production.
+  expect(() =>
+    render(
+      <LineChart data={[{ turn: "A" }, { turn: "B" }]} xDataKey="turn">
+        {null}
+      </LineChart>,
+    ),
+  ).toThrow(/not coercible to a valid Date/);
+});
+```
+
+Mid-migration and want violations reported without failing every test at once?
+`configureChartTestDouble({ onViolation: "warn" })` downgrades to `console.error` (default:
+`"throw"`).
+
+## What's covered
+
+Every top-level chart CONTAINER — `AreaChart`, `BarChart`, `LineChart`, `ScatterChart`,
+`PieChart`, `RingChart`, `FunnelChart`, `RadarChart`, `CandlestickChart`, `ComposedChart`,
+`LiveLineChart`, `ChoroplethChart`, `SankeyChart`, `Gantt`, `AutoChart` — plus `MetricCard`,
+`MetricGrid`, `ChartCard`, `ChartFrame` and `Sparkline`, re-exported **verbatim** (their import
+graphs never touch `@visx`/`d3`/`motion`, so there's nothing to fake).
+
+**Every composition primitive and provider is exported too** (`Line`, `Area`, `Bar`, `Grid`,
+`XAxis`, `YAxis`, the legend/tooltip/pattern parts, `ChartProvider`, …), as inert stand-ins:
+they render nothing (a `*Provider` renders its `children`) and exist so the mocked module
+namespace is **complete**. That is not cosmetic — `vi.mock`'s factory result is wrapped in a
+proxy that throws
+
+```
+[vitest] No "Line" export is defined on the "@qlik-coe-emea/qlabs-components-charts" mock.
+```
+
+the moment your module reads the binding, so without them the canonical
+`<LineChart><Line dataKey="revenue" /></LineChart>` would fail on import. A container double
+still only _inspects_ its children (via `React.Children`, to validate declared series
+`dataKey`s) and never mounts them.
+
+## What's NOT covered, and the escape hatch
+
+The barrel's screaming-snake constants (`DEFAULT_HOVER_OFFSET`, the `PROFIT_LOSS` colours, …)
+live in `@visx`-backed modules, so re-exporting them would drag the engine back into the jsdom path;
+hooks (`useChart`, `useChartHover`, …) and utility functions (`chartCssVars`,
+`inferChartType`, …) cannot be faithfully faked either. And because the primitives are inert,
+the double can't help if your test asserts on a series/axis/legend part's actual rendered
+markup.
+
+For any of those, compose the two modules instead of replacing one with the other:
+
+```ts
+vi.mock("@qlik-coe-emea/qlabs-components-charts", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  ...(await import("@qlik-coe-emea/qlabs-components-charts/test")),
+}));
+```
+
+Importing `@visx` under jsdom is safe — only _rendering_ a visx chart is not — so this works;
+it is just slower, because the real engine lands in your test's module graph. Prefer the plain
+form above.
+
+For real render, interaction and a11y coverage, use the Storybook story in a real browser
+(`pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`) — the double is for **unit
+tests that assert on props**, not a replacement for visual verification.
+
+## Not in the component manifest — on purpose
+
+`@qlik-coe-emea/qlabs-components-charts/test` does not show up in `brand-ui.manifest.json` or the
+`brand-ui` MCP/CLI's component search. The manifest is the agent-facing **build-with**
+catalogue — listing a second `LineChart` reachable from a `/test` import path would cause exactly
+the hallucination it exists to prevent (an agent importing a jsdom test double into product
+code). This page, the package README, and
+`.claude/rules/chart-components.md` § "Test double" are the discovery surfaces instead.
+
+See the architect record and the full contract engine at
+`packages/charts/src/test/contract.ts` / `packages/charts/src/test/doubles.tsx`.

@@ -1,0 +1,250 @@
+/**
+ * Token-driven theme for the Milkdown (ProseMirror) WYSIWYG surface.
+ *
+ * Milkdown core ships ZERO styles (headless), so this is where brand-ui owns the
+ * look. Every value is a semantic design token (var(--foreground), --border,
+ * --radius, …) — NO raw colors — so the editor matches all three themes
+ * (qlik-bright/qlik-dark/blueprint) for free. Every rule
+ * is scoped under `.milkdown-host` so nothing leaks globally.
+ */
+
+.milkdown-host .ProseMirror {
+  outline: none;
+  padding: 1rem 1.1rem;
+  min-height: 9rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  caret-color: var(--primary);
+  word-break: break-word;
+  /* Same reading measure as the preview (max-w-3xl). Driven by the shared scale
+     (--md-measure, set via markdownScaleVars) so editor + preview match (#18). */
+  max-width: var(--md-measure, 48rem);
+  margin-inline: auto;
+}
+
+.milkdown-host .ProseMirror:focus {
+  outline: none;
+}
+
+/* ----------------------------------------------------------------------------
+ * Fill height — the editable grows to fill a definite-height parent.
+ *
+ * Milkdown's host box is otherwise content-sized (the `.ProseMirror` floor below
+ * is `min-height: 9rem`), so inside a tall pane a short document leaves a large
+ * dead area below the editable AND the caret-anchored `/` slash menu clips inside
+ * the short box near the bottom edge. Making `.milkdown-host` a column flex that
+ * fills its parent — and letting the intermediate Milkdown wrapper + the
+ * ProseMirror surface grow inside it — means the editable fills the pane
+ * (clickable everywhere) and the slash menu has room to open / flip.
+ *
+ * `min-height: 100%` only resolves against a parent with a DEFINITE height (the
+ * workspace's `h-full` wysiwyg pane, or any sized container). In an
+ * indefinite-height parent it resolves to `auto`, so the standalone / short
+ * editor still sizes to its content above the 9rem floor — no regression for the
+ * autodocs / inline cases. (qlabs-components: editor-fill-height)
+ * ------------------------------------------------------------------------- */
+.milkdown-host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.milkdown-host > div,
+.milkdown-host .milkdown {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+.milkdown-host .ProseMirror.editor {
+  flex: 1 1 auto;
+}
+
+.milkdown-host .ProseMirror > * + * {
+  margin-top: 0.7em;
+}
+
+/* Headings — sizes/weight/tracking come from the SHARED markdown scale
+   (markdown-scale.ts → --md-* vars on .milkdown-host), so the editor matches the
+   prose `Heading` exactly and can't drift on the next edit to either side (#18).
+   Fallbacks equal the canonical scale for use without the vars (e.g. clipboard). */
+.milkdown-host .ProseMirror h1,
+.milkdown-host .ProseMirror h2,
+.milkdown-host .ProseMirror h3,
+.milkdown-host .ProseMirror h4,
+.milkdown-host .ProseMirror h5,
+.milkdown-host .ProseMirror h6 {
+  font-weight: var(--md-heading-weight, 600);
+  letter-spacing: var(--md-heading-tracking, -0.025em);
+  line-height: 1.25;
+  color: var(--foreground);
+  margin-top: 1.1em;
+}
+.milkdown-host .ProseMirror h1 {
+  font-size: var(--md-h1, 1.5rem);
+}
+.milkdown-host .ProseMirror h2 {
+  font-size: var(--md-h2, 1.25rem);
+}
+.milkdown-host .ProseMirror h3 {
+  font-size: var(--md-h3, 1.125rem);
+}
+.milkdown-host .ProseMirror h4 {
+  font-size: var(--md-h4, 1rem);
+}
+.milkdown-host .ProseMirror h5 {
+  font-size: var(--md-h5, 0.875rem);
+}
+.milkdown-host .ProseMirror h6 {
+  font-size: var(--md-h6, 0.875rem);
+  color: var(--muted-foreground);
+}
+
+/* Inline */
+.milkdown-host .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.milkdown-host .ProseMirror strong {
+  font-weight: 650;
+}
+.milkdown-host .ProseMirror code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 0.12em 0.36em;
+  border-radius: calc(var(--radius) - 4px);
+}
+
+/* Blocks */
+.milkdown-host .ProseMirror blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.milkdown-host .ProseMirror pre {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  overflow: auto;
+}
+.milkdown-host .ProseMirror pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.82rem;
+}
+.milkdown-host .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25em 0;
+}
+
+/* Lists */
+.milkdown-host .ProseMirror ul,
+.milkdown-host .ProseMirror ol {
+  padding-left: 1.4rem;
+}
+.milkdown-host .ProseMirror ul {
+  list-style: disc;
+}
+.milkdown-host .ProseMirror ol {
+  list-style: decimal;
+}
+.milkdown-host .ProseMirror li > * + * {
+  margin-top: 0.35em;
+}
+
+/* Tables (GFM) */
+.milkdown-host .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.milkdown-host .ProseMirror th,
+.milkdown-host .ProseMirror td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.milkdown-host .ProseMirror th {
+  background: var(--surface-muted);
+  font-weight: 600;
+}
+
+/* Task lists (GFM) */
+.milkdown-host .ProseMirror ul[data-item-type="task"] {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+
+/* Read-only mode dims the caret affordance */
+.milkdown-host .ProseMirror[contenteditable="false"] {
+  caret-color: transparent;
+}
+
+/* ---- Brand `:::` directives ----------------------------------------------------
+ * These now render as LIVE @brand React components via @prosemirror-adapter/react
+ * (see directive-views.tsx), so the box-model chrome (card/callout/metric borders,
+ * fills, type accents) comes from the components themselves — NOT from here. This
+ * section only owns what the editor adds on top: outer spacing, the editable-body
+ * rhythm, the timeline frame (an editable list, not a derived <Timeline>), and the
+ * inline-edit affordance for editable attributes (card/callout title, metric
+ * label/value). The `toDOM` defs in directive-nodes.ts keep their own marker classes
+ * for clipboard serialization but are not visually rendered while node-views are on.
+ */
+.milkdown-host .brand-directive {
+  margin: 0.85em 0;
+}
+.milkdown-host .brand-directive__body > * + * {
+  margin-top: 0.6em;
+}
+/* The first/last editable block inside a card/callout shouldn't add stray margin
+ * on top of the component's own padding. */
+.milkdown-host .brand-directive__body > :first-child {
+  margin-top: 0;
+}
+
+/* timeline → keep the list editable inside a subtle frame */
+.milkdown-host .brand-directive--timeline {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+}
+
+/* Inline-editable directive attribute (seamless, caret-friendly). */
+.milkdown-host .brand-inline-edit {
+  cursor: text;
+  min-width: 1ch;
+  /* inherit the surrounding component's type (CardTitle, MetricBlock label/value) */
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+.milkdown-host .brand-inline-edit:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Focus writing (Ulysses Phase A): under a `[data-focus-writing]` ancestor   */
+/* (the workspace's wysiwyg pane), every top-level block dims except the one  */
+/* owning the selection (`.wb-fw-active`, set by the workspace) — paragraph   */
+/* focus. Hover un-dims for mouse repositioning. Token-driven, motion-safe.   */
+/* ------------------------------------------------------------------------- */
+[data-focus-writing] .milkdown-host .ProseMirror > * {
+  opacity: 0.35;
+  transition: opacity var(--t-base, 200ms) var(--ease-standard, ease);
+}
+[data-focus-writing] .milkdown-host .ProseMirror > .wb-fw-active,
+[data-focus-writing] .milkdown-host .ProseMirror > *:hover {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-focus-writing] .milkdown-host .ProseMirror > * {
+    transition: none;
+  }
+}

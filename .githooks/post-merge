@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# .githooks/post-merge — after a merge / `git pull` that changed pnpm-lock.yaml,
+# resync node_modules so newly-added deps are installed (prevents the
+# "Failed to resolve import" → 404 dev-server flood; see
+# scripts/ensure-deps-synced.mjs). Fires on fast-forward pulls too (verified).
+# Non-blocking: never fails the git operation. Wired via core.hooksPath=.githooks.
+set -u
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+command -v node >/dev/null 2>&1 || exit 0
+
+# ORIG_HEAD = the tip before the merge; HEAD = after. Diff the lockfile across it.
+old="$(git rev-parse -q --verify ORIG_HEAD 2>/dev/null)" || exit 0
+new="$(git rev-parse -q --verify HEAD 2>/dev/null)" || exit 0
+
+node scripts/ensure-deps-synced.mjs "$old" "$new" --reason "a git pull/merge" || true
+exit 0

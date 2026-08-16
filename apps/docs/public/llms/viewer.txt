@@ -1,0 +1,37 @@
+# @qlik-coe-emea/qlabs-components-viewer
+
+> FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
+
+Import from `@qlik-coe-emea/qlabs-components-viewer`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- ACTIVE_HIGHLIGHT_SELECTOR
+- DEFAULT_ZOOM
+- FileViewer — Render a file the app did not write (upload, signed URL, agent output) — detects the format, loads the matching adapter on demand, draws it with brand-ui components.
+  - avoid: Adding a per-format branch to FileViewerContent — a format is an adapter registration (registry.register), never a switch in the shell.
+  - avoid: Making a parser a plain dependency — every parser engine is an OPTIONAL peer, so a consumer who skips it gets the panel naming the package instead of a build error.
+  - avoid: Returning HTML from an adapter — adapters emit a DATA model that brand-ui components render; that is the only reason an arbitrary file inherits the theme.
+  - avoid: Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@qlik-coe-emea/qlabs-components-editor).
+  - avoid: Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure.
+- FileViewerContent
+- FileViewerEmpty
+- FileViewerError
+- FileViewerFind
+- FileViewerFrame
+- FileViewerHighlightStatus
+- FileViewerPager
+- FileViewerProvider
+- FileViewerRotate
+- FileViewerSkeleton
+- FileViewerToolbar
+- FileViewerZoom
+- FIND_MATCH_LIMIT
+- PROTOCOL_VERSION
+- VIEWER_ZOOM_STEPS
+- ViewerError
+
+## Hooks
+
+- useFileViewer
+- useScrollActiveHighlightIntoView

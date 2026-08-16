@@ -1,0 +1,427 @@
+# @qlik-coe-emea/qlabs-components-ui
+
+> Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).
+
+Import from `@qlik-coe-emea/qlabs-components-ui`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- Accordion
+- AccordionContent
+- AccordionItem
+- AccordionTrigger
+- AdvancedGroup
+- Alert (variant=default*|info|success|warning|destructive)
+- AlertDescription
+- AlertDialog — Confirmation overlay for destructive / irreversible actions — friction proportional to consequence.
+  - avoid: Firing the destructive action immediately on click — require the AlertDialog confirm (or an undo window).
+  - avoid: Making the destructive action the default-focused button — focus the Cancel/safe action first.
+- AlertDialogAction
+- AlertDialogCancel
+- AlertDialogContent
+- AlertDialogDescription
+- AlertDialogFooter
+- AlertDialogHeader
+- AlertDialogPortal
+- AlertDialogTitle
+- AlertDialogTrigger
+- AlertTitle
+- AppShell — Top-level application frame — sidebar + header + content region.
+  - avoid: Deep wrapper nesting inside the shell — keep the DOM shallow; one element, one job.
+  - avoid: Painting the shell's chrome recess in the component — the chrome→canvas hierarchy is a THEME property; fix --sidebar's lightness, not AppShell.
+- AppSidebar
+- AspectRatio
+- AttributionPanel
+- ATTRIBUTIONS
+- Avatar
+- AvatarFallback
+- AvatarImage
+- Badge (variant=default*|secondary|outline|success|warning|destructive|info) — Compact status/label chip (status, count, category).
+  - avoid: Using a Badge as a clickable control — use a Button (Badge is not interactive).
+  - avoid: Encoding status by color alone — pair the color with text/icon for non-color users.
+- BentoGrid
+- BentoGridItem (hero=true|false* · interactive=true|false*)
+- BoundedNumber
+- Breadcrumb
+- BreadcrumbEllipsis
+- BreadcrumbItem
+- BreadcrumbLink
+- BreadcrumbList
+- BreadcrumbPage
+- BreadcrumbSeparator
+- Button (variant=default*|secondary|destructive|outline|outline-subtle|ghost|link · size=sm|default*|lg|icon|icon-sm|icon-lg) — Primary action trigger — the canonical way to invoke an action.
+  - avoid: Two primary Buttons in the same action group — demote one to secondary/outline.
+  - avoid: Button used for navigation — use a link instead (asChild + <a>, or the variant="link").
+  - avoid: destructive variant for an irreversible action with no confirm step — wrap in AlertDialog.
+  - avoid: Icon-only Button without an aria-label — the control has no accessible name.
+- ButtonGroup (orientation=horizontal*|vertical)
+- ButtonGroupSeparator
+- ButtonGroupText
+- Calendar
+- Card (interactive=true|false*) — Surface grouping related content into a bordered, padded block.
+  - avoid: Card inside a Card (nested cards) — flatten; cards are not a generic wrapper.
+  - avoid: Card-for-everything — use a Card only when a bordered surface is the right affordance.
+  - avoid: Identical icon-tile-above-heading Card grids repeated endlessly — vary structure.
+- CardAction
+- CardContent
+- CardDescription
+- CardFooter
+- CardHeader
+- CardTitle
+- Carousel
+- CarouselContent
+- CarouselItem
+- CarouselNext
+- CarouselPrevious
+- CATEGORY_LABEL
+- ChangeReview
+- ChangeReviewHeader
+- ChangeReviewHunk
+- ChangeReviewList
+- ChangeReviewProvenance
+- ChangeReviewProvider
+- Checkbox — Binary on/off toggle within a form (multi-select within a group).
+  - avoid: Checkbox and its Label not sharing one hit target — clicking the label must toggle the box (no dead zone).
+  - avoid: Using a Checkbox for mutually-exclusive choices — use RadioGroup.
+- Collapsible
+- CollapsibleContent
+- CollapsibleTrigger
+- COLOR_TOKENS
+- ColorPicker
+- Combobox — Searchable single/multi select — Select with typeahead over a large or async option set.
+  - avoid: Using Combobox for a tiny fixed option set — a plain Select is simpler and lighter.
+  - avoid: Restyling the trigger/panel by hand — Combobox is a Popover + Command assembly; style through those parts.
+- Command
+- CommandDialog
+- CommandEmpty
+- CommandGroup
+- CommandInput
+- CommandItem
+- CommandList
+- CommandSeparator
+- CommandShortcut
+- ConfirmDialog
+- ContextMenu
+- ContextMenuCheckboxItem
+- ContextMenuContent
+- ContextMenuGroup
+- ContextMenuItem
+- ContextMenuLabel
+- ContextMenuRadioGroup
+- ContextMenuRadioItem
+- ContextMenuSeparator
+- ContextMenuShortcut
+- ContextMenuSub
+- ContextMenuSubContent
+- ContextMenuSubTrigger
+- ContextMenuTrigger
+- COPY_FEEDBACK_MS
+- CopyableValue
+- DatePicker
+- DateRangePicker
+- DEFAULT_MESSAGES
+- DEFAULT_THEME_PAIR
+- Descriptions
+- DescriptionsItem
+- Dialog — Modal overlay for focused tasks/flows that block the page until dismissed.
+  - avoid: Dialog without a DialogTitle — screen readers announce no name (use sr-only if visually hidden).
+  - avoid: Nesting a Dialog inside a Dialog — use a single flow or a Sheet/Drawer for the secondary surface.
+  - avoid: Confirming a destructive action in a plain Dialog — use AlertDialog (it traps focus on the safe action).
+- DialogBody
+- DialogClose
+- DialogContent (size=sm|lg*|xl|full)
+- DialogDescription
+- DialogFooter
+- DialogHeader
+- DialogOverlay
+- DialogPortal
+- DialogSection
+- DialogTitle
+- DialogTrigger
+- DOCUMENT_ADDRESS_KINDS
+- Drawer
+- DrawerClose
+- DrawerContent
+- DrawerDescription
+- DrawerFooter
+- DrawerHeader
+- DrawerPortal
+- DrawerTitle
+- DrawerTrigger
+- DropdownMenu
+- DropdownMenuCheckboxItem
+- DropdownMenuContent
+- DropdownMenuGroup
+- DropdownMenuItem
+- DropdownMenuLabel
+- DropdownMenuPortal
+- DropdownMenuRadioGroup
+- DropdownMenuRadioItem
+- DropdownMenuSeparator
+- DropdownMenuShortcut
+- DropdownMenuSub
+- DropdownMenuSubContent
+- DropdownMenuSubTrigger
+- DropdownMenuTrigger
+- EmptyState
+- ErrorState
+- ExpandDialog
+- ExpandDialogContent
+- ExpandDialogHeader
+- ExpandDialogPanes (detailPlacement=side*|bottom · stackBelow=never*|sm|md|lg)
+- FieldRow
+- FILE_CATEGORY_ICONS
+- FileUpload
+- FileUploadDropzone
+- FileUploadItem
+- FileUploadList
+- FilterChip
+- Form — Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema.
+  - avoid: Disabling submit until valid — keep submit enabled until the request starts, then show a spinner.
+  - avoid: Errors not rendered inline next to the field; not focusing the first error on submit.
+  - avoid: Warning the user before navigating away from unsaved changes is missing.
+- FormControl
+- FormDescription
+- FormField
+- FormItem
+- FormLabel
+- FormMessage
+- Heading (size=display|title*|subtitle)
+- HoverCard
+- HoverCardContent
+- HoverCardTrigger
+- IconButton
+- Input — Single-line text field — the base form input.
+  - avoid: Input without an associated Label (visible or sr-only) — it has no accessible name.
+  - avoid: Blocking paste (onPaste + preventDefault) — never block paste.
+  - avoid: Wrong type/inputmode — use type=email/tel/url/number + inputmode so mobile keyboards + validation match.
+  - avoid: Missing autocomplete + a meaningful name on a real form field.
+- InputGroup (variant=outline*|surface|card)
+- InputGroupAddon (align=inline-start*|inline-end|block-start|block-end)
+- InputGroupButton
+- InputGroupInput
+- InputGroupText
+- InputGroupTextarea
+- InputOTP
+- InputOTPGroup
+- InputOTPSeparator
+- InputOTPSlot
+- Kbd
+- KeyValueEditor
+- Label
+- LinkPreview
+- LinkPreviewCard
+- ListEditor
+- LoadingState
+- LocaleProvider
+- MatchHighlight
+- MentionInput
+- MentionInputContent
+- MentionInputEmpty
+- MentionInputItem
+- MentionInputList
+- MentionInputTextarea
+- Menubar
+- MenubarCheckboxItem
+- MenubarContent
+- MenubarGroup
+- MenubarItem
+- MenubarMenu
+- MenubarPortal
+- MenubarRadioGroup
+- MenubarRadioItem
+- MenubarSeparator
+- MenubarShortcut
+- MenubarSub
+- MenubarSubContent
+- MenubarSubTrigger
+- MenubarTrigger
+- MetricCard — Single KPI tile — label, value, delta/trend.
+  - avoid: Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.
+  - avoid: Encoding up/down by color alone — pair with an arrow/sign.
+  - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui; charts and editor re-export it (ADR 0012).
+- ModelPicker
+- NavigationMenu
+- NavigationMenuContent
+- NavigationMenuItem
+- NavigationMenuLink
+- NavigationMenuList
+- NavigationMenuTrigger
+- NavigationMenuViewport
+- NavMain
+- NavNotifications
+- NavUser
+- NumberInput
+- PageShell
+- Pagination
+- PaginationContent
+- PaginationEllipsis
+- PaginationItem
+- PaginationLink
+- PaginationNext
+- PaginationPrevious
+- Popover — Anchored, dismissible floating panel for lightweight contextual content.
+  - avoid: Reimplementing dismissal/positioning by hand — let the Radix Popover own focus + outside-click.
+  - avoid: Expecting PopoverContent to render its own focus ring — it is outline-none by design; the trigger carries the ring.
+- PopoverAnchor
+- PopoverContent
+- PopoverTrigger
+- Progress
+- PROSE_HEADING_REM
+- PROSE_HEADING_TRACKING
+- PROSE_HEADING_WEIGHT
+- ProseBlockquote
+- ProseHeading
+- ProseInlineCode
+- ProseLink
+- ProseList
+- ProseListItem
+- ProseText
+- RadioGroup — Mutually-exclusive single choice from a small visible set.
+  - avoid: Using a RadioGroup for many options — use Select/Combobox past ~7 options.
+  - avoid: RadioGroup items without labels sharing a hit target.
+- RadioGroupItem
+- Rating
+- ResizableHandle
+- ResizablePanel
+- ResizablePanelGroup
+- ResultCount
+- Reveal (appear=fade|up*|down|left|right|zoom · speed=fast|base|slow*)
+- RevealGroup
+- RevisionTimeline (density=comfortable*|compact)
+- ScrollArea
+- ScrollBar
+- SectionHeader
+- SegmentedField
+- Select — Single-choice dropdown from a known set of options.
+  - avoid: Using Select for free-form or searchable values — use Combobox when the user may type/search.
+  - avoid: Select without a Label — no accessible name.
+- SelectContent
+- SelectGroup
+- SelectItem
+- SelectLabel
+- SelectSeparator
+- SelectTrigger
+- SelectValue
+- Separator
+- Sheet — Edge-anchored panel (left/right/top/bottom) for secondary flows beside the page.
+  - avoid: Sheet without a SheetTitle — no accessible name.
+  - avoid: Scroll chaining to the page behind it — set overscroll-behavior: contain.
+- SheetClose
+- SheetContent
+- SheetDescription
+- SheetFooter
+- SheetHeader
+- SheetPortal
+- SheetTitle
+- SheetTrigger
+- Sidebar
+- SidebarContent
+- SidebarFooter
+- SidebarGroup
+- SidebarGroupAction
+- SidebarGroupContent
+- SidebarGroupLabel
+- SidebarHeader
+- SidebarInput
+- SidebarInset
+- SidebarMenu
+- SidebarMenuAction
+- SidebarMenuBadge
+- SidebarMenuButton (variant=default*|outline · size=default*|sm|lg)
+- SidebarMenuItem
+- SidebarMenuSkeleton
+- SidebarMenuSub
+- SidebarMenuSubButton
+- SidebarMenuSubItem
+- SidebarProvider
+- SidebarRail
+- SidebarSeparator
+- SidebarTrigger
+- Skeleton
+- Slider
+- SliderNumber
+- Spinner
+- SplitPanel
+- StatePanel (kind=empty*|error|loading)
+- STATUS_LABELS
+- STATUS_ROLE
+- STATUS_TONE_ICONS
+- STATUS_TONES
+- StatusBadge (status=pending|running|complete|awaiting-approval|denied|failed|skipped · tone=neutral|info|success|warning|destructive · size=sm|md*)
+- STATUSES
+- StatusIcon
+- STREAMDOWN_TRANSLATION_KEYS
+- Switch — Immediate on/off setting toggle (applies on change, not on submit).
+  - avoid: Switch that needs a separate Save to apply — use a Checkbox in a form instead; a Switch should apply immediately.
+- Table
+- TableBody
+- TableCaption
+- TableCell
+- TableFooter
+- TableHead
+- TableHeader
+- TableRow
+- Tabs — Switch between peer views in the same context without navigating away.
+  - avoid: Tabs for sequential steps — use a stepper/wizard; tabs are for peer, non-sequential views.
+  - avoid: More than ~7 tabs — consider a Select or a sidebar nav.
+- TabsContent
+- TabsList
+- TabsTrigger
+- TagInput
+- TeamSwitcher
+- Text (variant=lead|body*|caption|meta|kpi|code · tone=default*|muted|primary)
+- TEXT_ROLE_REM
+- Textarea
+- ThemeSwitcher
+- Timeline
+- TimelineItem
+- TimelineRoot
+- Toaster
+- Toggle (variant=default*|outline|segmented · size=default*|sm|lg)
+- ToggleGroup
+- ToggleGroupItem
+- Toolbar (orientation=horizontal*|vertical) — A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls.
+  - avoid: Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.
+  - avoid: Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.
+  - avoid: Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.
+  - avoid: Reaching for it to attach actions to a canvas node — that is NodeToolbar in @qlik-coe-emea/qlabs-components-ai.
+- ToolbarButton
+- ToolbarSeparator
+- ToolbarSlot
+- ToolbarToggleGroup
+- ToolbarToggleItem
+- Tooltip — Transient hover/focus hint with supplementary (non-essential) text.
+  - avoid: Putting essential information ONLY in a Tooltip — it is unreachable on touch and transient; keep critical content visible.
+  - avoid: Tooltip on a non-focusable element — it won't show on keyboard focus.
+- TooltipContent
+- TooltipProvider
+- TooltipTrigger
+- TopNav
+- Transfer
+- Tree
+- TreeSelect
+- ViewToolbar
+- ViewToolbarFilters
+- VirtualSelect
+- Wizard
+- WizardNav
+- WizardStep
+- WizardSteps
+
+## Hooks
+
+- useCollapsiblePanel
+- useCommandActiveItemId
+- useCopyToClipboard
+- useDialogDismissGuard
+- useFileUpload
+- useFormField
+- useIsMobile
+- useLocale
+- useMentionInput
+- useSidebar
+- useStreamdownTranslations
+- useThemeTransition
+- useTreeKeyboard
+- useVirtualListbox

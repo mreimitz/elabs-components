@@ -1,0 +1,72 @@
+# @qlik-coe-emea/qlabs-components-editor
+
+> Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
+
+Import from `@qlik-coe-emea/qlabs-components-editor`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- CodeEditor — Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens.
+  - avoid: Passing Monaco a hardcoded theme — the bridge reads the active data-theme tokens; never override it.
+  - avoid: Using CodeEditor for read-only display — use CodeBlock (@qlik-coe-emea/qlabs-components-ai, Shiki) for non-editable code.
+  - avoid: Forgetting the worker setup (import "@qlik-coe-emea/qlabs-components-editor/monaco-environment") — IntelliSense is off without it.
+- CodeWorkspace
+- CopyButton
+- DiffEditor
+- EDITOR_LANGUAGES
+- EditorContextMenu
+- EditorToolbar
+- MarkdownEditor
+
+## Hooks
+
+- useDataTheme
+
+## Subpath exports
+
+- Bibliography (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- Blockquote (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- BRAND_DIRECTIVES (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- BRAND_SLASH_COMMANDS (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- CALC_FENCE_SEED (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- CalcBlock (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- CalcInline (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- DECISION_STATUSES (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- DecisionCard (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- DEFAULT_TEMPLATE (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- DocumentOutline (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- ENTITY_KINDS (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- EntityCard (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- EntityChip (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- FootnoteList (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- Heading (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- InlineCode (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- IterationBlock (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- IterationBuilderDialog (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- IterationBuilderProvider (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- IterationEditContext (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- IterationTemplateDialog (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- IterationTemplateProvider (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- KnowledgeCard (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- Link (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- List (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- ListItem (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MARKDOWN_HEADING_REM (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MARKDOWN_HEADING_TRACKING (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MARKDOWN_HEADING_WEIGHT (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MARKDOWN_MEASURE (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MarkdownEditor (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MarkdownPreview (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MarkdownToolbar (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MarkdownWorkspace (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MathBlock (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MathInline (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MermaidDiagram (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MermaidWorkspace (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MetricBlock (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- MonacoSlashMenu (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- SlashMenu (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- TableOfContents (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- Text (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- Timeline (`@qlik-coe-emea/qlabs-components-editor/markdown` · component)
+- useMarkdownOutline (`@qlik-coe-emea/qlabs-components-editor/markdown` · hook)

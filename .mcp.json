@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "storybook": {
+      "type": "http",
+      "url": "http://localhost:6006/mcp"
+    },
+    "brand-ui": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["packages/cli/bin/brand-ui.mjs", "mcp"]
+    }
+  }
+}

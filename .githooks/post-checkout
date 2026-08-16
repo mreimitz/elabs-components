@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# .githooks/post-checkout — after switching branches to a state with a different
+# pnpm-lock.yaml, resync node_modules (same rationale as post-merge). Only acts on
+# branch/switch checkouts, never file checkouts. Non-blocking.
+# Args: $1 = previous HEAD, $2 = new HEAD, $3 = 1 for a branch checkout / 0 for a file.
+set -u
+
+[ "${3:-0}" = "1" ] || exit 0 # ignore `git checkout <file>` and worktree file ops
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+command -v node >/dev/null 2>&1 || exit 0
+
+node scripts/ensure-deps-synced.mjs "$1" "$2" --reason "a git checkout" || true
+exit 0

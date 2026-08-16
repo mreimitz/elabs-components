@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit — block a commit on the wrong branch inside an
+# orchestrated worktree, block unresolved conflict markers, keep the brand-ui
+# manifest fresh, and keep staged files formatted, on the happy path.
+# -----------------------------------------------------------------------------
+# 0) HARD BLOCK a commit landing on the wrong branch during an orchestrated
+#    /close-issues run — the #403 incident (two independently-dispatched
+#    coder agents committed straight to `main` instead of their assigned
+#    worktree/branch; a stronger brief did not stop the second occurrence).
+#    TWO checks, since either side of the worktree boundary can drift:
+#    (a) inside a worktree an orchestrator MARKED for a specific branch
+#        (`.expected-branch`, written at worktree-creation time — see
+#        .claude/commands/close-issues.md Phase 2), HEAD must resolve to that
+#        branch; (b) in the PRIMARY checkout, a commit on `main` is blocked
+#        while ANY OTHER worktree is marked (an orchestration run is in
+#        flight elsewhere) — the actual shape of the real incidents, since a
+#        marked worktree can never itself have HEAD==`main` while `main` is
+#        checked out at the primary. An UNMARKED worktree with no
+#        orchestration running anywhere is a silent no-op either way; see
+#        scripts/check-worktree-branch.mjs for the exact rules and the
+#        `ALLOW_MAIN_COMMIT=1` override for (b).
+# 1) HARD BLOCK a commit that stages a literal, unresolved Git conflict marker
+#    (`<<<<<<<`/`=======`/`>>>>>>>`) — the #379 incident (PR #375 merged commit
+#    7ac0d12 with markers committed verbatim into 6 tracked files). Like step 0,
+#    this ABORTS the commit rather than best-effort-fixing it: there is no safe
+#    way to auto-resolve a merge (or a branch mixup) on the committer's behalf.
+#    The CI gate (`pnpm conflict-markers:check`) is the backstop for a
+#    `--no-verify` bypass.
+# 2) When a commit stages files that change the manifest's inputs (any package
+#    source, the token themes, or the registry), regenerate `brand-ui.manifest.json`
+#    and its 5 downstream generators (inventory/llms/context/gen — #396) and stage
+#    them — so none of the derived artifacts are ever stale. The CI stale-gates
+#    are the universal backstop; this is the convenience that makes the happy
+#    path pass by construction. (WP-10 #85, extended by #396.)
+# 3) Run Prettier over the staged Prettier-supported files and re-stage the
+#    (idempotent) result — so `format:check` doesn't go red on direct commits
+#    from contributors without the `.claude/hooks/format-after-edit.sh` agent
+#    hook. `pnpm format:check` in CI (blocking `gates` job) stays the backstop
+#    for a `--no-verify` bypass or a machine that never ran `pnpm install`
+#    (`core.hooksPath` unset). (#239 — "Enforcement over reminders": the format
+#    convention now has commit-time teeth, not just a CI post-hoc check.)
+#
+# Steps 2-3 are staged-files-only (never the whole tree) to keep the hook fast,
+# and both no-op safely if their tool isn't available yet (never blocks a commit
+# on a MISSING tool — steps 0-1 still block on a FOUND violation).
+#
+# Wired via `core.hooksPath=.githooks` (set by the `prepare` npm script on install).
+set -u
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+
+# --- 0) hard-block a commit on the wrong branch inside a MARKED worktree (#403) ---
+# Runs before the staged-paths check below (and before step 1) since a worktree
+# that has drifted to the wrong branch should never even get to "are there
+# staged files" — an empty commit attempt on the wrong branch is just as much
+# the incident this guards against.
+if command -v node >/dev/null 2>&1; then
+  if ! node scripts/check-worktree-branch.mjs; then
+    echo "pre-commit: aborting commit — wrong branch for an orchestrated run (see the reason printed above)." >&2
+    exit 1
+  fi
+fi
+
+# Staged paths in this commit.
+staged="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)" || exit 0
+[ -z "$staged" ] && exit 0
+
+# --- 1) hard-block staged content containing unresolved conflict markers (#379) ---
+if command -v node >/dev/null 2>&1; then
+  if ! node scripts/check-conflict-markers.mjs --staged; then
+    echo "pre-commit: aborting commit — staged file(s) contain unresolved conflict markers (see above). Resolve them, then re-stage." >&2
+    exit 1
+  fi
+fi
+
+# --- 2) regenerate the manifest + its 5 downstream generators when inputs changed (#396) ---
+# `run-agent-docs-cascade.mjs` re-derives the SAME trigger condition internally
+# (belt-and-suspenders — see its TRIGGER_PATTERN, self-tested to stay in sync
+# with the grep pattern below) and chains manifest → inventory → llms → context
+# → gen (which itself runs gen:readmes), staging only the artifacts that
+# actually changed. Best-effort: a failure here never blocks the commit —
+# `pnpm agent-docs:check` in CI is the backstop.
+if printf '%s\n' "$staged" | grep -Eq '^packages/[^/]+/src/|^packages/tokens/src/themes\.css$|^registry/'; then
+  if command -v node >/dev/null 2>&1; then
+    node scripts/run-agent-docs-cascade.mjs --staged || true
+  fi
+fi
+
+# --- 2) format staged Prettier-supported files (#239) ------------------------
+# Same binary-resolution pattern as .claude/hooks/format-after-edit.sh: prefer
+# the local node_modules binary, fall back to `pnpm exec`, else skip silently
+# (safe before `pnpm install` has run — no prettier binary is not a commit
+# blocker). `.prettierignore` is honored automatically by Prettier for each
+# target file, so generator-owned artifacts (manifest, inventory, llms, context)
+# are never reformatted here — this can't fight their stale-gates.
+prettier_targets="$(printf '%s\n' "$staged" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json|css|md|mdx)$' || true)"
+if [ -n "$prettier_targets" ]; then
+  prettier_cmd=()
+  if [ -x "$root/node_modules/.bin/prettier" ]; then
+    prettier_cmd=("$root/node_modules/.bin/prettier")
+  elif command -v pnpm >/dev/null 2>&1; then
+    prettier_cmd=(pnpm exec prettier)
+  fi
+  if [ "${#prettier_cmd[@]}" -gt 0 ]; then
+    # Partial-staging guard: formatting the worktree file and re-adding it would
+    # silently sweep UNSTAGED hunks into the commit. Only touch files whose
+    # worktree state matches the index; the CI format:check backstop covers the
+    # skipped ones.
+    # Populate WITHOUT `mapfile` — it is a bash 4+ builtin, absent from macOS's
+    # default /bin/bash 3.2 (which is what `env bash` resolves to here). On 3.2
+    # `mapfile` failed → `candidate_files` stayed unset → `set -u` turned the
+    # expansion below into a fatal "unbound variable", aborting EVERY commit. A
+    # portable read loop + a count-guard (matching the target_files guard below)
+    # work on bash 3.2+.
+    candidate_files=()
+    while IFS= read -r line; do
+      [ -n "$line" ] && candidate_files+=("$line")
+    done <<<"$prettier_targets"
+    target_files=()
+    if [ "${#candidate_files[@]}" -gt 0 ]; then
+      for f in "${candidate_files[@]}"; do
+        [ -f "$f" ] || continue
+        git diff --quiet -- "$f" 2>/dev/null && target_files+=("$f")
+      done
+    fi
+    if [ "${#target_files[@]}" -gt 0 ]; then
+      "${prettier_cmd[@]}" --write --log-level warn -- "${target_files[@]}" >/dev/null 2>&1 || true
+      formatted=0
+      for f in "${target_files[@]}"; do
+        if ! git diff --quiet -- "$f" 2>/dev/null; then
+          git add -- "$f"
+          formatted=1
+        fi
+      done
+      [ "$formatted" = "1" ] && echo "pre-commit: formatted staged file(s) with Prettier (#239)."
+    fi
+  fi
+fi
+
+exit 0

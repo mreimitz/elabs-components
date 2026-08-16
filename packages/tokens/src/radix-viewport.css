@@ -1,0 +1,47 @@
+/* ---------------------------------------------------------------------------
+ * Radix viewport scrollbar hiding — shipped as real CSS, not injected inline.
+ * ---------------------------------------------------------------------------
+ *
+ * `@radix-ui/react-scroll-area`'s `ScrollAreaViewport` and
+ * `@radix-ui/react-select`'s `SelectViewport` each render an unconditional
+ *
+ *     <style dangerouslySetInnerHTML={{ __html: "…" }} nonce={nonce} />
+ *
+ * carrying exactly the rules below. React performs that as an `.innerHTML`
+ * assignment inside `setInitialProperties` — during COMMIT, not render — so
+ * under a `require-trusted-types-for 'script'` policy it throws where no error
+ * boundary can catch it and React tears down the whole ROOT. The symptom is a
+ * blank window, not a broken component, and neither jsdom (no CSP) nor a
+ * screenshot test can see it.
+ *
+ * The rules are static — no interpolation, no per-instance values — so there is
+ * nothing an inline `<style>` buys. They live here, and `patches/` removes the
+ * injection from both packages. Keeping the two in sync matters: if a Radix
+ * upgrade drops the patch, these rules stay correct and merely become redundant;
+ * if these rules are deleted, native scrollbars reappear inside every ScrollArea
+ * and Select. `pnpm csp-sinks:check` fails the build if the injection returns.
+ *
+ * `nonce` is deliberately not reproduced: it exists to satisfy a CSP that
+ * whitelists inline styles, which is precisely the configuration a strict policy
+ * does not use.
+ */
+
+[data-radix-scroll-area-viewport] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-radix-scroll-area-viewport]::-webkit-scrollbar {
+  display: none;
+}
+
+[data-radix-select-viewport] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-radix-select-viewport]::-webkit-scrollbar {
+  display: none;
+}

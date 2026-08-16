@@ -1,0 +1,75 @@
+{
+  // Debug profiles for each app. The web apps (Playground, Storybook, Workbench)
+  // launch Chrome with the debugger attached (set breakpoints in .tsx source via
+  // source maps):
+  //   - F5 / "Run" runs the `preLaunchTask` (starts the dev server, waits until
+  //     it's ready) then opens the app in a debuggable Chrome.
+  //   - Stop (Shift+F5) runs the `postDebugTask` (kills the dev server's port).
+  // Chrome must be installed; swap "chrome" for "msedge" to use Edge instead.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🎮 Playground (Vite)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "dev: playground",
+      "postDebugTask": "stop: playground",
+      "presentation": { "group": "1_apps", "order": 1 }
+    },
+    {
+      "name": "📕 Storybook (Docs)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:6006",
+      "webRoot": "${workspaceFolder}",
+      // Diagnostics: js-debug writes why a launch failed here. Remove once the profile
+      // is confirmed working (the file is gitignored via .vscode/* and *.log).
+      "trace": { "logFile": "${workspaceFolder}/.vscode/js-debug.log" },
+      "preLaunchTask": "dev: storybook",
+      "postDebugTask": "stop: storybook",
+      "presentation": { "group": "1_apps", "order": 2 }
+    },
+    {
+      "name": "🛠 Workbench (Vite)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5174",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "dev: workbench",
+      "postDebugTask": "stop: workbench",
+      "presentation": { "group": "1_apps", "order": 3 }
+    },
+    {
+      "name": "🧪 E2E (Playwright) — run + debug",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/e2e",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "playwright", "test"],
+      "autoAttachChildProcesses": true,
+      "console": "integratedTerminal",
+      "presentation": { "group": "1_apps", "order": 4 }
+    },
+    {
+      "name": "🧪 E2E (Playwright) — UI mode",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/e2e",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "playwright", "test", "--ui"],
+      "autoAttachChildProcesses": true,
+      "console": "integratedTerminal",
+      "presentation": { "group": "1_apps", "order": 5 }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "▶ All web apps (Playground + Storybook + Workbench)",
+      "configurations": ["🎮 Playground (Vite)", "📕 Storybook (Docs)", "🛠 Workbench (Vite)"],
+      "stopAll": true,
+      "presentation": { "group": "0_all", "order": 1 }
+    }
+  ]
+}

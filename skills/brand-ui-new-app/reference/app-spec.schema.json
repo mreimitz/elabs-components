@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brand-ui/app-spec",
+  "title": "brand-ui app-spec",
+  "description": "The machine-readable contract the new-app interview produces and `brand-ui scaffold` consumes. Authored as a fenced ```json block inside app-spec.md (single source: prose for humans, this block for the engine). `brand-ui scaffold <app-spec.md>` extracts this block, validates it against this schema, and emits the app from it (`--write <dir>`).",
+  "type": "object",
+  "required": ["archetype", "theme", "title"],
+  "additionalProperties": true,
+  "properties": {
+    "archetype": {
+      "description": "App shape → the generated playbooks/templates/<archetype>.tsx + playbooks/<archetype>.md.",
+      "type": "string",
+      "enum": ["dashboard", "data-app", "ai-assistant", "flow-workspace", "settings", "marketing"]
+    },
+    "theme": {
+      "description": "Shipped theme slug (CSS slug, never display name).",
+      "type": "string",
+      "enum": ["qlik-bright", "qlik-dark"],
+      "default": "qlik-bright"
+    },
+    "title": {
+      "description": "App title (free text; defaults to the archetype name).",
+      "type": "string",
+      "minLength": 1
+    },
+    "intent": {
+      "description": "Why the app exists (stage 1).",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "purpose": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "scale": {
+          "type": "string",
+          "enum": ["demo", "internal", "production"]
+        }
+      }
+    },
+    "density": {
+      "description": "DEPRECATED alias for `taste.density` — kept so existing specs keep validating. \"default\" == the token dial's \"comfortable\". Prefer `taste.density`, which uses the shipped DensityMode vocabulary; when both are present `taste.density` wins.",
+      "type": "string",
+      "enum": ["default", "compact"],
+      "default": "default"
+    },
+    "taste": {
+      "description": "The taste profile the scaffold is built to — register x density x motion x expressiveness (stage 5 'Brand & feel'; ADR 0020). Every axis maps to a shipped token dial except `register`, which picks the BAR the surface is judged against. Omitted axes take the restrained default (product / comfortable / system / 0) — expressive is opt-in. Apply these ONLY through the dials (ThemeProvider props / data-density / data-decoration), never as hardcoded values in emitted component source.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "register": {
+          "description": "Which bar the app is judged against. product = app UI, earned familiarity (default). brand = marketing surfaces, distinctiveness.",
+          "type": "string",
+          "enum": ["product", "brand"],
+          "default": "product"
+        },
+        "density": {
+          "description": "Density → the `data-density` dial (ThemeProvider `defaultDensity`). Rescales spacing AND the eight `--text-<role>` sizes together (#340): compact is ~11% tighter spacing with ~6% smaller role type, spacious the reverse; comfortable is the identity. Apply it through the dial, never by hardcoding smaller `text-*` in emitted source. Note the dial only reaches text that uses a ROLE utility (`text-body`/`text-meta`/…); raw `text-sm`/`text-xs` stays fixed.",
+          "type": "string",
+          "enum": ["compact", "comfortable", "spacious"],
+          "default": "comfortable"
+        },
+        "motion": {
+          "description": "Motion setting → the `data-motion-pref` dial (ThemeProvider `defaultMotionPreference`). \"system\" (default) follows the OS reduce-motion setting — i.e. full motion whenever the OS is neutral; \"reduced\" is calm regardless of the OS. The third MotionPreference value, \"full\", is DELIBERATELY NOT ALLOWED here: `[data-motion-pref=\"full\"]` keeps --motion-factor at 1 through an OS `prefers-reduced-motion: reduce` request and opts out of the third-party animation cap that the token stylesheet applies, so it is an informed-consent override a PERSON makes for themselves via a motion control (useMotionPreference()) — never an app default a scaffold imposes on every visitor.",
+          "type": "string",
+          "enum": ["system", "reduced"],
+          "default": "system"
+        },
+        "expressiveness": {
+          "description": "How expressive the surface may be, 0-10. This IS the decoration dial (`--decoration` / `data-decoration`) — there is no separate CSS variable. 0 = restrained (default), 10 = full reprographic.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 0
+        }
+      }
+    },
+    "standalone": {
+      "description": "True when the app lives OUTSIDE this monorepo. Standalone scaffolds get the full GitHub-Packages install handoff (.npmrc + `pnpm add` + peers + the CSS @import/@source lines — docs/CONSUMING.md §1-4) and real semver dependency ranges; in-monorepo scaffolds keep `workspace:*`.",
+      "type": "boolean",
+      "default": false
+    },
+    "release": {
+      "description": "The @qlik-coe-emea/qlabs-components-* release a standalone app installs (e.g. \"2.0.0\"). Defaults to the version of the monorepo the scaffold runs in.",
+      "type": "string",
+      "minLength": 1
+    },
+    "surfaces": {
+      "description": "Screens/sections; one archetype per surface, shared app shell.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "navLabel"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "navLabel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "archetype": {
+            "type": "string",
+            "enum": [
+              "dashboard",
+              "data-app",
+              "ai-assistant",
+              "flow-workspace",
+              "settings",
+              "marketing"
+            ]
+          }
+        }
+      }
+    },
+    "entities": {
+      "description": "Domain objects → generated interface + ColumnDef<Entity>[] at scaffold time.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "fields"],
+        "additionalProperties": true,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "additionalProperties": true,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["text", "number", "date", "status", "boolean"]
+                },
+                "rendersAs": {
+                  "type": "string"
+                },
+                "filterable": {
+                  "type": ["boolean", "string"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

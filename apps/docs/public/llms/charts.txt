@@ -1,0 +1,233 @@
+# @qlik-coe-emea/qlabs-components-charts
+
+> MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
+
+Import from `@qlik-coe-emea/qlabs-components-charts`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- Area
+- AreaChart — Cumulative or part-of-whole trend over time — a filled line.
+  - avoid: Stacking areas that are not parts of one whole — a stack asserts summation; use lines.
+  - avoid: Overlapping opaque areas — either stack them or switch to a LineChart.
+  - avoid: Leaving status="loading" unhandled — AreaChartLoading is the shipped skeleton.
+- AreaChartLoading
+- AutoChart — Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.
+  - avoid: Hand-picking a chart type when the spec already encodes the intent — AutoChart is the agent-facing entry point.
+  - avoid: Putting raw colors in a spec's series — the chart-1…chart-5 tokens are the palette in every theme.
+  - avoid: Passing an empty dataset with no not-ready signal — render the loading state instead of an empty frame.
+- Bar
+- BarChart — Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider.
+  - avoid: Truncating the value axis so small differences look large — a bar axis starts at zero.
+  - avoid: Hardcoding series colors — use the chart-1…chart-5 tokens so every theme works.
+  - avoid: Rendering an empty frame before data arrives — use the shipped chart skeleton utilities.
+- BarXAxis
+- BarYAxis
+- Candlestick
+- CandlestickChart
+- CHART_CLIP_PASSTHROUGH
+- ChartBrush
+- ChartBrushLayout
+- ChartBrushSelectionOverlay
+- ChartBrushTrackOverlay
+- ChartCard — Titled card surface around a chart — header, description, and the chart body.
+  - avoid: Nesting a ChartCard inside a Card — it already IS the surface.
+  - avoid: Hand-building expand / flip-to-table / download controls on the card — wrap it with ChartFrame instead.
+  - avoid: Leaving the body blank when data is absent — render the loading/empty state; a blank card reads as broken.
+- ChartConfigProvider
+- ChartDatapointLayer
+- ChartDatapointProvider
+- ChartFallback
+- ChartFrame — Opt-in chart wrapper adding expand / flip-to-table / download-CSV to any chart child.
+  - avoid: Expecting ChartFrame to read the chart's context — it is the PARENT of the chart's provider; pass the same data to both via props.
+  - avoid: Importing @qlik-coe-emea/qlabs-components-data into a chart — charts → ui only; flip-to-table uses the @qlik-coe-emea/qlabs-components-ui Table.
+  - avoid: Expecting the table/download controls with no `data` — they hide by design when data is absent or empty; pass the same rows you gave the chart.
+- ChartLegend — Series key with label, value and an optional progress bar; pattern-aware under decoration.
+  - avoid: Dropping the legend on a multi-series chart — colour without a key is not a legend.
+  - avoid: Ordering legend items differently from the series — the eye maps them positionally.
+  - avoid: Passing a raw hex as the item colour — resolve the chart token so high decoration gets its pattern swatch.
+- ChartLegendHoverProvider
+- ChartLoadingLabel
+- ChartMarkers
+- ChartProvider
+- ChartRevealClip
+- ChartStatFlow
+- ChartTooltip — Hover readout for the point/series under the pointer.
+  - avoid: Putting information ONLY in the tooltip — hover content is unreachable by keyboard and on touch.
+  - avoid: Showing every series in a shared tooltip on a dense chart — filter to the hovered series.
+  - avoid: Formatting numbers by hand — use Intl so locale and units stay consistent with the axis.
+- ChartTooltipBox
+- ChartTooltipContent
+- ChartTooltipDot
+- ChartTooltipIndicator
+- ChoroplethChart — Region-shaded map for a measure that is defined per geographic area.
+  - avoid: Shading raw counts instead of a rate — area size becomes the story and the map lies.
+  - avoid: A rainbow ramp for a sequential measure — use one ordered ramp so darker always means more.
+  - avoid: Shipping it without a legend — a shaded region carries no value without the scale.
+- ChoroplethFeatureComponent
+- ChoroplethGraticule
+- ChoroplethProvider
+- ChoroplethTooltip
+- ComposedChart — One cartesian frame that layers several series types (bars + lines + areas) together.
+  - avoid: Stacking series on two silently-different y-scales — label the second axis or the comparison lies.
+  - avoid: Layering more than ~3 series types in one frame — split it into small multiples instead.
+  - avoid: Colouring series by hand — resolve --chart-1..5 so the dark theme stays legible.
+- DateTicker
+- DEFAULT_CHART_CONFIG
+- DEFAULT_CHART_LIFECYCLE
+- DEFAULT_CHART_STATUS
+- DEFAULT_HOVER_OFFSET
+- DEFAULT_MAX_INTERACTIVE_DATAPOINTS
+- DEFAULT_Y_AXIS_ID
+- DEFAULT_Y_DOMAIN_TWEEN_MS
+- FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
+  - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
+  - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.
+  - avoid: Hiding the absolute counts behind percentages only — a funnel without its base number cannot be judged.
+- Gantt (density=comfortable*|compact) — Schedule grid — tasks as bars over time, with a task table beside them.
+  - avoid: Mutating task dates inside the component on drag — Gantt is emit-only; the app owns the model (D5).
+  - avoid: Bar labels that rely on the bar fill for contrast — check the label against the bar color in every theme.
+  - avoid: Rendering the grid without `loading` while rows are still fetching — skeleton rows must hold the layout.
+- GANTT_NOMINAL_VIEWPORT_PX
+- GANTT_UNIT_MS
+- Gauge — Single-value dial against a known range — a KPI with an explicit ceiling.
+  - avoid: A gauge for a value with no meaningful maximum — that is a MetricCard, not a dial.
+  - avoid: A gauge per KPI in a grid — a row of dials reads worse than a MetricGrid; use one for the headline only.
+  - avoid: Encoding the threshold by colour alone — pair the band with a label or a tick.
+- GradientDarkgreenGreen
+- GradientLightgreenGreen
+- GradientOrangeRed
+- GradientPinkBlue
+- GradientPinkRed
+- GradientPurpleOrange
+- GradientPurpleTeal
+- GradientSteelPurple
+- GradientTealBlue
+- Grid
+- Legend
+- LegendItemComponent
+- LegendLabel
+- LegendMarker
+- LegendProgress
+- LegendValue
+- Line
+- LinearGradient
+- LineChart — Trend over a continuous (usually time) axis.
+  - avoid: A LineChart over unordered categories — a line asserts continuity; use a BarChart.
+  - avoid: More than ~5 series in one plot — past the chart-1…chart-5 palette the series stop being distinguishable; facet instead.
+  - avoid: Distinguishing series by color alone — add markers or direct labels for non-color users.
+- LineChartLoading
+- LineLoadingPulseStroke
+- LiveLine
+- LiveLineChart
+- LiveXAxis
+- LiveYAxis
+- MarkerGroup
+- MarkerTooltipContent
+- MetricCard — Single KPI tile — label, value, delta/trend.
+  - avoid: Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.
+  - avoid: Encoding up/down by color alone — pair with an arrow/sign.
+  - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui; charts and editor re-export it (ADR 0012).
+- MetricGrid — Responsive grid of KPI tiles — the summary row at the top of a dashboard.
+  - avoid: More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.
+  - avoid: Numbers without tabular-nums — figures jitter across the row.
+  - avoid: Re-declaring a KPI tile locally — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui and re-exported here (ADR 0012).
+- MIN_DATAPOINT_TARGET_SIZE
+- PatternArea
+- PatternCircles
+- PatternHexagons
+- PatternLines
+- PatternWaves
+- PieCenter
+- PieCenterShell
+- PieChart — Part-of-whole split across a handful of categories.
+  - avoid: More than ~5 slices — a bar chart compares better; a pie is not a ranking.
+  - avoid: A pie for values that don't sum to a meaningful whole.
+  - avoid: Identifying slices by color alone — put the label and value on or beside the slice.
+- PieProvider
+- PieSlice
+- PROFIT_LOSS_LEGEND_ITEMS
+- PROFIT_LOSS_NEGATIVE_COLOR
+- PROFIT_LOSS_POSITIVE_COLOR
+- PROFIT_LOSS_TOOLTIP_LABEL_FALLBACK
+- ProfitLossLegend
+- ProfitLossLegendHoverProvider
+- ProfitLossLine
+- RadarArea
+- RadarAxis
+- RadarChart — Multi-metric profile comparison on a shared radial axis.
+  - avoid: Plotting metrics with different units on one radar — normalize first or the shape is meaningless.
+  - avoid: Overlaying more than ~3 profiles — the filled areas occlude each other; use small multiples.
+  - avoid: Relying on the filled area to be readable at low opacity — check the fill against every theme's canvas.
+- RadarGrid
+- RadarLabels
+- RadarProvider
+- RadialGradient
+- Ring
+- RingCenter
+- RingChart
+- RingProvider
+- SankeyChart — Flow diagram — how quantity moves between stages or nodes.
+  - avoid: A Sankey for a simple two-column comparison — reach for a bar chart.
+  - avoid: Raw colors on nodes/links — resolve the chart tokens so the dark theme reads correctly.
+  - avoid: So many nodes that the labels collide — aggregate the tail into one 'other' node.
+- SankeyLink
+- SankeyNode
+- SankeyProvider
+- SankeyTooltip
+- Scatter
+- ScatterChart — Point cloud for correlation between two continuous measures.
+  - avoid: Connecting the points — a line asserts a sequence a scatter does not have.
+  - avoid: Plotting tens of thousands of raw points — bin or sample; the browser and the reader both give up.
+  - avoid: Distinguishing groups by colour only at default opacity — overlapping marks collapse; add shape or facets.
+- SegmentBackground
+- SegmentLineFrom
+- SegmentLineTo
+- SeriesBar
+- SeriesMarkers
+- SeriesPointMarker
+- Sparkline — Tiny, axis-less trend that lives inside a KPI tile or a table cell.
+  - avoid: Adding axes and tooltips to a Sparkline — if it needs them it is a LineChart.
+  - avoid: A Sparkline as the only carrier of a number — pair it with the value (MetricCard).
+  - avoid: Fixing its width in pixels — let the tile or cell own the box so it reflows.
+- StaticChartPreviewProvider
+- XAxis
+- Y_AXIS_DEFAULT_TICK_COUNT
+- Y_AXIS_MAX_TICK_COUNT
+- Y_AXIS_MIN_TICK_COUNT
+- YAxis
+
+## Hooks
+
+- useActivateDatapoint
+- useActiveMarkers
+- useAnimatedYDomains
+- useChart
+- useChartConfig
+- useChartDatapointsEnabled
+- useChartHover
+- useChartInteraction
+- useChartLegendHover
+- useChartStable
+- useChoropleth
+- useChoroplethZoom
+- useHighDecoration
+- useHighDecorationOf
+- useLegend
+- useLegendItem
+- usePie
+- usePieHover
+- usePieStable
+- useProfitLossLegendHover
+- useRadar
+- useRadarHover
+- useRadarStable
+- useRegisterDatapointTargets
+- useResolvedRadius
+- useResolvedRadiusOf
+- useRing
+- useRingHover
+- useRingStable
+- useSankey
+- useStaticChartPreview
+- useYScale

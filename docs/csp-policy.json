@@ -1,0 +1,88 @@
+{
+  "policy": {
+    "default-src": ["'self'"],
+    "img-src": ["'self'", "data:", "blob:", "https://models.dev", "https://basemaps.cartocdn.com"],
+    "media-src": ["'self'", "blob:"],
+    "connect-src": [
+      "'self'",
+      "https://ejiidnob33g9ap1r.public.blob.vercel-storage.com",
+      "https://basemaps.cartocdn.com"
+    ],
+    "script-src": ["'self'", "'wasm-unsafe-eval'"],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "trusted-types": [
+      "dompurify",
+      "default",
+      "editorViewLayer",
+      "richScreenReaderContent",
+      "domLineBreaksComputer",
+      "diffReview",
+      "diffEditorWidget",
+      "editorGhostText",
+      "stickyScrollViewLayer",
+      "defaultWorkerFactory",
+      "standaloneColorizer",
+      "tokenizeToString"
+    ],
+    "require-trusted-types-for": ["'script'"]
+  },
+  "carveOuts": [
+    {
+      "directive": "style-src",
+      "sources": ["'unsafe-inline'"],
+      "why": "NOT fixable in the library, and not a build-tool artifact — it is required in production too. React writes a `style` attribute for every `style={{…}}` prop, and React Flow (node/viewport transforms), Radix (popper positioning) and Recharts (responsive sizing) all depend on that. Attribute styles written from JS take no nonce and their hashes are unknowable at build time, so the only alternative is to stop using inline styles inside three third-party engines. Measured on the `vite preview` production build with `style-src 'self'`: 276 blocked inline styles (54 distinct hashes) across one walkthrough, and the rendered `#root` halved in size."
+    },
+    {
+      "directive": "img-src",
+      "sources": ["data:"],
+      "why": "Inline SVG/PNG data URIs in icon and chart output. `data:` in `img-src` cannot execute script, so this is the cheapest relaxation in the policy — but it is still one, so it is declared rather than assumed (§2.7)."
+    },
+    {
+      "directive": "img-src",
+      "sources": ["blob:"],
+      "why": "`@qlik-coe-emea/qlabs-components-viewer` shows a file the app did not write. When that file arrives as a `File`/`Blob`/`ArrayBuffer` — an upload, a paste, an agent's output — there is no URL to point an `<img>` at, so `normalizeFileSource` mints one with `URL.createObjectURL` and revokes it on dispose. A `blob:` URL is same-origin and cannot execute script. Drop it if every file you view arrives as a URL you already control. DERIVED from what the code does, not re-measured against an enforcing browser — the app that served this header was removed on 2026-08-10 (§2.7)."
+    },
+    {
+      "directive": "media-src",
+      "sources": ["'self'", "blob:"],
+      "why": "The viewer's video/audio adapter streams from a URL rather than buffering the bytes, so an uploaded recording plays from the same `blob:` URL as above. `media-src` is listed explicitly because `default-src 'self'` would otherwise block it. Drop the whole directive if you never open media files. DERIVED, not re-measured (see the `img-src blob:` row)."
+    },
+    {
+      "directive": "script-src",
+      "sources": ["'wasm-unsafe-eval'"],
+      "why": "`Persona` instantiates the Rive WebGL2 runtime from a `.wasm` bundled on your own origin. Drop it if you never render `Persona` (§1)."
+    },
+    {
+      "directive": "trusted-types",
+      "sources": ["dompurify"],
+      "why": "Mermaid sanitises its rendered SVG with DOMPurify, which mints a pass-through Trusted-Types policy named `dompurify` on the FIRST diagram render. Without the allowlist entry DOMPurify returns `\"\"` and the diagram silently disappears (§2.4)."
+    },
+    {
+      "directive": "trusted-types",
+      "sources": ["default"],
+      "why": "Sanitising is not sufficient: the sanitised SVG still crosses React's `dangerouslySetInnerHTML`, a raw `Element.innerHTML` write that Trusted Types blocks and that takes the whole React tree down with it (measured: `#root` emptied on the first Mermaid render). React exposes no TrustedHTML-typed prop, so the only document-level fix is a policy named `default`. The playground installs a NARROW one that accepts an `<svg>` document and throws on anything else — `apps/playground/src/trusted-types.ts`. Skip both if you never render Mermaid, KaTeX math, or `SchemaDisplay`."
+    },
+    {
+      "directive": "trusted-types",
+      "sources": [
+        "editorViewLayer",
+        "richScreenReaderContent",
+        "domLineBreaksComputer",
+        "diffReview",
+        "diffEditorWidget",
+        "editorGhostText",
+        "stickyScrollViewLayer",
+        "defaultWorkerFactory",
+        "standaloneColorizer",
+        "tokenizeToString"
+      ],
+      "why": "Monaco (`@qlik-coe-emea/qlabs-components-editor`) calls `trustedTypes.createPolicy` under ten fixed names at module init — including `defaultWorkerFactory`, which it needs to start its language workers. Each blocked name throws asynchronously through Monaco's `onUnexpectedError`. Drop all ten if you never render `CodeEditor`/`DiffEditor`/`CodeWorkspace`/`MermaidDiagram`. NOTE these are ten NAMES, not `'allow-duplicates'` — `monaco-editor@0.55` mints `defaultWorkerFactory` twice (two source files carry the same module-init block), which the memoizing `MonacoEnvironment.createTrustedTypesPolicy` hook in `@qlik-coe-emea/qlabs-components-editor/monaco-environment` de-duplicates so this policy does not have to (§2.6)."
+    }
+  ],
+  "devOnly": {
+    "script-src": {
+      "add": ["'unsafe-inline'"],
+      "why": "Vite dev injects the @vitejs/plugin-react Refresh preamble as an INLINE module script into index.html; blocking it kills HMR ('can't detect preamble'). `vite build` emits only external hashed scripts, so the published policy keeps `script-src 'self' 'wasm-unsafe-eval'` and `vite preview` is served that policy verbatim."
+    }
+  }
+}

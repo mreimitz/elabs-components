@@ -1,0 +1,91 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+storybook-static/
+registry/__output/
+*.tsbuildinfo
+
+# Release staging + pack-time artifacts (throwaway; see docs/RELEASING.md)
+release/
+# Written by `pnpm release-verdict:check --out` in the release job: which CI run
+# authorised the publish. Consumed by `pnpm release:report`, never committed.
+release-verdict.json
+# The CLI ships the manifest + the archetype templates via its `prepack` copy
+# (packages/cli/scripts/bundle-assets.mjs); both copies are generated — the
+# canonical sources are the repo-root manifest and docs/playbooks/templates/**.
+packages/cli/brand-ui.manifest.json
+packages/cli/templates/
+
+# Turbo
+.turbo/
+
+# Test / coverage
+coverage/
+
+# Env & secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+# Referenced by the "dev: storybook" task in tasks.json — must be shared, or a fresh
+# clone gets a debug profile that points at a missing script.
+!.vscode/start-storybook.mjs
+*.log
+
+# Claude Code local overrides (machine-specific, never shared)
+.claude/settings.local.json
+
+# Session-retro working digests — raw transcript extracts, may contain secrets
+.claude/retros/
+
+# Subagent isolation worktrees (transient; never commit an agent's workspace)
+.claude/worktrees/
+
+# Per-command run artifacts (transient; never commit scratch working files)
+.claude/scratch/
+
+# Generated per-harness skill mirrors (scripts/build-skills.mjs; canonical source is skills/)
+.cursor/skills/
+.gemini/skills/
+.agents/skills/
+.github/skills/
+
+# repo-architect-review run artifacts (promote a scorecard.md to baseline to track it)
+research/repo-architect-review/runs/
+
+# Playwright / E2E artifacts
+playwright-report/
+blob-report/
+test-results/
+apps/e2e/.cache/
+
+# tsup writes temp bundled config files next to tsup.config.ts
+*.bundled_*.mjs
+
+# axe ratchet measurement (#316) — one Storybook test run's raw axe result.
+# The committed source of truth is scripts/a11y-baseline.json.
+scripts/.a11y-run.json
+
+# repo-cleanup audit output (#audit) — generated, machine-specific, never maintained
+# source. The skill writes report/baseline/evidence here on every run.
+.repo-cleanup/
+
+# Orchestrated-worktree branch marker (#403) — written by /close-issues into each
+# unit worktree and read by .githooks/pre-commit. It is per-worktree, machine-local
+# state and must never be committed: a tracked marker would ride a merge onto `main`
+# and then block every commit in every checkout that names a different branch.
+.expected-branch

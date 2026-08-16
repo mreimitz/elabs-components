@@ -1,0 +1,46 @@
+# @qlik-coe-emea/qlabs-components-icons
+
+> Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
+
+Import from `@qlik-coe-emea/qlabs-components-icons`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- AppIcon — The standard app/brand mark for app chrome — theme-aware, morphs mark↔lockup on sidebar collapse.
+  - avoid: Hand-rolling BrandLogo plus a lucide box in app chrome — AppIcon is the standard app mark.
+  - avoid: Using AppIcon as a brand-neutral scaffold placeholder or a multi-tenant team switcher — it is the product's own mark.
+- BookmarkIcon
+- BrandLogo — The product's mark/lockup, drawn from tokens so it adapts to every theme.
+  - avoid: Hardcoding a brand fill — the mark uses currentColor/tokens so it adapts per theme.
+  - avoid: Hand-rolling the mark↔lockup swap in app chrome — AppIcon wraps BrandLogo and morphs on sidebar collapse.
+- ChartAreaIcon
+- ChartBarIcon
+- ChartComboIcon
+- ChartLineIcon
+- ChartPieIcon
+- ChartScatterIcon
+- ChatIcon
+- DashboardIcon
+- DataConnectionIcon
+- DataModelIcon
+- DatasetIcon
+- DimensionIcon
+- FilterPaneIcon
+- FlowIcon
+- GaugeIcon
+- Icon — The brand/product-vocabulary icon primitive — 24×24, stroke = currentColor, so it themes with text.
+  - avoid: Reaching here for a generic glyph (chevron, close, search, menu) — those come from lucide-react.
+  - avoid: A meaning-bearing icon with no title — an untitled Icon is decorative and hidden from assistive tech by design.
+  - avoid: A raw color on an icon — it inherits currentColor so it adapts per theme.
+- InsightIcon
+- KpiIcon
+- MeasureIcon
+- PipelineIcon
+- PivotIcon
+- SearchIcon
+- SheetIcon
+- SparklesIcon
+- StoryIcon
+- TableIcon
+- TrendDownIcon
+- TrendUpIcon

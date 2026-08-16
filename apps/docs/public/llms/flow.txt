@@ -1,0 +1,51 @@
+# @qlik-coe-emea/qlabs-components-flow
+
+> Branded React Flow canvas, nodes, edges, controls, inspector.
+
+Import from `@qlik-coe-emea/qlabs-components-flow`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- Background
+- CanvasShell — Branded React Flow canvas wrapper with token-driven background + sane defaults.
+  - avoid: Hardcoding node/edge colors — use the flow-node/flow-edge tokens so the canvas matches the theme.
+  - avoid: Hiding the React Flow attribution without the appropriate license.
+  - avoid: Forgetting to import @xyflow/react/dist/style.css once in the consuming app.
+- Controls — Zoom / fit / lock controls for the agent workspace Canvas.
+  - avoid: Building a second zoom control in a Panel — one control cluster per canvas, or the two disagree.
+  - avoid: Dropping the keyboard path — every canvas action must stay reachable without a pointer.
+  - avoid: Stacking it under the canvas content — it is chrome and must stay above the graph and clickable.
+- FLOW_ALL_SIDE_HANDLES
+- FLOW_GROUP_NODE_TYPE
+- FlowButtonEdge
+- FlowEdge
+- FlowFloatingEdge
+- FlowGroupNode
+- FlowMiniMap
+- FlowNode — Branded custom React Flow node (title/subtitle/kind/icon/tone).
+  - avoid: Raw colors on the node — use flow-node tokens.
+- FlowPlaceholderNode
+- FlowSmartEdge
+- HANDLE_SIDES
+- HelperLines
+- InspectorPanel
+- Legend
+- MiniMap
+- Panel — A floating overlay panel pinned to a corner of the workspace Canvas.
+  - avoid: Using it as the app's side rail — that is ContextPanel; this floats over the graph.
+  - avoid: Filling a corner panel with a long scrollable list — it overlays the graph the user is trying to read.
+  - avoid: Stacking several panels in one corner — they occlude each other; give each corner one job.
+- Position
+- ReactFlow
+- ReactFlowProvider
+- ZoomControls
+
+## Hooks
+
+- useAutoLayout
+- useEdgesState
+- useFlowGroups
+- useFlowLayout
+- useHelperLines
+- useNodesState
+- useReactFlow

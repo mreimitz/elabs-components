@@ -1,0 +1,22 @@
+node_modules
+dist
+storybook-static
+coverage
+pnpm-lock.yaml
+registry/__output
+.turbo
+*.min.*
+# Generated artifact — the brand-ui CLI is its single source of truth (WP-10 #85).
+# Excluded so the stale-gate diffs the generator's exact output, not Prettier's.
+brand-ui.manifest.json
+# Generated agent docs (WP-03 #87/#156/#82) — same single-source rule: their
+# stale-gates (`pnpm inventory:check` / `llms:check` / `context:check`) diff the
+# generator's exact output, so Prettier must not reformat them.
+apps/docs/public/component-inventory.md
+apps/docs/public/brand-ui-context.md
+apps/docs/public/llms.txt
+apps/docs/public/llms/
+# Generated cross-theme WCAG audit (#78) — same single-source rule: its stale-gate
+# (`pnpm audit-artifact:check`) diffs the generator's exact output byte-for-byte,
+# so Prettier's table padding must not touch it.
+apps/e2e/reports/theme-aa-audit.md
