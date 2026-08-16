@@ -38,7 +38,7 @@ Web access was available; key facts were verified against official docs
   semantic-token rules.
 - **Charts are library-agnostic:** `@elabs/components-charts` ships `MetricCard`/`MetricGrid`
   and a presentational `ChartCard` container (no heavy chart dependency). Series
-  should use the `--chart-1..5` tokens. Bring Recharts/visx/Chart.js per app.
+  should use the `--chart-1..12` tokens. Bring Recharts/visx/Chart.js per app.
 - **SplitPanel is static** (no drag-to-resize) for predictable SSR/tests; wrap
   with a resize library at the app level if needed.
 - **`lucide-react` is NOT a dependency of `@elabs/components-icons`** — that package's

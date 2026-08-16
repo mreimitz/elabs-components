@@ -30,7 +30,7 @@ export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
 
 /**
  * Presentational container for a chart. Intentionally chart-library-agnostic:
- * pass a Recharts/visx/Chart.js element as children and use the `--chart-1..5`
+ * pass a Recharts/visx/Chart.js element as children and use the `--chart-1..12`
  * tokens for series colors so charts theme with the rest of the system.
  */
 export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function ChartCard(

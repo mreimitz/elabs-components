@@ -18,6 +18,13 @@ in full below.
   under the 3:1 bar there. Hue is the shared identity; the rung is per-theme.
   Two hues moved noticeably: success from pine to emerald, and error from a
   pink-leaning crimson to an orange-leaning red.
+- **Warning is the one status tone whose light hue is not the authored one.**
+  Amber cannot be both bright and visible-as-a-mark on a near-white page: at the
+  authored hue, the contrast bar caps how light it may be, and at that lightness
+  the colour the screen can actually produce reads as brown. Light rotates a
+  little toward orange, which buys back the intensity, and its label ink flips
+  dark. Dark keeps the authored amber exactly. The two themes share the meaning,
+  not the hue — the same per-theme retune the chart ramp uses.
 - **The chart palette grew from five series to twelve.** Three hue families —
   the brand yellow, a blue and a grey — interleaved so the first three series
   drawn are one per family, and every one of the 66 pairs is perceptibly
@@ -26,6 +33,11 @@ in full below.
   actually show. Two members had to move on their own account: the deep slate was
   invisible on a dark card and was lifted a rung, and one grey took on a little
   blue to stay apart from its neighbour.
+- **Charts actually use all twelve now.** Every chart family that assigns colours
+  automatically — pies, rings, radars, scatter series and the spec-driven
+  auto-chart — cycles through the full twelve before repeating, where it used to
+  wrap after five. The colour picker offers all twelve as swatches, and the
+  Foundations palette page shows them.
 - **The focus ring is now the primary brand colour.** In the dark theme this is
   unambiguously good — the ring is bright lime on charcoal.
   **In the light theme it is a regression, and an intentional one:** the lime

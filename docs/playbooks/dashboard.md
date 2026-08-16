@@ -75,7 +75,7 @@ import {
 ```
 
 `ChartFrame` adds expand / table-view / CSV-download for free when you pass
-`data`. Series colors are `var(--chart-1..5)` only — they retheme with the app.
+`data`. Series colors are `var(--chart-1..12)` only — they retheme with the app.
 
 KPI tiles:
 

@@ -36,7 +36,7 @@ example and the default registry, not the menu.
   provider's registry, so it needs no `themes` prop of its own. Full recipe:
   `docs/CONSUMING.md` §5.1.
 - **Every theme overrides every token.** A theme block must set the full
-  semantic set (surfaces, sidebar, canvas/flow, chat, chart-1..5, radius). A
+  semantic set (surfaces, sidebar, canvas/flow, chat, chart-1..12, radius). A
   missing token falls back to `:root` and usually looks wrong. **Enforced** by the
   theme-token-parity gate (`pnpm theme-parity:check`, #89): every theme block must
   define every semantic token the other blocks define — root-only machinery

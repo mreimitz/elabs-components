@@ -187,13 +187,20 @@ const GROUPS: TokenGroup[] = [
   {
     heading: "Categorical data palette",
     blurb:
-      "The five-series chart palette (`@elabs/components-charts`). Re-tuned per theme; under monochrome themes series are also differentiated by pattern, not hue alone.",
+      "The twelve-series chart palette (`@elabs/components-charts`) — three interleaved hue families (yellow, blue, grey) so adjacent series never share a family. Re-tuned per theme; under monochrome themes series are also differentiated by pattern, not hue alone.",
     tokens: [
       { varName: "--chart-1", utility: "bg-chart-1" },
       { varName: "--chart-2", utility: "bg-chart-2" },
       { varName: "--chart-3", utility: "bg-chart-3" },
       { varName: "--chart-4", utility: "bg-chart-4" },
       { varName: "--chart-5", utility: "bg-chart-5" },
+      { varName: "--chart-6", utility: "bg-chart-6" },
+      { varName: "--chart-7", utility: "bg-chart-7" },
+      { varName: "--chart-8", utility: "bg-chart-8" },
+      { varName: "--chart-9", utility: "bg-chart-9" },
+      { varName: "--chart-10", utility: "bg-chart-10" },
+      { varName: "--chart-11", utility: "bg-chart-11" },
+      { varName: "--chart-12", utility: "bg-chart-12" },
     ],
   },
 ];

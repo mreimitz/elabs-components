@@ -38,7 +38,7 @@ Lines & focus: `--border`, `--input`, `--ring`.
 App chrome: `--sidebar(-foreground/-border/-accent/-muted-foreground...)`.
 Canvas/flow: `--canvas`, `--canvas-grid`, `--flow-node(-foreground)`, `--flow-edge`.
 Chat: `--chat-user(-foreground)`, `--chat-assistant(-foreground)`.
-Data: `--chart-1..5`. Shape: `--radius` (+ derived `--radius-sm/md/lg/xl`).
+Data: `--chart-1..12`. Shape: `--radius` (+ derived `--radius-sm/md/lg/xl`).
 
 ## Rules
 

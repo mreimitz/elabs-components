@@ -22,7 +22,7 @@ Steps:
    overrides **every** semantic token defined in `:root`. Do not add new token
    names unless you also map them in `themes.css`'s `@theme inline` block.
    - Use `oklch()` values. Keep text/background pairs WCAG AA (4.5:1 body text).
-   - Cover the full set: surfaces, sidebar, canvas/flow, chat, chart-1..5, radius.
+   - Cover the full set: surfaces, sidebar, canvas/flow, chat, chart-1..12, radius.
      `THEME_TOKEN_NAMES` is the machine-readable contract.
    - Declare `color-scheme: light|dark` — it is load-bearing, not decoration:
      `resolveThemeIsDark()` reads it to swap Monaco/basemap/Sonner assets.

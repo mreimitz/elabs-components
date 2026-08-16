@@ -10,12 +10,19 @@ export const pieCssVars = {
   foreground: "var(--chart-foreground)",
   foregroundMuted: "var(--chart-foreground-muted)",
   label: "var(--chart-label)",
-  // Default slice colors from chart palette
+  // Default slice colors from chart palette (`--chart-1` … `--chart-12`)
   slice1: "var(--chart-1)",
   slice2: "var(--chart-2)",
   slice3: "var(--chart-3)",
   slice4: "var(--chart-4)",
   slice5: "var(--chart-5)",
+  slice6: "var(--chart-6)",
+  slice7: "var(--chart-7)",
+  slice8: "var(--chart-8)",
+  slice9: "var(--chart-9)",
+  slice10: "var(--chart-10)",
+  slice11: "var(--chart-11)",
+  slice12: "var(--chart-12)",
 };
 
 // Default slice color palette
@@ -25,6 +32,13 @@ export const defaultPieColors = [
   pieCssVars.slice3,
   pieCssVars.slice4,
   pieCssVars.slice5,
+  pieCssVars.slice6,
+  pieCssVars.slice7,
+  pieCssVars.slice8,
+  pieCssVars.slice9,
+  pieCssVars.slice10,
+  pieCssVars.slice11,
+  pieCssVars.slice12,
 ];
 
 export interface PieData {

@@ -11,12 +11,19 @@ export const ringCssVars = {
   foregroundMuted: "var(--chart-foreground-muted)",
   label: "var(--chart-label)",
   ringBackground: "var(--chart-ring-background)",
-  // Default ring colors from chart palette
+  // Default ring colors from chart palette (`--chart-1` … `--chart-12`)
   ring1: "var(--chart-1)",
   ring2: "var(--chart-2)",
   ring3: "var(--chart-3)",
   ring4: "var(--chart-4)",
   ring5: "var(--chart-5)",
+  ring6: "var(--chart-6)",
+  ring7: "var(--chart-7)",
+  ring8: "var(--chart-8)",
+  ring9: "var(--chart-9)",
+  ring10: "var(--chart-10)",
+  ring11: "var(--chart-11)",
+  ring12: "var(--chart-12)",
 };
 
 // Default ring color palette
@@ -26,6 +33,13 @@ export const defaultRingColors = [
   ringCssVars.ring3,
   ringCssVars.ring4,
   ringCssVars.ring5,
+  ringCssVars.ring6,
+  ringCssVars.ring7,
+  ringCssVars.ring8,
+  ringCssVars.ring9,
+  ringCssVars.ring10,
+  ringCssVars.ring11,
+  ringCssVars.ring12,
 ];
 
 /**

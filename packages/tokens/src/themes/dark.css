@@ -89,7 +89,7 @@
   /* #334 — success is its own emerald, never the brand hue. Same role split as
      light: the brand is the ACTION, success is a status. Unchanged by the
      Phase-4 debrand for the same reason as light — the brand moved away from
-     it, not toward it. */
+     it, not toward it.
      #10B981 verbatim; hue moved pine 170 -> emerald 162.5 with it. */
   --success: oklch(0.696 0.149 162.5);
   --success-foreground: oklch(0.22 0.01 257);

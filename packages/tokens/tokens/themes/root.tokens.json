@@ -106,17 +106,17 @@
   },
   "warning": {
     "$type": "color",
-    "$value": "oklch(0.555 0.12 70.1)",
-    "$description": "Warning/caution fill. Deep amber: a colour-only warning mark must clear WCAG 1.4.11 (≥3:1) on every content surface (#381)."
+    "$value": "oklch(0.635 0.157 55)",
+    "$description": "Warning/caution fill. Burnt orange: a colour-only warning mark must clear WCAG 1.4.11 (≥3:1) on every content surface (#381), and at the authored amber's hue 70 that bar forces a lightness/chroma pair that reads brown — hue 55 buys chroma at the same lightness."
   },
   "warning-foreground": {
     "$type": "color",
-    "$value": "oklch(0.985 0 0)",
-    "$description": "Ink on a --warning fill. Light, because the fill is a deep amber plate (#381) — same polarity as its success/info/destructive siblings."
+    "$value": "oklch(0.2 0.02 55)",
+    "$description": "Ink on a --warning fill. Dark, because the fill is bright enough that light ink is sub-AA (3.45:1) — the one status plate here whose ink polarity is reversed."
   },
   "warning-text": {
     "$type": "color",
-    "$value": "oklch(0.535 0.114 70.1)",
+    "$value": "oklch(0.53 0.13 55)",
     "$description": "On-surface warning TEXT color; ≥4.5:1 on content surfaces."
   },
   "info": {

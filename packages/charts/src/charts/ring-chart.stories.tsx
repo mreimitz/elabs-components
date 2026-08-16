@@ -19,7 +19,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Channel breakdown: value + maxValue drive progress per ring (--chart-1..5 tokens). */
+/** Channel breakdown: value + maxValue drive progress per ring (--chart-1..12 tokens). */
 const ringData = [
   { label: "Email", value: 42, maxValue: 100 },
   { label: "Social", value: 28, maxValue: 100 },

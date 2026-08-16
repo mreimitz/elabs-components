@@ -15,7 +15,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Traffic-funnel flow: acquisition sources → landing → product → checkout.
- *  Node colors cycle through --chart-1..5 tokens; links use --chart-foreground-muted. */
+ *  Node colors cycle through --chart-1..12 tokens; links use --chart-foreground-muted. */
 const funnelData = {
   nodes: [
     { name: "Paid Ads", category: "source" as const },

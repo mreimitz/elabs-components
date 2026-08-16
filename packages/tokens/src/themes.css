@@ -190,7 +190,7 @@
      destructive/warning white. Committing the FILL instead, the way #381 did for
      `--warning`, restores one polarity for the whole family. Deepening a fill can
      only RAISE its 1.4.11 mark rung: 4.60-5.61:1 on the content surfaces, up
-     from 3.36-4.10:1. */
+     from 3.36-4.10:1.
      Hue moved 150 -> EMERALD 162.5 with the authored signal palette. */
   --success: oklch(0.535 0.115 162.5);
   /* #406 — back to white, the polarity the rest of the family uses. */
@@ -205,16 +205,22 @@
      chroma, so "amber that reads on white" means darkening past its most
      saturated point. The ink flips with it (light, like the success/info/
      destructive siblings) — one token cannot be both a light plate under dark
-     ink AND a mark on a light surface. Now 4.29-4.82:1 on the content surfaces
-     and 4.62:1 for its own ink. */
-     Hue 80 -> 70.1, the authored AMBER. */
-  --warning: oklch(0.555 0.12 70.1);
-  --warning-foreground: oklch(0.985 0 0);
+     ink AND a mark on a light surface. Now 3.12-3.60:1 on the content surfaces
+     and 5.03:1 for its own ink.
+     Hue 80 -> 55, NOT the authored amber's 70.1: at hue 70 the ≥3:1 bar caps
+     lightness at L 0.635 where the gamut caps chroma at 0.137, and the result
+     reads BROWN. Hue 55 buys chroma at the same lightness and lands a burnt
+     orange that still reads as caution. Matches `themes/light.css`; the dark
+     theme keeps the authored #F59E0B. The ink is DARK here — light ink on a
+     fill this bright is 3.45:1, sub-AA — so warning is the one status plate in
+     this block with dark ink. */
+  --warning: oklch(0.635 0.157 55);
+  --warning-foreground: oklch(0.2 0.02 55);
   /* On-surface TEXT variant of warning (amber TEXT clears AA on surfaces).
-     Sibling of success/destructive-text; a shade lighter than the fill. */
-  --warning-text: oklch(0.535 0.114 70.1);
+     Sibling of success/destructive-text; a shade darker than the fill. */
+  --warning-text: oklch(0.53 0.13 55);
   /* #406 — DEEPENED from `oklch(0.6 0.15 240)`, same one-polarity reasoning as
-     `--success` above. Mark rung 4.68-5.71:1, up from 3.42-4.17:1. */
+     `--success` above. Mark rung 4.68-5.71:1, up from 3.42-4.17:1.
      Hue 240 -> 237.3, the authored SKY blue. */
   --info: oklch(0.545 0.12 237.3);
   /* #406 — back to white. */

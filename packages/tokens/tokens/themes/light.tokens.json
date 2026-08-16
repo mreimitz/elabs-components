@@ -85,15 +85,15 @@
   },
   "warning": {
     "$type": "color",
-    "$value": "oklch(0.555 0.12 70.1)"
+    "$value": "oklch(0.635 0.157 55)"
   },
   "warning-foreground": {
     "$type": "color",
-    "$value": "oklch(0.985 0 0)"
+    "$value": "oklch(0.2 0.02 55)"
   },
   "warning-text": {
     "$type": "color",
-    "$value": "oklch(0.535 0.114 70.1)"
+    "$value": "oklch(0.53 0.13 55)"
   },
   "info": {
     "$type": "color",

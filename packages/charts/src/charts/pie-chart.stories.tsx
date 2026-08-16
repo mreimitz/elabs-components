@@ -24,7 +24,7 @@ const trafficData = [
   { label: "Other", value: 70 },
 ];
 
-/** Solid pie with token-driven slice colors (--chart-1..5) */
+/** Solid pie with token-driven slice colors (--chart-1..12) */
 export const Default: Story = {
   render: () => (
     <div className="h-72 w-[560px]">

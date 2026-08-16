@@ -31,7 +31,14 @@ export type ColorToken =
   | "chart-2"
   | "chart-3"
   | "chart-4"
-  | "chart-5";
+  | "chart-5"
+  | "chart-6"
+  | "chart-7"
+  | "chart-8"
+  | "chart-9"
+  | "chart-10"
+  | "chart-11"
+  | "chart-12";
 
 /** All recognised token names in display order. */
 export const COLOR_TOKENS: ColorToken[] = [
@@ -40,6 +47,13 @@ export const COLOR_TOKENS: ColorToken[] = [
   "chart-3",
   "chart-4",
   "chart-5",
+  "chart-6",
+  "chart-7",
+  "chart-8",
+  "chart-9",
+  "chart-10",
+  "chart-11",
+  "chart-12",
   "primary",
   "secondary",
   "destructive",
@@ -59,6 +73,13 @@ const TOKEN_BG: Record<ColorToken, string> = {
   "chart-3": "bg-chart-3",
   "chart-4": "bg-chart-4",
   "chart-5": "bg-chart-5",
+  "chart-6": "bg-chart-6",
+  "chart-7": "bg-chart-7",
+  "chart-8": "bg-chart-8",
+  "chart-9": "bg-chart-9",
+  "chart-10": "bg-chart-10",
+  "chart-11": "bg-chart-11",
+  "chart-12": "bg-chart-12",
   primary: "bg-primary",
   secondary: "bg-secondary",
   destructive: "bg-destructive",

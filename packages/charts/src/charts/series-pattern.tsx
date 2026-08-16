@@ -5,7 +5,7 @@
  *
  * Issue #164. Once a theme removes hue (any region at high
  * `--decoration`), chart series can no longer be told apart by color. This module
- * is the pattern-domain analogue of the `--chart-1..5` color ramp: it maps a
+ * is the pattern-domain analogue of the `--chart-1..12` color ramp: it maps a
  * series index to a COMBINABLE, deterministic non-color encoding — an SVG hatch/
  * dot/grid `<pattern>` (for filled series: bar/area/pie/scatter) plus a
  * stroke-dash + marker-shape (for stroke series: line/sparkline/area outline).

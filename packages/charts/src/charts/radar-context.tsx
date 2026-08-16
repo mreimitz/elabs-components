@@ -11,12 +11,19 @@ export const radarCssVars = {
   label: "var(--chart-label, oklch(0.65 0.01 260))",
   grid: "var(--chart-grid)",
   border: "var(--border)",
-  // Default radar colors from chart palette
+  // Default radar colors from chart palette (`--chart-1` … `--chart-12`)
   area1: "var(--chart-1)",
   area2: "var(--chart-2)",
   area3: "var(--chart-3)",
   area4: "var(--chart-4)",
   area5: "var(--chart-5)",
+  area6: "var(--chart-6)",
+  area7: "var(--chart-7)",
+  area8: "var(--chart-8)",
+  area9: "var(--chart-9)",
+  area10: "var(--chart-10)",
+  area11: "var(--chart-11)",
+  area12: "var(--chart-12)",
 };
 
 // Default radar color palette
@@ -26,6 +33,13 @@ export const defaultRadarColors = [
   radarCssVars.area3,
   radarCssVars.area4,
   radarCssVars.area5,
+  radarCssVars.area6,
+  radarCssVars.area7,
+  radarCssVars.area8,
+  radarCssVars.area9,
+  radarCssVars.area10,
+  radarCssVars.area11,
+  radarCssVars.area12,
 ];
 
 export interface RadarMetric {
@@ -38,7 +52,7 @@ export interface RadarMetric {
 export interface RadarData {
   /** Display label for this data series */
   label: string;
-  /** Color for this data series (defaults to chart-1 through chart-5) */
+  /** Color for this data series (defaults to chart-1 through chart-12) */
   color?: string;
   /** Metric values (key -> value, normalized 0-100) */
   values: Record<string, number>;
