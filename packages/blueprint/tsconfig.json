@@ -1,8 +1,0 @@
-{
-  "extends": "@elabs/components-typescript-config/react-library.json",
-  "compilerOptions": {
-    "types": ["react", "react-dom", "vitest/globals", "@testing-library/jest-dom"]
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.stories.tsx"]
-}
