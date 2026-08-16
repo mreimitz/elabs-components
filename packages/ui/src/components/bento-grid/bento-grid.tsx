@@ -1,18 +1,26 @@
 "use client";
 
 /**
- * BentoGrid + BentoGridItem — "spotlight bento" layout.
+ * BentoGrid + BentoGridItem — a hover-elevation bento layout.
  *
- * A responsive dense CSS-grid container with a reduced-motion-safe cursor-
- * following spotlight on each tile. The spotlight color is a DERIVED tint of the
- * `--primary` token (`color-mix(in oklch, var(--primary) 12%, transparent)`), so
- * it stays theme-correct in every theme with no raw colors and no extra token.
- * Under OS reduced-motion the spotlight is suppressed entirely
- * (`motion-reduce:hidden`); tiles still respond to hover/focus with their normal
- * card states.
+ * A responsive dense CSS-grid container. **The default separation gesture is
+ * ELEVATION, not colour:** the grid rests flat (`shadow-none` — border only) and
+ * each tile rises ~4px into `shadow-xl` with a brand-tinted edge on hover, so the
+ * tile under the pointer clearly separates from the sheet.
+ *
+ * The cursor-following **spotlight is OPT-IN** (`spotlight`, default `false`) —
+ * set it on the `BentoGrid` to enable it for every tile, or per tile to override
+ * the grid. Its colour is a DERIVED tint of the `--primary` token
+ * (`color-mix(in oklch, var(--primary) 12%, transparent)`), so it stays
+ * theme-correct in every theme with no raw colors and no extra token. Under OS
+ * reduced-motion the spotlight is suppressed entirely (`motion-reduce:hidden`);
+ * tiles still respond to hover/focus with their normal card states.
  *
  * Key design choices:
- * - `BentoGridItem` composes `Card` (inherits card surface/border/radius).
+ * - `BentoGridItem` composes `Card` (inherits card surface/border/radius) and
+ *   then overrides the resting `shadow-sm` down to `shadow-none`.
+ * - Under reduced motion the travel is neutralized and the transition dropped —
+ *   the shadow and the edge still state the hover ("reduced != none").
  * - Spans are inline `grid-column/grid-row` and collapse to one cell on the
  *   1-column mobile grid (the browser caps a span at the available tracks).
  * - The tile is presentational; for a clickable tile, place an interactive inner
@@ -22,10 +30,26 @@
  * - Motion is gated via `duration-base` / `ease-standard` (token-backed).
  */
 
-import { forwardRef, useRef, useCallback, type CSSProperties, type HTMLAttributes } from "react";
+import {
+  createContext,
+  forwardRef,
+  use,
+  useRef,
+  useCallback,
+  type CSSProperties,
+  type HTMLAttributes,
+} from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
 import { cardVariants } from "../card/card";
+
+// ---------------------------------------------------------------------------
+// Context — the grid hands its spotlight default down to every tile so a whole
+// bento can opt in with ONE prop instead of repeating it on every child. A tile's
+// own `spotlight` prop always wins.
+// ---------------------------------------------------------------------------
+
+const BentoGridContext = createContext<{ spotlight: boolean }>({ spotlight: false });
 
 // ---------------------------------------------------------------------------
 // BentoGrid
@@ -34,6 +58,13 @@ import { cardVariants } from "../card/card";
 export interface BentoGridProps extends HTMLAttributes<HTMLDivElement> {
   /** Additional className merged via cn(). */
   className?: string;
+  /**
+   * Enable the cursor-following spotlight on every tile in this grid. Individual
+   * tiles can still opt out (or in) with their own `spotlight` prop. Disabled
+   * entirely under OS `prefers-reduced-motion` regardless of this prop.
+   * @default false
+   */
+  spotlight?: boolean;
 }
 
 /**
@@ -42,25 +73,29 @@ export interface BentoGridProps extends HTMLAttributes<HTMLDivElement> {
  * - `grid-auto-flow: dense` fills in gaps left by spanning tiles.
  * - `auto-rows-[14rem]` gives a baseline row height (14rem ≈ 224px); tiles can
  *   span multiple rows via the `size` / `span.row` API.
+ * - Carries the grid-wide `spotlight` default for its tiles (opt-in).
  */
 export const BentoGrid = forwardRef<HTMLDivElement, BentoGridProps>(function BentoGrid(
-  { className, children, ...props },
+  { className, spotlight = false, children, ...props },
   ref,
 ) {
   return (
-    <div
-      ref={ref}
-      className={cn(
-        "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
-        "[grid-auto-flow:dense]",
-        "auto-rows-[14rem]",
-        "gap-4",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </div>
+    <BentoGridContext value={{ spotlight }}>
+      <div
+        ref={ref}
+        data-slot="bento-grid"
+        className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+          "[grid-auto-flow:dense]",
+          "auto-rows-[14rem]",
+          "gap-4",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    </BentoGridContext>
   );
 });
 
@@ -102,6 +137,32 @@ export const bentoGridItemVariants = cva(
     "flex flex-col",
     // Ensure long unbroken strings can't overflow the tile.
     "min-w-0 break-words",
+    // ELEVATION IS THE HOVER GESTURE. The grid rests FLAT — `shadow-none` beats
+    // the `shadow-sm` inherited from `cardVariants` (tailwind-merge, later wins)
+    // so a bento sheet reads as one plane, not a field of lifted chips. On hover
+    // the single tile under the pointer rises to `shadow-lg`, a stacked rung of
+    // the ONE elevation ramp (never a hand-rolled box-shadow). The rung is
+    // `hover:`-prefixed, so pairing it with the card border is the sanctioned
+    // "bordered card, hover lift" shape, not the flagged double edge.
+    "shadow-none hover:shadow-xl",
+    // Shadow alone is a LIGHT-theme signal: the ramp's ink is black, so on a dark
+    // ground even `shadow-xl` is faint (measured on `theme:dark` — the hovered tile
+    // was hard to pick out). The hover EDGE carries the lift there. It is
+    // `ring/40`, the same tint `Card interactive` uses — NOT `border-strong`, which
+    // is a near-charcoal 0.65 L against a 0.88 L resting border and reads as a hard
+    // outline snapping on, not as a lift. At 40% the brand hue stays a soft warm
+    // edge on white and a clearly brighter one on charcoal.
+    "hover:border-ring/40",
+    // A lift you can SEE: ~4px of travel. Below ~16px a slide is a flicker, but a
+    // hover-lift is the exception the motion guidelines size at ≥4px — and the
+    // travel, not the duration, is what makes the elevation legible.
+    "hover:-translate-y-1 motion-reduce:hover:translate-y-0",
+    // `ease-entrance` (easeOutQuint) — a near-zero arrival velocity is the #1
+    // smoothness lever; `ease-standard` snaps at the end. Duration stays at the
+    // 260ms `base` rung: lengthening it does NOT fix abruptness. Under OS
+    // reduced-motion the travel is neutralized and the transition is dropped, so
+    // the shadow + edge still state the hover without any movement.
+    "transition-[translate,box-shadow,border-color] duration-base ease-entrance motion-reduce:transition-none",
   ].join(" "),
   {
     variants: {
@@ -112,12 +173,12 @@ export const bentoGridItemVariants = cva(
       },
       /**
        * Interactive tiles (those holding a clickable inner element, e.g. a
-       * stretched link) get a pointer cursor, a hover border accent, and a
-       * `focus-within` ring so keyboard focus on the inner control is visible on
-       * the whole tile.
+       * stretched link) get a pointer cursor and a `focus-within` ring so keyboard
+       * focus on the inner control is visible on the whole tile. The hover lift
+       * (elevation + edge) is on the base — every tile lifts, clickable or not.
        */
       interactive: {
-        true: "cursor-pointer transition-[border-color,box-shadow] duration-base ease-standard hover:border-border-strong focus-within:outline-none focus-within:ring-2 focus-within:ring-ring motion-reduce:transition-none",
+        true: "cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-ring",
         false: "",
       },
     },
@@ -139,15 +200,18 @@ export interface BentoGridItemProps extends HTMLAttributes<HTMLDivElement>, Bent
    */
   span?: { col?: number; row?: number };
   /**
-   * Enable the cursor-following spotlight gradient. Disabled entirely under
-   * OS `prefers-reduced-motion` regardless of this prop.
-   * @default true
+   * Enable the cursor-following spotlight gradient on this tile. Omit to inherit
+   * the parent `BentoGrid`'s `spotlight` (itself `false` by default) — so the
+   * effect is opt-in, per grid or per tile. Disabled entirely under OS
+   * `prefers-reduced-motion` regardless of this prop.
+   * @default false (inherited from BentoGrid)
    */
   spotlight?: boolean;
 }
 
 /**
- * A single bento tile. Composes `Card` and adds the spotlight overlay.
+ * A single bento tile. Composes `Card`, rests flat, lifts to `shadow-lg` on
+ * hover, and adds the OPT-IN spotlight overlay.
  *
  * Spotlight:
  * - Sets `--bento-x` / `--bento-y` CSS custom properties on `onMouseMove`
@@ -159,11 +223,14 @@ export interface BentoGridItemProps extends HTMLAttributes<HTMLDivElement>, Bent
  * - Suppressed with `motion-reduce:hidden` — cursor-following IS motion.
  */
 export const BentoGridItem = forwardRef<HTMLDivElement, BentoGridItemProps>(function BentoGridItem(
-  { size = "sm", span, spotlight = true, hero, interactive, className, style, children, ...props },
+  { size = "sm", span, spotlight, hero, interactive, className, style, children, ...props },
   ref,
 ) {
   const tileRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Own prop wins; otherwise inherit the grid's opt-in (default false).
+  const spotlightOn = spotlight ?? use(BentoGridContext).spotlight;
 
   // Resolve spans: explicit span wins over size preset.
   const resolvedCol = span?.col ?? SIZE_SPANS[size].col;
@@ -179,7 +246,7 @@ export const BentoGridItem = forwardRef<HTMLDivElement, BentoGridItemProps>(func
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!spotlight || !tileRef.current || !overlayRef.current) return;
+      if (!spotlightOn || !tileRef.current || !overlayRef.current) return;
       // Cancel pending rAF to debounce rapid moves.
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
@@ -193,7 +260,7 @@ export const BentoGridItem = forwardRef<HTMLDivElement, BentoGridItemProps>(func
         overlayRef.current.style.opacity = "1";
       });
     },
-    [spotlight],
+    [spotlightOn],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -236,14 +303,15 @@ export const BentoGridItem = forwardRef<HTMLDivElement, BentoGridItemProps>(func
         className,
       )}
       style={gridStyle}
+      data-slot="bento-grid-item"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       {...props}
     >
-      {/* Spotlight overlay — decorative, pointer-events-none, aria-hidden.
+      {/* Spotlight overlay — OPT-IN, decorative, pointer-events-none, aria-hidden.
             Hidden in full under reduced-motion (the cursor-following IS the motion).
             Color is a color-mix tint of --primary (token-derived, no raw color). */}
-      {spotlight && (
+      {spotlightOn && (
         <div
           ref={overlayRef}
           aria-hidden="true"

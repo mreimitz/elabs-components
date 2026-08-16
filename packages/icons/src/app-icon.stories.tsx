@@ -2,7 +2,7 @@
  * AppIcon — the standard product/brand mark for app chrome.
  *
  * Built on `BrandLogo`, so it's theme-correct automatically (each theme's approved
- * colorway). In `morph="auto"` it shows the full lockup — the gear-and-hull glyph
+ * colorway). In `morph="auto"` it shows the full lockup — the hatched-circle glyph
  * plus `title` as the wordmark — and collapses to the glyph alone when its enclosing
  * `Sidebar` collapses to the icon rail, a width + crossfade morph. Use it everywhere
  * an app icon appears; pass your own `title` to get your own lockup.

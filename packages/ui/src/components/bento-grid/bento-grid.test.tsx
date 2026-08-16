@@ -43,16 +43,55 @@ describe("BentoGridItem", () => {
     expect(item.style.gridRow).toBe("");
   });
 
-  it("renders the spotlight overlay by default and omits it when spotlight is false", () => {
+  it("omits the spotlight overlay by default and renders it when opted in", () => {
     const { rerender } = render(<BentoGridItem data-testid="item">x</BentoGridItem>);
-    expect(screen.getByTestId("bento-spotlight")).toBeInTheDocument();
+    expect(screen.queryByTestId("bento-spotlight")).toBeNull();
 
     rerender(
-      <BentoGridItem data-testid="item" spotlight={false}>
+      <BentoGridItem data-testid="item" spotlight>
         x
       </BentoGridItem>,
     );
-    expect(screen.queryByTestId("bento-spotlight")).toBeNull();
+    expect(screen.getByTestId("bento-spotlight")).toBeInTheDocument();
+  });
+
+  it("inherits the grid's spotlight opt-in, and a tile's own prop wins", () => {
+    render(
+      <BentoGrid spotlight>
+        <BentoGridItem data-testid="inherited">a</BentoGridItem>
+        <BentoGridItem data-testid="opted-out" spotlight={false}>
+          b
+        </BentoGridItem>
+      </BentoGrid>,
+    );
+    expect(screen.getByTestId("inherited").querySelector("[data-testid=bento-spotlight]")).not.toBe(
+      null,
+    );
+    expect(
+      screen.getByTestId("opted-out").querySelector("[data-testid=bento-spotlight]"),
+    ).toBeNull();
+  });
+
+  it("rests flat and lifts to a visible elevation on hover", () => {
+    render(<BentoGridItem data-testid="item">x</BentoGridItem>);
+    const item = screen.getByTestId("item");
+    // No resting elevation — the Card `shadow-sm` is overridden down to none...
+    expect(item.className).toMatch(/(?:^|\s)shadow-none(?:\s|$)/);
+    expect(item.className).not.toMatch(/(?:^|\s)shadow-sm(?:\s|$)/);
+    // ...and the hover state reaches a clearly readable rung of the ONE ramp.
+    expect(item.className).toMatch(/hover:shadow-xl/);
+    // The black-ink shadow all but vanishes on a dark ground, so the hover edge is
+    // the channel that carries the lift there — it must ride the base, not the
+    // `interactive` variant (a plain, non-clickable tile lifts too). It is the
+    // soft `ring/40` tint, never the hard `border-strong` outline.
+    expect(item.className).toMatch(/hover:border-ring\/40/);
+    expect(item.className).not.toMatch(/hover:border-border-strong/);
+    // ~4px of travel, neutralized (not dropped) under reduced motion.
+    expect(item.className).toMatch(/hover:-translate-y-1/);
+    expect(item.className).toMatch(/motion-reduce:hover:translate-y-0/);
+    // Smoothness comes from the arrival curve, not from a longer duration.
+    expect(item.className).toMatch(/transition-\[translate,box-shadow,border-color\]/);
+    expect(item.className).toMatch(/ease-entrance/);
   });
 
   it("supports the stretched-link pattern with a focus-within ring when interactive", () => {

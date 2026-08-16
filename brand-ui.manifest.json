@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T16:46:41.216Z",
+  "generatedAt": "2026-08-16T17:24:10.761Z",
   "name": "brand-ui",
   "themes": [
     "dark"
@@ -19111,6 +19111,12 @@
               "optional": true,
               "type": "string",
               "description": "Additional className merged via cn()."
+            },
+            {
+              "name": "spotlight",
+              "optional": true,
+              "type": "boolean",
+              "description": "Enable the cursor-following spotlight on every tile in this grid. Individual tiles can still opt out (or in) with their own `spotlight` prop. Disabled entirely under OS `prefers-reduced-motion` regardless of this prop. @default false"
             }
           ]
         },
@@ -19136,7 +19142,7 @@
               "name": "spotlight",
               "optional": true,
               "type": "boolean",
-              "description": "Enable the cursor-following spotlight gradient. Disabled entirely under OS `prefers-reduced-motion` regardless of this prop. @default true"
+              "description": "Enable the cursor-following spotlight gradient on this tile. Omit to inherit the parent `BentoGrid`'s `spotlight` (itself `false` by default) — so the effect is opt-in, per grid or per tile. Disabled entirely under OS `prefers-reduced-motion` regardless of this prop. @default false (inherited from BentoGrid)"
             }
           ]
         },

@@ -207,7 +207,7 @@
   "packages/ui/src/components/attribution-panel/attribution-panel.tsx": [3, 3],
   "packages/ui/src/components/avatar/avatar.tsx": [3, 0],
   "packages/ui/src/components/badge/badge.tsx": [1, 0],
-  "packages/ui/src/components/bento-grid/bento-grid.tsx": [2, 0],
+  "packages/ui/src/components/bento-grid/bento-grid.tsx": [2, 2],
   "packages/ui/src/components/bounded-number/bounded-number.tsx": [1, 2],
   "packages/ui/src/components/breadcrumb/breadcrumb.tsx": [7, 0],
   "packages/ui/src/components/button-group/button-group.tsx": [3, 2],

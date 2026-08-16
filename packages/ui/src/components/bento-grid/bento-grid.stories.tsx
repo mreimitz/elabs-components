@@ -21,7 +21,12 @@ function Tile({ title, body }: { title: string; body?: string }) {
   );
 }
 
-/** A 6-tile overview: one hero (2×2, gradient wash) + five supporting tiles. */
+/**
+ * A 6-tile overview: one hero (2×2, gradient wash) + five supporting tiles.
+ *
+ * The grid rests FLAT — no tile carries an elevation at rest, so the sheet reads
+ * as one plane. Hover a tile and it alone lifts to `shadow-lg`.
+ */
 export const Default: Story = {
   render: () => (
     <div className="p-6">
@@ -29,7 +34,7 @@ export const Default: Story = {
         <BentoGridItem size="hero">
           <Tile
             title="Revenue"
-            body="Up 24% this quarter — the headline the team opens the dashboard for. Hover any tile for the spotlight."
+            body="Up 24% this quarter — the headline the team opens the dashboard for. Hover any tile: it lifts, the rest stay flat."
           />
         </BentoGridItem>
         <BentoGridItem size="sm">
@@ -82,6 +87,36 @@ export const Interactive: Story = {
   ),
 };
 
+/**
+ * The cursor-following spotlight is OPT-IN. Set `spotlight` on the `BentoGrid`
+ * to enable it for every tile; a tile's own `spotlight` prop still wins, so one
+ * tile can opt back out. Suppressed entirely under OS reduced-motion — the hover
+ * elevation carries the interaction on its own there.
+ */
+export const Spotlight: Story = {
+  render: () => (
+    <div className="p-6">
+      <BentoGrid spotlight>
+        <BentoGridItem size="hero">
+          <Tile
+            title="Revenue"
+            body="A primary-tinted glow follows the cursor across the tile, on top of the hover lift."
+          />
+        </BentoGridItem>
+        <BentoGridItem>
+          <Tile title="Active users" body="12,480" />
+        </BentoGridItem>
+        <BentoGridItem>
+          <Tile title="Churn" body="1.2%" />
+        </BentoGridItem>
+        <BentoGridItem size="md" spotlight={false}>
+          <Tile title="Opted out" body="spotlight={false} — lifts on hover, no glow." />
+        </BentoGridItem>
+      </BentoGrid>
+    </div>
+  ),
+};
+
 /** Explicit `span` overrides the size presets for bespoke layouts. */
 export const ExplicitSpans: Story = {
   render: () => (
@@ -107,7 +142,7 @@ export const ExplicitSpans: Story = {
   ),
 };
 
-/** Edge states: a very long unbroken string (must not overflow) and a spotlight opt-out. */
+/** Edge states: a very long unbroken string (must not overflow) and a per-tile spotlight opt-in. */
 export const EdgeStates: Story = {
   render: () => (
     <div className="p-6">
@@ -118,8 +153,8 @@ export const EdgeStates: Story = {
             body="supercalifragilisticexpialidocious-antidisestablishmentarianism-pneumonoultramicroscopicsilicovolcanoconiosis"
           />
         </BentoGridItem>
-        <BentoGridItem spotlight={false}>
-          <Tile title="No spotlight" body="spotlight={false}" />
+        <BentoGridItem spotlight>
+          <Tile title="Spotlight" body="spotlight — on one tile only" />
         </BentoGridItem>
         <BentoGridItem>
           <Tile title="Plain" />

@@ -59,10 +59,10 @@ of already-lifted chips with a decorative effect nobody had asked for.
 
 - **Elevation is the hover gesture now.** The grid rests completely flat (border
   only, no shadow), so a bento sheet reads as one plane; hover a tile and that
-  tile alone rises to a clearly visible elevation, then settles back. Nothing
-  moves or reflows — the lift is elevation only — so the effect still reads under
-  an operating-system "reduce motion" setting, where it simply snaps instead of
-  easing.
+  tile alone rises about 4px into a deep, soft shadow with a brand-tinted edge,
+  then settles back on a decelerating curve. It lifts in place — the surrounding
+  tiles never move — and under an operating-system "reduce motion" setting the
+  travel is dropped while the shadow and the edge still mark the hover.
 - **The cursor glow is off unless you ask for it.** Turn it on for a whole grid
   with `spotlight` on `BentoGrid`, or for one tile with `spotlight` on
   `BentoGridItem`; a tile's own setting always wins over the grid's, so a single
