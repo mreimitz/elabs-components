@@ -1,23 +1,19 @@
 {
-  // Debug profiles for each app. The web apps (Playground, Storybook, Workbench)
-  // launch Chrome with the debugger attached (set breakpoints in .tsx source via
-  // source maps):
+  // Debug profiles for each app. This repo ships ONE web app — Storybook
+  // (apps/docs). It launches Chrome with the debugger attached (set breakpoints
+  // in .tsx source via source maps):
   //   - F5 / "Run" runs the `preLaunchTask` (starts the dev server, waits until
   //     it's ready) then opens the app in a debuggable Chrome.
   //   - Stop (Shift+F5) runs the `postDebugTask` (kills the dev server's port).
   // Chrome must be installed; swap "chrome" for "msedge" to use Edge instead.
+  //
+  // There is deliberately NO compound and no Playground/Workbench profile: those
+  // apps do not exist here. A profile pointing at a missing app fails twice over —
+  // its preLaunchTask aborts (`Command "playground" not found`) and Chrome then
+  // reports "Unable to attach to browser" against the dead port, which reads as
+  // "Storybook won't launch" even while Storybook is up on :6006.
   "version": "0.2.0",
   "configurations": [
-    {
-      "name": "🎮 Playground (Vite)",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "dev: playground",
-      "postDebugTask": "stop: playground",
-      "presentation": { "group": "1_apps", "order": 1 }
-    },
     {
       "name": "📕 Storybook (Docs)",
       "type": "chrome",
@@ -52,14 +48,6 @@
       "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
       "presentation": { "group": "1_apps", "order": 5 }
-    }
-  ],
-  "compounds": [
-    {
-      "name": "▶ All web apps (Playground + Storybook + Workbench)",
-      "configurations": ["🎮 Playground (Vite)", "📕 Storybook (Docs)", "🛠 Workbench (Vite)"],
-      "stopAll": true,
-      "presentation": { "group": "0_all", "order": 1 }
     }
   ]
 }

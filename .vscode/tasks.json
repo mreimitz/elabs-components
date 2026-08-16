@@ -5,31 +5,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "dev: playground",
-      "detail": "Start the Vite playground dev server on http://localhost:5173",
-      "type": "shell",
-      "command": "pnpm playground",
-      "options": { "cwd": "${workspaceFolder}" },
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "vite",
-        "source": "vite",
-        "fileLocation": "absolute",
-        "pattern": { "regexp": "^$" },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": ".*(VITE|building|Forced re-optimization|hmr).*",
-          "endsPattern": ".*(Local:|ready in|localhost:5173).*"
-        }
-      },
-      "presentation": {
-        "group": "apps",
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
       "label": "dev: storybook",
       "detail": "Start Storybook (docs) on http://localhost:6006, or reuse one that is already running",
       "type": "shell",
@@ -61,14 +36,6 @@
       }
     },
     {
-      "label": "stop: playground",
-      "detail": "Kill whatever is listening on :5173 (used as a postDebugTask)",
-      "type": "shell",
-      "command": "npx --yes kill-port 5173",
-      "problemMatcher": [],
-      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
-    },
-    {
       "label": "stop: storybook",
       "detail": "Kill the Storybook server on :6006 AND the task wrapper that started it",
       "type": "shell",
@@ -82,9 +49,9 @@
     },
     {
       "label": "stop: all apps",
-      "detail": "Kill the playground (:5173) and Storybook (:6006) dev servers",
+      "detail": "Kill the Storybook (:6006) dev server and its task wrapper",
       "type": "shell",
-      "command": "npx --yes kill-port 5173 6006",
+      "command": "pkill -f 'start-storybook\\.mjs' ; npx --yes kill-port 6006",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared", "close": false }
     }
