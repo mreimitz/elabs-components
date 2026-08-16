@@ -26,28 +26,6 @@
       "preLaunchTask": "dev: storybook",
       "postDebugTask": "stop: storybook",
       "presentation": { "group": "1_apps", "order": 2 }
-    },
-    {
-      "name": "🧪 E2E (Playwright) — run + debug",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/apps/e2e",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["exec", "playwright", "test"],
-      "autoAttachChildProcesses": true,
-      "console": "integratedTerminal",
-      "presentation": { "group": "1_apps", "order": 4 }
-    },
-    {
-      "name": "🧪 E2E (Playwright) — UI mode",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/apps/e2e",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["exec", "playwright", "test", "--ui"],
-      "autoAttachChildProcesses": true,
-      "console": "integratedTerminal",
-      "presentation": { "group": "1_apps", "order": 5 }
     }
   ]
 }
