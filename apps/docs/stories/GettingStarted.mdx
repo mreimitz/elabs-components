@@ -92,15 +92,24 @@ pnpm add @elabs/components-tokens @elabs/components-ui
 No `file:` deps and no `pnpm.overrides`/`resolutions` mirror block needed — real
 registry resolution handles cross-package peers. (All packages are **ESM-only**.)
 
-**2 · Wire Tailwind v4 + tokens** in your CSS entry — **two** lines, both required:
+**2 · Wire Tailwind v4 + tokens** in your CSS entry — the first two lines are
+required; the reference themes are opt-in:
 
 ```css
-@import "@elabs/components-tokens/styles.css"; /* Tailwind + token→utility map + all 2 themes + fonts */
+@import "@elabs/components-tokens/styles.css"; /* Tailwind + token→utility map + :root base + fonts */
 @source "../node_modules/@elabs/components-ui/dist"; /* one @source per @brand pkg you render */
+
+/* Opt-in reference themes. Import the ones you want, or none and ship your own. */
+@import "@elabs/components-tokens/themes/light.css";
+@import "@elabs/components-tokens/themes/dark.css";
 ```
 
 > **The #1 consumer mistake:** skip the `@source` line and components render
 > **completely unstyled**. Tailwind doesn't scan `node_modules` unless you tell it to.
+
+> `styles.css` alone renders correctly — `:root` is a complete neutral light
+> palette. A `[data-theme="…"]` only applies once its stylesheet is imported.
+> Writing your own theme: `docs/CONSUMING.md` §5.1.
 
 **3 · Add the bundler plugin.** Vite: `@tailwindcss/vite`. Next.js: `@tailwindcss/postcss`.
 

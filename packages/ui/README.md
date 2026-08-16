@@ -43,7 +43,7 @@ import { ThemeProvider } from "@elabs/components-tokens";
 
 ## What's in it
 
-355 exported components — including `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger`, `AdvancedGroup`.
+354 exported components — including `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger`, `AdvancedGroup`.
 
 Don't guess the API — ask the CLI:
 

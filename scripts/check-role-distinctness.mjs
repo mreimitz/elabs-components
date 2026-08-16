@@ -47,19 +47,17 @@
  *
  * Dependency-free; ESM; locates themes.css relative to this file (cwd-independent).
  */
-import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 // Same hazard, same fix, one implementation: `themes.css` comments describe the
 // declarations these gates scan for, so both must blank comments before matching.
 import { blankComments } from "./check-elevation.mjs";
 // The ACTIVE theme set — a paused theme is kept as source but never gated
 // (single source of truth: PAUSED_THEMES in theme-types.ts).
 import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
-
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
-const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");
+// Every stylesheet that carries a theme block (ADR 0029 split the reference
+// themes out of themes.css). Throws rather than return an incomplete set.
+import { readThemesCss } from "./lib/theme-sources.mjs";
 
 /**
  * The mode key standing for the `:root` neutral base/fallback — NOT a selectable
@@ -340,17 +338,15 @@ export function findRoleCollisions(cssText, opts = {}) {
 function main(argv) {
   const warnOnly = argv.slice(2).includes("--warn");
 
-  if (!existsSync(THEMES_CSS)) {
-    console.error(`✖ role-distinctness gate: themes.css not found at ${THEMES_CSS}`);
-    if (!warnOnly) process.exit(1);
-    return;
-  }
-
+  // EVERY theme stylesheet, not just the engine one: ADR 0029 moved the two
+  // reference blocks into their own files, and a reader that still opened only
+  // themes.css would quietly audit whichever blocks HAPPEN to remain there.
+  // readThemesCss() throws rather than return an incomplete set.
   let cssText = "";
   try {
-    cssText = readFileSync(THEMES_CSS, "utf8");
+    cssText = readThemesCss();
   } catch (e) {
-    console.error(`✖ role-distinctness gate: failed to read ${THEMES_CSS}: ${e.message}`);
+    console.error(`✖ role-distinctness gate: ${e.message}`);
     if (!warnOnly) process.exit(1);
     return;
   }

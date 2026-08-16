@@ -2,7 +2,12 @@ import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { THEMES, ThemeProvider } from "@elabs/components-tokens";
+import {
+  BUILT_IN_THEMES,
+  BUILT_IN_THEME_DEFINITIONS,
+  defineTheme,
+  ThemeProvider,
+} from "@elabs/components-tokens";
 
 import { ThemeSwitcher } from "./theme-switcher";
 
@@ -30,10 +35,10 @@ describe("ThemeSwitcher", () => {
   });
 
   // The >2-themes AUTO-upgrade can't be exercised while only two themes ship
-  // (a paused one is out of THEMES), so this pins the explicit dropdown mode —
+  // (a paused one is out of BUILT_IN_THEMES), so this pins the explicit dropdown mode —
   // the same render path the auto-upgrade selects.
   it("renders a dropdown trigger in dropdown mode", () => {
-    setup(<ThemeSwitcher mode="dropdown" themes={[...THEMES]} />);
+    setup(<ThemeSwitcher mode="dropdown" themes={[...BUILT_IN_THEMES]} />);
     expect(screen.getByRole("button", { name: "Theme" })).toBeInTheDocument();
   });
 });
@@ -99,7 +104,7 @@ describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
   it("never renders a theme the provider disallows, even when the themes prop lists it", async () => {
     render(
       <ThemeProvider allowedThemes={["light", "dark"]}>
-        <ThemeSwitcher mode="dropdown" themes={[...THEMES]} />
+        <ThemeSwitcher mode="dropdown" themes={[...BUILT_IN_THEMES]} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
@@ -112,7 +117,7 @@ describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
   it("no rendered control ever applies the disallowed theme (menu items + System)", async () => {
     render(
       <ThemeProvider allowedThemes={["light", "dark"]}>
-        <ThemeSwitcher mode="dropdown" themes={[...THEMES]} />
+        <ThemeSwitcher mode="dropdown" themes={[...BUILT_IN_THEMES]} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
@@ -145,7 +150,7 @@ describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
       </ThemeProvider>,
     );
     // The default 2-theme toggle presentation — never upgraded to a dropdown by
-    // provider.themes (which is the full 3-theme THEMES list when no
+    // provider.themes (which is the full built-in registry when no
     // allowedThemes is set).
     expect(screen.getByRole("button", { name: /theme:/i })).toBeInTheDocument();
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -159,5 +164,83 @@ describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: /theme:/i }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+});
+
+/**
+ * The switcher renders the PROVIDER's registry (ADR 0029). Before this it
+ * defaulted to a hard-coded `["light","dark"]` pair, so an app that registered
+ * its own themes got a switcher that could not reach them — and, worse, a
+ * switcher whose `light`/`dark` fallbacks named themes that app may not ship at
+ * all. These drive consumer theme names end to end: label, iconography, the
+ * auto-upgrade to a dropdown, and what "System" resolves to.
+ */
+describe("ThemeSwitcher — consumer themes (ADR 0029)", () => {
+  const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
+  const parchment = defineTheme({ value: "parchment", label: "Parchment", dark: false });
+
+  it("offers the provider's consumer themes with NO themes prop at all", async () => {
+    render(
+      <ThemeProvider themes={[parchment, midnight]} defaultTheme="parchment">
+        <ThemeSwitcher mode="dropdown" />
+      </ThemeProvider>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Theme" }));
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByText("Parchment")).toBeInTheDocument();
+    expect(within(menu).getByText("Midnight")).toBeInTheDocument();
+    // The old hard-coded default pair is not silently in the list.
+    expect(within(menu).queryByText("Light")).not.toBeInTheDocument();
+  });
+
+  it("applies a consumer theme when picked", async () => {
+    render(
+      <ThemeProvider themes={[parchment, midnight]} defaultTheme="parchment">
+        <ThemeSwitcher mode="dropdown" />
+      </ThemeProvider>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Theme" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /midnight/i }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("midnight");
+  });
+
+  it("auto-upgrades to a dropdown once the registry passes two themes", async () => {
+    render(
+      <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]}>
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    // Three registered themes → the dropdown trigger, not the cycle toggle.
+    expect(screen.getByRole("button", { name: "Theme" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /theme:/i })).not.toBeInTheDocument();
+  });
+
+  it("announces the consumer theme's OWN label in toggle mode, never a name the app lacks", async () => {
+    render(
+      <ThemeProvider themes={[parchment, midnight]} defaultTheme="parchment">
+        <ThemeSwitcher showSystem={false} />
+      </ThemeProvider>,
+    );
+    // The pre-0029 code labelled the roles ("Theme: light"), naming a theme this
+    // app does not ship.
+    const button = screen.getByRole("button", { name: /theme:/i });
+    expect(button).toHaveAccessibleName(/Theme: Parchment\. Activate to switch to Midnight\./i);
+    await userEvent.click(button);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("midnight");
+  });
+
+  it('resolves "System" to a registered theme of the right darkness, not to "light"/"dark"', async () => {
+    render(
+      <ThemeProvider themes={[parchment, midnight]} defaultTheme="parchment">
+        <ThemeSwitcher mode="dropdown" />
+      </ThemeProvider>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Theme" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /system/i }));
+    // jsdom's matchMedia stub reports no dark preference, so the light-side
+    // registry entry wins — the point is that it is a REGISTERED name.
+    expect(["parchment", "midnight"]).toContain(
+      document.documentElement.getAttribute("data-theme"),
+    );
   });
 });

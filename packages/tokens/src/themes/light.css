@@ -1,0 +1,258 @@
+/**
+ * light.css — the light REFERENCE theme (ADR 0029).
+ *
+ * OPT-IN. `@elabs/components-tokens/styles.css` does NOT import this file — it
+ * ships the engine (Tailwind bridge, base layer, dials) plus a neutral light
+ * `:root` fallback, and nothing else. Import this only if you want the light
+ * reference theme:
+ *
+ *     @import "@elabs/components-tokens/styles.css";
+ *     @import "@elabs/components-tokens/themes/light.css";
+ *
+ * An app that authors its own themes imports neither, and pays no bytes for
+ * palettes it does not use. Every token declared here is part of the contract
+ * exported as `THEME_TOKEN_NAMES` — a theme of your own covers the same set.
+ *
+ * This file is a value SINK for the DTCG pipeline: `pnpm tokens:build` rewrites
+ * the values in place from `tokens/themes/light.tokens.json` and preserves
+ * every other byte. Edit values there, structure/comments here.
+ */
+
+/* ========================================================================
+   LIGHT (light) — Qlik Cloud "Sprout" register. Primary = Qlik Green on
+   near-white neutral surfaces; neutral grey text (#404040); tight 4px base
+   radius; neutral low-contrast hairlines; a BLUE focus ring; the Qlik
+   categorical chart palette; Source Sans Pro / Source Code Pro fonts.
+   ======================================================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Qlik's tight 4px (subtle) base radius. */
+  --radius-base: 0.25rem;
+
+  /* Qlik fonts: Source Sans Pro (UI) + Source Code Pro (data/mono). */
+  --font-sans: "Source Sans Pro", "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display:
+    "Source Sans Pro", "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-sans);
+
+  /* Neutral near-white ground; white cards. */
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.37 0 0); /* #404040 neutral grey — not blue */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.37 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.37 0 0);
+
+  /* Qlik SaaS light primary #00873D */
+  --primary: oklch(0.553 0.143 153);
+  --primary-foreground: oklch(0.985 0 0);
+  /* #399 — On-surface TEXT variant of the Qlik green. The fill above measured
+     3.87-4.48:1 as bare text on the five content surfaces (sub-AA everywhere in
+     the DEFAULT shipped theme); deepened by ~0.06 L, hue/chroma unchanged, so
+     the brand reads the same but clears 4.99-5.78:1. Does NOT retune --primary
+     itself — the fill's contract is 3:1 (#381) and its ink pairing is the #180
+     brand exemption. */
+  --primary-text: oklch(0.49 0.14 153);
+
+  --secondary: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.37 0 0);
+
+  --muted: oklch(0.968 0 0);
+  --muted-foreground: oklch(0.5 0 0); /* neutral, AA-safe caption grey */
+
+  --accent: oklch(0.96 0 0);
+  --accent-foreground: oklch(0.37 0 0);
+
+  /* Qlik danger — pink-red #D7004B */
+  --destructive: oklch(0.55 0.21 8);
+  --destructive-foreground: oklch(0.985 0 0);
+  --destructive-text: oklch(0.5 0.2 8);
+
+  /* #334 — a DEEPER, COOLER green than the Qlik-brand --primary (which stays
+     #008947 / oklch(0.553 0.143 153)). These were byte-identical, so a success
+     chip was indistinguishable from a primary button by the only signal these
+     tokens carry. The brand green stays reserved for the ACTION role; success
+     is its own pine/emerald. Side effect: white on this fill is 5.46:1 (AA), up
+     from 4.29:1 — without touching --primary's brand exemption (#180). */
+  --success: oklch(0.49 0.12 170);
+  --success-foreground: oklch(0.985 0 0);
+  --success-text: oklch(0.46 0.12 170);
+  /* #381 — DEEP amber (was the light `oklch(0.78 0.16 67)` plate, which cleared
+     3:1 against NO shipped surface in this theme: 2.07:1 on --card at best,
+     1.79:1 on --secondary). A colour-only warning mark (Timeline's
+     `awaiting-approval` dot, a flow-node stroke, a Rating star) must clear WCAG
+     1.4.11's ≥3:1, and amber only gets there by going darker than its most
+     saturated point. The ink flips to light with it, which also makes warning
+     the same "dark plate + white ink" shape as success/info/destructive here.
+     Now 4.23-4.89:1 on the content surfaces; white ink on it is 4.69:1 (AA). */
+  --warning: oklch(0.555 0.12 67);
+  --warning-foreground: oklch(0.985 0 0);
+  --warning-text: oklch(0.52 0.13 70);
+  /* Qlik blue #5daef1, DEEPENED from `oklch(0.6 0.13 245)` by #406. #383 chose
+     the other exit from the L 0.6 dead zone (white on that fill was 3.74:1, and
+     AA-Large never applies at the 12px `Badge`/`StatusBadge` call sites) by
+     flipping the INK dark — correct in isolation, but it made `--info` the only
+     reversed plate in a theme whose other four status tones are all white-ink.
+     Committing the fill restores one polarity; the ≥3:1 1.4.11 mark rung only
+     improves (4.52-5.51:1, up from 3.24-3.95:1). Chroma was eased 0.13 → 0.11 to
+     hold `--info` perceptibly apart from the focus ring at the shared lightness:
+     against the BLUE ring of the day (`oklch(0.52 0.17 255)`) keeping chroma at
+     0.13 would have measured OKLab ΔE 0.0487 — under the 0.05 floor that
+     themes-contrast.test.ts's ROLE_PAIRS enforces — and the ease bought 0.0653.
+     #427 has since moved the focus ring into the GREEN family, so that
+     constraint no longer binds: the pair now measures ΔE 0.2309. The 0.11 is
+     KEPT (the contrast figures above are its, and nothing else asked it to
+     move), but a maintainer retuning `--info` has ~0.23 of headroom against the
+     ring, not 0.065 — re-measure, do not reason from this note. */
+  --info: oklch(0.53 0.11 245);
+  /* #406 — white, like the other four light status plates. 5.01:1. */
+  --info-foreground: oklch(0.985 0 0);
+  --info-text: oklch(0.52 0.12 245);
+
+  /* Match highlight — warm amber plate, dark ink; AA-verified. */
+  --highlight: oklch(0.865 0.155 90);
+  --highlight-foreground: oklch(0.27 0.05 90);
+  /* The current one among many — burnt orange, white ink (ADR 0025). Orange,
+     not red: it must not read as `--destructive` (see the :root comment). */
+  --highlight-active: oklch(0.56 0.16 60);
+  --highlight-active-foreground: oklch(0.99 0.005 90);
+
+  /* Neutral hairlines; --border-strong darkened to clear WCAG 1.4.11 (≥3:1) vs --card/--background. */
+  --border: oklch(0.88 0 0);
+  --border-strong: oklch(0.65 0 0);
+  --input: oklch(0.88 0 0);
+  /* BRAND-DERIVED focus indicator (ADR 0027, #427). --ring is the same hue family
+     as --primary — 140 vs 153, a 13° gap — at a deliberately DISTINCT rung
+     (ΔE 0.157), never an alias. It is a graphical MARK, so it clears WCAG 1.4.11
+     (≥3:1) on every mark surface: 8.39:1 vs --background, 7.57:1 at its worst
+     (--secondary). It stays ΔE ≥ 0.05 from --primary / --chart-1 /
+     --accent-foreground (MUST_DIFFER), --info (ROLE_PAIRS, #334) and --success.
+     Hue 140 rather than the exact brand 153 because this theme's green band is
+     already full between L 0.42-0.60; 13° off buys real headroom. #334 moved this
+     token OFF --info and out of the palette entirely — that half is now reversed.
+     The --sidebar-ring alias below is the sanctioned mirror of this token, so an
+     override reaches sidebar focus for free — never re-declare it with a literal. */
+  --ring: oklch(0.4 0.13 140);
+
+  --surface: oklch(0.985 0 0);
+  --surface-muted: oklch(0.96 0 0);
+  --surface-elevated: oklch(1 0 0);
+
+  /* Chrome recessed BELOW the content canvas (--background 0.985) so chrome reads
+     as the most-recessed app-frame surface: chrome(0.96) < canvas(0.985) < card(1.0).
+     Was a fully FLAT 0.985 == --background (Δ0); now ΔL≈0.025 vs canvas. */
+  --sidebar: oklch(0.96 0 0);
+  --sidebar-foreground: oklch(0.37 0 0);
+  --sidebar-muted-foreground: oklch(0.5 0 0);
+  /* Deepened a step so the divider stays visible against the recessed chrome. */
+  --sidebar-border: oklch(0.85 0 0);
+  /* Deepened so hover/selected stays perceptible (ΔL≈0.045) against the recessed
+     --sidebar (0.96) — at the old 0.95 it would be only Δ0.01, too subtle. */
+  --sidebar-accent: oklch(0.915 0 0);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-ring: var(--ring);
+
+  --canvas: oklch(0.97 0 0);
+  --canvas-grid: oklch(0.9 0 0);
+  --flow-node: oklch(1 0 0);
+  --flow-node-foreground: oklch(0.37 0 0);
+  --flow-edge: oklch(0.62 0.04 245);
+  --flow-helper-line: var(--primary);
+  --flow-group: oklch(0.94 0.018 153);
+  --flow-group-border: var(--border-strong);
+  --flow-minimap-node: var(--muted-foreground);
+  --flow-minimap-mask: oklch(1 0 0 / 0.65);
+
+  /* NEUTRAL grey bubble. Was `oklch(0.95 0.03 153)` — a mint-green tint that
+     read as a Qlik-brand/success wash rather than "the other speaker". The user
+     turn is a FILL channel (surface separation), not a status: its job is to
+     sit one step below the assistant turn (0.97) and the card (1.0) so the
+     conversation reads as two alternating grounds. Hue belongs to the brand and
+     status roles, not to whose turn it is. */
+  --chat-user: oklch(0.93 0 0);
+  --chat-user-foreground: oklch(0.37 0 0);
+  --chat-assistant: oklch(0.97 0 0);
+  --chat-assistant-foreground: oklch(0.37 0 0);
+
+  /* Qlik categorical: green, deep blue, ocean, plum, gold */
+  --chart-1: oklch(0.594 0.163 150);
+  --chart-2: oklch(0.45 0.11 252);
+  --chart-3: oklch(0.55 0.1 224);
+  --chart-4: oklch(0.552 0.124 323);
+  --chart-5: oklch(0.62 0.135 85);
+
+  --chart-grid: var(--border);
+  --chart-foreground: var(--foreground);
+  --chart-foreground-muted: var(--muted-foreground);
+  --chart-background: var(--card);
+  --chart-label: var(--foreground);
+  --chart-crosshair: var(--muted-foreground);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-brush-border: var(--border);
+  --chart-indicator-color: var(--chart-1);
+  --chart-indicator-secondary-color: var(--chart-2);
+  --chart-marker-background: var(--card);
+  --chart-marker-foreground: var(--foreground);
+  --chart-marker-border: var(--border);
+  --chart-marker-badge-background: var(--primary);
+  --chart-marker-badge-foreground: var(--primary-foreground);
+  --chart-ring-background: var(--background);
+  --chart-segment-background: var(--muted);
+  --chart-segment-line: var(--border);
+  --chart-tooltip-background: var(--popover);
+  --chart-tooltip-foreground: var(--popover-foreground);
+  --chart-tooltip-muted: var(--muted-foreground);
+  --legend-foreground: var(--foreground);
+  --legend-muted: var(--muted);
+  --legend-muted-foreground: var(--muted-foreground);
+  --legend-track: var(--muted);
+
+  /* ELEVATION — a light theme, so the stacked black ink reads at face value and
+     the hairline can stay very quiet (it darkens away from a near-white page). */
+  --shadow-color: oklch(0 0 0);
+  --shadow-strength: 1;
+  --shadow-ring-color: oklch(0 0 0 / 0.05);
+
+  --rule: oklch(0.88 0 0);
+  --rule-strong: oklch(0.74 0 0);
+  --grid-line: oklch(0.9 0 0);
+  --grid-line-major: oklch(0.82 0 0);
+
+  /* Calc syntax — neutralised foreground; Qlik-ish role hues retained. */
+  --calc-foreground: oklch(0.37 0 0);
+  --calc-number: oklch(0.4 0.15 240);
+  --calc-unit: oklch(0.42 0.12 200);
+  --calc-currency: oklch(0.42 0.143 153);
+  --calc-variable: oklch(0.38 0.14 300);
+  --calc-reference: oklch(0.4 0.15 264);
+  --calc-function: oklch(0.42 0.12 55);
+  --calc-operator: oklch(0.3 0 0);
+  --calc-result: oklch(0.38 0.16 264);
+  --calc-comment: oklch(0.5 0 0);
+  --calc-warning: oklch(0.5 0.2 27);
+
+  /* CodeBlock syntax-highlight roles (#315) — see the :root comment for why
+     these are separate literal tokens, not var(--calc-*) aliases. */
+  --code-background: var(--card);
+  --code-foreground: var(--foreground);
+  --code-comment: oklch(0.5 0 0);
+  --code-string: oklch(0.42 0.143 153);
+  --code-number: oklch(0.4 0.15 240);
+  --code-constant: oklch(0.42 0.12 200);
+  --code-keyword: oklch(0.38 0.16 264);
+  --code-function: oklch(0.42 0.12 55);
+  --code-type: oklch(0.38 0.14 300);
+  --code-tag: oklch(0.42 0.16 336);
+  --code-property: oklch(0.3 0 0);
+
+  /* Brand mark (Qlik logo). */
+  --brand-mark-ring: #54565a;
+  --brand-mark-tail: #00873d;
+}

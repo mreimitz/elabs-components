@@ -128,8 +128,8 @@ test("findColorBlocks takes :root + the FIRST block per theme (skips the 2nd)", 
   );
 });
 
-test("parseShippedThemes reads THEMES out of theme-types.ts", () => {
-  const src = `export const THEMES = ["light", "dark", "blueprint"] as const;`;
+test("parseShippedThemes reads BUILT_IN_THEMES out of theme-types.ts", () => {
+  const src = `export const BUILT_IN_THEMES = ["light", "dark", "blueprint"] as const;`;
   assert.deepEqual(parseShippedThemes(src), ["light", "dark", "blueprint"]);
 });
 
@@ -221,14 +221,14 @@ test("FAILS: the artifact was hand-edited (a ratio doctored to hide a change)", 
 
 // ── The gate: failure mode 3 — a deleted theme survives ──────────────────────
 
-test("FAILS: the artifact documents a theme that is not in THEMES", () => {
+test("FAILS: the artifact documents a theme that is not in BUILT_IN_THEMES", () => {
   const source = css();
   // Exactly the rot that killed charts-aa-2026-06-07.md: `dark`/`high-contrast`
   // sections outlived the themes themselves and nothing complained.
   const artifact = renderArtifact(source, THEMES) + "\n## high-contrast\n\nstale section\n";
   const problems = findArtifactViolations(artifact, source, THEMES);
   assert.ok(
-    problems.some((p) => /high-contrast/.test(p) && /not in THEMES/.test(p)),
+    problems.some((p) => /high-contrast/.test(p) && /not in BUILT_IN_THEMES/.test(p)),
     problems.join("\n"),
   );
 });

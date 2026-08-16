@@ -1,7 +1,7 @@
 "use client";
 
 import type * as Monaco from "monaco-editor";
-import { THEME_META, oklchToHex, type ThemeName } from "@elabs/components-tokens";
+import { oklchToHex, resolveThemeIsDark, type ThemeName } from "@elabs/components-tokens";
 
 /**
  * Bridges brand-ui's semantic tokens onto Monaco's theming API so the editor
@@ -112,9 +112,17 @@ function ensureReadable(hex: string, bg: string, minRatio: number): string {
   return out;
 }
 
-/** Map our `:root`/`[data-theme]` base to Monaco's nearest built-in base. */
-function builtinBase(theme: ThemeName): Monaco.editor.BuiltinTheme {
-  return THEME_META[theme].dark ? "vs-dark" : "vs";
+/**
+ * Map the theme active on `rootEl` to Monaco's nearest built-in base.
+ *
+ * Resolved from the element (the theme's own `color-scheme`), not from a
+ * registry lookup on the NAME — so a consumer-authored dark theme gets
+ * `vs-dark` without registering anything here (ADR 0029). Getting this wrong is
+ * visible: `vs` under a dark theme leaves Monaco's own chrome (the sticky-scroll
+ * shadow, the find widget, unstyled decorations) light on a dark editor.
+ */
+function builtinBase(rootEl?: HTMLElement | null): Monaco.editor.BuiltinTheme {
+  return resolveThemeIsDark(rootEl) ? "vs-dark" : "vs";
 }
 
 /**
@@ -278,7 +286,7 @@ export function applyBrandTheme(
 ): string {
   const id = brandThemeId(theme);
   const data = buildBrandThemeData(rootEl);
-  data.base = builtinBase(theme);
+  data.base = builtinBase(rootEl);
   monaco.editor.defineTheme(id, data);
   monaco.editor.setTheme(id);
   return id;

@@ -63,11 +63,13 @@ inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`
 - **Placement:** `TopNav` `end` slot (always reachable), and mirrored in the
   Settings modal's Appearance section (§1c).
 - **Options to expose:** **System · Light · Dark.** "System" follows the
-  OS and resolves across the light / dark pair (`DEFAULT_THEME_PAIR`).
+  OS and resolves across the provider's light / dark themes.
 - **Default theme:** `light`.
 - ✅ **Verified:** the library `<ThemeSwitcher />` (`@elabs/components-ui`) already does
-  this out of the box — its `themes` prop **defaults to the Qlik light/dark pair** and
-  `showSystem` **defaults to `true`**, so a bare `<ThemeSwitcher />` renders **System /
+  this out of the box — with no `themes` prop it renders **the provider's whole
+  registry** (the two reference themes by default, plus any theme you registered
+  through `<ThemeProvider themes={…}>`), and `showSystem`
+  **defaults to `true`**, so a bare `<ThemeSwitcher />` renders **System /
   Light / Dark** (whole-screen animated transition, reduced-motion safe). Use
   it directly. A curated labeled `Select` (`assets/theme-switcher.tsx`) is an optional
   alternative if you want text labels instead of the icon toggle.
@@ -161,14 +163,14 @@ A new professional app is not "scaffolded" until all are true:
 
 ## Component reference (exact names, brand-ui v1.0.0)
 
-| Need                       | Component (package)                                                                                                                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Top-level frame            | `AppShell` · `AppSidebar` · `TopNav` (`@elabs/components-ui`)                                                                                                                                           |
-| Shell primitives           | `SidebarProvider`/`Sidebar`/`SidebarInset`/`SidebarTrigger`/`useSidebar` (`@elabs/components-ui`)                                                                                                       |
-| Ready shells               | `sidebar-02` · `sidebar-04` · `sidebar-05` (registry)                                                                                                                                                   |
-| App icon                   | `BrandLogo` (`variant` mark\|lockup) (`@elabs/components-icons`)                                                                                                                                        |
-| Theme                      | `ThemeProvider`/`useTheme`/`THEMES`/`THEME_META` (`@elabs/components-tokens`) · `ThemeSwitcher` (`@elabs/components-ui`; `themes` defaults to Qlik pair, `showSystem` default true → System/Light/Dark) |
-| Settings modal             | `Dialog` + `Tabs` + `AlertDialog` (`@elabs/components-ui`)                                                                                                                                              |
-| Toasts                     | `Toaster` + `toast` (`@elabs/components-ui`, Sonner)                                                                                                                                                    |
-| Right detail panel         | generic → `Sheet`/`Drawer` (`@elabs/components-ui`, `side="right"`) or inspector `aside`; AI → `ContextPanel*` + `useContextPanel` (**`@elabs/components-ai`**)                                         |
-| Command palette (optional) | `Command`/`CommandDialog` (`@elabs/components-ui`)                                                                                                                                                      |
+| Need                       | Component (package)                                                                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Top-level frame            | `AppShell` · `AppSidebar` · `TopNav` (`@elabs/components-ui`)                                                                                                                                                                            |
+| Shell primitives           | `SidebarProvider`/`Sidebar`/`SidebarInset`/`SidebarTrigger`/`useSidebar` (`@elabs/components-ui`)                                                                                                                                        |
+| Ready shells               | `sidebar-02` · `sidebar-04` · `sidebar-05` (registry)                                                                                                                                                                                    |
+| App icon                   | `BrandLogo` (`variant` mark\|lockup) (`@elabs/components-icons`)                                                                                                                                                                         |
+| Theme                      | `ThemeProvider`/`useTheme`/`BUILT_IN_THEMES`/`BUILT_IN_THEME_META`/`defineTheme` (`@elabs/components-tokens`) · `ThemeSwitcher` (`@elabs/components-ui`; renders the provider's registry, `showSystem` default true → System/Light/Dark) |
+| Settings modal             | `Dialog` + `Tabs` + `AlertDialog` (`@elabs/components-ui`)                                                                                                                                                                               |
+| Toasts                     | `Toaster` + `toast` (`@elabs/components-ui`, Sonner)                                                                                                                                                                                     |
+| Right detail panel         | generic → `Sheet`/`Drawer` (`@elabs/components-ui`, `side="right"`) or inspector `aside`; AI → `ContextPanel*` + `useContextPanel` (**`@elabs/components-ai`**)                                                                          |
+| Command palette (optional) | `Command`/`CommandDialog` (`@elabs/components-ui`)                                                                                                                                                                                       |

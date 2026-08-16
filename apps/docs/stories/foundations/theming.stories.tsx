@@ -1,18 +1,26 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
+import { BUILT_IN_THEME_DEFINITIONS, defineTheme, ThemeProvider } from "@elabs/components-tokens";
+import { ThemeSwitcher } from "@elabs/components-ui";
 
 /**
- * THEMING — how one set of components renders three different looks.
+ * THEMING — how one set of components renders any number of different looks.
  *
  * A theme is a block of semantic token VALUES applied with the `data-theme`
  * attribute on a root element. `:root` is a neutral light base/fallback; each
- * theme is a `[data-theme="…"]` block in `@elabs/components-tokens` `themes.css`.
- * Components reference tokens (`bg-background`, `text-muted-foreground`,
- * `border-border`), never raw colors — so re-theming is purely a token swap.
+ * theme is a `[data-theme="…"]` block. Components reference tokens
+ * (`bg-background`, `text-muted-foreground`, `border-border`), never raw colors
+ * — so re-theming is purely a token swap.
  *
- * There are THREE shipped themes. Switch them with the toolbar (the paint-roller
- * control); everything on the page re-colors because the same tokens resolve to
- * new values.
+ * **Theming is OPEN (ADR 0029).** `light` and `dark` are the two REFERENCE
+ * themes shipped by `@elabs/components-tokens`; they are the worked example, not
+ * the menu. You author your own `[data-theme]` block, register it with
+ * `<ThemeProvider themes={…}>`, and every component themes correctly with no
+ * change to the library — see "Bring your own theme" below.
+ *
+ * Switch the shipped pair with the toolbar (the paint-roller control);
+ * everything on the page re-colors because the same tokens resolve to new values.
  *
  * Orthogonal to color, three more dials live in the toolbar and write their own
  * root attributes: DECORATION (`data-decoration`, 0–10 reprographic texture),
@@ -27,10 +35,10 @@ const meta = {
     docs: {
       description: {
         component:
-          "How `data-theme` + semantic tokens give one component set its shipped " +
-          "looks (light, dark) plus the orthogonal decoration / " +
-          "density / motion dials. Flip the toolbar controls and watch the sample " +
-          "composition below adapt.",
+          "How `data-theme` + semantic tokens give one component set any number of " +
+          "looks — the two reference themes (light, dark), a theme you author " +
+          "yourself, plus the orthogonal decoration / density / motion dials. Flip " +
+          "the toolbar controls and watch the sample composition below adapt.",
       },
     },
   },
@@ -38,10 +46,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The shipped themes — slug (the data-theme value) + display label.
+// The two REFERENCE themes — slug (the data-theme value) + display label.
 const THEMES = [
-  { slug: "light", label: "Light", note: "Default. Qlik Green on light surfaces." },
-  { slug: "dark", label: "Dark", note: "Deep-blue surfaces, brighter Qlik Green." },
+  { slug: "light", label: "Light", note: "Default. Brand primary on near-white surfaces." },
+  { slug: "dark", label: "Dark", note: "Warm charcoal surfaces, off-white text." },
 ] as const;
 
 const DIALS = [
@@ -230,13 +238,15 @@ export const Overview: Story = {
 };
 
 export const ShippedThemes: Story = {
-  name: "The shipped themes",
+  name: "The reference themes",
   render: () => (
     <div className="space-y-4">
       <p className="m-0 max-w-prose text-caption text-muted-foreground">
-        Two themes ship in <code className="text-code">@elabs/components-tokens</code>. Pass the{" "}
-        <strong>slug</strong> (the <code className="text-code">data-theme</code> value), never the
-        display name, when setting a theme programmatically or via the Storybook globals.
+        Two <strong>reference</strong> themes ship in{" "}
+        <code className="text-code">@elabs/components-tokens</code> — enough to prove the light/dark
+        contract, and the worked example for one you author yourself. Pass the <strong>slug</strong>{" "}
+        (the <code className="text-code">data-theme</code> value), never the display name, when
+        setting a theme programmatically or via the Storybook globals.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {THEMES.map((t) => (
@@ -271,7 +281,7 @@ export const ShippingASubset: Story = {
       <ul className="m-0 space-y-1.5 ps-5 text-caption text-muted-foreground">
         <li>
           <code className="text-code">useTheme().themes</code> lists only the allowed names — build
-          switchers off that, not off <code className="text-code">THEMES</code>.
+          switchers off that, never off a module-level constant.
         </li>
         <li>
           A persisted value for a now-hidden theme is rejected in the same mount pass that applies
@@ -281,15 +291,235 @@ export const ShippingASubset: Story = {
           <code className="text-code">setTheme</code> with a disallowed name is a no-op that warns
           in development, and never writes it to storage.
         </li>
-        <li>Omitting the prop is unchanged behaviour: every shipped theme is available.</li>
+        <li>Omitting the prop is unchanged behaviour: the whole registry is available.</li>
       </ul>
       <p className="m-0 text-caption text-muted-foreground">
-        <code className="text-code">ThemeSwitcher</code> keeps its own{" "}
-        <code className="text-code">themes</code> prop (defaulting to the light/dark pair) — pass it{" "}
-        <code className="text-code">themes={"{useTheme().themes}"}</code> to inherit the subset.
+        <code className="text-code">ThemeSwitcher</code> renders the provider&rsquo;s registry, so
+        it inherits the subset with <strong>no prop at all</strong>. Its own{" "}
+        <code className="text-code">themes</code> prop is now purely an extra narrowing on top.
+      </p>
+      <p className="m-0 text-caption text-muted-foreground">
+        <code className="text-code">allowedThemes</code> is the narrower of the two knobs. Prefer
+        registering exactly the themes you ship via <code className="text-code">themes</code> —
+        reach for <code className="text-code">allowedThemes</code> when one registry feeds several
+        products that each surface a slice of it.
       </p>
     </div>
   ),
+};
+
+/**
+ * The `[data-theme="sandstone"]` block for the demo below.
+ *
+ * DELIBERATELY PARTIAL, and it says so on the page: a real theme must define
+ * every name in `THEME_TOKEN_NAMES` (123 of them), which is what
+ * `pnpm theme-parity:check` holds the shipped themes to and what a consumer
+ * asserts in their own test. What is declared here is the subset the sample
+ * composition renders; anything omitted falls back to `:root` — the exact
+ * failure mode a coverage assertion exists to catch, shown honestly rather than
+ * hidden behind a hand-copied wall of 123 declarations that would go stale.
+ */
+const SANDSTONE_CSS = `
+[data-theme="sandstone"] {
+  color-scheme: light;
+
+  --background: oklch(0.97 0.014 85);
+  --foreground: oklch(0.28 0.03 60);
+  --card: oklch(0.99 0.008 85);
+  --card-foreground: oklch(0.28 0.03 60);
+  --surface-muted: oklch(0.94 0.02 82);
+  --muted: oklch(0.93 0.02 82);
+  --muted-foreground: oklch(0.5 0.03 62);
+
+  --primary: oklch(0.55 0.13 42);
+  --primary-foreground: oklch(0.99 0.008 85);
+  --primary-text: oklch(0.47 0.12 42);
+  --secondary: oklch(0.92 0.025 80);
+  --secondary-foreground: oklch(0.32 0.04 60);
+
+  --border: oklch(0.88 0.02 80);
+  --border-strong: oklch(0.7 0.03 72);
+  --input: oklch(0.88 0.02 80);
+  --ring: oklch(0.62 0.12 42);
+
+  --success: oklch(0.52 0.13 150);
+  --success-foreground: oklch(0.99 0.008 85);
+  --info: oklch(0.52 0.12 240);
+  --info-foreground: oklch(0.99 0.008 85);
+  --destructive-text: oklch(0.48 0.17 28);
+}
+`;
+
+/** A consumer theme, declared exactly as a consuming app would declare it. */
+const sandstone = defineTheme({
+  value: "sandstone",
+  label: "Sandstone",
+  dark: false,
+  description: "A demo theme authored outside the library — warm clay on a sand ground.",
+});
+
+/**
+ * Registers a third theme at runtime and renders it beside the reference pair.
+ *
+ * Scoped on purpose: `attributeTarget` points at this story's own wrapper, so
+ * the demo writes `data-theme` on that element instead of `<html>` and never
+ * fights the Storybook toolbar. Storage keys are disabled for the same reason —
+ * a docs demo must not persist over the reader's real preference.
+ *
+ * The `target && …` guard is load-bearing, not defensive noise: `ThemeProvider`
+ * applies the theme in a mount-once effect, and a ref is null on the first
+ * render — so mounting the provider immediately would apply the theme to
+ * `<html>` (the `attributeTarget = null` default) and never re-apply it to the
+ * element once the ref lands. Mounting the provider on the second pass is the
+ * pattern any scoped `attributeTarget` needs today.
+ */
+function BringYourOwnThemeDemo() {
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+
+  return (
+    <>
+      <style>{SANDSTONE_CSS}</style>
+      <div ref={setTarget} className="rounded-lg border border-border bg-background p-4">
+        {target ? (
+          <ThemeProvider
+            themes={[...BUILT_IN_THEME_DEFINITIONS, sandstone]}
+            defaultTheme="sandstone"
+            attributeTarget={target}
+            storageKey={null}
+            motionStorageKey={null}
+            decorationStorageKey={null}
+            densityStorageKey={null}
+            registerStorageKey={null}
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="m-0 text-caption text-muted-foreground">
+                This region is themed by its own provider — three themes, one of them authored here.
+              </p>
+              <ThemeSwitcher mode="dropdown" showSystem={false} />
+            </div>
+            <SampleComposition />
+          </ThemeProvider>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+export const BringYourOwnTheme: Story = {
+  name: "Bring your own theme",
+  render: () => (
+    <div className="space-y-5">
+      <div className="max-w-prose space-y-2">
+        <p className="m-0 text-body text-foreground">
+          Theme names are <strong>open</strong> (ADR 0029). A theme is any{" "}
+          <code className="text-code">[data-theme=&quot;…&quot;]</code> block covering the token
+          contract, registered on the provider. Nothing in the library needs to know its name.
+        </p>
+        <p className="m-0 text-caption text-muted-foreground">
+          Below, a <code className="text-code">sandstone</code> theme is defined in this story file
+          and offered alongside the two reference themes. Pick it in the switcher — the whole region
+          re-colors, and the switcher labels, iconography and &ldquo;System&rdquo; resolution all
+          work with no library change.
+        </p>
+      </div>
+
+      <pre className="m-0 overflow-x-auto rounded-lg border border-border bg-card p-4 text-code text-card-foreground">
+        {`/* 1. Author the block — every name in THEME_TOKEN_NAMES. */
+[data-theme="sandstone"] {
+  color-scheme: light;
+  --background: oklch(0.97 0.014 85);
+  /* … */
+}
+
+/* 2. Describe it. */
+const sandstone = defineTheme({
+  value: "sandstone", label: "Sandstone", dark: false,
+});
+
+/* 3. Register it. \`themes\` REPLACES the default registry —
+      spread the built-ins to keep them. */
+<ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, sandstone]}>
+  <App />
+</ThemeProvider>`}
+      </pre>
+
+      <BringYourOwnThemeDemo />
+
+      <ul className="m-0 max-w-prose space-y-1.5 ps-5 text-caption text-muted-foreground">
+        <li>
+          <strong>Cover the contract.</strong> Assert your stylesheet defines every{" "}
+          <code className="text-code">THEME_TOKEN_NAMES</code> entry in your own test — a missing
+          token silently falls back to <code className="text-code">:root</code> and usually looks
+          wrong. The <code className="text-code">sandstone</code> block above is deliberately
+          partial, so a few values here come from that fallback.
+        </li>
+        <li>
+          <strong>
+            Declare <code className="text-code">color-scheme</code>.
+          </strong>{" "}
+          It is how the library answers &ldquo;is this theme dark&rdquo; for a theme it has never
+          heard of — native scrollbars and controls follow it, and so do Monaco, map basemaps and
+          toasts.
+        </li>
+        <li>
+          <strong>
+            Keep <code className="text-code">dark</code> in agreement
+          </strong>{" "}
+          with that declaration. The flag drives switcher iconography and which theme
+          &ldquo;System&rdquo; picks.
+        </li>
+        <li>
+          Ship <em>only</em> your themes by omitting the built-in spread — the registry is replaced,
+          not extended.
+        </li>
+      </ul>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Radix portals the menu to <body>, outside the story canvas.
+    const doc = within(canvasElement.ownerDocument.body);
+
+    // The consumer theme is offered by a switcher that was given no `themes`
+    // prop — i.e. it came from the PROVIDER's registry.
+    await userEvent.click(canvas.getByRole("button", { name: "Theme" }));
+    const menu = await doc.findByRole("menu");
+    await expect(within(menu).getByText("Sandstone")).toBeInTheDocument();
+    await expect(within(menu).getByText("Light")).toBeInTheDocument();
+
+    // Picking a reference theme, then the consumer theme, applies each in turn —
+    // on the SCOPED target, never the document root (which the toolbar owns).
+    const region = canvasElement.querySelector<HTMLElement>("[data-theme]");
+    await expect(region).not.toBeNull();
+    const rootTheme = canvasElement.ownerDocument.documentElement.getAttribute("data-theme");
+
+    // `waitFor`: the switch runs inside `document.startViewTransition`, so the
+    // attribute write lands a frame later than the click.
+    await userEvent.click(await doc.findByRole("menuitem", { name: /light/i }));
+    await waitFor(() => expect(region?.getAttribute("data-theme")).toBe("light"));
+
+    // `find`, not `get`: Radix keeps the page outside the menu `aria-hidden`
+    // until the dismiss settles, and an aria-hidden subtree is invisible to
+    // byRole — a synchronous read here is a flake, not an assertion.
+    await userEvent.click(await canvas.findByRole("button", { name: "Theme" }));
+    await userEvent.click(await doc.findByRole("menuitem", { name: /sandstone/i }));
+    await waitFor(() => expect(region?.getAttribute("data-theme")).toBe("sandstone"));
+
+    // The scoping actually held: the document root still carries whatever the
+    // toolbar set. A provider that leaked to <html> would have overwritten it.
+    await expect(canvasElement.ownerDocument.documentElement.getAttribute("data-theme")).toBe(
+      rootTheme,
+    );
+
+    // Wait for Radix to unwind the `aria-hidden` it puts on the rest of the page
+    // while the menu is open. axe runs AFTER the play function, and a wrapper
+    // still carrying `aria-hidden` around focusable content is a real
+    // `aria-hidden-focus` violation — it is the dismiss that is unfinished, not
+    // the markup that is wrong, so the fix is to await it, never to exempt it.
+    await waitFor(() =>
+      expect(canvasElement.ownerDocument.querySelector("[data-aria-hidden]")).toBeNull(),
+    );
+  },
 };
 
 export const Dials: Story = {

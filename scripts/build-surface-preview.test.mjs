@@ -23,6 +23,7 @@ import {
   TOKENS_BEGIN,
   TOKENS_END,
 } from "./build-surface-preview.mjs";
+import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
 import { ARCHETYPES } from "../packages/cli/lib/engine.mjs";
 
 /** The document with the inlined token stylesheet removed. */
@@ -36,7 +37,13 @@ function outsideTokens(html) {
 test("every archetype × theme pair builds a self-contained, themed preview", () => {
   const dir = mkdtempSync(join(tmpdir(), "brand-ui-preview-"));
   const themes = listThemes();
-  assert.equal(themes.length, 3, "three shipped themes");
+  // Anti-vacuity, not a count: the shipped theme set moves (blueprint was
+  // paused; ADR 0029 makes the set a REGISTRY rather than a fixed list), so a
+  // hard-coded `3` was red at HEAD and would go red again on every change. What
+  // must hold is that `listThemes()` resolved SOMETHING — an empty list would
+  // skip the whole matrix below and pass vacuously.
+  assert.ok(themes.length > 0, "listThemes() resolved at least one shipped theme");
+  assert.deepEqual([...themes].sort(), [...ACTIVE_THEMES].sort(), "matches the active theme set");
   try {
     for (const archetype of ARCHETYPES) {
       for (const theme of themes) {

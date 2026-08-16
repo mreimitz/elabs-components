@@ -7,7 +7,7 @@
  * properties, each of which is a way the pause has actually been broken before
  * or could plausibly be broken by a well-meaning sweep:
  *
- *   A. A paused theme is NOT in `THEMES` / `THEME_META` (the active set).
+ *   A. A paused theme is NOT in `BUILT_IN_THEMES` / `BUILT_IN_THEME_META` (the active set).
  *   B. A paused theme's `[data-theme="…"]` block still EXISTS in themes.css.
  *      Pause is not delete — a "cleanup" that removes the block is a failure,
  *      because un-pausing must stay a one-line edit.
@@ -260,13 +260,22 @@ function read(rel) {
       fail(
         "packages/tokens/src/theme-types.ts",
         0,
-        `"${theme}" is in BOTH THEMES and PAUSED_THEMES — a theme is active or paused, never both`,
+        `"${theme}" is in BOTH BUILT_IN_THEMES and PAUSED_THEMES — a theme is active or paused, never both`,
       );
     }
   }
   const themeTypes = read("packages/tokens/src/theme-types.ts") ?? "";
-  const metaBlock = themeTypes.match(/export const THEME_META[\s\S]*?\n\};/)?.[0];
-  if (metaBlock) {
+  const metaBlock = themeTypes.match(/export const BUILT_IN_THEME_META[\s\S]*?\n\};/)?.[0];
+  if (!metaBlock) {
+    // Anti-vacuity: this arm used to `if (metaBlock)` and skip silently, so a
+    // rename of the meta const (exactly what ADR 0029 did) would have disarmed
+    // it with a green run. A missing block is now a failure, not a shrug.
+    fail(
+      "packages/tokens/src/theme-types.ts",
+      0,
+      "could not locate the BUILT_IN_THEME_META block — this check cannot run (rename? re-point the parser)",
+    );
+  } else {
     for (const theme of PAUSED_THEMES) {
       // A commented-out mention is the un-pause recipe and is fine; a real key
       // is not. Strip comment lines before looking for the key.
@@ -278,7 +287,7 @@ function read(rel) {
         fail(
           "packages/tokens/src/theme-types.ts",
           0,
-          `THEME_META still has an entry for the paused theme "${theme}"`,
+          `BUILT_IN_THEME_META still has an entry for the paused theme "${theme}"`,
         );
       }
     }

@@ -7,7 +7,7 @@
  * fails CI (and runs locally via `pnpm docs:check`) when authoritative docs drift:
  *
  *   1. THEME COUNT — no prose may say "four/five/six themes" (all stale counts); the
- *      system ships (THEMES in theme-types.ts — paused themes excluded).
+ *      system ships (BUILT_IN_THEMES in theme-types.ts — paused themes excluded).
  *      Also: the PR template must enumerate all three themes, not a stale subset (#158).
  *   2. WORKFLOW REFS — every `.github/workflows/<x>.yml` a doc references must exist,
  *      so docs can't claim a CI that isn't there (the original C1/C5 gap).
@@ -182,11 +182,25 @@ const workflowViolations = [];
 const versionViolations = [];
 const workflowRe = /\.github\/workflows\/([A-Za-z0-9_-]+\.ya?ml)/g;
 
+/**
+ * This fork has no `.github/` at all (no CI, no remote — see
+ * `docs/ADR/0028-publishing-disabled-private-fork.md`). The WORKFLOW REFS rule exists to
+ * catch a doc naming a workflow that was RENAMED or DELETED out from under it; with the
+ * whole directory absent there is no workflow layer to be stale against, and the rule
+ * would only ever report the same 11 accurate-for-upstream references. Skip that ONE arm
+ * — every other arm (theme count, version literals, component names, PR-template themes,
+ * CLI preconditions) is CI-independent and stays live. Same honest-dormancy treatment as
+ * `release-gates:check` and `a11y:baseline:check`.
+ *
+ * Restoring `.github/workflows/` re-arms this automatically — no flag to remember.
+ */
+const workflowsPresent = existsSync(join(root, ".github", "workflows"));
+
 // The count is DERIVED from packages/tokens/src/theme-types.ts, not hard-coded, so
 // adding or removing a theme changes what the docs are allowed to claim (#64).
 const themeTypesPath = join(root, "packages", "tokens", "src", "theme-types.ts");
 export function themeNamesFromSource(text) {
-  const m = text.match(/export const THEMES\s*=\s*\[([^\]]*)\]/);
+  const m = text.match(/export const BUILT_IN_THEMES\s*=\s*\[([^\]]*)\]/);
   if (!m) return null;
   const names = [...m[1].matchAll(/"([^"]+)"|'([^']+)'/g)].map((x) => x[1] ?? x[2]);
   return names.length ? names : null;
@@ -196,7 +210,7 @@ export function themeCountFromSource(text) {
   return themeNamesFromSource(text)?.length ?? null;
 }
 // The NAMES are derived too, not hard-coded: a theme that is paused
-// (@.claude/rules/paused-surfaces.md) leaves THEMES, and the docs must stop
+// (@.claude/rules/paused-surfaces.md) leaves BUILT_IN_THEMES, and the docs must stop
 // naming it in the same move — otherwise this gate would demand the docs
 // enumerate a theme nothing tests any more.
 const THEME_NAMES = existsSync(themeTypesPath)
@@ -260,10 +274,14 @@ for (const f of files) {
       themeViolations.push(`${rel}:${v.line}: claims "${v.match}"`);
     }
   }
-  for (const m of text.matchAll(workflowRe)) {
-    const wf = join(root, ".github", "workflows", m[1]);
-    if (!existsSync(wf))
-      workflowViolations.push(`${rel}: references .github/workflows/${m[1]} which does not exist`);
+  if (workflowsPresent) {
+    for (const m of text.matchAll(workflowRe)) {
+      const wf = join(root, ".github", "workflows", m[1]);
+      if (!existsSync(wf))
+        workflowViolations.push(
+          `${rel}: references .github/workflows/${m[1]} which does not exist`,
+        );
+    }
   }
   if (currentVersion && !VERSION_LITERAL_EXEMPT.has(rel)) {
     for (const v of findVersionLiteralViolations(text, currentVersion)) {
@@ -397,7 +415,7 @@ if (exportNames) {
 // 4. PR TEMPLATE THEME ENUMERATION (#158)
 // ---------------------------------------------------------------------------
 // The PR checklist asserts theme coverage; it must enumerate every ACTIVE
-// shipped theme (THEMES in theme-types.ts), not a stale subset (#158).
+// shipped theme (BUILT_IN_THEMES in theme-types.ts), not a stale subset (#158).
 const prTemplateViolations = [];
 const prTemplate = join(root, ".github", "PULL_REQUEST_TEMPLATE.md");
 if (existsSync(prTemplate)) {
@@ -718,7 +736,7 @@ if (themeViolations.length) {
   for (const v of themeViolations) console.error("  - " + v);
   console.error(
     `  Fix: state ${THEME_COUNT} themes and list ${THEME_LIST}. The count is\n` +
-      "  derived from THEMES in theme-types.ts — if a theme was genuinely added/removed, that is\n" +
+      "  derived from BUILT_IN_THEMES in theme-types.ts — if a theme was genuinely added/removed, that is\n" +
       "  where it changes first.",
   );
 }
@@ -809,8 +827,9 @@ if (cliPreconditionViolations.length) {
 }
 if (failed) process.exit(1);
 console.log(
-  "✔ docs-accuracy: theme count + workflow refs + @elabs/components-* component names + PR-template themes + " +
+  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}@elabs/components-* component names + PR-template themes + ` +
     "CI-gate contract + version literals + release-set counts + dual-canvas decision consistent, " +
     "and consuming-project CLI preconditions present " +
-    `(${files.length} docs scanned for rules 1–7; ${cliPreconditionFiles.length} docs/skills/agents/stories files for the CLI-precondition rule).`,
+    `(${files.length} docs scanned for rules 1–7; ${cliPreconditionFiles.length} docs/skills/agents/stories files for the CLI-precondition rule)` +
+    `${workflowsPresent ? "" : ". NOTE: workflow-ref + CI-gate-contract rules SKIPPED — no .github/workflows (ADR 0028)"}.`,
 );

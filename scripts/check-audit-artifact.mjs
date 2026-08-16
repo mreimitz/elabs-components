@@ -20,12 +20,14 @@
  *
  * SCOPE (#78's "six themes" framing is outdated)
  * ----------------------------------------------
- * There are THREE shipped themes — `light`, `dark`, `blueprint`
- * (`THEMES` in packages/tokens/src/theme-types.ts) — plus the `:root` neutral
- * light base, which is a fallback, not a selectable theme. The orphan `acme`
- * theme #78 asked to remove is already gone. The gate enforces that scope: an
- * artifact naming a theme that is not in `THEMES` fails, so the "documents
- * deleted themes" rot cannot recur.
+ * The audit covers the BUILT-IN themes (`BUILT_IN_THEMES` in
+ * packages/tokens/src/theme-types.ts) plus the `:root` neutral light base, which
+ * is a fallback, not a selectable theme. Since ADR 0029 theme names are OPEN —
+ * a consumer authors their own — so this artifact deliberately speaks only for
+ * the themes this repo ships; nothing here can measure a theme we never see.
+ * The orphan `acme` theme #78 asked to remove is already gone. The gate enforces
+ * that scope: an artifact naming a theme that is not in `BUILT_IN_THEMES` fails,
+ * so the "documents deleted themes" rot cannot recur.
  *
  * WHAT THIS PROVES — AND WHAT IT DOES NOT
  * ---------------------------------------
@@ -54,10 +56,13 @@ import { dirname, join } from "node:path";
 // `declarations`, so both must blank comments before matching (#401).
 import { blankComments } from "./check-elevation.mjs";
 import { isPausedTheme } from "./lib/paused-surfaces.mjs";
+// Every stylesheet that carries a theme block (ADR 0029 split the reference
+// themes out of themes.css). Throws rather than return an incomplete set — an
+// artifact rendered from a shrunken source would look fresh and audit nothing.
+import { readThemesCss } from "./lib/theme-sources.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR);
-const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");
 const THEME_TYPES_TS = join(REPO_ROOT, "packages", "tokens", "src", "theme-types.ts");
 export const ARTIFACT_PATH = join(REPO_ROOT, "apps", "e2e", "reports", "theme-aa-audit.md");
 /** Repo-relative, for messages (never a machine-specific absolute path). */
@@ -143,7 +148,7 @@ export function contrast(fg, bg) {
  * skipped — they carry no color tokens.
  *
  * A PAUSED theme's block stays in themes.css (pause ≠ delete) but is NOT
- * audited: the checker validates every heading against `THEMES`, so writing one
+ * audited: the checker validates every heading against `BUILT_IN_THEMES`, so writing one
  * would make the artifact fail its own gate. See `.claude/rules/paused-surfaces.md`.
  * @returns {{ name: string, body: string }[]}
  */
@@ -172,10 +177,15 @@ function tokenMap(body) {
   return map;
 }
 
-/** THEMES from theme-types.ts (the single source for the shipped theme set). */
+/**
+ * BUILT_IN_THEMES from theme-types.ts (the single source for the themes THIS
+ * REPO ships). Theme names are open since ADR 0029, so this is deliberately the
+ * built-in list and not "every theme that could exist" — the audit artifact
+ * documents the reference themes, which is all this repo can speak for.
+ */
 export function parseShippedThemes(tsText) {
-  const m = tsText.match(/export const THEMES\s*=\s*\[([^\]]*)\]/);
-  if (!m) throw new Error("Could not parse THEMES from theme-types.ts");
+  const m = tsText.match(/export const BUILT_IN_THEMES\s*=\s*\[([^\]]*)\]/);
+  if (!m) throw new Error("Could not parse BUILT_IN_THEMES from theme-types.ts");
   return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
 }
 
@@ -347,7 +357,7 @@ export function renderArtifact(cssText, shippedThemes) {
     `- **${shippedThemes.length} shipped themes:** ${shippedThemes.map((t) => `\`${t}\``).join(", ")} — plus the \`:root\` neutral light base (a fallback, not a selectable theme).`,
     '  #78\'s original "six themes" framing is outdated, and the orphan `acme` theme it asked to',
     '  remove is already gone — no `[data-theme="acme"]` block exists. The gate fails if this',
-    "  artifact ever names a theme that is not in `THEMES` (`packages/tokens/src/theme-types.ts`),",
+    "  artifact ever names a theme that is not in `BUILT_IN_THEMES` (`packages/tokens/src/theme-types.ts`),",
     "  which is the specific rot that killed the previous artifact.",
     "- **Source:** `packages/tokens/src/themes.css` (raw `oklch()` token literals; `var()` aliases resolved).",
     "- **Method:** deterministic oklch → OKLab → sRGB → WCAG 2.x relative luminance. No browser.",
@@ -427,7 +437,7 @@ export function findArtifactViolations(committed, cssText, shippedThemes) {
     }
     if (/^[a-z][a-z0-9-]*$/.test(heading) && !allowed.has(heading)) {
       problems.push(
-        `Artifact documents theme "${heading}", which is not in THEMES ` +
+        `Artifact documents theme "${heading}", which is not in BUILT_IN_THEMES ` +
           `(${shippedThemes.join(", ")}). A deleted theme must not survive in the audit.`,
       );
     }
@@ -454,7 +464,7 @@ export function findArtifactViolations(committed, cssText, shippedThemes) {
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMain) {
   const write = process.argv.includes("--write");
-  const css = readFileSync(THEMES_CSS, "utf8");
+  const css = readThemesCss();
   const shipped = parseShippedThemes(readFileSync(THEME_TYPES_TS, "utf8"));
 
   if (write) {

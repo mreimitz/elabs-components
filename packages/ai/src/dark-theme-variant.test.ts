@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { THEME_META, type ThemeName } from "@elabs/components-tokens";
+import { BUILT_IN_THEME_META, BUILT_IN_THEMES } from "@elabs/components-tokens";
 
 /**
  * Regression lock for #3: the Tailwind `dark:` custom variant in themes.css must
@@ -25,7 +25,12 @@ const themesCss = readFileSync(themesCssPath, "utf8");
 const darkVariant = themesCss.match(/@custom-variant dark \(([^;]*)\)/);
 const darkVariantSelector = darkVariant?.[1] ?? "";
 
-const darkThemes = (Object.keys(THEME_META) as ThemeName[]).filter((name) => THEME_META[name].dark);
+// The BUILT-IN dark themes only. A consumer theme cannot be covered here by
+// construction — its `[data-theme]` selector is not in OUR themes.css — which is
+// why a consumer authoring a dark theme must add it to their own `dark:` variant
+// (or, better, rely on semantic tokens, which need no variant at all). See
+// @.claude/rules/theming.md.
+const darkThemes = BUILT_IN_THEMES.filter((name) => BUILT_IN_THEME_META[name].dark);
 
 describe("dark: custom variant", () => {
   it("is declared in themes.css", () => {

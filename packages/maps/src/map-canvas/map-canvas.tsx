@@ -68,7 +68,7 @@ export type MapCanvasProps = {
   className?: string;
   /**
    * Basemap flavor. If not provided, it is derived from the active brand theme
-   * (`data-theme` + `THEME_META[..].dark`), then a `dark`/`light` root class,
+   * (`data-theme` + that theme's own `color-scheme`), then a `dark`/`light` root class,
    * then the OS preference.
    */
   theme?: BasemapTheme;

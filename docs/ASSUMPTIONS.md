@@ -50,10 +50,14 @@ Web access was available; key facts were verified against official docs
 
 ## Placeholder brand (replace these)
 
-- Colors: token values in `packages/tokens/src/themes.css`.
+- Colors: token values in `packages/tokens/src/themes.css` (`:root`) and the
+  reference themes in `packages/tokens/src/themes/`.
 - Logo: `packages/icons/src/brand-logo.tsx` (keep the `currentColor` + variant API).
 - Icons: add to `packages/icons/src/sample-icons/` via `createIcon`.
-- Themes are token-driven; adding a new theme is a single CSS block + `THEMES` entry.
+- Themes are token-driven and the set is **open**: a consumer writes their own
+  `[data-theme]` stylesheet and registers it with `<ThemeProvider themes={…}>`,
+  no fork required (ADR 0029). Shipping one FROM the package additionally needs
+  a `BUILT_IN_THEMES` entry and an `exports` key.
 
 ## Test/story coverage
 

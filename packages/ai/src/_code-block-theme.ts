@@ -21,35 +21,34 @@
  * see @.claude/rules/theming.md) resolves ITS region's theme this way: pass a
  * descendant of that region as `el` and the id/type/colors all agree by
  * construction (there is no "themeName" parameter that could disagree with what
- * `el` actually renders — see `getActiveThemeName`, which derives the name off
- * the very same element for exactly this reason).
+ * `el` actually renders).
  *
  * The highlight-cache key (`codeBlockThemeId`, consumed by `code-block.tsx`'s
  * `getTokensCacheKey`) is keyed on `getThemeScopeKey` — the RAW `data-theme`
- * attribute — NOT `getActiveThemeName`'s validated `ThemeName`. This matters:
- * `getActiveThemeName` collapses "no `data-theme` attribute yet" (the first
- * render, before `ThemeProvider` mounts and writes the attribute) and an
- * EXPLICIT `data-theme="light"` into the same name, because `:root`'s
- * fallback `--code-*` values are intentionally their OWN neutral placeholder
- * theme, not a byte-identical copy of `[data-theme="light"]`'s (see
- * `themes.css`'s "`:root` holds the DEFAULT (light) theme" header — a
- * deliberately distinct palette, not an alias). If the cache key used the
- * validated name, a code block that first tokenizes before `ThemeProvider`
- * mounts would cache `:root`'s colors under the SAME key `ThemeProvider`
- * later writes explicitly — so the (correct) `light` colors would never
- * take effect; the cache hit would return the stale `:root` colors forever
- * (#315 follow-up). Keying on the raw attribute gives "no attribute" and
- * "light" distinct cache entries, so the mutation from one to the other
- * is a genuine cache miss and re-tokenizes.
+ * attribute — and must NOT be collapsed to a validated/normalized theme name.
+ * This matters: "no `data-theme` attribute yet" (the first render, before
+ * `ThemeProvider` mounts and writes the attribute) and an EXPLICIT
+ * `data-theme="light"` are DIFFERENT palettes, because `:root`'s fallback
+ * `--code-*` values are intentionally their OWN neutral placeholder theme, not
+ * a byte-identical copy of `[data-theme="light"]`'s (see `themes.css`'s
+ * "`:root` holds the DEFAULT (light) theme" header — a deliberately distinct
+ * palette, not an alias). If the cache key normalized "unset" to "light", a
+ * code block that first tokenizes before `ThemeProvider` mounts would cache
+ * `:root`'s colors under the SAME key `ThemeProvider` later writes explicitly
+ * — so the (correct) `light` colors would never take effect; the cache hit
+ * would return the stale `:root` colors forever (#315 follow-up). Keying on the
+ * raw attribute gives "no attribute" and "light" distinct cache entries, so the
+ * mutation from one to the other is a genuine cache miss and re-tokenizes.
+ *
+ * ADR 0029 removed the `getActiveThemeName` helper this file used to export.
+ * Theme names are open now, so "narrow the attribute to a known theme" is not a
+ * meaningful operation — a consumer theme is as real as a shipped one. The two
+ * things it was used for are both answered off the element directly:
+ * `resolveThemeIsDark(el)` for the light/dark `type`, and `resolveTokenColor`
+ * for the colors.
  */
 
-import {
-  DEFAULT_THEME,
-  isThemeName,
-  resolveTokenColor,
-  THEME_META,
-  type ThemeName,
-} from "@elabs/components-tokens";
+import { resolveThemeIsDark, resolveTokenColor } from "@elabs/components-tokens";
 import type { ThemeRegistrationRaw } from "shiki";
 
 const FALLBACK_BACKGROUND = "#ffffff";
@@ -58,27 +57,11 @@ const FALLBACK_FOREGROUND = "#111111";
 const ROOT_SCOPE_KEY = "__root__";
 
 /**
- * Reads the active brand theme NAME off `el` (default `<html>`), narrowed to a
- * known `ThemeName` — used ONLY to pick the right `--code-*` fallback values
- * and the `THEME_META[...].dark` light/dark flag. NOT the highlight-cache key
- * (see `getThemeScopeKey` for that) — an unset attribute and an explicit
- * `data-theme="light"` both narrow to `"light"` here by design
- * (DEFAULT_THEME), which is exactly why this must never double as a cache key.
- */
-export function getActiveThemeName(el?: Element | null): ThemeName {
-  const root = el ?? (typeof document !== "undefined" ? document.documentElement : null);
-  const raw = root?.getAttribute("data-theme");
-  return isThemeName(raw) ? raw : DEFAULT_THEME;
-}
-
-/**
  * Reads the RAW `data-theme` attribute off `el` (default `<html>`) — or the
- * `"__root__"` sentinel when the attribute is absent (or its value isn't a
- * known theme). Unlike `getActiveThemeName`, this does NOT collapse "unset"
- * and "explicit light" into one value — it is the highlight-cache
- * scoping key (`codeBlockThemeId`), never a `ThemeName`, so an unrecognized
- * string still gets its own (harmless) cache bucket instead of silently
- * merging into `DEFAULT_THEME`'s.
+ * `"__root__"` sentinel when the attribute is absent. It deliberately does NOT
+ * collapse "unset" and "explicit light" into one value (see the module comment),
+ * and it never validates the name against a registry: a consumer theme gets its
+ * own cache bucket, which is exactly right — it has its own `--code-*` values.
  */
 export function getThemeScopeKey(el?: Element | null): string {
   const root = el ?? (typeof document !== "undefined" ? document.documentElement : null);
@@ -92,15 +75,16 @@ export function codeBlockThemeId(scopeKey: string): string {
 
 /**
  * Builds a Shiki `ThemeRegistrationRaw` from the resolved `--code-*` tokens of
- * whichever brand theme is active on `el` (default `<html>`). The theme
- * id/type (`codeBlockThemeId`, `THEME_META[...].dark`) and the colors are both
- * derived from THIS SAME element, so they can never disagree. Scopes follow
- * the common TextMate categories Shiki's bundled grammars emit across
+ * whichever brand theme is active on `el` (default `<html>`). The theme id, its
+ * light/dark `type` and its colors are ALL derived from THIS SAME element, so
+ * they can never disagree. `type` comes from `resolveThemeIsDark` (the theme's
+ * own `color-scheme`) rather than a registry lookup, so a consumer-authored
+ * theme gets the right Shiki type without registering here (ADR 0029). Scopes
+ * follow the common TextMate categories Shiki's bundled grammars emit across
  * languages.
  */
 export function buildCodeBlockTheme(el?: Element | null): ThemeRegistrationRaw {
   const root = el ?? (typeof document !== "undefined" ? document.documentElement : null);
-  const themeName = getActiveThemeName(root);
   const read = (name: string, fallback: string) => resolveTokenColor(name, { el: root, fallback });
 
   const background = read("--code-background", FALLBACK_BACKGROUND);
@@ -120,7 +104,7 @@ export function buildCodeBlockTheme(el?: Element | null): ThemeRegistrationRaw {
     // comment + `getThemeScopeKey` for why "unset" and "light" must get
     // different cache buckets.
     name: codeBlockThemeId(getThemeScopeKey(root)),
-    type: THEME_META[themeName].dark ? "dark" : "light",
+    type: resolveThemeIsDark(root) ? "dark" : "light",
     bg: background,
     fg: foreground,
     colors: {

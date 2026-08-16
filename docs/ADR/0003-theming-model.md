@@ -2,6 +2,10 @@
 
 - Status: Accepted
 - Date: 2026-06-04
+- **Amended by:** ADR [0029](./0029-open-theme-registry.md) — the mechanism below is
+  unchanged, but the SET of themes is no longer closed: `ThemeName` is `string`,
+  `THEMES`/`THEME_META` became `BUILT_IN_THEMES`/`BUILT_IN_THEME_META`, and a consumer
+  registers their own themes through `<ThemeProvider themes={…}>`.
 
 ## Context
 
@@ -22,16 +26,17 @@ Tailwind v4 via `@theme inline`.
   (`--color-background: var(--background)`), so components use `bg-background`,
   `text-muted-foreground`, `border-border` — never raw values.
 - `ThemeProvider` writes `data-theme` and persists the choice; `useTheme()`
-  reads/sets it. `THEMES`/`THEME_META` enumerate the available themes.
-- Shipped themes: **light** (Qlik brand, the default), **dark**,
-  and **blueprint** (cyanotype paper, white ink, full reprographic texture).
-  `light`/`dark` derive from the Qlik brand palette (Qlik Green
-  primary).
+  reads/sets it. The available themes are the provider's REGISTRY (ADR 0029);
+  `BUILT_IN_THEME_DEFINITIONS` is its default.
+- Reference themes: **light** (the default) and **dark**. `blueprint`
+  (cyanotype paper, white ink, full reprographic texture) is kept as source but
+  PAUSED — see @.claude/rules/paused-surfaces.md.
 
 ## Consequences
 
 - Re-branding = editing token values; components never change.
-- Adding a theme is mechanical (`/new-theme`): one CSS block + a `THEMES` entry.
+- Adding a theme is mechanical: one CSS block covering `THEME_TOKEN_NAMES`, plus a
+  registry entry (`/new-theme` in this repo; `defineTheme` in a consumer's).
 - Components must use tokens exclusively — enforced by review, the quality gates,
   and a non-blocking boundary hook that warns on raw hex.
 - `data-theme` (vs. a `.dark` class) generalizes cleanly to N brands/modes.

@@ -18,14 +18,15 @@
  * own `AUDIT_WRITE=1`-gated artifact; that was an opt-in reminder, not a gate,
  * and the file it produced still documented two deleted themes months later.
  */
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { readThemeCss } from "./_theme-css-source";
 import { contrast } from "./color-contrast";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const css = readFileSync(join(__dirname, "themes.css"), "utf8");
+// ADR 0029 — the reference themes live in their own stylesheets now, so read
+// the SET. The helper throws if a theme's block is missing rather than let a
+// block regex match less and pass vacuously.
+const css = readThemeCss();
 
 /** WCAG thresholds. */
 const AA_TEXT = 4.5; // body text

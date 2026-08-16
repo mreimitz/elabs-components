@@ -103,8 +103,9 @@ Set the **favicon** to the same Qlik mark (head-level asset).
 
 ```tsx
 import { ThemeSwitcher } from "@elabs/components-ui";
-// `themes` defaults to the Qlik light/dark pair; `showSystem` defaults to true →
-// renders exactly System / Light / Dark (whole-screen animated, reduce-motion safe).
+// With no `themes` prop it renders the ThemeProvider's whole registry (the two
+// reference themes by default); `showSystem` defaults to true → renders exactly
+// System / Light / Dark (whole-screen animated, reduce-motion safe).
 <ThemeSwitcher />;
 ```
 
@@ -112,9 +113,10 @@ import { ThemeSwitcher } from "@elabs/components-ui";
 when you want text labels instead of the icon toggle:
 
 ```tsx
-const LIGHT = "light",
-  DARK = "dark";
-type Mode = "light" | "dark" | "system";
+type Mode = ThemeName | "system";
+// Read the labels off the provider's registry — never a module-level map, so a
+// theme YOU registered shows up here too (ADR 0029).
+const { themeDefinitions } = useTheme();
 // persist Mode in localStorage; in "system", read matchMedia('(prefers-color-scheme: dark)')
 // and setTheme(systemTheme()) on change.
 <Select value={mode} onValueChange={choose}>
@@ -122,14 +124,17 @@ type Mode = "light" | "dark" | "system";
     <SelectValue />
   </SelectTrigger>
   <SelectContent>
-    <SelectItem value="light">{THEME_META[LIGHT].label}</SelectItem>
-    <SelectItem value="dark">{THEME_META[DARK].label}</SelectItem>
+    {themeDefinitions.map((d) => (
+      <SelectItem key={d.value} value={d.value}>
+        {d.label}
+      </SelectItem>
+    ))}
     <SelectItem value="system">System</SelectItem>
   </SelectContent>
 </Select>;
 ```
 
-> Verified props: `themes?` (default Qlik pair) · `showSystem?` (default true) ·
+> Verified props: `themes?` (default: the provider's registry) · `showSystem?` (default true) ·
 > `mode?` ("auto"|"toggle"|"dropdown") · `size?` · `effect?`. So `<ThemeSwitcher />`
 > yields System / Light / Dark with no config — the `Select` is only for an
 > explicit labeled dropdown.

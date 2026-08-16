@@ -24,16 +24,17 @@
  * was needed. This test locks that reading so a future palette edit cannot silently
  * erase (or over-ink) the grid.
  */
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { readThemeCss } from "./_theme-css-source";
 import { oklchToSrgb, parseOklch, relativeLuminance } from "./color-contrast";
 // The shipped, user-selectable themes — read from the source of truth, never re-listed.
-import { THEMES } from "./theme-types";
+import { BUILT_IN_THEMES } from "./theme-types";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const css = readFileSync(join(__dirname, "themes.css"), "utf8");
+// ADR 0029 — the reference themes live in their own stylesheets now, so read
+// the SET. The helper throws if a theme's block is missing rather than let a
+// block regex match less and pass vacuously.
+const css = readThemeCss();
 
 /**
  * The surfaces `decoration.css` paints the ground grid on. `--surface-muted` and
@@ -137,7 +138,7 @@ describe("decoration ink (#29) — one recipe, every shipped palette", () => {
     for (const token of inks) expect(inkMultiplier(token)).toBeGreaterThan(0);
   });
 
-  describe.each(THEMES)("%s", (theme) => {
+  describe.each(BUILT_IN_THEMES)("%s", (theme) => {
     it.each(inks)("%s reads legible-but-quiet on every ground surface at dial 10", (token) => {
       const band = BANDS[token];
       for (const surface of GROUND_SURFACES) {
@@ -171,7 +172,7 @@ describe("decoration ink (#29) — one recipe, every shipped palette", () => {
   });
 
   it("keeps the major grid line stronger than the minor one (the 80px rhythm reads)", () => {
-    for (const theme of THEMES) {
+    for (const theme of BUILT_IN_THEMES) {
       expect(inkMultiplier("--bp-grid-ink-major")).toBeGreaterThan(inkMultiplier("--bp-grid-ink"));
       expect(inkContrast(theme, "--bp-grid-ink-major", "--card", 10)).toBeGreaterThan(
         inkContrast(theme, "--bp-grid-ink", "--card", 10),

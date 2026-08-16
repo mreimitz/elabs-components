@@ -6,16 +6,16 @@
 
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
-**Themes (2):** dark, light (default)
+**Themes (1):** dark
 **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 154
 
 ## Packages
 
 | Package | Path | Components | Hooks | Purpose |
 | --- | --- | --: | --: | --- |
-| `@elabs/components-tokens` | packages/tokens | 18 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
+| `@elabs/components-tokens` | packages/tokens | 20 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs/components-ui` | packages/ui | 355 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs/components-ui` | packages/ui | 354 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs/components-ai` | packages/ai | 443 | 13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -31,6 +31,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| BUILT_IN_THEME_DEFINITIONS | component |  | `@elabs/components-tokens` |  |
+| BUILT_IN_THEME_META | component |  | `@elabs/components-tokens` |  |
+| BUILT_IN_THEMES | component |  | `@elabs/components-tokens` |  |
 | DECORATION_LEVELS | component |  | `@elabs/components-tokens` |  |
 | DecorationProvider | component |  | `@elabs/components-tokens` | Sets the `--decoration` dial (0–10) for a region — reprographic texture, orthogonal to color. |
 | DEFAULT_DECORATION_LEVEL | component |  | `@elabs/components-tokens` |  |
@@ -46,9 +49,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PAUSED_THEMES | component |  | `@elabs/components-tokens` |  |
 | TASTE_REGISTER_META | component |  | `@elabs/components-tokens` |  |
 | TASTE_REGISTERS | component |  | `@elabs/components-tokens` |  |
-| THEME_META | component |  | `@elabs/components-tokens` |  |
+| THEME_TOKEN_NAMES | component |  | `@elabs/components-tokens` |  |
 | ThemeProvider | component |  | `@elabs/components-tokens` | Writes `data-theme` on a root element and persists the choice; `useTheme()` reads/sets it. |
-| THEMES | component |  | `@elabs/components-tokens` |  |
 | useDecoration | hook |  | `@elabs/components-tokens` |  |
 | useDensity | hook |  | `@elabs/components-tokens` |  |
 | useMotionPreference | hook |  | `@elabs/components-tokens` |  |
@@ -197,7 +199,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DatePicker | component |  | `@elabs/components-ui` |  |
 | DateRangePicker | component |  | `@elabs/components-ui` |  |
 | DEFAULT_MESSAGES | component |  | `@elabs/components-ui` |  |
-| DEFAULT_THEME_PAIR | component |  | `@elabs/components-ui` |  |
 | Descriptions | component |  | `@elabs/components-ui` |  |
 | DescriptionsItem | component |  | `@elabs/components-ui` |  |
 | Dialog | component |  | `@elabs/components-ui` | Modal overlay for focused tasks/flows that block the page until dismissed. |

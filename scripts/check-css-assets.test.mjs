@@ -64,6 +64,34 @@ test("resolves a ?query / #fragment suffix on an asset URL", () => {
 });
 
 // ── False positives the gate must NOT raise ──────────────────────────────────
+test("ignores an @import shown inside a COMMENT (a docblock usage example)", () => {
+  // The reference-theme stylesheets document their own opt-in import in their
+  // header (ADR 0029). Counting that reported the package as depending on
+  // itself — a bare-import violation nobody could fix.
+  const css = `/**
+ * Import this only if you want the dark reference theme:
+ *
+ *     @import "@elabs/components-tokens/styles.css";
+ *     @import "@elabs/components-tokens/themes/dark.css";
+ *
+ * The mask below is documented as url("./nope.svg") too.
+ */
+[data-theme="dark"] {
+  --background: oklch(0 0 0);
+}`;
+  const { bare, relative } = extractCssRefs(css);
+  assert.deepEqual(bare, [], "a commented-out @import is not an edge");
+  assert.deepEqual(relative, [], "nor is a url() named in prose");
+});
+
+test("still sees a REAL @import that follows a comment", () => {
+  const { bare, relative } = extractCssRefs(
+    `/* @import "not-real"; */\n@import "tailwindcss";\n@import "./decoration.css";`,
+  );
+  assert.deepEqual(bare, ["tailwindcss"]);
+  assert.deepEqual(relative, ["./decoration.css"]);
+});
+
 test("ignores remote, data: and fragment url()s", () => {
   const css = `
     .a { background: url(https://cdn.example.com/x.png); }

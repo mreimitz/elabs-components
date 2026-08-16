@@ -98,10 +98,11 @@ describe("CodeBlock", () => {
     expect(spansAfter.length).toBeGreaterThan(1);
   });
 
-  // #315 regression lock — the blocker: `getActiveThemeName` narrows "no
-  // `data-theme` attribute yet" (the pre-`ThemeProvider`-mount render) and an
-  // EXPLICIT `data-theme="light"` to the SAME `ThemeName` (both are
-  // `DEFAULT_THEME`). `:root`'s `--code-*` fallback values are their own
+  // #315 regression lock — the blocker: narrowing the attribute to a validated
+  // theme name collapses "no `data-theme` attribute yet" (the
+  // pre-`ThemeProvider`-mount render) and an EXPLICIT `data-theme="light"` into
+  // the SAME value (both fall back to `DEFAULT_THEME`). `:root`'s `--code-*`
+  // fallback values are their own
   // distinct placeholder palette, not a copy of `light`'s — so if the
   // highlight cache were keyed on the validated name, a code block that first
   // tokenizes before `data-theme` is set would cache under the SAME key

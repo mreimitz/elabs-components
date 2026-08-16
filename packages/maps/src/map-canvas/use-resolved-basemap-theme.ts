@@ -1,23 +1,23 @@
 "use client";
 
-import { THEME_META, isThemeName } from "@elabs/components-tokens";
+import { resolveThemeIsDark } from "@elabs/components-tokens";
 import { useEffect, useState } from "react";
 
 import type { BasemapTheme } from "./map-context";
 
 /**
- * Brand theme → basemap flavor. `THEME_META[theme].dark` is authoritative when
- * a `data-theme` is set (the ThemeProvider contract); a `dark`/`light` class on
- * `<html>` is honored for non-brand hosts (next-themes et al.); the OS
- * preference is only the last-resort fallback.
+ * Brand theme → basemap flavor. When a `data-theme` is set (the ThemeProvider
+ * contract) the theme's own `color-scheme` is authoritative via
+ * `resolveThemeIsDark` — which is why a CONSUMER-AUTHORED dark theme gets the
+ * dark basemap without registering anything here (ADR 0029; the old
+ * `THEME_META[theme].dark` lookup only knew the themes this repo ships). A
+ * `dark`/`light` class on `<html>` is honored for non-brand hosts (next-themes
+ * et al.); the OS preference is only the last-resort fallback.
  */
 function getBrandTheme(): BasemapTheme | null {
   if (typeof document === "undefined") return null;
   const root = document.documentElement;
-  const dataTheme = root.getAttribute("data-theme");
-  if (dataTheme && isThemeName(dataTheme)) {
-    return THEME_META[dataTheme].dark ? "dark" : "light";
-  }
+  if (root.getAttribute("data-theme")) return resolveThemeIsDark(root) ? "dark" : "light";
   if (root.classList.contains("dark")) return "dark";
   if (root.classList.contains("light")) return "light";
   return null;

@@ -6,6 +6,9 @@ Import from `@elabs/components-tokens`. Part of brand-ui — see the root `llms.
 
 ## Components
 
+- BUILT_IN_THEME_DEFINITIONS
+- BUILT_IN_THEME_META
+- BUILT_IN_THEMES
 - DECORATION_LEVELS
 - DecorationProvider — Sets the `--decoration` dial (0–10) for a region — reprographic texture, orthogonal to color.
   - avoid: Raising decoration on a dense data surface — decoration density goes DOWN as information density goes UP.
@@ -23,12 +26,11 @@ Import from `@elabs/components-tokens`. Part of brand-ui — see the root `llms.
 - PAUSED_THEMES
 - TASTE_REGISTER_META
 - TASTE_REGISTERS
-- THEME_META
+- THEME_TOKEN_NAMES
 - ThemeProvider — Writes `data-theme` on a root element and persists the choice; `useTheme()` reads/sets it.
   - avoid: Fixing a flat or wrong-looking surface inside a component — change the theme's token, not the component.
   - avoid: Adding `dark:` overrides in a component — semantic tokens make every theme work, not only dark.
   - avoid: Assuming a Storybook decorator supplies this context — the global decorator only sets data-theme, so a useTheme story must wrap itself.
-- THEMES
 
 ## Hooks
 

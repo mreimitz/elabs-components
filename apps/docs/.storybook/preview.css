@@ -4,8 +4,17 @@
    same faces from the same @font-face rules — previously Storybook fetched them
    from a CDN and every consumer silently fell back to Helvetica. */
 
-/* Token stylesheet (pulls in Tailwind v4 + tw-animate-css) */
+/* Token stylesheet: the ENGINE (Tailwind v4 + tw-animate-css + the token→utility
+   bridge + the dials + a neutral light `:root` base). It ships no selectable
+   theme — ADR 0029. */
 @import "@elabs/components-tokens/styles.css";
+
+/* The two REFERENCE themes, imported explicitly because they are opt-in. This is
+   exactly what a consuming app writes; an app that authors its own themes omits
+   these two lines and imports its own stylesheet instead. Storybook needs both
+   because its theme toolbar switches between them. */
+@import "@elabs/components-tokens/themes/light.css";
+@import "@elabs/components-tokens/themes/dark.css";
 
 /* Tailwind v4 cannot auto-scan workspace packages resolved via node_modules,
    so point it at each package's source explicitly. Add new packages here. */

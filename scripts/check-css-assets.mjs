@@ -57,16 +57,30 @@ const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 
 /**
+ * Blank out `/* … *​/` comments, preserving newlines so any line-based reporting
+ * stays accurate. CSS has no nested comments, so a non-greedy scan is exact.
+ */
+function blankComments(cssText) {
+  return cssText.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
+}
+
+/**
  * Every `url(…)` target and `@import` specifier in a stylesheet.
  *
  * `url(` is matched quote-aware: a data-URI can legally contain `)` (themes.css
  * embeds `<circle filter="url(%23b)"/>` inside an SVG mask), so a naive
  * `url\(([^)]*)\)` truncates it and then reports a bogus violation.
  *
+ * COMMENTS ARE BLANKED FIRST. A stylesheet's own docblock routinely shows the
+ * consumer how to import it (`@import "@elabs/components-tokens/themes/dark.css"`),
+ * and counting that as a real edge reports a dependency the package must declare
+ * on ITSELF. Same comment-blindness class as #401.
+ *
  * @param {string} cssText
  * @returns {{ relative: string[], bare: string[], external: string[] }}
  */
-export function extractCssRefs(cssText) {
+export function extractCssRefs(rawCssText) {
+  const cssText = blankComments(rawCssText);
   const relative = [];
   const bare = [];
   const external = [];

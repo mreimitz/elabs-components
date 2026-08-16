@@ -2,6 +2,13 @@
    If this file drifts from those instructions, the docs are wrong. */
 @import "@elabs/components-tokens/styles.css";
 
+/* The reference themes are OPT-IN subpaths (ADR 0029) — the engine above ships
+   only the neutral `:root` base. A consumer takes the ones they want, or none
+   and registers their own. Importing them here is what proves the subpath
+   exports actually resolve from an installed package. */
+@import "@elabs/components-tokens/themes/light.css";
+@import "@elabs/components-tokens/themes/dark.css";
+
 /* Tailwind ignores node_modules unless you @source it. Skipping these is the
    single most common consumer mistake — components render unstyled. */
 @source "../node_modules/@elabs/components-ai/dist";

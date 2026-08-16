@@ -5,15 +5,26 @@ brands. Re-branding is a token change.
 
 ## Where tokens live
 
-`packages/tokens/src/themes.css`:
+`packages/tokens/src/themes.css` is the **engine** — shipped as
+`@elabs/components-tokens/styles.css` and always imported:
 
-- `:root` — neutral light base/fallback.
-- `[data-theme="light"]` (default), `[data-theme="dark"]`.
-  (A paused theme's block stays in the file but is not shipped — see
-  `.claude/rules/paused-surfaces.md`.)
+- `:root` — neutral light base/fallback. A complete palette, so an app that
+  imports nothing else still renders correctly.
 - `@theme inline { --color-*: var(--*) }` — maps tokens to Tailwind utilities.
+- the dials (decoration, density, motion), the base layer, the view-transition
+  block. (A paused theme's block stays in the file but is not shipped — see
+  `.claude/rules/paused-surfaces.md`.)
 
-`packages/tokens/src/theme-types.ts` enumerates `THEMES` and `THEME_META`.
+Each **reference theme** is its own opt-in file — `src/themes/light.css`,
+`src/themes/dark.css`, exported as `@elabs/components-tokens/themes/<name>.css`.
+`styles.css` does **not** import them.
+
+`packages/tokens/src/theme-types.ts` holds the **built-in registry**
+(`BUILT_IN_THEMES`, `BUILT_IN_THEME_META`, `BUILT_IN_THEME_DEFINITIONS`,
+`DEFAULT_THEME`) plus `defineTheme()` and `THEME_TOKEN_NAMES`. The theme set is
+open — `ThemeName` is `string` and a consumer registers their own through
+`<ThemeProvider themes={…}>`. See ADR
+[0029](./ADR/0029-open-theme-registry.md) and `docs/CONSUMING.md` §5.1.
 
 ## Semantic token set
 
@@ -36,6 +47,9 @@ Data: `--chart-1..5`. Shape: `--radius` (+ derived `--radius-sm/md/lg/xl`).
 2. **Adding a visual concept = adding a token** in _every_ theme block + a
    mapping in `@theme inline`. Then use `bg-foo` / `text-foo`.
 3. **Every theme overrides every token.** Missing tokens fall back to `:root`.
+   In-repo themes are gated by `pnpm theme-parity:check`; a consumer's theme
+   lives where that gate cannot reach, so the contract ships as data —
+   `THEME_TOKEN_NAMES`, asserted in the consumer's own test.
 4. **Contrast:** body text ≥ 4.5:1 (WCAG AA) in every theme. The
    `packages/tokens/src/themes-contrast.test.ts` Vitest gate enforces this for the
    status-text + muted/sidebar-muted pairings across both themes.

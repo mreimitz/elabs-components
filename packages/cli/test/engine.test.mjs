@@ -140,7 +140,18 @@ for (const archetype of ["data-app", "flow-workspace"]) {
       expected.map((p) => `@source "../node_modules/${p}/dist";`),
       "@source lines === the dependency set",
     );
-    assert.equal(r.install.css.import, `@import "${PKG_SCOPE}tokens/styles.css";`);
+    // The engine stylesheet FIRST, then the two reference themes as separate
+    // opt-in imports (ADR 0029 — styles.css alone carries no selectable theme,
+    // so a scaffold that imported only it would render the neutral `:root` base
+    // and its theme switcher would have nothing to switch to).
+    assert.equal(
+      r.install.css.import,
+      [
+        `@import "${PKG_SCOPE}tokens/styles.css";`,
+        `@import "${PKG_SCOPE}tokens/themes/light.css";`,
+        `@import "${PKG_SCOPE}tokens/themes/dark.css";`,
+      ].join("\n"),
+    );
   });
 }
 

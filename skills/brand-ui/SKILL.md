@@ -38,15 +38,15 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 154 · **Registry blocks:** 23
+**Themes (1):** dark · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 154 · **Registry blocks:** 23
 
-**Exported surface:** 1050 components · 76 hooks across 11 packages.
+**Exported surface:** 1051 components · 76 hooks across 11 packages.
 
 | Package                       | Components | Hooks | Use it for                                                                               |
 | ----------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
-| `@elabs/components-tokens`    |         18 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs/components-tokens`    |         20 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
 | `@elabs/components-icons`     |         31 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@elabs/components-ui`        |        355 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs/components-ui`        |        354 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
 | `@elabs/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
 | `@elabs/components-ai`        |        443 |    13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
 | `@elabs/components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |

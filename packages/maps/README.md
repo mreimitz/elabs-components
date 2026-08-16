@@ -99,8 +99,9 @@ import { MapCanvas, MapControls, MapMarker, MapMarkerContent } from "@elabs/comp
 </div>;
 ```
 
-- The basemap flavor (light/dark) follows the active brand theme
-  (`data-theme` + `THEME_META[..].dark`); pass `theme` to pin it.
+- The basemap flavor (light/dark) follows the active theme's own
+  `color-scheme` (`resolveThemeIsDark`), so a theme you authored yourself
+  resolves correctly too; pass `theme` to pin it.
 - Default layer paints (routes, arcs, clusters, GeoJSON fills) resolve
   semantic tokens at runtime — WebGL can't read CSS variables — and re-resolve
   on theme change.

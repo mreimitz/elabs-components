@@ -22,11 +22,12 @@ keep that attribution in the package barrel/README.
   any descendant.
 - **CSS:** `<MapCanvas>` imports `maplibre-gl/dist/maplibre-gl.css` and the
   brand popup overrides (`maps.css`) itself — consumers add no CSS imports.
-- **Theme → basemap:** `THEME_META[data-theme].dark` is **authoritative** for
-  the light/dark basemap choice (blueprint is dark → dark basemap); a root
-  `dark`/`light` class, then `prefers-color-scheme`, are fallbacks for
-  non-brand hosts. Pass `theme` to pin it, `styles` for custom basemaps,
-  `blank` for a tile-less data-viz canvas.
+- **Theme → basemap:** when `data-theme` is set, the theme's own `color-scheme`
+  is **authoritative** via `resolveThemeIsDark` — never a registry lookup, so a
+  CONSUMER-AUTHORED dark theme gets the dark basemap without registering
+  anything here (ADR 0029). A root `dark`/`light` class, then
+  `prefers-color-scheme`, are fallbacks for non-brand hosts. Pass `theme` to pin
+  it, `styles` for custom basemaps, `blank` for a tile-less data-viz canvas.
 - **Token paints (WebGL can't read CSS variables):** default layer paints
   resolve semantic tokens at runtime via `resolveTokenColor` (`@elabs/components-tokens`)
   through the internal `useTokenColor` hook, keyed on the map context's

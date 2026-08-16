@@ -120,7 +120,6 @@ Import from `@elabs/components-ui`. Part of brand-ui — see the root `llms.txt`
 - DatePicker
 - DateRangePicker
 - DEFAULT_MESSAGES
-- DEFAULT_THEME_PAIR
 - Descriptions
 - DescriptionsItem
 - Dialog — Modal overlay for focused tasks/flows that block the page until dismissed.

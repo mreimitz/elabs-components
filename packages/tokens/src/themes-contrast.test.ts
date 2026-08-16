@@ -8,14 +8,15 @@
  * in EVERY theme. A theme that forgets a token (falling back to :root) or
  * under-tunes one fails here, before it ships. Locks issues #20 and #23.
  */
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { readThemeCss } from "./_theme-css-source";
 import { contrast, parseOklch } from "./color-contrast";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const css = readFileSync(join(__dirname, "themes.css"), "utf8");
+// ADR 0029 — the reference themes live in their own stylesheets now, so read
+// the SET. The helper throws if a theme's block is missing rather than let a
+// block regex match less and pass vacuously.
+const css = readThemeCss();
 
 const AA = 4.5;
 /** WCAG 1.4.11 — non-text UI components (borders/outlines) need ≥3:1. */

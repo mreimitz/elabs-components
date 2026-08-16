@@ -12,10 +12,10 @@ code looks abandoned. It is paused on purpose.
 
 ## What is paused right now
 
-| Surface                       | Kind    | Paused     | Why                                                                  |
-| ----------------------------- | ------- | ---------- | -------------------------------------------------------------------- |
-| `blueprint` theme             | theme   | 2026-08-09 | Experimental / testing theme. Kept in `themes.css`, out of `THEMES`. |
-| `@elabs/components-blueprint` | package | 2026-08-09 | Drawing furniture for that theme — frozen with it.                   |
+| Surface                       | Kind    | Paused     | Why                                                                           |
+| ----------------------------- | ------- | ---------- | ----------------------------------------------------------------------------- |
+| `blueprint` theme             | theme   | 2026-08-09 | Experimental / testing theme. Kept in `themes.css`, out of `BUILT_IN_THEMES`. |
+| `@elabs/components-blueprint` | package | 2026-08-09 | Drawing furniture for that theme — frozen with it.                            |
 
 **The decoration dial is NOT paused.** `--decoration` (0–10), `decoration.css`,
 `DecorationProvider`/`useDecoration`, `data-decoration`, and the
@@ -29,7 +29,7 @@ its furniture _package_ are on hold.
 
 For anything in the table above:
 
-1. **Never enumerate it.** It is absent from `THEMES`, `THEME_META`, every
+1. **Never enumerate it.** It is absent from `BUILT_IN_THEMES`, `BUILT_IN_THEME_META`, every
    `describe.each` / theme loop, every gate's theme list, every Storybook
    toolbar, every "sweep across the themes" instruction.
 2. **Never test or validate it.** No unit test, no contrast test, no story, no
@@ -46,7 +46,7 @@ For anything in the table above:
    package directory and its git history stay.
 6. **Two themes is the correct count.** The theme sweep is `light` +
    `dark` — write "both themes". Any doc still claiming the older,
-   higher count fails `pnpm docs:check`, which derives the number from `THEMES`.
+   higher count fails `pnpm docs:check`, which derives the number from `BUILT_IN_THEMES`.
 
 ## Where "paused" is declared (one place each)
 
@@ -65,8 +65,8 @@ makes it a one-line edit.
 
 ## Un-pausing (when the maintainer says so)
 
-1. Move the name out of `PAUSED_THEMES` into `THEMES` and restore its
-   `THEME_META` entry (the entry's former contents are recorded in a comment
+1. Move the name out of `PAUSED_THEMES` into `BUILT_IN_THEMES` and restore its
+   `BUILT_IN_THEME_META` entry (the entry's former contents are recorded in a comment
    right where it was removed).
 2. For a package: drop `private: true`, restore its `build` / `test` /
    `typecheck` / `lint` scripts, re-add it to the Storybook stories glob and to
@@ -79,7 +79,7 @@ makes it a one-line edit.
 `pnpm paused:check` (`scripts/check-paused-surfaces.mjs`, self-tested via
 `pnpm paused:check:test`, blocking in `gates.yml`) fails when:
 
-- a paused theme name reappears in `THEMES`, `THEME_META`, the Storybook theme
+- a paused theme name reappears in `BUILT_IN_THEMES`, `BUILT_IN_THEME_META`, the Storybook theme
   globals, a `*.stories.tsx` theme arg, a playbook/template, or a fixture app;
 - a paused theme's `[data-theme="…"]` block has been **deleted** from
   `themes.css` (pause ≠ delete — the source must survive);
@@ -88,7 +88,7 @@ makes it a one-line edit.
   stories are still inside the Storybook glob;
 - a shipped doc still claims the pre-pause theme count, or names a paused theme
   in a sweep instruction (`globals=theme:<paused>`); this arm overlaps
-  `pnpm docs:check`, which derives the count from `THEMES` on its own.
+  `pnpm docs:check`, which derives the count from `BUILT_IN_THEMES` on its own.
 
 The gate deliberately does **not** scan `packages/blueprint/**` itself, `CHANGELOG.md`,
 `docs/ADR/**` or `research/**` — a paused surface's own source, the historical

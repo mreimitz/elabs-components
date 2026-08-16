@@ -1,15 +1,19 @@
 "use client";
 /**
  * Theme switcher — System / Light / Dark (the baseline default).
- * Grounded in a qLabs tool/workspace app's theme switcher.
  *
- * PREFER the library `<ThemeSwitcher />` from @elabs/components-ui: its `themes` defaults to the
- * Qlik light/dark pair and `showSystem` defaults to true, so it ALREADY renders exactly
- * System / Light / Dark (whole-screen animated, reduced-motion safe). This
+ * PREFER the library `<ThemeSwitcher />` from @elabs/components-ui: it renders the
+ * PROVIDER's theme registry (ADR 0029) with no `themes` prop at all, and `showSystem`
+ * defaults to true, so it ALREADY renders exactly System / Light / Dark (whole-screen
+ * animated, reduced-motion safe) — and picks up any theme you registered yourself. This
  * curated Select is an OPTIONAL alternative when you want explicit text labels instead
- * of the icon toggle. (Verified against @elabs/components-* v1.0.0 source.)
+ * of the icon toggle.
+ *
+ * Labels come from `useTheme().themeDefinitions`, so this stays correct for a custom
+ * registry too; the `light`/`dark` constants below name the two REFERENCE themes and
+ * are what you change if your app ships different ones.
  */
-import { THEME_META, useTheme, type ThemeName } from "@elabs/components-tokens";
+import { useTheme, type ThemeName } from "@elabs/components-tokens";
 import {
   Select,
   SelectContent,
@@ -39,8 +43,10 @@ function systemTheme(): ThemeName {
 }
 
 export function ThemeSwitcher() {
-  const { setTheme } = useTheme();
+  const { setTheme, themeDefinitions } = useTheme();
   const [mode, setMode] = useState<ThemeMode>(storedMode);
+  const labelOf = (name: ThemeName) =>
+    themeDefinitions.find((d) => d.value === name)?.label ?? name;
 
   // Apply the mode; in System, follow OS appearance changes live.
   useEffect(() => {
@@ -70,8 +76,8 @@ export function ThemeSwitcher() {
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="light">{THEME_META[LIGHT].label}</SelectItem>
-        <SelectItem value="dark">{THEME_META[DARK].label}</SelectItem>
+        <SelectItem value="light">{labelOf(LIGHT)}</SelectItem>
+        <SelectItem value="dark">{labelOf(DARK)}</SelectItem>
         <SelectItem value="system">System</SelectItem>
       </SelectContent>
     </Select>

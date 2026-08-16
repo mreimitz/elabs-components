@@ -1,9 +1,8 @@
 {
-  "generatedAt": "2026-08-16T09:49:26.285Z",
+  "generatedAt": "2026-08-16T12:20:44.181Z",
   "name": "brand-ui",
   "themes": [
-    "dark",
-    "light"
+    "dark"
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
@@ -15338,7 +15337,7 @@
               "name": "theme",
               "optional": true,
               "type": "BasemapTheme",
-              "description": "Basemap flavor. If not provided, it is derived from the active brand theme (`data-theme` + `THEME_META[..].dark`), then a `dark`/`light` root class, then the OS preference."
+              "description": "Basemap flavor. If not provided, it is derived from the active brand theme (`data-theme` + that theme's own `color-scheme`), then a `dark`/`light` root class, then the OS preference."
             },
             {
               "name": "styles",
@@ -16184,6 +16183,21 @@
       },
       "components": [
         {
+          "name": "BUILT_IN_THEME_DEFINITIONS",
+          "kind": "value",
+          "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
+          "name": "BUILT_IN_THEME_META",
+          "kind": "value",
+          "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
+          "name": "BUILT_IN_THEMES",
+          "kind": "value",
+          "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
           "name": "DECORATION_LEVELS",
           "kind": "value",
           "module": "packages/tokens/src/theme-types.ts"
@@ -16259,19 +16273,14 @@
           "module": "packages/tokens/src/theme-types.ts"
         },
         {
-          "name": "THEME_META",
+          "name": "THEME_TOKEN_NAMES",
           "kind": "value",
-          "module": "packages/tokens/src/theme-types.ts"
+          "module": "packages/tokens/src/theme-token-names.generated.ts"
         },
         {
           "name": "ThemeProvider",
           "kind": "value",
           "module": "packages/tokens/src/theme-provider.tsx"
-        },
-        {
-          "name": "THEMES",
-          "kind": "value",
-          "module": "packages/tokens/src/theme-types.ts"
         }
       ],
       "hooks": [
@@ -16308,14 +16317,17 @@
       ],
       "types": [],
       "otherExports": [
+        "defineTheme",
+        "isBuiltInThemeName",
         "isDecorationLevel",
         "isDensity",
         "isMotionPreference",
         "isPausedThemeName",
         "isTasteRegister",
-        "isThemeName",
         "oklchToHex",
+        "resolveThemeIsDark",
         "resolveTokenColor",
+        "typeBuiltInThemeName",
         "typeDecorationLevel",
         "typeDecorationProviderProps",
         "typeDensityMeta",
@@ -16327,9 +16339,10 @@
         "typeTasteProfile",
         "typeTasteRegister",
         "typeTasteRegisterMeta",
-        "typeThemeMeta",
+        "typeThemeDefinition",
         "typeThemeName",
-        "typeThemeProviderProps"
+        "typeThemeProviderProps",
+        "typeThemeTokenName"
       ],
       "props": {
         "DecorationProvider": {
@@ -16366,10 +16379,16 @@
               "description": "localStorage key used to persist the theme. Set `null` to disable."
             },
             {
+              "name": "themes",
+              "optional": true,
+              "type": "readonly ThemeDefinition[]",
+              "description": "The theme REGISTRY — every theme this app offers (ADR 0029). Defaults to `BUILT_IN_THEME_DEFINITIONS` (the two reference themes). Supplying it REPLACES the default rather than extending it, so shipping only your own themes is expressible. Spread the built-ins to keep them: ```tsx const midnight = defineTheme({ value: \"midnight\", label: \"Midnight\", dark: true }); <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]} />  // both <ThemeProvider themes={[midnight]} />                                 // only yours ``` Each entry's `value` must match a `[data-theme=\"<value>\"]` block your app has loaded, covering `THEME_TOKEN_NAMES`. An empty array is ignored — a provider always exposes at least one theme."
+            },
+            {
               "name": "allowedThemes",
               "optional": true,
               "type": "readonly ThemeName[]",
-              "description": "Restrict this provider to a SUBSET of the shipped themes (#355). When set: `useTheme().themes` lists only these, a persisted value outside the list is rejected during the same mount pass that applies the theme (so there is no flash of a theme the product doesn't ship), and `setTheme` with a disallowed name is a no-op that warns in development. Omit it (the default) for the previous behaviour: every shipped theme. Unknown names and an empty list are ignored — a provider always exposes at least one theme. `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this subset (#384): it narrows its offered themes to the intersection of the `themes` prop and the provider's allowed list when the provider is genuinely restricting (a strict subset of every shipped theme). A non-restricting provider leaves the `themes` prop untouched for backward compatibility. Passing `themes={useTheme().themes}` explicitly is still allowed and works, but is no longer required."
+              "description": "Restrict this provider to a SUBSET of its registry (#355). When set: `useTheme().themes` lists only these, a persisted value outside the list is rejected during the same mount pass that applies the theme (so there is no flash of a theme the product doesn't ship), and `setTheme` with a disallowed name is a no-op that warns in development. Omit it (the default) for the whole registry. Names not in the registry and an empty list are ignored — a provider always exposes at least one theme. With an open registry this is now the NARROWER of the two knobs, and mostly redundant: pass the themes you ship as `themes` and you rarely need it. It stays for the case it was built for (#355) — one registry, several products each surfacing a slice of it. `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this subset (#384): it narrows its offered themes to the intersection of its own `themes` prop and the provider's allowed list whenever the provider is genuinely restricting (a strict subset of its registry). A non-restricting provider leaves the prop untouched for backward compatibility."
             },
             {
               "name": "defaultMotionPreference",
@@ -16959,11 +16978,6 @@
           "name": "DEFAULT_MESSAGES",
           "kind": "value",
           "module": "packages/ui/src/components/locale-provider/messages.ts"
-        },
-        {
-          "name": "DEFAULT_THEME_PAIR",
-          "kind": "value",
-          "module": "packages/ui/src/components/theme-switcher/theme-switcher.tsx"
         },
         {
           "name": "Descriptions",
@@ -21461,7 +21475,7 @@
               "name": "themes",
               "optional": true,
               "type": "ThemeName[]",
-              "description": "Themes to offer. ≤2 → toggle; >2 → dropdown. Defaults to the Qlik light/dark pair."
+              "description": "Themes to offer, as names. ≤2 → toggle; >2 → dropdown. Defaults to the PROVIDER's registry (ADR 0029) — so an app that registers its own themes gets a working switcher with no prop at all. Pass this only to offer a subset, or to fix the order; names the provider doesn't know are dropped."
             },
             {
               "name": "mode",

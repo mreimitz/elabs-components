@@ -197,7 +197,8 @@
     "viewer-highlight:check": "node scripts/check-viewer-highlight-coverage.mjs",
     "viewer-highlight:check:test": "node --test scripts/check-viewer-highlight-coverage.test.mjs",
     "worktree-branch:check": "node scripts/check-worktree-branch.mjs",
-    "worktree-branch:check:test": "node --test scripts/check-worktree-branch.test.mjs"
+    "worktree-branch:check:test": "node --test scripts/check-worktree-branch.test.mjs",
+    "token-contract:check": "pnpm --filter @elabs/components-tokens tokens:names:check"
   },
   "devDependencies": {
     "@elabs/components-eslint-config": "workspace:*",

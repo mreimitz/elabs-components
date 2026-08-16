@@ -1,10 +1,10 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { DecoratorHelpers } from "@storybook/addon-themes";
 import {
+  BUILT_IN_THEME_DEFINITIONS,
   DEFAULT_DENSITY,
   DEFAULT_MOTION_PREFERENCE,
   DEFAULT_THEME,
-  THEME_META,
 } from "@elabs/components-tokens";
 import { useEffect, type ReactNode } from "react";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
@@ -102,9 +102,13 @@ const withDensity: Decorator = (Story, context) => {
  * does internally. Kept as a direct call to the addon's own helper so the live
  * Storybook dev toolbar and `globals=theme:<slug>` keep working unchanged; see
  * `withTheme` below for why the returned DECORATOR is no longer used (#402).
+ *
+ * The toolbar lists the BUILT-IN themes (ADR 0029) — this Storybook is the
+ * library's own docs app, so its registry is the shipped reference pair. An app
+ * that registers its own themes drives the list from its provider instead.
  */
 DecoratorHelpers.initializeThemeState(
-  Object.values(THEME_META).map((meta) => meta.value),
+  BUILT_IN_THEME_DEFINITIONS.map((d) => d.value),
   DEFAULT_THEME,
 );
 

@@ -2,7 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useState, type HTMLAttributes } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
-import { THEME_META, THEMES, useTheme, type ThemeName } from "@elabs/components-tokens";
+import { useTheme, type ThemeDefinition, type ThemeName } from "@elabs/components-tokens";
 
 import { Button } from "../button";
 import {
@@ -17,9 +17,6 @@ import { useThemeTransition, type ThemeTransitionEffect } from "./use-theme-tran
 const SYSTEM_STORAGE_KEY = "brand-ui-theme-system";
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
-/** Default light/dark pair used when an app doesn't pass its own `themes`. */
-export const DEFAULT_THEME_PAIR: ThemeName[] = ["light", "dark"];
-
 type ButtonSize = "sm" | "default" | "lg";
 const ICON_SIZE: Record<ButtonSize, "icon-sm" | "icon" | "icon-lg"> = {
   sm: "icon-sm",
@@ -31,7 +28,14 @@ const ICON_SIZE: Record<ButtonSize, "icon-sm" | "icon" | "icon-lg"> = {
 export type ThemePreference = ThemeName | "system";
 
 export interface ThemeSwitcherProps extends Omit<HTMLAttributes<HTMLButtonElement>, "onChange"> {
-  /** Themes to offer. ≤2 → toggle; >2 → dropdown. Defaults to the Qlik light/dark pair. */
+  /**
+   * Themes to offer, as names. ≤2 → toggle; >2 → dropdown.
+   *
+   * Defaults to the PROVIDER's registry (ADR 0029) — so an app that registers
+   * its own themes gets a working switcher with no prop at all. Pass this only
+   * to offer a subset, or to fix the order; names the provider doesn't know are
+   * dropped.
+   */
   themes?: ThemeName[];
   /** Force presentation; "auto" (default) picks toggle vs dropdown by theme count. */
   mode?: "auto" | "toggle" | "dropdown";
@@ -60,8 +64,8 @@ function prefersDark(): boolean {
 }
 
 /** First theme in `list` matching `dark`, or the list's own first entry as a last resort. */
-function pickByDarkness(list: readonly ThemeName[], dark: boolean): ThemeName | undefined {
-  return list.find((t) => THEME_META[t].dark === dark) ?? list[0];
+function pickByDarkness(list: readonly ThemeDefinition[], dark: boolean): ThemeName | undefined {
+  return (list.find((t) => t.dark === dark) ?? list[0])?.value;
 }
 
 /**
@@ -69,26 +73,28 @@ function pickByDarkness(list: readonly ThemeName[], dark: boolean): ThemeName | 
  * (a single icon button that cycles); with >2 it auto-upgrades to a dropdown
  * over the offered themes. Every switch animates the whole screen via
  * `useThemeTransition` (respecting reduced motion). Icons follow each theme's
- * `dark` flag, so it works for any of the six brand themes — not just light/dark.
+ * `dark` flag, so it works for any theme — including one you authored.
  *
  * Uncontrolled by default (tracks its own "system" choice via `localStorage`).
  * Pass `preference`/`onPreferenceChange` to drive it from an external store
  * instead (#366) — see the `Controlled` story.
  *
- * When a `ThemeProvider` restricts `allowedThemes` (#355), this component
- * narrows to that subset automatically (#384): the `themes` prop is intersected
- * with `useTheme().themes` whenever the provider is genuinely restricting (a
- * strict subset of every shipped theme), so a disallowed theme is never
- * offered and never reachable via a menu item, the toggle, "System", or the OS
- * `prefers-color-scheme` listener. A provider exposing every theme (the
- * default, and every pre-#355 provider) leaves `themes` untouched, so existing
- * consumers keep today's presentation — including the light/dark toggle at the
- * default 2-theme `themes` prop.
+ * **It renders the PROVIDER's registry** (ADR 0029). Register your themes on
+ * `<ThemeProvider themes={…}>` and this switcher offers them with no prop —
+ * which is also why `allowedThemes` (#355) is honoured for free: the provider
+ * has already narrowed what it exposes. The `themes` prop is now purely an
+ * additional, optional narrowing on top; a name the provider does not offer is
+ * dropped rather than rendered, so a disallowed or unregistered theme is never
+ * reachable via a menu item, the toggle, "System", or the OS
+ * `prefers-color-scheme` listener.
+ *
+ * The pre-ADR-0029 hard-coded `["light","dark"]` default is gone. Behaviour for
+ * an app on the default provider is unchanged — that registry IS light + dark.
  */
 export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
   function ThemeSwitcher(
     {
-      themes = DEFAULT_THEME_PAIR,
+      themes,
       mode = "auto",
       showSystem = true,
       effect = "polygon",
@@ -100,44 +106,31 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     },
     ref,
   ) {
-    const { theme, themes: providerThemes, setTheme } = useTheme();
+    const { theme, themeDefinitions, setTheme } = useTheme();
     const switchTheme = useThemeTransition(effect);
     const isControlled = preference !== undefined;
     const [uncontrolledIsSystem, setUncontrolledIsSystem] = useState(false);
     const isSystem = isControlled ? preference === "system" : uncontrolledIsSystem;
 
-    // Drop any unknown theme name (e.g. a stale prop) so a bad value degrades
-    // to the default pair instead of crashing the whole render on THEME_META[t].
-    const offered = themes.filter((t) => THEME_META[t]);
-    const propThemes: ThemeName[] = offered.length > 0 ? offered : DEFAULT_THEME_PAIR;
+    // The provider's registry is the universe; the prop only narrows it, in the
+    // prop's own order. A name the provider doesn't offer is DROPPED (it has no
+    // CSS block here and no label to render), and an empty intersection falls
+    // back to the whole registry rather than to a hard-coded pair — falling back
+    // to literals is what could resurrect a theme the provider disallowed.
+    const narrowed = themes
+      ? themes
+          .map((name) => themeDefinitions.find((d) => d.value === name))
+          .filter((d): d is ThemeDefinition => d !== undefined)
+      : themeDefinitions;
+    const offered: readonly ThemeDefinition[] = narrowed.length > 0 ? narrowed : themeDefinitions;
+    const safeThemes: ThemeName[] = offered.map((d) => d.value);
+    const labelOf = (name: ThemeName) => offered.find((d) => d.value === name)?.label ?? name;
+    const isDark = (name: ThemeName) => offered.find((d) => d.value === name)?.dark ?? false;
 
-    // #384 — the provider only CONSTRAINS when it is genuinely restricting (a
-    // strict subset of every shipped theme). A provider exposing everything —
-    // the default, and every pre-#355 provider — leaves `themes` untouched, so
-    // existing 2-theme consumers keep their toggle presentation (the
-    // breaking-change hazard #384 flags against naively defaulting to
-    // `useTheme().themes`).
-    const providerRestricts = providerThemes.length < THEMES.length;
-    const allowedByProvider = providerRestricts
-      ? propThemes.filter((t) => providerThemes.includes(t))
-      : propThemes;
-    // An empty intersection (the prop's themes and the provider's disagree
-    // entirely) falls back to the PROVIDER's list, never to DEFAULT_THEME_PAIR —
-    // falling back to the hardcoded pair could resurrect a disallowed theme.
-    const safeThemes: ThemeName[] =
-      providerRestricts && allowedByProvider.length === 0 ? [...providerThemes] : allowedByProvider;
-
-    // Never fall back to the hardcoded "light"/"dark" literals when
-    // the provider restricts — retry within the provider's own list first, so
-    // "light"/"dark"/"System" can never resolve to a disallowed theme.
-    const lightTheme: ThemeName =
-      pickByDarkness(safeThemes, false) ??
-      (providerRestricts ? pickByDarkness(providerThemes, false) : undefined) ??
-      "light";
-    const darkTheme: ThemeName =
-      pickByDarkness(safeThemes, true) ??
-      (providerRestricts ? pickByDarkness(providerThemes, true) : undefined) ??
-      "dark";
+    // `?? theme` (the active theme), never a "light"/"dark" literal: with an open
+    // registry those names may not exist at all in this app.
+    const lightTheme: ThemeName = pickByDarkness(offered, false) ?? theme;
+    const darkTheme: ThemeName = pickByDarkness(offered, true) ?? theme;
 
     // The concrete theme to DISPLAY as current: the controlled preference when
     // it names one, otherwise the theme actually applied via the provider.
@@ -199,7 +192,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
       switchTheme(prefersDark() ? darkTheme : lightTheme);
     }, [switchTheme, darkTheme, lightTheme, isControlled, onPreferenceChange]);
 
-    const TriggerIcon = isSystem ? Monitor : THEME_META[resolvedTheme].dark ? Moon : Sun;
+    const TriggerIcon = isSystem ? Monitor : isDark(resolvedTheme) ? Moon : Sun;
     const useDropdown = mode === "dropdown" || (mode === "auto" && safeThemes.length > 2);
 
     // ---- Dropdown mode (>2 themes) ----
@@ -226,11 +219,11 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
                 {isSystem ? <Check className="ml-auto" /> : null}
               </DropdownMenuItem>
             ) : null}
-            {safeThemes.map((t) => (
-              <DropdownMenuItem key={t} onSelect={() => pickTheme(t)}>
-                {THEME_META[t].dark ? <Moon /> : <Sun />}
-                <span>{THEME_META[t].label}</span>
-                {!isSystem && resolvedTheme === t ? <Check className="ml-auto" /> : null}
+            {offered.map((d) => (
+              <DropdownMenuItem key={d.value} onSelect={() => pickTheme(d.value)}>
+                {d.dark ? <Moon /> : <Sun />}
+                <span>{d.label}</span>
+                {!isSystem && resolvedTheme === d.value ? <Check className="ml-auto" /> : null}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -239,6 +232,8 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     }
 
     // ---- Toggle mode (≤2 themes): cycle light → dark → (system) ----
+    // These three are ROLES in the cycle, not theme names — `lightTheme` and
+    // `darkTheme` resolve each role to whatever this app actually registered.
     const order: Array<"light" | "dark" | "system"> = showSystem
       ? ["light", "dark", "system"]
       : ["light", "dark"];
@@ -253,6 +248,14 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
       else pickTheme(next === "dark" ? darkTheme : lightTheme);
     };
 
+    // Announce the THEME'S OWN label, not the role: an app whose themes are
+    // "Daylight"/"Midnight" would otherwise announce "Theme: light" — naming a
+    // theme that does not exist in that app.
+    // `role` is optional only because `order[i]` is an indexed read under
+    // `noUncheckedIndexedAccess`; the modulo above makes it always present.
+    const roleLabel = (role: "light" | "dark" | "system" | undefined) =>
+      role === "system" ? "System" : labelOf(role === "dark" ? darkTheme : lightTheme);
+
     return (
       <TooltipProvider>
         <Tooltip>
@@ -261,7 +264,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
               ref={ref}
               variant="ghost"
               size={ICON_SIZE[size]}
-              aria-label={`Theme: ${current}. Activate to switch to ${next}.`}
+              aria-label={`Theme: ${roleLabel(current)}. Activate to switch to ${roleLabel(next)}.`}
               onClick={apply}
               className={className}
               {...props}
@@ -269,7 +272,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
               <TriggerIcon />
             </Button>
           </TooltipTrigger>
-          <TooltipContent className="capitalize">{current}</TooltipContent>
+          <TooltipContent>{roleLabel(current)}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );

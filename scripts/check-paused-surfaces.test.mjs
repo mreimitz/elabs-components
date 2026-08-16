@@ -49,9 +49,9 @@ function makeTree(overrides = {}) {
     "packages/tokens/src/theme-types.ts",
     overrides.themeTypes ??
       [
-        'export const THEMES = ["light", "dark"] as const;',
+        'export const BUILT_IN_THEMES = ["light", "dark"] as const;',
         'export const PAUSED_THEMES = ["blueprint"] as const;',
-        "export const THEME_META = {",
+        "export const BUILT_IN_THEME_META = {",
         '  "light": { value: "light" },',
         '  "dark": { value: "dark" },',
         "  // blueprint is PAUSED — restore this entry to un-pause.",
@@ -109,34 +109,51 @@ describe("paused-surfaces gate", () => {
     match(out, /✔ paused-surfaces gate/);
   });
 
-  it("A — fails when a paused theme is ALSO in the active THEMES", () => {
+  it("A — fails when a paused theme is ALSO in the active BUILT_IN_THEMES", () => {
     const { code, out } = run(
       makeTree({
         themeTypes: [
-          'export const THEMES = ["light", "dark", "blueprint"] as const;',
+          'export const BUILT_IN_THEMES = ["light", "dark", "blueprint"] as const;',
           'export const PAUSED_THEMES = ["blueprint"] as const;',
-          "export const THEME_META = {\n};",
+          "export const BUILT_IN_THEME_META = {\n};",
         ].join("\n"),
       }),
     );
     strictEqual(code, 1, out);
-    match(out, /BOTH THEMES and PAUSED_THEMES/);
+    match(out, /BOTH BUILT_IN_THEMES and PAUSED_THEMES/);
   });
 
-  it("A — fails when THEME_META still has a real entry for the paused theme", () => {
+  it("A — fails when BUILT_IN_THEME_META still has a real entry for the paused theme", () => {
     const { code, out } = run(
       makeTree({
         themeTypes: [
-          'export const THEMES = ["light", "dark"] as const;',
+          'export const BUILT_IN_THEMES = ["light", "dark"] as const;',
           'export const PAUSED_THEMES = ["blueprint"] as const;',
-          "export const THEME_META = {",
+          "export const BUILT_IN_THEME_META = {",
           '  blueprint: { value: "blueprint", label: "Blueprint" },',
           "};",
         ].join("\n"),
       }),
     );
     strictEqual(code, 1, out);
-    match(out, /THEME_META still has an entry/);
+    match(out, /BUILT_IN_THEME_META still has an entry/);
+  });
+
+  // Anti-vacuity: check A used to `if (metaBlock)` and skip silently, so renaming
+  // the meta const (which ADR 0029 did) disarmed the arm with a green run. A block
+  // this gate cannot locate is now a failure, not a shrug.
+  it("A — fails when the meta block cannot be located at all (renamed const)", () => {
+    const { code, out } = run(
+      makeTree({
+        themeTypes: [
+          'export const BUILT_IN_THEMES = ["light", "dark"] as const;',
+          'export const PAUSED_THEMES = ["blueprint"] as const;',
+          "export const SOME_OTHER_NAME = {\n};",
+        ].join("\n"),
+      }),
+    );
+    strictEqual(code, 1, out);
+    match(out, /could not locate the BUILT_IN_THEME_META block/);
   });
 
   it("B — fails when the paused theme's CSS block was DELETED (pause is not delete)", () => {
@@ -277,7 +294,7 @@ describe("paused-surfaces gate", () => {
   });
 
   it("is registered as a blocking gate in gates.yml and as a pnpm script", async () => {
-    const { readFileSync } = await import("node:fs");
+    const { readFileSync, existsSync } = await import("node:fs");
     const pkg = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8"));
     deepStrictEqual(
       [pkg.scripts["paused:check"], pkg.scripts["paused:check:test"]],
@@ -286,7 +303,13 @@ describe("paused-surfaces gate", () => {
         "node --test scripts/check-paused-surfaces.test.mjs",
       ],
     );
-    const gates = readFileSync(join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
+    // Honest dormancy (ADR 0028): this fork has no `.github/`, so the CI-wiring
+    // half of the assertion has no subject. Skip that half rather than fail on
+    // an absent file or silently drop the pnpm-script half with it. Restoring
+    // `.github/workflows/` re-arms it automatically — no flag to remember.
+    const gatesPath = join(REPO_ROOT, ".github", "workflows", "gates.yml");
+    if (!existsSync(gatesPath)) return;
+    const gates = readFileSync(gatesPath, "utf8");
     ok(gates.includes("pnpm paused:check"), "gates.yml must run pnpm paused:check");
     ok(gates.includes("pnpm paused:check:test"), "gates.yml must run the self-test");
   });
@@ -298,9 +321,9 @@ describe("paused-surfaces gate", () => {
     const { code, out } = run(
       makeTree({
         themeTypes: [
-          'export const THEMES = ["light"] as const;',
+          'export const BUILT_IN_THEMES = ["light"] as const;',
           'export const PAUSED_THEMES = ["cyanotype"] as const;',
-          "export const THEME_META = {\n};",
+          "export const BUILT_IN_THEME_META = {\n};",
         ].join("\n"),
         themesCss: '[data-theme="light"] {\n}\n',
       }),

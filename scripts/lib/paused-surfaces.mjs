@@ -38,7 +38,7 @@ function parseStringArray(text, name) {
 const themeTypesText = readFileSync(THEME_TYPES_TS, "utf8");
 
 /** The ACTIVE themes — what every gate, sweep and doc must enumerate. */
-export const ACTIVE_THEMES = parseStringArray(themeTypesText, "THEMES");
+export const ACTIVE_THEMES = parseStringArray(themeTypesText, "BUILT_IN_THEMES");
 
 /** Themes kept as source in themes.css but excluded from everything. */
 export const PAUSED_THEMES = parseStringArray(themeTypesText, "PAUSED_THEMES");

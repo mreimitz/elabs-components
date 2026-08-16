@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Toaster as SonnerToaster, toast } from "sonner";
-import { THEME_META, type ThemeName } from "@elabs/components-tokens";
+import { resolveThemeIsDark } from "@elabs/components-tokens";
 import { cn } from "../../lib/cn";
 
 /**
@@ -19,16 +19,18 @@ const DEFAULT_TOAST_CLASS_NAMES = {
   cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
 } as const;
 
-/** Reads the active theme from the document `data-theme` attribute. */
+/**
+ * Reads the active theme's light/dark-ness off the document. Uses
+ * `resolveThemeIsDark` — the theme's own `color-scheme` — rather than a registry
+ * lookup, so a consumer-authored dark theme gets dark toasts with no
+ * registration (ADR 0029).
+ */
 function useDocumentThemeMode(): "light" | "dark" {
   const [mode, setMode] = useState<"light" | "dark">("light");
   useEffect(() => {
     if (typeof document === "undefined") return;
     const el = document.documentElement;
-    const read = () => {
-      const t = el.getAttribute("data-theme") as ThemeName | null;
-      setMode(t && THEME_META[t]?.dark ? "dark" : "light");
-    };
+    const read = () => setMode(resolveThemeIsDark(el) ? "dark" : "light");
     read();
     const obs = new MutationObserver(read);
     obs.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
@@ -68,9 +70,9 @@ export type ToasterProps = React.ComponentProps<typeof SonnerToaster>;
  *
  * ## Theme handling
  *
- * The Toaster's `theme` prop is automatically set based on the active
- * `data-theme` attribute (light → "light", dark/blueprint → "dark"),
- * so toasts visually track the app's theme by default. However, you may pass
+ * The Toaster's `theme` prop is automatically set from the active theme's own
+ * `color-scheme` declaration, so toasts visually track the app's theme by
+ * default — including a theme you authored yourself. However, you may pass
  * `theme="light"` or `theme="dark"` directly to override this derivation if needed.
  */
 export function Toaster({ className, toastOptions, ...rest }: ToasterProps) {

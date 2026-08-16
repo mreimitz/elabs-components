@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { THEME_META, useReducedMotion, useTheme, type ThemeName } from "@elabs/components-tokens";
+import { useReducedMotion, useTheme, type ThemeName } from "@elabs/components-tokens";
 
 /** Whole-screen reveal effects for the animated theme switch (View Transitions API). */
 export type ThemeTransitionEffect = "polygon" | "circle" | "circle-blur" | "triangle";
@@ -26,7 +26,7 @@ type ViewTransitionDocument = Document & {
  * this hook only orchestrates it.
  */
 export function useThemeTransition(effect: ThemeTransitionEffect = "polygon") {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, themeDefinitions } = useTheme();
   const reduced = useReducedMotion();
 
   return useCallback(
@@ -42,7 +42,14 @@ export function useThemeTransition(effect: ThemeTransitionEffect = "polygon") {
         return;
       }
       const root = document.documentElement;
-      root.dataset.vt = THEME_META[next].dark ? "to-dark" : "to-light";
+      // The direction of the reveal comes from the provider's REGISTRY entry
+      // for the incoming theme (ADR 0029) — a consumer theme animates correctly
+      // without registering here. `resolveThemeIsDark` is deliberately NOT used:
+      // it reads the CURRENT computed `color-scheme`, and `next` has not been
+      // applied yet, so it would report the OUTGOING theme's direction.
+      root.dataset.vt = themeDefinitions.find((d) => d.value === next)?.dark
+        ? "to-dark"
+        : "to-light";
       root.dataset.vtEffect = effect;
       const transition = doc.startViewTransition(() => setTheme(next));
       transition.finished.finally(() => {
@@ -50,6 +57,6 @@ export function useThemeTransition(effect: ThemeTransitionEffect = "polygon") {
         delete root.dataset.vtEffect;
       });
     },
-    [theme, setTheme, reduced, effect],
+    [theme, setTheme, reduced, effect, themeDefinitions],
   );
 }

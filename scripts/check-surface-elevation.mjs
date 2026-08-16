@@ -19,15 +19,14 @@
  * Flags:
  *   --warn   never exit non-zero (dev-hook mode); still prints findings.
  *
- * Dependency-free; ESM; locates themes.css relative to this file (cwd-independent).
+ * Dependency-free; ESM; locates the theme stylesheets relative to this file
+ * (cwd-independent).
  */
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
-const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");
+// Every stylesheet that carries a theme block (ADR 0029 split the reference
+// themes out of themes.css). Throws rather than return an incomplete set — this
+// gate audited `:root` + the PAUSED blueprint block and reported a cheerful
+// "2 theme block(s)" for exactly one commit before that guard existed.
+import { readThemesCss } from "./lib/theme-sources.mjs";
 
 /** Minimum chrome→canvas lightness step (oklch L). 0.023 is the tightest shipped. */
 export const MIN_CHROME_CANVAS_DELTA = 0.02;
@@ -95,7 +94,13 @@ export function findElevationViolations(cssText) {
 // ───────────────────────────────── CLI ────────────────────────────────────────
 function main(argv) {
   const warnOnly = argv.includes("--warn");
-  const css = readFileSync(THEMES_CSS, "utf8");
+  let css;
+  try {
+    css = readThemesCss();
+  } catch (e) {
+    console.error(`✖ surface-elevation gate: ${e.message}`);
+    return warnOnly ? 0 : 1;
+  }
   const violations = findElevationViolations(css);
 
   if (violations.length === 0) {

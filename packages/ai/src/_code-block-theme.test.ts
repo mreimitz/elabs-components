@@ -1,44 +1,22 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  buildCodeBlockTheme,
-  codeBlockThemeId,
-  getActiveThemeName,
-  getThemeScopeKey,
-} from "./_code-block-theme";
+import { buildCodeBlockTheme, codeBlockThemeId, getThemeScopeKey } from "./_code-block-theme";
 
 afterEach(() => {
   document.documentElement.removeAttribute("data-theme");
   document.documentElement.removeAttribute("style");
 });
 
-describe("getActiveThemeName", () => {
-  it("defaults to light when no data-theme is set", () => {
-    expect(getActiveThemeName()).toBe("light");
-  });
-
-  it("reads a valid data-theme off the root element", () => {
-    document.documentElement.setAttribute("data-theme", "dark");
-    expect(getActiveThemeName()).toBe("dark");
-  });
-
-  it("falls back to the default for an unknown data-theme value", () => {
-    document.documentElement.setAttribute("data-theme", "not-a-real-theme");
-    expect(getActiveThemeName()).toBe("light");
-  });
-});
-
 // #315 blocker fix — the highlight-cache scoping key must NOT collapse "no
-// data-theme attribute" and an explicit "data-theme=light" into the same
-// value the way `getActiveThemeName` does, or the pre-ThemeProvider-mount
-// render's `:root`-tokenized colors would poison the cache under the key
-// ThemeProvider later writes explicitly.
+// data-theme attribute" and an explicit "data-theme=light" into the same value,
+// or the pre-ThemeProvider-mount render's `:root`-tokenized colors would poison
+// the cache under the key ThemeProvider later writes explicitly.
 describe("getThemeScopeKey", () => {
   it("returns a distinct sentinel when no data-theme attribute is set", () => {
     expect(getThemeScopeKey()).toBe("__root__");
   });
 
-  it("returns the RAW attribute value when data-theme is set, even though it narrows to the same ThemeName as unset", () => {
+  it("returns the RAW attribute value when data-theme is set", () => {
     document.documentElement.setAttribute("data-theme", "light");
     expect(getThemeScopeKey()).toBe("light");
   });
@@ -46,10 +24,17 @@ describe("getThemeScopeKey", () => {
   it("differs between unset and explicit light (the exact collision the fix closes)", () => {
     const unset = getThemeScopeKey();
     document.documentElement.setAttribute("data-theme", "light");
-    const explicitBright = getThemeScopeKey();
-    expect(unset).not.toBe(explicitBright);
-    // Meanwhile the validated name IS the same for both — that's the trap.
-    expect(getActiveThemeName()).toBe("light");
+    expect(unset).not.toBe(getThemeScopeKey());
+  });
+
+  // ADR 0029 — theme names are open, so an unrecognized name is a CONSUMER
+  // theme, not an error. It must get its own cache bucket (it has its own
+  // `--code-*` values); the pre-0029 code narrowed it away to the default,
+  // which would have served a consumer theme the light theme's tokens.
+  it("gives an unregistered (consumer) theme its own bucket", () => {
+    document.documentElement.setAttribute("data-theme", "midnight");
+    expect(getThemeScopeKey()).toBe("midnight");
+    expect(codeBlockThemeId(getThemeScopeKey())).toBe("brand-code-midnight");
   });
 });
 
@@ -86,7 +71,7 @@ describe("buildCodeBlockTheme", () => {
 
   // #315 blocker fix — `theme.name` (the highlight-cache key) must differ
   // between "no data-theme attribute" and an explicit "light", even
-  // though both resolve to the same `THEME_META[...].dark` light/dark flag.
+  // though both resolve to the same light/dark flag.
   it("gives the unset-attribute render a distinct theme name from explicit light", () => {
     const unset = buildCodeBlockTheme();
     expect(unset.name).toBe("brand-code-__root__");
@@ -101,7 +86,7 @@ describe("buildCodeBlockTheme", () => {
     expect(explicitBright.type).toBe("light");
   });
 
-  it("marks dark as a dark Shiki theme (THEME_META-driven, not guessed)", () => {
+  it("marks dark as a dark Shiki theme (color-scheme-driven, not guessed)", () => {
     document.documentElement.setAttribute("data-theme", "dark");
     const theme = buildCodeBlockTheme();
     expect(theme.type).toBe("dark");

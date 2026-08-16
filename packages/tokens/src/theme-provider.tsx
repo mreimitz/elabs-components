@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  BUILT_IN_THEME_DEFINITIONS,
   DEFAULT_DENSITY,
   DEFAULT_MOTION_PREFERENCE,
   DEFAULT_TASTE_REGISTER,
@@ -18,14 +19,12 @@ import {
   isDensity,
   isMotionPreference,
   isTasteRegister,
-  isThemeName,
-  THEME_META,
-  THEMES,
   type DecorationLevel,
   type DensityMode,
   type MotionPreference,
   type TasteProfile,
   type TasteRegister,
+  type ThemeDefinition,
   type ThemeName,
 } from "./theme-types";
 
@@ -33,12 +32,18 @@ interface ThemeContextValue {
   /** The active theme. */
   theme: ThemeName;
   /**
-   * The theme names this provider exposes — every shipped theme by default, or
-   * the `allowedThemes` subset when the provider was given one. Read this (not
-   * `THEMES`) when building a switcher, so a product that ships a subset lists
-   * only what it ships.
+   * The theme names this provider exposes — its registry, narrowed by
+   * `allowedThemes` when one was given. Read this (never a module-level
+   * constant) when building a switcher: with theming open (ADR 0029) the
+   * provider's registry is the only thing that knows what this app ships.
    */
   themes: readonly ThemeName[];
+  /**
+   * The same themes as full descriptors, in the same order — label, `dark`
+   * flag, description. A switcher renders straight off this and needs no
+   * import; a consumer theme appears here exactly like a built-in one.
+   */
+  themeDefinitions: readonly ThemeDefinition[];
   /** Set the active theme. */
   setTheme: (theme: ThemeName) => void;
   /** The user's motion preference (over the OS setting and theme default). */
@@ -85,23 +90,43 @@ export interface ThemeProviderProps {
   /** localStorage key used to persist the theme. Set `null` to disable. */
   storageKey?: string | null;
   /**
-   * Restrict this provider to a SUBSET of the shipped themes (#355). When set:
+   * The theme REGISTRY — every theme this app offers (ADR 0029). Defaults to
+   * `BUILT_IN_THEME_DEFINITIONS` (the two reference themes).
+   *
+   * Supplying it REPLACES the default rather than extending it, so shipping
+   * only your own themes is expressible. Spread the built-ins to keep them:
+   *
+   * ```tsx
+   * const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
+   * <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]} />  // both
+   * <ThemeProvider themes={[midnight]} />                                 // only yours
+   * ```
+   *
+   * Each entry's `value` must match a `[data-theme="<value>"]` block your app
+   * has loaded, covering `THEME_TOKEN_NAMES`. An empty array is ignored — a
+   * provider always exposes at least one theme.
+   */
+  themes?: readonly ThemeDefinition[];
+  /**
+   * Restrict this provider to a SUBSET of its registry (#355). When set:
    * `useTheme().themes` lists only these, a persisted value outside the list is
    * rejected during the same mount pass that applies the theme (so there is no
    * flash of a theme the product doesn't ship), and `setTheme` with a
    * disallowed name is a no-op that warns in development.
    *
-   * Omit it (the default) for the previous behaviour: every shipped theme.
-   * Unknown names and an empty list are ignored — a provider always exposes at
-   * least one theme.
+   * Omit it (the default) for the whole registry. Names not in the registry and
+   * an empty list are ignored — a provider always exposes at least one theme.
    *
-   * `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this
-   * subset (#384): it narrows its offered themes to the intersection of the
-   * `themes` prop and the provider's allowed list when the provider is genuinely
-   * restricting (a strict subset of every shipped theme). A non-restricting
-   * provider leaves the `themes` prop untouched for backward compatibility. Passing
-   * `themes={useTheme().themes}` explicitly is still allowed and works, but is no
-   * longer required.
+   * With an open registry this is now the NARROWER of the two knobs, and mostly
+   * redundant: pass the themes you ship as `themes` and you rarely need it. It
+   * stays for the case it was built for (#355) — one registry, several products
+   * each surfacing a slice of it.
+   *
+   * `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this subset
+   * (#384): it narrows its offered themes to the intersection of its own
+   * `themes` prop and the provider's allowed list whenever the provider is
+   * genuinely restricting (a strict subset of its registry). A non-restricting
+   * provider leaves the prop untouched for backward compatibility.
    */
   allowedThemes?: readonly ThemeName[];
   /**
@@ -146,14 +171,34 @@ export interface ThemeProviderProps {
 }
 
 /**
- * Narrow the shipped theme list to the provider's `allowedThemes` (#355).
- * Preserves THEMES order, drops unknown names, and falls back to the full list
- * when the subset would be empty — a provider must always expose a theme.
+ * The provider's REGISTRY: the supplied definitions, or the built-in reference
+ * themes. An empty array falls back to the built-ins — "expose no theme at all"
+ * is never a useful state, and silently rendering an unthemed app is worse than
+ * ignoring the empty list. Duplicate `value`s collapse to the first entry, so a
+ * consumer who spreads the built-ins AND redefines `light` gets their own.
  */
-function resolveAllowedThemes(allowed: readonly ThemeName[] | undefined): readonly ThemeName[] {
-  if (!allowed) return THEMES;
-  const subset = THEMES.filter((name) => allowed.includes(name));
-  return subset.length > 0 ? subset : THEMES;
+function resolveRegistry(
+  themes: readonly ThemeDefinition[] | undefined,
+): readonly ThemeDefinition[] {
+  if (!themes || themes.length === 0) return BUILT_IN_THEME_DEFINITIONS;
+  const seen = new Set<string>();
+  const unique = themes.filter((t) => !seen.has(t.value) && seen.add(t.value));
+  return unique.length > 0 ? unique : BUILT_IN_THEME_DEFINITIONS;
+}
+
+/**
+ * Narrow a registry to the provider's `allowedThemes` (#355). Preserves registry
+ * order, drops names the registry doesn't define, and falls back to the whole
+ * registry when the subset would be empty — a provider must always expose a
+ * theme.
+ */
+function resolveAllowedThemes(
+  registry: readonly ThemeDefinition[],
+  allowed: readonly ThemeName[] | undefined,
+): readonly ThemeDefinition[] {
+  if (!allowed) return registry;
+  const subset = registry.filter((t) => allowed.includes(t.value));
+  return subset.length > 0 ? subset : registry;
 }
 
 /**
@@ -165,6 +210,18 @@ function resolveAllowedThemes(allowed: readonly ThemeName[] | undefined): readon
 function resolveDefaultTheme(requested: ThemeName, allowedThemes: readonly ThemeName[]): ThemeName {
   if (allowedThemes.includes(requested)) return requested;
   return allowedThemes[0] ?? DEFAULT_THEME;
+}
+
+/**
+ * Identity key for a registry, so an INLINE `themes={[...]}` literal — a new
+ * array on every render — doesn't churn `setTheme` and the context value. Keyed
+ * on the fields that actually affect behaviour (`value` picks the theme,
+ * `decorationLevel` feeds `effectiveDecoration`) plus `label`/`dark`, which a
+ * switcher renders. A changed description alone is not worth a re-render.
+ */
+function registryKey(themes: readonly ThemeDefinition[] | undefined): string | null {
+  if (!themes) return null;
+  return themes.map((t) => `${t.value}|${t.label}|${t.dark}|${t.decorationLevel ?? ""}`).join(",");
 }
 
 /**
@@ -230,9 +287,11 @@ function applyDensity(mode: DensityMode, target: HTMLElement | null) {
  * on the server (no-ops until mounted; the "system" default writes no attribute
  * so the first paint defers to the OS media query — no hydration flash).
  *
- * A product that ships only SOME of the themes passes `allowedThemes`: the
- * context's `themes` list, the persisted-value hydration and `setTheme` all
- * honour it, so a subset needs no consumer-side defenses (#355).
+ * Theming is OPEN (ADR 0029): pass `themes` to register your own theme
+ * definitions instead of the two reference themes. A product that surfaces only
+ * part of its registry passes `allowedThemes` on top — the context's `themes`
+ * list, the persisted-value hydration and `setTheme` all honour it, so a subset
+ * needs no consumer-side defenses (#355).
  */
 export function ThemeProvider({
   children,
@@ -241,6 +300,7 @@ export function ThemeProvider({
   // excludes "light" doesn't warn a consumer about a prop they never passed.
   defaultTheme,
   storageKey = "brand-ui-theme",
+  themes: themeRegistry,
   allowedThemes,
   defaultMotionPreference = DEFAULT_MOTION_PREFERENCE,
   motionStorageKey = "brand-ui-motion-pref",
@@ -252,14 +312,25 @@ export function ThemeProvider({
   registerStorageKey = "brand-ui-taste-register",
   attributeTarget = null,
 }: ThemeProviderProps) {
-  // The themes THIS provider exposes (#355). Keyed by VALUE, not identity, so an
-  // inline `allowedThemes={["light", "dark"]}` literal — which is a new
-  // array on every render — doesn't churn `setTheme`/the context value.
+  // The themes THIS provider exposes: its registry (ADR 0029), narrowed by
+  // `allowedThemes` (#355). BOTH are keyed by VALUE, not identity, so an inline
+  // `themes={[...]}` / `allowedThemes={["light","dark"]}` literal — a new array
+  // on every render — doesn't churn `setTheme`/the context value.
   const allowedKey = allowedThemes?.join(",") ?? null;
-  const themes = useMemo<readonly ThemeName[]>(
-    () => resolveAllowedThemes(allowedThemes),
+  const themeRegistryKey = registryKey(themeRegistry);
+  const themeDefinitions = useMemo<readonly ThemeDefinition[]>(
+    () => resolveAllowedThemes(resolveRegistry(themeRegistry), allowedThemes),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allowedKey],
+    [allowedKey, themeRegistryKey],
+  );
+  const themes = useMemo<readonly ThemeName[]>(
+    () => themeDefinitions.map((t) => t.value),
+    [themeDefinitions],
+  );
+  /** `value` → definition, for the O(1) `effectiveDecoration` lookup below. */
+  const themesByName = useMemo(
+    () => new Map(themeDefinitions.map((t) => [t.value, t])),
+    [themeDefinitions],
   );
 
   const requestedTheme = defaultTheme ?? DEFAULT_THEME;
@@ -268,7 +339,10 @@ export function ThemeProvider({
   // `defaultTheme` never reaches the context, and no `data-theme` is written
   // until the hydration effect below picks the (also coerced) initial value.
   const [theme, setThemeState] = useState<ThemeName>(() =>
-    resolveDefaultTheme(requestedTheme, resolveAllowedThemes(allowedThemes)),
+    resolveDefaultTheme(
+      requestedTheme,
+      resolveAllowedThemes(resolveRegistry(themeRegistry), allowedThemes).map((t) => t.value),
+    ),
   );
   const [motionPreference, setMotionState] = useState<MotionPreference>(defaultMotionPreference);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -295,7 +369,11 @@ export function ThemeProvider({
     let initial = resolveDefaultTheme(requestedTheme, themes);
     if (storageKey && typeof window !== "undefined") {
       const stored = window.localStorage.getItem(storageKey);
-      if (isThemeName(stored) && themes.includes(stored)) initial = stored;
+      // Registry membership IS the validation now — there is no closed union to
+      // guard against (ADR 0029). A persisted name this provider doesn't offer
+      // (a theme the app dropped, or one from a different app on the same
+      // origin) is rejected before any `data-theme` is written.
+      if (stored !== null && themes.includes(stored)) initial = stored;
     }
     setThemeState(initial);
     applyTheme(initial, attributeTarget);
@@ -366,10 +444,13 @@ export function ThemeProvider({
     (next: ThemeName) => {
       // #355 — a theme this provider doesn't expose is a no-op, not a silent
       // apply-and-persist (which would also poison storage for the next boot).
+      // With an open registry this is also the ONLY check: an unregistered name
+      // would write a `data-theme` with no matching CSS block, silently
+      // rendering the `:root` base and looking like a broken theme.
       if (!themes.includes(next)) {
         warnDev(
-          `ThemeProvider: setTheme("${next}") ignored — not in allowedThemes ` +
-            `[${themes.join(", ")}].`,
+          `ThemeProvider: setTheme("${next}") ignored — not one of this provider's ` +
+            `themes [${themes.join(", ")}]. Register it via the \`themes\` prop.`,
         );
         return;
       }
@@ -429,10 +510,15 @@ export function ThemeProvider({
   );
 
   const value = useMemo<ThemeContextValue>(() => {
-    const effectiveDecoration = decoration ?? THEME_META[theme].decorationLevel ?? 0;
+    // `?.` is load-bearing, not defensive noise: with an open registry the
+    // active theme may be one this provider doesn't define (a stale name during
+    // a registry swap), and the old `THEME_META[theme].decorationLevel` would
+    // throw and take the whole tree down.
+    const effectiveDecoration = decoration ?? themesByName.get(theme)?.decorationLevel ?? 0;
     return {
       theme,
       themes,
+      themeDefinitions,
       setTheme,
       motionPreference,
       setMotionPreference,
@@ -456,6 +542,8 @@ export function ThemeProvider({
   }, [
     theme,
     themes,
+    themeDefinitions,
+    themesByName,
     setTheme,
     motionPreference,
     setMotionPreference,

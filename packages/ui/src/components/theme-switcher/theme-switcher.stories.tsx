@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { THEMES, ThemeProvider } from "@elabs/components-tokens";
+import { BUILT_IN_THEMES, ThemeProvider } from "@elabs/components-tokens";
 
 import { ThemeSwitcher, type ThemePreference } from "./theme-switcher";
 
@@ -64,7 +64,7 @@ export const Toggle: Story = {
 };
 
 /** Dropdown mode — the list form. (More than two themes picks this automatically.) */
-export const Dropdown: Story = { args: { mode: "dropdown", themes: [...THEMES] } };
+export const Dropdown: Story = { args: { mode: "dropdown", themes: [...BUILT_IN_THEMES] } };
 
 /** Toggle without the System option (light / dark only). */
 export const ToggleNoSystem: Story = { args: { showSystem: false } };
@@ -118,7 +118,7 @@ export const RestrictedProvider: Story = {
       </ThemeProvider>
     ),
   ],
-  args: { mode: "dropdown", themes: [...THEMES] },
+  args: { mode: "dropdown", themes: [...BUILT_IN_THEMES] },
   play: async ({ canvas, canvasElement, userEvent }) => {
     const trigger = canvas.getByRole("button", { name: "Theme" });
     await userEvent.click(trigger);

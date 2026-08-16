@@ -15,7 +15,9 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./styles.css": "./src/themes.css"
+    "./styles.css": "./src/themes.css",
+    "./themes/light.css": "./src/themes/light.css",
+    "./themes/dark.css": "./src/themes/dark.css"
   },
   "publishConfig": {
     "exports": {
@@ -23,18 +25,22 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./styles.css": "./dist/themes.css"
+      "./styles.css": "./dist/themes.css",
+      "./themes/light.css": "./dist/themes/light.css",
+      "./themes/dark.css": "./dist/themes/dark.css"
     }
   },
   "scripts": {
-    "build": "tsup && cp src/themes.css dist/themes.css && cp src/decoration.css dist/decoration.css && cp src/density.css dist/density.css && cp src/rtl.css dist/rtl.css && cp src/radix-viewport.css dist/radix-viewport.css && rm -rf dist/fonts && cp -r src/fonts dist/fonts",
+    "build": "tsup && cp src/themes.css dist/themes.css && cp src/decoration.css dist/decoration.css && cp src/density.css dist/density.css && cp src/rtl.css dist/rtl.css && cp src/radix-viewport.css dist/radix-viewport.css && rm -rf dist/themes && cp -r src/themes dist/themes && rm -rf dist/fonts && cp -r src/fonts dist/fonts",
     "tokens:build": "node scripts/build-themes-css.mjs",
     "tokens:extract": "node scripts/extract-tokens.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist .turbo"
+    "clean": "rm -rf dist .turbo",
+    "tokens:names": "node scripts/gen-theme-token-names.mjs",
+    "tokens:names:check": "node scripts/gen-theme-token-names.mjs --check"
   },
   "dependencies": {
     "tw-animate-css": "^1.4.0"

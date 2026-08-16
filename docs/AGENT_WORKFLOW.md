@@ -14,8 +14,10 @@ How a coding agent (Claude Code or otherwise) should work in this repo.
 - **New component:** run `/new-component <pkg> <Name> [purpose]`, or follow
   `docs/COMPONENT_GUIDELINES.md`. Create `tsx/index/stories/test`, use semantic
   tokens, wire the barrel export, typecheck + test.
-- **New theme:** `/new-theme <name>` — add a `themes.css` block + `THEMES`/
-  `THEME_META`, verify contrast in all themes.
+- **New theme:** `/new-theme <name>` — add a `src/themes/<name>.css` block +
+  `BUILT_IN_THEMES`/`BUILT_IN_THEME_META` + the `exports` keys, verify contrast
+  in every theme. (Only for a theme that SHIPS from the package — a consumer
+  registers their own with `defineTheme` + `<ThemeProvider themes={…}>`.)
 - **New registry item:** `/new-registry-item <name> <type>` — add source +
   manifest entry, run `pnpm registry:validate`.
 - **Review:** `/review-component <path>` against the quality gates.

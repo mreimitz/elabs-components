@@ -8,7 +8,7 @@
 - **2 shipped themes:** `light`, `dark` — plus the `:root` neutral light base (a fallback, not a selectable theme).
   #78's original "six themes" framing is outdated, and the orphan `acme` theme it asked to
   remove is already gone — no `[data-theme="acme"]` block exists. The gate fails if this
-  artifact ever names a theme that is not in `THEMES` (`packages/tokens/src/theme-types.ts`),
+  artifact ever names a theme that is not in `BUILT_IN_THEMES` (`packages/tokens/src/theme-types.ts`),
   which is the specific rot that killed the previous artifact.
 - **Source:** `packages/tokens/src/themes.css` (raw `oklch()` token literals; `var()` aliases resolved).
 - **Method:** deterministic oklch → OKLab → sRGB → WCAG 2.x relative luminance. No browser.

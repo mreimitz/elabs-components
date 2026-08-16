@@ -17,7 +17,13 @@ import { act, useEffect, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider, useTheme } from "./theme-provider";
-import { PAUSED_THEMES, THEMES, type ThemeName } from "./theme-types";
+import {
+  BUILT_IN_THEMES,
+  BUILT_IN_THEME_DEFINITIONS,
+  defineTheme,
+  PAUSED_THEMES,
+  type ThemeName,
+} from "./theme-types";
 
 const STORAGE_KEY = "brand-ui-theme";
 
@@ -225,7 +231,7 @@ describe("ThemeProvider — allowedThemes (#355)", () => {
       </ThemeProvider>,
     );
 
-    expect(latest?.themes).toEqual([...THEMES]);
+    expect(latest?.themes).toEqual([...BUILT_IN_THEMES]);
   });
 });
 
@@ -237,7 +243,7 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
       </ThemeProvider>,
     );
 
-    expect(latest?.themes).toEqual([...THEMES]);
+    expect(latest?.themes).toEqual([...BUILT_IN_THEMES]);
   });
 
   it("still applies any persisted shipped theme", () => {
@@ -265,8 +271,18 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe("dark");
   });
 
+  it("exposes the built-ins as full descriptors, in registry order", () => {
+    mount(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.themeDefinitions.map((d) => d.value)).toEqual([...BUILT_IN_THEMES]);
+  });
+
   it("never applies a persisted PAUSED theme name", () => {
-    // A paused theme keeps its CSS block but leaves THEMES, so a value persisted
+    // A paused theme keeps its CSS block but leaves BUILT_IN_THEMES, so a value persisted
     // before the pause must not be honoured. See .claude/rules/paused-surfaces.md.
     window.localStorage.setItem(STORAGE_KEY, PAUSED_THEMES[0]);
 
@@ -278,5 +294,147 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
 
     expect(themeWrites).not.toContain(PAUSED_THEMES[0]);
     expect(latest?.theme).toBe("light");
+  });
+});
+
+/**
+ * The open registry (ADR 0029). The property that matters is that a CONSUMER
+ * theme is indistinguishable from a built-in one everywhere the provider deals
+ * in themes — exposed, selectable, persistable, and able to carry its own
+ * decoration default. A fix that only widened `ThemeName` to `string` would pass
+ * a typecheck and still reject every consumer name at runtime, so these drive
+ * the real `setTheme` / persistence / `data-theme` paths.
+ */
+describe("ThemeProvider — the theme registry (ADR 0029)", () => {
+  const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
+  const parchment = defineTheme({
+    value: "parchment",
+    label: "Parchment",
+    dark: false,
+    decorationLevel: 6,
+  });
+
+  it("REPLACES the built-in registry rather than extending it", () => {
+    mount(
+      <ThemeProvider themes={[midnight, parchment]} defaultTheme="midnight">
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.themes).toEqual(["midnight", "parchment"]);
+    expect(latest?.themes).not.toContain("light");
+    expect(latest?.themeDefinitions.map((d) => d.label)).toEqual(["Midnight", "Parchment"]);
+  });
+
+  it("keeps the built-ins when the consumer spreads them in", () => {
+    mount(
+      <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.themes).toEqual([...BUILT_IN_THEMES, "midnight"]);
+  });
+
+  it("applies and persists a consumer theme like any other", () => {
+    mount(
+      <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]}>
+        <Probe />
+        <SetThemeOnMount to="midnight" />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.theme).toBe("midnight");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("midnight");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("midnight");
+  });
+
+  it("honours a persisted consumer theme on the next boot", () => {
+    window.localStorage.setItem(STORAGE_KEY, "midnight");
+
+    mount(
+      <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.theme).toBe("midnight");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("midnight");
+  });
+
+  it("rejects a persisted theme that is not in the registry", () => {
+    // Registry-relative validation, not a closed union: "midnight" is a perfectly
+    // good theme name — it is just not one THIS provider offers.
+    window.localStorage.setItem(STORAGE_KEY, "midnight");
+
+    mount(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(themeWrites).not.toContain("midnight");
+    expect(latest?.theme).toBe("light");
+  });
+
+  it("makes setTheme a no-op (with a dev warning) for a theme outside the registry", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    mount(
+      <ThemeProvider themes={[midnight]}>
+        <Probe />
+        <SetThemeOnMount to="light" />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.theme).toBe("midnight");
+    expect(themeWrites).not.toContain("light");
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('setTheme("light") ignored'));
+  });
+
+  it("reads the effective decoration off the ACTIVE registry entry", () => {
+    // Pre-0029 this was `THEME_META[theme].decorationLevel`, which throws on a
+    // name the built-in table has never seen — the crash a consumer theme would
+    // have hit on its first render.
+    mount(
+      <ThemeProvider themes={[parchment]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.theme).toBe("parchment");
+    expect(latest?.effectiveDecoration).toBe(6);
+    expect(latest?.tasteProfile.expressiveness).toBe(6);
+  });
+
+  it("lets an explicit decoration override win over the theme's default", () => {
+    mount(
+      <ThemeProvider themes={[parchment]} defaultDecoration={0}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.effectiveDecoration).toBe(0);
+  });
+
+  it("ignores an empty registry rather than exposing none", () => {
+    mount(
+      <ThemeProvider themes={[]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.themes).toEqual([...BUILT_IN_THEMES]);
+  });
+
+  it("allowedThemes still filters, now over the consumer registry", () => {
+    mount(
+      <ThemeProvider themes={[midnight, parchment]} allowedThemes={["parchment"]}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(latest?.themes).toEqual(["parchment"]);
+    expect(latest?.theme).toBe("parchment");
   });
 });

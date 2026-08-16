@@ -201,8 +201,10 @@ Phase 3 wrapper over the _same_ engine.
 
 - `brand-ui-component` → `/new-component` flow + `brand-ui-component-builder` /
   `review-component` (dedupe gate, quality gates, story + test, barrel export).
-- `brand-ui-theme` → `/new-theme` (token block in `themes.css`, `THEMES`/`THEME_META`,
-  registry theme item, contrast check). Useful to consumers too (brand a theme).
+- `brand-ui-theme` → `/new-theme` (a `src/themes/<name>.css` block,
+  `BUILT_IN_THEMES`/`BUILT_IN_THEME_META`, registry theme item, contrast check).
+  Useful to consumers too — though a consumer theme needs none of that, only
+  `defineTheme` + the provider's `themes` prop (ADR 0029).
 - `brand-ui-registry` → `brand-ui-registry-curator` (package vs registry decision,
   `registry:validate`, build/publish).
 - (release stays a command; optionally `brand-ui-release`.)

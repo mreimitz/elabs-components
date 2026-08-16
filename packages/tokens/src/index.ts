@@ -28,12 +28,16 @@ export {
 } from "./resolve-token-color";
 
 export {
-  THEMES,
-  THEME_META,
+  BUILT_IN_THEMES,
+  BUILT_IN_THEME_META,
+  BUILT_IN_THEME_DEFINITIONS,
   DEFAULT_THEME,
-  isThemeName,
+  defineTheme,
+  isBuiltInThemeName,
+  resolveThemeIsDark,
   type ThemeName,
-  type ThemeMeta,
+  type BuiltInThemeName,
+  type ThemeDefinition,
   PAUSED_THEMES,
   isPausedThemeName,
   type PausedThemeName,
@@ -62,3 +66,11 @@ export {
   DEFAULT_TASTE_PROFILE,
   type TasteProfile,
 } from "./theme-types";
+
+/**
+ * The token contract every theme must cover (ADR 0029) — GENERATED from
+ * `themes.css`, kept fresh by `pnpm token-contract:check`. Assert your own
+ * theme's stylesheet against it so a missing token fails your build instead of
+ * falling back to `:root` and rendering wrong.
+ */
+export { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.generated";

@@ -1,5 +1,5 @@
 import { createRef, type ReactElement } from "react";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { act, cleanup, render, waitFor } from "@testing-library/react";
@@ -285,10 +285,23 @@ function contrastRatio(a: string, b: string): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
-const THEMES_CSS_PATH = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../tokens/src/themes.css",
-);
+// ADR 0029 split the reference themes out of `themes.css` into their own opt-in
+// files, so a reader that opens ONLY `themes.css` sees `:root` and the paused
+// blueprint block and nothing else — it keeps parsing, just less. Read the SET,
+// and throw rather than return an incomplete one.
+const TOKENS_SRC = join(dirname(fileURLToPath(import.meta.url)), "../../tokens/src");
+
+function readThemeCssSet(): string {
+  const engine = join(TOKENS_SRC, "themes.css");
+  const themesDir = join(TOKENS_SRC, "themes");
+  const files = readdirSync(themesDir).filter((f) => f.endsWith(".css"));
+  if (files.length === 0) {
+    throw new Error(`no theme stylesheets found in ${themesDir} — the fixture would be vacuous`);
+  }
+  return [engine, ...files.map((f) => join(themesDir, f))]
+    .map((p) => readFileSync(p, "utf8"))
+    .join("\n");
+}
 
 /** Every custom property declared per `:root` / `[data-theme="…"]` block.
  *  Comments are stripped FIRST — themes.css documents its tokens heavily, and a
@@ -381,7 +394,7 @@ const ANSI_INK_SLOTS = [
   "brightWhite",
 ] as const;
 
-const THEME_BLOCKS = parseThemeBlocks(readFileSync(THEMES_CSS_PATH, "utf8"));
+const THEME_BLOCKS = parseThemeBlocks(readThemeCssSet());
 
 describe("buildInteractiveTerminalTheme readable-ink floor (#386)", () => {
   afterEach(() => {
@@ -390,7 +403,7 @@ describe("buildInteractiveTerminalTheme readable-ink floor (#386)", () => {
 
   // Guards the parse itself: if the regex ever stops matching, the per-block
   // loop below would silently run zero assertions and still go green.
-  it("parses every palette the repo ships out of themes.css", () => {
+  it("parses every palette the repo ships out of the theme stylesheet SET", () => {
     expect(Object.keys(THEME_BLOCKS).sort()).toEqual(
       expect.arrayContaining([":root", "light", "dark"]),
     );

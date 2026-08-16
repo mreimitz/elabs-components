@@ -116,15 +116,20 @@ tokens (`bg-background`, `text-foreground`, `border-border`). For those classes
 to produce styles in your app, do **two** things in your app's CSS entry:
 
 ```css
-/* Pulls in Tailwind itself + the @theme inline token→utility map + both
-   themes (`light`, `dark`) + the self-hosted fonts. No
-   separate `@import "tailwindcss"` is needed, and Tailwind v4 needs no
+/* The ENGINE: Tailwind itself + the @theme inline token→utility map + the dials
+   + a neutral light `:root` base + the self-hosted fonts. No separate
+   `@import "tailwindcss"` is needed, and Tailwind v4 needs no
    tailwind.config.js.
 
    It also pulls in `tw-animate-css` (the animation utilities the motion system
    retimes). That ships INSIDE @elabs/components-tokens as a real dependency — you do not
    install it yourself. `tailwindcss` is the one peer you provide (see §3). */
 @import "@elabs/components-tokens/styles.css";
+
+/* The two REFERENCE themes are OPT-IN, one import each (ADR 0029). Take the ones
+   you want; take neither if you author your own — see §5.1. */
+@import "@elabs/components-tokens/themes/light.css";
+@import "@elabs/components-tokens/themes/dark.css";
 
 /* Tailwind ignores node_modules unless you @source it — list every @elabs/components-*
    package you render so its utility classes get generated: */
@@ -166,8 +171,8 @@ they stay callable from a server component or a plain Node script:
 
 ## 5. App root — ThemeProvider
 
-Import the CSS once and wrap the tree. The three shipped themes are `light`
-(default) and `dark`:
+Import the CSS once and wrap the tree. The two REFERENCE themes are `light`
+(the default) and `dark`:
 
 ```tsx
 import "@elabs/components-tokens/styles.css";
@@ -188,6 +193,64 @@ export default function App() {
   );
 }
 ```
+
+### 5.1 Your own themes
+
+Theming is **open** (ADR 0029): a theme is any `[data-theme="…"]` block that
+covers the token contract, registered on the provider. Nothing in this package
+has to know its name.
+
+Three steps.
+
+**1. Write the CSS.** One block per theme, declaring every token in
+`THEME_TOKEN_NAMES` plus a `color-scheme`. Copy
+`node_modules/@elabs/components-tokens/dist/themes/light.css` as the starting
+point — that is what it is there for.
+
+```css
+/* src/themes/midnight.css */
+[data-theme="midnight"] {
+  color-scheme: dark; /* not optional — see below */
+  --background: oklch(0.18 0.02 260);
+  --foreground: oklch(0.96 0.01 260);
+  /* …every token in THEME_TOKEN_NAMES */
+}
+```
+
+`color-scheme` is load-bearing, not decoration: it is how the library answers
+"is the active theme dark" for a theme it has never heard of, so a wrong or
+missing value gives you a light code editor, basemap and toast inside a dark
+theme. Native scrollbars and form controls follow it too.
+
+**2. Register it.**
+
+```tsx
+import { defineTheme, ThemeProvider, BUILT_IN_THEME_DEFINITIONS } from "@elabs/components-tokens";
+import "./themes/midnight.css";
+
+const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
+
+// `themes` REPLACES the default registry. Spread the built-ins to keep them;
+// omit them to ship only your own.
+<ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]} defaultTheme="midnight">
+```
+
+`ThemeSwitcher` renders the provider's registry, so it picks up your theme with
+no `themes` prop of its own.
+
+**3. Assert the coverage in your own test.** The contract ships as data, so this
+needs no CSS parsing beyond your own file:
+
+```ts
+import { THEME_TOKEN_NAMES } from "@elabs/components-tokens";
+
+const css = readFileSync("src/themes/midnight.css", "utf8");
+const missing = THEME_TOKEN_NAMES.filter((t) => !new RegExp(`${t}\\s*:`).test(css));
+expect(missing).toEqual([]);
+```
+
+A theme missing a token silently falls back to the neutral `:root` base, which
+usually looks _almost_ right — which is why this is worth one test.
 
 ## 6. Per-package extras
 

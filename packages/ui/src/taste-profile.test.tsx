@@ -15,7 +15,7 @@ import userEvent from "@testing-library/user-event";
 import {
   DEFAULT_TASTE_PROFILE,
   DEFAULT_THEME,
-  THEME_META,
+  BUILT_IN_THEME_META,
   ThemeProvider,
   useDecoration,
   useDensity,
@@ -134,9 +134,11 @@ describe("useTasteProfile", () => {
       </ThemeProvider>,
     );
     // With no override the profile must report the theme's EFFECTIVE level (its
-    // THEME_META default), never the (null) override. Read from THEME_META so a
+    // registry default), never the (null) override. Read from the registry so a
     // retuned theme can't silently make this vacuous.
-    expect(profile().expressiveness).toBe(THEME_META[DEFAULT_THEME].decorationLevel ?? 0);
+    expect(profile().expressiveness).toBe(
+      BUILT_IN_THEME_META[DEFAULT_THEME as "light" | "dark"].decorationLevel ?? 0,
+    );
   });
 
   it("honours an explicit defaultRegister", () => {

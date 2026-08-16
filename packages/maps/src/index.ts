@@ -4,7 +4,7 @@
  * Adapted from mapcn (https://github.com/AnmolSaini16/mapcn, MIT License,
  * © 2025 Anmoldeep Singh), re-tokenized and renamed for brand-ui: semantic
  * tokens drive default layer paints, the basemap follows the active brand
- * theme (`data-theme` + `THEME_META`), and popups/controls use brand chrome.
+ * theme (`data-theme` + its own `color-scheme`), and popups/controls use brand chrome.
  *
  * MapLibre's stylesheet and the brand popup overrides are imported by
  * `<MapCanvas>` itself — no extra CSS import is needed.

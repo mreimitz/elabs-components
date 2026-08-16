@@ -45,7 +45,7 @@ import { ThemeProvider } from "@elabs/components-tokens";
 
 ## What's in it
 
-18 exported components — including `DECORATION_LEVELS`, `DecorationProvider`, `DEFAULT_DECORATION_LEVEL`, `DEFAULT_DENSITY`, `DEFAULT_MOTION_PREFERENCE`.
+20 exported components — including `BUILT_IN_THEME_DEFINITIONS`, `BUILT_IN_THEME_META`, `BUILT_IN_THEMES`, `DECORATION_LEVELS`, `DecorationProvider`.
 
 Don't guess the API — ask the CLI:
 

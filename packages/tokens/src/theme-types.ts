@@ -1,31 +1,59 @@
 /**
  * @elabs/components-tokens — theme types
  *
- * The set of themes shipped with the design system. Each has a matching
- * `[data-theme="..."]` block in `themes.css`. `:root` holds a neutral light
- * BASE/fallback (not a selectable theme); the default is `light`.
- * Adding a theme = add a value here + a block in themes.css.
+ * ## Theming is OPEN (ADR 0029)
  *
- * `THEMES` is the ACTIVE set — the one every gate, test, story, doc and release
- * enumerates. A theme that is experimental or on hold moves to `PAUSED_THEMES`
- * below; its CSS block stays in `themes.css` untouched, but nothing enumerates
- * it. See @.claude/rules/paused-surfaces.md.
+ * A theme is **not** a member of a closed union. `ThemeName` is `string`, and a
+ * theme is anything that has a `[data-theme="<name>"]` block covering the token
+ * contract (`THEME_TOKEN_NAMES`). A consumer authors one, registers it with
+ * `<ThemeProvider themes={[...]}>`, and every component themes correctly with no
+ * change to this package.
+ *
+ * `:root` holds a neutral light BASE/fallback — not a selectable theme — so a
+ * consumer who imports only `styles.css` still renders correctly.
+ *
+ * `BUILT_IN_THEMES` are the two REFERENCE themes this package ships (`light`,
+ * `dark`). They are the default registry and the worked example, not a
+ * restriction. Every gate, test, story, doc and release enumerates them; a theme
+ * that is experimental or on hold moves to `PAUSED_THEMES` below (its CSS block
+ * stays in `themes.css` untouched, but nothing enumerates it — see
+ * @.claude/rules/paused-surfaces.md).
+ *
+ * ## Light or dark is a CSS fact, not a registry fact
+ *
+ * Every theme block declares `color-scheme: light|dark`, so `resolveThemeIsDark`
+ * answers "is the active theme dark" for ANY theme — including one this package
+ * has never heard of. Components that need to swap an asset, a Monaco base or a
+ * basemap flavour call that, NOT a registry lookup. A registry lookup is a
+ * hard-coded guess about a name; the computed `color-scheme` is what the theme
+ * itself says.
  */
 
-export const THEMES = ["light", "dark"] as const;
-
-export type ThemeName = (typeof THEMES)[number];
+/**
+ * A theme name is any string with a matching `[data-theme="…"]` block. It is
+ * deliberately OPEN (it was a closed union before ADR 0029) — a consumer theme
+ * is a first-class theme, not a cast.
+ *
+ * Because this no longer narrows, there is no `isThemeName` guard: "is this a
+ * string" is not a useful check. Validate against a REGISTRY instead —
+ * `useTheme().themes` at runtime, or `isBuiltInThemeName` when you specifically
+ * mean one of the two shipped reference themes.
+ */
+export type ThemeName = string;
 
 /**
  * Themes kept as SOURCE but paused — experimental / on hold by maintainer
  * decision. A paused theme:
  *
  * - keeps its `[data-theme="…"]` block in `themes.css` (pause ≠ delete),
- * - is NOT in `THEMES`, so `ThemeName`, `THEME_META`, `isThemeName`,
- *   `ThemeProvider`, `ThemeSwitcher` and the Storybook theme toolbar never
- *   offer it,
+ * - is NOT in `BUILT_IN_THEMES`, so `BUILT_IN_THEME_META`, the default
+ *   `ThemeProvider` registry, `ThemeSwitcher` and the Storybook theme toolbar
+ *   never offer it,
  * - is excluded from every gate, contrast test, theme sweep, doc and release,
- * - is NOT deleted, so un-pausing is a one-line move back into `THEMES`.
+ * - is NOT deleted, so un-pausing is a one-line move into `BUILT_IN_THEMES`.
+ *
+ * Pausing constrains what THIS package ships. It is not a block on consumers:
+ * theming is open (ADR 0029), so a consumer may register any theme they author.
  *
  * `blueprint` is paused as of 2026-08-09 (maintainer decision — experimental
  * testing theme). Do not re-enumerate it anywhere; `pnpm paused:check` fails
@@ -41,17 +69,32 @@ export function isPausedThemeName(value: unknown): value is PausedThemeName {
   return typeof value === "string" && (PAUSED_THEMES as readonly string[]).includes(value);
 }
 
-export interface ThemeMeta {
-  /** The value written to `data-theme`. */
+/**
+ * What a theme declares ABOUT ITSELF to the UI — the registry entry. The colours
+ * live in CSS (`[data-theme="<value>"]`); this is the switcher-facing descriptor.
+ *
+ * Pass an array of these to `<ThemeProvider themes={…}>` to register consumer
+ * themes. Build them with `defineTheme` so a typo is a compile error.
+ */
+export interface ThemeDefinition {
+  /** The value written to `data-theme` — must match the CSS block's selector. */
   value: ThemeName;
   /** Human-readable label for theme switchers. */
   label: string;
-  /** Whether the theme is predominantly dark (useful for image/asset swaps). */
-  dark: boolean;
-  /** One-line description for docs/UX. */
-  description: string;
   /**
-   * Default decoration dial (0–10) for this theme. The active themes are all 0;
+   * Whether the theme is predominantly dark. Drives switcher ICONOGRAPHY and
+   * `pickByDarkness` (which theme "System" resolves to).
+   *
+   * It is NOT how a component decides to swap an asset, a Monaco base or a
+   * basemap flavour — those call `resolveThemeIsDark`, which reads the theme's
+   * own `color-scheme` and therefore works for a theme that was never
+   * registered. Keep this in agreement with the CSS block's `color-scheme`.
+   */
+  dark: boolean;
+  /** One-line description for docs/UX. Optional for consumer themes. */
+  description?: string;
+  /**
+   * Default decoration dial (0–10) for this theme. Both reference themes are 0;
    * a theme that wants ambient reprographic texture declares it here AND in its
    * `themes.css` block (locked by theme-decoration-parity.test.ts). The dial
    * itself stays fully live and is set per region/document — see
@@ -60,42 +103,122 @@ export interface ThemeMeta {
   decorationLevel?: DecorationLevel;
 }
 
-export const THEME_META: Record<ThemeName, ThemeMeta> = {
+/**
+ * Identity helper: types and validates a consumer theme at AUTHOR time.
+ *
+ * ```ts
+ * const midnight = defineTheme({ value: "midnight", label: "Midnight", dark: true });
+ * <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, midnight]} />
+ * ```
+ *
+ * It deliberately does not check that the CSS block exists or that the token
+ * contract is covered — that is a build-time property, asserted by testing your
+ * stylesheet against `THEME_TOKEN_NAMES` (see ADR 0029 §"Validating your theme").
+ */
+export function defineTheme(definition: ThemeDefinition): ThemeDefinition {
+  return definition;
+}
+
+/**
+ * The REFERENCE themes shipped in this package. Two, by design: enough to prove
+ * the light/dark contract, few enough that a consumer reads them as examples
+ * rather than as the menu. `PAUSED_THEMES` is kept as source but not enumerated.
+ */
+export const BUILT_IN_THEMES = ["light", "dark"] as const;
+
+/** One of the two reference themes this package ships. */
+export type BuiltInThemeName = (typeof BUILT_IN_THEMES)[number];
+
+export const BUILT_IN_THEME_META: Record<BuiltInThemeName, ThemeDefinition> = {
   light: {
     value: "light",
     label: "Light",
     dark: false,
     description:
-      "Qlik Cloud light theme — Qlik Green primary on near-white neutral surfaces; neutral grey text, 4px radius, blue focus ring, Qlik chart palette, Source Sans Pro.",
+      "Reference light theme — brand primary on near-white neutral surfaces; neutral grey text, 4px radius.",
   },
   dark: {
     value: "dark",
     label: "Dark",
     dark: true,
     description:
-      "Qlik Cloud dark theme on warm charcoal surfaces with off-white ivory text — bright Qlik Green, blue focus ring, Qlik chart palette, Source Sans Pro, 4px radius.",
+      "Reference dark theme — warm charcoal surfaces with off-white text; the same brand primary, 4px radius.",
   },
   // `blueprint` is PAUSED (see PAUSED_THEMES) — its `themes.css` block stays,
-  // but it has no THEME_META entry, so no switcher, toolbar or sweep offers it.
+  // but it has no entry here, so no switcher, toolbar or sweep offers it.
   // Un-pausing = restore this entry (label "Blueprint", dark, decorationLevel 10
   // — which MUST equal the `--decoration` its themes.css block sets, since
-  // ThemeProvider derives `effectiveDecoration` from here) and move the name back
-  // into THEMES.
+  // ThemeProvider derives `effectiveDecoration` from here) and move the name
+  // back into BUILT_IN_THEMES.
 };
+
+/**
+ * The default `ThemeProvider` registry, in switcher order. Spread it to KEEP the
+ * reference themes alongside your own; omit it to ship only your own.
+ */
+export const BUILT_IN_THEME_DEFINITIONS: readonly ThemeDefinition[] = BUILT_IN_THEMES.map(
+  (name) => BUILT_IN_THEME_META[name],
+);
 
 /** Default theme applied when nothing is persisted. */
 export const DEFAULT_THEME: ThemeName = "light";
 
-/** Runtime guard for narrowing unknown strings (e.g. persisted values). */
-export function isThemeName(value: unknown): value is ThemeName {
-  return typeof value === "string" && (THEMES as readonly string[]).includes(value);
+/** True for one of the two reference themes this package ships. */
+export function isBuiltInThemeName(value: unknown): value is BuiltInThemeName {
+  return typeof value === "string" && (BUILT_IN_THEMES as readonly string[]).includes(value);
+}
+
+/**
+ * Is the theme in effect on `el` a DARK theme? Works for ANY theme, including
+ * one this package has never heard of — which is the whole point.
+ *
+ * Resolution order:
+ *
+ * 1. **The computed `color-scheme`** on the element. Every theme block is
+ *    required to declare `color-scheme: light|dark` (@.claude/rules/theming.md),
+ *    and the property inherits, so this is the theme telling you directly. It is
+ *    authoritative because it survives a consumer OVERRIDING a built-in theme's
+ *    block — a registry lookup would not.
+ * 2. **The built-in registry**, keyed off `data-theme`. Covers jsdom and any
+ *    environment where computed styles are not resolvable (the tokens
+ *    stylesheet is usually not loaded in unit tests).
+ * 3. **`prefers-color-scheme`**, when no theme is applied at all.
+ *
+ * Defaults to `false` (light) with no DOM — SSR-safe.
+ */
+export function resolveThemeIsDark(el?: Element | null): boolean {
+  if (typeof document === "undefined") return false;
+  const target = el ?? document.documentElement;
+  if (!target) return false;
+
+  // 1. The theme's own declaration. jsdom returns "" here (no stylesheet
+  //    applied), which correctly falls through rather than reporting "light".
+  if (typeof window !== "undefined" && typeof window.getComputedStyle === "function") {
+    const scheme = window.getComputedStyle(target).colorScheme;
+    // `color-scheme` may legitimately be a LIST ("light dark") meaning "either
+    // is fine" — that is not a claim about this theme, so only a single,
+    // unambiguous keyword counts.
+    if (scheme === "dark") return true;
+    if (scheme === "light") return false;
+  }
+
+  // 2. A registered reference theme, read off the nearest `data-theme`.
+  const themed = target.closest?.("[data-theme]") ?? document.querySelector("[data-theme]");
+  const name = themed?.getAttribute("data-theme");
+  if (name && isBuiltInThemeName(name)) return BUILT_IN_THEME_META[name].dark;
+
+  // 3. No theme applied — follow the OS.
+  if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  return false;
 }
 
 /* ==========================================================================
    MOTION PREFERENCE
    A user-facing override for micro-interaction motion, layered over the OS
    `prefers-reduced-motion` setting and the per-theme default. Mirrors the
-   THEMES / ThemeName / isThemeName surface above. The ThemeProvider persists
+   BUILT_IN_THEMES / meta / guard surface above. The ThemeProvider persists
    the choice and writes `data-motion-pref` (see themes.css "MOTION GATE").
    ========================================================================== */
 
@@ -150,8 +273,9 @@ export function isMotionPreference(value: unknown): value is MotionPreference {
    10 = full reprographic drafting (grid, hatch, drawn-not-filled, squared). Set
    it on any theme/region/document to add gentle blueprint texture in ANY color.
    Mirrors the MOTION surface above; the ThemeProvider persists the choice and
-   writes `data-decoration`, defaulting to THEME_META[theme].decorationLevel
-   (blueprint = 10). See themes.css "DECORATION DIAL" + .claude/rules/blueprint-decoration.md.
+   writes `data-decoration`, defaulting to the ACTIVE REGISTRY ENTRY's
+   `decorationLevel` — so a consumer theme declares its own default the same way
+   a built-in does. See themes.css "DECORATION DIAL" + .claude/rules/blueprint-decoration.md.
    ========================================================================== */
 
 export const DECORATION_LEVELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;

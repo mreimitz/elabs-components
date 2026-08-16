@@ -323,7 +323,15 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
   const spec$ = (name) => `${name}@${peerRanges[name]}`;
 
   const css = {
-    import: `@import "${PKG_SCOPE}tokens/styles.css";`,
+    // The engine, then the two REFERENCE themes — which are opt-in subpaths since
+    // ADR 0029 (styles.css alone ships a neutral `:root` base and no selectable
+    // theme). A scaffolded app gets both so its theme switcher works out of the
+    // box; an app that authors its own theme deletes these two lines.
+    import: [
+      `@import "${PKG_SCOPE}tokens/styles.css";`,
+      `@import "${PKG_SCOPE}tokens/themes/light.css";`,
+      `@import "${PKG_SCOPE}tokens/themes/dark.css";`,
+    ].join("\n"),
     // One `@source` per installed package — generated from the SAME array as the
     // deps, so "I installed it but it renders unstyled" cannot happen.
     sources: packages.map((p) => `@source "../node_modules/${p}/dist";`),
@@ -902,7 +910,9 @@ function buildStyles(install) {
   return `/* brand-ui styling entry.
  *
  * 1) The token stylesheet pulls in Tailwind v4, the @theme inline token→utility
- *    map, both themes (light, dark) and the fonts.
+ *    map, a neutral \`:root\` base and the fonts. The two REFERENCE themes are
+ *    separate, opt-in imports — keep the ones you use, or drop both and import
+ *    your own theme stylesheet instead (see docs/CONSUMING.md §5.1).
  * 2) Tailwind ignores node_modules unless you @source it — one line per
  *    @elabs/components-* package you render. Delete a line and those
  *    components render UNSTYLED. See docs/CONSUMING.md §4.

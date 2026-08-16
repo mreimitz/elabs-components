@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_THEME, isThemeName, type ThemeName } from "@elabs/components-tokens";
+import { DEFAULT_THEME, type ThemeName } from "@elabs/components-tokens";
 
 export interface DataThemeState {
   /** The active brand theme parsed from `data-theme`. */
@@ -37,7 +37,10 @@ export function useDataTheme(target?: HTMLElement | null): DataThemeState {
       const next =
         el.getAttribute("data-theme") ?? document.documentElement.getAttribute("data-theme");
       setState((prev) => ({
-        theme: isThemeName(next) ? next : prev.theme,
+        // Any non-empty attribute value is a theme (ADR 0029 — names are open).
+        // Only "no attribute anywhere" keeps the previous value, which is what
+        // makes a late ThemeProvider write a no-op rather than a flash.
+        theme: next || prev.theme,
         revision: prev.revision + 1,
       }));
     };

@@ -3,6 +3,10 @@
 - **Status:** accepted (2026-07-03)
 - **Deciders:** brand-ui-design-system-architect review, maps package work
 - **Related:** ADR 0001 (architecture), ADR 0002 (component ownership), `.claude/rules/map-components.md`
+- **Amended by:** ADR [0029](./0029-open-theme-registry.md) — point 3's darkness
+  oracle changed: the basemap flavour now comes from the active theme's
+  `color-scheme` (`resolveThemeIsDark`), not from a `THEME_META[theme].dark`
+  registry lookup, so a consumer-authored dark theme resolves correctly.
 
 ## Context
 
