@@ -8,7 +8,7 @@
 The single `--border` token failed **WCAG 1.4.11** (non-text UI components need
 ≥3:1) against the `--card`/`--background` surfaces in **4 of 6 themes** — measured
 with the repo's own oklch→sRGB→WCAG math (`packages/tokens/src/color-contrast.ts`):
-light 1.27:1, qlik-bright (default) 1.35:1, dark 1.36:1, qlik-dark 1.40:1 (blueprint
+light 1.27:1, light (default) 1.35:1, dark 1.36:1, dark 1.40:1 (blueprint
 5.71:1 and high-contrast 21:1 already pass). Surfaced in #78, split to #172.
 
 `--border` was doing two jobs at once: a **decorative** hairline (where the boundary
@@ -18,7 +18,7 @@ divider (the only structural cue between two same-surface regions → must hit 3
 
 A single global bump to satisfy the load-bearing case is wrong, and the math proves
 it: to clear 3:1 vs a white card, `--border` L would have to drop from 0.92 to ~0.67
-(light/qlik-bright) — a heavy mid-gray hairline on _every_ card, table, input, and
+(light/light) — a heavy mid-gray hairline on _every_ card, table, input, and
 divider, which visibly breaks brand-ui's stated "restrained, modern enterprise SaaS,
 app-first" aesthetic ([`.claude/rules/design-system.md`](../../.claude/rules/design-system.md)).
 WCAG 1.4.11 compliance is **pair-relative**, so one global token over-corrects.
@@ -31,8 +31,8 @@ as the policy that makes the subtle default compliant.**
 
 - **`--border-strong`** is defined in every theme block of `themes.css` and clears
   **≥3:1 vs both `--card` and `--background`**. The historically failing themes were
-  given new values (light/qlik-bright `oklch(0.65 …)` → 3.23:1; dark `oklch(0.53 0.025 264)` → 3.28/3.56;
-  qlik-dark `oklch(0.55 0.045 252)` → 3.40/3.74); blueprint uses its
+  given new values (light/light `oklch(0.65 …)` → 3.23:1; dark `oklch(0.53 0.025 264)` → 3.28/3.56;
+  dark `oklch(0.55 0.045 252)` → 3.40/3.74); blueprint uses its
   existing already-compliant border value as a **literal** (not `var(--border)`) so the
   contrast gate's `tokenMap` parser resolves it.
 - **`--input` moves onto the strong rung** in the four failing themes — a form field's
@@ -73,7 +73,7 @@ as the policy that makes the subtle default compliant.**
 ## Consequences
 
 - **Visual change is bounded.** Form fields (`Input`, `Textarea`, `Select`,
-  `Checkbox`, `Toggle`, `RadioGroup`, `InputOTP`, `InputGroup`, and `@qlik-coe-emea/qlabs-components-data`
+  `Checkbox`, `Toggle`, `RadioGroup`, `InputOTP`, `InputGroup`, and `@elabs/components-data`
   `FacetFilter`/`ColumnPicker` — the `border-input` sites) get a crisper, darker
   resting outline in the four light/dark themes. Nothing else changes until the
   follow-up migration moves _load-bearing_ dividers to `border-strong`.
@@ -102,7 +102,7 @@ as the policy that makes the subtle default compliant.**
 
 ### Why
 
-In `qlik-bright` (the default theme) the form controls — segmented/button-group,
+In `light` (the default theme) the form controls — segmented/button-group,
 `Select`, `Combobox`, `Date`/`DateRange` pickers, and **all** form fields — rendered
 with a noticeably dark thin outline (`--input` on the strong rung, 0.65 → 3.23:1 vs
 white card) while everything else in the theme uses the subtle `--border` hairline
@@ -117,13 +117,13 @@ the theme's subtle hairline, **including** text `Input`, `Textarea`, `InputOTP`,
 The change is a token-value edit in `themes.css` only; no component shape changes
 (the lowered token cascades to every `border-input` site for free — `Input`,
 `Textarea`, `InputOTP`, `Checkbox`, `RadioGroup`, `Toggle`, `Select`, color-picker,
-and `@qlik-coe-emea/qlabs-components-data` `ColumnPicker`/`FacetFilter`).
+and `@elabs/components-data` `ColumnPicker`/`FacetFilter`).
 
 | Theme           | old `--input` (vs card)        | new `--input` (vs card)        | Rationale                                                                                     |
 | --------------- | ------------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------- |
 | `:root` (light) | `oklch(0.65 0.012 264)` 3.23:1 | `oklch(0.92 0.008 264)` 1.27:1 | == `--border` (subtle hairline).                                                              |
-| `qlik-bright`   | `oklch(0.65 0.014 252)` 3.23:1 | `oklch(0.9 0.01 252)` 1.35:1   | == `--border` — the explicit ask.                                                             |
-| `qlik-dark`     | `oklch(0.55 0.045 252)` 3.40:1 | `oklch(0.42 0.04 252)` 1.95:1  | NOT == `--border` (0.34 → 1.40:1 would vanish on dark); a perceptible-but-quiet mid value.    |
+| `light`         | `oklch(0.65 0.014 252)` 3.23:1 | `oklch(0.9 0.01 252)` 1.35:1   | == `--border` — the explicit ask.                                                             |
+| `dark`          | `oklch(0.55 0.045 252)` 3.40:1 | `oklch(0.42 0.04 252)` 1.95:1  | NOT == `--border` (0.34 → 1.40:1 would vanish on dark); a perceptible-but-quiet mid value.    |
 | `blueprint`     | `oklch(0.78 0.05 246)` 4.98:1  | `oklch(0.82 0.04 244)` 5.71:1  | == `--border` (white hairline); near-no-op — drawn-not-filled, the hairline IS the structure. |
 
 `--input` stays a distinct per-theme token (the theme-parity gate `pnpm
@@ -150,7 +150,7 @@ A form field is now identifiable WITHOUT relying on the resting border contrast:
 ### Consequences (honest)
 
 - **Resting non-text contrast on form-control outlines is now <3:1** in the light
-  themes and on qlik-dark — a deliberate, documented tradeoff (aesthetic / on-theme
+  themes and on dark — a deliberate, documented tradeoff (aesthetic / on-theme
   coherence over strict 1.4.11) for an **internal** design system. A product with a
   hard external 1.4.11 conformance requirement should re-tune `--input` upward (it is a
   single token, themeable).
@@ -158,11 +158,11 @@ A form field is now identifiable WITHOUT relying on the resting border contrast:
 3:1` and **drops** the `input ≥ 3:1` assertion (replaced by a documenting comment so
   it can't silently rot).
 - **Token-VALUE edit → three-theme `brand-ui-visual-ux-reviewer` sweep on a real
-  screen** is still owed before merge (Meta #161), **especially qlik-dark**, where the
+  screen** is still owed before merge (Meta #161), **especially dark**, where the
   failure mode is "now too subtle" — the computed 1.95:1 says perceptible, but only a
   rendered screen confirms it reads as an on-theme outline rather than disappearing.
 - The `button.tsx` `outline` (`border-input`) and `outline-subtle` (`border-border`)
-  variants are now **visually identical by default** (both 1.35:1 on qlik-bright). Both
+  variants are now **visually identical by default** (both 1.35:1 on light). Both
   variant names are kept as a **semantic seam** — a future brand could re-differentiate
   `--input` from `--border` — and to avoid churning `outline-subtle` callers; only the
   now-stale "strong form-field `--input` rung" comment was corrected.
@@ -170,8 +170,8 @@ A form field is now identifiable WITHOUT relying on the resting border contrast:
 ### Per-control redundant-cue map + escape hatch (#297)
 
 A downstream consumer re-surfaced the sub-3:1 `--input` border as a 1.4.11 finding
-(#297). Confirmed measured ratios (repo `color-contrast` math): **qlik-bright 1.37:1
-(bg) / 1.44:1 (card); qlik-dark 1.77:1 / 1.60:1; blueprint 6.32:1 / 5.71:1 — blueprint
+(#297). Confirmed measured ratios (repo `color-contrast` math): **light 1.37:1
+(bg) / 1.44:1 (card); dark 1.77:1 / 1.60:1; blueprint 6.32:1 / 5.71:1 — blueprint
 already passes**, only the light/dark themes are sub-threshold. Resolution stands as
 **by-design** (this Amendment). Which redundant cue carries each control, made explicit:
 
@@ -187,6 +187,6 @@ already passes**, only the light/dark themes are sub-threshold. Resolution stand
 **Escape hatch (external hard-conformance builds)** — a single-token change aliasing
 `--input` to the `--border-strong` rung, no component edits:
 
-- qlik-bright: `--input: oklch(0.65 0 0)` → 3.10:1 (bg) / 3.23:1 (card)
-- qlik-dark: `--input: oklch(0.54 0.006 75)` → 3.50:1 / 3.16:1
+- light: `--input: oklch(0.65 0 0)` → 3.10:1 (bg) / 3.23:1 (card)
+- dark: `--input: oklch(0.54 0.006 75)` → 3.50:1 / 3.16:1
 - blueprint: unchanged (already 5.71:1)

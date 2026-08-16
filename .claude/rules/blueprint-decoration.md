@@ -1,7 +1,7 @@
 ---
 # Path-scoped (Claude Code lazy-loads this only when a matching file is touched) — not
 # always-on context. Scoped to the blueprint package AND the decoration tokens
-# (decoration.css/themes.css live in @qlik-coe-emea/qlabs-components-tokens). See `.claude/rules/quality-gates.md`
+# (decoration.css/themes.css live in @elabs/components-tokens). See `.claude/rules/quality-gates.md`
 # "Enforcement over reminders" and the `rules:scoping:check` gate.
 paths:
   - "packages/blueprint/**"
@@ -19,7 +19,7 @@ theme is simply "the navy cyanotype palette at decoration 10."
 
 Its character must read on **real, unmodified screens** — so the **theme/dial** supplies
 the ambient look automatically (no per-component edits), and the **drawing furniture**
-(`@qlik-coe-emea/qlabs-components-blueprint`) is placed **sparingly, by role** — never as wallpaper. Tasteful
+(`@elabs/components-blueprint`) is placed **sparingly, by role** — never as wallpaper. Tasteful
 restraint is the point.
 
 ## The decoration dial (how to set it)
@@ -27,7 +27,7 @@ restraint is the point.
 - **Theme default:** a theme block may set `--decoration` (blueprint = 10; others
   inherit 0). See `themes.css` "DECORATION DIAL" + `decoration.css` (overlay rules).
 - **Region:** put `data-decoration="N"` on any element (or use
-  `<DecorationProvider level={N}>` from `@qlik-coe-emea/qlabs-components-tokens`) to dial a subtree — a diagram,
+  `<DecorationProvider level={N}>` from `@elabs/components-tokens`) to dial a subtree — a diagram,
   panel, or page — without changing the theme.
 - **Document:** `ThemeProvider` / `useDecoration()` persist a document-level override
   (`null` = follow the theme's default).
@@ -164,6 +164,6 @@ screen without per-component edits (in `themes.css`, scoped to `[data-theme="blu
 
 Judge the theme on a **real app scenario** (e.g. `scenarios-agentic-ai-workspace--default`)
 under `globals=theme:blueprint`, not on demos authored to look right. Confirm the other
-themes are untouched (same screen under `qlik-bright`/`dark` — no grid leak). See
+themes are untouched (same screen under `light`/`dark` — no grid leak). See
 @.claude/rules/styling-and-tokens.md and @.claude/rules/editor-components.md siblings,
-and the `@qlik-coe-emea/qlabs-components-blueprint` package.
+and the `@elabs/components-blueprint` package.

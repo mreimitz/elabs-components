@@ -10,7 +10,7 @@
  *      so the ComposedChart outer container div renders cleanly in jsdom.
  *
  * Real render fidelity + a11y are covered by the Storybook build
- * (the @qlik-coe-emea/qlabs-components-editor / @qlik-coe-emea/qlabs-components-flow precedent for SVG-heavy components).
+ * (the @elabs/components-editor / @elabs/components-flow precedent for SVG-heavy components).
  */
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";

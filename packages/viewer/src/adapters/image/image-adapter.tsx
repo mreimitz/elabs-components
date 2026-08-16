@@ -11,7 +11,7 @@
  * user gets the same information a sighted user does.
  */
 
-import { cn, StatePanel, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn, StatePanel, useLocale } from "@elabs/components-ui";
 import { useEffect, useState } from "react";
 
 import type {
@@ -23,7 +23,7 @@ import type {
 } from "../../core/types";
 import { imageManifest } from "./image-manifest";
 import { toViewerError } from "../../core/errors";
-import type { ResolvedFileSource } from "@qlik-coe-emea/qlabs-components-ui";
+import type { ResolvedFileSource } from "@elabs/components-ui";
 
 export interface ImageDocument extends AdapterDocument {
   kind: "image";

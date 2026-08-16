@@ -8,14 +8,9 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { BotIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";

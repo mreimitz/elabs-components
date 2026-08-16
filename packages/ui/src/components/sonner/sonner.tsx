@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Toaster as SonnerToaster, toast } from "sonner";
-import { THEME_META, type ThemeName } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEME_META, type ThemeName } from "@elabs/components-tokens";
 import { cn } from "../../lib/cn";
 
 /**
@@ -69,7 +69,7 @@ export type ToasterProps = React.ComponentProps<typeof SonnerToaster>;
  * ## Theme handling
  *
  * The Toaster's `theme` prop is automatically set based on the active
- * `data-theme` attribute (qlik-bright → "light", qlik-dark/blueprint → "dark"),
+ * `data-theme` attribute (light → "light", dark/blueprint → "dark"),
  * so toasts visually track the app's theme by default. However, you may pass
  * `theme="light"` or `theme="dark"` directly to override this derivation if needed.
  */

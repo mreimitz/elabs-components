@@ -81,10 +81,7 @@ export const BASELINE_PATH = join(HERE, "intent-coverage-baseline.json");
  * whose llms spokes went empty. Widening this to every package is a welcome
  * follow-up ratchet, not a precondition.
  */
-export const GATED_PACKAGES = [
-  "@qlik-coe-emea/qlabs-components-ai",
-  "@qlik-coe-emea/qlabs-components-charts",
-];
+export const GATED_PACKAGES = ["@elabs/components-ai", "@elabs/components-charts"];
 
 /** The documented `category` enum (intent.mjs schema header). */
 export const CATEGORIES = new Set([
@@ -253,7 +250,7 @@ export function familyDocumented(name, components, intent) {
 }
 
 /** Bare (non-relative, non-workspace) import specifier → a third-party package. */
-const THIRD_PARTY_RE = /^(?!\.)(?!@qlik-coe-emea\/)/;
+const THIRD_PARTY_RE = /^(?!\.)(?!@elabs\/)/;
 
 /**
  * Is `name` a verbatim RE-EXPORT of a third-party symbol?

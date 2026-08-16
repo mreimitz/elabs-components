@@ -6,11 +6,11 @@
  * claim came from" — the RAG-citation case, and the same machinery behind
  * find-in-document.
  *
- * ## Why this lives in `@qlik-coe-emea/qlabs-components-ui`
+ * ## Why this lives in `@elabs/components-ui`
  *
  * The producer of an address (a chat answer's citation, in
- * `@qlik-coe-emea/qlabs-components-ai`) and its consumer (the file viewer, in
- * `@qlik-coe-emea/qlabs-components-viewer`) are Layer-2 siblings that may not
+ * `@elabs/components-ai`) and its consumer (the file viewer, in
+ * `@elabs/components-viewer`) are Layer-2 siblings that may not
  * import each other. `ui` is the only layer both reach, which is exactly why
  * `FileSource` and `MatchRange` already live here. This module is a
  * dependency-free leaf: types plus pure string functions, no React.

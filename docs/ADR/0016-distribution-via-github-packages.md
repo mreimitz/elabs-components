@@ -1,6 +1,11 @@
 # ADR 0016 — Distribution via GitHub Packages (and the scope rename it forced)
 
-- **Status:** Accepted
+> **Superseded.** This repo is a private fork with no remote and no registry;
+> nothing is published. The reasoning below is kept as the record of why the
+> packages are scoped and carry publish metadata at all. See
+> [ADR 0028](./0028-publishing-disabled-private-fork.md) for what holds today.
+
+- **Status:** Superseded by [ADR 0028](./0028-publishing-disabled-private-fork.md) (2026-08-16)
 - **Date:** 2026-08-01
 - **Supersedes:** the "no npm registry / tarballs only" premise stated in
   `docs/RELEASING.md` and `docs/CONSUMING.md`
@@ -23,16 +28,16 @@ owns — so publishing was blocked by construction, not by policy.
 ## Decision
 
 **Publish the packages as private npm packages on GitHub Packages
-(`https://npm.pkg.github.com`), from the `Qlik-CoE-EMEA/qlabs-components` repo,
+(`https://npm.pkg.github.com`), from the owning organization’s repo,
 published by CI on a version tag.**
 
 This forces three coupled changes:
 
 1. **Scope rename.** GitHub Packages only accepts packages whose npm scope
-   equals the repository owner. `@brand/<pkg>` → `@qlik-coe-emea/qlabs-components-<pkg>`.
+   equals the repository owner. `@brand/<pkg>` → `@elabs/components-<pkg>`.
    The repo name is carried in the package name so the packages stay
    collision-free inside a scope shared by every repo in the org — otherwise the
-   design system would claim generic names like `@qlik-coe-emea/ui`.
+   design system would claim generic names like `@elabs/ui`.
 2. **Publish metadata.** `private` removed (repo visibility is what keeps the
    package private); `repository` + `directory` added (GitHub Packages needs it
    to link the package and inherit visibility); `publishConfig.registry` added
@@ -57,7 +62,7 @@ and 200 cold installs per month. Not a constraint at this size.
 
 ## Consequences
 
-**Better.** Consumers write `"@qlik-coe-emea/qlabs-components-ui": "^X.Y.Z"`
+**Better.** Consumers write `"@elabs/components-ui": "^X.Y.Z"`
 and nothing else. The `pnpm.overrides` mirror is deleted. `npx` works on the
 CLI. Upgrades are `pnpm update`.
 
@@ -70,7 +75,7 @@ step that the tarball flow did not have.
 **Permanent.** Published npm versions and names are immutable. The package names
 chosen here cannot be cleanly changed later.
 
-**Verbose.** `@qlik-coe-emea/qlabs-components-ui` is a 34-character specifier on
+**Verbose.** `@elabs/components-ui` is a 34-character specifier on
 every import line. Accepted deliberately in exchange for collision-safety.
 
 ## What made this safe to do

@@ -13,8 +13,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Spinner, StatePanel } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Spinner, StatePanel } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 import { MapContext, type BasemapTheme } from "./map-context";
 import { useResolvedBasemapTheme } from "./use-resolved-basemap-theme";
@@ -121,7 +121,7 @@ function getViewport(map: MapLibreGL.Map): MapViewport {
 
 /**
  * The root map surface — a token/theme-aware MapLibre GL canvas. Compose the
- * other `@qlik-coe-emea/qlabs-components-maps` components (markers, popups, controls, layers) as
+ * other `@elabs/components-maps` components (markers, popups, controls, layers) as
  * children; they reach the map through context (`useMap`).
  *
  * The ref exposes the raw MapLibre `Map` instance for imperative work

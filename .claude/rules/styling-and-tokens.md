@@ -48,7 +48,7 @@
   - **`text-<tone>-foreground` is ONLY the ink on a solid `bg-<tone>` plate.** It is
     light in the light themes because the plate is dark. Putting it on a `/10` wash or
     a bare surface paints near-white text on near-white ground — the exact regression
-    #381 had to repair in `@qlik-coe-emea/qlabs-components-editor`'s entity chip.
+    #381 had to repair in `@elabs/components-editor`'s entity chip.
   - **`text-<tone>-text` is coloured TEXT on an ordinary surface** (≥4.5:1 — a wash
     chip's label, an inline status word). Not a fill, not plate ink.
   - **Decision test:** _is the colour behind text I control (`-foreground`), the colour
@@ -64,7 +64,7 @@
   use `bg-foo`/`text-foo`. Never short-circuit with a literal.
 - **Tailwind content scanning:** workspace packages are scanned via `@source`
   directives in each app's CSS — add new packages there.
-- **KPI tile ownership:** the canonical KPI tile (`MetricCard`) is owned by `@qlik-coe-emea/qlabs-components-ui`; `@qlik-coe-emea/qlabs-components-charts` and `@qlik-coe-emea/qlabs-components-editor` re-export it (ADR 0012).
+- **KPI tile ownership:** the canonical KPI tile (`MetricCard`) is owned by `@elabs/components-ui`; `@elabs/components-charts` and `@elabs/components-editor` re-export it (ADR 0012).
 
 ## Typography scale (#187)
 
@@ -108,10 +108,10 @@
     dial does not touch. So density coverage on a real screen == role adoption
     on that screen, and adoption is partial: `pnpm text-scale:check` still
     counts **309 raw font-size uses across 111 files** — 112 in
-    `@qlik-coe-emea/qlabs-components-ui` (mostly `src/blocks/**` copy-own
+    `@elabs/components-ui` (mostly `src/blocks/**` copy-own
     blocks, `context-menu`, `menubar`), 109 in
-    `@qlik-coe-emea/qlabs-components-ai`, 50 in
-    `@qlik-coe-emea/qlabs-components-charts`. Every one of those is a string of
+    `@elabs/components-ai`, 50 in
+    `@elabs/components-charts`. Every one of those is a string of
     text a compact surface will NOT tighten. Measured on real screens after the
     Sidebar/Button/Badge/Table/DataTable migration (elements whose computed
     `font-size` actually changes between comfortable and compact, story root,

@@ -24,7 +24,7 @@ export const Alert = forwardRef<
   HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
 >(function Alert(
   // `role` is an explicit override seam (default "alert"): a PENDING decision
-  // containing focusable controls (e.g. @qlik-coe-emea/qlabs-components-ai ApprovalCard) must be a
+  // containing focusable controls (e.g. @elabs/components-ai ApprovalCard) must be a
   // labelled region (`role="group"` + aria-labelledby), not an assertive live
   // region (research/structural-design/11 §B.3).
   { className, variant, role = "alert", ...props },

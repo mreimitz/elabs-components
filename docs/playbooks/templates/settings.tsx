@@ -37,7 +37,7 @@ import {
   WizardStep,
   WizardSteps,
   type WizardStepMeta,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { Bell, Home, Shield, User } from "lucide-react";
 
 const WIZARD_STEPS: WizardStepMeta[] = [

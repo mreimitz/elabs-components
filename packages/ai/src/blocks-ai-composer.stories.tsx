@@ -39,7 +39,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The standard AI chat-input block — a thin showcase of the real <Composer /> component: a rounded two-tone double card (a status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a model pill, a circular send, and suggestion chips under a centered greeting. Composer's `tone` prop (#254) picks the arrangement — `surface` (default, this block's Default/ComposerOnly) is the outer bg-card frame; `card` (see DoubleCardToned) is the tinted-outer/distinct-inner frame the reference exemplar calls for. Built on the real @qlik-coe-emea/qlabs-components-ai PromptInput; semantic tokens only; reads in all themes. Reach for <Composer /> instead of hand-rolling this.",
+          "The standard AI chat-input block — a thin showcase of the real <Composer /> component: a rounded two-tone double card (a status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a model pill, a circular send, and suggestion chips under a centered greeting. Composer's `tone` prop (#254) picks the arrangement — `surface` (default, this block's Default/ComposerOnly) is the outer bg-card frame; `card` (see DoubleCardToned) is the tinted-outer/distinct-inner frame the reference exemplar calls for. Built on the real @elabs/components-ai PromptInput; semantic tokens only; reads in all themes. Reach for <Composer /> instead of hand-rolling this.",
       },
     },
   },
@@ -70,7 +70,7 @@ export const ComposerOnly: Story = {
  * around a `tone="card"` well, instead of the default outer `bg-card` frame
  * `ComposerOnly`/`Default` above ship. Check both themes: the well is
  * raised (lighter than the frame) on light themes, recessed (darker) on
- * qlik-dark.
+ * dark.
  */
 export const DoubleCardToned: Story = {
   render: () => (

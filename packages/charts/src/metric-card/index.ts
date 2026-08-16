@@ -1,1 +1,1 @@
-export { MetricCard, type MetricCardProps } from "@qlik-coe-emea/qlabs-components-ui";
+export { MetricCard, type MetricCardProps } from "@elabs/components-ui";

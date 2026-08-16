@@ -7,7 +7,7 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import type * as Monaco from "monaco-editor";
 import { type ReactNode } from "react";
 

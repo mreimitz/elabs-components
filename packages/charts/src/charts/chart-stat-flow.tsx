@@ -2,7 +2,7 @@
 
 import NumberFlow from "@number-flow/react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 
 /** Subset of `Intl.NumberFormatOptions` supported by NumberFlow */
 export interface ChartStatFlowFormat {

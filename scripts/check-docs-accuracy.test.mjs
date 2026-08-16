@@ -38,7 +38,7 @@ const CURRENT = "1.7.0";
 // ── FLAGS: a stale literal that disagrees with the current version ────────────
 
 test("FLAGS: gh release download vN.N.N mismatching the current version", () => {
-  const text = "gh release download v9.9.9 -R mreimitz/qlabs-components -D vendor/brand-ui";
+  const text = "gh release download v9.9.9 -R mreimitz/elabs-components -D vendor/brand-ui";
   const violations = findVersionLiteralViolations(text, CURRENT);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].line, 1);
@@ -46,7 +46,7 @@ test("FLAGS: gh release download vN.N.N mismatching the current version", () => 
 });
 
 test("FLAGS: -N.N.N.tgz tarball filename mismatching the current version", () => {
-  const text = '"@qlik-coe-emea/qlabs-components-ui": "file:vendor/brand-ui/brand-ui-9.9.9.tgz",';
+  const text = '"@elabs/components-ui": "file:vendor/brand-ui/brand-ui-9.9.9.tgz",';
   const violations = findVersionLiteralViolations(text, CURRENT);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].match, "-9.9.9.tgz");
@@ -59,12 +59,12 @@ test("FLAGS: -N.N.N.zip agent-kit filename mismatching the current version", () 
   assert.equal(violations[0].match, "-9.9.9.zip");
 });
 
-test("FLAGS: @qlik-coe-emea/qlabs-components-x@N.N.N package pin mismatching the current version", () => {
+test("FLAGS: @elabs/components-x@N.N.N package pin mismatching the current version", () => {
   const text =
-    "cross-package peers (`@qlik-coe-emea/qlabs-components-ui -> @qlik-coe-emea/qlabs-components-tokens@9.9.9`, etc.)";
+    "cross-package peers (`@elabs/components-ui -> @elabs/components-tokens@9.9.9`, etc.)";
   const violations = findVersionLiteralViolations(text, CURRENT);
   assert.equal(violations.length, 1);
-  assert.equal(violations[0].match, "@qlik-coe-emea/qlabs-components-tokens@9.9.9");
+  assert.equal(violations[0].match, "@elabs/components-tokens@9.9.9");
 });
 
 test("multiple violations on one line are all reported", () => {
@@ -75,15 +75,15 @@ test("multiple violations on one line are all reported", () => {
 // ── PASSES: the vX.Y.Z / -X.Y.Z.tgz placeholder never matches ─────────────────
 
 test("PASSES: the vX.Y.Z placeholder", () => {
-  const text = "gh release download vX.Y.Z -R mreimitz/qlabs-components -D vendor/brand-ui";
+  const text = "gh release download vX.Y.Z -R mreimitz/elabs-components -D vendor/brand-ui";
   assert.deepEqual(findVersionLiteralViolations(text, CURRENT), []);
 });
 
 test("PASSES: the -X.Y.Z.tgz / -X.Y.Z.zip placeholder", () => {
   const text = [
-    '"@qlik-coe-emea/qlabs-components-ui": "file:vendor/brand-ui/brand-ui-X.Y.Z.tgz",',
+    '"@elabs/components-ui": "file:vendor/brand-ui/brand-ui-X.Y.Z.tgz",',
     "brand-ui-agent-kit-X.Y.Z.zip",
-    "@qlik-coe-emea/qlabs-components-tokens@X.Y.Z",
+    "@elabs/components-tokens@X.Y.Z",
   ].join("\n");
   assert.deepEqual(findVersionLiteralViolations(text, CURRENT), []);
 });
@@ -92,10 +92,10 @@ test("PASSES: the -X.Y.Z.tgz / -X.Y.Z.zip placeholder", () => {
 
 test("PASSES: a literal EQUAL to the current version", () => {
   const text = [
-    `gh release download v${CURRENT} -R mreimitz/qlabs-components -D vendor/brand-ui`,
-    `"@qlik-coe-emea/qlabs-components-ui": "file:vendor/brand-ui/brand-ui-${CURRENT}.tgz",`,
+    `gh release download v${CURRENT} -R mreimitz/elabs-components -D vendor/brand-ui`,
+    `"@elabs/components-ui": "file:vendor/brand-ui/brand-ui-${CURRENT}.tgz",`,
     `brand-ui-agent-kit-${CURRENT}.zip`,
-    `@qlik-coe-emea/qlabs-components-tokens@${CURRENT}`,
+    `@elabs/components-tokens@${CURRENT}`,
   ].join("\n");
   assert.deepEqual(findVersionLiteralViolations(text, CURRENT), []);
 });
@@ -106,21 +106,21 @@ test("VERSION_LITERAL_EXEMPT names docs/RELEASING.md (worked-example literals)",
   assert.ok(VERSION_LITERAL_EXEMPT.has("docs/RELEASING.md"));
 });
 
-// ── DUAL-CANVAS DECISION (#183) — @qlik-coe-emea/qlabs-components-ai vs @qlik-coe-emea/qlabs-components-flow ────────
+// ── DUAL-CANVAS DECISION (#183) — @elabs/components-ai vs @elabs/components-flow ────────
 
-// The real row always includes `chat → @qlik-coe-emea/qlabs-components-ai` — a naive "does the
+// The real row always includes `chat → @elabs/components-ai` — a naive "does the
 // line contain -ai anywhere" check would always pass because of THAT clause, even
 // with single-surface canvas routing. These fixtures include the chat clause so
 // the test actually exercises that trap.
 const GOOD_D3_LINE =
-  "| **D3** | Which package | chat → `@qlik-coe-emea/qlabs-components-ai` · " +
-  "canvas → `@qlik-coe-emea/qlabs-components-flow` (author-built diagrams) · " +
-  "in-chat agent workspace graph → `@qlik-coe-emea/qlabs-components-ai` (ADR 0018) | detail |";
+  "| **D3** | Which package | chat → `@elabs/components-ai` · " +
+  "canvas → `@elabs/components-flow` (author-built diagrams) · " +
+  "in-chat agent workspace graph → `@elabs/components-ai` (ADR 0018) | detail |";
 const SINGLE_SURFACE_D3_LINE =
-  "| **D3** | Which package | chat → `@qlik-coe-emea/qlabs-components-ai` · " +
-  "canvas → `@qlik-coe-emea/qlabs-components-flow` | detail |";
+  "| **D3** | Which package | chat → `@elabs/components-ai` · " +
+  "canvas → `@elabs/components-flow` | detail |";
 const GOOD_ADR_TITLES = [
-  "# ADR 0018 — Dual React Flow canvas surfaces (`@qlik-coe-emea/qlabs-components-ai` and `@qlik-coe-emea/qlabs-components-flow`)",
+  "# ADR 0018 — Dual React Flow canvas surfaces (`@elabs/components-ai` and `@elabs/components-flow`)",
 ];
 
 test("PASSES: a dual-canvas ADR title + a D3 row naming both -flow and -ai", () => {
@@ -168,15 +168,14 @@ test("PASSES: an ADR title matching /two.*canvas/i (not just 'dual')", () => {
 // ── THEME COUNT (#64) — derived from THEMES, word AND numeric forms ────────────
 
 test("the count is DERIVED from packages/tokens/src/theme-types.ts", () => {
-  const src = 'export const THEMES = ["qlik-bright", "qlik-dark", "blueprint"] as const;';
+  const src = 'export const THEMES = ["light", "dark", "blueprint"] as const;';
   assert.equal(themeCountFromSource(src), 3);
   assert.equal(themeCountFromSource('export const THEMES = ["a", "b"] as const;'), 2);
   assert.equal(themeCountFromSource("no themes here"), null);
 });
 
 test("FLAGS: the word form ('all six themes') the PR template carried for months", () => {
-  const text =
-    "- [ ] Works in all six themes (qlik-bright, qlik-dark, light, dark, blueprint, high-contrast)";
+  const text = "- [ ] Works in all six themes (light, dark, light, dark, blueprint, high-contrast)";
   const v = findThemeCountViolations(text, 3);
   assert.equal(v.length, 1);
   assert.equal(v[0].claimed, 6);
@@ -195,7 +194,7 @@ test("FLAGS: an UNDER-count too (a theme was added and the docs lagged)", () => 
 });
 
 test("PASSES: the current count, in either form", () => {
-  assert.deepEqual(findThemeCountViolations("all three themes (qlik-bright, …)", 3), []);
+  assert.deepEqual(findThemeCountViolations("all three themes (light, …)", 3), []);
   assert.deepEqual(findThemeCountViolations("3 themes ship today", 3), []);
 });
 
@@ -407,12 +406,8 @@ test("the REAL repo currently passes docs:check (CLI run)", () => {
 
 // ── 6. CONSUMING-PROJECT CLI PRECONDITION (#265) ────────────────────────────────
 
-test("FLAGS: a bare npx @qlik-coe-emea/qlabs-components-cli line with no precondition anywhere in the file", () => {
-  const text = [
-    "# Some skill",
-    "",
-    "Run `npx @qlik-coe-emea/qlabs-components-cli info` first.",
-  ].join("\n");
+test("FLAGS: a bare npx @elabs/components-cli line with no precondition anywhere in the file", () => {
+  const text = ["# Some skill", "", "Run `npx @elabs/components-cli info` first."].join("\n");
   const violations = findCliPreconditionViolations(text);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].line, 3);
@@ -424,7 +419,7 @@ test("PASSES: the same bare line, plus a docs/CONSUMING.md precondition cue in t
     "",
     "Install the CLI first — see docs/CONSUMING.md §1 + §7a.",
     "",
-    "Run `npx @qlik-coe-emea/qlabs-components-cli info` first.",
+    "Run `npx @elabs/components-cli info` first.",
   ].join("\n");
   assert.deepEqual(findCliPreconditionViolations(text), []);
 });
@@ -434,9 +429,9 @@ test("PASSES: the same bare line, plus a `.npmrc`/`read:packages`/`pnpm add -D` 
     "Add the scope mapping to your project's .npmrc.",
     "Use a classic PAT with the read:packages scope.",
     "This package is published to GitHub Packages.",
-    "Run `pnpm add -D @qlik-coe-emea/qlabs-components-cli` first.",
+    "Run `pnpm add -D @elabs/components-cli` first.",
   ]) {
-    const text = [cue, "", "npx @qlik-coe-emea/qlabs-components-cli search <query>"].join("\n");
+    const text = [cue, "", "npx @elabs/components-cli search <query>"].join("\n");
     assert.deepEqual(findCliPreconditionViolations(text), [], `cue: ${cue}`);
   }
 });
@@ -446,7 +441,7 @@ test("PASSES: an `allowed-tools:` frontmatter line only — a permission, not an
     "---",
     "name: some-skill",
     "allowed-tools:",
-    "  - Bash(npx @qlik-coe-emea/qlabs-components-cli *)",
+    "  - Bash(npx @elabs/components-cli *)",
     "  - Bash(pnpm brand-ui *)",
     "---",
     "",
@@ -462,10 +457,10 @@ test("FLAGS: a bare npx line AFTER an allowed-tools frontmatter block with no ot
     "---",
     "name: some-skill",
     "allowed-tools:",
-    "  - Bash(npx @qlik-coe-emea/qlabs-components-cli *)",
+    "  - Bash(npx @elabs/components-cli *)",
     "---",
     "",
-    "Run `npx @qlik-coe-emea/qlabs-components-cli info` to get started.",
+    "Run `npx @elabs/components-cli info` to get started.",
   ].join("\n");
   const violations = findCliPreconditionViolations(text);
   assert.equal(violations.length, 1);
@@ -473,7 +468,7 @@ test("FLAGS: a bare npx line AFTER an allowed-tools frontmatter block with no ot
 });
 
 test("PASSES: an mcp launch-wiring line (npx ... mcp) is not a usage example", () => {
-  const text = ["printf '...' | npx @qlik-coe-emea/qlabs-components-cli mcp"].join("\n");
+  const text = ["printf '...' | npx @elabs/components-cli mcp"].join("\n");
   assert.deepEqual(findCliPreconditionViolations(text), []);
 });
 
@@ -482,7 +477,7 @@ test('PASSES: the JSON .mcp.json wiring form (args array ending in "mcp")', () =
     '"brand-ui": {',
     '  "type": "stdio",',
     '  "command": "npx",',
-    '  "args": ["-y", "@qlik-coe-emea/qlabs-components-cli", "mcp"]',
+    '  "args": ["-y", "@elabs/components-cli", "mcp"]',
     "}",
   ].join("\n");
   assert.deepEqual(findCliPreconditionViolations(text), []);
@@ -526,7 +521,7 @@ test("PASSES: an `allowed-tools:` frontmatter line for the alias — a permissio
     "---",
     "name: brand-ui-audit",
     "allowed-tools:",
-    "  - Bash(npx @qlik-coe-emea/qlabs-components-cli *)",
+    "  - Bash(npx @elabs/components-cli *)",
     "  - Bash(pnpm brand-ui *)",
     "  - Bash(npx brand-ui *)",
     "---",
@@ -550,7 +545,7 @@ test("PASSES: the monorepo runner form (`pnpm brand-ui …` / `pnpm exec brand-u
 
 function plantTree() {
   const root = mkdtempSync(path.join(tmpdir(), "docs-accuracy-scope-"));
-  const bare = "# Fixture\n\nRun `npx @qlik-coe-emea/qlabs-components-cli info` first.\n";
+  const bare = "# Fixture\n\nRun `npx @elabs/components-cli info` first.\n";
   const bareAlias = "# Fixture\n\nRun `npx brand-ui info` first.\n";
   const write = (rel, body) => {
     const p = path.join(root, rel);

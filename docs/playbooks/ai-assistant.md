@@ -14,7 +14,7 @@ keywords:
     tool calls,
     sources,
   ]
-packages: ["@qlik-coe-emea/qlabs-components-ui", "@qlik-coe-emea/qlabs-components-ai"]
+packages: ["@elabs/components-ui", "@elabs/components-ai"]
 ---
 
 # Playbook — AI assistant
@@ -24,18 +24,18 @@ reasoning, tool calls, sources. Template source: `templates/ai-assistant.tsx` (g
 
 **Boundary first (D5):** brand-ui renders the conversation; it never owns the
 model call. Your app brings the runtime (`useChat` from the Vercel AI SDK, or
-your own). `@qlik-coe-emea/qlabs-components-ai` uses the `ai` package **types only**.
+your own). `@elabs/components-ai` uses the `ai` package **types only**.
 
 ## Building blocks
 
-| Layer      | Components                                                                                                                                                                                             | From                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| Shell      | `SidebarProvider`+`Sidebar` (history) · `ChatShell` (chat container)                                                                                                                                   | `@qlik-coe-emea/qlabs-components-ui` / `@qlik-coe-emea/qlabs-components-ai` |
-| Transcript | `Conversation` + `ConversationContent` + `ConversationScrollButton` + `ConversationEmptyState`                                                                                                         | `@qlik-coe-emea/qlabs-components-ai`                                        |
-| Message    | `Message from=…` + `MessageContent` + `MessageResponse` (streaming md)                                                                                                                                 | `@qlik-coe-emea/qlabs-components-ai`                                        |
-| Parts      | `Reasoning`/`ReasoningTrigger`/`ReasoningContent` · `Tool`/`ToolHeader`/`ToolContent`/`ToolInput`/`ToolOutput` · `Sources`/`SourcesTrigger`/`SourcesContent`/`Source` · `InlineCitation` · `CodeBlock` | `@qlik-coe-emea/qlabs-components-ai`                                        |
-| Composer   | `PromptInput` + `PromptInputBody` + `PromptInputTextarea` + `PromptInputFooter` + `PromptInputTools` + `PromptInputSubmit`                                                                             | `@qlik-coe-emea/qlabs-components-ai`                                        |
-| Extras     | `Suggestion`/`Suggestions` (empty state) · `Shimmer` (first token)                                                                                                                                     | `@qlik-coe-emea/qlabs-components-ai`                                        |
+| Layer      | Components                                                                                                                                                                                             | From                                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Shell      | `SidebarProvider`+`Sidebar` (history) · `ChatShell` (chat container)                                                                                                                                   | `@elabs/components-ui` / `@elabs/components-ai` |
+| Transcript | `Conversation` + `ConversationContent` + `ConversationScrollButton` + `ConversationEmptyState`                                                                                                         | `@elabs/components-ai`                          |
+| Message    | `Message from=…` + `MessageContent` + `MessageResponse` (streaming md)                                                                                                                                 | `@elabs/components-ai`                          |
+| Parts      | `Reasoning`/`ReasoningTrigger`/`ReasoningContent` · `Tool`/`ToolHeader`/`ToolContent`/`ToolInput`/`ToolOutput` · `Sources`/`SourcesTrigger`/`SourcesContent`/`Source` · `InlineCitation` · `CodeBlock` | `@elabs/components-ai`                          |
+| Composer   | `PromptInput` + `PromptInputBody` + `PromptInputTextarea` + `PromptInputFooter` + `PromptInputTools` + `PromptInputSubmit`                                                                             | `@elabs/components-ai`                          |
+| Extras     | `Suggestion`/`Suggestions` (empty state) · `Shimmer` (first token)                                                                                                                                     | `@elabs/components-ai`                          |
 
 ## useChat wiring (the bridge)
 

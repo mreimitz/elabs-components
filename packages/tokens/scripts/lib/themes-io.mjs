@@ -22,17 +22,46 @@ const HERE = dirname(fileURLToPath(import.meta.url)); // packages/tokens/scripts
 export const TOKENS_PKG = dirname(dirname(HERE)); // → packages/tokens
 export const THEMES_CSS = join(TOKENS_PKG, "src", "themes.css");
 export const TOKENS_DIR = join(TOKENS_PKG, "tokens");
+const THEME_TYPES_TS = join(TOKENS_PKG, "src", "theme-types.ts");
 
 /**
- * Theme mode key → block, in report order. `light` is the FIRST `:root` block
- * (the neutral base/fallback, not a selectable theme); the rest are the FIRST
- * `[data-theme="name"]` block. Mirrors THEME_NAMES in scripts/check-theme-parity.mjs.
- *
- * A PAUSED theme is absent: its DTCG file and its CSS block both stay on disk,
- * but the sync never reads or rewrites them — "kept as source, not touched"
- * (.claude/rules/paused-surfaces.md).
+ * The mode key standing for the `:root` neutral base/fallback — NOT a selectable
+ * theme. It is deliberately `root`, not `light`: `light` is a real shipped theme
+ * slug, and a sentinel that collides with one makes `locateBlock()` return the
+ * `:root` block when asked for the light theme. Its DTCG source is
+ * `tokens/themes/root.tokens.json`.
  */
-export const THEME_NAMES = ["light", "qlik-bright", "qlik-dark"];
+export const ROOT_MODE = "root";
+
+/** Parse a `export const NAME = ["a", "b"] as const;` string array. */
+function parseStringArray(text, name) {
+  const m = text.match(new RegExp(`export const ${name}\\s*=\\s*\\[([^\\]]*)\\]`));
+  if (!m) throw new Error(`themes-io: could not parse ${name} from ${THEME_TYPES_TS}`);
+  return [...m[1].matchAll(/["']([^"']+)["']/g)].map((x) => x[1]);
+}
+
+/**
+ * Theme mode key → block, in report order. `ROOT_MODE` is the FIRST `:root`
+ * block; the rest are the FIRST `[data-theme="name"]` block.
+ *
+ * DERIVED from `THEMES` in `src/theme-types.ts` — the single source of truth for
+ * the ACTIVE theme set — rather than hand-copied. A second literal drifts the
+ * day someone adds, renames or un-pauses a theme, which is exactly how this file
+ * and `scripts/check-theme-parity.mjs` came to disagree.
+ *
+ * A PAUSED theme is absent by construction (it lives in `PAUSED_THEMES`, not
+ * `THEMES`): its DTCG file and its CSS block both stay on disk, but the sync
+ * never reads or rewrites them — "kept as source, not touched"
+ * (.claude/rules/paused-surfaces.md).
+ *
+ * Parsed here rather than imported from `scripts/lib/paused-surfaces.mjs` so this
+ * file stays self-contained across the `packages/tokens` ⇄ repo-root `scripts/`
+ * boundary — same reason `blankComments` below is duplicated.
+ */
+export const THEME_NAMES = [
+  ROOT_MODE,
+  ...parseStringArray(readFileSync(THEME_TYPES_TS, "utf8"), "THEMES"),
+];
 
 /**
  * Machinery declared per-theme but NOT a synced semantic value (timing /
@@ -55,14 +84,14 @@ export function isInScope(name, value) {
 
 /**
  * Match the body of a theme block exactly the way the parity gate does:
- *   light → first `:root { … \n}`; else → first `[data-theme="name"] { … \n}`.
+ *   ROOT_MODE → first `:root { … \n}`; else → first `[data-theme="name"] { … \n}`.
  * Returns { start, end, body } char offsets into `cssText`, or null if absent.
  * `start`/`end` bracket the INNER body (between `{` and the closing `\n}`), so a
  * value rewrite stays strictly inside this one block.
  */
 export function locateBlock(cssText, name) {
   const re =
-    name === "light"
+    name === ROOT_MODE
       ? /:root\s*\{([\s\S]*?)\n\}/
       : new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([\\s\\S]*?)\\n\\}`);
   const m = re.exec(cssText);
@@ -77,7 +106,7 @@ export function locateBlock(cssText, name) {
  * valid for any caller that needs them. `themes.css` documents the very
  * tokens this scanner parses, so a comment sitting directly above a
  * declaration routinely contains a `--token:`-shaped substring (e.g. the real
- * comment above qlik-bright's `--ring`, themes.css:826-834, which mentions
+ * comment above light's `--ring`, themes.css:826-834, which mentions
  * `--info:`). Without blanking, the lazy `[^;]*?` below can start a match
  * INSIDE that comment and run to the semicolon of the NEXT real declaration,
  * silently dropping it (#401 — the same hazard `scripts/check-elevation.mjs`'s

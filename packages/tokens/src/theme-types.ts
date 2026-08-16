@@ -1,9 +1,9 @@
 /**
- * @qlik-coe-emea/qlabs-components-tokens — theme types
+ * @elabs/components-tokens — theme types
  *
  * The set of themes shipped with the design system. Each has a matching
  * `[data-theme="..."]` block in `themes.css`. `:root` holds a neutral light
- * BASE/fallback (not a selectable theme); the default is `qlik-bright`.
+ * BASE/fallback (not a selectable theme); the default is `light`.
  * Adding a theme = add a value here + a block in themes.css.
  *
  * `THEMES` is the ACTIVE set — the one every gate, test, story, doc and release
@@ -12,7 +12,7 @@
  * it. See @.claude/rules/paused-surfaces.md.
  */
 
-export const THEMES = ["qlik-bright", "qlik-dark"] as const;
+export const THEMES = ["light", "dark"] as const;
 
 export type ThemeName = (typeof THEMES)[number];
 
@@ -61,16 +61,16 @@ export interface ThemeMeta {
 }
 
 export const THEME_META: Record<ThemeName, ThemeMeta> = {
-  "qlik-bright": {
-    value: "qlik-bright",
-    label: "Qlik Bright",
+  light: {
+    value: "light",
+    label: "Light",
     dark: false,
     description:
       "Qlik Cloud light theme — Qlik Green primary on near-white neutral surfaces; neutral grey text, 4px radius, blue focus ring, Qlik chart palette, Source Sans Pro.",
   },
-  "qlik-dark": {
-    value: "qlik-dark",
-    label: "Qlik Dark",
+  dark: {
+    value: "dark",
+    label: "Dark",
     dark: true,
     description:
       "Qlik Cloud dark theme on warm charcoal surfaces with off-white ivory text — bright Qlik Green, blue focus ring, Qlik chart palette, Source Sans Pro, 4px radius.",
@@ -84,7 +84,7 @@ export const THEME_META: Record<ThemeName, ThemeMeta> = {
 };
 
 /** Default theme applied when nothing is persisted. */
-export const DEFAULT_THEME: ThemeName = "qlik-bright";
+export const DEFAULT_THEME: ThemeName = "light";
 
 /** Runtime guard for narrowing unknown strings (e.g. persisted values). */
 export function isThemeName(value: unknown): value is ThemeName {

@@ -1,4 +1,4 @@
-import type { WizardStepMeta } from "@qlik-coe-emea/qlabs-components-ui";
+import type { WizardStepMeta } from "@elabs/components-ui";
 
 export const STEPS: WizardStepMeta[] = [
   { id: "customer", title: "Customer", description: "Contact details" },

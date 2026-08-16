@@ -2,9 +2,37 @@
 
 ## Unreleased
 
+### Attribution is now a maintained, public document
+
+Every project brand-ui borrows from is credited in one place. `ATTRIBUTION.md` at
+the repo root lists what we took, from whom, under which licence — adapted and
+vendored source, runtime map data, self-hosted fonts, and every open-source
+dependency — and the README links to it.
+
+- **The credits list grew from 6 entries to 18 adapted/vendored sources.** Twelve
+  projects the library actually borrows from were credited only in a source-file
+  comment and appeared nowhere a reader could find them: Milkdown, anyview,
+  blocks.so, assistant-ui, extend-hq/ui, @ncdai/shimmering-text, Liveline, Bklit
+  UI, the Web Interface Guidelines, vercel-labs/agent-skills, subyfly/topojson,
+  and the patched Radix primitives.
+- **`AI Elements` was credited under the wrong licence.** It is Apache-2.0, not
+  MIT. `@elabs/components-ai` now carries the required copyright notice and states
+  that the vendored files were modified (Apache-2.0 §4(b)).
+- **Two shipped fonts displayed a broken copyright.** Source Code Pro and Source
+  Sans 3 showed the string `copyright statement(s).` — a fragment of licence
+  boilerplate — instead of Adobe's notice. Both now show the real line, and
+  IBM Plex Mono is no longer labelled "Ibm Plex Mono".
+- **Every credit now carries a link**, the upstream GitHub repository wherever one
+  exists, including the fonts.
+- The page and the in-product `AttributionPanel` are generated from one dataset,
+  so they cannot disagree about what the product ships.
+- **Borrowing again requires crediting again.** `pnpm attribution:provenance:check`
+  fails when shipped source says it was adapted, vendored or ported from a project
+  that has no entry.
+
 ## v3.1.0 — 2026-08-10
 
-### `@qlik-coe-emea/qlabs-components-viewer`: PDFs and decks scroll continuously (ADR 0026)
+### `@elabs/components-viewer`: PDFs and decks scroll continuously (ADR 0026)
 
 A PDF used to show one page at a time, and a deck one slide at a time: reading
 the next one meant clicking a button that swapped the canvas. Both now stack
@@ -25,7 +53,7 @@ Behaviour change: page 2 of a PDF is now present as soon as the file opens, one
 scroll below page 1 — anything asserting that only one page exists at a time
 needs updating.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: the page, the scale and the rotation are the viewer's, not the file format's (ADR 0026)
+### `@elabs/components-viewer`: the page, the scale and the rotation are the viewer's, not the file format's (ADR 0026)
 
 Which page you are on, how big it is drawn and which way up it sits used to be
 private to whichever adapter drew the file. So an app could not open a contract
@@ -61,13 +89,13 @@ from the brand: the same hue family as `--primary`, at a deliberately different
 rung.
 
 - **What you will see.** Tab through any screen and the focus ring is green
-  instead of blue, in `qlik-bright` (a deep green) and `qlik-dark` (a light
+  instead of blue, in `light` (a deep green) and `dark` (a light
   halo). This reaches every focusable control in every package, plus all sidebar
   focus via the `--sidebar-ring` mirror. Nothing else changes: no component was
   edited, no other token moved, and the neutral `:root` fallback is untouched.
 - **It is a stronger ring, not just a different one.** Against every surface a
-  focus ring lands on it now measures 7.6–8.8:1 in `qlik-bright` and
-  11.1–13.5:1 in `qlik-dark`, up from 4.8–5.6 and 7.3–9.4. WCAG 1.4.11 asks for
+  focus ring lands on it now measures 7.6–8.8:1 in `light` and
+  11.1–13.5:1 in `dark`, up from 4.8–5.6 and 7.3–9.4. WCAG 1.4.11 asks for
   3:1.
 - **If you patched `--ring` locally, you can drop the patch.** Consumers who
   overrode the token in their own theme block to get an on-brand ring should
@@ -78,9 +106,9 @@ rung.
   from `--primary`, `--chart-1`, `--accent-foreground`, `--info` and `--success`.
   `pnpm roles:check` checks it for you.
 
-### New package: `@qlik-coe-emea/qlabs-components-viewer` — display a file the app did not write (ADR 0024)
+### New package: `@elabs/components-viewer` — display a file the app did not write (ADR 0024)
 
-A twelfth package, and the missing half of `@qlik-coe-emea/qlabs-components-editor`:
+A twelfth package, and the missing half of `@elabs/components-editor`:
 `editor` is for source you **author**, `viewer` for content you **read** — an
 upload, a signed URL, or a file an agent produced.
 
@@ -112,7 +140,7 @@ upload, a signed URL, or a file an agent produced.
 
 PDF, video, audio, Office, markdown and source code are all below.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: PDF, video and audio
+### `@elabs/components-viewer`: PDF, video and audio
 
 **PDF is the format nothing in this library could open before.** It renders on
 pdf.js: the parser runs on a Web Worker with `eval` disabled, the page is
@@ -134,7 +162,7 @@ retry, because retrying cannot install a codec.
 An enforced Content-Security-Policy needs `img-src blob:` and `media-src blob:`
 for files handed in as a `File`/`Blob` — see `docs/CSP-AND-NETWORK.md` §2.7.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: Word, Excel and PowerPoint
+### `@elabs/components-viewer`: Word, Excel and PowerPoint
 
 The three formats people actually get sent. All three follow the same rule as
 every other adapter: **the parser hands over data, and brand-ui components draw
@@ -165,15 +193,15 @@ boundary rather than a gap: a half-faithful reproduction reads as the real
 document while quietly lying about it, and the toolbar's download hands over the
 original.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: markdown and source code
+### `@elabs/components-viewer`: markdown and source code
 
 The two formats that decide whether a file browser is pleasant to use, because
 they are most of what a repository or an agent's output actually contains.
 
 - **Markdown (`.md`, optional peer `streamdown`)** renders as a **document** —
   real headings, lists, links and quotes drawn by the same `Prose*` primitives
-  `@qlik-coe-emea/qlabs-components-ai`'s chat markdown and
-  `@qlik-coe-emea/qlabs-components-editor`'s preview use. A README must not look
+  `@elabs/components-ai`'s chat markdown and
+  `@elabs/components-editor`'s preview use. A README must not look
   like three different documents depending on which pane it opened in. Fenced
   code inside it reads as a block of code rather than a run-on paragraph.
 - **Source code (60+ extensions, optional peer `shiki`)** is highlighted with a
@@ -190,7 +218,7 @@ they are most of what a repository or an agent's output actually contains.
   `baseHeadingLevel` on `FileViewerProvider` moves the whole tree if your page
   is arranged differently.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: point the viewer at PART of a document (ADR 0025)
+### `@elabs/components-viewer`: point the viewer at PART of a document (ADR 0025)
 
 Until now the viewer could open a file but not say _where in it_ to look. It can
 now be handed a passage — an answer's citation, a search result, a region of a
@@ -202,7 +230,7 @@ scanned page — and it will find it, mark it and scroll to it.
   own extraction), exact **character offsets** (when both ends are ours), or a
   **box on a page** as fractions of the page (which needs no text at all, so it
   works on a scan or a chart). The vocabulary lives in
-  `@qlik-coe-emea/qlabs-components-ui`, so a chat answer can produce one without
+  `@elabs/components-ui`, so a chat answer can produce one without
   either package having to know about the other.
 - **A quote is matched the way a person would read it**, not byte-for-byte:
   re-wrapped lines, curly versus straight quotes, an em dash versus a hyphen and
@@ -221,7 +249,7 @@ scanned page — and it will find it, mark it and scroll to it.
 This release lands the plumbing; the marks themselves and the find box arrive in
 the entries below.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: marks on the page, and find-in-document
+### `@elabs/components-viewer`: marks on the page, and find-in-document
 
 The passages the viewer can now be pointed at are **drawn**, and the same layer
 answers the reader's own search.
@@ -249,14 +277,14 @@ answers the reader's own search.
 - **The stepper stays reachable from the keyboard even with nothing to step
   through.** Previous and Next announce that they are unavailable instead of
   vanishing from the tab order under a reader's fingers.
-- **New in `@qlik-coe-emea/qlabs-components-ui`:** `MatchHighlight` can now be
+- **New in `@elabs/components-ui`:** `MatchHighlight` can now be
   told which of its matches is the current one, and its marks are addressable
   from outside for tests and styling.
 
 Two new theme colours (the current match's plate and its ink) are defined in
 every theme; a brand overriding the highlight pair should set them too.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: citations land on the PDF page
+### `@elabs/components-viewer`: citations land on the PDF page
 
 A PDF page is pixels, so a cited passage is drawn as a translucent box over the
 page rather than as a mark around the text — the sentence underneath stays
@@ -277,7 +305,7 @@ Only the first 50 pages of a PDF are text-extracted, unchanged from before; a
 passage past that limit is now reported as "beyond the pages we previewed"
 rather than as missing from the document.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: citations in Word documents and markdown
+### `@elabs/components-viewer`: citations in Word documents and markdown
 
 Both formats can now be pointed at a passage, and each is marked the way its own
 content allows.
@@ -294,7 +322,7 @@ content allows.
 - The current passage is never distinguished by colour alone in either: it
   carries a thicker rail and is announced as the current one.
 
-### `@qlik-coe-emea/qlabs-components-viewer`: citations in spreadsheets and decks
+### `@elabs/components-viewer`: citations in spreadsheets and decks
 
 Every text-bearing format the viewer opens can now be pointed at a passage.
 
@@ -315,13 +343,13 @@ Every text-bearing format the viewer opens can now be pointed at a passage.
   now match what the reader sees. If you relied on `document.text` for the raw
   file, read the source instead.
 
-### `@qlik-coe-emea/qlabs-components-ai`: `AssetPreview` can be taught new formats
+### `@elabs/components-ai`: `AssetPreview` can be taught new formats
 
 `AssetPreview` (the context rail's drill-in preview) now takes
 **`renderPreview?: (asset) => ReactNode | null`** — as a prop, or once for a
 whole rail via `<ContextPanelProvider renderPreview={…}>`. It is how a PDF, a
 spreadsheet or a video reaches the rail without this package depending on
-`@qlik-coe-emea/qlabs-components-viewer`; the two are peers in the layer graph
+`@elabs/components-viewer`; the two are peers in the layer graph
 and neither may import the other, so the app owns the edge:
 
 ```tsx
@@ -341,7 +369,7 @@ grow cases: that union describes what this package can draw itself.
 own name and MIME, so a PDF stops drawing a source-code icon. An asset with
 inline content keeps the glyph it had.
 
-### `@qlik-coe-emea/qlabs-components-ui`: one shared file model (ADR 0024)
+### `@elabs/components-ui`: one shared file model (ADR 0024)
 
 New, additive — nothing existing changes shape. Three dependency-free helpers
 that give the library a single answer to "what file is this, and how do I read
@@ -365,23 +393,23 @@ it", ahead of the `viewer` package that consumes them:
   a format never means a `…-ui` release.
 - **`FILE_CATEGORY_ICONS` / `fileIconFor()`** — one Lucide glyph per category,
   superseding `PRODUCED_ASSET_ICONS` and `mediaCategoryIcons` in
-  `@qlik-coe-emea/qlabs-components-ai`, which disagreed about the same `.csv`.
+  `@elabs/components-ai`, which disagreed about the same `.csv`.
 
 `Blob.arrayBuffer` is feature-detected with a `FileReader` fallback, so these
 work under jsdom in every downstream package's tests as well as in a browser.
 
-### `@qlik-coe-emea/qlabs-components-ui`: shared Streamdown translations
+### `@elabs/components-ui`: shared Streamdown translations
 
 `useStreamdownTranslations()` and `STREAMDOWN_TRANSLATION_KEYS` moved down from
-`@qlik-coe-emea/qlabs-components-ai` so every package that renders markdown
+`@elabs/components-ai` so every package that renders markdown
 translates it the same way — Streamdown ships its own English strings ("Copy
 Code", "Download diagram"), and a `<LocaleProvider>` used to stop at that
 boundary in whichever package had not copied the bridge. The `ai.streamdown.*`
 message keys are unchanged, so an existing override keeps working, and
-`@qlik-coe-emea/qlabs-components-ai` still re-exports the hook. It imports
+`@elabs/components-ai` still re-exports the hook. It imports
 nothing from Streamdown itself, so this adds no dependency to `…-ui`.
 
-### `@qlik-coe-emea/qlabs-components-ui`: `Toolbar` — the row that keeps the role's promise
+### `@elabs/components-ui`: `Toolbar` — the row that keeps the role's promise
 
 New primitive over `@radix-ui/react-toolbar`. `role="toolbar"` promises a
 **single tab stop with arrow-key navigation between the controls**; four rows in
@@ -398,7 +426,7 @@ one tab stop is what makes the content reachable again. For the ordinary control
 row above a list or table, `ViewToolbar` is still correct: there every control is
 its own tab stop, which is what readers expect.
 
-### `@qlik-coe-emea/qlabs-components-ai`: `Toolbar` → `NodeToolbar` (deprecated alias kept)
+### `@elabs/components-ai`: `Toolbar` → `NodeToolbar` (deprecated alias kept)
 
 The canvas part that attaches to a selected **node** is now `NodeToolbar`
 (`NodeToolbarProps`), after the React Flow primitive it wraps — `Toolbar` now
@@ -407,22 +435,22 @@ means the WAI-ARIA toolbar above. `Toolbar` / `ToolbarProps` remain as
 next major. Rename at your leisure:
 
 ```diff
--import { Toolbar } from "@qlik-coe-emea/qlabs-components-ai";
-+import { NodeToolbar } from "@qlik-coe-emea/qlabs-components-ai";
+-import { Toolbar } from "@elabs/components-ai";
++import { NodeToolbar } from "@elabs/components-ai";
 ```
 
-### `@qlik-coe-emea/qlabs-components-ui`: `DialogBody` no longer clips a flush child's focus ring
+### `@elabs/components-ui`: `DialogBody` no longer clips a flush child's focus ring
 
 The focus outline around a field inside a dialog is no longer cut off at the
 edges — a keyboard user can see which field they are in, including in a dialog
 holding a single field, where the outline previously disappeared completely.
 `DialogBody` now reserves a 4px gutter (`-m-1 p-1 scroll-p-1`) around its
 scrollport so an outward `ring-2 ring-offset-2` on a full-width child is never
-clipped by the scroll container's own edge. `@qlik-coe-emea/qlabs-components-editor`'s
+clipped by the scroll container's own edge. `@elabs/components-editor`'s
 iteration builder dialog picks this up by switching its scrolling region to
 `DialogBody`.
 
-### ⚠️ `@qlik-coe-emea/qlabs-components-charts`: bar-chart category labels now fit the space they are given
+### ⚠️ `@elabs/components-charts`: bar-chart category labels now fit the space they are given
 
 Category labels under a bar chart used to be painted at full length wherever the
 band centre fell, so on a narrow card — the chat surface this was reported from —
@@ -470,7 +498,7 @@ hidden axis reads exactly the same set of category names as a full one.
 Escape hatch: `<BarXAxis fit="off" />` (and `<BarYAxis fit="off" />`) reproduces
 the previous render exactly — full labels, no rotation, no reserved space.
 
-### ⚠️ `@qlik-coe-emea/qlabs-components-charts` + `-ui`: numbers are compact by default, and the exact value is one click away
+### ⚠️ `@elabs/components-charts` + `-ui`: numbers are compact by default, and the exact value is one click away
 
 Five unrelated number formatters had grown across the chart package, and none of
 them was reached by the chart's own `valueFormat`. The worst of them hand-rolled
@@ -512,7 +540,7 @@ and `copyValueOnActivate={false}` on `AutoChart`.
   (which understands millions, billions, currency, percent and locale). It will be
   removed in the next major.
 
-### `@qlik-coe-emea/qlabs-components-ui`: `ExpandDialog` — one "make this bigger" surface
+### `@elabs/components-ui`: `ExpandDialog` — one "make this bigger" surface
 
 "Expand" used to mean four different things depending on what you clicked: a
 chart opened a two-pane modal, a table went full-screen, a gallery opened its own
@@ -534,7 +562,7 @@ scrollable region. `ToolResultCard` gains an `actions` slot on its title row, so
 a produced table can offer the same expand affordance a produced chart does
 without growing a toolbar of its own.
 
-### ⚠️ `@qlik-coe-emea/qlabs-components-charts`: `AutoChart` bar charts finally have a value scale
+### ⚠️ `@elabs/components-charts`: `AutoChart` bar charts finally have a value scale
 
 A spec-driven bar chart drew its bars, its category labels and its gridlines —
 and no value axis at all, so a reader had to hover every bar to learn what any of
@@ -570,8 +598,8 @@ answers "is this commit releasable yet?".
 ### ⚠️ BREAKING: the `blueprint` theme and package are paused — two themes ship, eleven packages publish
 
 `THEMES` / `THEME_META` no longer enumerate `blueprint`, so the `ThemeName`
-union narrows from three names to two (`qlik-bright`, `qlik-dark`), and
-`@qlik-coe-emea/qlabs-components-blueprint` is no longer published.
+union narrows from three names to two (`light`, `dark`), and
+`@elabs/components-blueprint` is no longer published.
 
 **Why it is not cosmetic:** `ThemeName` is a public type. Any consumer that
 annotates a variable, a prop or a stored preference with `"blueprint"` stops
@@ -588,7 +616,7 @@ reversible; un-pausing is the maintainer's call
 
 **Migrating a consumer:**
 
-1. **Drop `@qlik-coe-emea/qlabs-components-blueprint` from `package.json`** and
+1. **Drop `@elabs/components-blueprint` from `package.json`** and
    remove its imports. It is not published at `3.0.0`; there is no replacement
    component — the drawing furniture is paused with the theme.
 2. **Remove any `"blueprint"` literal** you pass to `ThemeProvider`
@@ -599,13 +627,13 @@ reversible; un-pausing is the maintainer's call
    step only applies if you read the value into your own state as well.
 4. **Keep the reprographic look with the decoration dial, not the theme.** It is
    **not** paused: set `data-decoration="10"` (or `<DecorationProvider value={10}>`
-   / `useDecoration().setDecoration(10)`) on `qlik-bright` or `qlik-dark`. The
+   / `useDecoration().setDecoration(10)`) on `light` or `dark`. The
    dial is hue-independent, so drawn-not-filled, grid and hatch all still apply.
 5. **Pin `2.1.1` instead** if you cannot absorb this yet. That version is
    immutable and still installable, and it is where the blueprint package stays.
    Per `docs/DEPRECATION.md` § 4 the previous major gets no back-ports.
 
-New from `@qlik-coe-emea/qlabs-components-tokens`: `PAUSED_THEMES` and
+New from `@elabs/components-tokens`: `PAUSED_THEMES` and
 `isPausedThemeName`, so a consumer can see what is on hold rather than guessing
 from a missing name.
 
@@ -637,11 +665,11 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
 
 ---
 
-- **The `blueprint` theme and `@qlik-coe-emea/qlabs-components-blueprint` are
+- **The `blueprint` theme and `@elabs/components-blueprint` are
   PAUSED — kept as source, out of everything else.** Blueprint was always an
   experimental/testing surface; it is now frozen on the maintainer's call
   (`.claude/rules/paused-surfaces.md`). **Breaking for anyone who selected it:**
-  `THEMES` and `THEME_META` ship two themes (`qlik-bright`, `qlik-dark`), so
+  `THEMES` and `THEME_META` ship two themes (`light`, `dark`), so
   `ThemeName` narrows accordingly and a persisted `"blueprint"` preference is
   rejected on boot instead of applied. The theme's `[data-theme="blueprint"]`
   block, its DTCG token file and the whole package directory stay on disk
@@ -649,7 +677,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   release enumerates them any more, and the drawing-furniture package is now
   `private` and is no longer published (consumers stay pinned on 2.1.1). The new
   `PAUSED_THEMES` / `isPausedThemeName` exports from
-  `@qlik-coe-emea/qlabs-components-tokens` name what is on hold, and
+  `@elabs/components-tokens` name what is on hold, and
   `pnpm paused:check` (self-tested, blocking) fails if anything re-enumerates a
   paused surface — or if a paused surface's source is deleted. **The decoration
   dial is unaffected**: `--decoration` 0–10, `decoration.css`,
@@ -658,7 +686,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   so the drawn-not-filled look is still covered on the shipped palettes.
 
 - **`MessageActions` can present as a hover-revealed floating pill
-  (`@qlik-coe-emea/qlabs-components-ai`).** Two new `cva` axes on the existing
+  (`@elabs/components-ai`).** Two new `cva` axes on the existing
   row — no new component, and both defaults are the pre-existing shape, so every
   current consumer renders byte-identically. `appearance="bar"` wraps the
   controls in a `rounded-full bg-popover shadow-ring-sm` pill (ADR 0020: a
@@ -677,21 +705,21 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   each `MessageAction` is a bare button the host wires with `onClick` and, for a
   toggle, an `aria-pressed` it owns (D5).
 - **The user chat bubble is neutral grey again in both Qlik themes
-  (`@qlik-coe-emea/qlabs-components-tokens`).** `--chat-user` carried a green tint
-  in `qlik-bright` (`oklch(0.95 0.03 153)` — mint) and `qlik-dark`
+  (`@elabs/components-tokens`).** `--chat-user` carried a green tint
+  in `light` (`oklch(0.95 0.03 153)` — mint) and `dark`
   (`oklch(0.32 0.04 153)` — olive/swamp on the warm charcoal ground), so a
   `Message from="user"` read as a brand/success wash rather than "the other
   speaker". The user turn is a **fill** separation channel, not a status: hue is
   reserved for the brand and status roles. Both now use the theme's own neutral —
   `oklch(0.93 0 0)` on bright (one step below the assistant turn at `0.97` and the
   card at `1.0`) and `oklch(0.33 0.006 75)` on dark (one step above the assistant
-  turn at `0.26`) — so the two turns still separate by ground. `qlik-bright`'s
+  turn at `0.26`) — so the two turns still separate by ground. `light`'s
   `--chat-user-foreground` drops its matching green cast for the theme ink
   (`oklch(0.37 0 0)`, 8.2:1 on the new fill). `blueprint`'s navy bubble and the
   `:root` fallback are untouched.
-- **Charts mock-namespace test timeout resolved (`@qlik-coe-emea/qlabs-components-charts`).** The test that validates export completeness of the chart test double was timing out at the Vitest default 5000ms when run under full parallel fan-out (`pnpm exec turbo run typecheck lint test --force`), despite passing consistently (~2s) when run standalone. The heavy `vi.importActual` call can take 3–6 seconds depending on machine load. Added an explicit per-test timeout override of 15_000ms, raising the margin above the worst-observed cost (6247ms) while keeping the export-completeness assertion unchanged. Verified that breaking the invariant still fails correctly.
+- **Charts mock-namespace test timeout resolved (`@elabs/components-charts`).** The test that validates export completeness of the chart test double was timing out at the Vitest default 5000ms when run under full parallel fan-out (`pnpm exec turbo run typecheck lint test --force`), despite passing consistently (~2s) when run standalone. The heavy `vi.importActual` call can take 3–6 seconds depending on machine load. Added an explicit per-test timeout override of 15_000ms, raising the margin above the worst-observed cost (6247ms) while keeping the export-completeness assertion unchanged. Verified that breaking the invariant still fails correctly.
 - **`MentionInput`'s `document.fonts.ready` mirror re-measure arm is now
-  documented as an intentional keep (`@qlik-coe-emea/qlabs-components-ui`,
+  documented as an intentional keep (`@elabs/components-ui`,
   #405).** No behavior change — the source comment and
   `docs/ADR/0023-mention-input-primitive.md` §6 now both record that this arm
   is kept as unpinned defence-in-depth (five isolation attempts could not
@@ -700,7 +728,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   future reader doesn't re-attempt the same scenarios or delete it on the
   strength of "no test notices."
 - **`brand-ui <subcommand> --help`/`-h` is now a TERMINAL flag, before any
-  handler runs (`@qlik-coe-emea/qlabs-components-cli`, #323).** `--help`/`-h` was parsed into the
+  handler runs (`@elabs/components-cli`, #323).** `--help`/`-h` was parsed into the
   flags/args sets but never checked once a subcommand was present, so e.g.
   `brand-ui context --help` fell through to the normal `context` handler and
   silently rewrote the stale-gated `apps/docs/public/brand-ui-context.md` — a
@@ -708,14 +736,14 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   own one-line usage and exits 0 before its handler is reached; `brand-ui -h`
   also now matches `brand-ui --help` for the bare invocation.
 - **`brand-ui docs <Component> --json` now emits structured JSON instead of
-  silently ignoring `--json` (`@qlik-coe-emea/qlabs-components-cli`, #325).** `docs` was the one
+  silently ignoring `--json` (`@elabs/components-cli`, #325).** `docs` was the one
   command the CLI's own `--help` claimed was `--json`-capable but wasn't — it
   always printed its markdown card regardless of the flag. `--json` now
   collects the same fields the markdown renders (`purpose`, `relationships`,
   `stateTokens`, `antiPatterns`, `props`, `variants`, verbatim source
   snippets) into a structured record (an array when multiple components are
   queried); the markdown path is unchanged.
-- **`ModelPicker` gains controlled `open`/`onOpenChange` (`@qlik-coe-emea/qlabs-components-ui`,
+- **`ModelPicker` gains controlled `open`/`onOpenChange` (`@elabs/components-ui`,
   #409).** The popover's open state was internal `useState` only, so a consumer
   couldn't open the picker programmatically (e.g. forcing a re-pick when a
   previously pinned target becomes unavailable) or observe it opening/closing.
@@ -725,7 +753,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   `Popover` and `ContextPanelProvider`). Uncontrolled behavior — no props passed —
   is unchanged. Adds a `Controlled` story and locking tests for both modes.
 - **`Slider` supports multi-thumb/range sliders with per-thumb `aria-valuetext`/`thumbProps`
-  (`@qlik-coe-emea/qlabs-components-ui`, #398).** Previously `Slider` rendered exactly one
+  (`@elabs/components-ui`, #398).** Previously `Slider` rendered exactly one
   hardcoded `SliderPrimitive.Thumb`, so Radix's array `value`/`defaultValue` (its own
   range-slider shape) silently rendered only the first value with no visible/operable
   thumb for the rest. `Slider` now renders one `Thumb` per element of
@@ -741,11 +769,11 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   `@vitest/browser/context`'s `cdp()`) reports two distinctly-named, distinctly-valued
   `slider` nodes — not just a DOM `aria-valuetext` attribute — proving the AC's actual bar
   (what assistive tech reads) rather than the markup that produces it; this assertion runs
-  under Vitest's browser-mode test runner (`pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`,
+  under Vitest's browser-mode test runner (`pnpm --filter @elabs/components-docs test-storybook`,
   the same engine CI's blocking "Storybook interaction + axe" job uses) and no-ops
   elsewhere (plain interactive Storybook browsing, `build-storybook`), since that module
   only resolves inside that runner by design.
-- **`@qlik-coe-emea/qlabs-components-data` source files now carry `"use client"`
+- **`@elabs/components-data` source files now carry `"use client"`
   directives (#324).** The package is RSC-safe via the tsup build banner, but
   source-consumed apps (which transpile `src/` directly) never saw the directive.
   Added to `DataTable`, `SearchInput` and other hook-using modules so RSC apps
@@ -754,37 +782,37 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   must have at least one `"use client"` module, preventing regression if future
   builds or imports change.
 - **One ink polarity per status family, and the sidebar mirror finished
-  (`@qlik-coe-emea/qlabs-components-tokens`, #406).** Three P2 findings from the
+  (`@elabs/components-tokens`, #406).** Three P2 findings from the
   three-theme sweep of #383/#321/#385, all caused by landing contrast fixes
-  per-PAIR instead of per-FAMILY. (1) `qlik-bright --info` was the only status
+  per-PAIR instead of per-FAMILY. (1) `light --info` was the only status
   plate in the theme with reversed (dark) ink; (2) `:root --success` / `--info`
   were likewise dark-inked while `--primary` / `--destructive` / `--warning`
   were white. Both are now resolved the way #381 resolved `--warning` — by
   deepening the FILL out of the `L 0.6` dead zone instead of flipping the ink,
-  so all five plates in each theme share one polarity: `qlik-bright --info`
+  so all five plates in each theme share one polarity: `light --info`
   `oklch(0.6 0.13 245)` → `oklch(0.53 0.11 245)` (chroma eased so it stays
   perceptibly apart from `--ring`), `:root --success` `oklch(0.6 0.14 150)` →
   `oklch(0.52 0.14 150)`, `:root --info` `oklch(0.6 0.15 240)` →
   `oklch(0.52 0.15 240)`, each with `--<tone>-foreground` back to white
   (4.95–5.03:1 on its own fill). Deepening a fill only raises its WCAG 1.4.11
   mark rung, so the colour-only marks that use `bg-info` / `bg-success` bare
-  improve too (worst case 3.24:1 → 4.52:1 in `qlik-bright`, 3.36:1 → 4.60:1 in
+  improve too (worst case 3.24:1 → 4.52:1 in `light`, 3.36:1 → 4.60:1 in
   `:root`). (3) `--sidebar-primary-foreground` is now a declared
   `var(--primary-foreground)` alias in all four blocks, the partner its
   `--sidebar-primary: var(--primary)` mirror was missing — zero pixel delta, the
-  values were already byte-identical. **`blueprint` and `qlik-dark` status
+  values were already byte-identical. **`blueprint` and `dark` status
   values are untouched.** **Migration:** none for consumers using the tokens;
   if you hard-coded the old `--info` / `--success` literals, re-read them from
   the tokens.
 
 - **New `--primary-text` token — the brand accent as ordinary TEXT
-  (`@qlik-coe-emea/qlabs-components-tokens`, #399, closes the colour half of
+  (`@elabs/components-tokens`, #399, closes the colour half of
   #317).** Every status tone already shipped three rungs — the fill
   (`--<tone>`, WCAG 1.4.11 mark contract, ≥3:1), the plate ink
   (`--<tone>-foreground`) and the on-surface text rung (`--<tone>-text`,
   ≥4.5:1) — but `--primary` shipped only the first two. So 16 call sites that
   needed "brand accent, as ordinary text" reached for `text-primary`, the FILL,
-  which in `qlik-bright` (the DEFAULT theme) measured **3.87–4.48:1** on the
+  which in `light` (the DEFAULT theme) measured **3.87–4.48:1** on the
   five content surfaces and 4.47:1 in the `:root` fallback: real, shipped WCAG
   1.4.3 AA failures on `ProseLink`, `Button variant="link"`,
   `Text tone="primary"`, the academic-layer citation/footnote links and more.
@@ -809,7 +837,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   these stories clean either way (#402).
 
 - **`Calendar` month-navigation buttons no longer escape the calendar
-  (`@qlik-coe-emea/qlabs-components-ui`).** The `classNames` map still carried
+  (`@elabs/components-ui`).** The `classNames` map still carried
   react-day-picker **v8**'s layout hack — `absolute start-1 top-1` on
   `button_previous` / `button_next`, which worked only because v8 rendered the nav
   buttons _inside_ the `relative` caption. In v9 (9.14.0 here) `<nav>` is a sibling
@@ -824,7 +852,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   Adds `calendar.test.tsx` locking the invariant that every absolutely-positioned
   part has a positioned ancestor _inside_ the calendar.
 - **`PromptInputSubmit` refuses via `aria-disabled`, not the native attribute
-  (`@qlik-coe-emea/qlabs-components-ai`).** Merged from the long-lived
+  (`@elabs/components-ai`).** Merged from the long-lived
   `fix/a11y-review-followups` branch. A focused control that becomes _natively_
   disabled is removed from the focus order by the HTML focus-fixup rule, so focus
   dropped to `<body>` after every keyboard-initiated send — the composer clears and
@@ -854,7 +882,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
 
 ## v2.1.1 — 2026-08-02
 
-- **Strict-CSP (Trusted Types) support: the Radix scrollbar `<style>` injection is gone (`@qlik-coe-emea/qlabs-components-tokens`, `patches/`).**
+- **Strict-CSP (Trusted Types) support: the Radix scrollbar `<style>` injection is gone (`@elabs/components-tokens`, `patches/`).**
   `@radix-ui/react-scroll-area`'s `ScrollAreaViewport` and `@radix-ui/react-select`'s
   `SelectViewport` each rendered an unconditional
   `<style dangerouslySetInnerHTML>` carrying nothing but static scrollbar rules.
@@ -867,7 +895,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   `PromptInputSelect*` unusable in a hardened renderer. Both packages are now
   patched to drop the injection and the rules ship as real CSS in
   `packages/tokens/src/radix-viewport.css` (already imported by
-  `@qlik-coe-emea/qlabs-components-tokens/styles.css`) — nothing is required of a
+  `@elabs/components-tokens/styles.css`) — nothing is required of a
   consumer. **A CONSUMER MUST APPLY THE TWO PATCHES THEMSELVES** — `pnpm patch` cannot travel in a published package, so your app still resolves Radix unpatched from npm; copy `patches/*.patch` (attached to the release) and add `pnpm.patchedDependencies` to your `package.json`, see `docs/CSP-AND-NETWORK.md`. New `pnpm csp-sinks:check` gate (self-tested, in CI) fails if either
   patch stops applying, if our source gains a NEW sink, or if a new direct
   dependency carries one; `scripts/csp-sinks-baseline.json` records the surfaces
@@ -876,9 +904,9 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   so a strict-CSP consumer knows exactly what to avoid. Documented in
   `docs/CSP-AND-NETWORK.md`. **Limit:** the gate scans direct dependencies, not a
   full transitive fixpoint.
-- **New `ModelPicker` (`@qlik-coe-emea/qlabs-components-ui`).** A compact pill that
+- **New `ModelPicker` (`@elabs/components-ui`).** A compact pill that
   opens a grouped, searchable target list anchored under itself — the inline
-  sibling of `@qlik-coe-emea/qlabs-components-ai`'s modal `ModelSelector`, sized for
+  sibling of `@elabs/components-ai`'s modal `ModelSelector`, sized for
   a composer footer. `Command` inside a `Popover`, never a `DropdownMenu`
   (`DropdownMenuContent` owns roving tabindex and its own typeahead, which fight a
   real `<input>` in its subtree). Search matches caller-supplied `keywords` as well
@@ -894,7 +922,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   is nothing to show, and `CommandEmpty` for no-match; the two decisions are
   exported as pure `modelPickerBody` / `showsInlineError` so they are testable
   rather than buried in JSX.
-- **`Composer` forwards `submitProps` to the send button (`@qlik-coe-emea/qlabs-components-ai`).**
+- **`Composer` forwards `submitProps` to the send button (`@elabs/components-ai`).**
   `Composer` rendered `PromptInputSubmit` with `status`/`onStop`/`sendIcon`/`className`
   and no way to reach anything else, so a consumer could not disable the send — and
   disabling it is the only thing that prevents a real data-loss path. `PromptInput`'s
@@ -912,7 +940,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   New story `AI/Composer → RefusedSubmit`. Additive; no existing usage changes.
 
 - **`MapCanvas` disables MapLibre's attribution control by default
-  (`@qlik-coe-emea/qlabs-components-maps`).** Previously every map painted
+  (`@elabs/components-maps`).** Previously every map painted
   `© CARTO, © OpenStreetMap contributors` bottom-right — and because the control
   was `compact`, MapLibre rendered it **expanded** on first paint, so it read as a
   text slab rather than a toggle. `MapCanvas` now passes
@@ -928,9 +956,9 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   the React Flow badge below, which is an MIT project's _request_ and carries no
   such condition. Locked by two tests in `map-canvas.test.tsx`.
 - **The React Flow attribution badge is hidden on both canvas surfaces
-  (`@qlik-coe-emea/qlabs-components-flow`, `@qlik-coe-emea/qlabs-components-ai`).**
+  (`@elabs/components-flow`, `@elabs/components-ai`).**
   `CanvasShell` passed `proOptions={{ hideAttribution: false }}` — explicitly ON —
-  and `@qlik-coe-emea/qlabs-components-ai`'s `Canvas` passed no `proOptions` at
+  and `@elabs/components-ai`'s `Canvas` passed no `proOptions` at
   all, so every canvas rendered the "React Flow" badge bottom-right. Both now pass
   `hideAttribution: true`. This is a **product/commercial decision, not a legal
   one**: `@xyflow/react` is MIT, which requires the copyright notice in source
@@ -942,11 +970,11 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   after removal; that rule is reversed and the behaviour is now locked by
   `canvas-shell.test.tsx` so a future agent reds the suite instead of flipping it
   back silently.
-- **`Sources` renders the grounded-concept in `--success-text` (#382, `@qlik-coe-emea/qlabs-components-ai`).** Changed from `text-primary` to `text-success-text` so the "Used N sources" label clears WCAG AA (4.5:1) in all three themes and aligns with `InlineCitation`'s success-family styling, ensuring one semantic role for one visual idea.
-- **`Toaster` merges a consumer's `className` and `toastOptions.classNames` with defaults instead of replacing them (#389, #362, `@qlik-coe-emea/qlabs-components-ui`).** Previously, passing `className` would replace the wrapper's `"toaster group"` classes, silently breaking the `group-[.toaster]:*` defaults that render the toast's card background, foreground color and elevation. Now `className` is merged via `cn()`, and each key in `toastOptions.classNames` is merged per-key so consumer overrides extend the defaults instead of wiping sibling keys. Documented in JSDoc: to override a built-in toast class, mirror the variant prefix (e.g. `group-[.toaster]:bg-blue-500`), because built-in classes are variant-scoped and out-specify bare utilities. The `theme` prop is a derived, non-configurable property set from `data-theme` to ensure toasts always track the app's active theme.
-- **Fix: academic-layer citation/footnote/TOC links keep a resting underline (#317, `@qlik-coe-emea/qlabs-components-editor`).** `CiteLink`, the bibliography's external DOI/URL link, the footnote marker, and TOC entries in `@qlik-coe-emea/qlabs-components-editor/markdown`'s academic layer (`citations.tsx`, `footnotes.tsx`, `toc.tsx`) styled themselves color-only at rest (`no-underline` + `hover:underline`), which failed axe's `link-in-text-block` check in `qlik-dark` — a link inside a paragraph needs a non-color cue, not just hue. Now they carry a resting `underline`, matching the base `MarkdownPreview` `Link`'s convention. `qlik-bright`'s separate `color-contrast` reading on `--primary`-as-inline-text (~4.3:1 vs the 4.5:1 AA floor) is a pre-existing, unrelated token-level fact and is NOT fixed by this change; it stays open as **#317**. Root cause and remedy (`--primary` has no `-text` rung, at 16 call sites across 6 packages) are now filed as **#399** — genuinely unowned today, and NOT resolved by the wave-3 token-contrast work (#321/#383/#385), which never touches `qlik-bright`'s `--primary`.
-- **`Slider`'s "multi-thumb support is tracked separately" doc comment now names the tracking issue (#353, `@qlik-coe-emea/qlabs-components-ui`).** No behavior change — `packages/ui/src/components/slider/slider.tsx`'s doc comment on `thumbProps` now points at #398, the new follow-up issue split out of #353's multi-thumb/range acceptance criterion (see #353 and #398 for the rationale). The single-thumb `aria-valuetext`/`thumbProps` half of #353 (the escape hatch, `PROTECTED_THUMB_KEYS` stripping) was already shipped; this unit adds `apps/e2e/tests/slider-aria-valuetext.spec.ts`, a real Chromium accessibility-tree assertion (CDP `Accessibility.getFullAXTree`) proving a screen reader's computed `valuetext` reflects the custom string, not a DOM-attribute snapshot.
-- **`PageShell` gains a `headerVariant="toolbar"` prop (#367, `@qlik-coe-emea/qlabs-components-ui`).** Wraps
+- **`Sources` renders the grounded-concept in `--success-text` (#382, `@elabs/components-ai`).** Changed from `text-primary` to `text-success-text` so the "Used N sources" label clears WCAG AA (4.5:1) in all three themes and aligns with `InlineCitation`'s success-family styling, ensuring one semantic role for one visual idea.
+- **`Toaster` merges a consumer's `className` and `toastOptions.classNames` with defaults instead of replacing them (#389, #362, `@elabs/components-ui`).** Previously, passing `className` would replace the wrapper's `"toaster group"` classes, silently breaking the `group-[.toaster]:*` defaults that render the toast's card background, foreground color and elevation. Now `className` is merged via `cn()`, and each key in `toastOptions.classNames` is merged per-key so consumer overrides extend the defaults instead of wiping sibling keys. Documented in JSDoc: to override a built-in toast class, mirror the variant prefix (e.g. `group-[.toaster]:bg-blue-500`), because built-in classes are variant-scoped and out-specify bare utilities. The `theme` prop is a derived, non-configurable property set from `data-theme` to ensure toasts always track the app's active theme.
+- **Fix: academic-layer citation/footnote/TOC links keep a resting underline (#317, `@elabs/components-editor`).** `CiteLink`, the bibliography's external DOI/URL link, the footnote marker, and TOC entries in `@elabs/components-editor/markdown`'s academic layer (`citations.tsx`, `footnotes.tsx`, `toc.tsx`) styled themselves color-only at rest (`no-underline` + `hover:underline`), which failed axe's `link-in-text-block` check in `dark` — a link inside a paragraph needs a non-color cue, not just hue. Now they carry a resting `underline`, matching the base `MarkdownPreview` `Link`'s convention. `light`'s separate `color-contrast` reading on `--primary`-as-inline-text (~4.3:1 vs the 4.5:1 AA floor) is a pre-existing, unrelated token-level fact and is NOT fixed by this change; it stays open as **#317**. Root cause and remedy (`--primary` has no `-text` rung, at 16 call sites across 6 packages) are now filed as **#399** — genuinely unowned today, and NOT resolved by the wave-3 token-contrast work (#321/#383/#385), which never touches `light`'s `--primary`.
+- **`Slider`'s "multi-thumb support is tracked separately" doc comment now names the tracking issue (#353, `@elabs/components-ui`).** No behavior change — `packages/ui/src/components/slider/slider.tsx`'s doc comment on `thumbProps` now points at #398, the new follow-up issue split out of #353's multi-thumb/range acceptance criterion (see #353 and #398 for the rationale). The single-thumb `aria-valuetext`/`thumbProps` half of #353 (the escape hatch, `PROTECTED_THUMB_KEYS` stripping) was already shipped; this unit adds `apps/e2e/tests/slider-aria-valuetext.spec.ts`, a real Chromium accessibility-tree assertion (CDP `Accessibility.getFullAXTree`) proving a screen reader's computed `valuetext` reflects the custom string, not a DOM-attribute snapshot.
+- **`PageShell` gains a `headerVariant="toolbar"` prop (#367, `@elabs/components-ui`).** Wraps
   `header` in a `sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur`
   container so a `<ViewToolbar>` (#331) placed in the header slot stays pinned while the page
   body scrolls beneath it — the caller PLACES a `<ViewToolbar>`, `PageShell` does not invent a
@@ -954,20 +982,20 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   the wrapper never caps the row's height, so a `<ViewToolbar>` can still wrap onto a second
   line at narrow widths (R7).
 - **`Alert` gains a rendered `success` story and `Toggle` a rendered `segmented`
-  story (#388, `@qlik-coe-emea/qlabs-components-ui`).** Both variant values were only
+  story (#388, `@elabs/components-ui`).** Both variant values were only
   selectable in the Storybook controls panel (`argTypes.options`) and never
   actually rendered, so neither one ever reached the blocking interaction + axe
   job. New `pnpm variants:check` gate (`scripts/check-variant-coverage.mjs`,
   ratcheted via `scripts/variant-coverage-baseline.json`) now asserts every
   `cva` variant value reaches a rendered story repo-wide.
-- **Four status-ink pairs now clear WCAG AA, and the whole foreground-on-fill class is gated (#321/#383, `@qlik-coe-emea/qlabs-components-tokens`).** `--<tone>-foreground` is only ever painted on `--<tone>`, so the pair is an invariant of the tokens — but no gate asserted it, because a blanket row would have failed the one brand pair #180 blesses. `themes-contrast.test.ts` now runs an `INK_TONES` row over all six tones in every theme with a single `INK_EXEMPT` entry keyed by `(theme, tone)` — `qlik-bright/--primary` — plus a change-detector pinning that pair to the literal #180 accepted, so the exemption cannot outlive its justification. Keying by `(theme, tone)` rather than by tone matters: a role-keyed list would have re-frozen `--success`, which #334 already moved off the brand green to a passing 5.46:1. The row reds on exactly four pairs, all fixed here by flipping the INK (never the fill — a fill is also a bare graphical mark with its own ≥3:1 1.4.11 rung from #381, whereas `-foreground` has zero consumers outside its plate): **`qlik-dark --destructive-foreground` 3.02 → 5.50** (now the theme's own warm-dark ink, which its primary/success/info already used — destructive was the last holdout on qlik-bright's near-white), **`qlik-bright --info-foreground` 3.74 → 4.80**, **`:root --success-foreground` 3.55 → 5.02** and **`:root --info-foreground` 3.67 → 4.90** (the last two were recorded in no issue at all). `ConfirmDialog`'s qlik-dark story swept the neutral tone as a workaround for the destructive defect; it now sweeps `destructive` for real.
+- **Four status-ink pairs now clear WCAG AA, and the whole foreground-on-fill class is gated (#321/#383, `@elabs/components-tokens`).** `--<tone>-foreground` is only ever painted on `--<tone>`, so the pair is an invariant of the tokens — but no gate asserted it, because a blanket row would have failed the one brand pair #180 blesses. `themes-contrast.test.ts` now runs an `INK_TONES` row over all six tones in every theme with a single `INK_EXEMPT` entry keyed by `(theme, tone)` — `light/--primary` — plus a change-detector pinning that pair to the literal #180 accepted, so the exemption cannot outlive its justification. Keying by `(theme, tone)` rather than by tone matters: a role-keyed list would have re-frozen `--success`, which #334 already moved off the brand green to a passing 5.46:1. The row reds on exactly four pairs, all fixed here by flipping the INK (never the fill — a fill is also a bare graphical mark with its own ≥3:1 1.4.11 rung from #381, whereas `-foreground` has zero consumers outside its plate): **`dark --destructive-foreground` 3.02 → 5.50** (now the theme's own warm-dark ink, which its primary/success/info already used — destructive was the last holdout on light's near-white), **`light --info-foreground` 3.74 → 4.80**, **`:root --success-foreground` 3.55 → 5.02** and **`:root --info-foreground` 3.67 → 4.90** (the last two were recorded in no issue at all). `ConfirmDialog`'s dark story swept the neutral tone as a workaround for the destructive defect; it now sweeps `destructive` for real.
 
-- **Role distinctness is enforced: `pnpm roles:check` (#385, `@qlik-coe-emea/qlabs-components-tokens`).** Parity proves a token is present and the contrast gate proves it clears a ratio against a surface; neither can see two independent roles collapsing onto one colour — which is how `:root` shipped `--primary` ≡ `--ring` ≡ `--sidebar-primary` ≡ `--sidebar-ring` ≡ `--chart-1`, one literal for five roles. New self-tested `scripts/check-role-distinctness.mjs` (wired into `gates.yml` + the release-gates baseline) asserts a `MUST_DIFFER` pair list per theme at the same 0.05 OKLab ΔE floor `ROLE_PAIRS` uses, so a cosmetic 0.001 nudge cannot satisfy it, and resolves `var()` before comparing so an alias cannot launder a collision either. Token changes: `:root --ring` `oklch(0.55 0.18 264)` → **`oklch(0.45 0.21 264)`** (deeper + more saturated, the move qlik-bright already made for its own ring; ΔE 0.104 from `--primary`, 7.42:1 on `--background`) and `:root --chart-1` → **`oklch(0.62 0.17 264)`** (a lighter, chart-tuned cousin of the accent instead of a copy of it — as a duplicate it was also the darkest member of its own ramp at 5.02:1 vs `--card` against 2.87–4.37 for the rest; now 3.73:1, evening the ramp). Intentional mirrors are now DECLARED rather than copy-pasted: `--sidebar-primary: var(--primary)`, `--sidebar-ring: var(--ring)`, `--sidebar-accent-foreground: var(--accent-foreground)` in all four blocks — a zero-visual-change refactor that makes drift impossible. blueprint carries three documented exemptions (it is monochrome by contract and its chart ramp is pinned by `charts-contrast.test.ts`); `(--primary, --chart-1)` is deliberately NOT in `MUST_DIFFER` — series 1 as a cousin of the brand hue is a convention, not a collision.
-- **Blueprint gets a non-colour status channel + `CTASection`'s subtitle is legible again (#391, #393, `@qlik-coe-emea/qlabs-components-tokens`/`@qlik-coe-emea/qlabs-components-marketing`).** `CTASection`'s description `<p>` no longer hardcodes `text-primary-foreground/80` — it inherits `color` from the `.bg-primary` section root exactly like the heading, fixing a 1.20:1 (essentially invisible) contrast under `blueprint` and an 8.24:1 pairing in `qlik-dark`. The qlik-bright residual (4.31:1 measured / 4.3:1 axe, on `text-base`/400 body copy) is **unresolved** — it is covered by the pre-existing `(qlik-bright, --primary)` brand exemption (#180/#383), but that exemption was reasoned for large/bold text and was never separately adjudicated for small body copy, so it does not on its own close this case; the underlying gap (`--primary` has no on-surface `-text` rung) is tracked in #399. Separately, `packages/tokens/src/decoration.css` gains a `[data-status]`-keyed line-type channel (`pending` dotted · `running` dashed · `complete` solid · `awaiting-approval` solid+2px · `failed` double+3px · `denied`/`skipped` share dotted-no-hatch) so the seven canonical statuses stay distinguishable in `blueprint`/high decoration even though the six role fills (`bg-primary`/`secondary`/`destructive`/`success`/`warning`/`info`) deliberately collapse to one drawn appearance there, and the sanctioned `bg-<status>/10` wash only separates by lightness (ΔE ≈0.012, not perceptible). Zero component changes — `StatusBadge`/`StatusIcon`/`Timeline` already emit `data-status`. New `pnpm decoration-collapse:check` gate (self-tested) fails if a role-fill collapse ever ships again with no compensating `[data-status]` channel in the same scope.
-- **Density type-scale ratchet: sidebar-04 block + chart axis/legend labels now scale with `data-density` (#397, #394, `@qlik-coe-emea/qlabs-components-ui`, `@qlik-coe-emea/qlabs-components-charts`).** `packages/ui/src/blocks/sidebar-04/app-sidebar.tsx`'s 8 raw font-size utilities (3× `text-sm`, 4× `text-xs`, 1× `text-base`) now read the `text-body`/`text-meta`/`text-subtitle` roles, closing the worst-measured real screen for #340's density dial (`layout-app-shell-mail--default`). `@qlik-coe-emea/qlabs-components-charts`'s 8 HTML-rendered axis-tick/legend-percentage/auto-legend labels (`x-axis`, `y-axis`, `bar-x-axis`, `bar-y-axis`, `live-x-axis`, `live-y-axis`, `chart-legend`, `auto-chart`) move from raw `text-xs` to `text-meta`, matching `Gantt`'s already-density-aware timescale tick (11.25px compact / 12px comfortable). `text-sm`→`text-body` and `text-base`→`text-subtitle` are documented visual no-ops; `text-xs`→`text-meta` also adopts `font-weight: 500` + `letter-spacing: 0.01em` — verified across all three themes via `test-storybook`. 6 SVG-numeric chart sites (`radar-labels`, `radar-grid`, `live-line`, `marker-group`, `sankey-node`) are consciously scoped OUT — see `.claude/rules/chart-components.md` § SVG-rendered type. `scripts/text-scale-baseline.json` ratcheted 309→293 raw uses.
+- **Role distinctness is enforced: `pnpm roles:check` (#385, `@elabs/components-tokens`).** Parity proves a token is present and the contrast gate proves it clears a ratio against a surface; neither can see two independent roles collapsing onto one colour — which is how `:root` shipped `--primary` ≡ `--ring` ≡ `--sidebar-primary` ≡ `--sidebar-ring` ≡ `--chart-1`, one literal for five roles. New self-tested `scripts/check-role-distinctness.mjs` (wired into `gates.yml` + the release-gates baseline) asserts a `MUST_DIFFER` pair list per theme at the same 0.05 OKLab ΔE floor `ROLE_PAIRS` uses, so a cosmetic 0.001 nudge cannot satisfy it, and resolves `var()` before comparing so an alias cannot launder a collision either. Token changes: `:root --ring` `oklch(0.55 0.18 264)` → **`oklch(0.45 0.21 264)`** (deeper + more saturated, the move light already made for its own ring; ΔE 0.104 from `--primary`, 7.42:1 on `--background`) and `:root --chart-1` → **`oklch(0.62 0.17 264)`** (a lighter, chart-tuned cousin of the accent instead of a copy of it — as a duplicate it was also the darkest member of its own ramp at 5.02:1 vs `--card` against 2.87–4.37 for the rest; now 3.73:1, evening the ramp). Intentional mirrors are now DECLARED rather than copy-pasted: `--sidebar-primary: var(--primary)`, `--sidebar-ring: var(--ring)`, `--sidebar-accent-foreground: var(--accent-foreground)` in all four blocks — a zero-visual-change refactor that makes drift impossible. blueprint carries three documented exemptions (it is monochrome by contract and its chart ramp is pinned by `charts-contrast.test.ts`); `(--primary, --chart-1)` is deliberately NOT in `MUST_DIFFER` — series 1 as a cousin of the brand hue is a convention, not a collision.
+- **Blueprint gets a non-colour status channel + `CTASection`'s subtitle is legible again (#391, #393, `@elabs/components-tokens`/`@elabs/components-marketing`).** `CTASection`'s description `<p>` no longer hardcodes `text-primary-foreground/80` — it inherits `color` from the `.bg-primary` section root exactly like the heading, fixing a 1.20:1 (essentially invisible) contrast under `blueprint` and an 8.24:1 pairing in `dark`. The light residual (4.31:1 measured / 4.3:1 axe, on `text-base`/400 body copy) is **unresolved** — it is covered by the pre-existing `(light, --primary)` brand exemption (#180/#383), but that exemption was reasoned for large/bold text and was never separately adjudicated for small body copy, so it does not on its own close this case; the underlying gap (`--primary` has no on-surface `-text` rung) is tracked in #399. Separately, `packages/tokens/src/decoration.css` gains a `[data-status]`-keyed line-type channel (`pending` dotted · `running` dashed · `complete` solid · `awaiting-approval` solid+2px · `failed` double+3px · `denied`/`skipped` share dotted-no-hatch) so the seven canonical statuses stay distinguishable in `blueprint`/high decoration even though the six role fills (`bg-primary`/`secondary`/`destructive`/`success`/`warning`/`info`) deliberately collapse to one drawn appearance there, and the sanctioned `bg-<status>/10` wash only separates by lightness (ΔE ≈0.012, not perceptible). Zero component changes — `StatusBadge`/`StatusIcon`/`Timeline` already emit `data-status`. New `pnpm decoration-collapse:check` gate (self-tested) fails if a role-fill collapse ever ships again with no compensating `[data-status]` channel in the same scope.
+- **Density type-scale ratchet: sidebar-04 block + chart axis/legend labels now scale with `data-density` (#397, #394, `@elabs/components-ui`, `@elabs/components-charts`).** `packages/ui/src/blocks/sidebar-04/app-sidebar.tsx`'s 8 raw font-size utilities (3× `text-sm`, 4× `text-xs`, 1× `text-base`) now read the `text-body`/`text-meta`/`text-subtitle` roles, closing the worst-measured real screen for #340's density dial (`layout-app-shell-mail--default`). `@elabs/components-charts`'s 8 HTML-rendered axis-tick/legend-percentage/auto-legend labels (`x-axis`, `y-axis`, `bar-x-axis`, `bar-y-axis`, `live-x-axis`, `live-y-axis`, `chart-legend`, `auto-chart`) move from raw `text-xs` to `text-meta`, matching `Gantt`'s already-density-aware timescale tick (11.25px compact / 12px comfortable). `text-sm`→`text-body` and `text-base`→`text-subtitle` are documented visual no-ops; `text-xs`→`text-meta` also adopts `font-weight: 500` + `letter-spacing: 0.01em` — verified across all three themes via `test-storybook`. 6 SVG-numeric chart sites (`radar-labels`, `radar-grid`, `live-line`, `marker-group`, `sankey-node`) are consciously scoped OUT — see `.claude/rules/chart-components.md` § SVG-rendered type. `scripts/text-scale-baseline.json` ratcheted 309→293 raw uses.
 
-- **`FlowNode` tone and `Timeline` status gain non-colour cues + AT exposure (#387, WCAG 1.4.1, `@qlik-coe-emea/qlabs-components-flow` + `@qlik-coe-emea/qlabs-components-ui`).** Both previously encoded state in colour alone — `FlowNode`'s `tone` was a bare 1px border with no DOM attribute, icon or accessible name at all; `Timeline`'s `NODE_STYLE` gave `denied`/`skipped` byte-identical classes and left `complete`/`awaiting-approval`/`failed` distinguishable only by hue. `FlowNode` now sets `data-tone` on its root and, for every non-`default` tone, a decorative Lucide glyph (new export `STATUS_TONE_ICONS` from `@qlik-coe-emea/qlabs-components-ui` reuses the same icon `StatusBadge` already pairs with `success`/`warning`/`destructive`) plus an `sr-only` name. `Timeline`'s `NODE_STYLE` now gives `denied`/`skipped` distinct `border-dashed`/`border-dotted` rings (their fill genuinely differs from their border, so the pattern paints), and gives `running`/`complete`/`awaiting-approval`/`failed` four distinct `ring-*` WIDTHS (0/1/2/4 — a rendered check found `border-style` invisible on that quartet, since their border and fill share one token); every rail item also prefixes its title with an `sr-only` status name. New rule: `.claude/rules/accessibility.md` § "Colour is never the only channel."
-- **`Timeline`'s `running` rail node retints from `--primary` to `--info` to match `StatusBadge` (#392, `@qlik-coe-emea/qlabs-components-ui`).** `NODE_STYLE` (the rail dot's colour map) was an untested duplicate of the canonical status→role mapping `StatusBadge` owns, and had drifted: a running `AgentStep` rendered its rail dot green (`--primary`) and its badge blue (`--info`) on the same line. The dot now renders `--info` (halo kept, retinted to `ring-info/25`) — a **rendered colour change**: every running/`active` rail node goes green → blue in every theme, including the editor's `:::timeline` `active` marker. New export `STATUS_ROLE` (`@qlik-coe-emea/qlabs-components-ui`) names the single source of truth for status colour; `timeline.test.tsx` now locks the four chromatic statuses (`running`/`complete`/`awaiting-approval`/`failed`) against it so the two maps can't silently diverge again.
+- **`FlowNode` tone and `Timeline` status gain non-colour cues + AT exposure (#387, WCAG 1.4.1, `@elabs/components-flow` + `@elabs/components-ui`).** Both previously encoded state in colour alone — `FlowNode`'s `tone` was a bare 1px border with no DOM attribute, icon or accessible name at all; `Timeline`'s `NODE_STYLE` gave `denied`/`skipped` byte-identical classes and left `complete`/`awaiting-approval`/`failed` distinguishable only by hue. `FlowNode` now sets `data-tone` on its root and, for every non-`default` tone, a decorative Lucide glyph (new export `STATUS_TONE_ICONS` from `@elabs/components-ui` reuses the same icon `StatusBadge` already pairs with `success`/`warning`/`destructive`) plus an `sr-only` name. `Timeline`'s `NODE_STYLE` now gives `denied`/`skipped` distinct `border-dashed`/`border-dotted` rings (their fill genuinely differs from their border, so the pattern paints), and gives `running`/`complete`/`awaiting-approval`/`failed` four distinct `ring-*` WIDTHS (0/1/2/4 — a rendered check found `border-style` invisible on that quartet, since their border and fill share one token); every rail item also prefixes its title with an `sr-only` status name. New rule: `.claude/rules/accessibility.md` § "Colour is never the only channel."
+- **`Timeline`'s `running` rail node retints from `--primary` to `--info` to match `StatusBadge` (#392, `@elabs/components-ui`).** `NODE_STYLE` (the rail dot's colour map) was an untested duplicate of the canonical status→role mapping `StatusBadge` owns, and had drifted: a running `AgentStep` rendered its rail dot green (`--primary`) and its badge blue (`--info`) on the same line. The dot now renders `--info` (halo kept, retinted to `ring-info/25`) — a **rendered colour change**: every running/`active` rail node goes green → blue in every theme, including the editor's `:::timeline` `active` marker. New export `STATUS_ROLE` (`@elabs/components-ui`) names the single source of truth for status colour; `timeline.test.tsx` now locks the four chromatic statuses (`running`/`complete`/`awaiting-approval`/`failed`) against it so the two maps can't silently diverge again.
 - **Governance: three gate fixes, for issues #380/#379/#396 (`scripts/*.mjs`,
   `.github/workflows/gates.yml`, `.githooks/pre-commit`).** `changelog-entry:check`
   no longer false-negatives on a `## Unreleased` entry more than a few lines below
@@ -979,16 +1007,16 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   adding a component/export no longer leaves `component-inventory.md`/`llms.txt`/
   `brand-ui-context.md`/the `pnpm gen`-owned doc regions/package READMEs stale
   (#396). No shipped component API changed.
-- **`test-storybook` is green again, and three real a11y defects are fixed (#386, `@qlik-coe-emea/qlabs-components-ai`, `@qlik-coe-emea/qlabs-components-data`, `@qlik-coe-emea/qlabs-components-ui`, `@qlik-coe-emea/qlabs-components-editor`).** The repo's only real-browser interaction + axe surface was red on `main` (6 files / 14 tests, none baseline-exempt). Fixed in product/story, never by exempting: (1) `MessageAvatar role="agent"` now carries `role="img"` beside its `aria-label` — Radix's `Avatar.Root` renders a `<span>` whose implicit role is `generic`, and ARIA prohibits `aria-label` there, so the name was invalid AND never announced (axe `aria-prohibited-attr`); the user branch is unchanged. (2) `WebPreviewNavigationButton` takes its accessible name from `tooltip` — a Radix tooltip only contributes `aria-describedby` while OPEN, so these icon-only controls had no name at rest (axe `button-name`); an explicit `aria-label` still wins. (3) `buildInteractiveTerminalTheme` clamps every ANSI ink to WCAG AA against the terminal's own background — the mapping reaches for mark/fill-rung tokens (`--chart-2`/`--chart-4`/`--border-strong`, and `--success`/`--info`/… for the `bright*` siblings) which are only guaranteed ≥3:1, so EVERY palette shipped sub-AA ANSI slots — measured from `themes.css`: `:root` 7 (worst 2.39:1), `qlik-bright` 4 (worst 2.91:1), `qlik-dark` 1 (3.16:1), `blueprint` 1 (4.32:1). The 7 axe `color-contrast` violations that red-ed the story test are the `:root` set, because that is the palette the story test resolves. `bright*` variants are now derived by pushing AWAY from the background instead of always lightening, which on a light theme had been making them the least legible colour on screen. Also: `Patterns/Templates/Data App` no longer nests a second `<main>` inside `SidebarInset`'s, and the `DropdownMenu`/`MarkdownEditor` menu stories now dismiss their modal menu before returning (an open Radix menu marks the rest of the document `aria-hidden`, which both fails `aria-hidden-focus` and leaks into the next story's role queries).
+- **`test-storybook` is green again, and three real a11y defects are fixed (#386, `@elabs/components-ai`, `@elabs/components-data`, `@elabs/components-ui`, `@elabs/components-editor`).** The repo's only real-browser interaction + axe surface was red on `main` (6 files / 14 tests, none baseline-exempt). Fixed in product/story, never by exempting: (1) `MessageAvatar role="agent"` now carries `role="img"` beside its `aria-label` — Radix's `Avatar.Root` renders a `<span>` whose implicit role is `generic`, and ARIA prohibits `aria-label` there, so the name was invalid AND never announced (axe `aria-prohibited-attr`); the user branch is unchanged. (2) `WebPreviewNavigationButton` takes its accessible name from `tooltip` — a Radix tooltip only contributes `aria-describedby` while OPEN, so these icon-only controls had no name at rest (axe `button-name`); an explicit `aria-label` still wins. (3) `buildInteractiveTerminalTheme` clamps every ANSI ink to WCAG AA against the terminal's own background — the mapping reaches for mark/fill-rung tokens (`--chart-2`/`--chart-4`/`--border-strong`, and `--success`/`--info`/… for the `bright*` siblings) which are only guaranteed ≥3:1, so EVERY palette shipped sub-AA ANSI slots — measured from `themes.css`: `:root` 7 (worst 2.39:1), `light` 4 (worst 2.91:1), `dark` 1 (3.16:1), `blueprint` 1 (4.32:1). The 7 axe `color-contrast` violations that red-ed the story test are the `:root` set, because that is the palette the story test resolves. `bright*` variants are now derived by pushing AWAY from the background instead of always lightening, which on a light theme had been making them the least legible colour on screen. Also: `Patterns/Templates/Data App` no longer nests a second `<main>` inside `SidebarInset`'s, and the `DropdownMenu`/`MarkdownEditor` menu stories now dismiss their modal menu before returning (an open Radix menu marks the rest of the document `aria-hidden`, which both fails `aria-hidden-focus` and leaks into the next story's role queries).
 
 - **Merge discipline has teeth instead of a red X (#386, #379).** Branch protection is unavailable on this repo's plan (re-verified: `branches/main/protection` and `rulesets` both 403), so `pnpm merge:check` (`scripts/check-merge-readiness.mjs`, self-tested) refuses while any blocking check is failing **or has not reported yet**, and `.claude/hooks/gate-pr-merge-readiness.sh` blocks `gh pr merge` outright unless it passes — the exact hole PR #375 went through. Override: `ALLOW_UNVERIFIED_MERGE=1`.
-- **`Gantt` renders sub-day and sub-second timelines (#360, `@qlik-coe-emea/qlabs-components-charts`).** A 12-second agent run (tool calls, model turns, streaming) and a two-year programme plan are now the same component. New exported type `GanttTimeUnit` — a **superset** of `GanttViewMode` adding `hour`/`minute`/`second`/`millisecond` — widens every tick-granularity input (`viewMode`, `defaultViewMode`, `GanttScale.unit`); new props `viewModes` (which units the toolbar offers), `zoomBounds` (override the zoom clamp) and `defaultViewMode="auto"` (derive the finest readable unit from the data's own span); new exports `GANTT_UNIT_MS`, `pickGanttTimeUnit`, `computeGanttZoomBounds`, `GANTT_NOMINAL_VIEWPORT_PX`. Zoom bounds are now derived from the actual data span instead of the hardcoded `[2, 200]` px/day pair (they can only ever WIDEN it, so every shipped preset is unaffected), `computeDomain`'s one-day pad floor now applies only at or above day scale, so a sub-day domain is no longer padded by a whole day (which collapsed a 12-second timeline to ~0.04 px bars) and padding is proportionally consistent across scales — byte-identical to v1 for any span of a day or more, and for a zero-length span, and `generateTicks` strides so a millisecond unit over a long domain can't hang the tab. `GanttViewMode` is **unchanged** and `pixelsPerDay`/`defaultPixelsPerDay`/`onPixelsPerDayChange` keep their exact meaning — _pixels per 86 400 000 ms, at every granularity_ — and are still passed through **unclamped**, exactly as before: the span-derived clamp applies only to the view-mode preset the component derives for itself (which by construction contains all four calendar presets), never to a value you supply. **Changed / migration:** (1) `onViewModeChange`'s parameter widened from `GanttViewMode` to `GanttTimeUnit`; under `strictFunctionTypes` a handler _explicitly_ annotated `(mode: GanttViewMode) => void` no longer assigns — annotate it `GanttTimeUnit`, or drop the annotation (the inferred `onViewModeChange={(mode) => …}` is unaffected). (2) Ctrl/⌘-wheel zoom is no longer capped at 2–200 px/day but at the span-derived range — that IS the new capability, and the range only ever _widens_, so nothing previously reachable is lost; pass `zoomBounds` to pin it. (3) A single timescale row now strides once it would exceed 5 000 ticks — unreachable below roughly 13.7 years of daily ticks. No static render of any existing configuration changes: verified by a browser A/B against the previous release across `pixelsPerDay` 0.5 / 2 / 48 / 201 / 400 / 500 and 15 shipped stories, comparing canvas width, every tick label, every bar rect and decoded painted pixels. New stories `Charts/Gantt → Agent run trace` and `→ Millisecond trace`.
-- **New `MentionInput` — an `@`-mention text field (#368, ADR 0023, `@qlik-coe-emea/qlabs-components-ui`).** No package shipped a mention-capable input, so downstream teams re-solved caret arithmetic, chip atomicity and `aria-activedescendant` wiring by hand or reached for a `contentEditable` escape hatch. `MentionInput` is a compound component (`MentionInputTextarea` / `MentionInputContent` / `MentionInputList` / `MentionInputItem` / `MentionInputEmpty` + `useMentionInput`) over a **real `<textarea>`**, so IME, paste, native undo, spellcheck, mobile keyboards and `FormData` all keep working. It brings its own listbox rather than cmdk, so **focus never leaves the field** — arrow keys move `aria-activedescendant`, Enter/Tab insert, Escape closes without clearing the text — and an inserted mention behaves as one atomic unit (a single Backspace beside it removes the whole `@Name`; the arrow keys step over it, not into it). The value is `{ text, mentions }`; the pure, React-free `mention-value` algebra (`insertMention` / `remapMentions` / `mentionAt` / `mentionEnd` / `serializeMentions` / `defaultMentionFilter`) is exported alongside it, and `serializeMentions()` returns `{ text, mentionedIds }` with ids deduped in document order. Composes into `@qlik-coe-emea/qlabs-components-ai`'s composer with no `ai` change at all — `<MentionInputTextarea asChild><PromptInputTextarea name="message" /></MentionInputTextarea>`. The interception is bound as `onKeyDownCapture` because Radix `Slot` runs a child's handler before a slot's, so a bubble-phase handler would lose to an `asChild` child that binds `onKeyDown` **directly on a host element** (the `PromptInputTextarea` composition itself is unaffected either way — it destructures `onKeyDown` and bails on `defaultPrevented` — so the capture binding is what makes the raw-host case correct, and it is locked by its own unit test rather than by the composer story). Consumer props compose rather than clobber: the seven handlers the field owns are destructured out before `...props` is spread, so passing your own `onChange` no longer knocks out the component's value tracking, while `id`/`name`/`aria-*`/`placeholder` still win. Mentions are painted by an `aria-hidden` mirror layer over the field whose glyph metrics are re-snapshotted on theme/density/font-load changes (backgrounds only — no per-run text colour is possible behind a real textarea). ARIA note: the field stays a spec-valid `textbox` carrying `aria-autocomplete` / `aria-haspopup` / `aria-controls` / `aria-activedescendant` — **not** `role="combobox"` + `aria-expanded`, which `<textarea>` does not permit and axe rejects (`aria-allowed-role`; `aria-allowed-attr` is critical) — so the highlighted option is still announced while the open state is exposed as `data-state`. Additive: one new microcopy key (`ui.mentionInput.listLabel`); the empty state reuses the generic `noResults`.
+- **`Gantt` renders sub-day and sub-second timelines (#360, `@elabs/components-charts`).** A 12-second agent run (tool calls, model turns, streaming) and a two-year programme plan are now the same component. New exported type `GanttTimeUnit` — a **superset** of `GanttViewMode` adding `hour`/`minute`/`second`/`millisecond` — widens every tick-granularity input (`viewMode`, `defaultViewMode`, `GanttScale.unit`); new props `viewModes` (which units the toolbar offers), `zoomBounds` (override the zoom clamp) and `defaultViewMode="auto"` (derive the finest readable unit from the data's own span); new exports `GANTT_UNIT_MS`, `pickGanttTimeUnit`, `computeGanttZoomBounds`, `GANTT_NOMINAL_VIEWPORT_PX`. Zoom bounds are now derived from the actual data span instead of the hardcoded `[2, 200]` px/day pair (they can only ever WIDEN it, so every shipped preset is unaffected), `computeDomain`'s one-day pad floor now applies only at or above day scale, so a sub-day domain is no longer padded by a whole day (which collapsed a 12-second timeline to ~0.04 px bars) and padding is proportionally consistent across scales — byte-identical to v1 for any span of a day or more, and for a zero-length span, and `generateTicks` strides so a millisecond unit over a long domain can't hang the tab. `GanttViewMode` is **unchanged** and `pixelsPerDay`/`defaultPixelsPerDay`/`onPixelsPerDayChange` keep their exact meaning — _pixels per 86 400 000 ms, at every granularity_ — and are still passed through **unclamped**, exactly as before: the span-derived clamp applies only to the view-mode preset the component derives for itself (which by construction contains all four calendar presets), never to a value you supply. **Changed / migration:** (1) `onViewModeChange`'s parameter widened from `GanttViewMode` to `GanttTimeUnit`; under `strictFunctionTypes` a handler _explicitly_ annotated `(mode: GanttViewMode) => void` no longer assigns — annotate it `GanttTimeUnit`, or drop the annotation (the inferred `onViewModeChange={(mode) => …}` is unaffected). (2) Ctrl/⌘-wheel zoom is no longer capped at 2–200 px/day but at the span-derived range — that IS the new capability, and the range only ever _widens_, so nothing previously reachable is lost; pass `zoomBounds` to pin it. (3) A single timescale row now strides once it would exceed 5 000 ticks — unreachable below roughly 13.7 years of daily ticks. No static render of any existing configuration changes: verified by a browser A/B against the previous release across `pixelsPerDay` 0.5 / 2 / 48 / 201 / 400 / 500 and 15 shipped stories, comparing canvas width, every tick label, every bar rect and decoded painted pixels. New stories `Charts/Gantt → Agent run trace` and `→ Millisecond trace`.
+- **New `MentionInput` — an `@`-mention text field (#368, ADR 0023, `@elabs/components-ui`).** No package shipped a mention-capable input, so downstream teams re-solved caret arithmetic, chip atomicity and `aria-activedescendant` wiring by hand or reached for a `contentEditable` escape hatch. `MentionInput` is a compound component (`MentionInputTextarea` / `MentionInputContent` / `MentionInputList` / `MentionInputItem` / `MentionInputEmpty` + `useMentionInput`) over a **real `<textarea>`**, so IME, paste, native undo, spellcheck, mobile keyboards and `FormData` all keep working. It brings its own listbox rather than cmdk, so **focus never leaves the field** — arrow keys move `aria-activedescendant`, Enter/Tab insert, Escape closes without clearing the text — and an inserted mention behaves as one atomic unit (a single Backspace beside it removes the whole `@Name`; the arrow keys step over it, not into it). The value is `{ text, mentions }`; the pure, React-free `mention-value` algebra (`insertMention` / `remapMentions` / `mentionAt` / `mentionEnd` / `serializeMentions` / `defaultMentionFilter`) is exported alongside it, and `serializeMentions()` returns `{ text, mentionedIds }` with ids deduped in document order. Composes into `@elabs/components-ai`'s composer with no `ai` change at all — `<MentionInputTextarea asChild><PromptInputTextarea name="message" /></MentionInputTextarea>`. The interception is bound as `onKeyDownCapture` because Radix `Slot` runs a child's handler before a slot's, so a bubble-phase handler would lose to an `asChild` child that binds `onKeyDown` **directly on a host element** (the `PromptInputTextarea` composition itself is unaffected either way — it destructures `onKeyDown` and bails on `defaultPrevented` — so the capture binding is what makes the raw-host case correct, and it is locked by its own unit test rather than by the composer story). Consumer props compose rather than clobber: the seven handlers the field owns are destructured out before `...props` is spread, so passing your own `onChange` no longer knocks out the component's value tracking, while `id`/`name`/`aria-*`/`placeholder` still win. Mentions are painted by an `aria-hidden` mirror layer over the field whose glyph metrics are re-snapshotted on theme/density/font-load changes (backgrounds only — no per-run text colour is possible behind a real textarea). ARIA note: the field stays a spec-valid `textbox` carrying `aria-autocomplete` / `aria-haspopup` / `aria-controls` / `aria-activedescendant` — **not** `role="combobox"` + `aria-expanded`, which `<textarea>` does not permit and axe rejects (`aria-allowed-role`; `aria-allowed-attr` is critical) — so the highlighted option is still announced while the open state is exposed as `data-state`. Additive: one new microcopy key (`ui.mentionInput.listLabel`); the empty state reuses the generic `noResults`.
 
-- **`Dialog` gains a size/scroll/section/dirty-state contract (#341, `@qlik-coe-emea/qlabs-components-ui`).** New `DialogBody` (the scroll owner — with one present the header and footer stay fixed and only the body scrolls, via a `has-[[data-slot=dialog-body]]:` grid variant that is inert without it; it takes a `tabIndex={0}` so a keyboard user can scroll a body of static text, and `DialogContent` steps the OPENING focus past the wrapper to the first control that can actually take focus INSIDE the body, so the scroll region is not ringed on open — both behaviours gated on a `DialogBody` being present, and both falling back to Radix when the body holds nothing focusable), `DialogSection` (a real heading rung between `DialogTitle` and field labels), `ConfirmDialog` (an `AlertDialog` preset that always renders a Cancel, so Radix's open-autofocus lands on the safe action), `useDialogDismissGuard` (warn before discarding unsaved changes; the app still owns `open` and `dirty`) and `AdvancedGroup` (collapsed-by-default disclosure that summarises its non-default values). Additive — no existing prop removed or renamed. ONE visible change: `dialogContentVariants`' base gained `max-h-[calc(100dvh-2rem)] overflow-y-auto`, so a dialog taller than the viewport now scrolls internally instead of overflowing past both edges with its top unreachable; `size="full"` and any caller `max-h`/`overflow` still win through `cn()`. Decision record: `docs/ADR/0021-dialog-tier-model.md` (why there is no `tier` prop and no `WideDialog`/`FormDialog`/`WorkbenchDialog`). Every `dialog.tsx` part also now carries a `data-slot`.
+- **`Dialog` gains a size/scroll/section/dirty-state contract (#341, `@elabs/components-ui`).** New `DialogBody` (the scroll owner — with one present the header and footer stay fixed and only the body scrolls, via a `has-[[data-slot=dialog-body]]:` grid variant that is inert without it; it takes a `tabIndex={0}` so a keyboard user can scroll a body of static text, and `DialogContent` steps the OPENING focus past the wrapper to the first control that can actually take focus INSIDE the body, so the scroll region is not ringed on open — both behaviours gated on a `DialogBody` being present, and both falling back to Radix when the body holds nothing focusable), `DialogSection` (a real heading rung between `DialogTitle` and field labels), `ConfirmDialog` (an `AlertDialog` preset that always renders a Cancel, so Radix's open-autofocus lands on the safe action), `useDialogDismissGuard` (warn before discarding unsaved changes; the app still owns `open` and `dirty`) and `AdvancedGroup` (collapsed-by-default disclosure that summarises its non-default values). Additive — no existing prop removed or renamed. ONE visible change: `dialogContentVariants`' base gained `max-h-[calc(100dvh-2rem)] overflow-y-auto`, so a dialog taller than the viewport now scrolls internally instead of overflowing past both edges with its top unreachable; `size="full"` and any caller `max-h`/`overflow` still win through `cn()`. Decision record: `docs/ADR/0021-dialog-tier-model.md` (why there is no `tier` prop and no `WideDialog`/`FormDialog`/`WorkbenchDialog`). Every `dialog.tsx` part also now carries a `data-slot`.
 
 - **`PromptInputSubmit` flips back to Send once the user types during a running turn
-  (#351, ADR 0022, `@qlik-coe-emea/qlabs-components-ai`).** Previously the control stayed the Stop
+  (#351, ADR 0022, `@elabs/components-ai`).** Previously the control stayed the Stop
   affordance for the entire duration of a turn, and Enter was blocked outright while
   generating — so a user with a genuine follow-up had no way to submit it at all. Now:
   running + composer EMPTY still shows Stop (unchanged); running + composer NON-EMPTY shows
@@ -1003,7 +1031,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   "this control stops"; an app that cannot accept a mid-turn submit passes `disabled` to
   `PromptInputSubmit` (unchanged, already honoured).
 - **`Command` gains an `onActiveItemIdChange` callback and a `useCommandActiveItemId` hook
-  (#365, `@qlik-coe-emea/qlabs-components-ui`).** `cmdk` assigns each item's `id`/`role`/`aria-selected`
+  (#365, `@elabs/components-ui`).** `cmdk` assigns each item's `id`/`role`/`aria-selected`
   internally and applies them after any consumer spread, so a consumer-supplied `id` on
   `CommandItem` (including `PromptInputCommandItem`) was silently dropped — the only way to
   wire `aria-activedescendant` from an input rendered outside the `Command` tree (a
@@ -1017,7 +1045,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   `aria-activedescendant` in either state), so `Command` resolves the id from the committed
   DOM instead. Purely additive; no change to cmdk's own selection/filtering.
 
-- **`DataTable` gains column pinning (#333, `@qlik-coe-emea/qlabs-components-data`).**
+- **`DataTable` gains column pinning (#333, `@elabs/components-data`).**
   New `columnPinning` / `onColumnPinningChange` props freeze columns against the
   left and/or right edge while the rest of the table scrolls horizontally — the
   same controlled/uncontrolled slice shape as `sorting` / `columnVisibility` /
@@ -1036,7 +1064,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   pinned column must declare an explicit `size` (a dev-only warning names any
   that don't). Additive: with no pinning the rendered DOM is unchanged.
 - **`FacetFilter`'s trigger now takes `Button`'s default height (`h-9`), not the
-  `sm` rung (`h-8`) (#346, `@qlik-coe-emea/qlabs-components-data`).** A facet
+  `sm` rung (`h-8`) (#346, `@elabs/components-data`).** A facet
   filter lives in a toolbar beside `Select` / `Input` / `DatePicker`, all of which
   land on `h-9`, so the `sm` trigger was the row's lone short control and its top
   and bottom edges didn't line up. Visible change: the trigger is 4px taller with
@@ -1047,18 +1075,18 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   decision.
 
 - **`KeyValueEditor` — key/value rows with per-row secret masking (#370,
-  `@qlik-coe-emea/qlabs-components-ui`).** New form-kit primitive: an ordered
+  `@elabs/components-ui`).** New form-kit primitive: an ordered
   `{ key, value, secret? }[]` row editor (ordered over `Record<string,string>`
   so in-progress duplicate keys and row order survive mid-edit). A `secret`
   row renders `type="password"` with a per-row reveal toggle whose
   `aria-label` never carries the raw value.
 - **`ListEditor` — one `Input` per row editing a `string[]` (#371,
-  `@qlik-coe-emea/qlabs-components-ui`).** New form-kit primitive: add / remove
+  `@elabs/components-ui`).** New form-kit primitive: add / remove
   / reorder rows. Reordering uses keyboard-operable move-up/move-down
   buttons (no drag-and-drop dependency exists in the monorepo, and none
   was added for this).
 - **`SliderNumber` — a `Slider` and `NumberInput` bound in lockstep, plus an
-  explicit `null` "provider default" (#372, `@qlik-coe-emea/qlabs-components-ui`).**
+  explicit `null` "provider default" (#372, `@elabs/components-ui`).**
   Both the drag and type paths round through the SAME function before
   committing, so dragging to a value and then typing it never disagrees
   (fixes the floating-point-drift failure mode, e.g. `0.30000000000000004`).
@@ -1068,14 +1096,14 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   `null` renders the slider thumb dimmed/dashed and is reachable via a
   Reset control.
 - **`BoundedNumber` — a `NumberInput` preset where empty reads as "No limit"
-  (#373, `@qlik-coe-emea/qlabs-components-ui`).** A thin wrapper, not a parallel
+  (#373, `@elabs/components-ui`).** A thin wrapper, not a parallel
   implementation: `NumberInput` already clamps on blur (not per keystroke)
   and already treats `null` as a real empty state — the only missing piece
   was rendering that empty state as a meaningful label instead of a blank
   box, added here as a `pointer-events-none` overlay shown only while empty
   and unfocused.
 - **`SegmentedField` — a labelled segmented control with sticky selection
-  (#374, `@qlik-coe-emea/qlabs-components-ui`).** Composes `Label` +
+  (#374, `@elabs/components-ui`).** Composes `Label` +
   `ToggleGroup`/`ToggleGroupItem` (`variant="segmented"` — no new visual
   style). Radix's `type="single"` `ToggleGroup` emits `""` when the active
   segment is re-clicked; `SegmentedField` swallows that emission so
@@ -1087,7 +1115,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   into a not-yet-selected field, or a consumer's programmatic `.focus()`
   moves focus without mutating the value.
 
-- **New `IconButton` in `@qlik-coe-emea/qlabs-components-ui` (#335).** A single affordance for
+- **New `IconButton` in `@elabs/components-ui` (#335).** A single affordance for
   icon-only controls: `label` becomes both the `aria-label` and the tooltip
   text (so they can never drift), `disabledReason` surfaces via
   `aria-describedby` on an `sr-only` node that does not depend on the tooltip
@@ -1095,13 +1123,13 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   `pointer-events-none` disabled — and the tooltip trigger wraps a
   focusable `<span>` so it still opens for a disabled control. Composes
   `Button` + `Tooltip`; deliberately no `asChild`.
-- **New `FieldRow` in `@qlik-coe-emea/qlabs-components-ui` (#354).** Label/description/error/
+- **New `FieldRow` in `@elabs/components-ui` (#354).** Label/description/error/
   `aria-describedby` wiring for a field OUTSIDE a `react-hook-form` context —
   the same anatomy as `Form`'s `FormItem`/`FormLabel`/`FormControl`/
   `FormDescription`/`FormMessage`, driven by plain `label`/`description`/
   `error` props instead of RHF field state. Purely additive; the existing
   `Form*` family is unchanged.
-- **`Combobox` gains `allowCustomValue` (#359, `@qlik-coe-emea/qlabs-components-ui`).** When set,
+- **`Combobox` gains `allowCustomValue` (#359, `@elabs/components-ui`).** When set,
   typed text that doesn't match any option is offered as a submittable
   "Use…" suggestion (still filtered live) and accepted via `onValueChange`
   on Enter or click. The suggestion is always ranked **last**, so the top
@@ -1112,14 +1140,14 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
 - **`ThemeSwitcher` gains a controlled `preference`/`onPreferenceChange` mode
   (#366) and now narrows to a `ThemeProvider`'s `allowedThemes` subset instead
   of offering a disallowed theme whose click was a silent no-op (#384,
-  `@qlik-coe-emea/qlabs-components-ui`).** Both additive; an unset `preference` and a
+  `@elabs/components-ui`).** Both additive; an unset `preference` and a
   non-restricting provider (the default) render exactly today's behavior.
 - Docs: dropped stale `ThemeSwitcher` subset limitation notes from JSDoc and theming rule (#384 already shipped).
 - **`Tree.TreeNode` gains an `accessory?: ReactNode` trailing slot** for
   per-node content (e.g. a size/token-count badge) rendered as a sibling of
   the label — never part of the row's accessible name, never triggers
   select/expand — in BOTH the virtual and non-virtual render paths (#369,
-  `@qlik-coe-emea/qlabs-components-ui`). A `ReactNode` `label` now names its row
+  `@elabs/components-ui`). A `ReactNode` `label` now names its row
   via `aria-labelledby` (pointing at the label span) instead of falling back to
   the row's contents, and the accessory stops click/keydown/focus, so
   interactive accessory content is focusable and activates itself rather than
@@ -1127,11 +1155,11 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
 - **`StatusBadge.status` widens to `Status | CustomStatus`** so a domain with a
   state the closed 7-value enum doesn't express can pass a bounded
   `{label, tone, icon?}` object instead of dropping to a raw `Badge` (#363,
-  `@qlik-coe-emea/qlabs-components-ui`). `tone` is CALM-only and reachable only
+  `@elabs/components-ui`). `tone` is CALM-only and reachable only
   through the object form — a canonical status can never be recolored. Fully
   additive; all 7 canonical values render unchanged (regression-locked).
 - **`ViewToolbar` — a named grammar for the status/filters/actions row every view
-  needs (#331, `@qlik-coe-emea/qlabs-components-ui`).** New, additive: `ViewToolbar`
+  needs (#331, `@elabs/components-ui`).** New, additive: `ViewToolbar`
   (row shell with an `info` ⓘ tooltip slot, a left cluster and an `actions`
   cluster), `ViewToolbarFilters` (the one home for active-filter chips + an
   optional `onClearAll`), `FilterChip` (the one removable chip — label-in-value,
@@ -1148,7 +1176,7 @@ Admin Console` scenario now uses the row in place of its hand-rolled
   "{n} total" header — a real screen, not only the component's own stories.
   Known limitation, documented in the contract page: the ⓘ `info` tooltip does
   not open on tap, so it is pointer/keyboard progressive enhancement only.
-- **The `@qlik-coe-emea/qlabs-components-charts/test` double covers the drill-down
+- **The `@elabs/components-charts/test` double covers the drill-down
   parts and stops over-validating a non-temporal x (#364 ⨯ #349 ⨯ #352).** These
   three landed on separate branches and only conflict once merged, so the fix
   belongs to neither: `ChartDatapointLayer` / `ChartDatapointProvider` (#349) are
@@ -1159,12 +1187,12 @@ Admin Console` scenario now uses the row in place of its hand-rolled
   (#352) got a `ChartContractError` from the double for data the real chart
   renders fine. `requireDate` is now waived on a non-time scale — the double must
   never be stricter than the component it stands in for.
-- **New `@qlik-coe-emea/qlabs-components-charts/test` subpath — the official jsdom-safe test double
+- **New `@elabs/components-charts/test` subpath — the official jsdom-safe test double
   (issue #364).** `@visx/*`-backed charts don't render meaningfully under jsdom, so
-  consumers were mocking the whole `@qlik-coe-emea/qlabs-components-charts` barrel as a no-op — hiding
+  consumers were mocking the whole `@elabs/components-charts` barrel as a no-op — hiding
   real chart-prop bugs (a fully green suite shipped a `RangeError: Invalid time
-value` crash) from the quality gate. `vi.mock("@qlik-coe-emea/qlabs-components-charts", () =>
-import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-validated doubles for
+value` crash) from the quality gate. `vi.mock("@elabs/components-charts", () =>
+import("@elabs/components-charts/test"))` swaps in contract-validated doubles for
   every top-level chart container (`AreaChart` … `SankeyChart`, `Gantt`,
   `AutoChart`) plus `MetricCard`/`MetricGrid`/`ChartCard`/`ChartFrame`/
   `Sparkline` (re-exported verbatim, already visx-free) — each THROWS a
@@ -1183,7 +1211,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   `tsup.config.ts` wiring against drift. See `.claude/rules/chart-components.md`
   § "Test double" and the "Testing Charts in jsdom" Storybook doc page.
 - **Charts are drillable: `onDatapointClick` on every family, keyboard included (#349,
-  `@qlik-coe-emea/qlabs-components-charts`).** Bar / line / area / composed / pie / ring / funnel gain
+  `@elabs/components-charts`).** Bar / line / area / composed / pie / ring / funnel gain
   `onDatapointClick`, `datapointLabel` and `maxInteractiveDatapoints`; `ChartLegend` gains
   `onItemClick` (which makes each entry a real `<button>`). One payload shape across every
   family — `{ datum, index, seriesKey?, seriesLabel?, value, category, source }` — so one
@@ -1193,7 +1221,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   ONE tab stop, arrow keys to traverse and ≥24×24 hit boxes (WCAG 2.5.8). Fully additive: with
   `onDatapointClick` unset the DOM is unchanged and no new focusables appear.
 - **`LineChart` / `AreaChart` / `ComposedChart` gain `xScale="time" | "band" | "linear"` (#352,
-  `@qlik-coe-emea/qlabs-components-charts`).** An ordered non-temporal x dimension (turn number, step index,
+  `@elabs/components-charts`).** An ordered non-temporal x dimension (turn number, step index,
   run sequence) is now a first-class axis instead of a crash: `xScale="band"` spaces categories
   evenly in first-seen order, `xScale="linear"` spaces numbers by magnitude, and in both modes the
   axis ticks, the ticker and the tooltip title show the caller's OWN x value — no more fabricating
@@ -1207,7 +1235,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
 ### Changed
 
 - **⚠️ BEHAVIOUR CHANGE — the density dial now scales TYPE as well as spacing
-  (#340, `@qlik-coe-emea/qlabs-components-tokens`). Every screen already using
+  (#340, `@elabs/components-tokens`). Every screen already using
   `data-density="compact"` will render smaller text.** `[data-density]` used to
   tighten padding/height/gap only, so a compact table read as tight rows around
   unchanged text; consumers were re-declaring the whole role scale in their own
@@ -1242,10 +1270,10 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
     `patterns-templates-enterprise-admin-console--default` **33/52 → 47/52**,
     `layout-app-shell-mail--default` **1/49 → 10/49**. It is **not** closed:
     `pnpm text-scale:check` still counts **309 raw font-size uses across 111
-    files** (112 `@qlik-coe-emea/qlabs-components-ui` — mostly the
+    files** (112 `@elabs/components-ui` — mostly the
     `src/blocks/**` copy-own blocks, which is why the mail shell still reads
-    10/49 — 109 `@qlik-coe-emea/qlabs-components-ai`, 50
-    `@qlik-coe-emea/qlabs-components-charts`), and every one of those is text a
+    10/49 — 109 `@elabs/components-ai`, 50
+    `@elabs/components-charts`), and every one of those is text a
     compact surface will not tighten. Closing it is ordinary text-scale ratchet
     work, not a change to the dial.
   - **Migrating a raw utility to its role is a size/leading no-op, not a
@@ -1273,15 +1301,15 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
     amended in place. Locked by
     `packages/tokens/src/density-type-scale.test.ts` and shown by
     `Foundations/Typography → Density scale`.
-- **`Progress`'s four tones now all clear 3:1 against the track, measured in a real browser (#358).** The `variant` axis shipped earlier this cycle with one hole: `warning` sat at 1.88:1 against the `bg-muted` track in `qlik-bright`, which is why the story carried a "does NOT clear 3:1" caveat and the issue stayed open. #381 fixed that at the token, so the tones were re-measured on the live `display-progress--tones` story (`getComputedStyle` → canvas readback, not token arithmetic) in all three themes: qlik-bright 4.09 / 5.19 / 4.44 / 4.94 and qlik-dark 7.17 / 9.07 / 7.88 / 4.79 for default / success / warning / destructive. `blueprint` renders all four as one identical DRAWN control (transparent fill, hairline border at 7.34:1) — there the tone must be read from `aria-valuetext` or an adjacent label, never the fill. The story's contrast table is updated with the measured numbers and its stale `#334` note dropped (`--primary` and `--success` are distinct now, so `default` and `success` no longer render identically). No API change.
-- **BREAKING (visual), `@qlik-coe-emea/qlabs-components-tokens`: `--warning` is now a DEEP amber and `--warning-foreground` is LIGHT ink (#381).** In `qlik-bright` (the default theme) and the `:root` light base, the old `--warning` (`oklch(0.78 0.16 67)` / `oklch(0.78 0.15 80)`) cleared WCAG 1.4.11's ≥3:1 non-text bar against **no shipped surface at all** — 2.07:1 on `--card` at best, 1.79:1 on `--secondary` — so any warning mark whose colour is its only cue (Timeline's `awaiting-approval` dot, a `warning` flow-node stroke, a `Rating` star, a colour-picker swatch) was effectively invisible. The fill is now `oklch(0.555 0.12 67)` / `oklch(0.555 0.115 80)`: 4.23-4.89:1 against `--background`/`--card`/`--muted`/`--surface-muted`/`--secondary`. Because one token cannot be both a light plate under dark ink and a mark on a light surface, the paired `--warning-foreground` flips to `oklch(0.985 0 0)` — which also makes `warning` the same "dark plate + white ink" shape as its `success`/`info`/`destructive` siblings. **Visible change:** `Badge variant="warning"` and `StatusBadge "awaiting-approval"` render as a deep-amber plate with white text instead of a pale-amber plate with dark text; `bg-warning/10` washes read very slightly warmer. `--warning-text` is unchanged. `qlik-dark` and `blueprint` are untouched (they already cleared 3:1). Locked by two new rows in `themes-contrast.test.ts`: every status fill rung ≥3:1 on all five mark surfaces in all four theme blocks, and `--warning-foreground` ≥4.5:1 on `--warning`.
-- **`@qlik-coe-emea/qlabs-components-editor`'s entity chip uses `text-warning-text` for its `concept` kind (#381).** It was `text-warning-foreground` on a `bg-warning/10` wash — the plate-ink rung on a bare wash, which would have become near-white-on-near-white once `--warning-foreground` flipped. It now matches its `place`/`product` siblings.
+- **`Progress`'s four tones now all clear 3:1 against the track, measured in a real browser (#358).** The `variant` axis shipped earlier this cycle with one hole: `warning` sat at 1.88:1 against the `bg-muted` track in `light`, which is why the story carried a "does NOT clear 3:1" caveat and the issue stayed open. #381 fixed that at the token, so the tones were re-measured on the live `display-progress--tones` story (`getComputedStyle` → canvas readback, not token arithmetic) in all three themes: light 4.09 / 5.19 / 4.44 / 4.94 and dark 7.17 / 9.07 / 7.88 / 4.79 for default / success / warning / destructive. `blueprint` renders all four as one identical DRAWN control (transparent fill, hairline border at 7.34:1) — there the tone must be read from `aria-valuetext` or an adjacent label, never the fill. The story's contrast table is updated with the measured numbers and its stale `#334` note dropped (`--primary` and `--success` are distinct now, so `default` and `success` no longer render identically). No API change.
+- **BREAKING (visual), `@elabs/components-tokens`: `--warning` is now a DEEP amber and `--warning-foreground` is LIGHT ink (#381).** In `light` (the default theme) and the `:root` light base, the old `--warning` (`oklch(0.78 0.16 67)` / `oklch(0.78 0.15 80)`) cleared WCAG 1.4.11's ≥3:1 non-text bar against **no shipped surface at all** — 2.07:1 on `--card` at best, 1.79:1 on `--secondary` — so any warning mark whose colour is its only cue (Timeline's `awaiting-approval` dot, a `warning` flow-node stroke, a `Rating` star, a colour-picker swatch) was effectively invisible. The fill is now `oklch(0.555 0.12 67)` / `oklch(0.555 0.115 80)`: 4.23-4.89:1 against `--background`/`--card`/`--muted`/`--surface-muted`/`--secondary`. Because one token cannot be both a light plate under dark ink and a mark on a light surface, the paired `--warning-foreground` flips to `oklch(0.985 0 0)` — which also makes `warning` the same "dark plate + white ink" shape as its `success`/`info`/`destructive` siblings. **Visible change:** `Badge variant="warning"` and `StatusBadge "awaiting-approval"` render as a deep-amber plate with white text instead of a pale-amber plate with dark text; `bg-warning/10` washes read very slightly warmer. `--warning-text` is unchanged. `dark` and `blueprint` are untouched (they already cleared 3:1). Locked by two new rows in `themes-contrast.test.ts`: every status fill rung ≥3:1 on all five mark surfaces in all four theme blocks, and `--warning-foreground` ≥4.5:1 on `--warning`.
+- **`@elabs/components-editor`'s entity chip uses `text-warning-text` for its `concept` kind (#381).** It was `text-warning-foreground` on a `bg-warning/10` wash — the plate-ink rung on a bare wash, which would have become near-white-on-near-white once `--warning-foreground` flipped. It now matches its `place`/`product` siblings.
 
 ### Fixed
 
 - **`PromptInputButton`'s tooltip-derived `aria-label` no longer clobbers a
   visible text label or a caller's explicit `aria-label={undefined}`
-  (follow-up to #356, `@qlik-coe-emea/qlabs-components-ai`).** The #356 default was
+  (follow-up to #356, `@elabs/components-ai`).** The #356 default was
   unconditional, so a text+icon button that gained a `tooltip` (e.g. a
   model-switcher pill showing "Claude Opus 4") had its VISIBLE label silently
   **replaced** by the tooltip text in the accessible name — a WCAG 2.5.3
@@ -1296,7 +1324,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   longer clobbers the default. Both cases are covered by new tests against the
   real rendered component.
 - **`PromptInputButton`'s `tooltip` now defaults the button's `aria-label`
-  (#356, `@qlik-coe-emea/qlabs-components-ai`).** Icon-only buttons that carry only a `tooltip`
+  (#356, `@elabs/components-ai`).** Icon-only buttons that carry only a `tooltip`
   (`Composer`'s "Attach files" and "Voice" controls, both call sites
   unchanged) previously had NO accessible name at all — the tooltip content
   was visual-only. The button's `aria-label` now defaults to the tooltip's
@@ -1305,7 +1333,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   Purely additive — no prop signature change, no behaviour change for a
   consumer who already sets `aria-label`.
 - **`MessageBranch` gains a controlled `branch` prop (#361,
-  `@qlik-coe-emea/qlabs-components-ai`).** Previously `defaultBranch` was read once into
+  `@elabs/components-ai`).** Previously `defaultBranch` was read once into
   internal state with no way for a host to drive branch selection (e.g.
   restore it from a URL param) without discarding all internal/sibling state
   via a changed `key`. `branch` is optional and `undefined` by default, so
@@ -1313,7 +1341,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   `onBranchChange` continues to fire in both modes, per the `isControlled`
   convention already used by
   `MessageFeedback`/`MessageEdit`/`MessageForm`/`MessageTable`.
-- **`@qlik-coe-emea/qlabs-components-ui` — `SelectTrigger` recovers a clipped long/composed value (#332).**
+- **`@elabs/components-ui` — `SelectTrigger` recovers a clipped long/composed value (#332).**
   When (and only when) its rendered text is measurably clipped by
   `line-clamp-1`, the trigger sets a native `title` from that text — composed
   one child per segment, so a prefix beside `SelectValue` reads `"Env: Staging"`
@@ -1327,7 +1355,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   (`Tooltip`/`TooltipTrigger asChild`/`TooltipContent` + `autoTitle={false}`),
   which Radix also opens on keyboard focus. New exported type:
   `SelectTriggerProps`.
-- **`@qlik-coe-emea/qlabs-components-ui` — `TabsList` scrolls instead of clipping when the tab strip
+- **`@elabs/components-ui` — `TabsList` scrolls instead of clipping when the tab strip
   overflows (#344).** `overflow-x-auto` (bounded by `max-w-full`) turns an
   overflowing strip into a horizontal scroll container; `justify-center-safe`
   replaces `justify-center` so the first tab is never stranded off-screen once
@@ -1345,7 +1373,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   re-measures after a late relayout — a webfont swapping in on a cold load
   otherwise leaves the target stale (it stranded the last tab 45px outside the
   strip under the wider mono type of the blueprint theme).
-- **`@qlik-coe-emea/qlabs-components-ui` — `Slider` forwards `aria-valuetext` and a `thumbProps` escape
+- **`@elabs/components-ui` — `Slider` forwards `aria-valuetext` and a `thumbProps` escape
   hatch to its thumb (#353).** Extends the existing `aria-label`/
   `aria-labelledby` forwarding: pass a top-level `aria-valuetext` (e.g. a
   replay scrubber announcing "step 3 of 12" instead of the bare numeric
@@ -1358,7 +1386,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   Single-thumb only; `Slider` still renders exactly one hardcoded `Thumb` and
   does not support multi-thumb/range sliders (tracked separately, not in this
   change).
-- **`@qlik-coe-emea/qlabs-components-tokens` — `useReducedMotion()` and `ThemeProvider` feature-detect
+- **`@elabs/components-tokens` — `useReducedMotion()` and `ThemeProvider` feature-detect
   `window.matchMedia`.** Both only guarded `typeof window`, so mounting either
   in a jsdom test environment without a `matchMedia` stub threw
   `window.matchMedia is not a function`. The hook is documented as safe to call
@@ -1377,7 +1405,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   neither override is set. Both new props are optional and purely additive;
   default axis rendering is unchanged.
 - **`DataTable` gains `caption`, `onRowClick`, `rowActionLabel`, `rowClassName` and
-  `hidePaginationWhenSingle` (#337, #338, #342, `@qlik-coe-emea/qlabs-components-data`).**
+  `hidePaginationWhenSingle` (#337, #338, #342, `@elabs/components-data`).**
   - `caption?: ReactNode` renders a screen-reader-only (`sr-only`) `<caption>` as the first
     child of `<table>` so the table has a real accessible name; every header `<th>` now also
     carries `scope="col"` unconditionally (#338).
@@ -1402,7 +1430,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
 ### Fixed
 
 - **`DataTable`'s non-virtualized scroll container was `overflow-hidden`, silently clipping
-  columns that didn't fit instead of letting them scroll (#330, `@qlik-coe-emea/qlabs-components-data`).**
+  columns that didn't fit instead of letting them scroll (#330, `@elabs/components-data`).**
   It is now `overflow-auto` and shows a token-driven edge fade (`from-card to-transparent`)
   once the table actually overflows in that direction. The keyboard tab stop
   (`tabIndex={0}`) and its `aria-label` are gated on MEASURED overflow, so a table that
@@ -1425,7 +1453,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
 
 ### Added
 
-- **`@qlik-coe-emea/qlabs-components-ui` `Card`/`Alert` heading + measure seams (#328, #329, #339).**
+- **`@elabs/components-ui` `Card`/`Alert` heading + measure seams (#328, #329, #339).**
   - `CardTitle` gains `as?: "div" | "h1"-"h6"` (default `"div"`, byte-identical) so
     a card that titles a real page section can join the document outline instead
     of always rendering an unreachable `<div>`.
@@ -1496,7 +1524,7 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   copies. The rule immediately caught a dangling relative link in `stages.md`.
 - **The taste profile — the four taste axes as one readable object, and the
   anti-slop bar wired onto generated output (#72, #108, #109; ADR 0020).**
-  - `@qlik-coe-emea/qlabs-components-tokens` gains a `register` axis
+  - `@elabs/components-tokens` gains a `register` axis
     (`TASTE_REGISTERS` / `TasteRegister` / `TASTE_REGISTER_META` /
     `DEFAULT_TASTE_REGISTER` / `isTasteRegister`) and assembles it with the three
     shipped dials into `TasteProfile` + `DEFAULT_TASTE_PROFILE` (**product /
@@ -1580,15 +1608,15 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
     runtime, not at install).
   - The published CLI **ships the archetype templates** (`files: ["templates", …]`,
     copied by `prepack`), so `scaffold --write` works in any project that installed
-    `@qlik-coe-emea/qlabs-components-cli` — no brand-ui checkout required.
+    `@elabs/components-cli` — no brand-ui checkout required.
   - Emitting into a folder that already holds some of those files reports
     **`partial`** and exits non-zero, instead of a headline "written" over an app
     that cannot run.
   - New: `.claude/agents/brand-ui-scaffold-builder.md`, `packages/cli/lib/app-spec.mjs`,
     `packages/cli/scripts/bundle-assets.mjs`, `packages/cli/test/{scaffold,packaging}.test.mjs`.
-- **Loading/streaming placeholders roll out to the remaining `@qlik-coe-emea/qlabs-components-ai`
-  `packages/cli/scripts/bundle-assets.mjs`, `packages/cli/test/{scaffold,packaging}.test.mjs`.- **Loading/streaming placeholders roll out to the remaining `@qlik-coe-emea/qlabs-components-ai`
-  output surfaces + the `@qlik-coe-emea/qlabs-components-data` toolbar (#269, `.claude/rules/loading-states.md`).\*\*
+- **Loading/streaming placeholders roll out to the remaining `@elabs/components-ai`
+  `packages/cli/scripts/bundle-assets.mjs`, `packages/cli/test/{scaffold,packaging}.test.mjs`.- **Loading/streaming placeholders roll out to the remaining `@elabs/components-ai`
+  output surfaces + the `@elabs/components-data` toolbar (#269, `.claude/rules/loading-states.md`).\*\*
   - `Image` gains `showSkeleton` — a decode-aware `Skeleton` overlay (defaults to
     `Boolean(width && height)`, since a skeleton needs a box to reserve) plus an
     `onError` fallback (`ImageOff` glyph) so a broken image doesn't bleed its
@@ -1626,15 +1654,15 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
   a child reading `useTheme()` before any effect never sees a disallowed theme —
   an assertion a corrective-effect implementation fails).
   - **#355 stays OPEN — `ThemeSwitcher` does NOT inherit the subset.**
-    `ThemeSwitcher` (`@qlik-coe-emea/qlabs-components-ui`) has its own `themes`
+    `ThemeSwitcher` (`@elabs/components-ui`) has its own `themes`
     prop defaulting to the light/dark pair and never reads `useTheme().themes`, so
     with `allowedThemes` it can still offer a theme the provider rejects — whose
     `setTheme` is now a silent no-op. **Consumers must pass
     `themes={useTheme().themes}` explicitly.** The fix is deliberately out of
     scope here: defaulting `ThemeSwitcher` to the provider's list would flip every
     existing 2-theme toggle into a 3-theme dropdown (a breaking visual change), so
-    it needs a subset-of-`THEMES` guard designed in `@qlik-coe-emea/qlabs-components-ui`.
-- **`@qlik-coe-emea/qlabs-components-tokens` ships font smoothing (#345).** The
+    it needs a subset-of-`THEMES` guard designed in `@elabs/components-ui`.
+- **`@elabs/components-tokens` ships font smoothing (#345).** The
   `@layer base` `body` rule now sets `-webkit-font-smoothing: antialiased` and
   `-moz-osx-font-smoothing: grayscale`, at the same layer as the `@font-face`
   declarations. **Rendered change on WebKit/Blink: UI type reads slightly
@@ -1671,19 +1699,19 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
 ### Changed
 
 - **RENDERED COLOUR CHANGE — `--success` and `--ring` are no longer aliases of
-  `--primary`/`--info` in `qlik-bright` and `qlik-dark` (#334).** Both pairs were
+  `--primary`/`--info` in `light` and `dark` (#334).** Both pairs were
   byte-identical, so a success chip was indistinguishable from a primary button
   and a focus ring from an "Info"/"Running" chip — by colour, the only signal
   these tokens carry. **Success chips, success text and focus rings (including
   `--sidebar-ring`) shift hue in both Qlik themes**; `--primary`/`--info` and the
   brand green are untouched (the #180 brand exemption stands), as is `blueprint`,
   which already separated the roles.
-  - `qlik-bright`: `--success` `oklch(0.553 0.143 153)` → `oklch(0.49 0.12 170)`
+  - `light`: `--success` `oklch(0.553 0.143 153)` → `oklch(0.49 0.12 170)`
     (a deeper, cooler green — white on it goes 4.29:1 → **5.46:1**, now AA for
     normal text); `--success-text` → `oklch(0.46 0.12 170)`; `--ring` /
     `--sidebar-ring` `oklch(0.6 0.13 245)` → `oklch(0.52 0.17 255)` (3.74:1 →
     **5.36:1** vs `--background`).
-  - `qlik-dark`: `--success` `oklch(0.75 0.14 153)` → `oklch(0.82 0.12 170)`;
+  - `dark`: `--success` `oklch(0.75 0.14 153)` → `oklch(0.82 0.12 170)`;
     `--success-text` → `oklch(0.84 0.12 170)`; `--ring` / `--sidebar-ring`
     `oklch(0.7 0.13 245)` → `oklch(0.78 0.11 255)` (6.71:1 → **8.87:1** vs
     `--background`).
@@ -1694,13 +1722,13 @@ import("@qlik-coe-emea/qlabs-components-charts/test"))` swaps in contract-valida
 - **`SandboxRootProps` → `SandboxProps`** to match the repo's `<Name>Props`
   convention; `SandboxRootProps` is kept as a `@deprecated` type alias so
   existing imports keep compiling.
-- **`FacetFilter`/`ColumnPicker`** (`@qlik-coe-emea/qlabs-components-data`) are now
+- **`FacetFilter`/`ColumnPicker`** (`@elabs/components-data`) are now
   `forwardRef` and extend `ButtonHTMLAttributes<HTMLButtonElement>` (see Added,
   above) — a non-breaking widening of their prop types.
 
 ### Changed
 
-- **The last three eager engines in `@qlik-coe-emea/qlabs-components-ai` are now lazy (#313).**
+- **The last three eager engines in `@elabs/components-ai` are now lazy (#313).**
   React Flow, xterm and media-chrome are reached through a dynamic `import()`
   instead of a static edge, finishing what ADR 0019 started with Mermaid and
   Rive. `pnpm heavy-deps:check` is down from **9 known eager sites to 0**, and
@@ -1974,7 +2002,7 @@ version:check` in the same job has already forced that copy to agree, so the
   is built from. `docs/RELEASING.md`'s "Actions spending limit" blocker note is
   removed: the workflow ran end-to-end on 2026-08-01.
 
-### `@qlik-coe-emea/qlabs-components-ai`
+### `@elabs/components-ai`
 
 - **`ChatGreeting` (#254).** The centered first-run chat/composer greeting —
   a display-scale headline (`title`, then `subtitle` + a `text-primary`
@@ -1988,8 +2016,8 @@ version:check` in the same job has already forced that copy to agree, so the
   `bg-card` well for nesting inside an already-tinted outer frame — the
   "double card" look. The well's fill is theme-driven, not universally
   "white": raised (lighter than the outer `bg-surface-muted` frame) on light
-  themes, recessed (darker) on qlik-dark and blueprint — still a legible,
-  distinct tone in every theme. `InputGroup` (`@qlik-coe-emea/qlabs-components-ui`)
+  themes, recessed (darker) on dark and blueprint — still a legible,
+  distinct tone in every theme. `InputGroup` (`@elabs/components-ui`)
   gains the backing `variant="card"`. `Composer` gains the matching `tone`
   prop (default `"surface"`, unchanged) so the reference tinted-outer/
   distinct-inner arrangement (`tone="card"`) is reachable from the canonical
@@ -2046,7 +2074,7 @@ version:check` in the same job has already forced that copy to agree, so the
   `pnpm tokens:check` stay authoritative for them. `CodeBlock` resolves its
   Shiki theme from the NEAREST `data-theme` ancestor — not always
   `document.documentElement` — so a code block nested inside a region-scoped
-  `<div data-theme="qlik-dark">` (a supported `ThemeProvider`/decorator
+  `<div data-theme="dark">` (a supported `ThemeProvider`/decorator
   pattern) now picks up that region's palette instead of the document root's.
   `highlightCode`'s `callback` parameter stays in its original third position
   (no positional break for existing callers); the new theme-scope element is
@@ -2056,7 +2084,7 @@ version:check` in the same job has already forced that copy to agree, so the
   menu — "Edit iteration…", "Change layout" (a submenu of radio items),
   "Transpose" (pivot only), and "Convert to static" — and the identical item
   list also opens on right-click, so the two surfaces can never diverge.
-  `DropdownMenu` (`@qlik-coe-emea/qlabs-components-ui`) gains the `Sub` /
+  `DropdownMenu` (`@elabs/components-ui`) gains the `Sub` /
   `SubTrigger` / `SubContent` / `RadioGroup` / `RadioItem` / `CheckboxItem`
   parts `ContextMenu` already had, so both menus share one shape.
 
@@ -2138,18 +2166,18 @@ version:check` in the same job has already forced that copy to agree, so the
   4.12, oklch-aware numeric contrast) of 11 real screens × 3 themes, and now ships its raw
   per-run data as `visual-ux-2026-08-01.sweep.json` so every count in it is recomputable.
   One new finding was filed from it: **#321** (`--destructive-foreground` on
-  `--destructive` in qlik-dark = 3.02:1). Smoke tests were added for the five
-  `@qlik-coe-emea/qlabs-components-data` surfaces and five `@qlik-coe-emea/qlabs-components-ai`
+  `--destructive` in dark = 3.02:1). Smoke tests were added for the five
+  `@elabs/components-data` surfaces and five `@elabs/components-ai`
   surfaces.
 
-### `@qlik-coe-emea/qlabs-components-tokens`
+### `@elabs/components-tokens`
 
 - **Ground fade — a new opt-in decoration gesture (#257).** `data-decoration-fade="top|bottom|edges|center"`
   on any region fades the ambient graph-paper ground out across it instead of ruling
   it edge to edge. It is part of the decoration system, not a second background: it
   paints the same `--bp-grid` on a decorative `::before` layer and masks THAT, so the
   ink still rides the `--decoration` dial and the gesture is completely **inert at
-  decoration 0** (qlik-bright / qlik-dark render unchanged). The faded region owns its
+  decoration 0** (light / dark render unchanged). The faded region owns its
   ground — the host **and its descendants** are excluded from the plain-grid rule, so
   a nested surface can't punch a crisp rectangle into a faded field. New tokens:
   `--bp-fade-top` / `--bp-fade-bottom` / `--bp-fade-edges` / `--bp-fade-center` and the
@@ -2173,7 +2201,7 @@ version:check` in the same job has already forced that copy to agree, so the
   theme block's `--decoration` out of `themes.css` and asserts it equals `THEME_META`,
   so the two can't drift again.
 
-### `@qlik-coe-emea/qlabs-components-ui`
+### `@elabs/components-ui`
 
 - **`Slider`'s accessible name now lands on the thumb.** Radix puts `role="slider"` on
   the thumb, so an `aria-label` / `aria-labelledby` passed to `<Slider>` used to sit on
@@ -2219,9 +2247,9 @@ version:check` in the same job has already forced that copy to agree, so the
   non-default tone with `aria-valuetext` (passes straight through to the underlying
   `role="progressbar"`) so the state isn't color-only — non-text contrast of the fill
   against the `bg-muted` track, re-measured in a real browser after #381 landed, now
-  clears 3:1 for ALL FOUR tones in both painted themes (qlik-bright 4.09 / 5.19 / 4.44 /
-  4.94; qlik-dark 7.17 / 9.07 / 7.88 / 4.79). `warning` was the one hole (1.88:1 in
-  qlik-bright) and it was a `--warning` token-value gap, not a component one — fixed at
+  clears 3:1 for ALL FOUR tones in both painted themes (light 4.09 / 5.19 / 4.44 /
+  4.94; dark 7.17 / 9.07 / 7.88 / 4.79). `warning` was the one hole (1.88:1 in
+  light) and it was a `--warning` token-value gap, not a component one — fixed at
   the token by #381 rather than patched here. In
   `blueprint`, `decoration.css` turns all four filled tones into an identical DRAWN
   control (transparent fill + hairline border) — there is no painted fill to measure
@@ -2229,7 +2257,7 @@ version:check` in the same job has already forced that copy to agree, so the
   also gains `progressIndicatorVariants` (exported for composition) and `ProgressProps`
   (exported for consumers), both now re-exported from the component's `index.ts`.
 
-### `@qlik-coe-emea/qlabs-components-blueprint`
+### `@elabs/components-blueprint`
 
 - **`GridPaper`'s `fade` prop is widened to `boolean | GridPaperFade`** (`"top" |
 "bottom" | "edges" | "center"`), sharing the `--bp-fade-*` shapes with the ambient
@@ -2258,7 +2286,7 @@ version:check` in the same job has already forced that copy to agree, so the
   non-`https://` / missing `homepage`, self-tested via `pnpm registry:validate:test` (wired
   in CI).
 - **CLI install precondition (#265):** every consuming-project
-  `npx @qlik-coe-emea/qlabs-components-cli …` / `npx brand-ui …` example now carries its
+  `npx @elabs/components-cli …` / `npx brand-ui …` example now carries its
   precondition — the CLI is a **private GitHub Packages** dependency needing an `.npmrc`
   scope mapping + a classic PAT with `read:packages` (`docs/CONSUMING.md` §1 + §7a) — and
   prefers the install-first `pnpm exec brand-ui <cmd>` form. Stale post-v2.0.0 "release
@@ -2281,7 +2309,7 @@ and `vite preview` (`apps/playground/csp-policy.json` → the `brand-ui-csp` plu
 its `vite.config.ts`), and `apps/e2e/tests/csp.spec.ts` fails the build on any
 violation the browser reports.
 
-- **Fixed — `@qlik-coe-emea/qlabs-components-editor/monaco-environment` now
+- **Fixed — `@elabs/components-editor/monaco-environment` now
   de-duplicates Monaco's Trusted-Types policies.** `monaco-editor@0.55` ships the
   "mint `defaultWorkerFactory` at module init" block in two different source files,
   so it runs twice in the main thread — in dev **and** in a production Rollup build
@@ -2305,7 +2333,7 @@ data:`, `script-src 'wasm-unsafe-eval'` (Rive/`Persona`), and the `trusted-types
 - `docs/CSP-AND-NETWORK.md` gains §2.5 (why a narrow `default` Trusted-Types policy
   is unavoidable if you render Mermaid — and why a pass-through one is not
   acceptable), §2.6 and §2.7.
-- **`@qlik-coe-emea/qlabs-components-charts`: Sankey links no longer re-measure on
+- **`@elabs/components-charts`: Sankey links no longer re-measure on
   every render** (#185). `AnimatedLink`'s `useLayoutEffect` had no dependency array,
   so `getTotalLength()` — a forced layout read — ran for every link on every
   hover/fade re-render. It is now scoped to `[path]`, the sole geometry input.
@@ -2321,7 +2349,7 @@ data:`, `script-src 'wasm-unsafe-eval'` (Rive/`Persona`), and the `trusted-types
   new one. The five local `type CurveFactory = any` aliases collapse into one shared
   `CurveFactory` type derived from `@visx/curve`.
 - **`react-hooks/exhaustive-deps` and `@typescript-eslint/no-explicit-any` are
-  errors in `@qlik-coe-emea/qlabs-components-charts`** (`packages/charts/eslint.config.js`).
+  errors in `@elabs/components-charts`** (`packages/charts/eslint.config.js`).
   CI runs a bare `pnpm lint` with no `--max-warnings`, so at the shared preset's
   `warn` level these would keep accreting silently. This is the alternative #185's
   own AC permits; the `--max-warnings=0` flip it preferred is blocked by 39 residual
@@ -2334,7 +2362,7 @@ data:`, `script-src 'wasm-unsafe-eval'` (Rive/`Persona`), and the `trusted-types
 
 ### ⚠️ BREAKING: every package is renamed, and they now publish to a registry
 
-`@brand/<pkg>` → **`@qlik-coe-emea/qlabs-components-<pkg>`**, for all 11
+`@brand/<pkg>` → **`@elabs/components-<pkg>`**, for all 11
 component packages plus the CLI.
 
 **Why:** brand-ui is now distributed as **private npm packages on
@@ -2349,12 +2377,12 @@ repo so it stays collision-free inside a scope shared by every repo in the org.
 1. Add the registry + auth (a classic PAT with `read:packages`) — see
    [`docs/CONSUMING.md`](./docs/CONSUMING.md).
 2. Replace the `file:vendor/…` dependencies with real ranges, e.g.
-   `"@qlik-coe-emea/qlabs-components-ui": "^1.10.0"`.
+   `"@elabs/components-ui": "^1.10.0"`.
 3. **Delete the entire `pnpm.overrides` / `resolutions` mirror block.** It only
    existed because `workspace:*` peers in a hand-copied tarball had nothing to
    resolve against. Real registry resolution removes the need — this was the #1
    consumer pain point.
-4. Update imports: `@brand/ui` → `@qlik-coe-emea/qlabs-components-ui`.
+4. Update imports: `@brand/ui` → `@elabs/components-ui`.
 5. Update the Tailwind `@source` lines to the new `node_modules` paths.
 
 Entries for released versions below intentionally keep the old names — v1.9.0
@@ -2643,11 +2671,11 @@ packages, `@brand/cli`, both plugin manifests, and the MCP server's
 - **Semantic match-highlight pair** — new `--highlight` / `--highlight-foreground`
   (utilities `bg-highlight` / `text-highlight-foreground`) for search / find-in-page
   highlighting. Ink clears WCAG AA (≥4.5:1) as body text on the highlight plate in
-  every theme (qlik-bright 9.98:1, qlik-dark 8.87:1, blueprint 8.56:1), replacing the
-  sub-AA `bg-warning/40` improvisation (3.48:1 in qlik-dark). Locked by a new
+  every theme (light 9.98:1, dark 8.87:1, blueprint 8.56:1), replacing the
+  sub-AA `bg-warning/40` improvisation (3.48:1 in dark). Locked by a new
   `themes-contrast.test.ts` assertion. (#296)
 - **`--input` 1.4.11 exemption recorded** — the sub-3:1 form-control resting border in
-  qlik-bright/qlik-dark is confirmed by-design (blueprint already passes at 5.71:1).
+  light/dark is confirmed by-design (blueprint already passes at 5.71:1).
   ADR 0010's Amendment gains a per-control redundant-cue map (Select/Combobox/date
   pickers exempt via their glyph; Input/Textarea/Checkbox/Radio rest on
   `shadow-sm`+focus-ring+hover) and a one-token `--input`→`--border-strong` escape hatch
@@ -2891,7 +2919,7 @@ manifests, and the MCP server's reported `SERVER_INFO.version`).
   (idle / pending / ready / error) classifies syntactically incomplete input as `pending`,
   so the **error box no longer flashes while typing or streaming** — it builds up and
   surfaces an error only on a terminal failure. A11y: a persistent live region (announces on
-  NVDA) and `text-destructive-text` for the error cue (AA-safe, including qlik-dark).
+  NVDA) and `text-destructive-text` for the error cue (AA-safe, including dark).
 
 ### `@brand/ui`
 
@@ -2906,7 +2934,7 @@ manifests, and the MCP server's reported `SERVER_INFO.version`).
 
 A feature minor centred on app-chrome polish and the Qlik theme promotion: a
 theme-aware **AppIcon** brand mark, the standard **Composer** chat input, and the
-former "v2" Qlik palette promoted to the canonical `qlik-bright` / `qlik-dark`
+former "v2" Qlik palette promoted to the canonical `light` / `dark`
 themes. Plus a new surface-elevation gate that stops an app shell going flat, an
 automatic pointer-cursor affordance, and consumer-clean plugin hardening. All
 packages move to `1.5.0` in lockstep (root, the 10 publishable packages,
@@ -2937,11 +2965,11 @@ packages move to `1.5.0` in lockstep (root, the 10 publishable packages,
 
 ### Tokens & theming
 
-- **Qlik theme v2 promoted to canonical.** `qlik-bright` and `qlik-dark` are
+- **Qlik theme v2 promoted to canonical.** `light` and `dark` are
   recolored to the former Qlik Cloud–aligned "v2" design (near-white / warm-charcoal
   neutral surfaces, neutral grey / ivory text, 4px radius, blue focus ring, Qlik
-  chart palette). The comparison-sibling `qlik-bright-v2` / `qlik-dark-v2` blocks
-  are dropped: the shipped theme list is now **three** (`qlik-bright`, `qlik-dark`,
+  chart palette). The comparison-sibling `light-v2` / `dark-v2` blocks
+  are dropped: the shipped theme list is now **three** (`light`, `dark`,
   `blueprint`), and `themes.css`, the DTCG token JSONs, `theme-types.ts`, the
   manifest, `component-inventory`, `brand-ui-context`, and the `llms.txt` index are
   all updated to match.
@@ -3067,14 +3095,14 @@ packages, `@brand/cli`, and the Claude Code plugin).
 - `@brand/workbench` test setup: stub jsdom `document.queryCommand*` so
   Monaco-importing tests load.
 - CI: exclude the machine-paths self-test from its own scan; point plugin/install
-  references at `mreimitz/qlabs-components`.
+  references at `mreimitz/elabs-components`.
 
 ### Consumer docs (carried forward from the 0.7.0 line)
 
 - `docs/CONSUMING.md`, the version-pinned coding-agent kit
   (`brand-ui-agent-kit-1.0.0.zip`), and `@brand/cli` (`npx brand-ui
 info|search|docs` in a consuming project) ship with the release. Claude Code
-  can use the live plugin: `/plugin marketplace add mreimitz/qlabs-components`.
+  can use the live plugin: `/plugin marketplace add mreimitz/elabs-components`.
 
 ## v0.7.0 — 2026-06-12
 
@@ -3083,7 +3111,7 @@ First tagged release. Internal distribution via GitHub Release tarballs (see
 
 ### Packages (all at 0.7.0)
 
-- `@brand/tokens` — semantic CSS-variable themes (6: qlik-bright, qlik-dark,
+- `@brand/tokens` — semantic CSS-variable themes (6: light, dark,
   light, dark, blueprint, high-contrast), `ThemeProvider`/`useTheme`, decoration
   dial, density/RTL, self-hosted Inter + IBM Plex Mono.
 - `@brand/ui` — foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).
@@ -3118,7 +3146,7 @@ Plus the copy-own registry (24 items, `npx shadcn add`) and Storybook docs.
   to compose it: the `brand-ui` build/compose skill (+ `brand-ui-audit`,
   `brand-ui-theme`, `brand-ui-new-app`), the `brand-ui.manifest.json` inventory,
   `llms.txt`, and whole-screen playbooks. (Claude Code can also use the live
-  plugin: `/plugin marketplace add mreimitz/qlabs-components`.)
+  plugin: `/plugin marketplace add mreimitz/elabs-components`.)
 - `@brand/cli` (`0.7.0`, now packed into the release) — `npx brand-ui
 info|search|docs` works in a consuming project: it reads the manifest bundled
   inside the package, with no monorepo present (consumer-mode fix).

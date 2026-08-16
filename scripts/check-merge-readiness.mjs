@@ -15,7 +15,7 @@
  *     {"message":"Upgrade to GitHub Pro or make this repository public to
  *       enable this feature.","status":"403"}
  *
- *     (probed 2026-08-02 against Qlik-CoE-EMEA/qlabs-components, private.)
+ *     (probed 2026-08-02 against <owner>/<repo>, private.)
  *
  * So GitHub itself will happily merge over a red X — which is exactly what
  * happened to PR #375: it merged while `Quality gates (blocking)` reported

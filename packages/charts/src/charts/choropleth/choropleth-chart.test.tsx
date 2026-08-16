@@ -7,8 +7,8 @@
  * stub out the motion/react animation hooks so no timers bleed.
  *
  * Full render + a11y is covered by the Storybook story tests
- * (pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook), following the
- * @qlik-coe-emea/qlabs-components-editor / @qlik-coe-emea/qlabs-components-flow precedent.
+ * (pnpm --filter @elabs/components-docs test-storybook), following the
+ * @elabs/components-editor / @elabs/components-flow precedent.
  */
 
 import { describe, expect, it, vi } from "vitest";

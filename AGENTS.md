@@ -16,22 +16,22 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 
 <!-- brand-ui:gen:packages:start -->
 
-| Package                                             | Path                         | Purpose                                                                                  |
-| --------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `@qlik-coe-emea/qlabs-components-tokens`            | `packages/tokens`            | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@qlik-coe-emea/qlabs-components-icons`             | `packages/icons`             | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@qlik-coe-emea/qlabs-components-ui`                | `packages/ui`                | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@qlik-coe-emea/qlabs-components-data`              | `packages/data`              | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@qlik-coe-emea/qlabs-components-ai`                | `packages/ai`                | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@qlik-coe-emea/qlabs-components-flow`              | `packages/flow`              | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@qlik-coe-emea/qlabs-components-maps`              | `packages/maps`              | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@qlik-coe-emea/qlabs-components-charts`            | `packages/charts`            | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@qlik-coe-emea/qlabs-components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@qlik-coe-emea/qlabs-components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@qlik-coe-emea/qlabs-components-viewer`            | `packages/viewer`            | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
-| `@qlik-coe-emea/qlabs-components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                |
-| `@qlik-coe-emea/qlabs-components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                         |
-| `@qlik-coe-emea/qlabs-components-docs`              | `apps/docs`                  | Storybook                                                                                |
+| Package                               | Path                         | Purpose                                                                                  |
+| ------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `@elabs/components-tokens`            | `packages/tokens`            | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs/components-icons`             | `packages/icons`             | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
+| `@elabs/components-ui`                | `packages/ui`                | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs/components-data`              | `packages/data`              | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs/components-ai`                | `packages/ai`                | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs/components-flow`              | `packages/flow`              | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
+| `@elabs/components-maps`              | `packages/maps`              | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs/components-charts`            | `packages/charts`            | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
+| `@elabs/components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
+| `@elabs/components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
+| `@elabs/components-viewer`            | `packages/viewer`            | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| `@elabs/components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                |
+| `@elabs/components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                         |
+| `@elabs/components-docs`              | `apps/docs`                  | Storybook                                                                                |
 
 <!-- brand-ui:gen:packages:end -->
 
@@ -41,19 +41,19 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 
 <!-- brand-ui:gen:selection:start -->
 
-| Package                                     | Use it for                                                                               |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `@qlik-coe-emea/qlabs-components-tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@qlik-coe-emea/qlabs-components-icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@qlik-coe-emea/qlabs-components-ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@qlik-coe-emea/qlabs-components-data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@qlik-coe-emea/qlabs-components-ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@qlik-coe-emea/qlabs-components-flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@qlik-coe-emea/qlabs-components-maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@qlik-coe-emea/qlabs-components-charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@qlik-coe-emea/qlabs-components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@qlik-coe-emea/qlabs-components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@qlik-coe-emea/qlabs-components-viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| Package                       | Use it for                                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `@elabs/components-tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs/components-icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
+| `@elabs/components-ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs/components-data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs/components-ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs/components-flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
+| `@elabs/components-maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs/components-charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
+| `@elabs/components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
+| `@elabs/components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
+| `@elabs/components-viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
 
 <!-- brand-ui:gen:selection:end -->
 
@@ -65,15 +65,15 @@ is GENERATED into this region by `pnpm gen` — edit the decisions there, not he
 <!-- brand-ui:gen:decisions:start -->
 <!-- Generated from the DECISIONS:SUMMARY region of `docs/DECISIONS.md` — edit decisions there, not here. -->
 
-| #      | Decision                             | The short answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Detail rule                                                                                                                   |
-| ------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| **D1** | Which paradigm?                      | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | [`decision-routing.md`](../.claude/rules/decision-routing.md)                                                                 |
-| **D2** | Rendering agent output               | A **conversation** → AI SDK `UIMessage` + `@qlik-coe-emea/qlabs-components-ai`. An **agent-designed surface** → A2UI (WP-11).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md)                                                                     |
-| **D3** | Which package                        | app UI → `@qlik-coe-emea/qlabs-components-ui` · data → `@qlik-coe-emea/qlabs-components-data` · chat → `@qlik-coe-emea/qlabs-components-ai` · canvas → `@qlik-coe-emea/qlabs-components-flow` (author-built diagrams) · in-chat agent workspace graph → `@qlik-coe-emea/qlabs-components-ai` (ADR 0018) · KPIs → `@qlik-coe-emea/qlabs-components-charts` · landing → `@qlik-coe-emea/qlabs-components-marketing` · code → `@qlik-coe-emea/qlabs-components-editor` · viewing a file the app did not write → `@qlik-coe-emea/qlabs-components-viewer` · tokens → `@qlik-coe-emea/qlabs-components-tokens` · icons → `@qlik-coe-emea/qlabs-components-icons`. | `skills/brand-ui/SKILL.md` (generated table)                                                                                  |
-| **D4** | Import vs copy-own                   | Stable shared primitives → **import** `@qlik-coe-emea/qlabs-components-*`. Prototype-specific blocks → **copy-own** (registry).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | [`registry.md`](../.claude/rules/registry.md)                                                                                 |
-| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md)                                                           |
-| **D6** | Dependency & import discipline       | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
-| **D7** | Maintainer decisions                 | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | [`quality-gates.md`](../.claude/rules/quality-gates.md)                                                                       |
+| #      | Decision                             | The short answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Detail rule                                                                                                                   |
+| ------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Which paradigm?                      | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare.                                                                                                                                                                                                                                                                                                                                                                                               | [`decision-routing.md`](../.claude/rules/decision-routing.md)                                                                 |
+| **D2** | Rendering agent output               | A **conversation** → AI SDK `UIMessage` + `@elabs/components-ai`. An **agent-designed surface** → A2UI (WP-11).                                                                                                                                                                                                                                                                                                                                                                                    | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md)                                                                     |
+| **D3** | Which package                        | app UI → `@elabs/components-ui` · data → `@elabs/components-data` · chat → `@elabs/components-ai` · canvas → `@elabs/components-flow` (author-built diagrams) · in-chat agent workspace graph → `@elabs/components-ai` (ADR 0018) · KPIs → `@elabs/components-charts` · landing → `@elabs/components-marketing` · code → `@elabs/components-editor` · viewing a file the app did not write → `@elabs/components-viewer` · tokens → `@elabs/components-tokens` · icons → `@elabs/components-icons`. | `skills/brand-ui/SKILL.md` (generated table)                                                                                  |
+| **D4** | Import vs copy-own                   | Stable shared primitives → **import** `@elabs/components-*`. Prototype-specific blocks → **copy-own** (registry).                                                                                                                                                                                                                                                                                                                                                                                  | [`registry.md`](../.claude/rules/registry.md)                                                                                 |
+| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.                                                                                                                                                                                                                                                                                                                                                                                            | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md)                                                           |
+| **D6** | Dependency & import discipline       | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.                                                                                                                                                                                                                                                                                                                                                                                              | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
+| **D7** | Maintainer decisions                 | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory).                                                                                                                                                                                                                                                                                                                                                                                        | [`quality-gates.md`](../.claude/rules/quality-gates.md)                                                                       |
 
 <!-- brand-ui:gen:decisions:end -->
 
@@ -90,7 +90,7 @@ pnpm test:e2e     # playwright E2E (auto-starts playground + Storybook)
 pnpm registry:validate
 pnpm storybook         # Storybook on :6006
 pnpm playground   # Vite dev server on :5173
-# scope: pnpm --filter @qlik-coe-emea/qlabs-components-ui test
+# scope: pnpm --filter @elabs/components-ui test
 ```
 
 See `docs/TESTING.md` for the full strategy (unit → E2E → agent-driven QA +
@@ -113,7 +113,7 @@ visual review).
 ## Theming rules
 
 - `data-theme` attribute selects the theme; `:root` is a neutral light base/fallback.
-  Two themes: qlik-bright (default), qlik-dark. (A third is PAUSED — see
+  Two themes: light (default), dark. (A third is PAUSED — see
   `.claude/rules/paused-surfaces.md`.) Keep
   `THEMES`/`THEME_META` in sync with the CSS. Use the `new-theme` workflow.
 
@@ -153,7 +153,7 @@ visual review).
 ## Validate before you finish (command contract)
 
 Compliant agents auto-run these and make them **green before reporting done** — do
-the same. Run from the repo root (scope to one package with `pnpm --filter @qlik-coe-emea/qlabs-components-<pkg> <task>`):
+the same. Run from the repo root (scope to one package with `pnpm --filter @elabs/components-<pkg> <task>`):
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build   # every change
@@ -164,11 +164,11 @@ pnpm registry:validate:test     # self-test for the registry `homepage`-placehol
 pnpm registry:resolve:check     # if registry/ touched — every relative import resolves in both the repo tree AND the install (target) tree
 pnpm registry:resolve:check:test # self-test for the registry relative-import resolution gate
 pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
-pnpm components:check           # every @qlik-coe-emea/qlabs-components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
+pnpm components:check           # every @elabs/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
 pnpm variants:check:test        # self-test for the variant-coverage gate
-pnpm docs:check                 # docs match reality (theme count, workflow refs, @qlik-coe-emea/qlabs-components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
+pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
 pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)
@@ -176,8 +176,10 @@ pnpm gen:check                  # generated doc regions (package tables, decisio
 pnpm paused:check               # nothing re-enumerates a PAUSED surface (blueprint theme + package), and its source is still there
 pnpm paused:check:test          # self-test for the paused-surfaces gate
 pnpm agent-docs-cascade:check:test  # self-test for the pre-commit manifest→inventory/llms/context/gen cascade wiring (`pnpm agent-docs` for the manual command; #396). WARNING: its `finally` runs `git checkout HEAD --` over the generated agent-doc artifacts, so it DISCARDS uncommitted edits to AGENTS.md/CLAUDE.md/package READMEs — commit those first
-pnpm attributions:check         # AttributionPanel's dataset is derived from the repo, not hand-kept — stale copy fails, as does a licence-REQUIRED notice with no copyright line (run `pnpm gen:attributions`)
+pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset are derived from the repo, not hand-kept — a stale copy fails, as does an entry with no name/URL or a licence-REQUIRED notice with no copyright line (run `pnpm gen:attributions`)
 pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
+pnpm attribution:provenance:check       # if you borrowed from another project — shipped source may not say "adapted/vendored/ported from X" unless X is credited in scripts/attributions.sources.json (see .claude/rules/attribution.md)
+pnpm attribution:provenance:check:test  # self-test for the attribution-provenance gate
 pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerouslySetInnerHTML) in our source or a direct dep, and the Radix scroll-area/select patches still applied — a dropped patch renders a BLANK WINDOW for strict-CSP consumers with a green test suite
 pnpm csp-sinks:check:test       # self-test for the Trusted-Types sink gate
 pnpm intent:check               # if packages/cli/lib/intent.mjs touched — every authored intent entry names a real export, every `stateTokens` class resolves as a WHOLE class in real source, every package is covered (no zero-`avoid:` llms spoke), ai/chart entries carry >= 3 anti-patterns, and no NEW uncovered ai/charts root export (ratchet vs scripts/intent-coverage-baseline.json) (#60)
@@ -186,11 +188,11 @@ pnpm playbooks:check            # if docs/playbooks/ touched — every playbook 
 pnpm playbooks:check:test       # self-test for the playbook-registration gate
 pnpm cadence:check:test         # self-test for the Stop session-cadence nudge (.claude/hooks/session-cadence-nudge.sh, #67)
 pnpm format:check               # or fix with `pnpm format`
-pnpm ai:types-only              # if @qlik-coe-emea/qlabs-components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
+pnpm ai:types-only              # if @elabs/components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
 pnpm lucide:check               # if any `lucide-react` import touched — one Lucide version across the workspace
-pnpm charts:reuse:check         # if @qlik-coe-emea/qlabs-components-charts touched — charts must not redefine @qlik-coe-emea/qlabs-components-ui component names
+pnpm charts:reuse:check         # if @elabs/components-charts touched — charts must not redefine @elabs/components-ui component names
 pnpm charts:test-double:check   # if packages/charts/src/test/** or its wiring touched — the ./test double stays in parity with the real components, pulls no @visx/d3/motion engine, and exports/publishConfig/tsup.config.ts agree (#364)
-pnpm dep-direction:check        # if any packages/*/package.json touched — @qlik-coe-emea/qlabs-components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)
+pnpm dep-direction:check        # if any packages/*/package.json touched — @elabs/components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)
 pnpm dep-direction:check:test   # self-test for the dependency-direction gate
 pnpm agents:check               # if .claude/agents/ touched — agent names plugin-scoped, unique, name↔filename
 pnpm agents:check:test          # self-test for the agent-name gate
@@ -213,7 +215,7 @@ pnpm roles:check:test           # self-test for the role-distinctness gate
 pnpm surface-elevation:check    # if themes.css touched — app chrome (--sidebar) stays recessed below the content canvas (--background) in every theme (#187)
 pnpm surface-elevation:check:test  # self-test for the surface-elevation gate
 pnpm surface:preview:test       # self-test for the composed-surface preview generator (rung 2 of the visual loop, #57) — every archetype × theme builds self-contained, themed, with no colour literal outside the inlined tokens. Build one with `pnpm surface:preview -- --archetype <name> --theme <slug> --out <file.html>`.
-pnpm tokens:check               # if tokens/ or themes.css touched — themes.css matches the DTCG source (run `pnpm --filter @qlik-coe-emea/qlabs-components-tokens tokens:build`)
+pnpm tokens:check               # if tokens/ or themes.css touched — themes.css matches the DTCG source (run `pnpm --filter @elabs/components-tokens tokens:build`)
 pnpm tokens:check:test          # self-test for the tokens-freshness gate
 pnpm tokens:dup-blocks:check    # if themes.css touched — no duplicate [data-theme] color blocks (a 2nd block silently wins the cascade, #196)
 pnpm tokens:dup-blocks:check:test  # self-test for the duplicate-theme-block gate
@@ -235,7 +237,7 @@ pnpm version:check              # if any version site changed — all 16 lockste
 pnpm version:check:test         # self-test for the lockstep-version gate
 pnpm publish-ready:check        # before a release — scope equals the GitHub owner, nothing is still private, every package has repository + publishConfig.registry, .npmrc maps the scope. Release-time only (not a per-PR gate).
 pnpm publish-ready:check:test   # self-test for the publish-readiness preflight
-pnpm heavy-deps:check           # if @qlik-coe-emea/qlabs-components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
+pnpm heavy-deps:check           # if @elabs/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
 pnpm heavy-deps:check:test      # self-test for the eager-heavy-dependency ratchet
 pnpm origins:check              # if a packages/*/src file gained a URL — every remote origin is allowlisted (scripts/remote-origins-allowlist.json) AND documented in docs/CSP-AND-NETWORK.md
 pnpm origins:check:test         # self-test for the remote-origin inventory gate
@@ -269,7 +271,7 @@ pnpm slop:check                 # content anti-slop — the "Jane Doe effect" (J
 pnpm slop:check:test            # self-test for the anti-slop ratchet
 pnpm collapse-fork:check        # one collapse mechanism — no gap-spacer + fixed-slide width tween outside useCollapsiblePanel (#190)
 pnpm collapse-fork:check:test   # self-test for the collapse-fork gate
-pnpm timeline-fork:check        # one Timeline rail — no Timeline* re-declaration / hand-rolled connector+status rail outside @qlik-coe-emea/qlabs-components-ui (#190)
+pnpm timeline-fork:check        # one Timeline rail — no Timeline* re-declaration / hand-rolled connector+status rail outside @elabs/components-ui (#190)
 pnpm timeline-fork:check:test   # self-test for the timeline-fork gate
 pnpm machine-paths:check        # no absolute machine paths (e.g. /Users/...) committed in tracked source
 pnpm machine-paths:check:test   # self-test for the machine-paths gate
@@ -283,7 +285,7 @@ pnpm changelog-entry:check      # if packages/<pkg>/src changed — the branch m
 pnpm changelog-entry:check:test # self-test for the CHANGELOG-entry gate
 pnpm use-client:check           # if a client package's source changed — every package that uses React hooks carries a "use client" directive on ≥1 module, so RSC apps hydrate it correctly (#324)
 pnpm use-client:check:test      # self-test for the "use client" source gate
-pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook   # if a component/story changed (interaction + axe)
+pnpm --filter @elabs/components-docs test-storybook   # if a component/story changed (interaction + axe)
 ```
 
 Add a story + smoke test for any new component (see `.claude/rules/quality-gates.md`).
@@ -296,4 +298,4 @@ So push `main`, let those jobs go green on that commit, and only then tag (#103)
 
 **Honest completion:** never report "done"/"validated" for a path you did not run —
 lead with what you did NOT verify. Confirm components render across all **three** themes
-(qlik-bright, qlik-dark, blueprint) via Storybook, not from memory. Don't introduce paid deps, secrets, or absolute machine paths.
+(light, dark, blueprint) via Storybook, not from memory. Don't introduce paid deps, secrets, or absolute machine paths.

@@ -41,7 +41,7 @@ A coding agent told "build an internal admin console for X" will, left alone, of
 emit a **marketing** layout: hero banner, three equal feature cards, a big gradient
 headline, fake-perfect stats. That is a category error. An admin console is a
 **professional** surface → calm register, archetype B shell, the app baseline.
-**If you find yourself reaching for `@qlik-coe-emea/qlabs-components-marketing` (Hero, StatsBand, FeatureGrid,
+**If you find yourself reaching for `@elabs/components-marketing` (Hero, StatsBand, FeatureGrid,
 CTASection) inside an operational app, stop and re-classify.**
 
 ## Legitimate expressive moments inside a professional app
@@ -52,7 +52,7 @@ do yet** — then snap back to calm the moment real data/tasks appear:
 - Empty states (invite the first action) · first-run onboarding · upgrade / plan /
   paywall pages · changelog / what's-new · in-app announcements · presales "demo mode".
 
-These are the only places `@qlik-coe-emea/qlabs-components-marketing` belongs inside a pro app.
+These are the only places `@elabs/components-marketing` belongs inside a pro app.
 
 ## Per-archetype register (for brand-ui-new-app)
 

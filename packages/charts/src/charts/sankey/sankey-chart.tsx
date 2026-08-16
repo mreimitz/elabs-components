@@ -15,7 +15,7 @@ import {
   useState,
 } from "react";
 import type { SankeyLink } from "d3-sankey";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import {
   type Margin,
   type SankeyLinkDatum,

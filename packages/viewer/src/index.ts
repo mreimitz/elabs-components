@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-viewer — render any file in the browser.
+ * @elabs/components-viewer — render any file in the browser.
  *
  * A Layer-2 leaf (`tokens → ui → viewer`, ADR 0024). Formats are adapters in a
  * registry: an eager manifest plus a lazy loader, so an app that never opens a
@@ -7,7 +7,7 @@
  * peer — install only what you open.
  *
  * The input model (`FileSource`, `resolveFileKind`, `fileIconFor`) lives in
- * `@qlik-coe-emea/qlabs-components-ui`, so `-ai`, `-viewer` and your own code
+ * `@elabs/components-ui`, so `-ai`, `-viewer` and your own code
  * all speak it.
  */
 
@@ -58,7 +58,7 @@ export {
 export { canStepZoom, DEFAULT_ZOOM, isZoomFit, stepZoom, VIEWER_ZOOM_STEPS } from "./core/zoom";
 
 // Pointing the viewer at part of a document (ADR 0025). The ADDRESS vocabulary
-// itself is in `@qlik-coe-emea/qlabs-components-ui` — a citation's producer and
+// itself is in `@elabs/components-ui` — a citation's producer and
 // this consumer are sibling packages that may not import each other.
 export {
   FIND_MATCH_LIMIT,
@@ -90,7 +90,7 @@ export {
 // has no element to carry a `data-slot`, and giving it a wrapper would put a
 // span around every unmarked run of every document to no one's benefit. It is
 // four lines of glue over the two exports above — a third-party adapter composes
-// `localizeRanges` with `MatchHighlight` from `@qlik-coe-emea/qlabs-components-ui`
+// `localizeRanges` with `MatchHighlight` from `@elabs/components-ui`
 // the same way.
 export {
   chunkOffset,

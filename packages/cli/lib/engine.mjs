@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-cli — the experience engine (scaffold / scan / map / codemod).
+ * @elabs/components-cli — the experience engine (scaffold / scan / map / codemod).
  *
  * The deterministic backend the vibe-coder-plugin flows call so they are
  * repeatable, reviewable code paths — NOT hand-wavy LLM steps (VP-01 #121).
@@ -141,9 +141,15 @@ function walkSource(dir, { exts, cap = 4000, acc = [] } = {}) {
 // ---- scaffold (greenfield; VP-02 #123 / #55 / #263) ------------------------
 
 /** The npm scope every brand-ui package lives under. */
-export const PKG_SCOPE = "@qlik-coe-emea/qlabs-components-";
-/** GitHub Packages — where the private `@qlik-coe-emea` scope resolves from (ADR 0016). */
-export const REGISTRY_URL = "https://npm.pkg.github.com";
+export const PKG_SCOPE = "@elabs/components-";
+/**
+ * No registry is configured. The `@elabs` scope is private and unpublished, so a
+ * standalone scaffold cannot `pnpm add` it — it consumes local tarballs instead
+ * (`pnpm pack`). Setting this to a registry URL, together with a matching scope
+ * mapping in the repo `.npmrc`, is what re-enables the published install path.
+ * See ADR 0016 and `docs/CONSUMING.md`.
+ */
+export const REGISTRY_URL = null;
 /** Every scaffold installs at least these two (tokens = the theme, ui = the shell). */
 export const BASE_PACKAGES = [`${PKG_SCOPE}tokens`, `${PKG_SCOPE}ui`];
 
@@ -223,7 +229,7 @@ export function templateImports(archetype, opts = {}) {
 }
 
 /**
- * The `@qlik-coe-emea/qlabs-components-*` package set a scaffold needs.
+ * The `@elabs/components-*` package set a scaffold needs.
  *
  *  - `fromTemplate` — DERIVED from the archetype template's import specifiers.
  *  - `extra`        — packages the SPEC pulls in (entities ⇒ the data package, for
@@ -244,7 +250,7 @@ export function scaffoldPackages(archetype, spec = {}, { root, bundledDir } = {}
         `cannot derive the package set — ${templatePath(archetype)} is unreachable ` +
         `(looked in the repo root${root ? ` \`${root}\`` : " (none found)"} and in the ` +
         `templates bundled with the CLI). Run from a brand-ui checkout (\`pnpm gen:templates\` ` +
-        `if the file is missing) or reinstall @qlik-coe-emea/qlabs-components-cli.`,
+        `if the file is missing) or reinstall @elabs/components-cli.`,
     };
   }
   const fromTemplate = imports.filter((s) => s.startsWith(PKG_SCOPE));
@@ -261,7 +267,7 @@ export function scaffoldPackages(archetype, spec = {}, { root, bundledDir } = {}
  *  2. the manifest's `peerDependencies` (bundled with the CLI) — the only one
  *     reachable in consumer mode, outside the monorepo.
  *
- * Intra-scope peers (`@qlik-coe-emea/…`) are dropped — they are the brand-ui
+ * Intra-scope peers (`@elabs/…`) are dropped — they are the brand-ui
  * packages themselves, already in the dependency block — as are the base peers
  * every app installs anyway (react / react-dom / tailwindcss).
  */
@@ -271,9 +277,7 @@ export function packagePeers(pkgName, { root, manifest } = {}) {
   const fromDisk = root ? readPkgJson(join(root, dir))?.peerDependencies : null;
   const peers = fromDisk ?? entry?.peerDependencies ?? {};
   return Object.fromEntries(
-    Object.entries(peers).filter(
-      ([name]) => !name.startsWith("@qlik-coe-emea/") && !(name in BASE_PEERS),
-    ),
+    Object.entries(peers).filter(([name]) => !name.startsWith("@elabs/") && !(name in BASE_PEERS)),
   );
 }
 
@@ -346,10 +350,14 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
     peers,
     peerRanges,
     dependencyRange: range,
-    npmrc: [
-      `@qlik-coe-emea:registry=${REGISTRY_URL}`,
-      "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}",
-    ].join("\n"),
+    // Empty while REGISTRY_URL is null — there is no registry to point a scope at
+    // and nothing to authenticate against.
+    npmrc: REGISTRY_URL
+      ? [
+          `@elabs:registry=${REGISTRY_URL}`,
+          `//${new URL(REGISTRY_URL).host}/:_authToken=\${NPM_TOKEN}`,
+        ].join("\n")
+      : "",
     // Quoted: `^` and `@` are glob/history characters in some shells, and a
     // copy-pasted install line has to work in the shell the user actually has.
     addCommand: `pnpm add ${packages.map((p) => `"${p}@${range}"`).join(" ")}`,
@@ -384,7 +392,7 @@ function resolveSpec(input, { root } = {}) {
   }
   // Defaults BEFORE validation, so a minimal `{ archetype }` stays legal while the
   // schema still catches bad enums/shapes on everything the interview did answer.
-  const normalized = { ...data, archetype, theme: data.theme || "qlik-bright" };
+  const normalized = { ...data, archetype, theme: data.theme || "light" };
   normalized.title = data.title || archetype;
 
   const schema = loadSchema(root);
@@ -463,14 +471,7 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
     playbook: { path: playbookRel, exists: playbookExists },
     theme,
     // The WP-10 gates a scaffolded app is born passing (cross-theme = the ACTIVE themes).
-    gates: [
-      "typecheck",
-      "lint",
-      "tokens-only",
-      "theme-safe(qlik-bright,qlik-dark)",
-      "a11y",
-      "brand-ui audit",
-    ],
+    gates: ["typecheck", "lint", "tokens-only", "theme-safe(light,dark)", "a11y", "brand-ui audit"],
     // The agent handoff (#123 AC2): the two contracts + the manifest-derived
     // component inventory (`brand-ui context`'s block) so a later session's agent
     // knows what exists without a running server.
@@ -766,7 +767,7 @@ export default defineConfig({
 
 /**
  * `tsconfig.json` — the same shape as the monorepo's own Vite apps
- * (`@qlik-coe-emea/qlabs-components-typescript-config/vite-app.json`), inlined
+ * (`@elabs/components-typescript-config/vite-app.json`), inlined
  * because that config package is private + unpublished. `noUnusedLocals` /
  * `noUnusedParameters` are deliberately NOT on: a scaffold legitimately carries
  * imports for the `TODO(spec):` wiring that isn't done yet, and a fresh app that
@@ -814,7 +815,7 @@ function buildWorkflow(install) {
   const auth = install.standalone
     ? `
           registry-url: https://npm.pkg.github.com
-          scope: "@qlik-coe-emea"`
+          scope: "@elabs"`
     : "";
   const env = install.standalone
     ? `
@@ -852,7 +853,7 @@ jobs:
  * `brand-ui-context.md` — the manifest-derived component inventory (the same
  * block `brand-ui context` generates, WP-03 #82). #123 AC2 asks for a context
  * file next to CLAUDE.md/AGENTS.md: this is it, so a later agent session knows
- * what exists across `@qlik-coe-emea/qlabs-components-*` without a running
+ * what exists across `@elabs/components-*` without a running
  * Storybook, an MCP server, or a guess.
  */
 function buildContextFile(root) {
@@ -869,7 +870,7 @@ live, queryable API is \`brand-ui docs <Component>\` / \`brand-ui search <concep
       `
 > The component manifest was not reachable when this app was scaffolded, so the
 > inventory below is empty. Run \`brand-ui context\` from a brand-ui checkout, or
-> reinstall \`@qlik-coe-emea/qlabs-components-cli\` (it ships the manifest), then
+> reinstall \`@elabs/components-cli\` (it ships the manifest), then
 > re-run to fill it in.
 `
     );
@@ -901,9 +902,9 @@ function buildStyles(install) {
   return `/* brand-ui styling entry.
  *
  * 1) The token stylesheet pulls in Tailwind v4, the @theme inline token→utility
- *    map, both themes (qlik-bright, qlik-dark) and the fonts.
+ *    map, both themes (light, dark) and the fonts.
  * 2) Tailwind ignores node_modules unless you @source it — one line per
- *    @qlik-coe-emea/qlabs-components-* package you render. Delete a line and those
+ *    @elabs/components-* package you render. Delete a line and those
  *    components render UNSTYLED. See docs/CONSUMING.md §4.
  */
 ${install.css.import}
@@ -957,31 +958,31 @@ function buildClaudeMd(spec, plan, install) {
   const installSection = install.standalone
     ? `## Install / make it runnable
 
-Packages come from GitHub Packages (private — a classic PAT with \`read:packages\`).
-
-\`\`\`ini
-# .npmrc
-${install.npmrc}
-\`\`\`
+The \`@elabs/components-*\` packages are **private and unpublished** — there is no
+registry to install them from. Build local tarballs in the brand-ui repo
+(\`pnpm build && pnpm -r pack\`) and add them by path:
 
 \`\`\`bash
-${install.addCommand}
+pnpm add ${install.packages.map((p) => `"file:../brand-ui/${p.replace(/^@/, "").replace(/\//g, "-")}-<version>.tgz"`).join(" ")}
 ${install.peerCommand}
 \`\`\`
+
+If you later configure a registry for the scope, set \`REGISTRY_URL\` in
+\`packages/cli/lib/engine.mjs\` and the ordinary \`pnpm add\` path comes back.
 
 \`src/styles.css\` already carries the token import and one \`@source\` line per
 installed package — **do not delete them**, the components render unstyled without
 them. Full recipe: ${install.docs} in the brand-ui repo.`
     : `## Install / make it runnable
 
-This app lives inside the brand-ui monorepo: \`@qlik-coe-emea/qlabs-components-*\`
+This app lives inside the brand-ui monorepo: \`@elabs/components-*\`
 dependencies stay \`workspace:*\` and \`pnpm install\` at the repo root wires them.
 \`src/styles.css\` carries the token import and one \`@source\` line per package —
 **do not delete them**, the components render unstyled without them.`;
 
   return `# CLAUDE.md — ${title}
 
-This app is built on **brand-ui** (\`@qlik-coe-emea/qlabs-components-*\`). It was
+This app is built on **brand-ui** (\`@elabs/components-*\`). It was
 scaffolded from the **${archetype}** template; the spec is in \`./app-spec.md\` — read
 it before making structural changes.
 
@@ -1017,7 +1018,7 @@ src\`) — the static token/anti-slop pass; the rendered cross-theme + contrast 
 ## What exists (don't guess an API)
 
 \`./brand-ui-context.md\` is the generated inventory of every component in every
-\`@qlik-coe-emea/qlabs-components-*\` package — read it before inventing a
+\`@elabs/components-*\` package — read it before inventing a
 component. For the real props of one component: \`pnpm exec brand-ui docs <Name>\`
 (or \`mcp__brand-ui__docs\`). Refresh the inventory after upgrading the packages
 with \`pnpm exec brand-ui context\`.
@@ -1041,7 +1042,7 @@ what's left. Wire them; don't delete the guidance until each is wired.
 
 ## Themes
 
-Two shipped themes: \`qlik-bright\` and \`qlik-dark\`. Anything you build must read
+Two shipped themes: \`light\` and \`dark\`. Anything you build must read
 correctly in **both** — that is an observed result (render it), never inferred from
 "it uses tokens".
 
@@ -1062,7 +1063,7 @@ boundary). This file exists so agents that look for \`AGENTS.md\` find the same 
 
 The short version:
 
-- Compose from \`@qlik-coe-emea/qlabs-components-*\`; don't hand-roll tables, dialogs,
+- Compose from \`@elabs/components-*\`; don't hand-roll tables, dialogs,
   chat bubbles or KPI tiles.
 - Type is a **role** (\`text-title\`/\`text-body\`/…), colour is a **token**
   (\`bg-primary\`, \`text-muted-foreground\`) — never a raw size or hex.
@@ -1349,7 +1350,7 @@ export function emitScaffold(
                 ]),
           ]
         : []),
-      "Next: install (see `install`), then `typecheck` + `lint`, then RENDER it in qlik-bright and qlik-dark — theme-safety is observed, never inferred.",
+      "Next: install (see `install`), then `typecheck` + `lint`, then RENDER it in light and dark — theme-safety is observed, never inferred.",
     ],
   };
 }
@@ -1364,7 +1365,7 @@ const FRAMEWORK_DEPS = [
   ["react", "react"],
 ];
 const UI_LIB_DEPS = [
-  [/^@qlik-coe-emea\/qlabs-components-/, "brand-ui"],
+  [/^@elabs\/components-/, "brand-ui"],
   ["@mui/material", "mui"],
   ["antd", "antd"],
   ["@chakra-ui/react", "chakra"],
@@ -1791,7 +1792,7 @@ export const SOURCE_ALIASES = [
 const ALIAS_BY_NAME = new Map(SOURCE_ALIASES.map((a) => [a.from.toLowerCase(), a]));
 
 /** The app-UI package — the preferred home when a component name is ambiguous. */
-const isAppUiPkg = (pkg) => /(^|\/)[^/]*qlabs-components-ui$/.test(String(pkg ?? ""));
+const isAppUiPkg = (pkg) => /(^|\/)[^/]*components-ui$/.test(String(pkg ?? ""));
 
 /** Rungs, ordered low → high, for the risk/effort model. */
 const LEVELS = ["low", "medium", "high"];

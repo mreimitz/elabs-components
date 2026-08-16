@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { BookIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 

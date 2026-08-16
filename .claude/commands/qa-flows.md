@@ -40,7 +40,7 @@ throughout (use the console/errors tools) and attach a screenshot to each step.
 Walk and verify each flow; record PASS/FAIL + a screenshot + any console errors:
 
 1. **Load + theme switching** — page loads on the Dashboard; `<html data-theme>`
-   is `qlik-bright`. Use the "Theme" selector to switch to `qlik-dark` and
+   is `light`. Use the "Theme" selector to switch to `dark` and
    `blueprint`; confirm `data-theme` updates and the UI re-themes (no unstyled
    flashes, no illegible contrast). Screenshot each theme.
 2. **Sidebar navigation** — click Dashboard / Assistant / Pipeline / Landing;
@@ -68,7 +68,7 @@ sample of stories (at least one per package/title) open
 `iframe.html?id=<id>&globals=theme:<slug>` and confirm the story renders with no
 console errors. Flag any blank or erroring story.
 
-Valid theme slugs (three; default `qlik-bright`): `qlik-bright`, `qlik-dark` — always the CSS slug, never a display name.
+Valid theme slugs (three; default `light`): `light`, `dark` — always the CSS slug, never a display name.
 
 ## 4. Report
 

@@ -15,7 +15,7 @@
 
 import { useEffect, type RefObject } from "react";
 
-import { useReducedMotion } from "@qlik-coe-emea/qlabs-components-tokens";
+import { useReducedMotion } from "@elabs/components-tokens";
 
 /**
  * How the current highlight identifies itself in the DOM, whichever way it was

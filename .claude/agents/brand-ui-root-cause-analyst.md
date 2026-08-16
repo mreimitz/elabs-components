@@ -94,7 +94,7 @@ DUPLICATE_OF: <#issue or "none">
 
 ## Acceptance criteria
 - [ ] <testable outcome>
-- [ ] passes in both themes (`qlik-bright`, `qlik-dark`) (if visual/a11y)
+- [ ] passes in both themes (`light`, `dark`) (if visual/a11y)
 
 ## Test to add
 <which spec/test and what it asserts>

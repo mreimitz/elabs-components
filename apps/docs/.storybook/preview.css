@@ -1,11 +1,11 @@
-/* Source Sans 3 + Source Code Pro (the Qlik Cloud faces used by qlik-bright /
-   qlik-dark) are now SELF-HOSTED by @qlik-coe-emea/qlabs-components-tokens, so the Google Fonts @import
+/* Source Sans 3 + Source Code Pro (the Qlik Cloud faces used by light /
+   dark) are now SELF-HOSTED by @elabs/components-tokens, so the Google Fonts @import
    that used to lead this file is gone. Storybook and a real consumer render the
    same faces from the same @font-face rules — previously Storybook fetched them
    from a CDN and every consumer silently fell back to Helvetica. */
 
 /* Token stylesheet (pulls in Tailwind v4 + tw-animate-css) */
-@import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
+@import "@elabs/components-tokens/styles.css";
 
 /* Tailwind v4 cannot auto-scan workspace packages resolved via node_modules,
    so point it at each package's source explicitly. Add new packages here. */

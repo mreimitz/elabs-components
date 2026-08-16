@@ -5,13 +5,13 @@ import {
   DEFAULT_MOTION_PREFERENCE,
   DEFAULT_THEME,
   THEME_META,
-} from "@qlik-coe-emea/qlabs-components-tokens";
+} from "@elabs/components-tokens";
 import { useEffect, type ReactNode } from "react";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
 import "@xyflow/react/dist/style.css";
-// Wire Monaco's language workers so @qlik-coe-emea/qlabs-components-editor stories get IntelliSense.
-import "@qlik-coe-emea/qlabs-components-editor/monaco-environment";
+// Wire Monaco's language workers so @elabs/components-editor stories get IntelliSense.
+import "@elabs/components-editor/monaco-environment";
 
 /**
  * Writes `data-motion-pref` onto the iframe root (`:root`), exactly as

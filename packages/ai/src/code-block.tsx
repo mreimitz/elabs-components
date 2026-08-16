@@ -1,14 +1,14 @@
 "use client";
 
-import { Button, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button, useLocale } from "@elabs/components-ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import type { ComponentProps, CSSProperties, HTMLAttributes } from "react";
 import { Shimmer } from "./shimmer";
@@ -170,9 +170,9 @@ const subscribers = new Map<string, Set<(result: TokenizedCode) => void>>();
 // first highlighted. The id is derived from `getThemeScopeKey` (the RAW
 // `data-theme` attribute, or a sentinel when unset) rather than the validated
 // `ThemeName` — see `_code-block-theme.ts`'s module doc comment for why: an
-// unset attribute and an explicit `data-theme="qlik-bright"` both narrow to
+// unset attribute and an explicit `data-theme="light"` both narrow to
 // the SAME `ThemeName`, but `:root`'s `--code-*` fallback values are their own
-// distinct placeholder palette, not an alias of `qlik-bright`'s — so keying on
+// distinct placeholder palette, not an alias of `light`'s — so keying on
 // the validated name would let the pre-mount render's `:root` colors poison
 // the cache under the key `ThemeProvider` later writes explicitly, and they'd
 // never be replaced.
@@ -419,7 +419,7 @@ export const CodeBlockContent = ({
 }) => {
   // Track the active brand theme (#315), SCOPED to this code block's own
   // subtree (`getThemeScope`) rather than always `<html>` — so a CodeBlock
-  // nested inside a region-scoped `<div data-theme="qlik-dark">` (a supported
+  // nested inside a region-scoped `<div data-theme="dark">` (a supported
   // ThemeProvider/decorator pattern) picks up THAT region's `--code-*` tokens,
   // not the document root's. A MutationObserver on the resolved scope element
   // re-derives the Shiki theme — and any already-highlighted code — whenever
@@ -447,7 +447,7 @@ export const CodeBlockContent = ({
   const scopeEl = getThemeScope(scopeRef.current);
   // Keyed on the RAW `data-theme` scope, not the validated theme name (#315
   // follow-up) — see `_code-block-theme.ts`'s module doc comment. An unset
-  // attribute (the pre-mount render) and an explicit `data-theme="qlik-bright"`
+  // attribute (the pre-mount render) and an explicit `data-theme="light"`
   // both narrow to the SAME `ThemeName`, so using the validated name here would
   // mean this memo's dependency doesn't CHANGE across that mutation and the
   // stale `:root`-tokenized colors would never be recomputed once

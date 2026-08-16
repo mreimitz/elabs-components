@@ -22,7 +22,7 @@ import {
   useMotionPreference,
   useTasteProfile,
   type DecorationLevel,
-} from "@qlik-coe-emea/qlabs-components-tokens";
+} from "@elabs/components-tokens";
 
 /** A probe that prints the live profile and drives every axis from context. */
 function Probe() {

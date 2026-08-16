@@ -11,8 +11,8 @@ reference for what that command does and why each step exists.
 > **Status.** This pipeline is live. `v2.0.0` was published through it on
 > 2026-08-01, to GitHub Packages plus a GitHub Release with the agent-kit,
 > plugin and rollback tarballs attached. The release set is **12 packages** as
-> of 2026-08-10 — `@qlik-coe-emea/qlabs-components-viewer` joined it, and
-> `@qlik-coe-emea/qlabs-components-blueprint` left it when it was paused and
+> of 2026-08-10 — `@elabs/components-viewer` joined it, and
+> `@elabs/components-blueprint` left it when it was paused and
 > stopped being published (see `.claude/rules/paused-surfaces.md`). Consumers
 > stay on the `2.1.1` they already have.
 
@@ -79,7 +79,7 @@ is usable: every export resolves, `use client` boundaries are correct in both
 directions, fonts resolve, no engine resolved at two versions.
 
 This matters more than it sounds. Every app and every other gate in this repo
-resolves `@qlik-coe-emea/qlabs-components-*` to TypeScript **source** via the `exports` map, while
+resolves `@elabs/components-*` to TypeScript **source** via the `exports` map, while
 consumers get `publishConfig.exports` → `dist/`. Four defects lived in that blind
 spot simultaneously — stripped `use client` directives, fonts copied one level too
 deep, esbuild-orphaned stylesheets, and a subpath pointing at raw `.ts` — all with
@@ -94,7 +94,7 @@ git push origin main                          # <- MUST come first (see below)
 
 # Ask the release's own gate whether this commit is releasable yet.
 GH_TOKEN=$(gh auth token) pnpm release-verdict:check -- \
-  --sha "$(git rev-parse HEAD)" --repo Qlik-CoE-EMEA/qlabs-components
+  --sha "$(git rev-parse HEAD)" --repo <owner>/<repo>
 
 git tag v2.1.0
 git push origin v2.1.0                        # <- this triggers the publish
@@ -117,7 +117,7 @@ holds a release up. It also reads the **newest** run for the commit, so a supers
 `cancelled` run from a double-push does not veto the green one that replaced it.
 
 **`main` before the tag is enforced, not stylistic.** The plugin pointer a
-`/plugin marketplace add Qlik-CoE-EMEA/qlabs-components` consumer follows is
+`/plugin marketplace add <path-to-this-repo>` consumer follows is
 `.claude-plugin/marketplace.json` **as served by the default branch** — so a tag
 pushed on its own publishes new packages while every plugin consumer stays on the
 previous version. `release.yml` runs `pnpm marketplace:check` as a publish-only
@@ -205,7 +205,7 @@ other state (no run, still queued, still running, `failure`, `cancelled`,
     Two details it gets right that are easy to get wrong, and were:
     - **The registry is mapped per scope, never process-wide.** The `.npmrc` it
       writes is the one `CONSUMING.md` hands a consumer
-      (`@qlik-coe-emea:registry=…` + auth). An `npm install --registry=…` override
+      (`@elabs:registry=…` + auth). An `npm install --registry=…` override
       would make GitHub Packages the default for every _transitive_ dependency
       too, and it does not proxy npmjs.org — so the install 404s on the first
       public dep and the smoke fails every release, after the publish.
@@ -311,13 +311,13 @@ fail the run if either does not hold. To check by hand:
 ```bash
 gh release view v2.1.0
 # and resolve a package from the registry, from outside the monorepo:
-npm view @qlik-coe-emea/qlabs-components-ui@2.1.0 --registry=https://npm.pkg.github.com
+npm view @elabs/components-ui@2.1.0 --registry=https://npm.pkg.github.com
 # the real thing — a fresh install of the published artifact in a scratch dir.
 # GITHUB_REPOSITORY (or --repo) + an authenticated `gh` let it read the plugin
 # pointer off the DEFAULT BRANCH; without them it falls back to this checkout and
 # says so, because that comparison is tautological here.
 NODE_AUTH_TOKEN=<a PAT with read:packages> \
-GITHUB_REPOSITORY=Qlik-CoE-EMEA/qlabs-components \
+GITHUB_REPOSITORY=<owner>/<repo> \
   pnpm release:smoke
 ```
 
@@ -359,7 +359,7 @@ release-manifest.json` fetches it — it is attached to every Release.
 ### A bad plugin / marketplace pointer
 
 `.claude-plugin/marketplace.json` is served **live from the repo**, so anyone who
-ran `/plugin marketplace add Qlik-CoE-EMEA/qlabs-components` follows `main`.
+ran `/plugin marketplace add <path-to-this-repo>` follows `main`.
 Rollback is therefore a git operation, not a registry one:
 
 ```bash
@@ -424,7 +424,7 @@ that removes anything is a **major** and owes numbered migration steps in
 - `files: ["dist", "src"]` keeps `.turbo/` logs and build configs out of the tarball.
 - `release/` is throwaway and git-ignored — never commit it.
 - The Claude Code plugin installs LIVE from the repo
-  (`/plugin marketplace add Qlik-CoE-EMEA/qlabs-components`); the attached
+  (`/plugin marketplace add <path-to-this-repo>`); the attached
   `brand-ui-plugin-<v>.zip` is the pinned/offline alternative, and
   `brand-ui-agent-kit-<v>.zip` is the sanitized consumer subset for other projects.
 - `manifest:check` diffs a regenerated manifest against the **committed** one, so

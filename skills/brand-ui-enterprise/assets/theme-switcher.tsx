@@ -1,35 +1,35 @@
 "use client";
 /**
- * Theme switcher — System / Qlik Bright / Qlik Dark (the baseline default).
+ * Theme switcher — System / Light / Dark (the baseline default).
  * Grounded in a qLabs tool/workspace app's theme switcher.
  *
- * PREFER the library `<ThemeSwitcher />` from @qlik-coe-emea/qlabs-components-ui: its `themes` defaults to the
+ * PREFER the library `<ThemeSwitcher />` from @elabs/components-ui: its `themes` defaults to the
  * Qlik light/dark pair and `showSystem` defaults to true, so it ALREADY renders exactly
- * System / Qlik Bright / Qlik Dark (whole-screen animated, reduced-motion safe). This
+ * System / Light / Dark (whole-screen animated, reduced-motion safe). This
  * curated Select is an OPTIONAL alternative when you want explicit text labels instead
- * of the icon toggle. (Verified against @qlik-coe-emea/qlabs-components-* v1.0.0 source.)
+ * of the icon toggle. (Verified against @elabs/components-* v1.0.0 source.)
  */
-import { THEME_META, useTheme, type ThemeName } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEME_META, useTheme, type ThemeName } from "@elabs/components-tokens";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { useEffect, useState } from "react";
 
 const MODE_KEY = "ui.themeMode";
-const LIGHT: ThemeName = "qlik-bright";
-const DARK: ThemeName = "qlik-dark";
-type ThemeMode = "qlik-bright" | "qlik-dark" | "system";
+const LIGHT: ThemeName = "light";
+const DARK: ThemeName = "dark";
+type ThemeMode = "light" | "dark" | "system";
 
 function storedMode(): ThemeMode {
   try {
     const v = localStorage.getItem(MODE_KEY);
-    return v === "qlik-dark" || v === "system" ? v : "qlik-bright";
+    return v === "dark" || v === "system" ? v : "light";
   } catch {
-    return "qlik-bright";
+    return "light";
   }
 }
 function systemTheme(): ThemeName {
@@ -70,8 +70,8 @@ export function ThemeSwitcher() {
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="qlik-bright">{THEME_META[LIGHT].label}</SelectItem>
-        <SelectItem value="qlik-dark">{THEME_META[DARK].label}</SelectItem>
+        <SelectItem value="light">{THEME_META[LIGHT].label}</SelectItem>
+        <SelectItem value="dark">{THEME_META[DARK].label}</SelectItem>
         <SelectItem value="system">System</SelectItem>
       </SelectContent>
     </Select>

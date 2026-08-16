@@ -7,7 +7,7 @@
  * transaction/activity feed (icon + title + subtitle + signed amount). These
  * compose Card + Avatar + Badge + Progress only.
  *
- * Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in all
+ * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all
  * three themes. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";

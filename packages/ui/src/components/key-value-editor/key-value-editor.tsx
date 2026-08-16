@@ -57,7 +57,7 @@ export interface KeyValueEditorProps extends Omit<
  * Composes the existing `Input` + `Button` (icon vocabulary matches
  * `packages/ai/src/environment-variables.tsx`'s `Eye`/`EyeOff` reveal icons
  * for conceptual consistency, though this component lives in
- * `@qlik-coe-emea/qlabs-components-ui` — an EDITABLE settings-form primitive
+ * `@elabs/components-ui` — an EDITABLE settings-form primitive
  * is app UI, not the read-only agent tool-output display that
  * `EnvironmentVariables` is).
  *

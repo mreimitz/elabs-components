@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Textarea } from "@qlik-coe-emea/qlabs-components-ui";
+import { Textarea } from "@elabs/components-ui";
 import { SelectionToolbar } from "./selection-toolbar";
 import { Message, MessageContent } from "./message";
 
@@ -78,7 +78,7 @@ export const DarkTheme: Story = {
   ),
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

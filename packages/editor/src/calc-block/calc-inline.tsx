@@ -15,7 +15,7 @@
  * `text-calc-result`; the warning cue is the icon + dotted underline, never hue
  * alone (so it survives the high-contrast theme).
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { TriangleAlert } from "lucide-react";
 import { forwardRef, useMemo, type HTMLAttributes } from "react";
 

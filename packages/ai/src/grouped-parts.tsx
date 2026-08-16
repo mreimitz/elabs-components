@@ -17,13 +17,8 @@
 
 import { Fragment, useMemo, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
-import {
-  Badge,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Badge, Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
 import {

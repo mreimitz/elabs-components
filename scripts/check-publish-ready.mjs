@@ -21,6 +21,13 @@
  * Plus one repo-level check: the root `.npmrc` maps the scope to the registry,
  * or every install by every consumer silently goes to npmjs.org instead.
  *
+ * PUBLISHING IS CURRENTLY DISABLED. This repo has no registry mapping in its
+ * `.npmrc` and no git remote, so there is no target to be "ready" for — every
+ * rule above would report a blocker for a publish nobody can perform, which is
+ * noise, not a gate. So the preflight now SKIPS (exit 0, loud message) when the
+ * root `.npmrc` declares no scoped registry. Re-adding that one line turns the
+ * whole battery back on; nothing here was deleted. See docs/ADR/0016.
+ *
  * Owner resolution: $GITHUB_REPOSITORY (set in Actions) → the `origin` remote.
  *
  * Flags: --warn  report but never exit non-zero.
@@ -34,9 +41,21 @@ import { fileURLToPath } from "node:url";
 import { distributablePackages } from "./lib/distributables.mjs";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-export const REGISTRY = "https://npm.pkg.github.com";
 
-/** `Qlik-CoE-EMEA/qlabs-components` → `qlik-coe-emea` (npm scopes are lowercase). */
+/**
+ * The publish target, read from the root `.npmrc` rather than hard-coded — the
+ * `.npmrc` is what actually decides where a publish and every consumer install
+ * go, so deriving it here means the preflight can never assert a registry the
+ * repo isn't configured for.
+ * @param {string} npmrcText
+ * @returns {{ scope: string, registry: string } | null} null = publishing disabled
+ */
+export function publishTarget(npmrcText) {
+  const m = String(npmrcText ?? "").match(/^\s*@([^:\s]+):registry=(\S+)/m);
+  return m ? { scope: m[1].toLowerCase(), registry: m[2] } : null;
+}
+
+/** `Some-Org/some-repo` → `some-org` (npm scopes are lowercase). */
 export function ownerFromRepo(nameWithOwner) {
   return String(nameWithOwner).split("/")[0].toLowerCase();
 }
@@ -56,16 +75,18 @@ export function resolveOwner(root = REPO_ROOT) {
   return null;
 }
 
-/** `@qlik-coe-emea/qlabs-components-ui` → `qlik-coe-emea`; unscoped → null. */
+/** `@elabs/components-ui` → `elabs`; unscoped → null. */
 export function scopeOf(pkgName) {
   return pkgName.startsWith("@") ? pkgName.slice(1).split("/")[0].toLowerCase() : null;
 }
 
 /**
  * Every publish blocker for one package.
+ * @param {object} pkgJson
+ * @param {{ owner: string, relDir?: string, registry: string }} ctx
  * @returns {{ rule: string, detail: string }[]}
  */
-export function publishBlockers(pkgJson, { owner, relDir }) {
+export function publishBlockers(pkgJson, { owner, relDir, registry }) {
   const out = [];
   const name = pkgJson.name;
 
@@ -95,19 +116,19 @@ export function publishBlockers(pkgJson, { owner, relDir }) {
       detail: `"${name}" repository.directory is ${JSON.stringify(pkgJson.repository.directory)}, expected "${relDir}".`,
     });
   }
-  if (pkgJson.publishConfig?.registry !== REGISTRY) {
+  if (pkgJson.publishConfig?.registry !== registry) {
     out.push({
       rule: "missing-registry",
-      detail: `"${name}" has no publishConfig.registry === "${REGISTRY}" — the publish would go to npmjs.org.`,
+      detail: `"${name}" has no publishConfig.registry === "${registry}" — the publish would go to npmjs.org.`,
     });
   }
   return out;
 }
 
 /** The scope→registry mapping consumers and CI both rely on. */
-export function npmrcBlockers(npmrcText, owner) {
+export function npmrcBlockers(npmrcText, owner, registry) {
   if (!owner) return [];
-  const line = `@${owner}:registry=${REGISTRY}`;
+  const line = `@${owner}:registry=${registry}`;
   return npmrcText.includes(line)
     ? []
     : [
@@ -130,8 +151,23 @@ function distributables(root) {
 // ──────────────────────────────── CLI ─────────────────────────────────────────
 function main(argv) {
   const warnOnly = argv.includes("--warn");
-  const owner = resolveOwner();
 
+  const npmrcPath = join(REPO_ROOT, ".npmrc");
+  const npmrc = existsSync(npmrcPath) ? readFileSync(npmrcPath, "utf8") : "";
+  const target = publishTarget(npmrc);
+
+  // Publishing disabled: no scoped registry in .npmrc, so there is no target to
+  // be ready for. Skip loudly rather than reporting blockers for a publish that
+  // cannot happen — every rule below stays wired for the day a registry returns.
+  if (!target) {
+    console.log(
+      "• publish-ready: SKIPPED — publishing is disabled (no scoped registry in .npmrc).\n" +
+        "  Add `@<scope>:registry=<url>` to .npmrc to re-enable this preflight.",
+    );
+    return 0;
+  }
+
+  const owner = resolveOwner();
   if (!owner) {
     console.error(
       "✖ publish-ready: could not resolve the GitHub owner (no $GITHUB_REPOSITORY, no origin remote).",
@@ -142,18 +178,18 @@ function main(argv) {
   const pkgs = distributables(REPO_ROOT);
   const violations = [];
   for (const { json, relDir } of pkgs) {
-    for (const v of publishBlockers(json, { owner, relDir })) {
+    for (const v of publishBlockers(json, { owner, relDir, registry: target.registry })) {
       violations.push({ pkg: json.name, ...v });
     }
   }
 
-  const npmrcPath = join(REPO_ROOT, ".npmrc");
-  const npmrc = existsSync(npmrcPath) ? readFileSync(npmrcPath, "utf8") : "";
-  for (const v of npmrcBlockers(npmrc, owner)) violations.push({ pkg: "(repo)", ...v });
+  for (const v of npmrcBlockers(npmrc, owner, target.registry)) {
+    violations.push({ pkg: "(repo)", ...v });
+  }
 
   if (violations.length === 0) {
     console.log(
-      `✔ publish-ready: ${pkgs.length} package(s) can publish to ${REGISTRY} as @${owner}/*.`,
+      `✔ publish-ready: ${pkgs.length} package(s) can publish to ${target.registry} as @${owner}/*.`,
     );
     return 0;
   }

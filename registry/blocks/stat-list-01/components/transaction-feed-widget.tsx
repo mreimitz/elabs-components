@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@elabs/components-ui";
 import { TRANSACTIONS } from "./data/transactions";
 
 /** A transaction/activity feed — icon + title + subtitle + signed amount. */

@@ -2,11 +2,11 @@
  * themes-io.test.mjs — locks the #401 comment-swallowing bug in
  * `parseScopedTokens` (the themes.css → DTCG re-seeding parser's scanner).
  *
- * Run via `pnpm --filter @qlik-coe-emea/qlabs-components-tokens test` (vitest).
+ * Run via `pnpm --filter @elabs/components-tokens test` (vitest).
  *
  * `themes.css` documents its own tokens inline, so a comment sitting directly
  * above a declaration routinely contains a `--token:`-shaped substring (see
- * the real comment above qlik-bright's `--ring` in
+ * the real comment above light's `--ring` in
  * packages/tokens/src/themes.css:826-834, which mentions `--info:`). Before
  * the #401 fix, `parseScopedTokens` scanned the raw block body with a lazy
  * `[^;]*?` regex that started matching INSIDE such a comment and consumed

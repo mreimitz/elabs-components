@@ -43,7 +43,7 @@ describe("markdown-scale (shared editor↔preview source of truth)", () => {
   });
 
   it("the editor CSS drives its headings + measure from the scale vars (no hardcoded sizes)", () => {
-    // Resolve from the @qlik-coe-emea/qlabs-components-editor package root (vitest runs with cwd = package).
+    // Resolve from the @elabs/components-editor package root (vitest runs with cwd = package).
     const cssPath = resolve(process.cwd(), "src/markdown-editor/markdown-editor.css");
     const css = readFileSync(cssPath, "utf8");
 

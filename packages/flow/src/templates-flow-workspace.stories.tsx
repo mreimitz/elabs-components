@@ -21,7 +21,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import {
   CanvasShell,
   FlowEdge,
@@ -35,7 +35,7 @@ import {
   type BrandFlowNode,
   type Edge,
 } from "./index";
-import { AppIcon } from "@qlik-coe-emea/qlabs-components-icons";
+import { AppIcon } from "@elabs/components-icons";
 
 const nodeTypes = { brand: FlowNode };
 const edgeTypes = { brand: FlowEdge };

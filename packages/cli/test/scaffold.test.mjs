@@ -7,7 +7,7 @@
  * was invented (every gap is a `TODO(spec):`), that the emitted app is token-clean,
  * and that plan-only mode writes nothing at all.
  *
- * Run in CI via `pnpm --filter @qlik-coe-emea/qlabs-components-cli test` (node --test).
+ * Run in CI via `pnpm --filter @elabs/components-cli test` (node --test).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -39,7 +39,7 @@ const tmp = () => mkdtempSync(join(tmpdir(), "brand-ui-scaffold-"));
 /** A spec that answers most of the interview — the "happy" fixture. */
 const specFor = (archetype, extra = {}) => ({
   archetype,
-  theme: "qlik-dark",
+  theme: "dark",
   title: `Fixture ${archetype}`,
   surfaces: [
     { id: "overview", navLabel: "Overview" },
@@ -85,17 +85,13 @@ for (const archetype of ["dashboard", "data-app"]) {
     assert.match(app, /accessorKey: "stage"/);
 
     const main = readFileSync(join(dir, "src/main.tsx"), "utf8");
-    assert.match(
-      main,
-      /<ThemeProvider defaultTheme="qlik-dark">/,
-      "the theme is wired at the root",
-    );
+    assert.match(main, /<ThemeProvider defaultTheme="dark">/, "the theme is wired at the root");
     assert.match(main, /import "\.\/styles\.css";/);
 
     const claude = readFileSync(join(dir, "CLAUDE.md"), "utf8");
-    assert.match(claude, /qlik-dark/, "CLAUDE.md names the chosen theme");
+    assert.match(claude, /dark/, "CLAUDE.md names the chosen theme");
     assert.match(claude, new RegExp(archetype), "CLAUDE.md names the archetype");
-    assert.match(claude, /qlik-bright.*qlik-dark/s, "the shipped themes, not a stale list");
+    assert.match(claude, /light.*dark/s, "the shipped themes, not a stale list");
 
     const agents = readFileSync(join(dir, "AGENTS.md"), "utf8");
     assert.match(agents, /CLAUDE\.md/, "AGENTS.md points at the full contract (AC2)");
@@ -115,7 +111,7 @@ test("emitScaffold: everything package.json's scripts need is emitted", () => {
   const html = readFileSync(join(dir, "index.html"), "utf8");
   assert.match(html, /<div id="root"><\/div>/, "main.tsx's mount point exists");
   assert.match(html, /<script type="module" src="\/src\/main\.tsx"><\/script>/);
-  assert.match(html, /data-theme="qlik-dark"/, "first paint is already themed");
+  assert.match(html, /data-theme="dark"/, "first paint is already themed");
 
   const vite = readFileSync(join(dir, "vite.config.ts"), "utf8");
   // Without the Tailwind plugin styles.css is never processed → unstyled render,
@@ -166,7 +162,7 @@ test("emitScaffold: the manifest-derived context file ships with the app (#123 A
 
   const ctx = readFileSync(join(dir, "brand-ui-context.md"), "utf8");
   assert.match(ctx, /<!-- brand-ui:context:start -->/, "the regenerable marker block");
-  assert.match(ctx, /### @qlik-coe-emea\/qlabs-components-ui/, "the real component inventory");
+  assert.match(ctx, /### @elabs\/components-ui/, "the real component inventory");
   assert.match(ctx, /\bDataTable\b/, "a component an agent would otherwise guess at");
   assert.match(
     readFileSync(join(dir, "CLAUDE.md"), "utf8"),
@@ -193,11 +189,9 @@ for (const archetype of ["ai-assistant", "flow-workspace", "data-app"]) {
       .join("\n");
     const imported = [
       ...new Set(
-        [...source.matchAll(/from\s+["'](@qlik-coe-emea\/[^"']+)["']/g)]
+        [...source.matchAll(/from\s+["'](@elabs\/[^"']+)["']/g)]
           .map((m) => m[1])
-          .concat(
-            [...source.matchAll(/^import\s+["'](@qlik-coe-emea\/[^"']+)["']/gm)].map((m) => m[1]),
-          )
+          .concat([...source.matchAll(/^import\s+["'](@elabs\/[^"']+)["']/gm)].map((m) => m[1]))
           // a subpath import (…-editor/monaco-environment) is still that package
           .map((s) => s.split("/").slice(0, 2).join("/")),
       ),
@@ -268,7 +262,7 @@ test("emitScaffold: unanswered spec fields become TODO(spec) — never invented"
   const dir = tmp();
   // A minimal spec: no surfaces, no entities.
   const r = emitScaffold(
-    { archetype: "dashboard", theme: "qlik-dark", title: "Bare" },
+    { archetype: "dashboard", theme: "dark", title: "Bare" },
     {
       root,
       target: dir,
@@ -414,14 +408,21 @@ test("emitScaffold(standalone): package.json + CLAUDE.md carry the real install 
   );
 
   const css = readFileSync(join(dir, "src/styles.css"), "utf8");
-  assert.match(css, /@import "@qlik-coe-emea\/qlabs-components-tokens\/styles\.css";/);
+  assert.match(css, /@import "@elabs\/components-tokens\/styles\.css";/);
   for (const line of r.plan.install.css.sources)
     assert.ok(css.includes(line), `styles.css: ${line}`);
 
   const claude = readFileSync(join(dir, "CLAUDE.md"), "utf8");
-  assert.match(claude, /npm\.pkg\.github\.com/, "the registry handoff is in the agent contract");
+  // The scope is unpublished, so the handoff a standalone app inherits is the
+  // local-tarball recipe — not a registry the app could never reach.
+  assert.doesNotMatch(claude, /npm\.pkg\.github\.com|_authToken/);
+  assert.match(
+    claude,
+    /private and unpublished/,
+    "the agent contract says why there is no registry",
+  );
   assert.match(claude, /pnpm add /);
-  assert.doesNotMatch(claude, /pnpm\.overrides|gh release download|"file:/);
+  assert.doesNotMatch(claude, /pnpm\.overrides|gh release download/);
 
   rmSync(dir, { recursive: true, force: true });
 });

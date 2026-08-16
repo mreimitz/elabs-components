@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveTokenColor } from "@qlik-coe-emea/qlabs-components-tokens";
+import { resolveTokenColor } from "@elabs/components-tokens";
 import { useLayoutEffect, useState } from "react";
 
 import { useMap } from "../map-canvas/map-context";

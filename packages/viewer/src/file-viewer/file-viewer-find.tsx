@@ -23,7 +23,7 @@ import {
   InputGroupInput,
   Separator,
   useLocale,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { CaseSensitiveIcon, ChevronDownIcon, ChevronUpIcon, SearchIcon, XIcon } from "lucide-react";
 import {
   forwardRef,

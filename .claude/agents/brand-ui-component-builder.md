@@ -34,7 +34,7 @@ patterns and pass the quality gates.
   before authoring a story, and after building run the self-healing loop —
   `mcp__storybook__run-story-tests` (fix until green) then `mcp__storybook__preview-stories`
   to show the result. If the server is down, read source/stories and run
-  `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
+  `pnpm --filter @elabs/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
 
 ## Quality checklist
 
@@ -43,7 +43,7 @@ patterns and pass the quality gates.
 - [ ] Semantic tokens only; verified in light + dark
 - [ ] Story (autodocs) + at least one smoke test
 - [ ] Story passes `mcp__storybook__run-story-tests` (interaction + a11y) and renders
-      across both themes — or `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook` if the dev
+      across both themes — or `pnpm --filter @elabs/components-docs test-storybook` if the dev
       server is down (see @.claude/rules/storybook-mcp.md)
 - [ ] Exported from `src/index.ts`; types exported
 - [ ] `pnpm --filter <pkg> typecheck test` green
@@ -52,7 +52,7 @@ patterns and pass the quality gates.
 
 - No speculative props, no dead variants, no nested wrapper soup.
 - No raw colors, no paid deps.
-- Keep marketing concerns in `@qlik-coe-emea/qlabs-components-marketing`, app concerns in `@qlik-coe-emea/qlabs-components-ui`.
+- Keep marketing concerns in `@elabs/components-marketing`, app concerns in `@elabs/components-ui`.
 
 ## Context ceiling (measured — `.repo-cleanup/report.md`, 2026-08-02)
 

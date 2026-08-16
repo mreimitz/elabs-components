@@ -12,7 +12,7 @@ import {
   WizardNav,
   WizardStep,
   WizardSteps,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { STEPS } from "./data/steps";
 import { Field } from "./field";
 

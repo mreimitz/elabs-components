@@ -2,14 +2,14 @@
  * One glyph per {@link FileCategory} — the single icon map for file-shaped UI.
  *
  * Supersedes two package-private maps that could not see each other:
- * `PRODUCED_ASSET_ICONS` (`@qlik-coe-emea/qlabs-components-ai` file-tree, keyed by
+ * `PRODUCED_ASSET_ICONS` (`@elabs/components-ai` file-tree, keyed by
  * the five-member `ContextAssetType`) and `mediaCategoryIcons` (same package,
  * attachments, keyed by six MIME buckets) — so the same `.csv` drew a table glyph
  * in one surface and a generic document glyph in the other.
  *
  * Lucide per `.claude/rules/icons.md`: these are generic UI glyphs, not product
  * vocabulary, so nothing here belongs in
- * `@qlik-coe-emea/qlabs-components-icons`.
+ * `@elabs/components-icons`.
  *
  * Values only — this module holds component REFERENCES, it renders nothing.
  * Icons inherit color from `currentColor`; the category is never carried by hue

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button } from "@elabs/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { FileUIPart, SourceDocumentUIPart } from "ai";
 import {
   FileTextIcon,

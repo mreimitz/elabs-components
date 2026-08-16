@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { useLegendItem } from "./legend-context";

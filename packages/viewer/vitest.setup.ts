@@ -1,10 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 
-// jsdom does not implement `window.matchMedia`. Any `@qlik-coe-emea/qlabs-components-ui`
+// jsdom does not implement `window.matchMedia`. Any `@elabs/components-ui`
 // component that reads a media query at runtime (Sidebar/Sheet fallbacks via
 // `useIsMobile`, reduced-motion checks) throws on mount without it, and this
 // package composes those. Standard "no match" stub, mirroring the setup in
-// `@qlik-coe-emea/qlabs-components-ui` / `-ai` / `-data`.
+// `@elabs/components-ui` / `-ai` / `-data`.
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   Object.defineProperty(window, "matchMedia", {
     writable: true,

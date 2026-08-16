@@ -32,15 +32,12 @@ test("engine exports stable enums + tool name", () => {
 // ---- scaffold --------------------------------------------------------------
 
 test("planScaffold: happy path returns a plan shape (accepts an object spec)", () => {
-  const r = planScaffold(
-    { archetype: "dashboard", theme: "qlik-dark", title: "Sales Pulse" },
-    { root },
-  );
+  const r = planScaffold({ archetype: "dashboard", theme: "dark", title: "Sales Pulse" }, { root });
   assert.equal(r.command, "scaffold");
   assert.equal(r.status, "planned");
   assert.equal(r.implemented, true, "scaffold is implemented (#123) — not a skeleton");
   assert.equal(r.spec.archetype, "dashboard");
-  assert.equal(r.spec.theme, "qlik-dark");
+  assert.equal(r.spec.theme, "dark");
   assert.equal(r.spec.title, "Sales Pulse");
   assert.equal(r.template.name, "dashboard");
   assert.equal(typeof r.template.inManifest, "boolean");
@@ -62,7 +59,7 @@ test("planScaffold: happy path returns a plan shape (accepts an object spec)", (
 test("planScaffold: theme + title default when omitted", () => {
   const r = planScaffold({ archetype: "settings" }, { root });
   assert.equal(r.status, "planned");
-  assert.equal(r.theme, "qlik-bright");
+  assert.equal(r.theme, "light");
   assert.equal(r.spec.title, "settings");
 });
 
@@ -87,7 +84,7 @@ test("planScaffold: reads the fenced json Machine-spec block out of an app-spec.
   assert.equal(r.status, "planned", r.error);
   assert.equal(r.spec.archetype, "dashboard");
   assert.equal(r.spec.title, "Sales Pulse");
-  assert.equal(r.spec.theme, "qlik-dark");
+  assert.equal(r.spec.theme, "dark");
   assert.equal(r.spec.entities[0].name, "Deal", "entities survive the extraction");
 });
 
@@ -116,7 +113,7 @@ test("planScaffold: an app-spec.md with no json block is a structured error", ()
 
 // ---- scaffold: the standalone install handoff (#263) ------------------------
 
-/** The `@qlik-coe-emea/*` specifiers a template ACTUALLY imports, read from source. */
+/** The `@elabs/*` specifiers a template ACTUALLY imports, read from source. */
 function templatePkgsFromSource(archetype) {
   const src = readFileSync(join(root, `docs/playbooks/templates/${archetype}.tsx`), "utf8");
   const hits = [...src.matchAll(/^import\s[\s\S]*?from\s+["']([^"']+)["'];?\s*$/gm)]
@@ -128,7 +125,7 @@ function templatePkgsFromSource(archetype) {
 for (const archetype of ["data-app", "flow-workspace"]) {
   test(`planInstall(${archetype}): deps === template imports === @source lines`, () => {
     const r = planScaffold(
-      { archetype, theme: "qlik-bright", title: "X", standalone: true, release: "2.0.0" },
+      { archetype, theme: "light", title: "X", standalone: true, release: "2.0.0" },
       { root },
     );
     assert.equal(r.status, "planned", r.error);
@@ -147,24 +144,25 @@ for (const archetype of ["data-app", "flow-workspace"]) {
   });
 }
 
-test("planInstall: standalone emits the GitHub Packages registry block (ADR 0016)", () => {
+test("planInstall: standalone names NO registry and emits no .npmrc (unpublished scope)", () => {
   const r = planScaffold(
-    { archetype: "data-app", theme: "qlik-bright", title: "X", standalone: true, release: "2.0.0" },
+    { archetype: "data-app", theme: "light", title: "X", standalone: true, release: "2.0.0" },
     { root },
   );
   assert.equal(r.install.standalone, true);
-  assert.equal(r.install.registry, "https://npm.pkg.github.com");
-  assert.match(r.install.npmrc, /@qlik-coe-emea:registry=https:\/\/npm\.pkg\.github\.com/);
+  // The scope is private and unpublished — there is nothing to point an .npmrc at.
+  // A registry URL leaking back in here is what would silently re-create the
+  // "install works on my machine only" failure the debrand removed.
+  assert.equal(r.install.registry, null);
+  assert.equal(r.install.npmrc, "");
   assert.match(r.install.addCommand, /^pnpm add /);
   assert.match(r.install.addCommand, /@\^2\.0\.0/, "real semver range, not workspace:*");
-  const blob = JSON.stringify(r.install);
-  // The v2 distribution model — none of the pre-rename tarball plumbing.
-  assert.doesNotMatch(blob, /pnpm\.overrides|resolutions|file:|gh release download/);
+  assert.doesNotMatch(JSON.stringify(r.install), /npm\.pkg\.github\.com|_authToken/);
 });
 
 test("planInstall: flow needs @xyflow/react + its stylesheet; ai needs the `ai` peer", () => {
   const flow = planScaffold(
-    { archetype: "flow-workspace", theme: "qlik-bright", title: "X", standalone: true },
+    { archetype: "flow-workspace", theme: "light", title: "X", standalone: true },
     { root },
   );
   assert.ok(flow.install.peers.includes("@xyflow/react"), "xyflow is a peer the app installs");
@@ -174,7 +172,7 @@ test("planInstall: flow needs @xyflow/react + its stylesheet; ai needs the `ai` 
   );
 
   const ai = planScaffold(
-    { archetype: "ai-assistant", theme: "qlik-bright", title: "X", standalone: true },
+    { archetype: "ai-assistant", theme: "light", title: "X", standalone: true },
     { root },
   );
   assert.ok(ai.install.peers.includes("ai"), "the app owns the model calls (D5)");
@@ -201,7 +199,7 @@ for (const [archetype, pkgDir, peer] of [
     const declared = JSON.parse(readFileSync(join(root, `packages/${pkgDir}/package.json`), "utf8"))
       .peerDependencies[peer];
     const r = planScaffold(
-      { archetype, theme: "qlik-bright", title: "X", standalone: true, release: "2.0.0" },
+      { archetype, theme: "light", title: "X", standalone: true, release: "2.0.0" },
       { root },
     );
     assert.equal(r.install.peerRanges[peer], declared, "the declared range, verbatim");
@@ -224,7 +222,7 @@ test("planScaffold: an unreachable template is a hard error, never a {tokens,ui}
       { bundledDir: empty }, // consumer mode with the bundle missing
     ]) {
       const r = planScaffold(
-        { archetype: "ai-assistant", theme: "qlik-bright", title: "X", standalone: true },
+        { archetype: "ai-assistant", theme: "light", title: "X", standalone: true },
         opts,
       );
       assert.equal(r.status, "error", JSON.stringify(r.install ?? {}));
@@ -243,7 +241,7 @@ test("resolveTemplateFile: every archetype resolves from a checkout", () => {
 });
 
 test("planInstall: standalone:false keeps workspace:* and names no registry", () => {
-  const r = planScaffold({ archetype: "data-app", theme: "qlik-bright", title: "X" }, { root });
+  const r = planScaffold({ archetype: "data-app", theme: "light", title: "X" }, { root });
   assert.equal(r.install.standalone, false);
   assert.equal(r.install.dependencyRange, "workspace:*");
   assert.equal(r.install.addCommand, undefined, "no install command for an in-monorepo app");
@@ -253,7 +251,7 @@ test("planInstall: standalone:false keeps workspace:* and names no registry", ()
 test("planInstall: entities pull in the data package (the ColumnDef the scaffold emits)", () => {
   const spec = {
     archetype: "dashboard",
-    theme: "qlik-bright",
+    theme: "light",
     title: "X",
     entities: [{ name: "Deal", fields: [{ name: "value", type: "number" }] }],
   };
@@ -277,7 +275,7 @@ test("scanRepo: profiles a fixture repo deterministically", () => {
         name: "fixture-app",
         dependencies: {
           react: "19",
-          "@qlik-coe-emea/qlabs-components-ui": "1",
+          "@elabs/components-ui": "1",
           tailwindcss: "4",
           vite: "5",
         },
@@ -360,7 +358,7 @@ test("map: missing input is a structured error", () => {
 
 const FIXTURE_MAP = {
   mappings: [
-    { source: "Btn", target: "Button", pkg: "@qlik-coe-emea/qlabs-components-ui", class: "direct" },
+    { source: "Btn", target: "Button", pkg: "@elabs/components-ui", class: "direct" },
     { source: "Grid", target: null, class: "gap" },
   ],
 };

@@ -38,7 +38,7 @@ import {
 import { createPortal } from "react-dom";
 import { cva } from "class-variance-authority";
 import { motion, useReducedMotion } from "motion/react";
-import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs/components-ui";
 import { useGantt } from "./gantt-context";
 import type { ResolvedTask } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
@@ -95,7 +95,7 @@ export const ganttBarLabelVariants = cva("pointer-events-none truncate", {
  * must guarantee AA (4.5:1) independent of the fill underneath. An earlier fix
  * paired a fixed `bg-black/45` scrim with `text-primary-foreground`, assuming
  * "the label is always light" — but `--primary-foreground` is DARK in
- * qlik-dark/blueprint, so darkening the backdrop under already-dark text
+ * dark/blueprint, so darkening the backdrop under already-dark text
  * regressed those two themes below AA (see #259 follow-up).
  *
  * The real invariant: an OPAQUE, guaranteed-contrasting token PAIR that is

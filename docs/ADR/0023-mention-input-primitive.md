@@ -2,12 +2,12 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-02
-- **Issue:** [#368](https://github.com/qlik-coe-emea/qlabs-components/issues/368)
+- **Issue:** [#368](https://github.com/qlik-coe-emea/elabs-components/issues/368)
 - **Supersedes / amends:** nothing
 
 ## Context
 
-No `@qlik-coe-emea/qlabs-components-*` package shipped a mention-capable input.
+No `@elabs/components-*` package shipped a mention-capable input.
 Downstream teams that needed one were re-solving the same 500-line problem —
 caret arithmetic, chip atomicity, `aria-activedescendant` wiring, popup
 positioning — or reaching for a `contentEditable` escape hatch that quietly took
@@ -20,10 +20,10 @@ focus lives in cmdk's own input.
 
 ## Decision
 
-Ship `MentionInput` in **`@qlik-coe-emea/qlabs-components-ui`** as a compound
+Ship `MentionInput` in **`@elabs/components-ui`** as a compound
 component over a real `<textarea>`, with its own listbox.
 
-### 1. `@qlik-coe-emea/qlabs-components-ui`, not `-ai`, not the registry
+### 1. `@elabs/components-ui`, not `-ai`, not the registry
 
 Mentions are a general text-entry capability — comments, task assignment,
 descriptions — that merely _also_ suits a chat composer. The one-way dependency
@@ -36,7 +36,7 @@ It is not a registry block either. Registry items are copy-owned and divergence
 is expected; an ARIA-correct combobox is the last thing that should be allowed to
 drift per app.
 
-**`@qlik-coe-emea/qlabs-components-ai` gains no export and no source change.**
+**`@elabs/components-ai` gains no export and no source change.**
 The composer binding is pure composition:
 `<MentionInputTextarea asChild><PromptInputTextarea name="message" /></MentionInputTextarea>`.
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   MessageEdit,
@@ -126,7 +126,7 @@ export const BranchOnEdit: Story = {
   },
 };
 
-/** Dark theme — inline editor + trigger in qlik-dark. */
+/** Dark theme — inline editor + trigger in dark. */
 export const DarkTheme: Story = {
   render: function DarkTheme() {
     const [text, setText] = useState("Draft a follow-up email to the finance team.");
@@ -142,7 +142,7 @@ export const DarkTheme: Story = {
   },
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

@@ -1,9 +1,9 @@
 ---
 name: brand-ui
-description: Build UI with the brand-ui component system (@qlik-coe-emea/qlabs-components-* packages — ui, data, ai, flow, maps, charts, marketing, editor, viewer, blueprint, tokens, icons). Use when working in a project that depends on @qlik-coe-emea/qlabs-components-ui or any @qlik-coe-emea/qlabs-components-* package, when adding/composing components, building dashboards, data tables, AI/chat surfaces, React Flow canvases, MapLibre maps, code editors, file/document viewers, blueprint-theme drawing furniture, app shells, forms, or marketing sections, when theming with the token system, or when the user mentions brand-ui, @brand, qlik-bright/qlik-dark themes, or "our design system". Provides live project context, the real component API, composition patterns, and the rules that keep components token-driven, accessible, and theme-safe.
+description: Build UI with the brand-ui component system (@elabs/components-* packages — ui, data, ai, flow, maps, charts, marketing, editor, viewer, blueprint, tokens, icons). Use when working in a project that depends on @elabs/components-ui or any @elabs/components-* package, when adding/composing components, building dashboards, data tables, AI/chat surfaces, React Flow canvases, MapLibre maps, code editors, file/document viewers, blueprint-theme drawing furniture, app shells, forms, or marketing sections, when theming with the token system, or when the user mentions brand-ui, @brand, light/dark themes, or "our design system". Provides live project context, the real component API, composition patterns, and the rules that keep components token-driven, accessible, and theme-safe.
 user-invocable: false
 allowed-tools:
-  - Bash(npx @qlik-coe-emea/qlabs-components-cli *)
+  - Bash(npx @elabs/components-cli *)
   - Bash(pnpm brand-ui *)
   - Bash(npx brand-ui *)
   - Bash(npx shadcn@latest *)
@@ -13,21 +13,21 @@ allowed-tools:
 # brand-ui
 
 A source-owned, token-driven React component system: modern enterprise SaaS by
-default, themeable to any brand. Packages: `@qlik-coe-emea/qlabs-components-ui` (foundation + app UI),
-`@qlik-coe-emea/qlabs-components-data` (TanStack DataTable + filters), `@qlik-coe-emea/qlabs-components-ai` (AI Elements / chat),
-`@qlik-coe-emea/qlabs-components-flow` (React Flow canvas), `@qlik-coe-emea/qlabs-components-maps` (MapLibre GL maps),
-`@qlik-coe-emea/qlabs-components-charts` (KPI tiles + 13 charts + `ChartFrame`), `@qlik-coe-emea/qlabs-components-marketing`
-(landing sections), `@qlik-coe-emea/qlabs-components-editor` (Monaco code editor),
-`@qlik-coe-emea/qlabs-components-viewer` (FileViewer — display a file the app did not write),
-`@qlik-coe-emea/qlabs-components-blueprint`
-(blueprint-theme drawing furniture), `@qlik-coe-emea/qlabs-components-tokens` (themes +
-`ThemeProvider`), `@qlik-coe-emea/qlabs-components-icons` (brand/product icons; generic UI glyphs use the
+default, themeable to any brand. Packages: `@elabs/components-ui` (foundation + app UI),
+`@elabs/components-data` (TanStack DataTable + filters), `@elabs/components-ai` (AI Elements / chat),
+`@elabs/components-flow` (React Flow canvas), `@elabs/components-maps` (MapLibre GL maps),
+`@elabs/components-charts` (KPI tiles + 13 charts + `ChartFrame`), `@elabs/components-marketing`
+(landing sections), `@elabs/components-editor` (Monaco code editor),
+`@elabs/components-viewer` (FileViewer — display a file the app did not write),
+`@elabs/components-blueprint`
+(blueprint-theme drawing furniture), `@elabs/components-tokens` (themes +
+`ThemeProvider`), `@elabs/components-icons` (brand/product icons; generic UI glyphs use the
 default icon library **Lucide** / `lucide-react`).
 
 > Run the CLI with the project's runner. In this monorepo: `pnpm brand-ui <cmd>`.
 > In a consuming project, the CLI is a **private GitHub Packages** dependency —
 > add it first (`.npmrc` scope mapping + a `read:packages` PAT, then
-> `pnpm add -D @qlik-coe-emea/qlabs-components-cli`; see `docs/CONSUMING.md` §1 + §7a), then run
+> `pnpm add -D @elabs/components-cli`; see `docs/CONSUMING.md` §1 + §7a), then run
 > `pnpm exec brand-ui <cmd>`. Examples below say `brand-ui`.
 
 ## Packages & themes at a glance
@@ -38,23 +38,23 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (2):** qlik-dark, qlik-bright (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 154 · **Registry blocks:** 23
+**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 154 · **Registry blocks:** 23
 
 **Exported surface:** 1050 components · 76 hooks across 11 packages.
 
-| Package                                     | Components | Hooks | Use it for                                                                               |
-| ------------------------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
-| `@qlik-coe-emea/qlabs-components-tokens`    |         18 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@qlik-coe-emea/qlabs-components-icons`     |         31 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@qlik-coe-emea/qlabs-components-ui`        |        355 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@qlik-coe-emea/qlabs-components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@qlik-coe-emea/qlabs-components-ai`        |        443 |    13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@qlik-coe-emea/qlabs-components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@qlik-coe-emea/qlabs-components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@qlik-coe-emea/qlabs-components-charts`    |        130 |    32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@qlik-coe-emea/qlabs-components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@qlik-coe-emea/qlabs-components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@qlik-coe-emea/qlabs-components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| Package                       | Components | Hooks | Use it for                                                                               |
+| ----------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
+| `@elabs/components-tokens`    |         18 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs/components-icons`     |         31 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
+| `@elabs/components-ui`        |        355 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs/components-ai`        |        443 |    13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs/components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
+| `@elabs/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs/components-charts`    |        130 |    32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
+| `@elabs/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
+| `@elabs/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
+| `@elabs/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
 
 _Counts are exact, from the manifest. Confirm component names/props with `brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._
 
@@ -62,7 +62,7 @@ _Counts are exact, from the manifest. Confirm component names/props with `brand-
 
 ## Step 0 — Load project context (do this first, once per session)
 
-Run **`brand-ui info`** before writing UI. It reports which `@qlik-coe-emea/qlabs-components-*` packages
+Run **`brand-ui info`** before writing UI. It reports which `@elabs/components-*` packages
 are present, the available themes + default, the token set, and the registry. Do
 not re-run if you've already seen it this conversation.
 
@@ -100,7 +100,7 @@ Always enforced. Full detail with Incorrect/Correct pairs in
 [reference/rules.md](reference/rules.md).
 
 - **Semantic tokens, never raw color.** The only place raw colors live is the
-  `@qlik-coe-emea/qlabs-components-tokens` theme stylesheet (`@qlik-coe-emea/qlabs-components-tokens/styles.css`). In app code use
+  `@elabs/components-tokens` theme stylesheet (`@elabs/components-tokens/styles.css`). In app code use
   token-backed utilities. Run `brand-ui audit <path>` to catch violations.
 - **`className` is for layout, not recoloring.** Don't override a component's
   colors or typography; use its variants/tokens.
@@ -112,8 +112,8 @@ Always enforced. Full detail with Incorrect/Correct pairs in
 - **Visible focus ring.** Every interactive element keeps
   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`.
   Never `outline: none` without a replacement.
-- **Theme-safe.** It must read correctly in every theme (qlik-bright [default],
-  qlik-dark, blueprint). Rely on tokens, not `dark:`.
+- **Theme-safe.** It must read correctly in every theme (light [default],
+  dark, blueprint). Rely on tokens, not `dark:`.
 - **Spacing:** `flex`/`grid` + `gap-*`, not `space-x/space-y-*`. **Equal w/h:**
   `size-*`, not `w-N h-N`. **`cn()`** for conditional classes.
 - **Accessibility:** real elements (`<button>`, `<a>`, `<input>`), labels on
@@ -124,37 +124,37 @@ Always enforced. Full detail with Incorrect/Correct pairs in
 
 ## Component selection
 
-| Need                   | Use (package)                                                                                                                                                                                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Action                 | `Button` variants (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                                                                      |
-| Form inputs            | `Input`, `Select`, `Combobox`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `Textarea`, `InputOTP`, `Calendar`, `DatePicker`, `Form` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                  |
-| Grouped input + addon  | `InputGroup` + `InputGroupInput`/`InputGroupTextarea` + `InputGroupAddon` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                              |
-| 2–5 option toggle      | `ToggleGroup` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                                                                          |
-| Data table             | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@qlik-coe-emea/qlabs-components-data`)                                                                                                                                                             |
-| Display                | `Card`, `Badge`, `Avatar`, `Table`, `Progress`, `Skeleton` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                             |
-| Icons                  | **`lucide-react`** (default — generic UI glyphs) · `@qlik-coe-emea/qlabs-components-icons` (`Icon`/`createIcon`/`BrandLogo` — brand/product icons). No other icon set; see the brand-ui icons rule                                                            |
-| Navigation             | `Sidebar`, `NavigationMenu`, `Breadcrumb`, `Tabs`, `Pagination` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                        |
-| App shell              | `SidebarProvider`/`Sidebar`/`SidebarInset` + `sidebar-02/04/05` blocks                                                                                                                                                                                        |
-| Overlays               | `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `Popover`, `Tooltip`, `HoverCard`                                                                                                                                                                                 |
-| Command palette        | `Command` inside `Dialog`                                                                                                                                                                                                                                     |
-| Feedback               | `Alert`, `Sonner` toast, `EmptyState`, `ErrorState`, `LoadingState`, `Spinner`                                                                                                                                                                                |
-| AI / chat              | `ChatShell`, `Conversation`, `Message`, `PromptInput`, `Reasoning`, `Tool`, `Sources` (`@qlik-coe-emea/qlabs-components-ai`)                                                                                                                                  |
-| Flow canvas            | `CanvasShell`, `FlowNode`, `FlowEdge`, `ZoomControls`, `InspectorPanel` (`@qlik-coe-emea/qlabs-components-flow`)                                                                                                                                              |
-| KPIs / charts          | `MetricCard`, `MetricGrid`, `ChartCard`, `ChartFrame` + 13 chart types (`@qlik-coe-emea/qlabs-components-charts`) — see Charts section below                                                                                                                  |
-| Marketing              | `Hero`, `FeatureGrid`, `StatsBand`, `CTASection`, `LogoStrip` (`@qlik-coe-emea/qlabs-components-marketing`)                                                                                                                                                   |
-| Code editor            | `CodeEditor`, `DiffEditor`, `CodeWorkspace` (`@qlik-coe-emea/qlabs-components-editor`; import `@qlik-coe-emea/qlabs-components-editor/monaco-environment` once)                                                                                               |
-| Markdown authoring     | `MarkdownWorkspace`, `MarkdownEditor`, `MarkdownPreview`, `Timeline`, `MetricBlock` (`@qlik-coe-emea/qlabs-components-editor/markdown`); `parseFrontmatter`/`serializeFrontmatter` (`@qlik-coe-emea/qlabs-components-editor/markdown/frontmatter`, YAML only) |
-| File / document viewer | `FileViewer` + `FileViewerProvider`/`FileViewerToolbar`/`FileViewerContent` (`@qlik-coe-emea/qlabs-components-viewer`) — images, text, JSON, CSV today; formats are added by registering an adapter                                                           |
-| Blueprint chrome       | `GridPaper`, `PlaceholderBox`, `BlueprintFrame`, `BlueprintSheet`, `DimensionLine`, `Crosshair`/`RegistrationMark`, `FigAnnotation`, `Callout`, `TitleBlock` (`@qlik-coe-emea/qlabs-components-blueprint`; placement: blueprint-decoration rule)              |
+| Need                   | Use (package)                                                                                                                                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Action                 | `Button` variants (`@elabs/components-ui`)                                                                                                                                                                                         |
+| Form inputs            | `Input`, `Select`, `Combobox`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `Textarea`, `InputOTP`, `Calendar`, `DatePicker`, `Form` (`@elabs/components-ui`)                                                                     |
+| Grouped input + addon  | `InputGroup` + `InputGroupInput`/`InputGroupTextarea` + `InputGroupAddon` (`@elabs/components-ui`)                                                                                                                                 |
+| 2–5 option toggle      | `ToggleGroup` (`@elabs/components-ui`)                                                                                                                                                                                             |
+| Data table             | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@elabs/components-data`)                                                                                                                                                |
+| Display                | `Card`, `Badge`, `Avatar`, `Table`, `Progress`, `Skeleton` (`@elabs/components-ui`)                                                                                                                                                |
+| Icons                  | **`lucide-react`** (default — generic UI glyphs) · `@elabs/components-icons` (`Icon`/`createIcon`/`BrandLogo` — brand/product icons). No other icon set; see the brand-ui icons rule                                               |
+| Navigation             | `Sidebar`, `NavigationMenu`, `Breadcrumb`, `Tabs`, `Pagination` (`@elabs/components-ui`)                                                                                                                                           |
+| App shell              | `SidebarProvider`/`Sidebar`/`SidebarInset` + `sidebar-02/04/05` blocks                                                                                                                                                             |
+| Overlays               | `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `Popover`, `Tooltip`, `HoverCard`                                                                                                                                                      |
+| Command palette        | `Command` inside `Dialog`                                                                                                                                                                                                          |
+| Feedback               | `Alert`, `Sonner` toast, `EmptyState`, `ErrorState`, `LoadingState`, `Spinner`                                                                                                                                                     |
+| AI / chat              | `ChatShell`, `Conversation`, `Message`, `PromptInput`, `Reasoning`, `Tool`, `Sources` (`@elabs/components-ai`)                                                                                                                     |
+| Flow canvas            | `CanvasShell`, `FlowNode`, `FlowEdge`, `ZoomControls`, `InspectorPanel` (`@elabs/components-flow`)                                                                                                                                 |
+| KPIs / charts          | `MetricCard`, `MetricGrid`, `ChartCard`, `ChartFrame` + 13 chart types (`@elabs/components-charts`) — see Charts section below                                                                                                     |
+| Marketing              | `Hero`, `FeatureGrid`, `StatsBand`, `CTASection`, `LogoStrip` (`@elabs/components-marketing`)                                                                                                                                      |
+| Code editor            | `CodeEditor`, `DiffEditor`, `CodeWorkspace` (`@elabs/components-editor`; import `@elabs/components-editor/monaco-environment` once)                                                                                                |
+| Markdown authoring     | `MarkdownWorkspace`, `MarkdownEditor`, `MarkdownPreview`, `Timeline`, `MetricBlock` (`@elabs/components-editor/markdown`); `parseFrontmatter`/`serializeFrontmatter` (`@elabs/components-editor/markdown/frontmatter`, YAML only)  |
+| File / document viewer | `FileViewer` + `FileViewerProvider`/`FileViewerToolbar`/`FileViewerContent` (`@elabs/components-viewer`) — images, text, JSON, CSV today; formats are added by registering an adapter                                              |
+| Blueprint chrome       | `GridPaper`, `PlaceholderBox`, `BlueprintFrame`, `BlueprintSheet`, `DimensionLine`, `Crosshair`/`RegistrationMark`, `FigAnnotation`, `Callout`, `TitleBlock` (`@elabs/components-blueprint`; placement: blueprint-decoration rule) |
 
 Confirm exact names with `brand-ui search`; the registry also has copy-own blocks
 (`brand-ui search` shows `registry:*` items).
 
 ## Two consumption modes
 
-1. **Import (stable primitives):** `import { Button, Card } from "@qlik-coe-emea/qlabs-components-ui"`.
-   Once at the app root: `import "@qlik-coe-emea/qlabs-components-tokens/styles.css"` and wrap in
-   `<ThemeProvider defaultTheme="qlik-bright">`. React Flow consumers also
+1. **Import (stable primitives):** `import { Button, Card } from "@elabs/components-ui"`.
+   Once at the app root: `import "@elabs/components-tokens/styles.css"` and wrap in
+   `<ThemeProvider defaultTheme="light">`. React Flow consumers also
    `import "@xyflow/react/dist/style.css"`.
 2. **Copy-own (prototype blocks):** `npx shadcn@latest add <registry-url>/<item>.json`.
    After adding, **read the files** and fix imports to the project's alias, verify
@@ -162,7 +162,7 @@ Confirm exact names with `brand-ui search`; the registry also has copy-own block
 
 ## Theming
 
-Themes are `data-theme` blocks; `ThemeProvider`/`useTheme` (from `@qlik-coe-emea/qlabs-components-tokens`)
+Themes are `data-theme` blocks; `ThemeProvider`/`useTheme` (from `@elabs/components-tokens`)
 set and persist the choice. Every visual decision is a token — to re-brand, change
 token values, never hardcode in components. See [reference/theming.md](reference/theming.md).
 
@@ -183,9 +183,9 @@ token values, never hardcode in components. See [reference/theming.md](reference
 6. **Verify** — `brand-ui audit <path>` (static), and for visual/contrast across
    themes use the **brand-ui-audit** skill.
 
-## Rendering agent output (the @qlik-coe-emea/qlabs-components-ai contract)
+## Rendering agent output (the @elabs/components-ai contract)
 
-`@qlik-coe-emea/qlabs-components-ai` renders **agent-produced** data; your app owns the model call (D5). When you
+`@elabs/components-ai` renders **agent-produced** data; your app owns the model call (D5). When you
 (or an agent) produce chat/GenUI output, emit one of the two **shipped** shapes below and
 let the components render it — **there is no system prompt to copy**. Full routing lives in
 `docs/DECISIONS.md` §D2 and the `ai-sdk-vs-a2ui` rule; the machine-readable version is
@@ -197,7 +197,7 @@ never hand-edit between the markers.
 
 > **Generated** by `pnpm gen` from the CLI's agent-output module — edit there, not here. The `gen:check` gate fails on drift.
 
-`@qlik-coe-emea/qlabs-components-ai` is a **presentation layer**: it renders a data model — your app owns the model calls (D5). There is **no system prompt to copy**; there are two shipped output shapes and a wiring pattern. Pick the path, emit the shape, let the components render it.
+`@elabs/components-ai` is a **presentation layer**: it renders a data model — your app owns the model calls (D5). There is **no system prompt to copy**; there are two shipped output shapes and a wiring pattern. Pick the path, emit the shape, let the components render it.
 
 ### Which path (D2)
 
@@ -211,7 +211,7 @@ _Mental model: AI SDK = what the agent **said**; A2UI = a screen the agent **des
 
 ### Path A · Conversation — the AI SDK UIMessage (the default)
 
-Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @qlik-coe-emea/qlabs-components-ai renders it. ~the default for any chat.
+Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs/components-ai renders it. ~the default for any chat.
 
 - **Authority:** Vercel AI SDK — import type only (D6). brand-ui does NOT redefine UIMessage/ToolUIPart; the SDK is authoritative for their shape.
 - **brand-ui owns:** brand-ui owns ONLY the projection: the tool-state→Status mapping, the role narrowing, the fields its components consume, and SourceListItem.
@@ -225,7 +225,7 @@ Render what the agent SAID: a transcript of turns. The agent produces an AI SDK 
 | `tool`       | `Tool`, `ToolHeader`, `ToolInput`, `ToolOutput` | A pre-rendered React-element `output` is deprecated — emit a JSON payload and render it with ToolResultCard. |
 | `source-url` | `Sources`, `Source`, `SourceList`               | brand-ui-owned grounding item — not an SDK source part.                                                      |
 
-A **tool part** is typed `tool-<name> | dynamic-tool` and carries `type`, `state`, `input`, `output`, `errorText`. Its `state` maps onto the closed `@qlik-coe-emea/qlabs-components-ui` `Status` enum:
+A **tool part** is typed `tool-<name> | dynamic-tool` and carries `type`, `state`, `input`, `output`, `errorText`. Its `state` maps onto the closed `@elabs/components-ui` `Status` enum:
 
 | Tool `state`         | → `Status`          |
 | -------------------- | ------------------- |
@@ -268,7 +268,7 @@ const messages = [
 ];
 ```
 
-Map each turn's parts onto the components (**in your app** — `@qlik-coe-emea/qlabs-components-ai` never calls the model):
+Map each turn's parts onto the components (**in your app** — `@elabs/components-ai` never calls the model):
 
 ```tsx
 {
@@ -301,7 +301,7 @@ Map each turn's parts onto the components (**in your app** — `@qlik-coe-emea/q
 }
 ```
 
-> Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @qlik-coe-emea/qlabs-components-ai never calls the model.
+> Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs/components-ai never calls the model.
 
 ### Path B · Ad-hoc JSX — JSXPreview (the escape hatch)
 
@@ -340,7 +340,7 @@ The app owns the model. `useChat()` (from `ai`, **in your app**) gives you `mess
 
 ### Don't
 
-- Don't expect @qlik-coe-emea/qlabs-components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).
+- Don't expect @elabs/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).
 - Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.
 - Don't emit tags outside the JSXPreview `components` allow-list.
 - Don't emit A2UI surfaces — not shipped (WP-11).
@@ -351,14 +351,14 @@ _Verify every component name/prop with `brand-ui docs <Component>` or the Storyb
 
 <!-- brand-ui:gen:agent-output:end -->
 
-## Charts (@qlik-coe-emea/qlabs-components-charts)
+## Charts (@elabs/components-charts)
 
-`@qlik-coe-emea/qlabs-components-charts` provides 13 composable chart containers, `ChartFrame` (an
+`@elabs/components-charts` provides 13 composable chart containers, `ChartFrame` (an
 expand/flip-to-table/download-CSV wrapper), and the KPI tile primitives
 (`MetricCard`, `MetricGrid`, `ChartCard`). All visuals are token-driven —
 series colors come from `--chart-1..5` so every chart is theme-safe without
-any inline styles. The package depends only on `@qlik-coe-emea/qlabs-components-ui` and `@qlik-coe-emea/qlabs-components-tokens`;
-it must NOT import from `@qlik-coe-emea/qlabs-components-data` (sibling dep rule).
+any inline styles. The package depends only on `@elabs/components-ui` and `@elabs/components-tokens`;
+it must NOT import from `@elabs/components-data` (sibling dep rule).
 
 ### Which chart when
 
@@ -385,8 +385,8 @@ Charts follow a provider-children model: the chart container owns a
 are passed as children and read scale/data from context.
 
 ```tsx
-// Verified against the @qlik-coe-emea/qlabs-components-charts area-chart example
-import { AreaChart, Area, Grid, XAxis, ChartTooltip } from "@qlik-coe-emea/qlabs-components-charts";
+// Verified against the @elabs/components-charts area-chart example
+import { AreaChart, Area, Grid, XAxis, ChartTooltip } from "@elabs/components-charts";
 import { curveNatural } from "@visx/curve";
 
 const data = [
@@ -457,14 +457,7 @@ const { data, xScale, yScale, width, height, tooltipData } = useChart();
 automatically when `data` is absent or empty (feature degradation).
 
 ```tsx
-import {
-  ChartFrame,
-  BarChart,
-  Bar,
-  BarXAxis,
-  Grid,
-  ChartTooltip,
-} from "@qlik-coe-emea/qlabs-components-charts";
+import { ChartFrame, BarChart, Bar, BarXAxis, Grid, ChartTooltip } from "@elabs/components-charts";
 
 const data = [
   { month: "Jan", revenue: 12000 },
@@ -490,7 +483,7 @@ Key props: `title`, `description`, `data`, `columns` (`{ key, header? }[]`),
 `features` (`["expand","table","download"]` — default all), `height` (inline body
 px, default 260), `detail` (right-pane content in the modal), `onDownload`
 (custom CSV handler; default is a local RFC-4180 serializer), `renderTable`
-(custom table renderer; default is `@qlik-coe-emea/qlabs-components-ui` `Table`).
+(custom table renderer; default is `@elabs/components-ui` `Table`).
 
 ### KPI tiles
 

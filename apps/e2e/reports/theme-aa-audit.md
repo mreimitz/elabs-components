@@ -5,7 +5,7 @@
 
 ## Scope
 
-- **2 shipped themes:** `qlik-bright`, `qlik-dark` — plus the `:root` neutral light base (a fallback, not a selectable theme).
+- **2 shipped themes:** `light`, `dark` — plus the `:root` neutral light base (a fallback, not a selectable theme).
   #78's original "six themes" framing is outdated, and the orphan `acme` theme it asked to
   remove is already gone — no `[data-theme="acme"]` block exists. The gate fails if this
   artifact ever names a theme that is not in `THEMES` (`packages/tokens/src/theme-types.ts`),
@@ -27,7 +27,7 @@ This is **computation over tokens, not observation of a rendered screen.**
   actually composes (a component may put `--muted-foreground` on `--card`, an ungated pair), text
   over images/gradients/scrims, disabled and placeholder states, focus-ring visibility, hit-target
   size, and whether a screen simply *reads* well. Those come from the Storybook axe pass
-  (`pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`, blocking in CI since #280 —
+  (`pnpm --filter @elabs/components-docs test-storybook`, blocking in CI since #280 —
   though axe's own `test` mode is still advisory, ratcheting in #316) and from a
   `brand-ui-visual-ux-reviewer` three-theme sweep.
 
@@ -107,7 +107,7 @@ This is **computation over tokens, not observation of a rendered screen.**
 | `--chart-label` | `--chart-background` | 17.73 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.00 | 3.0 | ✅ |
 
-## qlik-bright
+## light
 
 ### Semantic tokens
 
@@ -168,7 +168,7 @@ This is **computation over tokens, not observation of a rendered screen.**
 | `--chart-label` | `--chart-background` | 10.43 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.00 | 3.0 | ✅ |
 
-## qlik-dark
+## dark
 
 ### Semantic tokens
 

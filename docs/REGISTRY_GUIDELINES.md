@@ -1,7 +1,7 @@
 # Registry guidelines
 
 The registry (`registry/`) distributes **copy-owned** code via the shadcn CLI,
-complementing the **imported** `@qlik-coe-emea/qlabs-components-*` packages.
+complementing the **imported** `@elabs/components-*` packages.
 
 ## Structure
 
@@ -9,7 +9,7 @@ complementing the **imported** `@qlik-coe-emea/qlabs-components-*` packages.
 registry/
   registry.json     # the manifest (validated by pnpm registry:validate)
   components/        # registry:ui — self-contained primitives
-  blocks/            # registry:block — compositions using @qlik-coe-emea/qlabs-components-* packages
+  blocks/            # registry:block — compositions using @elabs/components-* packages
   templates/         # whole pages/features composed of blocks
   themes/            # (token sets are declared inline via cssVars)
 ```
@@ -26,7 +26,7 @@ array; each item has `$schema`, `name`, `type`, `title`, `description`,
   `components/ui`.
 - **`registry:block`** (e.g. `app-shell`, `ai-chat-shell`, `data-table`,
   `flow-canvas`, `marketing-hero`) — a composition that imports installed
-  `@qlik-coe-emea/qlabs-components-*` packages (declared in `dependencies`). The consumer copies and
+  `@elabs/components-*` packages (declared in `dependencies`). The consumer copies and
   customizes it. Use `registry:page` + `target` for routed pages.
 - **`registry:theme`** (e.g. `default-theme`, `blueprint-theme`) — token sets via
   `cssVars.light` / `cssVars.dark`.
@@ -71,7 +71,7 @@ repo and fix up import aliases. Never document a bare
 
 ## Package vs. registry
 
-- Stable, broadly-shared, centrally-updated → **package** (`@qlik-coe-emea/qlabs-components-*`).
+- Stable, broadly-shared, centrally-updated → **package** (`@elabs/components-*`).
 - Prototype-specific, per-app customization expected → **registry** block.
 
 ## The registry is not published by a release (#106)

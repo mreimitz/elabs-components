@@ -1,8 +1,8 @@
-# @qlik-coe-emea/qlabs-components-marketing
+# @elabs/components-marketing
 
 > Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
 
-Import from `@qlik-coe-emea/qlabs-components-marketing`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs/components-marketing`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

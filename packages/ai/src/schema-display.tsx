@@ -1,12 +1,8 @@
 "use client";
 
-import { Badge } from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Badge } from "@elabs/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { createContext, useContext, useMemo } from "react";

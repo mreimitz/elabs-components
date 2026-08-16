@@ -15,30 +15,30 @@ and themeable to any brand.
 
 {/* brand-ui:gen:packages:start */}
 
-- **@qlik-coe-emea/qlabs-components-tokens** — Semantic CSS-variable themes + ThemeProvider/useTheme.
-- **@qlik-coe-emea/qlabs-components-icons** — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
-- **@qlik-coe-emea/qlabs-components-ui** — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).
-- **@qlik-coe-emea/qlabs-components-data** — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.
-- **@qlik-coe-emea/qlabs-components-ai** — ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.
-- **@qlik-coe-emea/qlabs-components-flow** — Branded React Flow canvas, nodes, edges, controls, inspector.
-- **@qlik-coe-emea/qlabs-components-maps** — MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
-- **@qlik-coe-emea/qlabs-components-charts** — MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
-- **@qlik-coe-emea/qlabs-components-marketing** — Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
-- **@qlik-coe-emea/qlabs-components-editor** — Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
-- **@qlik-coe-emea/qlabs-components-viewer** — FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
+- **@elabs/components-tokens** — Semantic CSS-variable themes + ThemeProvider/useTheme.
+- **@elabs/components-icons** — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
+- **@elabs/components-ui** — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).
+- **@elabs/components-data** — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.
+- **@elabs/components-ai** — ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.
+- **@elabs/components-flow** — Branded React Flow canvas, nodes, edges, controls, inspector.
+- **@elabs/components-maps** — MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
+- **@elabs/components-charts** — MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
+- **@elabs/components-marketing** — Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
+- **@elabs/components-editor** — Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
+- **@elabs/components-viewer** — FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
   {/* brand-ui:gen:packages:end */}
 
 ## Theming
 
-Switch themes with the toolbar (sun/paint icon): **Qlik Bright** (default),
-**Qlik Dark**, and **Blueprint**. Themes are driven entirely by `data-theme` +
-semantic tokens defined in `@qlik-coe-emea/qlabs-components-tokens/themes.css`. Components never hardcode
+Switch themes with the toolbar (sun/paint icon): **Light** (default),
+**Dark**, and **Blueprint**. Themes are driven entirely by `data-theme` +
+semantic tokens defined in `@elabs/components-tokens/themes.css`. Components never hardcode
 colors — they reference tokens like `bg-background`, `text-muted-foreground`,
 `border-border`, so re-branding (e.g. the Qlik Green primary) is a token change.
 
 ## Two ways to consume
 
-1. **Import** stable primitives: `import { Button } from "@qlik-coe-emea/qlabs-components-ui"`.
+1. **Import** stable primitives: `import { Button } from "@elabs/components-ui"`.
 2. **Copy-own** prototype blocks via the internal shadcn-compatible registry:
    `npx shadcn add <item>`.
 

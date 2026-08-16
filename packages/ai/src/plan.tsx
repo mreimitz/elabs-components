@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import {
   Card,
   CardAction,
@@ -9,13 +9,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { ChevronsUpDownIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { createContext, useContext, useMemo } from "react";

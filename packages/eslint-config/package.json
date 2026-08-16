@@ -1,5 +1,5 @@
 {
-  "name": "@qlik-coe-emea/qlabs-components-eslint-config",
+  "name": "@elabs/components-eslint-config",
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",

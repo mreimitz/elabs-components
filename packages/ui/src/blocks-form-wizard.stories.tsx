@@ -7,7 +7,7 @@
  * Review) so a builder doesn't re-derive the field layout, autocomplete hints,
  * or the summary step each time.
  *
- * Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in all
+ * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all
  * three themes. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";

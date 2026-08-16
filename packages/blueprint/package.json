@@ -1,5 +1,5 @@
 {
-  "name": "@qlik-coe-emea/qlabs-components-blueprint",
+  "name": "@elabs/components-blueprint",
   "version": "2.1.1",
   "private": true,
   "brandUi": {
@@ -15,11 +15,6 @@
         "test:watch": "vitest"
       }
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
-    "directory": "packages/blueprint"
   },
   "license": "UNLICENSED",
   "type": "module",
@@ -38,16 +33,16 @@
     "clean": "rm -rf dist .turbo coverage"
   },
   "peerDependencies": {
-    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "@elabs/components-tokens": "workspace:*",
+    "@elabs/components-ui": "workspace:*",
     "react": "^18.2.0 || ^19.0.0",
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "@elabs/components-eslint-config": "workspace:*",
+    "@elabs/components-tokens": "workspace:*",
+    "@elabs/components-typescript-config": "workspace:*",
+    "@elabs/components-ui": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.2",

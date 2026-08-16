@@ -9,7 +9,7 @@
  * Verify across both themes with globals=theme:<slug>.
  */
 import { useState } from "react";
-import { AppIcon } from "@qlik-coe-emea/qlabs-components-icons";
+import { AppIcon } from "@elabs/components-icons";
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +22,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import {
   Composer,
   Conversation,
@@ -32,7 +32,7 @@ import {
   Message,
   MessageContent,
   MessageResponse,
-} from "@qlik-coe-emea/qlabs-components-ai";
+} from "@elabs/components-ai";
 import { Bot, History, Home, Settings } from "lucide-react";
 
 interface ChatMessage {

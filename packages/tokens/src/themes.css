@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-tokens — themes.css
+ * @elabs/components-tokens — themes.css
  * --------------------------------------------------------------------------
  * Single source of truth for the design system's semantic tokens.
  *
@@ -25,7 +25,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 /* Decoration dial overlay rules (grid / hatch / drawn controls / shadow), driven
-   by the --decoration knob below. Copied to dist/ by the @qlik-coe-emea/qlabs-components-tokens build. */
+   by the --decoration knob below. Copied to dist/ by the @elabs/components-tokens build. */
 @import "./decoration.css";
 /* Density dial overlay — overrides --spacing to rescale all spacing utilities. */
 @import "./density.css";
@@ -37,7 +37,7 @@
 
 /* Self-hosted drafting monospace for the blueprint theme (IBM Plex Mono,
    SIL OFL 1.1). Vendored under ./fonts/ibm-plex-mono/ and copied into dist/
-   by the @qlik-coe-emea/qlabs-components-tokens build. No runtime CDN / network dependency. */
+   by the @elabs/components-tokens build. No runtime CDN / network dependency. */
 @font-face {
   font-family: "IBM Plex Mono";
   font-style: normal;
@@ -61,7 +61,7 @@
 }
 
 /* Inter — self-hosted variable sans (SIL OFL 1.1). Vendored under ./fonts/inter/
-   and copied into dist/ by the @qlik-coe-emea/qlabs-components-tokens build. The default --font-sans.
+   and copied into dist/ by the @elabs/components-tokens build. The default --font-sans.
    NOTE: shipped as .woff (the sandbox couldn't run the woff2/brotli step); to
    shrink ~30%, regenerate woff2 and add a format("woff2") src first. */
 @font-face {
@@ -79,7 +79,7 @@
   src: url("./fonts/inter/Inter-Italic-Variable.woff") format("woff");
 }
 
-/* Source Sans 3 + Source Code Pro — the faces the qlik-bright / qlik-dark
+/* Source Sans 3 + Source Code Pro — the faces the light / dark
    (DEFAULT) themes ask for, self-hosted (SIL OFL 1.1). Vendored under ./fonts/
    by `node scripts/vendor-fonts.mjs` and copied into dist/ by the build.
 
@@ -135,11 +135,11 @@
 /* Enable `dark:` utilities driven by the data-theme attribute. Components
    should prefer semantic tokens; this exists for the rare deliberate case.
    It must match EVERY dark-appearance theme (THEME_META[*].dark === true:
-   `qlik-dark`, `blueprint`) — otherwise `dark:` overrides (e.g. Shiki code
+   `dark`, `blueprint`) — otherwise `dark:` overrides (e.g. Shiki code
    colors) render light-on-dark in the other dark themes. Keep this list in
    sync with theme-types.ts. */
 @custom-variant dark (&:where(
-  [data-theme="qlik-dark"], [data-theme="qlik-dark"] *,
+  [data-theme="dark"], [data-theme="dark"] *,
   [data-theme="blueprint"], [data-theme="blueprint"] *
 ));
 
@@ -155,9 +155,9 @@
 
 /* ========================================================================
    BASE / FALLBACK (neutral light) — the ultimate token fallback, NOT a
-   selectable theme. The shipped, user-selectable themes are qlik-bright
-   (the DEFAULT_THEME), qlik-dark and blueprint; ThemeProvider always sets
-   data-theme=qlik-bright, so :root is only the safety net for an unthemed
+   selectable theme. The shipped, user-selectable themes are light
+   (the DEFAULT_THEME), dark and blueprint; ThemeProvider always sets
+   data-theme=light, so :root is only the safety net for an unthemed
    root. Restrained modern enterprise SaaS neutral palette.
    ======================================================================== */
 :root {
@@ -260,7 +260,7 @@
      clears WCAG AA (≥4.5:1) as body text in EVERY theme (proven in
      themes-contrast.test.ts). A dedicated pair so consumers stop improvising with
      `bg-warning/40` (sub-AA in dark, 3.48:1). Consumed by `MatchHighlight`
-     (@qlik-coe-emea/qlabs-components-ui). See #296 + #284. */
+     (@elabs/components-ui). See #296 + #284. */
   --highlight: oklch(0.865 0.155 90);
   --highlight-foreground: oklch(0.27 0.05 90);
   /* The CURRENT match among many (ADR 0025). A second pair, not an opacity
@@ -342,7 +342,7 @@
 
   /* Chart / legend token bridge — CH-01 (#112). Pure aliases to existing
      semantic tokens so every theme inherits the correct palette automatically.
-     Components from @qlik-coe-emea/qlabs-components-charts reference these via var(--…) or Tailwind
+     Components from @elabs/components-charts reference these via var(--…) or Tailwind
      utilities (bg-chart-grid, text-legend-foreground, etc.). */
   --chart-grid: var(--border);
   --chart-foreground: var(--foreground);
@@ -405,7 +405,7 @@
   --calc-comment: oklch(0.5 0.02 264);
   --calc-warning: oklch(0.5 0.2 27);
 
-  /* CodeBlock (@qlik-coe-emea/qlabs-components-ai, Shiki) syntax-highlight roles (#315). The
+  /* CodeBlock (@elabs/components-ai, Shiki) syntax-highlight roles (#315). The
      surface is a raised panel (alias --card/--foreground, already AA-proven); the
      9 hue roles below reuse the calc-block palette's exact values (already
      AA-audited ≥4.5:1 vs --card/--background in every theme — see
@@ -516,7 +516,7 @@
   --t-base: max(calc(var(--duration-base) * var(--motion-factor)), var(--motion-min));
   --t-slow: max(calc(var(--duration-slow) * var(--motion-factor)), var(--motion-min));
   --t-slower: max(calc(var(--duration-slower) * var(--motion-factor)), var(--motion-min));
-  /* Brand mark (Qlik logo) — green + Qlik gray (light). Consumed by @qlik-coe-emea/qlabs-components-icons BrandLogo. */
+  /* Brand mark (Qlik logo) — green + Qlik gray (light). Consumed by @elabs/components-icons BrandLogo. */
   --brand-mark-ring: #54565a;
   --brand-mark-tail: #009845;
 }
@@ -764,18 +764,18 @@
      The mono font stays palette-bound (see the [data-theme="blueprint"] block
      after @theme inline). */
   --decoration: 10;
-  /* Brand mark (Qlik logo) — fully white (navy cyanotype). Consumed by @qlik-coe-emea/qlabs-components-icons BrandLogo. */
+  /* Brand mark (Qlik logo) — fully white (navy cyanotype). Consumed by @elabs/components-icons BrandLogo. */
   --brand-mark-ring: #ffffff;
   --brand-mark-tail: #ffffff;
 }
 
 /* ========================================================================
-   QLIK BRIGHT (light) — Qlik Cloud "Sprout" register. Primary = Qlik Green on
+   LIGHT (light) — Qlik Cloud "Sprout" register. Primary = Qlik Green on
    near-white neutral surfaces; neutral grey text (#404040); tight 4px base
    radius; neutral low-contrast hairlines; a BLUE focus ring; the Qlik
    categorical chart palette; Source Sans Pro / Source Code Pro fonts.
    ======================================================================== */
-[data-theme="qlik-bright"] {
+[data-theme="light"] {
   color-scheme: light;
 
   /* Qlik's tight 4px (subtle) base radius. */
@@ -860,7 +860,7 @@
      move), but a maintainer retuning `--info` has ~0.23 of headroom against the
      ring, not 0.065 — re-measure, do not reason from this note. */
   --info: oklch(0.53 0.11 245);
-  /* #406 — white, like the other four qlik-bright status plates. 5.01:1. */
+  /* #406 — white, like the other four light status plates. 5.01:1. */
   --info-foreground: oklch(0.985 0 0);
   --info-text: oklch(0.52 0.12 245);
 
@@ -1009,12 +1009,12 @@
 }
 
 /* ========================================================================
-   QLIK DARK — Qlik Cloud register on warm neutral charcoal surfaces (low-chroma
+   DARK — Qlik Cloud register on warm neutral charcoal surfaces (low-chroma
    grays, hue ≈75) with off-white ivory text. Bright Qlik Green primary, BLUE
    focus ring, Qlik categorical charts, Source fonts, 4px radius. Companion to
-   qlik-bright.
+   light.
    ======================================================================== */
-[data-theme="qlik-dark"] {
+[data-theme="dark"] {
   color-scheme: dark;
 
   --radius-base: 0.25rem;
@@ -1058,7 +1058,7 @@
   --destructive: oklch(0.68 0.18 5);
   /* #321 — the warm-dark ink this theme's OTHER bright status fills already use
      (--primary/--success/--info-foreground are the same literal). Destructive
-     was the sole holdout still carrying qlik-bright's near-white ink verbatim,
+     was the sole holdout still carrying light's near-white ink verbatim,
      which measured 3.02:1 on this bright pink — the worst pair in the system,
      on every error badge in the theme where errors matter most. Not a new
      colour: the theme's own established pattern, finally applied. 5.50:1. */
@@ -1067,7 +1067,7 @@
 
   /* #334 — a BRIGHTER, COOLER emerald than the Qlik-brand --primary (which stays
      oklch(0.75 0.14 153)). They were byte-identical, so a success chip and a
-     primary button carried the same colour. Same role split as qlik-bright:
+     primary button carried the same colour. Same role split as light:
      the brand green is the ACTION, success is its own hue. */
   --success: oklch(0.82 0.12 170);
   --success-foreground: oklch(0.22 0.005 75);
@@ -1131,7 +1131,7 @@
   --flow-minimap-node: var(--muted-foreground);
   --flow-minimap-mask: oklch(0.27 0.006 75 / 0.65);
 
-  /* NEUTRAL warm-grey bubble, same reasoning as qlik-bright. Was
+  /* NEUTRAL warm-grey bubble, same reasoning as light. Was
      `oklch(0.32 0.04 153)` — a desaturated green that read as swamp/olive on the
      warm charcoal ground. Now the theme's own warm neutral (chroma 0.006 hue 75),
      lifted one step above the assistant turn (0.26) so the two turns still
@@ -1365,7 +1365,7 @@
   --color-calc-comment: var(--calc-comment);
   --color-calc-warning: var(--calc-warning);
 
-  /* CodeBlock (@qlik-coe-emea/qlabs-components-ai, Shiki) syntax-highlight roles (#315) —
+  /* CodeBlock (@elabs/components-ai, Shiki) syntax-highlight roles (#315) —
      `bg-code-background`, `text-code-keyword`, etc. become valid utilities.
      Primarily consumed at runtime via `resolveTokenColor` (the derived Shiki
      theme needs literal hex, not CSS vars), but mapped here too so the tokens
@@ -1858,7 +1858,7 @@
 }
 
 /* Backstop for THIRD-PARTY engines that ignore our --t-* tokens (Monaco /
-   @qlik-coe-emea/qlabs-components-editor, @xyflow/react / @qlik-coe-emea/qlabs-components-flow, Streamdown / @qlik-coe-emea/qlabs-components-ai): under an
+   @elabs/components-editor, @xyflow/react / @elabs/components-flow, Streamdown / @elabs/components-ai): under an
    OS reduce request, clamp every animation/transition to a non-zero epsilon and
    cap infinite loops. Scoped with :not([data-motion-pref="full"]) so a user who
    explicitly chose "full" still gets motion. KNOWN GAP: this fires on OS-reduce
@@ -1917,7 +1917,7 @@
 }
 
 /* ========================================================================
-   VIEW TRANSITIONS — animated theme switch (powers @qlik-coe-emea/qlabs-components-ui ThemeSwitcher)
+   VIEW TRANSITIONS — animated theme switch (powers @elabs/components-ui ThemeSwitcher)
    ------------------------------------------------------------------------
    The `useThemeTransition` hook wraps `setTheme` in `document.startViewTransition`
    and sets two attributes on <html>: `data-vt="to-dark|to-light"` (direction,

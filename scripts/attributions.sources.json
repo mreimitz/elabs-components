@@ -10,7 +10,13 @@
     "",
     "`required: true` marks a notice that a LICENCE obliges us to display (ODbL,",
     "provider terms), as opposed to one we show because it is right to credit.",
-    "The panel renders required notices first and the gate refuses to drop one."
+    "The panel renders required notices first and the gate refuses to drop one.",
+    "",
+    "Every `license` and `copyright` below is read from the upstream's own LICENSE",
+    "file, VERBATIM — never from a badge, a README claim or memory. If you cannot",
+    "establish one, say so in the note; do not invent a plausible value.",
+    "",
+    "Full rule: .claude/rules/attribution.md."
   ],
   "sources": [
     {
@@ -20,7 +26,7 @@
       "license": "ODbL-1.0",
       "copyright": "© OpenStreetMap contributors",
       "url": "https://www.openstreetmap.org/copyright",
-      "usedBy": ["@qlik-coe-emea/qlabs-components-maps"],
+      "usedBy": ["@elabs/components-maps"],
       "required": true,
       "note": "Map data behind the default Carto basemap. ODbL obliges the credit wherever the tiles are shown."
     },
@@ -31,7 +37,7 @@
       "license": "CARTO basemap terms",
       "copyright": "© CARTO",
       "url": "https://carto.com/about-carto/",
-      "usedBy": ["@qlik-coe-emea/qlabs-components-maps"],
+      "usedBy": ["@elabs/components-maps"],
       "required": true,
       "note": "Default light/dark basemap styles and tiles (positron / dark-matter)."
     },
@@ -40,44 +46,176 @@
       "category": "source",
       "name": "shadcn/ui",
       "license": "MIT",
-      "copyright": "© shadcn",
-      "url": "https://ui.shadcn.com",
-      "usedBy": ["@qlik-coe-emea/qlabs-components-ui"],
+      "copyright": "Copyright (c) 2023 shadcn",
+      "url": "https://github.com/shadcn-ui/ui",
+      "usedBy": ["@elabs/components-ui"],
       "required": false,
       "note": "The owned-source component model and many primitive implementations; the registry is shadcn-compatible (ADR 0001)."
     },
     {
       "id": "vercel-ai-elements",
       "category": "source",
-      "name": "Vercel AI Elements",
-      "license": "MIT",
-      "copyright": "© Vercel, Inc.",
+      "name": "AI Elements",
+      "license": "Apache-2.0",
+      "copyright": "Copyright 2023 Vercel, Inc.",
       "url": "https://github.com/vercel/ai-elements",
-      "usedBy": ["@qlik-coe-emea/qlabs-components-ai"],
+      "usedBy": ["@elabs/components-ai"],
+      "required": true,
+      "note": "Vendored into @elabs/components-ai and rewired onto brand-ui primitives and tokens. Apache-2.0, NOT MIT: §4 obliges us to carry the notice and to state that we modified the files."
+    },
+    {
+      "id": "assistant-ui",
+      "category": "source",
+      "name": "assistant-ui",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2025 AgentbaseAI Inc.",
+      "url": "https://github.com/assistant-ui/assistant-ui",
+      "usedBy": ["@elabs/components-ai"],
       "required": false,
-      "note": "Vendored into @qlik-coe-emea/qlabs-components-ai and rewired onto brand-ui primitives and tokens."
+      "note": "The message-part grouping design behind part-groups.ts, re-expressed in this library's idiom."
+    },
+    {
+      "id": "milkdown",
+      "category": "source",
+      "name": "Milkdown",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2020-present Mirone",
+      "url": "https://github.com/Milkdown/milkdown",
+      "usedBy": ["@elabs/components-editor"],
+      "required": false,
+      "note": "The @milkdown/react integration is vendored under markdown-editor/milkdown-react/ and adapted; Milkdown itself is also a runtime dependency."
     },
     {
       "id": "mapcn",
       "category": "source",
       "name": "mapcn",
       "license": "MIT",
-      "copyright": "© 2025 Anmoldeep Singh",
+      "copyright": "Copyright (c) 2025 Anmoldeep Singh",
       "url": "https://github.com/AnmolSaini16/mapcn",
-      "usedBy": ["@qlik-coe-emea/qlabs-components-maps"],
+      "usedBy": ["@elabs/components-maps"],
       "required": false,
-      "note": "The MapLibre component set @qlik-coe-emea/qlabs-components-maps was adapted from (ADR 0015)."
+      "note": "The MapLibre component set @elabs/components-maps was adapted from (ADR 0015)."
+    },
+    {
+      "id": "anyview",
+      "category": "source",
+      "name": "anyview",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 harshpreet931",
+      "url": "https://github.com/harshpreet931/anyview",
+      "usedBy": ["@elabs/components-viewer"],
+      "required": false,
+      "note": "The pluggable adapter-registry architecture behind the file viewer (ADR 0024)."
+    },
+    {
+      "id": "extend-hq-ui",
+      "category": "source",
+      "name": "extend-hq/ui",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 CrowdView Inc, dba Extend; portions Copyright (c) 2023 shadcn",
+      "url": "https://github.com/extend-hq/ui",
+      "usedBy": ["@elabs/components-viewer"],
+      "required": false,
+      "note": "The view-state seam and chrome-part inversion the viewer adopted (ADR 0026). Its LICENSE.md carries two copyright lines; both are reproduced."
+    },
+    {
+      "id": "blocks-so",
+      "category": "source",
+      "name": "blocks.so",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2025 Ephraim Duncan",
+      "url": "https://github.com/ephraimduncan/blocks",
+      "usedBy": ["@elabs/components-ui"],
+      "required": false,
+      "note": "The sidebar-02 / sidebar-04 / sidebar-05 copy-owned blocks, re-tokenized with Tabler icons mapped to Lucide."
     },
     {
       "id": "shadow-plugin",
       "category": "source",
       "name": "shadow-plugin",
       "license": "MIT",
-      "copyright": "© Florian Kiem",
+      "copyright": "Copyright (c) 2026 Florian Kiem",
       "url": "https://github.com/flornkm/shadow-plugin",
-      "usedBy": ["@qlik-coe-emea/qlabs-components-tokens"],
+      "usedBy": ["@elabs/components-tokens"],
       "required": false,
       "note": "The stacked, layered elevation-ramp technique behind the shadow tokens (ADR 0020)."
+    },
+    {
+      "id": "shimmering-text",
+      "category": "source",
+      "name": "@ncdai/shimmering-text",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Chánh Đại",
+      "url": "https://github.com/ncdai/chanhdai.com",
+      "usedBy": ["@elabs/components-charts"],
+      "required": false,
+      "note": "The ShimmeringText component, from the ncdai shadcn registry. Its TRADEMARK.md grants no right to the author's name or brand assets — the code is adopted, the branding is not."
+    },
+    {
+      "id": "liveline",
+      "category": "source",
+      "name": "Liveline",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2025-2026 Benji Taylor",
+      "url": "https://github.com/benjitaylor/liveline",
+      "usedBy": ["@elabs/components-charts"],
+      "required": false,
+      "note": "The live-axis tick-interval picker behind live-y-axis.tsx. Upstream now names that function niceTimeInterval."
+    },
+    {
+      "id": "bklit-ui",
+      "category": "source",
+      "name": "Bklit UI",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 uixmat",
+      "url": "https://github.com/bklit/bklit-ui",
+      "usedBy": ["@elabs/components-charts"],
+      "required": false,
+      "note": "Sample datasets in the bar / composed / candlestick chart stories. Attributed to bklit-ui (MIT, the charts library) rather than the archived bklit app (CC BY-NC 4.0) — see the note in ATTRIBUTION.md."
+    },
+    {
+      "id": "radix-primitives-patched",
+      "category": "source",
+      "name": "Radix UI Primitives (patched)",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2022 WorkOS",
+      "url": "https://github.com/radix-ui/primitives",
+      "usedBy": ["@elabs/components-ui"],
+      "required": false,
+      "note": "Beyond the npm dependency below, the shipped dist of react-scroll-area and react-select is modified in patches/ — disclosed here so the change is not invisible."
+    },
+    {
+      "id": "web-interface-guidelines",
+      "category": "source",
+      "name": "Web Interface Guidelines",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2025 Vercel Labs",
+      "url": "https://github.com/vercel-labs/web-interface-guidelines",
+      "usedBy": [],
+      "required": false,
+      "note": "Adopted delta-only into the repo's interaction-guidelines rule. Governance, not shipped code."
+    },
+    {
+      "id": "vercel-agent-skills",
+      "category": "source",
+      "name": "vercel-labs/agent-skills",
+      "license": "No licence declared",
+      "copyright": null,
+      "url": "https://github.com/vercel-labs/agent-skills",
+      "usedBy": [],
+      "required": false,
+      "note": "The composition-patterns skill behind the component-api rule's compound-component conventions. The repo declares NO licence and ships no LICENSE file — credited by link, with no licence claimed."
+    },
+    {
+      "id": "subyfly-topojson",
+      "category": "source",
+      "name": "subyfly/topojson",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2016",
+      "url": "https://github.com/subyfly/topojson",
+      "usedBy": [],
+      "required": false,
+      "note": "world-countries.json, fetched at runtime by the stat-card-choropleth-01 registry block. Its LICENSE names no holder, and upstream traces the file to johan/world.geo.json, which calls its own legal status dubious — the block already carries a TODO to self-host a clean source."
     }
   ]
 }

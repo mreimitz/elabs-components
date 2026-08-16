@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { PERFORMERS } from "./data/performers";
 
 /** A leaderboard (Top performers) — rank + avatar + name/role + a tone Badge. */

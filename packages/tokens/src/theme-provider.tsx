@@ -77,7 +77,7 @@ export interface ThemeProviderProps {
   children: ReactNode;
   /**
    * Initial theme when nothing is persisted. Defaults to `DEFAULT_THEME`
-   * ("qlik-bright"). Passing one that `allowedThemes` excludes falls back to the
+   * ("light"). Passing one that `allowedThemes` excludes falls back to the
    * first allowed theme and warns in development; leaving it unset never warns
    * (the library default yielding to a subset is not a consumer mistake).
    */
@@ -95,7 +95,7 @@ export interface ThemeProviderProps {
    * Unknown names and an empty list are ignored — a provider always exposes at
    * least one theme.
    *
-   * `ThemeSwitcher` (`@qlik-coe-emea/qlabs-components-ui`) automatically inherits this
+   * `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this
    * subset (#384): it narrows its offered themes to the intersection of the
    * `themes` prop and the provider's allowed list when the provider is genuinely
    * restricting (a strict subset of every shipped theme). A non-restricting
@@ -173,7 +173,7 @@ function resolveDefaultTheme(requested: ThemeName, allowedThemes: readonly Theme
  * has no `@types/node`. Declaring the one shape used here keeps the expression
  * `process.env.NODE_ENV` intact, which is what every bundler replaces at build
  * time (so the diagnostics below compile out of production bundles). Mirrors the
- * same guard in `@qlik-coe-emea/qlabs-components-data`'s DataTable.
+ * same guard in `@elabs/components-data`'s DataTable.
  */
 declare const process: { env: { NODE_ENV?: string } };
 
@@ -238,7 +238,7 @@ export function ThemeProvider({
   children,
   // NOT defaulted in the destructure: the effect below must be able to tell an
   // EXPLICIT `defaultTheme` from the library's own, so a subset that simply
-  // excludes "qlik-bright" doesn't warn a consumer about a prop they never passed.
+  // excludes "light" doesn't warn a consumer about a prop they never passed.
   defaultTheme,
   storageKey = "brand-ui-theme",
   allowedThemes,
@@ -253,7 +253,7 @@ export function ThemeProvider({
   attributeTarget = null,
 }: ThemeProviderProps) {
   // The themes THIS provider exposes (#355). Keyed by VALUE, not identity, so an
-  // inline `allowedThemes={["qlik-bright", "qlik-dark"]}` literal — which is a new
+  // inline `allowedThemes={["light", "dark"]}` literal — which is a new
   // array on every render — doesn't churn `setTheme`/the context value.
   const allowedKey = allowedThemes?.join(",") ?? null;
   const themes = useMemo<readonly ThemeName[]>(

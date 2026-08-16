@@ -8,7 +8,7 @@ export const toggleVariants = cva(
   // accent fill + bolded label (accent/accent-foreground is a guaranteed AA
   // pair) plus a solid `primary` border as a ≥3:1 non-text boundary cue. We
   // deliberately do NOT use `bg-primary`/`text-primary-foreground`: in
-  // qlik-bright `--primary-foreground` (near-white) on Qlik-Green `--primary`
+  // light `--primary-foreground` (near-white) on Qlik-Green `--primary`
   // is only 3.61:1, which fails AA for text labels (tracked separately as a
   // theme-token issue). The border carries the strength; the focus ring is
   // untouched. (#148)

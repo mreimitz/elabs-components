@@ -45,7 +45,7 @@ export const DarkTheme: Story = {
   args: { value: "positive" },
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

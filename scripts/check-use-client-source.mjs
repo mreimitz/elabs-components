@@ -158,7 +158,7 @@ function main() {
   if (violations.length > 0) {
     err("✖ use-client-source: packages using hooks must have at least one use-client module:");
     for (const v of violations) {
-      err(`  @qlik-coe-emea/qlabs-components-${v.package}: ${v.issue}`);
+      err(`  @elabs/components-${v.package}: ${v.issue}`);
     }
     return 1;
   }

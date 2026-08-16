@@ -15,24 +15,24 @@ const color = (sel) =>
 function cleanCss() {
   return [
     color(":root"),
-    color('[data-theme="qlik-bright"]'),
-    color('[data-theme="qlik-dark"]'),
+    color('[data-theme="light"]'),
+    color('[data-theme="dark"]'),
     color('[data-theme="blueprint"]'),
   ].join("\n\n");
 }
 
 const violations = (css) => findDuplicateThemeBlocks(css);
 
-// ── A: a planted second qlik-bright COLOR block → must FAIL, naming both lines ─
+// ── A: a planted second light COLOR block → must FAIL, naming both lines ─
 
-test("FAILS: a second qlik-bright color block (the #196 bug)", () => {
+test("FAILS: a second light color block (the #196 bug)", () => {
   const css =
     cleanCss() +
     "\n\n" +
-    `[data-theme="qlik-bright"] {\n  --background: oklch(1 0 0);\n  --accent: oklch(0.95 0.03 150);\n}`;
+    `[data-theme="light"] {\n  --background: oklch(1 0 0);\n  --accent: oklch(0.95 0.03 150);\n}`;
   const v = violations(css);
   assert.equal(v.length, 1, "expected exactly one duplicated selector");
-  assert.equal(v[0].selector, '[data-theme="qlik-bright"]');
+  assert.equal(v[0].selector, '[data-theme="light"]');
   assert.equal(v[0].colorBlockLines.length, 2, "should report both color-block line numbers");
   // Both line numbers must be real (1-based) and distinct.
   assert.ok(v[0].colorBlockLines.every((n) => Number.isInteger(n) && n > 0));
@@ -49,7 +49,7 @@ test("PASSES: exactly one color block per selector", () => {
 
 test("PASSES: grouped color-scheme selector (comma/`*`) is not counted", () => {
   const grouped =
-    `[data-theme="qlik-dark"], [data-theme="qlik-dark"] *,\n` +
+    `[data-theme="dark"], [data-theme="dark"] *,\n` +
     `[data-theme="blueprint"], [data-theme="blueprint"] * {\n  color-scheme: dark;\n}`;
   const css = grouped + "\n\n" + cleanCss();
   assert.equal(violations(css).length, 0, "the grouped selector must not count as a second block");
@@ -77,9 +77,8 @@ test("PASSES: a second :root with only an easing ramp (no color token) is allowe
 // ── E: a duplicate that aliases via var(--…) is still caught ──────────────────
 
 test("FAILS: a second color block that aliases tokens via var(--…)", () => {
-  const css =
-    cleanCss() + "\n\n" + `[data-theme="qlik-dark"] {\n  --background: var(--surface);\n}`;
+  const css = cleanCss() + "\n\n" + `[data-theme="dark"] {\n  --background: var(--surface);\n}`;
   const v = violations(css);
   assert.equal(v.length, 1);
-  assert.equal(v[0].selector, '[data-theme="qlik-dark"]');
+  assert.equal(v[0].selector, '[data-theme="dark"]');
 });

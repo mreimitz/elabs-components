@@ -23,13 +23,16 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const registryPath = resolve(root, "registry/registry.json");
 
 // ---------------------------------------------------------------------------
-// `homepage` — must be a real, resolvable URL, never a placeholder (#264)
+// `homepage` — OPTIONAL, but a real resolvable URL when present (#264)
 // ---------------------------------------------------------------------------
 // The registry is SELF-HOSTED (there is no `/r/*.json` publisher in this repo —
 // see docs/REGISTRY_GUIDELINES.md "Distribution: self-hosted"), so `homepage`
-// can't point at a serving origin; it should name the repo itself. Pure,
-// exported for the self-test (mirrors findVersionLiteralViolations in
-// check-docs-accuracy.mjs).
+// can't point at a serving origin. It used to be REQUIRED and point at the repo
+// on GitHub; this repo has no remote, so requiring it would only force a URL
+// that resolves to nothing — exactly what the placeholder rule below exists to
+// prevent. So: omit it, or give a real one. The placeholder/absolute rules still
+// apply to whatever IS supplied. Pure, exported for the self-test (mirrors
+// findVersionLiteralViolations in check-docs-accuracy.mjs).
 const PLACEHOLDER_HOMEPAGE_RE =
   /example\.(internal|com|org)|<[^>]+>|localhost|your-registry-host|your-own-host/i;
 
@@ -39,11 +42,12 @@ const PLACEHOLDER_HOMEPAGE_RE =
  * @param {string | undefined | null} homepage
  */
 export function findHomepageViolation(homepage) {
-  if (!homepage || typeof homepage !== "string" || !homepage.trim()) {
+  // Absent is fine — there is no canonical origin to name (see above).
+  if (homepage === undefined || homepage === null) return null;
+  if (typeof homepage !== "string" || !homepage.trim()) {
     return (
-      "registry.json is missing a top-level `homepage`. It must be an absolute " +
-      "https:// URL — since the registry is self-hosted (no serving origin to " +
-      "name), point it at the repo itself."
+      "registry.json `homepage` is present but empty. Either omit the key, or " +
+      "give an absolute, resolvable https:// URL."
     );
   }
   if (!/^https:\/\//.test(homepage)) {

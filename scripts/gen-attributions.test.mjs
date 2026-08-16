@@ -17,11 +17,17 @@ import { fileURLToPath } from "node:url";
 
 import {
   CATEGORY_ORDER,
+  FONT_UPSTREAM,
+  MD_END,
+  MD_START,
   collectFonts,
   distributablePackages,
   normalizeAuthor,
   npmUrl,
+  readOflCopyright,
+  renderMarkdown,
   sortEntries,
+  spliceMarkdown,
 } from "./gen-attributions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -79,7 +85,7 @@ test("collectFonts: reads the notice from the shipped OFL, and skips a face with
   mkdirSync(join(dir, "inter"), { recursive: true });
   writeFileSync(
     join(dir, "inter", "OFL.txt"),
-    "This Font Software is licensed…\nCopyright 2020 The Inter Project Authors\n",
+    "Copyright 2020 The Inter Project Authors\n\nThis Font Software is licensed…\n",
   );
   mkdirSync(join(dir, "unlicensed-face"), { recursive: true });
 
@@ -88,6 +94,48 @@ test("collectFonts: reads the notice from the shipped OFL, and skips a face with
   assert.equal(fonts[0].copyright, "Copyright 2020 The Inter Project Authors");
   assert.equal(fonts[0].required, true, "the OFL obliges the notice to ship");
   assert.equal(fonts[0].name, "Inter");
+  assert.equal(fonts[0].url, "https://github.com/rsms/inter", "every credit carries a link");
+});
+
+test("readOflCopyright: the licence BODY's boilerplate is never mistaken for the notice", () => {
+  // The bug this locks out: Source Code Pro and Source Sans 3 ship an OFL.txt
+  // whose header is just "Google Inc." — no copyright line at all. A whole-file
+  // scan matched the OFL body's own phrase "…including any relevant copyright
+  // statement(s)." and shipped `copyright: "copyright statement(s)."` as the
+  // displayed notice for both faces, past a gate that only checked non-emptiness.
+  const noHeaderNotice = [
+    "Google Inc.",
+    "",
+    "This Font Software is licensed under the SIL Open Font License, Version 1.1.",
+    "",
+    "…in all copies … including any relevant",
+    "copyright statement(s).",
+  ].join("\n");
+  assert.equal(readOflCopyright(noHeaderNotice), null, "boilerplate is not a notice");
+
+  const withHeaderNotice = [
+    "Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)",
+    "",
+    "This Font Software is licensed under the SIL Open Font License, Version 1.1.",
+    "copyright statement(s).",
+  ].join("\n");
+  assert.equal(
+    readOflCopyright(withHeaderNotice),
+    "Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)",
+  );
+});
+
+test("collectFonts: a face whose OFL has no header notice falls back to the upstream licence", () => {
+  const dir = tmp();
+  mkdirSync(join(dir, "source-code-pro"), { recursive: true });
+  writeFileSync(
+    join(dir, "source-code-pro", "OFL.txt"),
+    "Google Inc.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\ncopyright statement(s).\n",
+  );
+  const [font] = collectFonts(dir);
+  assert.equal(font.copyright, FONT_UPSTREAM["source-code-pro"].copyrightFallback);
+  assert.match(font.copyright, /^Copyright 2010-2020 Adobe/);
+  assert.equal(font.name, "Source Code Pro", "not the hyphen-title-cased directory name");
 });
 
 test("sortEntries: category order first, then required-first, then name", () => {
@@ -106,7 +154,82 @@ test("gate: passes on the committed tree", () => {
     cwd: root,
     encoding: "utf8",
   });
-  assert.match(out, /dataset is fresh/);
+  assert.match(out, /ATTRIBUTION\.md fresh/);
+  assert.match(out, /all named and linked/);
+});
+
+test("gate: FAILS when the committed ATTRIBUTION.md is stale", () => {
+  // The markdown is the PUBLIC face of the dataset; a gate that only watched the
+  // TS module would let the page drift from the product silently.
+  const md = join(root, "ATTRIBUTION.md");
+  const original = readFileSync(md, "utf8");
+  writeFileSync(md, original.replace("## Adapted & vendored source", "## Tampered"));
+  try {
+    assert.throws(
+      () => execFileSync("node", [join(here, "gen-attributions.mjs"), "--check"], { cwd: root }),
+      /Command failed/,
+      "a tampered ATTRIBUTION.md must fail the gate",
+    );
+  } finally {
+    writeFileSync(md, original);
+  }
+});
+
+test("spliceMarkdown: replaces only the marked region, keeping hand-authored prose", () => {
+  const doc = `# Attribution\n\nHand-written intro.\n\n${MD_START}\nOLD\n${MD_END}\n\nHand-written outro.\n`;
+  const out = spliceMarkdown(doc, "NEW");
+  assert.match(out, /Hand-written intro\./);
+  assert.match(out, /Hand-written outro\./);
+  assert.match(out, /NEW/);
+  assert.ok(!out.includes("OLD"), "the generated region is replaced");
+});
+
+test("spliceMarkdown: REFUSES a file whose markers were removed", () => {
+  // Silently overwriting would destroy the contributor-facing prose.
+  assert.throws(() => spliceMarkdown("# Attribution\n\nNo markers here.\n", "NEW"), /markers/);
+});
+
+test("renderMarkdown: every entry is a followable link, and empty usedBy renders", () => {
+  const md = renderMarkdown([
+    {
+      category: "source",
+      name: "mapcn",
+      license: "MIT",
+      copyright: "Copyright (c) 2025 Anmoldeep Singh",
+      url: "https://github.com/AnmolSaini16/mapcn",
+      usedBy: ["@elabs/components-maps"],
+      required: false,
+      note: "Adapted.",
+      version: null,
+    },
+    {
+      category: "source",
+      name: "Web Interface Guidelines",
+      license: "MIT",
+      copyright: "Copyright (c) 2025 Vercel Labs",
+      url: "https://github.com/vercel-labs/web-interface-guidelines",
+      usedBy: [], // governance we adopted — borrowed, credited, in no package
+      required: false,
+      note: "Governance.",
+      version: null,
+    },
+  ]);
+  assert.match(md, /\[mapcn\]\(https:\/\/github\.com\/AnmolSaini16\/mapcn\)/);
+  assert.match(md, /\| — \|/, "an entry reaching no package still renders a row");
+});
+
+test("the shipped dataset credits AI Elements under Apache-2.0, not MIT", () => {
+  // It was credited as MIT for its whole life here. Apache-2.0 carries a notice
+  // AND a state-your-modifications obligation that MIT does not, so the wrong
+  // identifier was a live compliance error, not a typo.
+  const generated = readFileSync(
+    join(root, "packages/ui/src/components/attribution-panel/attributions.generated.ts"),
+    "utf8",
+  );
+  assert.match(generated, /id: "vercel-ai-elements"[\s\S]{0,300}license: "Apache-2\.0"/);
+  const aiBarrel = readFileSync(join(root, "packages/ai/src/index.ts"), "utf8");
+  assert.match(aiBarrel, /Copyright 2023 Vercel, Inc\./, "the notice ships with the source");
+  assert.match(aiBarrel, /MODIFICATIONS/, "Apache-2.0 §4(b) requires stating the files changed");
 });
 
 test("gate: FAILS when the committed dataset is stale", () => {

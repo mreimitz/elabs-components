@@ -2,7 +2,7 @@
 # check-charts-reuse.sh — PostToolUse(Write|Edit)
 # -----------------------------------------------------------------------------
 # NON-BLOCKING (always exit 0). Dev-time heads-up for the charts reuse gate (#169):
-# `@qlik-coe-emea/qlabs-components-charts` must not define components whose names collide with `@qlik-coe-emea/qlabs-components-ui`
+# `@elabs/components-charts` must not define components whose names collide with `@elabs/components-ui`
 # exports, and must not import from `@base-ui/react` or `@base-ui/*`.
 #
 # Detection logic lives ONCE in scripts/check-charts-reuse.mjs (shared with the

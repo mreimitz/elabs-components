@@ -1,12 +1,11 @@
 {
   "name": "brand-ui",
   "displayName": "brand-ui",
-  "description": "AI skills + subagents for the brand-ui design system: build, theme, and audit UI with the @qlik-coe-emea/qlabs-components-* component packages. Front door: brand-ui-start routes to build-new (brand-ui-new-app), improve-existing (brand-ui-migrate), or use-it (brand-ui). Backed by the brand-ui CLI (component manifest, project context, search, docs, design audit), the persistent brand-ui MCP (always-on API ground truth — search/docs/tokens/audit), and the Storybook MCP for real-component previews.",
+  "description": "AI skills + subagents for the brand-ui design system: build, theme, and audit UI with the @elabs/components-* component packages. Front door: brand-ui-start routes to build-new (brand-ui-new-app), improve-existing (brand-ui-migrate), or use-it (brand-ui). Backed by the brand-ui CLI (component manifest, project context, search, docs, design audit), the persistent brand-ui MCP (always-on API ground truth — search/docs/tokens/audit), and the Storybook MCP for real-component previews.",
   "version": "3.1.0",
   "author": {
-    "name": "Qlik CoE EMEA"
+    "name": "elabs"
   },
-  "repository": "https://github.com/Qlik-CoE-EMEA/qlabs-components",
   "skills": [
     "./skills/brand-ui-start",
     "./skills/brand-ui",

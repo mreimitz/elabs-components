@@ -3,7 +3,7 @@
 // works correctly in jsdom. We mock ParentSize to supply a fixed size and stub
 // rAF as a no-op so the component can mount without stack-overflow or layout
 // errors. Real render + a11y are covered by the Storybook build (same
-// precedent as @qlik-coe-emea/qlabs-components-flow's canvas-shell.test.tsx).
+// precedent as @elabs/components-flow's canvas-shell.test.tsx).
 //
 // NOTE: forwardRef() returns an exotic object, not a plain function, so
 // `typeof LiveLineChart` is "object". We verify the export shape via

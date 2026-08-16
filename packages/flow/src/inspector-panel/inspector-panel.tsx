@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from "react";
-import { Reveal, useCollapsiblePanel } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Reveal, useCollapsiblePanel } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 const INSPECTOR_PANEL_WIDTH = "18rem";
 
@@ -20,7 +20,7 @@ export interface InspectorPanelProps {
    */
   selectionKey?: string | number;
   /**
-   * Collapse (research 09 step 3 — converged on the shared `@qlik-coe-emea/qlabs-components-ui`
+   * Collapse (research 09 step 3 — converged on the shared `@elabs/components-ui`
    * `useCollapsiblePanel` base; the panel stays single-view, drill-in is
    * ContextPanel-only). Controlled `open` / uncontrolled `defaultOpen`.
    */

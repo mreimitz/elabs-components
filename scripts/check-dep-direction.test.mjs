@@ -21,58 +21,58 @@ function violationsFor(manifests) {
 
 // ── FLAGS ────────────────────────────────────────────────────────────────────
 
-test("FLAGS: a domain→sibling edge (@qlik-coe-emea/qlabs-components-data deps @qlik-coe-emea/qlabs-components-charts)", () => {
+test("FLAGS: a domain→sibling edge (@elabs/components-data deps @elabs/components-charts)", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-data",
-      dependencies: { "@qlik-coe-emea/qlabs-components-charts": "workspace:*" },
+      name: "@elabs/components-data",
+      dependencies: { "@elabs/components-charts": "workspace:*" },
     },
   ]);
   assert.equal(v.length, 1);
-  assert.equal(v[0].from, "@qlik-coe-emea/qlabs-components-data");
-  assert.equal(v[0].to, "@qlik-coe-emea/qlabs-components-charts");
+  assert.equal(v[0].from, "@elabs/components-data");
+  assert.equal(v[0].to, "@elabs/components-charts");
 });
 
-test("FLAGS: an upward edge (@qlik-coe-emea/qlabs-components-ui deps @qlik-coe-emea/qlabs-components-data)", () => {
+test("FLAGS: an upward edge (@elabs/components-ui deps @elabs/components-data)", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-ui",
-      dependencies: { "@qlik-coe-emea/qlabs-components-data": "workspace:*" },
+      name: "@elabs/components-ui",
+      dependencies: { "@elabs/components-data": "workspace:*" },
     },
   ]);
   assert.equal(v.length, 1);
-  assert.equal(v[0].from, "@qlik-coe-emea/qlabs-components-ui");
-  assert.equal(v[0].to, "@qlik-coe-emea/qlabs-components-data");
+  assert.equal(v[0].from, "@elabs/components-ui");
+  assert.equal(v[0].to, "@elabs/components-data");
 });
 
-test("FLAGS: @qlik-coe-emea/qlabs-components-charts deps @qlik-coe-emea/qlabs-components-data specifically (ADR 0012 / chart-components.md)", () => {
+test("FLAGS: @elabs/components-charts deps @elabs/components-data specifically (ADR 0012 / chart-components.md)", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-charts",
-      peerDependencies: { "@qlik-coe-emea/qlabs-components-data": "workspace:*" },
+      name: "@elabs/components-charts",
+      peerDependencies: { "@elabs/components-data": "workspace:*" },
     },
   ]);
   assert.equal(v.length, 1);
-  assert.equal(v[0].from, "@qlik-coe-emea/qlabs-components-charts");
-  assert.equal(v[0].to, "@qlik-coe-emea/qlabs-components-data");
+  assert.equal(v[0].from, "@elabs/components-charts");
+  assert.equal(v[0].to, "@elabs/components-data");
 });
 
-test("FLAGS: @qlik-coe-emea/qlabs-components-tokens deps @qlik-coe-emea/qlabs-components-ui (foundation depending on layer 1)", () => {
+test("FLAGS: @elabs/components-tokens deps @elabs/components-ui (foundation depending on layer 1)", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-tokens",
-      dependencies: { "@qlik-coe-emea/qlabs-components-ui": "workspace:*" },
+      name: "@elabs/components-tokens",
+      dependencies: { "@elabs/components-ui": "workspace:*" },
     },
   ]);
   assert.equal(v.length, 1);
-  assert.equal(v[0].from, "@qlik-coe-emea/qlabs-components-tokens");
-  assert.equal(v[0].to, "@qlik-coe-emea/qlabs-components-ui");
+  assert.equal(v[0].from, "@elabs/components-tokens");
+  assert.equal(v[0].to, "@elabs/components-ui");
 });
 
-test("FLAGS: a @qlik-coe-emea/qlabs-components-* package missing from ALLOWED", () => {
-  const v = violationsFor([{ name: "@qlik-coe-emea/qlabs-components-newthing", dependencies: {} }]);
+test("FLAGS: a @elabs/components-* package missing from ALLOWED", () => {
+  const v = violationsFor([{ name: "@elabs/components-newthing", dependencies: {} }]);
   assert.equal(v.length, 1);
-  assert.equal(v[0].from, "@qlik-coe-emea/qlabs-components-newthing");
+  assert.equal(v[0].from, "@elabs/components-newthing");
   assert.equal(v[0].to, null);
   assert.match(v[0].reason, /not registered in ALLOWED/);
 });
@@ -81,32 +81,32 @@ test("FLAGS: a @qlik-coe-emea/qlabs-components-* package missing from ALLOWED", 
 
 test("DOES NOT FLAG: every real current edge (the manifests documented in the issue)", () => {
   const manifests = [
-    { name: "@qlik-coe-emea/qlabs-components-tokens" },
-    { name: "@qlik-coe-emea/qlabs-components-icons" },
+    { name: "@elabs/components-tokens" },
+    { name: "@elabs/components-icons" },
     {
-      name: "@qlik-coe-emea/qlabs-components-ui",
-      peerDependencies: { "@qlik-coe-emea/qlabs-components-tokens": "workspace:*" },
+      name: "@elabs/components-ui",
+      peerDependencies: { "@elabs/components-tokens": "workspace:*" },
     },
     {
-      name: "@qlik-coe-emea/qlabs-components-data",
+      name: "@elabs/components-data",
       peerDependencies: {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-icons": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-icons": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
       },
     },
     {
-      name: "@qlik-coe-emea/qlabs-components-ai",
+      name: "@elabs/components-ai",
       peerDependencies: {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
       },
     },
     {
-      name: "@qlik-coe-emea/qlabs-components-charts",
+      name: "@elabs/components-charts",
       peerDependencies: {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
       },
     },
   ];
@@ -116,38 +116,38 @@ test("DOES NOT FLAG: every real current edge (the manifests documented in the is
 test("DOES NOT FLAG: a devDependencies-only sibling edge (story/test composition)", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-ai",
+      name: "@elabs/components-ai",
       peerDependencies: {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
       },
-      devDependencies: { "@qlik-coe-emea/qlabs-components-charts": "workspace:*" },
+      devDependencies: { "@elabs/components-charts": "workspace:*" },
     },
   ]);
   assert.deepEqual(v, []);
 });
 
-test("DOES NOT FLAG: @qlik-coe-emea/qlabs-components-eslint-config / @qlik-coe-emea/qlabs-components-typescript-config deps", () => {
+test("DOES NOT FLAG: @elabs/components-eslint-config / @elabs/components-typescript-config deps", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-eslint-config",
-      dependencies: { "@qlik-coe-emea/qlabs-components-ui": "workspace:*" },
+      name: "@elabs/components-eslint-config",
+      dependencies: { "@elabs/components-ui": "workspace:*" },
     },
     {
-      name: "@qlik-coe-emea/qlabs-components-ui",
-      devDependencies: { "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*" },
+      name: "@elabs/components-ui",
+      devDependencies: { "@elabs/components-eslint-config": "workspace:*" },
     },
   ]);
   assert.deepEqual(v, []);
 });
 
-test("DOES NOT FLAG: non-@qlik-coe-emea/qlabs-components-* third-party deps", () => {
+test("DOES NOT FLAG: non-@elabs/components-* third-party deps", () => {
   const v = violationsFor([
     {
-      name: "@qlik-coe-emea/qlabs-components-flow",
+      name: "@elabs/components-flow",
       peerDependencies: {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
       },
       dependencies: { "@xyflow/react": "^12.0.0", ai: "^4.0.0", "monaco-editor": "^0.50.0" },
     },
@@ -155,9 +155,9 @@ test("DOES NOT FLAG: non-@qlik-coe-emea/qlabs-components-* third-party deps", ()
   assert.deepEqual(v, []);
 });
 
-test("DOES NOT FLAG: non-@qlik-coe-emea/qlabs-components-* package.json (e.g. an app manifest) is ignored", () => {
+test("DOES NOT FLAG: non-@elabs/components-* package.json (e.g. an app manifest) is ignored", () => {
   const v = violationsFor([
-    { name: "some-app", dependencies: { "@qlik-coe-emea/qlabs-components-ui": "workspace:*" } },
+    { name: "some-app", dependencies: { "@elabs/components-ui": "workspace:*" } },
   ]);
   assert.deepEqual(v, []);
 });
@@ -165,15 +165,11 @@ test("DOES NOT FLAG: non-@qlik-coe-emea/qlabs-components-* package.json (e.g. an
 // ── shape sanity ───────────────────────────────────────────────────────────────
 
 test("ALLOWED / TOOLING_PACKAGES shape sanity", () => {
-  assert.deepEqual(ALLOWED["@qlik-coe-emea/qlabs-components-tokens"], []);
-  assert.deepEqual(ALLOWED["@qlik-coe-emea/qlabs-components-icons"], []);
-  assert.ok(
-    !ALLOWED["@qlik-coe-emea/qlabs-components-charts"].includes(
-      "@qlik-coe-emea/qlabs-components-data",
-    ),
-  );
-  assert.ok(TOOLING_PACKAGES.has("@qlik-coe-emea/qlabs-components-eslint-config"));
-  assert.ok(TOOLING_PACKAGES.has("@qlik-coe-emea/qlabs-components-typescript-config"));
+  assert.deepEqual(ALLOWED["@elabs/components-tokens"], []);
+  assert.deepEqual(ALLOWED["@elabs/components-icons"], []);
+  assert.ok(!ALLOWED["@elabs/components-charts"].includes("@elabs/components-data"));
+  assert.ok(TOOLING_PACKAGES.has("@elabs/components-eslint-config"));
+  assert.ok(TOOLING_PACKAGES.has("@elabs/components-typescript-config"));
 });
 
 // ── CLI: the REAL repo currently passes the gate (verified dry-run) ────────────

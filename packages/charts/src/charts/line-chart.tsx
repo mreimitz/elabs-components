@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";

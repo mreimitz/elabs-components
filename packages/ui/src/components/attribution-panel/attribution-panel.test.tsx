@@ -14,7 +14,7 @@ const fixture: Attribution[] = [
     license: "ODbL-1.0",
     copyright: "© OpenStreetMap contributors",
     url: "https://www.openstreetmap.org/copyright",
-    usedBy: ["@qlik-coe-emea/qlabs-components-maps"],
+    usedBy: ["@elabs/components-maps"],
     required: true,
     note: "Map data behind the default basemap.",
   },
@@ -26,7 +26,7 @@ const fixture: Attribution[] = [
     license: "MIT",
     copyright: "Luke Edwards",
     url: "https://github.com/lukeed/clsx",
-    usedBy: ["@qlik-coe-emea/qlabs-components-ui"],
+    usedBy: ["@elabs/components-ui"],
     required: false,
     note: null,
   },
@@ -65,9 +65,7 @@ describe("AttributionPanel", () => {
   });
 
   it("filters by consuming package so an app credits only what it ships", () => {
-    render(
-      <AttributionPanel attributions={fixture} packages={["@qlik-coe-emea/qlabs-components-ui"]} />,
-    );
+    render(<AttributionPanel attributions={fixture} packages={["@elabs/components-ui"]} />);
     expect(screen.getByText("clsx")).toBeInTheDocument();
     expect(screen.queryByText("OpenStreetMap")).not.toBeInTheDocument();
   });

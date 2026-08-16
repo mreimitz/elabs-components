@@ -38,7 +38,7 @@
  *
  * Relationship to neighbours: `PageShell`'s generic `header` slot is where this
  * row goes on a page (#367's toolbar header variant should PLACE a
- * `<ViewToolbar>`, not invent a second row concept). `@qlik-coe-emea/qlabs-components-data`'s `FilterBar`
+ * `<ViewToolbar>`, not invent a second row concept). `@elabs/components-data`'s `FilterBar`
  * stays the DataTable-scoped toolbar render-prop row; it could later be
  * recomposed on this shell, but that is a separate change.
  */
@@ -214,7 +214,7 @@ export interface FilterChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
  * (WCAG 2.5.3 Label in Name).
  *
  * A chip that must EDIT a filter rather than remove it is a different control —
- * reach for `FacetFilter` (`@qlik-coe-emea/qlabs-components-data`), not a variant of this.
+ * reach for `FacetFilter` (`@elabs/components-data`), not a variant of this.
  */
 export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(function FilterChip(
   { label, onRemove, className, onClick, ...props },

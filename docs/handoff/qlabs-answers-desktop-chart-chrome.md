@@ -7,7 +7,7 @@ packages, and this repo never edits it.
 **Precondition:** the changes described below depend on a brand-ui release that
 includes the axis-fit, value-format and `ExpandDialog` work (see `CHANGELOG.md`
 `## Unreleased`). **Publish brand-ui first**, then bump
-`@qlik-coe-emea/qlabs-components-*` in the client. Three of the four problems the
+`@elabs/components-*` in the client. Three of the four problems the
 maintainer reported are fixed by that upgrade alone; the two below are client-side
 and stay broken until the client changes.
 
@@ -45,7 +45,7 @@ surface must show full digits, pass `valueFormat="number"` on the chart spec, or
 > space in a transcript, hides the controls until the pointer finds them, and
 > produces two competing titles.
 >
-> `ChartFrame` (`@qlik-coe-emea/qlabs-components-charts`) already puts the toolbar
+> `ChartFrame` (`@elabs/components-charts`) already puts the toolbar
 > and the title on **one row**, and it already owns expand / flip-to-table /
 > download-CSV. Replace `BlockFrame` with it for chart blocks:
 >
@@ -61,7 +61,7 @@ surface must show full digits, pass `valueFormat="number"` on the chart spec, or
 > different gestures behind one button, and neither is the surface this design
 > system ships for it.
 >
-> Use `ExpandDialog` (`@qlik-coe-emea/qlabs-components-ui`): enlarged content on
+> Use `ExpandDialog` (`@elabs/components-ui`): enlarged content on
 > one side, its context on the other. `ChartFrame`'s own expand already opens it,
 > so a chart block needs nothing beyond point 1. For a **table** block, drop the
 > full-screen route and the `max-h-80` clamp on the inline table, and instead give
@@ -70,7 +70,7 @@ surface must show full digits, pass `valueFormat="number"` on the chart spec, or
 > and each column's declared format) in `detail`. Do not compute min/max/avg over
 > a model-emitted table: its numeric columns may already be formatted strings.
 >
-> `ToolResultCard` (`@qlik-coe-emea/qlabs-components-ai`) has an `actions` slot on
+> `ToolResultCard` (`@elabs/components-ai`) has an `actions` slot on
 > its title row for exactly this — the expand button belongs there, beside the
 > title, not in a strip above it. There is a worked example in Storybook under
 > `AI/ToolResultCard → ExpandableTable`.

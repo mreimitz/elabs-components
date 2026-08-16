@@ -1,6 +1,6 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export interface FlowPlaceholderNodeData extends Record<string, unknown> {
   /** Label rendered inside the placeholder. @default "Add node" */

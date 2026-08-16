@@ -21,11 +21,17 @@ const AA = 4.5;
 /** WCAG 1.4.11 — non-text UI components (borders/outlines) need ≥3:1. */
 const AA_NONTEXT = 3;
 
-/** Theme display name → CSS selector body extractor. `light` is `:root`. */
+/**
+ * Theme key → CSS selector body extractor. `root` is the `:root` neutral
+ * base/fallback — NOT a selectable theme, and deliberately NOT keyed `light`:
+ * `light` is a real shipped theme slug, and a colliding key silently OVERWROTE
+ * the base block here (leaving it unaudited) the moment the theme was renamed.
+ * Canonical declaration: `ROOT_MODE` in `scripts/lib/themes-io.mjs`.
+ */
 const THEME_BLOCKS: Record<string, string> = {
-  light: extractBlock(/:root\s*\{([\s\S]*?)\n\}/),
-  "qlik-bright": extractThemeBlock("qlik-bright"),
-  "qlik-dark": extractThemeBlock("qlik-dark"),
+  root: extractBlock(/:root\s*\{([\s\S]*?)\n\}/),
+  light: extractThemeBlock("light"),
+  dark: extractThemeBlock("dark"),
 };
 
 function extractBlock(re: RegExp): string {
@@ -64,7 +70,7 @@ const TEXT_SURFACES = ["--background", "--card", "--surface-muted"] as const;
  * superset of `TEXT_SURFACES`: a `ProseLink` / `Button variant="link"` /
  * `Text tone="primary"` lands on the two mid-tone wells too (a link inside a
  * `--muted` panel, a `--secondary` chip), and `--primary` was under AA on all
- * five in qlik-bright (3.87-4.48:1), so the new `-text` rung is gated on the
+ * five in light (3.87-4.48:1), so the new `-text` rung is gated on the
  * widest set rather than only the three the status `-text` rungs use.
  */
 const PRIMARY_TEXT_SURFACES = [
@@ -122,7 +128,7 @@ const CALC_TEXT_TOKENS = [
 ] as const;
 
 /**
- * #315 — CodeBlock (@qlik-coe-emea/qlabs-components-ai, Shiki) syntax-highlight TEXT tokens.
+ * #315 — CodeBlock (@elabs/components-ai, Shiki) syntax-highlight TEXT tokens.
  * `--code-background`/`--code-foreground` are `var(--card)`/`var(--foreground)`
  * aliases (already covered by the foreground/card pairings used everywhere) so
  * they're not literal `oklch()` declarations this regex-based map can see; only
@@ -150,7 +156,7 @@ const CODE_TEXT_TOKENS = [
  * sites render it at 12-14px, weight 400-500 (`Badge` fixes `text-xs`/weight
  * 500, `Button` `text-sm`/weight 500, `StatusBadge`, `Alert`; `Calendar`'s
  * selected-day cell — `calendar.tsx`, `selected:` classNames — renders the
- * `qlik-bright/--primary` INK_EXEMPT pair at `text-sm`/weight 400, #430), so
+ * `light/--primary` INK_EXEMPT pair at `text-sm`/weight 400, #430), so
  * AA-Large never applies (it needs ≥18.66px bold or ≥24px regardless of
  * weight) and 4.5:1 is the operative floor at 100% of them.
  */
@@ -166,7 +172,7 @@ const INK_TONES = [
 /**
  * The ONLY accepted sub-AA ink pair, keyed by `(theme, tone)` — NOT by tone.
  *
- * #180 is closed won't-fix for white-on-Qlik-green **in qlik-bright
+ * #180 is closed won't-fix for white-on-Qlik-green **in light
  * specifically**: a brand argument about that one theme's brand hue. Keying it
  * by the tone name instead would be wrong twice over:
  *   - it would travel to `:root`'s genuine `--primary` failure and to any future
@@ -176,7 +182,7 @@ const INK_TONES = [
  *     green to `oklch(0.49 0.12 170)` and which now measures 5.46:1 — a pass.
  * The live footprint of #180 is exactly one pair. Keep it that way.
  */
-const INK_EXEMPT = new Set(["qlik-bright/--primary"]);
+const INK_EXEMPT = new Set(["light/--primary"]);
 
 /**
  * The literal #180 accepted, so the exemption cannot rot silently. If the brand
@@ -184,7 +190,7 @@ const INK_EXEMPT = new Set(["qlik-bright/--primary"]);
  * the exemption deliberately (it may well no longer be needed).
  */
 const INK_EXEMPT_LITERALS: Record<string, string> = {
-  "qlik-bright/--primary": "oklch(0.553 0.143 153)",
+  "light/--primary": "oklch(0.553 0.143 153)",
 };
 
 /**
@@ -267,7 +273,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // text" (ProseLink, `Button variant="link"`, `Text tone="primary"`, the
     // academic-layer citation links, …) reached for the FILL rung — whose
     // contract is the 1.4.11 mark bar (3:1), not the 1.4.3 text floor. In
-    // qlik-bright that measured 3.87-4.48:1 and in `:root` 4.47:1 on
+    // light that measured 3.87-4.48:1 and in `:root` 4.47:1 on
     // `--surface-muted`: real, shipped AA failures. This row is the missing
     // rung's gate; it is the reason the token exists.
     it.each(PRIMARY_TEXT_SURFACES)("primary-text ≥ 4.5:1 on %s", (surface) => {
@@ -293,8 +299,8 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
 
     // Search / find-in-page match highlight — the ink on the `<mark>` plate must
     // clear AA body text in every theme (the dedicated pair that replaces the
-    // sub-AA `bg-warning/40` improvisation, 3.48:1 in qlik-dark). Consumed by
-    // `MatchHighlight` (@qlik-coe-emea/qlabs-components-ui). See #284 + the highlight-token issue.
+    // sub-AA `bg-warning/40` improvisation, 3.48:1 in dark). Consumed by
+    // `MatchHighlight` (@elabs/components-ui). See #284 + the highlight-token issue.
     it("highlight-foreground ≥ 4.5:1 on --highlight", () => {
       const ratio = contrast(token(theme, "--highlight-foreground"), token(theme, "--highlight"));
       expect(
@@ -366,7 +372,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // #381 — WCAG 1.4.11: the status FILL rungs as colour-only GRAPHICAL marks.
     // Until this row existed the file only asserted the `-text` rungs at 4.5:1,
     // so `--warning` shipped at 1.79-2.07:1 — it cleared 3:1 against no surface
-    // at all in qlik-bright, making the `awaiting-approval` Timeline dot and the
+    // at all in light, making the `awaiting-approval` Timeline dot and the
     // `warning` flow-node stroke effectively invisible. Filled plates that also
     // carry a LABEL (Badge, StatusBadge) are a redundant boundary and 1.4.11-
     // exempt, but the same token is used bare, so the token itself must clear it.
@@ -404,8 +410,8 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // declining to generalize it because "the qlik white-on-Qlik-green
     // `--primary`/`--success` pairing is an accepted brand exemption (#180)".
     // That reasoning was the bug: one brand decision on ONE pair left the entire
-    // foreground-on-fill class unmeasured, which is how qlik-dark shipped a
-    // 3.02:1 error badge (#321) and qlik-bright a 3.74:1 info badge (#383).
+    // foreground-on-fill class unmeasured, which is how dark shipped a
+    // 3.02:1 error badge (#321) and light a 3.74:1 info badge (#383).
     // The fix is not "no gate" but "gate everything except what is blessed" —
     // see INK_TONES / INK_EXEMPT above. Do NOT re-narrow this row.
     it.each(INK_TONES.filter((t) => !INK_EXEMPT.has(`${theme}/${t}`)))(
@@ -421,8 +427,8 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
 
     // NOTE: there is intentionally NO `--input ≥ 3:1` assertion here.
     // ADR 0010 Amendment (2026-06-20) returned `--input` to the SUBTLE hairline
-    // rung (== --border on qlik-bright/light/blueprint; a perceptible-but-quiet
-    // 0.42 mid-value on qlik-dark) so form controls read on-theme rather than
+    // rung (== --border on light/light/blueprint; a perceptible-but-quiet
+    // 0.42 mid-value on dark) so form controls read on-theme rather than
     // carrying a dark strong-rung outline. This relaxes ADR 0010's `--input → strong
     // rung` sub-decision by maintainer direction: <3:1 resting contrast is an
     // accepted aesthetic-over-strict-1.4.11 tradeoff for an internal system — field
@@ -430,11 +436,11 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // hover, with the resting border as a redundant hairline. Do NOT re-add a 3:1
     // gate on `--input`; the `--border-strong` rung above is the load-bearing one.
 
-    // #259 — the Gantt inside-bar-label pill (@qlik-coe-emea/qlabs-components-charts
+    // #259 — the Gantt inside-bar-label pill (@elabs/components-charts
     // gantt-bar.tsx `GANTT_INSIDE_LABEL_SCRIM`) is opaque `bg-foreground` +
     // `text-background`, chosen SPECIFICALLY because it is fill-independent and
     // guaranteed ≥4.5:1 in every theme — unlike `--primary-foreground`, which is
-    // light in qlik-bright but DARK in qlik-dark/blueprint. This row is the gate
+    // light in light but DARK in dark/blueprint. This row is the gate
     // that keeps that pair from silently inverting again.
     it("foreground ≥ 4.5:1 on background (Gantt inside-label pill, #259)", () => {
       const ratio = contrast(token(theme, "--foreground"), token(theme, "--background"));
@@ -514,7 +520,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
 // is already the same hue at a distinct rung (it satisfies the contract on its
 // own terms), and `blueprint` is paused (@.claude/rules/paused-surfaces.md).
 describe("themes.css — --ring is brand-derived (ADR 0027, #427)", () => {
-  it.each(["qlik-bright", "qlik-dark"])(
+  it.each(["light", "dark"])(
     "%s: --ring is in --primary's hue family but a distinct rung",
     (theme) => {
       const ring = parseOklch(token(theme, "--ring"));
@@ -534,7 +540,7 @@ describe("themes.css — --ring is brand-derived (ADR 0027, #427)", () => {
 
 // #321/#383 — change-detector on the ONE `INK_EXEMPT` pair. The exemption above
 // suppresses a real AA failure, so it must not be able to outlive its own
-// justification: if the qlik-bright brand green moves, this fails and the mover
+// justification: if the light brand green moves, this fails and the mover
 // has to re-measure the pair and decide whether #180 still applies at all.
 describe("themes.css — the #180 ink exemption is pinned to its literal", () => {
   it.each(Object.entries(INK_EXEMPT_LITERALS))("%s still holds %s", (key, literal) => {

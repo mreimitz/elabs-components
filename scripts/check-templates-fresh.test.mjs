@@ -33,7 +33,7 @@ const STORY = `/**
  * Verify across all three themes with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import { Widget } from "./widget/widget";
 
 function SampleTemplate() {
@@ -63,7 +63,7 @@ function makeRepo({ pkg = "ui", name = "sample", story = STORY } = {}) {
   mkdirSync(srcDir, { recursive: true });
   writeFileSync(
     join(root, "packages", pkg, "package.json"),
-    JSON.stringify({ name: `@qlik-coe-emea/qlabs-components-${pkg}` }),
+    JSON.stringify({ name: `@elabs/components-${pkg}` }),
   );
   writeFileSync(join(srcDir, `templates-${name}.stories.tsx`), story);
   return root;
@@ -151,7 +151,7 @@ test("writeTemplates is idempotent (write → check clean → re-write no-op)", 
 test("transform: strips Storybook scaffolding + rewrites same-package imports", () => {
   const { code, title, packages } = transformStory({
     src: STORY,
-    pkgName: "@qlik-coe-emea/qlabs-components-ui",
+    pkgName: "@elabs/components-ui",
     name: "sample",
     relFile: "packages/ui/src/templates-sample.stories.tsx",
   });
@@ -165,17 +165,17 @@ test("transform: strips Storybook scaffolding + rewrites same-package imports", 
   // same-package relative import rewritten to the alias; cross-package untouched
   assert.ok(!/from "\.\/widget\/widget"/.test(code), "relative import rewritten");
   assert.ok(
-    /import { Widget } from "@qlik-coe-emea\/qlabs-components-ui"/.test(code),
-    "rewritten to @qlik-coe-emea/qlabs-components-ui",
+    /import { Widget } from "@elabs\/components-ui"/.test(code),
+    "rewritten to @elabs/components-ui",
   );
   assert.ok(
-    /import { Button } from "@qlik-coe-emea\/qlabs-components-ui"/.test(code),
+    /import { Button } from "@elabs\/components-ui"/.test(code),
     "cross-package import kept",
   );
   // generated header present
   assert.ok(/GENERATED from packages\/ui\/src\/templates-sample\.stories\.tsx/.test(code));
   // the package list folds in the own-package alias (relative import was rewritten)
-  assert.deepEqual(packages, ["@qlik-coe-emea/qlabs-components-ui"]);
+  assert.deepEqual(packages, ["@elabs/components-ui"]);
 });
 
 // sanity: computeTemplates returns an index entry shaped for the manifest

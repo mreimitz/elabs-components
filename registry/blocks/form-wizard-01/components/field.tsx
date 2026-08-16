@@ -1,6 +1,6 @@
 "use client";
 
-import { Input, Label } from "@qlik-coe-emea/qlabs-components-ui";
+import { Input, Label } from "@elabs/components-ui";
 
 export interface FieldProps {
   id: string;

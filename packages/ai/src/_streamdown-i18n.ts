@@ -2,7 +2,7 @@
 
 /**
  * The shared Streamdown wiring for every streamed-markdown surface in
- * `@qlik-coe-emea/qlabs-components-ai` — the plugin set and the locale bridge.
+ * `@elabs/components-ai` — the plugin set and the locale bridge.
  *
  * Why the locale bridge exists (#310)
  * -----------------------------------
@@ -28,7 +28,7 @@ import {
   STREAMDOWN_TRANSLATION_KEYS,
   useStreamdownTranslations,
   type StreamdownTranslationKey,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { cjk } from "@streamdown/cjk";
 import { createCodePlugin } from "@streamdown/code";
 import { math } from "@streamdown/math";
@@ -47,9 +47,9 @@ import { lazyMermaid } from "./_lazy-mermaid";
  *
  * Streamdown's dual-theme mechanism (`createCodePlugin({ themes: [light, dark] })`)
  * expects exactly TWO themes and picks between them purely via the `.dark` CSS
- * selector — but brand-ui ships THREE themes (qlik-bright/qlik-dark/blueprint),
+ * selector — but brand-ui ships THREE themes (light/dark/blueprint),
  * and blueprint matches `.dark` too (see `_code-block-theme.ts`). Passing a real
- * light/dark PAIR would still force blueprint into the qlik-dark slot. Instead
+ * light/dark PAIR would still force blueprint into the dark slot. Instead
  * this pins BOTH slots to `buildCodeBlockTheme()` — the SAME brand-token-derived
  * theme the active `data-theme` resolves to — so whichever slot the `.dark`
  * selector picks, it's the CORRECT theme for whatever is actually active.
@@ -81,7 +81,7 @@ function useReactiveCodePlugin() {
 }
 
 /**
- * The plugin set every `@qlik-coe-emea/qlabs-components-ai` markdown surface renders with.
+ * The plugin set every `@elabs/components-ai` markdown surface renders with.
  *
  * `mermaid` is the LAZY plugin (`./_lazy-mermaid`): the engine + d3 + DOMPurify
  * load on first diagram render, not in the entry chunk of every consumer. `code`
@@ -96,8 +96,8 @@ export function useStreamdownPlugins() {
 }
 
 /*
- * The translation MAP moved down to `@qlik-coe-emea/qlabs-components-ui`
- * (`lib/streamdown-translations.ts`) when `@qlik-coe-emea/qlabs-components-viewer`
+ * The translation MAP moved down to `@elabs/components-ui`
+ * (`lib/streamdown-translations.ts`) when `@elabs/components-viewer`
  * became a second Streamdown renderer — the two packages may not import each
  * other. What stays here is the half that needs the dependency itself: the
  * proof that the shared key list is still COMPLETE.

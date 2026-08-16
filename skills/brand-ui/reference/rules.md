@@ -5,8 +5,8 @@ mechanical ones.
 
 ## Color: semantic tokens only
 
-Raw colors live ONLY in the `@qlik-coe-emea/qlabs-components-tokens` theme stylesheet
-(`@qlik-coe-emea/qlabs-components-tokens/styles.css`). App code uses token-backed utilities so every
+Raw colors live ONLY in the `@elabs/components-tokens` theme stylesheet
+(`@elabs/components-tokens/styles.css`). App code uses token-backed utilities so every
 theme works.
 
 ```tsx
@@ -92,7 +92,7 @@ export const Thing = forwardRef<HTMLDivElement, ThingProps>(function Thing(
 ## Theme-safety
 
 Don't reach for `dark:` overrides — components rely on semantic tokens so all three
-themes (qlik-bright default, qlik-dark, blueprint) benefit. If you add a visual
+themes (light default, dark, blueprint) benefit. If you add a visual
 concept, it's a token in every theme block, not a literal in the component.
 
 ## Accessibility baseline

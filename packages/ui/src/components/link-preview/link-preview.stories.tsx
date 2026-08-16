@@ -89,10 +89,10 @@ export const NoImage: Story = {
   render: () => (
     <LinkPreviewCard
       className="w-96"
-      title="GitHub – qlabs/qlabs-components"
+      title="GitHub – qlabs/elabs-components"
       description="Source-owned, token-driven React component system for internal apps and prototypes."
       domain="github.com"
-      href="https://github.com/qlabs/qlabs-components"
+      href="https://github.com/qlabs/elabs-components"
     />
   ),
   play: async ({ canvasElement }) => {

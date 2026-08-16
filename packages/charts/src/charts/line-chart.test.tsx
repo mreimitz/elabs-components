@@ -12,7 +12,7 @@
  * failure pattern when Line/path children are included.)
  *
  * Real render, interaction, and a11y are covered by the Storybook story
- * (Charts/LineChart) running in a real browser via `pnpm --filter @qlik-coe-emea/qlabs-components-docs
+ * (Charts/LineChart) running in a real browser via `pnpm --filter @elabs/components-docs
  * test-storybook`.
  */
 

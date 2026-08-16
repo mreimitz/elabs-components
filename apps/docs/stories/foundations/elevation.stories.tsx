@@ -21,7 +21,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
  *
  * The ink is a THEME property, not a constant: `--shadow-color`,
  * `--shadow-strength` and `--shadow-ring-color` per theme block. Flip the toolbar
- * to **qlik-dark** (deeper stack, white hairline) or **blueprint**
+ * to **dark** (deeper stack, white hairline) or **blueprint**
  * (`--shadow-strength: 0` → shadowless, hairline becomes the drawn rule) and
  * watch the same rungs re-ink themselves.
  *

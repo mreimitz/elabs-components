@@ -19,7 +19,7 @@ type text, leading TSDoc) plus the literal `extends` clause — but it deliberat
 VariantProps<typeof buttonVariants>` as a string, not the expanded inherited surface,
 and TSDoc descriptions/defaults from base interfaces are absent.
 
-`@qlik-coe-emea/qlabs-components-cli` is, by stated invariant in its own header, **dependency-free** (zero
+`@elabs/components-cli` is, by stated invariant in its own header, **dependency-free** (zero
 runtime deps; the `package.json` has no `dependencies` key). Adding a docgen engine is
 therefore a structural change to a package whose dependency-freeness is a feature, and
 it churns the lockfile — both are architect-gated calls.
@@ -42,7 +42,7 @@ so this ADR scopes #79 to the **react-docgen prop-table half only**.
 
 ## Decision
 
-Adopt **`react-docgen-typescript`** as a **dev dependency of `@qlik-coe-emea/qlabs-components-cli`**.
+Adopt **`react-docgen-typescript`** as a **dev dependency of `@elabs/components-cli`**.
 
 - It is the engine Storybook's `@storybook/react-vite` docgen uses, so the manifest's
   resolved prop tables match what the docs site shows — one resolution source of truth,

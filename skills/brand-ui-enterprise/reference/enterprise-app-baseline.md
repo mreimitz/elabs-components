@@ -1,6 +1,6 @@
 # Enterprise app baseline — the default skeleton
 
-_Props are **verified against the `@qlik-coe-emea/qlabs-components-*` v1.0.0 source** (vendored tarballs). Re-confirm
+_Props are **verified against the `@elabs/components-*` v1.0.0 source** (vendored tarballs). Re-confirm
 with `brand-ui docs <Component>` if the version changes._
 
 Every **professional** brand-ui app starts from this skeleton. The agent must put
@@ -36,7 +36,7 @@ How to discover them in-repo: `brand-ui search sidebar` (registry blocks
 is a **collapsible app-shell sidebar + archetype content**. (Shell/template IDs named in this
 skill are indicative — confirm the current ones with `brand-ui search`.)
 
-**Frame primitive:** `AppShell` (`@qlik-coe-emea/qlabs-components-ui`) is the top-level frame —
+**Frame primitive:** `AppShell` (`@elabs/components-ui`) is the top-level frame —
 slots `sidebar` (a `<Sidebar/>`/`<AppSidebar/>`), `topNav` (a `<TopNav/>`), and
 `children` (scrolling main, `mainClassName` to style). Compose the chosen shell
 inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`.
@@ -47,34 +47,34 @@ inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`
 
 ### 1a. Collapsible Qlik app icon + matching favicon
 
-- **Component:** `BrandLogo` (`@qlik-coe-emea/qlabs-components-icons`). `variant="lockup"` = Q + "Qlik"
+- **Component:** `BrandLogo` (`@elabs/components-icons`). `variant="lockup"` = Q + "Qlik"
   wordmark (default, height 28); `variant="mark"` = the Q glyph only.
 - **Placement:** in the sidebar header (`AppSidebar` `header` slot).
 - **Collapse behavior:** show `lockup` when the sidebar is expanded, swap to `mark`
   when collapsed-to-icon — driven by the sidebar's collapsed state (`useSidebar`).
 - **Favicon:** set the document favicon to the **Qlik mark** so the browser tab
   matches the in-app icon. (App-level asset step, not a component — wire it in
-  `index.html` / the head; export the mark SVG from `@qlik-coe-emea/qlabs-components-icons`.)
+  `index.html` / the head; export the mark SVG from `@elabs/components-icons`.)
 
-### 1b. Theme switcher — System / Qlik Bright / Qlik Dark
+### 1b. Theme switcher — System / Light / Dark
 
-- **Components:** `ThemeProvider` (`@qlik-coe-emea/qlabs-components-tokens`, wrap the app root, persists
-  choice) + `ThemeSwitcher` (`@qlik-coe-emea/qlabs-components-ui`, a self-contained button).
+- **Components:** `ThemeProvider` (`@elabs/components-tokens`, wrap the app root, persists
+  choice) + `ThemeSwitcher` (`@elabs/components-ui`, a self-contained button).
 - **Placement:** `TopNav` `end` slot (always reachable), and mirrored in the
   Settings modal's Appearance section (§1c).
-- **Options to expose:** **System · Qlik Bright · Qlik Dark.** "System" follows the
-  OS and resolves across the qlik-bright / qlik-dark pair (`DEFAULT_THEME_PAIR`).
-- **Default theme:** `qlik-bright`.
-- ✅ **Verified:** the library `<ThemeSwitcher />` (`@qlik-coe-emea/qlabs-components-ui`) already does
+- **Options to expose:** **System · Light · Dark.** "System" follows the
+  OS and resolves across the light / dark pair (`DEFAULT_THEME_PAIR`).
+- **Default theme:** `light`.
+- ✅ **Verified:** the library `<ThemeSwitcher />` (`@elabs/components-ui`) already does
   this out of the box — its `themes` prop **defaults to the Qlik light/dark pair** and
   `showSystem` **defaults to `true`**, so a bare `<ThemeSwitcher />` renders **System /
-  Qlik Bright / Qlik Dark** (whole-screen animated transition, reduced-motion safe). Use
+  Light / Dark** (whole-screen animated transition, reduced-motion safe). Use
   it directly. A curated labeled `Select` (`assets/theme-switcher.tsx`) is an optional
   alternative if you want text labels instead of the icon toggle.
 
 ### 1c. Settings panel — as a modal, by default
 
-- **Pattern:** a `Dialog` (`@qlik-coe-emea/qlabs-components-ui`) opened from a gear/account control in the
+- **Pattern:** a `Dialog` (`@elabs/components-ui`) opened from a gear/account control in the
   `TopNav` `end` slot. Inside: a small section nav or `Tabs` with at least an
   **Appearance** section (hosting the theme switcher) plus app preference sections.
 - **Why modal:** keeps the user on their work surface (rulebook R012/R033 — preserve
@@ -94,7 +94,7 @@ inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`
 
 ### 1d. Sonner messaging system
 
-- **Components:** mount `<Toaster />` (`@qlik-coe-emea/qlabs-components-ui`, Sonner) **once** at the app root;
+- **Components:** mount `<Toaster />` (`@elabs/components-ui`, Sonner) **once** at the app root;
   fire with `toast(...)` from anywhere.
 - **Discipline (rulebook R040–R041):** toast for async results and confirmations
   ("Export finished", "Changes saved"), **not** for obvious in-context actions
@@ -103,14 +103,14 @@ inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`
 ### 1e. Right-side context / detail panel (preserve the work surface)
 
 - **Which to use (verified):**
-  - **AI workspace** → the `ContextPanel` family lives in **`@qlik-coe-emea/qlabs-components-ai`** (not `@qlik-coe-emea/qlabs-components-ui`):
+  - **AI workspace** → the `ContextPanel` family lives in **`@elabs/components-ai`** (not `@elabs/components-ui`):
     `ContextPanelProvider` (`defaultOpen` true; controlled `open`/`view` root↔detail +
     `selectedAsset`), `ContextPanel` (`width` default `"20rem"`), `ContextPanelHeader`/
     `Body`/`Section`/`Detail`/`Trigger`, `useContextPanel`. It models produced **assets**
     (markdown/code/sql/csv/image) with grounding/sources/status — purpose-built for agent
     output, animated, reduced-motion safe.
   - **Generic** record detail / inspector on non-AI surfaces → a right `Sheet` or `Drawer`
-    (`@qlik-coe-emea/qlabs-components-ui`, `side="right"`), or an inspector `<aside>` (the archetype-A tool-shell
+    (`@elabs/components-ui`, `side="right"`), or an inspector `<aside>` (the archetype-A tool-shell
     already provides one). Same "preserve the work surface" intent, lighter API.
 - **Why it matters:** realises "preserve the work surface" (rulebook R012/R024/R033) —
   show detail beside the list instead of a page jump.
@@ -120,16 +120,16 @@ inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`
 ## 2. Root wiring (once, at the app root)
 
 ```
-import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
+import "@elabs/components-tokens/styles.css";
 // providers, outermost → in:
-<ThemeProvider defaultTheme="qlik-bright">      // 1b — theme + persistence
+<ThemeProvider defaultTheme="light">      // 1b — theme + persistence
   <SidebarProvider>                             // 0  — shell state (collapse)
-    {/* AI workspaces only: wrap in <ContextPanelProvider> from @qlik-coe-emea/qlabs-components-ai (1e) */}
+    {/* AI workspaces only: wrap in <ContextPanelProvider> from @elabs/components-ai (1e) */}
       <AppShell sidebar={<AppSidebar header={<BrandLogo/>} …/>}  // 0 + 1a
                 topNav={<TopNav end={<>…ThemeSwitcher…SettingsTrigger…</>}/>}>
         {/* routed page content */}
       </AppShell>
-      {/* 1e: AI → <ContextPanel/> (@qlik-coe-emea/qlabs-components-ai); generic detail → Sheet/Drawer (side="right") */}
+      {/* 1e: AI → <ContextPanel/> (@elabs/components-ai); generic detail → Sheet/Drawer (side="right") */}
   </SidebarProvider>
   <Toaster/>                                     // 1d — once, at root
 </ThemeProvider>
@@ -149,26 +149,26 @@ A new professional app is not "scaffolded" until all are true:
 - [ ] Correct **app shell** chosen for the style (table §0), inside `AppShell`.
 - [ ] **Qlik app icon** in the sidebar header, **collapsing** lockup↔mark.
 - [ ] **Favicon** set to the Qlik mark.
-- [ ] **ThemeProvider** at root (`defaultTheme="qlik-bright"`); **ThemeSwitcher**
-      in the TopNav exposing **System / Qlik Bright / Qlik Dark**; choice persists.
+- [ ] **ThemeProvider** at root (`defaultTheme="light"`); **ThemeSwitcher**
+      in the TopNav exposing **System / Light / Dark**; choice persists.
 - [ ] **Settings modal** reachable from the chrome, with an Appearance section.
 - [ ] **`<Toaster/>`** mounted once; feedback uses `toast()` with R040–R041 discipline.
-- [ ] **Right-side detail panel** present (generic → `Sheet`/`Drawer` or inspector `aside`; AI → `@qlik-coe-emea/qlabs-components-ai` `ContextPanel`).
+- [ ] **Right-side detail panel** present (generic → `Sheet`/`Drawer` or inspector `aside`; AI → `@elabs/components-ai` `ContextPanel`).
 - [ ] Every state designed (default/hover/focus/active/disabled/loading/empty/error).
-- [ ] Semantic tokens only; reads correctly in qlik-bright + qlik-dark.
+- [ ] Semantic tokens only; reads correctly in light + dark.
 
 ---
 
 ## Component reference (exact names, brand-ui v1.0.0)
 
-| Need                       | Component (package)                                                                                                                                                                                                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Top-level frame            | `AppShell` · `AppSidebar` · `TopNav` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                                    |
-| Shell primitives           | `SidebarProvider`/`Sidebar`/`SidebarInset`/`SidebarTrigger`/`useSidebar` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                |
-| Ready shells               | `sidebar-02` · `sidebar-04` · `sidebar-05` (registry)                                                                                                                                                                                          |
-| App icon                   | `BrandLogo` (`variant` mark\|lockup) (`@qlik-coe-emea/qlabs-components-icons`)                                                                                                                                                                 |
-| Theme                      | `ThemeProvider`/`useTheme`/`THEMES`/`THEME_META` (`@qlik-coe-emea/qlabs-components-tokens`) · `ThemeSwitcher` (`@qlik-coe-emea/qlabs-components-ui`; `themes` defaults to Qlik pair, `showSystem` default true → System/Qlik Bright/Qlik Dark) |
-| Settings modal             | `Dialog` + `Tabs` + `AlertDialog` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                                       |
-| Toasts                     | `Toaster` + `toast` (`@qlik-coe-emea/qlabs-components-ui`, Sonner)                                                                                                                                                                             |
-| Right detail panel         | generic → `Sheet`/`Drawer` (`@qlik-coe-emea/qlabs-components-ui`, `side="right"`) or inspector `aside`; AI → `ContextPanel*` + `useContextPanel` (**`@qlik-coe-emea/qlabs-components-ai`**)                                                    |
-| Command palette (optional) | `Command`/`CommandDialog` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                                                                                                               |
+| Need                       | Component (package)                                                                                                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Top-level frame            | `AppShell` · `AppSidebar` · `TopNav` (`@elabs/components-ui`)                                                                                                                                           |
+| Shell primitives           | `SidebarProvider`/`Sidebar`/`SidebarInset`/`SidebarTrigger`/`useSidebar` (`@elabs/components-ui`)                                                                                                       |
+| Ready shells               | `sidebar-02` · `sidebar-04` · `sidebar-05` (registry)                                                                                                                                                   |
+| App icon                   | `BrandLogo` (`variant` mark\|lockup) (`@elabs/components-icons`)                                                                                                                                        |
+| Theme                      | `ThemeProvider`/`useTheme`/`THEMES`/`THEME_META` (`@elabs/components-tokens`) · `ThemeSwitcher` (`@elabs/components-ui`; `themes` defaults to Qlik pair, `showSystem` default true → System/Light/Dark) |
+| Settings modal             | `Dialog` + `Tabs` + `AlertDialog` (`@elabs/components-ui`)                                                                                                                                              |
+| Toasts                     | `Toaster` + `toast` (`@elabs/components-ui`, Sonner)                                                                                                                                                    |
+| Right detail panel         | generic → `Sheet`/`Drawer` (`@elabs/components-ui`, `side="right"`) or inspector `aside`; AI → `ContextPanel*` + `useContextPanel` (**`@elabs/components-ai`**)                                         |
+| Command palette (optional) | `Command`/`CommandDialog` (`@elabs/components-ui`)                                                                                                                                                      |

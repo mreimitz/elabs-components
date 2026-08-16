@@ -1,8 +1,8 @@
 /**
  * Browser file-download helpers — the single home for the
  * `Blob`/URL → hidden `<a download>` → click → revoke dance that was previously
- * copy-pasted across `@qlik-coe-emea/qlabs-components-ai` (ConversationDownload), `@qlik-coe-emea/qlabs-components-data`
- * (downloadCsv) and now `@qlik-coe-emea/qlabs-components-ai` Gallery.
+ * copy-pasted across `@elabs/components-ai` (ConversationDownload), `@elabs/components-data`
+ * (downloadCsv) and now `@elabs/components-ai` Gallery.
  *
  * Pure DOM mechanics, no React, no other deps — and SSR-guarded
  * (`typeof document === "undefined"` → no-op) so it's safe to import from

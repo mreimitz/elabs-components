@@ -4,7 +4,7 @@ import MapLibreGL, { type PopupOptions } from "maplibre-gl";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 import { useMap } from "../map-canvas/map-context";
 

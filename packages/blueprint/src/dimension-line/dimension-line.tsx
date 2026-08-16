@@ -1,5 +1,5 @@
 import { forwardRef, type SVGProps } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export type DimensionEnds = "arrow" | "tick" | "dot";
 export type DimensionOrientation = "horizontal" | "vertical";

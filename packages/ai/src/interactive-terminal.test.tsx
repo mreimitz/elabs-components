@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { oklchToHex } from "@qlik-coe-emea/qlabs-components-tokens";
+import { oklchToHex } from "@elabs/components-tokens";
 
 // xterm.js needs a real canvas + layout to render, so it cannot mount in
 // jsdom — mock the engine and assert the wrapper's lifecycle + theming
 // contract. Real rendering + a11y come from the Storybook interaction tests.
-// Mirrors the Monaco mocking pattern in @qlik-coe-emea/qlabs-components-editor's code-editor.test.tsx.
+// Mirrors the Monaco mocking pattern in @elabs/components-editor's code-editor.test.tsx.
 const h = vi.hoisted(() => {
   const state = {
     dataHandler: undefined as undefined | ((data: string) => void),
@@ -392,11 +392,11 @@ describe("buildInteractiveTerminalTheme readable-ink floor (#386)", () => {
   // loop below would silently run zero assertions and still go green.
   it("parses every palette the repo ships out of themes.css", () => {
     expect(Object.keys(THEME_BLOCKS).sort()).toEqual(
-      expect.arrayContaining([":root", "qlik-bright", "qlik-dark"]),
+      expect.arrayContaining([":root", "light", "dark"]),
     );
   });
 
-  for (const blockName of [":root", "qlik-bright", "qlik-dark"]) {
+  for (const blockName of [":root", "light", "dark"]) {
     const apply = () => {
       const palette = resolveBlock(THEME_BLOCKS[blockName] ?? {}, blockName);
       for (const [name, value] of Object.entries(palette)) {

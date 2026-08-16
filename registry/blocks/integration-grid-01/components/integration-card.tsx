@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, Card, CardContent, CardFooter } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge, Button, Card, CardContent, CardFooter } from "@elabs/components-ui";
 import type { Integration } from "./data/integrations";
 
 export interface IntegrationCardProps {

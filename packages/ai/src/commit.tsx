@@ -1,14 +1,10 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@qlik-coe-emea/qlabs-components-ui";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Avatar, AvatarFallback } from "@elabs/components-ui";
+import { Button } from "@elabs/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
+import { useLocale } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { CheckIcon, CopyIcon, FileIcon, GitCommitIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";

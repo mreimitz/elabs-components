@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Card, CardContent } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge, Card, CardContent } from "@elabs/components-ui";
 
 /** A comparison tile — this period vs last, with the delta. */
 export function ComparisonStatCard() {

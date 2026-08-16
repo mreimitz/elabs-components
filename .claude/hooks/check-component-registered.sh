@@ -2,7 +2,7 @@
 # check-component-registered.sh — PostToolUse(Write|Edit)
 # -----------------------------------------------------------------------------
 # NON-BLOCKING (always exit 0). Component-level sibling of check-package-registered.sh.
-# Warns when a @qlik-coe-emea/qlabs-components-ui component folder (packages/ui/src/components/<name>/) is
+# Warns when a @elabs/components-ui component folder (packages/ui/src/components/<name>/) is
 # written but NOT re-exported from the package barrel (src/index.ts) — i.e. the
 # component is invisible to consumers, the manifest, and the Storybook-MCP path.
 #
@@ -39,7 +39,7 @@ barrel="$root/packages/ui/src/index.ts"
 
 if ! grep -qF "./components/$name" "$barrel" 2>/dev/null; then
   cat >&2 <<MSG
-⚠ component-registration: @qlik-coe-emea/qlabs-components-ui components/$name/ is not re-exported from src/index.ts.
+⚠ component-registration: @elabs/components-ui components/$name/ is not re-exported from src/index.ts.
 A component with no barrel export is invisible to consumers, the manifest, and the
 Storybook-MCP agent path. Register it (or scaffold via /new-component):
   • add  export * from "./components/$name";  to packages/ui/src/index.ts

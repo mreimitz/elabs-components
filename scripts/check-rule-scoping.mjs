@@ -68,6 +68,11 @@ export const CROSS_CUTTING = [
   // Always-on by necessity: an agent has to know a surface is paused BEFORE it
   // opens a file inside it or adds it to a sweep.
   "paused-surfaces",
+  // Credit what we borrow, in the same change. Always-on by necessity: no `paths:`
+  // glob can express "when you paste someone else's code" — the borrow can land in
+  // any package, a doc, a rule or the registry, and the obligation attaches at the
+  // moment of borrowing, before any particular file is touched.
+  "attribution",
 ];
 
 // Package/area-scoped rules: MUST carry `paths:` frontmatter (lazy-loaded only when a

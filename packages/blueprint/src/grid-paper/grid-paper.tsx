@@ -1,5 +1,5 @@
 import { forwardRef, type CSSProperties, type HTMLAttributes } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export type GridPaperVariant = "lines" | "dots" | "crosshatch" | "hatch";
 export type GridPaperSize = "sm" | "md" | "lg";

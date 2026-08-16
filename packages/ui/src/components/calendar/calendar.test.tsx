@@ -79,7 +79,7 @@ describe("Calendar", () => {
 // pinned to a TWO-digit day specifically, so the a11y assertion stays capable
 // of failing rather than being silently routed into axe's unscoreable-text
 // path. The real, accepted 4.31:1 ink pair this cell renders
-// (`--primary-foreground` on `--primary`, qlik-bright) is `INK_EXEMPT` in
+// (`--primary-foreground` on `--primary`, light) is `INK_EXEMPT` in
 // `packages/tokens/src/themes-contrast.test.ts` (#180) — fixing that colour is
 // explicitly out of scope here.
 describe("Calendar — story fixture is clock-independent (#430)", () => {

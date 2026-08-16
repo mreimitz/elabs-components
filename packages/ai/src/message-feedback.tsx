@@ -12,9 +12,9 @@
 import { forwardRef, useState, type HTMLAttributes } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 
 export type FeedbackType = "positive" | "negative";
 

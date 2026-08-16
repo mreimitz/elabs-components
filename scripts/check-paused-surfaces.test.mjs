@@ -49,11 +49,11 @@ function makeTree(overrides = {}) {
     "packages/tokens/src/theme-types.ts",
     overrides.themeTypes ??
       [
-        'export const THEMES = ["qlik-bright", "qlik-dark"] as const;',
+        'export const THEMES = ["light", "dark"] as const;',
         'export const PAUSED_THEMES = ["blueprint"] as const;',
         "export const THEME_META = {",
-        '  "qlik-bright": { value: "qlik-bright" },',
-        '  "qlik-dark": { value: "qlik-dark" },',
+        '  "light": { value: "light" },',
+        '  "dark": { value: "dark" },',
         "  // blueprint is PAUSED — restore this entry to un-pause.",
         "};",
       ].join("\n"),
@@ -61,14 +61,14 @@ function makeTree(overrides = {}) {
 
   write(
     "packages/tokens/src/themes.css",
-    overrides.themesCss ?? '[data-theme="qlik-bright"] {\n}\n[data-theme="blueprint"] {\n}\n',
+    overrides.themesCss ?? '[data-theme="light"] {\n}\n[data-theme="blueprint"] {\n}\n',
   );
 
   write(
     "packages/blueprint/package.json",
     JSON.stringify(
       overrides.pausedPkg ?? {
-        name: "@qlik-coe-emea/qlabs-components-blueprint",
+        name: "@elabs/components-blueprint",
         private: true,
         version: "2.1.1",
       },
@@ -113,7 +113,7 @@ describe("paused-surfaces gate", () => {
     const { code, out } = run(
       makeTree({
         themeTypes: [
-          'export const THEMES = ["qlik-bright", "qlik-dark", "blueprint"] as const;',
+          'export const THEMES = ["light", "dark", "blueprint"] as const;',
           'export const PAUSED_THEMES = ["blueprint"] as const;',
           "export const THEME_META = {\n};",
         ].join("\n"),
@@ -127,7 +127,7 @@ describe("paused-surfaces gate", () => {
     const { code, out } = run(
       makeTree({
         themeTypes: [
-          'export const THEMES = ["qlik-bright", "qlik-dark"] as const;',
+          'export const THEMES = ["light", "dark"] as const;',
           'export const PAUSED_THEMES = ["blueprint"] as const;',
           "export const THEME_META = {",
           '  blueprint: { value: "blueprint", label: "Blueprint" },',
@@ -140,7 +140,7 @@ describe("paused-surfaces gate", () => {
   });
 
   it("B — fails when the paused theme's CSS block was DELETED (pause is not delete)", () => {
-    const { code, out } = run(makeTree({ themesCss: '[data-theme="qlik-bright"] {\n}\n' }));
+    const { code, out } = run(makeTree({ themesCss: '[data-theme="light"] {\n}\n' }));
     strictEqual(code, 1, out);
     match(out, /pause is not delete/);
   });
@@ -208,7 +208,7 @@ describe("paused-surfaces gate", () => {
       makeTree({
         extraFiles: {
           "fixtures/consumer-smoke/src/index.css":
-            '@source "../node_modules/@qlik-coe-emea/qlabs-components-blueprint/dist";\n',
+            '@source "../node_modules/@elabs/components-blueprint/dist";\n',
         },
       }),
     );
@@ -219,7 +219,7 @@ describe("paused-surfaces gate", () => {
   it("D — fails when a paused package is not private", () => {
     const { code, out } = run(
       makeTree({
-        pausedPkg: { name: "@qlik-coe-emea/qlabs-components-blueprint", version: "2.1.1" },
+        pausedPkg: { name: "@elabs/components-blueprint", version: "2.1.1" },
       }),
     );
     strictEqual(code, 1, out);
@@ -230,7 +230,7 @@ describe("paused-surfaces gate", () => {
     const { code, out } = run(
       makeTree({
         pausedPkg: {
-          name: "@qlik-coe-emea/qlabs-components-blueprint",
+          name: "@elabs/components-blueprint",
           private: true,
           scripts: { build: "tsup", test: "vitest run" },
         },
@@ -246,7 +246,7 @@ describe("paused-surfaces gate", () => {
       makeTree({
         docsPkg: {
           name: "docs",
-          dependencies: { "@qlik-coe-emea/qlabs-components-blueprint": "workspace:*" },
+          dependencies: { "@elabs/components-blueprint": "workspace:*" },
         },
       }),
     );
@@ -298,11 +298,11 @@ describe("paused-surfaces gate", () => {
     const { code, out } = run(
       makeTree({
         themeTypes: [
-          'export const THEMES = ["qlik-bright"] as const;',
+          'export const THEMES = ["light"] as const;',
           'export const PAUSED_THEMES = ["cyanotype"] as const;',
           "export const THEME_META = {\n};",
         ].join("\n"),
-        themesCss: '[data-theme="qlik-bright"] {\n}\n',
+        themesCss: '[data-theme="light"] {\n}\n',
       }),
     );
     strictEqual(code, 1, out);

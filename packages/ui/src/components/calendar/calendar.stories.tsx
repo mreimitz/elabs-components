@@ -48,7 +48,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 // Pinned rather than `new Date()` (#430): the selected day's cell paints
-// `--primary-foreground` on `--primary` (qlik-bright), a real, accepted AA
+// `--primary-foreground` on `--primary` (light), a real, accepted AA
 // miss (4.31:1 vs a 4.5:1 floor — #180, `INK_EXEMPT` in
 // `packages/tokens/src/themes-contrast.test.ts`). axe-core's `color-contrast`
 // rule reports single-CHARACTER text as `incomplete`/`shortTextContent`

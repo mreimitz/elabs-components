@@ -34,10 +34,10 @@ import {
   Skeleton,
   downloadUrl,
   type CarouselApi,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
-import { useReducedMotion } from "@qlik-coe-emea/qlabs-components-tokens";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
+import { useReducedMotion } from "@elabs/components-tokens";
 import { Download, ImageOff, Maximize2 } from "lucide-react";
 import {
   createContext,

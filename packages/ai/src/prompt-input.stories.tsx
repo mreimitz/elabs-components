@@ -10,7 +10,7 @@
  * already-tinted outer frame — the "double card" (#254) that `PromptInput`
  * could not express before this prop existed. The `card` well's fill is
  * theme-driven, not universally "white" — raised (lighter than the outer
- * frame) on light themes, recessed (darker) on qlik-dark; see the
+ * frame) on light themes, recessed (darker) on dark; see the
  * `tone` prop doc.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -35,7 +35,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The raw composer FORM primitive Composer is built on. `tone` picks the inner well's fill — `surface` (default, muted) or `card` — so it can nest inside an already-tinted outer frame (the double card, #254). The `card` fill is theme-driven, not universally white: raised on light themes, recessed on qlik-dark — still a distinct, legible tone against the outer frame in every theme.",
+          "The raw composer FORM primitive Composer is built on. `tone` picks the inner well's fill — `surface` (default, muted) or `card` — so it can nest inside an already-tinted outer frame (the double card, #254). The `card` fill is theme-driven, not universally white: raised on light themes, recessed on dark — still a distinct, legible tone against the outer frame in every theme.",
       },
     },
   },
@@ -68,7 +68,7 @@ export const Default: Story = {
 /**
  * The "double card" (#254): a tinted `bg-surface-muted` outer frame around a
  * `tone="card"` well. Raised (lighter than the frame) on light themes,
- * recessed (darker) on qlik-dark — check both themes here, not
+ * recessed (darker) on dark — check both themes here, not
  * just the light default.
  */
 export const DoubleCardToned: Story = {

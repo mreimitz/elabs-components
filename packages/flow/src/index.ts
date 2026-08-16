@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-flow — branded React Flow (@xyflow/react) building blocks.
+ * @elabs/components-flow — branded React Flow (@xyflow/react) building blocks.
  *
  * Import the React Flow stylesheet once at the app root:
  *   import "@xyflow/react/dist/style.css";

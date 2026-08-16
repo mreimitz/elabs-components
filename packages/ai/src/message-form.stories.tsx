@@ -167,14 +167,14 @@ export const Submitted: Story = {
   },
 };
 
-/** Dark theme — verifies token-driven surfaces + focus rings in qlik-dark. The
+/** Dark theme — verifies token-driven surfaces + focus rings in dark. The
  *  theme is scoped to this story via a `data-theme` decorator (NOT a `globals`
  *  override, which would stick and re-theme the whole Docs page). */
 export const DarkTheme: Story = {
   args: { spec: contactSpec },
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

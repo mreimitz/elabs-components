@@ -6,8 +6,8 @@
  * The documented swap is a `vi.mock` FACTORY:
  *
  * ```ts
- * vi.mock("@qlik-coe-emea/qlabs-components-charts", async () =>
- *   import("@qlik-coe-emea/qlabs-components-charts/test"));
+ * vi.mock("@elabs/components-charts", async () =>
+ *   import("@elabs/components-charts/test"));
  * ```
  *
  * Vitest wraps a factory's result in a proxy that THROWS on any export the
@@ -25,12 +25,9 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock(
-  "@qlik-coe-emea/qlabs-components-charts",
-  async () => await import("@qlik-coe-emea/qlabs-components-charts/test"),
-);
+vi.mock("@elabs/components-charts", async () => await import("@elabs/components-charts/test"));
 
-import { Line, LineChart, XAxis } from "@qlik-coe-emea/qlabs-components-charts";
+import { Line, LineChart, XAxis } from "@elabs/components-charts";
 import { ChartContractError } from "./contract";
 
 describe("the mocked module namespace is complete", () => {
@@ -57,9 +54,7 @@ describe("the mocked module namespace is complete", () => {
   });
 
   it("exports a stand-in for every component the real barrel exports", async () => {
-    const real = await vi.importActual<Record<string, unknown>>(
-      "@qlik-coe-emea/qlabs-components-charts",
-    );
+    const real = await vi.importActual<Record<string, unknown>>("@elabs/components-charts");
     const double = await import("./index");
     const isComponentName = (n: string) => /^[A-Z]/.test(n) && !/^[A-Z0-9_]+$/.test(n);
     const missing = Object.keys(real)

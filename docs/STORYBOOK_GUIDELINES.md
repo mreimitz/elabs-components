@@ -15,7 +15,7 @@ group sorts to the bottom in arbitrary story-import order.
    detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI Output Contract).
 2. **Foundations** — the design/token layer: Colors, Typography, Spacing & Radius,
    Elevation, Motion, Decoration, Theming. (Tokens and scales, NOT components.)
-3. **Core** — base UI primitives from `@qlik-coe-emea/qlabs-components-ui` (Badge, Button, Card, Input, …).
+3. **Core** — base UI primitives from `@elabs/components-ui` (Badge, Button, Card, Input, …).
 4. **Icons** — brand/product icon vocabulary + BrandLogo.
 5. **Forms** — inputs and form controls.
 6. **Display** — presentational primitives (Avatar, Progress, Separator, …).
@@ -25,12 +25,12 @@ group sorts to the bottom in arbitrary story-import order.
 10. **Feedback** — Toast and other transient feedback.
 11. **States** — Alert, Empty / Error / Loading state, Skeleton.
 12. **Layout** — app shells, sidebars, page scaffolding.
-13. **Data** — tables and data surfaces (`@qlik-coe-emea/qlabs-components-data` grid + `@qlik-coe-emea/qlabs-components-ui` table primitives).
-14. **Charts** — `@qlik-coe-emea/qlabs-components-charts`.
-15. **AI** — `@qlik-coe-emea/qlabs-components-ai` chat / agent surfaces.
-16. **Editor** — `@qlik-coe-emea/qlabs-components-editor`.
-17. **Flow** — `@qlik-coe-emea/qlabs-components-flow` canvas.
-18. **Marketing** — `@qlik-coe-emea/qlabs-components-marketing`.
+13. **Data** — tables and data surfaces (`@elabs/components-data` grid + `@elabs/components-ui` table primitives).
+14. **Charts** — `@elabs/components-charts`.
+15. **AI** — `@elabs/components-ai` chat / agent surfaces.
+16. **Editor** — `@elabs/components-editor`.
+17. **Flow** — `@elabs/components-flow` canvas.
+18. **Marketing** — `@elabs/components-marketing`.
 19. **Providers** — non-visual providers (LocaleProvider, …).
 20. **Patterns** — full composed demos: `Patterns/Templates`, `Patterns/Scenarios`,
     `Patterns/Blocks`.
@@ -57,16 +57,16 @@ never go under Foundations.
 
 Stories are grouped by what a component is **for** (its concern), not strictly by
 which package ships it — e.g. `AI/ChangeReview`, `Data/Table` and
-`Data/RevisionTimeline` live in `@qlik-coe-emea/qlabs-components-ui` but appear under AI/ and Data/ beside
+`Data/RevisionTimeline` live in `@elabs/components-ui` but appear under AI/ and Data/ beside
 their domain peers. That is intentional.
 
 When the same capability is reachable two ways, pick a **canonical** entry and
 signpost the other on both stories (via `parameters.docs.description.component`):
 
-- `Core/MetricCard` (`@qlik-coe-emea/qlabs-components-ui`, canonical, ADR 0012) ↔ `Charts/MetricCard`
+- `Core/MetricCard` (`@elabs/components-ui`, canonical, ADR 0012) ↔ `Charts/MetricCard`
   (re-export) — the same component.
-- `Data/Table` (`@qlik-coe-emea/qlabs-components-ui`, simple static table) ↔ `Data/DataTable`
-  (`@qlik-coe-emea/qlabs-components-data`, TanStack grid) — choose by need.
+- `Data/Table` (`@elabs/components-ui`, simple static table) ↔ `Data/DataTable`
+  (`@elabs/components-data`, TanStack grid) — choose by need.
 
 ## Every story
 
@@ -78,7 +78,7 @@ signpost the other on both stories (via `parameters.docs.description.component`)
   a `play` interaction test that asserts behavior and runs the a11y check
   (`addon-vitest`). Mirror `Forms/Select`.
 - Theme-safe by construction: semantic token utilities only, no raw colors. Verify
-  across both themes (`qlik-bright`, `qlik-dark`) via the toolbar.
+  across both themes (`light`, `dark`) via the toolbar.
 
 ## Adding a group
 

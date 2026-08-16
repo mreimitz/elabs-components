@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import { Button } from "../button";
 import { ConfirmDialog } from "../confirm-dialog";
 import { Input } from "../input";
@@ -382,23 +382,21 @@ export const FocusRingClearance: Story = {
  * The clip is geometric and theme-invariant (it is a property of the box model,
  * not of any token value) — but the ring's colour IS a token (`--ring`), so the
  * acceptance criterion asks for the rendered result in both shipped themes.
- * Re-runs `FocusRingClearance`'s own geometry assertions under `qlik-dark`,
+ * Re-runs `FocusRingClearance`'s own geometry assertions under `dark`,
  * applied the way Storybook actually resolves a theme — a per-story `globals`
  * override (`DecoratorHelpers.pluckThemeFromContext`, read by the root
  * `withTheme` decorator in `preview.tsx`) — rather than a nested
  * `ThemeProvider`, which does not win against that decorator and silently
- * left an earlier version of this story rendering `qlik-bright` under a
- * "qlik-dark" name. `document.documentElement`'s `data-theme` is read back in
+ * left an earlier version of this story rendering `light` under a
+ * "dark" name. `document.documentElement`'s `data-theme` is read back in
  * `play` so a future regression of THIS story is caught rather than repeated.
  */
-export const FocusRingClearanceQlikDark: Story = {
-  name: "Focus ring clearance — qlik-dark",
-  globals: { theme: "qlik-dark" },
+export const FocusRingClearanceDark: Story = {
+  name: "Focus ring clearance — dark",
+  globals: { theme: "dark" },
   render: FocusRingClearance.render,
   play: async (context) => {
-    await waitFor(() =>
-      expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark"),
-    );
+    await waitFor(() => expect(document.documentElement.getAttribute("data-theme")).toBe("dark"));
     await FocusRingClearance.play!(context);
   },
 };
@@ -451,11 +449,11 @@ export const WideWithSections: Story = {
   },
 };
 
-export const WideWithSectionsQlikDark: Story = {
-  name: "Wide with sections — qlik-dark",
+export const WideWithSectionsDark: Story = {
+  name: "Wide with sections — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

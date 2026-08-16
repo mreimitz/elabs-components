@@ -21,7 +21,7 @@ export interface BrandLogoProps extends SVGProps<SVGSVGElement> {
 /**
  * The Qlik brand logo. Brand-locked and theme-aware: the ring/letterforms use
  * `--brand-mark-ring` and the Q tail uses `--brand-mark-tail`, both set per
- * theme in `@qlik-coe-emea/qlabs-components-tokens` themes.css, so the mark always renders an approved
+ * theme in `@elabs/components-tokens` themes.css, so the mark always renders an approved
  * Qlik colorway (green+gray, green+white, or fully white) that fits the active
  * theme. Pass `tone="white"` to force the monochrome white mark on a colored
  * background. No background fill — drop it straight onto any surface.

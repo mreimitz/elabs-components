@@ -2,23 +2,23 @@
 
 ## Mechanism
 
-- Themes are `[data-theme="<name>"]` blocks in the `@qlik-coe-emea/qlabs-components-tokens` theme
-  stylesheet (`@qlik-coe-emea/qlabs-components-tokens/styles.css`); `:root` is the default (light) base.
+- Themes are `[data-theme="<name>"]` blocks in the `@elabs/components-tokens` theme
+  stylesheet (`@elabs/components-tokens/styles.css`); `:root` is the default (light) base.
   Each theme overrides the full semantic token set (surfaces, sidebar,
   canvas/flow, chat, chart-1..5, radius).
-- `ThemeProvider` (from `@qlik-coe-emea/qlabs-components-tokens`) writes `data-theme` and persists the
+- `ThemeProvider` (from `@elabs/components-tokens`) writes `data-theme` and persists the
   choice; `useTheme()` reads/sets it.
-- Shipped themes: **qlik-bright (default)**, qlik-dark, blueprint. Confirm the
+- Shipped themes: **light (default)**, dark, blueprint. Confirm the
   live set with `brand-ui info`.
 
 ## Setup (once, at the app root)
 
 ```tsx
-import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import "@elabs/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs/components-tokens";
 
 export function App() {
-  return <ThemeProvider defaultTheme="qlik-bright">{/* app */}</ThemeProvider>;
+  return <ThemeProvider defaultTheme="light">{/* app */}</ThemeProvider>;
 }
 ```
 

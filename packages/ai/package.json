@@ -1,11 +1,6 @@
 {
-  "name": "@qlik-coe-emea/qlabs-components-ai",
+  "name": "@elabs/components-ai",
   "version": "3.1.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
-    "directory": "packages/ai"
-  },
   "license": "UNLICENSED",
   "type": "module",
   "files": [
@@ -20,7 +15,6 @@
     }
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -59,20 +53,20 @@
     "zod": "^3.24.1"
   },
   "peerDependencies": {
-    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "@elabs/components-tokens": "workspace:*",
+    "@elabs/components-ui": "workspace:*",
     "@xyflow/react": "^12.11.1",
     "ai": "^6.0.0",
     "react": "^18.2.0 || ^19.0.0",
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@qlik-coe-emea/qlabs-components-charts": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-icons": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+    "@elabs/components-charts": "workspace:*",
+    "@elabs/components-eslint-config": "workspace:*",
+    "@elabs/components-icons": "workspace:*",
+    "@elabs/components-tokens": "workspace:*",
+    "@elabs/components-typescript-config": "workspace:*",
+    "@elabs/components-ui": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",

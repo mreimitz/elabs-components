@@ -57,7 +57,7 @@ import {
   SidebarMenuItem,
   TeamSwitcher,
   cn,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 
 const data = {
   user: { name: "ephraim", email: "ephraim@blocks.so", avatar: "" },

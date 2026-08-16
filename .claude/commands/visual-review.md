@@ -23,7 +23,7 @@ curl -sf http://localhost:6006/index.json >/dev/null || (pnpm storybook >/tmp/br
 Then launch the `brand-ui-visual-ux-reviewer` agent to:
 
 1. Screenshot the playground (Dashboard, Assistant, Pipeline, Landing) and a
-   representative set of Storybook stories, in **both themes** (`qlik-bright`, `qlik-dark`). When the Storybook
+   representative set of Storybook stories, in **both themes** (`light`, `dark`). When the Storybook
    dev server is running, enumerate stories with `mcp__storybook__list-all-documentation`
    and get per-theme render URLs with `mcp__storybook__preview-stories`
    (`globals=theme:<slug>`) to cover the library systematically rather than hunting

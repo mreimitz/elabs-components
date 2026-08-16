@@ -54,7 +54,7 @@ ramp stays monotonic and a resting input does not get a 47 px cloud.
 `--shadow-color`, `--shadow-strength` (a multiplier on every layer's alpha) and
 `--shadow-ring-color`. Layers are `color-mix(in srgb, var(--shadow-color)
 calc(N% * var(--shadow-strength)), transparent)`, so a theme owns its elevation
-the way it owns its colour. qlik-dark deepens the stack ×2.2 and moves the real
+the way it owns its colour. dark deepens the stack ×2.2 and moves the real
 edge cue to a white 18 % hairline; blueprint sets strength `0`.
 
 **3. Tailwind's own `--shadow-*` namespace carries the ramp.** Overriding

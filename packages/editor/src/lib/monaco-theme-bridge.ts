@@ -1,7 +1,7 @@
 "use client";
 
 import type * as Monaco from "monaco-editor";
-import { THEME_META, oklchToHex, type ThemeName } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEME_META, oklchToHex, type ThemeName } from "@elabs/components-tokens";
 
 /**
  * Bridges brand-ui's semantic tokens onto Monaco's theming API so the editor
@@ -10,7 +10,7 @@ import { THEME_META, oklchToHex, type ThemeName } from "@qlik-coe-emea/qlabs-com
  *
  * Why this exists: brand tokens are authored in `oklch(...)` but
  * `monaco.editor.defineTheme` only accepts hex. The shared `oklchToHex`
- * (`@qlik-coe-emea/qlabs-components-tokens`, ADR 0015) converts the oklch tokens dependency-free; a 1×1
+ * (`@elabs/components-tokens`, ADR 0015) converts the oklch tokens dependency-free; a 1×1
  * canvas rasterize remains only as the fallback for non-oklch CSS colors
  * (`rgb()`, named), since `getComputedStyle` does NOT serialize `oklch()` to
  * `rgb()` in Chromium. Results are cached per raw token value.

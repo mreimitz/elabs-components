@@ -15,11 +15,11 @@
  *      and the `export const …: Story = { render: () => <X/> }` story exports.
  *   2. REWRITE same-package relative imports → the package alias. A story at
  *      `packages/<pkg>/src/…` importing `./foo` or `../foo` (i.e. another file in
- *      its OWN package) maps to `@qlik-coe-emea/qlabs-components-<pkg>`; cross-package imports are already
- *      `@qlik-coe-emea/qlabs-components-*` and are left untouched. (e.g. dashboard's
- *      `import { MetricGrid } from "./metric-grid/metric-grid"` → `@qlik-coe-emea/qlabs-components-charts`.)
+ *      its OWN package) maps to `@elabs/components-<pkg>`; cross-package imports are already
+ *      `@elabs/components-*` and are left untouched. (e.g. dashboard's
+ *      `import { MetricGrid } from "./metric-grid/metric-grid"` → `@elabs/components-charts`.)
  *   3. KEEP everything else — the `<Name>Template` component, its module-scope
- *      consts, the lucide-react imports, the `@qlik-coe-emea/qlabs-components-*` imports.
+ *      consts, the lucide-react imports, the `@elabs/components-*` imports.
  *
  * Discovery is by GLOB (packages slash star slash src slash templates-<name>
  * .stories.tsx) so a NEW template story is picked up automatically.
@@ -62,7 +62,7 @@ export function discoverStories(root = REPO_ROOT) {
     const srcDir = join(pkgsDir, pkg, "src");
     if (!existsSync(srcDir)) continue;
     const pkgJsonPath = join(pkgsDir, pkg, "package.json");
-    let pkgName = `@qlik-coe-emea/qlabs-components-${pkg}`;
+    let pkgName = `@elabs/components-${pkg}`;
     if (existsSync(pkgJsonPath)) {
       try {
         pkgName = JSON.parse(readFileSync(pkgJsonPath, "utf8")).name || pkgName;
@@ -128,14 +128,13 @@ function extractTitle(src) {
 }
 
 /**
- * The set of `@qlik-coe-emea/qlabs-components-*` packages a story imports (for the index `packages` list),
+ * The set of `@elabs/components-*` packages a story imports (for the index `packages` list),
  * PLUS the story's own package alias when a same-package relative import was
  * rewritten to it. Sorted, de-duped.
  */
 function collectBrandPackages(src, ownPkg, rewroteToOwn) {
   const set = new Set();
-  for (const m of src.matchAll(/from\s+["'](@qlik-coe-emea\/qlabs-components-[a-z-]+)["']/g))
-    set.add(m[1]);
+  for (const m of src.matchAll(/from\s+["'](@elabs\/components-[a-z-]+)["']/g)) set.add(m[1]);
   if (rewroteToOwn) set.add(ownPkg);
   return [...set].sort();
 }

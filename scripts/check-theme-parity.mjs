@@ -11,10 +11,11 @@
  *
  * It uses the SAME block-extraction regex as themes-contrast.test.ts so it sees
  * the same block slices the AA gate does:
- *   - light       = first `:root { … }`        block (the default theme)
- *   - dark / qlik-bright / qlik-dark / blueprint / high-contrast
- *                 = first `[data-theme="NAME"] { … }` block
- *     (blueprint has a 2nd, non-color block later — FIRST match only).
+ *   - root  = first `:root { … }` block (the neutral base/fallback, not a
+ *             selectable theme — see ROOT_MODE below)
+ *   - every ACTIVE theme = first `[data-theme="NAME"] { … }` block
+ *     (blueprint has a 2nd, non-color block later — FIRST match only; it is
+ *     paused, so it is not enumerated here at all).
  *
  * ROOT-ONLY ALLOWLIST — machinery legitimately declared ONLY in :root (timing,
  * decoration dial, blueprint vars, radius scale, fonts) is exempt from parity.
@@ -38,15 +39,23 @@ const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
 const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");
 
 /**
+ * The mode key standing for the `:root` neutral base/fallback — NOT a selectable
+ * theme. `root`, not `light`, because `light` is a real shipped theme slug and a
+ * colliding sentinel resolves the light theme's block to `:root`. Canonical
+ * declaration: `ROOT_MODE` in `packages/tokens/scripts/lib/themes-io.mjs`.
+ */
+const ROOT_MODE = "root";
+
+/**
  * Theme mode → the block whose tokens must be at parity.
- * `light` is `:root` (the neutral base/fallback); the rest are `[data-theme="name"]`.
+ * `ROOT_MODE` is `:root`; the rest are `[data-theme="name"]`.
  * Order is the report order.
  *
  * Derived from the ACTIVE theme set, so a paused theme's block is never held to
  * parity — it is kept as source and updated by nobody
  * (@.claude/rules/paused-surfaces.md).
  */
-const THEME_NAMES = ["light", ...ACTIVE_THEMES];
+const THEME_NAMES = [ROOT_MODE, ...ACTIVE_THEMES];
 
 /**
  * Keys legitimately declared ONLY in :root (machinery, not per-theme semantics).
@@ -68,7 +77,7 @@ const ROOT_ONLY_RE = /^--(decoration($|-)|bp-|duration-|t-|motion-|radius($|-)|f
  */
 function extractBlock(cssText, name) {
   const re =
-    name === "light"
+    name === ROOT_MODE
       ? /:root\s*\{([\s\S]*?)\n\}/
       : new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([\\s\\S]*?)\\n\\}`);
   const m = cssText.match(re);
@@ -99,7 +108,7 @@ export function findParityViolations(cssText) {
   for (const name of THEME_NAMES) {
     const body = extractBlock(cssText, name);
     if (body == null) {
-      const selector = name === "light" ? ":root" : `[data-theme="${name}"]`;
+      const selector = name === ROOT_MODE ? ":root" : `[data-theme="${name}"]`;
       violations.push({ token: "<block>", theme: name, selector });
       continue;
     }
@@ -120,7 +129,7 @@ export function findParityViolations(cssText) {
   for (const token of [...universe].sort()) {
     for (const name of present) {
       if (!blocks[name].has(token)) {
-        const selector = name === "light" ? ":root" : `[data-theme="${name}"]`;
+        const selector = name === ROOT_MODE ? ":root" : `[data-theme="${name}"]`;
         violations.push({ token, theme: name, selector });
       }
     }

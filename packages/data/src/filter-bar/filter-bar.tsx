@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export interface FilterBarProps {
   /** Left cluster: search + facet filters. */

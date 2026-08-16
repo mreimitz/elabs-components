@@ -6,32 +6,32 @@
  * data/ai/flow/charts/marketing/editor/blueprint` (CLAUDE.md "Architecture
  * rules", .claude/rules/design-system.md "One direction of dependency") — was
  * stated in prose only; `typecheck`/`lint`/`build` all pass for a sideways or
- * upward `@qlik-coe-emea/qlabs-components-*` import. This gate makes the DAG a deterministic check.
+ * upward `@elabs/components-*` import. This gate makes the DAG a deterministic check.
  *
  * `package.json` alone is sufficient: a package can only consume a sibling's
  * runtime surface if it declares the dependency (pnpm workspace resolution),
  * so no AST/source scan is needed. This also means legitimate story/test
- * composition (which lives in `devDependencies` — e.g. `@qlik-coe-emea/qlabs-components-ai`/`@qlik-coe-emea/qlabs-components-data`
- * dev-depending on `@qlik-coe-emea/qlabs-components-charts` for Storybook compositions) is never
+ * composition (which lives in `devDependencies` — e.g. `@elabs/components-ai`/`@elabs/components-data`
+ * dev-depending on `@elabs/components-charts` for Storybook compositions) is never
  * false-flagged: only `dependencies` + `peerDependencies` (the RUNTIME
  * surfaces) are checked.
  *
  * Layer model (the allowed-edges DAG):
- *   Layer 0 (foundation, no @brand deps):  @qlik-coe-emea/qlabs-components-tokens, @qlik-coe-emea/qlabs-components-icons
- *   Layer 1 (foundation UI):               @qlik-coe-emea/qlabs-components-ui (may depend on: tokens, icons)
- *   Layer 2 (domain, mutually exclusive):  @qlik-coe-emea/qlabs-components-data, @qlik-coe-emea/qlabs-components-ai, @qlik-coe-emea/qlabs-components-flow,
- *                                           @qlik-coe-emea/qlabs-components-maps, @qlik-coe-emea/qlabs-components-charts, @qlik-coe-emea/qlabs-components-marketing,
- *                                           @qlik-coe-emea/qlabs-components-editor, @qlik-coe-emea/qlabs-components-blueprint
+ *   Layer 0 (foundation, no @brand deps):  @elabs/components-tokens, @elabs/components-icons
+ *   Layer 1 (foundation UI):               @elabs/components-ui (may depend on: tokens, icons)
+ *   Layer 2 (domain, mutually exclusive):  @elabs/components-data, @elabs/components-ai, @elabs/components-flow,
+ *                                           @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing,
+ *                                           @elabs/components-editor, @elabs/components-blueprint
  *                                           (may depend on: ui, tokens, icons)
  *
- * `@qlik-coe-emea/qlabs-components-charts` must NOT depend on `@qlik-coe-emea/qlabs-components-data` (.claude/rules/chart-components.md
+ * `@elabs/components-charts` must NOT depend on `@elabs/components-data` (.claude/rules/chart-components.md
  * "charts → ui ONLY"; ADR 0012). No domain package may depend on a domain sibling.
  *
- * Tooling packages (`@qlik-coe-emea/qlabs-components-eslint-config`, `@qlik-coe-emea/qlabs-components-typescript-config`) are config,
+ * Tooling packages (`@elabs/components-eslint-config`, `@elabs/components-typescript-config`) are config,
  * not layer participants, and are ignored entirely (not required to appear in
  * ALLOWED, never flagged as a source or a target).
  *
- * Any `@qlik-coe-emea/qlabs-components-*` package name absent from ALLOWED is itself a violation — forces
+ * Any `@elabs/components-*` package name absent from ALLOWED is itself a violation — forces
  * the map to be updated when a new package is added (ties into the "Adding a new
  * package" registration discipline, quality-gates.md).
  *
@@ -52,68 +52,65 @@ const PACKAGES_DIR = join(REPO_ROOT, "packages");
 
 /**
  * Tooling / infra packages — config or build tooling, not layer participants
- * in the visual/component DAG. Never flagged either way. `@qlik-coe-emea/qlabs-components-cli` is the
+ * in the visual/component DAG. Never flagged either way. `@elabs/components-cli` is the
  * deterministic manifest/docs/search backend (packages/cli) — it has no
- * `@qlik-coe-emea/qlabs-components-*` runtime deps and sits outside the tokens→ui→domain layering.
+ * `@elabs/components-*` runtime deps and sits outside the tokens→ui→domain layering.
  */
 export const TOOLING_PACKAGES = new Set([
-  "@qlik-coe-emea/qlabs-components-eslint-config",
-  "@qlik-coe-emea/qlabs-components-typescript-config",
-  "@qlik-coe-emea/qlabs-components-cli",
+  "@elabs/components-eslint-config",
+  "@elabs/components-typescript-config",
+  "@elabs/components-cli",
 ]);
 
-/** ALLOWED @qlik-coe-emea/qlabs-components-* runtime targets per package — the source of truth for the DAG. */
+/** ALLOWED @elabs/components-* runtime targets per package — the source of truth for the DAG. */
 export const ALLOWED = {
-  "@qlik-coe-emea/qlabs-components-tokens": [], // foundation
-  "@qlik-coe-emea/qlabs-components-icons": [], // foundation
-  "@qlik-coe-emea/qlabs-components-ui": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
+  "@elabs/components-tokens": [], // foundation
+  "@elabs/components-icons": [], // foundation
+  "@elabs/components-ui": ["@elabs/components-tokens", "@elabs/components-icons"],
+  "@elabs/components-data": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-data": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-ai": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-ai": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-flow": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-flow": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-maps": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-maps": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-charts": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
+  ], // NOT @elabs/components-data (ADR 0012 / chart rule)
+  "@elabs/components-marketing": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-charts": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
-  ], // NOT @qlik-coe-emea/qlabs-components-data (ADR 0012 / chart rule)
-  "@qlik-coe-emea/qlabs-components-marketing": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-editor": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-editor": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-blueprint": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ],
-  "@qlik-coe-emea/qlabs-components-blueprint": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
-  ],
-  "@qlik-coe-emea/qlabs-components-viewer": [
-    "@qlik-coe-emea/qlabs-components-tokens",
-    "@qlik-coe-emea/qlabs-components-icons",
-    "@qlik-coe-emea/qlabs-components-ui",
+  "@elabs/components-viewer": [
+    "@elabs/components-tokens",
+    "@elabs/components-icons",
+    "@elabs/components-ui",
   ], // NOT -ai (ADR 0024 §6: AssetPreview reaches new formats by injection, not import)
 };
 
@@ -128,16 +125,14 @@ export function findDepDirectionViolations(manifests) {
   const violations = [];
   for (const manifest of manifests) {
     const name = manifest?.name;
-    if (!name || !name.startsWith("@qlik-coe-emea/qlabs-components-")) continue;
+    if (!name || !name.startsWith("@elabs/components-")) continue;
     if (TOOLING_PACKAGES.has(name)) continue;
 
     const runtimeDeps = {
       ...(manifest.dependencies ?? {}),
       ...(manifest.peerDependencies ?? {}),
     };
-    const brandDeps = Object.keys(runtimeDeps).filter((d) =>
-      d.startsWith("@qlik-coe-emea/qlabs-components-"),
-    );
+    const brandDeps = Object.keys(runtimeDeps).filter((d) => d.startsWith("@elabs/components-"));
 
     if (!(name in ALLOWED)) {
       violations.push({
@@ -202,9 +197,9 @@ function main(argv) {
       "\nThe one-way package dependency DAG (tokens → ui/icons → " +
         "data/ai/flow/charts/marketing/editor/blueprint) is documented in CLAUDE.md " +
         '"Architecture rules" and .claude/rules/design-system.md. A sideways or ' +
-        "upward @qlik-coe-emea/qlabs-components-* edge in `dependencies`/`peerDependencies` violates it. If a " +
+        "upward @elabs/components-* edge in `dependencies`/`peerDependencies` violates it. If a " +
         "shared piece is genuinely needed across domain packages, lift it into " +
-        "@qlik-coe-emea/qlabs-components-ui or a registry block — do not relax this gate. See GitHub issue #184.",
+        "@elabs/components-ui or a registry block — do not relax this gate. See GitHub issue #184.",
     );
     if (!warnOnly) process.exit(1);
     return;
@@ -212,7 +207,7 @@ function main(argv) {
 
   if (!warnOnly) {
     console.log(
-      `✔ dep-direction: no @qlik-coe-emea/qlabs-components-* layer violations (${manifests.length} package(s)).`,
+      `✔ dep-direction: no @elabs/components-* layer violations (${manifests.length} package(s)).`,
     );
   }
 }

@@ -13,13 +13,13 @@
  *    React component tree (MarkdownEditor mounts without onEmbedAsset; mounts
  *    with it; the editor still shows its content).
  *
- * We mock `@qlik-coe-emea/qlabs-components-ui` to intercept `toast.error` calls (the Toaster is not
+ * We mock `@elabs/components-ui` to intercept `toast.error` calls (the Toaster is not
  * mounted in jsdom; the toast call is a side-effect, not the only error cue).
  */
 
 // vi.hoisted() ensures the variable is initialized before the hoisted vi.mock() call.
 const { mockToastError } = vi.hoisted(() => ({ mockToastError: vi.fn() }));
-vi.mock("@qlik-coe-emea/qlabs-components-ui", async (importOriginal) => {
+vi.mock("@elabs/components-ui", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,

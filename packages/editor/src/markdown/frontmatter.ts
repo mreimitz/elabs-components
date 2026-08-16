@@ -1,5 +1,5 @@
 /**
- * `@qlik-coe-emea/qlabs-components-editor/markdown/frontmatter` — the lightweight frontmatter subpath.
+ * `@elabs/components-editor/markdown/frontmatter` — the lightweight frontmatter subpath.
  *
  * Just the YAML frontmatter parse/serialize (depends on `js-yaml` only). Split out
  * from the `./markdown` barrel so DATA-only consumers — a metadata form, a document

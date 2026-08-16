@@ -9,7 +9,7 @@
  *   - raw colours (`text-gray-500`, `bg-[#fff]`)  → "colour is a TOKEN, not a palette"
  *
  * ADVISORY ONLY — it never blocks the edit (exit 0). It is the in-loop sibling of
- * the durable CI gate (@qlik-coe-emea/qlabs-components-eslint-config `brand/no-raw-*`); the regexes mirror
+ * the durable CI gate (@elabs/components-eslint-config `brand/no-raw-*`); the regexes mirror
  * that rule + scripts/check-raw-palette.mjs so all three surfaces agree.
  *
  * Zero-dependency (Node ESM, stdin/JSON only) so it works in any installed plugin
@@ -18,7 +18,7 @@
  */
 import { readFileSync } from "node:fs";
 
-// Mirror of @qlik-coe-emea/qlabs-components-eslint-config rules/brand-tokens.js + scripts/check-raw-palette.mjs.
+// Mirror of @elabs/components-eslint-config rules/brand-tokens.js + scripts/check-raw-palette.mjs.
 const FONT_SIZE_RE = /\b-?text-(?:xs|sm|base|lg|xl|[0-9]+xl)\b/g;
 const FONT_SIZE_ARB_RE = /\b-?text-\[[^\]]*(?:px|rem|em|ch|vw|vh|pt|pc)\b[^\]]*\]/g;
 const PALETTE_RE =
@@ -85,7 +85,7 @@ if (colors.length)
   ctx +=
     `\n\n• Colour is a TOKEN, not a palette. Replace with a semantic token (text-foreground, text-muted-foreground, bg-card, bg-primary + text-primary-foreground, bg-success/10, border-border, …). Raw palette/hex bypasses every theme and breaks contrast:\n` +
     fmt(colors);
-ctx += `\n\nSee the app's CLAUDE.md (Non-negotiable rules) — enforced by @qlik-coe-emea/qlabs-components-eslint-config (brand/no-raw-font-size, brand/no-raw-color).`;
+ctx += `\n\nSee the app's CLAUDE.md (Non-negotiable rules) — enforced by @elabs/components-eslint-config (brand/no-raw-font-size, brand/no-raw-color).`;
 
 process.stdout.write(
   JSON.stringify({

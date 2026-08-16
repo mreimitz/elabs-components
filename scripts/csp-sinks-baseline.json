@@ -9,25 +9,19 @@
   "packages": [
     {
       "package": "@number-flow/react",
-      "reachedFrom": ["@qlik-coe-emea/qlabs-components-charts"]
+      "reachedFrom": ["@elabs/components-charts"]
     },
     {
       "package": "media-chrome",
-      "reachedFrom": ["@qlik-coe-emea/qlabs-components-ai"]
+      "reachedFrom": ["@elabs/components-ai"]
     },
     {
       "package": "mermaid",
-      "reachedFrom": [
-        "@qlik-coe-emea/qlabs-components-ai",
-        "@qlik-coe-emea/qlabs-components-editor"
-      ]
+      "reachedFrom": ["@elabs/components-ai", "@elabs/components-editor"]
     },
     {
       "package": "streamdown",
-      "reachedFrom": [
-        "@qlik-coe-emea/qlabs-components-ai",
-        "@qlik-coe-emea/qlabs-components-editor"
-      ]
+      "reachedFrom": ["@elabs/components-ai", "@elabs/components-editor"]
     }
   ]
 }

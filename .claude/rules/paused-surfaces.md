@@ -12,16 +12,16 @@ code looks abandoned. It is paused on purpose.
 
 ## What is paused right now
 
-| Surface                                     | Kind    | Paused     | Why                                                                  |
-| ------------------------------------------- | ------- | ---------- | -------------------------------------------------------------------- |
-| `blueprint` theme                           | theme   | 2026-08-09 | Experimental / testing theme. Kept in `themes.css`, out of `THEMES`. |
-| `@qlik-coe-emea/qlabs-components-blueprint` | package | 2026-08-09 | Drawing furniture for that theme — frozen with it.                   |
+| Surface                       | Kind    | Paused     | Why                                                                  |
+| ----------------------------- | ------- | ---------- | -------------------------------------------------------------------- |
+| `blueprint` theme             | theme   | 2026-08-09 | Experimental / testing theme. Kept in `themes.css`, out of `THEMES`. |
+| `@elabs/components-blueprint` | package | 2026-08-09 | Drawing furniture for that theme — frozen with it.                   |
 
 **The decoration dial is NOT paused.** `--decoration` (0–10), `decoration.css`,
 `DecorationProvider`/`useDecoration`, `data-decoration`, and the
 `decoration:check` / `decoration-collapse:check` gates all stay fully live and
 enforced. The dial is hue-independent and orthogonal to color — it rides
-`qlik-bright` and `qlik-dark` exactly as designed
+`light` and `dark` exactly as designed
 (@.claude/rules/blueprint-decoration.md). Only the navy `blueprint` _theme_ and
 its furniture _package_ are on hold.
 
@@ -44,8 +44,8 @@ For anything in the table above:
    repo-wide codemod would touch it, exclude it.
 5. **Do not delete it.** Pause is reversible by design. The CSS block, the
    package directory and its git history stay.
-6. **Two themes is the correct count.** The theme sweep is `qlik-bright` +
-   `qlik-dark` — write "both themes". Any doc still claiming the older,
+6. **Two themes is the correct count.** The theme sweep is `light` +
+   `dark` — write "both themes". Any doc still claiming the older,
    higher count fails `pnpm docs:check`, which derives the number from `THEMES`.
 
 ## Where "paused" is declared (one place each)
@@ -53,7 +53,7 @@ For anything in the table above:
 - **Themes** — `PAUSED_THEMES` in `packages/tokens/src/theme-types.ts`. That
   array is the single source of truth for TypeScript **and** for every `.mjs`
   gate, which read it through `scripts/lib/paused-surfaces.mjs`. It is also
-  re-exported from `@qlik-coe-emea/qlabs-components-tokens` (`PAUSED_THEMES`,
+  re-exported from `@elabs/components-tokens` (`PAUSED_THEMES`,
   `isPausedThemeName`) so a consumer can see what is on hold.
 - **Packages** — `PAUSED_PACKAGES` in `scripts/lib/paused-surfaces.mjs`, plus
   `private: true` in the package's own `package.json`.

@@ -9,8 +9,8 @@ import {
   CardTitle,
   Skeleton,
   useLocale,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   title: ReactNode;

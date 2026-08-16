@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { Button, SectionHeader } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button, SectionHeader } from "@elabs/components-ui";
 import { INTEGRATIONS } from "./data/integrations";
 import { IntegrationCard } from "./integration-card";
 

@@ -42,7 +42,7 @@ export const Empty: Story = { render: () => <Progress value={0} className="w-64"
  * story (`getComputedStyle` → canvas readback, 2026-08-02) rather than derived
  * from the token literals:
  *
- * | tone        | qlik-bright | qlik-dark |
+ * | tone        | light | dark |
  * | ----------- | ----------- | --------- |
  * | default     | 4.09:1      | 7.17:1    |
  * | success     | 5.19:1      | 9.07:1    |
@@ -50,7 +50,7 @@ export const Empty: Story = { render: () => <Progress value={0} className="w-64"
  * | destructive | 4.94:1      | 4.79:1    |
  *
  * All four clear 3:1 in both painted themes. `warning` used to be the hole in
- * this table (1.88:1 in qlik-bright); it was a token-value gap, not a component
+ * this table (1.88:1 in light); it was a token-value gap, not a component
  * one, and #381 fixed it at the token — `--warning` is now a deep amber that
  * clears 3:1 on every content surface.
  *

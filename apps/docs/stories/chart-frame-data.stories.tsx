@@ -1,19 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
-import {
-  Bar,
-  BarChart,
-  BarXAxis,
-  ChartFrame,
-  ChartTooltip,
-  Grid,
-} from "@qlik-coe-emea/qlabs-components-charts";
-import { DataTable, downloadCsv, type ColumnDef } from "@qlik-coe-emea/qlabs-components-data";
+import { Bar, BarChart, BarXAxis, ChartFrame, ChartTooltip, Grid } from "@elabs/components-charts";
+import { DataTable, downloadCsv, type ColumnDef } from "@elabs/components-data";
 
 /**
- * The INTERACTIVE flip-to-table. `@qlik-coe-emea/qlabs-components-charts` `ChartFrame` ships a static,
+ * The INTERACTIVE flip-to-table. `@elabs/components-charts` `ChartFrame` ships a static,
  * dependency-free table on flip (the `charts ↛ data` rule forbids importing the
- * sibling `@qlik-coe-emea/qlabs-components-data`). To flip to the REAL sortable `@qlik-coe-emea/qlabs-components-data` `DataTable`,
+ * sibling `@elabs/components-data`). To flip to the REAL sortable `@elabs/components-data` `DataTable`,
  * compose both at a layer that may see both — an app, or the copy-own
  * **`chart-frame-data` registry block** (`npx shadcn add chart-frame-data`), which
  * this demo mirrors. The wiring is the `ChartFrame` `renderTable` / `onDownload`
@@ -48,7 +41,7 @@ function ChartFrameDataTableDemo() {
     <div style={{ maxWidth: 680 }}>
       <ChartFrame
         title="Monthly revenue"
-        description="Flip via the toolbar toggle — the table is the real @qlik-coe-emea/qlabs-components-data DataTable: sortable, with CSV export via downloadCsv."
+        description="Flip via the toolbar toggle — the table is the real @elabs/components-data DataTable: sortable, with CSV export via downloadCsv."
         data={data}
         columns={columns}
         // Flip-to-table renders the full TanStack DataTable instead of the static table.
@@ -88,7 +81,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Interactive flip-to-table = `ChartFrame` + the real `@qlik-coe-emea/qlabs-components-data` `DataTable` + `downloadCsv`, composed in app/registry code via the `renderTable` / `onDownload` seams. The copy-own version is the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`). Use the table toggle in the toolbar to flip; the flipped table sorts on header click.",
+          "Interactive flip-to-table = `ChartFrame` + the real `@elabs/components-data` `DataTable` + `downloadCsv`, composed in app/registry code via the `renderTable` / `onDownload` seams. The copy-own version is the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`). Use the table toggle in the toolbar to flip; the flipped table sorts on header click.",
       },
     },
   },
@@ -110,7 +103,7 @@ export const FlipAndSort: Story = {
 
     await userEvent.click(canvas.getByRole("button", { name: /flip to table view/i }));
 
-    // The flipped table is the @qlik-coe-emea/qlabs-components-data DataTable: its sortable column headers
+    // The flipped table is the @elabs/components-data DataTable: its sortable column headers
     // are <button>s — the proof it is interactive, not the static charts table.
     const revenueHeader = await canvas.findByRole("button", { name: /revenue/i });
 

@@ -6,14 +6,14 @@
  * template source (`docs/playbooks/templates/marketing.tsx`) from it.
  *
  * Verify across both themes with globals=theme:<slug>
- * (qlik-bright | qlik-dark).
+ * (light | dark).
  *
  * The marketing package ships no icons by design (sections take `icon?:
  * ReactNode` from the consumer), so this story passes inline currentColor
- * glyphs — the same way a consumer would hand in Lucide / @qlik-coe-emea/qlabs-components-icons.
+ * glyphs — the same way a consumer would hand in Lucide / @elabs/components-icons.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Badge, Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge, Button } from "@elabs/components-ui";
 import {
   CTASection,
   FeatureGrid,
@@ -182,8 +182,8 @@ function MarketingLandingTemplate() {
             band is full-bleed on purpose: a fade inside the centred column would
             leave crisp grid in the margins beside it and read as a patch, not a
             fade. It paints `--bp-grid` on a masked ::before layer, so the ink rides
-            the dial and the band is INERT at decoration 0 — qlik-bright and
-            qlik-dark render exactly as before. */}
+            the dial and the band is INERT at decoration 0 — light and
+            dark render exactly as before. */}
         <section data-decoration-fade="top" className="bg-background pt-16">
           <div className="mx-auto max-w-6xl px-6">
             <Hero

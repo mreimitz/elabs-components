@@ -13,12 +13,12 @@
  * never show a diagram never download the engine. Invalid sources render an
  * inline error block (message + source), never a thrown render.
  */
-import { Button, Dialog, DialogContent, DialogTitle } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button, Dialog, DialogContent, DialogTitle } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { Download, Maximize2 } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState, type HTMLAttributes } from "react";
 
-import { oklchToHex } from "@qlik-coe-emea/qlabs-components-tokens";
+import { oklchToHex } from "@elabs/components-tokens";
 
 import { CopyButton } from "../copy-button";
 import { MermaidViewer } from "./mermaid-viewer";

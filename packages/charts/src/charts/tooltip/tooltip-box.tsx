@@ -4,7 +4,7 @@ import { motion, useSpring } from "motion/react";
 import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 
 export interface ChartTooltipBoxProps {

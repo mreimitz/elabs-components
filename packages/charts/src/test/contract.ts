@@ -1,5 +1,5 @@
 /**
- * contract.ts — the value-contract validator behind every `@qlik-coe-emea/qlabs-components-charts/test`
+ * contract.ts — the value-contract validator behind every `@elabs/components-charts/test`
  * double (issue #364).
  *
  * A test double that silently swallows whatever props it is given is worse than
@@ -50,7 +50,7 @@ export class ChartContractError extends Error {
 
   constructor(component: string, prop: string, received: unknown, reason: string) {
     super(
-      `@qlik-coe-emea/qlabs-components-charts/test: "${component}" violates the real component's runtime contract on ` +
+      `@elabs/components-charts/test: "${component}" violates the real component's runtime contract on ` +
         `prop "${prop}" — ${reason} (received: ${describeReceived(received)}). ` +
         `This is the contract the REAL ${component} depends on — fix the props passed in your app/test code.`,
     );

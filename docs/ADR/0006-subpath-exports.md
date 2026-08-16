@@ -8,9 +8,9 @@
 A few packages already ship public **subpath exports** in addition to their
 barrel:
 
-- `@qlik-coe-emea/qlabs-components-editor` — `./markdown`, `./markdown/frontmatter`, `./monaco-environment`
-- `@qlik-coe-emea/qlabs-components-ui` — `./lib/cn`
-- `@qlik-coe-emea/qlabs-components-tokens` — `./styles.css`
+- `@elabs/components-editor` — `./markdown`, `./markdown/frontmatter`, `./monaco-environment`
+- `@elabs/components-ui` — `./lib/cn`
+- `@elabs/components-tokens` — `./styles.css`
 
 Each was added ad hoc, with no written convention. Without a rule the next
 maintainer (human or agent) either proliferates subpaths as a general
@@ -23,7 +23,7 @@ model for that case — this ADR codifies _when_ that is true.
 
 ## Decision
 
-A subpath export (`@qlik-coe-emea/qlabs-components-<pkg>/<leaf>`) is **warranted only when BOTH**:
+A subpath export (`@elabs/components-<pkg>/<leaf>`) is **warranted only when BOTH**:
 
 1. **The leaf has a materially lighter or different dependency tree** than the
    package trunk — e.g. a pure helper that does not pull the package's heavy

@@ -36,7 +36,7 @@ easy for both humans and coding agents to extend.
 - [ ] No new cross-package coupling; dependencies flow one direction
 - [ ] Public API is consistent with sibling components
 - [ ] Decision documented (ADR or rule update) if structural
-- [ ] Works across both themes (`qlik-bright`, `qlik-dark`)
+- [ ] Works across both themes (`light`, `dark`)
 
 ## Constraints
 

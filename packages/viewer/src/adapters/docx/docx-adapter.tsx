@@ -16,7 +16,7 @@
  * honest answer is to download the file, which the toolbar already offers.
  */
 
-import type { ProseHeadingLevel, ResolvedFileSource } from "@qlik-coe-emea/qlabs-components-ui";
+import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs/components-ui";
 import {
   cn,
   ProseHeading,
@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
   useLocale,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 
 import { useMemo, useRef } from "react";
 

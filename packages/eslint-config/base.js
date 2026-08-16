@@ -33,7 +33,7 @@ export const baseConfig = [
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
-      // Icon policy (WP-12 #119): Lucide is the default icon library; @qlik-coe-emea/qlabs-components-icons holds
+      // Icon policy (WP-12 #119): Lucide is the default icon library; @elabs/components-icons holds
       // brand/product icons. No other icon set — see .claude/rules/icons.md.
       "no-restricted-imports": [
         "error",
@@ -68,7 +68,7 @@ export const baseConfig = [
                 "@icons-pack/*",
               ],
               message:
-                "Use lucide-react (default, generic glyphs) or @qlik-coe-emea/qlabs-components-icons (brand icons). Other icon sets are not allowed — see .claude/rules/icons.md.",
+                "Use lucide-react (default, generic glyphs) or @elabs/components-icons (brand icons). Other icon sets are not allowed — see .claude/rules/icons.md.",
             },
             {
               // Deep-path imports bypass the package entry + can pull a duplicate copy.

@@ -14,7 +14,7 @@
  * Until shiki finishes loading (or for a fence with no language tag) the raw
  * fence text renders as before — highlighting is a progressive enhancement.
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { code as codeHighlighter } from "@streamdown/code";
 import {
   useEffect,

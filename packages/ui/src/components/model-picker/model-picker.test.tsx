@@ -9,7 +9,7 @@ afterEach(cleanup);
 
 // cmdk calls Element.scrollIntoView to keep the auto-highlighted item visible.
 // jsdom doesn't implement it and this package's vitest setup deliberately ships
-// no global stub (a stub there would only fix @qlik-coe-emea/qlabs-components-ui's
+// no global stub (a stub there would only fix @elabs/components-ui's
 // own tests while every other jsdom consumer still crashed), so third-party
 // libraries that don't feature-detect get a local, scoped stub — the same
 // pattern as combobox.test.tsx and tree.test.tsx.

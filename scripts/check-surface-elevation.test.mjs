@@ -54,13 +54,13 @@ test("FAILS: --card darker than --background", () => {
 
 // ── PASS: a healthy light stack (chrome < canvas < card) ─────────────────────
 test("PASSES: chrome recessed below canvas, card raised (light)", () => {
-  const css = theme(`[data-theme="qlik-bright"]`, { sidebar: 0.96, background: 0.985, card: 1 });
+  const css = theme(`[data-theme="light"]`, { sidebar: 0.96, background: 0.985, card: 1 });
   assert.ok(isClean(css), "Δ0.025 with raised card must pass");
 });
 
 // ── PASS: a healthy dark stack (canvas still lighter than chrome) ─────────────
 test("PASSES: dark theme — canvas lighter than chrome", () => {
-  const css = theme(`[data-theme="qlik-dark"]`, { sidebar: 0.17, background: 0.2, card: 0.24 });
+  const css = theme(`[data-theme="dark"]`, { sidebar: 0.17, background: 0.2, card: 0.24 });
   assert.ok(isClean(css), "dark Δ0.03 must pass (canvas still more elevated than chrome)");
 });
 

@@ -28,7 +28,7 @@ You curate `registry/` so copy-owned distribution stays reliable and well-organi
 
 - [ ] `name` unique; `type` valid; `title` + `description` present
 - [ ] All `files[].path` exist; `target` set for `registry:page`/`registry:file`
-- [ ] `dependencies` list real npm + `@qlik-coe-emea/qlabs-components-*` packages actually imported
+- [ ] `dependencies` list real npm + `@elabs/components-*` packages actually imported
 - [ ] `registry:theme` items use `cssVars`
 - [ ] Block/template has a co-located `*.stories.tsx`; when the dev server is up it
       passes `mcp__storybook__run-story-tests` and renders across both themes via

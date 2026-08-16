@@ -11,7 +11,7 @@ import {
   useId,
   useMemo,
 } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
 import { PieCenterShell } from "./pie-center-shell";
 

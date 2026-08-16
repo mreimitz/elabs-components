@@ -1,5 +1,5 @@
 /**
- * `@qlik-coe-emea/qlabs-components-editor/markdown/parse` — a Monaco-free markdown parser.
+ * `@elabs/components-editor/markdown/parse` — a Monaco-free markdown parser.
  *
  * `parseMarkdown(md)` returns the mdast `Root` for the SAME dialect the branded
  * preview parses: GitHub-flavored markdown + `:::`/`::`/`:` directives + YAML

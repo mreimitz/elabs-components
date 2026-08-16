@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
   useLocale,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { RotateCwIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { forwardRef, type HTMLAttributes } from "react";
 

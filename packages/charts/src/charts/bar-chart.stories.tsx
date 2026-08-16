@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import { Bar } from "./bar";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { BarChart } from "./bar-chart";
@@ -339,19 +339,19 @@ export const KeyboardDrilldown: Story = {
 
 /**
  * Three-theme sweep for the drill-down layer. The stories above run under
- * Storybook's DEFAULT theme (`qlik-bright`) only, and a hand-toggled sweep
+ * Storybook's DEFAULT theme (`light`) only, and a hand-toggled sweep
  * leaves no durable evidence — so these wrap the SAME render/play pair in an
  * explicit `<ThemeProvider>` (the `markdown-editor.stories.tsx` #223 idiom).
- * `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook` therefore
+ * `pnpm --filter @elabs/components-docs test-storybook` therefore
  * renders AND axe-asserts the focus ring, the target boxes and the detail panel
- * in `qlik-dark` and at decoration 10 on every run, with zero manual steps.
+ * in `dark` and at decoration 10 on every run, with zero manual steps.
  * `storageKey={null}` keeps the override out of localStorage.
  */
-export const KeyboardDrilldownQlikDark: Story = {
-  name: "KeyboardDrilldown — qlik-dark",
+export const KeyboardDrilldownDark: Story = {
+  name: "KeyboardDrilldown — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

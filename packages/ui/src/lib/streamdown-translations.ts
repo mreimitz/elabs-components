@@ -3,14 +3,14 @@
 /**
  * Streamdown's own chrome microcopy, resolved through the brand locale seam.
  *
- * Why this lives in `@qlik-coe-emea/qlabs-components-ui` and not next to the
+ * Why this lives in `@elabs/components-ui` and not next to the
  * renderer that uses it (#310, ADR 0017): Streamdown draws controls INSIDE the
  * markdown it renders — a code-block copy button, table copy/download menus, a
  * Mermaid toolbar, an external-link interstitial. Those labels live in the
  * dependency, so `pnpm microcopy:check` structurally cannot see them and a
  * `<LocaleProvider>` used to stop dead at the Streamdown boundary. TWO packages
- * now render Streamdown — `@qlik-coe-emea/qlabs-components-ai` (chat answers,
- * `MarkdownView`) and `@qlik-coe-emea/qlabs-components-viewer` (a markdown FILE
+ * now render Streamdown — `@elabs/components-ai` (chat answers,
+ * `MarkdownView`) and `@elabs/components-viewer` (a markdown FILE
  * someone opened) — and they may not import each other, so the shared half sits
  * one layer down where both can reach it.
  *

@@ -2,16 +2,14 @@
 /**
  * gen-package-readmes.mjs — every published package ships the getting-started guide.
  *
- * WHY: a developer who runs `pnpm add @qlik-coe-emea/qlabs-components-ui` lands on
- * the package's page in GitHub Packages, and that page renders the package
- * README. Before this, 9 of 12 publishable packages had **no README at all** —
- * the `ui` tarball shipped zero documentation — so the landing page was blank
- * and the real guide was buried at `docs/CONSUMING.md` inside a private repo.
+ * WHY: a developer reaching for `@elabs/components-ui` lands on the package
+ * directory and reads its README. Before this, 9 of 12 distributable packages
+ * had **no README at all** — the `ui` package shipped zero documentation — so
+ * the entry point was blank and the real guide was buried in `docs/CONSUMING.md`.
  *
- * A consumer-facing guide that only exists in the maintainers' repo is not
- * shipped. This generates a "Getting started" region into every publishable
- * package's README: auth, install, the Tailwind wiring (the #1 mistake), that
- * package's own peers/extras, and how to make a coding agent aware of it.
+ * This generates a "Getting started" region into every distributable package's
+ * README: install, the Tailwind wiring (the #1 mistake), that package's own
+ * peers/extras, and how to make a coding agent aware of it.
  *
  * The region lives between markers, so hand-written prose ABOVE and BELOW it is
  * preserved — `ai`, `editor` and `maps` already had real content and keep it.
@@ -31,51 +29,49 @@ import { PKG_PURPOSE } from "../packages/cli/lib/render-docs.mjs";
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const START = "<!-- brand-ui:gen:readme:start -->";
 const END = "<!-- brand-ui:gen:readme:end -->";
-const REGISTRY = "https://npm.pkg.github.com";
-const SCOPE = "@qlik-coe-emea";
-const REPO = "Qlik-CoE-EMEA/qlabs-components";
+const SCOPE = "@elabs";
 
 /**
  * Per-package extras a consumer must know at install time. Only what is
  * genuinely package-specific — the shared setup is in the common region.
  */
 const EXTRAS = {
-  [`${SCOPE}/qlabs-components-tokens`]: [
+  [`${SCOPE}/components-tokens`]: [
     "`tailwindcss` `^4` is a peer — it must be the SAME instance that processes the token stylesheet.",
     "Ships the shipped themes and the self-hosted fonts. Everything else depends on this package.",
     "Font smoothing is already applied: the stylesheet's `@layer base` `body` rule sets `-webkit-font-smoothing: antialiased` and `-moz-osx-font-smoothing: grayscale`. **Do not re-add those two lines in your app CSS** — importing `styles.css` is enough. It is a base-layer rule, so an app that genuinely wants subpixel rendering can still override it.",
   ],
-  [`${SCOPE}/qlabs-components-editor`]: [
+  [`${SCOPE}/components-editor`]: [
     "`monaco-editor` is a peer — it owns `globalThis.MonacoEnvironment`, so two copies break it.",
     "Import `.../monaco-environment` once at your app entry to enable language workers (Vite-only).",
     "`./markdown/parse` and `./markdown/frontmatter` are pure, Monaco-free and server-safe.",
   ],
-  [`${SCOPE}/qlabs-components-maps`]: [
+  [`${SCOPE}/components-maps`]: [
     "`maplibre-gl` is a peer — it owns a WebGL context and global CSS.",
     "No CSS import needed: `MapCanvas` pulls in MapLibre's stylesheet and the brand overrides itself.",
   ],
-  [`${SCOPE}/qlabs-components-flow`]: [
+  [`${SCOPE}/components-flow`]: [
     "`@xyflow/react` is a peer — it carries the React context `useReactFlow` reads, so two copies break.",
     'Import `"@xyflow/react/dist/style.css"` once.',
   ],
-  [`${SCOPE}/qlabs-components-ai`]: [
+  [`${SCOPE}/components-ai`]: [
     "`ai` (Vercel AI SDK) `^6` is a **types-only** peer — your app owns the model calls.",
     "`@xyflow/react` is a peer too, if you render the agent canvas.",
   ],
-  [`${SCOPE}/qlabs-components-charts`]: [
-    '`@visx/*`-backed charts do not render meaningfully under jsdom. `.../test` is the official jsdom-safe test double — `vi.mock("@qlik-coe-emea/qlabs-components-charts", () => import("@qlik-coe-emea/qlabs-components-charts/test"))` — and still THROWS on a missing/invalid required prop, so a mocked test doesn\'t silently pass a broken chart.',
+  [`${SCOPE}/components-charts`]: [
+    '`@visx/*`-backed charts do not render meaningfully under jsdom. `.../test` is the official jsdom-safe test double — `vi.mock("@elabs/components-charts", () => import("@elabs/components-charts/test"))` — and still THROWS on a missing/invalid required prop, so a mocked test doesn\'t silently pass a broken chart.',
   ],
-  [`${SCOPE}/qlabs-components-ui`]: [
+  [`${SCOPE}/components-ui`]: [
     "The class-merge helper is at `.../lib/cn` — a pure, server-safe entry point.",
   ],
-  [`${SCOPE}/qlabs-components-cli`]: [
+  [`${SCOPE}/components-cli`]: [
     "Provides the `brand-ui` binary. Bundles the component manifest, so it answers with no monorepo, no network and no dev server.",
   ],
 };
 
 /** The generated region for one package. */
 export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, extras }) {
-  const short = pkgName.replace(`${SCOPE}/qlabs-components-`, "");
+  const short = pkgName.replace(`${SCOPE}/components-`, "");
   const isCli = short === "cli";
 
   const lines = [
@@ -90,23 +86,15 @@ export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, e
 
   lines.push(
     `Part of **brand-ui**, a source-owned, token-driven React component system.`,
-    `These packages are **private** and published to GitHub Packages.`,
+    `These packages are **private** and are not published to any registry — they are`,
+    `consumed from this workspace. See \`docs/CONSUMING.md\`.`,
     "",
     "## Install",
     "",
-    "You need a token — GitHub Packages has no anonymous read for private packages.",
-    "Add to your project's `.npmrc`:",
+    "Inside this monorepo the packages resolve as workspace dependencies:",
     "",
-    "```ini",
-    `${SCOPE}:registry=${REGISTRY}`,
-    `//${REGISTRY.replace("https://", "")}/:_authToken=\${GITHUB_TOKEN}`,
-    "```",
-    "",
-    "`GITHUB_TOKEN` must be a **classic** PAT with the `read:packages` scope —",
-    "fine-grained PATs do not reliably work with this registry. Then:",
-    "",
-    "```bash",
-    `pnpm add ${pkgName}`,
+    "```json",
+    `"${pkgName}": "workspace:*"`,
     "```",
     "",
   );
@@ -120,7 +108,7 @@ export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, e
       "mistake:",
       "",
       "```css",
-      `@import "${SCOPE}/qlabs-components-tokens/styles.css";`,
+      `@import "${SCOPE}/components-tokens/styles.css";`,
       `@source "../node_modules/${pkgName}/dist";`,
       "```",
       "",
@@ -128,9 +116,9 @@ export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, e
       "one per brand-ui package you render. Then wrap your app once:",
       "",
       "```tsx",
-      `import { ThemeProvider } from "${SCOPE}/qlabs-components-tokens";`,
+      `import { ThemeProvider } from "${SCOPE}/components-tokens";`,
       "",
-      '<ThemeProvider defaultTheme="qlik-bright">{children}</ThemeProvider>;',
+      '<ThemeProvider defaultTheme="light">{children}</ThemeProvider>;',
       "```",
       "",
     );
@@ -151,7 +139,7 @@ export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, e
       "Don't guess the API — ask the CLI:",
       "",
       "```bash",
-      `pnpm add -D ${SCOPE}/qlabs-components-cli`,
+      `pnpm add -D ${SCOPE}/components-cli`,
       `pnpm exec brand-ui search <query>   # find a component`,
       `pnpm exec brand-ui docs <Name>      # its real props, from source`,
       "```",
@@ -162,10 +150,10 @@ export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, e
   lines.push(
     "## Using an AI coding agent?",
     "",
-    "Install the CLI above and, for Claude Code, the plugin:",
+    "For Claude Code, install the plugin from this repo's checkout:",
     "",
     "```",
-    `/plugin marketplace add ${REPO}`,
+    "/plugin marketplace add .",
     "/plugin install brand-ui",
     "```",
     "",
@@ -175,14 +163,12 @@ export function renderReadmeRegion(pkgName, { purpose, componentCount, sample, e
     "",
     "## Full guide",
     "",
-    `Auth, Tailwind and Next.js wiring, per-package extras, agent enablement and a`,
-    `prompt for migrating an existing project:`,
-    `[**CONSUMING.md**](https://github.com/${REPO}/blob/main/docs/CONSUMING.md)`,
-    "(also attached to every [release](https://github.com/" + REPO + "/releases)).",
+    `Tailwind and Next.js wiring, per-package extras, agent enablement and a`,
+    `prompt for migrating an existing project: \`docs/CONSUMING.md\`.`,
     "",
     "## License",
     "",
-    "UNLICENSED — internal to Qlik CoE EMEA.",
+    "UNLICENSED — private.",
     // Prettier inserts a blank line before a trailing HTML comment. Emitting it
     // here keeps `gen -> format -> gen:readmes:check` convergent; without it the
     // formatter and the generator fight and the gate can never go green.

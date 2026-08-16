@@ -2,7 +2,7 @@
 
 > Source-owned, token-driven React component system for internal apps, dashboards, AI/chat clients, data grids, React Flow canvases and presales demos. Default look: modern enterprise SaaS, themeable to any brand. Tailwind v4 (CSS-variable tokens) + Radix + React 19.
 
-This file is generated from `brand-ui.manifest.json` — the anti-hallucination ground truth. Never hand-edit it. For the live, queryable API, install the CLI as a dev dependency from GitHub Packages (`pnpm add -D @qlik-coe-emea/qlabs-components-cli`, see docs/CONSUMING.md) and run `pnpm exec brand-ui docs <Component>`, or, when the Storybook dev server runs, use the Storybook MCP at `http://localhost:6006/mcp`.
+This file is generated from `brand-ui.manifest.json` — the anti-hallucination ground truth. Never hand-edit it. For the live, queryable API, install the CLI as a dev dependency from GitHub Packages (`pnpm add -D @elabs/components-cli`, see docs/CONSUMING.md) and run `pnpm exec brand-ui docs <Component>`, or, when the Storybook dev server runs, use the Storybook MCP at `http://localhost:6006/mcp`.
 
 ## Rules of the road
 
@@ -14,25 +14,25 @@ This file is generated from `brand-ui.manifest.json` — the anti-hallucination 
 
 ## Themes (2)
 
-qlik-dark, qlik-bright (default)
+dark, light (default)
 
 ## Packages (which package for what)
 
-- [@qlik-coe-emea/qlabs-components-tokens](./llms/tokens.txt) — Semantic CSS-variable themes + ThemeProvider/useTheme. (18 components, 6 hooks)
-- [@qlik-coe-emea/qlabs-components-icons](./llms/icons.txt) — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). (31 components, 0 hooks)
-- [@qlik-coe-emea/qlabs-components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (355 components, 14 hooks)
-- [@qlik-coe-emea/qlabs-components-data](./llms/data.txt) — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. (5 components, 0 hooks)
-- [@qlik-coe-emea/qlabs-components-ai](./llms/ai.txt) — ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. (443 components, 13 hooks)
-- [@qlik-coe-emea/qlabs-components-flow](./llms/flow.txt) — Branded React Flow canvas, nodes, edges, controls, inspector. (23 components, 7 hooks)
-- [@qlik-coe-emea/qlabs-components-maps](./llms/maps.txt) — MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. (12 components, 1 hooks)
-- [@qlik-coe-emea/qlabs-components-charts](./llms/charts.txt) — MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). (130 components, 32 hooks)
-- [@qlik-coe-emea/qlabs-components-marketing](./llms/marketing.txt) — Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. (6 components, 0 hooks)
-- [@qlik-coe-emea/qlabs-components-editor](./llms/editor.txt) — Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. (8 components, 1 hooks)
-- [@qlik-coe-emea/qlabs-components-viewer](./llms/viewer.txt) — FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. (19 components, 2 hooks)
+- [@elabs/components-tokens](./llms/tokens.txt) — Semantic CSS-variable themes + ThemeProvider/useTheme. (18 components, 6 hooks)
+- [@elabs/components-icons](./llms/icons.txt) — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). (31 components, 0 hooks)
+- [@elabs/components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (355 components, 14 hooks)
+- [@elabs/components-data](./llms/data.txt) — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. (5 components, 0 hooks)
+- [@elabs/components-ai](./llms/ai.txt) — ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. (443 components, 13 hooks)
+- [@elabs/components-flow](./llms/flow.txt) — Branded React Flow canvas, nodes, edges, controls, inspector. (23 components, 7 hooks)
+- [@elabs/components-maps](./llms/maps.txt) — MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. (12 components, 1 hooks)
+- [@elabs/components-charts](./llms/charts.txt) — MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). (130 components, 32 hooks)
+- [@elabs/components-marketing](./llms/marketing.txt) — Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. (6 components, 0 hooks)
+- [@elabs/components-editor](./llms/editor.txt) — Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. (8 components, 1 hooks)
+- [@elabs/components-viewer](./llms/viewer.txt) — FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. (19 components, 2 hooks)
 
 ## Entry points
 
-- CLI: install first — `pnpm add -D @qlik-coe-emea/qlabs-components-cli` (GitHub Packages, see docs/CONSUMING.md §1+§7a) — then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>`
+- CLI: install first — `pnpm add -D @elabs/components-cli` (GitHub Packages, see docs/CONSUMING.md §1+§7a) — then `pnpm exec brand-ui info` · `… search <q>` · `… docs <Component>`
 - Manifest: `brand-ui.manifest.json` (machine-readable ground truth)
 - Live MCP (dev): Storybook addon-mcp at `http://localhost:6006/mcp`
 - Registry (copy-own): self-hosted registry JSON — `pnpm registry:build`, then `npx shadcn@latest add <your-host>/<item>.json` (or copy from `registry/blocks/<name>/`)

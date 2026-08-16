@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- lightweight engine stub; the real surface is exercised by Storybook browser tests */
 /**
  * MapLibre can't render in jsdom (no WebGL) — unit tests mock the engine and
- * assert the brand wrappers' own output, mirroring how @qlik-coe-emea/qlabs-components-flow mocks
+ * assert the brand wrappers' own output, mirroring how @elabs/components-flow mocks
  * @xyflow/react. Real rendering + a11y come from the Storybook story tests.
  *
  * Usage in a test file:

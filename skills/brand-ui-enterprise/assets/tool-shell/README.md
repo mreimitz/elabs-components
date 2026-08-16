@@ -5,7 +5,7 @@ bar**, an optional **right inspector** pane, a **⌘K command palette**, and **f
 mode** (⌘.). Generalized from `qlabs-workbench`. Archetype **B** (enterprise admin) is
 the default and lives at `../app-shell.tsx`; use A for editors, inspectors, canvases.
 
-> Starting points — verify every `@qlik-coe-emea/qlabs-components-*` prop with `brand-ui docs <Component>`.
+> Starting points — verify every `@elabs/components-*` prop with `brand-ui docs <Component>`.
 
 | File                  | Role                                                                                   |
 | --------------------- | -------------------------------------------------------------------------------------- |
@@ -24,7 +24,7 @@ the default and lives at `../app-shell.tsx`; use A for editors, inspectors, canv
 import { AppProviders } from "../app-providers"; // Theme → Tooltip → Sidebar → ContextPanel + Toaster
 import { UiStateProvider } from "./ui-state";
 import { ToolShell } from "./tool-shell";
-import { Sidebar /* … */ } from "@qlik-coe-emea/qlabs-components-ui";
+import { Sidebar /* … */ } from "@elabs/components-ui";
 
 <AppProviders>
   <UiStateProvider>

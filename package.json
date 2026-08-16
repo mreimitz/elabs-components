@@ -10,7 +10,7 @@
   "scripts": {
     "a11y:baseline:check": "node scripts/check-a11y-baseline.mjs",
     "a11y:baseline:check:test": "node --test scripts/check-a11y-baseline.test.mjs",
-    "a11y:baseline:run": "STORYBOOK_A11Y_MODE=todo pnpm --filter @qlik-coe-emea/qlabs-components-docs exec vitest --project storybook run --reporter=default --reporter=../../scripts/a11y-baseline-reporter.mjs",
+    "a11y:baseline:run": "STORYBOOK_A11Y_MODE=todo pnpm --filter @elabs/components-docs exec vitest --project storybook run --reporter=default --reporter=../../scripts/a11y-baseline-reporter.mjs",
     "agent-docs": "pnpm gen:templates && pnpm plugin:agents && pnpm manifest && pnpm inventory && pnpm llms && pnpm context && pnpm gen",
     "agent-docs-cascade:check:test": "node --test scripts/run-agent-docs-cascade.test.mjs",
     "agent-docs:check": "pnpm templates:check && pnpm manifest:check && pnpm inventory:check && pnpm llms:check && pnpm context:check && pnpm gen:check && pnpm agent-output:check && pnpm gen:readmes:check && pnpm playbooks:check && pnpm intent:check",
@@ -24,6 +24,8 @@
     "app-spec:check:test": "node --test scripts/check-app-spec.test.mjs",
     "arch:evidence": "node .claude/scripts/arch-evidence-pack.mjs",
     "arch:garden": "node .claude/scripts/arch-evidence-pack.mjs --depth quick",
+    "attribution:provenance:check": "node scripts/check-attribution-provenance.mjs",
+    "attribution:provenance:check:test": "node --test scripts/check-attribution-provenance.test.mjs",
     "attributions:check": "node scripts/gen-attributions.mjs --check",
     "attributions:check:test": "node --test scripts/gen-attributions.test.mjs",
     "audit-artifact": "node scripts/check-audit-artifact.mjs --write",
@@ -164,7 +166,7 @@
     "slop:check:test": "node --test scripts/check-anti-slop.test.mjs",
     "states:check": "node scripts/check-state-coverage.mjs",
     "states:check:test": "node --test scripts/check-state-coverage.test.mjs",
-    "storybook": "pnpm --filter @qlik-coe-emea/qlabs-components-docs dev",
+    "storybook": "pnpm --filter @elabs/components-docs dev",
     "surface-elevation:check": "node scripts/check-surface-elevation.mjs",
     "surface-elevation:check:test": "node --test scripts/check-surface-elevation.test.mjs",
     "surface:preview": "node scripts/build-surface-preview.mjs",
@@ -198,8 +200,8 @@
     "worktree-branch:check:test": "node --test scripts/check-worktree-branch.test.mjs"
   },
   "devDependencies": {
-    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
+    "@elabs/components-eslint-config": "workspace:*",
+    "@elabs/components-typescript-config": "workspace:*",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.3"

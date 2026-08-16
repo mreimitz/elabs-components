@@ -1,13 +1,8 @@
 "use client";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { Badge } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@elabs/components-ui";
+import { Badge } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { Tool } from "ai";
 import { BotIcon } from "lucide-react";
 import type { ComponentProps } from "react";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { THEMES, ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEMES, ThemeProvider } from "@elabs/components-tokens";
 
 import { ThemeSwitcher, type ThemePreference } from "./theme-switcher";
 
@@ -70,7 +70,7 @@ export const Dropdown: Story = { args: { mode: "dropdown", themes: [...THEMES] }
 export const ToggleNoSystem: Story = { args: { showSystem: false } };
 
 /** A custom (non-default) theme pair. ≤2 themes still toggle instead of a dropdown. */
-export const CustomPair: Story = { args: { themes: ["qlik-dark", "qlik-bright"] } };
+export const CustomPair: Story = { args: { themes: ["dark", "light"] } };
 
 /**
  * Controlled mode (#366): the caller owns the preference — including
@@ -88,21 +88,21 @@ export const Controlled: Story = {
       </div>
     );
   },
-  args: { themes: ["qlik-bright", "qlik-dark"] },
+  args: { themes: ["light", "dark"] },
   play: async ({ canvas, userEvent }) => {
     await expect(canvas.getByText("Preference: system")).toBeInTheDocument();
     const trigger = canvas.getByRole("button", { name: /theme: system/i });
     await userEvent.click(trigger);
-    // "system" cycles to "light" (qlik-bright) — the caller's own state updates,
+    // "system" cycles to "light" (light) — the caller's own state updates,
     // and the switcher renders straight from it (never its own storage key).
-    await expect(canvas.getByText("Preference: qlik-bright")).toBeInTheDocument();
+    await expect(canvas.getByText("Preference: light")).toBeInTheDocument();
   },
 };
 
 /**
  * When a `ThemeProvider` restricts `allowedThemes` (#355), the switcher
  * automatically narrows to that subset (#384) — even though this story's own
- * `themes` prop lists all three, only Qlik Bright and Qlik Dark are ever
+ * `themes` prop lists all three, only Light and Dark are ever
  * offered; Blueprint is unreachable via any menu item, "System", or the OS
  * `prefers-color-scheme` listener. The nested `ThemeProvider` below overrides
  * this file's meta-level (unrestricted) one, since `useTheme()` always reads
@@ -111,7 +111,7 @@ export const Controlled: Story = {
 export const RestrictedProvider: Story = {
   decorators: [
     (Story) => (
-      <ThemeProvider allowedThemes={["qlik-bright", "qlik-dark"]} storageKey={null}>
+      <ThemeProvider allowedThemes={["light", "dark"]} storageKey={null}>
         <div className="flex min-h-32 items-center justify-center">
           <Story />
         </div>
@@ -123,7 +123,7 @@ export const RestrictedProvider: Story = {
     const trigger = canvas.getByRole("button", { name: "Theme" });
     await userEvent.click(trigger);
     const body = within(canvasElement.ownerDocument.body);
-    const dark = await body.findByRole("menuitem", { name: /qlik dark/i });
+    const dark = await body.findByRole("menuitem", { name: /dark/i });
     await waitFor(() => expect(dark).toBeVisible());
     await expect(body.queryByText(/blueprint/i)).not.toBeInTheDocument();
     // Close the menu so the story doesn't end mid-interaction (portaled content

@@ -1,4 +1,4 @@
-import { normalizeFileSource } from "@qlik-coe-emea/qlabs-components-ui";
+import { normalizeFileSource } from "@elabs/components-ui";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -122,6 +122,17 @@ function main(argv = []) {
   const wfDir = join(root, ".github", "workflows");
   const ciPath = join(wfDir, "ci.yml");
   const releasePath = join(wfDir, "release.yml");
+
+  // No GitHub Actions workflows at all: this checkout has no CI and no release
+  // path, so there is no publish for a verdict to gate. Skip loudly instead of
+  // failing — a red gate for a release nobody can perform trains people to
+  // ignore red. Every rung below stays wired for the day the workflows return.
+  if (!existsSync(wfDir)) {
+    console.log(
+      "• release-gates: SKIPPED — no .github/workflows in this checkout (no CI, no release path).",
+    );
+    return 0;
+  }
   for (const p of [ciPath, releasePath]) {
     if (!existsSync(p)) {
       console.error(`✖ release-gates: missing ${p.slice(root.length + 1)}`);

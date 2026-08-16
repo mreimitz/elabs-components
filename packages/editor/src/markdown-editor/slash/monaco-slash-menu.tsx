@@ -14,7 +14,7 @@
  * `aria-selected`; this wrapper wires `aria-activedescendant` on the editor's
  * textarea so AT can follow the active row. Esc closes and refocuses the editor.
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { IRange } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 

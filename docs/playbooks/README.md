@@ -1,6 +1,6 @@
 # Playbooks (archetype composition recipes)
 
-One page per app archetype: which `@qlik-coe-emea/qlabs-components-*` building blocks it's made of,
+One page per app archetype: which `@elabs/components-*` building blocks it's made of,
 how they wire together, and a minimal working example. Playbooks answer the
 question templates can't: **"why these components, in this order, wired this
 way"** — so a developer (or a coding agent) composes correctly on the first
@@ -36,11 +36,11 @@ The index below is GENERATED from each playbook's own YAML front matter
 
 ## Conventions every playbook assumes
 
-- App root wrapped in `<ThemeProvider defaultTheme="…">` from `@qlik-coe-emea/qlabs-components-tokens`.
+- App root wrapped in `<ThemeProvider defaultTheme="…">` from `@elabs/components-tokens`.
 - Semantic tokens only (`bg-background`, `text-muted-foreground`, …) — no raw hex.
-- Generic icons from `lucide-react`; brand marks from `@qlik-coe-emea/qlabs-components-icons`.
+- Generic icons from `lucide-react`; brand marks from `@elabs/components-icons`.
 - Loading → `Skeleton`/`LoadingState`, empty → `EmptyState`, error →
-  `ErrorState` (all `@qlik-coe-emea/qlabs-components-ui`) — never a blank region.
+  `ErrorState` (all `@elabs/components-ui`) — never a blank region.
 - brand-ui is presentation-only: model calls, fetching, and transport belong
   to your app (see `docs/DECISIONS.md` D5).
 
@@ -54,7 +54,7 @@ Create `docs/playbooks/<archetype>.md` starting with:
 archetype: <archetype> # must equal the file name
 intent: "One sentence an agent can match a user's request against"
 keywords: [a, few, free-text, terms]
-packages: ["@qlik-coe-emea/qlabs-components-ui", "…"]
+packages: ["@elabs/components-ui", "…"]
 ---
 ```
 

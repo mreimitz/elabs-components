@@ -62,11 +62,19 @@ const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
 const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");
 
 /**
- * Theme mode key → block. `light` is the FIRST `:root` block (the neutral
+ * The mode key standing for the `:root` neutral base/fallback — NOT a selectable
+ * theme. `root`, not `light`, because `light` is a real shipped theme slug and a
+ * colliding sentinel resolves the light theme's block to `:root`. Canonical
+ * declaration: `ROOT_MODE` in `packages/tokens/scripts/lib/themes-io.mjs`.
+ */
+export const ROOT_MODE = "root";
+
+/**
+ * Theme mode key → block. `ROOT_MODE` is the FIRST `:root` block (the neutral
  * fallback, never selected by `ThemeProvider` but still the value anything
  * un-themed renders). Mirrors `themes-io.mjs THEME_NAMES` and the parity gate.
  */
-export const THEME_NAMES = ["light", ...ACTIVE_THEMES];
+export const THEME_NAMES = [ROOT_MODE, ...ACTIVE_THEMES];
 
 /**
  * Perceptual floor, as an OKLab ΔE. Deliberately the SAME constant as
@@ -155,7 +163,7 @@ export const EXEMPTIONS = new Map([
  * design contract. A pair that needs an exemption in a POLYCHROME theme is not
  * an invariant — delete the pair from MUST_DIFFER instead. That test is exactly
  * why `(--primary, --chart-1)` is absent above: it is below the floor in
- * qlik-bright (ΔE 0.0463) and barely over it in qlik-dark (0.0544), because both
+ * light (ΔE 0.0463) and barely over it in dark (0.0544), because both
  * themes ship series 1 as a chart-tuned cousin of the brand hue ON PURPOSE.
  * `--primary` is control chrome and `--chart-1` is a data mark — different
  * channels, no confusion — so the honest fix was to drop the pair, not to exempt
@@ -166,7 +174,7 @@ export const EXEMPTIONS = new Map([
 /** Extract the FIRST block body for a theme (same regex as the parity gate). */
 function extractBlock(cssText, name) {
   const re =
-    name === "light"
+    name === ROOT_MODE
       ? /:root\s*\{([\s\S]*?)\n\}/
       : new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([\\s\\S]*?)\\n\\}`);
   const m = cssText.match(re);
@@ -182,13 +190,13 @@ function extractBlock(cssText, name) {
  * match INSIDE a comment and runs to the first `;` it finds — which is the
  * semicolon of the next REAL declaration, swallowing it whole.
  *
- * That is not hypothetical: `themes.css`'s qlik-bright `--ring` comment says
+ * That is not hypothetical: `themes.css`'s light `--ring` comment says
  * "…distinct from the green brand AND (#334) from --info: it used to be…", so
  * the scan produced `--info` = "it used to be byte-identical…" and **no
  * `--ring` at all** — and the `:root` fallback in `resolveToken()` then silently
- * compared `:root`'s ring against qlik-bright's primary. Three of this gate's
+ * compared `:root`'s ring against light's primary. Three of this gate's
  * pairs were evaluated against the wrong theme in the DEFAULT theme, so planting
- * a real collision on `qlik-bright --ring` produced zero violations.
+ * a real collision on `light --ring` produced zero violations.
  *
  * `blankComments` is reused from the elevation gate (same hazard, same fix)
  * rather than re-implemented — it preserves length and newlines, so offsets stay
@@ -266,7 +274,7 @@ export function findRoleCollisions(cssText, opts = {}) {
   const mustDiffer = opts.mustDiffer ?? MUST_DIFFER;
   const floor = opts.floor ?? ROLE_SEPARATION_DELTA_E;
 
-  const rootBody = extractBlock(cssText, "light");
+  const rootBody = extractBlock(cssText, ROOT_MODE);
   const root = rootBody ? declarations(rootBody) : new Map();
 
   const violations = [];
@@ -378,7 +386,7 @@ function main(argv) {
       `\nTwo semantic roles that can appear on screen together have collapsed onto\n` +
         `one colour, so the distinction they carry is gone. Fix it by retuning ONE\n` +
         `side in packages/tokens/tokens/themes/<theme>.tokens.json and re-running\n` +
-        `\`pnpm --filter @qlik-coe-emea/qlabs-components-tokens tokens:build\`.\n\n` +
+        `\`pnpm --filter @elabs/components-tokens tokens:build\`.\n\n` +
         `If the equality is genuinely BY DESIGN, add it to EXEMPTIONS in\n` +
         `scripts/check-role-distinctness.mjs WITH the decision that justifies it\n` +
         `(the rule for what qualifies is documented beside that list).\n` +

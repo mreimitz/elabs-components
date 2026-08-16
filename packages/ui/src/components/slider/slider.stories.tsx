@@ -136,7 +136,7 @@ export const Range: Story = {
     // (`Accessibility.getFullAXTree`), which is what assistive tech consumes.
     //
     // `@vitest/browser/context` is a virtual module that only resolves inside
-    // Vitest's browser-mode test runner (`pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook` /
+    // Vitest's browser-mode test runner (`pnpm --filter @elabs/components-docs test-storybook` /
     // `vitest --project storybook run`, the same engine CI's blocking
     // "Storybook interaction + axe" job uses) — importing it anywhere else
     // throws by the module's own design. The dynamic import + catch lets this

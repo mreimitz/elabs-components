@@ -17,10 +17,10 @@
  * The sinks that hit it, all third-party or third-party-shaped:
  *   - `streamdown`'s mermaid block (reached from `MessageResponse`), plus Mermaid
  *     itself writing its generated CSS and its HTML node labels
- *   - `@qlik-coe-emea/qlabs-components-editor` — `mermaid-viewer`, `mermaid-diagram`, `markdown-academic/math`
- *   - `@qlik-coe-emea/qlabs-components-ai`'s `schema-display`
+ *   - `@elabs/components-editor` — `mermaid-viewer`, `mermaid-diagram`, `markdown-academic/math`
+ *   - `@elabs/components-ai`'s `schema-display`
  *   - `new Worker("<url string>")` from Vite's `?worker` transform, which is how
- *     `@qlik-coe-emea/qlabs-components-editor/monaco-environment` starts Monaco's five language workers
+ *     `@elabs/components-editor/monaco-environment` starts Monaco's five language workers
  *
  * None of them is fixable inside the library: React exposes no TrustedHTML-typed
  * prop, so a `dangerouslySetInnerHTML` needs a document-level policy. Per the

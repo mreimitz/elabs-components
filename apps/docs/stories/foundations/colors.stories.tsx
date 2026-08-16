@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
  *
  * Every swatch reads its color straight from the live CSS variable
  * (`var(--token)`), so the whole catalog RE-COLORS when you switch the theme in
- * the toolbar — try `qlik-bright` → `qlik-dark` → `blueprint`.
+ * the toolbar — try `light` → `dark` → `blueprint`.
  *
  * NOTE: a swatch fills via `var(--token)` (a token reference, never a raw hex),
  * and is LABELLED with its token name + the Tailwind utility that maps to it.
@@ -24,7 +24,7 @@ const meta = {
       description: {
         component:
           "The semantic color tokens, defined once per theme in " +
-          "`@qlik-coe-emea/qlabs-components-tokens` `themes.css` and exposed to Tailwind via `@theme inline`. " +
+          "`@elabs/components-tokens` `themes.css` and exposed to Tailwind via `@theme inline`. " +
           "Each swatch is theme-reactive: it fills from `var(--token)`, so switching " +
           "the toolbar theme recolors the entire page. Use the listed utility " +
           "(`bg-*` / `text-*` / `border-*`) — never a raw color.",
@@ -163,8 +163,7 @@ const GROUPS: TokenGroup[] = [
   },
   {
     heading: "Canvas & flow",
-    blurb:
-      "The React Flow canvas, its grid, and node/edge ink (`@qlik-coe-emea/qlabs-components-flow`).",
+    blurb: "The React Flow canvas, its grid, and node/edge ink (`@elabs/components-flow`).",
     tokens: [
       { varName: "--canvas", utility: "bg-canvas" },
       { varName: "--canvas-grid", utility: "bg-canvas-grid" },
@@ -175,7 +174,7 @@ const GROUPS: TokenGroup[] = [
   {
     heading: "Chat",
     blurb:
-      "The conversation surfaces in `@qlik-coe-emea/qlabs-components-ai` — user vs assistant message grounds.",
+      "The conversation surfaces in `@elabs/components-ai` — user vs assistant message grounds.",
     tokens: [
       { varName: "--chat-user", utility: "bg-chat-user", foregroundVar: "--chat-user-foreground" },
       {
@@ -188,7 +187,7 @@ const GROUPS: TokenGroup[] = [
   {
     heading: "Categorical data palette",
     blurb:
-      "The five-series chart palette (`@qlik-coe-emea/qlabs-components-charts`). Re-tuned per theme; under monochrome themes series are also differentiated by pattern, not hue alone.",
+      "The five-series chart palette (`@elabs/components-charts`). Re-tuned per theme; under monochrome themes series are also differentiated by pattern, not hue alone.",
     tokens: [
       { varName: "--chart-1", utility: "bg-chart-1" },
       { varName: "--chart-2", utility: "bg-chart-2" },

@@ -1,4 +1,4 @@
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";

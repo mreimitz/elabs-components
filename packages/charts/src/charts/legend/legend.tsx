@@ -1,7 +1,7 @@
 "use client";
 
 import { cloneElement, isValidElement, type ReactElement, useState } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { type LegendItemData, LegendItemProvider, LegendProvider } from "./legend-context";
 
 export interface LegendProps {

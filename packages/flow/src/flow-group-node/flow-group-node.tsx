@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { Handle, NodeResizer, Position, useNodes, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { useFlowGroups } from "../use-flow-groups";
 
 /** Visual accent for a group container. */

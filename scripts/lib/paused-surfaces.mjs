@@ -62,7 +62,7 @@ export function withoutPausedThemes(names) {
  * has the context it needs.
  */
 export const PAUSED_PACKAGES = {
-  "@qlik-coe-emea/qlabs-components-blueprint": {
+  "@elabs/components-blueprint": {
     dir: "packages/blueprint",
     since: "2026-08-09",
     reason:

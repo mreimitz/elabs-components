@@ -24,6 +24,7 @@ import {
   renderArtifact,
   findArtifactViolations,
   ROOT_LABEL,
+  ROOT_MODE,
 } from "./check-audit-artifact.mjs";
 
 // ── Fixture builder ──────────────────────────────────────────────────────────
@@ -123,13 +124,13 @@ test("findColorBlocks takes :root + the FIRST block per theme (skips the 2nd)", 
   const blocks = findColorBlocks(css());
   assert.deepEqual(
     blocks.map((b) => b.name),
-    ["light", "mint"],
+    [ROOT_MODE, "mint"],
   );
 });
 
 test("parseShippedThemes reads THEMES out of theme-types.ts", () => {
-  const src = `export const THEMES = ["qlik-bright", "qlik-dark", "blueprint"] as const;`;
-  assert.deepEqual(parseShippedThemes(src), ["qlik-bright", "qlik-dark", "blueprint"]);
+  const src = `export const THEMES = ["light", "dark", "blueprint"] as const;`;
+  assert.deepEqual(parseShippedThemes(src), ["light", "dark", "blueprint"]);
 });
 
 test("buildAuditRows resolves var() aliases (--chart-background: var(--card))", () => {
@@ -148,7 +149,7 @@ test("buildAuditRows throws when a theme block omits a semantic token", () => {
 // #401 — `tokenMap` (the private declaration scanner behind buildAuditRows)
 // used to scan the RAW block body: a comment sitting directly above a
 // declaration and mentioning a `--token:`-shaped substring (themes.css
-// documents its own tokens inline, e.g. the real comment above qlik-bright's
+// documents its own tokens inline, e.g. the real comment above light's
 // `--ring`) made the lazy `[^;]+` regex start matching INSIDE the comment and
 // consume through to the semicolon of the NEXT real declaration, silently
 // dropping it — which surfaced as exactly the "missing token" throw above,
@@ -163,8 +164,8 @@ test("buildAuditRows does not swallow a declaration preceded by a comment mentio
   assert.doesNotThrow(() => {
     result = buildAuditRows(source);
   });
-  const row = result.rows.find((r) => r.theme === "light" && r.token === "--border-strong");
-  assert.ok(row, "the --border-strong row for the :root/light block must still be present");
+  const row = result.rows.find((r) => r.theme === ROOT_MODE && r.token === "--border-strong");
+  assert.ok(row, "the --border-strong row for the `:root` base block must still be present");
 });
 
 // ── The gate: green case ─────────────────────────────────────────────────────

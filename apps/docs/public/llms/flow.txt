@@ -1,8 +1,8 @@
-# @qlik-coe-emea/qlabs-components-flow
+# @elabs/components-flow
 
 > Branded React Flow canvas, nodes, edges, controls, inspector.
 
-Import from `@qlik-coe-emea/qlabs-components-flow`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs/components-flow`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

@@ -196,7 +196,7 @@ describe("MarkdownPreview — citations + bibliography", () => {
 
   // Regression guard for the OTHER half of #317 — `color-contrast`. Both links
   // used the `--primary` FILL rung as body text, which measured 4.29-4.31:1 in
-  // qlik-bright (sub-AA for normal text). #399 minted `--primary-text`, gated
+  // light (sub-AA for normal text). #399 minted `--primary-text`, gated
   // ≥4.5:1 on every content surface in every theme by
   // `packages/tokens/src/themes-contrast.test.ts`; this row is the CLASS-NAME
   // lock that keeps these two call sites pointed at it. It is not a contrast

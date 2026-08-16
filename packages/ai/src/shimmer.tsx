@@ -1,7 +1,7 @@
 "use client";
 
-import { useReducedMotion } from "@qlik-coe-emea/qlabs-components-tokens";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { useReducedMotion } from "@elabs/components-tokens";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { MotionProps } from "motion/react";
 import { motion } from "motion/react";
 import type { CSSProperties, ElementType, JSX } from "react";

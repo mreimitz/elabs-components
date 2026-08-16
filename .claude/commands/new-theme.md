@@ -4,7 +4,7 @@ argument-hint: <theme-name> [brand description or key colors]
 allowed-tools: Read, Edit, Write, Grep, Bash(pnpm:*)
 ---
 
-You are adding a new theme to `@qlik-coe-emea/qlabs-components-tokens`. Read `@.claude/rules/theming.md`
+You are adding a new theme to `@elabs/components-tokens`. Read `@.claude/rules/theming.md`
 and `docs/TOKEN_GUIDELINES.md` first.
 
 Steps:
@@ -22,7 +22,7 @@ Steps:
 3. (Optional) Mirror the palette as a `registry:theme` item in
    `registry/registry.json` so other projects can `npx shadcn add <name>-theme`.
 4. Verify: switch to the theme in the playground/Storybook and confirm contrast,
-   focus rings, and that no component breaks. Run `pnpm --filter @qlik-coe-emea/qlabs-components-tokens typecheck`.
+   focus rings, and that no component breaks. Run `pnpm --filter @elabs/components-tokens typecheck`.
 
 Do NOT hardcode the theme's colors anywhere except `themes.css` (and the
 registry theme item). Components must remain brand-agnostic.

@@ -1,6 +1,6 @@
 "use client";
 
-import { THEME_META, isThemeName } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEME_META, isThemeName } from "@elabs/components-tokens";
 import { useEffect, useState } from "react";
 
 import type { BasemapTheme } from "./map-context";

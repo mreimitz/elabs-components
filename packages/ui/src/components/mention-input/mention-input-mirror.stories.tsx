@@ -143,7 +143,7 @@ export const TracksThemeChangeWithNailedBox: Story = {
         // override (the same root `style` the observer also watches) so the
         // parity assertion below cannot pass vacuously.
         host.style.setProperty("--font-sans", '"Times New Roman", serif');
-        host.setAttribute("data-theme", original === "qlik-dark" ? "qlik-bright" : "qlik-dark");
+        host.setAttribute("data-theme", original === "dark" ? "light" : "dark");
         await waitFor(() => {
           expect(getComputedStyle(field).fontFamily).not.toBe(fontBefore);
         });

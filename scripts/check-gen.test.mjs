@@ -76,12 +76,12 @@ const AGENT_OUTPUT_FIXTURE = {
 /** A minimal product-only manifest (two packages is enough to exercise ordering). */
 const MANIFEST = {
   packages: {
-    "@qlik-coe-emea/qlabs-components-tokens": {
+    "@elabs/components-tokens": {
       path: "packages/tokens",
       components: [],
       hooks: [{ name: "useTheme" }],
     },
-    "@qlik-coe-emea/qlabs-components-ui": {
+    "@elabs/components-ui": {
       path: "packages/ui",
       components: [{ name: "Button" }, { name: "Card" }],
       hooks: [],
@@ -99,7 +99,7 @@ const MANIFEST = {
       archetype: "dashboard",
       intent: "KPI overview screen",
       keywords: ["dashboard", "kpi"],
-      packages: ["@qlik-coe-emea/qlabs-components-ui"],
+      packages: ["@elabs/components-ui"],
       file: "docs/playbooks/dashboard.md",
       template: "templates/dashboard.tsx",
     },
@@ -263,12 +263,12 @@ test("PRESERVES: hand prose outside the markers survives a write", async () => {
     assert.ok(agents.includes("Bottom prose."));
     // The packages region was populated with the manifest packages.
     assert.ok(
-      agents.includes("@qlik-coe-emea/qlabs-components-tokens"),
+      agents.includes("@elabs/components-tokens"),
       "package table must be generated into AGENTS.md",
     );
     // Infra rows (scope:"all") are present in AGENTS.md.
     assert.ok(
-      agents.includes("@qlik-coe-emea/qlabs-components-eslint-config"),
+      agents.includes("@elabs/components-eslint-config"),
       "infra rows must appear in AGENTS.md",
     );
     // The MDX target keeps MDX-comment markers (HTML comments break MDX) and is populated.
@@ -278,7 +278,7 @@ test("PRESERVES: hand prose outside the markers survives a write", async () => {
       "the .mdx target must use MDX-comment markers, not HTML comments",
     );
     assert.ok(
-      intro.includes("@qlik-coe-emea/qlabs-components-tokens"),
+      intro.includes("@elabs/components-tokens"),
       "the .mdx package list must be generated",
     );
   } finally {
@@ -335,7 +335,7 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
     assert.ok(md.includes("name: brand-ui"), "the skill frontmatter must survive");
     // The factual catalogue is generated from the manifest: packages + counts.
     assert.ok(
-      md.includes("@qlik-coe-emea/qlabs-components-ui"),
+      md.includes("@elabs/components-ui"),
       "the package catalogue must be generated into the skill",
     );
     assert.ok(
@@ -348,7 +348,7 @@ test("SKILL CATALOGUE: generated from the manifest; hand prose survives; drift i
 
     // A manifest change (add a component) must make the skill catalogue stale.
     const m2 = JSON.parse(readFileSync(join(root, "brand-ui.manifest.json"), "utf8"));
-    m2.packages["@qlik-coe-emea/qlabs-components-ui"].components.push({ name: "Dialog" });
+    m2.packages["@elabs/components-ui"].components.push({ name: "Dialog" });
     writeFileSync(join(root, "brand-ui.manifest.json"), JSON.stringify(m2));
     const stale = await checkGen(root);
     assert.ok(

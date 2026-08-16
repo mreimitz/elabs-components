@@ -1,4 +1,4 @@
 {
-  "$description": "DTCG theme modes for @qlik-coe-emea/qlabs-components-tokens.",
-  "modes": ["light", "qlik-bright", "qlik-dark", "blueprint"]
+  "$description": "DTCG theme modes for @elabs/components-tokens.",
+  "modes": ["root", "light", "dark", "blueprint"]
 }

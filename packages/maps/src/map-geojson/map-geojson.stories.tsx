@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { resolveTokenColor } from "@qlik-coe-emea/qlabs-components-tokens";
+import { resolveTokenColor } from "@elabs/components-tokens";
 
 import { MapCanvas } from "../map-canvas";
 import { MapGeoJSON } from "./map-geojson";

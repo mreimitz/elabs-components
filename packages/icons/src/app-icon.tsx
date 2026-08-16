@@ -25,7 +25,7 @@ export interface AppIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, "tit
 const RATIO_LOCKUP = 662 / 278;
 const RATIO_MARK = 298 / 288;
 
-/** Lightweight class joiner — @qlik-coe-emea/qlabs-components-icons stays dependency-free (no clsx/tailwind-merge). */
+/** Lightweight class joiner — @elabs/components-icons stays dependency-free (no clsx/tailwind-merge). */
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }

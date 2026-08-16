@@ -46,12 +46,7 @@
  * reader is, and typing one is a scroll.
  */
 
-import {
-  cn,
-  StatePanel,
-  useLocale,
-  type ResolvedFileSource,
-} from "@qlik-coe-emea/qlabs-components-ui";
+import { cn, StatePanel, useLocale, type ResolvedFileSource } from "@elabs/components-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toViewerError } from "../../core/errors";

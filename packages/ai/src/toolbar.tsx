@@ -17,7 +17,7 @@ const NodeToolbarImpl = lazyFlowPart<NodeToolbarProps>((m) => m.Toolbar);
  *
  * Named `NodeToolbar` (after the React Flow primitive it wraps) because
  * `Toolbar` now means the general-purpose WAI-ARIA toolbar in
- * `@qlik-coe-emea/qlabs-components-ui`: a keyboard row with a roving tabindex.
+ * `@elabs/components-ui`: a keyboard row with a roving tabindex.
  * The two solve unrelated problems, and the collision made "use the Toolbar"
  * ambiguous at every call site.
  */
@@ -35,7 +35,7 @@ export const NodeToolbar = (props: NodeToolbarProps) => (
 
 /**
  * @deprecated Renamed to {@link NodeToolbar}. `Toolbar` is now the WAI-ARIA
- * toolbar in `@qlik-coe-emea/qlabs-components-ui`. This alias will be removed in
+ * toolbar in `@elabs/components-ui`. This alias will be removed in
  * the next major.
  */
 export const Toolbar = NodeToolbar;

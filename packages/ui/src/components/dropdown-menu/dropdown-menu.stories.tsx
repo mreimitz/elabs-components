@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { useState } from "react";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import { Button } from "../button";
 import {
   DropdownMenu,
@@ -155,11 +155,11 @@ export const SubmenuRadioAndCheckbox: Story = {
  * attribute actually themes it. `storageKey={null}` keeps the override from
  * persisting to localStorage across runs.
  */
-export const SubmenuRadioAndCheckboxQlikDark: Story = {
-  name: "Submenu, radio group and checkbox item — qlik-dark",
+export const SubmenuRadioAndCheckboxDark: Story = {
+  name: "Submenu, radio group and checkbox item — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

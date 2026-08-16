@@ -8,7 +8,7 @@
 
 ## Context
 
-`@qlik-coe-emea/qlabs-components-viewer` landed with the full addressing layer of
+`@elabs/components-viewer` landed with the full addressing layer of
 ADR 0025 but with no **chrome**. (It was still unpublished at that point — the package
 joins the release set in this same release, so no consumer ever saw the shape below.) A PDF was a one-page-at-a-time pager, a deck a
 one-slide-at-a-time outline, and both owned their controls: `pageNumber` and `zoomIndex` were

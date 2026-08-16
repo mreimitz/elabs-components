@@ -15,8 +15,8 @@
     "theme": {
       "description": "Shipped theme slug (CSS slug, never display name).",
       "type": "string",
-      "enum": ["qlik-bright", "qlik-dark"],
-      "default": "qlik-bright"
+      "enum": ["light", "dark"],
+      "default": "light"
     },
     "title": {
       "description": "App title (free text; defaults to the archetype name).",
@@ -84,7 +84,7 @@
       "default": false
     },
     "release": {
-      "description": "The @qlik-coe-emea/qlabs-components-* release a standalone app installs (e.g. \"2.0.0\"). Defaults to the version of the monorepo the scaffold runs in.",
+      "description": "The @elabs/components-* release a standalone app installs (e.g. \"2.0.0\"). Defaults to the version of the monorepo the scaffold runs in.",
       "type": "string",
       "minLength": 1
     },

@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-blueprint — decorative "drawing furniture" for the reprographic
+ * @elabs/components-blueprint — decorative "drawing furniture" for the reprographic
  * blueprint theme: graph-paper grounds, sheet frames with corner ticks,
  * dimension lines, registration marks, figure labels, part callouts and a
  * drafting title block.

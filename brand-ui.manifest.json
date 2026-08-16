@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-08-10T21:46:19.142Z",
+  "generatedAt": "2026-08-16T09:49:26.285Z",
   "name": "brand-ui",
   "themes": [
-    "qlik-dark",
-    "qlik-bright"
+    "dark",
+    "light"
   ],
-  "defaultTheme": "qlik-bright",
+  "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
   "tokenCount": 154,
   "tokens": [
@@ -223,13 +223,13 @@
       "name": "chart-frame-data",
       "type": "registry:block",
       "title": "ChartFrame + data table",
-      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @qlik-coe-emea/qlabs-components-data: full TanStack DataTable on flip and downloadCsv on export."
+      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs/components-data: full TanStack DataTable on flip and downloadCsv on export."
     },
     {
       "name": "ai-chart",
       "type": "registry:block",
       "title": "AI chart in conversation",
-      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@qlik-coe-emea/qlabs-components-charts) composed with Tool/ToolOutput from @qlik-coe-emea/qlabs-components-ai. The canonical copy-owned home for @qlik-coe-emea/qlabs-components-ai + @qlik-coe-emea/qlabs-components-charts cross-sibling composition."
+      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs/components-charts) composed with Tool/ToolOutput from @elabs/components-ai. The canonical copy-owned home for @elabs/components-ai + @elabs/components-charts cross-sibling composition."
     },
     {
       "name": "flow-canvas",
@@ -253,7 +253,7 @@
       "name": "code-workspace",
       "type": "registry:block",
       "title": "Code workspace",
-      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @qlik-coe-emea/qlabs-components-editor/monaco-environment once at the app entry)."
+      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs/components-editor/monaco-environment once at the app entry)."
     },
     {
       "name": "default-theme",
@@ -262,10 +262,10 @@
       "description": "Neutral enterprise SaaS light + dark token set."
     },
     {
-      "name": "qlik-bright-theme",
+      "name": "light-theme",
       "type": "registry:theme",
-      "title": "Qlik Bright theme",
-      "description": "Qlik brand theme — Qlik Green primary, deep-blue text, bright surfaces (light) with a deep-blue qlik-dark companion. Derived from the Qlik brand palette."
+      "title": "Light theme",
+      "description": "Qlik brand theme — Qlik Green primary, deep-blue text, bright surfaces (light) with a deep-blue dark companion. Derived from the Qlik brand palette."
     },
     {
       "name": "sidebar-02",
@@ -340,9 +340,9 @@
       "title": "Patterns/Templates/AI Assistant",
       "description": "AI assistant template — the canonical full-screen AI assistant composition (app-shell + chat shell: Conversation + PromptInput). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/ai-assistant.tsx`) from it. Verify across both themes with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ai",
-        "@qlik-coe-emea/qlabs-components-icons",
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-ai",
+        "@elabs/components-icons",
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/ai/src/templates-ai-assistant.stories.tsx",
       "file": "templates/ai-assistant.tsx"
@@ -352,9 +352,9 @@
       "title": "Patterns/Templates/Dashboard",
       "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-icons",
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-charts",
+        "@elabs/components-icons",
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/charts/src/templates-dashboard.stories.tsx",
       "file": "templates/dashboard.tsx"
@@ -364,9 +364,9 @@
       "title": "Patterns/Templates/Data App",
       "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-data",
-        "@qlik-coe-emea/qlabs-components-icons",
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-data",
+        "@elabs/components-icons",
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/data/src/templates-data-app.stories.tsx",
       "file": "templates/data-app.tsx"
@@ -376,9 +376,9 @@
       "title": "Patterns/Templates/Flow Workspace",
       "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-flow",
-        "@qlik-coe-emea/qlabs-components-icons",
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-flow",
+        "@elabs/components-icons",
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/flow/src/templates-flow-workspace.stories.tsx",
       "file": "templates/flow-workspace.tsx"
@@ -386,10 +386,10 @@
     {
       "name": "marketing",
       "title": "Patterns/Templates/Marketing",
-      "description": "Marketing landing template — the canonical full-screen presales/landing composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row + LogoStrip + CTASection + footer (the standard section order). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/marketing.tsx`) from it. Verify across both themes with globals=theme:<slug> (qlik-bright | qlik-dark). The marketing package ships no icons by design (sections take `icon?: ReactNode` from the consumer), so this story passes inline currentColor glyphs — the same way a consumer would hand in Lucide / @qlik-coe-emea/qlabs-components-icons.",
+      "description": "Marketing landing template — the canonical full-screen presales/landing composition: sticky nav + Hero + StatsBand + FeatureGrid + UseCaseCard row + LogoStrip + CTASection + footer (the standard section order). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/marketing.tsx`) from it. Verify across both themes with globals=theme:<slug> (light | dark). The marketing package ships no icons by design (sections take `icon?: ReactNode` from the consumer), so this story passes inline currentColor glyphs — the same way a consumer would hand in Lucide / @elabs/components-icons.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-marketing",
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-marketing",
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/marketing/src/templates-marketing.stories.tsx",
       "file": "templates/marketing.tsx"
@@ -397,9 +397,9 @@
     {
       "name": "object-detail-hub",
       "title": "Patterns/Templates/Object Detail Hub",
-      "description": "Object Detail Hub — the master-detail screen the library was missing. The single most common enterprise screen: a list of objects on the left drives a rich DETAIL HUB on the right. It demonstrates the structural choices the enterprise rulebook insists on, so an end-user copies the right anatomy instead of dumping everything on one page or stacking detail *below* the list: • SplitPanel master-detail (list drives detail — never detail below list). • A detail hub = sticky SectionHeader (identity + status) + a ButtonGroup toolbar + Tabs for the object's sections (Overview / Activity / Settings). • Descriptions for the object's attributes; a related list for its children. • A high-value task (Run) promoted to its own focused Dialog surface. • A real empty state (StatePanel kind=\"empty\") when nothing is selected. Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in qlik-bright AND qlik-dark. Verify with globals=theme:<slug>.",
+      "description": "Object Detail Hub — the master-detail screen the library was missing. The single most common enterprise screen: a list of objects on the left drives a rich DETAIL HUB on the right. It demonstrates the structural choices the enterprise rulebook insists on, so an end-user copies the right anatomy instead of dumping everything on one page or stacking detail *below* the list: • SplitPanel master-detail (list drives detail — never detail below list). • A detail hub = sticky SectionHeader (identity + status) + a ButtonGroup toolbar + Tabs for the object's sections (Overview / Activity / Settings). • Descriptions for the object's attributes; a related list for its children. • A high-value task (Run) promoted to its own focused Dialog surface. • A real empty state (StatePanel kind=\"empty\") when nothing is selected. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in light AND dark. Verify with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/ui/src/templates-object-detail-hub.stories.tsx",
       "file": "templates/object-detail-hub.tsx"
@@ -407,9 +407,9 @@
     {
       "name": "screen-states",
       "title": "Patterns/Templates/Screen States",
-      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in all three themes. Verify with globals=theme:<slug>.",
+      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all three themes. Verify with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/ui/src/templates-screen-states.stories.tsx",
       "file": "templates/screen-states.tsx"
@@ -419,7 +419,7 @@
       "title": "Patterns/Templates/Settings",
       "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui"
+        "@elabs/components-ui"
       ],
       "sourceStory": "packages/ui/src/templates-settings.stories.tsx",
       "file": "templates/settings.tsx"
@@ -442,8 +442,8 @@
         "sources"
       ],
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-ai"
+        "@elabs/components-ui",
+        "@elabs/components-ai"
       ],
       "file": "docs/playbooks/ai-assistant.md",
       "template": "templates/ai-assistant.tsx"
@@ -463,9 +463,9 @@
         "drill-down"
       ],
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-data"
+        "@elabs/components-ui",
+        "@elabs/components-charts",
+        "@elabs/components-data"
       ],
       "file": "docs/playbooks/dashboard.md",
       "template": "templates/dashboard.tsx"
@@ -487,8 +487,8 @@
         "back-office"
       ],
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-data"
+        "@elabs/components-ui",
+        "@elabs/components-data"
       ],
       "file": "docs/playbooks/data-app.md",
       "template": "templates/data-app.tsx"
@@ -510,9 +510,9 @@
         "inspector"
       ],
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-flow",
-        "@qlik-coe-emea/qlabs-components-ai"
+        "@elabs/components-ui",
+        "@elabs/components-flow",
+        "@elabs/components-ai"
       ],
       "file": "docs/playbooks/flow-workspace.md",
       "template": "templates/flow-workspace.tsx"
@@ -533,9 +533,9 @@
         "website"
       ],
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-marketing",
-        "@qlik-coe-emea/qlabs-components-icons"
+        "@elabs/components-ui",
+        "@elabs/components-marketing",
+        "@elabs/components-icons"
       ],
       "file": "docs/playbooks/marketing.md",
       "template": "templates/marketing.tsx"
@@ -555,8 +555,8 @@
         "team management"
       ],
       "packages": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-data"
+        "@elabs/components-ui",
+        "@elabs/components-data"
       ],
       "file": "docs/playbooks/settings.md",
       "template": "templates/settings.tsx"
@@ -567,7 +567,7 @@
       "conversation": {
         "status": "shipped",
         "title": "Conversation — the AI SDK UIMessage (the default)",
-        "summary": "Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @qlik-coe-emea/qlabs-components-ai renders it. ~the default for any chat.",
+        "summary": "Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs/components-ai renders it. ~the default for any chat.",
         "model": "ai/UIMessage",
         "modelAuthority": "Vercel AI SDK — import type only (D6). brand-ui does NOT redefine UIMessage/ToolUIPart; the SDK is authoritative for their shape.",
         "owns": "brand-ui owns ONLY the projection: the tool-state→Status mapping, the role narrowing, the fields its components consume, and SourceListItem.",
@@ -652,7 +652,7 @@
           }
         ],
         "example": "const messages = [\n  { id: \"m1\", role: \"user\", parts: [{ type: \"text\", text: \"Weather in Berlin?\" }] },\n  {\n    id: \"m2\",\n    role: \"assistant\",\n    parts: [\n      { type: \"reasoning\", text: \"User wants current weather — call the tool.\" },\n      {\n        type: \"tool-getWeather\",        // `tool-<name>`, or { type: \"dynamic-tool\", toolName }\n        toolCallId: \"call_1\",\n        state: \"output-available\",      // 7-state machine → StatusBadge\n        input: { city: \"Berlin\" },\n        output: { tempC: 18, summary: \"Partly cloudy\" },\n      },\n      { type: \"text\", text: \"It is 18°C and partly cloudy in Berlin.\" },\n      { type: \"source-url\", sourceId: \"s1\", url: \"https://example.com/berlin\", title: \"Berlin forecast\" },\n    ],\n  },\n];",
-        "wiring": "Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @qlik-coe-emea/qlabs-components-ai never calls the model."
+        "wiring": "Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs/components-ai never calls the model."
       },
       "jsxPreview": {
         "status": "shipped",
@@ -680,7 +680,7 @@
       }
     },
     "donts": [
-      "Don't expect @qlik-coe-emea/qlabs-components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
+      "Don't expect @elabs/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
       "Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.",
       "Don't emit tags outside the JSXPreview `components` allow-list.",
       "Don't emit A2UI surfaces — not shipped (WP-11).",
@@ -689,11 +689,11 @@
     ]
   },
   "packages": {
-    "@qlik-coe-emea/qlabs-components-ai": {
+    "@elabs/components-ai": {
       "path": "packages/ai",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
         "ai": "^6.0.0",
         "react": "^18.2.0 || ^19.0.0",
@@ -4127,7 +4127,7 @@
               "name": "tone",
               "optional": true,
               "type": "PromptInputProps[\"tone\"]",
-              "description": "The two-tone arrangement, forwarded to the `tone` prop of `PromptInput`. `\"surface\"` (default, unchanged) is the original Composer look — an outer `bg-card` frame around the standard muted `PromptInput` well — so every existing usage is unaffected. `\"card\"` swaps to the tinted-outer/ distinct-inner \"double card\" (#254): an outer `bg-surface-muted` frame around a `tone=\"card\"` well. The well fill relative to the frame is theme-driven, not universally \"white\" — raised on light themes, recessed on qlik-dark; see the `tone` prop doc on `PromptInput`."
+              "description": "The two-tone arrangement, forwarded to the `tone` prop of `PromptInput`. `\"surface\"` (default, unchanged) is the original Composer look — an outer `bg-card` frame around the standard muted `PromptInput` well — so every existing usage is unaffected. `\"card\"` swaps to the tinted-outer/ distinct-inner \"double card\" (#254): an outer `bg-surface-muted` frame around a `tone=\"card\"` well. The well fill relative to the frame is theme-driven, not universally \"white\" — raised on light themes, recessed on dark; see the `tone` prop doc on `PromptInput`."
             },
             {
               "name": "suggestions",
@@ -4320,7 +4320,7 @@
               "name": "renderPreview",
               "optional": true,
               "type": "AssetPreviewRenderer",
-              "description": "Draw an asset's preview body yourself. The seam that lets this package show formats it cannot parse — a PDF, a spreadsheet, a video — without importing a domain sibling (`@qlik-coe-emea/qlabs-components-ai` and `@qlik-coe-emea/qlabs-components-viewer` are peers in the layer graph and may never import each other). The consuming app owns the edge: ```tsx <ContextPanelProvider renderPreview={(asset) => asset.source ? <FileViewer source={asset.source} /> : null } > ``` Return `null` to decline, and the built-in type-keyed rendering runs exactly as before — so an injection is additive, never a replacement."
+              "description": "Draw an asset's preview body yourself. The seam that lets this package show formats it cannot parse — a PDF, a spreadsheet, a video — without importing a domain sibling (`@elabs/components-ai` and `@elabs/components-viewer` are peers in the layer graph and may never import each other). The consuming app owns the edge: ```tsx <ContextPanelProvider renderPreview={(asset) => asset.source ? <FileViewer source={asset.source} /> : null } > ``` Return `null` to decline, and the built-in type-keyed rendering runs exactly as before — so an injection is additive, never a replacement."
             }
           ]
         },
@@ -5506,7 +5506,7 @@
               "name": "tone",
               "optional": true,
               "type": "\"surface\" | \"card\"",
-              "description": "The fill of the inner well (the `InputGroup` `variant`). `\"surface\"` (default) is the standard muted composer look; `\"card\"` renders a `bg-card` well for nesting inside an already-tinted outer frame — the \"double card\" look (#254). e.g. `<div className=\"rounded-xl bg-surface-muted p-1.5\"><PromptInput tone=\"card\">…</PromptInput></div>`. The well fill is NOT universally \"white\": `--card` reads lighter (raised) than `--surface-muted` on light themes, but darker (recessed) on qlik-dark and blueprint — the same theme-dependent trade-off documented for `bg-surface-muted`-as-a-well in `styling-and-tokens.md`. The well stays a legible, distinct tone against the outer frame in every theme; only the \"raised\" framing is light-themes-specific."
+              "description": "The fill of the inner well (the `InputGroup` `variant`). `\"surface\"` (default) is the standard muted composer look; `\"card\"` renders a `bg-card` well for nesting inside an already-tinted outer frame — the \"double card\" look (#254). e.g. `<div className=\"rounded-xl bg-surface-muted p-1.5\"><PromptInput tone=\"card\">…</PromptInput></div>`. The well fill is NOT universally \"white\": `--card` reads lighter (raised) than `--surface-muted` on light themes, but darker (recessed) on dark and blueprint — the same theme-dependent trade-off documented for `bg-surface-muted`-as-a-well in `styling-and-tokens.md`. The well stays a legible, distinct tone against the outer frame in every theme; only the \"raised\" framing is light-themes-specific."
             },
             {
               "name": "onError",
@@ -6448,10 +6448,10 @@
             ]
           },
           "stateTokens": {
-            "status": "the rail NODE, owned by the composed @qlik-coe-emea/qlabs-components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted"
+            "status": "the rail NODE, owned by the composed @elabs/components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted"
           },
           "antiPatterns": [
-            "Hand-rolling a connector + status-map rail — reuse the @qlik-coe-emea/qlabs-components-ui Timeline (the timeline-fork gate blocks a second one).",
+            "Hand-rolling a connector + status-map rail — reuse the @elabs/components-ui Timeline (the timeline-fork gate blocks a second one).",
             "Reaching for a border-s-* accent rail to show step status — AgentTimeline is a thin TimelineRoot/TimelineItem wrapper; status is the node dot (plus the StatusBadge), never a left rail.",
             "Encoding step status by color alone — pair the color with an icon or label.",
             "Rendering a blank rail while the run is starting — show the not-ready state, never an empty region."
@@ -6648,7 +6648,7 @@
           },
           "stateTokens": {},
           "antiPatterns": [
-            "Calling a model inside the component — @qlik-coe-emea/qlabs-components-ai is presentational/runtime-agnostic; wire useChat in the app.",
+            "Calling a model inside the component — @elabs/components-ai is presentational/runtime-agnostic; wire useChat in the app.",
             "Hand-rolling the composer footer inside the shell — compose Composer; it is the shipped chat input.",
             "Putting an animated/collapsible context rail in ChatShell.aside — the aside is for a STATIC rail; compose ContextPanelProvider + ContextPanel as a SIBLING of the shell."
           ]
@@ -7128,7 +7128,7 @@
             "Adding a bg-card fill to the assistant turn — the assistant branch is deliberately unfilled; reach for AgentMessage emphasis=\"answer\" (a left rail), not a redundant surface.",
             "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
             "Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.",
-            "Calling a model inside the component — @qlik-coe-emea/qlabs-components-ai is presentational; the app owns useChat/transport (D5)."
+            "Calling a model inside the component — @elabs/components-ai is presentational; the app owns useChat/transport (D5)."
           ]
         },
         "MessageEdit": {
@@ -7322,7 +7322,7 @@
           },
           "antiPatterns": [
             "Using it as the canvas-wide toolbar — it is a NODE toolbar and is positioned against the selected node.",
-            "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @qlik-coe-emea/qlabs-components-ui.",
+            "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @elabs/components-ui.",
             "Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.",
             "Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name."
           ]
@@ -7849,7 +7849,7 @@
             "Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.",
             "Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.",
             "Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.",
-            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @qlik-coe-emea/qlabs-components-ai."
+            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs/components-ai."
           ]
         },
         "ToolResultCard": {
@@ -7936,11 +7936,11 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-charts": {
+    "@elabs/components-charts": {
       "path": "packages/charts",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -10155,13 +10155,13 @@
               "name": "renderTable",
               "optional": true,
               "type": "(rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode",
-              "description": "Custom table renderer for the flip-to-table view. Defaults to the @qlik-coe-emea/qlabs-components-ui Table primitive."
+              "description": "Custom table renderer for the flip-to-table view. Defaults to the @elabs/components-ui Table primitive."
             },
             {
               "name": "onDownload",
               "optional": true,
               "type": "(rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => void",
-              "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @qlik-coe-emea/qlabs-components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
+              "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @elabs/components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
             },
             {
               "name": "children",
@@ -13076,7 +13076,7 @@
           "stateTokens": {},
           "antiPatterns": [
             "Expecting ChartFrame to read the chart's context — it is the PARENT of the chart's provider; pass the same data to both via props.",
-            "Importing @qlik-coe-emea/qlabs-components-data into a chart — charts → ui only; flip-to-table uses the @qlik-coe-emea/qlabs-components-ui Table.",
+            "Importing @elabs/components-data into a chart — charts → ui only; flip-to-table uses the @elabs/components-ui Table.",
             "Expecting the table/download controls with no `data` — they hide by design when data is absent or empty; pass the same rows you gave the chart."
           ]
         },
@@ -13255,7 +13255,7 @@
           "antiPatterns": [
             "Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.",
             "Encoding up/down by color alone — pair with an arrow/sign.",
-            "Re-declaring a KPI tile in another package — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui; charts and editor re-export it (ADR 0012)."
+            "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012)."
           ]
         },
         "MetricGrid": {
@@ -13279,7 +13279,7 @@
           "antiPatterns": [
             "More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.",
             "Numbers without tabular-nums — figures jitter across the row.",
-            "Re-declaring a KPI tile locally — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui and re-exported here (ADR 0012)."
+            "Re-declaring a KPI tile locally — MetricCard is owned by @elabs/components-ui and re-exported here (ADR 0012)."
           ]
         },
         "PieChart": {
@@ -13388,12 +13388,12 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-data": {
+    "@elabs/components-data": {
       "path": "packages/data",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-icons": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-icons": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -13818,11 +13818,11 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-editor": {
+    "@elabs/components-editor": {
       "path": "packages/editor",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "monaco-editor": "^0.55.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -13918,13 +13918,13 @@
           "stateTokens": {},
           "antiPatterns": [
             "Passing Monaco a hardcoded theme — the bridge reads the active data-theme tokens; never override it.",
-            "Using CodeEditor for read-only display — use CodeBlock (@qlik-coe-emea/qlabs-components-ai, Shiki) for non-editable code.",
-            "Forgetting the worker setup (import \"@qlik-coe-emea/qlabs-components-editor/monaco-environment\") — IntelliSense is off without it."
+            "Using CodeEditor for read-only display — use CodeBlock (@elabs/components-ai, Shiki) for non-editable code.",
+            "Forgetting the worker setup (import \"@elabs/components-editor/monaco-environment\") — IntelliSense is off without it."
           ]
         }
       },
       "subpaths": {
-        "@qlik-coe-emea/qlabs-components-editor/markdown": {
+        "@elabs/components-editor/markdown": {
           "components": [
             {
               "name": "Bibliography",
@@ -14321,7 +14321,7 @@
             "wrapSelection"
           ]
         },
-        "@qlik-coe-emea/qlabs-components-editor/markdown/frontmatter": {
+        "@elabs/components-editor/markdown/frontmatter": {
           "components": [],
           "hooks": [],
           "types": [],
@@ -14331,7 +14331,7 @@
             "typeParsedDocument"
           ]
         },
-        "@qlik-coe-emea/qlabs-components-editor/markdown/parse": {
+        "@elabs/components-editor/markdown/parse": {
           "components": [],
           "hooks": [],
           "types": [],
@@ -14341,11 +14341,11 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-flow": {
+    "@elabs/components-flow": {
       "path": "packages/flow",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -14665,7 +14665,7 @@
               "name": "open",
               "optional": true,
               "type": "boolean",
-              "description": "Collapse (research 09 step 3 — converged on the shared `@qlik-coe-emea/qlabs-components-ui` `useCollapsiblePanel` base; the panel stays single-view, drill-in is ContextPanel-only). Controlled `open` / uncontrolled `defaultOpen`."
+              "description": "Collapse (research 09 step 3 — converged on the shared `@elabs/components-ui` `useCollapsiblePanel` base; the panel stays single-view, drill-in is ContextPanel-only). Controlled `open` / uncontrolled `defaultOpen`."
             },
             {
               "name": "defaultOpen",
@@ -14816,7 +14816,7 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-icons": {
+    "@elabs/components-icons": {
       "path": "packages/icons",
       "peerDependencies": {
         "react": "^18.2.0 || ^19.0.0"
@@ -15130,11 +15130,11 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-maps": {
+    "@elabs/components-maps": {
       "path": "packages/maps",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "maplibre-gl": "^5.15.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
@@ -15881,11 +15881,11 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-marketing": {
+    "@elabs/components-marketing": {
       "path": "packages/marketing",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -16175,7 +16175,7 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-tokens": {
+    "@elabs/components-tokens": {
       "path": "packages/tokens",
       "peerDependencies": {
         "react": "^18.2.0 || ^19.0.0",
@@ -16357,7 +16357,7 @@
               "name": "defaultTheme",
               "optional": true,
               "type": "ThemeName",
-              "description": "Initial theme when nothing is persisted. Defaults to `DEFAULT_THEME` (\"qlik-bright\"). Passing one that `allowedThemes` excludes falls back to the first allowed theme and warns in development; leaving it unset never warns (the library default yielding to a subset is not a consumer mistake)."
+              "description": "Initial theme when nothing is persisted. Defaults to `DEFAULT_THEME` (\"light\"). Passing one that `allowedThemes` excludes falls back to the first allowed theme and warns in development; leaving it unset never warns (the library default yielding to a subset is not a consumer mistake)."
             },
             {
               "name": "storageKey",
@@ -16369,7 +16369,7 @@
               "name": "allowedThemes",
               "optional": true,
               "type": "readonly ThemeName[]",
-              "description": "Restrict this provider to a SUBSET of the shipped themes (#355). When set: `useTheme().themes` lists only these, a persisted value outside the list is rejected during the same mount pass that applies the theme (so there is no flash of a theme the product doesn't ship), and `setTheme` with a disallowed name is a no-op that warns in development. Omit it (the default) for the previous behaviour: every shipped theme. Unknown names and an empty list are ignored — a provider always exposes at least one theme. `ThemeSwitcher` (`@qlik-coe-emea/qlabs-components-ui`) automatically inherits this subset (#384): it narrows its offered themes to the intersection of the `themes` prop and the provider's allowed list when the provider is genuinely restricting (a strict subset of every shipped theme). A non-restricting provider leaves the `themes` prop untouched for backward compatibility. Passing `themes={useTheme().themes}` explicitly is still allowed and works, but is no longer required."
+              "description": "Restrict this provider to a SUBSET of the shipped themes (#355). When set: `useTheme().themes` lists only these, a persisted value outside the list is rejected during the same mount pass that applies the theme (so there is no flash of a theme the product doesn't ship), and `setTheme` with a disallowed name is a no-op that warns in development. Omit it (the default) for the previous behaviour: every shipped theme. Unknown names and an empty list are ignored — a provider always exposes at least one theme. `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this subset (#384): it narrows its offered themes to the intersection of the `themes` prop and the provider's allowed list when the provider is genuinely restricting (a strict subset of every shipped theme). A non-restricting provider leaves the `themes` prop untouched for backward compatibility. Passing `themes={useTheme().themes}` explicitly is still allowed and works, but is no longer required."
             },
             {
               "name": "defaultMotionPreference",
@@ -16457,7 +16457,7 @@
             ]
           },
           "stateTokens": {
-            "theme": "data-theme=\"qlik-bright|qlik-dark\""
+            "theme": "data-theme=\"light|dark\""
           },
           "antiPatterns": [
             "Fixing a flat or wrong-looking surface inside a component — change the theme's token, not the component.",
@@ -16467,10 +16467,10 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-ui": {
+    "@elabs/components-ui": {
       "path": "packages/ui",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -20483,7 +20483,7 @@
               "name": "evidence",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@qlik-coe-emea/qlabs-components-ai`). Rendered subdued (`text-meta text-muted-foreground`) under the tile body."
+              "description": "Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited figure to its source (e.g. an `EvidenceChip` from `@elabs/components-ai`). Rendered subdued (`text-meta text-muted-foreground`) under the tile body."
             },
             {
               "name": "loading",
@@ -20715,7 +20715,7 @@
               "name": "headerVariant",
               "optional": true,
               "type": "\"default\" | \"toolbar\"",
-              "description": "\"default\" (unset) — `header` renders inline, scrolls with the body. Byte-identical to today. \"toolbar\" — for a `<ViewToolbar>` header (`@qlik-coe-emea/qlabs-components-ui`, `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container with an opaque/blurred fill and a bottom hairline, so it stays pinned while the body scrolls beneath it. PLACES whatever node `header` is — it does not reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see `Docs/View Toolbar Contract` R7)."
+              "description": "\"default\" (unset) — `header` renders inline, scrolls with the body. Byte-identical to today. \"toolbar\" — for a `<ViewToolbar>` header (`@elabs/components-ui`, `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container with an opaque/blurred fill and a bottom hairline, so it stays pinned while the body scrolls beneath it. PLACES whatever node `header` is — it does not reimplement ViewToolbar's own info/left-cluster/actions grammar, and it does NOT cap the row's height (a `<ViewToolbar>` wraps at narrow widths; see `Docs/View Toolbar Contract` R7)."
             },
             {
               "name": "width",
@@ -21540,7 +21540,7 @@
               "name": "detail",
               "optional": true,
               "type": "ReactNode",
-              "description": "Rich block content under the title/description, indented with the rail — the slot composing consumers (e.g. `@qlik-coe-emea/qlabs-components-ai`'s `AgentStep`, #192) interleave per node. Block-level, so it must NOT ride the inline title slot (`children`)."
+              "description": "Rich block content under the title/description, indented with the rail — the slot composing consumers (e.g. `@elabs/components-ai`'s `AgentStep`, #192) interleave per node. Block-level, so it must NOT ride the inline title slot (`children`)."
             }
           ]
         },
@@ -22238,7 +22238,7 @@
           "antiPatterns": [
             "Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.",
             "Encoding up/down by color alone — pair with an arrow/sign.",
-            "Re-declaring a KPI tile in another package — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui; charts and editor re-export it (ADR 0012)."
+            "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012)."
           ]
         },
         "Popover": {
@@ -22392,7 +22392,7 @@
             "Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.",
             "Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.",
             "Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.",
-            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @qlik-coe-emea/qlabs-components-ai."
+            "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs/components-ai."
           ]
         },
         "Tooltip": {
@@ -22414,7 +22414,7 @@
         }
       },
       "subpaths": {
-        "@qlik-coe-emea/qlabs-components-ui/lib/cn": {
+        "@elabs/components-ui/lib/cn": {
           "components": [],
           "hooks": [],
           "types": [],
@@ -22424,11 +22424,11 @@
         }
       }
     },
-    "@qlik-coe-emea/qlabs-components-viewer": {
+    "@elabs/components-viewer": {
       "path": "packages/viewer",
       "peerDependencies": {
-        "@qlik-coe-emea/qlabs-components-tokens": "workspace:*",
-        "@qlik-coe-emea/qlabs-components-ui": "workspace:*",
+        "@elabs/components-tokens": "workspace:*",
+        "@elabs/components-ui": "workspace:*",
         "papaparse": "^5.4.1",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0",
@@ -22671,7 +22671,7 @@
               "name": "baseHeadingLevel",
               "optional": true,
               "type": "ProseHeadingLevel",
-              "description": "The rung a viewed document's own top-level heading renders at. Default `2`. A file carries its OWN heading tree, and that tree is only correct relative to the page hosting it: a README's `#` rendered as an `<h1>` inside an app that already has one puts two `h1`s in a screen reader's flat heading list, and the frame's `<section aria-label>` does not fix that — most screen readers list headings flat, not per landmark. The default assumes the common case, a viewer embedded BELOW the page's own heading; pass `1` when the viewer genuinely is the page. Adapters that render no headings ignore it. Same seam as `@qlik-coe-emea/qlabs-components-ai`'s `MarkdownView baseHeadingLevel`."
+              "description": "The rung a viewed document's own top-level heading renders at. Default `2`. A file carries its OWN heading tree, and that tree is only correct relative to the page hosting it: a README's `#` rendered as an `<h1>` inside an app that already has one puts two `h1`s in a screen reader's flat heading list, and the frame's `<section aria-label>` does not fix that — most screen readers list headings flat, not per landmark. The default assumes the common case, a viewer embedded BELOW the page's own heading; pass `1` when the viewer genuinely is the page. Adapters that render no headings ignore it. Same seam as `@elabs/components-ai`'s `MarkdownView baseHeadingLevel`."
             },
             {
               "name": "highlights",
@@ -22802,7 +22802,7 @@
             "Adding a per-format branch to FileViewerContent — a format is an adapter registration (registry.register), never a switch in the shell.",
             "Making a parser a plain dependency — every parser engine is an OPTIONAL peer, so a consumer who skips it gets the panel naming the package instead of a build error.",
             "Returning HTML from an adapter — adapters emit a DATA model that brand-ui components render; that is the only reason an arbitrary file inherits the theme.",
-            "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@qlik-coe-emea/qlabs-components-editor).",
+            "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@elabs/components-editor).",
             "Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure."
           ]
         }

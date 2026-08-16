@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, type ReactNode } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { intFmt } from "./chart-formatters";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";

@@ -22,9 +22,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
   MetricCard,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { AppIcon } from "@qlik-coe-emea/qlabs-components-icons";
-import { MetricGrid } from "@qlik-coe-emea/qlabs-components-charts";
+} from "@elabs/components-ui";
+import { AppIcon } from "@elabs/components-icons";
+import { MetricGrid } from "@elabs/components-charts";
 import { BarChart3, Home, Settings, Users } from "lucide-react";
 
 const nav = [

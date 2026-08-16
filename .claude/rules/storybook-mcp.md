@@ -35,7 +35,7 @@ brand-ui exposes **two** MCP servers; they are complementary, not alternatives:
   components (render, interaction + a11y tests, three-theme checks) and the only way to
   reach the `mcp__storybook__*` tools. If you're testing/reviewing UI or need those
   tools and the server is down, **start it** — `pnpm storybook` (or
-  `pnpm --filter @qlik-coe-emea/qlabs-components-docs dev`) in the background — then drive it, and **stop it
+  `pnpm --filter @elabs/components-docs dev`) in the background — then drive it, and **stop it
   when you're done**. Don't start it for work that has nothing to do with the UI.
 - **Every instruction below is conditional:** _if_ the tools are available, use them;
   _otherwise_ start the server or use the named fallback.
@@ -60,7 +60,7 @@ reference (here, `CLAUDE.md`, subagent `tools:` lines, `settings.json`) must cha
   always surface the URL to the user).
 - **Test** — `mcp__storybook__run-story-tests` (runs the given stories as real-browser
   interaction tests **+ axe a11y** and returns a markdown report). Same engine as
-  `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`. **Always scope it to specific stories** —
+  `pnpm --filter @elabs/components-docs test-storybook`. **Always scope it to specific stories** —
   never "run all".
 
 ## Story IDs
@@ -70,19 +70,19 @@ export. e.g. `title:"Foundation/Button"` → `foundation-button--default`;
 `title:"Disclosure/Accordion"` → `disclosure-accordion--default`. Use
 `list-all-documentation` with `withStoryIds:true` to get exact IDs.
 
-## Themes (three; default `qlik-bright`)
+## Themes (three; default `light`)
 
 Always pass the **CSS slug**, never the display name:
-`qlik-bright`, `qlik-dark`.
+`light`, `dark`.
 
-- `preview-stories`: `globals={theme:'qlik-dark'}`.
+- `preview-stories`: `globals={theme:'dark'}`.
 - Manual URL: `/?path=/story/<storyId>&globals=theme:<slug>` (iframe:
   `iframe.html?id=<storyId>&globals=theme:<slug>`).
 
 ## Workflow by pillar
 
 - **ADD / DEV** — `list-all-documentation` (dedupe: does it already exist across
-  `@qlik-coe-emea/qlabs-components-*`?) → `get-documentation` / `get-documentation-for-story` (real props,
+  `@elabs/components-*`?) → `get-documentation` / `get-documentation-for-story` (real props,
   copy a validated usage) → `get-storybook-story-instructions` (before authoring a
   story) → build → `preview-stories` (show the user the rendered result).
 - **TEST (self-healing loop)** — `run-story-tests` scoped to the touched stories →
@@ -98,7 +98,7 @@ Always pass the **CSS slug**, never the display name:
 - Discovery → read `packages/*/src/index.ts` barrels + Glob `packages/*/src/**`.
 - Real props → Read the component `.tsx` + its exported types.
 - Story authoring → copy a sibling `*.stories.tsx`.
-- Tests → `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook` (or `pnpm --filter <pkg> test`).
+- Tests → `pnpm --filter @elabs/components-docs test-storybook` (or `pnpm --filter <pkg> test`).
   Use this **also when the MCP runner is busy** ("Tests are already running"), not only
   when it's down — a UI change still needs a real interaction + axe pass before you call
   a11y/theme-safety verified.

@@ -51,21 +51,21 @@ pnpm storybook        # http://localhost:6006
 ```
 
 Storybook loads stories co-located in every package and includes a theme
-switcher (Qlik Bright [default], Qlik Dark).
+switcher (Light [default], Dark).
 
 ## Use the packages (import mode)
 
 ```tsx
 // once, at the app root:
-import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import "@elabs/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs/components-tokens";
 
-import { Button, Card, CardHeader, CardTitle } from "@qlik-coe-emea/qlabs-components-ui";
-import { DataTable } from "@qlik-coe-emea/qlabs-components-data";
+import { Button, Card, CardHeader, CardTitle } from "@elabs/components-ui";
+import { DataTable } from "@elabs/components-data";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="qlik-bright">
+    <ThemeProvider defaultTheme="light">
       <Card>
         <CardHeader>
           <CardTitle>Hello</CardTitle>
@@ -79,7 +79,7 @@ function App() {
 
 React Flow consumers also import its CSS once: `import "@xyflow/react/dist/style.css"`.
 
-Consuming `@qlik-coe-emea/qlabs-components-*` from a **separate** project (tarball install, Tailwind v4 +
+Consuming `@elabs/components-*` from a **separate** project (tarball install, Tailwind v4 +
 token wiring, making your coding agent brand-ui-aware)? See
 [`docs/CONSUMING.md`](docs/CONSUMING.md).
 
@@ -128,7 +128,7 @@ Three layers (full guide in `docs/TESTING.md`):
 
 ```bash
 pnpm test                 # 1. unit/smoke (Vitest) — fast, co-located
-pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook
+pnpm --filter @elabs/components-docs test-storybook
                           # 2. stories as real-browser interaction + axe a11y tests
 ```
 
@@ -150,7 +150,7 @@ CI (`.github/workflows/ci.yml`) runs a **blocking gate set** on every PR —
 `llms:check` · `context:check` · `ai:types-only` · `lucide:check` ·
 `charts:reuse:check` · `agents:check` — plus two **non-blocking**
 (`continue-on-error`) layers: Playwright E2E (`pnpm test:e2e`) and Storybook
-interaction + axe (`pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`).
+interaction + axe (`pnpm --filter @elabs/components-docs test-storybook`).
 
 ## How coding agents should work here
 
@@ -174,7 +174,7 @@ pnpm test           # vitest (unit/smoke)
 pnpm test:e2e       # playwright end-to-end
 pnpm format         # prettier --write .
 pnpm registry:validate
-# scope any task: pnpm --filter @qlik-coe-emea/qlabs-components-ui test
+# scope any task: pnpm --filter @elabs/components-ui test
 ```
 
 ## Documentation
@@ -184,11 +184,28 @@ pnpm registry:validate
 - `docs/COMPONENT_GUIDELINES.md`, `docs/TOKEN_GUIDELINES.md`,
   `docs/REGISTRY_GUIDELINES.md`, `docs/AGENT_WORKFLOW.md`, `docs/TESTING.md`,
   `docs/ISSUE_WORKFLOW.md`.
-- `docs/CONSUMING.md` — use `@qlik-coe-emea/qlabs-components-*` from another project; `docs/RELEASING.md`
+- `docs/CONSUMING.md` — use `@elabs/components-*` from another project; `docs/RELEASING.md`
   — cut a release (incl. § 7 Rollback); `docs/DEPRECATION.md` — how things are
   retired, and what support you can expect.
 - `docs/ASSUMPTIONS.md` — assumptions and environment notes.
+- [`ATTRIBUTION.md`](ATTRIBUTION.md) — every project whose code, design, data or
+  type we use, with its licence and copyright.
+
+## Attribution
+
+brand-ui is built on other people's work. **[`ATTRIBUTION.md`](ATTRIBUTION.md)**
+credits all of it — adapted and vendored source, runtime map data, self-hosted
+fonts, and every open-source dependency — with the licence and copyright line for
+each. It is generated from the repo, not hand-kept, so it cannot drift from what
+is actually shipped.
+
+If you borrow from another project, credit it in the same change:
+[`.claude/rules/attribution.md`](.claude/rules/attribution.md).
 
 ## License
 
 Internal / UNLICENSED. Not for external distribution without approval.
+
+> This applies to brand-ui's own source. It does **not** override the licences of
+> the third-party work listed in [`ATTRIBUTION.md`](ATTRIBUTION.md), several of
+> which oblige their notices to travel with the code.

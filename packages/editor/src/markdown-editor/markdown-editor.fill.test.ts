@@ -14,7 +14,7 @@ const css = readFileSync(resolve(process.cwd(), "src/markdown-editor/markdown-ed
  * regression this guards is the editable staying content-sized (`min-height:
  * 9rem`) inside a tall pane, which also clips the caret-anchored `/` slash menu.
  * The real visual proof is the `FillsContainer` Storybook story.
- * (qlabs-components: editor-fill-height)
+ * (elabs-components: editor-fill-height)
  */
 
 describe("editor fill-height CSS (regression)", () => {

@@ -21,7 +21,7 @@ export interface CopyToClipboard {
  * Copy-to-clipboard with a transient confirmation flag.
  *
  * One implementation for the whole library — the copy button in
- * `@qlik-coe-emea/qlabs-components-editor` and `CopyableValue` share it, so the
+ * `@elabs/components-editor` and `CopyableValue` share it, so the
  * timing, the unmount cleanup and the "no clipboard here" answer are defined
  * once instead of re-derived per component.
  *

@@ -1,13 +1,8 @@
 "use client";
 
-import { Button, Skeleton, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button, Skeleton, useLocale } from "@elabs/components-ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { LucideIcon } from "lucide-react";
 import { XIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";

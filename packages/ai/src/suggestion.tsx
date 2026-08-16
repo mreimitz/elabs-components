@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { ScrollArea, ScrollBar } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button } from "@elabs/components-ui";
+import { ScrollArea, ScrollBar } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { useCallback } from "react";
 

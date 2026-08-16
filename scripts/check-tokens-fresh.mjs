@@ -78,7 +78,7 @@ async function main(argv) {
   }
   console.error(
     "\nthemes.css is stale vs the DTCG source — run " +
-      "`pnpm --filter @qlik-coe-emea/qlabs-components-tokens tokens:build`\n" +
+      "`pnpm --filter @elabs/components-tokens tokens:build`\n" +
       "(then commit the regenerated themes.css). The token VALUES live in\n" +
       "packages/tokens/tokens/themes/<theme>.tokens.json; the file STRUCTURE is\n" +
       "hand-authored. See WP-04 / issue #61.",

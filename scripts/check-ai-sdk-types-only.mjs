@@ -2,11 +2,11 @@
 /**
  * check-ai-sdk-types-only.mjs — WP-12 #97 dependency-posture gate (decision D6).
  *
- * Enforces ADR-0008 + docs/DECISIONS.md §D6: `@qlik-coe-emea/qlabs-components-ai` may import the Vercel AI
+ * Enforces ADR-0008 + docs/DECISIONS.md §D6: `@elabs/components-ai` may import the Vercel AI
  * SDK (`ai`) and `@ai-sdk/*` as **types only** — never the runtime. A *value* import
  * (`useChat`, `streamText`, providers, a default/namespace/side-effect/dynamic import,
  * or a re-export of a value) turns a types-only seam into runtime lock-in. The moment
- * `@qlik-coe-emea/qlabs-components-ai` pulls a runtime value from `ai`, brand-ui stops being a presentation
+ * `@elabs/components-ai` pulls a runtime value from `ai`, brand-ui stops being a presentation
  * layer (D5) and becomes downstream of Vercel's runtime.
  *
  *   Allowed:  import type { UIMessage } from "ai";   import { type ToolUIPart } from "ai";
@@ -188,7 +188,7 @@ function main(argv) {
       console.error(`  - ${rel}: ${v.reason}\n      ${v.statement}`);
     }
     console.error(
-      `\n@qlik-coe-emea/qlabs-components-ai must import \`ai\`/\`@ai-sdk/*\` as TYPES ONLY (use \`import type\`). Runtime\n` +
+      `\n@elabs/components-ai must import \`ai\`/\`@ai-sdk/*\` as TYPES ONLY (use \`import type\`). Runtime\n` +
         `values (useChat, streamText, providers, …) belong in the consuming app, not the\n` +
         `component package. See ${ADR} (decision D6).`,
     );

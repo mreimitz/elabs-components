@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export interface PlaceholderBoxProps extends HTMLAttributes<HTMLDivElement> {
   /** Optional centered caption (e.g. "illustration 2"). */

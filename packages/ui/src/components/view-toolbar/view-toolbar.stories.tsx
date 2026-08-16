@@ -313,9 +313,9 @@ export const KeyboardRemoval: Story = {
   },
 };
 
-/** The same row on `qlik-dark`. */
+/** The same row on `dark`. */
 export const DarkTheme: Story = {
-  globals: { theme: "qlik-dark" },
+  globals: { theme: "dark" },
   render: () => (
     <ViewToolbar info={VIEW_INFO} actions={<ViewActions />} className="w-full max-w-4xl">
       <StatusBadge status="complete" size="sm" />

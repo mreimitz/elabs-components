@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import { Button } from "../button";
 import {
   Dialog,
@@ -122,12 +122,12 @@ export const InsideDialog: Story = {
   },
 };
 
-export const DefaultQlikDark: Story = {
-  name: "Default — qlik-dark",
+export const DefaultDark: Story = {
+  name: "Default — dark",
   args: { changedCount: 3 },
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

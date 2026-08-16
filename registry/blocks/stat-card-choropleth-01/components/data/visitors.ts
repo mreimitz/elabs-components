@@ -1,4 +1,4 @@
-import type { ChoroplethFeature } from "@qlik-coe-emea/qlabs-components-charts";
+import type { ChoroplethFeature } from "@elabs/components-charts";
 
 export const visitorsByCountry: Record<string, number> = {
   "United States": 18,

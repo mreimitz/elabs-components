@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-charts — KPI tiles, a chart container, and 14 compositional charts.
+ * @elabs/components-charts — KPI tiles, a chart container, and 14 compositional charts.
  *
  * Token-driven: series use `--chart-1..5` tokens so visuals theme consistently.
  *

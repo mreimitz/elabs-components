@@ -117,7 +117,7 @@ export const ZoomEnabled: Story = {
  * Accessible name + keyboard navigation overlay.
  *
  * - The container gets `role="figure"` + `aria-label` + `aria-describedby`
- *   matching the pattern used by all other @qlik-coe-emea/qlabs-components-charts charts (issue #145).
+ *   matching the pattern used by all other @elabs/components-charts charts (issue #145).
  * - `keyboardNav` adds a visually-hidden listbox so keyboard users can
  *   arrow-navigate through geographic features. Each item announces its
  *   region name and score value. Focus syncs to the SVG highlight.

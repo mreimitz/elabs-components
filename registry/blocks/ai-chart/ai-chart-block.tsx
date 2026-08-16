@@ -3,15 +3,15 @@
  *
  * The canonical place to render a model's chart tool-output inside an AI
  * conversation — composing BOTH sibling packages:
- *   - @qlik-coe-emea/qlabs-components-ai  (chat surface: Message, Tool, ToolHeader, ToolContent, ToolOutput)
- *   - @qlik-coe-emea/qlabs-components-charts  (smart chart: AutoChart + ChartSpec)
+ *   - @elabs/components-ai  (chat surface: Message, Tool, ToolHeader, ToolContent, ToolOutput)
+ *   - @elabs/components-charts  (smart chart: AutoChart + ChartSpec)
  *
  * WHY a registry block, not a package: the one-way dependency rule
  * (tokens → ui → data/ai/charts/…) prevents any bare package from importing a
  * sibling (DEP_DIRECTION_VIOLATION). Copy-owned registry blocks are explicitly
  * exempt — they live outside the package graph and may compose any number of
- * installed @qlik-coe-emea/qlabs-components-* siblings. This is the same pattern as
- * registry/blocks/chart-frame-data/ (@qlik-coe-emea/qlabs-components-charts + @qlik-coe-emea/qlabs-components-data).
+ * installed @elabs/components-* siblings. This is the same pattern as
+ * registry/blocks/chart-frame-data/ (@elabs/components-charts + @elabs/components-data).
  *
  * The app owns the real model call; the tool output used here is sample data.
  * Swap `sampleSpec` and `sampleInput` for your own tool-call payload.
@@ -48,8 +48,8 @@ import {
   ToolHeader,
   ToolInput,
   ToolOutput,
-} from "@qlik-coe-emea/qlabs-components-ai";
-import { AutoChart, type ChartSpec } from "@qlik-coe-emea/qlabs-components-charts";
+} from "@elabs/components-ai";
+import { AutoChart, type ChartSpec } from "@elabs/components-charts";
 
 // ---------------------------------------------------------------------------
 // Sample data — replace with your tool-call payload in a real app.

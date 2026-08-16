@@ -13,7 +13,7 @@ can't easily change a component without forking. shadcn popularized the opposite
 
 Support **both**, deliberately:
 
-1. **Imported package primitives** (`import { Button } from "@qlik-coe-emea/qlabs-components-ui"`).
+1. **Imported package primitives** (`import { Button } from "@elabs/components-ui"`).
    Stable, broadly-shared components and primitives. Centrally versioned and
    updated. This is the default for foundational UI, data/ai/flow/charts.
 

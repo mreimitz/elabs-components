@@ -22,7 +22,7 @@
  * `position.start.offset` is an offset into `document.text` itself.
  */
 
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 
 import type { MarkRanges } from "../../core/highlight-marks";
 

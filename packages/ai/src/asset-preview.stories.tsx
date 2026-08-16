@@ -71,7 +71,7 @@ export const RawByDefault: Story = {
  * A format this package cannot parse, drawn by an injected renderer.
  *
  * `renderPreview` is how a PDF, a spreadsheet or a video reaches the rail:
- * `@qlik-coe-emea/qlabs-components-viewer` is a layer PEER of this package, so
+ * `@elabs/components-viewer` is a layer PEER of this package, so
  * neither may import the other (ADR 0024 §6) and the consuming app owns the
  * edge — `renderPreview={(asset) => asset.source ? <FileViewer source={asset.source} /> : null}`.
  * The stand-in below keeps this story free of that import.

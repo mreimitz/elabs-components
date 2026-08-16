@@ -1,7 +1,7 @@
 "use client";
 
 import * as monaco from "monaco-editor";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import {
   forwardRef,
   useEffect,
@@ -92,7 +92,7 @@ const BASE_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
  * editor matches the active `data-theme` (all three themes).
  *
  * Workers (for completions/diagnostics) are wired by importing
- * `@qlik-coe-emea/qlabs-components-editor/monaco-environment` once at the app entry.
+ * `@elabs/components-editor/monaco-environment` once at the app entry.
  */
 export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(function CodeEditor(
   {
@@ -189,7 +189,7 @@ export const CodeEditor = forwardRef<MonacoCodeEditor | null, CodeEditorProps>(f
     try {
       applyBrandTheme(monaco, theme);
     } catch (err) {
-      console.error("[@qlik-coe-emea/qlabs-components-editor] failed to apply brand theme", err);
+      console.error("[@elabs/components-editor] failed to apply brand theme", err);
     }
     // `revision` forces a re-apply after the data-theme attribute settles (even
     // when the parsed theme name equals the default), so tokens are re-read.

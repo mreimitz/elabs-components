@@ -5,7 +5,7 @@
 // ("Jane Doe effect") and visual-slop rules fire on slop and stay quiet on clean,
 // realistic content (low false positives). Per quality-gates.md "Self-tested gates".
 //
-// Run: node --test  (from packages/cli) — `pnpm --filter @qlik-coe-emea/qlabs-components-cli test`.
+// Run: node --test  (from packages/cli) — `pnpm --filter @elabs/components-cli test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { scanText, RULES, CONTENT_SLOP_RULES, countContentSlop } from "../lib/audit.mjs";

@@ -1,6 +1,6 @@
 # Loading, streaming & placeholder states (one vocabulary, two signals)
 
-The cross-cutting convention for **"not-ready" UI** across every `@qlik-coe-emea/qlabs-components-*` package.
+The cross-cutting convention for **"not-ready" UI** across every `@elabs/components-*` package.
 brand-ui is a **presentation layer** (D5 — `docs/DECISIONS.md` §D5): it does NOT own
 model calls, transport, or React Suspense. Loading is **prop-driven only** — a parent
 that knows the data state passes a prop; a component never starts a fetch or reads
@@ -52,7 +52,7 @@ divergent names are **documented aliases** — kept, not migrated, to avoid a br
 | `StatePanel kind="empty"\|"error"\|"loading"`                | **Different role** — keep   | `StatePanel` is the centered **message panel** (icon + title + action), NOT a layout-shaped skeleton. `kind="loading"` is the spinner-message; use it for a whole-region "loading…" panel, use a **Skeleton** for a layout-shaped one. Both are valid; pick by whether you mirror the layout (Skeleton) or show a message (StatePanel). |
 
 **Do not** introduce a fourth name. If a component needs a not-ready prop, it is `loading`
-and/or `isStreaming` (or, inside `@qlik-coe-emea/qlabs-components-charts` only, the existing `status` triple).
+and/or `isStreaming` (or, inside `@elabs/components-charts` only, the existing `status` triple).
 
 ## Standard "not-ready" slot anatomy
 
@@ -71,18 +71,18 @@ Pick the exposure by component shape (in order of preference):
 
 ### Which primitive for which shape
 
-- **Box / block / row** → `Skeleton` (`@qlik-coe-emea/qlabs-components-ui`) — `animate-pulse rounded-md bg-muted`,
+- **Box / block / row** → `Skeleton` (`@elabs/components-ui`) — `animate-pulse rounded-md bg-muted`,
   already `aria-hidden`. Compose width/height: `<Skeleton className="h-4 w-32" />`. Build
   rows, aspect boxes (`<AspectRatio><Skeleton className="size-full" /></AspectRatio>`),
   content blocks from it. **This is the canonical skeleton primitive — do not hand-roll
   `animate-pulse bg-muted` boxes.**
 - **Whole-region "loading…" message** (not layout-shaped) → `StatePanel kind="loading"`
-  (`@qlik-coe-emea/qlabs-components-ui`) or, inline, `Spinner` (`@qlik-coe-emea/qlabs-components-ui`, `role="status"`).
-- **Streaming TEXT affordance** (a shimmering "Thinking…" line) → `Shimmer` (`@qlik-coe-emea/qlabs-components-ai`,
+  (`@elabs/components-ui`) or, inline, `Spinner` (`@elabs/components-ui`, `role="status"`).
+- **Streaming TEXT affordance** (a shimmering "Thinking…" line) → `Shimmer` (`@elabs/components-ai`,
   motion-aware, text-only). Use as the optional in-progress cue for `isStreaming`, NOT as a
   skeleton.
 - **Charts** → the chart skeleton utilities (`generate-chart-skeleton-data.ts`,
-  `area-chart-loading.tsx` in `@qlik-coe-emea/qlabs-components-charts`); don't rebuild chart skeletons from boxes.
+  `area-chart-loading.tsx` in `@elabs/components-charts`); don't rebuild chart skeletons from boxes.
 
 ### a11y
 

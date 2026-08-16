@@ -41,12 +41,12 @@ theming, and unpolished states.
 
 1. Ensure dev servers are up (start `pnpm playground` / `pnpm storybook` in the
    background and wait for the ports if needed).
-2. For EACH of both themes (`qlik-bright`, `qlik-dark`) capture
+2. For EACH of both themes (`light`, `dark`) capture
    the playground Dashboard, Assistant, Pipeline and Landing pages, plus a
    representative set of Storybook stories. Switch the playground theme via the
    "Theme" selector; switch Storybook via `&globals=theme:<slug>` — always the
-   **CSS slug**, never the display name (e.g. `&globals=theme:qlik-dark`, not
-   `theme:Qlik Dark`).
+   **CSS slug**, never the display name (e.g. `&globals=theme:dark`, not
+   `theme:Dark`).
 3. Read the actual pixels. Check focus rings by tabbing through interactive
    elements. Note anything that only breaks in a specific theme.
 

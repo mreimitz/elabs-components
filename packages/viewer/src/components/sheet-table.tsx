@@ -11,7 +11,7 @@
  *
  * It stays deliberately dumb: no sorting, no filtering, no virtualization. A
  * preview pane is for looking; past a few thousand rows the right component is
- * `DataTable` in `@qlik-coe-emea/qlabs-components-data`, which virtualizes.
+ * `DataTable` in `@elabs/components-data`, which virtualizes.
  */
 
 import {
@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
   useLocale,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { useRef } from "react";
 
 import { type MarkRanges } from "../core/highlight-marks";

@@ -7,7 +7,7 @@
  * was the ASSET-2 defect: `CodeBlock code={…} language="markdown"`). Built on
  * the EXISTING `streamdown` dependency (no new heavy dep), but unlike the
  * streaming `MessageResponse` it maps the element tree onto the promoted
- * `Prose*` primitives from `@qlik-coe-emea/qlabs-components-ui` via a `components` map — one
+ * `Prose*` primitives from `@elabs/components-ui` via a `components` map — one
  * source-owned prose set for chat answers, the editor preview and this view.
  *
  * `baseHeadingLevel` is the constrained-rung seam (research 04 §5 / 09 §G.2):
@@ -24,8 +24,8 @@ import {
   ProseListItem,
   ProseText,
   type ProseHeadingLevel,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";

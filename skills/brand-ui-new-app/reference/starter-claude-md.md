@@ -19,7 +19,7 @@ judges the app against the profile it was built to.
 ````markdown
 # CLAUDE.md — {Title}
 
-This app is built on **brand-ui** (`@qlik-coe-emea/qlabs-components-*`). It was scaffolded from the
+This app is built on **brand-ui** (`@elabs/components-*`). It was scaffolded from the
 **{archetype}** template; the spec is in `./app-spec.md` — read it before
 making structural changes.
 
@@ -81,7 +81,7 @@ decoration dial (`--decoration`, 0–10), not a separate setting.
 ## What exists (don't guess an API)
 
 `./brand-ui-context.md` is the generated inventory of every component in every
-`@qlik-coe-emea/qlabs-components-*` package — read it before inventing a component.
+`@elabs/components-*` package — read it before inventing a component.
 `pnpm exec brand-ui docs <Name>` gives the real props; `brand-ui context`
 regenerates the inventory after a package upgrade.
 
@@ -106,7 +106,7 @@ what's left. Wire them; don't delete the guidance until each is wired.
 
 ## Themes
 
-Three shipped themes: `qlik-bright`, `qlik-dark`. Anything you build
+Three shipped themes: `light`, `dark`. Anything you build
 must read correctly in **all three** — that is an observed result (render it),
 never inferred from "it uses tokens".
 
@@ -127,12 +127,12 @@ Packages come from GitHub Packages (private — a classic PAT with `read:package
 
 ```ini
 # .npmrc
-@qlik-coe-emea:registry=https://npm.pkg.github.com
+@elabs:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
 ```bash
-pnpm add "@qlik-coe-emea/qlabs-components-tokens@^{release}" …    # the packages
+pnpm add "@elabs/components-tokens@^{release}" …    # the packages
 pnpm add "react@^19.0.0" "@xyflow/react@^12.11.1" …               # + engine peers
 ```
 
@@ -148,7 +148,7 @@ without them. Full recipe: `docs/CONSUMING.md` §1-4 in the brand-ui repo.
 ### `{install-block}` — in-monorepo
 
 ```markdown
-This app lives inside the brand-ui monorepo: `@qlik-coe-emea/qlabs-components-*`
+This app lives inside the brand-ui monorepo: `@elabs/components-*`
 dependencies stay `workspace:*` and `pnpm install` at the repo root wires them.
 `src/styles.css` carries the token import and one `@source` line per package —
 **do not delete them**, the components render unstyled without them.
@@ -168,7 +168,7 @@ boundary). This file exists so agents that look for `AGENTS.md` find the same ru
 
 The short version:
 
-- Compose from `@qlik-coe-emea/qlabs-components-*`; don't hand-roll tables, dialogs,
+- Compose from `@elabs/components-*`; don't hand-roll tables, dialogs,
   chat bubbles or KPI tiles.
 - Type is a **role** (`text-title`/`text-body`/…), colour is a **token**
   (`bg-primary`, `text-muted-foreground`) — never a raw size or hex.

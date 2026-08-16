@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Snippet, SnippetAddon, SnippetCopyButton, SnippetInput, SnippetText } from "./snippet";
 
-const CODE = "pnpm add @qlik-coe-emea/qlabs-components-ui";
+const CODE = "pnpm add @elabs/components-ui";
 
 /** Install a clipboard stub for one test; returns the writeText spy. */
 function stubClipboard(impl: () => Promise<void> = () => Promise.resolve()) {

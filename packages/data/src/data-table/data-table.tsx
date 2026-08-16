@@ -21,8 +21,8 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { Button, Skeleton, Spinner, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button, Skeleton, Spinner, useLocale } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -734,7 +734,7 @@ function DataTableInner<TData, TValue>(
       // travel with a `position: sticky` cell, and the cell's own opaque fill
       // (which it needs, see `pinnedCellFillClass`) then paints over it. Measured
       // in Chromium on `Data/DataTable → PinnedColumns`: with `border-e` the
-      // seam pixel read `143,143,143` (qlik-bright `--border-strong`) at
+      // seam pixel read `143,143,143` (light `--border-strong`) at
       // scrollLeft 0 and `245,245,245` (the plain cell fill — i.e. GONE) once
       // scrolled, in all three themes and on both edges. So the one cue vanished
       // exactly when the freeze was doing something. The `::after` lives in the
@@ -883,8 +883,8 @@ function DataTableInner<TData, TValue>(
                     //                     re-apply the /60 wash on `::before`.
                     // Painting the plain branch's corner solid `surface-muted`
                     // read 4-5/255 darker than the header beside it in every
-                    // theme (measured: 242 vs 247 qlik-bright, 43 vs 40
-                    // qlik-dark, 26 vs 21 blueprint) — the same "floating pill"
+                    // theme (measured: 242 vs 247 light, 43 vs 40
+                    // dark, 26 vs 21 blueprint) — the same "floating pill"
                     // artefact #333 was filed about, moved into the header.
                     geometry && "sticky z-30",
                     geometry &&

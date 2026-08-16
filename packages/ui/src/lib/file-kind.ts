@@ -4,9 +4,9 @@
  *
  * Before this existed the repo had three competing, package-private ideas of
  * "what kind of file is this": `ContextAssetType`
- * (`markdown|code|sql|csv|image`, `@qlik-coe-emea/qlabs-components-ai`),
+ * (`markdown|code|sql|csv|image`, `@elabs/components-ai`),
  * `AttachmentMediaCategory` (six MIME buckets, same package) and
- * `UploadFile` (no kind at all, `@qlik-coe-emea/qlabs-components-ui`). None could
+ * `UploadFile` (no kind at all, `@elabs/components-ui`). None could
  * see the others, so each grew its own icon map and its own gaps.
  *
  * ## Why the category is closed and coarse (ADR 0024 §4)
@@ -16,7 +16,7 @@
  * for a renderer. Fine-grained format matching (`.docx` vs `.odt`,
  * `.tsx` vs `.rs`) belongs to the adapter manifests in the package that owns the
  * parsers, so adding a format never means editing this file — and never means a
- * `@qlik-coe-emea/qlabs-components-ui` release.
+ * `@elabs/components-ui` release.
  *
  * Pure data + string handling: no React, no DOM, no other deps.
  */

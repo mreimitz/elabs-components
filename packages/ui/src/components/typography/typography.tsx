@@ -2,7 +2,7 @@
  * Typography primitives — the semantic type-role API (#187/#188, research 07 §B.3).
  *
  * `Text` and `Heading` map intent → a type ROLE. Each `text-<role>` utility is
- * backed by the `--text-<role>` tokens in @qlik-coe-emea/qlabs-components-tokens and bundles all four
+ * backed by the `--text-<role>` tokens in @elabs/components-tokens and bundles all four
  * dimensions (size + leading + weight + tracking) while staying composable —
  * `leading-*` / `font-*` / `tracking-*` overrides still win. Reach for these
  * primitives (or a `text-<role>` utility) — never a raw size utility (sm/xl/…).
@@ -15,7 +15,7 @@ import { cn } from "../../lib/cn";
 /**
  * The role font sizes in rem — a TS mirror of the `--text-<role>` tokens
  * (packages/tokens/src/themes.css) for consumers that need the numbers at
- * runtime (e.g. @qlik-coe-emea/qlabs-components-editor's markdown-scale CSS-var seam). Edit the tokens
+ * runtime (e.g. @elabs/components-editor's markdown-scale CSS-var seam). Edit the tokens
  * first; typography.test.tsx pins this mirror to themes.css.
  */
 export const TEXT_ROLE_REM = {

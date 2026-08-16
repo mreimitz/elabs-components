@@ -11,7 +11,7 @@ import {
   serializeMentions,
   type MentionOption,
   type MentionValue,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import {
   PromptInput,
   PromptInputBody,
@@ -19,11 +19,11 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from "@qlik-coe-emea/qlabs-components-ai";
+} from "@elabs/components-ai";
 
 /**
- * `MentionInput` (`@qlik-coe-emea/qlabs-components-ui`) wrapped around
- * `PromptInputTextarea` (`@qlik-coe-emea/qlabs-components-ai`) — the composer keeps its own
+ * `MentionInput` (`@elabs/components-ui`) wrapped around
+ * `PromptInputTextarea` (`@elabs/components-ai`) — the composer keeps its own
  * submit contract while the field gains an `@`-mention roster.
  *
  * ### Why this composes at all

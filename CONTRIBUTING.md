@@ -31,7 +31,7 @@ Keep changes scoped to one concern per PR where possible.
 
 ## Testing
 
-- Unit/smoke tests with Vitest + Testing Library: `pnpm --filter @qlik-coe-emea/qlabs-components-<pkg> test`.
+- Unit/smoke tests with Vitest + Testing Library: `pnpm --filter @elabs/components-<pkg> test`.
 - Every new component needs at least a render + key-behavior smoke test.
 - Type safety: `pnpm typecheck`. Lint: `pnpm lint`. Format: `pnpm format`.
 
@@ -41,6 +41,20 @@ Keep changes scoped to one concern per PR where possible.
   variants/states.
 - Update `docs/` or `.claude/rules/` when you change a convention.
 - Notable decisions get an ADR in `docs/ADR/`.
+
+## Borrowed from another project? Credit it in the same change
+
+If you vendor, adapt, port, copy or re-express anything from another project —
+code, a design, sample data, an image, a technique — add it to
+`scripts/attributions.sources.json` (name, canonical URL, licence and copyright
+read from the upstream's actual LICENSE file) and run `pnpm gen:attributions`.
+That regenerates both [`ATTRIBUTION.md`](ATTRIBUTION.md) and the in-product
+`AttributionPanel` from one dataset.
+
+A comment saying `// Adapted from foo` is a useful pointer, but it is **not** an
+attribution — `pnpm attribution:provenance:check` fails on one whose upstream is
+not credited. Never hand-add an npm dependency; those are harvested from the
+manifests. Full rule: [`.claude/rules/attribution.md`](.claude/rules/attribution.md).
 
 ## Self-maintaining repo (enforcement over reminders)
 
@@ -85,7 +99,7 @@ rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over rem
 - **Does a new component earn a place in a package?** There is no separate RFC
   process — use the two gates that already exist: the **dedupe/reuse audit** at
   the top of `.claude/rules/quality-gates.md` (does this already exist across
-  `@qlik-coe-emea/qlabs-components-*` or `registry/`?) and decision **D4** in
+  `@elabs/components-*` or `registry/`?) and decision **D4** in
   [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared primitive → package;
   prototype-specific composition → copy-own registry block).
 
@@ -109,6 +123,8 @@ rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over rem
 - [ ] Public types exported; barrel export updated
 - [ ] No raw colors outside `themes.css`; no paid deps; no secrets/absolute paths
 - [ ] Docs/ADR updated if conventions changed
+- [ ] Anything borrowed from another project is credited in
+      `scripts/attributions.sources.json` and `pnpm gen:attributions` was run
 - [ ] Enforcement over reminders: a new convention ships with a generator and/or a
       gate/hook (not just a doc note) — see "Self-maintaining repo" above
 

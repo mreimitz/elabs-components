@@ -2,9 +2,9 @@
 name: brand-ui-new-app
 description: Define-to-build — scaffold a new brand-ui app from a plain-language description (VP-02). Use when the user wants to START an app, page, or demo ("build me a sales dashboard", "I need an admin console for X", "new app", "scaffold a chat assistant", "create a landing page for a pitch") rather than add to an existing one. Runs a staged interview (quick 3-question mode or full 7-stage spec mode), writes an app-spec.md, then scaffolds from the matching template + playbook with every wiring point annotated and a starter CLAUDE.md so later agent sessions stay on-brand. For adding components to an existing app use `brand-ui`; for authoring library components use `brand-ui-component`.
 user-invocable: true
-argument-hint: "[description of the app, e.g. 'sales pipeline dashboard, qlik-dark']"
+argument-hint: "[description of the app, e.g. 'sales pipeline dashboard, dark']"
 allowed-tools:
-  - Bash(npx @qlik-coe-emea/qlabs-components-cli *)
+  - Bash(npx @elabs/components-cli *)
   - Bash(pnpm brand-ui *)
   - Bash(pnpm exec brand-ui *)
   - Bash(npx brand-ui *)
@@ -36,7 +36,7 @@ One `AskUserQuestion` round, only for the unknowns among:
 
 1. **Archetype** — dashboard · data app · AI assistant · flow workspace ·
    settings · marketing page (mapping table: `reference/archetypes.md`).
-2. **Theme** — qlik-bright (default) · qlik-dark · blueprint. Offer a preview
+2. **Theme** — light (default) · dark · blueprint. Offer a preview
    when Storybook is available (ladder below).
 3. **App title** — free text, defaults to the archetype name.
 
@@ -75,7 +75,7 @@ loop — **`reference/visual-loop.md`** (VP-04). Use the highest fidelity rung
 available — **real Storybook render > generated artifact > option preview >
 text** — and **never decide a visual on prose when a render is possible**
 (start `pnpm storybook` in the background to reach the MCP if needed; theme
-slugs `qlik-bright`/`qlik-dark`/`blueprint`).
+slugs `light`/`dark`/`blueprint`).
 
 Layout options come from the curated arsenal — **`reference/patterns.md`** —
 filtered by the spec's taste profile (calm/product is the default; brand and
@@ -110,7 +110,7 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
    ```
 
    (`pnpm brand-ui …` inside the brand-ui repo; `pnpm exec brand-ui …` in a project
-   that installed `@qlik-coe-emea/qlabs-components-cli` — the CLI **ships the
+   that installed `@elabs/components-cli` — the CLI **ships the
    archetype templates and the manifest**, so `--write` works with no brand-ui
    checkout anywhere. `--write <target>` may point at any directory.) It writes:
 
@@ -215,7 +215,7 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
 - Open the playbook checklist for the archetype; confirm each block the spec
   ordered is present.
 - If Storybook/browser rendering is available, render the scaffold in **all three
-  shipped themes** — `qlik-bright`, `qlik-dark` — and name the surface
+  shipped themes** — `light`, `dark` — and name the surface
   you looked at; otherwise **say plainly that the scaffold compiled and audited
   clean but was not visually verified**. Never claim a visual result you didn't see.
 - Report remaining `// TODO(spec):` placeholders as the user's explicit next
@@ -231,6 +231,6 @@ domain-specific, drawn from the spec's `intent`/`entities`; never "John Doe",
 "99.99%", "Acme", or a filler verb ("Elevate", "Seamless"), and the audit above
 enforces it · **taste comes from the dials** — the profile is applied via
 `ThemeProvider` props + `brand-ui.config.json`, never hardcoded per component ·
-import via `@qlik-coe-emea/qlabs-components-*` · Lucide for generic glyphs ·
+import via `@elabs/components-*` · Lucide for generic glyphs ·
 loading/empty/error states wired, never blank regions · brand-ui never owns
 model calls or data fetching (D5) — scaffold stubs, not transport.

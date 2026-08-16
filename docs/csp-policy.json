@@ -40,7 +40,7 @@
     {
       "directive": "img-src",
       "sources": ["blob:"],
-      "why": "`@qlik-coe-emea/qlabs-components-viewer` shows a file the app did not write. When that file arrives as a `File`/`Blob`/`ArrayBuffer` — an upload, a paste, an agent's output — there is no URL to point an `<img>` at, so `normalizeFileSource` mints one with `URL.createObjectURL` and revokes it on dispose. A `blob:` URL is same-origin and cannot execute script. Drop it if every file you view arrives as a URL you already control. DERIVED from what the code does, not re-measured against an enforcing browser — the app that served this header was removed on 2026-08-10 (§2.7)."
+      "why": "`@elabs/components-viewer` shows a file the app did not write. When that file arrives as a `File`/`Blob`/`ArrayBuffer` — an upload, a paste, an agent's output — there is no URL to point an `<img>` at, so `normalizeFileSource` mints one with `URL.createObjectURL` and revokes it on dispose. A `blob:` URL is same-origin and cannot execute script. Drop it if every file you view arrives as a URL you already control. DERIVED from what the code does, not re-measured against an enforcing browser — the app that served this header was removed on 2026-08-10 (§2.7)."
     },
     {
       "directive": "media-src",
@@ -76,7 +76,7 @@
         "standaloneColorizer",
         "tokenizeToString"
       ],
-      "why": "Monaco (`@qlik-coe-emea/qlabs-components-editor`) calls `trustedTypes.createPolicy` under ten fixed names at module init — including `defaultWorkerFactory`, which it needs to start its language workers. Each blocked name throws asynchronously through Monaco's `onUnexpectedError`. Drop all ten if you never render `CodeEditor`/`DiffEditor`/`CodeWorkspace`/`MermaidDiagram`. NOTE these are ten NAMES, not `'allow-duplicates'` — `monaco-editor@0.55` mints `defaultWorkerFactory` twice (two source files carry the same module-init block), which the memoizing `MonacoEnvironment.createTrustedTypesPolicy` hook in `@qlik-coe-emea/qlabs-components-editor/monaco-environment` de-duplicates so this policy does not have to (§2.6)."
+      "why": "Monaco (`@elabs/components-editor`) calls `trustedTypes.createPolicy` under ten fixed names at module init — including `defaultWorkerFactory`, which it needs to start its language workers. Each blocked name throws asynchronously through Monaco's `onUnexpectedError`. Drop all ten if you never render `CodeEditor`/`DiffEditor`/`CodeWorkspace`/`MermaidDiagram`. NOTE these are ten NAMES, not `'allow-duplicates'` — `monaco-editor@0.55` mints `defaultWorkerFactory` twice (two source files carry the same module-init block), which the memoizing `MonacoEnvironment.createTrustedTypesPolicy` hook in `@elabs/components-editor/monaco-environment` de-duplicates so this policy does not have to (§2.6)."
     }
   ],
   "devOnly": {

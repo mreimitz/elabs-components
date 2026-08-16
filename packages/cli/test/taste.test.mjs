@@ -167,7 +167,7 @@ for (const [label, taste, archetype] of [
 ]) {
   test(`planScaffold carries the ${label} taste profile through to the plan`, () => {
     const plan = planScaffold(
-      { archetype, theme: "qlik-bright", title: "T", taste },
+      { archetype, theme: "light", title: "T", taste },
       {
         root: repoRoot,
       },
@@ -178,7 +178,7 @@ for (const [label, taste, archetype] of [
 }
 
 test("a spec with no taste block plans fine (restrained default applies)", () => {
-  const plan = planScaffold({ archetype: "dashboard", theme: "qlik-bright" }, { root: repoRoot });
+  const plan = planScaffold({ archetype: "dashboard", theme: "light" }, { root: repoRoot });
   assert.equal(plan.status, "planned");
   assert.equal(plan.spec.taste, undefined, "absent means the restrained default, not an error");
 });

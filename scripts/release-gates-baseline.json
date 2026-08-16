@@ -10,6 +10,8 @@
     "ai:types-only:test",
     "app-spec:check",
     "app-spec:check:test",
+    "attribution:provenance:check",
+    "attribution:provenance:check:test",
     "attributions:check",
     "attributions:check:test",
     "audit-artifact:check",

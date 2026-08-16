@@ -1,4 +1,4 @@
-import { reactConfig } from "@qlik-coe-emea/qlabs-components-eslint-config/react";
+import { reactConfig } from "@elabs/components-eslint-config/react";
 
 /**
  * Charts-local severity ratchet (#185).
@@ -9,7 +9,7 @@ import { reactConfig } from "@qlik-coe-emea/qlabs-components-eslint-config/react
  * (`.github/workflows/ci.yml` runs a bare `pnpm lint`), so at the shared preset's
  * default `warn` level a re-introduced violation lands silently — exactly the
  * accretion mechanism the issue names. These two rules are therefore ERRORS in
- * `@qlik-coe-emea/qlabs-components-charts`.
+ * `@elabs/components-charts`.
  *
  * This is the issue's own documented alternative to `eslint . --max-warnings=0`,
  * which stays infeasible here: the package still carries 39 pre-existing

@@ -18,7 +18,7 @@
  * and `ViewToolbar` make, for the same reason.
  */
 
-import { cn, IconButton, Input, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn, IconButton, Input, useLocale } from "@elabs/components-ui";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { forwardRef, useState, type HTMLAttributes } from "react";
 

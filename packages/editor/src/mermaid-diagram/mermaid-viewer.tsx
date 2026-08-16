@@ -5,8 +5,8 @@
  * drag-pan, fit/100% controls, and a left search panel that filters the
  * RENDERED nodes, highlights every hit and zooms to the selected one.
  */
-import { Button, Input } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button, Input } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { Maximize, Minus, Plus } from "lucide-react";
 import {
   useCallback,

@@ -2,7 +2,7 @@
 
 /**
  * IterationTemplateDialog — author a `:::iterate` / `:::pivot` per-cell TEMPLATE
- * in a focused modal (the #223 template modal). Composes `@qlik-coe-emea/qlabs-components-ui` `Dialog`
+ * in a focused modal (the #223 template modal). Composes `@elabs/components-ui` `Dialog`
  * with the existing `MarkdownWorkspace` (source / split / preview-edit), so the
  * template is edited with the same toolbar + live preview as any document.
  *
@@ -18,7 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { MarkdownWorkspace, type MarkdownWorkspaceMode } from "../markdown-workspace";

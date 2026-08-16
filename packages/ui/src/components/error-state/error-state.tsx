@@ -1,5 +1,5 @@
 /**
- * @deprecated Use `StatePanel kind="error"` from `@qlik-coe-emea/qlabs-components-ui` instead.
+ * @deprecated Use `StatePanel kind="error"` from `@elabs/components-ui` instead.
  * This wrapper is kept for back-compat and will be removed in a future release.
  */
 import { type ReactNode } from "react";

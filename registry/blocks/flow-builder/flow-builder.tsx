@@ -1,14 +1,14 @@
 /**
  * Workflow-builder scaffold (copy-owned block).
  *
- * A realistic, forkable canvas that ties together the @qlik-coe-emea/qlabs-components-flow capabilities:
+ * A realistic, forkable canvas that ties together the @elabs/components-flow capabilities:
  * a node palette, auto-layout, grouping, placeholder growth + insert-between,
  * an inspector, and app-owned undo/redo + copy/paste. It is a COMPOSITION of
- * installed @qlik-coe-emea/qlabs-components-* packages — not new package API — so copy it into your app
+ * installed @elabs/components-* packages — not new package API — so copy it into your app
  * and edit it freely.
  *
  * Remember to `import "@xyflow/react/dist/style.css"` once at the app root.
- * Depends on installed @qlik-coe-emea/qlabs-components-flow + @qlik-coe-emea/qlabs-components-ui + @xyflow/react + lucide-react.
+ * Depends on installed @elabs/components-flow + @elabs/components-ui + @xyflow/react + lucide-react.
  */
 "use client";
 
@@ -36,8 +36,8 @@ import {
   type Edge,
   type FlowLayoutDirection,
   type FlowNodeData,
-} from "@qlik-coe-emea/qlabs-components-flow";
-import { Button, cn } from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-flow";
+import { Button, cn } from "@elabs/components-ui";
 import {
   Boxes,
   ClipboardPaste,

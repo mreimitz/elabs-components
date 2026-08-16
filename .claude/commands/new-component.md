@@ -20,7 +20,7 @@ what to do about it. **Do not create any files until this is resolved.**
    exact string:
    - **If the Storybook dev server is running**, call
      `mcp__storybook__list-all-documentation` (`withStoryIds:true`) to enumerate
-     every documented component across all `@qlik-coe-emea/qlabs-components-*` packages, then
+     every documented component across all `@elabs/components-*` packages, then
      `mcp__storybook__get-documentation` on candidates to compare real props/variants
      — this is the fastest, most reliable dedupe signal. If the server is down, use
      the source-reading fallback below. See @.claude/rules/storybook-mcp.md.
@@ -64,8 +64,8 @@ what to do about it. **Do not create any files until this is resolved.**
    line and proceed to create new.
 
 5. **Don't duplicate non-component primitives either:** a `cn` helper already
-   exists (`@qlik-coe-emea/qlabs-components-ui/lib/cn`), icons live in `@qlik-coe-emea/qlabs-components-icons`, tokens in
-   `@qlik-coe-emea/qlabs-components-tokens`. Reuse them; never re-add a local copy.
+   exists (`@elabs/components-ui/lib/cn`), icons live in `@elabs/components-icons`, tokens in
+   `@elabs/components-tokens`. Reuse them; never re-add a local copy.
 
 Only continue below when the confirmed action is **create new** (full scaffold)
 or **extend** (modify the existing component + add its story/test coverage). For
@@ -76,16 +76,16 @@ or **extend** (modify the existing component + add its story/test coverage). For
 
 Choose the target package under `packages/` (ui, data, ai, flow, maps, charts,
 marketing, editor, viewer, blueprint). If unclear from the name/purpose, ask which package. Keep app
-UI in `@qlik-coe-emea/qlabs-components-ui`, marketing in `@qlik-coe-emea/qlabs-components-marketing`, code-editor surfaces
-(Monaco) in `@qlik-coe-emea/qlabs-components-editor`, surfaces that display a file the app did not
-write (uploads, signed URLs, agent output) in `@qlik-coe-emea/qlabs-components-viewer`,
-geospatial/MapLibre surfaces in `@qlik-coe-emea/qlabs-components-maps`,
+UI in `@elabs/components-ui`, marketing in `@elabs/components-marketing`, code-editor surfaces
+(Monaco) in `@elabs/components-editor`, surfaces that display a file the app did not
+write (uploads, signed URLs, agent output) in `@elabs/components-viewer`,
+geospatial/MapLibre surfaces in `@elabs/components-maps`,
 and decorative blueprint-theme drawing furniture
-(graph paper, sheet frames, dimension lines, marks) in `@qlik-coe-emea/qlabs-components-blueprint`.
+(graph paper, sheet frames, dimension lines, marks) in `@elabs/components-blueprint`.
 
 ## Step 3 — Scaffold the files
 
-1. Create `packages/<pkg>/src/components/<kebab-name>/` (for `@qlik-coe-emea/qlabs-components-ui`) or
+1. Create `packages/<pkg>/src/components/<kebab-name>/` (for `@elabs/components-ui`) or
    `packages/<pkg>/src/<kebab-name>/` (other packages — match that package's
    layout).
 2. Create, following the repo pattern:
@@ -115,11 +115,11 @@ Read `@.claude/rules/component-api.md`, `@.claude/rules/styling-and-tokens.md`,
 
 1. Add the export to the package barrel `packages/<pkg>/src/index.ts`.
 2. Verify against `@.claude/rules/quality-gates.md`.
-3. Run `pnpm --filter @qlik-coe-emea/qlabs-components-<pkg> typecheck` and the package tests; fix issues.
+3. Run `pnpm --filter @elabs/components-<pkg> typecheck` and the package tests; fix issues.
 4. **Verify the story.** If the Storybook dev server is running, run
    `mcp__storybook__run-story-tests` on the new story (fix until green) and
    `mcp__storybook__preview-stories` to show the user the rendered result (spot-check
-   `light` + `dark`); otherwise run `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`. See
+   `light` + `dark`); otherwise run `pnpm --filter @elabs/components-docs test-storybook`. See
    @.claude/rules/storybook-mcp.md.
 5. **Regenerate the manifest AND its downstream generators**: `pnpm agent-docs`
    (not just `pnpm manifest`) — the new export must reach

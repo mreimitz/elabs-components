@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { useRef, useState } from "react";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./markdown-editor";
 import { IterationBuilderProvider } from "../markdown-iteration/iteration-builder-dialog";
 
@@ -173,7 +173,7 @@ export const LiveDirectives: Story = {
  * hook that always rejects so you can observe the inline error chip + toast.
  *
  * Theme sweep: switch the Storybook theme (toolbar) to verify the upload chip
- * and error chip use only semantic tokens across qlik-bright/qlik-dark.
+ * and error chip use only semantic tokens across light/dark.
  */
 export const PasteEmbed: Story = {
   name: "Paste / drop image embed (onEmbedAsset)",
@@ -506,12 +506,12 @@ export const IterationContextMenu: Story = {
 /**
  * Three-theme sweep for the node menu (#223 round-2): both `NodeMenu` (⋯) and
  * `IterationContextMenu` (right-click) above run only under the toolbar's
- * DEFAULT theme (`qlik-bright`) — Storybook's `defaultTheme` isn't overridable
+ * DEFAULT theme (`light`) — Storybook's `defaultTheme` isn't overridable
  * per-story from the global decorator alone, and toggling `preview.tsx` by hand
  * for a manual three-run sweep leaves no durable, re-runnable evidence. These
  * four stories wrap the SAME render/play pairs in an explicit `<ThemeProvider>`
- * instead, so `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`
- * (or `mcp__storybook__run-story-tests`) exercises `qlik-dark` and decoration 10
+ * instead, so `pnpm --filter @elabs/components-docs test-storybook`
+ * (or `mcp__storybook__run-story-tests`) exercises `dark` and decoration 10
  * on every run, with zero manual steps. `<ThemeProvider>` (not a plain
  * `data-theme` wrapper div) because it writes the attribute onto the DOCUMENT
  * ROOT — the menu's Radix `Portal` mounts its content on `document.body`,
@@ -519,11 +519,11 @@ export const IterationContextMenu: Story = {
  * actually themes it. `storageKey={null}` keeps the override from persisting
  * to localStorage across runs.
  */
-export const NodeMenuQlikDark: Story = {
-  name: "Iteration node menu (⋯ dropdown) — qlik-dark",
+export const NodeMenuDark: Story = {
+  name: "Iteration node menu (⋯ dropdown) — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),
@@ -539,11 +539,11 @@ export const NodeMenuHighDecoration: Story = {
   play: NodeMenu.play,
 };
 
-export const IterationContextMenuQlikDark: Story = {
-  name: "Iteration node menu (right-click) — qlik-dark",
+export const IterationContextMenuDark: Story = {
+  name: "Iteration node menu (right-click) — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

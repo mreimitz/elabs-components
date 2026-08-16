@@ -1,5 +1,5 @@
 {
-  "extends": "@qlik-coe-emea/qlabs-components-typescript-config/vite-app.json",
+  "extends": "@elabs/components-typescript-config/vite-app.json",
   "compilerOptions": {
     "types": ["react", "react-dom"],
     "allowImportingTsExtensions": false

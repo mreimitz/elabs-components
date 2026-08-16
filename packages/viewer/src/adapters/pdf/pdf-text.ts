@@ -27,7 +27,7 @@
  * box comes from the file itself and does.
  */
 
-import type { DocumentRect } from "@qlik-coe-emea/qlabs-components-ui";
+import type { DocumentRect } from "@elabs/components-ui";
 
 import type { ResolvedHighlight } from "../../core/highlight";
 import { localizeRanges, type MarkRanges } from "../../core/highlight-marks";

@@ -13,7 +13,7 @@ keywords:
     danger zone,
     team management,
   ]
-packages: ["@qlik-coe-emea/qlabs-components-ui", "@qlik-coe-emea/qlabs-components-data"]
+packages: ["@elabs/components-ui", "@elabs/components-data"]
 ---
 
 # Playbook — Settings / admin portal
@@ -23,15 +23,15 @@ destructive actions. Template source: `templates/settings.tsx` (generated from t
 
 ## Building blocks
 
-| Layer    | Components                                                                       | From                                   |
-| -------- | -------------------------------------------------------------------------------- | -------------------------------------- |
-| Shell    | `SidebarProvider` + `Sidebar` (sections) + `SidebarInset`                        | `@qlik-coe-emea/qlabs-components-ui`   |
-| Sections | one view component per section, switched by nav (or `Tabs` for ≤4 flat sections) | `@qlik-coe-emea/qlabs-components-ui`   |
-| Forms    | `Card` + `Label` + `Input` / `Switch` / `Select` / `RadioGroup`                  | `@qlik-coe-emea/qlabs-components-ui`   |
-| Display  | `Descriptions` + `DescriptionsItem` (read-only field groups) · `Badge` (status)  | `@qlik-coe-emea/qlabs-components-ui`   |
-| Flows    | `Wizard` + `WizardSteps` + `WizardStep` + `WizardNav` (multi-step setup)         | `@qlik-coe-emea/qlabs-components-ui`   |
-| Guard    | `AlertDialog` (destructive) · `Dialog` (focused sub-forms like change-password)  | `@qlik-coe-emea/qlabs-components-ui`   |
-| Data     | `DataTable` for embedded record lists (active sessions, API keys)                | `@qlik-coe-emea/qlabs-components-data` |
+| Layer    | Components                                                                       | From                     |
+| -------- | -------------------------------------------------------------------------------- | ------------------------ |
+| Shell    | `SidebarProvider` + `Sidebar` (sections) + `SidebarInset`                        | `@elabs/components-ui`   |
+| Sections | one view component per section, switched by nav (or `Tabs` for ≤4 flat sections) | `@elabs/components-ui`   |
+| Forms    | `Card` + `Label` + `Input` / `Switch` / `Select` / `RadioGroup`                  | `@elabs/components-ui`   |
+| Display  | `Descriptions` + `DescriptionsItem` (read-only field groups) · `Badge` (status)  | `@elabs/components-ui`   |
+| Flows    | `Wizard` + `WizardSteps` + `WizardStep` + `WizardNav` (multi-step setup)         | `@elabs/components-ui`   |
+| Guard    | `AlertDialog` (destructive) · `Dialog` (focused sub-forms like change-password)  | `@elabs/components-ui`   |
+| Data     | `DataTable` for embedded record lists (active sessions, API keys)                | `@elabs/components-data` |
 
 ## Wiring diagram
 

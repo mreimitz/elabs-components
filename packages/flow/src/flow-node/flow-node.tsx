@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Star, type LucideIcon } from "lucide-react";
-import { STATUS_TONE_ICONS } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { STATUS_TONE_ICONS } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 /** A node side that can carry a handle. Doubles as the handle's stable id. */
 export type FlowHandleSide = "top" | "right" | "bottom" | "left";
@@ -62,7 +62,7 @@ const toneRing: Record<NonNullable<FlowNodeData["tone"]>, string> = {
  * (WCAG 1.4.1, #387). Every non-default tone now also gets a leading Lucide
  * glyph (`aria-hidden`, decorative — the sr-only text below carries the
  * meaning) and a distinct accessible name. `success`/`warning`/`destructive`
- * reuse `@qlik-coe-emea/qlabs-components-ui`'s `STATUS_TONE_ICONS` (the SAME glyph
+ * reuse `@elabs/components-ui`'s `STATUS_TONE_ICONS` (the SAME glyph
  * `StatusBadge`/`StatusIcon` already pair with that tone) rather than
  * inventing a second icon vocabulary; `accent` has no canonical `StatusTone`
  * counterpart to reuse (the closed `StatusTone` enum is deliberately

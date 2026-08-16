@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import { InteractiveTerminal, type InteractiveTerminalHandle } from "./interactive-terminal";
 
 const meta = {
@@ -29,7 +29,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Exercises all 8 base ANSI colors + their bright variants, so a cross-theme
-// audit can confirm every swatch stays legible in qlik-bright/qlik-dark.
+// audit can confirm every swatch stays legible in light/dark.
 const ANSI_PALETTE =
   "\x1b[30mblack\x1b[0m \x1b[31mred\x1b[0m \x1b[32mgreen\x1b[0m \x1b[33myellow\x1b[0m " +
   "\x1b[34mblue\x1b[0m \x1b[35mmagenta\x1b[0m \x1b[36mcyan\x1b[0m \x1b[37mwhite\x1b[0m\r\n" +

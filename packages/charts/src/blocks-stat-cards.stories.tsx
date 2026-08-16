@@ -7,11 +7,11 @@
  * `--chart-*` token), plus a goal/progress tile and a comparison tile that the
  * bare MetricCard doesn't cover. Reference: shadcnspace Statistics/Widgets.
  *
- * Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in all
+ * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all
  * three themes. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Badge, Card, CardContent, MetricCard, Progress } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge, Card, CardContent, MetricCard, Progress } from "@elabs/components-ui";
 import { Sparkline } from "./sparkline/sparkline";
 
 const revenueSeries = [31, 34, 33, 38, 42, 40, 45, 48];

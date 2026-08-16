@@ -42,7 +42,7 @@ import {
   renderMigrationDocs,
 } from "../lib/engine.mjs";
 // NOTE: `../lib/gen.mjs` is imported lazily inside `cmdGen` (monorepo-only) — it
-// pulls in `prettier` (a devDependency), which is absent when `@qlik-coe-emea/qlabs-components-cli` is
+// pulls in `prettier` (a devDependency), which is absent when `@elabs/components-cli` is
 // installed as a consumer dependency. Keeping it out of the top-level import
 // graph is what lets `info`/`search`/`docs` run in a consuming project.
 
@@ -112,7 +112,7 @@ function cmdInfo() {
   const consumer = consumerContext();
   const manifest = loadManifest(root);
   // In the monorepo, the package set IS the manifest. Only fall back to a
-  // consuming project's declared @qlik-coe-emea/qlabs-components-* deps when we're outside the monorepo.
+  // consuming project's declared @elabs/components-* deps when we're outside the monorepo.
   const installed = root && manifest ? Object.keys(manifest.packages) : (consumer?.installed ?? []);
   const ctx = {
     mode: root ? "monorepo" : consumer ? "consumer" : "unknown",
@@ -255,7 +255,7 @@ function cmdSearch() {
   const manifest = loadManifest(root);
   if (!manifest)
     return console.error(
-      "search: no manifest (run inside the monorepo or install @qlik-coe-emea/qlabs-components-cli).",
+      "search: no manifest (run inside the monorepo or install @elabs/components-cli).",
     );
   if (!q) return console.error("usage: brand-ui search <query>");
   const rows = flat(manifest).filter(

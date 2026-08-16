@@ -5,7 +5,7 @@
  * the agent kit, `build-agent-kit.mjs`).
  *
  * The plugin is normally installed LIVE from the repo
- * (`/plugin marketplace add mreimitz/qlabs-components`); this zip is the pinned,
+ * (`/plugin marketplace add <path-to-this-repo>`); this zip is the pinned,
  * offline alternative — the same plugin frozen at a release version, for an
  * air-gapped install or an attached release asset.
  *
@@ -92,9 +92,9 @@ for (const p of [".claude-plugin", "brand-ui.manifest.json"]) {
 // `.mcp.json`: the repo-root copy points the persistent `brand-ui` MCP server at
 // the MONOREPO path (`node packages/cli/bin/brand-ui.mjs mcp`), which does NOT
 // exist in a consumer project. Rewrite that one server to the published-CLI
-// command (`npx -y @qlik-coe-emea/qlabs-components-cli mcp`) so the plugin's MCP works wherever it's
+// command (`npx -y @elabs/components-cli mcp`) so the plugin's MCP works wherever it's
 // installed. NOTE: this `npx` form only resolves where the consumer's npm config
-// maps the `@qlik-coe-emea` scope to GitHub Packages AND carries a `read:packages`
+// maps the `@elabs` scope to GitHub Packages AND carries a `read:packages`
 // token (see docs/CONSUMING.md §1) — it is NOT a no-install fallback for an
 // unauthenticated consumer (#265). The Storybook server (HTTP localhost) is
 // environment-independent and passes through unchanged. (#81)
@@ -108,7 +108,7 @@ if (mcp.mcpServers?.["brand-ui"]) {
   mcp.mcpServers["brand-ui"] = {
     type: "stdio",
     command: "npx",
-    args: ["-y", "@qlik-coe-emea/qlabs-components-cli", "mcp"],
+    args: ["-y", "@elabs/components-cli", "mcp"],
   };
 }
 writeFileSync(join(stage, ".mcp.json"), `${JSON.stringify(mcp, null, 2)}\n`);
@@ -142,7 +142,7 @@ The full brand-ui plugin for **Claude Code / Cowork**, frozen at v${version}.
 Normally you install it live from the repo:
 
 \`\`\`
-/plugin marketplace add mreimitz/qlabs-components
+/plugin marketplace add <path-to-this-repo>
 \`\`\`
 
 This pinned bundle is the **offline / air-gapped** alternative — the same plugin,
@@ -155,7 +155,7 @@ at this version.
   router, which routes build-new / improve / use-it). Maintainer-only skills are excluded.
 - \`agents/\` — the ${agents.length} consumer-clean reviewer agents.
 - \`.mcp.json\` — two MCP servers: the persistent \`brand-ui\` (API ground truth via
-  \`npx @qlik-coe-emea/qlabs-components-cli mcp\` — requires the \`@qlik-coe-emea\` scope authenticated
+  \`npx @elabs/components-cli mcp\` — requires the \`@elabs\` scope authenticated
   to GitHub Packages, see \`docs/CONSUMING.md\` §1) and \`storybook\` (real-component
   previews when Storybook runs, no auth needed).
 - \`brand-ui.manifest.json\` — the inventory the skills read.

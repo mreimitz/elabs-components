@@ -1,7 +1,6 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "brand-ui",
-  "homepage": "https://github.com/Qlik-CoE-EMEA/qlabs-components",
   "items": [
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -28,10 +27,7 @@
       "type": "registry:block",
       "title": "App shell",
       "description": "Sidebar + top nav + page layout scaffold for an internal app.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-icons"
-      ],
+      "dependencies": ["@elabs/components-ui", "@elabs/components-icons"],
       "files": [
         {
           "path": "registry/blocks/app-shell/app-shell-page.tsx",
@@ -46,7 +42,7 @@
       "type": "registry:block",
       "title": "AI chat shell",
       "description": "Chat surface with transcript, composer, tool calls and a context rail.",
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ai", "@qlik-coe-emea/qlabs-components-ui"],
+      "dependencies": ["@elabs/components-ai", "@elabs/components-ui"],
       "files": [
         {
           "path": "registry/blocks/ai-chat-shell/ai-chat.tsx",
@@ -61,11 +57,7 @@
       "type": "registry:block",
       "title": "Data table",
       "description": "Filterable, sortable, paginated TanStack data table with toolbar.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-data",
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@tanstack/react-table"
-      ],
+      "dependencies": ["@elabs/components-data", "@elabs/components-ui", "@tanstack/react-table"],
       "files": [
         {
           "path": "registry/blocks/data-table/data-table-block.tsx",
@@ -79,11 +71,8 @@
       "name": "chart-frame-data",
       "type": "registry:block",
       "title": "ChartFrame + data table",
-      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @qlik-coe-emea/qlabs-components-data: full TanStack DataTable on flip and downloadCsv on export.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-data"
-      ],
+      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs/components-data: full TanStack DataTable on flip and downloadCsv on export.",
+      "dependencies": ["@elabs/components-charts", "@elabs/components-data"],
       "files": [
         {
           "path": "registry/blocks/chart-frame-data/chart-frame-data-block.tsx",
@@ -97,11 +86,8 @@
       "name": "ai-chart",
       "type": "registry:block",
       "title": "AI chart in conversation",
-      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@qlik-coe-emea/qlabs-components-charts) composed with Tool/ToolOutput from @qlik-coe-emea/qlabs-components-ai. The canonical copy-owned home for @qlik-coe-emea/qlabs-components-ai + @qlik-coe-emea/qlabs-components-charts cross-sibling composition.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-ai",
-        "@qlik-coe-emea/qlabs-components-charts"
-      ],
+      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs/components-charts) composed with Tool/ToolOutput from @elabs/components-ai. The canonical copy-owned home for @elabs/components-ai + @elabs/components-charts cross-sibling composition.",
+      "dependencies": ["@elabs/components-ai", "@elabs/components-charts"],
       "files": [
         {
           "path": "registry/blocks/ai-chart/ai-chart-block.tsx",
@@ -116,11 +102,7 @@
       "type": "registry:block",
       "title": "Flow canvas",
       "description": "Branded React Flow canvas with custom nodes, edges and controls.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-flow",
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@xyflow/react"
-      ],
+      "dependencies": ["@elabs/components-flow", "@elabs/components-ui", "@xyflow/react"],
       "files": [
         {
           "path": "registry/blocks/flow-canvas/flow-canvas.tsx",
@@ -136,8 +118,8 @@
       "title": "Flow builder",
       "description": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste.",
       "dependencies": [
-        "@qlik-coe-emea/qlabs-components-flow",
-        "@qlik-coe-emea/qlabs-components-ui",
+        "@elabs/components-flow",
+        "@elabs/components-ui",
         "@xyflow/react",
         "lucide-react"
       ],
@@ -165,10 +147,7 @@
       "type": "registry:block",
       "title": "Marketing hero",
       "description": "Landing hero section with eyebrow, headline, CTAs and logo strip.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-marketing",
-        "@qlik-coe-emea/qlabs-components-ui"
-      ],
+      "dependencies": ["@elabs/components-marketing", "@elabs/components-ui"],
       "files": [
         {
           "path": "registry/blocks/marketing-hero/marketing-hero.tsx",
@@ -182,11 +161,11 @@
       "name": "code-workspace",
       "type": "registry:block",
       "title": "Code workspace",
-      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @qlik-coe-emea/qlabs-components-editor/monaco-environment once at the app entry).",
+      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs/components-editor/monaco-environment once at the app entry).",
       "dependencies": [
-        "@qlik-coe-emea/qlabs-components-editor",
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@qlik-coe-emea/qlabs-components-tokens",
+        "@elabs/components-editor",
+        "@elabs/components-ui",
+        "@elabs/components-tokens",
         "monaco-editor"
       ],
       "files": [
@@ -229,10 +208,10 @@
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
-      "name": "qlik-bright-theme",
+      "name": "light-theme",
       "type": "registry:theme",
-      "title": "Qlik Bright theme",
-      "description": "Qlik brand theme — Qlik Green primary, deep-blue text, bright surfaces (light) with a deep-blue qlik-dark companion. Derived from the Qlik brand palette.",
+      "title": "Light theme",
+      "description": "Qlik brand theme — Qlik Green primary, deep-blue text, bright surfaces (light) with a deep-blue dark companion. Derived from the Qlik brand palette.",
       "cssVars": {
         "light": {
           "background": "oklch(1 0 0)",
@@ -349,7 +328,7 @@
       "title": "App shell — dashboard inset",
       "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so.",
       "registryDependencies": ["avatar", "button", "collapsible", "dropdown-menu", "sidebar"],
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "dependencies": ["@elabs/components-ui", "lucide-react"],
       "files": [
         {
           "path": "packages/ui/src/blocks/sidebar-02/app-sidebar.tsx",
@@ -386,7 +365,7 @@
       "title": "App shell — mail (double-sided)",
       "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so.",
       "registryDependencies": ["avatar", "dropdown-menu", "sidebar"],
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "dependencies": ["@elabs/components-ui", "lucide-react"],
       "files": [
         {
           "path": "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx",
@@ -408,7 +387,7 @@
       "title": "App shell — double-sided nav",
       "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
       "registryDependencies": ["avatar", "dropdown-menu", "sidebar"],
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "dependencies": ["@elabs/components-ui", "lucide-react"],
       "files": [
         {
           "path": "packages/ui/src/blocks/sidebar-05/app-sidebar.tsx",
@@ -425,8 +404,8 @@
       "title": "Stat Card — Area",
       "description": "KPI stat card with a live area chart sparkline, hover-driven value/label updates, and a tokenized trend badge.",
       "dependencies": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-ui",
+        "@elabs/components-charts",
+        "@elabs/components-ui",
         "@visx/curve",
         "lucide-react"
       ],
@@ -465,8 +444,8 @@
       "title": "Stat Card — Line",
       "description": "KPI stat card with an inline line chart, hover-driven value/label updates, and a tokenized trend badge.",
       "dependencies": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-ui",
+        "@elabs/components-charts",
+        "@elabs/components-ui",
         "@visx/curve",
         "lucide-react"
       ],
@@ -505,8 +484,8 @@
       "title": "Stat Card — Choropleth Map",
       "description": "KPI stat card with a choropleth world-map chart, hover-driven country value/label updates, and a tokenized trend badge.",
       "dependencies": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-ui",
+        "@elabs/components-charts",
+        "@elabs/components-ui",
         "topojson-client",
         "lucide-react"
       ],
@@ -549,10 +528,7 @@
       "type": "registry:block",
       "title": "Stat Cards — elevated KPI tiles",
       "description": "Elevated KPI tiles beyond a flat number: MetricCard + inline Sparkline (bar or line, coloured by a --chart-* token), a goal/progress tile, and a this-vs-last comparison tile.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-ui"
-      ],
+      "dependencies": ["@elabs/components-charts", "@elabs/components-ui"],
       "files": [
         {
           "path": "registry/blocks/stat-cards-01/components/stat-cards.tsx",
@@ -587,11 +563,7 @@
       "type": "registry:block",
       "title": "Chart Card — KPI header",
       "description": "An elevated chart-in-a-card: a header with a headline KPI + delta + a segmented period control (ToggleGroup), a token-coloured AreaChart, and a footer breakdown legend. The period control re-renders the chart.",
-      "dependencies": [
-        "@qlik-coe-emea/qlabs-components-charts",
-        "@qlik-coe-emea/qlabs-components-ui",
-        "@visx/curve"
-      ],
+      "dependencies": ["@elabs/components-charts", "@elabs/components-ui", "@visx/curve"],
       "files": [
         {
           "path": "registry/blocks/chart-card-kpi-01/components/revenue-chart-card.tsx",
@@ -611,7 +583,7 @@
       "type": "registry:block",
       "title": "Stat List — ranked list, leaderboard, activity feed",
       "description": "Compact summary widgets: a ranked list with share bars + delta (Sales by country), a leaderboard (Top performers), and a transaction/activity feed with signed amounts.",
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "dependencies": ["@elabs/components-ui", "lucide-react"],
       "files": [
         {
           "path": "registry/blocks/stat-list-01/components/stat-list.tsx",
@@ -656,7 +628,7 @@
       "type": "registry:block",
       "title": "Integration Grid",
       "description": "A responsive grid of integration cards (icon + name + description + connect/manage action + connection status) under a page header with an Add action — the canonical ‘connect your tools’ surface. Logos are consumer-supplied (Lucide placeholders here).",
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ui", "lucide-react"],
+      "dependencies": ["@elabs/components-ui", "lucide-react"],
       "files": [
         {
           "path": "registry/blocks/integration-grid-01/components/integration-grid.tsx",
@@ -681,7 +653,7 @@
       "type": "registry:block",
       "title": "Form Wizard — checkout flow",
       "description": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step.",
-      "dependencies": ["@qlik-coe-emea/qlabs-components-ui"],
+      "dependencies": ["@elabs/components-ui"],
       "files": [
         {
           "path": "registry/blocks/form-wizard-01/components/checkout-wizard.tsx",

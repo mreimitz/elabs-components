@@ -8,36 +8,31 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs/components-ui";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { Spinner } from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
+import { Spinner } from "@elabs/components-ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import { CornerDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from "lucide-react";
 import { nanoid } from "nanoid";
@@ -515,7 +510,7 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit" 
    * `<div className="rounded-xl bg-surface-muted p-1.5"><PromptInput tone="card">…</PromptInput></div>`.
    * The well fill is NOT universally "white": `--card` reads lighter
    * (raised) than `--surface-muted` on light themes, but darker (recessed) on
-   * qlik-dark and blueprint — the same theme-dependent trade-off documented
+   * dark and blueprint — the same theme-dependent trade-off documented
    * for `bg-surface-muted`-as-a-well in `styling-and-tokens.md`. The well
    * stays a legible, distinct tone against the outer frame in every theme;
    * only the "raised" framing is light-themes-specific.
@@ -1642,7 +1637,7 @@ export type PromptInputCommandItemProps = ComponentProps<typeof CommandItem>;
  * A selectable row inside `PromptInputCommand` (e.g. an `@`-mention popup).
  *
  * `id`/`role`/`aria-selected` are assigned internally by the `cmdk` dependency
- * itself — one layer below this wrapper and below `@qlik-coe-emea/qlabs-components-ui`'s
+ * itself — one layer below this wrapper and below `@elabs/components-ui`'s
  * own `CommandItem` — and applied AFTER any props you pass, so a
  * consumer-supplied `id`/`role`/`aria-selected` is silently overridden
  * (`CommandItem` warns about this in development; #365).
@@ -1650,7 +1645,7 @@ export type PromptInputCommandItemProps = ComponentProps<typeof CommandItem>;
  * To wire `aria-activedescendant` from an input rendered OUTSIDE this
  * `PromptInputCommand` tree (the composer textarea driving the popup), use
  * `PromptInputCommand`'s `onActiveItemIdChange` callback (inherited from
- * `@qlik-coe-emea/qlabs-components-ui`'s `Command`, since `PromptInputCommandProps =
+ * `@elabs/components-ui`'s `Command`, since `PromptInputCommandProps =
  * ComponentProps<typeof Command>`) instead of reading the id back
  * positionally from the DOM:
  *

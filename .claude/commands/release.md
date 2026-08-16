@@ -83,7 +83,7 @@ SHA. Ask the release's own gate whether the commit is releasable:
 
 ```bash
 GH_TOKEN=$(gh auth token) pnpm release-verdict:check -- \
-  --sha "$(git rev-parse HEAD)" --repo Qlik-CoE-EMEA/qlabs-components
+  --sha "$(git rev-parse HEAD)" --repo <owner>/<repo>
 ```
 
 Green → the tag will publish. Anything else names the blocking job that is

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { Spinner } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button } from "@elabs/components-ui";
+import { Spinner } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { MicIcon, SquareIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";

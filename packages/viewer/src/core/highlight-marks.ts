@@ -9,7 +9,7 @@
  * ranges through its own `textIndex` instead and does not use this.
  */
 
-import { normalizeRanges, type MatchRange } from "@qlik-coe-emea/qlabs-components-ui";
+import { normalizeRanges, type MatchRange } from "@elabs/components-ui";
 
 import type { ResolvedHighlight } from "./highlight";
 

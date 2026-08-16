@@ -105,17 +105,17 @@ surface**.
 
 ## 8. brand-ui mapping
 
-| Need                                   | brand-ui                                                                                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Object list (the master)               | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@qlik-coe-emea/qlabs-components-data`); the object name is the drill link (R078) |
-| Object detail hub                      | routed page: header (name/status + `Button` actions) + `Descriptions` (attributes) + `Tabs` (sub-sections) + `DataTable` related lists      |
-| Drill path / drill-up                  | `Breadcrumb` (`@qlik-coe-emea/qlabs-components-ui`) reflecting the relationship chain                                                       |
-| Peer navigation                        | prev/next `Button`s in the detail header                                                                                                    |
-| Quick detail / sub-task (keep context) | right `Sheet` / `Drawer` (`@qlik-coe-emea/qlabs-components-ui`, `side="right"`)                                                             |
-| Focused / destructive task             | `Dialog` / `AlertDialog` (`@qlik-coe-emea/qlabs-components-ui`)                                                                             |
-| Repeated edits                         | inline cell edit / expandable row (`DataTable`)                                                                                             |
-| Procedure                              | `Wizard` / `Steps` (`@qlik-coe-emea/qlabs-components-ui`)                                                                                   |
-| Dashboard routing                      | `MetricGrid` / `ChartCard` (`@qlik-coe-emea/qlabs-components-charts`) → drill-through to the list/hub                                       |
+| Need                                   | brand-ui                                                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Object list (the master)               | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@elabs/components-data`); the object name is the drill link (R078)          |
+| Object detail hub                      | routed page: header (name/status + `Button` actions) + `Descriptions` (attributes) + `Tabs` (sub-sections) + `DataTable` related lists |
+| Drill path / drill-up                  | `Breadcrumb` (`@elabs/components-ui`) reflecting the relationship chain                                                                |
+| Peer navigation                        | prev/next `Button`s in the detail header                                                                                               |
+| Quick detail / sub-task (keep context) | right `Sheet` / `Drawer` (`@elabs/components-ui`, `side="right"`)                                                                      |
+| Focused / destructive task             | `Dialog` / `AlertDialog` (`@elabs/components-ui`)                                                                                      |
+| Repeated edits                         | inline cell edit / expandable row (`DataTable`)                                                                                        |
+| Procedure                              | `Wizard` / `Steps` (`@elabs/components-ui`)                                                                                            |
+| Dashboard routing                      | `MetricGrid` / `ChartCard` (`@elabs/components-charts`) → drill-through to the list/hub                                                |
 
 Confirm props with `brand-ui docs`. The shell these live in: `shell-and-navigation.md`.
 

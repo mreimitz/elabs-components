@@ -9,7 +9,7 @@
  * survives even when the location does not, so the chrome still has something
  * to name.
  *
- * The address vocabulary itself lives in `@qlik-coe-emea/qlabs-components-ui`
+ * The address vocabulary itself lives in `@elabs/components-ui`
  * (`DocumentAddress`) because the producer of a citation and this consumer are
  * sibling packages that may not import each other. Everything here is
  * adapter-protocol detail and stays in this package.
@@ -20,7 +20,7 @@ import type {
   DocumentAddressKind,
   DocumentRect,
   MatchRange,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 
 /**
  * Where a highlight came from. Both paint identically — only which one is

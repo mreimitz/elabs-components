@@ -41,7 +41,7 @@ when the choice was not made on a real render.
   with the story ID + `globals={theme:'<slug>'}` and **surface the URL**.
 - If they don't exist and you're inside the brand-ui monorepo, **start the dev
   server** (`pnpm storybook` in the background), drive it, then stop it when done.
-- Theme slugs are the CSS slugs, never display names: `qlik-bright`, `qlik-dark`,
+- Theme slugs are the CSS slugs, never display names: `light`, `dark`,
   `blueprint`. Story-ID derivation + tool details: the brand-ui Storybook-MCP rule.
 - **Fallback (server unavailable):** drop to rung 2 (artifact) or rung 3
   (option preview) — and say plainly that the choice was made without a live
@@ -54,7 +54,7 @@ shell plus its regions — because no single story covers the composition. Rung 
 does, inside the brand-ui monorepo:
 
 ```bash
-pnpm surface:preview -- --archetype dashboard --theme qlik-dark --out ./dashboard.qlik-dark.html
+pnpm surface:preview -- --archetype dashboard --theme dark --out ./dashboard.dark.html
 pnpm surface:preview -- --list   # the archetypes and theme slugs available
 ```
 

@@ -20,8 +20,8 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { AppIcon } from "@qlik-coe-emea/qlabs-components-icons";
+} from "@elabs/components-ui";
+import { AppIcon } from "@elabs/components-icons";
 import { ColumnPicker, DataTable, FilterBar, SearchInput, type ColumnDef } from "./index";
 
 type Status = "active" | "paused" | "error";

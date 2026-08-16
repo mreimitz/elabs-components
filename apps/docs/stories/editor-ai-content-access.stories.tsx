@@ -1,5 +1,5 @@
 // Editor / AI Content Access
-// Cross-package composition story: @qlik-coe-emea/qlabs-components-editor + @qlik-coe-emea/qlabs-components-ui
+// Cross-package composition story: @elabs/components-editor + @elabs/components-ui
 // All "AI actions" are LOCAL stub transforms — no model call (D5).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -9,13 +9,10 @@ import {
   CodeWorkspace,
   type CodeWorkspaceHandle,
   type EditorFile,
-} from "@qlik-coe-emea/qlabs-components-editor";
-import {
-  MarkdownWorkspace,
-  type MarkdownWorkspaceHandle,
-} from "@qlik-coe-emea/qlabs-components-editor/markdown";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-editor";
+import { MarkdownWorkspace, type MarkdownWorkspaceHandle } from "@elabs/components-editor/markdown";
+import { Button } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 // The live handles, captured per render so each story's `play` can drive the
 // editor (select text → the AI panel reacts). Refreshed every render so they
@@ -258,7 +255,7 @@ const meta = {
     docs: {
       description: {
         component: `
-Engine-agnostic \`EditorContentAccess\` interface for AI-driven editing in \`@qlik-coe-emea/qlabs-components-editor\`.
+Engine-agnostic \`EditorContentAccess\` interface for AI-driven editing in \`@elabs/components-editor\`.
 
 ### API
 
@@ -275,8 +272,8 @@ interface EditorContentAccess {
 
 ### Adapters
 
-- **\`monacoContentAccess(editor)\`** — wrap a \`MonacoCodeEditor\` ref (also returned by \`CodeWorkspaceHandle.getActiveEditor()\`). Exported from \`@qlik-coe-emea/qlabs-components-editor\`.
-- **\`proseMirrorContentAccess(deps)\`** — wrap a Milkdown view (markdown-fidelity by default: selection serialized to markdown; incoming text parsed as markdown fragment). Exported from \`@qlik-coe-emea/qlabs-components-editor/markdown\`.
+- **\`monacoContentAccess(editor)\`** — wrap a \`MonacoCodeEditor\` ref (also returned by \`CodeWorkspaceHandle.getActiveEditor()\`). Exported from \`@elabs/components-editor\`.
+- **\`proseMirrorContentAccess(deps)\`** — wrap a Milkdown view (markdown-fidelity by default: selection serialized to markdown; incoming text parsed as markdown fragment). Exported from \`@elabs/components-editor/markdown\`.
 
 ### Markdown fidelity note
 

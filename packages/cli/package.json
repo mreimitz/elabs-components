@@ -1,12 +1,7 @@
 {
-  "name": "@qlik-coe-emea/qlabs-components-cli",
+  "name": "@elabs/components-cli",
   "version": "3.1.0",
   "description": "brand-ui CLI — the deterministic backend for the brand-ui AI skills (component manifest, project context, search, docs, design audit).",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
-    "directory": "packages/cli"
-  },
   "license": "UNLICENSED",
   "type": "module",
   "bin": {
@@ -30,8 +25,5 @@
   },
   "engines": {
     "node": ">=20"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   }
 }

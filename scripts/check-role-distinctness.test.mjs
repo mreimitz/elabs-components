@@ -9,7 +9,7 @@
  *
  * ⚠️ THE FIXTURES CARRY CSS COMMENTS ON PURPOSE. The first version of this file
  * used only comment-free inline blocks, and that is exactly why the gate shipped
- * blind to `qlik-bright --ring`: a comment in `themes.css` contains the text
+ * blind to `light --ring`: a comment in `themes.css` contains the text
  * `--info: it`, so the declaration scan started a match inside the comment and
  * swallowed the real `--ring` declaration that followed. A synthetic fixture that
  * omits the messiest thing about the real input cannot catch that class of bug —
@@ -29,6 +29,7 @@ import {
   EXEMPTIONS,
   ROLE_SEPARATION_DELTA_E,
   THEME_NAMES,
+  ROOT_MODE,
 } from "./check-role-distinctness.mjs";
 
 /** Distinct, comfortably-separated defaults for every role the gate looks at. */
@@ -60,7 +61,7 @@ const BASE = {
  * representative of `themes.css`, which documents its own tokens inline.
  */
 function block(theme, overrides = {}) {
-  const sel = theme === "light" ? ":root" : `[data-theme="${theme}"]`;
+  const sel = theme === ROOT_MODE ? ":root" : `[data-theme="${theme}"]`;
   const decls = Object.entries({ ...BASE, ...overrides })
     .map(([k, v]) => `  /* ${k} — distinct from --primary: it must not collide. */\n  ${k}: ${v};`)
     .join("\n");
@@ -86,10 +87,10 @@ test("PASSES: every MUST_DIFFER pair comfortably separated", () => {
 // ── B: a planted collision fails, and is attributed to the right theme/pair ───
 
 test("FAILS: two MUST_DIFFER roles on one literal, no exemption (the #385 bug)", () => {
-  const v = find(css({ light: { "--ring": BASE["--primary"] } }));
+  const v = find(css({ [ROOT_MODE]: { "--ring": BASE["--primary"] } }));
   const ringPrimary = v.filter((x) => x.a === "--ring" && x.b === "--primary");
   assert.equal(ringPrimary.length, 1, "expected exactly one --ring/--primary collision");
-  assert.equal(ringPrimary[0].theme, "light");
+  assert.equal(ringPrimary[0].theme, ROOT_MODE);
   assert.equal(ringPrimary[0].kind, "collision");
   assert.equal(ringPrimary[0].deltaE, 0);
 });
@@ -101,14 +102,14 @@ test("FAILS: the brand-derived focus ring drifting onto the success mark (ADR 00
   // the row has to catch a perceptual collapse, not only an exact alias.
   const v = find(
     css({
-      light: {
+      [ROOT_MODE]: {
         "--ring": "oklch(0.5 0.14 150)",
         "--success": "oklch(0.51 0.14 151)",
       },
     }),
   ).filter((x) => x.a === "--ring" && x.b === "--success");
   assert.equal(v.length, 1, "expected the ring/success pair to fail");
-  assert.equal(v[0].theme, "light");
+  assert.equal(v[0].theme, ROOT_MODE);
   assert.ok(v[0].deltaE < ROLE_SEPARATION_DELTA_E, `ΔE ${v[0].deltaE} must be under the floor`);
 });
 
@@ -117,7 +118,7 @@ test("FAILS: the current search match drifting onto the destructive red (the ADR
   // `--destructive: oklch(0.58 0.22 27)` — byte-different, ΔE 0.011.
   const v = find(
     css({
-      light: {
+      [ROOT_MODE]: {
         "--highlight-active": "oklch(0.58 0.21 28)",
         "--destructive": "oklch(0.58 0.22 27)",
       },
@@ -132,7 +133,7 @@ test("FAILS: the current search match drifting onto the destructive red (the ADR
 test("FAILS: a 0.001 nudge in L (byte-different, perceptually identical)", () => {
   const nudged = "oklch(0.551 0.18 264)"; // vs --primary oklch(0.55 0.18 264)
   assert.notEqual(nudged, BASE["--primary"], "fixture must be byte-DIFFERENT");
-  const v = find(css({ light: { "--ring": nudged } })).filter((x) => x.a === "--ring");
+  const v = find(css({ [ROOT_MODE]: { "--ring": nudged } })).filter((x) => x.a === "--ring");
   assert.ok(
     v.some((x) => x.b === "--primary"),
     "a 0.001 nudge must NOT satisfy the gate — that is the whole point of the ΔE floor",
@@ -144,13 +145,13 @@ test("FAILS: a 0.001 nudge in L (byte-different, perceptually identical)", () =>
 // ── D: a declared var() alias is honoured — but only where it is legitimate ───
 
 test("PASSES: `--sidebar-primary: var(--primary)` (an intentional mirror, not MUST_DIFFER)", () => {
-  const v = find(css({ light: { "--sidebar-primary": "var(--primary)" } }));
+  const v = find(css({ [ROOT_MODE]: { "--sidebar-primary": "var(--primary)" } }));
   assert.deepEqual(v, [], "an alias between roles the gate does not police is fine");
 });
 
 test("FAILS: `--ring: var(--primary)` — var() does not launder a MUST_DIFFER pair", () => {
-  const v = find(css({ light: { "--ring": "var(--primary)" } }));
-  const hit = v.find((x) => x.a === "--ring" && x.b === "--primary" && x.theme === "light");
+  const v = find(css({ [ROOT_MODE]: { "--ring": "var(--primary)" } }));
+  const hit = v.find((x) => x.a === "--ring" && x.b === "--primary" && x.theme === ROOT_MODE);
   assert.ok(hit, "an alias must be resolved to its literal before comparison");
   assert.equal(hit.kind, "collision");
   assert.equal(hit.valueA, BASE["--primary"], "the alias must resolve to the target's literal");
@@ -181,11 +182,15 @@ test("a var() alias TARGET may live in :root — the cascade fallback still reso
   const text =
     `:root {\n  --brand-accent: oklch(0.55 0.18 264);\n` +
     `  --primary: oklch(0.55 0.18 264);\n  --ring: oklch(0.45 0.21 264);\n}\n\n` +
-    `[data-theme="qlik-bright"] {\n  --primary: oklch(0.55 0.18 264);\n` +
+    `[data-theme="light"] {\n  --primary: oklch(0.55 0.18 264);\n` +
     `  --ring: var(--brand-accent);\n}`;
   const v = find(text, { mustDiffer: [["--ring", "--primary"]], exemptions: new Map() });
   assert.equal(v.length, 1, "the cascade fallback to :root must be followed for an alias target");
-  assert.equal(v[0].theme, "qlik-bright", ":root's own ring/primary are distinct, so only qb reds");
+  assert.equal(
+    v[0].theme,
+    "light",
+    ":root's own ring/primary are distinct, so only the light theme reds",
+  );
   assert.equal(v[0].kind, "collision");
   assert.equal(v[0].valueA, "oklch(0.55 0.18 264)", "the alias must resolve through :root");
 });
@@ -194,12 +199,12 @@ test("a var() alias TARGET may live in :root — the cascade fallback still reso
 
 test("an exempted pair passes in ITS theme while the same pair still fails elsewhere", () => {
   const collide = { "--ring": BASE["--primary"] };
-  const text = css({ blueprint: collide, "qlik-bright": collide });
+  const text = css({ blueprint: collide, [ROOT_MODE]: collide });
   const exemptions = new Map([["blueprint/--ring|--primary", "by design (test fixture)"]]);
 
   const v = find(text, { exemptions });
   const themes = v.filter((x) => x.a === "--ring" && x.b === "--primary").map((x) => x.theme);
-  assert.deepEqual(themes, ["qlik-bright"], "the exemption must NOT travel to another theme");
+  assert.deepEqual(themes, [ROOT_MODE], "the exemption must NOT travel to another theme");
 });
 
 test("every shipped EXEMPTIONS key is well-formed and names a real MUST_DIFFER pair", () => {
@@ -224,7 +229,7 @@ test("FAILS: a MUST_DIFFER token that cannot resolve to an oklch literal is repo
   const v = find(text, { mustDiffer: [["--ring", "--primary"]] });
   assert.equal(v.length, 1);
   assert.equal(v[0].kind, "unresolved", "a hex/calc value must be surfaced, not skipped");
-  assert.equal(v[0].theme, "light");
+  assert.equal(v[0].theme, ROOT_MODE);
 });
 
 // ── G: the real themes.css is measured — the gate is actually wired to it ─────
@@ -278,15 +283,15 @@ test("a comment mentioning a token does not corrupt that token's parsed value", 
 });
 
 test("FAILS loudly (not silently) when a MUST_DIFFER role is absent from a theme block", () => {
-  // qlik-bright omits --ring entirely; :root has one. The gate must NOT quietly
-  // compare :root's ring to qlik-bright's primary — that is how the real defect
+  // light omits --ring entirely; :root has one. The gate must NOT quietly
+  // compare :root's ring to light's primary — that is how the real defect
   // stayed invisible. It must report `not-declared`.
   const text =
     `:root {\n  --ring: oklch(0.45 0.21 264);\n  --primary: oklch(0.55 0.18 264);\n}\n\n` +
-    `[data-theme="qlik-bright"] {\n  --primary: oklch(0.553 0.143 153);\n}`;
+    `[data-theme="light"] {\n  --primary: oklch(0.553 0.143 153);\n}`;
   const v = find(text, { mustDiffer: [["--ring", "--primary"]] });
-  const qb = v.filter((x) => x.theme === "qlik-bright");
-  assert.equal(qb.length, 1, "expected exactly one qlik-bright finding");
+  const qb = v.filter((x) => x.theme === "light");
+  assert.equal(qb.length, 1, "expected exactly one light finding");
   assert.equal(qb[0].kind, "not-declared");
   assert.equal(qb[0].a, "--ring");
 });

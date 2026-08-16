@@ -170,7 +170,7 @@ function entryPoints(root, files, pkg, allFiles = []) {
    * Reading only the root `package.json` is wrong in any workspace: in a pnpm/yarn
    * monorepo every real entry point lives in `packages/<x>/package.json`, so the
    * root read finds nothing and every package barrel looks unreachable. Measured
-   * 2026-08-02 in qlabs-components: 385 "deletion candidates" out of 1,585 code
+   * 2026-08-02 in elabs-components: 385 "deletion candidates" out of 1,585 code
    * files, with the whole public API surface among them.
    *
    * @param {object|null} manifest @param {string} dir repo-relative dir ("" = root)

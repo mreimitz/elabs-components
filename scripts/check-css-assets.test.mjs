@@ -174,7 +174,7 @@ test("PASSES: a stylesheet reachable only via publishConfig.exports", () => {
   assert.equal(v.length, 0);
 });
 
-test("PASSES: transitively — @qlik-coe-emea/qlabs-components-tokens ships rtl/density only via themes.css @import", () => {
+test("PASSES: transitively — @elabs/components-tokens ships rtl/density only via themes.css @import", () => {
   const files = {
     "/pkg/dist/themes.css":
       '@import "./decoration.css";\n@import "./density.css";\n@import "./rtl.css";',

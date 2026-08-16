@@ -11,24 +11,24 @@
  *       driven by the sidebar collapsed state).
  *   1b. ThemeProvider wraps the screen (the story decorator below — in a real
  *       app it sits at the root); the TopNav `end` slot exposes a bare
- *       <ThemeSwitcher /> (System / Qlik Bright / Qlik Dark).
+ *       <ThemeSwitcher /> (System / Light / Dark).
  *   1c. Settings as a modal Dialog (Appearance section hosts the switcher).
  *   1d. Sonner <Toaster /> mounted once; feedback via toast().
  *   1e. Right-side detail panel (Sheet, side="right") that preserves the work
  *       surface instead of a page jump.
  *
- * Compose-only: every element is an existing @qlik-coe-emea/qlabs-components-* primitive, semantic
- * tokens only, and it must read in qlik-bright AND qlik-dark. Verify across all
+ * Compose-only: every element is an existing @elabs/components-* primitive, semantic
+ * tokens only, and it must read in light AND dark. Verify across all
  * three themes with globals=theme:<slug>.
  *
- * Home: this is a cross-package COMPOSITION demo (@qlik-coe-emea/qlabs-components-ui + @qlik-coe-emea/qlabs-components-icons), so
+ * Home: this is a cross-package COMPOSITION demo (@elabs/components-ui + @elabs/components-icons), so
  * it lives in apps/docs/stories — no single library package may own it under the
  * one-way dep rule (apps compose siblings freely). See .storybook/main.ts.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
-import { AppIcon } from "@qlik-coe-emea/qlabs-components-icons";
+import { ThemeProvider } from "@elabs/components-tokens";
+import { AppIcon } from "@elabs/components-icons";
 import {
   Bell,
   Cable,
@@ -95,7 +95,7 @@ import {
   ViewToolbar,
   ViewToolbarFilters,
   toast,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 
 /* -------------------------------------------------------------------------- */
 /*  Fixtures — a small "Integrations admin" object model                       */
@@ -501,8 +501,8 @@ function PlaceholderView({ label }: { label: string }) {
       <h2 className="text-body font-semibold text-foreground">{label}</h2>
       <p className="mt-1 text-body text-muted-foreground">
         This view is a placeholder in the baseline scenario. Swap in your real {label.toLowerCase()}{" "}
-        surface (a DataTable from <code>@qlik-coe-emea/qlabs-components-data</code>, a canvas from{" "}
-        <code>@qlik-coe-emea/qlabs-components-flow</code>, …).
+        surface (a DataTable from <code>@elabs/components-data</code>, a canvas from{" "}
+        <code>@elabs/components-flow</code>, …).
       </p>
     </div>
   );
@@ -618,7 +618,7 @@ function AuditView() {
 const meta = {
   title: "Patterns/Templates/Enterprise Admin Console",
   component: AdminConsole,
-  // <ThemeSwitcher /> reads the @qlik-coe-emea/qlabs-components-tokens React context, so the screen needs
+  // <ThemeSwitcher /> reads the @elabs/components-tokens React context, so the screen needs
   // a real <ThemeProvider> (the global decorator only sets the data-theme
   // attribute). In a consuming app this provider sits at the root.
   decorators: [
@@ -633,7 +633,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app. It wires the entire mandatory enterprise baseline in one screen: a collapsible Qlik app icon (lockup ↔ mark), a primary view sidebar with breadcrumb, a TopNav `end` slot with <ThemeSwitcher /> (System / Qlik Bright / Qlik Dark), a Settings modal whose Appearance section hosts the switcher, a Sonner <Toaster /> mounted once, and a right-side Sheet detail panel that preserves the work surface. Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in all three themes.",
+          "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app. It wires the entire mandatory enterprise baseline in one screen: a collapsible Qlik app icon (lockup ↔ mark), a primary view sidebar with breadcrumb, a TopNav `end` slot with <ThemeSwitcher /> (System / Light / Dark), a Settings modal whose Appearance section hosts the switcher, a Sonner <Toaster /> mounted once, and a right-side Sheet detail panel that preserves the work surface. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all three themes.",
       },
     },
   },

@@ -12,7 +12,7 @@
  *   2. WORKFLOW REFS — every `.github/workflows/<x>.yml` a doc references must exist,
  *      so docs can't claim a CI that isn't there (the original C1/C5 gap).
  *   3. PACKAGE-DESCRIPTION COMPONENT NAMES (#154) — every component named in a
- *      `@qlik-coe-emea/qlabs-components-*` package-description line in CLAUDE.md / AGENTS.md must actually be
+ *      `@elabs/components-*` package-description line in CLAUDE.md / AGENTS.md must actually be
  *      exported (verified against `brand-ui.manifest.json`), so the always-on context
  *      layer can't mis-instruct an agent about a package's API (the MessageBubble/
  *      ToolCallCard/AgentStep drift). Known framework/proper nouns are ignored.
@@ -34,7 +34,7 @@
  *      cannot drift from the packages that actually ship. The pack loop stopped
  *      being a hand-kept literal in #295; these counts were the last one left.
  *   8. CONSUMING-PROJECT CLI PRECONDITION (#265) — a consuming-project
- *      `npx @qlik-coe-emea/qlabs-components-cli <cmd>` / `npx brand-ui <cmd>` example
+ *      `npx @elabs/components-cli <cmd>` / `npx brand-ui <cmd>` example
  *      must be paired with its install precondition (the CLI is a PRIVATE GitHub
  *      Packages dependency, ADR 0016), so a documented first command can't 404.
  *      Scanned over the union of the docs above and the consuming-project agent
@@ -56,15 +56,15 @@ const root = findRepoRoot(process.cwd()) ?? process.cwd();
 // ---------------------------------------------------------------------------
 // 5. VERSION LITERALS (#266)
 // ---------------------------------------------------------------------------
-// A concrete `vN.N.N` / `-N.N.N.tgz` / `-N.N.N.zip` / `@qlik-coe-emea/qlabs-components-x@N.N.N` literal in
+// A concrete `vN.N.N` / `-N.N.N.tgz` / `-N.N.N.zip` / `@elabs/components-x@N.N.N` literal in
 // a copy-paste doc must match the CURRENT release, or use the `X.Y.Z` placeholder
-// form. The package-pin form is scoped to `@qlik-coe-emea/qlabs-components-*` specifically (not every
+// form. The package-pin form is scoped to `@elabs/components-*` specifically (not every
 // `pkg@N.N.N` in the doc) so a third-party dependency's pinned version can't be
 // mistaken for a brand-ui release drift. Pure, exported for the self-test
 // (mirrors check-motion-tokens.mjs / check-raw-palette.mjs).
 const VERSION_TAG_RE = /\bv(\d+\.\d+\.\d+)\b/g;
 const VERSION_ARCHIVE_RE = /-(\d+\.\d+\.\d+)\.(?:tgz|zip)\b/g;
-const VERSION_PKG_PIN_RE = /@qlik-coe-emea\/qlabs-components-[a-z0-9-]+@(\d+\.\d+\.\d+)\b/g;
+const VERSION_PKG_PIN_RE = /@elabs\/components-[a-z0-9-]+@(\d+\.\d+\.\d+)\b/g;
 
 // Docs whose version literals are a worked EXAMPLE of the release procedure
 // itself (not a copy-paste install target) — exempt, mirroring PROSE_IGNORE/
@@ -152,7 +152,7 @@ const files = docFiles(root);
  * #265 — the consuming-project CLI PRECONDITION rule (8, below) runs over the
  * UNION of the docs above and the consuming-project agent surfaces:
  * `skills/**`, `agents/**`, `.claude/agents/**` and `apps/docs/stories/**` —
- * where the bare `npx @qlik-coe-emea/qlabs-components-cli` / `npx brand-ui`
+ * where the bare `npx @elabs/components-cli` / `npx brand-ui`
  * examples actually live. `docs/**` is included (the issue's Test-to-add says
  * "plus existing docs/**" — `docs/SKILLS.md` was an original offender), and so
  * are both agent copies, which AC2 names.
@@ -277,7 +277,7 @@ for (const f of files) {
 // ---------------------------------------------------------------------------
 // 3. PACKAGE-DESCRIPTION COMPONENT NAMES (#154)
 // ---------------------------------------------------------------------------
-// Every PascalCase identifier presented as a component in a `@qlik-coe-emea/qlabs-components-*`
+// Every PascalCase identifier presented as a component in a `@elabs/components-*`
 // package-description line (CLAUDE.md / AGENTS.md) must exist as an export in the
 // manifest. We check against the UNION of all package exports (a name moved
 // between packages is still real), and ignore a curated set of framework /
@@ -305,7 +305,7 @@ const PROSE_IGNORE = new Set([
   "Shiki",
   "Streamdown",
   "Milkdown",
-  // File-parser libraries and format names named in @qlik-coe-emea/qlabs-components-viewer
+  // File-parser libraries and format names named in @elabs/components-viewer
   // prose (ADR 0024) — none of these are components.
   "SheetJS",
   "DOMPurify",
@@ -360,10 +360,10 @@ function manifestExportNames() {
 }
 
 const exportNames = manifestExportNames();
-// A line is a package-description line iff it names a `@qlik-coe-emea/qlabs-components-<pkg>` package AND is
+// A line is a package-description line iff it names a `@elabs/components-<pkg>` package AND is
 // a list item or table row (the package list in CLAUDE.md / AGENTS.md) — not an
 // arbitrary prose mention elsewhere in the file.
-const pkgLineRe = /`@qlik-coe-emea\/qlabs-components-[a-z]+`/;
+const pkgLineRe = /`@elabs\/components-[a-z]+`/;
 // Candidate component token: PascalCase (≥2 segments OR a known component shape).
 const compTokenRe = /\b([A-Z][a-z0-9]+(?:[A-Z][A-Za-z0-9]*)+)\b/g;
 
@@ -375,7 +375,7 @@ if (exportNames) {
     text.split("\n").forEach((line, i) => {
       if (!pkgLineRe.test(line)) return;
       // Strip code spans (`...`), markdown links, and parenthetical file refs so we
-      // don't read identifiers out of `@qlik-coe-emea/qlabs-components-*`, `lucide-react`, paths, etc.
+      // don't read identifiers out of `@elabs/components-*`, `lucide-react`, paths, etc.
       const prose = line
         .replace(/`[^`]*`/g, " ")
         .replace(/\([^)]*\.[a-z]+[^)]*\)/g, " ") // (foo.md) style refs
@@ -450,7 +450,7 @@ export const CONTRACT_EXEMPT = new Set([
   // Building the Storybook static site is a step OF the interaction-test job, not
   // a per-change agent gate — the contract already carries root `pnpm build` and
   // `pnpm --filter …-docs test-storybook` (the check that job actually enforces).
-  "--filter @qlik-coe-emea/qlabs-components-docs build",
+  "--filter @elabs/components-docs build",
 ]);
 
 /** Escape a gate identity for a literal regex match, with flexible whitespace. */
@@ -507,9 +507,9 @@ if (existsSync(ciYml) && existsSync(agentsMd)) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. DUAL-CANVAS DECISION (#183) — @qlik-coe-emea/qlabs-components-ai vs @qlik-coe-emea/qlabs-components-flow
+// 6. DUAL-CANVAS DECISION (#183) — @elabs/components-ai vs @elabs/components-flow
 // ---------------------------------------------------------------------------
-// Both `@qlik-coe-emea/qlabs-components-ai` and `@qlik-coe-emea/qlabs-components-flow` wrap `@xyflow/react`
+// Both `@elabs/components-ai` and `@elabs/components-flow` wrap `@xyflow/react`
 // as two intentionally distinct canvas surfaces (ADR 0018). Guard that the decision
 // stays recorded: (a) an ADR whose title names the dual-canvas decision exists, and
 // (b) the docs/DECISIONS.md D3 routing row names BOTH `-flow` and `-ai` for canvas —
@@ -520,8 +520,8 @@ export function findDualCanvasViolations({ adrTitles, decisionsMdText }) {
   const hasDualCanvasAdr = adrTitles.some((t) => /dual|two/i.test(t) && /canvas/i.test(t));
   if (!hasDualCanvasAdr) {
     violations.push(
-      "docs/ADR/: no ADR title matches /dual|two/i AND /canvas/i (the @qlik-coe-emea/qlabs-components-ai vs " +
-        "@qlik-coe-emea/qlabs-components-flow dual-canvas decision must be recorded — see issue #183)",
+      "docs/ADR/: no ADR title matches /dual|two/i AND /canvas/i (the @elabs/components-ai vs " +
+        "@elabs/components-flow dual-canvas decision must be recorded — see issue #183)",
     );
   }
   const d3Line = decisionsMdText.split("\n").find((l) => /^\|\s*\*\*D3\*\*/.test(l));
@@ -529,7 +529,7 @@ export function findDualCanvasViolations({ adrTitles, decisionsMdText }) {
     violations.push("docs/DECISIONS.md: could not find the D3 row to check canvas routing");
   } else {
     // The D3 cell is a `·`-joined list of "topic → package" clauses, and one of
-    // them is always `chat → `@qlik-coe-emea/qlabs-components-ai`` — so naively checking the whole
+    // them is always `chat → `@elabs/components-ai`` — so naively checking the whole
     // line for `-ai` is always true regardless of canvas routing. Drop the chat
     // clause before checking, so the remaining text must independently name both
     // `-flow` (canvas) and `-ai` (the in-chat agent workspace graph, ADR 0018).
@@ -627,9 +627,9 @@ const decisionsMdText = existsSync(decisionsMdPath) ? readFileSync(decisionsMdPa
 const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdText });
 // 8. CONSUMING-PROJECT CLI PRECONDITION (#265)
 // ---------------------------------------------------------------------------
-// `@qlik-coe-emea/qlabs-components-cli` is a PRIVATE GitHub Packages dependency (ADR 0016) — a bare
-// `npx @qlik-coe-emea/qlabs-components-cli <cmd>` in a consuming project 404s/401s until the project's
-// npm config maps the `@qlik-coe-emea` scope to `npm.pkg.github.com` AND carries a
+// `@elabs/components-cli` is a PRIVATE GitHub Packages dependency (ADR 0016) — a bare
+// `npx @elabs/components-cli <cmd>` in a consuming project 404s/401s until the project's
+// npm config maps the `@elabs` scope to `npm.pkg.github.com` AND carries a
 // `read:packages` token (docs/CONSUMING.md §1). BOTH documented invocation forms
 // count: the scoped package name AND the `brand-ui` bin alias (`npx brand-ui …`,
 // pre-authorized in several skills' `allowed-tools`) — they 404 identically, so
@@ -639,13 +639,13 @@ const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdTe
 // not an instruction to a reader, and an `mcp` launch-wiring line (how the MCP
 // server itself is configured, not a "try this" example) is exempt too. Pure,
 // exported for the self-test.
-const CLI_NPX_RE = /npx\s+(-y\s+)?(@qlik-coe-emea\/qlabs-components-cli|brand-ui)\b/;
-const MCP_WIRING_RE = /(@qlik-coe-emea\/qlabs-components-cli|brand-ui)["'\s,\]]*mcp\b/;
+const CLI_NPX_RE = /npx\s+(-y\s+)?(@elabs\/components-cli|brand-ui)\b/;
+const MCP_WIRING_RE = /(@elabs\/components-cli|brand-ui)["'\s,\]]*mcp\b/;
 const PRECONDITION_CUE_RE =
-  /read:packages|\.npmrc|GitHub Packages|pnpm add -D @qlik-coe-emea\/qlabs-components-cli|from the release|docs\/CONSUMING\.md/i;
+  /read:packages|\.npmrc|GitHub Packages|pnpm add -D @elabs\/components-cli|from the release|docs\/CONSUMING\.md/i;
 
 /**
- * Find bare, consuming-project `npx @qlik-coe-emea/qlabs-components-cli <cmd>` lines in `text` that
+ * Find bare, consuming-project `npx @elabs/components-cli <cmd>` lines in `text` that
  * are not paired with an install precondition anywhere in the same file.
  * Returns `{ line, match }[]` (1-based line numbers) — empty if the file is
  * clean (no bare lines, or a precondition cue is present somewhere).
@@ -731,7 +731,7 @@ if (workflowViolations.length) {
 if (phantomViolations.length) {
   failed = true;
   console.error(
-    `\n✖ phantom component in a @qlik-coe-emea/qlabs-components-* package description (${phantomViolations.length}):`,
+    `\n✖ phantom component in a @elabs/components-* package description (${phantomViolations.length}):`,
   );
   for (const v of phantomViolations) console.error("  - " + v);
   console.error(
@@ -798,18 +798,18 @@ if (dualCanvasViolations.length) {
 if (cliPreconditionViolations.length) {
   failed = true;
   console.error(
-    `\n✖ bare consuming-project \`npx @qlik-coe-emea/qlabs-components-cli\` / \`npx brand-ui\` with no install precondition (${cliPreconditionViolations.length}):`,
+    `\n✖ bare consuming-project \`npx @elabs/components-cli\` / \`npx brand-ui\` with no install precondition (${cliPreconditionViolations.length}):`,
   );
   for (const v of cliPreconditionViolations) console.error("  - " + v);
   console.error(
     "  Fix: add an install-precondition cue to the SAME file — mention `.npmrc`,\n" +
-      '  `read:packages`, "GitHub Packages", `pnpm add -D @qlik-coe-emea/qlabs-components-cli`, or\n' +
+      '  `read:packages`, "GitHub Packages", `pnpm add -D @elabs/components-cli`, or\n' +
       "  `docs/CONSUMING.md` — so the example can't be read as a turnkey `npx` (#265).",
   );
 }
 if (failed) process.exit(1);
 console.log(
-  "✔ docs-accuracy: theme count + workflow refs + @qlik-coe-emea/qlabs-components-* component names + PR-template themes + " +
+  "✔ docs-accuracy: theme count + workflow refs + @elabs/components-* component names + PR-template themes + " +
     "CI-gate contract + version literals + release-set counts + dual-canvas decision consistent, " +
     "and consuming-project CLI preconditions present " +
     `(${files.length} docs scanned for rules 1–7; ${cliPreconditionFiles.length} docs/skills/agents/stories files for the CLI-precondition rule).`,

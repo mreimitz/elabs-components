@@ -40,7 +40,7 @@ if (typeof URL.createObjectURL !== "function") {
 // jsdom does not implement `window.matchMedia`. Components/libraries that read
 // media queries on mount — Embla (Carousel, used by Gallery), `useIsMobile`,
 // reduced-motion checks — would otherwise throw. Mirror the canonical "no match"
-// stub from @qlik-coe-emea/qlabs-components-ui's setup (incl. the deprecated addListener/removeListener
+// stub from @elabs/components-ui's setup (incl. the deprecated addListener/removeListener
 // API that Embla still calls).
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   Object.defineProperty(window, "matchMedia", {

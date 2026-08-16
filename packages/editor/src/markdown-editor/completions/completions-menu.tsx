@@ -8,7 +8,7 @@
  * Same visual grammar (bg-popover, accent selection) for consistency with the
  * slash popup and Monaco's own themed suggest widget.
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes } from "react";
 
 import type { EditorCompletionItem } from "../../lib/editor-completions";

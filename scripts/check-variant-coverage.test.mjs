@@ -134,7 +134,7 @@ test("findStoryFilesFor: matches an import + JSX usage, ignores an unrelated pro
 function fixtureManifest(variants) {
   return {
     packages: {
-      "@qlik-coe-emea/qlabs-components-fixture": {
+      "@elabs/components-fixture": {
         path: "pkg-fixture",
         components: [{ name: "Widget", module: "pkg-fixture/src/widget.tsx" }],
         variants: { Widget: variants },
@@ -173,7 +173,7 @@ test("(1) an UNCOVERED variant value is FLAGGED", () => {
     });
     const gaps = findVariantGaps(manifest, root);
     assert.equal(gaps.length, 1);
-    assert.equal(gaps[0].key, "@qlik-coe-emea/qlabs-components-fixture::Widget::variant=success");
+    assert.equal(gaps[0].key, "@elabs/components-fixture::Widget::variant=success");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -202,7 +202,7 @@ test("(2) a value mentioned ONLY in argTypes.options is FLAGGED, not laundered a
     const gaps = findVariantGaps(manifest, root);
     const keys = gaps.map((g) => g.key);
     assert.ok(
-      keys.includes("@qlik-coe-emea/qlabs-components-fixture::Widget::variant=success"),
+      keys.includes("@elabs/components-fixture::Widget::variant=success"),
       `expected success to be flagged, got: ${keys.join(", ")}`,
     );
   } finally {

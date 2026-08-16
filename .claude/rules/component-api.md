@@ -102,7 +102,7 @@ the Vercel `composition-patterns` skill in brand-ui's idiom (Radix, `cn`, our
   the UI"), and sibling controls **outside** the visual frame but **inside** the
   provider can read/drive state (no prop-drilling, no `useEffect`-to-sync, no refs).
   Canonical shape for **stateful compound components**: `ChartFrame` (charts),
-  `PromptInput`/`Conversation` (`@qlik-coe-emea/qlabs-components-ai`), `DataTable` (`@qlik-coe-emea/qlabs-components-data`), the React
+  `PromptInput`/`Conversation` (`@elabs/components-ai`), `DataTable` (`@elabs/components-data`), the React
   Flow canvas, and the future A2UI surfaces.
 - **Children over render-props.** Compose static structure with `children`; reserve
   `renderX` for when the parent must hand data _back_ to the child (e.g. a
@@ -113,8 +113,8 @@ the Vercel `composition-patterns` skill in brand-ui's idiom (Radix, `cn`, our
 
 ## Subpath exports (gated — not a general API-organization tool)
 
-A package's public surface is its barrel (`@qlik-coe-emea/qlabs-components-<pkg>`). A **subpath export**
-(`@qlik-coe-emea/qlabs-components-<pkg>/markdown/frontmatter`) is a deliberate exception, warranted ONLY
+A package's public surface is its barrel (`@elabs/components-<pkg>`). A **subpath export**
+(`@elabs/components-<pkg>/markdown/frontmatter`) is a deliberate exception, warranted ONLY
 when both hold:
 
 1. **Lighter / different dependency tree.** The leaf has a materially lighter or

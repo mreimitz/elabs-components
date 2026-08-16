@@ -3,11 +3,11 @@
  * instead of a hardcoded `github-light`/`github-dark` literal (issue #315).
  *
  * Shiki can't read CSS custom properties at tokenize time, so — the same
- * "wrap an engine, theme it from tokens" pattern as `@qlik-coe-emea/qlabs-components-editor`'s
- * Monaco bridge (`monaco-theme-bridge.ts`), `@qlik-coe-emea/qlabs-components-maps`' `useTokenColor`,
+ * "wrap an engine, theme it from tokens" pattern as `@elabs/components-editor`'s
+ * Monaco bridge (`monaco-theme-bridge.ts`), `@elabs/components-maps`' `useTokenColor`,
  * and this package's own `buildInteractiveTerminalTheme` — this module reads the
  * ACTIVE theme's resolved token colors at call time via `resolveTokenColor`
- * (`@qlik-coe-emea/qlabs-components-tokens`, ADR 0015: oklch → hex, no canvas needed since every
+ * (`@elabs/components-tokens`, ADR 0015: oklch → hex, no canvas needed since every
  * `--code-*` token is authored as `oklch()`) and builds a single Shiki
  * `ThemeRegistrationRaw` that matches whatever brand theme is currently active
  * — including blueprint's own monochrome ink palette, never a recolored GitHub
@@ -17,7 +17,7 @@
  * `buildCodeBlockTheme` takes a single `el` (default `<html>`) and derives BOTH
  * the theme id/type AND the resolved colors from that SAME element — never a
  * separately-requested theme name. A CodeBlock nested inside a region-scoped
- * `<div data-theme="qlik-dark">` (a supported `ThemeProvider`/decorator pattern,
+ * `<div data-theme="dark">` (a supported `ThemeProvider`/decorator pattern,
  * see @.claude/rules/theming.md) resolves ITS region's theme this way: pass a
  * descendant of that region as `el` and the id/type/colors all agree by
  * construction (there is no "themeName" parameter that could disagree with what
@@ -29,17 +29,17 @@
  * attribute — NOT `getActiveThemeName`'s validated `ThemeName`. This matters:
  * `getActiveThemeName` collapses "no `data-theme` attribute yet" (the first
  * render, before `ThemeProvider` mounts and writes the attribute) and an
- * EXPLICIT `data-theme="qlik-bright"` into the same name, because `:root`'s
+ * EXPLICIT `data-theme="light"` into the same name, because `:root`'s
  * fallback `--code-*` values are intentionally their OWN neutral placeholder
- * theme, not a byte-identical copy of `[data-theme="qlik-bright"]`'s (see
+ * theme, not a byte-identical copy of `[data-theme="light"]`'s (see
  * `themes.css`'s "`:root` holds the DEFAULT (light) theme" header — a
  * deliberately distinct palette, not an alias). If the cache key used the
  * validated name, a code block that first tokenizes before `ThemeProvider`
  * mounts would cache `:root`'s colors under the SAME key `ThemeProvider`
- * later writes explicitly — so the (correct) `qlik-bright` colors would never
+ * later writes explicitly — so the (correct) `light` colors would never
  * take effect; the cache hit would return the stale `:root` colors forever
  * (#315 follow-up). Keying on the raw attribute gives "no attribute" and
- * "qlik-bright" distinct cache entries, so the mutation from one to the other
+ * "light" distinct cache entries, so the mutation from one to the other
  * is a genuine cache miss and re-tokenizes.
  */
 
@@ -49,7 +49,7 @@ import {
   resolveTokenColor,
   THEME_META,
   type ThemeName,
-} from "@qlik-coe-emea/qlabs-components-tokens";
+} from "@elabs/components-tokens";
 import type { ThemeRegistrationRaw } from "shiki";
 
 const FALLBACK_BACKGROUND = "#ffffff";
@@ -62,7 +62,7 @@ const ROOT_SCOPE_KEY = "__root__";
  * known `ThemeName` — used ONLY to pick the right `--code-*` fallback values
  * and the `THEME_META[...].dark` light/dark flag. NOT the highlight-cache key
  * (see `getThemeScopeKey` for that) — an unset attribute and an explicit
- * `data-theme="qlik-bright"` both narrow to `"qlik-bright"` here by design
+ * `data-theme="light"` both narrow to `"light"` here by design
  * (DEFAULT_THEME), which is exactly why this must never double as a cache key.
  */
 export function getActiveThemeName(el?: Element | null): ThemeName {
@@ -75,7 +75,7 @@ export function getActiveThemeName(el?: Element | null): ThemeName {
  * Reads the RAW `data-theme` attribute off `el` (default `<html>`) — or the
  * `"__root__"` sentinel when the attribute is absent (or its value isn't a
  * known theme). Unlike `getActiveThemeName`, this does NOT collapse "unset"
- * and "explicit qlik-bright" into one value — it is the highlight-cache
+ * and "explicit light" into one value — it is the highlight-cache
  * scoping key (`codeBlockThemeId`), never a `ThemeName`, so an unrecognized
  * string still gets its own (harmless) cache bucket instead of silently
  * merging into `DEFAULT_THEME`'s.
@@ -117,7 +117,7 @@ export function buildCodeBlockTheme(el?: Element | null): ThemeRegistrationRaw {
 
   return {
     // Keyed on the RAW scope, not the validated name — see the module doc
-    // comment + `getThemeScopeKey` for why "unset" and "qlik-bright" must get
+    // comment + `getThemeScopeKey` for why "unset" and "light" must get
     // different cache buckets.
     name: codeBlockThemeId(getThemeScopeKey(root)),
     type: THEME_META[themeName].dark ? "dark" : "light",

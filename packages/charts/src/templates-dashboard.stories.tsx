@@ -20,8 +20,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
   MetricCard,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { AppIcon } from "@qlik-coe-emea/qlabs-components-icons";
+} from "@elabs/components-ui";
+import { AppIcon } from "@elabs/components-icons";
 import { MetricGrid } from "./metric-grid/metric-grid";
 import { BarChart3, Home, Settings, Users } from "lucide-react";
 

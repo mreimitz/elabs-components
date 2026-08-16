@@ -95,16 +95,16 @@ The right-side **`ContextPanel`** is the library-native form of the archetype-A
 
 Set the **favicon** to the same Qlik mark (head-level asset).
 
-### 3b. Theme switcher — System / Qlik Bright / Qlik Dark — preferred + alternative
+### 3b. Theme switcher — System / Light / Dark — preferred + alternative
 
-**Verified against `@qlik-coe-emea/qlabs-components-*` v1.0.0 source.** Two good options.
+**Verified against `@elabs/components-*` v1.0.0 source.** Two good options.
 
 **Preferred — the library component already does it:**
 
 ```tsx
-import { ThemeSwitcher } from "@qlik-coe-emea/qlabs-components-ui";
+import { ThemeSwitcher } from "@elabs/components-ui";
 // `themes` defaults to the Qlik light/dark pair; `showSystem` defaults to true →
-// renders exactly System / Qlik Bright / Qlik Dark (whole-screen animated, reduce-motion safe).
+// renders exactly System / Light / Dark (whole-screen animated, reduce-motion safe).
 <ThemeSwitcher />;
 ```
 
@@ -112,9 +112,9 @@ import { ThemeSwitcher } from "@qlik-coe-emea/qlabs-components-ui";
 when you want text labels instead of the icon toggle:
 
 ```tsx
-const LIGHT = "qlik-bright",
-  DARK = "qlik-dark";
-type Mode = "qlik-bright" | "qlik-dark" | "system";
+const LIGHT = "light",
+  DARK = "dark";
+type Mode = "light" | "dark" | "system";
 // persist Mode in localStorage; in "system", read matchMedia('(prefers-color-scheme: dark)')
 // and setTheme(systemTheme()) on change.
 <Select value={mode} onValueChange={choose}>
@@ -122,8 +122,8 @@ type Mode = "qlik-bright" | "qlik-dark" | "system";
     <SelectValue />
   </SelectTrigger>
   <SelectContent>
-    <SelectItem value="qlik-bright">{THEME_META[LIGHT].label}</SelectItem>
-    <SelectItem value="qlik-dark">{THEME_META[DARK].label}</SelectItem>
+    <SelectItem value="light">{THEME_META[LIGHT].label}</SelectItem>
+    <SelectItem value="dark">{THEME_META[DARK].label}</SelectItem>
     <SelectItem value="system">System</SelectItem>
   </SelectContent>
 </Select>;
@@ -131,7 +131,7 @@ type Mode = "qlik-bright" | "qlik-dark" | "system";
 
 > Verified props: `themes?` (default Qlik pair) · `showSystem?` (default true) ·
 > `mode?` ("auto"|"toggle"|"dropdown") · `size?` · `effect?`. So `<ThemeSwitcher />`
-> yields System / Qlik Bright / Qlik Dark with no config — the `Select` is only for an
+> yields System / Light / Dark with no config — the `Select` is only for an
 > explicit labeled dropdown.
 
 ### 3c. Settings as a modal — see `../assets/settings-dialog.tsx`
@@ -178,7 +178,7 @@ only when they grow large; the always-available entry is the modal.
 ## 5. Root provider order (generalized — baseline in `../assets/app-providers.tsx`)
 
 ```
-ErrorBoundary → ThemeProvider(defaultTheme="qlik-bright") → QueryClient → TooltipProvider
+ErrorBoundary → ThemeProvider(defaultTheme="light") → QueryClient → TooltipProvider
   → UiStateProvider (panes/palette/focus, tool shells)
     → SidebarProvider → ContextPanelProvider → <Shell/>
   → <Toaster/>   (once)

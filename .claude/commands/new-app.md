@@ -1,7 +1,7 @@
 ---
 description: Define-to-build — scaffold a new brand-ui app from a plain-language description (guided interview → app-spec.md → annotated scaffold + starter CLAUDE.md)
-argument-hint: "[app description, e.g. 'sales pipeline dashboard, qlik-dark' — or empty for the full interview]"
-allowed-tools: Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm:*), Bash(npx shadcn@latest *), Bash(npx @qlik-coe-emea/qlabs-components-cli *), mcp__storybook__*
+argument-hint: "[app description, e.g. 'sales pipeline dashboard, dark' — or empty for the full interview]"
+allowed-tools: Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm:*), Bash(npx shadcn@latest *), Bash(npx @elabs/components-cli *), mcp__storybook__*
 ---
 
 You are scaffolding a **new app** for a user who should not need design

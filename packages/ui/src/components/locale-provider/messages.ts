@@ -21,7 +21,7 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   more: "More",
   selectAll: "Select all",
 
-  // ── @qlik-coe-emea/qlabs-components-ui ───────────────────────────────────────────────────────────────
+  // ── @elabs/components-ui ───────────────────────────────────────────────────────────────
   "ui.metricCard.loading": "Loading metric…",
   // CopyableValue. `hint` is APPENDED to the visible (compact) value, so the
   // accessible name contains what the reader sees — WCAG 2.5.3, Label in Name.
@@ -82,7 +82,7 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   "ui.advancedGroup.title": "Advanced",
   "ui.advancedGroup.changed": "{count} changed",
 
-  // ── @qlik-coe-emea/qlabs-components-data ─────────────────────────────────────────────────────────────
+  // ── @elabs/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
   // overflows its container, so it is never announced for a table that fits.
   "data.table.scrollRegion": "Table contents, scrollable",
@@ -90,7 +90,7 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   // no primitive value to name it after (see `rowActionLabel`).
   "data.table.rowAction": "Activate row",
 
-  // ── @qlik-coe-emea/qlabs-components-charts ───────────────────────────────────────────────────────────
+  // ── @elabs/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton
   // (ChartFrame, ChartCard, AutoChart all show the same "a chart is loading"
   // concept — one key, reused, rather than three near-duplicate strings).
@@ -106,11 +106,11 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   // clipboard — the recovery path for a compact axis label.
   "charts.datapoint.copied": "Exact value copied",
 
-  // ── @qlik-coe-emea/qlabs-components-ai ───────────────────────────────────────────────────────────────
+  // ── @elabs/components-ai ───────────────────────────────────────────────────────────────
   // Namespaced `ai.<area>.<key>` so package microcopy can't collide with the
   // generic keys above, or with a future package's. See ADR 0017.
   //
-  // The three attachment errors are the only @qlik-coe-emea/qlabs-components-ai strings a user reads as a
+  // The three attachment errors are the only @elabs/components-ai strings a user reads as a
   // SYSTEM MESSAGE rather than a control label — they are the reason this bundle
   // grew beyond the generic set.
   "ai.promptInput.errorAccept": "No files match the accepted types.",
@@ -196,7 +196,7 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   "ai.streamdown.copied": "Copied",
   "ai.streamdown.openLink": "Open link",
 
-  // ── @qlik-coe-emea/qlabs-components-viewer (ADR 0024) ─────────────────────────
+  // ── @elabs/components-viewer (ADR 0024) ─────────────────────────
   // FileViewer chrome. Every control here is icon-only, so these ARE the
   // accessible names — a non-English screen-reader user has no workaround.
   "viewer.label": "File viewer",

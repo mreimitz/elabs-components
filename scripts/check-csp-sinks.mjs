@@ -198,7 +198,7 @@ export function scanDependencies(packagesDir) {
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     if (!manifest.publishConfig && manifest.private) continue;
     for (const dep of Object.keys(manifest.dependencies || {})) {
-      if (dep.startsWith("@qlik-coe-emea/")) continue;
+      if (dep.startsWith("@elabs/")) continue;
       const dir = resolvePkgDir(dep, join(packagesDir, pkg));
       if (!dir) continue;
       const dirty = packageCode(dir).some((f) => findSinks(readFileSync(f, "utf8")).length > 0);

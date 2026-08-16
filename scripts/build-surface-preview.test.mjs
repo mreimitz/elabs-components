@@ -81,9 +81,9 @@ test("output is deterministic, and each theme produces a different document", ()
       buildPreview({ archetype: "dashboard", theme, out });
       return readFileSync(out, "utf8");
     };
-    assert.equal(read("qlik-bright", 1), read("qlik-bright", 2), "same inputs → same bytes");
-    assert.notEqual(read("qlik-bright", 1), read("qlik-dark", 1), "the theme changes the document");
-    assert.notEqual(read("qlik-dark", 1), read("blueprint", 1), "…for every theme");
+    assert.equal(read("light", 1), read("light", 2), "same inputs → same bytes");
+    assert.notEqual(read("light", 1), read("dark", 1), "the theme changes the document");
+    assert.notEqual(read("dark", 1), read("blueprint", 1), "…for every theme");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -96,7 +96,7 @@ test("an unknown archetype fails loudly and lists the real ones", () => {
       () =>
         buildPreview({
           archetype: "not-an-archetype",
-          theme: "qlik-bright",
+          theme: "light",
           out: join(dir, "x.html"),
         }),
       /unknown archetype/,
@@ -128,8 +128,8 @@ test("readComposition reads a template as a composition manifest, not as code", 
   const source = `/**
  * Demo template — a made-up composition.
  */
-import { Card, CardHeader, Sidebar, SidebarMenuItem } from "@qlik-coe-emea/qlabs-components-ui";
-import { MetricGrid } from "@qlik-coe-emea/qlabs-components-charts";
+import { Card, CardHeader, Sidebar, SidebarMenuItem } from "@elabs/components-ui";
+import { MetricGrid } from "@elabs/components-charts";
 
 const nav = [
   { id: "a", label: "Overview" },
@@ -159,11 +159,8 @@ export function Demo() {
     ["MetricGrid", "Card"],
     "sidebar chrome and sub-parts are not composed regions",
   );
-  assert.equal(c.regions[0].pkg, "@qlik-coe-emea/qlabs-components-charts");
-  assert.deepEqual(c.packages.sort(), [
-    "@qlik-coe-emea/qlabs-components-charts",
-    "@qlik-coe-emea/qlabs-components-ui",
-  ]);
+  assert.equal(c.regions[0].pkg, "@elabs/components-charts");
+  assert.deepEqual(c.packages.sort(), ["@elabs/components-charts", "@elabs/components-ui"]);
 });
 
 test("roleFor sizes a region by what it is", () => {

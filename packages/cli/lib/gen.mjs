@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-cli — `brand-ui gen` generator (WP-10 #87 + WP-12 #96).
+ * @elabs/components-cli — `brand-ui gen` generator (WP-10 #87 + WP-12 #96).
  *
  * The KEYSTONE of the self-maintaining-repo block: the package tables, the
  * decision summary, and the package-selection table that today are hand-copied
@@ -98,7 +98,7 @@ export function genTargets(root, manifest) {
       file: join(root, "skills/brand-ui/SKILL.md"),
       regions: [
         { name: "catalogue", render: () => renderSkillCatalogue(manifest) },
-        // The agent-output contract (how an agent structures output for @qlik-coe-emea/qlabs-components-ai).
+        // The agent-output contract (how an agent structures output for @elabs/components-ai).
         { name: "agent-output", render: () => renderAgentOutputGuidance(manifest) },
       ],
     },

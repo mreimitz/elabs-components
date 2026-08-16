@@ -1,7 +1,7 @@
 /**
  * Copy-own undo/redo history for a React Flow graph.
  *
- * This is APP-OWNED state, not part of the @qlik-coe-emea/qlabs-components-flow package — it lives in the
+ * This is APP-OWNED state, not part of the @elabs/components-flow package — it lives in the
  * block so a team can tune the history behaviour per app (what counts as a
  * snapshot, how deep the stack is, coalescing rapid edits, etc). Keep it small
  * and legible; it is meant to be edited.
@@ -13,7 +13,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { Edge, Node } from "@qlik-coe-emea/qlabs-components-flow";
+import type { Edge, Node } from "@elabs/components-flow";
 
 interface HistoryEntry<N extends Node, E extends Edge> {
   nodes: N[];

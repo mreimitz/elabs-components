@@ -45,7 +45,7 @@ function SampleDetail() {
 /*
  * Opens from a trigger you own; state stays in your component. The trigger is
  * `outline` rather than the default primary purely so these stories exercise
- * ExpandDialog and not the known qlik-bright primary-fill contrast exemption
+ * ExpandDialog and not the known light primary-fill contrast exemption
  * (#180) — the component itself has no opinion about the trigger.
  */
 function Frame({ children, label = "Expand" }: { children: ReactNode; label?: string }) {

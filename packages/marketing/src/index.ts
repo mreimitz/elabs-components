@@ -1,6 +1,6 @@
 /**
- * @qlik-coe-emea/qlabs-components-marketing — landing-page sections, kept separate from app UI.
- * Compose with @qlik-coe-emea/qlabs-components-ui primitives (Button, Card) for actions.
+ * @elabs/components-marketing — landing-page sections, kept separate from app UI.
+ * Compose with @elabs/components-ui primitives (Button, Card) for actions.
  */
 export * from "./hero";
 export * from "./feature-grid";

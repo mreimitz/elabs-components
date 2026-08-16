@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { useLegendItem } from "./legend-context";
 
 export interface LegendLabelProps {

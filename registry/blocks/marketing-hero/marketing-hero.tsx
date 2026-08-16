@@ -1,9 +1,9 @@
 /**
  * Marketing hero scaffold (copy-owned block).
- * Depends on installed @qlik-coe-emea/qlabs-components-marketing + @qlik-coe-emea/qlabs-components-ui.
+ * Depends on installed @elabs/components-marketing + @elabs/components-ui.
  */
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { Hero, LogoStrip } from "@qlik-coe-emea/qlabs-components-marketing";
+import { Button } from "@elabs/components-ui";
+import { Hero, LogoStrip } from "@elabs/components-marketing";
 
 export function MarketingHero() {
   return (

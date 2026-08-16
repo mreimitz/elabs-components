@@ -83,9 +83,9 @@ with sub-folders, e.g. `Patterns/Templates/*`, `Patterns/Scenarios/*`.
 
 ## 4. Taxonomy doesn't map cleanly to packages — pick a rule
 
-Several `@qlik-coe-emea/qlabs-components-ui` components surface under _domain_ groups:
+Several `@elabs/components-ui` components surface under _domain_ groups:
 `AI/ChangeReview`, `Data/Table`, `Data/RevisionTimeline` all live in
-`packages/ui` but appear under `AI/` and `Data/`. Meanwhile `@qlik-coe-emea/qlabs-components-data`'s
+`packages/ui` but appear under `AI/` and `Data/`. Meanwhile `@elabs/components-data`'s
 DataTable is _also_ under `Data/`. "Group by concern" is defensible, but it's
 currently undocumented and produces confusables:
 

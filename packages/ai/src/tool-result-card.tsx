@@ -12,8 +12,8 @@
  * chart/table/file as `children` — so an agent picks the channel by NAME,
  * not by a behavioural mode flag.
  *
- * Presentational and dependency-light: it does NOT import `@qlik-coe-emea/qlabs-components-charts` or
- * `@qlik-coe-emea/qlabs-components-data` (one-way dep graph) — the consumer passes the artifact (an
+ * Presentational and dependency-light: it does NOT import `@elabs/components-charts` or
+ * `@elabs/components-data` (one-way dep graph) — the consumer passes the artifact (an
  * `<AutoChart>`, `<DataTable>`, file preview, …) as children, and maps an
  * AI-SDK tool state to `status` via `statusFromToolState` (tool.tsx).
  *
@@ -25,8 +25,8 @@
  * the payload's own frame, in the body. A card that hoisted them would present
  * one row of buttons that act on two different things.
  */
-import { StatusBadge, type Status } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { StatusBadge, type Status } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 
 export interface ToolResultCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {

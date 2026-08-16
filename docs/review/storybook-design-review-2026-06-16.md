@@ -1,4 +1,4 @@
-# @qlik-coe-emea/qlabs-components-\* Storybook design + a11y + QA review
+# @elabs/components-\* Storybook design + a11y + QA review
 
 **Date:** 2026-06-16 · **Scope:** the running Storybook at `localhost:6006` · **Method:** parallel subagents drove a real browser (agent-browser, isolated sessions), opened each story's iframe, interacted as an end user (click/type/open/keyboard), read the console, inspected the a11y tree, and sampled the dark / high-contrast / blueprint themes. Rubric: the design-taste skill (AI-tells, interaction states, taste) + the repo's own a11y/token/interaction rules.
 
@@ -37,7 +37,7 @@ These repeat across many components; each is one fix applied broadly.
 
 **C. Streaming / dynamic AI content has no live region.** `ai-shimmer--default`, `ai-message--presets` (streaming text), `ai-agenttimeline--default` (status changes), `ai-changereview--default` (approval counter), `ai-chat--default` (`role="log"` unlabeled) — state changes are silent to screen readers. Add `role="status"`/`aria-live` and name the log.
 
-**D. Color-only encoding in low-chroma themes (WCAG 1.4.1).** `charts-candlestickchart--default` (bull/bear, HC), `flow-legend--full-pipeline` + `flow-canvasshell--pipeline` (Source & Output both green in qlik-bright; all hue-only in HC), `ai-changereview--default` diff markers (HC), `ai-test-results--default` progress bar. Needs shape/pattern/text alternatives. (Related: the calc B1 follow-on below.)
+**D. Color-only encoding in low-chroma themes (WCAG 1.4.1).** `charts-candlestickchart--default` (bull/bear, HC), `flow-legend--full-pipeline` + `flow-canvasshell--pipeline` (Source & Output both green in light; all hue-only in HC), `ai-changereview--default` diff markers (HC), `ai-test-results--default` progress bar. Needs shape/pattern/text alternatives. (Related: the calc B1 follow-on below.)
 
 **E. Missing `motion-reduce:` neutralizers.** All States components animate unconditionally: `animate-spin` (LoadingState), `animate-pulse` (Skeleton), `animate-in` (Empty/Error/Loading). Add `motion-reduce:` per the repo motion rule.
 
@@ -47,7 +47,7 @@ These repeat across many components; each is one fix applied broadly.
 
 **H. `div`/`span` used as interactive controls.** `ai-task--default` collapse header (`div` + onclick, no role/keyboard), `ai-inline-citation--default` (`span tabindex=-1` + onclick — unreachable), `marketing-usecasecard--default` (card `div` cursor-pointer + "Learn more" `div`), `ai-chat-shell--default` context items (`div tabindex=-1`). Use real `<button>`/`<a>`.
 
-**I. Blueprint theme token gap.** `--destructive` resolves to near-white (`oklch(0.98 0.01 240)`) in blueprint, so `states-errorstate--default` loses its error badge/icon/tint entirely (only the accent rail survives). A token-value fix in `themes.css` blueprint block. (`Resizable` handle is also near-invisible in qlik-dark/blueprint.)
+**I. Blueprint theme token gap.** `--destructive` resolves to near-white (`oklch(0.98 0.01 240)`) in blueprint, so `states-errorstate--default` loses its error badge/icon/tint entirely (only the accent rail survives). A token-value fix in `themes.css` blueprint block. (`Resizable` handle is also near-invisible in dark/blueprint.)
 
 **J. `alertdialog` dismisses on Escape.** `overlays-alertdialog--default` closes on Esc; per ARIA an alertdialog must require an explicit choice (`onEscapeKeyDown` preventDefault). Focus trap/return are otherwise correct.
 

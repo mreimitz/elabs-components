@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
 import { useState } from "react";
 import { expect, waitFor } from "storybook/test";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
@@ -250,14 +250,14 @@ export const Drilldown: Story = {
  * Three-theme sweep for the categorical x-axis (#352 AC5). Same idiom as
  * `bar-chart.stories.tsx` — an explicit `<ThemeProvider>` around the SAME
  * render, so `test-storybook` renders and axe-asserts the band-mode axis
- * labels, grid and tooltip chrome in `qlik-dark` and `blueprint` every run
+ * labels, grid and tooltip chrome in `dark` and `blueprint` every run
  * instead of relying on a one-off manual toggle.
  */
-export const CategoricalXScaleQlikDark: Story = {
-  name: "CategoricalXScale — qlik-dark",
+export const CategoricalXScaleDark: Story = {
+  name: "CategoricalXScale — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),
@@ -271,11 +271,11 @@ export const CategoricalXScaleHighDecoration: Story = {
   render: CategoricalXScale.render,
 };
 
-export const DrilldownQlikDark: Story = {
-  name: "Drilldown — qlik-dark",
+export const DrilldownDark: Story = {
+  name: "Drilldown — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

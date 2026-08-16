@@ -2,19 +2,18 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "brand-ui",
   "metadata": {
-    "description": "AI skills for the brand-ui design system — build, theme, and audit UI with @qlik-coe-emea/qlabs-components-* components."
+    "description": "AI skills for the brand-ui design system — build, theme, and audit UI with @elabs/components-* components."
   },
   "owner": {
-    "name": "Qlik CoE EMEA"
+    "name": "elabs"
   },
   "plugins": [
     {
       "name": "brand-ui",
-      "description": "Build UI with @qlik-coe-emea/qlabs-components-* (ui, data, ai, flow, charts, marketing, tokens, icons): a guided front door (brand-ui-start) into build-new / improve-existing / use-it flows, live project context, real component API, composition patterns, token rules, and a cross-theme design audit. Serves both library maintainers and app developers.",
+      "description": "Build UI with @elabs/components-* (ui, data, ai, flow, charts, marketing, tokens, icons): a guided front door (brand-ui-start) into build-new / improve-existing / use-it flows, live project context, real component API, composition patterns, token rules, and a cross-theme design audit. Serves both library maintainers and app developers.",
       "version": "3.1.0",
       "source": "./",
       "category": "design",
-      "homepage": "https://github.com/Qlik-CoE-EMEA/qlabs-components",
       "tags": ["design", "ui", "ux", "components", "design-system", "react", "tailwind", "skills"]
     }
   ]

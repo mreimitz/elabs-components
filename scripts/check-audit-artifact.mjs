@@ -20,7 +20,7 @@
  *
  * SCOPE (#78's "six themes" framing is outdated)
  * ----------------------------------------------
- * There are THREE shipped themes — `qlik-bright`, `qlik-dark`, `blueprint`
+ * There are THREE shipped themes — `light`, `dark`, `blueprint`
  * (`THEMES` in packages/tokens/src/theme-types.ts) — plus the `:root` neutral
  * light base, which is a fallback, not a selectable theme. The orphan `acme`
  * theme #78 asked to remove is already gone. The gate enforces that scope: an
@@ -66,6 +66,14 @@ const ARTIFACT_REL = "apps/e2e/reports/theme-aa-audit.md";
 /** WCAG thresholds. */
 const AA_TEXT = 4.5; // body text (1.4.3)
 const NON_TEXT = 3.0; // graphical objects / UI components (1.4.11)
+
+/**
+ * The mode key standing for the `:root` neutral base/fallback — NOT a selectable
+ * theme. `root`, not `light`, because `light` is a real shipped theme slug and a
+ * colliding sentinel makes the base block indistinguishable from that theme's.
+ * Canonical declaration: `ROOT_MODE` in `packages/tokens/scripts/lib/themes-io.mjs`.
+ */
+export const ROOT_MODE = "root";
 
 /** The `:root` block label. Not a selectable theme — a neutral light fallback. */
 export const ROOT_LABEL = ":root (neutral base — not a selectable theme)";
@@ -142,7 +150,7 @@ export function contrast(fg, bg) {
 export function findColorBlocks(cssText) {
   const blocks = [];
   const rootM = cssText.match(/:root\s*\{([\s\S]*?)\n\}/);
-  if (rootM) blocks.push({ name: "light", body: rootM[1] });
+  if (rootM) blocks.push({ name: ROOT_MODE, body: rootM[1] });
   const seen = new Set();
   for (const m of cssText.matchAll(/\[data-theme="([^"]+)"\]\s*\{([\s\S]*?)\n\}/g)) {
     if (seen.has(m[1]) || isPausedTheme(m[1])) continue;
@@ -326,7 +334,7 @@ function table(rows) {
 export function renderArtifact(cssText, shippedThemes) {
   const { blocks, rows } = buildAuditRows(cssText);
   const fails = rows.filter((r) => !r.pass);
-  const themeBlocks = blocks.filter((b) => b !== "light");
+  const themeBlocks = blocks.filter((b) => b !== ROOT_MODE);
 
   const lines = [
     "# Cross-theme WCAG contrast audit (#78)",
@@ -358,7 +366,7 @@ export function renderArtifact(cssText, shippedThemes) {
     "  actually composes (a component may put `--muted-foreground` on `--card`, an ungated pair), text",
     "  over images/gradients/scrims, disabled and placeholder states, focus-ring visibility, hit-target",
     "  size, and whether a screen simply *reads* well. Those come from the Storybook axe pass",
-    "  (`pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`, blocking in CI since #280 —",
+    "  (`pnpm --filter @elabs/components-docs test-storybook`, blocking in CI since #280 —",
     "  though axe's own `test` mode is still advisory, ratcheting in #316) and from a",
     "  `brand-ui-visual-ux-reviewer` three-theme sweep.",
     "",
@@ -380,7 +388,7 @@ export function renderArtifact(cssText, shippedThemes) {
   ];
 
   for (const block of blocks) {
-    lines.push(`## ${block === "light" ? ROOT_LABEL : block}`, "");
+    lines.push(`## ${block === ROOT_MODE ? ROOT_LABEL : block}`, "");
     lines.push("### Semantic tokens", "");
     lines.push(...table(rows.filter((r) => r.theme === block && r.group === "semantic")));
     lines.push("", "### Chart palette", "");

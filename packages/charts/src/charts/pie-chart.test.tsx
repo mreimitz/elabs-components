@@ -4,10 +4,10 @@
  * PieChart uses @visx/responsive ParentSize (ResizeObserver) and SVG geometry
  * measurement — both unavailable in jsdom. We mock @visx/responsive so
  * ParentSize renders its children with a fixed size, matching the pattern used
- * by @qlik-coe-emea/qlabs-components-flow tests that mock @xyflow/react internals.
+ * by @elabs/components-flow tests that mock @xyflow/react internals.
  *
  * Real render + interaction fidelity is covered by the Storybook story build
- * (pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook, story id: charts-piechart--default).
+ * (pnpm --filter @elabs/components-docs test-storybook, story id: charts-piechart--default).
  */
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";

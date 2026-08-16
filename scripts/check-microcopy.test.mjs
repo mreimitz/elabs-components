@@ -77,8 +77,8 @@ test("the committed baseline matches the real tree", async () => {
   assert.deepEqual(regressions, [], JSON.stringify(regressions, null, 2));
 });
 
-test("the @qlik-coe-emea/qlabs-components-ai a11y-critical surfaces are already routed through t()", async () => {
-  // ADR 0017 Stage 1: every aria-label and placeholder in @qlik-coe-emea/qlabs-components-ai is
+test("the @elabs/components-ai a11y-critical surfaces are already routed through t()", async () => {
+  // ADR 0017 Stage 1: every aria-label and placeholder in @elabs/components-ai is
   // translatable. This asserts the win doesn't quietly regress.
   const { readFileSync } = await import("node:fs");
   const { fileURLToPath } = await import("node:url");

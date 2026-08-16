@@ -16,7 +16,7 @@
  * document that can be read.
  */
 
-import { MatchHighlight } from "@qlik-coe-emea/qlabs-components-ui";
+import { MatchHighlight } from "@elabs/components-ui";
 
 import { localizeRanges, type MarkRanges } from "../core/highlight-marks";
 

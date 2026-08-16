@@ -1,10 +1,23 @@
 /**
- * @qlik-coe-emea/qlabs-components-ai — AI Elements ported onto the brand-ui design system.
+ * @elabs/components-ai — AI Elements ported onto the brand-ui design system.
  *
  * Components are presentational and render the Vercel AI SDK's `UIMessage`
  * data model; the consuming app still owns model calls (e.g. `useChat`).
- * Vendored from Vercel AI Elements (https://elements.ai-sdk.dev), rewired to
- * import primitives from `@qlik-coe-emea/qlabs-components-ui` and tokens from `@qlik-coe-emea/qlabs-components-tokens`.
+ *
+ * ATTRIBUTION. Vendored from AI Elements (https://github.com/vercel/ai-elements,
+ * https://elements.ai-sdk.dev):
+ *
+ *   Copyright 2023 Vercel, Inc.
+ *   Licensed under the Apache License, Version 2.0.
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * MODIFICATIONS: these files have been changed from the originals — rewired to
+ * import primitives from `@elabs/components-ui` and tokens from
+ * `@elabs/components-tokens`, re-tokenized, and extended with surfaces that do
+ * not exist upstream. Stating that is an Apache-2.0 §4(b) obligation, not a
+ * courtesy — this is the notice that discharges it for the whole package.
+ *
+ * See ATTRIBUTION.md and .claude/rules/attribution.md.
  */
 export * from "./agent";
 export * from "./agent-timeline";

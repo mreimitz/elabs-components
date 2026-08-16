@@ -16,10 +16,10 @@ importers:
 
   .:
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:packages/typescript-config
       prettier:
@@ -34,31 +34,31 @@ importers:
 
   apps/docs:
     dependencies:
-      '@qlik-coe-emea/qlabs-components-ai':
+      '@elabs/components-ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@qlik-coe-emea/qlabs-components-charts':
+      '@elabs/components-charts':
         specifier: workspace:*
         version: link:../../packages/charts
-      '@qlik-coe-emea/qlabs-components-data':
+      '@elabs/components-data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@qlik-coe-emea/qlabs-components-editor':
+      '@elabs/components-editor':
         specifier: workspace:*
         version: link:../../packages/editor
-      '@qlik-coe-emea/qlabs-components-flow':
+      '@elabs/components-flow':
         specifier: workspace:*
         version: link:../../packages/flow
-      '@qlik-coe-emea/qlabs-components-icons':
+      '@elabs/components-icons':
         specifier: workspace:*
         version: link:../../packages/icons
-      '@qlik-coe-emea/qlabs-components-marketing':
+      '@elabs/components-marketing':
         specifier: workspace:*
         version: link:../../packages/marketing
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@xyflow/react':
@@ -77,10 +77,10 @@ importers:
       '@chromatic-com/storybook':
         specifier: ^5.2.1
         version: 5.2.1(storybook@10.4.2(@testing-library/dom@10.4.0)(@types/react@19.2.16)(prettier@3.8.3)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@storybook/addon-a11y':
@@ -222,22 +222,22 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-charts':
+      '@elabs/components-charts':
         specifier: workspace:*
         version: link:../charts
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-icons':
+      '@elabs/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -288,16 +288,16 @@ importers:
 
   packages/blueprint:
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -412,19 +412,19 @@ importers:
         specifier: ^2.1.7
         version: 2.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-icons':
+      '@elabs/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -512,19 +512,19 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-icons':
+      '@elabs/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -618,16 +618,16 @@ importers:
         specifier: ^5.0.0
         version: 5.1.0
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -715,19 +715,19 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-icons':
+      '@elabs/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -778,10 +778,10 @@ importers:
 
   packages/icons:
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@testing-library/jest-dom':
@@ -827,16 +827,16 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -884,16 +884,16 @@ importers:
 
   packages/marketing:
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -939,10 +939,10 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/react':
@@ -1113,13 +1113,13 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@testing-library/jest-dom':
@@ -1171,16 +1171,16 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@qlik-coe-emea/qlabs-components-eslint-config':
+      '@elabs/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@qlik-coe-emea/qlabs-components-tokens':
+      '@elabs/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@qlik-coe-emea/qlabs-components-typescript-config':
+      '@elabs/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@qlik-coe-emea/qlabs-components-ui':
+      '@elabs/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -10735,7 +10735,7 @@ snapshots:
       magic-string: 0.30.21
       sirv: 3.0.2
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.19)(@vitest/browser@3.2.6)(jiti@2.7.0)(jsdom@25.0.1)(lightningcss@1.32.0)
+      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.19)(@vitest/browser@3.2.6)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)
       ws: 8.21.0
     optionalDependencies:
       playwright: 1.60.0

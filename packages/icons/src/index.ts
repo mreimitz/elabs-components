@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-icons
+ * @elabs/components-icons
  *
  * Brand / product-vocabulary SVG icons in one consistent monoline style (24x24,
  * stroke = currentColor) + `BrandLogo`. Use the `Icon`/`createIcon` primitives to

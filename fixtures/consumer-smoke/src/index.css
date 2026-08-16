@@ -1,16 +1,16 @@
 /* Exactly what docs/CONSUMING.md tells a consumer to write.
    If this file drifts from those instructions, the docs are wrong. */
-@import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
+@import "@elabs/components-tokens/styles.css";
 
 /* Tailwind ignores node_modules unless you @source it. Skipping these is the
    single most common consumer mistake — components render unstyled. */
-@source "../node_modules/@qlik-coe-emea/qlabs-components-ai/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-charts/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-data/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-editor/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-viewer/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-flow/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-icons/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-maps/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-marketing/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-ui/dist";
+@source "../node_modules/@elabs/components-ai/dist";
+@source "../node_modules/@elabs/components-charts/dist";
+@source "../node_modules/@elabs/components-data/dist";
+@source "../node_modules/@elabs/components-editor/dist";
+@source "../node_modules/@elabs/components-viewer/dist";
+@source "../node_modules/@elabs/components-flow/dist";
+@source "../node_modules/@elabs/components-icons/dist";
+@source "../node_modules/@elabs/components-maps/dist";
+@source "../node_modules/@elabs/components-marketing/dist";
+@source "../node_modules/@elabs/components-ui/dist";

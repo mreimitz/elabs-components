@@ -5,7 +5,7 @@
  *
  * `@rive-app/react-webgl2` declares no `sideEffects`, so a static import from
  * `persona.tsx` put the whole WebGL2 runtime (and its `rive.wasm`) into the entry
- * chunk of every `@qlik-coe-emea/qlabs-components-ai` consumer — including the vast majority that never
+ * chunk of every `@elabs/components-ai` consumer — including the vast majority that never
  * render a `Persona`. Keeping every Rive *value* import in this module, reached
  * only through `lazy(() => import("./_persona-rive"))`, confines it to its own
  * chunk. `persona.tsx` may still `import type` from Rive (types erase).
@@ -16,8 +16,8 @@
  * fails if anything imports it statically, which would put Rive back in the
  * entry chunk and make the `lazy()` pointless.
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useReducedMotion } from "@qlik-coe-emea/qlabs-components-tokens";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useReducedMotion } from "@elabs/components-tokens";
 import type { RiveParameters } from "@rive-app/react-webgl2";
 import {
   useRive,

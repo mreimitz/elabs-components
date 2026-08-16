@@ -113,81 +113,81 @@ function mount(ui: ReactNode) {
 
 describe("ThemeProvider — allowedThemes (#355)", () => {
   it("never applies a persisted theme that is outside allowedThemes", () => {
-    window.localStorage.setItem(STORAGE_KEY, "qlik-dark");
+    window.localStorage.setItem(STORAGE_KEY, "dark");
 
     mount(
-      <ThemeProvider allowedThemes={["qlik-bright"]}>
+      <ThemeProvider allowedThemes={["light"]}>
         <Probe />
       </ThemeProvider>,
     );
 
     // Not just "settles on the right value" — never written AT ALL, so there is
     // no frame in which the disallowed theme is on screen.
-    expect(themeWrites).not.toContain("qlik-dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-bright");
-    expect(latest?.theme).toBe("qlik-bright");
+    expect(themeWrites).not.toContain("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(latest?.theme).toBe("light");
   });
 
   it("restricts useTheme().themes to the allowed subset", () => {
     mount(
-      <ThemeProvider allowedThemes={["qlik-bright"]}>
+      <ThemeProvider allowedThemes={["light"]}>
         <Probe />
       </ThemeProvider>,
     );
 
-    expect(latest?.themes).toEqual(["qlik-bright"]);
-    expect(latest?.themes).not.toContain("qlik-dark");
+    expect(latest?.themes).toEqual(["light"]);
+    expect(latest?.themes).not.toContain("dark");
   });
 
   it("makes setTheme a no-op (with a dev warning) for a disallowed theme", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     mount(
-      <ThemeProvider allowedThemes={["qlik-bright"]}>
+      <ThemeProvider allowedThemes={["light"]}>
         <Probe />
-        <SetThemeOnMount to="qlik-dark" />
+        <SetThemeOnMount to="dark" />
       </ThemeProvider>,
     );
 
-    expect(latest?.theme).toBe("qlik-bright");
-    expect(themeWrites).not.toContain("qlik-dark");
+    expect(latest?.theme).toBe("light");
+    expect(themeWrites).not.toContain("dark");
     // The rejected theme must not poison storage for the next boot either.
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('setTheme("qlik-dark") ignored'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('setTheme("dark") ignored'));
   });
 
   it("still switches to a theme that IS allowed", () => {
     mount(
-      <ThemeProvider allowedThemes={["qlik-bright", "qlik-dark"]}>
+      <ThemeProvider allowedThemes={["light", "dark"]}>
         <Probe />
-        <SetThemeOnMount to="qlik-dark" />
+        <SetThemeOnMount to="dark" />
       </ThemeProvider>,
     );
 
-    expect(latest?.theme).toBe("qlik-dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
-    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("qlik-dark");
+    expect(latest?.theme).toBe("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("dark");
   });
 
   it("falls back (and warns) when defaultTheme is not in allowedThemes", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     mount(
-      <ThemeProvider defaultTheme="qlik-bright" allowedThemes={["qlik-dark"]}>
+      <ThemeProvider defaultTheme="light" allowedThemes={["dark"]}>
         <Probe />
       </ThemeProvider>,
     );
 
-    expect(themeWrites).not.toContain("qlik-bright");
-    expect(latest?.theme).toBe("qlik-dark");
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('defaultTheme "qlik-bright"'));
+    expect(themeWrites).not.toContain("light");
+    expect(latest?.theme).toBe("dark");
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('defaultTheme "light"'));
   });
 
   it("coerces the FIRST RENDER's context theme, not only the data-theme write", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
     mount(
-      <ThemeProvider defaultTheme="qlik-bright" allowedThemes={["qlik-dark"]}>
+      <ThemeProvider defaultTheme="light" allowedThemes={["dark"]}>
         <RenderPhaseProbe />
       </ThemeProvider>,
     );
@@ -197,24 +197,24 @@ describe("ThemeProvider — allowedThemes (#355)", () => {
     // initializer to `useState(defaultTheme)` leaves every other assertion in
     // this file green (the hydration effect corrects it before `act` returns) —
     // only this one goes red.
-    expect(renderedThemes[0]).toBe("qlik-dark");
-    expect(renderedThemes).not.toContain("qlik-bright");
+    expect(renderedThemes[0]).toBe("dark");
+    expect(renderedThemes).not.toContain("light");
   });
 
   it("does NOT warn about defaultTheme when the consumer never passed one", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    // A subset that simply excludes DEFAULT_THEME ("qlik-bright") is a normal,
+    // A subset that simply excludes DEFAULT_THEME ("light") is a normal,
     // correct configuration — warning here would name a prop that was never set.
     mount(
-      <ThemeProvider allowedThemes={["qlik-dark"]}>
+      <ThemeProvider allowedThemes={["dark"]}>
         <Probe />
         <RenderPhaseProbe />
       </ThemeProvider>,
     );
 
-    expect(latest?.theme).toBe("qlik-dark");
-    expect(renderedThemes[0]).toBe("qlik-dark");
+    expect(latest?.theme).toBe("dark");
+    expect(renderedThemes[0]).toBe("dark");
     expect(warn).not.toHaveBeenCalledWith(expect.stringContaining("defaultTheme"));
   });
 
@@ -241,7 +241,7 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
   });
 
   it("still applies any persisted shipped theme", () => {
-    window.localStorage.setItem(STORAGE_KEY, "qlik-dark");
+    window.localStorage.setItem(STORAGE_KEY, "dark");
 
     mount(
       <ThemeProvider>
@@ -249,20 +249,20 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
       </ThemeProvider>,
     );
 
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
-    expect(latest?.theme).toBe("qlik-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(latest?.theme).toBe("dark");
   });
 
   it("still allows setTheme to any shipped theme", () => {
     mount(
       <ThemeProvider>
         <Probe />
-        <SetThemeOnMount to="qlik-dark" />
+        <SetThemeOnMount to="dark" />
       </ThemeProvider>,
     );
 
-    expect(latest?.theme).toBe("qlik-dark");
-    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("qlik-dark");
+    expect(latest?.theme).toBe("dark");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("dark");
   });
 
   it("never applies a persisted PAUSED theme name", () => {
@@ -277,6 +277,6 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
     );
 
     expect(themeWrites).not.toContain(PAUSED_THEMES[0]);
-    expect(latest?.theme).toBe("qlik-bright");
+    expect(latest?.theme).toBe("light");
   });
 });

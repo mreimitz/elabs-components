@@ -25,7 +25,7 @@ const schema = loadSchema(REPO_ROOT);
 
 const VALID = {
   archetype: "dashboard",
-  theme: "qlik-dark",
+  theme: "dark",
   title: "Sales Pulse",
   surfaces: [{ id: "overview", navLabel: "Overview", archetype: "dashboard" }],
   entities: [{ name: "Deal", fields: [{ name: "value", type: "number" }] }],
@@ -55,10 +55,7 @@ test("the schema declares the right required fields + archetype enum", () => {
 // ── PASS ─────────────────────────────────────────────────────────────────────
 
 test("PASSES: a minimal valid spec (just the required fields)", () => {
-  assert.deepEqual(
-    validateSpec({ archetype: "settings", theme: "qlik-dark", title: "X" }, schema),
-    [],
-  );
+  assert.deepEqual(validateSpec({ archetype: "settings", theme: "dark", title: "X" }, schema), []);
 });
 
 test("PASSES: the full valid spec", () => {
@@ -68,7 +65,7 @@ test("PASSES: the full valid spec", () => {
 // ── FLAG: required fields ────────────────────────────────────────────────────
 
 test("FLAGS: missing required field (title)", () => {
-  const errs = validateSpec({ archetype: "dashboard", theme: "qlik-dark" }, schema);
+  const errs = validateSpec({ archetype: "dashboard", theme: "dark" }, schema);
   assert.ok(errs.some((e) => /missing required "title"/.test(e)));
 });
 
@@ -80,7 +77,7 @@ test("FLAGS: unknown archetype", () => {
 });
 
 test("FLAGS: unknown theme slug (display name, not slug)", () => {
-  const errs = validateSpec({ ...VALID, theme: "Qlik Dark" }, schema);
+  const errs = validateSpec({ ...VALID, theme: "Dark" }, schema);
   assert.ok(errs.some((e) => /theme.*not in/.test(e)));
 });
 

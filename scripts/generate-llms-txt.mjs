@@ -46,7 +46,7 @@ function buildOutputs() {
   const outputs = new Map();
   outputs.set(HUB, renderLlmsHub(manifest));
   for (const pkg of orderedPackages(manifest)) {
-    const slug = pkg.replace("@qlik-coe-emea/qlabs-components-", "");
+    const slug = pkg.replace("@elabs/components-", "");
     outputs.set(join(SPOKE_DIR, `${slug}.txt`), renderLlmsSpoke(manifest, pkg));
   }
   return outputs;

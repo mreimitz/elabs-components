@@ -7,7 +7,7 @@
  * markers annotate are conveyed elsewhere).
  */
 
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { dateToX } from "./gantt-bar";
 import { useGantt } from "./gantt-context";
 import type { GanttMarkerTone } from "./gantt";

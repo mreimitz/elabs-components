@@ -38,7 +38,7 @@
  *   - **The marketplace pointer is read from the DEFAULT BRANCH, not this checkout.**
  *     Reading the tag's own working tree is tautological: `pnpm version:check` in the
  *     same job already asserted that file agrees with the root version. A
- *     `/plugin marketplace add Qlik-CoE-EMEA/qlabs-components` consumer follows
+ *     `/plugin marketplace add <path-to-this-repo>` consumer follows
  *     `main` — so if `git push origin main` was skipped, or the version commit was
  *     later reverted, consumers keep the OLD plugin while a working-tree check stays
  *     green. The local read survives only as an offline fallback, and says so.

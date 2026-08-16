@@ -36,7 +36,7 @@ Nav: sidebar (one item per surface).
 
 ## Brand & feel
 
-- **Theme:** qlik-dark
+- **Theme:** dark
 - **Taste profile:** register `product` · density `comfortable` · motion `system` ·
   expressiveness `0` — the restrained default. Expressiveness IS the decoration
   dial (`--decoration`); raise it only if the app should carry blueprint texture.
@@ -56,7 +56,7 @@ The contract `brand-ui scaffold` reads (kept in sync with the prose above):
 ```json
 {
   "archetype": "dashboard",
-  "theme": "qlik-dark",
+  "theme": "dark",
   "title": "Sales Pulse",
   "intent": {
     "purpose": "Give a sales lead an at-a-glance read on pipeline health.",

@@ -1,5 +1,5 @@
 [
-  "@qlik-coe-emea/qlabs-components-ai::Plan",
-  "@qlik-coe-emea/qlabs-components-ai::Terminal",
-  "@qlik-coe-emea/qlabs-components-ai::VoiceSelectorPreview"
+  "@elabs/components-ai::Plan",
+  "@elabs/components-ai::Terminal",
+  "@elabs/components-ai::VoiceSelectorPreview"
 ]

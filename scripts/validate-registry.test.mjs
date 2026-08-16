@@ -36,24 +36,21 @@ test("FLAGS: a non-https URL", () => {
   assert.ok(violation);
 });
 
-test("FLAGS: a missing homepage", () => {
-  const violation = findHomepageViolation(undefined);
-  assert.ok(violation);
-  assert.match(violation, /missing/);
+test("PASSES: an omitted homepage (this repo has no canonical origin to name)", () => {
+  assert.equal(findHomepageViolation(undefined), null);
+  assert.equal(findHomepageViolation(null), null);
 });
 
-test("FLAGS: an empty-string homepage", () => {
-  assert.ok(findHomepageViolation(""));
+test("FLAGS: a present-but-empty homepage — omit the key instead", () => {
+  const violation = findHomepageViolation("");
+  assert.ok(violation);
+  assert.match(violation, /empty/);
 });
 
 // ── PASSES: a real, resolvable URL ──────────────────────────────────────────
 
-test("PASSES: the repo's real GitHub URL", () => {
-  assert.equal(findHomepageViolation("https://github.com/Qlik-CoE-EMEA/qlabs-components"), null);
-});
-
-test("PASSES: any other real https:// homepage", () => {
-  assert.equal(findHomepageViolation("https://qlabs.example-real-domain.io/registry"), null);
+test("PASSES: a real https:// homepage", () => {
+  assert.equal(findHomepageViolation("https://brand-ui.example-real-domain.io/registry"), null);
 });
 
 // ── CLI: the REAL repo currently passes the gate ────────────────────────────

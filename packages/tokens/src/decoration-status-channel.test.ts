@@ -23,11 +23,11 @@
  * Browser-free: parses `decoration.css` directly (mirrors
  * `theme-decoration-parity.test.ts`'s "cannot be fooled by a mock" style).
  *
- * NOTE ON THE ONE-WAY DEPENDENCY GRAPH: `@qlik-coe-emea/qlabs-components-tokens`
- * is upstream of `@qlik-coe-emea/qlabs-components-ui` (`tokens` → `ui`, never the
+ * NOTE ON THE ONE-WAY DEPENDENCY GRAPH: `@elabs/components-tokens`
+ * is upstream of `@elabs/components-ui` (`tokens` → `ui`, never the
  * reverse — `.claude/rules/design-system.md`), so this file does NOT import
- * `STATUSES` from `@qlik-coe-emea/qlabs-components-ui` (that package is not even
- * a dependency of `@qlik-coe-emea/qlabs-components-tokens`). The 7 values are
+ * `STATUSES` from `@elabs/components-ui` (that package is not even
+ * a dependency of `@elabs/components-tokens`). The 7 values are
  * mirrored here as a literal instead — keep it in sync with `status-badge.tsx`'s
  * `STATUSES` by hand; both are small, closed, and rarely change.
  */

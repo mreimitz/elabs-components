@@ -163,12 +163,12 @@ export const CustomCell: Story = {
   },
 };
 
-/** Dark theme — verifies token-driven surfaces + dividers in qlik-dark. */
+/** Dark theme — verifies token-driven surfaces + dividers in dark. */
 export const DarkTheme: Story = {
   args: { spec: invoicesSpec, sortable: true },
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

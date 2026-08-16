@@ -13,7 +13,7 @@ hand when you are retro-fitting an existing app).
 ### 1 · Dependency
 
 ```
-"@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
+"@elabs/components-eslint-config": "workspace:*",
 "eslint": "^9"
 ```
 
@@ -24,7 +24,7 @@ The shared config ships `brand/no-raw-font-size` + `brand/no-raw-color` at
 the lint _blocks_ raw sizes/colours instead of just warning:
 
 ```js
-import { reactConfig } from "@qlik-coe-emea/qlabs-components-eslint-config/react";
+import { reactConfig } from "@elabs/components-eslint-config/react";
 
 export default [
   ...reactConfig,

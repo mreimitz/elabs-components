@@ -23,9 +23,9 @@ Tailwind v4 via `@theme inline`.
   `text-muted-foreground`, `border-border` — never raw values.
 - `ThemeProvider` writes `data-theme` and persists the choice; `useTheme()`
   reads/sets it. `THEMES`/`THEME_META` enumerate the available themes.
-- Shipped themes: **qlik-bright** (Qlik brand, the default), **qlik-dark**,
+- Shipped themes: **light** (Qlik brand, the default), **dark**,
   and **blueprint** (cyanotype paper, white ink, full reprographic texture).
-  `qlik-bright`/`qlik-dark` derive from the Qlik brand palette (Qlik Green
+  `light`/`dark` derive from the Qlik brand palette (Qlik Green
   primary).
 
 ## Consequences

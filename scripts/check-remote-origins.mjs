@@ -6,7 +6,7 @@
  * from a third-party host works on a laptop and fails behind a CSP — and the
  * failure is usually silent (a blank logo, an empty animation box). The consumer
  * report that prompted this gate listed origins nobody had written down, and
- * missed one that was there all along (`basemaps.cartocdn.com` in @qlik-coe-emea/qlabs-components-maps).
+ * missed one that was there all along (`basemaps.cartocdn.com` in @elabs/components-maps).
  *
  * So: every `https://` origin appearing in `packages/*​/src` must be BOTH
  *

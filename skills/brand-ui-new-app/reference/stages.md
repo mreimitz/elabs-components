@@ -10,7 +10,7 @@ loop]** — run `./visual-loop.md` there (never decide a visual on text alone
 when a render is possible).
 
 > **Golden rule:** never re-ask what the description already answers. If the user
-> said "a qlik-dark sales dashboard called Pulse", stages 1–2 and the theme are
+> said "a dark sales dashboard called Pulse", stages 1–2 and the theme are
 > already decided — record them and skip ahead. If the user says "just scaffold
 > it / defaults are fine", drop to Quick mode and record the defaults used.
 
@@ -73,7 +73,7 @@ capturing it here is what makes "done" checkable instead of a matter of taste.
 
 **Round 1 — theme + register**
 
-1. **Theme** — qlik-bright (default) · qlik-dark · blueprint. **Render a sample
+1. **Theme** — light (default) · dark · blueprint. **Render a sample
    surface in the candidate theme** (loop rung 1) before they pick — never pick a
    theme on its name.
 2. **Register** — which bar this app is judged against. Two options, product

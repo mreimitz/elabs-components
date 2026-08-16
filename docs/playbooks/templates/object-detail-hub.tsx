@@ -16,8 +16,8 @@
  *   • A high-value task (Run) promoted to its own focused Dialog surface.
  *   • A real empty state (StatePanel kind="empty") when nothing is selected.
  *
- * Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in
- * qlik-bright AND qlik-dark. Verify with globals=theme:<slug>.
+ * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in
+ * light AND dark. Verify with globals=theme:<slug>.
  */
 import { useState } from "react";
 import { Pencil, Play, Search } from "lucide-react";
@@ -50,7 +50,7 @@ import {
   Toaster,
   toast,
   type Status,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 
 /* -------------------------------------------------------------------------- */
 /*  Object model — a "Pipeline" with attributes, runs (children) and settings  */

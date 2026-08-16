@@ -1,7 +1,7 @@
 /**
  * Unit tests for the Monaco registration lifecycle (#283) —
  * `attachCompletionsMonaco`'s refcount/dispose behavior + the per-model
- * scoping that keeps suggestions out of markdown models `@qlik-coe-emea/qlabs-components-editor` never
+ * scoping that keeps suggestions out of markdown models `@elabs/components-editor` never
  * attached. Monaco can't render in jsdom, so `monaco-editor` is mocked (the
  * `markdown-workspace.test.tsx` / `calc-editor-monaco.ts` precedent); the real
  * suggest-widget UI is verified via `test-storybook`.

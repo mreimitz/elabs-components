@@ -14,12 +14,7 @@ keywords:
     testimonial,
     website,
   ]
-packages:
-  [
-    "@qlik-coe-emea/qlabs-components-ui",
-    "@qlik-coe-emea/qlabs-components-marketing",
-    "@qlik-coe-emea/qlabs-components-icons",
-  ]
+packages: ["@elabs/components-ui", "@elabs/components-marketing", "@elabs/components-icons"]
 ---
 
 # Playbook — Marketing / presales landing page
@@ -29,15 +24,15 @@ ask. Template source: `templates/marketing.tsx` (generated from this Storybook s
 
 ## Building blocks
 
-| Section    | Component                                        | From                                                                           |
-| ---------- | ------------------------------------------------ | ------------------------------------------------------------------------------ |
-| Nav        | sticky header + `BrandLogo` + `Button` CTA       | `@qlik-coe-emea/qlabs-components-ui` / `@qlik-coe-emea/qlabs-components-icons` |
-| Hero       | `Hero` (eyebrow/title/description/actions/media) | `@qlik-coe-emea/qlabs-components-marketing`                                    |
-| Proof      | `StatsBand` (3–4 numbers)                        | `@qlik-coe-emea/qlabs-components-marketing`                                    |
-| Capability | `FeatureGrid` (6 items, 3 columns)               | `@qlik-coe-emea/qlabs-components-marketing`                                    |
-| Relevance  | `UseCaseCard` ×3 (industry cards)                | `@qlik-coe-emea/qlabs-components-marketing`                                    |
-| Trust      | `LogoStrip` (customer logos)                     | `@qlik-coe-emea/qlabs-components-marketing`                                    |
-| Ask        | `CTASection` (one action)                        | `@qlik-coe-emea/qlabs-components-marketing`                                    |
+| Section    | Component                                        | From                                               |
+| ---------- | ------------------------------------------------ | -------------------------------------------------- |
+| Nav        | sticky header + `BrandLogo` + `Button` CTA       | `@elabs/components-ui` / `@elabs/components-icons` |
+| Hero       | `Hero` (eyebrow/title/description/actions/media) | `@elabs/components-marketing`                      |
+| Proof      | `StatsBand` (3–4 numbers)                        | `@elabs/components-marketing`                      |
+| Capability | `FeatureGrid` (6 items, 3 columns)               | `@elabs/components-marketing`                      |
+| Relevance  | `UseCaseCard` ×3 (industry cards)                | `@elabs/components-marketing`                      |
+| Trust      | `LogoStrip` (customer logos)                     | `@elabs/components-marketing`                      |
+| Ask        | `CTASection` (one action)                        | `@elabs/components-marketing`                      |
 
 ## Section order (and why)
 
@@ -98,7 +93,7 @@ safe); pass `animate={false}` to opt out.
 
 Copy (headline, stats, feature titles — the hard part) · CTA labels +
 targets · feature count/icons · standalone vs. embedded · theme
-(qlik-bright for a Qlik pitch; client-brand theme for client pitches —
+(light for a Qlik pitch; client-brand theme for client pitches —
 re-branding is a token swap, not a redesign).
 
 ## Decisions already made — don't re-make
@@ -109,7 +104,7 @@ owns the primary surface) · responsive behavior of every section.
 
 ## Common mistakes
 
-- Inventing section layouts with raw Tailwind when a `@qlik-coe-emea/qlabs-components-marketing`
+- Inventing section layouts with raw Tailwind when a `@elabs/components-marketing`
   component covers it.
 - More than one ask in `CTASection` — one action converts.
 - `<img>` without `width`/`height` (CLS) — applies to hero media and logos.

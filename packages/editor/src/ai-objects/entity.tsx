@@ -17,8 +17,8 @@
  * The inline chip is a `<span>` — no block wrapper — so it stays inside `<p>` without
  * creating invalid HTML. A11y: kind is conveyed via `aria-label` (not icon alone).
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Card, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Box, Building2, Lightbulb, MapPin, Tag, User } from "lucide-react";
 import {

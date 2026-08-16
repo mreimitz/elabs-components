@@ -4,7 +4,7 @@
  * GanttGrid — multi-column left-pane grid (P1 — multi-column task grid).
  *
  * Architecture (the load-bearing a11y decision):
- *   The `@qlik-coe-emea/qlabs-components-ui` Tree stays the left pane and renders **column 0 (the task
+ *   The `@elabs/components-ui` Tree stays the left pane and renders **column 0 (the task
  *   name) as a string** — so its roving tabindex, expand/collapse, keyboard nav,
  *   aria-level/setsize/posinset AND its auto `aria-label` synthesis
  *   (`tree.tsx` only synthesizes for string labels) are all preserved.
@@ -32,7 +32,7 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import type { GanttColumn, GanttFormatDate, GanttSort } from "./gantt";
 import { useGantt, type ResolvedTask } from "./gantt-context";
 

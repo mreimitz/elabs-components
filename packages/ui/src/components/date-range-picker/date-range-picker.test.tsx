@@ -4,7 +4,7 @@
  * NOTE: Opening the Radix Popover and interacting with the Calendar is NOT
  * tested here — Radix Portals do not render in jsdom reliably. Calendar open/
  * select interaction and accessibility are covered by the Storybook stories
- * (run via `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook` or the MCP story tests).
+ * (run via `pnpm --filter @elabs/components-docs test-storybook` or the MCP story tests).
  */
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";

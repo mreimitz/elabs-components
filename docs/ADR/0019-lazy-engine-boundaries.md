@@ -1,4 +1,4 @@
-# ADR 0019 — Lazy engine boundaries in `@qlik-coe-emea/qlabs-components-ai`
+# ADR 0019 — Lazy engine boundaries in `@elabs/components-ai`
 
 - **Status:** Accepted
 - **Date:** 2026-08-01
@@ -11,7 +11,7 @@
 
 ## Context
 
-`@qlik-coe-emea/qlabs-components-ai` imported `@streamdown/mermaid` statically from three modules —
+`@elabs/components-ai` imported `@streamdown/mermaid` statically from three modules —
 `message.tsx`, `reasoning.tsx`, `markdown-view.tsx` — each building a
 module-level `const streamdownPlugins = { cjk, code, math, mermaid }`. That
 package's dist opens with `import n from "mermaid"`, and **none** of
@@ -58,7 +58,7 @@ false`, `suppressErrorRendering: true`, …) and initialize-once semantics are
 mirrored exactly, and its `DiagramPlugin` type is still imported (as a type, so
 it erases) to keep the reimplementation honest at typecheck time.
 
-`mermaid` becomes a direct dependency of `@qlik-coe-emea/qlabs-components-ai` (it was transitive; under
+`mermaid` becomes a direct dependency of `@elabs/components-ai` (it was transitive; under
 pnpm's isolated layout a dynamic `import("mermaid")` cannot resolve otherwise).
 
 `preloadMermaid()` is exported as an opt-in warm-up for surfaces that know they
@@ -81,7 +81,7 @@ has no `@streamdown/mermaid` edge and exactly one dynamic `import("mermaid")`.
 
 **DOMPurify still appears in the playground entry chunk — from a different
 source.** `monaco-editor` vendors its own copy at
-`esm/vs/base/browser/dompurify/dompurify.js`, reached via `@qlik-coe-emea/qlabs-components-editor`. That is
+`esm/vs/base/browser/dompurify/dompurify.js`, reached via `@elabs/components-editor`. That is
 a separate dependency on a separate path and is out of scope here; the Mermaid
 copy did move. Do not read the surviving `data-tt-policy-suffix` marker as this
 change having failed.

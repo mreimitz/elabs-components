@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, useCopyToClipboard } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button, useCopyToClipboard } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useCallback, type ComponentProps } from "react";
 
@@ -17,7 +17,7 @@ export interface CopyButtonProps extends Omit<ComponentProps<typeof Button>, "va
  * the editor toolbar and workspace so the copy affordance is defined once.
  */
 export function CopyButton({ value, label = true, className, ...props }: CopyButtonProps) {
-  // Clipboard write + transient flag come from the shared `@qlik-coe-emea/qlabs-components-ui`
+  // Clipboard write + transient flag come from the shared `@elabs/components-ui`
   // hook, so this button and `CopyableValue` cannot drift on timing or on what
   // happens where there is no clipboard.
   const { copied, copy } = useCopyToClipboard();

@@ -1,9 +1,9 @@
 /**
- * @qlik-coe-emea/qlabs-components-ui — foundation + app UI components.
+ * @elabs/components-ui — foundation + app UI components.
  *
  * Source-owned shadcn-style components built on Radix primitives and the
- * @qlik-coe-emea/qlabs-components-tokens semantic theme. Import the token stylesheet once at the app
- * root ("import \"@qlik-coe-emea/qlabs-components-tokens/styles.css\"") and wrap in <ThemeProvider>.
+ * @elabs/components-tokens semantic theme. Import the token stylesheet once at the app
+ * root ("import \"@elabs/components-tokens/styles.css\"") and wrap in <ThemeProvider>.
  *
  * NOTE: this barrel is generated to include every component folder. Some
  * components require their own peer libs (declared in package.json), e.g.

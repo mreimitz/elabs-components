@@ -42,7 +42,7 @@ import { Plugin, PluginKey } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { $prose } from "@milkdown/kit/utils";
 import { isInTable } from "@milkdown/kit/prose/tables";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { usePluginViewContext } from "@prosemirror-adapter/react";
 import type { usePluginViewFactory } from "@prosemirror-adapter/react";
 

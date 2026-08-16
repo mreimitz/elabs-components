@@ -15,7 +15,7 @@
  * output rather than a second thing assembled by hand.
  */
 
-import type { MatchRange } from "@qlik-coe-emea/qlabs-components-ui";
+import type { MatchRange } from "@elabs/components-ui";
 
 /** One chunk of the projection, and what it came from. */
 export interface TextSpan<TRef> {

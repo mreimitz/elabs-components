@@ -1,8 +1,8 @@
-# @qlik-coe-emea/qlabs-components-maps
+# @elabs/components-maps
 
 > MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.
 
-Import from `@qlik-coe-emea/qlabs-components-maps`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs/components-maps`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

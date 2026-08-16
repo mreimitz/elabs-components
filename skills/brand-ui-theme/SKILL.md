@@ -15,7 +15,7 @@ front door to brand-ui's theming workflow and rules.
 
 ## Where everything lives
 
-The `@qlik-coe-emea/qlabs-components-tokens` theme stylesheet (`@qlik-coe-emea/qlabs-components-tokens/styles.css`) — `:root` is the
+The `@elabs/components-tokens` theme stylesheet (`@elabs/components-tokens/styles.css`) — `:root` is the
 default base; each theme is a `[data-theme="name"]` block that overrides the
 **full** semantic token set (surfaces, sidebar, canvas/flow, chat, chart-1..5,
 radius). `theme-types.ts` holds
@@ -51,5 +51,5 @@ lower `--radius` in each block — don't touch components.
   (oklch-aware, rendered) — don't eyeball. Watch brand green as small text on
   white and white text on green fills.
 - Re-render the playground/Storybook in the new theme.
-- `pnpm --filter @qlik-coe-emea/qlabs-components-tokens typecheck` and keep `THEMES`/`THEME_META` in sync
+- `pnpm --filter @elabs/components-tokens typecheck` and keep `THEMES`/`THEME_META` in sync
   with the CSS blocks.

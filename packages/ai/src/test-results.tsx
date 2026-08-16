@@ -1,12 +1,8 @@
 "use client";
 
-import { StatusBadge, StatusIcon, type Status } from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { StatusBadge, StatusIcon, type Status } from "@elabs/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { createContext, useContext, useMemo } from "react";
@@ -208,7 +204,7 @@ const TestSuiteContext = createContext<TestSuiteContextType>({
 });
 
 // The local status icon/color records were the 5th status idiom (#189);
-// re-pointed to the canonical `StatusIcon` vocabulary from @qlik-coe-emea/qlabs-components-ui.
+// re-pointed to the canonical `StatusIcon` vocabulary from @elabs/components-ui.
 const TestStatusIcon = ({ status }: { status: TestStatus }) => (
   <StatusIcon className="shrink-0" status={testStatusToCanonical[status]} />
 );

@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Skeleton } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { AlertCircle } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import {
@@ -385,7 +385,7 @@ export const JSXPreviewError = memo(({ className, children, ...props }: JSXPrevi
       // drawn-not-filled rule), so the old `border border-destructive/50` was
       // redundant on every theme — dropped. Text + icon use `text-destructive-text`
       // (the on-surface destructive ink ramp) — raw `text-destructive` fails AA on
-      // the wash (3.86:1) and goes near-white in qlik-dark; the *-text token is
+      // the wash (3.86:1) and goes near-white in dark; the *-text token is
       // AA-guaranteed and keeps the destructive cue in every theme.
       className={cn(
         "flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-body text-destructive-text",

@@ -7,7 +7,7 @@
  * it with a text token (`text-muted-foreground` by default); the optional
  * emphasized last point uses `--chart-1`.
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { forwardRef, useMemo, type SVGAttributes } from "react";
 
 export interface SparklineProps extends Omit<SVGAttributes<SVGSVGElement>, "children" | "values"> {

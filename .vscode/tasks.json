@@ -61,31 +61,6 @@
       }
     },
     {
-      "label": "dev: workbench",
-      "detail": "Start the Vite workbench dev server on http://localhost:5174",
-      "type": "shell",
-      "command": "pnpm --filter @qlik-coe-emea/qlabs-components-workbench dev",
-      "options": { "cwd": "${workspaceFolder}" },
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "vite",
-        "source": "vite",
-        "fileLocation": "absolute",
-        "pattern": { "regexp": "^$" },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": ".*(VITE|building|Forced re-optimization|hmr).*",
-          "endsPattern": ".*(Local:|ready in|localhost:5174).*"
-        }
-      },
-      "presentation": {
-        "group": "apps",
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
       "label": "stop: playground",
       "detail": "Kill whatever is listening on :5173 (used as a postDebugTask)",
       "type": "shell",
@@ -106,18 +81,10 @@
       "presentation": { "reveal": "silent", "panel": "shared", "close": true }
     },
     {
-      "label": "stop: workbench",
-      "detail": "Kill whatever is listening on :5174 (used as a postDebugTask)",
-      "type": "shell",
-      "command": "npx --yes kill-port 5174",
-      "problemMatcher": [],
-      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
-    },
-    {
       "label": "stop: all apps",
-      "detail": "Kill the playground (:5173), Storybook (:6006) and workbench (:5174) dev servers",
+      "detail": "Kill the playground (:5173) and Storybook (:6006) dev servers",
       "type": "shell",
-      "command": "npx --yes kill-port 5173 6006 5174",
+      "command": "npx --yes kill-port 5173 6006",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared", "close": false }
     }

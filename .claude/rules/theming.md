@@ -3,9 +3,9 @@
 - **Mechanism:** themes are applied with the `data-theme` attribute on a root
   element. `:root` is a neutral light base/fallback; each theme is a
   `[data-theme="name"]` block in `packages/tokens/src/themes.css`.
-- **Provider:** `ThemeProvider` (from `@qlik-coe-emea/qlabs-components-tokens`) writes `data-theme` and
+- **Provider:** `ThemeProvider` (from `@elabs/components-tokens`) writes `data-theme` and
   persists the choice; `useTheme()` reads/sets it.
-- **Shipped themes:** `qlik-bright` (default) and `qlik-dark` — the ACTIVE set.
+- **Shipped themes:** `light` (default) and `dark` — the ACTIVE set.
   (`blueprint` is paused: kept in `themes.css`, out of `THEMES`; see
   @.claude/rules/paused-surfaces.md.) Keep
   `THEMES` + `THEME_META` in `theme-types.ts` in sync with the CSS blocks. The
@@ -23,7 +23,7 @@
   rejected in the same mount pass that applies the theme (so it can never flash
   on boot), and `setTheme` with a disallowed name is a no-op that warns in dev.
   Omitting it keeps the previous behaviour (every shipped theme). `ThemeSwitcher`
-  (`@qlik-coe-emea/qlabs-components-ui`) automatically narrows to the provider's
+  (`@elabs/components-ui`) automatically narrows to the provider's
   subset when restricting (#384); a non-restricting provider leaves the `themes`
   prop untouched for backward compatibility, so existing 2-theme toggles are
   unchanged.
@@ -87,7 +87,7 @@
      reaches sidebar focus automatically. Never re-declare it with a literal.
   5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
      provided (1)–(3) still hold. Verify with `pnpm roles:check` and
-     `pnpm --filter @qlik-coe-emea/qlabs-components-tokens test`. **Prefer
+     `pnpm --filter @elabs/components-tokens test`. **Prefer
      forking the theme (`/new-theme`) over patching one token.**
   6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
      blue (264°) and its ring is the same hue at a distinct rung (ΔE 0.1044).
@@ -118,7 +118,7 @@
 ## Taste profile (register × density × motion × expressiveness)
 
 The four axes that say what a surface should FEEL like, as one named object —
-`TasteProfile` in `@qlik-coe-emea/qlabs-components-tokens`. ADR
+`TasteProfile` in `@elabs/components-tokens`. ADR
 [`0020`](../../docs/ADR/0020-taste-profile.md) is the durable record.
 
 | Axis               | Values                                       | Dial                                                           |
@@ -151,7 +151,7 @@ The four axes that say what a surface should FEEL like, as one named object —
   defaults ⊕ an optional project-root `brand-ui.config.json` `taste` key. The
   `brand-ui-audit` skill reads this instead of asking a human to pick a register.
 - **`register` picks the BAR, never the styling.** `product` = earned familiarity
-  (app UI — the default for `@qlik-coe-emea/qlabs-components-*`); `brand` =
+  (app UI — the default for `@elabs/components-*`); `brand` =
   distinctiveness (marketing surfaces). `brand-ui audit` softens exactly three
   expressive tells (`over-round`, `side-stripe`, `bounce-easing`) to advisory in
   the brand register — it never softens a banned rule or content slop. No

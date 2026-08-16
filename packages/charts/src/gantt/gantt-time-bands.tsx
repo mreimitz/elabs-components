@@ -15,7 +15,7 @@
  */
 
 import { useMemo } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { dateToX } from "./gantt-bar";
 import { useGantt } from "./gantt-context";
 

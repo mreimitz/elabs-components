@@ -11,11 +11,11 @@
  *
  * Theming: xterm can't read CSS custom properties, so its `ITheme` (background/
  * foreground/cursor/selection + the 16 ANSI colors) is derived from semantic
- * tokens at runtime via `oklchToHex`/`resolveTokenColor` (`@qlik-coe-emea/qlabs-components-tokens`, ADR
+ * tokens at runtime via `oklchToHex`/`resolveTokenColor` (`@elabs/components-tokens`, ADR
  * 0015) — the same "wrap an engine, theme it from tokens" pattern as
- * `@qlik-coe-emea/qlabs-components-editor`'s Monaco bridge and `@qlik-coe-emea/qlabs-components-maps`' `useTokenColor`. It
+ * `@elabs/components-editor`'s Monaco bridge and `@elabs/components-maps`' `useTokenColor`. It
  * re-resolves whenever `data-theme` changes (a local MutationObserver, mirroring
- * `persona.tsx`'s theme watcher — `@qlik-coe-emea/qlabs-components-ai` can't import `@qlik-coe-emea/qlabs-components-editor`'s
+ * `persona.tsx`'s theme watcher — `@elabs/components-ai` can't import `@elabs/components-editor`'s
  * shared `useDataTheme` hook per the one-way package graph).
  *
  * Bundling: xterm and its stylesheet are reached through a dynamic
@@ -25,8 +25,8 @@
  * 0019 and `pnpm heavy-deps:check`.
  */
 
-import { resolveTokenColor } from "@qlik-coe-emea/qlabs-components-tokens";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { resolveTokenColor } from "@elabs/components-tokens";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { ITheme, Terminal as XTerm } from "@xterm/xterm";
 import {
@@ -63,10 +63,10 @@ export interface InteractiveTerminalProps extends Omit<HTMLAttributes<HTMLDivEle
 }
 
 // --- Runtime color helpers -------------------------------------------------
-// `resolveTokenColor` (@qlik-coe-emea/qlabs-components-tokens, ADR 0015) is the shared "read a semantic
-// token off an element, oklch → hex" resolver — the same one `@qlik-coe-emea/qlabs-components-maps`'
+// `resolveTokenColor` (@elabs/components-tokens, ADR 0015) is the shared "read a semantic
+// token off an element, oklch → hex" resolver — the same one `@elabs/components-maps`'
 // `useTokenColor` wraps. `withAlpha`/`lighten` below are the same "math on the
-// resolved hex" idiom as `monaco-theme-bridge.ts` (@qlik-coe-emea/qlabs-components-editor) — never a
+// resolved hex" idiom as `monaco-theme-bridge.ts` (@elabs/components-editor) — never a
 // hardcoded literal color.
 
 /** Mix `alpha` (0..1) into a `#rrggbb` color, returning `#rrggbbaa`. */
@@ -118,7 +118,7 @@ const awayPole = (bg: string) => (relativeLuminance(bg) > 0.5 ? "#000000" : "#ff
  * a dark one. This is how a "bright" ANSI sibling is derived for a hue with no
  * dedicated lighter/darker token: `lighten()` used to hardcode "toward white",
  * which on a light theme moved the swatch TOWARD the background and made the
- * bright variant the least legible colour on screen (#386 — in `qlik-bright`
+ * bright variant the least legible colour on screen (#386 — in `light`
  * brightMagenta bottomed out at 2.91:1, and in the `:root` base at 2.39:1).
  */
 function awayFromBackground(hex: string, bg: string, amount: number): string {
@@ -178,8 +178,8 @@ function readableInk(hex: string, bg: string, ratio = 4.5): string {
  * floor guarantees the resulting ink is legible on this terminal's actual
  * background. Several of these tokens are mark/fill rungs (≥3:1 only), so
  * without the floor EVERY palette this repo ships had sub-AA ANSI slots —
- * measured from `themes.css`: `:root` 7 (worst 2.39:1), `qlik-bright` 4 (worst
- * 2.91:1), `qlik-dark` 1 (3.16:1), `blueprint` 1 (4.32:1). Re-derived on every
+ * measured from `themes.css`: `:root` 7 (worst 2.39:1), `light` 4 (worst
+ * 2.91:1), `dark` 1 (3.16:1), `blueprint` 1 (4.32:1). Re-derived on every
  * run by `interactive-terminal.test.tsx`, which parses those palettes out of
  * `themes.css` rather than hard-coding them. Keep new slots inside `ink(...)`;
  * a raw token assigned straight to an ANSI slot is the bug.

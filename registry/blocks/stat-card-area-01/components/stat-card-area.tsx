@@ -1,20 +1,9 @@
 "use client";
 
-import {
-  Area,
-  AreaChart,
-  ChartStatFlow,
-  LinearGradient,
-} from "@qlik-coe-emea/qlabs-components-charts";
+import { Area, AreaChart, ChartStatFlow, LinearGradient } from "@elabs/components-charts";
 import { curveCardinal } from "@visx/curve";
 import { useState } from "react";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
 import { revenueSeries, revenueStats } from "./data/revenue-series";
 import { StatCardChart, statCardLabelClassName, statCardValueClassName } from "./stat-card-chart";
 import {

@@ -18,7 +18,7 @@ Steps:
 1. Decide the item kind (read the guidelines):
    - `registry:ui` — a self-contained primitive (imports `@/lib/utils`)
    - `registry:block` — a copy-owned composition that imports installed
-     `@qlik-coe-emea/qlabs-components-*` packages (declare them in `dependencies`)
+     `@elabs/components-*` packages (declare them in `dependencies`)
    - `registry:theme` — a token set via `cssVars`
 2. Create the source file(s) under `registry/components/`, `registry/blocks/<name>/`,
    or `registry/themes/`.
@@ -27,7 +27,7 @@ Steps:
    via Storybook MCP. See @.claude/rules/storybook-mcp.md.
 3. Add an entry to `registry/registry.json`:
    - `$schema`, unique `name`, `type`, `title`, `description`
-   - `dependencies` (npm + `@qlik-coe-emea/qlabs-components-*`), `registryDependencies` (other items)
+   - `dependencies` (npm + `@elabs/components-*`), `registryDependencies` (other items)
    - `files[]` with `path` (relative to repo root) + `type` (+ `target` for
      `registry:page`/`registry:file`)
 4. Run `pnpm registry:validate` and fix any errors. If the Storybook dev server is

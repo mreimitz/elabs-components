@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { forwardRef } from "react";
-import { cn, Heading, type HeadingLevel } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn, Heading, type HeadingLevel } from "@elabs/components-ui";
 
 export interface ChatGreetingProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Primary line, e.g. "Good morning, Avery". */

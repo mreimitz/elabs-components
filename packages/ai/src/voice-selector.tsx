@@ -1,7 +1,7 @@
 "use client";
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import {
   Command,
   CommandDialog,
@@ -12,16 +12,11 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { Spinner } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@elabs/components-ui";
+import { Spinner } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 import {
   CircleSmallIcon,
   MarsIcon,

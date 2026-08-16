@@ -12,7 +12,7 @@
  *   - `makeShortDateFmt(locale)` / … — the ADR's non-hook explicit-locale path
  *     for module-scope / non-component callers.
  *   - `useChartFormatters()` — the hook path for chart COMPONENTS: it reads the
- *     active locale from `@qlik-coe-emea/qlabs-components-ui`'s `useLocale()` and returns formatters bound
+ *     active locale from `@elabs/components-ui`'s `useLocale()` and returns formatters bound
  *     to it, so charts under a `<LocaleProvider locale="de-DE">` format in `de-DE`.
  *   - `shortDateFmt` / `weekdayDateFmt` / `hmsTimeFmt` / `intFmt` — backward-compatible
  *     bindings for existing direct callers. They now default to the HOST locale
@@ -22,7 +22,7 @@
  */
 
 import { useMemo } from "react";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { useLocale } from "@elabs/components-ui";
 import { useChartConfig } from "./chart-config-context";
 import {
   type ChartValueFormat,

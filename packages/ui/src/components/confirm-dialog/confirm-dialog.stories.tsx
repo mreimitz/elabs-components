@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { ThemeProvider } from "@elabs/components-tokens";
 import { Button } from "../button";
 import { Text } from "../typography";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -152,21 +152,21 @@ export const NeutralTone: Story = {
 };
 
 /**
- * The DESTRUCTIVE tone in qlik-dark — the third theme of the sweep, alongside
- * qlik-bright (`Default`) and blueprint (`Destructive — blueprint`).
+ * The DESTRUCTIVE tone in dark — the third theme of the sweep, alongside
+ * light (`Default`) and blueprint (`Destructive — blueprint`).
  *
  * This story used to sweep the *neutral* tone here on purpose, because
- * `--destructive-foreground` on `--destructive` measured 3.02:1 in qlik-dark —
+ * `--destructive-foreground` on `--destructive` measured 3.02:1 in dark —
  * a token defect every `variant="destructive"` control in the theme shared,
  * which this component could not fix. That token is now the theme's own
  * warm-dark ink at 5.50:1 (#321), so the destructive tone finally gets a real
- * qlik-dark sweep and the workaround is retired.
+ * dark sweep and the workaround is retired.
  */
-export const DestructiveQlikDark: Story = {
-  name: "Destructive — qlik-dark",
+export const DestructiveDark: Story = {
+  name: "Destructive — dark",
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="qlik-dark" storageKey={null}>
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
         <Story />
       </ThemeProvider>
     ),

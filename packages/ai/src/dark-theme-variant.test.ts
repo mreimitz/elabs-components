@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { THEME_META, type ThemeName } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEME_META, type ThemeName } from "@elabs/components-tokens";
 
 /**
  * Regression lock for #3: the Tailwind `dark:` custom variant in themes.css must
@@ -32,8 +32,8 @@ describe("dark: custom variant", () => {
     expect(darkVariantSelector).not.toBe("");
   });
 
-  it("covers at least the known dark themes (qlik-dark)", () => {
-    expect(darkThemes).toEqual(expect.arrayContaining(["qlik-dark"]));
+  it("covers at least the known dark themes (dark)", () => {
+    expect(darkThemes).toEqual(expect.arrayContaining(["dark"]));
   });
 
   it.each(darkThemes)("matches [data-theme=%s]", (name) => {

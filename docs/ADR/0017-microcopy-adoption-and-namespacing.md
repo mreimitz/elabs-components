@@ -16,7 +16,7 @@ in its own title was never carried through, and §(c) left "are non-English loca
 in scope now or later" open.
 
 The result: `t()` was called in **zero** components repo-wide, `DEFAULT_MESSAGES`
-held 10 keys, and `@qlik-coe-emea/qlabs-components-ai` alone hardcoded ~100 user-visible English strings —
+held 10 keys, and `@elabs/components-ai` alone hardcoded ~100 user-visible English strings —
 including three end-user **error messages** and 16 `aria-label`s. Worse, several
 of those duplicated keys the shared bundle _already had_: `inline-citation.tsx`
 hardcoded `"Previous"`/`"Next"` while `previous`/`next` existed, and
@@ -43,12 +43,12 @@ Adoption is worthwhile even for English-only consumers: it makes microcopy
   before minting anything. This is what closes the duplication gap above.
 - **Package-specific microcopy is namespaced** `<pkg>.<area>.<key>` —
   e.g. `ai.promptInput.errorMaxFiles`, `ai.gallery.downloadImage`. Without this a
-  flat bundle of ~100 `@qlik-coe-emea/qlabs-components-ai` keys would swamp the shared set and collide with
+  flat bundle of ~100 `@elabs/components-ai` keys would swamp the shared set and collide with
   future packages.
 
-### 3. `DEFAULT_MESSAGES` stays in `@qlik-coe-emea/qlabs-components-ui`
+### 3. `DEFAULT_MESSAGES` stays in `@elabs/components-ui`
 
-Even though the keys belong to `@qlik-coe-emea/qlabs-components-ai`. This is correct under the one-way
+Even though the keys belong to `@elabs/components-ai`. This is correct under the one-way
 package DAG (`ai → ui`, enforced by `pnpm dep-direction:check`) and gives
 consumers **one** bundle to override. The modular alternative — per-package
 message files merged at provider construction — was rejected: it forces every
@@ -70,11 +70,11 @@ translated. They are encoded as gate exemptions so they never nag.
 - `DEFAULT_MESSAGES` grows from 10 to 31 keys: the generic set plus `ai.*` for the
   end-user error messages, every `aria-label`, and the placeholders — the strings
   a user genuinely cannot work around.
-- Remaining `@qlik-coe-emea/qlabs-components-ai` strings (JSX text nodes, default props) are **not yet**
+- Remaining `@elabs/components-ai` strings (JSX text nodes, default props) are **not yet**
   routed. They are held by the ratchet below so the number can only fall.
 - **A surface the original audit could not see:** `Streamdown` accepts a
   `translations` prop with **32 keys** (`copyCode`, `downloadDiagram`,
-  `externalLinkWarning`, …) that `@qlik-coe-emea/qlabs-components-ai` passes nothing for. Every
+  `externalLinkWarning`, …) that `@elabs/components-ai` passes nothing for. Every
   streamed-markdown surface therefore leaks 32 more English strings. Tracked as
   follow-up work under `ai.streamdown.*`, to be wired in the shared
   `_lazy-mermaid`/plugins path so all three call sites are one edit.

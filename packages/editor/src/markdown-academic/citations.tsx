@@ -15,8 +15,8 @@
  * as the wikilink resolver. Numbering is owned by `collectCitations` (a single
  * pre-pass over the source) so an inline `[1]` and bibliography entry 1 always agree.
  */
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { Separator } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { Separator } from "@elabs/components-ui";
 import {
   createContext,
   forwardRef,
@@ -259,7 +259,7 @@ function CiteLink({ entry, label }: { entry: ResolvedCitation; label: string }) 
       aria-label={`Citation: ${name}`}
       // #317/#399 — the on-surface `-text` rung, NOT the `--primary` FILL: an
       // inline cite is body text inside a paragraph and owes WCAG 1.4.3 AA
-      // (4.5:1), which `--primary` missed at 4.29-4.31:1 in qlik-bright. The
+      // (4.5:1), which `--primary` missed at 4.29-4.31:1 in light. The
       // resting `underline` is the separate 1.4.1 non-colour cue (#317's
       // link-in-text-block half) — keep both.
       className="text-primary-text underline hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

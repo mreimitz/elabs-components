@@ -8,7 +8,7 @@ brands. Re-branding is a token change.
 `packages/tokens/src/themes.css`:
 
 - `:root` — neutral light base/fallback.
-- `[data-theme="qlik-bright"]` (default), `[data-theme="qlik-dark"]`.
+- `[data-theme="light"]` (default), `[data-theme="dark"]`.
   (A paused theme's block stays in the file but is not shipped — see
   `.claude/rules/paused-surfaces.md`.)
 - `@theme inline { --color-*: var(--*) }` — maps tokens to Tailwind utilities.

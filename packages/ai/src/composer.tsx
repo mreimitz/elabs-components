@@ -2,7 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { ArrowUp, ChevronDown, Globe, Mic, Paperclip, Sparkles } from "lucide-react";
-import { cn, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn, useLocale } from "@elabs/components-ui";
 
 import {
   PromptInput,
@@ -69,7 +69,7 @@ export interface ComposerProps {
    * distinct-inner "double card" (#254): an outer `bg-surface-muted` frame
    * around a `tone="card"` well. The well fill relative to the frame is
    * theme-driven, not universally "white" — raised on light themes, recessed
-   * on qlik-dark; see the `tone` prop doc on `PromptInput`.
+   * on dark; see the `tone` prop doc on `PromptInput`.
    */
   tone?: PromptInputProps["tone"];
   /** Optional suggestion chips rendered beneath the composer. */
@@ -95,7 +95,7 @@ export interface ComposerProps {
  * the original outer `bg-card` frame around the standard muted well;
  * `"card"` (#254) swaps to an outer `bg-surface-muted` frame around a
  * `tone="card"` well — the well fill is theme-driven (raised on light
- * themes, recessed on qlik-dark), not universally white; see the
+ * themes, recessed on dark), not universally white; see the
  * `tone` prop doc on `PromptInput`. Semantic tokens only; theme-aware radii
  * (`rounded-xl` frame / `rounded-b-lg` well); reads in every theme.
  *

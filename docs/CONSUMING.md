@@ -1,6 +1,6 @@
 # Consuming brand-ui from another project
 
-How to install and use the `@qlik-coe-emea/qlabs-components-*` packages — and
+How to install and use the `@elabs/components-*` packages — and
 make your coding agent brand-ui-aware — in a project **outside** this monorepo.
 
 This is the guide shipped as every package's README and attached to each
@@ -14,7 +14,7 @@ release. You should never need anything else to get started.
 > the ranges those packages declare, and the CSS `@import`/`@source` lines. Set
 > `"standalone": true` in the app-spec so it knows the target is outside this
 > monorepo. It needs **only the CLI** (`pnpm add -D
-@qlik-coe-emea/qlabs-components-cli`, §1) — the archetype templates and the
+@elabs/components-cli`, §1) — the archetype templates and the
 > component manifest ship inside it, so no brand-ui checkout is required. The
 > sections below are the manual version, and the reference the generated block is
 > built from.
@@ -22,14 +22,14 @@ release. You should never need anything else to get started.
 ## Distribution model — private packages on GitHub Packages
 
 The packages are published to **[GitHub Packages](https://npm.pkg.github.com)**
-under the `@qlik-coe-emea` scope, from the
-[`Qlik-CoE-EMEA/qlabs-components`](https://github.com/Qlik-CoE-EMEA/qlabs-components)
+under the `@elabs` scope, from the
+`<owner>/<repo>`
 repo. They are **private** — visibility follows the repo — so you need a token
 to install, but otherwise they behave like any other npm dependency: real semver
 ranges, lockfile integrity, `pnpm update`.
 
 > **Upgrading from the tarball flow?** The packages were renamed
-> (`@brand/<pkg>` → `@qlik-coe-emea/qlabs-components-<pkg>`) because GitHub
+> (`@brand/<pkg>` → `@elabs/components-<pkg>`) because GitHub
 > Packages only accepts a scope matching the repo owner. **Delete your entire
 > `pnpm.overrides` / `resolutions` mirror block** — it only existed so
 > `workspace:*` peers in a hand-copied tarball had something to resolve against.
@@ -41,7 +41,7 @@ GitHub Packages has no anonymous read for private packages. Add the scope
 mapping to your project's `.npmrc`:
 
 ```ini
-@qlik-coe-emea:registry=https://npm.pkg.github.com
+@elabs:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
@@ -59,15 +59,15 @@ that `${VAR}` in `.npmrc` is expanded by npm/pnpm at install time.
 ## 2. Install the packages
 
 ```bash
-pnpm add @qlik-coe-emea/qlabs-components-tokens @qlik-coe-emea/qlabs-components-ui
+pnpm add @elabs/components-tokens @elabs/components-ui
 ```
 
 ```jsonc
 {
   "dependencies": {
-    "@qlik-coe-emea/qlabs-components-tokens": "^2.0.0",
-    "@qlik-coe-emea/qlabs-components-ui": "^2.0.0",
-    "@qlik-coe-emea/qlabs-components-data": "^2.0.0",
+    "@elabs/components-tokens": "^2.0.0",
+    "@elabs/components-ui": "^2.0.0",
+    "@elabs/components-data": "^2.0.0",
   },
 }
 ```
@@ -97,14 +97,14 @@ pnpm add @xyflow/react      # only if you use …-flow or the …-ai canvas
 
 Per-package peers worth knowing:
 
-| Package                                  | Extra peer you must provide                                                                                                                                                           |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@qlik-coe-emea/qlabs-components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
-| `@qlik-coe-emea/qlabs-components-ai`     | `ai` (Vercel AI SDK) `^6` — your app owns the model calls; `@xyflow/react` if you render the agent canvas                                                                             |
-| `@qlik-coe-emea/qlabs-components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
-| `@qlik-coe-emea/qlabs-components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@qlik-coe-emea/qlabs-components-editor/monaco-environment` once (Vite)                                                 |
-| `@qlik-coe-emea/qlabs-components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
-| everything else                          | `@qlik-coe-emea/qlabs-components-tokens` + `@qlik-coe-emea/qlabs-components-ui` (already in your deps)                                                                                |
+| Package                    | Extra peer you must provide                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
+| `@elabs/components-ai`     | `ai` (Vercel AI SDK) `^6` — your app owns the model calls; `@xyflow/react` if you render the agent canvas                                                                             |
+| `@elabs/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
+| `@elabs/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs/components-editor/monaco-environment` once (Vite)                                                               |
+| `@elabs/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
+| everything else            | `@elabs/components-tokens` + `@elabs/components-ui` (already in your deps)                                                                                                            |
 
 All packages are **ESM-only** (`"type": "module"`) — use a bundler that handles
 ESM (Vite, Next, webpack 5, esbuild).
@@ -117,20 +117,20 @@ to produce styles in your app, do **two** things in your app's CSS entry:
 
 ```css
 /* Pulls in Tailwind itself + the @theme inline token→utility map + both
-   themes (`qlik-bright`, `qlik-dark`) + the self-hosted fonts. No
+   themes (`light`, `dark`) + the self-hosted fonts. No
    separate `@import "tailwindcss"` is needed, and Tailwind v4 needs no
    tailwind.config.js.
 
    It also pulls in `tw-animate-css` (the animation utilities the motion system
-   retimes). That ships INSIDE @qlik-coe-emea/qlabs-components-tokens as a real dependency — you do not
+   retimes). That ships INSIDE @elabs/components-tokens as a real dependency — you do not
    install it yourself. `tailwindcss` is the one peer you provide (see §3). */
-@import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
+@import "@elabs/components-tokens/styles.css";
 
-/* Tailwind ignores node_modules unless you @source it — list every @qlik-coe-emea/qlabs-components-*
+/* Tailwind ignores node_modules unless you @source it — list every @elabs/components-*
    package you render so its utility classes get generated: */
-@source "../node_modules/@qlik-coe-emea/qlabs-components-ui/dist";
-@source "../node_modules/@qlik-coe-emea/qlabs-components-data/dist";
-/* …one @source per @qlik-coe-emea/qlabs-components-* package you use */
+@source "../node_modules/@elabs/components-ui/dist";
+@source "../node_modules/@elabs/components-data/dist";
+/* …one @source per @elabs/components-* package you use */
 ```
 
 > Skip the `@source` lines and the components render **unstyled** — that's the
@@ -166,18 +166,18 @@ they stay callable from a server component or a plain Node script:
 
 ## 5. App root — ThemeProvider
 
-Import the CSS once and wrap the tree. The three shipped themes are `qlik-bright`
-(default) and `qlik-dark`:
+Import the CSS once and wrap the tree. The three shipped themes are `light`
+(default) and `dark`:
 
 ```tsx
-import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
-import { Button, Card, CardHeader, CardTitle } from "@qlik-coe-emea/qlabs-components-ui";
-import { DataTable } from "@qlik-coe-emea/qlabs-components-data";
+import "@elabs/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs/components-tokens";
+import { Button, Card, CardHeader, CardTitle } from "@elabs/components-ui";
+import { DataTable } from "@elabs/components-data";
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="qlik-bright">
+    <ThemeProvider defaultTheme="light">
       <Card>
         <CardHeader>
           <CardTitle>Hello</CardTitle>
@@ -191,15 +191,15 @@ export default function App() {
 
 ## 6. Per-package extras
 
-- **`@qlik-coe-emea/qlabs-components-flow`** — `import "@xyflow/react/dist/style.css"` once.
-- **`@qlik-coe-emea/qlabs-components-editor`** — `import "@qlik-coe-emea/qlabs-components-editor/monaco-environment"`
+- **`@elabs/components-flow`** — `import "@xyflow/react/dist/style.css"` once.
+- **`@elabs/components-editor`** — `import "@elabs/components-editor/monaco-environment"`
   once at the app entry to enable Monaco's language workers (completions,
   diagnostics). Vite-only; other bundlers wire `self.MonacoEnvironment.getWorker`
   themselves. Without it the editor still renders and highlights.
   Subpaths: `…/markdown` (the authoring + preview suite), `…/markdown/parse` and
   `…/markdown/frontmatter` (pure, Monaco-free, server-safe).
   You do **not** import the editor's CSS — the bundles import their own.
-- **`@qlik-coe-emea/qlabs-components-viewer`** — formats are **opt-in**. Every parser
+- **`@elabs/components-viewer`** — formats are **opt-in**. Every parser
   engine is an OPTIONAL peer dependency, so the package installs and builds with
   none of them; a format whose parser is absent renders an error panel naming the
   package to install rather than failing the build.
@@ -219,7 +219,7 @@ export default function App() {
   ship is a `registry.register(manifest, () => import(…))` call, not a fork.
 
   **Markdown and code cost nothing extra if you already render chat.** Both peers
-  are ones `@qlik-coe-emea/qlabs-components-ai` already depends on, so an app with
+  are ones `@elabs/components-ai` already depends on, so an app with
   a chat surface has them installed. Skip them and a `.md` or `.ts` file shows the
   panel naming the package — it does not silently fall back to plain text, because
   a highlighted file quietly arriving unhighlighted is a worse answer than being
@@ -234,7 +234,7 @@ export default function App() {
   start:
 
   ```ts
-  import { configurePdfEngine } from "@qlik-coe-emea/qlabs-components-viewer";
+  import { configurePdfEngine } from "@elabs/components-viewer";
 
   configurePdfEngine({
     workerSrc: "/pdfjs/pdf.worker.min.mjs",
@@ -264,11 +264,11 @@ export default function App() {
   peer at the vendor CDN build yourself. Every other viewer format is unaffected;
   skip the peer and you skip the exposure.
 
-- **`@qlik-coe-emea/qlabs-components-maps`** — no CSS import needed; `MapCanvas`
+- **`@elabs/components-maps`** — no CSS import needed; `MapCanvas`
   pulls in MapLibre's stylesheet and the brand overrides itself.
-- **`@qlik-coe-emea/qlabs-components-ui`** — the class-merge helper is at
-  `@qlik-coe-emea/qlabs-components-ui/lib/cn` (server-safe).
-- **`@qlik-coe-emea/qlabs-components-ai`** — `MarkdownPreview` math needs
+- **`@elabs/components-ui`** — the class-merge helper is at
+  `@elabs/components-ui/lib/cn` (server-safe).
+- **`@elabs/components-ai`** — `MarkdownPreview` math needs
   `import "katex/dist/katex.min.css"` once, only if you enable it.
 
 ## 7. Make your coding agent brand-ui-aware
@@ -281,7 +281,7 @@ CLI at minimum.**
 ### 7a. The CLI — ground truth about the API (install this first)
 
 ```bash
-pnpm add -D @qlik-coe-emea/qlabs-components-cli
+pnpm add -D @elabs/components-cli
 ```
 
 The binary is `brand-ui`. It ships the component manifest **inside the package**,
@@ -327,7 +327,7 @@ consumption. `docs`'s default is its markdown card — written to be read by a
 model as-is, and returning far more than a prop list:
 
 ```
-# Button  (@qlik-coe-emea/qlabs-components-ui)
+# Button  (@elabs/components-ui)
 purpose: Primary action trigger — the canonical way to invoke an action.  [action]
   used inside: Form, Dialog, Card, AlertDialog, Toolbar
   pairs with: Spinner
@@ -371,7 +371,7 @@ it well_. Two ways in:
 **Claude Code / Cowork — the plugin (live, tracks the repo):**
 
 ```
-/plugin marketplace add Qlik-CoE-EMEA/qlabs-components
+/plugin marketplace add <path-to-this-repo>
 /plugin install brand-ui
 ```
 
@@ -379,7 +379,7 @@ Then `/brand-ui-start` is the front door — it routes you to build-a-new-app,
 improve-an-existing-app, or just-help-me-use-it.
 
 **Version-pinned instead:** download `brand-ui-agent-kit-X.Y.Z.zip` from the
-[release](https://github.com/Qlik-CoE-EMEA/qlabs-components/releases), unzip, and
+release, unzip, and
 copy `skills/` into `.claude/skills/`, keeping `playbooks/`,
 `brand-ui.manifest.json` and `llms.txt` beside it. Pin this if you need the agent
 layer to match an exact component set.
@@ -462,7 +462,7 @@ of the project you want to migrate:
 
 ```text
 Migrate this project to the brand-ui design system
-(@qlik-coe-emea/qlabs-components-*). Work in phases and stop for my approval
+(@elabs/components-*). Work in phases and stop for my approval
 between each one.
 
 PHASE 1 — Understand, change nothing.
@@ -503,7 +503,7 @@ PHASE 3 — Migrate, leaf-first.
 
 PHASE 4 — Verify.
 - Run `pnpm exec brand-ui audit src/` and fix what it reports.
-- Check every migrated screen in both themes: qlik-bright, qlik-dark. A component that only works in one theme is not done.
+- Check every migrated screen in both themes: light, dark. A component that only works in one theme is not done.
 - Report honestly what you migrated, what you skipped and why, and anything you
   changed that I should look at closely.
 
@@ -542,11 +542,11 @@ full picture, including the touch-device gating, is in
 ## Troubleshooting
 
 - **Components render unstyled** → you're missing the `@source` line for that
-  package (§4), or `@qlik-coe-emea/qlabs-components-tokens/styles.css` isn't
+  package (§4), or `@elabs/components-tokens/styles.css` isn't
   imported. This is the single most common mistake.
 - **`401 Unauthorized` / `404 Not Found` on install** → the registry or the token
   is missing (§1). Confirm with
-  `npm view @qlik-coe-emea/qlabs-components-ui --registry=https://npm.pkg.github.com`.
+  `npm view @elabs/components-ui --registry=https://npm.pkg.github.com`.
   Use a **classic** PAT with `read:packages` — fine-grained PATs are unreliable
   here. In another repo's CI, its own `GITHUB_TOKEN` cannot read this repo's
   packages; grant package access or use an org-level token.
@@ -559,8 +559,8 @@ full picture, including the touch-device gating, is in
   `"use client"`, so this usually means a stale install; reinstall. The
   deliberately server-safe entries are `…-ui/lib/cn`,
   `…-editor/markdown/parse` and `…/frontmatter`.
-- **Fonts missing** → they ship inside `@qlik-coe-emea/qlabs-components-tokens` with relative `@font-face`
-  URLs; importing `@qlik-coe-emea/qlabs-components-tokens/styles.css` from the installed package is enough.
+- **Fonts missing** → they ship inside `@elabs/components-tokens` with relative `@font-face`
+  URLs; importing `@elabs/components-tokens/styles.css` from the installed package is enough.
 
 ## Upgrading
 
@@ -570,7 +570,7 @@ full picture, including the touch-device gating, is in
 Ordinary npm upgrades now:
 
 ```bash
-pnpm update "@qlik-coe-emea/qlabs-components-*"
+pnpm update "@elabs/components-*"
 ```
 
 All packages are released in **lockstep** — every distributable package shares
@@ -584,7 +584,7 @@ Two things to re-sync after a bump:
 2. **The agent kit**, if you vendored the pinned zip rather than installing the
    live plugin (§7c). The plugin tracks the repo and needs nothing.
 
-Read the [CHANGELOG](https://github.com/Qlik-CoE-EMEA/qlabs-components/blob/main/CHANGELOG.md)
+Read the CHANGELOG
 before a major — the 2.0.0 release renamed every package.
 
 **What you can expect from us:** deprecations land in a minor and are only removed

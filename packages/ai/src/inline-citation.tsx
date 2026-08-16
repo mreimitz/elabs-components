@@ -1,11 +1,11 @@
 "use client";
 
-import { Badge } from "@qlik-coe-emea/qlabs-components-ui";
-import type { CarouselApi } from "@qlik-coe-emea/qlabs-components-ui";
-import { Carousel, CarouselContent, CarouselItem } from "@qlik-coe-emea/qlabs-components-ui";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge } from "@elabs/components-ui";
+import type { CarouselApi } from "@elabs/components-ui";
+import { Carousel, CarouselContent, CarouselItem } from "@elabs/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 import { ArrowLeftIcon, ArrowRightIcon, BadgeCheckIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";

@@ -42,9 +42,9 @@ export const Ghost: Story = { args: { variant: "ghost" } };
 // `rgba(0, 0, 0, 0)` and fail — where a plain `toBeVisible()` would still pass
 // on the unstyled element.
 //
-// The harness applies the shipped DEFAULT theme (`qlik-bright`) to
+// The harness applies the shipped DEFAULT theme (`light`) to
 // `document.documentElement` (see `apps/docs/.storybook/preview.tsx`'s
-// `withTheme` decorator, #402), so `--primary` here is qlik-bright's own
+// `withTheme` decorator, #402), so `--primary` here is light's own
 // value (`oklch(0.553 0.143 153)` in themes.css) — not the unbranded `:root`
 // fallback this test asserted against before #402 fixed the harness to
 // actually apply a theme.

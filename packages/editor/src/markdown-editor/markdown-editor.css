@@ -4,7 +4,7 @@
  * Milkdown core ships ZERO styles (headless), so this is where brand-ui owns the
  * look. Every value is a semantic design token (var(--foreground), --border,
  * --radius, …) — NO raw colors — so the editor matches all three themes
- * (qlik-bright/qlik-dark/blueprint) for free. Every rule
+ * (light/dark/blueprint) for free. Every rule
  * is scoped under `.milkdown-host` so nothing leaks globally.
  */
 
@@ -42,7 +42,7 @@
  * workspace's `h-full` wysiwyg pane, or any sized container). In an
  * indefinite-height parent it resolves to `auto`, so the standalone / short
  * editor still sizes to its content above the 9rem floor — no regression for the
- * autodocs / inline cases. (qlabs-components: editor-fill-height)
+ * autodocs / inline cases. (elabs-components: editor-fill-height)
  * ------------------------------------------------------------------------- */
 .milkdown-host {
   display: flex;

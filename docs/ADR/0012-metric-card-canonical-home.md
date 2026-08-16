@@ -1,4 +1,4 @@
-# ADR 0012 — MetricCard canonical home: `@qlik-coe-emea/qlabs-components-ui`
+# ADR 0012 — MetricCard canonical home: `@elabs/components-ui`
 
 **Status:** Accepted
 **Date:** 2026-06-08
@@ -8,30 +8,30 @@
 
 Two near-identical KPI tile implementations existed in the codebase:
 
-1. `packages/charts/src/metric-card/metric-card.tsx` — the `@qlik-coe-emea/qlabs-components-charts` canonical tile.
+1. `packages/charts/src/metric-card/metric-card.tsx` — the `@elabs/components-charts` canonical tile.
 2. `packages/editor/src/metric-block/metric-block.tsx` — a deliberate fork that added a
    `description` slot and avoided an `editor → charts` sideways dependency.
 
 The comment in the editor file explicitly acknowledged the fork. Both were built on
-`@qlik-coe-emea/qlabs-components-ui` `Card`, with no `@qlik-coe-emea/qlabs-components-charts`-internal dependency in the charts tile itself.
-This meant the charts tile was eligible for promotion to `@qlik-coe-emea/qlabs-components-ui` without introducing
+`@elabs/components-ui` `Card`, with no `@elabs/components-charts`-internal dependency in the charts tile itself.
+This meant the charts tile was eligible for promotion to `@elabs/components-ui` without introducing
 any new dependency edge.
 
 The one-way dependency graph (`tokens → ui/icons → data/ai/flow/charts/marketing/editor/blueprint`)
 makes `editor → charts` a **forbidden sideways dependency**. A `charts → ui` import is
 already allowed (and was already present), so the correct resolution is to move the canonical
-KPI tile **down** to `@qlik-coe-emea/qlabs-components-ui`, where both `@qlik-coe-emea/qlabs-components-charts` and `@qlik-coe-emea/qlabs-components-editor` can consume
+KPI tile **down** to `@elabs/components-ui`, where both `@elabs/components-charts` and `@elabs/components-editor` can consume
 it without violating the graph.
 
 ## Decision
 
-The canonical KPI tile (`MetricCard`) lives in **`@qlik-coe-emea/qlabs-components-ui`**.
+The canonical KPI tile (`MetricCard`) lives in **`@elabs/components-ui`**.
 
 - `packages/ui/src/components/metric-card/metric-card.tsx` — the single implementation.
 - `packages/charts/src/metric-card/index.ts` — re-exports `MetricCard` / `MetricCardProps`
-  from `@qlik-coe-emea/qlabs-components-ui`. No implementation. The `@qlik-coe-emea/qlabs-components-charts` public surface is unchanged.
+  from `@elabs/components-ui`. No implementation. The `@elabs/components-charts` public surface is unchanged.
 - `packages/editor/src/metric-block/metric-block.tsx` — thin alias: `MetricBlock = MetricCard`,
-  `MetricBlockProps = MetricCardProps`. The `@qlik-coe-emea/qlabs-components-editor/markdown` public surface is
+  `MetricBlockProps = MetricCardProps`. The `@elabs/components-editor/markdown` public surface is
   unchanged (same names, superset props).
 
 ## Consequences
@@ -39,8 +39,8 @@ The canonical KPI tile (`MetricCard`) lives in **`@qlik-coe-emea/qlabs-component
 **Positive:**
 
 - One implementation, no drift. The fork is retired.
-- No new cross-package dependency edge is created. `@qlik-coe-emea/qlabs-components-editor` already depended on
-  `@qlik-coe-emea/qlabs-components-ui`; `@qlik-coe-emea/qlabs-components-charts` already depended on `@qlik-coe-emea/qlabs-components-ui`.
+- No new cross-package dependency edge is created. `@elabs/components-editor` already depended on
+  `@elabs/components-ui`; `@elabs/components-charts` already depended on `@elabs/components-ui`.
 - Both packages' public APIs are source-compatible (same exported names).
 - `description`, `positiveIsGood`, `icon`, and `visual` are available everywhere the tile is used.
 
@@ -52,7 +52,7 @@ The canonical KPI tile (`MetricCard`) lives in **`@qlik-coe-emea/qlabs-component
 
 **Drift guard:**
 
-- The existing `check-charts-reuse` gate forbids `@qlik-coe-emea/qlabs-components-charts` from re-declaring
-  a component name already exported by `@qlik-coe-emea/qlabs-components-ui`. The re-export in `charts/src/metric-card/
+- The existing `check-charts-reuse` gate forbids `@elabs/components-charts` from re-declaring
+  a component name already exported by `@elabs/components-ui`. The re-export in `charts/src/metric-card/
 index.ts` is a pass-through, not a re-declaration, so the gate continues to pass.
 - Any future KPI tile duplication will be caught by the same gate.

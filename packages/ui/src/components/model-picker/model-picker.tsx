@@ -101,7 +101,7 @@ function Row({
  * A compact pill that opens a grouped, searchable target list anchored under
  * itself — sized to sit in a composer footer.
  *
- * The inline sibling of `@qlik-coe-emea/qlabs-components-ai`'s `ModelSelector`,
+ * The inline sibling of `@elabs/components-ai`'s `ModelSelector`,
  * which is the same `Command` internals in a modal `Dialog`. Reach for that one
  * for a full command palette; reach for this one for an in-place picker.
  *

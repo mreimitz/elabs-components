@@ -1,6 +1,6 @@
 /**
  * value-format.ts — the ONE answer to "how does a number become a string" in
- * `@qlik-coe-emea/qlabs-components-charts`.
+ * `@elabs/components-charts`.
  *
  * Pure by design: types, constants and an `Intl.NumberFormatOptions` builder,
  * with no React and no `Intl` instances (those live behind the locale-keyed
@@ -12,7 +12,7 @@
  * narrow surfaces; `50012102.632741` is not a number a reader can take in, and
  * the axis' old hand-rolled `(v / 1000).toFixed(0) + "k"` rendered 1.5 million
  * as `1500k`. Exactness does not disappear — it moves to click-to-copy
- * (`CopyableValue` in `@qlik-coe-emea/qlabs-components-ui`), which hands over
+ * (`CopyableValue` in `@elabs/components-ui`), which hands over
  * the unrounded value.
  */
 

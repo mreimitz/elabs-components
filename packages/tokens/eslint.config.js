@@ -1,7 +1,7 @@
-import { reactConfig } from "@qlik-coe-emea/qlabs-components-eslint-config/react";
+import { reactConfig } from "@elabs/components-eslint-config/react";
 
 /**
- * @qlik-coe-emea/qlabs-components-tokens extends the shared React preset, plus a Node-globals override
+ * @elabs/components-tokens extends the shared React preset, plus a Node-globals override
  * for the package's build scripts (the DTCG → themes.css pipeline). The shared
  * preset only wires Node globals for `.{ts,tsx,js,jsx}`; these are `.mjs` Node
  * CLI scripts that use `process`/`console`, so they need the Node environment.

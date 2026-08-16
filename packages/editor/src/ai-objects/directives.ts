@@ -7,7 +7,7 @@
  * components — the library renders, the consumer computes.
  *
  * Usage:
- *   import { aiObjectDirectives } from "@qlik-coe-emea/qlabs-components-editor/markdown";
+ *   import { aiObjectDirectives } from "@elabs/components-editor/markdown";
  *
  *   <MarkdownPreview
  *     extensions={{ directives: aiObjectDirectives({ resolveKnowledge }) }}

@@ -11,11 +11,11 @@
  * with — WITHOUT creating a `charts/ -> auto-chart/ -> charts/` import cycle
  * (`auto-chart` imports FROM `charts`, never the reverse). `auto-chart.tsx`
  * re-exports this component so `ChartFallback` keeps its existing place in the
- * public `@qlik-coe-emea/qlabs-components-charts` surface.
+ * public `@elabs/components-charts` surface.
  */
 
 import { forwardRef, type HTMLAttributes } from "react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 
 interface ChartFallbackProps extends HTMLAttributes<HTMLDivElement> {
   message: string;

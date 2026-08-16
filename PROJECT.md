@@ -24,7 +24,7 @@ patterns, so a brand can be swapped via themes rather than hardcoded anywhere.
 - Fast to use for prototypes and demos; fast for coding agents to extend safely.
 - First-class support for AI/chat UIs and React Flow canvases, plus data grids
   and dashboards.
-- Multiple themes from day one (qlik-bright, qlik-dark, blueprint).
+- Multiple themes from day one (light, dark, blueprint).
 - Two consumption modes: imported stable primitives, and copy-owned registry
   blocks/templates.
 - High-signal docs + Claude Code setup so humans and agents extend it correctly.
@@ -55,26 +55,26 @@ reasoning behind each major choice.
 
 <!-- brand-ui:gen:packages:start -->
 
-| Package                                     | Path                 | Purpose                                                                                  |
-| ------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------- |
-| `@qlik-coe-emea/qlabs-components-tokens`    | `packages/tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@qlik-coe-emea/qlabs-components-icons`     | `packages/icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@qlik-coe-emea/qlabs-components-ui`        | `packages/ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@qlik-coe-emea/qlabs-components-data`      | `packages/data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@qlik-coe-emea/qlabs-components-ai`        | `packages/ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@qlik-coe-emea/qlabs-components-flow`      | `packages/flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@qlik-coe-emea/qlabs-components-maps`      | `packages/maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@qlik-coe-emea/qlabs-components-charts`    | `packages/charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@qlik-coe-emea/qlabs-components-marketing` | `packages/marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@qlik-coe-emea/qlabs-components-editor`    | `packages/editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@qlik-coe-emea/qlabs-components-viewer`    | `packages/viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| Package                       | Path                 | Purpose                                                                                  |
+| ----------------------------- | -------------------- | ---------------------------------------------------------------------------------------- |
+| `@elabs/components-tokens`    | `packages/tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs/components-icons`     | `packages/icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
+| `@elabs/components-ui`        | `packages/ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs/components-data`      | `packages/data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs/components-ai`        | `packages/ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs/components-flow`      | `packages/flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
+| `@elabs/components-maps`      | `packages/maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs/components-charts`    | `packages/charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
+| `@elabs/components-marketing` | `packages/marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
+| `@elabs/components-editor`    | `packages/editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
+| `@elabs/components-viewer`    | `packages/viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
 
 <!-- brand-ui:gen:packages:end -->
 
 ## Roadmap (suggested)
 
 - **Now:** harden the foundation; expand test coverage; add `Drawer`, `Accordion`,
-  `Command`, `Toast` to `@qlik-coe-emea/qlabs-components-ui`.
+  `Command`, `Toast` to `@elabs/components-ui`.
 - **Next:** DataTable saved views + server-side data; React Flow minimap +
   grouping; chat streaming helpers; more registry blocks/templates.
 - **Shipped:** internal package releases — every distributable package publishes
@@ -87,7 +87,7 @@ reasoning behind each major choice.
 ## Acceptance criteria (foundation)
 
 - All listed packages exist with real starter implementations and barrel exports.
-- Token system with 2 themes (qlik-bright, qlik-dark) switchable via `data-theme` +
+- Token system with 2 themes (light, dark) switchable via `data-theme` +
   `ThemeProvider`.
 - Storybook loads stories from all packages with live theme switching.
 - Vite playground demonstrates app shell, dashboard/data table, AI chat, flow

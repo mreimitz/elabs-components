@@ -3,7 +3,7 @@
  *
  * `skills/brand-ui-new-app` (shipped in `.claude-plugin/plugin.json`) tells every
  * consumer to run `pnpm exec brand-ui scaffold <spec> --write <dir>` in a project
- * that installed `@qlik-coe-emea/qlabs-components-cli`. That instruction is only
+ * that installed `@elabs/components-cli`. That instruction is only
  * true while the CLI ships the archetype templates and the manifest — otherwise
  * `scaffold` dead-ends with "template not found" and `context`/`docs` have no
  * ground truth. This test is the teeth on that promise: it locks the `files`
@@ -58,7 +58,7 @@ test("the manifest carries each package's peers, so consumer mode can derive the
   const declared = (pkg) =>
     JSON.parse(readFileSync(join(root, `packages/${pkg}/package.json`), "utf8")).peerDependencies;
   for (const pkg of ["flow", "ai", "editor", "maps"]) {
-    const name = `@qlik-coe-emea/qlabs-components-${pkg}`;
+    const name = `@elabs/components-${pkg}`;
     assert.deepEqual(
       manifest.packages[name].peerDependencies,
       declared(pkg),
@@ -71,7 +71,7 @@ test("the manifest carries each package's peers, so consumer mode can derive the
     assert.deepEqual(fromManifest, fromDisk, `${name}: manifest and checkout agree`);
   }
   assert.equal(
-    packagePeers("@qlik-coe-emea/qlabs-components-ai", { manifest })["@xyflow/react"],
+    packagePeers("@elabs/components-ai", { manifest })["@xyflow/react"],
     declared("ai")["@xyflow/react"],
   );
 });

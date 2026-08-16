@@ -37,7 +37,7 @@ const monthlyColumns = [
 ];
 
 /**
- * A real `@qlik-coe-emea/qlabs-components-charts` BarChart — ChartFrame wraps actual charts, so the
+ * A real `@elabs/components-charts` BarChart — ChartFrame wraps actual charts, so the
  * stories exercise the genuine integration (sizing, theming, toolbar overlay).
  * ChartFrame's body supplies the height, so the chart fills its box.
  */

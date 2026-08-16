@@ -85,7 +85,7 @@ pnpm audit:ui                   # = brand-ui audit src — must be 0 issues
 "Runnable" is a claim about a command you ran. If you could not install/start it,
 say that first.
 
-Then **render it** in both shipped themes — `qlik-bright`, `qlik-dark` — and say which surface you actually looked at. If you could not
+Then **render it** in both shipped themes — `light`, `dark` — and say which surface you actually looked at. If you could not
 render it, say so plainly: "compiles and audits clean; **not** visually verified".
 Never claim a visual result you did not observe.
 

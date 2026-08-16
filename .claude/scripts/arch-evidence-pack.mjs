@@ -11,7 +11,7 @@
  * every finding carries a `code`, a `severity`, and a concrete `fix`.
  *
  * READ-ONLY on the repo. Writes ONLY under the run dir. Self-contained (no
- * @qlik-coe-emea/qlabs-components-* import) so it stays portable when the audit is packaged as a plugin.
+ * @elabs/components-* import) so it stays portable when the audit is packaged as a plugin.
  *
  * Usage:
  *   node .claude/scripts/arch-evidence-pack.mjs                 # standard depth

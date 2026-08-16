@@ -9,7 +9,7 @@
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { LocaleProvider } from "@qlik-coe-emea/qlabs-components-ui";
+import { LocaleProvider } from "@elabs/components-ui";
 import { MessageResponse } from "./message";
 import { MarkdownView } from "./markdown-view";
 import { Reasoning, ReasoningContent } from "./reasoning";
@@ -105,7 +105,7 @@ describe("Streamdown chrome microcopy (#310)", () => {
  */
 describe("Streamdown code-block theme (#315 follow-up)", () => {
   it("MessageResponse derives fenced code-block colors from brand --code-* tokens, not a static github palette", async () => {
-    document.documentElement.setAttribute("data-theme", "qlik-bright");
+    document.documentElement.setAttribute("data-theme", "light");
     document.documentElement.style.setProperty("--code-keyword", "oklch(0.38 0.16 264)");
 
     const { container } = render(<MessageResponse>{CODE_MARKDOWN}</MessageResponse>);
@@ -121,7 +121,7 @@ describe("Streamdown code-block theme (#315 follow-up)", () => {
   });
 
   it("re-derives MessageResponse's code colors when data-theme changes at runtime", async () => {
-    document.documentElement.setAttribute("data-theme", "qlik-bright");
+    document.documentElement.setAttribute("data-theme", "light");
     document.documentElement.style.setProperty("--code-keyword", "oklch(0.38 0.16 264)");
 
     const { container } = render(
@@ -130,7 +130,7 @@ describe("Streamdown code-block theme (#315 follow-up)", () => {
 
     await findHighlightedKeywordSpan(container, "const");
 
-    document.documentElement.setAttribute("data-theme", "qlik-dark");
+    document.documentElement.setAttribute("data-theme", "dark");
     document.documentElement.style.setProperty("--code-keyword", "oklch(0.92 0.02 240)");
 
     await waitFor(() => {
@@ -138,7 +138,7 @@ describe("Streamdown code-block theme (#315 follow-up)", () => {
         (el) => el.textContent === "const",
       );
       const style = (span?.getAttribute("style") ?? "").toLowerCase();
-      // Must differ from the qlik-bright color above (case-insensitive — Shiki's
+      // Must differ from the light color above (case-insensitive — Shiki's
       // own re-serialization may differ in hex letter case from ours), proving
       // the plugin re-derived rather than staying frozen on whichever theme was
       // active at first mount.

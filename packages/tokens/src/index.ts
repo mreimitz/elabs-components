@@ -1,10 +1,10 @@
 /**
- * @qlik-coe-emea/qlabs-components-tokens
+ * @elabs/components-tokens
  *
  * Token-driven theming for the brand-ui design system.
  *
  * Consumers MUST import the stylesheet once at the app root:
- *   import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
+ *   import "@elabs/components-tokens/styles.css";
  *
  * Then wrap the app in <ThemeProvider> and switch themes with useTheme().
  */

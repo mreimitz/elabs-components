@@ -3,9 +3,9 @@
 /**
  * MarkdownPreview — renders markdown to REAL @brand components (not default HTML).
  *
- * Built on Streamdown (the same react-markdown + remark engine @qlik-coe-emea/qlabs-components-ai uses), with
+ * Built on Streamdown (the same react-markdown + remark engine @elabs/components-ai uses), with
  * a branded `components` map: `#` → Heading, paragraph → Text, link → Link, list →
- * List, table → @qlik-coe-emea/qlabs-components-ui Table, `---` → Separator, blockquote → Blockquote, and the
+ * List, table → @elabs/components-ui Table, `---` → Separator, blockquote → Blockquote, and the
  * `:::card`/`:::callout`/`::metric`/`:::timeline` directives → Card / Alert /
  * MetricBlock / Timeline. The directive plugins come from the SHARED
  * `buildMarkdownPlugins()` array, so the preview and the Milkdown editor parse the
@@ -36,8 +36,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import {
   createContext,
   forwardRef,
@@ -1189,7 +1189,7 @@ export interface MarkdownPreviewProps extends Omit<HTMLAttributes<HTMLDivElement
   resolveTransclusion?: (target: string, opts: TransclusionResolveOptions) => string | null;
   /**
    * Wrap every rendered `<a>` to attach a hover/inline link preview (e.g. a
-   * `@qlik-coe-emea/qlabs-components-ui` HoverCard showing metadata). The library does NOT fetch; the
+   * `@elabs/components-ui` HoverCard showing metadata). The library does NOT fetch; the
    * consumer owns the preview content.
    *
    * Return `children` unchanged if the href should not trigger a preview.

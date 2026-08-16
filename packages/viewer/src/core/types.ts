@@ -23,7 +23,7 @@ import type {
   FileCategory,
   ProseHeadingLevel,
   ResolvedFileSource,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import type { ComponentType } from "react";
 
 import type { ResolvedHighlight } from "./highlight";
@@ -210,7 +210,7 @@ export interface AdapterRendererProps {
    * heading list. `FileViewerContent` passes the provider's value; an adapter
    * that renders headings offsets by it (`clampHeadingLevel(own + base - 1)`),
    * and one that renders none ignores it. Same seam as
-   * `@qlik-coe-emea/qlabs-components-ai`'s `MarkdownView baseHeadingLevel`.
+   * `@elabs/components-ai`'s `MarkdownView baseHeadingLevel`.
    *
    * Optional, so adding it is not a `PROTOCOL_VERSION` change.
    */

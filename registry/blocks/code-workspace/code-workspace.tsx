@@ -3,15 +3,15 @@
  *
  * A multi-file Monaco editor with brand-ui tabs + token theming. Wire Monaco's
  * language workers once at the app entry (Vite):
- *   import "@qlik-coe-emea/qlabs-components-editor/monaco-environment";
+ *   import "@elabs/components-editor/monaco-environment";
  *
- * Depends on installed @qlik-coe-emea/qlabs-components-editor (+ its peers @qlik-coe-emea/qlabs-components-ui, @qlik-coe-emea/qlabs-components-tokens, and
+ * Depends on installed @elabs/components-editor (+ its peers @elabs/components-ui, @elabs/components-tokens, and
  * monaco-editor).
  */
 "use client";
 
 import { useState } from "react";
-import { CodeWorkspace, type EditorFile } from "@qlik-coe-emea/qlabs-components-editor";
+import { CodeWorkspace, type EditorFile } from "@elabs/components-editor";
 
 const initialFiles: EditorFile[] = [
   {

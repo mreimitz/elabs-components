@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { Separator } from "@qlik-coe-emea/qlabs-components-ui";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Button } from "@elabs/components-ui";
+import { Separator } from "@elabs/components-ui";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { LucideProps } from "lucide-react";
 import { BookmarkIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";

@@ -1,18 +1,18 @@
 /**
  * Data table scaffold (copy-owned block). Swap the row type, columns and data.
- * Depends on installed @qlik-coe-emea/qlabs-components-data + @qlik-coe-emea/qlabs-components-ui + @tanstack/react-table.
+ * Depends on installed @elabs/components-data + @elabs/components-ui + @tanstack/react-table.
  */
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge } from "@elabs/components-ui";
 import {
   ColumnPicker,
   DataTable,
   FilterBar,
   SearchInput,
   type ColumnDef,
-} from "@qlik-coe-emea/qlabs-components-data";
+} from "@elabs/components-data";
 
 interface Row {
   name: string;

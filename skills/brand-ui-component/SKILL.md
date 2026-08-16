@@ -1,6 +1,6 @@
 ---
 name: brand-ui-component
-description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @qlik-coe-emea/qlabs-components-ui, @qlik-coe-emea/qlabs-components-data, @qlik-coe-emea/qlabs-components-ai, @qlik-coe-emea/qlabs-components-flow, @qlik-coe-emea/qlabs-components-maps, @qlik-coe-emea/qlabs-components-charts, @qlik-coe-emea/qlabs-components-marketing, @qlik-coe-emea/qlabs-components-editor, @qlik-coe-emea/qlabs-components-viewer, or @qlik-coe-emea/qlabs-components-blueprint, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
+description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs/components-ui, @elabs/components-data, @elabs/components-ai, @elabs/components-flow, @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing, @elabs/components-editor, @elabs/components-viewer, or @elabs/components-blueprint, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
 user-invocable: true
 argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
@@ -24,17 +24,17 @@ registry. If something close exists, decide with the user: **reuse**, **extend**
 
 ## 2. Place it correctly
 
-App UI → `@qlik-coe-emea/qlabs-components-ui`; data-dense → `@qlik-coe-emea/qlabs-components-data`; chat/AI → `@qlik-coe-emea/qlabs-components-ai`; canvas →
-`@qlik-coe-emea/qlabs-components-flow`; geospatial/MapLibre map → `@qlik-coe-emea/qlabs-components-maps`; KPI/chart → `@qlik-coe-emea/qlabs-components-charts`;
-landing → `@qlik-coe-emea/qlabs-components-marketing`; code
-editor (Monaco) → `@qlik-coe-emea/qlabs-components-editor` (markdown authoring/preview + frontmatter utils
-on the `@qlik-coe-emea/qlabs-components-editor/markdown` + `@qlik-coe-emea/qlabs-components-editor/markdown/frontmatter` subpaths);
-displaying a file the app did not write (upload, signed URL, agent output) → `@qlik-coe-emea/qlabs-components-viewer`
+App UI → `@elabs/components-ui`; data-dense → `@elabs/components-data`; chat/AI → `@elabs/components-ai`; canvas →
+`@elabs/components-flow`; geospatial/MapLibre map → `@elabs/components-maps`; KPI/chart → `@elabs/components-charts`;
+landing → `@elabs/components-marketing`; code
+editor (Monaco) → `@elabs/components-editor` (markdown authoring/preview + frontmatter utils
+on the `@elabs/components-editor/markdown` + `@elabs/components-editor/markdown/frontmatter` subpaths);
+displaying a file the app did not write (upload, signed URL, agent output) → `@elabs/components-viewer`
 (a new FORMAT is an adapter registration, not a new component);
 decorative blueprint-theme drawing furniture →
-`@qlik-coe-emea/qlabs-components-blueprint`. One direction of dependency:
+`@elabs/components-blueprint`. One direction of dependency:
 `tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/blueprint`.
-Import across packages via `@qlik-coe-emea/qlabs-components-*`, never relative paths.
+Import across packages via `@elabs/components-*`, never relative paths.
 
 ## 3. Build to the rules
 
@@ -52,7 +52,7 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 
 ## 4. Quality gate + manifest
 
-- `pnpm --filter @qlik-coe-emea/qlabs-components-<pkg> typecheck test` (and `lint`) must pass.
+- `pnpm --filter @elabs/components-<pkg> typecheck test` (and `lint`) must pass.
 - Verify it renders in both themes (Storybook).
 - Run `pnpm agent-docs` so the new component lands in the manifest AND its 5
   downstream generators (inventory/llms/context/gen — `component-inventory.md`,

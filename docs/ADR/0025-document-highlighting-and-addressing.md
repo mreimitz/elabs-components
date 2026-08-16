@@ -8,7 +8,7 @@
 
 ## Context
 
-`@qlik-coe-emea/qlabs-components-viewer` (ADR 0024) opens a file and renders it. It could not
+`@elabs/components-viewer` (ADR 0024) opens a file and renders it. It could not
 point at a **part** of one — which is the whole RAG-citation case: _"this answer came from that
 paragraph on page 3"_, where clicking the citation must take the reader to the passage and mark
 it. The same missing layer is why the viewer had no find-in-document, despite
@@ -37,7 +37,7 @@ a documented **deep-link precedence**, and a scrollbar minimap (not built).
 
 ## Decision
 
-### 1. One address union, in `@qlik-coe-emea/qlabs-components-ui`
+### 1. One address union, in `@elabs/components-ui`
 
 ```ts
 // packages/ui/src/lib/document-address.ts — dependency-free leaf
@@ -183,7 +183,7 @@ an address literal per declared kind AND asserts on something **painted**.
 
 ## Consequences
 
-- A chat citation needs **no change to `@qlik-coe-emea/qlabs-components-ai`**: the app holds the
+- A chat citation needs **no change to `@elabs/components-ai`**: the app holds the
   highlight state and closes over it in `AssetPreview`'s `renderPreview` slot (ADR 0024 §6). No
   sideways package edge is created.
 - **A CSV's `AdapterDocument.text` changed** from the raw file to the parsed grid. It is a

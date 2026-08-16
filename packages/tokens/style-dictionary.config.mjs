@@ -1,5 +1,5 @@
 /**
- * style-dictionary.config.mjs — the Style Dictionary v5 engine for @qlik-coe-emea/qlabs-components-tokens.
+ * style-dictionary.config.mjs — the Style Dictionary v5 engine for @elabs/components-tokens.
  * ---------------------------------------------------------------------------
  * SD loads the DTCG source (tokens/themes/<mode>.tokens.json) and resolves, PER
  * THEME, a flat `{ "--token": "value" }` CSS-variable map that the in-place

@@ -6,7 +6,7 @@ import { expect, within } from "storybook/test";
  *
  * A theme is a block of semantic token VALUES applied with the `data-theme`
  * attribute on a root element. `:root` is a neutral light base/fallback; each
- * theme is a `[data-theme="…"]` block in `@qlik-coe-emea/qlabs-components-tokens` `themes.css`.
+ * theme is a `[data-theme="…"]` block in `@elabs/components-tokens` `themes.css`.
  * Components reference tokens (`bg-background`, `text-muted-foreground`,
  * `border-border`), never raw colors — so re-theming is purely a token swap.
  *
@@ -28,7 +28,7 @@ const meta = {
       description: {
         component:
           "How `data-theme` + semantic tokens give one component set its shipped " +
-          "looks (qlik-bright, qlik-dark) plus the orthogonal decoration / " +
+          "looks (light, dark) plus the orthogonal decoration / " +
           "density / motion dials. Flip the toolbar controls and watch the sample " +
           "composition below adapt.",
       },
@@ -40,8 +40,8 @@ type Story = StoryObj<typeof meta>;
 
 // The shipped themes — slug (the data-theme value) + display label.
 const THEMES = [
-  { slug: "qlik-bright", label: "Qlik Bright", note: "Default. Qlik Green on light surfaces." },
-  { slug: "qlik-dark", label: "Qlik Dark", note: "Deep-blue surfaces, brighter Qlik Green." },
+  { slug: "light", label: "Light", note: "Default. Qlik Green on light surfaces." },
+  { slug: "dark", label: "Dark", note: "Deep-blue surfaces, brighter Qlik Green." },
 ] as const;
 
 const DIALS = [
@@ -202,9 +202,9 @@ export const Overview: Story = {
   // MUST fail on today's (pre-#391) blueprint — both chips are raw role
   // fills (`bg-success`/`bg-info`), so decoration.css's drawn-not-filled
   // override collapses them to one identical declaration set. MUST pass
-  // after the fix (and in `qlik-bright`/`qlik-dark`, where colour alone
+  // after the fix (and in `light`/`dark`, where colour alone
   // already separates them). Run under all three theme globals via
-  // `mcp__storybook__run-story-tests` / `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`.
+  // `mcp__storybook__run-story-tests` / `pnpm --filter @elabs/components-docs test-storybook`.
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const completeChip = await canvas.findByText("Active");
@@ -234,9 +234,9 @@ export const ShippedThemes: Story = {
   render: () => (
     <div className="space-y-4">
       <p className="m-0 max-w-prose text-caption text-muted-foreground">
-        Two themes ship in <code className="text-code">@qlik-coe-emea/qlabs-components-tokens</code>
-        . Pass the <strong>slug</strong> (the <code className="text-code">data-theme</code> value),
-        never the display name, when setting a theme programmatically or via the Storybook globals.
+        Two themes ship in <code className="text-code">@elabs/components-tokens</code>. Pass the{" "}
+        <strong>slug</strong> (the <code className="text-code">data-theme</code> value), never the
+        display name, when setting a theme programmatically or via the Storybook globals.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {THEMES.map((t) => (
@@ -264,7 +264,7 @@ export const ShippingASubset: Story = {
         hand-roll the filtering.
       </p>
       <pre className="m-0 overflow-x-auto rounded-lg border border-border bg-card p-4 text-code text-card-foreground">
-        {`<ThemeProvider allowedThemes={["qlik-bright", "qlik-dark"]}>
+        {`<ThemeProvider allowedThemes={["light", "dark"]}>
   <App />
 </ThemeProvider>`}
       </pre>

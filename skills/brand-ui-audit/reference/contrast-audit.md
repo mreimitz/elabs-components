@@ -107,7 +107,7 @@ everything silently**. Use this oklch-aware auditor in the page.
 ## Capture recipe (agent-browser)
 
 - **Theme switch (Storybook):** `…/iframe.html?id=<story>&globals=theme:Qlik+Dark&viewMode=story`
-  (labels: `Qlik Bright`, `Qlik Dark`, `Light`, `Dark`, `Blueprint`, `High contrast`).
+  (labels: `Light`, `Dark`, `Light`, `Dark`, `Blueprint`, `High contrast`).
 - **Render gate (critical):** after `open`, `wait <ms>` (e.g. `wait 1200`) or poll
   until `#storybook-root` has content **before** the screenshot. A blank/spinner
   capture is a timing bug, not a component bug — re-shoot, don't report it.
@@ -123,5 +123,5 @@ everything silently**. Use this oklch-aware auditor in the page.
 Report the measured ratio and the offending token. Example:
 `Default button label 3.61:1 (white on --primary)` → fix in `themes.css`: darken
 `--primary` or add `--primary-strong` for text/labels; re-run until ≥ 4.5:1 in
-qlik-bright and qlik-dark. Never "use a darker gray/green" as a literal — name the
+light and dark. Never "use a darker gray/green" as a literal — name the
 token.

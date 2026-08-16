@@ -45,7 +45,7 @@ single fenced `json` block (the **Machine spec**, see below) is the contract
 
 ## Brand & feel
 
-- **Theme:** {qlik-bright} {(default)}
+- **Theme:** {light} {(default)}
 - **Density / decoration:** {default}
 
 ## Per-surface detail
@@ -73,15 +73,15 @@ This is what `brand-ui scaffold` reads (the prose above is for humans). It must
 satisfy `app-spec.schema.json`:
 
 - **Required:** `archetype` (one of dashboard · data-app · ai-assistant ·
-  flow-workspace · settings · marketing), `theme` (slug: qlik-bright · qlik-dark ·
+  flow-workspace · settings · marketing), `theme` (slug: light · dark ·
   blueprint), `title`.
 - **Optional:** `intent` (`purpose`/`audience`/`scale`), `density`,
   `surfaces[]` (`{id, navLabel, archetype}`), `entities[]`
   (`{name, fields:[{name, type, rendersAs?, filterable?}]}`, `type` ∈ text ·
   number · date · status · boolean).
 
-Mirrors the `planScaffold` input in the `@qlik-coe-emea/qlabs-components-cli` scaffold engine. See
+Mirrors the `planScaffold` input in the `@elabs/components-cli` scaffold engine. See
 `app-spec.example.md` for a filled-in block; validate any spec with
 `pnpm app-spec:check <path>` (in a consuming project: install
-`@qlik-coe-emea/qlabs-components-cli` — a private GitHub Packages dependency, see
+`@elabs/components-cli` — a private GitHub Packages dependency, see
 `docs/CONSUMING.md` §1 + §7a — then use its bundled schema).

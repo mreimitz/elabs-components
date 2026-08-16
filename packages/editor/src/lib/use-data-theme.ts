@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_THEME, isThemeName, type ThemeName } from "@qlik-coe-emea/qlabs-components-tokens";
+import { DEFAULT_THEME, isThemeName, type ThemeName } from "@elabs/components-tokens";
 
 export interface DataThemeState {
   /** The active brand theme parsed from `data-theme`. */

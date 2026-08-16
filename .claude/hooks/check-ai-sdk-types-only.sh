@@ -2,7 +2,7 @@
 # check-ai-sdk-types-only.sh — PostToolUse(Write|Edit)
 # -----------------------------------------------------------------------------
 # NON-BLOCKING (always exit 0). Dev-time heads-up for decision D6 / ADR-0008:
-# `@qlik-coe-emea/qlabs-components-ai` may import the Vercel AI SDK (`ai`) and `@ai-sdk/*` as TYPES ONLY —
+# `@elabs/components-ai` may import the Vercel AI SDK (`ai`) and `@ai-sdk/*` as TYPES ONLY —
 # never the runtime. Warns the moment an edited packages/ai source file gains a
 # value import (useChat, streamText, providers, a default/namespace/side-effect/
 # dynamic import, or a value re-export).

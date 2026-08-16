@@ -1,8 +1,8 @@
-# @qlik-coe-emea/qlabs-components-viewer
+# @elabs/components-viewer
 
 > FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.
 
-Import from `@qlik-coe-emea/qlabs-components-viewer`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs/components-viewer`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 
@@ -12,7 +12,7 @@ Import from `@qlik-coe-emea/qlabs-components-viewer`. Part of brand-ui — see t
   - avoid: Adding a per-format branch to FileViewerContent — a format is an adapter registration (registry.register), never a switch in the shell.
   - avoid: Making a parser a plain dependency — every parser engine is an OPTIONAL peer, so a consumer who skips it gets the panel naming the package instead of a build error.
   - avoid: Returning HTML from an adapter — adapters emit a DATA model that brand-ui components render; that is the only reason an arbitrary file inherits the theme.
-  - avoid: Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@qlik-coe-emea/qlabs-components-editor).
+  - avoid: Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@elabs/components-editor).
   - avoid: Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure.
 - FileViewerContent
 - FileViewerEmpty

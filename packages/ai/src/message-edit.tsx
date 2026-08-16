@@ -36,9 +36,9 @@ import {
   type ReactNode,
 } from "react";
 import { Check, Pencil, X } from "lucide-react";
-import { Button, Textarea } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button, Textarea } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 
 // ─── Context ────────────────────────────────────────────────────────────────
 

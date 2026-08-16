@@ -8,11 +8,11 @@ marketing page.
 Core principles:
 
 - **Tokens are the source of truth.** Every visual decision is a semantic token
-  in `@qlik-coe-emea/qlabs-components-tokens`. Components reference tokens, never raw values. Re-branding
+  in `@elabs/components-tokens`. Components reference tokens, never raw values. Re-branding
   is a token change, not a component change.
 - **Source ownership over lock-in.** Code is meant to be read and modified.
   Avoid clever abstractions that prevent a team from editing a component.
-- **Two consumption modes.** Stable primitives are _imported_ from `@qlik-coe-emea/qlabs-components-*`;
+- **Two consumption modes.** Stable primitives are _imported_ from `@elabs/components-*`;
   prototype-specific compositions are _copy-owned_ via the registry.
 - **One direction of dependency.** `tokens` → `ui`/`icons` →
   `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`blueprint`. Never import sideways with relative

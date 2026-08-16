@@ -1,6 +1,6 @@
 "use client";
 
-import { useChoropleth } from "@qlik-coe-emea/qlabs-components-charts";
+import { useChoropleth } from "@elabs/components-charts";
 import { useEffect } from "react";
 import { computeVisitorTrend, getVisitorValue } from "./data/visitors";
 import type { StatCardHoverState } from "./stat-card-chart";

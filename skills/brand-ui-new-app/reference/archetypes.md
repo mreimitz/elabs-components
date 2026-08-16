@@ -57,5 +57,5 @@ input/switch/select/radio) ③ destructive actions + consequence copy
 | Settings       | Profile + Notifications + Security sections (template's) · no wizard                               |
 | Marketing      | template's section order · 4 stats · 6 features · single CTA                                       |
 
-Theme default: `qlik-bright`. Nav default: sidebar with one item per surface
+Theme default: `light`. Nav default: sidebar with one item per surface
 (marketing: top nav instead).

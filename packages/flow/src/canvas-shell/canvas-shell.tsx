@@ -8,7 +8,7 @@ import {
   type Node,
   type ReactFlowProps,
 } from "@xyflow/react";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { HelperLines } from "../helper-lines/helper-lines";
 import { useHelperLines } from "../helper-lines/use-helper-lines";
 

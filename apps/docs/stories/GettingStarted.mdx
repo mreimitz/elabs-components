@@ -19,22 +19,22 @@ today and what still needs a manual step.
 | **Work inside this monorepo**                  | [Path D](#path-d--work-inside-this-monorepo)             | `pnpm install`                     |
 
 > **The one thing to know first: this is _not_ on the public npm registry.**
-> `npm install @qlik-coe-emea/qlabs-components-ui` **404s** there — the packages are
+> `npm install @elabs/components-ui` **404s** there — the packages are
 > `private` and published to **GitHub Packages** instead. You need a one-time
 > `.npmrc` scope mapping + a `read:packages` token to install them; after that
 > they behave like any other npm dependency (real semver, lockfiles, `pnpm update`).
 > Everything below reflects that. (Full detail:
-> [`docs/CONSUMING.md`](https://github.com/Qlik-CoE-EMEA/qlabs-components/blob/main/docs/CONSUMING.md).)
+> `docs/CONSUMING.md`.)
 
 ## The bundled offering — the five pieces and where each lives
 
-| Piece                                                                                                                                                                                                                                                                                                                                                                                                                                                | What it is                                                                                    | How you get it                               |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Component packages** (`@qlik-coe-emea/qlabs-components-ui`, `@qlik-coe-emea/qlabs-components-tokens`, `@qlik-coe-emea/qlabs-components-data`, `@qlik-coe-emea/qlabs-components-ai`, `@qlik-coe-emea/qlabs-components-charts`, `@qlik-coe-emea/qlabs-components-flow`, `@qlik-coe-emea/qlabs-components-marketing`, `@qlik-coe-emea/qlabs-components-editor`, `@qlik-coe-emea/qlabs-components-icons`, `@qlik-coe-emea/qlabs-components-blueprint`) | the actual React components + themes                                                          | **GitHub Packages** → `pnpm add` (Path B)    |
-| **The CLI** (`@qlik-coe-emea/qlabs-components-cli`, bin `brand-ui`)                                                                                                                                                                                                                                                                                                                                                                                  | deterministic `info` / `search` / `docs` / `tokens` / `audit` over the component manifest     | GitHub Packages; then `pnpm exec brand-ui …` |
-| **The plugin**                                                                                                                                                                                                                                                                                                                                                                                                                                       | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                    |
-| **The agent kit**                                                                                                                                                                                                                                                                                                                                                                                                                                    | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo         |
-| **The registry**                                                                                                                                                                                                                                                                                                                                                                                                                                     | copy-own block/template JSON (`shadcn add`)                                                   | **self-hosted** JSON (see Path B step 5)     |
+| Piece                                                                                                                                                                                                                                                                                                    | What it is                                                                                    | How you get it                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **Component packages** (`@elabs/components-ui`, `@elabs/components-tokens`, `@elabs/components-data`, `@elabs/components-ai`, `@elabs/components-charts`, `@elabs/components-flow`, `@elabs/components-marketing`, `@elabs/components-editor`, `@elabs/components-icons`, `@elabs/components-blueprint`) | the actual React components + themes                                                          | **GitHub Packages** → `pnpm add` (Path B)    |
+| **The CLI** (`@elabs/components-cli`, bin `brand-ui`)                                                                                                                                                                                                                                                    | deterministic `info` / `search` / `docs` / `tokens` / `audit` over the component manifest     | GitHub Packages; then `pnpm exec brand-ui …` |
+| **The plugin**                                                                                                                                                                                                                                                                                           | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                    |
+| **The agent kit**                                                                                                                                                                                                                                                                                        | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo         |
+| **The registry**                                                                                                                                                                                                                                                                                         | copy-own block/template JSON (`shadcn add`)                                                   | **self-hosted** JSON (see Path B step 5)     |
 
 ## Path A — Start a new app in Claude Code
 
@@ -44,7 +44,7 @@ plugin's skills do the work.
 1. **Install the plugin** (once per machine):
 
    ```text
-   /plugin marketplace add Qlik-CoE-EMEA/qlabs-components
+   /plugin marketplace add <path-to-this-repo>
    ```
 
    This registers the skills, the reviewer agents, and both MCP servers (see Path C).
@@ -53,7 +53,7 @@ plugin's skills do the work.
    "build me a sales dashboard" / "I need an admin console" to **`brand-ui-new-app`**,
    which runs a short interview, writes a reviewable **`app-spec.md`**, then
    **scaffolds from the matching template** — app code, the root wiring
-   (`@qlik-coe-emea/qlabs-components-tokens` styles + `<ThemeProvider>` + Tailwind `@source` lines), and a
+   (`@elabs/components-tokens` styles + `<ThemeProvider>` + Tailwind `@source` lines), and a
    **starter `CLAUDE.md`** so later sessions stay on-brand.
 
 3. **Make it run.** The scaffold is _code_; to actually start it you still install
@@ -71,13 +71,13 @@ plugin's skills do the work.
 
 Four steps. This is the condensed version; the authoritative, copy-pasteable guide
 (peers, Next.js, troubleshooting, upgrading) is
-[`docs/CONSUMING.md`](https://github.com/Qlik-CoE-EMEA/qlabs-components/blob/main/docs/CONSUMING.md).
+`docs/CONSUMING.md`.
 
 **1 · Authenticate, then install the packages (GitHub Packages, not the public
-registry).** Add the `@qlik-coe-emea` scope mapping to your project's `.npmrc`:
+registry).** Add the `@elabs` scope mapping to your project's `.npmrc`:
 
 ```ini
-@qlik-coe-emea:registry=https://npm.pkg.github.com
+@elabs:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
@@ -86,7 +86,7 @@ don't reliably work against GitHub Packages). Then install like any normal
 dependency:
 
 ```bash
-pnpm add @qlik-coe-emea/qlabs-components-tokens @qlik-coe-emea/qlabs-components-ui
+pnpm add @elabs/components-tokens @elabs/components-ui
 ```
 
 No `file:` deps and no `pnpm.overrides`/`resolutions` mirror block needed — real
@@ -95,8 +95,8 @@ registry resolution handles cross-package peers. (All packages are **ESM-only**.
 **2 · Wire Tailwind v4 + tokens** in your CSS entry — **two** lines, both required:
 
 ```css
-@import "@qlik-coe-emea/qlabs-components-tokens/styles.css"; /* Tailwind + token→utility map + all 2 themes + fonts */
-@source "../node_modules/@qlik-coe-emea/qlabs-components-ui/dist"; /* one @source per @brand pkg you render */
+@import "@elabs/components-tokens/styles.css"; /* Tailwind + token→utility map + all 2 themes + fonts */
+@source "../node_modules/@elabs/components-ui/dist"; /* one @source per @brand pkg you render */
 ```
 
 > **The #1 consumer mistake:** skip the `@source` line and components render
@@ -107,13 +107,13 @@ registry resolution handles cross-package peers. (All packages are **ESM-only**.
 **4 · Wrap the app root** in `ThemeProvider`:
 
 ```tsx
-import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
-import { Button, Card } from "@qlik-coe-emea/qlabs-components-ui";
+import "@elabs/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs/components-tokens";
+import { Button, Card } from "@elabs/components-ui";
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="qlik-bright">
+    <ThemeProvider defaultTheme="light">
       <Card>
         <Button>Click me</Button>
       </Card>
@@ -153,20 +153,20 @@ agent layer so it uses the real inventory instead of guessing.
 - **Other harnesses** (Cursor, Copilot, Gemini) — vendor the **agent kit** zip
   (sanitized `skills/` + `brand-ui.manifest.json` + `llms.txt`) and point the tool at
   `llms.txt`.
-- **The CLI** — install `@qlik-coe-emea/qlabs-components-cli` from GitHub Packages (same auth as
+- **The CLI** — install `@elabs/components-cli` from GitHub Packages (same auth as
   Path B step 1: `.npmrc` scope mapping + a `read:packages` PAT), then the
   skill's commands work in your project:
 
   ```bash
-  pnpm add -D @qlik-coe-emea/qlabs-components-cli
-  pnpm exec brand-ui info            # themes, tokens, the @qlik-coe-emea/qlabs-components-* packages you have
+  pnpm add -D @elabs/components-cli
+  pnpm exec brand-ui info            # themes, tokens, the @elabs/components-* packages you have
   pnpm exec brand-ui search <query>  # find a component / hook / registry item
   pnpm exec brand-ui docs <Name>     # real props + intent — never guess the API
   ```
 
-> **Status / gap:** `brand-ui …` / `@qlik-coe-emea/qlabs-components-cli …` only resolve **after** you install
-> `@qlik-coe-emea/qlabs-components-cli` — it is a private GitHub Packages dependency, not on the
-> public npm registry. Inside Claude Code with the plugin **and the `@qlik-coe-emea`
+> **Status / gap:** `brand-ui …` / `@elabs/components-cli …` only resolve **after** you install
+> `@elabs/components-cli` — it is a private GitHub Packages dependency, not on the
+> public npm registry. Inside Claude Code with the plugin **and the `@elabs`
 > scope authenticated**, prefer the `mcp__brand-ui__*` tools instead.
 
 ## Path D — Work inside this monorepo
@@ -178,7 +178,7 @@ pnpm playground     # the Vite demo app
 pnpm build          # tsup → dist/ for every package
 ```
 
-Import across packages via the `@qlik-coe-emea/qlabs-components-*` alias (never relative paths). Scaffold a
+Import across packages via the `@elabs/components-*` alias (never relative paths). Scaffold a
 new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writes the
 `tsx`/`index.ts`/`stories`/`test`, adds the barrel export, and refreshes the manifest.
 
@@ -186,9 +186,9 @@ new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writ
 
 | When                                    | Command                                                                     | Where        |
 | --------------------------------------- | --------------------------------------------------------------------------- | ------------ |
-| Once per machine, to get the AI tooling | `/plugin marketplace add Qlik-CoE-EMEA/qlabs-components`                    | Claude Code  |
+| Once per machine, to get the AI tooling | `/plugin marketplace add <path-to-this-repo>`                               | Claude Code  |
 | Start a new app                         | tell `brand-ui-start` what to build                                         | Claude Code  |
-| Install components into your app        | `.npmrc` scope + PAT, then `pnpm add @qlik-coe-emea/qlabs-components-*`     | your project |
+| Install components into your app        | `.npmrc` scope + PAT, then `pnpm add @elabs/components-*`                   | your project |
 | Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                     | your project |
 | Find a component                        | `brand-ui search <q>`                                                       | your project |
 | Get a component's real props            | `brand-ui docs <Name>`                                                      | your project |
@@ -199,11 +199,11 @@ new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writ
 
 Theming is the `data-theme` attribute + semantic tokens — components never hardcode
 colors, they reference tokens (`bg-background`, `text-muted-foreground`,
-`border-border`). Two themes ship: **qlik-bright** (default), **qlik-dark**,
+`border-border`). Two themes ship: **light** (default), **dark**,
 **blueprint**. In these docs, switch with the **theme** toolbar control (and try the
 orthogonal **Decoration**, **Density**, **Motion** dials). In an app, wrap the tree in
 `ThemeProvider` and read/set with `useTheme()`. Re-branding is a token change in
-`@qlik-coe-emea/qlabs-components-tokens` `themes.css`, never a component change.
+`@elabs/components-tokens` `themes.css`, never a component change.
 
 ## Build with tokens, not raw colors
 
@@ -214,7 +214,7 @@ correct across both themes for free. `brand-ui audit <path>` catches violations.
 
 ## Where to go next
 
-- **[Consuming brand-ui (full guide)](https://github.com/Qlik-CoE-EMEA/qlabs-components/blob/main/docs/CONSUMING.md)** — peers, Next.js, per-package extras, troubleshooting, upgrading.
+- **Consuming brand-ui (full guide)** — peers, Next.js, per-package extras, troubleshooting, upgrading.
 - **[Docs / brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs)** & **[Storybook MCP](?path=/docs/docs-storybook-mcp-for-agents--docs)** — the agent tooling.
 - **[Foundations / Theming](?path=/docs/foundations-theming--docs)** — both themes + decoration/density/motion dials.
 - **[Foundations / Colors](?path=/docs/foundations-colors--docs)** · **[Spacing & Radius](?path=/docs/foundations-spacing-radius--docs)** · **[Elevation](?path=/docs/foundations-elevation--docs)** — the token scales.

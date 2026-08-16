@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-data — data-dense UI built on TanStack Table.
+ * @elabs/components-data — data-dense UI built on TanStack Table.
  *
  * DataTable owns the table instance and exposes it through a toolbar
  * render-prop so SearchInput, FacetFilter and ColumnPicker can drive it.

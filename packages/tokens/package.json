@@ -1,11 +1,6 @@
 {
-  "name": "@qlik-coe-emea/qlabs-components-tokens",
+  "name": "@elabs/components-tokens",
   "version": "3.1.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Qlik-CoE-EMEA/qlabs-components.git",
-    "directory": "packages/tokens"
-  },
   "license": "UNLICENSED",
   "type": "module",
   "files": [
@@ -23,7 +18,6 @@
     "./styles.css": "./src/themes.css"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -51,8 +45,8 @@
     "tailwindcss": "^4.0.0"
   },
   "devDependencies": {
-    "@qlik-coe-emea/qlabs-components-eslint-config": "workspace:*",
-    "@qlik-coe-emea/qlabs-components-typescript-config": "workspace:*",
+    "@elabs/components-eslint-config": "workspace:*",
+    "@elabs/components-typescript-config": "workspace:*",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "eslint": "^9.17.0",

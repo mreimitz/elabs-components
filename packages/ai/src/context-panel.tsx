@@ -17,7 +17,7 @@
  * ChatShell stays generic: compose `<ContextPanel>` as a SIBLING of
  * `<ChatShell>` under a workspace-wrapping `<ContextPanelProvider>` (the
  * Sidebar / SidebarInset relationship). Below the mobile breakpoint the panel
- * degrades to a `@qlik-coe-emea/qlabs-components-ui` `<Sheet side="right">` driven by the same state.
+ * degrades to a `@elabs/components-ui` `<Sheet side="right">` driven by the same state.
  */
 import {
   Button,
@@ -30,8 +30,8 @@ import {
   useIsMobile,
   useLocale,
   type FileSource,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { ChevronLeftIcon, PanelRightIcon } from "lucide-react";
 import type { ComponentProps, CSSProperties, HTMLAttributes, ReactNode, RefObject } from "react";
 import {
@@ -67,7 +67,7 @@ export interface ContextAsset {
   /**
    * The file itself, when the asset IS one — a `File`, a `Blob`, a URL, a
    * buffer. Carried so a `renderPreview` injection (below) can hand it to
-   * something that opens files, such as `@qlik-coe-emea/qlabs-components-viewer`'s
+   * something that opens files, such as `@elabs/components-viewer`'s
    * `FileViewer`, without the asset first being turned into a string.
    *
    * `ContextAssetType` is deliberately NOT widened to cover PDFs, Office files
@@ -178,8 +178,8 @@ export interface ContextPanelProviderProps {
    *
    * The seam that lets this package show formats it cannot parse — a PDF, a
    * spreadsheet, a video — without importing a domain sibling
-   * (`@qlik-coe-emea/qlabs-components-ai` and
-   * `@qlik-coe-emea/qlabs-components-viewer` are peers in the layer graph and
+   * (`@elabs/components-ai` and
+   * `@elabs/components-viewer` are peers in the layer graph and
    * may never import each other). The consuming app owns the edge:
    *
    * ```tsx

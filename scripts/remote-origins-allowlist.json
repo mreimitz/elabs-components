@@ -58,18 +58,19 @@
   "elements.ai-sdk.dev": {
     "directive": "none",
     "kind": "comment",
-    "note": "Attribution comment — @qlik-coe-emea/qlabs-components-ai is vendored from Vercel AI Elements. Never fetched.",
+    "note": "Attribution comment — @elabs/components-ai is vendored from Vercel AI Elements. Never fetched.",
     "escapeHatch": "n/a",
     "usedBy": ["packages/ai/src/index.ts"]
   },
   "github.com": {
     "directive": "none",
-    "kind": "comment",
-    "note": "Attribution comments (mapcn, Milkdown). Never fetched.",
-    "escapeHatch": "n/a",
+    "kind": "navigation",
+    "note": "AttributionPanel's provenance links — the upstream repo of every adapted/vendored source and every vendored font — plus the same credits as source comments (mapcn, Milkdown). Fixed provenance URLs carrying no user content. Never fetched.",
+    "escapeHatch": "Don't render AttributionPanel's `source` / `font` categories.",
     "usedBy": [
       "packages/editor/src/markdown-editor/milkdown-react/types.ts",
-      "packages/maps/src/index.ts"
+      "packages/maps/src/index.ts",
+      "packages/ui/src/components/attribution-panel/attributions.generated.ts"
     ]
   },
   "models.dev": {
@@ -93,19 +94,19 @@
     "escapeHatch": "Don't render the OpenInT3 component.",
     "usedBy": ["packages/ai/src/open-in-chat.tsx"]
   },
-  "ui.shadcn.com": {
-    "directive": "none",
-    "kind": "navigation",
-    "note": "AttributionPanel provenance link for shadcn/ui, which @qlik-coe-emea/qlabs-components-ui's owned-source model is adapted from. Never fetched.",
-    "escapeHatch": "Don't render AttributionPanel's `source` category.",
-    "usedBy": ["packages/ui/src/components/attribution-panel/attributions.generated.ts"]
-  },
   "v0.app": {
     "directive": "none",
     "kind": "navigation",
     "note": "OpenInv0 deep link; carries the prompt in the query string.",
     "escapeHatch": "Don't render the OpenInv0 component.",
     "usedBy": ["packages/ai/src/open-in-chat.tsx"]
+  },
+  "www.apache.org": {
+    "directive": "none",
+    "kind": "comment",
+    "note": "The canonical Apache-2.0 licence URL, carried in @elabs/components-ai's vendored-from notice. Apache-2.0 §4 requires the notice to travel with the source, and this is its standard form. Never fetched.",
+    "escapeHatch": "n/a",
+    "usedBy": ["packages/ai/src/index.ts"]
   },
   "www.npmjs.com": {
     "directive": "none",

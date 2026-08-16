@@ -9,7 +9,7 @@
  * the top of a barrel-reachable module therefore puts megabytes into the entry
  * chunk of every consumer, including the majority who never use the feature.
  *
- * `packages/ai/package.json` says `"sideEffects": false`, which frees @qlik-coe-emea/qlabs-components-ai's
+ * `packages/ai/package.json` says `"sideEffects": false`, which frees @elabs/components-ai's
  * OWN modules — it does nothing for the dependency. The only fix is to reach the
  * engine through a dynamic `import()`.
  *
@@ -64,7 +64,7 @@ export const HEAVY_DEPS = [
   "@xyflow/react",
   "media-chrome",
   "mermaid",
-  // `@qlik-coe-emea/qlabs-components-viewer` file parsers (ADR 0024). These are
+  // `@elabs/components-viewer` file parsers (ADR 0024). These are
   // OPTIONAL PEERS, so the dynamic-import requirement is doubly load-bearing: a
   // static edge does not merely bloat the entry chunk, it makes the package fail
   // to resolve for every consumer that did not install that parser.
@@ -89,7 +89,7 @@ const isHeavy = (specifier) => matchesDep(specifier, HEAVY_DEPS);
  * weight: an optional peer reached by a static import makes the module
  * UNRESOLVABLE for every consumer who chose not to install it — a build error,
  * not a slow page. Deriving it means a newly-declared optional peer is policed
- * the moment it is declared, with nothing to remember. `@qlik-coe-emea/qlabs-components-ai`
+ * the moment it is declared, with nothing to remember. `@elabs/components-ai`
  * declares none, so this rule is presently about `viewer`'s parser engines.
  *
  * @param {string} root

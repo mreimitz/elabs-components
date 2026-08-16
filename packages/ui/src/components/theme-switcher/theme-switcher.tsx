@@ -2,12 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useState, type HTMLAttributes } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
-import {
-  THEME_META,
-  THEMES,
-  useTheme,
-  type ThemeName,
-} from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEME_META, THEMES, useTheme, type ThemeName } from "@elabs/components-tokens";
 
 import { Button } from "../button";
 import {
@@ -23,7 +18,7 @@ const SYSTEM_STORAGE_KEY = "brand-ui-theme-system";
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
 /** Default light/dark pair used when an app doesn't pass its own `themes`. */
-export const DEFAULT_THEME_PAIR: ThemeName[] = ["qlik-bright", "qlik-dark"];
+export const DEFAULT_THEME_PAIR: ThemeName[] = ["light", "dark"];
 
 type ButtonSize = "sm" | "default" | "lg";
 const ICON_SIZE: Record<ButtonSize, "icon-sm" | "icon" | "icon-lg"> = {
@@ -132,17 +127,17 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     const safeThemes: ThemeName[] =
       providerRestricts && allowedByProvider.length === 0 ? [...providerThemes] : allowedByProvider;
 
-    // Never fall back to the hardcoded "qlik-bright"/"qlik-dark" literals when
+    // Never fall back to the hardcoded "light"/"dark" literals when
     // the provider restricts — retry within the provider's own list first, so
     // "light"/"dark"/"System" can never resolve to a disallowed theme.
     const lightTheme: ThemeName =
       pickByDarkness(safeThemes, false) ??
       (providerRestricts ? pickByDarkness(providerThemes, false) : undefined) ??
-      "qlik-bright";
+      "light";
     const darkTheme: ThemeName =
       pickByDarkness(safeThemes, true) ??
       (providerRestricts ? pickByDarkness(providerThemes, true) : undefined) ??
-      "qlik-dark";
+      "dark";
 
     // The concrete theme to DISPLAY as current: the controlled preference when
     // it names one, otherwise the theme actually applied via the provider.

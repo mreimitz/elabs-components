@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
   Progress,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { COUNTRIES } from "./data/countries";
 
 /** A ranked list (Sales by country) — code + label + share bar + delta. */

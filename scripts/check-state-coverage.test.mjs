@@ -91,7 +91,7 @@ test("findStoryFilesFor: matches an import + JSX usage, ignores an unrelated pro
 function fixtureManifest(components) {
   return {
     packages: {
-      "@qlik-coe-emea/qlabs-components-fixture": {
+      "@elabs/components-fixture": {
         path: "pkg-fixture",
         components,
       },
@@ -111,7 +111,7 @@ test("PLANTED bad fixture (allowlisted component, no state story) is caught end-
     const manifest = fixtureManifest([{ name: "Widget", module: "pkg-fixture/src/widget.tsx" }]);
     const missing = findMissingStateStories(manifest, root, undefined, ["Widget"]);
     assert.equal(missing.length, 1);
-    assert.equal(missing[0].key, "@qlik-coe-emea/qlabs-components-fixture::Widget");
+    assert.equal(missing[0].key, "@elabs/components-fixture::Widget");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

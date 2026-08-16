@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-cli — the migration report renderer (VP-03 #124).
+ * @elabs/components-cli — the migration report renderer (VP-03 #124).
  *
  * Turns a `scan` + `map` result into the three markdown deliverables a brownfield
  * migration is planned from:
@@ -54,7 +54,7 @@ export const MIGRATION_PHASES = [
   },
   {
     name: "Theming cutover",
-    goal: "Replace the remaining raw colour, spacing and font values with semantic tokens, then verify every migrated screen in qlik-bright and qlik-dark.",
+    goal: "Replace the remaining raw colour, spacing and font values with semantic tokens, then verify every migrated screen in light and dark.",
     classes: [],
     exit: "No raw hex outside a theme file, and every screen reads correctly in all three themes.",
   },
@@ -366,7 +366,7 @@ ${phases}
   guess a prop.
 - Prefer composing the primitives that exist over writing a new component.
 - Run the project's build and tests after each batch, not at the end.
-- Check migrated screens in qlik-bright and qlik-dark. A component
+- Check migrated screens in light and dark. A component
   that only works in one theme is not migrated.
 `;
 }

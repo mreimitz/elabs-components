@@ -22,13 +22,20 @@ function fixtureCss(primary = "oklch(0.5 0.1 264)") {
     `  --background: oklch(1 0 0);\n  --foreground: oklch(0 0 0);\n  --primary: ${p};\n  --ring: var(--primary);`;
   return [
     `:root {\n${body(primary)}\n}`,
-    `[data-theme="qlik-bright"] {\n${body(primary)}\n}`,
-    `[data-theme="qlik-dark"] {\n${body(primary)}\n}`,
+    `[data-theme="light"] {\n${body(primary)}\n}`,
+    `[data-theme="dark"] {\n${body(primary)}\n}`,
     `[data-theme="blueprint"] {\n${body(primary)}\n}`,
   ].join("\n\n");
 }
 
-const MODES = ["light", "qlik-bright", "qlik-dark", "blueprint"];
+/**
+ * The four blocks `fixtureCss` emits, in order. `root` is the `:root` base — NOT
+ * a selectable theme, and deliberately not keyed `light`, which is a real shipped
+ * theme slug (a colliding key silently collapses this list to three entries).
+ * Canonical declaration: `ROOT_MODE` in
+ * `packages/tokens/scripts/lib/themes-io.mjs`.
+ */
+const MODES = ["root", "light", "dark", "blueprint"];
 
 /** Build a mode→(token→value) map from a flat per-mode value object. */
 function maps(perMode) {
@@ -69,21 +76,21 @@ test("DETERMINISM: re-assembling the output is a no-op (seeded values round-trip
 
 test("PLANTED DRIFT: a changed DTCG value rewrites exactly that token's line", () => {
   const css = fixtureCss(); // committed file has --primary: oklch(0.5 0.1 264)
-  // The DTCG source now says a DIFFERENT --primary for qlik-bright only.
+  // The DTCG source now says a DIFFERENT --primary for light only.
   const valueMaps = maps({
     "--background": "oklch(1 0 0)",
     "--foreground": "oklch(0 0 0)",
     "--primary": "oklch(0.5 0.1 264)",
     "--ring": "var(--primary)",
   });
-  valueMaps.get("qlik-bright").set("--primary", "oklch(0.9 0.2 30)");
+  valueMaps.get("light").set("--primary", "oklch(0.9 0.2 30)");
 
   const out = assembleThemesCss(css, valueMaps);
 
   // The committed css differs from the (DTCG-derived) assembled output → STALE.
   assert.notEqual(out, css, "a drifted DTCG value must make themes.css stale");
 
-  // Exactly one line changed, and it's the qlik-bright --primary.
+  // Exactly one line changed, and it's the light --primary.
   const before = css.split("\n");
   const after = out.split("\n");
   const changed = before.map((l, i) => (l !== after[i] ? i : -1)).filter((i) => i >= 0);
@@ -103,11 +110,11 @@ test("PLANTED DRIFT: rewrite stays inside the target block (no cross-block bleed
     "--primary": "oklch(0.5 0.1 264)",
     "--ring": "var(--primary)",
   });
-  // Change --primary ONLY for qlik-dark; every other block keeps the seeded value.
-  valueMaps.get("qlik-dark").set("--primary", "oklch(0.7 0.16 264)");
+  // Change --primary ONLY for dark; every other block keeps the seeded value.
+  valueMaps.get("dark").set("--primary", "oklch(0.7 0.16 264)");
 
   const out = assembleThemesCss(css, valueMaps);
-  // Count occurrences of the new value — must be exactly one (qlik-dark only).
+  // Count occurrences of the new value — must be exactly one (dark only).
   const hits = out.split("oklch(0.7 0.16 264)").length - 1;
-  assert.equal(hits, 1, "only the qlik-dark block's --primary changes");
+  assert.equal(hits, 1, "only the dark block's --primary changes");
 });

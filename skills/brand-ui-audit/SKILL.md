@@ -4,7 +4,7 @@ description: Audit and refine UI built with brand-ui — visual quality, design 
 user-invocable: true
 argument-hint: "[audit|contrast|review|polish] [target]"
 allowed-tools:
-  - Bash(npx @qlik-coe-emea/qlabs-components-cli *)
+  - Bash(npx @elabs/components-cli *)
   - Bash(pnpm brand-ui *)
   - Bash(npx brand-ui *)
 ---
@@ -20,9 +20,9 @@ issues; the fix is done separately.
 > Run the CLI with the project's runner. In this monorepo: `pnpm brand-ui <cmd>`.
 > In a consuming project, the CLI is a **private GitHub Packages** dependency —
 > add it first (`.npmrc` scope mapping + a `read:packages` PAT, then
-> `pnpm add -D @qlik-coe-emea/qlabs-components-cli`; see `docs/CONSUMING.md` §1 + §7a),
+> `pnpm add -D @elabs/components-cli`; see `docs/CONSUMING.md` §1 + §7a),
 > then run `pnpm exec brand-ui <cmd>`. **Inside Claude Code with the plugin
-> installed and the `@qlik-coe-emea` scope authenticated, prefer the
+> installed and the `@elabs` scope authenticated, prefer the
 > `mcp__brand-ui__*` tools** (`mcp__brand-ui__info`, `mcp__brand-ui__audit`) — the
 > plugin launches the same CLI for you, so you skip the per-project
 > dev-dependency, but not the auth. Examples below say `brand-ui`.
@@ -49,8 +49,8 @@ issues; the fix is done separately.
      _earned familiarity_: one type family, fixed rem scale, restrained color,
      every component state present (default/hover/focus/active/disabled/loading/
      empty/error), skeletons over spinners, quick 150–250ms state-only motion, no
-     modal-as-first-thought. Most `@qlik-coe-emea/qlabs-components-*` surfaces are here.
-   - **brand** — `@qlik-coe-emea/qlabs-components-marketing` surfaces, landing pages, campaigns. Bar is
+     modal-as-first-thought. Most `@elabs/components-*` surfaces are here.
+   - **brand** — `@elabs/components-marketing` surfaces, landing pages, campaigns. Bar is
      _distinctiveness_: committed color, required real imagery (not colored blocks),
      ambitious first-load motion, a POV. "Restraint without intent reads as
      mediocre."
@@ -100,9 +100,9 @@ to drive a running Storybook (default `http://localhost:6007`) or app:
 1. Enumerate the surfaces to check (Storybook `/index.json`, or the app's routes).
    Pick a representative set: app shell, data table, chat, charts, flow, forms,
    overlays (opened), states (empty/loading/error), plus foundation (button, badge, alert).
-2. For **each theme** (qlik-bright, qlik-dark, blueprint): navigate with a render
+2. For **each theme** (light, dark, blueprint): navigate with a render
    gate, screenshot, and read the pixels. Switch a Storybook story's theme via
-   `&globals=theme:<Qlik Bright|Qlik Dark|Blueprint>`.
+   `&globals=theme:<Light|Dark|Blueprint>`.
    **Always wait for render before the screenshot** (poll for content / fixed
    delay) — a screenshot fired during the loader is a capture bug, not a finding.
 3. **Measure contrast on the real pixels**, oklch-aware. Computed colors here come

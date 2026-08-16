@@ -1,4 +1,4 @@
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button } from "@elabs/components-ui";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 
@@ -142,7 +142,7 @@ const DIAGRAM = `data:image/svg+xml;utf8,${encodeURIComponent(DIAGRAM_SVG)}`;
 /**
  * A real, playable ~1.5 s silent 8-bit mono WAV, synthesized here so the story
  * needs no network origin (`docs/CSP-AND-NETWORK.md`) and no binary fixture.
- * Same technique as `@qlik-coe-emea/qlabs-components-ai`'s audio-player story —
+ * Same technique as `@elabs/components-ai`'s audio-player story —
  * copied rather than imported, because a Layer-2 package may not reach sideways.
  */
 function silentWav(seconds = 1.5, sampleRate = 8000): string {

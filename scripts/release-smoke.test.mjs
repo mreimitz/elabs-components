@@ -258,7 +258,7 @@ test("FLAGS: the DEFAULT BRANCH pointer is on the previous version (tree says ot
   try {
     const p = resolveMarketplacePointer({
       root,
-      repo: "Qlik-CoE-EMEA/qlabs-components",
+      repo: "<owner>/<repo>",
       gh: fakeGh("main", JSON.stringify({ plugins: [{ version: "1.9.0" }] })),
     });
     assert.equal(p.source, "default-branch");
@@ -276,7 +276,7 @@ test("PASSES: the default branch serves the released version", () => {
   try {
     const p = resolveMarketplacePointer({
       root,
-      repo: "Qlik-CoE-EMEA/qlabs-components",
+      repo: "<owner>/<repo>",
       gh: fakeGh("main", JSON.stringify({ plugins: [{ version: "2.0.0" }] })),
     });
     assert.deepEqual(

@@ -1,7 +1,4 @@
-import {
-  normalizeQuoteTextWithOffsets,
-  type DocumentAddress,
-} from "@qlik-coe-emea/qlabs-components-ui";
+import { normalizeQuoteTextWithOffsets, type DocumentAddress } from "@elabs/components-ui";
 import { describe, expect, it } from "vitest";
 
 import type { DocumentHighlight, HighlightSupport } from "./highlight";

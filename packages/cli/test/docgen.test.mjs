@@ -136,7 +136,7 @@ test("generateManifest merges a synthetic resolved map additively (engine-output
   const ownCount = baseButton.props.props.length;
 
   const resolved = {
-    "@qlik-coe-emea/qlabs-components-ui": {
+    "@elabs/components-ui": {
       Button: {
         asChild: { type: "boolean", optional: true, defaultValue: "false" },
         onClick: {

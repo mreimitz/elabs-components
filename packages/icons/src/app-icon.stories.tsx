@@ -7,7 +7,7 @@
  * — a width + crossfade morph. Use it everywhere an app icon appears.
  *
  * The morph keys off the `Sidebar`'s `group-data-[collapsible=icon]` signal.
- * @qlik-coe-emea/qlabs-components-icons can't import `Sidebar` (sibling package), so these stories simulate
+ * @elabs/components-icons can't import `Sidebar` (sibling package), so these stories simulate
  * it with a `.group` + `data-collapsible` wrapper; the real Sidebar integration is
  * shown in the app-shell / admin-console scenarios (apps/docs).
  */

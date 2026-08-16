@@ -1,6 +1,6 @@
 "use client";
 
-import { useChart } from "@qlik-coe-emea/qlabs-components-charts";
+import { useChart } from "@elabs/components-charts";
 import { useEffect } from "react";
 import type { StatCardHoverState } from "./stat-card-chart";
 

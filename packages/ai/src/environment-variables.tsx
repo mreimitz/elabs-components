@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@qlik-coe-emea/qlabs-components-ui";
-import { Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { Switch } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge } from "@elabs/components-ui";
+import { Button } from "@elabs/components-ui";
+import { Switch } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 import {

@@ -1,8 +1,8 @@
-# @qlik-coe-emea/qlabs-components-data
+# @elabs/components-data
 
 > TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.
 
-Import from `@qlik-coe-emea/qlabs-components-data`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs/components-data`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

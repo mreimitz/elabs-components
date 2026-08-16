@@ -2,9 +2,9 @@
 
 Canonical, harness-agnostic [Agent Skills](https://agentskills.io) for brand-ui.
 This folder is the **source of truth**; Claude Code reads it via `../.claude-plugin/`,
-and `npx skills add Qlik-CoE-EMEA/qlabs-components` reads it directly.
+and `npx skills add <path-to-this-repo>` reads it directly.
 
-- `brand-ui/` — consumer skill: build UI with `@qlik-coe-emea/qlabs-components-*` (auto-triggers).
+- `brand-ui/` — consumer skill: build UI with `@elabs/components-*` (auto-triggers).
 - `brand-ui-audit/` — design audit: static lint + cross-theme contrast/visual review.
 - `brand-ui-component/` — maintainer: scaffold/extend a component.
 - `brand-ui-theme/` — themes + global tokens.
@@ -13,6 +13,6 @@ and `npx skills add Qlik-CoE-EMEA/qlabs-components` reads it directly.
 - `brand-ui-migrate/` — brownfield adoption: scan → map → phased plan → reviewed migration of an app that already exists (entry point: `/brand-ui-migrate`).
 - `brand-ui-enterprise/` — enterprise design-judgment layer: classify the surface (professional/consumer/marketing), pick the app-shell archetype, stand up the mandatory baseline, model objects → screens. Defers props to `brand-ui`, scoring to `brand-ui-audit`.
 
-All skills call the `@qlik-coe-emea/qlabs-components-cli` engine (`../packages/cli`) so they read the real
+All skills call the `@elabs/components-cli` engine (`../packages/cli`) so they read the real
 code instead of guessing. See [../docs/SKILLS.md](../docs/SKILLS.md) for install
 and architecture.

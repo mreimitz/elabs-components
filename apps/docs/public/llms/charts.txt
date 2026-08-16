@@ -1,8 +1,8 @@
-# @qlik-coe-emea/qlabs-components-charts
+# @elabs/components-charts
 
 > MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).
 
-Import from `@qlik-coe-emea/qlabs-components-charts`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs/components-charts`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 
@@ -40,7 +40,7 @@ Import from `@qlik-coe-emea/qlabs-components-charts`. Part of brand-ui — see t
 - ChartFallback
 - ChartFrame — Opt-in chart wrapper adding expand / flip-to-table / download-CSV to any chart child.
   - avoid: Expecting ChartFrame to read the chart's context — it is the PARENT of the chart's provider; pass the same data to both via props.
-  - avoid: Importing @qlik-coe-emea/qlabs-components-data into a chart — charts → ui only; flip-to-table uses the @qlik-coe-emea/qlabs-components-ui Table.
+  - avoid: Importing @elabs/components-data into a chart — charts → ui only; flip-to-table uses the @elabs/components-ui Table.
   - avoid: Expecting the table/download controls with no `data` — they hide by design when data is absent or empty; pass the same rows you gave the chart.
 - ChartLegend — Series key with label, value and an optional progress bar; pattern-aware under decoration.
   - avoid: Dropping the legend on a multi-series chart — colour without a key is not a legend.
@@ -127,11 +127,11 @@ Import from `@qlik-coe-emea/qlabs-components-charts`. Part of brand-ui — see t
 - MetricCard — Single KPI tile — label, value, delta/trend.
   - avoid: Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.
   - avoid: Encoding up/down by color alone — pair with an arrow/sign.
-  - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui; charts and editor re-export it (ADR 0012).
+  - avoid: Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012).
 - MetricGrid — Responsive grid of KPI tiles — the summary row at the top of a dashboard.
   - avoid: More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.
   - avoid: Numbers without tabular-nums — figures jitter across the row.
-  - avoid: Re-declaring a KPI tile locally — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui and re-exported here (ADR 0012).
+  - avoid: Re-declaring a KPI tile locally — MetricCard is owned by @elabs/components-ui and re-exported here (ADR 0012).
 - MIN_DATAPOINT_TARGET_SIZE
 - PatternArea
 - PatternCircles

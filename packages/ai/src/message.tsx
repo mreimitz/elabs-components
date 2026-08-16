@@ -1,15 +1,10 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage, Button } from "@qlik-coe-emea/qlabs-components-ui";
-import { ButtonGroup, ButtonGroupText, Skeleton } from "@qlik-coe-emea/qlabs-components-ui";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { Avatar, AvatarFallback, AvatarImage, Button } from "@elabs/components-ui";
+import { ButtonGroup, ButtonGroupText, Skeleton } from "@elabs/components-ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import type { UIMessage } from "ai";
@@ -89,13 +84,13 @@ export type MessageAvatarProps = ComponentProps<typeof Avatar> & {
 };
 
 /**
- * Thin preset over the `@qlik-coe-emea/qlabs-components-ui` Avatar sized for inline chat (NOT a new
+ * Thin preset over the `@elabs/components-ui` Avatar sized for inline chat (NOT a new
  * avatar primitive — research 11 §B.1 MSG-2).
  *
  * When `role="agent"`, renders a filled primary-green circle with a centered
  * Bot icon (lucide-react `BotIcon`) and an accessible label derived from
  * `name`. The primary/primary-foreground token pair is the agent identity
- * colour across both themes (green on qlik-bright/qlik-dark; theme-adapted
+ * colour across both themes (green on light/dark; theme-adapted
  * on others).
  */
 export const MessageAvatar = ({
@@ -116,7 +111,7 @@ export const MessageAvatar = ({
         // `aria-prohibited-attr` reds the story AND assistive tech never
         // announces the name. `img` is the role permitted to carry a name for a
         // graphic whose contents (the Bot glyph) are not text — the same
-        // precedent a titled `@qlik-coe-emea/qlabs-components-icons` `Icon`
+        // precedent a titled `@elabs/components-icons` `Icon`
         // uses (.claude/rules/icons.md). Only the agent branch takes it: the
         // user branch's fallback initial is real text content, so naming it too
         // would add an `img` per message for no gain.
@@ -241,7 +236,7 @@ export const messageActionsVariants = cva(
           // gesture that reveals it first). `pointer-coarse` therefore never
           // takes the `opacity-0` at all and the row stays visible. Note this is
           // a stronger guarantee than the `md:` breakpoint proxy used by the
-          // `@qlik-coe-emea/qlabs-components-ui` Sidebar — a ≥md tablet is
+          // `@elabs/components-ui` Sidebar — a ≥md tablet is
           // exactly the case that proxy gets wrong.
           "pointer-fine:opacity-0",
           // Reveal on: the parent Message (`Message` sets the bare `group` class

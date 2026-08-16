@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-cli — per-component intent metadata (WP-03 #80).
+ * @elabs/components-cli — per-component intent metadata (WP-03 #80).
  *
  * The agent-distinctive layer that prop tables and types CANNOT encode: a
  * component's PURPOSE, its RELATIONSHIPS (what it lives inside / next to),
@@ -322,14 +322,14 @@ export const INTENT = {
       avoidNextTo: ["ViewToolbar"],
     },
     // No `stateTokens` while the deprecated `Toolbar` alias still ships from
-    // @qlik-coe-emea/qlabs-components-ai: two modules export the name, so a
+    // @elabs/components-ai: two modules export the name, so a
     // class-level claim cannot be pinned to one of them and would be checked
     // against the wrong file. Add them when the alias is removed.
     antiPatterns: [
       "Using it for the ordinary control row above a list or table — that is ViewToolbar, where every control is its own tab stop.",
       "Omitting aria-label — a toolbar is one tab stop, so an unnamed one announces nothing about what it acts on.",
       "Putting a text input or a link inside it — the roving tabindex swallows the arrow keys those controls need.",
-      "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @qlik-coe-emea/qlabs-components-ai.",
+      "Reaching for it to attach actions to a canvas node — that is NodeToolbar in @elabs/components-ai.",
     ],
   },
 
@@ -392,7 +392,7 @@ export const INTENT = {
     relationships: { contains: ["Conversation", "PromptInput", "Message"] },
     stateTokens: {},
     antiPatterns: [
-      "Calling a model inside the component — @qlik-coe-emea/qlabs-components-ai is presentational/runtime-agnostic; wire useChat in the app.",
+      "Calling a model inside the component — @elabs/components-ai is presentational/runtime-agnostic; wire useChat in the app.",
       "Hand-rolling the composer footer inside the shell — compose Composer; it is the shipped chat input.",
       "Putting an animated/collapsible context rail in ChatShell.aside — the aside is for a STATIC rail; compose ContextPanelProvider + ContextPanel as a SIBLING of the shell.",
     ],
@@ -480,7 +480,7 @@ export const INTENT = {
     antiPatterns: [
       "Numbers without tabular-nums — figures jitter across a row; use tabular-nums for any number column.",
       "Encoding up/down by color alone — pair with an arrow/sign.",
-      "Re-declaring a KPI tile in another package — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui; charts and editor re-export it (ADR 0012).",
+      "Re-declaring a KPI tile in another package — MetricCard is owned by @elabs/components-ui; charts and editor re-export it (ADR 0012).",
     ],
   },
 
@@ -492,7 +492,7 @@ export const INTENT = {
     stateTokens: {},
     antiPatterns: [
       "Expecting ChartFrame to read the chart's context — it is the PARENT of the chart's provider; pass the same data to both via props.",
-      "Importing @qlik-coe-emea/qlabs-components-data into a chart — charts → ui only; flip-to-table uses the @qlik-coe-emea/qlabs-components-ui Table.",
+      "Importing @elabs/components-data into a chart — charts → ui only; flip-to-table uses the @elabs/components-ui Table.",
       "Expecting the table/download controls with no `data` — they hide by design when data is absent or empty; pass the same rows you gave the chart.",
     ],
   },
@@ -504,12 +504,12 @@ export const INTENT = {
     stateTokens: {},
     antiPatterns: [
       "Passing Monaco a hardcoded theme — the bridge reads the active data-theme tokens; never override it.",
-      "Using CodeEditor for read-only display — use CodeBlock (@qlik-coe-emea/qlabs-components-ai, Shiki) for non-editable code.",
-      'Forgetting the worker setup (import "@qlik-coe-emea/qlabs-components-editor/monaco-environment") — IntelliSense is off without it.',
+      "Using CodeEditor for read-only display — use CodeBlock (@elabs/components-ai, Shiki) for non-editable code.",
+      'Forgetting the worker setup (import "@elabs/components-editor/monaco-environment") — IntelliSense is off without it.',
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-viewer — read a file the app did not write ──
+  // ── @elabs/components-viewer — read a file the app did not write ──
   // Sourced from .claude/rules/viewer-components.md and docs/ADR/0024-viewer-package.md.
 
   FileViewer: {
@@ -529,17 +529,17 @@ export const INTENT = {
       "Adding a per-format branch to FileViewerContent — a format is an adapter registration (registry.register), never a switch in the shell.",
       "Making a parser a plain dependency — every parser engine is an OPTIONAL peer, so a consumer who skips it gets the panel naming the package instead of a build error.",
       "Returning HTML from an adapter — adapters emit a DATA model that brand-ui components render; that is the only reason an arbitrary file inherits the theme.",
-      "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@qlik-coe-emea/qlabs-components-editor).",
+      "Using FileViewer to edit — it is read-only; authoring code is CodeEditor (@elabs/components-editor).",
       "Clearing an error with the `loading` prop — a parent's loading is additive; it can add the not-ready state but never hide a real failure.",
     ],
   },
 
-  // NOTE: the `@qlik-coe-emea/qlabs-components-blueprint` drawing-furniture entries
+  // NOTE: the `@elabs/components-blueprint` drawing-furniture entries
   // (BlueprintSheet, …) were removed when that package was paused — it is no longer
   // manifest-listed, so an intent entry for it would not resolve.
   // See .claude/rules/paused-surfaces.md.
 
-  // ── @qlik-coe-emea/qlabs-components-ai — the complex agent/chat surfaces ────
+  // ── @elabs/components-ai — the complex agent/chat surfaces ────
   // Sourced from .claude/rules/ai-chat-components.md, .claude/rules/loading-states.md
   // and docs/DECISIONS.md D2/D5 (render the model's output; never own the model call).
 
@@ -562,7 +562,7 @@ export const INTENT = {
       'Adding a bg-card fill to the assistant turn — the assistant branch is deliberately unfilled; reach for AgentMessage emphasis="answer" (a left rail), not a redundant surface.',
       "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
       "Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.",
-      "Calling a model inside the component — @qlik-coe-emea/qlabs-components-ai is presentational; the app owns useChat/transport (D5).",
+      "Calling a model inside the component — @elabs/components-ai is presentational; the app owns useChat/transport (D5).",
     ],
   },
 
@@ -721,10 +721,10 @@ export const INTENT = {
     relationships: { contains: ["AgentStep", "Checkpoint"], pairsWith: ["Plan", "Task", "Tool"] },
     stateTokens: {
       status:
-        "the rail NODE, owned by the composed @qlik-coe-emea/qlabs-components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted",
+        "the rail NODE, owned by the composed @elabs/components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted",
     },
     antiPatterns: [
-      "Hand-rolling a connector + status-map rail — reuse the @qlik-coe-emea/qlabs-components-ui Timeline (the timeline-fork gate blocks a second one).",
+      "Hand-rolling a connector + status-map rail — reuse the @elabs/components-ui Timeline (the timeline-fork gate blocks a second one).",
       "Reaching for a border-s-* accent rail to show step status — AgentTimeline is a thin TimelineRoot/TimelineItem wrapper; status is the node dot (plus the StatusBadge), never a left rail.",
       "Encoding step status by color alone — pair the color with an icon or label.",
       "Rendering a blank rail while the run is starting — show the not-ready state, never an empty region.",
@@ -969,7 +969,7 @@ export const INTENT = {
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-charts ──────────────────────────────────
+  // ── @elabs/components-charts ──────────────────────────────────
   // Sourced from .claude/rules/chart-components.md + .claude/rules/loading-states.md
   // (the chart-scoped `status` alias) + the styling rule's tokens-only line.
 
@@ -1013,7 +1013,7 @@ export const INTENT = {
     antiPatterns: [
       "More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.",
       "Numbers without tabular-nums — figures jitter across the row.",
-      "Re-declaring a KPI tile locally — MetricCard is owned by @qlik-coe-emea/qlabs-components-ui and re-exported here (ADR 0012).",
+      "Re-declaring a KPI tile locally — MetricCard is owned by @elabs/components-ui and re-exported here (ADR 0012).",
     ],
   },
 
@@ -1216,7 +1216,7 @@ export const INTENT = {
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-maps ────────────────────────────────────
+  // ── @elabs/components-maps ────────────────────────────────────
   // Sourced from .claude/rules/map-components.md (token paints, attribution, WebGL).
 
   MapCanvas: {
@@ -1269,7 +1269,7 @@ export const INTENT = {
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-marketing ───────────────────────────────
+  // ── @elabs/components-marketing ───────────────────────────────
   // Sourced from skills/brand-ui-audit/reference/anti-patterns.md (the marketing
   // register-gated tells + the content "Jane Doe effect" section).
 
@@ -1307,7 +1307,7 @@ export const INTENT = {
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-icons ───────────────────────────────────
+  // ── @elabs/components-icons ───────────────────────────────────
   // Sourced from .claude/rules/icons.md (Lucide is the default; this package is
   // for brand/product vocabulary) + the AppIcon convention.
 
@@ -1347,7 +1347,7 @@ export const INTENT = {
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-tokens ──────────────────────────────────
+  // ── @elabs/components-tokens ──────────────────────────────────
   // Sourced from .claude/rules/theming.md + the decoration dial policy.
 
   ThemeProvider: {
@@ -1355,7 +1355,7 @@ export const INTENT = {
       "Writes `data-theme` on a root element and persists the choice; `useTheme()` reads/sets it.",
     category: "layout",
     relationships: { contains: ["AppShell"], pairsWith: ["DecorationProvider"] },
-    stateTokens: { theme: 'data-theme="qlik-bright|qlik-dark"' },
+    stateTokens: { theme: 'data-theme="light|dark"' },
     antiPatterns: [
       "Fixing a flat or wrong-looking surface inside a component — change the theme's token, not the component.",
       "Adding `dark:` overrides in a component — semantic tokens make every theme work, not only dark.",
@@ -1375,7 +1375,7 @@ export const INTENT = {
     ],
   },
 
-  // ── @qlik-coe-emea/qlabs-components-ai surfaces (#60 coverage ratchet) ──────
+  // ── @elabs/components-ai surfaces (#60 coverage ratchet) ──────
   // Authored from each module's own source, not from its name. Every entry below
   // carries the ≥3 anti-patterns the complex-surface bar asks for; `stateTokens`
   // is present only where a class was READ off the module (rule 5 resolves it
@@ -1799,8 +1799,8 @@ export const INTENT = {
   },
 
   // The in-chat agent WORKSPACE GRAPH (ADR 0018). This React Flow surface lives in
-  // `@qlik-coe-emea/qlabs-components-ai` on purpose: an author-built diagram is
-  // `@qlik-coe-emea/qlabs-components-flow` (CanvasShell/FlowNode); this is the graph an
+  // `@elabs/components-ai` on purpose: an author-built diagram is
+  // `@elabs/components-flow` (CanvasShell/FlowNode); this is the graph an
   // agent renders inside a conversation. Picking the wrong one is the #1 mistake here,
   // so every entry names the boundary.
 
@@ -1899,7 +1899,7 @@ export const INTENT = {
     relationships: { usedInside: ["Canvas"], pairsWith: ["Node", "Controls"] },
     antiPatterns: [
       "Using it as the canvas-wide toolbar — it is a NODE toolbar and is positioned against the selected node.",
-      "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @qlik-coe-emea/qlabs-components-ui.",
+      "Reaching for it when you want the WAI-ARIA keyboard toolbar — that is Toolbar in @elabs/components-ui.",
       "Putting destructive node actions in it with no confirm/undo — deleting a node loses its edges too.",
       "Filling it with icon-only buttons and no labels — every icon-only control needs an accessible name.",
     ],

@@ -12,7 +12,7 @@
  * teeth", quality-gates.md), so the contract cannot rot.
  *
  * It also checks contract HONESTY: every `consumedBy`/component the block names
- * must be a real `@qlik-coe-emea/qlabs-components-ai` export (manifest), and the conversation example must
+ * must be a real `@elabs/components-ai` export (manifest), and the conversation example must
  * NOT contain `useChat(` (the agent emits DATA; the app owns the runtime — D6/D5).
  *
  * Dependency-free; locates files relative to this file (cwd-independent).
@@ -111,7 +111,7 @@ export function diffAgentOutput({ agentOutput, aiComponentNames, srcStateToStatu
       );
     }
   }
-  // Every component the contract names must be a real @qlik-coe-emea/qlabs-components-ai export.
+  // Every component the contract names must be a real @elabs/components-ai export.
   const named = new Set([
     ...(conv.consumedBy || []),
     ...(conv.parts || []).flatMap((p) => p.consumedBy || []),
@@ -120,7 +120,7 @@ export function diffAgentOutput({ agentOutput, aiComponentNames, srcStateToStatu
   for (const name of [...named].sort()) {
     if (!aiComponentNames.has(name)) {
       problems.push(
-        `agentOutput names "${name}", which is NOT exported by @qlik-coe-emea/qlabs-components-ai (renamed/removed?).`,
+        `agentOutput names "${name}", which is NOT exported by @elabs/components-ai (renamed/removed?).`,
       );
     }
   }
@@ -153,9 +153,7 @@ function main() {
     process.exit(1);
   }
   const aiComponentNames = new Set(
-    (manifest?.packages?.["@qlik-coe-emea/qlabs-components-ai"]?.components ?? []).map(
-      (c) => c.name,
-    ),
+    (manifest?.packages?.["@elabs/components-ai"]?.components ?? []).map((c) => c.name),
   );
   const problems = diffAgentOutput({
     agentOutput: manifest.agentOutput,

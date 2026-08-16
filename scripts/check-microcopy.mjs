@@ -2,9 +2,9 @@
 /**
  * check-microcopy.mjs — hardcoded user-visible English is a ratchet.
  *
- * `@qlik-coe-emea/qlabs-components-*` ships a locale seam (`LocaleProvider` + `t()`, ADR 0014/0017), but a
+ * `@elabs/components-*` ships a locale seam (`LocaleProvider` + `t()`, ADR 0014/0017), but a
  * seam nothing calls is decoration: before ADR 0017, `t()` was invoked in ZERO
- * components while `@qlik-coe-emea/qlabs-components-ai` alone hardcoded ~100 user-visible strings —
+ * components while `@elabs/components-ai` alone hardcoded ~100 user-visible strings —
  * including end-user error messages and every `aria-label`. A screen-reader user
  * in a non-English locale has no workaround for those.
  *

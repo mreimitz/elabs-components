@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Skeleton } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { Experimental_SpeechResult as SpeechResult } from "ai";
 import type {
   MediaControlBar,

@@ -1,16 +1,16 @@
 /**
- * @qlik-coe-emea/qlabs-components-charts/test — the official jsdom-safe test double for `@qlik-coe-emea/qlabs-components-charts`
+ * @elabs/components-charts/test — the official jsdom-safe test double for `@elabs/components-charts`
  * (issue #364).
  *
  * A `@visx/*`-backed chart does not render meaningfully under jsdom, so a
- * consumer's test suite has historically mocked the whole `@qlik-coe-emea/qlabs-components-charts`
+ * consumer's test suite has historically mocked the whole `@elabs/components-charts`
  * barrel as a no-op — hiding real chart-prop bugs from the quality gate. Swap
  * to this subpath instead:
  *
  * ```ts
  * // vitest.setup.ts
- * vi.mock("@qlik-coe-emea/qlabs-components-charts", async () =>
- *   import("@qlik-coe-emea/qlabs-components-charts/test"),
+ * vi.mock("@elabs/components-charts", async () =>
+ *   import("@elabs/components-charts/test"),
  * );
  * ```
  *
@@ -39,9 +39,9 @@
  * composes the two modules instead:
  *
  * ```ts
- * vi.mock("@qlik-coe-emea/qlabs-components-charts", async (importOriginal) => ({
+ * vi.mock("@elabs/components-charts", async (importOriginal) => ({
  *   ...(await importOriginal<Record<string, unknown>>()),
- *   ...(await import("@qlik-coe-emea/qlabs-components-charts/test")),
+ *   ...(await import("@elabs/components-charts/test")),
  * }));
  * ```
  *
@@ -200,7 +200,7 @@ export type { FunnelChartProps, FunnelStage } from "../charts/funnel-chart";
 export type { GanttProps, GanttTask } from "../gantt/gantt";
 export type { LineChartProps } from "../charts/line-chart";
 export type { LiveLineChartProps, LiveLinePoint } from "../charts/live-line-chart";
-export type { MetricCardProps } from "@qlik-coe-emea/qlabs-components-ui";
+export type { MetricCardProps } from "@elabs/components-ui";
 export type { MetricGridProps } from "../metric-grid/metric-grid";
 export type { PieChartProps } from "../charts/pie-chart";
 export type { PieData } from "../charts/pie-context";

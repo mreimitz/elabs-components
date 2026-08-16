@@ -10,7 +10,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 // A representative mix of comment/keyword/type/string/number/function scopes
 // (#315) — so the derived-from-tokens Shiki theme is visually checkable across
-// both themes (qlik-bright, qlik-dark) via the toolbar's global
+// both themes (light, dark) via the toolbar's global
 // theme switcher, not just a single flat color.
 const SAMPLE_CODE = [
   "// Adds two numbers together",
@@ -28,8 +28,8 @@ export const Default: Story = {
   ),
 };
 
-// Dark theme — verifies the derived-from-tokens Shiki theme in qlik-dark
-// (#315). Also proves the region-scoped fix: a `<div data-theme="qlik-dark">`
+// Dark theme — verifies the derived-from-tokens Shiki theme in dark
+// (#315). Also proves the region-scoped fix: a `<div data-theme="dark">`
 // decorator (the same pattern as `message-table.stories.tsx`'s `DarkTheme`)
 // resolves ITS OWN theme rather than always the document root's.
 export const DarkTheme: Story = {
@@ -40,7 +40,7 @@ export const DarkTheme: Story = {
   ),
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

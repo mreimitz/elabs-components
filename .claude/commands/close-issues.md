@@ -136,7 +136,7 @@ that work shipped, was rejected, or was rescoped.
 Work the backlog in this order — do **not** just take issues by number:
 
 1. **`consumer-handover`** — filed from a real consuming app's handover pack. These are places the
-   "every visible element is `@qlik-coe-emea/qlabs-components-*`" rule could not be honoured, so each one
+   "every visible element is `@elabs/components-*`" rule could not be honoured, so each one
    is a live blocker for a downstream project. **Always the first wave.** Within the label, order by
    `severity:P0` → `P1` → `P2`.
 2. Any other `severity:P0`, then `type:a11y`, then `type:bug` / `type:regression`.
@@ -263,7 +263,7 @@ exports, packaging, CSS assets or the registry.
 **Visual/token/theme changes require rendered proof.** This environment CAN do it:
 Playwright chromium is installed, agents drive Storybook and run in-browser
 axe-core, and the orchestrator can view PNGs with `Read`. Require screenshots in
-both themes (`qlik-bright`, `qlik-dark`) plus numeric contrast
+both themes (`light`, `dark`) plus numeric contrast
 via `getComputedStyle` + canvas — never eyeballed. **Port 6006 is shared across
 concurrent worktrees**: give every agent its own `--exact-port`.
 

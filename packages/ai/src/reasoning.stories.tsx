@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
 const meta = {
   title: "AI/Reasoning",

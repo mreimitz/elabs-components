@@ -1,5 +1,5 @@
 /**
- * @qlik-coe-emea/qlabs-components-eslint-config — local rules that enforce the brand-ui TAXONOMY at the
+ * @elabs/components-eslint-config — local rules that enforce the brand-ui TAXONOMY at the
  * CONSUMER's point of action (the apps coding-agents build), where the repo's
  * internal ratchets (scripts/check-text-scale.mjs, scripts/check-raw-palette.mjs)
  * do NOT reach. They run in the edit→lint loop, so an agent sees the violation
@@ -15,7 +15,7 @@
  *     (`text-[#fff]`, `bg-[oklch(...)]`) and points at the semantic tokens
  *     (`text-foreground`, `text-muted-foreground`, `bg-primary` +
  *     `text-primary-foreground`, `bg-success/10`, …). Raw colour bypasses every
- *     theme (qlik-bright/-v2, qlik-dark/-v2, blueprint) and breaks contrast.
+ *     theme (light/-v2, dark/-v2, blueprint) and breaks contrast.
  *
  * Detection mirrors scripts/check-raw-palette.mjs (RAW_PALETTE_RE) so the two
  * surfaces agree. Inspects `className`/`class` attributes and class-utility
@@ -149,14 +149,14 @@ const noRawColor = makeRule({
   messageId: "rawColor",
   messages: {
     rawColor:
-      'Colour is a token, not a palette — "{{cls}}" is a raw colour. Use a semantic token (text-foreground, text-muted-foreground, bg-card, bg-primary + text-primary-foreground, bg-success/10, border-border, …). Raw palette/hex bypasses every theme (qlik-bright, qlik-dark) and breaks contrast. See .claude/rules/styling-and-tokens.md.',
+      'Colour is a token, not a palette — "{{cls}}" is a raw colour. Use a semantic token (text-foreground, text-muted-foreground, bg-card, bg-primary + text-primary-foreground, bg-success/10, border-border, …). Raw palette/hex bypasses every theme (light, dark) and breaks contrast. See .claude/rules/styling-and-tokens.md.',
   },
   test: (cls) => (PALETTE_RE.test(cls) || COLOR_ARBITRARY_RE.test(cls) ? { cls } : null),
 });
 
 /** The flat-config plugin object. */
 const plugin = {
-  meta: { name: "@qlik-coe-emea/qlabs-components-eslint-config/brand", version: "0.1.0" },
+  meta: { name: "@elabs/components-eslint-config/brand", version: "0.1.0" },
   rules: {
     "no-raw-font-size": noRawFontSize,
     "no-raw-color": noRawColor,

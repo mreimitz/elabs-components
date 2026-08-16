@@ -1,7 +1,7 @@
 # Enterprise UX principles → brand-ui
 
 The design judgment for professional surfaces, distilled from the 103-rule business-app
-rulebook (Ant Design + Clarity) and mapped to `@qlik-coe-emea/qlabs-components-*`. Apply these when building
+rulebook (Ant Design + Clarity) and mapped to `@elabs/components-*`. Apply these when building
 screens (procedure step 4). This is _generative_ guidance; for _scored review_ use the
 `brand-ui-audit` skill (don't duplicate it).
 
@@ -35,18 +35,18 @@ context panel), not amputation. Order information by importance, frequency, asso
 
 ## Apply by cluster (rule range → what to do → brand-ui)
 
-| Area                            | Do                                                                                                          | Build with (`@qlik-coe-emea/qlabs-components-*`)                                      |
+| Area                            | Do                                                                                                          | Build with (`@elabs/components-*`)                                                    |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | **Layout** (R006–R012)          | proximity groups; spacing scale; fixed nav + adaptive work area; preserve the work surface                  | `AppShell`/`Sidebar`/`SidebarInset`; tokens + `gap-*`                                 |
 | **Navigation** (R022–R031)      | "where am I / can I go / how"; side rail for ops; tabs/steps; cache list position                           | `Sidebar`, `TopNav`+`Breadcrumb`, `Tabs`, `Steps`, `Pagination`                       |
 | **Interaction** (R032–R039)     | direct manipulation; stay-on-page (drawer/split); undo vs confirm; controls near object                     | `Sheet`/`Drawer`, `ContextPanel`, `AlertDialog`                                       |
 | **Feedback** (R040–R050)        | necessary/immediate; don't over-toast; loading >2s; progress+cancel; modal only when justified; never stack | `Alert`, `Toaster`/`toast`, `Skeleton`/`Spinner`/`LoadingState`, `Progress`, `Dialog` |
 | **Forms** (R051–R064)           | only-as-long; group; labels close; validate on blur; color+icon+text; required-by-default                   | `Form`, `Input`, `Select`, `RadioGroup`, `Switch`, `InputGroup`                       |
-| **Data display** (R065–R072)    | order by importance; design extreme states; tables vs cards; "-" for empty; collapse                        | `DataTable` (`@qlik-coe-emea/qlabs-components-data`), `Card`, `Badge`, `Table`        |
+| **Data display** (R065–R072)    | order by importance; design extreme states; tables vs cards; "-" for empty; collapse                        | `DataTable` (`@elabs/components-data`), `Card`, `Badge`, `Table`                      |
 | **Data lists** (R073–R080)      | table/list/card by task; search pattern; submit vs live filter; batch-after-select; empty states            | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker`, `EmptyState`                |
 | **Actions** (R081–R092)         | one primary per group; danger only for destructive; icon needs tooltip; verb+object labels                  | `Button` variants, `Tooltip`                                                          |
 | **Motion** (R093–R099)          | serve interaction/hierarchy/feedback; minimal duration; fast exits; react immediately                       | token-driven; `motion-reduce` safe                                                    |
-| **AI/productivity** (R100–R103) | source+confidence+reversibility; review states; editable-in-context; recoverable AI errors                  | `@qlik-coe-emea/qlabs-components-ai` (`Reasoning`, `Tool`, `Sources`), `ContextPanel` |
+| **AI/productivity** (R100–R103) | source+confidence+reversibility; review states; editable-in-context; recoverable AI errors                  | `@elabs/components-ai` (`Reasoning`, `Tool`, `Sources`), `ContextPanel`               |
 
 ## Designed states (every interactive surface)
 
@@ -73,9 +73,9 @@ destructive actions reversible or confirmed · forms only-as-long, labels close,
 validation inline + humanized, color paired with icon/text · representation chosen by
 task (compare/scan/browse) · empty/loading/long-content states designed · returning
 from detail preserves list state · one primary action per area · danger reserved for
-real risk · motion short/performant/non-distracting · reads in qlik-bright + qlik-dark.
+real risk · motion short/performant/non-distracting · reads in light + dark.
 
 (Visuals: `../assets/images/` — do/don't pairs + pattern examples. Source: the business-app
 rulebook, Ant Design + Clarity. Always confirm real props with `brand-ui docs <Component>` — and
-note some clusters live in `@qlik-coe-emea/qlabs-components-charts`/`ai`/`marketing`/`flow`/`editor`; reach for one only
+note some clusters live in `@elabs/components-charts`/`ai`/`marketing`/`flow`/`editor`; reach for one only
 if that package is available in your app.)

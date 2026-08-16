@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { Card, CardContent } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Card, CardContent } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 
 export interface UseCaseCardProps {
   title: ReactNode;

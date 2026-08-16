@@ -29,7 +29,7 @@
  * check-loading-states.mjs / check-raw-palette.mjs / check-anti-slop.mjs:
  *
  *   - the committed baseline (`scripts/state-coverage-baseline.json`, a list of
- *     "@qlik-coe-emea/qlabs-components-pkg::Component" keys) is the allowed set of pre-existing gaps;
+ *     "@elabs/components-pkg::Component" keys) is the allowed set of pre-existing gaps;
  *   - any allowlisted component missing a state story that is NOT already
  *     baselined FAILS (a newly-allowlisted component must ship its story);
  *   - when a baselined component gains its story, run `--update` to ratchet the

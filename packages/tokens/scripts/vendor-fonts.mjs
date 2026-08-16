@@ -2,12 +2,12 @@
 /**
  * vendor-fonts.mjs — download the self-hosted webfonts into src/fonts/.
  *
- * @qlik-coe-emea/qlabs-components-tokens ships its faces rather than pulling a CDN at runtime, so a
+ * @elabs/components-tokens ships its faces rather than pulling a CDN at runtime, so a
  * consumer gets correct typography with no network dependency and no CSP hole.
  * Inter and IBM Plex Mono were vendored by hand; this script does the same job
  * reproducibly for the Qlik-theme faces and can re-run to add weights.
  *
- * WHY: `qlik-bright` / `qlik-dark` (the DEFAULT themes) ask for Source Sans Pro
+ * WHY: `light` / `dark` (the DEFAULT themes) ask for Source Sans Pro
  * and Source Code Pro, but only Storybook ever loaded them — from Google Fonts,
  * with a comment admitting the gap. Every external consumer silently fell back
  * to Helvetica. These are the exact families/weights Storybook was fetching, so

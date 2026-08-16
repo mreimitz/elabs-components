@@ -32,16 +32,6 @@
       "presentation": { "group": "1_apps", "order": 2 }
     },
     {
-      "name": "🛠 Workbench (Vite)",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:5174",
-      "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "dev: workbench",
-      "postDebugTask": "stop: workbench",
-      "presentation": { "group": "1_apps", "order": 3 }
-    },
-    {
       "name": "🧪 E2E (Playwright) — run + debug",
       "type": "node",
       "request": "launch",

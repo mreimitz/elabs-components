@@ -15,7 +15,7 @@ Check against `@.claude/rules/quality-gates.md`, `@.claude/rules/component-api.m
 - [ ] `forwardRef` where a DOM ref is meaningful; spreads `...props`; merges `className` via `cn()`
 - [ ] Variants via `cva` (no ad-hoc conditional class soup)
 - [ ] Semantic tokens only — no raw hex / arbitrary colors
-- [ ] Works in both themes (`qlik-bright`, `qlik-dark`)
+- [ ] Works in both themes (`light`, `dark`)
 - [ ] Keyboard accessible, visible focus ring, correct roles/labels, no div-as-button
 - [ ] Controlled/uncontrolled behavior is correct and predictable
 - [ ] Has a Storybook story and at least a smoke test
@@ -29,7 +29,7 @@ the code; run `mcp__storybook__run-story-tests` scoped to this component (intera
 - axe a11y) and report failures with their story IDs; use
   `mcp__storybook__preview-stories` with `globals=theme:<slug>` to confirm it renders
   in both themes. If the server is unavailable, fall back to
-  `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook` and reading the story/source. See
+  `pnpm --filter @elabs/components-docs test-storybook` and reading the story/source. See
   @.claude/rules/storybook-mcp.md.
 
 Output a short report: ✅ passes, ⚠️ issues (with file:line and a concrete fix),

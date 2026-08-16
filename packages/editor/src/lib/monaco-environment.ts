@@ -8,7 +8,7 @@
  * factory using Vite's `?worker` import suffix, which makes Vite bundle each
  * worker entry. Import it ONCE at the app entry, before any editor mounts:
  *
- *   import "@qlik-coe-emea/qlabs-components-editor/monaco-environment";
+ *   import "@elabs/components-editor/monaco-environment";
  *
  * Without this, the editor still renders + highlights, but completions,
  * diagnostics and hovers are unavailable.

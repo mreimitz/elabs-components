@@ -78,7 +78,7 @@ export interface MetricCardProps
   visual?: ReactNode;
   /**
    * Optional grounding footer (research 11 §B.5 KPI-3) — connects a cited
-   * figure to its source (e.g. an `EvidenceChip` from `@qlik-coe-emea/qlabs-components-ai`). Rendered
+   * figure to its source (e.g. an `EvidenceChip` from `@elabs/components-ai`). Rendered
    * subdued (`text-meta text-muted-foreground`) under the tile body.
    */
   evidence?: ReactNode;

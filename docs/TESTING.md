@@ -10,7 +10,7 @@ Co-located `*.test.tsx` next to components. Fast, isolated, run on every change.
 
 ```bash
 pnpm test                      # all packages (turbo)
-pnpm --filter @qlik-coe-emea/qlabs-components-ui test   # one package
+pnpm --filter @elabs/components-ui test   # one package
 ```
 
 Every component should have at least a render + key-behavior smoke test.
@@ -21,7 +21,7 @@ Deterministic, real-browser tests of every story. **This is the "hard testing
 that runs automatically."** No AI agent involved.
 
 ```bash
-pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook
+pnpm --filter @elabs/components-docs test-storybook
 ```
 
 Every story runs as an interaction test and is asserted with axe

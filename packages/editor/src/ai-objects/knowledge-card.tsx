@@ -18,8 +18,8 @@
  * `KnowledgeCard` is standalone (no `resolve` → sources rendered as plain labels).
  * The `knowledgeDirective({ resolve })` factory wires the hook for directive use.
  */
-import { Card, CardContent, CardFooter } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Card, CardContent, CardFooter } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { BookOpen, FileText } from "lucide-react";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 

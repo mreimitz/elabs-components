@@ -40,17 +40,22 @@ function extractBlock(re: RegExp): string {
 function extractThemeBlock(name: string): string {
   return extractBlock(new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([\\s\\S]*?)\\n\\}`));
 }
+/**
+ * `root` is the `:root` neutral base/fallback — NOT a selectable theme, and
+ * deliberately NOT keyed `light`: `light` is a real shipped theme slug, and a
+ * colliding key silently overwrote the base block here. See themes-contrast.test.ts.
+ */
 const THEME_BLOCKS: Record<string, string> = {
-  light: extractBlock(/:root\s*\{([\s\S]*?)\n\}/),
-  "qlik-bright": extractThemeBlock("qlik-bright"),
-  "qlik-dark": extractThemeBlock("qlik-dark"),
+  root: extractBlock(/:root\s*\{([\s\S]*?)\n\}/),
+  light: extractThemeBlock("light"),
+  dark: extractThemeBlock("dark"),
 };
 
 /**
  * Blank out CSS comments, preserving length and newlines. `themes.css`
  * documents the very tokens this scanner parses, so a comment sitting
  * directly above a declaration routinely contains a `--token:`-shaped
- * substring (e.g. the real comment above qlik-bright's `--ring`, which
+ * substring (e.g. the real comment above light's `--ring`, which
  * mentions `--info:`). Without blanking, the lazy `[^;]+` below can start a
  * match INSIDE that comment and run to the semicolon of the NEXT real
  * declaration, silently dropping it (#401 — the same hazard
@@ -79,10 +84,10 @@ const THEMES = Object.keys(THEME_BLOCKS);
 const SERIES = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"] as const;
 
 /** Resolve a token to a concrete `oklch(...)` literal, following `var(--x)`
- *  aliases within the theme (then the light/:root base as fallback). */
+ *  aliases within the theme (then the `root`/`:root` base as fallback). */
 function resolve(theme: string, name: string, seen: string[] = []): string {
   if (seen.includes(name)) throw new Error(`var() cycle: ${seen.join(" → ")} → ${name}`);
-  const raw = TOKENS[theme]?.[name] ?? TOKENS.light?.[name];
+  const raw = TOKENS[theme]?.[name] ?? TOKENS.root?.[name];
   if (!raw) throw new Error(`${theme} is missing ${name} (and no :root fallback)`);
   const varMatch = raw.match(/^var\(\s*(--[\w-]+)\s*\)$/);
   if (varMatch?.[1]) return resolve(theme, varMatch[1], [...seen, name]);
@@ -134,7 +139,7 @@ describe("themes.css — chart palette WCAG contrast (all themes)", () => {
 // #401 — `tokenMap` (above) used to scan the RAW block body: a comment sitting
 // directly above a declaration and mentioning a `--token:`-shaped substring
 // (themes.css documents its own tokens inline, e.g. the real comment above
-// qlik-bright's `--ring`) made the lazy `[^;]+` regex start matching INSIDE
+// light's `--ring`) made the lazy `[^;]+` regex start matching INSIDE
 // the comment and consume through to the semicolon of the NEXT real
 // declaration, silently dropping it. Same class of bug already fixed in
 // `scripts/check-role-distinctness.mjs` (commit 22ca442).

@@ -91,12 +91,12 @@ export const Empty: Story = {
   args: { parts: [] },
 };
 
-/** Dark theme — trace disclosure + tool cards in qlik-dark. */
+/** Dark theme — trace disclosure + tool cards in dark. */
 export const DarkTheme: Story = {
   args: { parts },
   decorators: [
     (Story) => (
-      <div data-theme="qlik-dark" className="rounded-lg bg-background p-6 text-foreground">
+      <div data-theme="dark" className="rounded-lg bg-background p-6 text-foreground">
         <Story />
       </div>
     ),

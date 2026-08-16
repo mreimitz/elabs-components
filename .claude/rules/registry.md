@@ -15,7 +15,7 @@ shadcn CLI. Schema: `registry/registry.json` (validated by `pnpm registry:valida
 
 **Decision rule — package vs. registry:**
 
-- **Package (`@qlik-coe-emea/qlabs-components-*` import)** — stable, reusable primitives and well-defined
+- **Package (`@elabs/components-*` import)** — stable, reusable primitives and well-defined
   components that many apps share. Versioned, imported, updated centrally.
 - **Registry item (`npx shadcn add`)** — prototype-specific blocks/templates a
   team will tweak per app. Copy-owned; divergence is expected and fine.
@@ -23,7 +23,7 @@ shadcn CLI. Schema: `registry/registry.json` (validated by `pnpm registry:valida
 **Item types we use:**
 
 - `registry:ui` — self-contained primitive; imports `@/lib/utils` (`cn`).
-- `registry:block` — a composition that imports installed `@qlik-coe-emea/qlabs-components-*` packages
+- `registry:block` — a composition that imports installed `@elabs/components-*` packages
   (list them in `dependencies`). Use `registry:page`/`target` for routes.
 - `registry:theme` — a token set via `cssVars` (light/dark).
 
@@ -32,7 +32,7 @@ shadcn CLI. Schema: `registry/registry.json` (validated by `pnpm registry:valida
 - Unique `name`; valid `type`; always include `title` + `description`.
 - `files[].path` is relative to repo root and MUST exist on disk.
 - `target` is required for `registry:page` and `registry:file`.
-- `dependencies` lists real npm + `@qlik-coe-emea/qlabs-components-*` packages the files import;
+- `dependencies` lists real npm + `@elabs/components-*` packages the files import;
   `registryDependencies` lists other registry items (names or URLs).
 - Run `pnpm registry:validate` after every change.
 - Every block/template should have a co-located `*.stories.tsx` (or reference an

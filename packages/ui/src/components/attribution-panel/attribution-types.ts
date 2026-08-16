@@ -31,7 +31,7 @@ export interface Attribution {
   copyright: string | null;
   /** Canonical link (homepage, repository, or licence page). */
   url: string | null;
-  /** The `@qlik-coe-emea/qlabs-components-*` packages this reaches a consumer through. */
+  /** The `@elabs/components-*` packages this reaches a consumer through. */
   usedBy: readonly string[];
   /**
    * True when a licence or provider terms OBLIGE the notice to be displayed

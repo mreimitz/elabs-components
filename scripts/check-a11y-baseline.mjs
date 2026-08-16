@@ -250,10 +250,18 @@ function main(argv) {
     return 0;
   }
 
+  // The CI rung only exists to catch `STORYBOOK_A11Y_MODE` being set in the
+  // workflow (which turns axe back into a reporter). This checkout has no
+  // `.github/workflows`, so there is no workflow to weaken — skip that ONE rung
+  // instead of crashing on the missing file. The other rungs (the baseline
+  // itself, and the preview.tsx wiring that makes axe blocking) do not depend on
+  // CI and stay live. Same honest-dormancy treatment as `release-gates:check`;
+  // see docs/ADR/0028.
+  const ciPresent = existsSync(CI_PATH);
   const violations = [
     ...findBaselineViolations(baseline),
     ...findWiringViolations(readFileSync(PREVIEW_PATH, "utf8")),
-    ...findCiViolations(readFileSync(CI_PATH, "utf8")),
+    ...(ciPresent ? findCiViolations(readFileSync(CI_PATH, "utf8")) : []),
     ...(run ? findRunViolations(baseline, run) : []),
   ];
 

@@ -8,7 +8,7 @@
  * revenue card — and it doubles as the visual spec for enriching `ChartCard`
  * with `kpi` / `period` / `footer` slots (tracked as a follow-up issue).
  *
- * Compose-only from @qlik-coe-emea/qlabs-components-* primitives; semantic tokens only; reads in all
+ * Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all
  * three themes. Verify with globals=theme:<slug>.
  */
 import { useState } from "react";
@@ -22,7 +22,7 @@ import {
   Separator,
   ToggleGroup,
   ToggleGroupItem,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { AreaChart } from "./charts/area-chart";
 import { Area } from "./charts/area";
 import { Grid } from "./charts/grid";

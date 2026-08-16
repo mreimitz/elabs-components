@@ -29,8 +29,8 @@
  * straight onto a token variable.
  *
  * USAGE
- *   pnpm surface:preview -- --archetype dashboard --theme qlik-dark --out /tmp/x.html
- *   pnpm surface:preview -- --archetype dashboard --theme qlik-dark --out-dir /tmp
+ *   pnpm surface:preview -- --archetype dashboard --theme dark --out /tmp/x.html
+ *   pnpm surface:preview -- --archetype dashboard --theme dark --out-dir /tmp
  *   pnpm surface:preview -- --list
  *
  * Deterministic (same inputs → byte-identical output), dependency-free, and
@@ -192,7 +192,7 @@ export function readComposition(source) {
   const pkgOf = new Map();
   const packages = [];
   for (const { source: mod, specifiers } of scanImports(source)) {
-    if (!mod.startsWith("@qlik-coe-emea/qlabs-components-")) continue;
+    if (!mod.startsWith("@elabs/components-")) continue;
     if (!packages.includes(mod)) packages.push(mod);
     for (const s of specifiers) if (/^[A-Z]/.test(s)) pkgOf.set(s, mod);
   }
@@ -254,15 +254,15 @@ const esc = (s) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-/** Short package label, e.g. `@qlik-coe-emea/qlabs-components-ui` → `ui`. */
-const shortPkg = (pkg) => (pkg ? pkg.replace(/^.*qlabs-components-/, "") : "local");
+/** Short package label, e.g. `@elabs/components-ui` → `ui`. */
+const shortPkg = (pkg) => (pkg ? pkg.replace(/^.*\/components-/, "") : "local");
 
 /**
  * Render the self-contained preview HTML.
  *
  * @param {object} input
  * @param {string} input.archetype
- * @param {string} input.theme - a theme SLUG (`qlik-bright` | `qlik-dark` | `blueprint`).
+ * @param {string} input.theme - a theme SLUG (`light` | `dark` | `blueprint`).
  * @param {ReturnType<typeof readComposition>} input.composition
  * @param {string} input.tokensCss - the flattened token stylesheet.
  * @returns {string} a complete HTML document.

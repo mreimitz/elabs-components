@@ -2,7 +2,7 @@
 
 A component is "done" only when ALL of these hold:
 
-- [ ] **Reuse audit (do this FIRST, before scaffolding)** — grep the `@qlik-coe-emea/qlabs-components-*`
+- [ ] **Reuse audit (do this FIRST, before scaffolding)** — grep the `@elabs/components-*`
       barrels + `registry/` for the capability AND for shared helpers (copy
       buttons, context menus, `cn`, hooks) by name and by concept; reuse or extend
       what exists instead of duplicating. A new component/helper is only justified
@@ -12,7 +12,7 @@ A component is "done" only when ALL of these hold:
       where a DOM ref is meaningful.
 - [ ] **Semantic tokens** — uses token-backed utilities; no raw hex/arbitrary
       colors anywhere except `themes.css`.
-- [ ] **Theme-safe** — visually correct in both themes (`qlik-bright`, `qlik-dark`). This is an **observed** result:
+- [ ] **Theme-safe** — visually correct in both themes (`light`, `dark`). This is an **observed** result:
       render/screenshot the component (visual sweep or `test-storybook`) in each
       theme. **Never infer theme-safety from "it uses tokens"** — token usage is
       necessary, not sufficient (runtime-computed themes, e.g. a wrapped editor,
@@ -32,14 +32,14 @@ A component is "done" only when ALL of these hold:
       Storybook dev server is running, it passes `mcp__storybook__run-story-tests`
       (interaction + axe a11y) and renders across both themes via
       `mcp__storybook__preview-stories` (`globals=theme:<slug>`); otherwise verify
-      with `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
+      with `pnpm --filter @elabs/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
 - [ ] **Test** — at least one smoke test (render + key behavior) where practical.
 - [ ] **Barrel export** — re-exported from the package's `src/index.ts`.
 - [ ] **Agent-legible API** — predictable props a coding agent can use without
       reading the implementation.
 - [ ] **No paid dependencies.**
-- [ ] **Separation of concerns** — app UI in `@qlik-coe-emea/qlabs-components-ui`, marketing in
-      `@qlik-coe-emea/qlabs-components-marketing`; data/ai/flow/charts stay in their packages.
+- [ ] **Separation of concerns** — app UI in `@elabs/components-ui`, marketing in
+      `@elabs/components-marketing`; data/ai/flow/charts stay in their packages.
 - [ ] **Green checks** — `pnpm --filter <pkg> typecheck test` (and `lint`) pass.
 - [ ] **Motion-tokened** — animations use the gated `duration-*`/`ease-*`
       utilities (or `--t-*`), never raw `duration-200`/`ease-in-out`; movement
@@ -106,7 +106,7 @@ for a CI-only clone, a `--no-verify` commit, or adding a whole new package
 (whose registration touches files the trigger regex doesn't scan, e.g.
 `apps/docs/.storybook/preview.tsx`).
 
-**Adding a new public subpath export** (e.g. `@qlik-coe-emea/qlabs-components-editor/markdown/frontmatter`)
+**Adding a new public subpath export** (e.g. `@elabs/components-editor/markdown/frontmatter`)
 is _equally_ a structural API change — not a quiet implementation detail you reach
 for to dodge a test. Before adding one:
 
@@ -144,7 +144,7 @@ wrote. They apply to all work, not just components. Before reporting completion:
   self-authored demo.** "Accessible" / "verified across both themes" is only
   true if the assertion ran against the actual component as it ships (a Storybook
   story in a browser, `test-storybook`, or the real app screen). A test that
-  `vi.mock`s a `@qlik-coe-emea/qlabs-components-*` component and then asserts a11y attributes on the
+  `vi.mock`s a `@elabs/components-*` component and then asserts a11y attributes on the
   stand-in proves nothing about the real surface — the mock (e.g. a `<textarea>`
   that happens to honor `aria-label`) can **mask** a P0 a11y bug in the real
   component (the #34/#46 lesson). Likewise a three-theme pass scoped to one
@@ -195,7 +195,7 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   marker can corrupt a JSON/JS gate script's own source before it even runs, the exact
   #375 incident), the manifest stale-gate (`pnpm manifest:check`), the component-registration gate
   (`pnpm components:check` — barrel export AND a co-located story, the latter a ratchet
-  vs `scripts/components-story-baseline.json`: a NEW `@qlik-coe-emea/qlabs-components-ui`
+  vs `scripts/components-story-baseline.json`: a NEW `@elabs/components-ui`
   component with no `*.stories.tsx` FAILS, and the baseline only ratchets down; the
   `*.test.tsx` arm stays advisory-by-design per "where practical" + #59), the
   intent-content gate (`pnpm intent:check` — a `stateTokens` class or a relationship name
@@ -212,14 +212,14 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   not "not yet enumerated". **A green run is NOT "#60 satisfied":** the gate proves no
   spoke is empty, no shipped entry is thin/wrong, and the gap cannot grow — it does not
   prove the gap is closed. Every run prints the residual and `pnpm intent:check --
---residual` lists it; `@qlik-coe-emea/qlabs-components-ai` is fully covered, the
-  `@qlik-coe-emea/qlabs-components-charts` internals are not, and **#60 stays open until
+--residual` lists it; `@elabs/components-ai` is fully covered, the
+  `@elabs/components-charts` internals are not, and **#60 stays open until
   the residual is 0**), the docs-accuracy gate (`pnpm docs:check`), the agent-name
   gate (`pnpm agents:check`), the AI-SDK types-only gate (`pnpm ai:types-only` + its
   PostToolUse hook), the content anti-slop ratchet (`pnpm slop:check` — the
   taste-skill's "Jane Doe effect" with teeth, WP-15 #107), the inventory/llms
   generators, the one-way package DAG gate (`pnpm dep-direction:check`, #184 — a
-  sideways/upward `@qlik-coe-emea/qlabs-components-*` `package.json` edge fails CI), the state-story
+  sideways/upward `@elabs/components-*` `package.json` edge fails CI), the state-story
   coverage ratchet (`pnpm states:check`, #247), the eager-heavy-dependency ratchet
   (`pnpm heavy-deps:check` — an engine like mermaid/Rive/xterm must be reached by a
   dynamic `import()`; a static edge puts it in every consumer's entry chunk because
@@ -413,7 +413,7 @@ optional extra:
     sweep is still owed"), so counting them inverted the hook — it went silent on exactly
     the sessions it exists to catch.
   - **Verified against real bytes, not only fixtures.** Replayed over the transcripts in
-    `~/.claude/projects/-Users-czq-Documents-DEV-qlabs-qlabs-components/`, it now nudges
+    `~/.claude/projects/-Users-czq-Documents-DEV-qlabs-elabs-components/`, it now nudges
     on all three large sessions with no reviewer dispatch (18 / 19 / 20 product files —
     including the one whose only dispatch is the _builder_ skill) and stays silent on the
     13-file session that really dispatched `review-component`.

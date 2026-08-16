@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveNatural } from "@visx/curve";
-import { MetricCard } from "@qlik-coe-emea/qlabs-components-ui";
+import { MetricCard } from "@elabs/components-ui";
 import { MetricGrid } from "../metric-grid";
 import { Line } from "../charts/line";
 import { LineChart } from "../charts/line-chart";
@@ -13,9 +13,9 @@ const meta = {
     docs: {
       description: {
         component:
-          "A re-export of the canonical MetricCard owned by @qlik-coe-emea/qlabs-components-ui (see Core/MetricCard, ADR 0012). " +
-          "It is the *same* component — import from @qlik-coe-emea/qlabs-components-charts when you are already in a charts " +
-          "context, or from @qlik-coe-emea/qlabs-components-ui otherwise. Don't fork a second KPI tile.",
+          "A re-export of the canonical MetricCard owned by @elabs/components-ui (see Core/MetricCard, ADR 0012). " +
+          "It is the *same* component — import from @elabs/components-charts when you are already in a charts " +
+          "context, or from @elabs/components-ui otherwise. Don't fork a second KPI tile.",
       },
     },
   },
@@ -121,7 +121,7 @@ export const WithDescription: Story = {
 };
 
 /**
- * The `visual` slot takes any node — here a real token-driven `@qlik-coe-emea/qlabs-components-charts`
+ * The `visual` slot takes any node — here a real token-driven `@elabs/components-charts`
  * mini-chart, so the KPI tile carries a sparkline that themes with the rest of
  * the system. (The full chart-backed tiles — area/line/choropleth + hover-sync
  * + trend badge — ship as copy-owned registry blocks: `stat-card-*-01`.)

@@ -30,7 +30,7 @@ component change."_ A token with no declared contract cannot be re-branded
 safely: a consumer cannot see that it is gated against four other roles, cannot
 see the WCAG 1.4.11 surface obligations, and has no documented list of what a
 replacement must satisfy. A downstream consumer on
-`@qlik-coe-emea/qlabs-components-tokens` 3.0.0 hit exactly this: they shipped a
+`@elabs/components-tokens` 3.0.0 hit exactly this: they shipped a
 private per-theme override aliasing `--ring` to `--primary-text` because there
 was no supported alternative — and that value measures **ΔE 0.0432 vs
 `--success`** (below the 0.05 floor `pnpm roles:check` enforces) and is
@@ -69,14 +69,14 @@ contract, stated once here and linked (not restated) everywhere else:
 >    reaches sidebar focus automatically. Never re-declare it with a literal.
 > 5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
 >    provided (1)–(3) still hold. Verify with `pnpm roles:check` and
->    `pnpm --filter @qlik-coe-emea/qlabs-components-tokens test`. **Prefer
+>    `pnpm --filter @elabs/components-tokens test`. **Prefer
 >    forking the theme (`/new-theme`) over patching one token.**
 > 6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
 >    blue (264°) and its ring is the same hue at a distinct rung (ΔE 0.1044).
 >    It already satisfies this contract.
 
-The companion token-value change (issue #427 Part B) retunes qlik-bright and
-qlik-dark's `--ring` to satisfy clause 1 — the analysis behind that issue
+The companion token-value change (issue #427 Part B) retunes light and
+dark's `--ring` to satisfy clause 1 — the analysis behind that issue
 recommends hue 140 (`oklch(0.40 0.13 140)` bright / `oklch(0.89 0.20 140)`
 dark), 13° off the brand green with real margin against every gated partner.
 This ADR is the contract those values are accountable to, not a record of the
@@ -99,14 +99,14 @@ it.
 ### Why not neutral / ink
 
 A hue-free ring (mirroring the paused `blueprint` theme's white ring) was
-considered and rejected: in qlik-dark, `--accent-foreground` is
+considered and rejected: in dark, `--accent-foreground` is
 `oklch(0.95 0.006 90)` — a near-white — and `(--accent-foreground, --ring)` is
 also a `MUST_DIFFER` pair. A near-white green candidate at, for example,
 `oklch(0.93 0.05 153)` measures **ΔE 0.0516** against it — barely over the
 floor and with no margin to spare, and a genuinely neutral/ink candidate would
 land closer still. Blueprint can use a hue-free ring because it is monochrome
 by contract (`MUST_DIFFER` exempts it, see `.claude/rules/theming.md` "Roles
-that co-occur"); qlik-dark is polychrome, so the same choice collides with its
+that co-occur"); dark is polychrome, so the same choice collides with its
 own hover/selected ink. A neutral ring also does not answer the ask — the
 consumer wanted the ring to read as on-brand, not as absent of brand.
 
@@ -125,7 +125,7 @@ convention, not inventing one.
 
 ### The declined `(--ring, --info-text)` pair
 
-Today's qlik-dark ring measures **ΔE 0.0458** from `--info-text`
+Today's dark ring measures **ΔE 0.0458** from `--info-text`
 (`oklch(0.74 0.12 245)`) — below the 0.05 floor — and no gate has ever caught
 it, because `MUST_DIFFER`/`ROLE_PAIRS` carry no row for the `-text` rung. This
 ADR records that as a **knowingly-declined** pair, not an oversight to close
@@ -152,7 +152,7 @@ other; both are obligated to re-check.
 ### Ordering with #416
 
 #416 (open at the time of writing) proposes retuning `--success-text`. Both
-issues touch the green-family cluster in qlik-bright/qlik-dark, so whichever
+issues touch the green-family cluster in light/dark, so whichever
 lands second must **re-run `pnpm roles:check` and re-measure
 `(--ring, --success-text)`** using the reproduction method in issue #427 (the
 repo's own `oklabDistance` + `contrast()`, verified there to reproduce
@@ -161,7 +161,7 @@ chosen partly for robustness to either ordering — analysis in #427 shows it
 clears the floor against both today's `--success-text` and #416's proposed
 value — but that robustness is a property of the specific hue chosen, not of
 the contract in general. A future ring retune that drifts back toward
-146–160° in qlik-bright is not automatically safe against a concurrent
+146–160° in light is not automatically safe against a concurrent
 `--success-text` change; this rule is why the re-check is mandatory rather than
 assumed.
 

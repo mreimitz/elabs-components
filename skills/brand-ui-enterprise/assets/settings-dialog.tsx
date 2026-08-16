@@ -14,7 +14,7 @@ import {
   DialogTitle,
   Label,
   Separator,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { ThemeSwitcher } from "./theme-switcher";
 
 export function SettingsDialog({

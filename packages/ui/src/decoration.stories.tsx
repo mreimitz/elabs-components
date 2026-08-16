@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
-import { DecorationProvider, type DecorationLevel } from "@qlik-coe-emea/qlabs-components-tokens";
+import { DecorationProvider, type DecorationLevel } from "@elabs/components-tokens";
 import { Button } from "./components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/card";
 import { Badge } from "./components/badge";
@@ -8,7 +8,7 @@ import { Input } from "./components/input";
 
 /**
  * Foundation/Decoration — the decoration DIAL (`--decoration`, 0–10), orthogonal
- * to color. The SAME real `@qlik-coe-emea/qlabs-components-ui` components are rendered across the ramp:
+ * to color. The SAME real `@elabs/components-ui` components are rendered across the ramp:
  * 0 = plain themed UI; mid = a gentle graph-paper + hatch texture (fills/shadows
  * stay); 10 = full reprographic drafting (drawn-not-filled, squared, shadowless).
  *

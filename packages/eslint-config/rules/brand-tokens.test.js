@@ -1,7 +1,7 @@
 /**
  * Self-test for the brand-tokens ESLint rules (node --test).
  * Plants valid + invalid fixtures and asserts the rules fire exactly where
- * expected — so the gate can't silently rot. Run: `pnpm --filter @qlik-coe-emea/qlabs-components-eslint-config test`.
+ * expected — so the gate can't silently rot. Run: `pnpm --filter @elabs/components-eslint-config test`.
  */
 import test from "node:test";
 import { RuleTester } from "eslint";

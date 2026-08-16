@@ -1,11 +1,11 @@
 /**
  * Timeline — THE rail/node/connector spine (#190, research 10 §B.2): an
  * ordered list of steps with a vertical connector and a status-colored node
- * per step. Moved from `@qlik-coe-emea/qlabs-components-editor` (which re-exports it for back-compat —
+ * per step. Moved from `@elabs/components-editor` (which re-exports it for back-compat —
  * the ADR-0012 own/re-export model); the branded target for the editor's
  * `:::timeline` markdown directive, and reusable anywhere a process/sequence
  * needs showing. Token-driven, theme-safe, motion-free (animation belongs to
- * composing consumers, e.g. the `@qlik-coe-emea/qlabs-components-ai` agent grammar).
+ * composing consumers, e.g. the `@elabs/components-ai` agent grammar).
  *
  * One rail, two front doors:
  *   - compound `TimelineRoot` + `TimelineItem` — for composing consumers that
@@ -96,7 +96,7 @@ export interface TimelineItemProps extends LiHTMLAttributes<HTMLLIElement> {
   description?: ReactNode;
   /**
    * Rich block content under the title/description, indented with the rail —
-   * the slot composing consumers (e.g. `@qlik-coe-emea/qlabs-components-ai`'s `AgentStep`, #192)
+   * the slot composing consumers (e.g. `@elabs/components-ai`'s `AgentStep`, #192)
    * interleave per node. Block-level, so it must NOT ride the inline title
    * slot (`children`).
    */
@@ -152,7 +152,7 @@ export const TimelineItem = forwardRef<HTMLLIElement, TimelineItemProps>(functio
 
 /**
  * One step of the array-API `Timeline` (the editor's original item shape —
- * re-exported by `@qlik-coe-emea/qlabs-components-editor` as `TimelineItem` for back-compat).
+ * re-exported by `@elabs/components-editor` as `TimelineItem` for back-compat).
  */
 export interface TimelineEntry {
   title: ReactNode;

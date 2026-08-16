@@ -6,7 +6,7 @@ Goal: ship an installable **AI skill layer** for `brand-ui` that supercharges UI
 creation for **two audiences at once**:
 
 1. **The maintainer (you)** — building and extending the library _inside_ this monorepo.
-2. **The consumer** — a developer building their _own_ app _with_ `@qlik-coe-emea/qlabs-components-*`, in
+2. **The consumer** — a developer building their _own_ app _with_ `@elabs/components-*`, in
    their own repo, in Claude Code / Cursor / Codex / etc.
 
 This document analyzes the reference systems, then proposes a concrete architecture
@@ -27,7 +27,7 @@ Three skill tracks:
 
 - **`brand-ui` (consumer skill)** — the shadcn-model auto-triggering skill that
   teaches a consuming project how to discover, install, compose, theme, and
-  correctly use `@qlik-coe-emea/qlabs-components-*`. _This is the missing piece today._
+  correctly use `@elabs/components-*`. _This is the missing piece today._
 - **maintainer skills** — thin skills wrapping the commands/agents you already
   have (`new-component`, `new-theme`, registry curation, release).
 - **`brand-ui-audit` (quality skill)** — productizes the deterministic checks I
@@ -54,7 +54,7 @@ corrected several points; the build was updated to match:
   OR `reference/product.md` per task, which flips the defaults. brand-ui is a
   **product-register** system by definition (its `product.md` equivalent reads almost
   verbatim like brand-ui's philosophy: one family, fixed rem scale, restrained color,
-  all component states, skeleton loading, no modal-first); `@qlik-coe-emea/qlabs-components-marketing` surfaces
+  all component states, skeleton loading, no modal-first); `@elabs/components-marketing` surfaces
   are **brand-register** (distinctiveness, required imagery, committed color). The
   `brand-ui-audit` skill now carries a register section.
 - **The detector is bigger than I first implied.** impeccable ships a **38-rule
@@ -62,7 +62,7 @@ corrected several points; the build was updated to match:
   (regex/source, static-html/jsdom, browser/DOM, visual/screenshot), each rule
   cross-linked to skill guidance via `<!-- rule:id -->` anchors. My first `brand-ui audit`
   was a 6-rule static linter; it's now **~16 token-aware static rules** (the
-  regex-engine-applicable subset), calibrated against the real `@qlik-coe-emea/qlabs-components-ui` source with
+  regex-engine-applicable subset), calibrated against the real `@elabs/components-ui` source with
   false positives fixed and an advisory/blocking split. The DOM/visual rules stay in the
   skill's browser pass by design.
 - **Rendered contrast — better technique available.** impeccable's
@@ -135,10 +135,10 @@ we just haven't packaged them.
 ## 4. Proposed architecture
 
 ```
-qlabs-components/
+elabs-components/
 ├─ .claude-plugin/
 │  ├─ plugin.json            # the brand-ui plugin (points at ./skills)
-│  └─ marketplace.json       # so `/plugin marketplace add Qlik-CoE-EMEA/qlabs-components` works
+│  └─ marketplace.json       # so `/plugin marketplace add <path-to-this-repo>` works
 ├─ skills/                   # NEW — the shipped skills (portable, multi-harness)
 │  ├─ brand-ui/              # CONSUMER skill (shadcn-model, auto-trigger)
 │  │  ├─ SKILL.md
@@ -183,7 +183,7 @@ Phase 3 wrapper over the _same_ engine.
 ### Track A — `brand-ui` (consumer, the headline)
 
 - `name: brand-ui`, `user-invocable: false` (auto-triggers when a project depends
-  on `@qlik-coe-emea/qlabs-components-*` or asks to build UI with it).
+  on `@elabs/components-*` or asks to build UI with it).
 - **Live context:** `!`npx brand-ui info --json``→ installed`@brand` packages,
   active theme(s), token set, available components, registry URL.
 - **Critical rules** (linked files, reused from `.claude/rules/*`): semantic
@@ -216,7 +216,7 @@ Phase 3 wrapper over the _same_ engine.
   impeccable/intent (side-stripe borders, gradient text, nested cards, gray-on-
   color, dark-pattern smells).
 - **Visual pass:** the agent-browser cross-theme screenshot + critique I ran in
-  the visual-UX review (qlik-bright/qlik-dark).
+  the visual-UX review (light/dark).
 - **Output:** 3-phase plan (bencium) → approval gate → file each finding via the
   existing `/file-issue` RCA → GitHub flow.
 - **Token-aware:** every fix references a `@brand` token; it will _never_ suggest
@@ -241,18 +241,18 @@ to productize first.
 
 ## 7. Distribution
 
-- **Claude Code:** `/plugin marketplace add Qlik-CoE-EMEA/qlabs-components` →
-  install `brand-ui`. (Or `npx skills add Qlik-CoE-EMEA/qlabs-components`.)
+- **Claude Code:** `/plugin marketplace add <path-to-this-repo>` →
+  install `brand-ui`. (Or `npx skills add <path-to-this-repo>`.)
 - **Other harnesses (Phase 2):** a build step compiles `skills/` into
   `.cursor/`, `.gemini/`, `.codex/.agents/`, `.github/` layouts (impeccable's
   approach) so Cursor/Codex/Copilot/Gemini users get the same skill.
 - **CLI:** `npx brand-ui ...` via the package `bin`; works with or without the
-  plugin installed — but **not** without auth. `@qlik-coe-emea/qlabs-components-cli`
+  plugin installed — but **not** without auth. `@elabs/components-cli`
   is a **private GitHub Packages** dependency (ADR 0016), so every `npx brand-ui …`
-  / `npx @qlik-coe-emea/qlabs-components-cli …` example in this document assumes the
-  one-time setup first: map the `@qlik-coe-emea` scope in `.npmrc` to
+  / `npx @elabs/components-cli …` example in this document assumes the
+  one-time setup first: map the `@elabs` scope in `.npmrc` to
   `npm.pkg.github.com` with a `read:packages` PAT, then
-  `pnpm add -D @qlik-coe-emea/qlabs-components-cli` and call it as
+  `pnpm add -D @elabs/components-cli` and call it as
   `pnpm exec brand-ui …`. See `docs/CONSUMING.md` §1 + §7a. Without that, a bare
   `npx` 404s (#265).
 

@@ -1,15 +1,9 @@
 "use client";
 
-import { ChartStatFlow, Line, LineChart } from "@qlik-coe-emea/qlabs-components-charts";
+import { ChartStatFlow, Line, LineChart } from "@elabs/components-charts";
 import { curveBasis } from "@visx/curve";
 import { useState } from "react";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
 import { sessionsSeries, sessionsStats } from "./data/sessions-series";
 import { StatCardChart, statCardLabelClassName, statCardValueClassName } from "./stat-card-chart";
 import {

@@ -17,7 +17,7 @@
   errors → `role="alert"`.
 - **Don't over-ARIA.** Native semantics + Radix beat redundant ARIA. Add ARIA
   only to fill a genuine gap.
-- **Contrast.** Verify text/UI contrast in both themes (`qlik-bright`, `qlik-dark`).
+- **Contrast.** Verify text/UI contrast in both themes (`light`, `dark`).
 - **Colour is never the only channel (WCAG 1.4.1, #387).** A `cva`-style colour
   map is the right tool for a _visual_ variant (size, tone-of-voice); it is the
   wrong tool ON ITS OWN for a variant that carries MEANING the user must recover

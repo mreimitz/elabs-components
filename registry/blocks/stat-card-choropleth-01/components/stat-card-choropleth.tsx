@@ -1,21 +1,15 @@
 "use client";
 
-import type { ChoroplethFeature } from "@qlik-coe-emea/qlabs-components-charts";
+import type { ChoroplethFeature } from "@elabs/components-charts";
 import {
   ChartStatFlow,
   ChoroplethChart,
   ChoroplethFeatureComponent,
   ChoroplethTooltip,
-} from "@qlik-coe-emea/qlabs-components-charts";
+} from "@elabs/components-charts";
 import { useState } from "react";
 import { useWorldDataStandalone } from "./lib/use-world-data";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@qlik-coe-emea/qlabs-components-ui";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
 import { getVisitorColor, getVisitorValue, visitorStats } from "./data/visitors";
 import {
   StatCardChart,

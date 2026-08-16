@@ -3,20 +3,20 @@
  * Root providers for an enterprise brand-ui app (baseline root wiring).
  * Order: Theme -> Tooltip -> Sidebar -> app; <Toaster/> mounted once.
  * Generalized from qlabs-workbench app-providers + the brand-ui baseline.
- * Verified against @qlik-coe-emea/qlabs-components-* v1.0.0 source. NOTE: the ContextPanel family is in
- * @qlik-coe-emea/qlabs-components-ai (not @qlik-coe-emea/qlabs-components-ui) and is AI-oriented — add <ContextPanelProvider> from
- * @qlik-coe-emea/qlabs-components-ai only for AI workspaces; generic detail uses a right Sheet/Drawer.
+ * Verified against @elabs/components-* v1.0.0 source. NOTE: the ContextPanel family is in
+ * @elabs/components-ai (not @elabs/components-ui) and is AI-oriented — add <ContextPanelProvider> from
+ * @elabs/components-ai only for AI workspaces; generic detail uses a right Sheet/Drawer.
  */
-import "@qlik-coe-emea/qlabs-components-tokens/styles.css";
-import { ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
-import { SidebarProvider, Toaster, TooltipProvider } from "@qlik-coe-emea/qlabs-components-ui";
+import "@elabs/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs/components-tokens";
+import { SidebarProvider, Toaster, TooltipProvider } from "@elabs/components-ui";
 import type { ReactNode } from "react";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider defaultTheme="qlik-bright">
+    <ThemeProvider defaultTheme="light">
       <TooltipProvider delayDuration={300}>
-        {/* AI workspaces also wrap children in <ContextPanelProvider> from @qlik-coe-emea/qlabs-components-ai. */}
+        {/* AI workspaces also wrap children in <ContextPanelProvider> from @elabs/components-ai. */}
         <SidebarProvider>{children}</SidebarProvider>
       </TooltipProvider>
       <Toaster />

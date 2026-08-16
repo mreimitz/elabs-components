@@ -28,7 +28,7 @@ matter for real keyboard and screen-reader users without over-engineering.
   an objective axe violation report (rule, impact, element, inspect link), and use
   `mcp__storybook__preview-stories` (`globals=theme:<slug>`) to check focus rings +
   contrast in each of both themes. If the server is down, audit from source and run
-  `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
+  `pnpm --filter @elabs/components-docs test-storybook`. See @.claude/rules/storybook-mcp.md.
 
 ## Quality checklist
 
@@ -37,7 +37,7 @@ matter for real keyboard and screen-reader users without over-engineering.
 - [ ] Correct semantic element or appropriate ARIA role + accessible name
 - [ ] Icon-only controls have `aria-label`; decorative SVGs are `aria-hidden`
 - [ ] Status/loading/error regions use `role="status"`/`role="alert"`
-- [ ] Contrast holds in both themes (`qlik-bright`, `qlik-dark`)
+- [ ] Contrast holds in both themes (`light`, `dark`)
 
 ## Constraints
 

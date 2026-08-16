@@ -62,9 +62,7 @@ export function parseShortcut(shortcut: string): number {
     NAMED_KEY_MAP[key] ??
     LETTER_KEY_MAP[key] ??
     (() => {
-      throw new Error(
-        `[@qlik-coe-emea/qlabs-components-editor] parseShortcut: unrecognized key "${keyPart}"`,
-      );
+      throw new Error(`[@elabs/components-editor] parseShortcut: unrecognized key "${keyPart}"`);
     })();
 
   return binding | keyCode;

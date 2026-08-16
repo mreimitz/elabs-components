@@ -6,12 +6,12 @@ paths:
   - "packages/viewer/**"
 ---
 
-# File viewer components (@qlik-coe-emea/qlabs-components-viewer)
+# File viewer components (@elabs/components-viewer)
 
-`@qlik-coe-emea/qlabs-components-viewer` renders **a file the app did not write** —
+`@elabs/components-viewer` renders **a file the app did not write** —
 uploaded, fetched from a signed URL, or produced by an agent — themed and accessible.
 Durable record: [`docs/ADR/0024-viewer-package.md`](../../docs/ADR/0024-viewer-package.md).
-`@qlik-coe-emea/qlabs-components-editor` is its sibling: `editor` is for source you
+`@elabs/components-editor` is its sibling: `editor` is for source you
 **author**, `viewer` for content you **read**.
 
 ## The shape
@@ -94,7 +94,7 @@ registry.register(
 
 The rule the whole package rests on. An adapter's `load()` returns a **model** —
 rows/columns, a tree, a page list, a string — and its `Renderer` draws that model with
-`@qlik-coe-emea/qlabs-components-ui` components. It never returns an HTML string, never
+`@elabs/components-ui` components. It never returns an HTML string, never
 writes `innerHTML`, and never carries inline colour. This is what makes an arbitrary file
 themeable at all: the `csv` adapter renders a real `Table`, so it gets the theme, the
 density dial, RTL and keyboard semantics for free.
@@ -124,7 +124,7 @@ Four adapters can all claim a text file, so the boundaries are deliberate — re
 before adding a fifth:
 
 - **`markdown`** claims `.md` and `text/markdown` and renders a **document**
-  (Streamdown → the same `Prose*` primitives `@qlik-coe-emea/qlabs-components-ai` uses).
+  (Streamdown → the same `Prose*` primitives `@elabs/components-ai` uses).
   It does **not** claim `.mdx` — that is JavaScript wearing markdown, and executing it is
   not what a viewer does.
 - **`code`** claims ~60 source extensions and nothing else. It never claims the `code`
@@ -141,7 +141,7 @@ before adding a fifth:
 **The highlighting theme is a token theme.** `code-theme.ts` is a hand-written Shiki
 `ThemeRegistrationRaw` whose every colour is `var(--code-*)`, so ONE theme is correct in
 every `data-theme` and switching theme recolours live with no re-tokenize. Do not port
-`@qlik-coe-emea/qlabs-components-ai`'s `_code-block-theme.ts` (oklch→hex + a
+`@elabs/components-ai`'s `_code-block-theme.ts` (oklch→hex + a
 `MutationObserver`) here — that bridge exists only because `@streamdown/code` freezes
 themes at import time, which this package does not use.
 
@@ -172,7 +172,7 @@ only relative to the page hosting it. `AdapterRendererProps.baseHeadingLevel` (d
 `2`) is what an adapter that renders headings offsets by — `clampHeadingLevel(own + base
 
 - 1)`, never past `h6`. Without it a README's `#`puts a second`h1`in the screen
-reader's flat heading list. Same seam as`@qlik-coe-emea/qlabs-components-ai`'s
+reader's flat heading list. Same seam as`@elabs/components-ai`'s
 `MarkdownView`.
 
 ## Pointing at part of a document
@@ -184,7 +184,7 @@ same layer. Durable record: [`docs/ADR/0025`](../../docs/ADR/0025-document-highl
   and what a retrieval pipeline can actually emit), `range` (character offsets
   into `AdapterDocument.text`, exact but only against OUR projection), `rect`
   (0..1 page fractions, no text needed). `DocumentAddress` lives in
-  `@qlik-coe-emea/qlabs-components-ui` (`src/lib/document-address.ts`) because
+  `@elabs/components-ui` (`src/lib/document-address.ts`) because
   `ai` and `viewer` are Layer-2 siblings and `ui` is the only layer both reach —
   the same reason `FileSource` is there.
 - **Three steps, three homes.** LOCATE (`quote` → offsets) runs in the
@@ -298,5 +298,5 @@ sibling that needs viewer formats takes them by **injection** — see `AssetPrev
 `renderPreview` slot (ADR 0024 §6), the same shape `ChartFrame`'s `renderTable` uses.
 
 The shared file vocabulary — `FileSource`, `normalizeFileSource`, `resolveFileKind`,
-`fileIconFor`, `FileCategory` — lives in `@qlik-coe-emea/qlabs-components-ui`
+`fileIconFor`, `FileCategory` — lives in `@elabs/components-ui`
 (`src/lib/`) precisely so both sides can speak it without a sideways edge.

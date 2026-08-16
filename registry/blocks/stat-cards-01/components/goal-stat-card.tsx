@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Card, CardContent, Progress } from "@qlik-coe-emea/qlabs-components-ui";
+import { Badge, Card, CardContent, Progress } from "@elabs/components-ui";
 
 export interface GoalStatCardProps {
   label: string;

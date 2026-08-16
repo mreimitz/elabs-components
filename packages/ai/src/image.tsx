@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton, useLocale } from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+import { Skeleton, useLocale } from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import type { Experimental_GeneratedImage } from "ai";
 import { ImageOff } from "lucide-react";
 import type { ImgHTMLAttributes } from "react";

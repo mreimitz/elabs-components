@@ -1,14 +1,14 @@
 /**
- * @qlik-coe-emea/qlabs-components-editor — a token-themed Monaco (VS Code) editor wrapped as brand-ui
+ * @elabs/components-editor — a token-themed Monaco (VS Code) editor wrapped as brand-ui
  * components.
  *
  * Monaco is a self-rendering editor engine; this package wraps it the way
- * @qlik-coe-emea/qlabs-components-flow wraps React Flow and @qlik-coe-emea/qlabs-components-data wraps TanStack. The editing
+ * @elabs/components-flow wraps React Flow and @elabs/components-data wraps TanStack. The editing
  * surface + widgets are Monaco's, recolored from the active brand theme via the
  * theming bridge; the chrome (toolbar, file tabs, copy button) is brand-ui.
  *
  * Worker setup (for completions/diagnostics) — import ONCE at the app entry:
- *   import "@qlik-coe-emea/qlabs-components-editor/monaco-environment";   // Vite apps
+ *   import "@elabs/components-editor/monaco-environment";   // Vite apps
  */
 export {
   CodeEditor,

@@ -5,7 +5,7 @@ Hooks shipped with the **brand-ui** Claude Code plugin (auto-discovered from
 
 ## `check-raw-taxonomy.mjs` — PostToolUse(Write|Edit) taxonomy guard
 
-The in-loop sibling of the durable CI gate (`@qlik-coe-emea/qlabs-components-eslint-config` →
+The in-loop sibling of the durable CI gate (`@elabs/components-eslint-config` →
 `brand/no-raw-font-size`, `brand/no-raw-color`). After an agent edits a
 `.tsx`/`.jsx`, it scans the file and, if it finds raw font sizes (`text-2xl`,
 `text-[18px]`) or raw colours (`text-gray-500`, `bg-[#fff]`), returns them as
@@ -21,7 +21,7 @@ The in-loop sibling of the durable CI gate (`@qlik-coe-emea/qlabs-components-esl
   ratchets, not this consumer-facing hook.
 
 The three surfaces share one set of patterns (this script ·
-`@qlik-coe-emea/qlabs-components-eslint-config/rules/brand-tokens.js` · `scripts/check-raw-palette.mjs`)
+`@elabs/components-eslint-config/rules/brand-tokens.js` · `scripts/check-raw-palette.mjs`)
 so they can't disagree.
 
 > Why a hook _and_ a lint rule? Match the mechanism to the property: a decidable

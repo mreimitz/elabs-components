@@ -11,7 +11,7 @@
  * SECOND color block for the same selector exists later in the file, it is
  * invisible to every gate yet — having equal CSS specificity and coming later —
  * WINS the cascade at runtime, so the tools validate one set of values while the
- * browser renders another. That is exactly how the stale qlik-bright/qlik-dark
+ * browser renders another. That is exactly how the stale light/dark
  * "block B" shipped and reverted the #148 ring fix + the #187 recess (regression
  * introduced by merge 7f5ead8). See issue #196.
  *

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { LocaleProvider } from "@qlik-coe-emea/qlabs-components-ui";
+import { LocaleProvider } from "@elabs/components-ui";
 
 import { Composer } from "./composer";
 import { InlineCitationCard, InlineCitationCarouselNext } from "./inline-citation";
@@ -74,7 +74,7 @@ describe("microcopy — a LocaleProvider overrides it", () => {
     expect(screen.getByPlaceholderText("Frag mich etwas…")).toBeInTheDocument();
   });
 
-  it("translates a namespaced @qlik-coe-emea/qlabs-components-ai aria-label", () => {
+  it("translates a namespaced @elabs/components-ai aria-label", () => {
     render(
       <LocaleProvider locale="de-DE" messages={de}>
         <MessageBranch>

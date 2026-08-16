@@ -8,7 +8,7 @@
  * one `lucide-react` version specifier is declared across all package.json manifests.
  *
  * (The other half — blocking non-Lucide/non-@brand icon-library imports — is the ESLint
- * `no-restricted-imports` rule in @qlik-coe-emea/qlabs-components-eslint-config, enforced by `pnpm lint`.)
+ * `no-restricted-imports` rule in @elabs/components-eslint-config, enforced by `pnpm lint`.)
  *
  * Dependency-free; locates the workspace relative to this file (cwd-independent).
  */

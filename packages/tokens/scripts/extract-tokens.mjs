@@ -21,7 +21,7 @@
  * documentation that rides with the values.
  *
  * Re-run ONLY to re-seed from a known-good themes.css (it OVERWRITES the JSON).
- * Day-to-day, edit the JSON and run `pnpm --filter @qlik-coe-emea/qlabs-components-tokens tokens:build`.
+ * Day-to-day, edit the JSON and run `pnpm --filter @elabs/components-tokens tokens:build`.
  *
  * Usage:  node packages/tokens/scripts/extract-tokens.mjs
  * Dependency-free; ESM.
@@ -29,6 +29,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  ROOT_MODE,
   THEME_NAMES,
   TOKENS_DIR,
   locateBlock,
@@ -146,9 +147,9 @@ function main() {
     const group = {};
     for (const { name, value } of tokens) {
       const entry = { $type: "color", $value: value };
-      // Author the intent only on the canonical `light` mode (values vary per
-      // theme; intent does not). Falls back to a generic note if unlisted.
-      if (mode === "light") {
+      // Author the intent only on the canonical `root` base mode (values vary
+      // per theme; intent does not). Falls back to a generic note if unlisted.
+      if (mode === ROOT_MODE) {
         entry.$description = DESCRIPTIONS[name] ?? `Semantic token ${name}.`;
       }
       group[dtcgName(name)] = entry;
@@ -166,7 +167,7 @@ function main() {
   const modesInline = "[" + THEME_NAMES.map((m) => JSON.stringify(m)).join(", ") + "]";
   const manifest =
     "{\n" +
-    `  "$description": "DTCG theme modes for @qlik-coe-emea/qlabs-components-tokens.",\n` +
+    `  "$description": "DTCG theme modes for @elabs/components-tokens.",\n` +
     `  "modes": ${modesInline}\n` +
     "}\n";
   writeFileSync(join(TOKENS_DIR, "$themes.json"), manifest, "utf8");

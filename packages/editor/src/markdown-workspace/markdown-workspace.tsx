@@ -3,7 +3,7 @@
 /**
  * MarkdownWorkspace — the hybrid markdown authoring surface for the Workbench.
  *
- * One markdown value, three modes (a @qlik-coe-emea/qlabs-components-ui ToggleGroup):
+ * One markdown value, three modes (a @elabs/components-ui ToggleGroup):
  *  - "source"  : Monaco CodeEditor(markdown) + the MarkdownToolbar
  *  - "wysiwyg" : the Milkdown MarkdownEditor (direct manipulation)
  *  - "split"   : source ↔ the branded MarkdownPreview (drag-resizable)
@@ -22,8 +22,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
+} from "@elabs/components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
 import { Columns2, Eye, Focus, SquareCode } from "lucide-react";
 import {
   forwardRef,

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Maximize2 } from "lucide-react";
-import { Button, Dialog, DialogTrigger, ExpandDialog } from "@qlik-coe-emea/qlabs-components-ui";
+import { Button, Dialog, DialogTrigger, ExpandDialog } from "@elabs/components-ui";
 import { MessageTable } from "./message-table";
 import type { TableSpec } from "./message-table-spec";
 import { ToolDetails, ToolInput } from "./tool";
@@ -79,7 +79,7 @@ const invoicesSpec: TableSpec = {
 
 /**
  * The whole point of the `actions` slot, and of `ExpandDialog` living in
- * `@qlik-coe-emea/qlabs-components-ui`: a produced table expands through the
+ * `@elabs/components-ui`: a produced table expands through the
  * SAME surface a produced chart does, so "make this bigger" means one thing
  * across the whole chat. Never hand-roll a lightbox or an in-place breakout
  * here — that is how a chat ends up teaching four different meanings for one

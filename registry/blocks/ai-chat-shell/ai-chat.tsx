@@ -1,8 +1,8 @@
 /**
  * AI chat scaffold (copy-owned block). Wire `send` to your model/runtime.
- * Built on @qlik-coe-emea/qlabs-components-ai (AI Elements) — render the AI SDK `UIMessage` model;
+ * Built on @elabs/components-ai (AI Elements) — render the AI SDK `UIMessage` model;
  * the app owns the model calls (swap `send` for a `useChat` transport).
- * Depends on installed @qlik-coe-emea/qlabs-components-ai + @qlik-coe-emea/qlabs-components-ui.
+ * Depends on installed @elabs/components-ai + @elabs/components-ui.
  */
 "use client";
 
@@ -21,7 +21,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from "@qlik-coe-emea/qlabs-components-ai";
+} from "@elabs/components-ai";
 
 interface ChatMessage {
   id: string;

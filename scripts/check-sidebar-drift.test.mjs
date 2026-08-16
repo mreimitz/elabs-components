@@ -59,7 +59,7 @@ export default NavUser;
 });
 
 test("reports the correct line number", () => {
-  const src = `import { Sidebar } from "@qlik-coe-emea/qlabs-components-ui";
+  const src = `import { Sidebar } from "@elabs/components-ui";
 
 export function TeamSwitcher() { return null; }
 `;
@@ -70,27 +70,25 @@ export function TeamSwitcher() { return null; }
 
 // ── Reuse (re-export / import) — must NOT FLAG ───────────────────────────────
 
-test("DOES NOT FLAG: export { TeamSwitcher } from @qlik-coe-emea/qlabs-components-ui (pass-through)", () => {
-  assert.ok(isClean(`export { TeamSwitcher } from "@qlik-coe-emea/qlabs-components-ui";`));
+test("DOES NOT FLAG: export { TeamSwitcher } from @elabs/components-ui (pass-through)", () => {
+  assert.ok(isClean(`export { TeamSwitcher } from "@elabs/components-ui";`));
 });
 
-test("DOES NOT FLAG: aliased re-export — export { NavMain as X } from @qlik-coe-emea/qlabs-components-ui", () => {
-  assert.ok(
-    isClean(`export { NavMain as DashboardNavigation } from "@qlik-coe-emea/qlabs-components-ui";`),
-  );
+test("DOES NOT FLAG: aliased re-export — export { NavMain as X } from @elabs/components-ui", () => {
+  assert.ok(isClean(`export { NavMain as DashboardNavigation } from "@elabs/components-ui";`));
 });
 
 test("DOES NOT FLAG: multi-name aliased re-export with `as default`", () => {
   assert.ok(
     isClean(
-      `export { NavMain as default, NavMain as DashboardNavigation } from "@qlik-coe-emea/qlabs-components-ui";`,
+      `export { NavMain as default, NavMain as DashboardNavigation } from "@elabs/components-ui";`,
     ),
   );
 });
 
-test("DOES NOT FLAG: import { TeamSwitcher } from @qlik-coe-emea/qlabs-components-ui usage", () => {
+test("DOES NOT FLAG: import { TeamSwitcher } from @elabs/components-ui usage", () => {
   const src = `
-import { TeamSwitcher, NavUser } from "@qlik-coe-emea/qlabs-components-ui";
+import { TeamSwitcher, NavUser } from "@elabs/components-ui";
 export function DashboardSidebar() {
   return <TeamSwitcher teams={[]} />;
 }
@@ -100,20 +98,18 @@ export function DashboardSidebar() {
 
 test("DOES NOT FLAG: aliased re-export — NavNotifications as NotificationsPopover", () => {
   assert.ok(
-    isClean(
-      `export { NavNotifications as NotificationsPopover } from "@qlik-coe-emea/qlabs-components-ui";`,
-    ),
+    isClean(`export { NavNotifications as NotificationsPopover } from "@elabs/components-ui";`),
   );
 });
 
 test("DOES NOT FLAG: every guarded name as a pass-through re-export", () => {
   for (const name of GUARDED) {
     assert.ok(
-      isClean(`export { ${name} } from "@qlik-coe-emea/qlabs-components-ui";`),
+      isClean(`export { ${name} } from "@elabs/components-ui";`),
       `${name} re-export should be clean`,
     );
     assert.ok(
-      isClean(`export { ${name} as Foo } from "@qlik-coe-emea/qlabs-components-ui";`),
+      isClean(`export { ${name} as Foo } from "@elabs/components-ui";`),
       `${name} aliased re-export should be clean`,
     );
   }
@@ -121,9 +117,7 @@ test("DOES NOT FLAG: every guarded name as a pass-through re-export", () => {
 
 test("DOES NOT FLAG: export type { TeamSwitcherProps } (types only)", () => {
   assert.ok(
-    isClean(
-      `export type { TeamSwitcherProps, TeamSwitcherTeam } from "@qlik-coe-emea/qlabs-components-ui";`,
-    ),
+    isClean(`export type { TeamSwitcherProps, TeamSwitcherTeam } from "@elabs/components-ui";`),
   );
 });
 
@@ -135,16 +129,14 @@ test("DOES NOT FLAG: a non-guarded local declaration (block-local AppSidebar wra
 
 test("DOES NOT FLAG: export default bare identifier that was imported, not declared", () => {
   const src = `
-import { NavMain } from "@qlik-coe-emea/qlabs-components-ui";
+import { NavMain } from "@elabs/components-ui";
 export default NavMain;
 `;
   assert.ok(isClean(src));
 });
 
 test("DOES NOT FLAG: comments mentioning a guarded primitive", () => {
-  assert.ok(
-    isClean(`// re-exports the shared TeamSwitcher from @qlik-coe-emea/qlabs-components-ui`),
-  );
+  assert.ok(isClean(`// re-exports the shared TeamSwitcher from @elabs/components-ui`));
   assert.ok(isClean(`/* export function TeamSwitcher() {} -- old copy, removed */`));
 });
 

@@ -15,7 +15,7 @@ keywords:
     bulk actions,
     back-office,
   ]
-packages: ["@qlik-coe-emea/qlabs-components-ui", "@qlik-coe-emea/qlabs-components-data"]
+packages: ["@elabs/components-ui", "@elabs/components-data"]
 ---
 
 # Playbook — Data app / admin console
@@ -25,14 +25,14 @@ facets, column control, row + bulk actions. Template source: `templates/data-app
 
 ## Building blocks
 
-| Layer   | Components                                                   | From                                   |
-| ------- | ------------------------------------------------------------ | -------------------------------------- |
-| Shell   | `SidebarProvider` + `Sidebar` + `SidebarInset`               | `@qlik-coe-emea/qlabs-components-ui`   |
-| Table   | `DataTable` (TanStack-backed)                                | `@qlik-coe-emea/qlabs-components-data` |
-| Toolbar | `FilterBar` + `SearchInput` + `FacetFilter` + `ColumnPicker` | `@qlik-coe-emea/qlabs-components-data` |
-| Detail  | `Dialog` (row detail) · `DropdownMenu` (row actions)         | `@qlik-coe-emea/qlabs-components-ui`   |
-| Guard   | `AlertDialog` for destructive/bulk actions                   | `@qlik-coe-emea/qlabs-components-ui`   |
-| States  | `Skeleton` · `EmptyState` · `Badge` (status)                 | `@qlik-coe-emea/qlabs-components-ui`   |
+| Layer   | Components                                                   | From                     |
+| ------- | ------------------------------------------------------------ | ------------------------ |
+| Shell   | `SidebarProvider` + `Sidebar` + `SidebarInset`               | `@elabs/components-ui`   |
+| Table   | `DataTable` (TanStack-backed)                                | `@elabs/components-data` |
+| Toolbar | `FilterBar` + `SearchInput` + `FacetFilter` + `ColumnPicker` | `@elabs/components-data` |
+| Detail  | `Dialog` (row detail) · `DropdownMenu` (row actions)         | `@elabs/components-ui`   |
+| Guard   | `AlertDialog` for destructive/bulk actions                   | `@elabs/components-ui`   |
+| States  | `Skeleton` · `EmptyState` · `Badge` (status)                 | `@elabs/components-ui`   |
 
 ## Wiring diagram
 

@@ -54,7 +54,7 @@ edited="$(jq -rs '
 # Already reviewed? Scope the answer to what was actually EXECUTED — never to raw
 # transcript bytes, and never to the agent's own prose. Two failure modes, both
 # observed by replaying this hook over the real transcripts in
-# ~/.claude/projects/-Users-czq-Documents-DEV-qlabs-qlabs-components/:
+# ~/.claude/projects/-Users-czq-Documents-DEV-qlabs-elabs-components/:
 #
 #   1. Whole-file grep — Claude Code injects `type:"attachment"` lines into EVERY
 #      session (`agent_listing_delta` enumerates `brand-ui-*-reviewer`,

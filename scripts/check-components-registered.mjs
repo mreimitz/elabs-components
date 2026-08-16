@@ -9,10 +9,10 @@
  * PostToolUse hook.
  *
  * BLOCKING (exit 1) — the crisp, unambiguous conventions:
- *   • @qlik-coe-emea/qlabs-components-ui folder-per-component: every `packages/ui/src/components/<name>/`
+ *   • @elabs/components-ui folder-per-component: every `packages/ui/src/components/<name>/`
  *     MUST be re-exported from the package barrel (`src/index.ts`). An unexported
  *     component folder is invisible to consumers and to the manifest/MCP agent path.
- *   • STORY RATCHET (#67 DoD): a registered `@qlik-coe-emea/qlabs-components-ui` component with no
+ *   • STORY RATCHET (#67 DoD): a registered `@elabs/components-ui` component with no
  *     co-located `*.stories.tsx` (and none in apps/docs) is invisible to the
  *     Storybook-MCP agent path. The pre-existing gaps are frozen in
  *     `scripts/components-story-baseline.json`; a NEW component without a story
@@ -21,7 +21,7 @@
  *     "after WP-02"; a repo-wide sweep is NOT required to get the teeth.
  *
  * ADVISORY (warn, never blocks):
- *   • a flat-file package (`@qlik-coe-emea/qlabs-components-ai`, charts, …) top-level `*.tsx` whose exports
+ *   • a flat-file package (`@elabs/components-ai`, charts, …) top-level `*.tsx` whose exports
  *     don't reach the manifest (possible orphan) — flat layout is fuzzier, so warn.
  *   • the `*.test.tsx` arm stays advisory-by-design: the quality-gates rule asks for a
  *     smoke test "where practical", and repo-wide test coverage is tracked separately
@@ -165,7 +165,7 @@ function runGate({ update = false } = {}) {
     // a story may live in apps/docs referencing this component
     storyIndex.has(base.toLowerCase());
 
-  // ---- @qlik-coe-emea/qlabs-components-ui : folder-per-component ----
+  // ---- @elabs/components-ui : folder-per-component ----
   const missingStory = [];
   const uiComponents = join(root, "packages", "ui", "src", "components");
   if (existsSync(uiComponents)) {
@@ -179,7 +179,7 @@ function runGate({ update = false } = {}) {
       ).test(barrel);
       if (!exported) {
         blocking.push(
-          `@qlik-coe-emea/qlabs-components-ui: components/${name}/ is NOT re-exported from src/index.ts.\n` +
+          `@elabs/components-ui: components/${name}/ is NOT re-exported from src/index.ts.\n` +
             `    Add:  export * from "${spec}";   (or run /new-component which wires it)`,
         );
       } else if (!hasStory(dir, name)) {
@@ -206,7 +206,7 @@ function runGate({ update = false } = {}) {
 
   for (const name of regressions) {
     blocking.push(
-      `@qlik-coe-emea/qlabs-components-ui: components/${name}/ has no *.stories.tsx — it is invisible to the\n` +
+      `@elabs/components-ui: components/${name}/ has no *.stories.tsx — it is invisible to the\n` +
         "    Storybook-MCP agent path and to the three-theme/a11y run. Add <name>.stories.tsx\n" +
         '    (tags: ["autodocs"]) beside the component, or scaffold via /new-component.',
     );
@@ -220,7 +220,7 @@ function runGate({ update = false } = {}) {
 
   // ---- flat-file packages : ADVISORY orphan check ----
   for (const [pkg, entry] of Object.entries(manifest.packages)) {
-    if (pkg === "@qlik-coe-emea/qlabs-components-ui") continue;
+    if (pkg === "@elabs/components-ui") continue;
     const srcDir = join(root, entry.path, "src");
     if (!existsSync(srcDir)) continue;
     const known = namesByPkg.get(pkg) ?? new Set();
@@ -255,7 +255,7 @@ function runGate({ update = false } = {}) {
     process.exit(1);
   }
   console.log(
-    `\n✔ component-registration: every @qlik-coe-emea/qlabs-components-ui component is barrel-exported and ` +
+    `\n✔ component-registration: every @elabs/components-ui component is barrel-exported and ` +
       `story-covered (${baseline.length} grandfathered, ${advisory.length} advisory).`,
   );
 }

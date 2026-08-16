@@ -11,9 +11,9 @@ const meta = {
     docs: {
       description: {
         component:
-          "The canonical KPI tile, owned by @qlik-coe-emea/qlabs-components-ui (ADR 0012). @qlik-coe-emea/qlabs-components-charts re-exports this exact " +
-          "component as Charts/MetricCard — they are the same component, so import from @qlik-coe-emea/qlabs-components-ui for app " +
-          "UI, or from @qlik-coe-emea/qlabs-components-charts when already in a charts context. Don't fork a second KPI tile.",
+          "The canonical KPI tile, owned by @elabs/components-ui (ADR 0012). @elabs/components-charts re-exports this exact " +
+          "component as Charts/MetricCard — they are the same component, so import from @elabs/components-ui for app " +
+          "UI, or from @elabs/components-charts when already in a charts context. Don't fork a second KPI tile.",
       },
     },
   },

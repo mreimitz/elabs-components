@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@qlik-coe-emea/qlabs-components-ui/lib/cn";
-import { useLocale } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui/lib/cn";
+import { useLocale } from "@elabs/components-ui";
 import type { RiveParameters } from "@rive-app/react-webgl2";
 import type { FC, ReactNode } from "react";
 import { lazy, memo, Suspense, useCallback, useState } from "react";

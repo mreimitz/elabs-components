@@ -11,7 +11,7 @@ const meta = {
       description: {
         component:
           "Compact KPI tile (label · value · description · optional delta). The branded " +
-          "target for the `::metric` directive. Thin alias for `@qlik-coe-emea/qlabs-components-ui` MetricCard " +
+          "target for the `::metric` directive. Thin alias for `@elabs/components-ui` MetricCard " +
           "(see ADR 0012).",
       },
     },
@@ -35,6 +35,6 @@ export const NoDelta: Story = {
   args: {
     label: "Open gaps",
     value: "2",
-    description: "in @qlik-coe-emea/qlabs-components-data + @qlik-coe-emea/qlabs-components-icons",
+    description: "in @elabs/components-data + @elabs/components-icons",
   },
 };

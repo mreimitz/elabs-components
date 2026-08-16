@@ -17,8 +17,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@qlik-coe-emea/qlabs-components-ui";
-import { NavUser } from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
+import { NavUser } from "@elabs/components-ui";
 import { useMail } from "./mail-context";
 
 const data = {

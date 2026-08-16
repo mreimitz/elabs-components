@@ -45,7 +45,7 @@ Delegate to the specialized agents in `.claude/agents/` when useful:
 ## Validating changes
 
 - `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` (Turbo runs them
-  across affected packages; scope with `--filter @qlik-coe-emea/qlabs-components-<pkg>`).
+  across affected packages; scope with `--filter @elabs/components-<pkg>`).
 - `pnpm registry:validate` for registry changes.
 - Hooks run automatically: formatting on edit, danger-blocking on Bash, boundary
   warnings on edit.
@@ -53,6 +53,6 @@ Delegate to the specialized agents in `.claude/agents/` when useful:
 ## Guardrails
 
 - Never hardcode colors outside `themes.css`.
-- Never import another package via relative paths — use `@qlik-coe-emea/qlabs-components-*`.
+- Never import another package via relative paths — use `@elabs/components-*`.
 - Keep app vs. marketing concerns in their packages.
 - No paid dependencies, secrets, or machine-specific absolute paths.

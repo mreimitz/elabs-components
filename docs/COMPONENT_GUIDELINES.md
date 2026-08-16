@@ -13,7 +13,7 @@ component-name/
   index.ts               # public re-exports
 ```
 
-`@qlik-coe-emea/qlabs-components-ui` nests components under `src/components/`; the other packages place
+`@elabs/components-ui` nests components under `src/components/`; the other packages place
 them directly under `src/`. Match the package you're in.
 
 ## API conventions

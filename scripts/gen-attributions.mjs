@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 /**
- * Generate the attribution dataset `AttributionPanel` renders (#attribution).
+ * Generate the attribution dataset, for both audiences.
+ *
+ * ONE dataset, TWO outputs:
+ *   - `packages/ui/src/components/attribution-panel/attributions.generated.ts`
+ *     — what `AttributionPanel` renders in-product.
+ *   - `ATTRIBUTION.md` — the public, human-readable credits page linked from the
+ *     README. Only the region between the `brand-ui:gen:attributions` markers is
+ *     generated; the prose around it is hand-authored.
+ * Generating both from one dataset is what stops the page and the product from
+ * disagreeing about what this repo actually ships.
  *
  * WHY THIS IS GENERATED. A hand-kept credits list is wrong the day after it is
  * written: a dependency is added, a package is dropped, a font is swapped, and
@@ -10,7 +19,7 @@
  * reminders" rule in .claude/rules/quality-gates.md).
  *
  * Three inputs, two of them derived:
- *   1. npm dependencies  — every non-`@qlik-coe-emea/*` runtime `dependencies`
+ *   1. npm dependencies  — every non-`@elabs/*` runtime `dependencies`
  *      entry of every DISTRIBUTABLE package, with its licence/author/version read
  *      from the installed `node_modules` copy. Runtime deps only: a devDependency
  *      is not shipped to anyone, so crediting it would overstate what we ship.
@@ -37,6 +46,7 @@ const OUT_FILE = join(
   root,
   "packages/ui/src/components/attribution-panel/attributions.generated.ts",
 );
+const ATTRIBUTION_FILE = join(root, "ATTRIBUTION.md");
 const SOURCES_FILE = join(here, "attributions.sources.json");
 const FONTS_DIR = join(root, "packages/tokens/src/fonts");
 
@@ -115,7 +125,7 @@ export function collectDependencies(packagesDir) {
   const byName = new Map();
   for (const { path, json } of distributablePackages(packagesDir)) {
     for (const dep of Object.keys(json.dependencies || {})) {
-      if (dep.startsWith("@qlik-coe-emea/")) continue; // first-party, not an attribution
+      if (dep.startsWith("@elabs/")) continue; // first-party, not an attribution
       const manifest = resolveDepManifest(dep, path);
       const existing = byName.get(dep);
       if (existing) {
@@ -140,6 +150,74 @@ export function collectDependencies(packagesDir) {
 }
 
 /**
+ * Per-face facts an `OFL.txt` cannot supply, keyed by the vendored directory name.
+ *
+ * `name` — the face's own capitalisation. Deriving it from the directory would
+ *   title-case each hyphen segment and ship "Ibm Plex Mono".
+ * `url` — the upstream project, so every attribution carries a link a reader can
+ *   follow (see `.claude/rules/attribution.md`). All four are on `github.com`,
+ *   already an allowlisted origin.
+ * `copyrightFallback` — the notice from the UPSTREAM licence, used only when the
+ *   repackaged `OFL.txt` we ship carries no copyright header of its own (see
+ *   `readOflCopyright`). Verbatim from the upstream LICENSE, never retyped from
+ *   memory.
+ */
+export const FONT_UPSTREAM = {
+  "ibm-plex-mono": {
+    name: "IBM Plex Mono",
+    url: "https://github.com/IBM/plex",
+    copyrightFallback: null, // its OFL.txt carries the notice
+  },
+  inter: {
+    name: "Inter",
+    url: "https://github.com/rsms/inter",
+    copyrightFallback: null, // its OFL.txt carries the notice
+  },
+  "source-code-pro": {
+    name: "Source Code Pro",
+    url: "https://github.com/adobe-fonts/source-code-pro",
+    copyrightFallback:
+      "Copyright 2010-2020 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'. All Rights Reserved.",
+  },
+  "source-sans-3": {
+    name: "Source Sans 3",
+    url: "https://github.com/adobe-fonts/source-sans",
+    copyrightFallback:
+      "Copyright 2010-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'. All Rights Reserved.",
+  },
+};
+
+/** The line that ends an OFL file's header and begins the licence body. */
+const OFL_BODY_START = /^this font software is licensed under the sil open font license/i;
+
+/**
+ * The copyright notice from an `OFL.txt` HEADER — the lines above the licence
+ * body, which is where the OFL puts the actual notice.
+ *
+ * Scanning the whole file is what broke here: the OFL's own body contains the
+ * boilerplate line `copyright statement(s).` (part of "…must include the above
+ * copyright notice, this list of conditions and the following disclaimer in all
+ * copies of one or more of the Font Software typefaces and any derivative works
+ * … including any relevant copyright statement(s)."). Two of the four shipped
+ * faces — Source Code Pro and Source Sans 3, repackaged from `@fontsource`, whose
+ * header line reads only "Google Inc." — have no header notice at all, so the
+ * whole-file scan matched that boilerplate and shipped `copyright: "copyright
+ * statement(s)."` as the notice for both. The `required && !copyright` gate rung
+ * passed it because the field was merely non-empty.
+ *
+ * Returns null when the header has no notice; the caller supplies the upstream
+ * fallback, and the gate still refuses a required notice left with nothing.
+ */
+export function readOflCopyright(oflText) {
+  for (const raw of String(oflText).split("\n")) {
+    const line = raw.trim();
+    if (OFL_BODY_START.test(line)) break; // past the header — everything below is boilerplate
+    if (/^copyright\b/i.test(line)) return line;
+  }
+  return null;
+}
+
+/**
  * Vendored font faces. The OFL asks that the copyright notice travel with the
  * font, so the notice is read from the shipped `OFL.txt` itself rather than
  * retyped — retyping is how a notice drifts from the file it describes.
@@ -151,23 +229,23 @@ export function collectFonts(fontsDir) {
     .map((e) => {
       const oflPath = join(fontsDir, e.name, "OFL.txt");
       if (!existsSync(oflPath)) return null;
+      const upstream = FONT_UPSTREAM[e.name] ?? {};
       const copyright =
-        readFileSync(oflPath, "utf8")
-          .split("\n")
-          .find((l) => /^copyright/i.test(l.trim()))
-          ?.trim() ?? null;
+        readOflCopyright(readFileSync(oflPath, "utf8")) ?? upstream.copyrightFallback ?? null;
       return {
         id: `font:${e.name}`,
         category: "font",
-        name: e.name
-          .split("-")
-          .map((w) => w[0].toUpperCase() + w.slice(1))
-          .join(" "),
+        name:
+          upstream.name ??
+          e.name
+            .split("-")
+            .map((w) => w[0].toUpperCase() + w.slice(1))
+            .join(" "),
         version: null,
         license: "OFL-1.1",
         copyright,
-        url: null,
-        usedBy: ["@qlik-coe-emea/qlabs-components-tokens"],
+        url: upstream.url ?? null,
+        usedBy: ["@elabs/components-tokens"],
         required: true, // the OFL requires the notice to ship with the font
         note: "Self-hosted webfont shipped in the tokens package.",
       };
@@ -208,9 +286,9 @@ export function buildDataset({ packagesDir, fontsDir, sourcesFile }) {
  * permanent conflict — one rewrites what the other demands — so the generator
  * owns the formatting rather than leaving a file nobody may touch by hand.
  */
-async function renderFormatted(entries) {
-  const config = (await resolveConfig(OUT_FILE)) ?? {};
-  return format(render(entries), { ...config, filepath: OUT_FILE });
+async function renderFormatted(text, filepath) {
+  const config = (await resolveConfig(filepath)) ?? {};
+  return format(text, { ...config, filepath });
 }
 
 function render(entries) {
@@ -229,23 +307,188 @@ export const ATTRIBUTIONS: readonly Attribution[] = ${JSON.stringify(entries, nu
 `;
 }
 
+// ── ATTRIBUTION.md — the same dataset, for humans ────────────────────────────
+
+/**
+ * Only the region between these markers is generated. The prose around it (what
+ * the file is, how to add an entry) is hand-authored, following the same
+ * convention `pnpm gen` uses in CLAUDE.md / AGENTS.md. A wholly-generated doc
+ * would have nowhere to put the instructions a contributor needs.
+ */
+export const MD_START = "<!-- brand-ui:gen:attributions:start -->";
+export const MD_END = "<!-- brand-ui:gen:attributions:end -->";
+
+/** Escape a value for a Markdown table cell (a stray `|` would break the row). */
+const cell = (v) => (v == null || v === "" ? "—" : String(v).replace(/\|/g, "\\|"));
+const link = (e) => (e.url ? `[${cell(e.name)}](${e.url})` : cell(e.name));
+// An entry with no `usedBy` is a real case, not a gap: governance we adopted
+// (a rule taken from someone's guidelines) or data a registry block fetches —
+// borrowed, credited, but reaching no published package.
+const pkgs = (e) => (e.usedBy.length ? e.usedBy.map((p) => `\`${p}\``).join(", ") : "—");
+
+const SECTIONS = [
+  {
+    category: "data",
+    heading: "Runtime data",
+    lead: "Data served to the user at runtime. These credits are **obliged by a licence or provider terms** — an app that displays these surfaces must display the notice.",
+    columns: ["Project", "Licence", "Copyright", "Used in", "What it provides"],
+    row: (e) => [link(e), cell(e.license), cell(e.copyright), pkgs(e), cell(e.note)],
+  },
+  {
+    category: "source",
+    heading: "Adapted & vendored source",
+    lead: "Code and design we took from another project — vendored, adapted, ported or re-expressed. Adding to this list is required whenever we borrow again; see [`.claude/rules/attribution.md`](.claude/rules/attribution.md).",
+    columns: ["Project", "Licence", "Copyright", "Used in", "What we took"],
+    row: (e) => [link(e), cell(e.license), cell(e.copyright), pkgs(e), cell(e.note)],
+  },
+  {
+    category: "font",
+    heading: "Fonts",
+    lead: "Self-hosted webfaces shipped in `@elabs/components-tokens`. The OFL asks that the notice travel with the font.",
+    columns: ["Font", "Licence", "Copyright", "Upstream"],
+    row: (e) => [cell(e.name), cell(e.license), cell(e.copyright), e.url ? `<${e.url}>` : "—"],
+  },
+  {
+    category: "dependency",
+    heading: "Open-source dependencies",
+    lead: "Runtime dependencies of the published packages, harvested from the manifests — never hand-listed.",
+    columns: ["Package", "Version", "Licence", "Author", "Used in"],
+    row: (e) => [link(e), cell(e.version), cell(e.license), cell(e.copyright), pkgs(e)],
+    collapse: true, // the bulk list; kept behind a <details> so the borrowed code stays the signal
+  },
+];
+
+function table(columns, rows) {
+  return [
+    `| ${columns.join(" | ")} |`,
+    `| ${columns.map(() => "---").join(" | ")} |`,
+    ...rows.map((r) => `| ${r.join(" | ")} |`),
+  ].join("\n");
+}
+
+export function renderMarkdown(entries) {
+  const counts = SECTIONS.map(
+    (s) => `${entries.filter((e) => e.category === s.category).length} ${s.category}`,
+  ).join(" · ");
+
+  const blocks = [
+    `_${entries.length} entries — ${counts}. Generated by \`scripts/gen-attributions.mjs\`; do not edit between the markers._`,
+  ];
+
+  for (const section of SECTIONS) {
+    const rows = entries.filter((e) => e.category === section.category);
+    if (rows.length === 0) continue;
+    const body = [section.lead, "", table(section.columns, rows.map(section.row))].join("\n");
+    blocks.push(
+      section.collapse
+        ? [
+            `## ${section.heading}`,
+            "",
+            `<details>`,
+            `<summary>${rows.length} packages</summary>`,
+            "",
+            body,
+            "",
+            `</details>`,
+          ].join("\n")
+        : [`## ${section.heading}`, "", body].join("\n"),
+    );
+  }
+
+  return blocks.join("\n\n");
+}
+
+/**
+ * Splice the generated region into the existing ATTRIBUTION.md, preserving the
+ * hand-authored prose around it. Throws when a marker is missing rather than
+ * silently overwriting somebody's prose.
+ */
+export function spliceMarkdown(current, generated) {
+  const start = current.indexOf(MD_START);
+  const end = current.indexOf(MD_END);
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(
+      `ATTRIBUTION.md is missing the generated region markers (${MD_START} … ${MD_END}). ` +
+        `Restore them, or delete the file and re-run \`pnpm gen:attributions\` to scaffold it.`,
+    );
+  }
+  return (
+    current.slice(0, start + MD_START.length) + "\n\n" + generated + "\n\n" + current.slice(end)
+  );
+}
+
+/** The hand-authored shell, written once when ATTRIBUTION.md does not exist yet. */
+function scaffoldMarkdown() {
+  return `# Attribution
+
+brand-ui is built on other people's work. This file credits every project whose
+code, design, data or type we use — what it is, who holds the copyright, under
+which licence, and where it is used.
+
+**The list below is generated.** It is derived from
+[\`scripts/attributions.sources.json\`](scripts/attributions.sources.json) (things
+that cannot be derived — source we adapted, data we serve) plus the repo's own
+dependency manifests and the licence files shipped with each vendored font. Run
+\`pnpm gen:attributions\` to regenerate it; \`pnpm attributions:check\` fails on a
+stale copy. The same dataset drives the in-app \`AttributionPanel\`
+(\`@elabs/components-ui\`), so the page and the product cannot disagree.
+
+## Adding an attribution
+
+If you vendor, adapt, port or copy anything from another project — or take a
+design or technique from one — add it to
+[\`scripts/attributions.sources.json\`](scripts/attributions.sources.json) with a
+name, a licence, a copyright line and a canonical URL (the GitHub repo where one
+exists), then run \`pnpm gen:attributions\` **in the same change**. A comment in a
+source file saying "adapted from X" is a useful pointer, not an attribution.
+
+Do **not** hand-add an npm dependency — those are harvested from the manifests
+and a hand-written duplicate goes stale the moment the dependency moves.
+
+The full rule, and what enforces it, is in
+[\`.claude/rules/attribution.md\`](.claude/rules/attribution.md).
+
+${MD_START}
+${MD_END}
+`;
+}
+
+// ────────────────────────────────── CLI ──────────────────────────────────────
+
 const dataset = buildDataset({
   packagesDir: join(root, "packages"),
   fontsDir: FONTS_DIR,
   sourcesFile: SOURCES_FILE,
 });
-const output = await renderFormatted(dataset);
+
+const tsOutput = await renderFormatted(render(dataset), OUT_FILE);
+
+const mdCurrent = existsSync(ATTRIBUTION_FILE)
+  ? readFileSync(ATTRIBUTION_FILE, "utf8")
+  : scaffoldMarkdown();
+const mdOutput = await renderFormatted(
+  spliceMarkdown(mdCurrent, renderMarkdown(dataset)),
+  ATTRIBUTION_FILE,
+);
+
+const rel = (p) => p.slice(root.length + 1);
 
 if (process.argv.includes("--check")) {
-  const current = existsSync(OUT_FILE) ? readFileSync(OUT_FILE, "utf8") : "";
-  if (current !== output) {
+  const stale = [
+    [OUT_FILE, tsOutput],
+    [ATTRIBUTION_FILE, mdOutput],
+  ].filter(([file, want]) => (existsSync(file) ? readFileSync(file, "utf8") : "") !== want);
+
+  if (stale.length) {
     console.error(
-      "\n✖ attributions: the generated dataset is STALE.\n" +
-        "  packages/ui/src/components/attribution-panel/attributions.generated.ts does not\n" +
-        "  match what the repo actually ships. Run `pnpm gen:attributions` and commit it.\n",
+      `\n✖ attributions: ${stale.length} generated file(s) are STALE:\n` +
+        stale.map(([file]) => `  - ${rel(file)}`).join("\n") +
+        "\n\n  They do not match what the repo actually ships.\n" +
+        "  Run `pnpm gen:attributions` and commit the result.\n",
     );
     process.exit(1);
   }
+
   const missingRequired = dataset.filter((e) => e.required && !e.copyright);
   if (missingRequired.length) {
     console.error(
@@ -255,13 +498,33 @@ if (process.argv.includes("--check")) {
     );
     process.exit(1);
   }
+
+  // Every attribution must be identifiable and followable: a name, and a link
+  // that resolves. GitHub is preferred where the upstream has a repo, but not
+  // required — OpenStreetMap and CARTO have no repo, and dependencies carry
+  // their npm page. See `.claude/rules/attribution.md`.
+  const unlinked = dataset.filter((e) => !e.name?.trim() || !e.url?.trim());
+  if (unlinked.length) {
+    console.error(
+      `\n✖ attributions: ${unlinked.length} entr(ies) have no name or no canonical URL:\n` +
+        unlinked
+          .map((e) => `  - ${e.id}: name=${e.name || "(none)"} url=${e.url || "(none)"}`)
+          .join("\n") +
+        "\n\n  A credit nobody can follow is not a credit. Add a canonical URL — the\n" +
+        "  upstream GitHub repo where one exists — in scripts/attributions.sources.json\n" +
+        "  (or, for a font, in FONT_UPSTREAM in this script).\n",
+    );
+    process.exit(1);
+  }
+
   console.log(
-    `✔ attributions: dataset is fresh — ${dataset.length} entries, ` +
-      `${dataset.filter((e) => e.required).length} of them required notices.`,
+    `✔ attributions: ${rel(OUT_FILE)} + ${rel(ATTRIBUTION_FILE)} fresh — ${dataset.length} entries, ` +
+      `${dataset.filter((e) => e.required).length} of them required notices, all named and linked.`,
   );
 } else if (!process.argv.includes("--print")) {
-  writeFileSync(OUT_FILE, output);
+  writeFileSync(OUT_FILE, tsOutput);
+  writeFileSync(ATTRIBUTION_FILE, mdOutput);
   console.log(
-    `✔ attributions: wrote ${dataset.length} entries to ${OUT_FILE.slice(root.length + 1)}`,
+    `✔ attributions: wrote ${dataset.length} entries to ${rel(OUT_FILE)} and ${rel(ATTRIBUTION_FILE)}`,
   );
 }

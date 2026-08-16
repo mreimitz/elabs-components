@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { THEMES, ThemeProvider } from "@qlik-coe-emea/qlabs-components-tokens";
+import { THEMES, ThemeProvider } from "@elabs/components-tokens";
 
 import { ThemeSwitcher } from "./theme-switcher";
 
@@ -19,14 +19,14 @@ beforeEach(() => {
 
 describe("ThemeSwitcher", () => {
   it("renders a toggle button for a 2-theme pair", () => {
-    setup(<ThemeSwitcher themes={["qlik-bright", "qlik-dark"]} />);
+    setup(<ThemeSwitcher themes={["light", "dark"]} />);
     expect(screen.getByRole("button", { name: /theme:/i })).toBeInTheDocument();
   });
 
   it("cycles the theme on click (jsdom has no startViewTransition → instant setTheme)", async () => {
-    setup(<ThemeSwitcher themes={["qlik-bright", "qlik-dark"]} showSystem={false} />);
+    setup(<ThemeSwitcher themes={["light", "dark"]} showSystem={false} />);
     await userEvent.click(screen.getByRole("button", { name: /theme:/i }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
   // The >2-themes AUTO-upgrade can't be exercised while only two themes ship
@@ -43,16 +43,16 @@ describe("ThemeSwitcher — controlled preference (#366)", () => {
     const onPreferenceChange = vi.fn();
     setup(
       <ThemeSwitcher
-        themes={["qlik-bright", "qlik-dark"]}
+        themes={["light", "dark"]}
         showSystem={false}
-        preference="qlik-bright"
+        preference="light"
         onPreferenceChange={onPreferenceChange}
       />,
     );
     const btn = screen.getByRole("button", { name: /theme: light/i });
     await userEvent.click(btn);
     expect(onPreferenceChange).toHaveBeenCalledTimes(1);
-    expect(onPreferenceChange).toHaveBeenCalledWith("qlik-dark");
+    expect(onPreferenceChange).toHaveBeenCalledWith("dark");
     expect(window.localStorage.getItem(SYSTEM_STORAGE_KEY)).toBeNull();
   });
 
@@ -60,7 +60,7 @@ describe("ThemeSwitcher — controlled preference (#366)", () => {
     const onPreferenceChange = vi.fn();
     setup(
       <ThemeSwitcher
-        themes={["qlik-bright", "qlik-dark"]}
+        themes={["light", "dark"]}
         preference="system"
         onPreferenceChange={onPreferenceChange}
       />,
@@ -69,7 +69,7 @@ describe("ThemeSwitcher — controlled preference (#366)", () => {
     const btn = screen.getByRole("button", { name: /theme: system/i });
     await userEvent.click(btn);
     expect(onPreferenceChange).toHaveBeenCalledTimes(1);
-    expect(onPreferenceChange).toHaveBeenCalledWith("qlik-bright");
+    expect(onPreferenceChange).toHaveBeenCalledWith("light");
     expect(window.localStorage.getItem(SYSTEM_STORAGE_KEY)).toBeNull();
   });
 
@@ -77,20 +77,20 @@ describe("ThemeSwitcher — controlled preference (#366)", () => {
     const onPreferenceChange = vi.fn();
     setup(
       <ThemeSwitcher
-        themes={["qlik-bright", "qlik-dark"]}
+        themes={["light", "dark"]}
         showSystem={false}
-        preference="qlik-bright"
+        preference="light"
         onPreferenceChange={onPreferenceChange}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: /theme: light/i }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
   it("uncontrolled usage (no preference prop) is unchanged: it still tracks its own localStorage key", async () => {
-    setup(<ThemeSwitcher themes={["qlik-bright", "qlik-dark"]} showSystem={false} />);
+    setup(<ThemeSwitcher themes={["light", "dark"]} showSystem={false} />);
     await userEvent.click(screen.getByRole("button", { name: /theme:/i }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(window.localStorage.getItem(SYSTEM_STORAGE_KEY)).toBe("0");
   });
 });
@@ -98,46 +98,44 @@ describe("ThemeSwitcher — controlled preference (#366)", () => {
 describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
   it("never renders a theme the provider disallows, even when the themes prop lists it", async () => {
     render(
-      <ThemeProvider allowedThemes={["qlik-bright", "qlik-dark"]}>
+      <ThemeProvider allowedThemes={["light", "dark"]}>
         <ThemeSwitcher mode="dropdown" themes={[...THEMES]} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
     const menu = await screen.findByRole("menu");
     expect(within(menu).queryByText(/blueprint/i)).not.toBeInTheDocument();
-    expect(within(menu).getByText("Qlik Bright")).toBeInTheDocument();
-    expect(within(menu).getByText("Qlik Dark")).toBeInTheDocument();
+    expect(within(menu).getByText("Light")).toBeInTheDocument();
+    expect(within(menu).getByText("Dark")).toBeInTheDocument();
   });
 
   it("no rendered control ever applies the disallowed theme (menu items + System)", async () => {
     render(
-      <ThemeProvider allowedThemes={["qlik-bright", "qlik-dark"]}>
+      <ThemeProvider allowedThemes={["light", "dark"]}>
         <ThemeSwitcher mode="dropdown" themes={[...THEMES]} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
-    const darkItem = await screen.findByRole("menuitem", { name: /qlik dark/i });
+    const darkItem = await screen.findByRole("menuitem", { name: /dark/i });
     await userEvent.click(darkItem);
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
 
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
     const systemItem = await screen.findByRole("menuitem", { name: /system/i });
     await userEvent.click(systemItem);
-    expect(["qlik-bright", "qlik-dark"]).toContain(
-      document.documentElement.getAttribute("data-theme"),
-    );
+    expect(["light", "dark"]).toContain(document.documentElement.getAttribute("data-theme"));
   });
 
   it("an empty intersection (themes prop entirely disallowed) falls back to the provider's list, never the disallowed prop", async () => {
     render(
-      <ThemeProvider allowedThemes={["qlik-bright"]}>
-        <ThemeSwitcher mode="dropdown" themes={["qlik-dark"]} />
+      <ThemeProvider allowedThemes={["light"]}>
+        <ThemeSwitcher mode="dropdown" themes={["dark"]} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
     const menu = await screen.findByRole("menu");
-    expect(within(menu).queryByText("Qlik Dark")).not.toBeInTheDocument();
-    expect(within(menu).getByText("Qlik Bright")).toBeInTheDocument();
+    expect(within(menu).queryByText("Dark")).not.toBeInTheDocument();
+    expect(within(menu).getByText("Light")).toBeInTheDocument();
   });
 
   it("BACKWARD COMPAT: a default <ThemeSwitcher /> under a non-restricting provider renders exactly today's toggle, not a dropdown", () => {
@@ -156,10 +154,10 @@ describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
   it("BACKWARD COMPAT: an explicit 2-theme pair under a non-restricting provider is unaffected", async () => {
     render(
       <ThemeProvider>
-        <ThemeSwitcher themes={["qlik-bright", "qlik-dark"]} showSystem={false} />
+        <ThemeSwitcher themes={["light", "dark"]} showSystem={false} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: /theme:/i }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("qlik-dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 });

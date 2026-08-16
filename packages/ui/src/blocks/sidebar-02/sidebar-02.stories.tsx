@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { SidebarInset, SidebarProvider } from "@qlik-coe-emea/qlabs-components-ui";
+import { SidebarInset, SidebarProvider } from "@elabs/components-ui";
 import { DashboardSidebar } from "./app-sidebar";
 
 const meta = {

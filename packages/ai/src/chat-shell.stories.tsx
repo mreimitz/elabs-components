@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { cn } from "@qlik-coe-emea/qlabs-components-ui";
+import { cn } from "@elabs/components-ui";
 import { ChatShell } from "./chat-shell";
 import { Conversation, ConversationContent, ConversationScrollButton } from "./conversation";
 import { Message, MessageContent, MessageResponse } from "./message";

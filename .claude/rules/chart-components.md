@@ -6,9 +6,9 @@ paths:
   - "packages/charts/**"
 ---
 
-# Chart components (@qlik-coe-emea/qlabs-components-charts)
+# Chart components (@elabs/components-charts)
 
-`@qlik-coe-emea/qlabs-components-charts` wraps visx/d3 compositional charts with token-driven styling.
+`@elabs/components-charts` wraps visx/d3 compositional charts with token-driven styling.
 `ChartFrame` is the standard opt-in chart wrapper that adds expand / flip-to-table /
 download-CSV to any chart child.
 
@@ -34,19 +34,19 @@ body, and modal body all read the same context; no prop-drilling.
 
 ### Dependency rule: charts → ui ONLY
 
-`@qlik-coe-emea/qlabs-components-charts` must not import from `@qlik-coe-emea/qlabs-components-data` (sibling dependency). This
+`@elabs/components-charts` must not import from `@elabs/components-data` (sibling dependency). This
 means:
 
-- **Flip-to-table** uses the `@qlik-coe-emea/qlabs-components-ui` `Table` primitive, not `@qlik-coe-emea/qlabs-components-data`
+- **Flip-to-table** uses the `@elabs/components-ui` `Table` primitive, not `@elabs/components-data`
   `DataTable` — the in-package default is a static, dependency-free table (charts
-  ↛ data). For the **interactive** flip (sortable `@qlik-coe-emea/qlabs-components-data` `DataTable` +
+  ↛ data). For the **interactive** flip (sortable `@elabs/components-data` `DataTable` +
   `downloadCsv`), use the **`chart-frame-data` registry block** (`npx shadcn add
 chart-frame-data`), which composes both siblings in copy-owned app code via the
   `renderTable` / `onDownload` seams. That block is the sanctioned way to "use the
-  real data component on flip" without giving `@qlik-coe-emea/qlabs-components-charts` a sibling dependency.
+  real data component on flip" without giving `@elabs/components-charts` a sibling dependency.
 - **CSV download** uses a minimal local RFC-4180 serializer inside
-  `chart-frame.tsx` (injection-guarded, SSR-safe), not `@qlik-coe-emea/qlabs-components-data`'s `toCsv`;
-  the `chart-frame-data` block swaps in `@qlik-coe-emea/qlabs-components-data`'s `downloadCsv` via `onDownload`.
+  `chart-frame.tsx` (injection-guarded, SSR-safe), not `@elabs/components-data`'s `toCsv`;
+  the `chart-frame-data` block swaps in `@elabs/components-data`'s `downloadCsv` via `onDownload`.
 
 ### Expand layout coupling
 
@@ -61,7 +61,7 @@ panel collapses. Chart is in the `start` pane (left), detail is in the `end` pan
 - All icon-only controls carry `aria-label`.
 - Icons get `aria-hidden="true"` (the control label is sufficient).
 - All tooltip triggers are wrapped in a single `<TooltipProvider>` at the toolbar root.
-- The flip toggle uses `@qlik-coe-emea/qlabs-components-ui` `Toggle` with `pressed` state so AT announces
+- The flip toggle uses `@elabs/components-ui` `Toggle` with `pressed` state so AT announces
   the active/inactive state correctly.
 
 ### Feature degradation
@@ -74,17 +74,14 @@ chart has no associated tabular data.
 
 `@visx/*` (SVG measurement — `ParentSize`/`ResizeObserver`, `getTotalLength()`, …)
 does not render meaningfully under jsdom, so consumers were mocking the whole
-`@qlik-coe-emea/qlabs-components-charts` barrel as a no-op — hiding real chart-prop bugs (a fully
+`@elabs/components-charts` barrel as a no-op — hiding real chart-prop bugs (a fully
 green suite shipped the `RangeError: Invalid time value` crash) from their
 quality gate. The **official, source-owned answer** is the
-`@qlik-coe-emea/qlabs-components-charts/test` subpath (`packages/charts/src/test/`):
+`@elabs/components-charts/test` subpath (`packages/charts/src/test/`):
 
 ```ts
 // vitest.setup.ts
-vi.mock(
-  "@qlik-coe-emea/qlabs-components-charts",
-  async () => import("@qlik-coe-emea/qlabs-components-charts/test"),
-);
+vi.mock("@elabs/components-charts", async () => import("@elabs/components-charts/test"));
 ```
 
 - **Not a no-op stub — a contract VALIDATOR.** Every double re-declares the real
@@ -254,8 +251,8 @@ should exercise: Default (toolbar visible), Expanded (dialog opened), TableFlipp
 (table visible), NoData (degraded toolbar), FeaturesSubset, DownloadCallback.
 
 When the Storybook dev server is running, verify interaction + a11y across all three
-themes (`qlik-bright`, `qlik-dark`) via `mcp__storybook__run-story-tests` + `mcp__storybook__preview-stories`
-(`globals=theme:<slug>`). Otherwise run `pnpm --filter @qlik-coe-emea/qlabs-components-docs test-storybook`.
+themes (`light`, `dark`) via `mcp__storybook__run-story-tests` + `mcp__storybook__preview-stories`
+(`globals=theme:<slug>`). Otherwise run `pnpm --filter @elabs/components-docs test-storybook`.
 See @.claude/rules/storybook-mcp.md.
 
 ## Tokens only

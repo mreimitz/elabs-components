@@ -28,7 +28,7 @@ import {
   TagInput,
   ToggleGroup,
   ToggleGroupItem,
-} from "@qlik-coe-emea/qlabs-components-ui";
+} from "@elabs/components-ui";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 
 import { type EvaluateCalc } from "../calc-block";

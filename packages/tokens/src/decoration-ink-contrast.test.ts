@@ -6,8 +6,8 @@
  * (`oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * α))`). That
  * makes the texture hue-independent — but it also means the SAME multiplier lands on
  * palettes with very different foreground/surface separation, so a palette whose
- * `--foreground` is a mid grey (qlik-bright: `oklch(0.37 0 0)`) gets a much weaker
- * line than one with a near-white ink on charcoal (qlik-dark).
+ * `--foreground` is a mid grey (light: `oklch(0.37 0 0)`) gets a much weaker
+ * line than one with a near-white ink on charcoal (dark).
  *
  * #29 asked whether the shared multipliers still serve every SHIPPED palette (three
  * now, not the six the issue was filed against). This test makes that answer
@@ -20,7 +20,7 @@
  * multipliers read correctly on both themes — `foundations-decoration--dial`
  * (`globals=decoration:4` and `:10`) and the real app screen
  * `patterns-scenarios-agentic-ai-workspace--default` (`globals=decoration:8`) under
- * `theme:qlik-bright` and `theme:qlik-dark`. No per-palette fork
+ * `theme:light` and `theme:dark`. No per-palette fork
  * was needed. This test locks that reading so a future palette edit cannot silently
  * erase (or over-ink) the grid.
  */

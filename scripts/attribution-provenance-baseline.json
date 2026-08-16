@@ -1,0 +1,13 @@
+{
+  "$comment": [
+    "Provenance claims in shipped source whose upstream could NOT be identified,",
+    "frozen so they cannot grow. Regenerate with:",
+    "  pnpm attribution:provenance:check -- --update",
+    "This baseline RATCHETS DOWN only — resolving one and re-running --update is the",
+    "intended direction. Adding an entry to hide a NEW borrowing defeats the gate;",
+    "credit the upstream in scripts/attributions.sources.json instead."
+  ],
+  "unresolved": {
+    "packages/charts/src/gantt/gantt-dependencies.tsx:6": "* Adapted from RevisionTimeline's LaneGutter cubic-bezier logic."
+  }
+}

@@ -1,12 +1,12 @@
 [
-  "@qlik-coe-emea/qlabs-components-ai::ChatShell",
-  "@qlik-coe-emea/qlabs-components-ai::Conversation",
-  "@qlik-coe-emea/qlabs-components-ai::Tool",
-  "@qlik-coe-emea/qlabs-components-ui::Accordion",
-  "@qlik-coe-emea/qlabs-components-ui::Breadcrumb",
-  "@qlik-coe-emea/qlabs-components-ui::Calendar",
-  "@qlik-coe-emea/qlabs-components-ui::Command",
-  "@qlik-coe-emea/qlabs-components-ui::DatePicker",
-  "@qlik-coe-emea/qlabs-components-ui::Drawer",
-  "@qlik-coe-emea/qlabs-components-ui::DropdownMenu"
+  "@elabs/components-ai::ChatShell",
+  "@elabs/components-ai::Conversation",
+  "@elabs/components-ai::Tool",
+  "@elabs/components-ui::Accordion",
+  "@elabs/components-ui::Breadcrumb",
+  "@elabs/components-ui::Calendar",
+  "@elabs/components-ui::Command",
+  "@elabs/components-ui::DatePicker",
+  "@elabs/components-ui::Drawer",
+  "@elabs/components-ui::DropdownMenu"
 ]
