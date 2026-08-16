@@ -2,7 +2,7 @@
 /**
  * Root providers for an enterprise brand-ui app (baseline root wiring).
  * Order: Theme -> Tooltip -> Sidebar -> app; <Toaster/> mounted once.
- * Generalized from qlabs-workbench app-providers + the brand-ui baseline.
+ * Generalized from a shipping workbench app's providers + the brand-ui baseline.
  * Verified against @elabs/components-* v1.0.0 source. NOTE: the ContextPanel family is in
  * @elabs/components-ai (not @elabs/components-ui) and is AI-oriented — add <ContextPanelProvider> from
  * @elabs/components-ai only for AI workspaces; generic detail uses a right Sheet/Drawer.

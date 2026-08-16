@@ -71,6 +71,6 @@ for (const [property, value] of [
 // matching revoke actually happened.
 if (typeof URL.createObjectURL !== "function") {
   let next = 0;
-  URL.createObjectURL = () => `blob:qlabs-viewer/${(next += 1)}`;
+  URL.createObjectURL = () => `blob:brand-ui-viewer/${(next += 1)}`;
   URL.revokeObjectURL = () => {};
 }

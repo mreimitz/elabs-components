@@ -2,7 +2,7 @@
 
 The IDE-like shell: inset collapsible sidebar (navigator) + routed content + **status
 bar**, an optional **right inspector** pane, a **⌘K command palette**, and **focus
-mode** (⌘.). Generalized from `qlabs-workbench`. Archetype **B** (enterprise admin) is
+mode** (⌘.). Generalized from a shipping workbench app. Archetype **B** (enterprise admin) is
 the default and lives at `../app-shell.tsx`; use A for editors, inspectors, canvases.
 
 > Starting points — verify every `@elabs/components-*` prop with `brand-ui docs <Component>`.
@@ -47,6 +47,6 @@ import { Sidebar /* … */ } from "@elabs/components-ui";
 </AppProviders>;
 ```
 
-The collapsible Qlik app icon (lockup↔mark), theme switcher, and settings modal are the
+The collapsible brand app icon (lockup↔mark), theme switcher, and settings modal are the
 same as archetype B — reuse `../app-shell.tsx` §header, `../theme-switcher.tsx`,
 `../settings-dialog.tsx`.

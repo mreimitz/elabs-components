@@ -6,8 +6,8 @@
  * assembler (scripts/build-themes-css.mjs) syncs into themes.css.
  *
  * NO color transform — values (oklch literals, `var(--…)` aliases) are opaque
- * strings carried through byte-for-byte. Exactness is required: the Qlik-green
- * `oklch(0.594 0.163 150)` is brand-frozen and must round-trip identically.
+ * strings carried through byte-for-byte. Exactness is required: a brand-frozen
+ * literal such as the primary's `oklch(…)` must round-trip identically.
  *
  * SD v5 is ESM: `import StyleDictionary from "style-dictionary"`. We drive it
  * programmatically (one instance per mode) and read back the resolved tokens

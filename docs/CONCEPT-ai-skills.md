@@ -279,7 +279,7 @@ to productize first.
    an impeccable-sized rule set (24+)?
 3. **MCP** — commit to Phase 3 MCP, or stay CLI-only for portability?
 4. **Multi-harness** — Claude Code only, or compile for Cursor/Codex/etc. too?
-5. **Naming/visibility** — internal-only (Qlik) plugin, or eventually public like
+5. **Naming/visibility** — internal-only plugin, or eventually public like
    the references?
 
 ```

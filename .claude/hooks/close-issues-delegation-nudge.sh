@@ -4,7 +4,7 @@
 # The runtime teeth for .claude/commands/close-issues.md ▸ "The delegation
 # contract" + "Model routing". Those rules were prose for two full runs and both
 # runs broke them without anything noticing. Measured by replaying the on-disk
-# transcripts in ~/.claude/projects/-Users-czq-Documents-DEV-qlabs-elabs-components/:
+# transcripts in ~/.claude/projects/-Users-czq-Documents-DEV-elabs-elabs-components/:
 #
 #   feadd8a6 (full run)  38 dispatches (19 sonnet / 19 opus) · largest parallel
 #                        batch 1 · haiku 0 · 3 orchestrator source files edited

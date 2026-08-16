@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-02
-- **Issue:** [#368](https://github.com/qlik-coe-emea/elabs-components/issues/368)
+- **Issue:** #368
 - **Supersedes / amends:** nothing
 
 ## Context

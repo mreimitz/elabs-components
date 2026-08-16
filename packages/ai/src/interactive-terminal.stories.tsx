@@ -52,7 +52,7 @@ async function waitForXtermTextarea(root: HTMLElement): Promise<HTMLTextAreaElem
 /**
  * A minimal fake "shell": echoes typed characters back and, on Enter, prints a
  * canned response — standing in for the real PTY a consumer (e.g. the
- * qlabs-workbench agent seam) would drive via `onData`/`write()`.
+ * agent seam in a consuming workbench app) would drive via `onData`/`write()`.
  */
 function EchoDemo() {
   const ref = useRef<InteractiveTerminalHandle>(null);

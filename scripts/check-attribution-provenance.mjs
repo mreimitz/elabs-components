@@ -78,10 +78,10 @@ export const EXCLUDED_RE = /\.(?:test|spec)\.[jt]sx?$|\/__(?:tests|fixtures|mock
 
 /**
  * Names that mean "this came from us". A first-party provenance note is not an
- * attribution obligation — `registry.json`'s "Derived from the Qlik brand palette"
- * credits nobody but the repo itself.
+ * attribution obligation — "Derived from the brand-ui palette" credits nobody but
+ * the repo itself.
  */
-export const FIRST_PARTY_ALIASES = ["elabs", "brand-ui", "qlik", "qlabs"];
+export const FIRST_PARTY_ALIASES = ["elabs", "brand-ui"];
 
 /** Lines of trailing context searched for the upstream's name (comments wrap). */
 export const CONTEXT_LINES = 2;

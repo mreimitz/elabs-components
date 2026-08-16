@@ -77,7 +77,7 @@ surface to the task's value (surface decision tree: `object-and-navigation-patte
 a full-width contributors chart):
 
 - **Lead with the findings (Act):** "Attention & Optimization" becomes the hero — a list of
-  recommendations, each _what + why + CTA_ ("qlik_create_data_object schema = 88% of its tokens
+  recommendations, each _what + why + CTA_ ("atlas_create_data_object schema = 88% of its tokens
   → Review schema"). Most valuable content → top + width + interactive.
 - **Don't repeat** the header KPI band.
 - **Server Profile (Reference):** `Descriptions`, calm, below the findings.

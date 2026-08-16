@@ -4,7 +4,7 @@
 - **Date:** 2026-08-01
 - **Supersedes the open question in:** ADR
   [`0014`](./0014-i18n-direction-and-microcopy-seam.md) §(c)
-- **Context:** consumer report (qlabs-workbench) item #11 — "all strings are
+- **Context:** consumer report (a workbench app) item #11 — "all strings are
   hardcoded English, blocks localization"
 
 ## Context

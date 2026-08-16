@@ -193,7 +193,17 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   the conflict-marker gate (`pnpm conflict-markers:check`, #379 — no tracked file may
   contain a literal, unresolved Git conflict marker; checked BEFORE install since a
   marker can corrupt a JSON/JS gate script's own source before it even runs, the exact
-  #375 incident), the manifest stale-gate (`pnpm manifest:check`), the component-registration gate
+  #375 incident), the debrand gate (`pnpm debrand:check` — this repo is a debranded
+  fork, and no tracked text file may name the upstream organisation, matched
+  case-insensitively and with no `@scope` required, since the case-sensitive one-shot
+  codemods are exactly what let ~140 prose/identifier/camelCase survivors through. The
+  ONLY exemptions are paused surfaces, derived from `scripts/lib/paused-surfaces.mjs`
+  — a whole directory for a paused package, and inside `themes.css` only the paused
+  theme's own block. `--staged` runs the same detector over the index and is wired as
+  a blocking step in `.githooks/pre-commit`, which in this fork is the only
+  enforcement point: it has no `.github/workflows`. Self-tested by
+  `pnpm debrand:check:test`, which asserts the hook wiring too), the manifest
+  stale-gate (`pnpm manifest:check`), the component-registration gate
   (`pnpm components:check` — barrel export AND a co-located story, the latter a ratchet
   vs `scripts/components-story-baseline.json`: a NEW `@elabs/components-ui`
   component with no `*.stories.tsx` FAILS, and the baseline only ratchets down; the
@@ -413,7 +423,7 @@ optional extra:
     sweep is still owed"), so counting them inverted the hook — it went silent on exactly
     the sessions it exists to catch.
   - **Verified against real bytes, not only fixtures.** Replayed over the transcripts in
-    `~/.claude/projects/-Users-czq-Documents-DEV-qlabs-elabs-components/`, it now nudges
+    `~/.claude/projects/-Users-czq-Documents-DEV-elabs-elabs-components/`, it now nudges
     on all three large sessions with no reviewer dispatch (18 / 19 / 20 product files —
     including the one whose only dispatch is the _builder_ skill) and stays silent on the
     13-file session that really dispatched `review-component`.

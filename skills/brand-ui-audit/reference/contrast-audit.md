@@ -106,8 +106,8 @@ everything silently**. Use this oklch-aware auditor in the page.
 
 ## Capture recipe (agent-browser)
 
-- **Theme switch (Storybook):** `…/iframe.html?id=<story>&globals=theme:Qlik+Dark&viewMode=story`
-  (labels: `Light`, `Dark`, `Light`, `Dark`, `Blueprint`, `High contrast`).
+- **Theme switch (Storybook):** `…/iframe.html?id=<story>&globals=theme:dark&viewMode=story`
+  (slugs: `light`, `dark` — always the CSS slug, never the display name).
 - **Render gate (critical):** after `open`, `wait <ms>` (e.g. `wait 1200`) or poll
   until `#storybook-root` has content **before** the screenshot. A blank/spinner
   capture is a timing bug, not a component bug — re-shoot, don't report it.

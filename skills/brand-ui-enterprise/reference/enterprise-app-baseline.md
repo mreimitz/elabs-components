@@ -28,7 +28,7 @@ Before any component, decide the surface type (see
 
 See **`shell-and-navigation.md`** for the two shell archetypes (tool/workspace vs
 enterprise admin), the navigation-type catalog, and canonical snippets (app icon,
-theme switcher, settings modal) lifted from shipping qLabs apps.
+theme switcher, settings modal) distilled from shipping enterprise apps.
 
 How to discover them in-repo: `brand-ui search sidebar` (registry blocks
 `sidebar-02` dashboard, `sidebar-04` mail, `sidebar-05` double-sided) and
@@ -45,14 +45,14 @@ inside it. For bespoke shells use `SidebarProvider` + `Sidebar` + `SidebarInset`
 
 ## 1. Mandatory chrome — every professional app gets these by default
 
-### 1a. Collapsible Qlik app icon + matching favicon
+### 1a. Collapsible brand app icon + matching favicon
 
-- **Component:** `BrandLogo` (`@elabs/components-icons`). `variant="lockup"` = Q + "Qlik"
+- **Component:** `BrandLogo` (`@elabs/components-icons`). `variant="lockup"` = the mark + the product wordmark
   wordmark (default, height 28); `variant="mark"` = the Q glyph only.
 - **Placement:** in the sidebar header (`AppSidebar` `header` slot).
 - **Collapse behavior:** show `lockup` when the sidebar is expanded, swap to `mark`
   when collapsed-to-icon — driven by the sidebar's collapsed state (`useSidebar`).
-- **Favicon:** set the document favicon to the **Qlik mark** so the browser tab
+- **Favicon:** set the document favicon to the **brand mark** so the browser tab
   matches the in-app icon. (App-level asset step, not a component — wire it in
   `index.html` / the head; export the mark SVG from `@elabs/components-icons`.)
 
@@ -135,7 +135,7 @@ import "@elabs/components-tokens/styles.css";
   </SidebarProvider>
   <Toaster/>                                     // 1d — once, at root
 </ThemeProvider>
-// + set the favicon to the Qlik mark in index.html head (1a)
+// + set the favicon to the brand mark in index.html head (1a)
 // flow apps also: import "@xyflow/react/dist/style.css"
 ```
 
@@ -149,8 +149,8 @@ A new professional app is not "scaffolded" until all are true:
 
 - [ ] Surface classified (professional/consumer/marketing) and **register stated**.
 - [ ] Correct **app shell** chosen for the style (table §0), inside `AppShell`.
-- [ ] **Qlik app icon** in the sidebar header, **collapsing** lockup↔mark.
-- [ ] **Favicon** set to the Qlik mark.
+- [ ] **Brand app icon** in the sidebar header, **collapsing** lockup↔mark.
+- [ ] **Favicon** set to the brand mark.
 - [ ] **ThemeProvider** at root (`defaultTheme="light"`); **ThemeSwitcher**
       in the TopNav exposing **System / Light / Dark**; choice persists.
 - [ ] **Settings modal** reachable from the chrome, with an Appearance section.

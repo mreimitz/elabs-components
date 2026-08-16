@@ -53,7 +53,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Default: the Qlik light/dark pair → a cycling light / dark / system toggle. */
+/** Default: the built-in light/dark pair → a cycling light / dark / system toggle. */
 export const Toggle: Story = {
   play: async ({ canvas }) => {
     // The toggle button is present and has an accessible label describing the cycle action.

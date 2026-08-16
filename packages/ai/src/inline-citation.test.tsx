@@ -74,11 +74,11 @@ describe("InlineCitationCardTrigger — source labels", () => {
     expect(() =>
       render(
         <InlineCitationCard>
-          <EvidenceChip sources={["qlik-doc-4821"]} />
+          <EvidenceChip sources={["internal-doc-4821"]} />
         </InlineCitationCard>,
       ),
     ).not.toThrow();
-    expect(screen.getByText(/qlik-doc-4821/)).toBeInTheDocument();
+    expect(screen.getByText(/internal-doc-4821/)).toBeInTheDocument();
   });
 });
 

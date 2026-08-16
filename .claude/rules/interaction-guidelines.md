@@ -45,7 +45,7 @@ component packages.
   ends with `…` ("Loading…", "Saving…").
 - Non-breaking space in units / shortcuts / brand names: `10&nbsp;MB`,
   `⌘&nbsp;K`. Wrap brand + code tokens with `translate="no"` (don't auto-translate
-  "Qlik", `⌘K`, identifiers) — see `Kbd`.
+  "brand-ui", `⌘K`, identifiers) — see `Kbd`.
 - `tabular-nums` for any number column / before-after comparison (MetricCard,
   DataTable numeric cells). `text-wrap: balance`/`pretty` on headings.
 

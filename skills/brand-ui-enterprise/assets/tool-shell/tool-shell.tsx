@@ -2,7 +2,7 @@
 /**
  * Archetype A — tool/workspace shell. Inset collapsible sidebar (navigator) + routed
  * content + status bar, an optional right inspector pane, a ⌘K command palette, and
- * focus mode (⌘.). Generalized from a qLabs tool/workspace app's app frame.
+ * focus mode (⌘.). Generalized from a shipping tool/workspace app's app frame.
  *
  * Mount under <UiStateProvider> (ui-state.tsx). Provide your own `sidebar` — typically a
  * <Sidebar variant="inset" collapsible="icon"> with a collapsible <BrandLogo/> header

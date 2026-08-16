@@ -1,6 +1,6 @@
 # Shell & navigation — archetypes, nav types, canonical snippets
 
-_Grounded in patterns distilled from shipping qLabs apps; the paste-ready versions live in
+_Grounded in patterns distilled from shipping enterprise apps; the paste-ready versions live in
 `../assets/`. Confirm props with `brand-ui docs <Component>`._
 
 Picking the shell is the **first** structural decision (rulebook R009/R022–R031).
@@ -79,7 +79,7 @@ The right-side **`ContextPanel`** is the library-native form of the archetype-A
 
 ## 3. Canonical solved snippets (reuse these)
 
-### 3a. Collapsible Qlik app icon — see `../assets/app-shell.tsx`
+### 3a. Collapsible brand app icon — see `../assets/app-shell.tsx`
 
 `BrandLogo` lockup when expanded, `variant="mark"` when collapsed-to-icon:
 
@@ -93,7 +93,7 @@ The right-side **`ContextPanel`** is the library-native form of the archetype-A
 </SidebarHeader>
 ```
 
-Set the **favicon** to the same Qlik mark (head-level asset).
+Set the **favicon** to the same brand mark (head-level asset).
 
 ### 3b. Theme switcher — System / Light / Dark — preferred + alternative
 

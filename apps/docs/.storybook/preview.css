@@ -1,5 +1,5 @@
-/* Source Sans 3 + Source Code Pro (the Qlik Cloud faces used by light /
-   dark) are now SELF-HOSTED by @elabs/components-tokens, so the Google Fonts @import
+/* Inter + the mono faces (IBM Plex Mono, Source Code Pro) used by light /
+   dark are SELF-HOSTED by @elabs/components-tokens, so the Google Fonts @import
    that used to lead this file is gone. Storybook and a real consumer render the
    same faces from the same @font-face rules — previously Storybook fetched them
    from a CDN and every consumer silently fell back to Helvetica. */

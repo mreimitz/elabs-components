@@ -69,7 +69,7 @@ Marketing → no sidebar; top nav + single scroll.
 ### 3 · Stand up the baseline (mandatory, by default)
 
 Every professional app gets these **without being asked**: the chosen shell, the
-**collapsible Qlik app icon + favicon**, **ThemeProvider + System/Light/Dark
+**collapsible brand app icon + favicon**, **ThemeProvider + System/Light/Dark
 switcher**, a **settings modal**, the **Sonner `Toaster`**, and a **right-side detail
 panel** (generic `Sheet`/`Drawer`; `@elabs/components-ai` `ContextPanel` for AI surfaces).
 → `reference/enterprise-app-baseline.md` (spec, root wiring, definition-of-done checklist).
@@ -175,7 +175,7 @@ in an operational app? Stop and re-do step 1.
 - `reference/modes-and-interaction.md` — the four modes, mode detection, per-mode question sets, hand-offs.
 - `reference/professional-vs-marketing.md` — the 3-way framework, one-line tests, the trap.
 - `reference/shell-and-navigation.md` — shell archetypes A/B, nav-type catalog, snippets
-  (collapsible app icon, theme switcher, settings modal) lifted from shipping qLabs apps.
+  (collapsible app icon, theme switcher, settings modal) distilled from shipping enterprise apps.
 - `reference/enterprise-app-baseline.md` — the mandatory default skeleton + checklist.
 - `reference/screen-design-brief.md` — the design-first ritual for a net-new screen:
   intent → references → distinct concepts → mocked concept → full state grid →
@@ -194,4 +194,4 @@ in an operational app? Stop and re-do step 1.
 
 > Sibling brand-ui skills do the rest: `brand-ui` (compose + real APIs), `brand-ui-new-app`
 > (scaffold), `brand-ui-audit` (scored review), `brand-ui-theme` (tokens/themes).
-> Shipped as `brand-ui-enterprise`; vendored from the `qlabs-enterprise-ui` skill repo (v0.4.0).
+> Shipped as `brand-ui-enterprise`; vendored from an internal, first-party enterprise-UI skill repo (v0.4.0).

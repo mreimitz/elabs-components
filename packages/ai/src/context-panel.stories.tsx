@@ -57,7 +57,7 @@ function RailRoot() {
   return (
     <>
       <ContextPanelSection label="Status">
-        <p className="text-body text-muted-foreground">Context 21% · model qlik-fast</p>
+        <p className="text-body text-muted-foreground">Context 21% · model atlas-fast</p>
       </ContextPanelSection>
       <ContextPanelSection label="Produced assets">
         <ProducedAssetTree

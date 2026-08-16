@@ -1,10 +1,10 @@
 "use client";
 /**
  * Enterprise-admin app shell (archetype B): collapsible icon sidebar with the
- * collapsible Qlik app icon + TopNav (breadcrumb + theme switcher + settings) + main,
+ * collapsible brand app icon + TopNav (breadcrumb + theme switcher + settings) + main,
  * with an optional secondary rail and room for the right-side ContextPanel.
  *
- * Grounded in mcp-token-footprint AppShell + qlabs-workbench sidebar/theme/settings.
+ * Grounded in mcp-token-footprint AppShell + a shipping workbench app's sidebar/theme/settings.
  * Verify props with `brand-ui docs` (Sidebar, TopNav, ContextPanel, …). For archetype
  * A (tool/workspace) add a status bar, navigator/inspector panes, and a ⌘K palette.
  */

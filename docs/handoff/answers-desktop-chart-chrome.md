@@ -1,6 +1,6 @@
-# Handoff — `qlabs-answers-desktop`: chart card chrome and expand
+# Handoff — the answers desktop app: chart card chrome and expand
 
-**Status:** a prompt for whoever owns `qlabs-answers-desktop`. Nothing here was
+**Status:** a prompt for whoever owns the answers desktop app. Nothing here was
 changed by brand-ui — that repo is a separate checkout consuming published
 packages, and this repo never edits it.
 
@@ -35,7 +35,7 @@ surface must show full digits, pass `valueFormat="number"` on the chart spec, or
 
 ## The prompt
 
-> You own `qlabs-answers-desktop`. Two pieces of chat-message chrome were
+> You own the answers desktop app. Two pieces of chat-message chrome were
 > hand-rolled around brand-ui's chart components, and both now have a shared
 > component that does the job properly. Replace them.
 >

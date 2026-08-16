@@ -1,7 +1,7 @@
 "use client";
 /**
  * Settings as a modal (the baseline default — keeps the user on their work surface).
- * Grounded in a qLabs tool/workspace app's settings dialog.
+ * Grounded in a shipping tool/workspace app's settings dialog.
  *
  * Controlled here via open/onOpenChange. For a deep-linkable, reload-surviving
  * variant (?settings=1) see the comment at the bottom.

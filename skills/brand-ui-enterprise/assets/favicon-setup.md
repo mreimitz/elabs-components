@@ -1,11 +1,11 @@
-# Favicon → Qlik mark
+# Favicon → brand mark
 
-The browser-tab favicon should match the in-app Qlik app icon (the `mark`). This is
+The browser-tab favicon should match the in-app brand app icon (the `mark`). This is
 an app-level asset step, not a component.
 
 ## 1 · Provide the mark
 
-Export the Qlik mark (the glyph `BrandLogo variant="mark"` renders) as an SVG, or drop
+Export the brand mark (the glyph `BrandLogo variant="mark"` renders) as an SVG, or drop
 it at `public/favicon.svg`.
 
 ## 2 · Reference it in `index.html` `<head>`

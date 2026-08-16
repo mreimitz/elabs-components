@@ -118,7 +118,7 @@ example and the default registry, not the menu.
 - **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427).**
   `--ring` had no stated contract, only a negative comment ("distinct from the
   green brand AND `--info`"), which is why #334's fix was free to leave the
-  brand palette entirely and land a blue ring in both qlik themes with every
+  brand palette entirely and land a blue ring in both reference themes with every
   gate green. A theme's `--ring` must satisfy all of:
   1. **Brand family** — within ~20° of that theme's `--primary` hue, at a
      clearly different lightness/chroma rung (never an alias).

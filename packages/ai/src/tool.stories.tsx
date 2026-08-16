@@ -22,9 +22,9 @@ export const Default: Story = {
       <ToolHeader type="tool-search_web" state="output-available" summary="3 results found" />
       <ToolContent>
         <ToolDetails>
-          <ToolInput input={{ query: "qlik cloud status" }} />
+          <ToolInput input={{ query: "platform status page" }} />
           <ToolOutput
-            output={{ hits: 3, sources: ["status.qlik.com", "community", "docs"] }}
+            output={{ hits: 3, sources: ["status.example.com", "community", "docs"] }}
             errorText={undefined}
           />
         </ToolDetails>
@@ -46,7 +46,7 @@ export const Streaming: Story = {
         <ToolHeader type="tool-search_web" state={state} summary="Searching…" />
         <ToolContent>
           <ToolDetails defaultOpen>
-            <ToolInput input={{ query: "qlik cloud status" }} />
+            <ToolInput input={{ query: "platform status page" }} />
             <ToolOutput
               output={undefined}
               errorText={undefined}

@@ -260,9 +260,9 @@ I drafted a one-page board note and exported the supporting figures — both are
 
 /** The run's grounding — shared by the answer footer and the context rail. */
 const GROUNDING_SOURCES = [
-  { href: "https://qlik.com/q3-10q", title: "Q3 10-Q filing" },
-  { href: "https://qlik.com/earnings-deck", title: "Q3 earnings deck" },
-  { href: "https://help.qlik.com/finance-revenue", title: "finance.revenue — warehouse table" },
+  { href: "https://example.com/q3-10q", title: "Q3 10-Q filing" },
+  { href: "https://example.com/earnings-deck", title: "Q3 earnings deck" },
+  { href: "https://docs.example.com/finance-revenue", title: "finance.revenue — warehouse table" },
 ];
 
 /** Produced assets — the `ContextAsset` units the ContextPanel drill-in focuses. */
@@ -850,7 +850,10 @@ I'll ground the numbers in the Q3 filing and reconcile them against the warehous
               <InlineCitationText>finance.revenue</InlineCitationText>
               <InlineCitationCard>
                 <EvidenceChip
-                  sources={["https://qlik.com/q3-10q", "https://help.qlik.com/finance-revenue"]}
+                  sources={[
+                    "https://example.com/q3-10q",
+                    "https://docs.example.com/finance-revenue",
+                  ]}
                 />
                 <InlineCitationCardBody>
                   <InlineCitationCarousel>
@@ -863,7 +866,7 @@ I'll ground the numbers in the Q3 filing and reconcile them against the warehous
                       <InlineCitationCarouselItem>
                         <InlineCitationSource
                           title="Q3 10-Q filing"
-                          url="https://qlik.com/q3-10q"
+                          url="https://example.com/q3-10q"
                           description="Quarterly revenue, ARR and margin."
                         />
                         <InlineCitationQuote>
@@ -873,7 +876,7 @@ I'll ground the numbers in the Q3 filing and reconcile them against the warehous
                       <InlineCitationCarouselItem>
                         <InlineCitationSource
                           title="finance.revenue table"
-                          url="https://help.qlik.com/finance-revenue"
+                          url="https://docs.example.com/finance-revenue"
                           description="Source-of-truth revenue by quarter and region."
                         />
                       </InlineCitationCarouselItem>

@@ -423,7 +423,7 @@ if (existsSync(prTemplate)) {
   const themeNames = THEME_NAMES ?? [];
   text.split("\n").forEach((line, i) => {
     // Only inspect a line that is clearly a theme-coverage assertion.
-    if (/works in .*(?:theme|qlik-)/i.test(line)) {
+    if (/works in .*theme/i.test(line)) {
       const missing = themeNames.filter((t) => !line.toLowerCase().includes(t));
       if (missing.length) {
         prTemplateViolations.push(

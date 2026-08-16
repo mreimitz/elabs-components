@@ -26,6 +26,14 @@
 #    way to auto-resolve a merge (or a branch mixup) on the committer's behalf.
 #    The CI gate (`pnpm conflict-markers:check`) is the backstop for a
 #    `--no-verify` bypass.
+# 1b) HARD BLOCK a commit that stages the upstream organisation's name. This
+#    repo is a debranded fork; the names were removed once, and a generated
+#    artifact, a dependency bump or a doc written from an old memory would put
+#    them back. Blocking (not best-effort) because there is no safe automatic
+#    rewrite — a name needs a replacement that reads right in context. Paused
+#    surfaces are exempt, derived from scripts/lib/paused-surfaces.mjs. The
+#    full-tree run is `pnpm debrand:check`; this stages-only arm is the cheap
+#    commit-time half.
 # 2) When a commit stages files that change the manifest's inputs (any package
 #    source, the token themes, or the registry), regenerate `brand-ui.manifest.json`
 #    and its 5 downstream generators (inventory/llms/context/gen — #396) and stage
@@ -75,6 +83,14 @@ staged="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)" || exit
 if command -v node >/dev/null 2>&1; then
   if ! node scripts/check-conflict-markers.mjs --staged; then
     echo "pre-commit: aborting commit — staged file(s) contain unresolved conflict markers (see above). Resolve them, then re-stage." >&2
+    exit 1
+  fi
+fi
+
+# --- 1b) hard-block staged content naming the upstream organisation ----------
+if command -v node >/dev/null 2>&1; then
+  if ! node scripts/check-debrand.mjs --staged; then
+    echo "pre-commit: aborting commit — staged file(s) name the upstream organisation (see above). Rewrite the string, then re-stage." >&2
     exit 1
   fi
 fi

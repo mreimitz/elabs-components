@@ -7,7 +7,7 @@
  * end-user (or the new-app scaffolder) starts on-baseline instead of bolting the
  * chrome on later:
  *
- *   1a. Collapsible Qlik app icon — the standard <AppIcon> (lockup ↔ mark morph,
+ *   1a. Collapsible brand app icon — the standard <AppIcon> (lockup ↔ mark morph,
  *       driven by the sidebar collapsed state).
  *   1b. ThemeProvider wraps the screen (the story decorator below — in a real
  *       app it sits at the root); the TopNav `end` slot exposes a bare
@@ -18,8 +18,8 @@
  *       surface instead of a page jump.
  *
  * Compose-only: every element is an existing @elabs/components-* primitive, semantic
- * tokens only, and it must read in light AND dark. Verify across all
- * three themes with globals=theme:<slug>.
+ * tokens only, and it must read in light AND dark. Verify both themes with
+ * globals=theme:<slug>.
  *
  * Home: this is a cross-package COMPOSITION demo (@elabs/components-ui + @elabs/components-icons), so
  * it lives in apps/docs/stories — no single library package may own it under the
@@ -166,7 +166,7 @@ const STATUS_VARIANT: Record<ConnStatus, "success" | "secondary" | "destructive"
 };
 
 /* -------------------------------------------------------------------------- */
-/*  1a. Sidebar — collapsing Qlik identity + primary view nav + account         */
+/*  1a. Sidebar — collapsing brand identity + primary view nav + account         */
 /* -------------------------------------------------------------------------- */
 
 function ConsoleSidebar({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
@@ -175,9 +175,9 @@ function ConsoleSidebar({ active, onSelect }: { active: string; onSelect: (id: s
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="Qlik Integrations" asChild>
-              <a href="#overview" aria-label="Qlik Integrations — home">
-                {/* The standard app icon: full lockup, morphs to the Q mark on collapse. */}
+            <SidebarMenuButton size="lg" tooltip="Integrations" asChild>
+              <a href="#overview" aria-label="Integrations — home">
+                {/* The standard app icon: full lockup, morphs to the bare mark on collapse. */}
                 <AppIcon height={20} aria-hidden />
                 <span className="grid flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate text-body font-semibold">Integrations</span>
@@ -633,7 +633,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app. It wires the entire mandatory enterprise baseline in one screen: a collapsible Qlik app icon (lockup ↔ mark), a primary view sidebar with breadcrumb, a TopNav `end` slot with <ThemeSwitcher /> (System / Light / Dark), a Settings modal whose Appearance section hosts the switcher, a Sonner <Toaster /> mounted once, and a right-side Sheet detail panel that preserves the work surface. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in all three themes.",
+          "The baseline-complete archetype-B console — the recommended starting point for a professional brand-ui app. It wires the entire mandatory enterprise baseline in one screen: a collapsible brand app icon (lockup ↔ mark), a primary view sidebar with breadcrumb, a TopNav `end` slot with <ThemeSwitcher /> (System / Light / Dark), a Settings modal whose Appearance section hosts the switcher, a Sonner <Toaster /> mounted once, and a right-side Sheet detail panel that preserves the work surface. Compose-only from @elabs/components-* primitives; semantic tokens only; reads in both themes.",
       },
     },
   },

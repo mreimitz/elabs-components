@@ -1,17 +1,17 @@
 # skill/assets — paste-ready baseline
 
 Starting points for the enterprise app baseline (SKILL.md step 3). **Starting points,
-not a library** — grounded in two shipping qLabs apps (`qlabs-workbench`,
+not a library** — grounded in two shipping enterprise apps (a workbench app,
 `mcp-token-footprint`) and the brand-ui v1.0.0 manifest. Before shipping, confirm every
 `@elabs/components-*` prop with `brand-ui docs <Component>`.
 
 | File                  | What it gives you                                                                                                                                                             |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app-providers.tsx`   | Root provider order (Theme → Tooltip → Sidebar → ContextPanel) + `<Toaster/>` once.                                                                                           |
-| `app-shell.tsx`       | Archetype B (enterprise admin) shell: collapsible Qlik-icon sidebar + TopNav (breadcrumb + theme switcher + settings) + optional rail + main.                                 |
+| `app-shell.tsx`       | Archetype B (enterprise admin) shell: collapsible brand-icon sidebar + TopNav (breadcrumb + theme switcher + settings) + optional rail + main.                                |
 | `theme-switcher.tsx`  | System / Light / Dark curated switcher (OS-following).                                                                                                                        |
 | `settings-dialog.tsx` | Settings as a modal; controlled, with optional `?settings=1` deep-link.                                                                                                       |
-| `favicon-setup.md`    | Wire the browser-tab favicon to the Qlik mark.                                                                                                                                |
+| `favicon-setup.md`    | Wire the browser-tab favicon to the brand mark.                                                                                                                               |
 | `detail-hub.tsx`      | A **screen-level** worked example: the archetype-B object **detail hub** (sticky header + sticky tabs · `SplitPanel` master-detail with per-pane scroll · Run-task `Dialog`). |
 
 Archetype A (tool/workspace) — status bar, left navigator + right inspector panes, ⌘K

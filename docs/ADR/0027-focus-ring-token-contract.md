@@ -11,7 +11,7 @@ the other — `--primary`/`--chart-1..5` are declared brand, `--border`/`--muted
 `--input` are declared neutral machinery — but nothing in `themes.css`,
 `theming.md`, `styling-and-tokens.md`, ADR 0003 or `packages/tokens/README.md`
 ever said which `--ring` was. #334 found `--ring` byte-identical to `--info` in
-both qlik themes (a focus ring reading as an "Info/Running" chip) and moved it
+both reference themes (a focus ring reading as an "Info/Running" chip) and moved it
 to a dedicated blue to satisfy distinctness. That fix was correct on its own
 terms — but distinctness is satisfiable by leaving the brand palette entirely,
 which is the cheapest move available when nothing says a replacement has to
@@ -119,7 +119,7 @@ family at a distinct lightness/chroma rung from `--primary`
 (`oklch(0.55 0.18 264)`), ΔE 0.1044 — comfortably clearing both clause 1 (0°
 hue gap, well inside ~20°) and clause 3 (0.1044 ≥ 0.05). `:root` never had a
 "which family" problem; it had `--primary` = blue, so a blue ring was always
-in-family. The two qlik themes broke the pattern that `:root` was already
+in-family. The two reference themes broke the pattern that `:root` was already
 following, which is why this ADR describes the fix as **restoring** a
 convention, not inventing one.
 

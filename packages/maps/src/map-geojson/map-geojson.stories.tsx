@@ -9,7 +9,8 @@ import { MapGeoJSON } from "./map-geojson";
  * Theme-reactive token resolution for CONSUMER-side paint (outside the map
  * context). A one-shot `resolveTokenColor` at render time can read the `:root`
  * fallback: Storybook's theme decorator stamps `data-theme` after the first
- * render (the sweep caught blue `:root` primary instead of Qlik green).
+ * render (the sweep caught the blue `:root` primary instead of the active
+ * theme's own).
  * Re-resolve whenever the theme attribute changes — the same contract the
  * package's internal `useTokenColor` follows.
  */

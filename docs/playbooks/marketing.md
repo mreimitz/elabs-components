@@ -93,7 +93,7 @@ safe); pass `animate={false}` to opt out.
 
 Copy (headline, stats, feature titles — the hard part) · CTA labels +
 targets · feature count/icons · standalone vs. embedded · theme
-(light for a Qlik pitch; client-brand theme for client pitches —
+(light for an in-house pitch; client-brand theme for client pitches —
 re-branding is a token swap, not a redesign).
 
 ## Decisions already made — don't re-make

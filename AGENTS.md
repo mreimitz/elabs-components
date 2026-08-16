@@ -159,6 +159,8 @@ the same. Run from the repo root (scope to one package with `pnpm --filter @elab
 pnpm typecheck && pnpm lint && pnpm test && pnpm build   # every change
 pnpm conflict-markers:check     # every change — no tracked file contains a literal, unresolved Git conflict marker (#379)
 pnpm conflict-markers:check:test # self-test for the conflict-marker gate
+pnpm debrand:check              # every change — no tracked file names the upstream organisation this repo was forked from (paused surfaces exempt, derived from scripts/lib/paused-surfaces.mjs)
+pnpm debrand:check:test         # self-test for the debrand gate + its pre-commit wiring
 pnpm registry:validate          # if registry/ touched
 pnpm registry:validate:test     # self-test for the registry `homepage`-placeholder gate (#264)
 pnpm registry:resolve:check     # if registry/ touched — every relative import resolves in both the repo tree AND the install (target) tree

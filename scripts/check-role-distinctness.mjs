@@ -11,7 +11,7 @@
  * against a *surface*. Neither expresses distinctness, which is a property of two
  * tokens against **each other** — so the whole class was invisible to CI. #334
  * found `--success` byte-identical to `--primary` and `--ring` to `--info` in
- * both qlik themes; #385 found the same class in `:root` (five roles —
+ * both reference themes; #385 found the same class in `:root` (five roles —
  * `--primary`, `--ring`, `--sidebar-primary`, `--sidebar-ring`, `--chart-1` — on
  * ONE literal) and in blueprint. A focus ring that renders in exactly the colour
  * of the primary button and of chart series 1 has destroyed the only signal

@@ -174,7 +174,7 @@ const INK_TONES = [
  * Sub-AA ink pairs accepted on a brand argument, keyed by `(theme, tone)` — NOT
  * by tone. **Currently empty, and that is a result, not an oversight.**
  *
- * #180 was closed won't-fix for white-on-Qlik-green in `light` specifically: at
+ * #180 was closed won't-fix for white-on-brand-green in `light` specifically: at
  * `oklch(0.553 0.143 153)` the brand green was too light to carry white ink at
  * 4.5:1, and too dark to carry black, so the brand hue itself was the argument.
  * The Phase-4 debrand retired that green. `--primary` is now the lime
@@ -414,7 +414,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // #321/#383 — the INK rung, generalized to EVERY status tone.
     //
     // This row started life (#381) scoped to `--warning` alone, with a comment
-    // declining to generalize it because "the qlik white-on-Qlik-green
+    // declining to generalize it because "the white-on-brand-green
     // `--primary`/`--success` pairing is an accepted brand exemption (#180)".
     // That reasoning was the bug: one brand decision on ONE pair left the entire
     // foreground-on-fill class unmeasured, which is how dark shipped a
@@ -492,7 +492,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     });
 
     // #334 — two SEMANTIC ROLES must never share one literal. `--success` was
-    // byte-identical to `--primary` and `--ring` to `--info` in BOTH qlik
+    // byte-identical to `--primary` and `--ring` to `--info` in BOTH reference
     // themes, so a success chip was indistinguishable from a primary button and
     // a focus ring from an "Info"/"Running" chip — by colour, the only signal
     // these tokens carry. A token that equals another token is an undeclared

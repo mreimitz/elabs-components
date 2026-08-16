@@ -12,7 +12,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
  *   Density scale.
  * - **Radius** is token-backed: `rounded-sm/md/lg/xl` derive from `--radius`,
  *   which is itself `--radius-base × (1 − decoration)`. Raise the toolbar
- *   Decoration dial and corners square up; the Qlik themes use a softer
+ *   Decoration dial and corners square up; the reference themes use a softer
  *   `--radius-base` than the neutral default.
  */
 

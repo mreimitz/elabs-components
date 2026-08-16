@@ -38,8 +38,8 @@
  * HONEST LIMIT: rung 3 scans the dist of each DIRECT runtime dependency of a
  * distributable package. It is not a full transitive fixpoint over the installed
  * tree, so a sink reached only through a transitive dep is not caught yet. The
- * consuming app that reported this (qlabs-answers-desktop) built exactly that
- * fixpoint and offered it; adopting it is the follow-up. Do not describe this
+ * consuming desktop app that reported this built exactly that fixpoint and
+ * offered it; adopting it is the follow-up. Do not describe this
  * gate as proving a module graph clean — it proves our source clean, the patches
  * intact, and the direct-dependency set unchanged.
  *

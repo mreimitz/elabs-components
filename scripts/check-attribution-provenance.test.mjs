@@ -103,7 +103,12 @@ test("FLAGS: an uncredited name still outside the context window", () => {
 
 test("PASSES: first-party provenance is not an attribution obligation", () => {
   const hits = findUnattributed(
-    [{ file: "registry/registry.json", content: '"description": "Ported from the qlik palette."' }],
+    [
+      {
+        file: "registry/registry.json",
+        content: '"description": "Ported from the brand-ui palette."',
+      },
+    ],
     CREDITED,
   );
   assert.deepEqual(hits, []);

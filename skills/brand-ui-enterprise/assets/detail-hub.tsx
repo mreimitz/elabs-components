@@ -101,7 +101,7 @@ type Finding = {
 type Segment = { label: string; value: number; className: string };
 
 const SERVER = {
-  name: "qlik-cloud",
+  name: "atlas-cloud",
   status: { variant: "warning" as const, label: "3 issues" },
   transport: "stdio",
   version: "1.4.0",
@@ -112,7 +112,7 @@ const SERVER = {
 const TOOLS: ToolRow[] = [
   {
     id: "t1",
-    name: "qlik_create_data_object",
+    name: "atlas_create_data_object",
     summary: "Create a data object from a connection and load script.",
     tokens: 8920,
     issues: 2,
@@ -120,7 +120,7 @@ const TOOLS: ToolRow[] = [
   },
   {
     id: "t2",
-    name: "qlik_list_apps",
+    name: "atlas_list_apps",
     summary: "List apps in a space with pagination and filters.",
     tokens: 1240,
     issues: 0,
@@ -128,7 +128,7 @@ const TOOLS: ToolRow[] = [
   },
   {
     id: "t3",
-    name: "qlik_reload_app",
+    name: "atlas_reload_app",
     summary: "Trigger a reload task for an app and poll status.",
     tokens: 2110,
     issues: 0,
@@ -136,7 +136,7 @@ const TOOLS: ToolRow[] = [
   },
   {
     id: "t4",
-    name: "qlik_export_chart",
+    name: "atlas_export_chart",
     summary: "Export a chart object to PNG/PDF with a size hint.",
     tokens: 3180,
     issues: 1,
@@ -148,14 +148,14 @@ const TOOLS: ToolRow[] = [
 const FINDINGS: Finding[] = [
   {
     id: "f1",
-    what: "Schema is 88% of qlik_create_data_object's tokens",
+    what: "Schema is 88% of atlas_create_data_object's tokens",
     why: "One tool drives 37% of the server's footprint.",
     cta: "Trim schema",
     onAct: () => {},
   },
   {
     id: "f2",
-    what: "qlik_export_chart returns an unbounded description",
+    what: "atlas_export_chart returns an unbounded description",
     why: "Adds ~1.2k tokens per call with no cap.",
     cta: "Add a limit",
     onAct: () => {},

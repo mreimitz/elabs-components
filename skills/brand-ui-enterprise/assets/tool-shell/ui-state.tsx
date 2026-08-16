@@ -5,7 +5,7 @@
  * collapses both panes for nothing-but-content; one keystroke restores them. Focus
  * persists across launches; manually opening a pane exits focus.
  *
- * Generalized from a qLabs tool/workspace app's UI-state provider.
+ * Generalized from a shipping tool/workspace app's UI-state provider.
  */
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 

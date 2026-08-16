@@ -118,7 +118,7 @@ This is **computation over tokens, not observation of a rendered screen.**
 | `--success-text` | `--surface-muted` | 5.73 | 4.5 | ✅ |
 | `--destructive-text` | `--background` | 6.43 | 4.5 | ✅ |
 | `--destructive-text` | `--card` | 6.71 | 4.5 | ✅ |
-| `--destructive-text` | `--surface-muted` | 5.97 | 4.5 | ✅ |
+| `--destructive-text` | `--surface-muted` | 5.98 | 4.5 | ✅ |
 | `--warning-text` | `--background` | 5.41 | 4.5 | ✅ |
 | `--warning-text` | `--card` | 5.65 | 4.5 | ✅ |
 | `--warning-text` | `--surface-muted` | 5.03 | 4.5 | ✅ |
@@ -128,30 +128,30 @@ This is **computation over tokens, not observation of a rendered screen.**
 | `--highlight-foreground` | `--highlight` | 9.98 | 4.5 | ✅ |
 | `--muted-foreground` | `--muted` | 5.47 | 4.5 | ✅ |
 | `--muted-foreground` | `--surface-muted` | 5.34 | 4.5 | ✅ |
-| `--sidebar-muted-foreground` | `--sidebar` | 5.34 | 4.5 | ✅ |
+| `--sidebar-muted-foreground` | `--sidebar` | 5.50 | 4.5 | ✅ |
 | `--border-strong` | `--card` | 3.23 | 3.0 | ✅ |
 | `--border-strong` | `--background` | 3.10 | 3.0 | ✅ |
-| `--foreground` | `--background` | 9.99 | 4.5 | ✅ |
-| `--calc-foreground` | `--card` | 10.43 | 4.5 | ✅ |
-| `--calc-foreground` | `--background` | 9.99 | 4.5 | ✅ |
+| `--foreground` | `--background` | 13.05 | 4.5 | ✅ |
+| `--calc-foreground` | `--card` | 13.63 | 4.5 | ✅ |
+| `--calc-foreground` | `--background` | 13.05 | 4.5 | ✅ |
 | `--calc-number` | `--card` | 8.63 | 4.5 | ✅ |
 | `--calc-number` | `--background` | 8.27 | 4.5 | ✅ |
 | `--calc-unit` | `--card` | 7.46 | 4.5 | ✅ |
 | `--calc-unit` | `--background` | 7.15 | 4.5 | ✅ |
-| `--calc-currency` | `--card` | 7.64 | 4.5 | ✅ |
-| `--calc-currency` | `--background` | 7.32 | 4.5 | ✅ |
+| `--calc-currency` | `--card` | 7.20 | 4.5 | ✅ |
+| `--calc-currency` | `--background` | 6.90 | 4.5 | ✅ |
 | `--calc-variable` | `--card` | 10.69 | 4.5 | ✅ |
 | `--calc-variable` | `--background` | 10.24 | 4.5 | ✅ |
 | `--calc-reference` | `--card` | 9.51 | 4.5 | ✅ |
 | `--calc-reference` | `--background` | 9.11 | 4.5 | ✅ |
 | `--calc-function` | `--card` | 8.80 | 4.5 | ✅ |
 | `--calc-function` | `--background` | 8.43 | 4.5 | ✅ |
-| `--calc-operator` | `--card` | 13.64 | 4.5 | ✅ |
+| `--calc-operator` | `--card` | 13.63 | 4.5 | ✅ |
 | `--calc-operator` | `--background` | 13.06 | 4.5 | ✅ |
 | `--calc-result` | `--card` | 10.41 | 4.5 | ✅ |
 | `--calc-result` | `--background` | 9.97 | 4.5 | ✅ |
 | `--calc-comment` | `--card` | 6.00 | 4.5 | ✅ |
-| `--calc-comment` | `--background` | 5.75 | 4.5 | ✅ |
+| `--calc-comment` | `--background` | 5.74 | 4.5 | ✅ |
 | `--calc-warning` | `--card` | 6.66 | 4.5 | ✅ |
 | `--calc-warning` | `--background` | 6.38 | 4.5 | ✅ |
 
@@ -159,13 +159,13 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--chart-1` | `--chart-background` | 3.77 | 3.0 | ✅ |
-| `--chart-2` | `--chart-background` | 7.45 | 3.0 | ✅ |
-| `--chart-3` | `--chart-background` | 4.71 | 3.0 | ✅ |
+| `--chart-1` | `--chart-background` | 3.49 | 3.0 | ✅ |
+| `--chart-2` | `--chart-background` | 4.79 | 3.0 | ✅ |
+| `--chart-3` | `--chart-background` | 3.53 | 3.0 | ✅ |
 | `--chart-4` | `--chart-background` | 5.13 | 3.0 | ✅ |
 | `--chart-5` | `--chart-background` | 3.67 | 3.0 | ✅ |
-| `--chart-foreground` | `--chart-background` | 10.43 | 4.5 | ✅ |
-| `--chart-label` | `--chart-background` | 10.43 | 4.5 | ✅ |
+| `--chart-foreground` | `--chart-background` | 13.63 | 4.5 | ✅ |
+| `--chart-label` | `--chart-background` | 13.63 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.00 | 3.0 | ✅ |
 
 ## dark
@@ -174,58 +174,58 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--success-text` | `--background` | 11.40 | 4.5 | ✅ |
-| `--success-text` | `--card` | 10.29 | 4.5 | ✅ |
-| `--success-text` | `--surface-muted` | 9.39 | 4.5 | ✅ |
+| `--success-text` | `--background` | 11.39 | 4.5 | ✅ |
+| `--success-text` | `--card` | 10.28 | 4.5 | ✅ |
+| `--success-text` | `--surface-muted` | 9.38 | 4.5 | ✅ |
 | `--destructive-text` | `--background` | 7.13 | 4.5 | ✅ |
-| `--destructive-text` | `--card` | 6.44 | 4.5 | ✅ |
+| `--destructive-text` | `--card` | 6.43 | 4.5 | ✅ |
 | `--destructive-text` | `--surface-muted` | 5.87 | 4.5 | ✅ |
 | `--warning-text` | `--background` | 9.82 | 4.5 | ✅ |
 | `--warning-text` | `--card` | 8.87 | 4.5 | ✅ |
 | `--warning-text` | `--surface-muted` | 8.09 | 4.5 | ✅ |
-| `--info-text` | `--background` | 7.77 | 4.5 | ✅ |
+| `--info-text` | `--background` | 7.76 | 4.5 | ✅ |
 | `--info-text` | `--card` | 7.01 | 4.5 | ✅ |
-| `--info-text` | `--surface-muted` | 6.40 | 4.5 | ✅ |
+| `--info-text` | `--surface-muted` | 6.39 | 4.5 | ✅ |
 | `--highlight-foreground` | `--highlight` | 8.87 | 4.5 | ✅ |
-| `--muted-foreground` | `--muted` | 6.08 | 4.5 | ✅ |
-| `--muted-foreground` | `--surface-muted` | 5.89 | 4.5 | ✅ |
+| `--muted-foreground` | `--muted` | 6.07 | 4.5 | ✅ |
+| `--muted-foreground` | `--surface-muted` | 5.88 | 4.5 | ✅ |
 | `--sidebar-muted-foreground` | `--sidebar` | 7.58 | 4.5 | ✅ |
 | `--border-strong` | `--card` | 3.16 | 3.0 | ✅ |
 | `--border-strong` | `--background` | 3.50 | 3.0 | ✅ |
-| `--foreground` | `--background` | 15.32 | 4.5 | ✅ |
-| `--calc-foreground` | `--card` | 13.83 | 4.5 | ✅ |
-| `--calc-foreground` | `--background` | 15.32 | 4.5 | ✅ |
+| `--foreground` | `--background` | 15.31 | 4.5 | ✅ |
+| `--calc-foreground` | `--card` | 13.82 | 4.5 | ✅ |
+| `--calc-foreground` | `--background` | 15.31 | 4.5 | ✅ |
 | `--calc-number` | `--card` | 6.56 | 4.5 | ✅ |
-| `--calc-number` | `--background` | 7.27 | 4.5 | ✅ |
+| `--calc-number` | `--background` | 7.26 | 4.5 | ✅ |
 | `--calc-unit` | `--card` | 6.72 | 4.5 | ✅ |
 | `--calc-unit` | `--background` | 7.44 | 4.5 | ✅ |
-| `--calc-currency` | `--card` | 7.61 | 4.5 | ✅ |
-| `--calc-currency` | `--background` | 8.43 | 4.5 | ✅ |
-| `--calc-variable` | `--card` | 6.92 | 4.5 | ✅ |
+| `--calc-currency` | `--card` | 9.39 | 4.5 | ✅ |
+| `--calc-currency` | `--background` | 10.40 | 4.5 | ✅ |
+| `--calc-variable` | `--card` | 6.91 | 4.5 | ✅ |
 | `--calc-variable` | `--background` | 7.66 | 4.5 | ✅ |
 | `--calc-reference` | `--card` | 6.37 | 4.5 | ✅ |
-| `--calc-reference` | `--background` | 7.06 | 4.5 | ✅ |
-| `--calc-function` | `--card` | 7.76 | 4.5 | ✅ |
-| `--calc-function` | `--background` | 8.59 | 4.5 | ✅ |
+| `--calc-reference` | `--background` | 7.05 | 4.5 | ✅ |
+| `--calc-function` | `--card` | 7.75 | 4.5 | ✅ |
+| `--calc-function` | `--background` | 8.58 | 4.5 | ✅ |
 | `--calc-operator` | `--card` | 11.15 | 4.5 | ✅ |
-| `--calc-operator` | `--background` | 12.35 | 4.5 | ✅ |
-| `--calc-result` | `--card` | 5.87 | 4.5 | ✅ |
-| `--calc-result` | `--background` | 6.50 | 4.5 | ✅ |
-| `--calc-comment` | `--card` | 4.76 | 4.5 | ✅ |
-| `--calc-comment` | `--background` | 5.27 | 4.5 | ✅ |
-| `--calc-warning` | `--card` | 6.44 | 4.5 | ✅ |
+| `--calc-operator` | `--background` | 12.34 | 4.5 | ✅ |
+| `--calc-result` | `--card` | 5.86 | 4.5 | ✅ |
+| `--calc-result` | `--background` | 6.49 | 4.5 | ✅ |
+| `--calc-comment` | `--card` | 6.45 | 4.5 | ✅ |
+| `--calc-comment` | `--background` | 7.14 | 4.5 | ✅ |
+| `--calc-warning` | `--card` | 6.43 | 4.5 | ✅ |
 | `--calc-warning` | `--background` | 7.13 | 4.5 | ✅ |
 
 ### Chart palette
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--chart-1` | `--chart-background` | 6.39 | 3.0 | ✅ |
-| `--chart-2` | `--chart-background` | 6.01 | 3.0 | ✅ |
-| `--chart-3` | `--chart-background` | 6.63 | 3.0 | ✅ |
-| `--chart-4` | `--chart-background` | 5.24 | 3.0 | ✅ |
-| `--chart-5` | `--chart-background` | 8.51 | 3.0 | ✅ |
-| `--chart-foreground` | `--chart-background` | 13.83 | 4.5 | ✅ |
-| `--chart-label` | `--chart-background` | 13.83 | 4.5 | ✅ |
+| `--chart-1` | `--chart-background` | 10.73 | 3.0 | ✅ |
+| `--chart-2` | `--chart-background` | 6.07 | 3.0 | ✅ |
+| `--chart-3` | `--chart-background` | 8.26 | 3.0 | ✅ |
+| `--chart-4` | `--chart-background` | 6.09 | 3.0 | ✅ |
+| `--chart-5` | `--chart-background` | 8.50 | 3.0 | ✅ |
+| `--chart-foreground` | `--chart-background` | 13.82 | 4.5 | ✅ |
+| `--chart-label` | `--chart-background` | 13.82 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.45 | 3.0 | ✅ |
 

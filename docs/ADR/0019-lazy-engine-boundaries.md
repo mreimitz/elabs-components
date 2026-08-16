@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-01
-- **Context:** consumer report (qlabs-workbench) item #7; issue: eager Mermaid in
+- **Context:** consumer report (a workbench app) item #7; issue: eager Mermaid in
   the entry chunk
 - **Renumbered:** originally filed as ADR 0016, which collided with
   [`0016-distribution-via-github-packages.md`](./0016-distribution-via-github-packages.md)

@@ -70,6 +70,8 @@
     "data-slot:check:test": "node --test scripts/check-data-slot.test.mjs",
     "decoration-collapse:check": "node scripts/check-decoration-collapse.mjs",
     "decoration-collapse:check:test": "node --test scripts/check-decoration-collapse.test.mjs",
+    "debrand:check": "node scripts/check-debrand.mjs",
+    "debrand:check:test": "node --test scripts/check-debrand.test.mjs",
     "decoration:check": "node scripts/check-decoration-css.mjs",
     "decoration:check:test": "node --test scripts/check-decoration-css.test.mjs",
     "dep-direction:check": "node scripts/check-dep-direction.mjs",

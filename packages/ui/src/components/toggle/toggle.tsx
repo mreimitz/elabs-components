@@ -7,11 +7,14 @@ export const toggleVariants = cva(
   // Pressed (data-[state=on]) reads as a clearly-distinct, AA-safe state: an
   // accent fill + bolded label (accent/accent-foreground is a guaranteed AA
   // pair) plus a solid `primary` border as a ≥3:1 non-text boundary cue. We
-  // deliberately do NOT use `bg-primary`/`text-primary-foreground`: in
-  // light `--primary-foreground` (near-white) on Qlik-Green `--primary`
-  // is only 3.61:1, which fails AA for text labels (tracked separately as a
-  // theme-token issue). The border carries the strength; the focus ring is
-  // untouched. (#148)
+  // deliberately do NOT use `bg-primary`/`text-primary-foreground`: under the
+  // pre-debrand green palette that pair measured only 3.61:1 in `light`, which
+  // fails AA for text labels (#148). The retuned palette flipped
+  // `--primary-foreground` to near-black on a light primary and clears AA
+  // comfortably, so the CONTRAST argument is spent — the shape stands on design
+  // grounds instead: a pressed toggle is a secondary state and an accent fill is
+  // the right weight for it. The border carries the strength; the focus ring is
+  // untouched.
   //
   // Active styles are keyed on BOTH data-[state=on]: AND aria-pressed:/aria-checked:
   // (belt-and-suspenders, mirroring the `segmented` variant). A TooltipTrigger

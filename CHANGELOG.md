@@ -42,6 +42,35 @@ the logo is a mark this repo owns.
   independent of the `--decoration` dial: the dial is ambient texture across a
   screen, these are a property of one surface. Retune with the `--paper-*` tokens
   rather than new classes.
+- **The upstream company's name is gone from the source, and stays gone.** The
+  last of it lived in places a scope rename could not reach: mock source URLs and
+  tool names in demo data, a sidebar tooltip, comments explaining a palette that
+  no longer exists, doc prose, the changelog and four decision records. All of it
+  now describes this repo. A new check (`pnpm debrand:check`) fails on any tracked
+  file that names the upstream, case-insensitively, and the same check runs on the
+  staged content of every commit — so a regenerated artifact or a doc written from
+  an old memory cannot quietly put it back.
+
+### The bento grid rests flat and lifts on hover; the cursor glow is now opt-in
+
+`BentoGrid` led with a primary-tinted glow that followed the cursor around every
+tile, and every tile carried a resting card shadow — so the grid read as a field
+of already-lifted chips with a decorative effect nobody had asked for.
+
+- **Elevation is the hover gesture now.** The grid rests completely flat (border
+  only, no shadow), so a bento sheet reads as one plane; hover a tile and that
+  tile alone rises to a clearly visible elevation, then settles back. Nothing
+  moves or reflows — the lift is elevation only — so the effect still reads under
+  an operating-system "reduce motion" setting, where it simply snaps instead of
+  easing.
+- **The cursor glow is off unless you ask for it.** Turn it on for a whole grid
+  with `spotlight` on `BentoGrid`, or for one tile with `spotlight` on
+  `BentoGridItem`; a tile's own setting always wins over the grid's, so a single
+  tile can opt back out of a spotlit grid. It remains suppressed entirely under
+  reduced motion.
+- **Breaking for anyone relying on the old default:** tiles that used to glow now
+  need `spotlight` passed explicitly. The bento layout inside the markdown
+  iteration block picks up the new flat-with-hover-lift behaviour.
 
 ### The copy-own registry is now generated, blocks-only, and actually rendered
 
@@ -776,7 +805,7 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
   **It ships no behaviour**: no clipboard call, no pin state, no persistence —
   each `MessageAction` is a bare button the host wires with `onClick` and, for a
   toggle, an `aria-pressed` it owns (D5).
-- **The user chat bubble is neutral grey again in both Qlik themes
+- **The user chat bubble is neutral grey again in both reference themes
   (`@elabs/components-tokens`).** `--chat-user` carried a green tint
   in `light` (`oklch(0.95 0.03 153)` — mint) and `dark`
   (`oklch(0.32 0.04 153)` — olive/swamp on the warm charcoal ground), so a
@@ -1365,8 +1394,8 @@ import("@elabs/components-charts/test"))` swaps in contract-validated doubles fo
   - The **legibility floor is really an x-height floor (~5.5px), not a px
     floor** — see the CAVEAT in `density.css`: measured on the shipped faces,
     blueprint's IBM Plex Mono at the compact `meta` size (5.81px x-height) is
-    optically larger than the qlik sans at today's comfortable 12px (5.83px),
-    while the qlik sans at compact `meta` sets the system minimum at 5.47px. A
+    optically larger than the brand sans at today's comfortable 12px (5.83px),
+    while the brand sans at compact `meta` sets the system minimum at 5.47px. A
     narrower brand face could clear "11px" and still fall under it.
   - This **supersedes** research 07 §E.4 ("type is NOT density-aware") and
     withdraws the reserved `[data-type-scale]` sixth dial; both records are
@@ -1775,7 +1804,7 @@ import("@elabs/components-charts/test"))` swaps in contract-validated doubles fo
   byte-identical, so a success chip was indistinguishable from a primary button
   and a focus ring from an "Info"/"Running" chip — by colour, the only signal
   these tokens carry. **Success chips, success text and focus rings (including
-  `--sidebar-ring`) shift hue in both Qlik themes**; `--primary`/`--info` and the
+  `--sidebar-ring`) shift hue in both reference themes**; `--primary`/`--info` and the
   brand green are untouched (the #180 brand exemption stands), as is `blueprint`,
   which already separated the roles.
   - `light`: `--success` `oklch(0.553 0.143 153)` → `oklch(0.49 0.12 170)`
@@ -2165,7 +2194,7 @@ version:check` in the same job has already forced that copy to agree, so the
 - **`/iterate` and `/pivot` now open the guided builder instead of inserting a
   bare directive — but ONLY when a consumer has wired an
   `IterationEditContext` handler** (`IterationBuilderProvider` /
-  `IterationTemplateProvider`, e.g. qLabs Workbench's write-mode
+  `IterationTemplateProvider`, e.g. a consumer workbench app's write-mode
   `MarkdownWorkspace`, #223). With no handler wired, both commands fall back
   to today's direct-insert behaviour unchanged — this is an opt-in surface,
   not a breaking change for consumers who haven't adopted the provider.
@@ -2479,7 +2508,7 @@ really did ship `@brand/ui`.
 
 ---
 
-Fixes for a downstream consumer report (qlabs-workbench) against the shipped
+Fixes for a downstream consumer report (a workbench app) against the shipped
 tarballs. Items are grouped by the package a consumer feels them in.
 
 ### `@brand/tokens`
@@ -2731,7 +2760,7 @@ types-only — `ai:types-only` gate green).
 
 ## v1.8.5 — 2026-07-05
 
-Resolves the component/token gaps a downstream consumer (`qlabs-workbench`,
+Resolves the component/token gaps a downstream consumer (a workbench app,
 vendoring v1.8.0) surfaced with RCA + a suggested API — built in the library so
 they stop being app-local one-offs — plus a set of `@brand/flow` edge/anchor
 fixes. All packages move to `1.8.5` in lockstep (root, the 11 publishable
@@ -3004,9 +3033,9 @@ manifests, and the MCP server's reported `SERVER_INFO.version`).
 
 ## v1.5.0 — 2026-06-21
 
-A feature minor centred on app-chrome polish and the Qlik theme promotion: a
+A feature minor centred on app-chrome polish and the brand theme promotion: a
 theme-aware **AppIcon** brand mark, the standard **Composer** chat input, and the
-former "v2" Qlik palette promoted to the canonical `light` / `dark`
+former "v2" brand palette promoted to the canonical `light` / `dark`
 themes. Plus a new surface-elevation gate that stops an app shell going flat, an
 automatic pointer-cursor affordance, and consumer-clean plugin hardening. All
 packages move to `1.5.0` in lockstep (root, the 10 publishable packages,
@@ -3017,7 +3046,7 @@ packages move to `1.5.0` in lockstep (root, the 10 publishable packages,
 - `@brand/icons` — **AppIcon**: the single source of truth for "the brand mark in
   the corner". Built on `BrandLogo`, so it renders the approved per-theme colorway
   automatically; with `morph="auto"` it shows the full lockup and crossfades to the
-  Q mark when its enclosing `Sidebar` collapses to the icon rail (gated motion,
+  bare mark when its enclosing `Sidebar` collapses to the icon rail (gated motion,
   reduced-motion safe). It now drives the sidebar headers of the dashboard
   (`@brand/charts`), data-app (`@brand/data`), flow-workspace (`@brand/flow`),
   admin-console, and ai-assistant template stories, with sizing standardized to a
@@ -3037,9 +3066,9 @@ packages move to `1.5.0` in lockstep (root, the 10 publishable packages,
 
 ### Tokens & theming
 
-- **Qlik theme v2 promoted to canonical.** `light` and `dark` are
-  recolored to the former Qlik Cloud–aligned "v2" design (near-white / warm-charcoal
-  neutral surfaces, neutral grey / ivory text, 4px radius, blue focus ring, Qlik
+- **Brand theme v2 promoted to canonical.** `light` and `dark` are
+  recolored to the former brand-aligned "v2" design (near-white / warm-charcoal
+  neutral surfaces, neutral grey / ivory text, 4px radius, blue focus ring, brand
   chart palette). The comparison-sibling `light-v2` / `dark-v2` blocks
   are dropped: the shipped theme list is now **three** (`light`, `dark`,
   `blueprint`), and `themes.css`, the DTCG token JSONs, `theme-types.ts`, the

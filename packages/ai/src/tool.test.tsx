@@ -9,7 +9,7 @@ const renderTool = () =>
       <ToolHeader type="tool-search_web" state="output-available" summary="3 results found" />
       <ToolContent>
         <ToolDetails>
-          <ToolInput input={{ query: "qlik cloud status" }} />
+          <ToolInput input={{ query: "platform status page" }} />
         </ToolDetails>
       </ToolContent>
     </Tool>,
