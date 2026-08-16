@@ -28,7 +28,7 @@ import {
 import { scanText } from "./audit.mjs";
 
 export const PROTOCOL_VERSION = "2024-11-05";
-export const SERVER_INFO = { name: "brand-ui", version: "3.1.0" };
+export const SERVER_INFO = { name: "brand-ui", version: "4.0.0" };
 
 /** The tool catalogue advertised over `tools/list`. */
 export const TOOLS = [
