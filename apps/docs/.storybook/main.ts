@@ -10,14 +10,10 @@ const require = createRequire(import.meta.url);
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 /**
- * Story globs for every package EXCEPT the paused ones.
+ * Story globs for every workspace package that has a `package.json`.
  *
- * A paused package (`brandUi.paused` in its own package.json — see
- * `.claude/rules/paused-surfaces.md`) is kept as source but must not load: its
- * stories would otherwise appear in the sidebar, run in `test-storybook`, and
- * be swept by the a11y job — i.e. it would still be tested while paused. This
- * enumerates the directories instead of using a `packages/*` wildcard so the
- * exclusion is explicit and cannot be defeated by glob-negation semantics.
+ * This enumerates the directories instead of using a `packages/*` wildcard so
+ * the set is explicit and a stray directory cannot silently join the sidebar.
  */
 function packageStoryGlobs(): string[] {
   const packagesDir = join(REPO_ROOT, "packages");
@@ -25,10 +21,8 @@ function packageStoryGlobs(): string[] {
     .filter((entry) => {
       if (!entry.isDirectory()) return false;
       try {
-        const pkg = JSON.parse(
-          readFileSync(join(packagesDir, entry.name, "package.json"), "utf8"),
-        ) as { brandUi?: { paused?: unknown } };
-        return pkg.brandUi?.paused == null;
+        readFileSync(join(packagesDir, entry.name, "package.json"), "utf8");
+        return true;
       } catch {
         return false;
       }

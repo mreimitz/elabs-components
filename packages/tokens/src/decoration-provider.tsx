@@ -10,7 +10,7 @@ export interface DecorationProviderProps extends HTMLAttributes<HTMLDivElement> 
  * Sets the decoration dial for a subtree by writing `data-decoration`. A plain
  * region wrapper — the CSS cascade does the work, so no React context or "use
  * client" is needed. Use it to give a diagram, panel, page, or modal a uniform
- * blueprint level without changing the document theme:
+ * decoration level without changing the document theme:
  *
  *   <DecorationProvider level={6} className="rounded-lg">…</DecorationProvider>
  *

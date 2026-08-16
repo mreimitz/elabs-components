@@ -24,7 +24,7 @@ function fixtureCss(primary = "oklch(0.5 0.1 264)") {
     `:root {\n${body(primary)}\n}`,
     `[data-theme="light"] {\n${body(primary)}\n}`,
     `[data-theme="dark"] {\n${body(primary)}\n}`,
-    `[data-theme="blueprint"] {\n${body(primary)}\n}`,
+    `[data-theme="drafting"] {\n${body(primary)}\n}`,
   ].join("\n\n");
 }
 
@@ -35,7 +35,7 @@ function fixtureCss(primary = "oklch(0.5 0.1 264)") {
  * Canonical declaration: `ROOT_MODE` in
  * `packages/tokens/scripts/lib/themes-io.mjs`.
  */
-const MODES = ["root", "light", "dark", "blueprint"];
+const MODES = ["root", "light", "dark", "drafting"];
 
 /** Build a mode→(token→value) map from a flat per-mode value object. */
 function maps(perMode) {

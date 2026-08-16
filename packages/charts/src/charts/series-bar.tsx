@@ -91,7 +91,7 @@ export interface SeriesBarProps {
   stroke?: string;
   /**
    * Corner radius for bar top corners. `"theme"` (default) follows the active
-   * theme's `--radius` token (squares in blueprint/high-decoration, scales with
+   * theme's `--radius` token (squares in high decoration, scales with
    * rounder themes); a number is an explicit px override. #165
    */
   radius?: number | "theme";
@@ -153,7 +153,7 @@ export function SeriesBar({
     return idx >= 0 ? idx : 0;
   }, [barKeys, dataKey]);
 
-  // Blueprint pattern fill: active only under high decoration AND for palette fills
+  // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecoration();
   const patternRawScope = useId().replace(/:/g, "");
   const usePattern = high && isPaletteFill(fill);

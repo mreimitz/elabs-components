@@ -62,7 +62,7 @@
  *
  *     face                                  11.25px    12px
  *     Source Sans 3   (retired)              5.47px   5.83px
- *     IBM Plex Mono   (blueprint sans/mono)  5.81px   6.19px
+ *     IBM Plex Mono   (a mono stack)         5.81px   6.19px
  *     Inter           (every --font-sans)    6.14px   6.55px
  *
  *   Every shipped theme now sets `--font-sans: Inter`, so the system minimum is

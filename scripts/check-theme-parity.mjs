@@ -13,14 +13,13 @@
  * the same block slices the AA gate does:
  *   - root  = first `:root { … }` block (the neutral base/fallback, not a
  *             selectable theme — see ROOT_MODE below)
- *   - every ACTIVE theme = first `[data-theme="NAME"] { … }` block
- *     (blueprint has a 2nd, non-color block later — FIRST match only; it is
- *     paused, so it is not enumerated here at all).
+ *   - every ACTIVE theme = first `[data-theme="NAME"] { … }` block (FIRST match
+ *     only, so a later machinery-only block for the same selector is ignored).
  *
  * ROOT-ONLY ALLOWLIST — machinery legitimately declared ONLY in :root (timing,
- * decoration dial, blueprint vars, radius scale, fonts) is exempt from parity.
+ * decoration dial, decoration overlay vars, radius scale, fonts) is exempt from parity.
  * A key absent from a non-root block is allowed iff it matches ROOT_ONLY_RE.
- * Everything else is a SEMANTIC token and must appear in all six blocks.
+ * Everything else is a SEMANTIC token and must appear in every theme block.
  *
  * Flags:
  *   --warn   never exit non-zero (dev-hook mode); still prints findings.
@@ -30,8 +29,8 @@
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 // The ACTIVE theme set — a paused theme is kept as source but never gated
-// (single source of truth: PAUSED_THEMES in theme-types.ts).
-import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
+// (single source of truth: BUILT_IN_THEMES in theme-types.ts).
+import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
 // Every stylesheet that carries a theme block (ADR 0029 split the reference
 // themes out of themes.css). Throws rather than return an incomplete set.
 import { readThemesCss } from "./lib/theme-sources.mjs";
@@ -60,7 +59,7 @@ const THEME_NAMES = [ROOT_MODE, ...ACTIVE_THEMES];
  * Anchored alternatives so e.g. `--text-*` does NOT match the `t-` family and
  * `--decoration` matches but unrelated tokens don't:
  *   --decoration, --decoration-factor   (decoration($|-))
- *   --bp-*                              (blueprint overlay vars)
+ *   --deco-*                            (decoration overlay vars)
  *   --paper-*                           (opt-in paper-ground texture; its inks
  *                                        are relative colours off --foreground,
  *                                        so every theme re-tints them for free)
@@ -70,7 +69,7 @@ const THEME_NAMES = [ROOT_MODE, ...ACTIVE_THEMES];
  *   --radius, --radius-base, --radius-* (radius scale)
  *   --font-sans, --font-*               (font families)
  */
-const ROOT_ONLY_RE = /^--(decoration($|-)|bp-|paper-|duration-|t-|motion-|radius($|-)|font-)/;
+const ROOT_ONLY_RE = /^--(decoration($|-)|deco-|paper-|duration-|t-|motion-|radius($|-)|font-)/;
 
 /**
  * Extract the FIRST block body for a theme using the contrast-test regex.

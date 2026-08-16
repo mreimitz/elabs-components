@@ -59,7 +59,7 @@ export function Scatter({
   const resolvedFill = gradientFill ?? fill;
   const resolvedStroke = stroke ?? (gradientFill ? gradientFill : undefined);
 
-  // Blueprint: differentiate scatter series by marker shape under high decoration
+  // Differentiate scatter series by marker shape under high decoration
   const high = useHighDecoration();
   const seriesIndex = useMemo(() => {
     const idx = lines.findIndex((l) => l.dataKey === dataKey);

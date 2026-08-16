@@ -27,7 +27,7 @@ describe("MetricCard", () => {
   });
 
   // Issue #162 — polarity (good/bad) must survive monochrome themes via a
-  // non-color channel: a stable data-polarity hook (the blueprint glyph rides it)
+  // non-color channel: a stable data-polarity hook (the decoration glyph rides it)
   // and the AT aria-label (good/bad is otherwise invisible to AT).
   it("marks a favorable delta with data-polarity=good and a favorable AT label", () => {
     render(

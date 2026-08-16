@@ -510,7 +510,7 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit" 
    * `<div className="rounded-xl bg-surface-muted p-1.5"><PromptInput tone="card">…</PromptInput></div>`.
    * The well fill is NOT universally "white": `--card` reads lighter
    * (raised) than `--surface-muted` on light themes, but darker (recessed) on
-   * dark and blueprint — the same theme-dependent trade-off documented
+   * dark — the same theme-dependent trade-off documented
    * for `bg-surface-muted`-as-a-well in `styling-and-tokens.md`. The well
    * stays a legible, distinct tone against the outer frame in every theme;
    * only the "raised" framing is light-themes-specific.

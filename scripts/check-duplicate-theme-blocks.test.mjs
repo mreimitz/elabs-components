@@ -17,7 +17,7 @@ function cleanCss() {
     color(":root"),
     color('[data-theme="light"]'),
     color('[data-theme="dark"]'),
-    color('[data-theme="blueprint"]'),
+    color('[data-theme="drafting"]'),
   ].join("\n\n");
 }
 
@@ -50,22 +50,22 @@ test("PASSES: exactly one color block per selector", () => {
 test("PASSES: grouped color-scheme selector (comma/`*`) is not counted", () => {
   const grouped =
     `[data-theme="dark"], [data-theme="dark"] *,\n` +
-    `[data-theme="blueprint"], [data-theme="blueprint"] * {\n  color-scheme: dark;\n}`;
+    `[data-theme="drafting"], [data-theme="drafting"] * {\n  color-scheme: dark;\n}`;
   const css = grouped + "\n\n" + cleanCss();
   assert.equal(violations(css).length, 0, "the grouped selector must not count as a second block");
 });
 
-// ── D: machinery-only secondary blocks are allowed (blueprint font / easing) ──
+// ── D: machinery-only secondary blocks are allowed (drafting font / easing) ──
 
-test("PASSES: blueprint's font-mechanism block (no color token) is allowed", () => {
+test("PASSES: drafting's font-mechanism block (no color token) is allowed", () => {
   const css =
     cleanCss() +
     "\n\n" +
-    `[data-theme="blueprint"] {\n  --font-sans: "IBM Plex Mono", monospace;\n  --font-mono: "IBM Plex Mono", monospace;\n  font-family: var(--font-mono);\n}`;
+    `[data-theme="drafting"] {\n  --font-sans: "IBM Plex Mono", monospace;\n  --font-mono: "IBM Plex Mono", monospace;\n  font-family: var(--font-mono);\n}`;
   assert.equal(
     violations(css).length,
     0,
-    "a machinery-only 2nd blueprint block declares no color token",
+    "a machinery-only 2nd drafting block declares no color token",
   );
 });
 

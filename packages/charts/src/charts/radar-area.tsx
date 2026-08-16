@@ -107,7 +107,7 @@ export const RadarArea = memo(function RadarArea({
   } = useRadarStable();
   const { hoveredIndex, setHoveredIndex } = useRadarHover();
 
-  // Blueprint pattern fill: active only under high decoration AND for palette fills
+  // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecorationOf(containerRef);
   const patternRawScope = useId().replace(/:/g, "");
 
@@ -152,7 +152,7 @@ export const RadarArea = memo(function RadarArea({
   const isHovered = hoveredIndex === index;
   const isOtherHovered = hoveredIndex !== null && hoveredIndex !== index;
 
-  // Blueprint series-pattern ramp
+  // Decoration series-pattern ramp
   const usePattern = high && isPaletteFill(color);
   const patternId = seriesPatternId(index, patternRawScope);
   const resolvedFill = usePattern ? `url(#${patternId})` : color;

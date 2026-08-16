@@ -36,7 +36,7 @@ One `AskUserQuestion` round, only for the unknowns among:
 
 1. **Archetype** — dashboard · data app · AI assistant · flow workspace ·
    settings · marketing page (mapping table: `reference/archetypes.md`).
-2. **Theme** — light (default) · dark · blueprint. Offer a preview
+2. **Theme** — light (default) · dark. Offer a preview
    when Storybook is available (ladder below).
 3. **App title** — free text, defaults to the archetype name.
 
@@ -75,7 +75,7 @@ loop — **`reference/visual-loop.md`** (VP-04). Use the highest fidelity rung
 available — **real Storybook render > generated artifact > option preview >
 text** — and **never decide a visual on prose when a render is possible**
 (start `pnpm storybook` in the background to reach the MCP if needed; theme
-slugs `light`/`dark`/`blueprint`).
+slugs `light`/`dark`).
 
 Layout options come from the curated arsenal — **`reference/patterns.md`** —
 filtered by the spec's taste profile (calm/product is the default; brand and

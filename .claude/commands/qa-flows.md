@@ -41,7 +41,7 @@ Walk and verify each flow; record PASS/FAIL + a screenshot + any console errors:
 
 1. **Load + theme switching** — page loads on the Dashboard; `<html data-theme>`
    is `light`. Use the "Theme" selector to switch to `dark` and
-   `blueprint`; confirm `data-theme` updates and the UI re-themes (no unstyled
+   `dark`; confirm `data-theme` updates and the UI re-themes (no unstyled
    flashes, no illegible contrast). Screenshot each theme.
 2. **Sidebar navigation** — click Dashboard / Assistant / Pipeline / Landing;
    confirm each page renders (`[data-testid="page-*"]`).

@@ -37,8 +37,11 @@ import { BUILT_IN_THEMES } from "./theme-types";
 const css = readThemeCss();
 
 /**
- * The surfaces `decoration.css` paints the ground grid on. `--surface-muted` and
- * friends are same-tone variants of these; the three below are the extremes.
+ * The surfaces the ground grid can land on. `decoration.css` paints the ambient
+ * sheet behind the page (over `--canvas`); an opt-in region ground
+ * (`data-decoration-fade`, `bg-paper`) can sit on any content surface, so
+ * `--background` and `--card` stay in the set. `--surface-muted` and friends are
+ * same-tone variants of these; the three below are the extremes.
  */
 const GROUND_SURFACES = ["--canvas", "--background", "--card"] as const;
 
@@ -46,15 +49,22 @@ const GROUND_SURFACES = ["--canvas", "--background", "--card"] as const;
  * Legible-but-quiet bands, as WCAG contrast of the composited hairline against the
  * surface it is drawn on, at FULL decoration (dial = 10). Below the floor the grid
  * stops reading as ruled paper; above the ceiling it starts competing with content.
- * Deliberately wider than the current spread (minor 1.18–1.32, major 1.36–1.71) so
- * an intentional palette tweak has room, but tight enough to catch an erased or
- * shouting grid.
+ *
+ * RETUNED 2026-08-16, downward. The previous ceiling was set when the ground was
+ * painted flat on `body` AND on every content surface, so each panel stacked its
+ * own full-strength grid; the maintainer's read of the result was that the paper
+ * decorations were far too aggressive. The ground is now painted once, faded, on
+ * a masked layer behind the page, and the ink alphas dropped with it (minor
+ * 0.10 → 0.05, major 0.18 → 0.09, hatch 0.10 → 0.05, hatch-strong 0.16 → 0.08).
+ * Bands are still wider than the current spread (minor 1.11–1.12, major
+ * 1.23–1.35) so an intentional palette tweak has room, but tight enough to catch
+ * an erased or a shouting grid.
  */
 const BANDS = {
-  "--bp-grid-ink": { min: 1.12, max: 1.55 },
-  "--bp-grid-ink-major": { min: 1.25, max: 2.0 },
-  "--bp-hatch-ink": { min: 1.12, max: 1.55 },
-  "--bp-hatch-strong-ink": { min: 1.2, max: 1.9 },
+  "--deco-grid-ink": { min: 1.06, max: 1.3 },
+  "--deco-grid-ink-major": { min: 1.14, max: 1.6 },
+  "--deco-hatch-ink": { min: 1.06, max: 1.3 },
+  "--deco-hatch-strong-ink": { min: 1.1, max: 1.45 },
 } as const;
 
 type InkToken = keyof typeof BANDS;
@@ -65,7 +75,7 @@ function extractBlock(re: RegExp): string {
   return body;
 }
 
-/** First `[data-theme="name"] { … }` block (blueprint has a 2nd, non-color one). */
+/** First `[data-theme="name"] { … }` block. */
 function themeBlock(name: string): string {
   return extractBlock(new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([\\s\\S]*?)\\n\\}`));
 }
@@ -163,7 +173,7 @@ describe("decoration ink (#29) — one recipe, every shipped palette", () => {
     it("ramps monotonically with the dial (4 < 8 < 10)", () => {
       for (const surface of GROUND_SURFACES) {
         const [d4, d8, d10] = [4, 8, 10].map((level) =>
-          inkContrast(theme, "--bp-grid-ink-major", surface, level),
+          inkContrast(theme, "--deco-grid-ink-major", surface, level),
         ) as [number, number, number];
         expect(d4).toBeLessThan(d8);
         expect(d8).toBeLessThan(d10);
@@ -173,9 +183,11 @@ describe("decoration ink (#29) — one recipe, every shipped palette", () => {
 
   it("keeps the major grid line stronger than the minor one (the 80px rhythm reads)", () => {
     for (const theme of BUILT_IN_THEMES) {
-      expect(inkMultiplier("--bp-grid-ink-major")).toBeGreaterThan(inkMultiplier("--bp-grid-ink"));
-      expect(inkContrast(theme, "--bp-grid-ink-major", "--card", 10)).toBeGreaterThan(
-        inkContrast(theme, "--bp-grid-ink", "--card", 10),
+      expect(inkMultiplier("--deco-grid-ink-major")).toBeGreaterThan(
+        inkMultiplier("--deco-grid-ink"),
+      );
+      expect(inkContrast(theme, "--deco-grid-ink-major", "--card", 10)).toBeGreaterThan(
+        inkContrast(theme, "--deco-grid-ink", "--card", 10),
       );
     }
   });

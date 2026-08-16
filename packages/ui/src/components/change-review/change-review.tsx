@@ -13,7 +13,7 @@
  *
  * State grid: empty (no hunks → StatePanel), single hunk, mixed, all-approved,
  * all-rejected, very long hunk content. Approval state is signalled with color
- * AND icon/label (colorblind + blueprint/high-contrast safe).
+ * AND icon/label (colorblind + high-decoration/high-contrast safe).
  *
  * Compound structure (named exports, the Card/CardHeader convention — NOT dot
  * notation). Use the `ChangeReview` root for the default layout, or compose the
@@ -455,7 +455,7 @@ export interface ChangeReviewHunkProps
  * - icon: Check (approved) vs plain toggle (pending)
  * - label: "Approved" badge vs "Approve" button text
  * This ensures the state is clear in all three themes including the low-chroma
- * blueprint theme (colorblind-safe).
+ * monochrome surfaces (colorblind-safe).
  */
 export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>(
   function ChangeReviewHunk({ hunk, renderHunk, className, ...props }, ref) {

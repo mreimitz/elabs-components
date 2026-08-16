@@ -17,7 +17,7 @@ export interface LegendItem {
   color: string;
   /**
    * Series index for pattern/dash differentiation under high decoration.
-   * When set, the legend swatch renders the blueprint pattern swatch instead of a solid dot.
+   * When set, the legend swatch renders the decoration pattern swatch instead of a solid dot.
    */
   seriesIndex?: number;
 }
@@ -75,7 +75,7 @@ export interface ChartLegendProps {
   }) => ReactNode;
 }
 
-/** Inline SVG pattern swatch for blueprint legend markers. */
+/** Inline SVG pattern swatch for decorated legend markers. */
 function LegendPatternSwatch({
   seriesIndex,
   color,
@@ -202,7 +202,7 @@ function SimpleItem({
   // Note: item.color must remain inline style as it's dynamic data
   return (
     <div className="flex items-center gap-3">
-      {/* Color marker — blueprint pattern swatch when high decoration + seriesIndex present */}
+      {/* Color marker — decoration pattern swatch when high decoration + seriesIndex present */}
       {showMarker &&
         (high && item.seriesIndex !== undefined ? (
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
@@ -246,7 +246,7 @@ export function ChartLegend({
   // Default showPercentage to true when showProgress is true
   const displayPercentage = showPercentage ?? showProgress;
 
-  // Blueprint: detect high decoration on the legend container
+  // Detect high decoration on the legend container
   const containerRef = useRef<HTMLDivElement>(null);
   const high = useHighDecorationOf(containerRef);
 

@@ -11,9 +11,7 @@ reference for what that command does and why each step exists.
 > **Status.** This pipeline is live. `v2.0.0` was published through it on
 > 2026-08-01, to GitHub Packages plus a GitHub Release with the agent-kit,
 > plugin and rollback tarballs attached. The release set is **12 packages** as
-> of 2026-08-10 — `@elabs/components-viewer` joined it, and
-> `@elabs/components-blueprint` left it when it was paused and
-> stopped being published (see `.claude/rules/paused-surfaces.md`). Consumers
+> of 2026-08-10 — `@elabs/components-viewer` joined it. Consumers
 > stay on the `2.1.1` they already have.
 
 ## The division of labour

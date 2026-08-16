@@ -3,7 +3,7 @@
 /**
  * series-pattern — the deterministic series→pattern ramp for @elabs/components-charts.
  *
- * Issue #164. Once a theme removes hue (blueprint, or any region at high
+ * Issue #164. Once a theme removes hue (any region at high
  * `--decoration`), chart series can no longer be told apart by color. This module
  * is the pattern-domain analogue of the `--chart-1..5` color ramp: it maps a
  * series index to a COMBINABLE, deterministic non-color encoding — an SVG hatch/
@@ -15,7 +15,7 @@
  *   visx pattern components render their own `<defs>` wrapper and would nest as
  *   `<defs><defs>` when placed inside a chart's `<defs>`. A raw `<pattern>` drops
  *   straight into a `<defs>` block (see `chart-defs.ts`).
- * - The pattern INK is the series' own resolved color. Under blueprint that color
+ * - The pattern INK is the series' own resolved color. At high decoration that color
  *   is the near-white `--chart-N` ramp, so the ink reads white-on-navy and the
  *   SHAPE carries the differentiation — exactly the "never by hue" policy.
  * - Patterning is opt-in by VALUE: only a palette fill (`var(--chart-*)` or the
@@ -136,7 +136,7 @@ export function isPaletteFill(fill: string | null | undefined): boolean {
  * @param index series index (→ descriptor via the ramp)
  * @param id    the pattern id (see `seriesPatternId`)
  * @param color the ink color — the series' own resolved color (near-white under
- *              blueprint, the palette hue under a colored decorated region)
+ *              the palette hue under a colored decorated region)
  */
 export function makeSeriesPattern(index: number, id: string, color: string): ReactElement {
   const { kind, size, strokeWidth, radius } = seriesPattern(index);

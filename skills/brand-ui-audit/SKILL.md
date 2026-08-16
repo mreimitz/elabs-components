@@ -100,9 +100,9 @@ to drive a running Storybook (default `http://localhost:6007`) or app:
 1. Enumerate the surfaces to check (Storybook `/index.json`, or the app's routes).
    Pick a representative set: app shell, data table, chat, charts, flow, forms,
    overlays (opened), states (empty/loading/error), plus foundation (button, badge, alert).
-2. For **each theme** (light, dark, blueprint): navigate with a render
+2. For **each theme** (light, dark): navigate with a render
    gate, screenshot, and read the pixels. Switch a Storybook story's theme via
-   `&globals=theme:<Light|Dark|Blueprint>`.
+   `&globals=theme:<light|dark>`.
    **Always wait for render before the screenshot** (poll for content / fixed
    delay) — a screenshot fired during the loader is a capture bug, not a finding.
 3. **Measure contrast on the real pixels**, oklch-aware. Computed colors here come

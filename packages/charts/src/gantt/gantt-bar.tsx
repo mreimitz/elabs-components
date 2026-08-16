@@ -95,7 +95,7 @@ export const ganttBarLabelVariants = cva("pointer-events-none truncate", {
  * must guarantee AA (4.5:1) independent of the fill underneath. An earlier fix
  * paired a fixed `bg-black/45` scrim with `text-primary-foreground`, assuming
  * "the label is always light" — but `--primary-foreground` is DARK in
- * dark/blueprint, so darkening the backdrop under already-dark text
+ * dark, so darkening the backdrop under already-dark text
  * regressed those two themes below AA (see #259 follow-up).
  *
  * The real invariant: an OPAQUE, guaranteed-contrasting token PAIR that is

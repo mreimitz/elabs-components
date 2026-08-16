@@ -36,7 +36,7 @@ export interface SeriesPointMarkerStyle {
   showActiveHighlight?: boolean;
   /**
    * Marker shape. Default: "circle". Used for series differentiation under
-   * high decoration (blueprint). Does not affect the ring — only the filled inner shape.
+   * high decoration. Does not affect the ring — only the filled inner shape.
    */
   shape?: SeriesMarkerShape;
 }
@@ -52,7 +52,7 @@ interface MarkerCirclesProps {
   shape?: SeriesMarkerShape;
 }
 
-/** Render the filled inner shape for a marker (circle by default; shaped under blueprint). */
+/** Render the filled inner shape for a marker (circle by default; shaped at high decoration). */
 function MarkerInnerShape({
   fill,
   radius,

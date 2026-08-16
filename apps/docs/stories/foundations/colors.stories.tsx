@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
  *
  * Every swatch reads its color straight from the live CSS variable
  * (`var(--token)`), so the whole catalog RE-COLORS when you switch the theme in
- * the toolbar — try `light` → `dark` → `blueprint`.
+ * the toolbar — try `light` → `dark`.
  *
  * NOTE: a swatch fills via `var(--token)` (a token reference, never a raw hex),
  * and is LABELLED with its token name + the Tailwind utility that maps to it.

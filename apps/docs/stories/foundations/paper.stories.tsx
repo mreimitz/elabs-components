@@ -29,7 +29,7 @@ import {
  * **These are NOT the decoration dial.** `--decoration` is the *ambient* texture:
  * it rides the dial, fades in across whole screens, and is inert at 0. A paper
  * ground is the opposite contract — you ask for it on one element and you get
- * it, at any decoration level. "The whole app reads as a blueprint" and "this
+ * it, at any decoration level. "The whole app reads as drafting paper" and "this
  * card is a sheet of paper" are different requests.
  *
  * **Budget: one focal ground per region.** A dotted card inside a dotted section

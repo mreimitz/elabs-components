@@ -2,18 +2,18 @@
 
 /**
  * useHighDecoration — is the chart rendered in a high-`--decoration` region
- * (blueprint, or any `data-decoration` 8–10 subtree)? Issue #164 / ADR 0011.
+ * (any `data-decoration` 8–10 subtree)? Issue #164 / ADR 0011.
  *
- * SVG `fill="url(#pattern)"` cannot be driven from CSS the way the blueprint hatch
+ * SVG `fill="url(#pattern)"` cannot be driven from CSS the way the decoration hatch
  * overlay (`decoration.css`) is — a `<pattern>` def must exist in the SVG and the
- * element's `fill` attribute must reference it. So, uniquely among the blueprint
- * decoration features, charts must participate in JS. This hook is that signal.
+ * element's `fill` attribute must reference it. So, uniquely among the decoration
+ * features, charts must participate in JS. This hook is that signal.
  *
  * Detection reads the registered `@property --decoration` custom property off the
- * chart container via `getComputedStyle` (it inherits, and the blueprint theme
- * sets it to 10; a region can set `data-decoration="N"`). This works with NO
- * `ThemeProvider`/`DecorationProvider` — a bare `<BarChart>` under
- * `data-theme="blueprint"` is covered. SSR-safe: the ref is null on the server, so
+ * chart container via `getComputedStyle` (it inherits, so a theme block or an
+ * ancestor `data-decoration="N"` both reach it). This works with NO
+ * `ThemeProvider`/`DecorationProvider` — a bare `<BarChart>` inside a decorated
+ * region is covered. SSR-safe: the ref is null on the server, so
  * it returns `false` (color) and the first client paint matches (no hydration
  * mismatch); `useLayoutEffect` then flips to pattern pre-paint (no color flash).
  */
@@ -50,7 +50,7 @@ export function useHighDecorationOf(ref: RefObject<Element | null>): boolean {
         // child effect (React commit order) — e.g. a fixed-size chart's outer
         // container. Read a PROVISIONAL value from the theme root so the first
         // paint is already correct in the common global-theme case (#289 — the
-        // one-frame deferral flashed solid fills on fixed-size blueprint charts
+        // one-frame deferral flashed solid fills on fixed-size decorated charts
         // and raced synchronous story assertions); `--decoration` inherits, so
         // the root equals the container unless a region override sits between.
         // Then retry on the next frame until the ref attaches, which refines

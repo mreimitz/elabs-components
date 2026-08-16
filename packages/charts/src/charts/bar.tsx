@@ -229,7 +229,7 @@ const BarInner = memo(function BarInner({
   // can't be mistaken for real values (mirrors Line/Area's stroke de-emphasis).
   const isLoadingPhase = isLoadingChromePhase(chartPhase);
 
-  // Blueprint pattern fill: active only under high decoration AND for palette fills
+  // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecoration();
   const patternRawScope = useId().replace(/:/g, "");
 
@@ -251,7 +251,7 @@ const BarInner = memo(function BarInner({
     return idx >= 0 ? idx : 0;
   }, [lines, dataKey]);
 
-  // Blueprint: pattern fill when high decoration + palette fill
+  // Decoration: pattern fill when high decoration + palette fill
   const usePattern = high && isPaletteFill(fill);
   const patternId = seriesPatternId(seriesIndex, patternRawScope);
   // Loading chrome overrides the series fill with a neutral skeleton token —
@@ -285,7 +285,7 @@ const BarInner = memo(function BarInner({
   }, [bandWidth, seriesCount, stacked, groupGap]);
 
   // Calculate corner radius based on lineCap. `round` follows the theme's --radius
-  // token (resolved to px) so bars square in blueprint/high-decoration and scale
+  // token (resolved to px) so bars square in high decoration and scale
   // with rounder themes — capped at half the bar width so thin bars never lozenge. #165
   const themeRadius = useResolvedRadius();
   const cornerRadius = useMemo(() => {

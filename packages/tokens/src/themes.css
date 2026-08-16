@@ -35,31 +35,6 @@
    the packages don't have to inject it via innerHTML (fatal under Trusted Types). */
 @import "./radix-viewport.css";
 
-/* Self-hosted drafting monospace for the blueprint theme (IBM Plex Mono,
-   SIL OFL 1.1). Vendored under ./fonts/ibm-plex-mono/ and copied into dist/
-   by the @elabs/components-tokens build. No runtime CDN / network dependency. */
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/ibm-plex-mono/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("./fonts/ibm-plex-mono/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("./fonts/ibm-plex-mono/ibm-plex-mono-latin-700-normal.woff2") format("woff2");
-}
-
 /* Inter — self-hosted variable sans (SIL OFL 1.1). Vendored under ./fonts/inter/
    and copied into dist/ by the @elabs/components-tokens build. The default --font-sans.
    NOTE: shipped as .woff (the sandbox couldn't run the woff2/brotli step); to
@@ -113,10 +88,9 @@
 
 /* Enable `dark:` utilities driven by the data-theme attribute. Components
    should prefer semantic tokens; this exists for the rare deliberate case.
-   It must match EVERY dark-appearance theme SHIPPED HERE (`dark`, plus the
-   paused `blueprint`) — otherwise `dark:` overrides (e.g. Shiki code colors)
-   render light-on-dark. Keep this list in sync with BUILT_IN_THEME_META in
-   theme-types.ts.
+   It must match EVERY dark-appearance theme SHIPPED HERE (`dark`) — otherwise
+   `dark:` overrides (e.g. Shiki code colors) render light-on-dark. Keep this
+   list in sync with BUILT_IN_THEME_META in theme-types.ts.
 
    KNOWN LIMIT of the open registry (ADR 0029): a CONSUMER-authored dark theme
    is not in this selector list, so `dark:` utilities do not fire under it. A
@@ -125,15 +99,12 @@
    supported fix is for the consumer to redeclare `@custom-variant dark` in
    their own CSS with their theme added; that is why component source must
    reach for semantic tokens, not `dark:`. */
-@custom-variant dark (&:where(
-  [data-theme="dark"], [data-theme="dark"] *,
-  [data-theme="blueprint"], [data-theme="blueprint"] *
-));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* Register the decoration dial as a typed number so it can be calc()'d into
    lengths/alphas (an UNregistered var is string-substituted and can't drive a
    gradient stop or interpolate). inherits:true makes it cascade to any subtree.
-   See .claude/rules/blueprint-decoration.md. */
+   See .claude/rules/decoration.md. */
 @property --decoration {
   syntax: "<number>";
   inherits: true;
@@ -143,18 +114,18 @@
 /* ========================================================================
    BASE / FALLBACK (neutral light) — the ultimate token fallback, NOT a
    selectable theme. The shipped, user-selectable themes are light
-   (the DEFAULT_THEME), dark and blueprint; ThemeProvider always sets
+   (the DEFAULT_THEME) and dark; ThemeProvider always sets
    data-theme=light, so :root is only the safety net for an unthemed
    root. Restrained modern enterprise SaaS neutral palette.
    ======================================================================== */
 :root {
   color-scheme: light;
   /* Typography — Inter is the default sans (self-hosted @font-face above).
-     The blueprint theme overrides --font-sans/--font-mono to IBM Plex Mono. */
+     A theme may override --font-sans/--font-mono to re-skin the whole surface. */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  /* Explicit mono default (#187) — blueprint already overrides this; declaring the
-     default here makes the seam visible and theme-overridable (parity: root-only
-     `font-` machinery, allowlisted). */
+  /* Explicit mono default (#187) — declaring the default here makes the seam
+     visible and theme-overridable (parity: root-only `font-` machinery,
+     allowlisted). */
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   /* Theme-author display seam (#187, research 07 §E.5) — identity-default to the
      sans so it ships dark. A brand theme sets `--font-display: "Source Serif", …`
@@ -372,8 +343,8 @@
   --shadow-strength: 1;
   --shadow-ring-color: oklch(0 0 0 / 0.05);
 
-  /* Reprographic line-work (drawn rules + graph paper). Neutral here; the
-     blueprint theme turns these into dominant cyan hairlines. */
+  /* Reprographic line-work (drawn rules + graph paper). Neutral here; a
+     drafting-flavoured theme can turn these into dominant hairlines. */
   --rule: oklch(0.92 0.008 264);
   --rule-strong: oklch(0.82 0.012 264);
   --grid-line: oklch(0.9 0.01 264);
@@ -415,13 +386,13 @@
   --radius-base: 0.25rem;
 
   /* ----------------------------------------------------------------------
-     DECORATION DIAL (0..10) — the "blueprint-ness" knob, ORTHOGONAL to color.
+     DECORATION DIAL (0..10) — the drafting-texture knob, ORTHOGONAL to color.
      Modeled on the --motion-factor gate: one number fanned out via calc().
      0 = plain themed UI; 10 = full reprographic drafting. HUE-INDEPENDENT —
      grid/hatch ink derive from THIS theme's --border/--foreground (relative
-     color syntax), so decoration works on any palette, not just blue.
-     Set per theme (blueprint=10), per region via [data-decoration="N"], or
-     document-level by ThemeProvider. See .claude/rules/blueprint-decoration.md.
+     color syntax), so decoration works on any palette.
+     Set per theme, per region via [data-decoration="N"], or
+     document-level by ThemeProvider. See .claude/rules/decoration.md.
      ---------------------------------------------------------------------- */
   --decoration: 0;
   --decoration-factor: calc(var(--decoration) / 10); /* 0..1 master gain */
@@ -430,54 +401,65 @@
   --radius: calc(var(--radius-base) * (1 - var(--decoration-factor)));
 
   /* Dial- + theme-derived inks (ALPHA rides the dial, HUE rides the theme). At
-     decoration 0 every alpha is 0, so the overlay is fully inert (zero leak). */
-  --bp-grid-ink: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.1));
-  --bp-grid-ink-major: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.18));
-  --bp-hatch-ink: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.1));
-  --bp-hatch-strong-ink: oklch(
-    from var(--foreground) l c h / calc(var(--decoration-factor) * 0.16)
+     decoration 0 every alpha is 0, so the overlay is fully inert (zero leak).
+
+     THE ALPHAS ARE DELIBERATELY LOW. The ground is ambient texture, not a
+     drawing: at full dial the composited hairline sits barely above the surface
+     it rules, and the ground fade takes it to nothing across part of every
+     region. Raising these is how the sheet stops reading as paper and starts
+     reading as a printed grid that competes with content — the failure the
+     2026-08-16 retune fixed. `decoration-ink-contrast.test.ts` locks the band. */
+  --deco-grid-ink: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.05));
+  --deco-grid-ink-major: oklch(
+    from var(--foreground) l c h / calc(var(--decoration-factor) * 0.09)
   );
-  --bp-rule-weight: calc(0.5px + var(--decoration-factor) * 1px); /* hairline 0.5->1.5px */
-  --bp-hatch-pitch: calc((12 - var(--decoration-factor) * 6) * 1px); /* 12px sparse -> 6px dense */
+  --deco-hatch-ink: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.05));
+  --deco-hatch-strong-ink: oklch(
+    from var(--foreground) l c h / calc(var(--decoration-factor) * 0.08)
+  );
+  --deco-rule-weight: calc(0.5px + var(--decoration-factor) * 1px); /* hairline 0.5->1.5px */
+  --deco-hatch-pitch: calc(
+    (12 - var(--decoration-factor) * 6) * 1px
+  ); /* 12px sparse -> 6px dense */
 
   /* Continuous graph-paper + hatch images: fade in with the dial, re-tint per
      theme. Applied to surfaces / interactive states by decoration.css. */
-  --bp-grid:
-    repeating-linear-gradient(to right, var(--bp-grid-ink-major) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(to bottom, var(--bp-grid-ink-major) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(to right, var(--bp-grid-ink) 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(to bottom, var(--bp-grid-ink) 0 1px, transparent 1px 8px);
-  --bp-hatch: repeating-linear-gradient(
+  --deco-grid:
+    repeating-linear-gradient(to right, var(--deco-grid-ink-major) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(to bottom, var(--deco-grid-ink-major) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(to right, var(--deco-grid-ink) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(to bottom, var(--deco-grid-ink) 0 1px, transparent 1px 8px);
+  --deco-hatch: repeating-linear-gradient(
     45deg,
-    var(--bp-hatch-ink) 0 1px,
-    transparent 1px var(--bp-hatch-pitch)
+    var(--deco-hatch-ink) 0 1px,
+    transparent 1px var(--deco-hatch-pitch)
   );
-  --bp-hatch-strong: repeating-linear-gradient(
+  --deco-hatch-strong: repeating-linear-gradient(
     45deg,
-    var(--bp-hatch-strong-ink) 0 1px,
-    transparent 1px var(--bp-hatch-pitch)
+    var(--deco-hatch-strong-ink) 0 1px,
+    transparent 1px var(--deco-hatch-pitch)
   );
 
   /* PAPER TEXTURE — the opt-in "drafting sheet" ground for a panel, card or
      section (`bg-dot-grid` / `bg-paper`, defined with the other background
      utilities at the end of this file).
 
-     DELIBERATELY NOT ON THE DECORATION DIAL. `--bp-*` above is the AMBIENT
+     DELIBERATELY NOT ON THE DECORATION DIAL. `--deco-*` above is the AMBIENT
      texture: it rides `--decoration-factor`, so it fades in across whole
      screens and is inert at 0. This family is the opposite contract — you ask
      for it on one element and you get it, at any decoration level, in any
-     theme. Two mechanisms, because "the whole app reads as a blueprint" and
+     theme. Two mechanisms, because "the whole app reads as drafting paper" and
      "this card is a sheet of paper" are different requests; keep them apart.
 
      Root-only machinery like the rest of this block: the inks are RELATIVE
      colours off `--foreground`, so every theme (including one a consumer
      authors) re-tints them for free and no theme block has to declare them —
      which is also why they are invisible to the theme-token-parity gate. */
-  --paper-dot-ink: oklch(from var(--foreground) l c h / 0.16);
+  --paper-dot-ink: oklch(from var(--foreground) l c h / 0.07);
   --paper-dot-pitch: 12px;
   --paper-dot-size: 1px;
   /* The sparse construction rules the sketch draws over the dot field. */
-  --paper-rule-ink: oklch(from var(--foreground) l c h / 0.06);
+  --paper-rule-ink: oklch(from var(--foreground) l c h / 0.028);
   --paper-rule-pitch: 96px;
   /* Paper tooth. `feTurbulence` is greyscale (saturate 0) so it stays hue-neutral,
      and it is blended `soft-light` at the utility so it darkens a light sheet and
@@ -487,28 +469,35 @@
      STRENGTH LIVES INSIDE THE URL (the `opacity` on the <rect>), not in a
      companion token: `url()` is an opaque string to CSS, so a var() inside it is
      never substituted and a `--paper-grain-opacity` knob would silently do
-     nothing. To retune the tooth, replace this whole declaration. It is kept low
-     on purpose — at 0.5 the sheet stopped reading as paper and started reading
-     as a grey panel in light and a lighter, noisy one in dark. */
+     nothing. To retune the tooth, replace this whole declaration. It is kept very
+     low on purpose — at 0.5 the sheet stopped reading as paper and started
+     reading as a grey panel in light and a lighter, noisy one in dark, and at
+     0.18 it was still too loud once the sheet was masked (2026-08-16 retune). */
   --paper-grain-scale: 140px;
-  --paper-grain: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="140" height="140" filter="url(%23g)" opacity="0.18"/></svg>');
+  --paper-grain: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="140" height="140" filter="url(%23g)" opacity="0.07"/></svg>');
 
   /* GROUND-FADE masks (#257) — consumed by the opt-in `[data-decoration-fade]`
-     region hook in decoration.css, which paints --bp-grid on a ::before layer and
+     region hook in decoration.css, which paints --deco-grid on a ::before layer and
      masks THAT (never the host, whose children would be masked too). A mask reads
      only the ALPHA channel, so `black`/`transparent` here are geometry, not color:
-     the ink still comes from --bp-grid and still rides --decoration-factor. Theme-
+     the ink still comes from --deco-grid and still rides --decoration-factor. Theme-
      agnostic on purpose — a brand re-tints the grid, not the fade shape.
        top    — fades out toward the top edge     (ink settles at the bottom)
        bottom — fades out toward the bottom edge  (ink settles at the top)
        edges  — vignette: fades out toward all four edges (ink in the middle)
        center — the inverse: clears the middle so a content column reads clean */
-  --bp-fade-top: linear-gradient(to bottom, transparent 0%, black 45%);
-  --bp-fade-bottom: linear-gradient(to top, transparent 0%, black 45%);
-  --bp-fade-edges: radial-gradient(ellipse at center, black 55%, transparent 100%);
-  --bp-fade-center: radial-gradient(ellipse at center, transparent 20%, black 65%);
+  --deco-fade-top: linear-gradient(to bottom, transparent 0%, black 45%);
+  --deco-fade-bottom: linear-gradient(to top, transparent 0%, black 45%);
+  --deco-fade-edges: radial-gradient(ellipse at center, black 55%, transparent 100%);
+  --deco-fade-center: radial-gradient(ellipse at center, transparent 20%, black 65%);
   /* Default for a bare `data-decoration-fade` (no value). */
-  --bp-fade: var(--bp-fade-edges);
+  --deco-fade: var(--deco-fade-edges);
+  /* The same geometry, reused by the opt-in paper utilities. A background
+     decoration is NEVER flat in this system: every ground — ambient or opt-in —
+     paints on a masked layer so it fades into transparency (a vignette by
+     default, a direction when the caller picks one). Override per element:
+     `class="bg-paper [--paper-fade:var(--deco-fade-top)]"`. */
+  --paper-fade: var(--deco-fade-edges);
 
   /* ----------------------------------------------------------------------
      MOTION — micro-interaction timing. Declared ONCE in :root because timing
@@ -572,234 +561,14 @@
    ======================================================================== */
 @supports not (color: oklch(from red l c h)) {
   :root {
-    --bp-grid-ink: transparent;
-    --bp-grid-ink-major: transparent;
-    --bp-hatch-ink: transparent;
-    --bp-hatch-strong-ink: transparent;
-    --bp-grid: none;
-    --bp-hatch: none;
-    --bp-hatch-strong: none;
+    --deco-grid-ink: transparent;
+    --deco-grid-ink-major: transparent;
+    --deco-hatch-ink: transparent;
+    --deco-hatch-strong-ink: transparent;
+    --deco-grid: none;
+    --deco-hatch: none;
+    --deco-hatch-strong: none;
   }
-}
-
-/* ========================================================================
-   BLUEPRINT THEME — deep navy "blueprint" surface with cyan accents.
-   Intended for dark, technical / canvas-heavy contexts.
-   ======================================================================== */
-[data-theme="blueprint"] {
-  color-scheme: dark;
-  /* GROUND — a cyanotype blueprint-blue PAPER. The ink drawn on it is WHITE. */
-  --background: oklch(0.36 0.13 256);
-  --foreground: oklch(0.98 0.008 240);
-
-  /* DRAWN, NOT FILLED — surfaces barely lift off the paper; a panel is defined
-     by its WHITE hairline (--border / --rule), not by a fill or a shadow. */
-  --card: oklch(0.385 0.12 256);
-  --card-foreground: oklch(0.98 0.008 240);
-
-  --popover: oklch(0.34 0.12 256);
-  --popover-foreground: oklch(0.98 0.008 240);
-
-  /* The "pen" is WHITE — the line-work, links, active state, primary action. */
-  --primary: oklch(0.97 0.01 240);
-  --primary-foreground: oklch(0.3 0.12 258);
-  /* #399 — On-surface TEXT variant of the pen. Blueprint separates roles by
-     LIGHTNESS, not hue, so this sits one rung below the pen white (between
-     --warning-text 0.92 and --success-text 0.97) and still measures 6.84-9.23:1
-     on the navy grounds. */
-  --primary-text: oklch(0.94 0.015 240);
-
-  --secondary: oklch(0.43 0.11 254);
-  --secondary-foreground: oklch(0.97 0.01 240);
-
-  --muted: oklch(0.42 0.11 254);
-  --muted-foreground: oklch(0.86 0.03 244);
-
-  --accent: oklch(0.47 0.11 250);
-  --accent-foreground: oklch(0.99 0.008 240);
-
-  /* Status — FULLY MONOCHROME WHITE ("no other colors"). Each status is a white
-     plate with blue ink; meaning is carried by the glyph + label + line-style,
-     never by hue. Separated only by a lightness ramp + (for fills) a hatch. */
-  --destructive: oklch(0.98 0.01 240);
-  --destructive-foreground: oklch(0.3 0.12 258);
-  /* -text variants ride a lightness ramp so success vs destructive carry a
-     polarity cue in monochrome (bright = favorable, dimmer = unfavorable; ΔL
-     0.17, both ≥4.5:1 AA on card/bg/surface-muted). Lightness REINFORCES the
-     primary non-color signals (polarity glyph in decoration.css + the AT
-     aria-label in metric-card.tsx) — never the sole cue. Issues #20, #162. */
-  --destructive-text: oklch(0.8 0.02 244);
-
-  --success: oklch(0.9 0.015 242);
-  --success-foreground: oklch(0.3 0.12 258);
-  --success-text: oklch(0.97 0.01 240);
-  --warning: oklch(0.84 0.025 244);
-  --warning-foreground: oklch(0.3 0.12 258);
-  /* Monochrome near-white text variant — meaning rides the glyph/label, not hue.
-     Sits on the success(0.97)→destructive(0.80) ramp; both ≥4.5:1 AA. */
-  --warning-text: oklch(0.92 0.02 244);
-  --info: oklch(0.78 0.035 246);
-  --info-foreground: oklch(0.3 0.12 258);
-  --info-text: oklch(0.84 0.03 246);
-
-  /* Match highlight — cool pale plate to stay on the navy cyanotype palette; ink
-     clears AA (see themes-contrast.test.ts). */
-  --highlight: oklch(0.82 0.09 230);
-  --highlight-foreground: oklch(0.28 0.1 255);
-
-  /* Borders are the structure — soft WHITE hairlines that draw every box. */
-  --border: oklch(0.82 0.04 244);
-  /* Already ≥3:1 here; literal (not var(--border)) so the contrast gate resolves it. */
-  --border-strong: oklch(0.82 0.04 244);
-  /* Form-control outline aligned to the WHITE hairline (== --border) per the ADR
-     0010 Amendment (2026-06-20). Near-no-op here (was 0.78) — blueprint is
-     drawn-not-filled, so the white hairline IS the structure and stays well above
-     3:1 (5.71:1 vs --card); the strong-rung distinction never applied. */
-  --input: oklch(0.82 0.04 244);
-  --ring: oklch(0.99 0.008 240);
-
-  --surface: oklch(0.355 0.13 256);
-  --surface-muted: oklch(0.42 0.11 254);
-  --surface-elevated: oklch(0.4 0.12 256);
-
-  --sidebar: oklch(0.31 0.13 257);
-  --sidebar-foreground: oklch(0.98 0.008 240);
-  --sidebar-muted-foreground: oklch(0.86 0.03 244);
-  --sidebar-border: oklch(0.8 0.04 244);
-  --sidebar-accent: oklch(0.43 0.11 252);
-  --sidebar-accent-foreground: var(--accent-foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-ring: var(--ring);
-
-  --canvas: oklch(0.335 0.13 256);
-  --canvas-grid: oklch(0.44 0.12 256);
-  --flow-node: oklch(0.37 0.12 256);
-  --flow-node-foreground: oklch(0.98 0.008 240);
-  --flow-edge: oklch(0.86 0.03 244);
-  /* Alignment-guide line — the WHITE pen, matching the drawn line-work. */
-  --flow-helper-line: var(--primary);
-  /* Group fill — near-transparent paper (drawn-not-filled): only a hair
-     lighter than --canvas so the WHITE --flow-group-border does the work. */
-  --flow-group: oklch(0.345 0.13 256);
-  --flow-group-border: var(--border-strong);
-  --flow-minimap-node: var(--muted-foreground);
-  --flow-minimap-mask: oklch(0.34 0.12 256 / 0.65);
-
-  --chat-user: oklch(0.43 0.11 252);
-  --chat-user-foreground: oklch(0.98 0.008 240);
-  --chat-assistant: oklch(0.355 0.13 256);
-  --chat-assistant-foreground: oklch(0.98 0.008 240);
-
-  /* Monochrome series — WHITE on a descending lightness ramp. Differentiate
-     series by stroke/dash + marker (or a hatch fill), never by hue.
-     Issue #144: all five steps clear WCAG 1.4.11 ≥3:1 vs --card (0.385) and
-     --background (0.36).
-
-     Issue #163 — DECISION: Option 2 (maximize separation within AA, NOT widen
-     to ΔL≥0.15). Widening adjacent series to ΔL≥0.15 while keeping all five
-     ≥3:1 is mathematically impossible here: the 3:1 floor vs the navy --card is
-     L≈0.66, so the usable window is only [0.66, 0.99] ≈ 0.32 units, but five
-     series at ΔL≥0.15 need a 0.60-unit span. The previous ramp clustered the
-     dark end (chart-3→4 ΔL 0.02, chart-4→5 ΔL 0.04) — the actual #163 defect.
-     The lightness channel is therefore tuned for MAXIMUM even separation across
-     the whole 3:1-safe window (even ≈0.078-unit steps; min 3.32:1 vs --card at
-     chart-5) — the most any single-channel ramp can do — and series identity is
-     carried by the #164 pattern channel (hatch/dot/dash + marker, gated on high
-     --decoration; see packages/charts/src/charts/series-pattern.tsx +
-     use-high-decoration.ts), which is the policy-mandated, primary
-     differentiator. Lightness here REINFORCES that pattern channel; it is not
-     the sole cue. Adjacent ΔL: 1→2 .08, 2→3 .09, 3→4 .08, 4→5 .07. */
-  --chart-1: oklch(0.99 0.008 240);
-  --chart-2: oklch(0.91 0.02 244);
-  --chart-3: oklch(0.82 0.03 247);
-  --chart-4: oklch(0.74 0.05 250);
-  --chart-5: oklch(0.67 0.075 252);
-
-  --chart-grid: var(--border);
-  --chart-foreground: var(--foreground);
-  --chart-foreground-muted: var(--muted-foreground);
-  --chart-background: var(--card);
-  --chart-label: var(--foreground);
-  --chart-crosshair: var(--muted-foreground);
-  --chart-line-primary: var(--chart-1);
-  --chart-line-secondary: var(--chart-2);
-  --chart-brush-border: var(--border);
-  --chart-indicator-color: var(--chart-1);
-  --chart-indicator-secondary-color: var(--chart-2);
-  --chart-marker-background: var(--card);
-  --chart-marker-foreground: var(--foreground);
-  --chart-marker-border: var(--border);
-  --chart-marker-badge-background: var(--primary);
-  --chart-marker-badge-foreground: var(--primary-foreground);
-  --chart-ring-background: var(--background);
-  --chart-segment-background: var(--muted);
-  --chart-segment-line: var(--border);
-  --chart-tooltip-background: var(--popover);
-  --chart-tooltip-foreground: var(--popover-foreground);
-  --chart-tooltip-muted: var(--muted-foreground);
-  --legend-foreground: var(--foreground);
-  --legend-muted: var(--muted);
-  --legend-muted-foreground: var(--muted-foreground);
-  --legend-track: var(--muted);
-
-  /* ELEVATION — blueprint is DRAWN, not lit: strength 0 zeroes every stacked
-     layer (that is what makes the theme shadowless, with no per-class rule to
-     maintain), and the hairline the `shadow-ring-*` utilities bake in becomes
-     the theme's own white rule. An elevated surface here reads as an outlined
-     cut-out, exactly like the rest of the reprographic language. */
-  --shadow-color: oklch(0 0 0);
-  --shadow-strength: 0;
-  --shadow-ring-color: var(--rule);
-
-  /* Reprographic line-work — soft WHITE rules + a FINE, FAINT graph paper that
-     sits just above the ground (a light nuance, never a prominent ruling). */
-  --rule: oklch(0.82 0.04 244);
-  --rule-strong: oklch(0.95 0.02 240);
-  --grid-line: oklch(0.4 0.12 256);
-  --grid-line-major: oklch(0.46 0.11 256);
-
-  /* Calc-block / calc-inline syntax highlighting roles. Monochrome blueprint
-     palette — hue is NOT the differentiator here; lightness carries the role
-     signal (per the blueprint monochrome rule for status tokens). Comment sits
-     at the lower-lightness end of the ramp; warning uses the faint near-white
-     ramp (not a hue cue), both ≥4.5:1 vs --card (0.385) and --background (0.36). */
-  --calc-foreground: oklch(0.98 0.008 240);
-  --calc-number: oklch(0.88 0.04 244);
-  --calc-unit: oklch(0.88 0.04 244);
-  --calc-currency: oklch(0.88 0.04 244);
-  --calc-variable: oklch(0.92 0.02 240);
-  --calc-reference: oklch(0.88 0.04 244);
-  --calc-function: oklch(0.86 0.03 244);
-  --calc-operator: oklch(0.96 0.01 240);
-  --calc-result: oklch(0.92 0.02 240);
-  --calc-comment: oklch(0.76 0.035 246);
-  --calc-warning: oklch(0.8 0.02 244);
-
-  /* CodeBlock syntax-highlight roles (#315) — same monochrome-blueprint approach
-     as the calc roles above (hue is not the differentiator; lightness carries
-     the role signal), reusing the exact calc-block values. */
-  --code-background: var(--card);
-  --code-foreground: var(--foreground);
-  --code-comment: oklch(0.76 0.035 246);
-  --code-string: oklch(0.88 0.04 244);
-  --code-number: oklch(0.88 0.04 244);
-  --code-constant: oklch(0.88 0.04 244);
-  --code-keyword: oklch(0.92 0.02 240);
-  --code-function: oklch(0.86 0.03 244);
-  --code-type: oklch(0.92 0.02 240);
-  --code-tag: oklch(0.84 0.03 246);
-  --code-property: oklch(0.96 0.01 240);
-
-  /* blueprint = this navy cyanotype PALETTE at FULL decoration. The grid, hatch,
-     drawn controls, squared corners and shadowless surfaces all come from the
-     --decoration dial (tokens above + decoration.css), hue-tinted by this palette.
-     The mono font stays palette-bound (see the [data-theme="blueprint"] block
-     after @theme inline). */
-  --decoration: 10;
-  /* Brand mark (Qlik logo) — fully white (navy cyanotype). Consumed by @elabs/components-icons BrandLogo. */
-  --brand-mark-ring: #ffffff;
-  --brand-mark-tail: #ffffff;
 }
 
 /* ========================================================================
@@ -816,9 +585,6 @@
    `:root` above stays a complete neutral light palette, so a consumer who
    imports only styles.css still renders correctly.
 
-   The PAUSED `blueprint` blocks deliberately stay in this file
-   (.claude/rules/paused-surfaces.md: pause ≠ move ≠ delete). They are inert
-   unless `data-theme="blueprint"` is set.
    ======================================================================== */
 
 /* ========================================================================
@@ -1037,8 +803,8 @@
    is the same everywhere; only the INK varies, through the three per-theme knobs
    (--shadow-color / --shadow-strength / --shadow-ring-color) each theme block
    declares. That is what lets one dial — `--shadow-strength: 0` — make a theme or
-   a region shadowless without touching a single component (blueprint, and
-   decoration ≥ 8 in decoration.css).
+   a region shadowless without touching a single component (decoration ≥ 8 in
+   decoration.css).
 
    The ramp is calibrated for app UI, so it is monotonic and starts TIGHT: 2xs/xs
    are hairline lifts for controls, sm is a resting card, md/lg float menus and
@@ -1115,7 +881,7 @@
      `shadow-ring-*` utilities. An element with one of these must not also carry
      a `border`/`ring-*`: the edge is already in here, and a second one doubles
      up. The hairline is deliberately outside the strength dial, so a shadowless
-     theme (blueprint) or region (decoration ≥ 8) keeps its drawn edge. */
+     theme or region (decoration ≥ 8) keeps its drawn edge. */
   --shadow-ring-2xs: 0 1px 1px 0 var(--elevation-ink-2), 0 0 0 1px var(--shadow-ring-color);
   --shadow-ring-xs:
     0 1px 2px 0 var(--elevation-ink-3), 0 0.5px 1px 0 var(--elevation-ink-2),
@@ -1318,7 +1084,7 @@
      excluded — they keep the default arrow (and Button already sets
      `disabled:pointer-events-none`). Native <a href> already gets pointer from
      the UA sheet; `[role="link"]` (div-as-link) is covered here. Mirrors the
-     interactive set the blueprint hover-hatch targets (blueprint-decoration). */
+     interactive set the decoration hover-hatch targets (decoration.md). */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [role="menuitem"]:not([aria-disabled="true"]),
@@ -1334,76 +1100,80 @@
   select:not(:disabled) {
     cursor: pointer;
   }
-
-  /* Blueprint reads as drafting ink — give mono body copy room to breathe, and
-     lay graph paper under the WHOLE UI so ANY screen reads as a blueprint sheet
-     (not a recolor). background-attachment:fixed lines every panel's grid up
-     into one continuous sheet; overlays (popover/dialog/tooltip) are left clean
-     so they pop above the page. White hairline borders draw the regions. */
-  /* Mono body copy (palette-bound) gets room to breathe. The graph-paper ground
-     + per-surface grid are DECORATION-driven now — see decoration.css. */
-  [data-theme="blueprint"] body {
-    line-height: 1.6;
-    letter-spacing: 0.01em;
-  }
 }
 
-/* ========================================================================
-   BLUEPRINT MECHANISM
-   Placed AFTER the @theme inline bridge so these win over the derived radius
-   vars and Tailwind's font defaults. Colors live in the blueprint block above;
-   here we square the corners, drop shadows, and switch type to mono everywhere.
-   ======================================================================== */
-[data-theme="blueprint"] {
-  /* Mono everything — drafting / title-block lettering. Overriding the Tailwind
-     font vars makes BOTH font-sans and font-mono utilities resolve to the mono
-     stack; font-family sets the inherited document default. */
-  --font-sans:
-    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --font-mono:
-    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-family: var(--font-mono);
-}
+/* The decoration OVERLAY — the faded graph-paper ground, the opt-in region fade,
+   squared large radii and shadowless surfaces — lives in decoration.css, firing
+   wherever --decoration > 0. It paints BACKGROUNDS only: the dial never reaches
+   inside a control (no hatch on buttons, no drawn-not-filled fills). */
 
-/* The decoration OVERLAY — shadowless surfaces, graph-paper ground, hover/active
-   hatch, and drawn-not-filled controls — lives in decoration.css, generalized to
-   fire wherever --decoration > 0 (blueprint = decoration 10). */
+/* ---------------------------------------------------------------------------
+   THE PAPER GROUNDS — `bg-grid-paper` / `bg-dot-grid` / `bg-paper`.
+
+   ONE SHARED CONTRACT, and it is load-bearing: a background decoration is
+   NEVER FLAT. Each utility paints its texture on a decorative `::before` layer
+   and masks that layer with `--paper-fade`, so the ground fades into
+   transparency — a vignette by default, a direction when the caller sets one
+   (`[--paper-fade:var(--deco-fade-top)]`). An edge-to-edge, uniform texture is
+   what makes a sheet read as printed-on rather than as paper, and it is the
+   thing that has to be re-derived every time someone "simplifies" one of these
+   back onto the host's own `background-image`. Don't.
+
+   The mask lives on the LAYER, never on the host — a `mask-image` on the
+   surface itself fades its CHILDREN (text, controls) with the texture. Same
+   rule, same reason, as the ground fade in decoration.css (#257).
+
+   The host keeps `position: relative; isolation: isolate` so the `z-index: -1`
+   layer stays above the host's own fill and below its content.
+   --------------------------------------------------------------------------- */
 
 /* Graph-paper background — a reusable, token-driven utility usable on ANY surface
    (not just the React Flow canvas). Minor ruling at 8px, major at 80px. Colors
-   come from --grid-line / --grid-line-major, so it re-tints per theme; under
-   blueprint it reads as a fine, faint white drafting grid. No raw hex. */
+   come from --grid-line / --grid-line-major, so it re-tints per theme. No raw hex. */
 @utility bg-grid-paper {
   background-color: var(--canvas);
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      var(--grid-line-major) 0,
-      var(--grid-line-major) 1px,
-      transparent 1px,
-      transparent 80px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      var(--grid-line-major) 0,
-      var(--grid-line-major) 1px,
-      transparent 1px,
-      transparent 80px
-    ),
-    repeating-linear-gradient(
-      to right,
-      var(--grid-line) 0,
-      var(--grid-line) 1px,
-      transparent 1px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      var(--grid-line) 0,
-      var(--grid-line) 1px,
-      transparent 1px,
-      transparent 8px
-    );
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    -webkit-mask-image: var(--paper-fade);
+    mask-image: var(--paper-fade);
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        var(--grid-line-major) 0,
+        var(--grid-line-major) 1px,
+        transparent 1px,
+        transparent 80px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--grid-line-major) 0,
+        var(--grid-line-major) 1px,
+        transparent 1px,
+        transparent 80px
+      ),
+      repeating-linear-gradient(
+        to right,
+        var(--grid-line) 0,
+        var(--grid-line) 1px,
+        transparent 1px,
+        transparent 8px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--grid-line) 0,
+        var(--grid-line) 1px,
+        transparent 1px,
+        transparent 8px
+      );
+  }
 }
 
 /* Dot matrix — the drafting-paper dot field. The quietest of the three ground
@@ -1413,9 +1183,22 @@
    re-tints per theme. Transparent ground — it composes over whatever fill the
    element already has (bg-card, bg-surface-muted, …); it does not paint one. */
 @utility bg-dot-grid {
-  background-image: radial-gradient(var(--paper-dot-ink) var(--paper-dot-size), transparent 0);
-  background-size: var(--paper-dot-pitch) var(--paper-dot-pitch);
-  background-position: center center;
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    -webkit-mask-image: var(--paper-fade);
+    mask-image: var(--paper-fade);
+    background-image: radial-gradient(var(--paper-dot-ink) var(--paper-dot-size), transparent 0);
+    background-size: var(--paper-dot-pitch) var(--paper-dot-pitch);
+    background-position: center center;
+  }
 }
 
 /* Paper — the full sheet: dot field + sparse construction rules + paper tooth.
@@ -1430,38 +1213,50 @@
    Reach for `bg-dot-grid` when the surface carries dense text (the grain costs
    legibility at small sizes), and for `bg-grid-paper` when you want the ruled
    engineering grid rather than a sheet. One focal ground per region — see
-   .claude/rules/blueprint-decoration.md ("The budget"). */
+   .claude/rules/decoration.md ("The budget"). */
 @utility bg-paper {
-  background-image:
-    var(--paper-grain),
-    repeating-linear-gradient(
-      to right,
-      var(--paper-rule-ink) 0,
-      var(--paper-rule-ink) 1px,
-      transparent 1px,
-      transparent var(--paper-rule-pitch)
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      var(--paper-rule-ink) 0,
-      var(--paper-rule-ink) 1px,
-      transparent 1px,
-      transparent var(--paper-rule-pitch)
-    ),
-    radial-gradient(var(--paper-dot-ink) var(--paper-dot-size), transparent 0);
-  background-size:
-    var(--paper-grain-scale) var(--paper-grain-scale),
-    auto,
-    auto,
-    var(--paper-dot-pitch) var(--paper-dot-pitch);
-  background-position: center center;
-  background-blend-mode: soft-light, normal, normal, normal;
-  opacity: 1;
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    -webkit-mask-image: var(--paper-fade);
+    mask-image: var(--paper-fade);
+    background-image:
+      var(--paper-grain),
+      repeating-linear-gradient(
+        to right,
+        var(--paper-rule-ink) 0,
+        var(--paper-rule-ink) 1px,
+        transparent 1px,
+        transparent var(--paper-rule-pitch)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--paper-rule-ink) 0,
+        var(--paper-rule-ink) 1px,
+        transparent 1px,
+        transparent var(--paper-rule-pitch)
+      ),
+      radial-gradient(var(--paper-dot-ink) var(--paper-dot-size), transparent 0);
+    background-size:
+      var(--paper-grain-scale) var(--paper-grain-scale),
+      auto,
+      auto,
+      var(--paper-dot-pitch) var(--paper-dot-pitch);
+    background-position: center center;
+    background-blend-mode: soft-light, normal, normal, normal;
+  }
 }
 
-/* Diagonal hatch — the striped "fill" of a blueprint (emphasis bands, selected
-   ranges, button textures, image placeholders). Token-driven white stripes that
-   re-tint per theme; pair with bg-grid-paper or use alone. No raw hex. */
+/* Diagonal hatch — the striped "fill" of a technical drawing (emphasis bands,
+   selected ranges, button textures, image placeholders). Token-driven stripes
+   that re-tint per theme; pair with bg-grid-paper or use alone. No raw hex. */
 @utility bg-hatch {
   background-image: repeating-linear-gradient(
     45deg,

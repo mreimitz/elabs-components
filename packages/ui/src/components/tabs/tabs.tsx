@@ -121,7 +121,7 @@ export const TabsTrigger = forwardRef<
     observer.observe(node, { attributes: true, attributeFilter: ["data-state"] });
 
     // A relayout AFTER the scroll invalidates the target it was computed from:
-    // a webfont swapping in on a cold load (measured — the blueprint theme's
+    // a webfont swapping in on a cold load (measured — a mono-everything theme's
     // wider mono face left the last tab 45px outside the strip), or the strip
     // being resized. Re-measure whenever the tab or the strip changes size;
     // the delta check makes every unaffected pass a no-op.

@@ -72,7 +72,7 @@ export const Surface: Story = {
 // The "double card" well (#254): nest a `card` InputGroup inside an
 // already-tinted outer frame — `PromptInput`'s `tone="card"` prop wires this
 // into the AI composer. The well's fill is theme-driven (raised on light
-// themes, recessed on dark/blueprint), not universally white.
+// themes, recessed on dark), not universally white.
 export const Card: Story = {
   render: () => (
     <div className="max-w-sm rounded-xl bg-surface-muted p-1.5">

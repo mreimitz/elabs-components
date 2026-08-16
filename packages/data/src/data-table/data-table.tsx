@@ -285,7 +285,7 @@ function isActiveTextSelection(): boolean {
  *
  * A pseudo-element rather than a `border-e`/`border-s` on purpose: see the note
  * in `pinnedCellGeometry`. Token-backed (`bg-border-strong`, the strong rung per
- * ADR 0010) and no shadow, so a shadowless theme (blueprint,
+ * ADR 0010) and no shadow, so a shadowless surface (
  * `data-decoration="8|9|10"`) cannot delete it.
  */
 const PINNED_SEAM_CLASS =
@@ -724,7 +724,7 @@ function DataTableInner<TData, TValue>(
       // structural cue between two regions that share one row fill and one
       // zebra stripe — delete it and a sighted user cannot tell them apart — so
       // it takes the strong rung (ADR 0010 decision test). No shadow: ADR 0020's
-      // `--shadow-strength: 0` (blueprint, `data-decoration="8|9|10"`) would
+      // `--shadow-strength: 0` (`data-decoration="8|9|10"`) would
       // erase a shadow-only cue entirely.
       //
       // It is drawn as a 1px `::after` INSIDE the cell, NOT as `border-e` /
@@ -884,7 +884,7 @@ function DataTableInner<TData, TValue>(
                     // Painting the plain branch's corner solid `surface-muted`
                     // read 4-5/255 darker than the header beside it in every
                     // theme (measured: 242 vs 247 light, 43 vs 40
-                    // dark, 26 vs 21 blueprint) — the same "floating pill"
+                    // dark) — the same "floating pill"
                     // artefact #333 was filed about, moved into the header.
                     geometry && "sticky z-30",
                     geometry &&
@@ -959,7 +959,7 @@ function DataTableInner<TData, TValue>(
    * unpinned cell gets from the `<tr>`'s translucent background.
    *
    * The wash must NOT be a background-IMAGE gradient on the cell itself: under
-   * `[data-theme="blueprint"]` / `[data-decoration]`, `decoration.css` gives every
+   * `[data-decoration]`, `decoration.css` gives every
    * `.bg-card` element the ambient grid AS a `background-image`, so a gradient
    * would overwrite it and punch a flat, ungridded rectangle into the sheet
    * exactly where the frozen column is.

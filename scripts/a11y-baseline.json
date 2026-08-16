@@ -1,6 +1,8 @@
 {
   "$comment": "GENERATED — do not hand-edit. `pnpm a11y:baseline:run` measures, `pnpm a11y:baseline:check --update` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. `ratchet.maxStories` only ever goes DOWN (#316).",
-  "ratchet": { "maxStories": 222 },
+  "ratchet": {
+    "maxStories": 222
+  },
   "stories": {
     "ai-approvalcard--pending": ["color-contrast"],
     "ai-changereview--all-approved": ["aria-prohibited-attr"],
@@ -210,8 +212,8 @@
     "overlays-dialog--overflow-guard": ["color-contrast"],
     "overlays-dialog--short-viewport": ["color-contrast"],
     "overlays-dialog--wide-with-sections": ["color-contrast"],
-    "overlays-dialog--wide-with-sections-blueprint": ["color-contrast"],
     "overlays-dialog--wide-with-sections-dark": ["color-contrast"],
+    "overlays-dialog--wide-with-sections-high-decoration": ["color-contrast"],
     "overlays-dialog--workbench-shell": ["color-contrast"],
     "overlays-dropdownmenu--default": ["aria-hidden-focus"],
     "overlays-hovercard--default": ["color-contrast"],

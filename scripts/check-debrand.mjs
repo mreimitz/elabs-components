@@ -21,16 +21,9 @@
  * an allowlist is a place for a real hit to hide — keep the pattern narrow
  * instead.
  *
- * THE ONLY EXEMPTIONS are paused surfaces (@.claude/rules/paused-surfaces.md),
- * which must not be edited even to make a gate pass, and they are DERIVED from
- * `scripts/lib/paused-surfaces.mjs` — never hard-coded here. Un-pausing stays a
- * one-line edit in `theme-types.ts`.
- *
- *   - Every file under a paused package's directory.
- *   - Inside `themes.css`, only the LINE RANGE of a paused theme's own block.
- *     The rest of that file is scanned normally — pausing a theme does not
- *     exempt the engine it lives in.
- *   - This gate's own source and its self-test, which must quote the names.
+ * THE ONLY EXEMPTION is this gate's own source and its self-test, which must
+ * quote the names to do their job. There is no allowlist and no per-surface
+ * carve-out: a hit is fixed by rewriting the string, never by exempting it.
  *
  * Dependency-free; locates the workspace relative to this file (cwd-independent).
  *
@@ -46,8 +39,6 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { PAUSED_PACKAGE_DIRS, PAUSED_THEMES } from "./lib/paused-surfaces.mjs";
-
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url))); // scripts/ → root
 
 /**
@@ -60,50 +51,18 @@ export const BRAND_RE = /qlik|qlabs|coe[-_ ]emea/gi;
 /** This gate and its self-test have to quote the names to do their job. */
 export const SELF_FILES = new Set(["scripts/check-debrand.mjs", "scripts/check-debrand.test.mjs"]);
 
-/** The one file whose paused content is a BLOCK, not a whole directory. */
-export const THEMES_CSS = "packages/tokens/src/themes.css";
-
-/**
- * 1-based `[start, end]` line ranges of each paused theme's `[data-theme="…"]`
- * block. The block ends at the first closing brace in column 0 — the shape
- * `themes.css` is formatted in, and the same assumption its sibling gates make.
- */
-export function pausedThemeRanges(content, pausedThemes = PAUSED_THEMES) {
-  const lines = content.split("\n");
-  const ranges = [];
-  for (const theme of pausedThemes) {
-    const open = `[data-theme="${theme}"] {`;
-    for (let i = 0; i < lines.length; i++) {
-      if (!lines[i].startsWith(open)) continue;
-      let end = lines.length;
-      for (let j = i + 1; j < lines.length; j++) {
-        if (lines[j].startsWith("}")) {
-          end = j + 1;
-          break;
-        }
-      }
-      ranges.push([i + 1, end]);
-    }
-  }
-  return ranges;
-}
-
 /**
  * The detector, exported so the self-test drives the same code CI does.
  * `files` is `[{ file, content }]` with repo-relative POSIX paths.
  */
-export function findBrandHits(files, { pausedDirs = PAUSED_PACKAGE_DIRS } = {}) {
+export function findBrandHits(files) {
   const hits = [];
   for (const { file, content } of files) {
     if (SELF_FILES.has(file)) continue;
-    if (pausedDirs.some((dir) => file === dir || file.startsWith(`${dir}/`))) continue;
-    const exempt = file === THEMES_CSS ? pausedThemeRanges(content) : [];
     content.split("\n").forEach((line, i) => {
-      const lineNo = i + 1;
-      if (exempt.some(([from, to]) => lineNo >= from && lineNo <= to)) return;
       const matches = [...line.matchAll(BRAND_RE)];
       if (matches.length) {
-        hits.push({ file, line: lineNo, match: matches[0][0], text: line.trim().slice(0, 120) });
+        hits.push({ file, line: i + 1, match: matches[0][0], text: line.trim().slice(0, 120) });
       }
     });
   }
@@ -162,8 +121,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     for (const h of hits) console.error(`  ${h.file}:${h.line}: ${h.text}`);
     console.error(
       "\n  Rewrite the string so it says what is true of THIS repo. Do not add an" +
-        "\n  exemption: the only sanctioned ones are paused surfaces, and those are" +
-        "\n  derived from scripts/lib/paused-surfaces.mjs, not listed in this gate.",
+        "\n  exemption — there is no allowlist, by design.",
     );
     process.exit(1);
   }

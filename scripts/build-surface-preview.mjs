@@ -41,8 +41,11 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve, basename } from "node:path";
 // The ACTIVE theme set — a paused theme is kept as source but never gated
-// (single source of truth: PAUSED_THEMES in theme-types.ts).
-import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
+// (single source of truth: BUILT_IN_THEMES in theme-types.ts).
+import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
+// ADR 0029 — the reference themes live in their own stylesheets, so a preview
+// must inline the SET (engine + every active theme), not just the engine file.
+import { themeSourcePaths } from "./lib/theme-sources.mjs";
 import { scanJsxTags, scanImports } from "../packages/cli/lib/engine.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -50,8 +53,24 @@ const REPO_ROOT = dirname(SCRIPT_DIR);
 
 /** Where the generated consumer templates live (`pnpm gen:templates` owns them). */
 export const TEMPLATES_DIR = join(REPO_ROOT, "docs", "playbooks", "templates");
-/** The token stylesheet — the ONLY source of colour in a generated preview. */
+/** The engine stylesheet — the Tailwind bridge, `:root` and the dials. */
 export const THEMES_CSS = join(REPO_ROOT, "packages", "tokens", "src", "themes.css");
+
+/**
+ * The ONLY source of colour in a generated preview: the engine stylesheet plus
+ * every active theme's own block, concatenated in cascade order.
+ *
+ * Inlining `themes.css` alone was enough before ADR 0029 moved the reference
+ * themes into `src/themes/*.css` — after it, a preview carried the neutral
+ * `:root` base and NO `[data-theme]` block at all, so every theme rendered the
+ * same palette while the "the theme changes the document" assertion stayed green
+ * off the root attribute alone. Read the set.
+ */
+export function inlineTokensCss() {
+  return themeSourcePaths()
+    .map((file) => inlineStylesheet(file))
+    .join("\n");
+}
 
 /** Markers that fence the inlined stylesheet, so a checker can scope its rules. */
 export const TOKENS_BEGIN = "/* >>> brand-ui tokens (inlined) >>> */";
@@ -262,7 +281,7 @@ const shortPkg = (pkg) => (pkg ? pkg.replace(/^.*\/components-/, "") : "local");
  *
  * @param {object} input
  * @param {string} input.archetype
- * @param {string} input.theme - a theme SLUG (`light` | `dark` | `blueprint`).
+ * @param {string} input.theme - a theme SLUG (e.g. `light` | `dark`).
  * @param {ReturnType<typeof readComposition>} input.composition
  * @param {string} input.tokensCss - the flattened token stylesheet.
  * @returns {string} a complete HTML document.
@@ -383,7 +402,7 @@ export function buildPreview({ archetype, theme, out }) {
     archetype,
     theme,
     composition,
-    tokensCss: inlineStylesheet(THEMES_CSS),
+    tokensCss: inlineTokensCss(),
   });
   const file = resolve(out);
   mkdirSync(dirname(file), { recursive: true });

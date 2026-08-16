@@ -30,7 +30,7 @@ paths:
 - **State:** prefer `useNodesState`/`useEdgesState` + `addEdge` (re-exported from
   the package). Keep selection state in the app and feed the `InspectorPanel`.
 - **Theming:** never hardcode node/edge colors — use the tokens so canvases match
-  the active theme (including `blueprint`).
+  the active theme.
 - **Attribution: hidden on both canvas surfaces — do NOT "restore" it.**
   `CanvasShell` (`@elabs/components-flow`) and `Canvas`
   (`@elabs/components-ai`) both pass

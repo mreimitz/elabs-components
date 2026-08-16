@@ -152,8 +152,8 @@ export const NeutralTone: Story = {
 };
 
 /**
- * The DESTRUCTIVE tone in dark — the third theme of the sweep, alongside
- * light (`Default`) and blueprint (`Destructive — blueprint`).
+ * The DESTRUCTIVE tone in dark — the second theme of the sweep, alongside
+ * light (`Default`).
  *
  * This story used to sweep the *neutral* tone here on purpose, because
  * `--destructive-foreground` on `--destructive` measured 3.02:1 in dark —

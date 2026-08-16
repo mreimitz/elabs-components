@@ -64,10 +64,6 @@ export const CROSS_CUTTING = [
   "decision-routing",
   "scope-and-non-goals",
   "loading-states",
-  // What is on hold and must not be enumerated, tested, released or updated.
-  // Always-on by necessity: an agent has to know a surface is paused BEFORE it
-  // opens a file inside it or adds it to a sweep.
-  "paused-surfaces",
   // Credit what we borrow, in the same change. Always-on by necessity: no `paths:`
   // glob can express "when you paste someone else's code" — the borrow can land in
   // any package, a doc, a rule or the registry, and the obligation attaches at the
@@ -85,7 +81,7 @@ export const PATH_SCOPED = [
   "data-components",
   "ai-chat-components",
   "ai-sdk-vs-a2ui",
-  "blueprint-decoration",
+  "decoration",
   "viewer-components",
   "registry",
   "architecture-review",

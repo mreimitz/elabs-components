@@ -112,10 +112,10 @@ function SampleComposition() {
         {/* Status pill on a fill. Sits beside the primary action ON PURPOSE:
             --success and --primary are DIFFERENT roles and must not read as the
             same colour (#334). `data-status="complete"` is the same hook
-            `StatusBadge` emits — under blueprint/high-decoration this is what
+            `StatusBadge` emits — under high decoration this is what
             lets decoration.css's [data-status] line-type channel (#391)
             distinguish it from the "Running" chip below once colour alone
-            cannot (both are raw role fills, so blueprint's drawn-not-filled
+            cannot (both are raw role fills, so the drawn-not-filled
             override collapses them to one identical appearance). */}
         <span
           data-status="complete"
@@ -188,7 +188,7 @@ export const Overview: Story = {
       <SampleComposition />
     </div>
   ),
-  // Rendered regression lock for #391 — "a role-fill collapse in blueprint
+  // Rendered regression lock for #391 — "a role-fill collapse at high decoration
   // must ship a non-colour compensator". `getComputedStyle` DOES resolve
   // rendered background/border here (unlike the manual oklch→sRGB contrast
   // math elsewhere, which needs a canvas) because this asserts STRUCTURAL
@@ -207,11 +207,11 @@ export const Overview: Story = {
   // differs" there would be vacuously true and would not exercise the
   // [data-status] channel at all — it would not catch a regression.
   //
-  // MUST fail on today's (pre-#391) blueprint — both chips are raw role
+  // MUST fail at pre-#391 high decoration — both chips are raw role
   // fills (`bg-success`/`bg-info`), so decoration.css's drawn-not-filled
   // override collapses them to one identical declaration set. MUST pass
-  // after the fix (and in `light`/`dark`, where colour alone
-  // already separates them). Run under all three theme globals via
+  // after the fix (and at decoration 0, where colour alone
+  // already separates them). Run under both theme globals via
   // `mcp__storybook__run-story-tests` / `pnpm --filter @elabs/components-docs test-storybook`.
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

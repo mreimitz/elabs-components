@@ -74,7 +74,7 @@ satisfy `app-spec.schema.json`:
 
 - **Required:** `archetype` (one of dashboard · data-app · ai-assistant ·
   flow-workspace · settings · marketing), `theme` (slug: light · dark ·
-  blueprint), `title`.
+  a custom theme), `title`.
 - **Optional:** `intent` (`purpose`/`audience`/`scale`), `density`,
   `surfaces[]` (`{id, navLabel, archetype}`), `entities[]`
   (`{name, fields:[{name, type, rendersAs?, filterable?}]}`, `type` ∈ text ·

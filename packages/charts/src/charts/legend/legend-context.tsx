@@ -22,7 +22,7 @@ export interface LegendItemData {
   color: string;
   /**
    * Series index for pattern/dash differentiation under high decoration.
-   * When set, LegendMarker renders a blueprint pattern swatch instead of a solid dot.
+   * When set, LegendMarker renders a decoration pattern swatch instead of a solid dot.
    */
   seriesIndex?: number;
 }

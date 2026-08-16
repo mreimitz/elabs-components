@@ -21,9 +21,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
  *
  * The ink is a THEME property, not a constant: `--shadow-color`,
  * `--shadow-strength` and `--shadow-ring-color` per theme block. Flip the toolbar
- * to **dark** (deeper stack, white hairline) or **blueprint**
- * (`--shadow-strength: 0` → shadowless, hairline becomes the drawn rule) and
- * watch the same rungs re-ink themselves.
+ * to **dark** (deeper stack, white hairline), or raise the **Decoration** dial
+ * to 10 (`--shadow-strength: 0` → shadowless, hairline becomes the drawn rule),
+ * and watch the same rungs re-ink themselves.
  *
  * Technique borrowed from `flornkm/shadow-plugin` (MIT); see ADR 0020.
  */
@@ -110,9 +110,9 @@ export const ElevationScale: Story = {
       <p className="m-0 max-w-prose text-caption text-muted-foreground">
         Each row is one rung. Left: <code className="text-code">shadow-*</code> — the stack alone,
         on a bordered resting surface. Right: <code className="text-code">shadow-ring-*</code> — the
-        same stack with the 1px hairline as its final layer, and <strong>no border</strong>. Flip
-        the theme in the toolbar: on <strong>blueprint</strong> the stack goes to zero and only the
-        drawn hairline survives, which is why floating surfaces use the ring variant.
+        same stack with the 1px hairline as its final layer, and <strong>no border</strong>. Raise
+        the <strong>Decoration</strong> dial to 10: the stack goes to zero and only the drawn
+        hairline survives, which is why floating surfaces use the ring variant.
       </p>
       <div className="grid grid-cols-[10rem_1fr_1fr] items-center gap-x-6 gap-y-4">
         <span className="text-meta text-muted-foreground">Rung</span>
@@ -199,8 +199,7 @@ export const StrengthDial: Story = {
         so a theme or a region can deepen or remove elevation without touching a component. The
         hairline is deliberately <strong>outside</strong> the dial — at strength 0 the surface stops
         being lit but keeps its drawn edge. This is what{" "}
-        <code className="text-code">data-decoration=&quot;10&quot;</code> and the blueprint theme
-        use.
+        <code className="text-code">data-decoration=&quot;10&quot;</code> uses.
       </p>
       <div className="grid gap-6 sm:grid-cols-3">
         {[

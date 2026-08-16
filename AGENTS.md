@@ -113,8 +113,7 @@ visual review).
 ## Theming rules
 
 - `data-theme` attribute selects the theme; `:root` is a neutral light base/fallback.
-  Two themes: light (default), dark. (A third is PAUSED — see
-  `.claude/rules/paused-surfaces.md`.) Keep
+  Two themes: light (default), dark. Keep
   `THEMES`/`THEME_META` in sync with the CSS. Use the `new-theme` workflow.
 
 ## Common tasks
@@ -159,7 +158,7 @@ the same. Run from the repo root (scope to one package with `pnpm --filter @elab
 pnpm typecheck && pnpm lint && pnpm test && pnpm build   # every change
 pnpm conflict-markers:check     # every change — no tracked file contains a literal, unresolved Git conflict marker (#379)
 pnpm conflict-markers:check:test # self-test for the conflict-marker gate
-pnpm debrand:check              # every change — no tracked file names the upstream organisation this repo was forked from (paused surfaces exempt, derived from scripts/lib/paused-surfaces.mjs)
+pnpm debrand:check              # every change — no tracked file names the upstream organisation this repo was forked from (no exemptions beyond the gate's own source)
 pnpm debrand:check:test         # self-test for the debrand gate + its pre-commit wiring
 pnpm registry:validate          # if registry/ touched
 pnpm registry:validate:test     # self-test for the registry `homepage`-placeholder gate (#264)
@@ -175,8 +174,6 @@ pnpm inventory:check            # component-inventory.md is generated from the m
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)
 pnpm gen:check                  # generated doc regions (package tables, decision summary) are fresh (run `pnpm gen`)
-pnpm paused:check               # nothing re-enumerates a PAUSED surface (blueprint theme + package), and its source is still there
-pnpm paused:check:test          # self-test for the paused-surfaces gate
 pnpm agent-docs-cascade:check:test  # self-test for the pre-commit manifest→inventory/llms/context/gen cascade wiring (`pnpm agent-docs` for the manual command; #396). WARNING: its `finally` runs `git checkout HEAD --` over the generated agent-doc artifacts, so it DISCARDS uncommitted edits to AGENTS.md/CLAUDE.md/package READMEs — commit those first
 pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset are derived from the repo, not hand-kept — a stale copy fails, as does an entry with no name/URL or a licence-REQUIRED notice with no copyright line (run `pnpm gen:attributions`)
 pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
@@ -221,9 +218,9 @@ pnpm tokens:check               # if tokens/ or themes.css touched — themes.cs
 pnpm tokens:check:test          # self-test for the tokens-freshness gate
 pnpm tokens:dup-blocks:check    # if themes.css touched — no duplicate [data-theme] color blocks (a 2nd block silently wins the cascade, #196)
 pnpm tokens:dup-blocks:check:test  # self-test for the duplicate-theme-block gate
-pnpm decoration:check           # if decoration.css or the --bp-* tokens changed — `background-attachment: fixed` stays pointer-gated (touch jank #29), the ground fade masks a ::before layer not the host (#257), relative-color inks keep an @supports fallback
+pnpm decoration:check           # if decoration.css or the --deco-* tokens changed — `background-attachment: fixed` stays pointer-gated (touch jank #29), the ground fade masks a ::before layer not the host (#257), relative-color inks keep an @supports fallback
 pnpm decoration:check:test      # self-test for the decoration-CSS gate
-pnpm decoration-collapse:check       # if decoration.css touched — a role-fill collapse (≥2 of bg-primary/secondary/destructive/success/warning/info reduced to one declaration set) must ship a compensating [data-status] non-colour channel in the same blueprint/high-decoration scope (#391)
+pnpm decoration-collapse:check       # if decoration.css touched — a role-fill collapse (≥2 of bg-primary/secondary/destructive/success/warning/info reduced to one declaration set) must ship a compensating [data-status] non-colour channel in the same high-decoration scope (#391)
 pnpm decoration-collapse:check:test  # self-test for the decoration-collapse gate
 pnpm audit-artifact:check       # if themes.css touched — the committed cross-theme WCAG audit (apps/e2e/reports/theme-aa-audit.md) is fresh and names no deleted theme (#78; run `pnpm audit-artifact`)
 pnpm audit-artifact:check:test  # self-test for the AA audit-artifact gate
@@ -300,4 +297,4 @@ So push `main`, let those jobs go green on that commit, and only then tag (#103)
 
 **Honest completion:** never report "done"/"validated" for a path you did not run —
 lead with what you did NOT verify. Confirm components render across all **three** themes
-(light, dark, blueprint) via Storybook, not from memory. Don't introduce paid deps, secrets, or absolute machine paths.
+(light, dark) via Storybook, not from memory. Don't introduce paid deps, secrets, or absolute machine paths.

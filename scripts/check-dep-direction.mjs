@@ -3,7 +3,7 @@
  * check-dep-direction.mjs — one-way package dependency DAG gate (#184).
  *
  * The architecture's central invariant — `tokens → ui/icons →
- * data/ai/flow/charts/marketing/editor/blueprint` (CLAUDE.md "Architecture
+ * data/ai/flow/charts/marketing/editor` (CLAUDE.md "Architecture
  * rules", .claude/rules/design-system.md "One direction of dependency") — was
  * stated in prose only; `typecheck`/`lint`/`build` all pass for a sideways or
  * upward `@elabs/components-*` import. This gate makes the DAG a deterministic check.
@@ -21,7 +21,7 @@
  *   Layer 1 (foundation UI):               @elabs/components-ui (may depend on: tokens, icons)
  *   Layer 2 (domain, mutually exclusive):  @elabs/components-data, @elabs/components-ai, @elabs/components-flow,
  *                                           @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing,
- *                                           @elabs/components-editor, @elabs/components-blueprint
+ *                                           @elabs/components-editor
  *                                           (may depend on: ui, tokens, icons)
  *
  * `@elabs/components-charts` must NOT depend on `@elabs/components-data` (.claude/rules/chart-components.md
@@ -98,11 +98,6 @@ export const ALLOWED = {
     "@elabs/components-ui",
   ],
   "@elabs/components-editor": [
-    "@elabs/components-tokens",
-    "@elabs/components-icons",
-    "@elabs/components-ui",
-  ],
-  "@elabs/components-blueprint": [
     "@elabs/components-tokens",
     "@elabs/components-icons",
     "@elabs/components-ui",
@@ -195,7 +190,7 @@ function main(argv) {
     }
     console.error(
       "\nThe one-way package dependency DAG (tokens → ui/icons → " +
-        "data/ai/flow/charts/marketing/editor/blueprint) is documented in CLAUDE.md " +
+        "data/ai/flow/charts/marketing/editor) is documented in CLAUDE.md " +
         '"Architecture rules" and .claude/rules/design-system.md. A sideways or ' +
         "upward @elabs/components-* edge in `dependencies`/`peerDependencies` violates it. If a " +
         "shared piece is genuinely needed across domain packages, lift it into " +

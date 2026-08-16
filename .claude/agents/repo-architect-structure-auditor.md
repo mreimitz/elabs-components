@@ -27,7 +27,7 @@ Conform to it exactly.
 
 ## What you audit
 
-- **D1** — one-way deps (`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/blueprint`).
+- **D1** — one-way deps (`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer`).
   Confirm/extend the pack's cross-package-import scan with targeted `Grep` for relative
   imports that escape a package; check each package's content against its `AGENTS.md`
   charter (`PACKAGE_CHARTER_MISMATCH`).

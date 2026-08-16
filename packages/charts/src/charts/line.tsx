@@ -146,13 +146,13 @@ export function Line({
   const seriesIndex = computedSeriesIndex;
   const resolvedIndex = seriesIndexProp ?? computedSeriesIndex;
 
-  // Blueprint differentiation: dash + markers for stroke series under high decoration
+  // Decoration differentiation: dash + markers for stroke series under high decoration
   const high = useHighDecoration();
-  const useBlueprintDash = high && isPaletteFill(stroke);
-  const bpDashArray = useBlueprintDash ? seriesDashArray(resolvedIndex) : undefined;
-  const bpMarkerShape = useBlueprintDash ? seriesMarkerShape(resolvedIndex) : undefined;
-  // Under blueprint, force markers on (with shape differentiation)
-  const effectiveShowMarkers = showMarkers || useBlueprintDash;
+  const useDecorationDash = high && isPaletteFill(stroke);
+  const bpDashArray = useDecorationDash ? seriesDashArray(resolvedIndex) : undefined;
+  const bpMarkerShape = useDecorationDash ? seriesMarkerShape(resolvedIndex) : undefined;
+  // At high decoration, force markers on (with shape differentiation)
+  const effectiveShowMarkers = showMarkers || useDecorationDash;
 
   const pathRef = useRef<SVGPathElement>(null);
   const { pathLength, pathD } = usePathStrokeMetrics(pathRef, [

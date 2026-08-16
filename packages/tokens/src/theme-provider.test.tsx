@@ -21,7 +21,6 @@ import {
   BUILT_IN_THEMES,
   BUILT_IN_THEME_DEFINITIONS,
   defineTheme,
-  PAUSED_THEMES,
   type ThemeName,
 } from "./theme-types";
 
@@ -281,10 +280,11 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
     expect(latest?.themeDefinitions.map((d) => d.value)).toEqual([...BUILT_IN_THEMES]);
   });
 
-  it("never applies a persisted PAUSED theme name", () => {
-    // A paused theme keeps its CSS block but leaves BUILT_IN_THEMES, so a value persisted
-    // before the pause must not be honoured. See .claude/rules/paused-surfaces.md.
-    window.localStorage.setItem(STORAGE_KEY, PAUSED_THEMES[0]);
+  it("never applies a persisted theme name that left the registry", () => {
+    // A theme removed from the registry may still have a value persisted from an
+    // earlier session; it must not be honoured on boot.
+    const retired = "retired-theme";
+    window.localStorage.setItem(STORAGE_KEY, retired);
 
     mount(
       <ThemeProvider>
@@ -292,7 +292,7 @@ describe("ThemeProvider — without allowedThemes (backwards compatible)", () =>
       </ThemeProvider>,
     );
 
-    expect(themeWrites).not.toContain(PAUSED_THEMES[0]);
+    expect(themeWrites).not.toContain(retired);
     expect(latest?.theme).toBe("light");
   });
 });

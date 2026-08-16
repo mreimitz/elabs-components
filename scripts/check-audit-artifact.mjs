@@ -55,7 +55,6 @@ import { dirname, join } from "node:path";
 // themes.css declarations exactly like check-role-distinctness.mjs's
 // `declarations`, so both must blank comments before matching (#401).
 import { blankComments } from "./check-elevation.mjs";
-import { isPausedTheme } from "./lib/paused-surfaces.mjs";
 // Every stylesheet that carries a theme block (ADR 0029 split the reference
 // themes out of themes.css). Throws rather than return an incomplete set — an
 // artifact rendered from a shrunken source would look fresh and audit nothing.
@@ -147,9 +146,8 @@ export function contrast(fg, bg) {
  * appear). Later duplicate blocks (a theme's 2nd, decoration-only block) are
  * skipped — they carry no color tokens.
  *
- * A PAUSED theme's block stays in themes.css (pause ≠ delete) but is NOT
- * audited: the checker validates every heading against `BUILT_IN_THEMES`, so writing one
- * would make the artifact fail its own gate. See `.claude/rules/paused-surfaces.md`.
+ * The checker validates every heading against `BUILT_IN_THEMES`, so a block for
+ * a theme outside that set would make the artifact fail its own gate.
  * @returns {{ name: string, body: string }[]}
  */
 export function findColorBlocks(cssText) {
@@ -158,7 +156,7 @@ export function findColorBlocks(cssText) {
   if (rootM) blocks.push({ name: ROOT_MODE, body: rootM[1] });
   const seen = new Set();
   for (const m of cssText.matchAll(/\[data-theme="([^"]+)"\]\s*\{([\s\S]*?)\n\}/g)) {
-    if (seen.has(m[1]) || isPausedTheme(m[1])) continue;
+    if (seen.has(m[1])) continue;
     seen.add(m[1]);
     blocks.push({ name: m[1], body: m[2] });
   }

@@ -14,7 +14,7 @@
  * themes "more elevated = lighter", but in BOTH the canvas is lighter than the
  * chrome — so a single rule (`L(background) − L(sidebar) ≥ MIN`) holds for every
  * theme. Checks every color block: `:root` + every `[data-theme="…"]`. Non-color
- * blocks (e.g. blueprint's 2nd decoration block) lack the tokens and are skipped.
+ * blocks (e.g. a 2nd, font-only block) lack the tokens and are skipped.
  *
  * Flags:
  *   --warn   never exit non-zero (dev-hook mode); still prints findings.
@@ -24,7 +24,7 @@
  */
 // Every stylesheet that carries a theme block (ADR 0029 split the reference
 // themes out of themes.css). Throws rather than return an incomplete set — this
-// gate audited `:root` + the PAUSED blueprint block and reported a cheerful
+// gate audited `:root` alone and reported a cheerful
 // "2 theme block(s)" for exactly one commit before that guard existed.
 import { readThemesCss } from "./lib/theme-sources.mjs";
 

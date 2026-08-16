@@ -1,7 +1,12 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { BUILT_IN_THEMES, ThemeProvider } from "@elabs/components-tokens";
+import {
+  BUILT_IN_THEMES,
+  BUILT_IN_THEME_DEFINITIONS,
+  defineTheme,
+  ThemeProvider,
+} from "@elabs/components-tokens";
 
 import { ThemeSwitcher, type ThemePreference } from "./theme-switcher";
 
@@ -101,31 +106,38 @@ export const Controlled: Story = {
 
 /**
  * When a `ThemeProvider` restricts `allowedThemes` (#355), the switcher
- * automatically narrows to that subset (#384) — even though this story's own
- * `themes` prop lists all three, only Light and Dark are ever
- * offered; Blueprint is unreachable via any menu item, "System", or the OS
- * `prefers-color-scheme` listener. The nested `ThemeProvider` below overrides
- * this file's meta-level (unrestricted) one, since `useTheme()` always reads
- * the nearest ancestor.
+ * automatically narrows to that subset (#384). The provider below registers a
+ * THIRD theme on top of the two reference ones and then allows only Light and
+ * Dark — so the narrowing is observable: `Drafting` is unreachable via any menu
+ * item, "System", or the OS `prefers-color-scheme` listener. The nested
+ * `ThemeProvider` overrides this file's meta-level (unrestricted) one, since
+ * `useTheme()` always reads the nearest ancestor.
  */
+const draftingTheme = defineTheme({ value: "drafting", label: "Drafting", dark: false });
+const RESTRICTED_REGISTRY = [...BUILT_IN_THEME_DEFINITIONS, draftingTheme];
+
 export const RestrictedProvider: Story = {
   decorators: [
     (Story) => (
-      <ThemeProvider allowedThemes={["light", "dark"]} storageKey={null}>
+      <ThemeProvider
+        themes={RESTRICTED_REGISTRY}
+        allowedThemes={["light", "dark"]}
+        storageKey={null}
+      >
         <div className="flex min-h-32 items-center justify-center">
           <Story />
         </div>
       </ThemeProvider>
     ),
   ],
-  args: { mode: "dropdown", themes: [...BUILT_IN_THEMES] },
+  args: { mode: "dropdown", themes: RESTRICTED_REGISTRY.map((t) => t.value) },
   play: async ({ canvas, canvasElement, userEvent }) => {
     const trigger = canvas.getByRole("button", { name: "Theme" });
     await userEvent.click(trigger);
     const body = within(canvasElement.ownerDocument.body);
     const dark = await body.findByRole("menuitem", { name: /dark/i });
     await waitFor(() => expect(dark).toBeVisible());
-    await expect(body.queryByText(/blueprint/i)).not.toBeInTheDocument();
+    await expect(body.queryByText(/drafting/i)).not.toBeInTheDocument();
     // Close the menu so the story doesn't end mid-interaction (portaled content
     // still open at test-end confuses the a11y pass on the surrounding page).
     await userEvent.keyboard("{Escape}");

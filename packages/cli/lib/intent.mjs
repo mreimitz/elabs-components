@@ -534,11 +534,6 @@ export const INTENT = {
     ],
   },
 
-  // NOTE: the `@elabs/components-blueprint` drawing-furniture entries
-  // (BlueprintSheet, …) were removed when that package was paused — it is no longer
-  // manifest-listed, so an intent entry for it would not resolve.
-  // See .claude/rules/paused-surfaces.md.
-
   // ── @elabs/components-ai — the complex agent/chat surfaces ────
   // Sourced from .claude/rules/ai-chat-components.md, .claude/rules/loading-states.md
   // and docs/DECISIONS.md D2/D5 (render the model's output; never own the model call).

@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 117 entries (data: 2, source: 16, font: 3, dependency: 96).
+// 116 entries (data: 2, source: 16, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -222,18 +222,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     url: "https://github.com/vercel-labs/web-interface-guidelines",
     usedBy: [],
     required: false,
-  },
-  {
-    id: "font:ibm-plex-mono",
-    category: "font",
-    name: "IBM Plex Mono",
-    version: null,
-    license: "OFL-1.1",
-    copyright: 'Copyright © 2017 IBM Corp. with Reserved Font Name "Plex".',
-    url: "https://github.com/IBM/plex",
-    usedBy: ["@elabs/components-tokens"],
-    required: true,
-    note: "Self-hosted webfont shipped in the tokens package.",
   },
   {
     id: "font:inter",

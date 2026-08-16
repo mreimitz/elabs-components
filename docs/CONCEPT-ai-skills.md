@@ -88,7 +88,7 @@ corrected several points; the build was updated to match:
   skill is built into ~13 identical harness copies) — I read the canonical `skill/` +
   `cli/engine/` + docs, and for intent the foundation + a representative skill + Vigil +
   the registers. I have not line-read all 14 remaining intent skills (they follow the
-  intent/blueprint pattern), the 8 intent reference knowledge bases, or impeccable's
+  intent/plan pattern), the 8 intent reference knowledge bases, or impeccable's
   10k-line `live-browser.js` implementation.
 
 ## 2. The two audiences and the current gap

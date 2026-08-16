@@ -139,7 +139,7 @@ export interface ThemeProviderProps {
   motionStorageKey?: string | null;
   /**
    * Initial decoration override when nothing is persisted. `null` (default) =
-   * follow the active theme's own level (blueprint = 10, others = 0), writing no
+   * follow the active theme's own level (both reference themes = 0), writing no
    * attribute for zero-flash SSR.
    */
   defaultDecoration?: DecorationLevel | null;

@@ -47,7 +47,7 @@ These repeat across many components; each is one fix applied broadly.
 
 **H. `div`/`span` used as interactive controls.** `ai-task--default` collapse header (`div` + onclick, no role/keyboard), `ai-inline-citation--default` (`span tabindex=-1` + onclick — unreachable), `marketing-usecasecard--default` (card `div` cursor-pointer + "Learn more" `div`), `ai-chat-shell--default` context items (`div tabindex=-1`). Use real `<button>`/`<a>`.
 
-**I. Blueprint theme token gap.** `--destructive` resolves to near-white (`oklch(0.98 0.01 240)`) in blueprint, so `states-errorstate--default` loses its error badge/icon/tint entirely (only the accent rail survives). A token-value fix in `themes.css` blueprint block. (`Resizable` handle is also near-invisible in dark/blueprint.)
+**I. Blueprint theme token gap.** `--destructive` resolves to near-white (`oklch(0.98 0.01 240)`) at high decoration, so `states-errorstate--default` loses its error badge/icon/tint entirely (only the accent rail survives). A token-value fix in `themes.css` blueprint block. (`Resizable` handle is also near-invisible in dark.)
 
 **J. `alertdialog` dismisses on Escape.** `overlays-alertdialog--default` closes on Esc; per ARIA an alertdialog must require an explicit choice (`onEscapeKeyDown` preventDefault). Focus trap/return are otherwise correct.
 

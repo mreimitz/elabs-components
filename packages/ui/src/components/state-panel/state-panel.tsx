@@ -16,7 +16,7 @@ export const statePanelVariants = cva(
         empty: "border border-dashed bg-surface",
         // error: primary cue is color (destructive bg/border); structural cue
         // (border-s-4 + border-border-strong top strip) survives monochrome /
-        // blueprint so the panel is distinguishable from empty/loading even
+        // a monochrome palette so the panel is distinguishable from empty/loading even
         // without hue. border-border-strong satisfies WCAG 1.4.11 non-text contrast.
         error: "border border-destructive/30 bg-destructive/5 border-s-4 border-s-border-strong",
         loading: "",
@@ -124,9 +124,9 @@ export function StatePanel({
   return (
     <div data-kind={kind} className={cn(statePanelVariants({ kind }), className)} {...roleProps}>
       {/* Error eyebrow: "Error" label shown above the icon so the panel reads
-          as an error structurally even in monochrome themes (blueprint). The
+          as an error structurally even in monochrome themes. The
           eyebrow uses text-destructive which resolves to a drawable
-          foreground in blueprint — combined with the thick left border from
+          foreground at high decoration — combined with the thick left border from
           statePanelVariants it gives two non-color structural cues. */}
       {isError && (
         <span className="text-xs font-semibold uppercase tracking-widest text-destructive">

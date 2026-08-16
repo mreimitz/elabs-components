@@ -381,7 +381,7 @@ export const JSXPreviewError = memo(({ className, children, ...props }: JSXPrevi
     <div
       // The status wash is the separation gesture (#194, research 08 §B.1):
       // `bg-destructive/10` + the destructive ink/icon already mark the region,
-      // and the alpha-wash survives blueprint (token-inequality escape from the
+      // and the alpha-wash survives high decoration (token-inequality escape from the
       // drawn-not-filled rule), so the old `border border-destructive/50` was
       // redundant on every theme — dropped. Text + icon use `text-destructive-text`
       // (the on-surface destructive ink ramp) — raw `text-destructive` fails AA on

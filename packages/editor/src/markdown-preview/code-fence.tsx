@@ -8,7 +8,7 @@
  * sync-after-first-tokenize), but the theme is a shiki **CSS-variables theme**:
  * every token color resolves to a `var(--md-code-*)` reference that this
  * component maps onto the semantic tokens below. One theme, correct in every
- * `data-theme` (light, dark, blueprint, …) — no per-theme shiki theme, no raw
+ * `data-theme` (light, dark, …) — no per-theme shiki theme, no raw
  * colors, and a runtime theme switch recolors already-tokenized code for free.
  *
  * Until shiki finishes loading (or for a fence with no language tag) the raw

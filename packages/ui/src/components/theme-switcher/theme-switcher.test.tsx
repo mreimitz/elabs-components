@@ -35,7 +35,7 @@ describe("ThemeSwitcher", () => {
   });
 
   // The >2-themes AUTO-upgrade can't be exercised while only two themes ship
-  // (a paused one is out of BUILT_IN_THEMES), so this pins the explicit dropdown mode —
+  // (the reference registry ships two), so this pins the explicit dropdown mode —
   // the same render path the auto-upgrade selects.
   it("renders a dropdown trigger in dropdown mode", () => {
     setup(<ThemeSwitcher mode="dropdown" themes={[...BUILT_IN_THEMES]} />);
@@ -101,23 +101,30 @@ describe("ThemeSwitcher — controlled preference (#366)", () => {
 });
 
 describe("ThemeSwitcher — provider-scoped themes (#384)", () => {
+  // The restriction must be tested against a registry BIGGER than the subset,
+  // or the assertion is vacuous: the two reference themes ARE the allowed list,
+  // so a registry of exactly those two would prove nothing about narrowing.
+  const drafting = defineTheme({ value: "drafting", label: "Drafting", dark: false });
+  const REGISTRY = [...BUILT_IN_THEME_DEFINITIONS, drafting];
+  const ALL_NAMES = REGISTRY.map((t) => t.value);
+
   it("never renders a theme the provider disallows, even when the themes prop lists it", async () => {
     render(
-      <ThemeProvider allowedThemes={["light", "dark"]}>
-        <ThemeSwitcher mode="dropdown" themes={[...BUILT_IN_THEMES]} />
+      <ThemeProvider themes={REGISTRY} allowedThemes={["light", "dark"]}>
+        <ThemeSwitcher mode="dropdown" themes={ALL_NAMES} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));
     const menu = await screen.findByRole("menu");
-    expect(within(menu).queryByText(/blueprint/i)).not.toBeInTheDocument();
+    expect(within(menu).queryByText(/drafting/i)).not.toBeInTheDocument();
     expect(within(menu).getByText("Light")).toBeInTheDocument();
     expect(within(menu).getByText("Dark")).toBeInTheDocument();
   });
 
   it("no rendered control ever applies the disallowed theme (menu items + System)", async () => {
     render(
-      <ThemeProvider allowedThemes={["light", "dark"]}>
-        <ThemeSwitcher mode="dropdown" themes={[...BUILT_IN_THEMES]} />
+      <ThemeProvider themes={REGISTRY} allowedThemes={["light", "dark"]}>
+        <ThemeSwitcher mode="dropdown" themes={ALL_NAMES} />
       </ThemeProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Theme" }));

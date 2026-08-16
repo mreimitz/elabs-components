@@ -32,8 +32,6 @@ const PKG_ORDER = [
   "@elabs/components-marketing",
   "@elabs/components-editor",
   "@elabs/components-viewer",
-  // NOTE: `…-blueprint` is intentionally absent — it is PAUSED (kept as source,
-  // excluded from every generated surface). See .claude/rules/paused-surfaces.md.
 ];
 
 /** One-line purpose per package — the routing map ("which package for what"). */

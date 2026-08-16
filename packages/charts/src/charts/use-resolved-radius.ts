@@ -6,7 +6,7 @@
  *
  * Chart color theming works because SVG paint accepts `var(--…)` strings, but SVG
  * `rx`/`ry` need a NUMBER — so bar corners were stuck at a hardcoded literal and
- * never squared in blueprint / high-decoration like the rest of the themed UI.
+ * never squared at high decoration / high-decoration like the rest of the themed UI.
  *
  * `--radius` is `calc(var(--radius-base) * (1 - var(--decoration-factor)))` and is
  * NOT a registered `@property`, so `getComputedStyle(el).getPropertyValue("--radius")`

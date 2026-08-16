@@ -4,7 +4,7 @@
  *
  * @elabs/components-tokens ships its faces rather than pulling a CDN at runtime, so a
  * consumer gets correct typography with no network dependency and no CSP hole.
- * Inter and IBM Plex Mono were vendored by hand; this script does the same job
+ * Inter was vendored by hand; this script does the same job
  * reproducibly for the remaining faces and can re-run to add weights.
  *
  * WHY: `light` / `dark` (the DEFAULT themes) ask for Source Code Pro as their

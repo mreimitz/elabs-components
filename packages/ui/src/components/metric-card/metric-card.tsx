@@ -141,14 +141,14 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
     deltaDirection === "up" ? positiveIsGood : deltaDirection === "down" ? !positiveIsGood : null;
   const deltaColor =
     good === null ? "text-muted-foreground" : good ? "text-success-text" : "text-destructive-text";
-  // Stable, theme-agnostic polarity hook. The blueprint theme reveals a non-color
+  // Stable, theme-agnostic polarity hook. High decoration reveals a non-color
   // polarity glyph from this attribute (decoration.css); chromatic themes ignore it
   // and use color. Issue #162.
   const polarity = good === null ? "neutral" : good ? "good" : "bad";
   const arrow = deltaDirection === "up" ? "↑" : deltaDirection === "down" ? "↓" : "";
   // Direction is conveyed visually by the arrow glyph + color; give AT a single
   // unambiguous name ("up 12.4%, favorable") since neither the glyph nor color is a
-  // reliable signal (blueprint/high-contrast collapse the hue) — and good/bad
+  // reliable signal (high decoration / high-contrast collapse the hue) — and good/bad
   // polarity is otherwise invisible to AT. See accessibility.md, #162.
   const directionLabel = deltaDirection === "up" ? "up" : deltaDirection === "down" ? "down" : "";
   const polarityLabel = good === null ? "" : good ? ", favorable" : ", unfavorable";

@@ -7,13 +7,13 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (1):** dark
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 161
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 162
 
 ## Packages
 
 | Package | Path | Components | Hooks | Purpose |
 | --- | --- | --: | --: | --- |
-| `@elabs/components-tokens` | packages/tokens | 20 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
+| `@elabs/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs/components-ui` | packages/ui | 354 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
@@ -46,7 +46,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DENSITY_META | component |  | `@elabs/components-tokens` |  |
 | MOTION_PREFERENCE_META | component |  | `@elabs/components-tokens` |  |
 | MOTION_PREFERENCES | component |  | `@elabs/components-tokens` |  |
-| PAUSED_THEMES | component |  | `@elabs/components-tokens` |  |
 | TASTE_REGISTER_META | component |  | `@elabs/components-tokens` |  |
 | TASTE_REGISTERS | component |  | `@elabs/components-tokens` |  |
 | THEME_TOKEN_NAMES | component |  | `@elabs/components-tokens` |  |

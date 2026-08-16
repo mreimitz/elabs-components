@@ -3,13 +3,12 @@
  *
  * ADR 0029 split the two REFERENCE themes out of `themes.css` into their own
  * opt-in stylesheets (`src/themes/light.css`, `src/themes/dark.css`). The engine
- * stylesheet keeps `:root`, the Tailwind bridge, the dials and the PAUSED
- * `blueprint` blocks.
+ * stylesheet keeps `:root`, the Tailwind bridge and the dials.
  *
  * Every test in this package that parses `[data-theme="…"]` blocks must read the
  * SET, not one file. The hazard is not a crash — it is that a block regex still
  * matches, just less: `check-surface-elevation.mjs` went from auditing light +
- * dark to auditing `:root` + blueprint and reported success. So this reader
+ * dark to auditing `:root` alone and reported success. So this reader
  * THROWS when the concatenation is missing an active theme's block, rather than
  * handing back a set that would make an assertion vacuous.
  *

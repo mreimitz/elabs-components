@@ -7,7 +7,7 @@ export type FlowMiniMapProps<NodeType extends Node = Node> = MiniMapProps<NodeTy
  * Branded preset over React Flow's `<MiniMap>` — sources node/mask colors from
  * the `--flow-minimap-*` tokens so the overview stays theme-aware (the raw
  * `MiniMap` re-export defaults to library colors and renders theme-blind,
- * especially under `blueprint`). Every prop can still be overridden; render
+ * especially under a low-chroma theme). Every prop can still be overridden; render
  * inside a `<CanvasShell>` (it needs the React Flow context via `useStore`).
  */
 export function FlowMiniMap<NodeType extends Node = Node>({

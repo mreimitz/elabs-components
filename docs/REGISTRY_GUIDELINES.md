@@ -28,7 +28,7 @@ array; each item has `$schema`, `name`, `type`, `title`, `description`,
   `flow-canvas`, `marketing-hero`) — a composition that imports installed
   `@elabs/components-*` packages (declared in `dependencies`). The consumer copies and
   customizes it. Use `registry:page` + `target` for routed pages.
-- **`registry:theme`** (e.g. `default-theme`, `blueprint-theme`) — token sets via
+- **`registry:theme`** (e.g. `default-theme`) — token sets via
   `cssVars.light` / `cssVars.dark`.
 
 ## How to add an item

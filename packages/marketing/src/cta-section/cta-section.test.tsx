@@ -35,8 +35,8 @@ describe("CTASection", () => {
     // element that carries the paired `bg-*` fill class (the section root, which
     // sets `text-primary-foreground`); a descendant must INHERIT color, never
     // re-declare its own alpha-faded `text-*-foreground/N`, or it silently
-    // bypasses decoration.css's blueprint ink override (packages/tokens/src/
-    // decoration.css) and renders ~1.20:1 contrast under blueprint.
+    // bypasses decoration.css's high-decoration ink override (packages/tokens/src/
+    // decoration.css) and renders ~1.20:1 contrast at high decoration.
     render(<CTASection title="Ready?" description="No credit card required" animate={false} />);
     const description = screen.getByText("No credit card required");
     expect(description.className).not.toMatch(/text-\S+-foreground\/\d/);

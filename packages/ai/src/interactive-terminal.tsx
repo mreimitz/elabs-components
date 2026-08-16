@@ -179,7 +179,7 @@ function readableInk(hex: string, bg: string, ratio = 4.5): string {
  * background. Several of these tokens are mark/fill rungs (≥3:1 only), so
  * without the floor EVERY palette this repo ships had sub-AA ANSI slots —
  * measured from `themes.css`: `:root` 7 (worst 2.39:1), `light` 4 (worst
- * 2.91:1), `dark` 1 (3.16:1), `blueprint` 1 (4.32:1). Re-derived on every
+ * 2.91:1), `dark` 1 (3.16:1). Re-derived on every
  * run by `interactive-terminal.test.tsx`, which parses those palettes out of
  * `themes.css` rather than hard-coding them. Keep new slots inside `ink(...)`;
  * a raw token assigned straight to an ANSI slot is the bug.
@@ -237,7 +237,7 @@ export function buildInteractiveTerminalTheme(rootEl?: Element | null): ITheme {
   };
 }
 
-/** Reads the theme's mono font stack (the `--font-mono` seam — blueprint
+/** Reads the theme's mono font stack (the `--font-mono` seam — a theme
  * overrides it to IBM Plex Mono) so the terminal's glyphs track it too. */
 function readTerminalFontFamily(rootEl?: Element | null): string {
   const el = rootEl ?? (typeof document !== "undefined" ? document.documentElement : null);

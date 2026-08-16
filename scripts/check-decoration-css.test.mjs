@@ -25,7 +25,7 @@ const GATED = `@layer base {
 
 // ── 1. touch gating (#29 item 3) ─────────────────────────────────────────────
 test("FAILS: background-attachment: fixed outside a pointer media query", () => {
-  const css = `@layer base { body { background-image: var(--bp-grid); background-attachment: fixed; } }`;
+  const css = `@layer base { body { background-image: var(--deco-grid); background-attachment: fixed; } }`;
   const v = findUngatedFixedAttachment(css);
   assert.equal(v.length, 1, "an unconditional fixed attachment must fail");
 });
@@ -56,25 +56,25 @@ test("reports the real 1-based line number", () => {
 
 // ── 2. the ground fade paints a layer, never the host (#257) ──────────────────
 const THEMES_FIXTURE = `:root {
-  --bp-fade-top: linear-gradient(to bottom, transparent 0%, black 45%);
-  --bp-fade: var(--bp-fade-top);
+  --deco-fade-top: linear-gradient(to bottom, transparent 0%, black 45%);
+  --deco-fade: var(--deco-fade-top);
 }`;
 
 const FADE_OK = `@layer base {
-  :is([data-theme="blueprint"], [data-decoration])
+  :is([data-theme="drafting"], [data-decoration])
     :is(.bg-background, .bg-card):not(
       [role="dialog"],
       [data-decoration-fade],
       [data-decoration-fade] *
     ) {
-    background-image: var(--bp-grid);
+    background-image: var(--deco-grid);
   }
   [data-decoration-fade] { position: relative; isolation: isolate; }
   [data-decoration-fade]::before {
     content: "";
     pointer-events: none;
-    background-image: var(--bp-grid);
-    mask-image: var(--bp-fade);
+    background-image: var(--deco-grid);
+    mask-image: var(--deco-fade);
   }
 }`;
 
@@ -85,7 +85,7 @@ test("PASSES: the canonical fade shape", () => {
 test("FAILS: mask-image on the HOST (would mask its children)", () => {
   const css = FADE_OK.replace(
     `[data-decoration-fade] { position: relative; isolation: isolate; }`,
-    `[data-decoration-fade] { mask-image: var(--bp-fade); }`,
+    `[data-decoration-fade] { mask-image: var(--deco-fade); }`,
   );
   assert.ok(
     findFadeViolations(css, THEMES_FIXTURE).some((v) => v.rule === "mask-on-host"),
@@ -116,8 +116,8 @@ test("a prettier line-wrap inside :not() still counts as excluded", () => {
   assert.deepEqual(findFadeViolations(css, THEMES_FIXTURE), []);
 });
 
-test("FAILS: a --bp-fade-* variant the CSS consumes is undeclared", () => {
-  const css = FADE_OK.replace("var(--bp-fade)", "var(--bp-fade-nowhere)");
+test("FAILS: a --deco-fade-* variant the CSS consumes is undeclared", () => {
+  const css = FADE_OK.replace("var(--deco-fade)", "var(--deco-fade-nowhere)");
   assert.ok(findFadeViolations(css, THEMES_FIXTURE).some((v) => v.rule === "undefined-fade-var"));
 });
 
@@ -127,13 +127,13 @@ test("PASSES: a stylesheet without the fade hook is unconstrained", () => {
 
 // ── 3. below-floor fallback for relative color syntax (#29 item 2) ────────────
 test("FAILS: oklch(from …) inks with no @supports fallback", () => {
-  const css = `:root { --bp-grid-ink: oklch(from var(--foreground) l c h / 0.1); }`;
+  const css = `:root { --deco-grid-ink: oklch(from var(--foreground) l c h / 0.1); }`;
   assert.equal(hasRelativeColorFallback(css), false);
 });
 
 test("PASSES: the @supports not (color: oklch(from …)) fallback is present", () => {
-  const css = `:root { --bp-grid-ink: oklch(from var(--foreground) l c h / 0.1); }
-@supports not (color: oklch(from red l c h)) { :root { --bp-grid-ink: transparent; } }`;
+  const css = `:root { --deco-grid-ink: oklch(from var(--foreground) l c h / 0.1); }
+@supports not (color: oklch(from red l c h)) { :root { --deco-grid-ink: transparent; } }`;
   assert.equal(hasRelativeColorFallback(css), true);
 });
 

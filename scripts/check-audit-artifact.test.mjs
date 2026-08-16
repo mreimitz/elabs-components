@@ -91,7 +91,7 @@ function css({ root = {}, mint = {} } = {}) {
     `[data-theme="mint"] {\n${blockBody(mint)}\n}`,
     "",
     // A 2nd, decoration-only block for the same theme — must be SKIPPED (it has
-    // no color tokens; the real blueprint theme ships exactly this shape).
+    // no color tokens; the real drafting theme ships exactly this shape).
     `[data-theme="mint"] {\n  --decoration: 10;\n}`,
     "",
   ].join("\n");
@@ -129,8 +129,8 @@ test("findColorBlocks takes :root + the FIRST block per theme (skips the 2nd)", 
 });
 
 test("parseShippedThemes reads BUILT_IN_THEMES out of theme-types.ts", () => {
-  const src = `export const BUILT_IN_THEMES = ["light", "dark", "blueprint"] as const;`;
-  assert.deepEqual(parseShippedThemes(src), ["light", "dark", "blueprint"]);
+  const src = `export const BUILT_IN_THEMES = ["light", "dark", "drafting"] as const;`;
+  assert.deepEqual(parseShippedThemes(src), ["light", "dark", "drafting"]);
 });
 
 test("buildAuditRows resolves var() aliases (--chart-background: var(--card))", () => {

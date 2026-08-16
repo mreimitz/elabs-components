@@ -47,7 +47,7 @@ judgment**.
 over the running Storybook (default `http://localhost:6007`) or app. For a
 representative set of surfaces (app shell, data table, chat, charts, flow, forms,
 overlays opened, states, plus foundation: button/badge/alert), in **each theme**
-(light, dark, blueprint): wait for render, screenshot
+(light, dark): wait for render, screenshot
 into `apps/e2e/reports/screenshots/`, read the pixels. Apply Nielsen's 10, the
 9-state inventory, hierarchy/spacing/typography/consistency, and the reduction
 filter. Measure rendered contrast (oklch-aware; screenshot-diff when text sits on

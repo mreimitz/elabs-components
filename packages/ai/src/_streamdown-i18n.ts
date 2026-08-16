@@ -47,9 +47,9 @@ import { lazyMermaid } from "./_lazy-mermaid";
  *
  * Streamdown's dual-theme mechanism (`createCodePlugin({ themes: [light, dark] })`)
  * expects exactly TWO themes and picks between them purely via the `.dark` CSS
- * selector — but brand-ui ships THREE themes (light/dark/blueprint),
- * and blueprint matches `.dark` too (see `_code-block-theme.ts`). Passing a real
- * light/dark PAIR would still force blueprint into the dark slot. Instead
+ * selector — but brand-ui ships THREE themes (light/dark),
+ * and any dark-declaring theme matches `.dark` too (see `_code-block-theme.ts`). Passing a real
+ * light/dark PAIR would still force such a theme into the dark slot. Instead
  * this pins BOTH slots to `buildCodeBlockTheme()` — the SAME brand-token-derived
  * theme the active `data-theme` resolves to — so whichever slot the `.dark`
  * selector picks, it's the CORRECT theme for whatever is actually active.

@@ -70,7 +70,7 @@ const addKeysToTokens = (lines: ThemedToken[][]): KeyedLine[] =>
 // Token rendering component. Colors come entirely from the derived brand
 // theme's inline styles (`_code-block-theme.ts`, #315) — no `dark:` escape
 // hatch needed, since the theme is already resolved for whichever brand
-// theme is active (including blueprint's own ink palette).
+// theme is active (including a monochrome ink palette).
 const TokenSpan = ({ token }: { token: ThemedToken }) => (
   <span
     style={

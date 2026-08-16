@@ -1,4 +1,4 @@
 {
   "$description": "DTCG theme modes for @elabs/components-tokens.",
-  "modes": ["root", "light", "dark", "blueprint"]
+  "modes": ["root", "light", "dark"]
 }

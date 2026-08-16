@@ -18,35 +18,35 @@ import {
 } from "./check-decoration-collapse.mjs";
 
 const COLLAPSE_ONLY = `@layer utilities {
-  :is([data-theme="blueprint"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
+  :is([data-theme="drafting"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
     :is(.bg-primary, .bg-secondary, .bg-destructive, .bg-success, .bg-warning, .bg-info) {
     background-color: transparent;
-    background-image: var(--bp-hatch);
+    background-image: var(--deco-hatch);
     color: var(--foreground);
     border: 1px solid var(--rule-strong);
   }
 }`;
 
 const COLLAPSE_PLUS_ONE_STATUS = `${COLLAPSE_ONLY.slice(0, -2)}
-  :is([data-theme="blueprint"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
+  :is([data-theme="drafting"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
     [data-status="running"] {
     border-style: dashed;
   }
 }`;
 
 const COLLAPSE_PLUS_TWO_STATUSES = `${COLLAPSE_ONLY.slice(0, -2)}
-  :is([data-theme="blueprint"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
+  :is([data-theme="drafting"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
     [data-status="running"] {
     border-style: dashed;
   }
-  :is([data-theme="blueprint"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
+  :is([data-theme="drafting"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
     [data-status="complete"] {
     border-style: solid;
   }
 }`;
 
 const COLLAPSE_PLUS_POLARITY = `${COLLAPSE_ONLY.slice(0, -2)}
-  :is([data-theme="blueprint"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
+  :is([data-theme="drafting"], [data-decoration="8"], [data-decoration="9"], [data-decoration="10"])
     [data-polarity="good"]::before {
     content: "● ";
   }
@@ -75,19 +75,19 @@ test("findRoleCollapses: ROLE_FILL_CLASSES has all six roles", () => {
 
 test("findRoleCollapses: only 1 role listed is NOT a collapse (nothing to distinguish)", () => {
   const css = `@layer utilities {
-    :is([data-theme="blueprint"]) :is(.bg-primary) { background-color: transparent; }
+    :is([data-theme="drafting"]) :is(.bg-primary) { background-color: transparent; }
   }`;
   assert.equal(findRoleCollapses(css).length, 0);
 });
 
-test("findRoleCollapses: unscoped (no blueprint/high-decoration wrapper) is ignored", () => {
+test("findRoleCollapses: unscoped (no high decoration wrapper) is ignored", () => {
   const css = `.bg-primary, .bg-secondary { background-color: red; }`;
   assert.equal(findRoleCollapses(css).length, 0);
 });
 
 test("findRoleCollapses: background-image alone (the hatch) does not count as collapsing", () => {
   const css = `@layer utilities {
-    :is([data-theme="blueprint"]) :is(.bg-primary, .bg-secondary) { background-image: var(--bp-hatch); }
+    :is([data-theme="drafting"]) :is(.bg-primary, .bg-secondary) { background-image: var(--deco-hatch); }
   }`;
   assert.equal(findRoleCollapses(css).length, 0);
 });
@@ -144,13 +144,12 @@ test("GATE PASSES: the same collapse, once a real [data-status] channel compensa
 });
 
 // ── 4. integration smoke: the SHIPPED decoration.css satisfies the contract ────
-test("INTEGRATION: shipped decoration.css collapses role fills but compensates with a real [data-status] channel", () => {
+test("INTEGRATION: shipped decoration.css collapses no role fill at all", () => {
   const css = readFileSync(DECORATION_CSS, "utf8");
-  const collapses = findRoleCollapses(css);
-  assert.ok(collapses.length > 0, "the drawn-controls rule must still exist and still collapse");
-  assert.equal(
-    hasCompensatingRule(css),
-    true,
-    "decoration.css must ship a real (≥2-value) [data-status] compensating rule (#391)",
+  assert.deepEqual(
+    findRoleCollapses(css),
+    [],
+    "the decoration dial paints backgrounds only — it must never re-ink a role fill, " +
+      "which is what removed the need for a compensating non-colour channel (#391)",
   );
 });

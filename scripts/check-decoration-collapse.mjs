@@ -3,19 +3,25 @@
  * check-decoration-collapse.mjs — a role-fill collapse must ship a
  * compensating non-colour channel (#391).
  *
- * `packages/tokens/src/decoration.css`'s "Filled controls become DRAWN
- * controls" rule collapses ≥2 role-distinct fill utilities
+ * A rule in `packages/tokens/src/decoration.css` that collapses ≥2
+ * role-distinct fill utilities
  * (`bg-primary`/`bg-secondary`/`bg-destructive`/`bg-success`/`bg-warning`/
  * `bg-info` — the same roles `themes-contrast.test.ts`'s `ROLE_PAIRS` gate
  * requires to stay distinct at the TOKEN layer) to ONE identical declaration
- * set at high decoration/blueprint. That collapse is deliberate
- * (drawn-not-filled is hue-independent, `.claude/rules/blueprint-decoration.md`)
- * — but it leaves NOTHING encoding the roles apart once it fires, unless a
- * real `[data-status]` line-type channel (≥2 distinct status values) exists in
- * the same decoration scope. The pre-existing `[data-polarity]` glyph (#162)
- * deliberately does NOT count as a compensator here — it answers a different
- * favorable/unfavorable collapse and predates #391, so accepting it would make
- * this gate vacuously green on the very file the issue reports.
+ * set at high decoration leaves NOTHING encoding the roles apart once it
+ * fires, unless a real `[data-status]` line-type channel (≥2 distinct status
+ * values) exists in the same decoration scope.
+ *
+ * The `[data-polarity]` glyph (#162) deliberately does NOT count as a
+ * compensator here — it answers a different favorable/unfavorable collapse and
+ * predates #391, so accepting it would make this gate vacuously green on the
+ * very file the issue reports.
+ *
+ * THE SHIPPED STYLESHEET NO LONGER COLLAPSES ANYTHING. The decoration dial
+ * paints BACKGROUNDS only and never re-inks a control, so this gate is now a
+ * guard against reintroducing the drawn-not-filled override rather than a check
+ * on a live compensation. Its self-test keeps both arms exercised on fixtures.
+ *
  * `themes-contrast.test.ts` cannot see this: it asserts a property of the
  * TOKEN, not of what `decoration.css` does to it downstream — a green
  * token-layer gate coexisted with pixel-identical rendering (#391, root cause
@@ -53,9 +59,9 @@ export const ROLE_FILL_CLASSES = [
   ".bg-info",
 ];
 
-/** A blueprint / high-decoration scope wrapper — the collapse only matters
- * where it actually fires (1–7 is the gentle, non-binary ramp). */
-const SCOPE_RE = /\[data-theme="blueprint"\]|\[data-decoration="(?:8|9|10)"\]/;
+/** A high-decoration scope wrapper — the collapse only matters where it
+ * actually fires (1–7 is the gentle, non-binary ramp). */
+const SCOPE_RE = /\[data-decoration="(?:8|9|10)"\]/;
 
 /**
  * Declarations whose IDENTICAL value across ≥2 role utilities erases the
@@ -66,7 +72,7 @@ const SCOPE_RE = /\[data-theme="blueprint"\]|\[data-decoration="(?:8|9|10)"\]/;
 const COLLAPSING_PROPS = ["background-color", "border", "border-color", "color"];
 
 /**
- * Rules whose selector scopes to blueprint/high-decoration AND lists ≥2 of
+ * Rules whose selector scopes to high decoration AND lists ≥2 of
  * the role-fill classes AND sets ≥1 collapsing declaration.
  * @param {string} rawCss
  * @returns {{ selector: string, roles: string[], props: string[] }[]}
@@ -89,7 +95,7 @@ export function findRoleCollapses(rawCss) {
 
 /**
  * Is there a REAL `[data-status="…"]` non-colour channel — ≥2 DISTINCT status
- * values, each in its own rule scoped to blueprint/high-decoration?
+ * values, each in its own rule scoped to high decoration?
  *
  * Deliberately does NOT accept `[data-polarity]` as a stand-in: polarity
  * compensates a different collapse (the lightness ramp / favorable-unfavorable
@@ -135,11 +141,11 @@ function main(argv) {
   console.error("✖ decoration-collapse gate FAILED (#391):");
   for (const c of collapses) {
     console.error(
-      `  \`${c.selector}\` collapses ${c.roles.join(", ")} to one appearance (${c.props.join("/")}) — no compensating [data-status] rule (≥2 distinct values) exists in the same blueprint/high-decoration scope`,
+      `  \`${c.selector}\` collapses ${c.roles.join(", ")} to one appearance (${c.props.join("/")}) — no compensating [data-status] rule (≥2 distinct values) exists in the same high decoration scope`,
     );
   }
   console.error(
-    '  Fix: add ≥2 [data-status="…"] rules (line type / hatch density) in the same scope, or the six role fills read as one colour in blueprint. [data-polarity] does not count — it answers a different collapse.',
+    '  Fix: add ≥2 [data-status="…"] rules (line type / hatch density) in the same scope, or the six role fills read as one colour at high decoration. [data-polarity] does not count — it answers a different collapse.',
   );
   return warnOnly ? 0 : 1;
 }

@@ -23,7 +23,6 @@ Import from `@elabs/components-tokens`. Part of brand-ui — see the root `llms.
 - DENSITY_META
 - MOTION_PREFERENCE_META
 - MOTION_PREFERENCES
-- PAUSED_THEMES
 - TASTE_REGISTER_META
 - TASTE_REGISTERS
 - THEME_TOKEN_NAMES

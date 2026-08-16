@@ -42,7 +42,7 @@ function extractBlock(re: RegExp): string {
   return body;
 }
 
-/** First `[data-theme="name"] { … }` block (blueprint has a 2nd, non-color one). */
+/** First `[data-theme="name"] { … }` block. */
 function extractThemeBlock(name: string): string {
   const re = new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([\\s\\S]*?)\\n\\}`);
   return extractBlock(re);
@@ -112,7 +112,7 @@ const MARK_TONES = ["--warning", "--success", "--info", "--destructive"] as cons
  * #221 — calc syntax-highlight TEXT tokens. Rendered as colored code text on the
  * calc sheet (`bg-card`) and inline in prose (`bg-background`), so each must clear
  * AA on both. Hue is never the SOLE cue (weight/underline carry roles in
- * low-chroma themes like blueprint), but the colors still have to be legible.
+ * low-chroma themes), but the colors still have to be legible.
  */
 const CALC_TEXT_TOKENS = [
   "--calc-foreground",
@@ -434,7 +434,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
 
     // NOTE: there is intentionally NO `--input ≥ 3:1` assertion here.
     // ADR 0010 Amendment (2026-06-20) returned `--input` to the SUBTLE hairline
-    // rung (== --border on light/light/blueprint; a perceptible-but-quiet
+    // rung (== --border on both reference themes; a perceptible-but-quiet
     // 0.42 mid-value on dark) so form controls read on-theme rather than
     // carrying a dark strong-rung outline. This relaxes ADR 0010's `--input → strong
     // rung` sub-decision by maintainer direction: <3:1 resting contrast is an
@@ -447,7 +447,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // gantt-bar.tsx `GANTT_INSIDE_LABEL_SCRIM`) is opaque `bg-foreground` +
     // `text-background`, chosen SPECIFICALLY because it is fill-independent and
     // guaranteed ≥4.5:1 in every theme — unlike `--primary-foreground`, which is
-    // light in light but DARK in dark/blueprint. This row is the gate
+    // light in light but DARK in dark. This row is the gate
     // that keeps that pair from silently inverting again.
     it("foreground ≥ 4.5:1 on background (Gantt inside-label pill, #259)", () => {
       const ratio = contrast(token(theme, "--foreground"), token(theme, "--background"));
@@ -496,7 +496,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // themes, so a success chip was indistinguishable from a primary button and
     // a focus ring from an "Info"/"Running" chip — by colour, the only signal
     // these tokens carry. A token that equals another token is an undeclared
-    // alias, not a distinct token. blueprint/light already separated them; this
+    // alias, not a distinct token. light already separated them; this
     // row keeps their good state locked too.
     it.each(ROLE_PAIRS)("%s is not byte-identical to %s", (role, other) => {
       expect(token(theme, role)).not.toBe(token(theme, other));
@@ -504,7 +504,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
 
     // …and inequality alone is too weak a gate: a 0.001 nudge would satisfy it
     // while still rendering as the same colour. The roles must be separated
-    // PERCEPTUALLY. Smallest shipped separation is blueprint's success/primary
+    // PERCEPTUALLY. Smallest shipped separation is light's success/primary
     // at ΔE 0.070 (its monochrome palette separates by lightness alone).
     it.each(ROLE_PAIRS)("%s is perceptibly separated from %s", (role, other) => {
       const distance = oklabDistance(token(theme, role), token(theme, other));
@@ -524,8 +524,8 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
 // collapse into an undeclared alias of the primary action.
 //
 // Scoped to the two SHIPPING themes: `:root`'s `--primary` is a blue and its ring
-// is already the same hue at a distinct rung (it satisfies the contract on its
-// own terms), and `blueprint` is paused (@.claude/rules/paused-surfaces.md).
+// is already the same hue at a distinct rung, so it satisfies the contract on
+// its own terms.
 describe("themes.css — --ring is brand-derived (ADR 0027, #427)", () => {
   it.each(["light", "dark"])(
     "%s: --ring is in --primary's hue family but a distinct rung",
@@ -568,5 +568,5 @@ describe("themes.css — every ink exemption is pinned to its literal", () => {
 });
 
 // NOTE Issue #162's monochrome status-lightness row lived here. It only ever
-// applied to the PAUSED `blueprint` theme, so it is retired with it — restore it
-// from git history when that theme is un-paused (.claude/rules/paused-surfaces.md).
+// applied to a monochrome theme this repo no longer ships, so it is retired with
+// it — restore it from git history if such a theme returns.

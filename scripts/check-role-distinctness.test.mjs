@@ -68,7 +68,7 @@ function block(theme, overrides = {}) {
   return `${sel} {\n${decls}\n}`;
 }
 
-/** A whole themes.css with per-theme overrides, e.g. `css({ blueprint: {…} })`. */
+/** A whole themes.css with per-theme overrides, e.g. `css({ drafting: {…} })`. */
 function css(perTheme = {}) {
   return THEME_NAMES.map((t) => block(t, perTheme[t])).join("\n\n");
 }
@@ -177,8 +177,8 @@ test("a var() alias TARGET may live in :root — the cascade fallback still reso
   // theme-parity guarantees. So the ONLY cascade hop here is the alias target —
   // exactly the fallback that must keep working after the `not-declared` guard.
   // (`exemptions` is explicitly emptied so this can never be silenced by a future
-  // entry in the SHIPPED list — an earlier draft used blueprint and went green the
-  // moment blueprint's ring rows were exempted.)
+  // entry in the SHIPPED list — an earlier draft used drafting and went green the
+  // moment drafting's ring rows were exempted.)
   const text =
     `:root {\n  --brand-accent: oklch(0.55 0.18 264);\n` +
     `  --primary: oklch(0.55 0.18 264);\n  --ring: oklch(0.45 0.21 264);\n}\n\n` +
@@ -199,8 +199,8 @@ test("a var() alias TARGET may live in :root — the cascade fallback still reso
 
 test("an exempted pair passes in ITS theme while the same pair still fails elsewhere", () => {
   const collide = { "--ring": BASE["--primary"] };
-  const text = css({ blueprint: collide, [ROOT_MODE]: collide });
-  const exemptions = new Map([["blueprint/--ring|--primary", "by design (test fixture)"]]);
+  const text = css({ drafting: collide, [ROOT_MODE]: collide });
+  const exemptions = new Map([["drafting/--ring|--primary", "by design (test fixture)"]]);
 
   const v = find(text, { exemptions });
   const themes = v.filter((x) => x.a === "--ring" && x.b === "--primary").map((x) => x.theme);
@@ -225,7 +225,7 @@ test("every shipped EXEMPTIONS key is well-formed and names a real MUST_DIFFER p
 test("FAILS: a MUST_DIFFER token that cannot resolve to an oklch literal is reported", () => {
   const text =
     `:root {\n  --ring: #ff0000;\n  --primary: oklch(0.55 0.18 264);\n}\n\n` +
-    `[data-theme="blueprint"] {\n  --ring: oklch(0.9 0.01 1);\n  --primary: oklch(0.2 0.1 200);\n}`;
+    `[data-theme="drafting"] {\n  --ring: oklch(0.9 0.01 1);\n  --primary: oklch(0.2 0.1 200);\n}`;
   const v = find(text, { mustDiffer: [["--ring", "--primary"]] });
   assert.equal(v.length, 1);
   assert.equal(v[0].kind, "unresolved", "a hex/calc value must be surfaced, not skipped");

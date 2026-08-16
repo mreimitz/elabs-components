@@ -32,7 +32,7 @@ export const inputGroupVariants = cva(
         // relative to `--surface-muted` is theme-driven, same trade-off as the
         // `bg-surface-muted`-as-a-well note above — raised (lighter than the
         // outer frame) on light themes, recessed (darker) on dark and
-        // blueprint. The well still reads as a distinct, legible tone in every
+        // a low-chroma palette. The well still reads as a distinct, legible tone in every
         // theme; only the light-themes' "raised" framing is theme-specific.
         card: "bg-card",
       },

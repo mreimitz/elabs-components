@@ -16,12 +16,11 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { findBrandHits, pausedThemeRanges, BRAND_RE, THEMES_CSS } from "./check-debrand.mjs";
+import { findBrandHits, BRAND_RE } from "./check-debrand.mjs";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
-const PAUSED_DIRS = ["packages/paused-pkg"];
-const scan = (files) => findBrandHits(files, { pausedDirs: PAUSED_DIRS });
+const scan = (files) => findBrandHits(files);
 
 // ── The detector ─────────────────────────────────────────────────────────────
 
@@ -55,56 +54,31 @@ test("FLAGS: a hit on any line, not only the first", () => {
   assert.equal(hits[0].line, 3);
 });
 
-// ── The exemptions (each is a place a real hit could hide) ───────────────────
+// ── No exemptions (an allowlist is a place a real hit could hide) ────────────
 
-test("PASSES: a paused package's own source", () => {
-  const hits = scan([
-    { file: "packages/paused-pkg/src/sheet.stories.tsx", content: 'drawnBy="qLabs"' },
-  ]);
-  assert.deepEqual(hits, []);
-});
-
-test("FLAGS: a path that merely PREFIXES a paused dir name", () => {
-  // `packages/paused-pkg-2` is a different package; a naive `startsWith(dir)`
-  // would exempt it.
-  const hits = scan([{ file: "packages/paused-pkg-2/src/a.tsx", content: "// Qlik" }]);
-  assert.equal(hits.length, 1);
-});
-
-test("PASSES: inside a paused theme's block in themes.css", () => {
-  const css = [
-    ":root {",
-    "  --brand-mark-ring: currentColor;",
-    "}",
-    '[data-theme="blueprint"] {',
-    "  /* Brand mark (Qlik logo) — fully white. */",
-    "  --brand-mark-ring: #ffffff;",
-    "}",
-  ].join("\n");
-  assert.deepEqual(scan([{ file: THEMES_CSS, content: css }]), []);
-});
-
-test("FLAGS: elsewhere in themes.css — pausing a theme does not exempt the engine", () => {
+test("FLAGS: a hit in themes.css like anywhere else — no per-block carve-out", () => {
   const css = [
     ":root {",
     "  /* the Qlik Cloud faces */",
     "}",
-    '[data-theme="blueprint"] {',
+    '[data-theme="dark"] {',
+    "  /* Brand mark (Qlik logo). */",
     "}",
   ].join("\n");
-  const hits = scan([{ file: THEMES_CSS, content: css }]);
-  assert.equal(hits.length, 1);
-  assert.equal(hits[0].line, 2);
+  const hits = scan([{ file: "packages/tokens/src/themes.css", content: css }]);
+  assert.equal(hits.length, 2);
+  assert.deepEqual(
+    hits.map((h) => h.line),
+    [2, 5],
+  );
 });
 
-test("pausedThemeRanges bounds the block, and only that block", () => {
-  const css = ["a {", "}", '[data-theme="blueprint"] {', "  x;", "}", "b {", "}"].join("\n");
-  assert.deepEqual(pausedThemeRanges(css, ["blueprint"]), [[3, 5]]);
-});
-
-test("pausedThemeRanges finds nothing when no theme is paused", () => {
-  const css = ['[data-theme="dark"] {', "}"].join("\n");
-  assert.deepEqual(pausedThemeRanges(css, []), []);
+test("PASSES: only this gate's own source and self-test", () => {
+  for (const file of ["scripts/check-debrand.mjs", "scripts/check-debrand.test.mjs"]) {
+    assert.deepEqual(scan([{ file, content: "// Qlik Cloud" }]), []);
+  }
+  // Anything else, including a sibling script, is scanned.
+  assert.equal(scan([{ file: "scripts/check-other.mjs", content: "// Qlik" }]).length, 1);
 });
 
 // ── The noise floor (why this gate is trusted) ───────────────────────────────

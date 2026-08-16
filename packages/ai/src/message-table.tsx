@@ -85,7 +85,7 @@ export const MessageTableFallback = forwardRef<HTMLDivElement, MessageTableFallb
         aria-live="polite"
         className={cn(
           // Sole structural cue is the border (no fill) — reads in every theme,
-          // incl. blueprint where surface-muted ≈ background. border-strong is
+          // incl. themes where surface-muted ≈ background. border-strong is
           // contrast-guaranteed vs the background.
           "flex items-center justify-center rounded-md border border-border-strong px-4 py-6 text-center text-body text-muted-foreground",
           className,

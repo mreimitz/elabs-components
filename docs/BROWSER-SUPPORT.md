@@ -33,7 +33,7 @@ Two features, both in `packages/tokens/src/themes.css`, both belonging to the
    active theme's `--foreground` and their alpha from the dial:
 
    ```css
-   --bp-grid-ink: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.1));
+   --deco-grid-ink: oklch(from var(--foreground) l c h / calc(var(--decoration-factor) * 0.1));
    ```
 
    This is what makes the reprographic texture hue-independent: the grid re-tints
@@ -59,20 +59,19 @@ So the degradation is pinned explicitly in `themes.css`:
 ```css
 @supports not (color: oklch(from red l c h)) {
   :root {
-    --bp-grid-ink: transparent;
+    --deco-grid-ink: transparent;
     /* …the other inks… */
-    --bp-grid: none;
-    --bp-hatch: none;
-    --bp-hatch-strong: none;
+    --deco-grid: none;
+    --deco-hatch: none;
+    --deco-hatch-strong: none;
   }
 }
 ```
 
-Result below the floor: **no graph paper, no hatch, no ground fade** — the full
-themed UI in its own colors, minus the reprographic texture. The blueprint theme
-keeps its navy cyanotype palette and loses its drawing texture; the binary
-decoration axes (drawn-not-filled controls, squared corners, shadowless surfaces)
-are plain selectors and still apply. `@property` failing to register only means
+Result below the floor: **no graph paper, no ground fade** — the full themed UI
+in its own colors, minus the drafting texture. A theme keeps its whole palette
+and loses only the ground; the binary decoration axes (squared corners,
+shadowless surfaces) are plain selectors and still apply. `@property` failing to register only means
 `--decoration` stops interpolating; with the inks already neutralized, nothing
 depends on it.
 

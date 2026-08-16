@@ -287,7 +287,7 @@ function contrastRatio(a: string, b: string): number {
 
 // ADR 0029 split the reference themes out of `themes.css` into their own opt-in
 // files, so a reader that opens ONLY `themes.css` sees `:root` and the paused
-// blueprint block and nothing else — it keeps parsing, just less. Read the SET,
+// engine block and nothing else — it keeps parsing, just less. Read the SET,
 // and throw rather than return an incomplete one.
 const TOKENS_SRC = join(dirname(fileURLToPath(import.meta.url)), "../../tokens/src");
 

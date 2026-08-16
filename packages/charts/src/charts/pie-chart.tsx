@@ -234,7 +234,7 @@ const PieChartCore = memo(function PieChartCore({
   // Calculate total value
   const totalValue = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
 
-  // Blueprint pattern fills
+  // Decoration pattern fills
   const high = useHighDecorationOf(containerRef);
   const patternScope = useId().replace(/:/g, "");
 
@@ -251,7 +251,7 @@ const PieChartCore = memo(function PieChartCore({
   );
 
   // Get fill for a slice index (supports patterns/gradients).
-  // Under high decoration, palette-token slices get a blueprint pattern.
+  // Under high decoration, palette-token slices get a decoration pattern.
   const getFill = useCallback(
     (index: number) => {
       const item = data[index];
@@ -260,7 +260,7 @@ const PieChartCore = memo(function PieChartCore({
         return item.fill;
       }
       const color = getColor(index);
-      // Blueprint: auto-pattern for palette fills
+      // Decoration: auto-pattern for palette fills
       if (high && isPaletteFill(color)) {
         return `url(#${seriesPatternId(index, patternScope)})`;
       }
@@ -269,7 +269,7 @@ const PieChartCore = memo(function PieChartCore({
     [data, getColor, high, patternScope],
   );
 
-  // Indices whose color is a palette fill (needs a <pattern> def under blueprint)
+  // Indices whose color is a palette fill (needs a <pattern> def at high decoration)
   const bpPatternIndices = useMemo(() => {
     if (!high) return [];
     return data

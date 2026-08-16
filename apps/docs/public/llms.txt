@@ -18,7 +18,7 @@ dark
 
 ## Packages (which package for what)
 
-- [@elabs/components-tokens](./llms/tokens.txt) — Semantic CSS-variable themes + ThemeProvider/useTheme. (20 components, 6 hooks)
+- [@elabs/components-tokens](./llms/tokens.txt) — Semantic CSS-variable themes + ThemeProvider/useTheme. (19 components, 6 hooks)
 - [@elabs/components-icons](./llms/icons.txt) — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). (31 components, 0 hooks)
 - [@elabs/components-ui](./llms/ui.txt) — Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). (354 components, 14 hooks)
 - [@elabs/components-data](./llms/data.txt) — TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. (5 components, 0 hooks)

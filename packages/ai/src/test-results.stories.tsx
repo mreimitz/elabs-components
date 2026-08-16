@@ -21,7 +21,7 @@ import {
  * TestResults — the status colors are semantic tokens (#157): success / destructive
  * / warning (badges + progress), success-text / destructive-text (pass/fail), and
  * muted / primary for skipped / running. Verify they read correctly in every theme,
- * especially blueprint (where the old raw Tailwind palette did not adapt).
+ * especially low-chroma ones (where the old raw Tailwind palette did not adapt).
  *
  * Structure: `TestResultsHeader` (file name + duration) → `TestResultsMeta`
  * (badges + progress bar) → `TestResultsContent` (divide-y suite list) →

@@ -42,7 +42,7 @@ when the choice was not made on a real render.
 - If they don't exist and you're inside the brand-ui monorepo, **start the dev
   server** (`pnpm storybook` in the background), drive it, then stop it when done.
 - Theme slugs are the CSS slugs, never display names: `light`, `dark`,
-  `blueprint`. Story-ID derivation + tool details: the brand-ui Storybook-MCP rule.
+  `dark`. Story-ID derivation + tool details: the brand-ui Storybook-MCP rule.
 - **Fallback (server unavailable):** drop to rung 2 (artifact) or rung 3
   (option preview) — and say plainly that the choice was made without a live
   render, so the user knows to eyeball it after scaffolding.

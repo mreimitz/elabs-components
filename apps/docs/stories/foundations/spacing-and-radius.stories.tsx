@@ -110,8 +110,8 @@ export const Radius: Story = {
       <p className="m-0 max-w-prose text-caption text-muted-foreground">
         Corner radii derive from <code className="text-code">--radius</code> (itself{" "}
         <code className="text-code">--radius-base × (1 − decoration)</code>). Raise the{" "}
-        <strong>Decoration</strong> toolbar dial toward 10 and every corner squares up; the
-        blueprint theme is fully square.
+        <strong>Decoration</strong> toolbar dial toward 10 and every corner squares up; at 10 the
+        geometry is fully square.
       </p>
       <div className="flex flex-wrap gap-6">
         {RADII.map((r) => (

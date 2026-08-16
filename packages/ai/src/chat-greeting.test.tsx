@@ -22,7 +22,7 @@ describe("ChatGreeting", () => {
     expect(screen.getByText("what are we building today?")).toBeInTheDocument();
   });
 
-  // #254 blueprint follow-up: `blueprint`'s --primary is a near-white "pen",
+  // #254 follow-up: a monochrome theme's --primary can be a near-white "pen",
   // ΔL/ΔC vs --foreground so small that `text-primary` alone is invisible as
   // an accent there. The underline + bold weight are a NON-hue channel that
   // must survive regardless of which theme resolves `text-primary`.

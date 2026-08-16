@@ -155,7 +155,7 @@ export function SankeyNode({
     containerRef,
   } = useSankey();
 
-  // Blueprint pattern fill: active only under high decoration AND for palette fills
+  // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecorationOf(containerRef);
   const patternRawScope = useId().replace(/:/g, "");
 
@@ -221,7 +221,7 @@ export function SankeyNode({
 
   return (
     <g className="sankey-nodes">
-      {/* Blueprint pattern defs — one per node, injected when high decoration */}
+      {/* Decoration pattern defs — one per node, injected when high decoration */}
       {high && (
         <defs>
           {nodes.map((node, index) => {
@@ -268,7 +268,7 @@ export function SankeyNode({
           setTooltipData(null);
         };
 
-        // Blueprint pattern fill: resolve to pattern url when high decoration + palette fill
+        // Decoration pattern fill: resolve to pattern url when high decoration + palette fill
         const nodeColor = getColor(node, index);
         const useNodePattern = high && isPaletteFill(nodeColor);
         const resolvedNodeFill = useNodePattern

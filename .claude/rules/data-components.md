@@ -40,7 +40,7 @@ paths:
       `bg-card` as the background-COLOR and re-applies the row's zebra/hover/selected wash on
       a `::before` layer (`pinnedCellFillClass`, kept in sync with `rowSeparationClass`).
       Never "fix" a seam by making the fill one flat opaque colour, and never make the wash a
-      background-IMAGE: under blueprint / `data-decoration`, `decoration.css` gives every
+      background-IMAGE: at high decoration / `data-decoration`, `decoration.css` gives every
       `.bg-card` the ambient grid AS `background-image`, so a gradient overwrites it and
       punches a flat ungridded rectangle where the frozen column is (measured: the grid's
       per-pixel spread across the cell falls 124 → 1).

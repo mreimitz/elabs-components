@@ -66,7 +66,7 @@ test("PASSES: dark theme — canvas lighter than chrome", () => {
 
 // ── Skips non-color blocks (no --sidebar/--background) ───────────────────────
 test("PASSES: a block without sidebar/background is skipped, not crashed", () => {
-  const css = `[data-theme="blueprint"] {\n  --decoration: 10;\n  --bp-hatch: red;\n}`;
+  const css = `[data-theme="drafting"] {\n  --decoration: 10;\n  --deco-hatch: red;\n}`;
   assert.ok(isClean(css), "non-color block must be skipped");
 });
 

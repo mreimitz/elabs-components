@@ -98,9 +98,9 @@ export async function assembleFromSource(cssText, modes) {
  * Read every theme stylesheet and compute its assembled form — the pure,
  * write-free half, shared with the freshness gate.
  *
- * Since ADR 0029 the blocks live in more than one file (the engine keeps `:root`
- * and the paused blueprint blocks; each reference theme has its own opt-in
- * file), so the unit of work is a FILE, not the one stylesheet.
+ * Since ADR 0029 the blocks live in more than one file (the engine keeps
+ * `:root`; each reference theme has its own opt-in file), so the unit of work
+ * is a FILE, not the one stylesheet.
  *
  * @returns {Promise<Array<{ path: string, current: string, expected: string }>>}
  */

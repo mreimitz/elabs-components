@@ -121,8 +121,6 @@
     "microcopy:check:test": "node --test scripts/check-microcopy.test.mjs",
     "motion:check": "node scripts/check-motion-tokens.mjs",
     "motion:check:test": "node --test scripts/check-motion-tokens.test.mjs",
-    "paused:check": "node scripts/check-paused-surfaces.mjs",
-    "paused:check:test": "node --test scripts/check-paused-surfaces.test.mjs",
     "origins:check": "node scripts/check-remote-origins.mjs",
     "origins:check:test": "node --test scripts/check-remote-origins.test.mjs",
     "palette:check": "node scripts/check-raw-palette.mjs",

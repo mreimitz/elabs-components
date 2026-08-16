@@ -22,8 +22,9 @@ import {
   THEMES_CSS,
   TOKENS_BEGIN,
   TOKENS_END,
+  inlineTokensCss,
 } from "./build-surface-preview.mjs";
-import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
+import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
 import { ARCHETYPES } from "../packages/cli/lib/engine.mjs";
 
 /** The document with the inlined token stylesheet removed. */
@@ -37,9 +38,9 @@ function outsideTokens(html) {
 test("every archetype × theme pair builds a self-contained, themed preview", () => {
   const dir = mkdtempSync(join(tmpdir(), "brand-ui-preview-"));
   const themes = listThemes();
-  // Anti-vacuity, not a count: the shipped theme set moves (blueprint was
-  // paused; ADR 0029 makes the set a REGISTRY rather than a fixed list), so a
-  // hard-coded `3` was red at HEAD and would go red again on every change. What
+  // Anti-vacuity, not a count: the shipped theme set moves (ADR 0029 makes the
+  // set a REGISTRY rather than a fixed list), so a
+  // hard-coded count was red at HEAD and would go red again on every change. What
   // must hold is that `listThemes()` resolved SOMETHING — an empty list would
   // skip the whole matrix below and pass vacuously.
   assert.ok(themes.length > 0, "listThemes() resolved at least one shipped theme");
@@ -90,7 +91,9 @@ test("output is deterministic, and each theme produces a different document", ()
     };
     assert.equal(read("light", 1), read("light", 2), "same inputs → same bytes");
     assert.notEqual(read("light", 1), read("dark", 1), "the theme changes the document");
-    assert.notEqual(read("dark", 1), read("blueprint", 1), "…for every theme");
+    for (const theme of ACTIVE_THEMES.filter((t) => t !== "light")) {
+      assert.notEqual(read("light", 3), read(theme, 1), "…for every theme");
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -119,7 +122,7 @@ test("every shipped archetype has a generated template on disk", () => {
 });
 
 test("inlineStylesheet flattens relative imports and drops what cannot resolve offline", () => {
-  const css = inlineStylesheet(THEMES_CSS);
+  const css = inlineTokensCss();
   assert.ok(css.length > 10_000, "the token sheet is inlined");
   assert.equal(/@import/.test(css), false, "every @import is resolved or dropped");
   assert.equal(
@@ -127,7 +130,7 @@ test("inlineStylesheet flattens relative imports and drops what cannot resolve o
     false,
     "font faces are dropped (their urls are relative)",
   );
-  assert.ok(css.includes('[data-theme="blueprint"]'), "the theme blocks survive");
+  assert.ok(css.includes('[data-theme="light"]'), "the theme blocks survive");
   assert.ok(css.includes("--background:"), "the semantic tokens survive");
 });
 

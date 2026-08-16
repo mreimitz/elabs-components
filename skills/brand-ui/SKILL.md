@@ -1,6 +1,6 @@
 ---
 name: brand-ui
-description: Build UI with the brand-ui component system (@elabs/components-* packages — ui, data, ai, flow, maps, charts, marketing, editor, viewer, blueprint, tokens, icons). Use when working in a project that depends on @elabs/components-ui or any @elabs/components-* package, when adding/composing components, building dashboards, data tables, AI/chat surfaces, React Flow canvases, MapLibre maps, code editors, file/document viewers, blueprint-theme drawing furniture, app shells, forms, or marketing sections, when theming with the token system, or when the user mentions brand-ui, @brand, light/dark themes, or "our design system". Provides live project context, the real component API, composition patterns, and the rules that keep components token-driven, accessible, and theme-safe.
+description: Build UI with the brand-ui component system (@elabs/components-* packages — ui, data, ai, flow, maps, charts, marketing, editor, viewer, tokens, icons). Use when working in a project that depends on @elabs/components-ui or any @elabs/components-* package, when adding/composing components, building dashboards, data tables, AI/chat surfaces, React Flow canvases, MapLibre maps, code editors, file/document viewers, app shells, forms, or marketing sections, when theming with the token system, or when the user mentions brand-ui, @brand, light/dark themes, or "our design system". Provides live project context, the real component API, composition patterns, and the rules that keep components token-driven, accessible, and theme-safe.
 user-invocable: false
 allowed-tools:
   - Bash(npx @elabs/components-cli *)
@@ -19,8 +19,7 @@ default, themeable to any brand. Packages: `@elabs/components-ui` (foundation + 
 `@elabs/components-charts` (KPI tiles + 13 charts + `ChartFrame`), `@elabs/components-marketing`
 (landing sections), `@elabs/components-editor` (Monaco code editor),
 `@elabs/components-viewer` (FileViewer — display a file the app did not write),
-`@elabs/components-blueprint`
-(blueprint-theme drawing furniture), `@elabs/components-tokens` (themes +
+`@elabs/components-tokens` (themes +
 `ThemeProvider`), `@elabs/components-icons` (brand/product icons; generic UI glyphs use the
 default icon library **Lucide** / `lucide-react`).
 
@@ -38,13 +37,13 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (1):** dark · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 161 · **Registry blocks:** 21
+**Themes (1):** dark · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 162 · **Registry blocks:** 21
 
-**Exported surface:** 1051 components · 76 hooks across 11 packages.
+**Exported surface:** 1050 components · 76 hooks across 11 packages.
 
 | Package                       | Components | Hooks | Use it for                                                                               |
 | ----------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
-| `@elabs/components-tokens`    |         20 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
 | `@elabs/components-icons`     |         31 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
 | `@elabs/components-ui`        |        354 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
 | `@elabs/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
@@ -113,7 +112,7 @@ Always enforced. Full detail with Incorrect/Correct pairs in
   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`.
   Never `outline: none` without a replacement.
 - **Theme-safe.** It must read correctly in every theme (light [default],
-  dark, blueprint). Rely on tokens, not `dark:`.
+  dark). Rely on tokens, not `dark:`.
 - **Spacing:** `flex`/`grid` + `gap-*`, not `space-x/space-y-*`. **Equal w/h:**
   `size-*`, not `w-N h-N`. **`cn()`** for conditional classes.
 - **Accessibility:** real elements (`<button>`, `<a>`, `<input>`), labels on
@@ -124,28 +123,27 @@ Always enforced. Full detail with Incorrect/Correct pairs in
 
 ## Component selection
 
-| Need                   | Use (package)                                                                                                                                                                                                                      |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Action                 | `Button` variants (`@elabs/components-ui`)                                                                                                                                                                                         |
-| Form inputs            | `Input`, `Select`, `Combobox`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `Textarea`, `InputOTP`, `Calendar`, `DatePicker`, `Form` (`@elabs/components-ui`)                                                                     |
-| Grouped input + addon  | `InputGroup` + `InputGroupInput`/`InputGroupTextarea` + `InputGroupAddon` (`@elabs/components-ui`)                                                                                                                                 |
-| 2–5 option toggle      | `ToggleGroup` (`@elabs/components-ui`)                                                                                                                                                                                             |
-| Data table             | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@elabs/components-data`)                                                                                                                                                |
-| Display                | `Card`, `Badge`, `Avatar`, `Table`, `Progress`, `Skeleton` (`@elabs/components-ui`)                                                                                                                                                |
-| Icons                  | **`lucide-react`** (default — generic UI glyphs) · `@elabs/components-icons` (`Icon`/`createIcon`/`BrandLogo` — brand/product icons). No other icon set; see the brand-ui icons rule                                               |
-| Navigation             | `Sidebar`, `NavigationMenu`, `Breadcrumb`, `Tabs`, `Pagination` (`@elabs/components-ui`)                                                                                                                                           |
-| App shell              | `SidebarProvider`/`Sidebar`/`SidebarInset` + `sidebar-02/04/05` blocks                                                                                                                                                             |
-| Overlays               | `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `Popover`, `Tooltip`, `HoverCard`                                                                                                                                                      |
-| Command palette        | `Command` inside `Dialog`                                                                                                                                                                                                          |
-| Feedback               | `Alert`, `Sonner` toast, `EmptyState`, `ErrorState`, `LoadingState`, `Spinner`                                                                                                                                                     |
-| AI / chat              | `ChatShell`, `Conversation`, `Message`, `PromptInput`, `Reasoning`, `Tool`, `Sources` (`@elabs/components-ai`)                                                                                                                     |
-| Flow canvas            | `CanvasShell`, `FlowNode`, `FlowEdge`, `ZoomControls`, `InspectorPanel` (`@elabs/components-flow`)                                                                                                                                 |
-| KPIs / charts          | `MetricCard`, `MetricGrid`, `ChartCard`, `ChartFrame` + 13 chart types (`@elabs/components-charts`) — see Charts section below                                                                                                     |
-| Marketing              | `Hero`, `FeatureGrid`, `StatsBand`, `CTASection`, `LogoStrip` (`@elabs/components-marketing`)                                                                                                                                      |
-| Code editor            | `CodeEditor`, `DiffEditor`, `CodeWorkspace` (`@elabs/components-editor`; import `@elabs/components-editor/monaco-environment` once)                                                                                                |
-| Markdown authoring     | `MarkdownWorkspace`, `MarkdownEditor`, `MarkdownPreview`, `Timeline`, `MetricBlock` (`@elabs/components-editor/markdown`); `parseFrontmatter`/`serializeFrontmatter` (`@elabs/components-editor/markdown/frontmatter`, YAML only)  |
-| File / document viewer | `FileViewer` + `FileViewerProvider`/`FileViewerToolbar`/`FileViewerContent` (`@elabs/components-viewer`) — images, text, JSON, CSV today; formats are added by registering an adapter                                              |
-| Blueprint chrome       | `GridPaper`, `PlaceholderBox`, `BlueprintFrame`, `BlueprintSheet`, `DimensionLine`, `Crosshair`/`RegistrationMark`, `FigAnnotation`, `Callout`, `TitleBlock` (`@elabs/components-blueprint`; placement: blueprint-decoration rule) |
+| Need                   | Use (package)                                                                                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Action                 | `Button` variants (`@elabs/components-ui`)                                                                                                                                                                                        |
+| Form inputs            | `Input`, `Select`, `Combobox`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `Textarea`, `InputOTP`, `Calendar`, `DatePicker`, `Form` (`@elabs/components-ui`)                                                                    |
+| Grouped input + addon  | `InputGroup` + `InputGroupInput`/`InputGroupTextarea` + `InputGroupAddon` (`@elabs/components-ui`)                                                                                                                                |
+| 2–5 option toggle      | `ToggleGroup` (`@elabs/components-ui`)                                                                                                                                                                                            |
+| Data table             | `DataTable` + `SearchInput`/`FacetFilter`/`ColumnPicker` (`@elabs/components-data`)                                                                                                                                               |
+| Display                | `Card`, `Badge`, `Avatar`, `Table`, `Progress`, `Skeleton` (`@elabs/components-ui`)                                                                                                                                               |
+| Icons                  | **`lucide-react`** (default — generic UI glyphs) · `@elabs/components-icons` (`Icon`/`createIcon`/`BrandLogo` — brand/product icons). No other icon set; see the brand-ui icons rule                                              |
+| Navigation             | `Sidebar`, `NavigationMenu`, `Breadcrumb`, `Tabs`, `Pagination` (`@elabs/components-ui`)                                                                                                                                          |
+| App shell              | `SidebarProvider`/`Sidebar`/`SidebarInset` + `sidebar-02/04/05` blocks                                                                                                                                                            |
+| Overlays               | `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `Popover`, `Tooltip`, `HoverCard`                                                                                                                                                     |
+| Command palette        | `Command` inside `Dialog`                                                                                                                                                                                                         |
+| Feedback               | `Alert`, `Sonner` toast, `EmptyState`, `ErrorState`, `LoadingState`, `Spinner`                                                                                                                                                    |
+| AI / chat              | `ChatShell`, `Conversation`, `Message`, `PromptInput`, `Reasoning`, `Tool`, `Sources` (`@elabs/components-ai`)                                                                                                                    |
+| Flow canvas            | `CanvasShell`, `FlowNode`, `FlowEdge`, `ZoomControls`, `InspectorPanel` (`@elabs/components-flow`)                                                                                                                                |
+| KPIs / charts          | `MetricCard`, `MetricGrid`, `ChartCard`, `ChartFrame` + 13 chart types (`@elabs/components-charts`) — see Charts section below                                                                                                    |
+| Marketing              | `Hero`, `FeatureGrid`, `StatsBand`, `CTASection`, `LogoStrip` (`@elabs/components-marketing`)                                                                                                                                     |
+| Code editor            | `CodeEditor`, `DiffEditor`, `CodeWorkspace` (`@elabs/components-editor`; import `@elabs/components-editor/monaco-environment` once)                                                                                               |
+| Markdown authoring     | `MarkdownWorkspace`, `MarkdownEditor`, `MarkdownPreview`, `Timeline`, `MetricBlock` (`@elabs/components-editor/markdown`); `parseFrontmatter`/`serializeFrontmatter` (`@elabs/components-editor/markdown/frontmatter`, YAML only) |
+| File / document viewer | `FileViewer` + `FileViewerProvider`/`FileViewerToolbar`/`FileViewerContent` (`@elabs/components-viewer`) — images, text, JSON, CSV today; formats are added by registering an adapter                                             |
 
 Confirm exact names with `brand-ui search`; the registry also has copy-own blocks
 (`brand-ui search` shows `registry:*` items).
@@ -519,8 +517,8 @@ every theme). Supporting tokens: `--chart-label` (axis/legend text),
 `--chart-foreground-muted`, `--chart-crosshair`, `--chart-tooltip-background`.
 
 Pass series colors as `stroke="var(--chart-1)"` / `fill="var(--chart-1)"` — never
-raw hex. The blueprint theme renders chart series in a monochrome ramp; use the
-tokens and you get correct blueprint behavior for free.
+raw hex. A monochrome theme renders chart series as a lightness ramp; use the
+tokens and every theme renders correctly for free.
 
 ## References
 

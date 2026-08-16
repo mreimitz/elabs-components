@@ -19,7 +19,7 @@
  *      would mask the host's CHILDREN — text and controls would fade out with
  *      the grid. The faded host must also be excluded from the plain-grid rule
  *      (otherwise the region is ruled twice: once crisp, once faded), and each
- *      `--bp-fade-*` variant the CSS consumes must exist in themes.css.
+ *      `--deco-fade-*` variant the CSS consumes must exist in themes.css.
  *
  * Both are one-regex facts, so they belong in a gate rather than a comment.
  * Pure functions are exported for the self-test (`check-decoration-css.test.mjs`).
@@ -132,12 +132,12 @@ export function findFadeViolations(decorationCss, themesCss) {
   const layers = ruleBlocks(decorationCss).filter(
     (r) => r.selector.includes("[data-decoration-fade") && r.selector.includes("::before"),
   );
-  const painter = layers.find((r) => /background-image\s*:\s*var\(--bp-grid\)/.test(r.body));
+  const painter = layers.find((r) => /background-image\s*:\s*var\(--deco-grid\)/.test(r.body));
   if (!painter) {
     out.push({
       rule: "no-layer",
       detail:
-        "no `[data-decoration-fade]…::before` rule paints `var(--bp-grid)` — the fade has nothing to show",
+        "no `[data-decoration-fade]…::before` rule paints `var(--deco-grid)` — the fade has nothing to show",
     });
   } else if (!/pointer-events\s*:\s*none/.test(painter.body)) {
     out.push({
@@ -152,7 +152,7 @@ export function findFadeViolations(decorationCss, themesCss) {
   const plainGrid = ruleBlocks(decorationCss).find(
     (r) =>
       r.selector.includes(".bg-background") &&
-      /background-image\s*:\s*var\(--bp-grid\)/.test(r.body) &&
+      /background-image\s*:\s*var\(--deco-grid\)/.test(r.body) &&
       !r.selector.includes("::before"),
   );
   if (plainGrid) {
@@ -173,9 +173,9 @@ export function findFadeViolations(decorationCss, themesCss) {
     }
   }
 
-  // Every --bp-fade-* the CSS consumes must be defined in themes.css.
+  // Every --deco-fade-* the CSS consumes must be defined in themes.css.
   const consumed = new Set(
-    [...decorationCss.matchAll(/var\((--bp-fade[\w-]*)\)/g)].map((m) => m[1]),
+    [...decorationCss.matchAll(/var\((--deco-fade[\w-]*)\)/g)].map((m) => m[1]),
   );
   for (const name of [...consumed].sort()) {
     const declared = new RegExp(`${name}\\s*:`).test(themesCss);

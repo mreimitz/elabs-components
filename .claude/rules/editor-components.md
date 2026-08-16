@@ -184,7 +184,7 @@ A throwing hook degrades to "no decorations" — it never blanks the editor.
 `CalcBlock` paints with (already AA-verified vs `--background` AND `--card`, #221) via
 CSS classes in `calc-block/calc-editor.css` — so it tracks the theme via the cascade.
 Hue is never the SOLE cue: `var-def` carries weight, unresolved tokens a dotted
-underline (so roles stay distinct in the low-chroma blueprint theme). The Monaco RESULT-inlay color is
+underline (so roles stay distinct in a low-chroma theme). The Monaco RESULT-inlay color is
 themed through the **theme bridge** (`editorInlayHint.*` from `--calc-result`, AA-clamped
 against the editor background) so it re-applies on theme change with the rest. The
 WYSIWYG result inlay is a non-editable widget; its number is the signal (text), color
@@ -194,4 +194,4 @@ only an enhancement, and it is announced to AT (not `aria-hidden`).
 (`calc-block/calc-editor.ts`: fence detection + column math + hook resolution) are
 unit-tested; the live decoration passes come from `pnpm --filter @elabs/components-docs
 test-storybook` on `Editor/CalcEditor`. Sweep both themes (the highlight collapses
-toward foreground in blueprint — confirm weight/underline still separate roles).
+toward foreground at high decoration — confirm weight/underline still separate roles).

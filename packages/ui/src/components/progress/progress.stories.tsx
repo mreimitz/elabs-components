@@ -54,16 +54,10 @@ export const Empty: Story = { render: () => <Progress value={0} className="w-64"
  * one, and #381 fixed it at the token — `--warning` is now a deep amber that
  * clears 3:1 on every content surface.
  *
- * `blueprint` is deliberately NOT in this table: `decoration.css` turns every
- * filled tone (`.bg-primary`/`.bg-success`/`.bg-warning`/`.bg-destructive`)
- * into a DRAWN control there — `background-color: transparent` plus the same
- * hatch and the same `1px solid var(--rule-strong)` border for all four
- * (measured: border 7.34:1 on the track, fill fully transparent), so there is
- * no painted fill to measure and no tone distinction FROM the fill in
- * blueprint (all four render as one visually identical bar). A guardrail must
- * be conveyed by `aria-valuetext` / an adjacent label there, not by color —
- * that is the existing `aria-valuetext` guidance above, not a blueprint-only
- * fallback.
+ * High decoration is deliberately NOT in this table: the decoration dial no
+ * longer re-inks controls at all (decoration paints backgrounds and chart
+ * fills only), so the indicator fill is the SAME painted token at every
+ * decoration level and this measurement holds across the whole dial.
  */
 export const Tones: Story = {
   render: () => (

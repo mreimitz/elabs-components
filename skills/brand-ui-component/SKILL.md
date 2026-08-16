@@ -1,6 +1,6 @@
 ---
 name: brand-ui-component
-description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs/components-ui, @elabs/components-data, @elabs/components-ai, @elabs/components-flow, @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing, @elabs/components-editor, @elabs/components-viewer, or @elabs/components-blueprint, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
+description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs/components-ui, @elabs/components-data, @elabs/components-ai, @elabs/components-flow, @elabs/components-maps, @elabs/components-charts, @elabs/components-marketing, @elabs/components-editor, or @elabs/components-viewer, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
 user-invocable: true
 argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
@@ -31,9 +31,8 @@ editor (Monaco) → `@elabs/components-editor` (markdown authoring/preview + fro
 on the `@elabs/components-editor/markdown` + `@elabs/components-editor/markdown/frontmatter` subpaths);
 displaying a file the app did not write (upload, signed URL, agent output) → `@elabs/components-viewer`
 (a new FORMAT is an adapter registration, not a new component);
-decorative blueprint-theme drawing furniture →
-`@elabs/components-blueprint`. One direction of dependency:
-`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/blueprint`.
+One direction of dependency:
+`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer`.
 Import across packages via `@elabs/components-*`, never relative paths.
 
 ## 3. Build to the rules

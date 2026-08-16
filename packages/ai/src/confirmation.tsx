@@ -79,7 +79,7 @@ export const Confirmation = ({
   // deliberate design-authority decision to drop the filled "AI card" look):
   // a neutral card ground (Alert variant="default") + ONE accent rail encoding
   // the outcome, plus the StatusBadge (icon + label, never color alone). The
-  // rails are hue-independent enough to stay legible in blueprint / high-contrast.
+  // rails are hue-independent enough to stay legible at high decoration / high-contrast.
   // A caller-supplied `variant` still wins (escape hatch).
   const railClass =
     approved === true

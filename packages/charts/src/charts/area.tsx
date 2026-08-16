@@ -171,10 +171,10 @@ export function Area({
     return index >= 0 ? index : 0;
   }, [lines, dataKey]);
 
-  // Blueprint pattern fill: active only under high decoration AND for palette fills
+  // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecoration();
   const patternRawScope = useId().replace(/:/g, "");
-  const useBlueprintPattern = high && isPaletteFill(fill);
+  const useDecorationPattern = high && isPaletteFill(fill);
   const bpPatternId = seriesPatternId(seriesIndex, patternRawScope);
 
   const pathRef = useRef<SVGPathElement>(null);
@@ -194,19 +194,19 @@ export function Area({
   const edgeMaskId = `area-edge-mask-${dataKey}-${uniqueId}`;
   const edgeGradientId = `${edgeMaskId}-gradient`;
 
-  const isPatternFill = useBlueprintPattern || fill.startsWith("url(");
+  const isPatternFill = useDecorationPattern || fill.startsWith("url(");
   const showAreaFill = isPatternFill || fillOpacity > 0;
-  // When blueprint pattern is active, use its url; otherwise fall through to gradient
-  const areaFill = useBlueprintPattern
+  // When the decoration pattern is active, use its url; otherwise fall through to gradient
+  const areaFill = useDecorationPattern
     ? `url(#${bpPatternId})`
     : isPatternFill
       ? fill
       : `url(#${gradientId})`;
 
   // Resolved stroke color (defaults to fill; pattern URLs need a real color).
-  // Under blueprint, use the series' own solid fill color (not the linePrimary default).
+  // At high decoration, use the series' own solid fill color (not the linePrimary default).
   const resolvedStroke =
-    stroke || (isPatternFill ? (useBlueprintPattern ? fill : chartCssVars.linePrimary) : fill);
+    stroke || (isPatternFill ? (useDecorationPattern ? fill : chartCssVars.linePrimary) : fill);
 
   const getY = useCallback(
     (d: Record<string, unknown>) => {
@@ -253,7 +253,7 @@ export function Area({
             data={renderData}
             innerRef={pathRef}
             stroke={visibleStroke}
-            strokeDasharray={useBlueprintPattern ? seriesDashArray(seriesIndex) : undefined}
+            strokeDasharray={useDecorationPattern ? seriesDashArray(seriesIndex) : undefined}
             strokeLinecap="round"
             strokeWidth={strokeWidth}
             x={(d) => xScale(xAccessor(d)) ?? 0}
@@ -281,7 +281,7 @@ export function Area({
 
   return (
     <>
-      {useBlueprintPattern && <defs>{makeSeriesPattern(seriesIndex, bpPatternId, fill)}</defs>}
+      {useDecorationPattern && <defs>{makeSeriesPattern(seriesIndex, bpPatternId, fill)}</defs>}
       <AreaGradientDefs
         edgeGradientId={edgeGradientId}
         edgeMaskId={edgeMaskId}

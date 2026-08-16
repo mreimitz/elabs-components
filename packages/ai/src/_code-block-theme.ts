@@ -10,7 +10,7 @@
  * (`@elabs/components-tokens`, ADR 0015: oklch → hex, no canvas needed since every
  * `--code-*` token is authored as `oklch()`) and builds a single Shiki
  * `ThemeRegistrationRaw` that matches whatever brand theme is currently active
- * — including blueprint's own monochrome ink palette, never a recolored GitHub
+ * — including a low-chroma monochrome ink palette, never a recolored GitHub
  * theme. Callers re-derive (and re-highlight) whenever `data-theme` changes;
  * see `code-block.tsx`'s `data-theme` MutationObserver.
  *

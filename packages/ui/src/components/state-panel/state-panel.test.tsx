@@ -16,7 +16,7 @@ describe("StatePanel", () => {
     render(<StatePanel kind="error" />);
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
-    // Structural eyebrow label — non-color cue for blueprint/monochrome themes (#179).
+    // Structural eyebrow label — non-color cue for monochrome themes (#179).
     expect(screen.getByText("Error")).toBeInTheDocument();
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
     expect(screen.getByText("An unexpected error occurred. Please try again.")).toBeInTheDocument();

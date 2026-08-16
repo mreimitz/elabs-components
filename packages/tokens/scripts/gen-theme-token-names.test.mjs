@@ -58,7 +58,7 @@ describe("themeTokenContract", () => {
   --font-sans: Inter;
   --t-fast: 120ms;
   --duration-fast: 120ms;
-  --bp-grid: oklch(0 0 0);
+  --deco-grid: oklch(0 0 0);
   --motion-factor: 1;
 }
 `;

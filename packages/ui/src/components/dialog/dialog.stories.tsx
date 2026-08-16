@@ -465,7 +465,7 @@ export const WideWithSectionsDark: Story = {
 export const WideWithSectionsHighDecoration: Story = {
   name: "Wide with sections — high decoration",
   globals: { decoration: "10" },
-  render: () => <WideSettingsDialog prefix="wide-blueprint" />,
+  render: () => <WideSettingsDialog prefix="wide-decorated" />,
   play: WideWithSections.play,
 };
 

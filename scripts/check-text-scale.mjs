@@ -35,7 +35,6 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
-import { PAUSED_PACKAGE_DIR_NAMES } from "./lib/paused-surfaces.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR);
@@ -110,8 +109,6 @@ function main(argv) {
   const pkgsDir = join(REPO_ROOT, "packages");
   const pkgCounts = {};
   for (const pkg of existsSync(pkgsDir) ? readdirSync(pkgsDir) : []) {
-    // A paused package is not gated (.claude/rules/paused-surfaces.md).
-    if (PAUSED_PACKAGE_DIR_NAMES.has(pkg)) continue;
     const src = join(pkgsDir, pkg, "src");
     if (existsSync(src)) Object.assign(pkgCounts, scanTree(src));
   }

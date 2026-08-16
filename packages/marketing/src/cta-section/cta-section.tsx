@@ -30,7 +30,7 @@ export function CTASection({
       {description ? (
         // Inherit `color` from the `.bg-primary` section root, exactly like the
         // heading above — do NOT re-declare `text-primary-foreground` (or any
-        // alpha-faded companion-token utility) here. decoration.css's blueprint
+        // alpha-faded companion-token utility) here. decoration.css's high-decoration
         // ink override only re-inks elements that themselves carry `.bg-primary`;
         // a descendant that sets its own `-foreground` class silently steps
         // outside that contract and stops being re-inked (#393).

@@ -101,8 +101,7 @@ A full `pnpm install` for this monorepo (Storybook + Vite + React Flow + TanStac
 - Import resolution audit: 175 source files scanned; all 187 relative + 46
   `@elabs/components-*` imports resolve to real files (no broken paths/typos).
 - Token consistency: 48 semantic tokens; every `@theme inline` `var()` maps to a
-  defined token; blueprint covers the full set (blueprint intentionally inherits
-  `--radius` from `:root`).
+  defined token; every shipped theme covers the full set.
 - No raw hex colors in any component package (only `themes.css` defines colors).
 - Shell hooks pass `bash -n` and behave correctly on sample inputs (blocks
   `rm -rf /` and force-push; allows safe commands; boundary warnings fire only on

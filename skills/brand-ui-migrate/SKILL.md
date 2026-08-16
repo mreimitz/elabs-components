@@ -103,7 +103,7 @@ and tests after each batch, not at the end.
 ## 5 · Verify — per screen, per theme
 
 - `brand-ui audit src/` and fix what it reports.
-- Check every migrated screen in **light, dark and blueprint**. A
+- Check every migrated screen in **light, dark**. A
   screen that only works in one theme is not migrated.
 - Report honestly: what moved, what was skipped and why, and what the user should
   look at closely. Lead with what you did **not** verify.

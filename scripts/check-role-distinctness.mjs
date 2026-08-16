@@ -13,7 +13,7 @@
  * found `--success` byte-identical to `--primary` and `--ring` to `--info` in
  * both reference themes; #385 found the same class in `:root` (five roles —
  * `--primary`, `--ring`, `--sidebar-primary`, `--sidebar-ring`, `--chart-1` — on
- * ONE literal) and in blueprint. A focus ring that renders in exactly the colour
+ * ONE literal) and at high decoration. A focus ring that renders in exactly the colour
  * of the primary button and of chart series 1 has destroyed the only signal
  * those tokens carry.
  *
@@ -36,7 +36,7 @@
  *   - `themes-contrast.test.ts` `ROLE_PAIRS` (:179, #334) owns `(success, primary)`
  *     and `(ring, info)`. This file deliberately does NOT duplicate those two rows.
  *   - This gate proves THE TOKENS DIFFER.
- *   - #391 proves THE DIFFERENCE SURVIVES TO THE PIXEL (blueprint's status roles
+ *   - #391 proves THE DIFFERENCE SURVIVES TO THE PIXEL (a decoration override
  *     are NOT aliased — ΔE 0.070/0.212 — yet render identically because
  *     `decoration.css` rewrites every `.bg-<tone>` to one declaration set). A
  *     token-level gate is structurally blind to that; do not delete either as
@@ -53,8 +53,8 @@ import { dirname } from "node:path";
 // declarations these gates scan for, so both must blank comments before matching.
 import { blankComments } from "./check-elevation.mjs";
 // The ACTIVE theme set — a paused theme is kept as source but never gated
-// (single source of truth: PAUSED_THEMES in theme-types.ts).
-import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
+// (single source of truth: BUILT_IN_THEMES in theme-types.ts).
+import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
 // Every stylesheet that carries a theme block (ADR 0029 split the reference
 // themes out of themes.css). Throws rather than return an incomplete set.
 import { readThemesCss } from "./lib/theme-sources.mjs";
@@ -147,12 +147,11 @@ export const MUST_DIFFER = [
  * deliberate act with an argument attached.
  */
 export const EXEMPTIONS = new Map([
-  // Empty on purpose. The only exemptions this list ever carried were the three
-  // monochrome rows for the now-PAUSED `blueprint` theme (the architect's
+  // Empty on purpose. The only exemptions this list ever carried were three
+  // monochrome rows for a theme this repo no longer ships (the architect's
   // 2026-08-02 decision for #385). The gate reads the ACTIVE theme set, so an
-  // exemption naming a paused theme is dead weight — and the self-test rejects
-  // it as an unknown theme. Restore them from git history if that theme is ever
-  // un-paused (.claude/rules/paused-surfaces.md).
+  // exemption naming a theme that is not registered is dead weight — and the
+  // self-test rejects it as an unknown theme.
 ]);
 
 /**

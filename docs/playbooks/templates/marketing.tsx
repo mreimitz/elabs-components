@@ -183,7 +183,7 @@ function MarketingLandingTemplate() {
             IN behind the headline and meets the page grid below with no seam. The
             band is full-bleed on purpose: a fade inside the centred column would
             leave crisp grid in the margins beside it and read as a patch, not a
-            fade. It paints `--bp-grid` on a masked ::before layer, so the ink rides
+            fade. It paints `--deco-grid` on a masked ::before layer, so the ink rides
             the dial and the band is INERT at decoration 0 — light and
             dark render exactly as before. */}
         <section data-decoration-fade="top" className="bg-background pt-16">

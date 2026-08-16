@@ -8,7 +8,7 @@
  * unnamed icon button is a WCAG 4.1.2 failure and is invisible in review.
  *
  * The frame's `border` is also locked here: it reads redundant on a light theme
- * (the recess + shadow already lift it) but under blueprint/decoration the
+ * (the recess + shadow already lift it) but at high decoration/decoration the
  * shadow is zeroed and the border becomes the SOLE structural cue — the
  * canonical "redundant-on-light, sole-cue-under-decoration" KEEP (#194).
  */

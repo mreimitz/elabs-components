@@ -92,7 +92,7 @@ export const Thing = forwardRef<HTMLDivElement, ThingProps>(function Thing(
 ## Theme-safety
 
 Don't reach for `dark:` overrides — components rely on semantic tokens so all three
-themes (light default, dark, blueprint) benefit. If you add a visual
+themes (light default, dark) benefit. If you add a visual
 concept, it's a token in every theme block, not a literal in the component.
 
 ## Accessibility baseline

@@ -45,9 +45,8 @@ import type {
   CalcValue,
   EvaluateCalc,
 } from "./types";
-// Carry the `.brand-calc-tok--<role>` color + the low-chroma non-hue role cues
-// (#226) so the RENDERED block stays role-distinct even when used without the
-// editor authoring surfaces (which also import this stylesheet).
+// Carry the `.brand-calc-tok--<role>` role colours, so the RENDERED block reads
+// identically to the editor authoring surfaces (which import the same stylesheet).
 import "./calc-editor.css";
 
 export interface CalcBlockProps extends Omit<HTMLAttributes<HTMLElement>, "children" | "title"> {

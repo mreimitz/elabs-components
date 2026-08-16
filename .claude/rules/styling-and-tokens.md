@@ -82,7 +82,7 @@
 - **`kpi` pairs with `tabular-nums`; `code` pairs with `font-mono`.**
 - **Theme seams:** `--font-display` (identity-default `var(--font-sans)`) lets a
   brand re-skin headlines without touching components; `--font-mono` is the
-  explicit mono seam (blueprint overrides it). Both are root-only `font-`
+  explicit mono seam. Both are root-only `font-`
   machinery (parity-allowlisted).
 - **Type IS density-aware (#340, 2026-08-02 — reverses the earlier stance).**
   `data-density` scales the type scale as well as the spacing, so a compact
@@ -180,18 +180,13 @@ single opt-in prop rather than a per-component judgment call:
 
 - **Each region owns ONE focal separation gesture**, picked by semantic role:
   - **fill / zone** — `bg-surface-muted` (neutral), `bg-chat-user` (user
-    message), `bg-<status>/10` wash (attention; escapes the blueprint
-    drawn-not-filled _override_ by token inequality — `bg-success/10` is a
-    different Tailwind class than `bg-success`, so `decoration.css`'s
-    class-scoped selector never matches it — do NOT mint `-subtle` tokens).
-    **Escaping the override is not the same as delivering separation in
-    blueprint**: blueprint's status tokens are near-white, low-chroma and
-    separated by lightness only, so at 10% alpha two adjacent statuses measure
-    ΔE ≈0.012 — indistinguishable by colour alone (#391). A status rendered
-    with this wash in blueprint/high decoration MUST also carry the
-    `[data-status]` non-colour line-type attribute (see
-    `.claude/rules/blueprint-decoration.md` "Status = line type, not colour")
-    for the separation to actually read;
+    message), `bg-<status>/10` wash (attention — do NOT mint `-subtle` tokens).
+    **A low-chroma palette is where this wash stops working**: if the theme's
+    status tokens are separated by lightness only, two adjacent statuses at 10%
+    alpha can measure ΔE ≈0.012 — indistinguishable by colour alone (#391). That
+    is a property of the PALETTE, not of the decoration dial (which no longer
+    re-inks any fill); in such a theme a status needs a second, non-colour
+    channel on the component itself — see @.claude/rules/accessibility.md;
   - **accent rail** — `border-s-2` (quiet) / `border-s-4` (emphatic) +
     `border-s-<role>`: `primary` = the answer/completed, `info` = in-progress,
     `muted` = technical/neutral, `border-strong` = structural attention;
@@ -264,8 +259,8 @@ single opt-in prop rather than a per-component judgment call:
   block: `--shadow-color` (the ink), `--shadow-strength` (multiplier on every
   layer's alpha — `0` = shadowless), `--shadow-ring-color` (the hairline). The
   hairline is deliberately **outside** the strength dial, so a shadowless surface
-  keeps its drawn edge: that is how blueprint (and `data-decoration="8|9|10"`)
-  goes shadowless with one declaration instead of a list of shadow classes.
+  keeps its drawn edge: that is how `data-decoration="8|9|10"` goes shadowless
+  with one declaration instead of a list of shadow classes.
 - **The ring is a redundant boundary, not a 1.4.11 cue.** At 5%/18% it is as
   quiet as the `border-border` it replaces, and legitimate for the same reason
   (fill + elevation also signal the edge). A boundary that is the **sole**

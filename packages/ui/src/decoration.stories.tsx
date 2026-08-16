@@ -8,13 +8,22 @@ import { Input } from "./components/input";
 
 /**
  * Foundation/Decoration — the decoration DIAL (`--decoration`, 0–10), orthogonal
- * to color. The SAME real `@elabs/components-ui` components are rendered across the ramp:
- * 0 = plain themed UI; mid = a gentle graph-paper + hatch texture (fills/shadows
- * stay); 10 = full reprographic drafting (drawn-not-filled, squared, shadowless).
+ * to color. The SAME real `@elabs/components-ui` components are rendered across the ramp.
+ *
+ * WHAT THE DIAL TOUCHES: backgrounds, and nothing else. It fades a drafting
+ * sheet in behind the page (faded, never flat — see `Fade` below) and, at 8–10,
+ * squares the large radii and goes shadowless. Charts additionally swap flat
+ * series fills for patterns at 8–10.
+ *
+ * WHAT IT NEVER TOUCHES: the inside of a control. The buttons, inputs and badges
+ * below render identically at decoration 10 and at 0 — no hatch, no
+ * drawn-not-filled plates. Texture inside an input is noise where someone is
+ * reading their own typing, and re-inking the six role fills collapsed them to
+ * one appearance, which used to force a whole compensating non-colour channel.
  *
  * It is hue-INDEPENDENT — flip the **theme** toolbar to see the dial on green,
  * navy, light paper, etc. Any story can be swept via the **Decoration** toolbar
- * global (or `globals=decoration:<0..10>`); `blueprint` ships at decoration 10.
+ * global (or `globals=decoration:<0..10>`).
  * Set it in code via `<DecorationProvider level={n}>`, a `data-decoration="n"`
  * attribute, or `ThemeProvider`/`useDecoration` (document-level).
  */
@@ -73,14 +82,14 @@ const FADES = ["top", "bottom", "edges", "center"] as const;
 /**
  * The GROUND FADE (`data-decoration-fade`) — an opt-in region gesture that fades
  * the ambient graph paper out instead of ruling a region edge to edge. It paints
- * the SAME `--bp-grid` on a decorative `::before` layer and masks THAT, so the ink
+ * the SAME `--deco-grid` on a decorative `::before` layer and masks THAT, so the ink
  * still rides the dial (inert at decoration 0) and the region's own content is
  * never masked — the text in each panel stays at full opacity.
  *
- * The fade OWNS its region's ground: the host **and its descendants** are excluded
- * from the plain-grid rule, so a nested surface can't punch a crisp, full-strength
- * rectangle into the field that was just faded out (the third panel below nests a
- * `bg-card`).
+ * The fade OWNS its region's ground. Opaque surfaces are never ruled themselves —
+ * the ambient sheet is painted once, behind the page — so a nested surface can't
+ * punch a crisp, full-strength rectangle into the field that was just faded out
+ * (the third panel below nests a `bg-card`).
  *
  * Budget: it spends the region's one focal drafting gesture. For a one-off fade on
  * a single element, use Tailwind's own `mask-t-from-*` / `mask-radial-*` utilities.
@@ -148,5 +157,80 @@ export const Fade: Story = {
     // …and neither is a surface nested inside it (no crisp patch in a faded field).
     const nested = canvas.getByTestId("fade-nested-surface");
     await expect(getComputedStyle(nested).backgroundImage).toBe("none");
+  },
+};
+
+/**
+ * The AMBIENT GROUND, as an executable lock. The sheet is painted exactly once —
+ * on a fixed, masked layer behind the page — so this asserts the three properties
+ * a static reading of the CSS cannot: the layer exists and carries the dial-driven
+ * grid, it is MASKED (never flat), and no opaque surface re-rules it on top.
+ *
+ * The dial is set from the toolbar global, which writes `data-decoration` on the
+ * preview root exactly as `ThemeProvider` does — a `DecorationProvider` wrapper
+ * would NOT reach `body`, which is why `Dial` above cannot stand in for this.
+ */
+export const AmbientGround: Story = {
+  globals: { decoration: "10" },
+  render: () => (
+    <Card className="w-64" data-testid="ground-card">
+      <CardHeader>
+        <CardTitle>On the sheet</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-caption text-muted-foreground">
+          An opaque panel covers the ground; it never re-rules it.
+        </p>
+      </CardContent>
+    </Card>
+  ),
+  play: async () => {
+    const ground = getComputedStyle(document.body, "::before");
+
+    // The sheet exists and carries the dial-driven grid…
+    await expect(ground.content).not.toBe("none");
+    await expect(ground.backgroundImage).toContain("gradient");
+    await expect(ground.position).toBe("fixed");
+    await expect(ground.pointerEvents).toBe("none");
+
+    // …and it is never flat: the layer itself is masked.
+    await expect(ground.maskImage).not.toBe("none");
+
+    // The host is unmasked, so the page's own content is never faded with it.
+    await expect(getComputedStyle(document.body).maskImage).toBe("none");
+  },
+};
+
+/**
+ * The control invariant, as an executable lock: at FULL decoration the dial must
+ * not have painted anything into a control. A `Button` keeps its solid role fill
+ * (no `background-image`), an `Input` keeps a clean ground, and a `Badge` keeps
+ * its own tone rather than collapsing to a drawn outline.
+ *
+ * This is the story to run when someone reintroduces a "drawn-not-filled" rule:
+ * it fails on the hatch, not on a screenshot review three weeks later.
+ */
+export const ControlsAreUntouched: Story = {
+  globals: { decoration: "10" },
+  render: () => (
+    <div data-testid="controls" className="flex flex-wrap items-center gap-3">
+      <Button data-testid="deco-button">Save</Button>
+      <Button variant="outline">Cancel</Button>
+      <Badge variant="warning">degraded</Badge>
+      <Input data-testid="deco-input" placeholder="Filter services…" className="w-48" />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    const button = canvas.getByTestId("deco-button");
+    const input = canvas.getByTestId("deco-input");
+
+    // No hatch, no texture: the dial paints backgrounds, never controls.
+    await expect(getComputedStyle(button).backgroundImage).toBe("none");
+    await expect(getComputedStyle(input).backgroundImage).toBe("none");
+
+    // And the role fill is still a real, opaque plate — not the old
+    // "transparent ground + hairline" drawn control.
+    await expect(getComputedStyle(button).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    await expect(getComputedStyle(button).backgroundColor).not.toBe("transparent");
   },
 };

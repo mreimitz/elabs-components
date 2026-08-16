@@ -4,7 +4,7 @@
 Generated from `brand-ui.manifest.json` by `brand-ui context`. Do not hand-edit inside the markers. The live, queryable API is `brand-ui docs <Component>`.
 
 Themes (1): dark
-Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 161 · Registry items: 21
+Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 162 · Registry items: 21
 
 Rules: semantic tokens only (no raw hex); forwardRef + cn() + spread props; Radix for
 overlays; compound composition; visible focus ring; works in every theme. Dependency
@@ -13,7 +13,7 @@ flows one way: tokens → ui/icons → data/ai/flow/charts/marketing/editor.
 ## Packages & components
 
 ### @elabs/components-tokens — Semantic CSS-variable themes + ThemeProvider/useTheme.
-BUILT_IN_THEME_DEFINITIONS, BUILT_IN_THEME_META, BUILT_IN_THEMES, DECORATION_LEVELS, DecorationProvider, DEFAULT_DECORATION_LEVEL, DEFAULT_DENSITY, DEFAULT_MOTION_PREFERENCE, DEFAULT_TASTE_PROFILE, DEFAULT_TASTE_REGISTER, DEFAULT_THEME, DENSITIES, DENSITY_META, MOTION_PREFERENCE_META, MOTION_PREFERENCES, PAUSED_THEMES, TASTE_REGISTER_META, TASTE_REGISTERS, THEME_TOKEN_NAMES, ThemeProvider, useDecoration, useDensity, useMotionPreference, useReducedMotion, useTasteProfile, useTheme
+BUILT_IN_THEME_DEFINITIONS, BUILT_IN_THEME_META, BUILT_IN_THEMES, DECORATION_LEVELS, DecorationProvider, DEFAULT_DECORATION_LEVEL, DEFAULT_DENSITY, DEFAULT_MOTION_PREFERENCE, DEFAULT_TASTE_PROFILE, DEFAULT_TASTE_REGISTER, DEFAULT_THEME, DENSITIES, DENSITY_META, MOTION_PREFERENCE_META, MOTION_PREFERENCES, TASTE_REGISTER_META, TASTE_REGISTERS, THEME_TOKEN_NAMES, ThemeProvider, useDecoration, useDensity, useMotionPreference, useReducedMotion, useTasteProfile, useTheme
 
 ### @elabs/components-icons — Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
 AppIcon, BookmarkIcon, BrandLogo, ChartAreaIcon, ChartBarIcon, ChartComboIcon, ChartLineIcon, ChartPieIcon, ChartScatterIcon, ChatIcon, DashboardIcon, DataConnectionIcon, DataModelIcon, DatasetIcon, DimensionIcon, FilterPaneIcon, FlowIcon, GaugeIcon, Icon, InsightIcon, KpiIcon, MeasureIcon, PipelineIcon, PivotIcon, SearchIcon, SheetIcon, SparklesIcon, StoryIcon, TableIcon, TrendDownIcon, TrendUpIcon

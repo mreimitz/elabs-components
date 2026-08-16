@@ -134,8 +134,8 @@ describe("themes.css — chart palette WCAG contrast (all themes)", () => {
 });
 
 // NOTE Issue #163's monochrome chart-series lightness ramp lived here. It only
-// applied to the PAUSED `blueprint` theme, so it is retired with it — restore it
-// from git history when that theme is un-paused (.claude/rules/paused-surfaces.md).
+// applied to a monochrome theme this repo no longer ships, so it is retired with
+// it — restore it from git history if such a theme returns.
 
 // #401 — `tokenMap` (above) used to scan the RAW block body: a comment sitting
 // directly above a declaration and mentioning a `--token:`-shaped substring

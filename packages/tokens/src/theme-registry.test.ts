@@ -27,8 +27,6 @@ import {
   DEFAULT_THEME,
   defineTheme,
   isBuiltInThemeName,
-  isPausedThemeName,
-  PAUSED_THEMES,
   resolveThemeIsDark,
   THEME_TOKEN_NAMES,
   type ThemeDefinition,
@@ -81,13 +79,11 @@ describe("the built-in registry", () => {
     }
   });
 
-  it("never enumerates a paused theme", () => {
-    for (const paused of PAUSED_THEMES) {
-      expect(isPausedThemeName(paused)).toBe(true);
-      expect(isBuiltInThemeName(paused)).toBe(false);
-      expect(BUILT_IN_THEME_DEFINITIONS.some((d) => d.value === paused)).toBe(false);
-      expect(Object.keys(BUILT_IN_THEME_META)).not.toContain(paused);
-    }
+  it("never enumerates a name outside the built-in registry", () => {
+    const outsider = "midnight";
+    expect(isBuiltInThemeName(outsider)).toBe(false);
+    expect(BUILT_IN_THEME_DEFINITIONS.some((d) => d.value === outsider)).toBe(false);
+    expect(Object.keys(BUILT_IN_THEME_META)).not.toContain(outsider);
   });
 });
 

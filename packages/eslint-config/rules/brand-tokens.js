@@ -15,7 +15,7 @@
  *     (`text-[#fff]`, `bg-[oklch(...)]`) and points at the semantic tokens
  *     (`text-foreground`, `text-muted-foreground`, `bg-primary` +
  *     `text-primary-foreground`, `bg-success/10`, …). Raw colour bypasses every
- *     theme (light/-v2, dark/-v2, blueprint) and breaks contrast.
+ *     theme (light, dark) and breaks contrast.
  *
  * Detection mirrors scripts/check-raw-palette.mjs (RAW_PALETTE_RE) so the two
  * surfaces agree. Inspects `className`/`class` attributes and class-utility

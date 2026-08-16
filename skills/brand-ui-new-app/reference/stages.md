@@ -73,7 +73,7 @@ capturing it here is what makes "done" checkable instead of a matter of taste.
 
 **Round 1 — theme + register**
 
-1. **Theme** — light (default) · dark · blueprint. **Render a sample
+1. **Theme** — light (default) · dark. **Render a sample
    surface in the candidate theme** (loop rung 1) before they pick — never pick a
    theme on its name.
 2. **Register** — which bar this app is judged against. Two options, product
@@ -92,14 +92,14 @@ capturing it here is what makes "done" checkable instead of a matter of taste.
 Offer three named presets, not three sliders (concepts, not parameters). Record
 the axis values, never the preset name alone:
 
-| Preset               | density       | motion   | expressiveness | For                                                        |
-| -------------------- | ------------- | -------- | -------------- | ---------------------------------------------------------- |
-| **Calm** _(default)_ | `comfortable` | `system` | `0`            | Almost everything. Nothing moves that doesn't have to.     |
-| **Dense**            | `compact`     | `system` | `0`            | Operator/admin consoles, trading-desk data density.        |
-| **Expressive**       | `comfortable` | `system` | `4`            | Pitch/demo surfaces; blueprint texture, expressive layout. |
+| Preset               | density       | motion   | expressiveness | For                                                       |
+| -------------------- | ------------- | -------- | -------------- | --------------------------------------------------------- |
+| **Calm** _(default)_ | `comfortable` | `system` | `0`            | Almost everything. Nothing moves that doesn't have to.    |
+| **Dense**            | `compact`     | `system` | `0`            | Operator/admin consoles, trading-desk data density.       |
+| **Expressive**       | `comfortable` | `system` | `4`            | Pitch/demo surfaces; drafting texture, expressive layout. |
 
 - **`expressiveness` IS the decoration dial** (`--decoration`, 0–10) — not a
-  separate knob. Picking `blueprint` as the theme already implies 10; don't ask
+  separate knob. Don't ask
   twice.
 - **No preset sets `motion: "full"` — a scaffold never may.** `full` is an
   informed-consent **override**, not a "more motion" dial: `[data-motion-pref="full"]`

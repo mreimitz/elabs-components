@@ -30,7 +30,7 @@ export const ChartFallback = forwardRef<HTMLDivElement, ChartFallbackProps>(func
       ref={ref}
       className={cn(
         // border-border keeps the placeholder boundary visible even in themes
-        // where --surface-muted is close to --background (e.g. blueprint).
+        // where --surface-muted is close to --background (e.g. a low-chroma theme).
         "flex items-center justify-center rounded-md border border-border bg-surface-muted text-muted-foreground text-body",
         className,
       )}

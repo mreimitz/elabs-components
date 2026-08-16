@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { findParityViolations } from "./check-theme-parity.mjs";
-import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
+import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
 
 const isClean = (css) => findParityViolations(css).length === 0;
 const hasViolation = (css) => findParityViolations(css).length > 0;
@@ -52,9 +52,9 @@ test("PASSES: --foo declared in every theme block", () => {
 
 // ── Fixture C: allowlist-pattern drift guard — root-only machinery → PASS ────
 
-test("PASSES: --bp-new declared only in :root (allowlisted, blueprint family)", () => {
-  const css = buildCss({ extra: "\n  --bp-new: oklch(0.5 0 0);" });
-  assert.ok(isClean(css), "--bp-* is root-only machinery — must not be flagged");
+test("PASSES: --deco-new declared only in :root (allowlisted, drafting family)", () => {
+  const css = buildCss({ extra: "\n  --deco-new: oklch(0.5 0 0);" });
+  assert.ok(isClean(css), "--deco-* is root-only machinery — must not be flagged");
 });
 
 test("PASSES: --t-new declared only in :root (allowlisted, motion timing)", () => {

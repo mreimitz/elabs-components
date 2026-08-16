@@ -163,11 +163,6 @@ export function collectDependencies(packagesDir) {
  *   memory.
  */
 export const FONT_UPSTREAM = {
-  "ibm-plex-mono": {
-    name: "IBM Plex Mono",
-    url: "https://github.com/IBM/plex",
-    copyrightFallback: null, // its OFL.txt carries the notice
-  },
   inter: {
     name: "Inter",
     url: "https://github.com/rsms/inter",

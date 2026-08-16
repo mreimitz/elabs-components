@@ -50,7 +50,7 @@ describe("Composer — tone prop (double-card arrangement, #254)", () => {
     expect(frame.className.split(" ")).toContain("bg-surface-muted");
     expect(frame.className.split(" ")).not.toContain("bg-card");
     // The frame keeps its border in BOTH tones: on light it's redundant
-    // (the fill already separates it from the page), but under `blueprint` the
+    // (the fill already separates it from the page), but under high decoration the
     // decoration dial zeros the shadow — the border becomes the SOLE structural
     // cue there, so it must never be dropped for either tone (see #254 review).
     expect(frame.className.split(" ")).toContain("border");

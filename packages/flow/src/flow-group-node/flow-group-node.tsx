@@ -53,7 +53,7 @@ const handleClassName = "!size-2 !border-2 !border-flow-group-border !bg-flow-gr
  * a `<NodeResizer>` lets the group be resized.
  *
  * The surface uses the FL-01 tokens `--flow-group` (fill) + `--flow-group-border`
- * (border). Under the blueprint theme `--flow-group` is near-transparent, so the
+ * (border). Under a theme whose `--flow-group` is near-transparent, the
  * drawn border does the work.
  */
 export function FlowGroupNode({ id, data, selected }: NodeProps<BrandFlowGroupNode>) {

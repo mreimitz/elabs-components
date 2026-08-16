@@ -56,7 +56,7 @@ theming, and unpolished states.
 - **Spacing & alignment** — consistent rhythm; no cramped/awkward gaps; aligned
   edges; balanced density for data-heavy views.
 - **Color & contrast** — body text ≥ 4.5:1 and UI ≥ 3:1 in every theme; tokens
-  used correctly; no muddy or vibrating color pairings (watch blueprint especially).
+  used correctly; no muddy or vibrating color pairings.
 - **Typography** — sensible scale, comfortable line length/height, no clipping.
 - **Consistency** — components look like one family across pages/themes; radius,
   shadow, border and state styling are uniform.

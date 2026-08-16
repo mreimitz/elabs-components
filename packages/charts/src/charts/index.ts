@@ -310,7 +310,7 @@ export {
 // Series bar (time-based columns for ComposedChart)
 export { SeriesBar, type SeriesBarProps } from "./series-bar";
 export { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
-// Blueprint series-pattern foundation (#164)
+// Decoration series-pattern foundation (#164)
 export {
   isPaletteFill,
   makeSeriesPattern,
@@ -328,7 +328,7 @@ export {
   type SeriesPointMarkerProps,
   type SeriesPointMarkerStyle,
 } from "./series-point-marker";
-// Blueprint decoration detection hook (#164)
+// Decoration detection hook (#164)
 export { useHighDecoration, useHighDecorationOf } from "./use-high-decoration";
 // Theme --radius → px resolver for SVG bar geometry (#165)
 export { useResolvedRadius, useResolvedRadiusOf } from "./use-resolved-radius";

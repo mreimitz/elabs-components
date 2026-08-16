@@ -39,7 +39,7 @@ Nav: sidebar (one item per surface).
 - **Theme:** dark
 - **Taste profile:** register `product` · density `comfortable` · motion `system` ·
   expressiveness `0` — the restrained default. Expressiveness IS the decoration
-  dial (`--decoration`); raise it only if the app should carry blueprint texture.
+  dial (`--decoration`); raise it only if the app should carry drafting texture.
 
 ## Per-surface detail
 

@@ -24,7 +24,7 @@ patterns, so a brand can be swapped via themes rather than hardcoded anywhere.
 - Fast to use for prototypes and demos; fast for coding agents to extend safely.
 - First-class support for AI/chat UIs and React Flow canvases, plus data grids
   and dashboards.
-- Multiple themes from day one (light, dark, blueprint).
+- Multiple themes from day one (light, dark).
 - Two consumption modes: imported stable primitives, and copy-owned registry
   blocks/templates.
 - High-signal docs + Claude Code setup so humans and agents extend it correctly.

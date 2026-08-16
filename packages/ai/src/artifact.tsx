@@ -35,7 +35,7 @@ export const Artifact = ({ className, loading = false, children, ...props }: Art
       <div
         // KEEP this border (#194, research 08 §G.5): it is redundant on light
         // (the #187 page-ground recess + shadow already lift the frame), but under
-        // blueprint/decoration the shadow is zeroed and the border becomes the
+        // high decoration the shadow is zeroed and the border becomes the
         // SOLE structural cue — the canonical "redundant-on-light, sole-cue-under-
         // decoration" KEEP example. Do not drop it in a border-noise pass.
         className={cn(

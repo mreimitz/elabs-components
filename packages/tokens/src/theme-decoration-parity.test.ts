@@ -8,7 +8,8 @@
  * field the drift was invisible; the moment a UI reads it — the playground's
  * decoration slider (#31) — a stale value shows "Theme default (2)" and parks the
  * thumb at 2 on a screen rendering the full dial-10 reprographic texture. That is
- * exactly the drift this test locks out (blueprint shipped `2` vs `--decoration: 10`).
+ * exactly the drift this test locks out (a registry entry saying `2` while the
+ * theme's own block sets `--decoration: 10`).
  *
  * Browser-free: parses themes.css directly, so it cannot be fooled by a mock.
  */
@@ -25,13 +26,13 @@ const css = readThemeCss();
 /**
  * The `--decoration` a theme's CSS blocks declare, or 0 when none does (the token
  * then falls back to the `:root` default). A theme may own more than one
- * `[data-theme="x"] { … }` block (blueprint has a second, palette-bound one), so
+ * `[data-theme="x"] { … }` block (a palette block plus a mechanism block), so
  * every block is scanned and the LAST declaration wins — as the cascade does.
  */
-function cssDecorationLevel(theme: ThemeName): number {
+function cssDecorationLevel(theme: ThemeName, source: string = css): number {
   const blockRe = new RegExp(`\\[data-theme="${theme}"\\][^{]*\\{([\\s\\S]*?)\\n\\}`, "g");
   let level = 0;
-  for (const block of css.matchAll(blockRe)) {
+  for (const block of source.matchAll(blockRe)) {
     const body = block[1] ?? "";
     // `--decoration:` only — never the derived `--decoration-factor`.
     for (const decl of body.matchAll(/--decoration\s*:\s*(\d+)\s*;/g)) {
@@ -46,15 +47,24 @@ describe("theme decoration parity (themes.css ⇄ BUILT_IN_THEME_META)", () => {
     expect(BUILT_IN_THEME_META[theme].decorationLevel ?? 0).toBe(cssDecorationLevel(theme));
   });
 
-  it("reads a real value out of themes.css (the parser itself is not vacuous)", () => {
+  it("reads a real non-zero value (the parser itself is not vacuous)", () => {
     // Guards against a regex that silently matches nothing and passes 0 === 0.
-    // The theme is DERIVED from the stylesheet rather than named, so pausing or
-    // retuning whichever theme carries a non-zero dial can't turn this vacuous.
-    const declared = css.match(
-      /\[data-theme="([^"]+)"\][^{]*\{[^}]*?--decoration\s*:\s*([1-9]\d*)/,
-    );
-    expect(declared, "themes.css declares no non-zero --decoration anywhere").not.toBeNull();
-    expect(cssDecorationLevel(declared![1] as ThemeName)).toBe(Number(declared![2]));
+    // Both SHIPPED themes sit at dial 0, so the fixture is synthetic: it proves
+    // the parser can see a non-zero dial and that the LAST block wins, which is
+    // the property the parity assertions above depend on.
+    const fixture = [
+      '[data-theme="drafting"] {',
+      "  --decoration: 4;",
+      "}",
+      '[data-theme="drafting"] {',
+      "  --decoration: 9;",
+      "}",
+      '[data-theme="plain"] {',
+      "  --background: white;",
+      "}",
+    ].join("\n");
+    expect(cssDecorationLevel("drafting" as ThemeName, fixture)).toBe(9);
+    expect(cssDecorationLevel("plain" as ThemeName, fixture)).toBe(0);
   });
 
   it("every declared level is a valid dial position", () => {

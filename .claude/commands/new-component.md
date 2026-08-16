@@ -75,13 +75,11 @@ or **extend** (modify the existing component + add its story/test coverage). For
 ## Step 2 — Pick the package
 
 Choose the target package under `packages/` (ui, data, ai, flow, maps, charts,
-marketing, editor, viewer, blueprint). If unclear from the name/purpose, ask which package. Keep app
+marketing, editor, viewer). If unclear from the name/purpose, ask which package. Keep app
 UI in `@elabs/components-ui`, marketing in `@elabs/components-marketing`, code-editor surfaces
 (Monaco) in `@elabs/components-editor`, surfaces that display a file the app did not
 write (uploads, signed URLs, agent output) in `@elabs/components-viewer`,
-geospatial/MapLibre surfaces in `@elabs/components-maps`,
-and decorative blueprint-theme drawing furniture
-(graph paper, sheet frames, dimension lines, marks) in `@elabs/components-blueprint`.
+and geospatial/MapLibre surfaces in `@elabs/components-maps`.
 
 ## Step 3 — Scaffold the files
 

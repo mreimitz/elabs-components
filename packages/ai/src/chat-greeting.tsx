@@ -13,10 +13,9 @@ export interface ChatGreetingProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   /**
    * Phrase rendered in `text-primary-text` with a bold underline, appended
    * after `subtitle` (or alone). The underline + weight is a NON-hue channel
-   * deliberately layered on top of the color — `blueprint`’s `--primary` is a
-   * near-white "pen" (its whole monochrome design intent, see
-   * `blueprint-decoration.md`), so on that theme the accent colour alone is
-   * indistinguishable from the surrounding `--foreground` headline text. The
+   * deliberately layered on top of the color — a monochrome theme's `--primary`
+   * can be a near-white "pen" by design, in which case the accent colour alone
+   * is indistinguishable from the surrounding `--foreground` headline text. The
    * underline/weight keep the phrase legible as an accent in EVERY theme,
    * not only the two where hue alone would carry it.
    */
@@ -37,8 +36,8 @@ export interface ChatGreetingProps extends Omit<HTMLAttributes<HTMLDivElement>, 
  * ChatGreeting — the centered first-run greeting for an empty chat/composer scene.
  *
  * A display-scale headline (`title`, then `subtitle` with an `accent` phrase
- * in `text-primary-text` + a bold underline, so the accent reads in every theme —
- * including `blueprint`, whose monochrome `--primary` is otherwise the same
+ * in `text-primary-text` + a bold underline, so the accent reads in every theme,
+ * including a monochrome one whose `--primary` is otherwise the same
  * near-white as the headline) over an optional soft primary glow. Pair it
  * with `<Composer />` for the standard empty/first-run chat state.
  *

@@ -18,7 +18,7 @@ export function LegendMarker({ className = "h-2.5 w-2.5" }: LegendMarkerProps) {
   const patternId = seriesPatternId(item.seriesIndex ?? 0, useId().replace(/:/g, ""));
   const size = 10;
 
-  // Under high decoration with a seriesIndex, render a blueprint pattern swatch
+  // Under high decoration with a seriesIndex, render a decoration pattern swatch
   if (high && item.seriesIndex !== undefined) {
     const dash = seriesDashArray(item.seriesIndex);
     return (

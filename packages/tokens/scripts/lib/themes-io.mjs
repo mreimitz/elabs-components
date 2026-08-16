@@ -8,7 +8,7 @@
  *
  * In scope = a per-theme SEMANTIC color/value token whose value is a literal
  * `oklch(...)` OR a `var(--…)` alias, and whose name is NOT machinery (the
- * parity gate's root-only allowlist: decoration / blueprint / motion / radius /
+ * parity gate's root-only allowlist: decoration / motion / radius /
  * font). The assembler rewrites ONLY the value text of these lines, in place,
  * matched by token name within each block — every other byte is preserved.
  *
@@ -47,15 +47,10 @@ function parseStringArray(text, name) {
  *
  * DERIVED from `BUILT_IN_THEMES` in `src/theme-types.ts` — the single source of truth for
  * the ACTIVE theme set — rather than hand-copied. A second literal drifts the
- * day someone adds, renames or un-pauses a theme, which is exactly how this file
+ * day someone adds or renames a theme, which is exactly how this file
  * and `scripts/check-theme-parity.mjs` came to disagree.
  *
- * A PAUSED theme is absent by construction (it lives in `PAUSED_THEMES`, not
- * `BUILT_IN_THEMES`): its DTCG file and its CSS block both stay on disk, but the sync
- * never reads or rewrites them — "kept as source, not touched"
- * (.claude/rules/paused-surfaces.md).
- *
- * Parsed here rather than imported from `scripts/lib/paused-surfaces.mjs` so this
+ * Parsed here rather than imported from `scripts/lib/active-themes.mjs` so this
  * file stays self-contained across the `packages/tokens` ⇄ repo-root `scripts/`
  * boundary — same reason `blankComments` below is duplicated.
  */
@@ -66,10 +61,10 @@ export const THEME_NAMES = [
 
 /**
  * Machinery declared per-theme but NOT a synced semantic value (timing /
- * decoration / blueprint overlay / radius scale / fonts). Identical to the
+ * decoration overlay / radius scale / fonts). Identical to the
  * parity gate's ROOT_ONLY_RE so the two stay in lockstep.
  */
-const MACHINERY_RE = /^--(decoration($|-)|bp-|duration-|t-|motion-|radius($|-)|font-)/;
+const MACHINERY_RE = /^--(decoration($|-)|deco-|duration-|t-|motion-|radius($|-)|font-)/;
 
 /**
  * A token is in scope for the DTCG sync iff it is NOT machinery AND its value is
@@ -136,9 +131,9 @@ export function parseScopedTokens(body) {
 }
 
 /**
- * Where each mode's block LIVES on disk (ADR 0029). `:root` and the paused
- * `blueprint` blocks stay in the engine stylesheet; the two REFERENCE themes are
- * opt-in files a consumer imports (or doesn't).
+ * Where each mode's block LIVES on disk (ADR 0029). `:root` stays in the engine
+ * stylesheet; the two REFERENCE themes are opt-in files a consumer imports (or
+ * doesn't).
  *
  * Keep this derived from `THEME_NAMES`, never hand-listed: a theme added to
  * `BUILT_IN_THEMES` without a matching file is a loud failure in
@@ -149,9 +144,7 @@ export function themeSourcePath(mode) {
 }
 
 /**
- * Every file that declares a theme block, in cascade order (engine first). The
- * paused `blueprint` blocks live inside THEMES_CSS, so they are covered by the
- * first entry without being enumerated (.claude/rules/paused-surfaces.md).
+ * Every file that declares a theme block, in cascade order (engine first).
  */
 export function themeSourcePaths() {
   return [THEMES_CSS, ...THEME_NAMES.filter((m) => m !== ROOT_MODE).map(themeSourcePath)];
@@ -188,7 +181,7 @@ export function readThemesCss() {
 
 /**
  * Machinery legitimately declared ONLY in `:root` — timing, decoration dial,
- * blueprint overlay vars, radius scale, fonts. Identical in meaning to
+ * decoration overlay vars, radius scale, fonts. Identical in meaning to
  * `check-theme-parity.mjs`'s `ROOT_ONLY_RE`; the two are deliberately separate
  * literals for the same reason `blankComments` is duplicated (this file stays
  * self-contained across the `packages/tokens` ⇄ repo-root `scripts/` boundary).
@@ -196,7 +189,7 @@ export function readThemesCss() {
  * `pnpm theme-parity:check` both derive from the same themes.css, so a change to
  * one regex and not the other shows up as a contract/parity disagreement.
  */
-const ROOT_ONLY_RE = /^--(decoration($|-)|bp-|duration-|t-|motion-|radius($|-)|font-)/;
+const ROOT_ONLY_RE = /^--(decoration($|-)|deco-|duration-|t-|motion-|radius($|-)|font-)/;
 
 /**
  * The TOKEN CONTRACT a theme must cover: every semantic token declared by the

@@ -536,7 +536,7 @@ export const RevealSelectedNode: Story = {
  * plus `aria-selected`, not fill contrast alone.
  *
  * NOTE: cross-theme visual correctness (the three shipped themes — light,
- * dark, blueprint) requires a real render and is owed to a human reviewer;
+ * dark) requires a real render and is owed to a human reviewer;
  * the tokens are semantic so they adapt, but pixel-level confirmation cannot be
  * automated in this environment.
  */

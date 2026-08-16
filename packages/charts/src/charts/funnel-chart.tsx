@@ -867,7 +867,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     return () => ro.disconnect();
   }, [measure]);
 
-  // Blueprint series-pattern ramp: auto-inject when high decoration and no
+  // Decoration series-pattern ramp: auto-inject when high decoration and no
   // explicit renderPattern is provided by the caller.
   const high = useHighDecorationOf(internalRef);
   const resolvedRenderPattern: FunnelChartProps["renderPattern"] =

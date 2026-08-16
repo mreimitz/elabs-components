@@ -2,6 +2,55 @@
 
 ## Unreleased
 
+### Decoration is a background texture again — never inside a control, never flat
+
+The decoration dial used to reach everywhere: it hatched buttons, menu items,
+tabs and links on hover, re-drew the six coloured role plates as transparent
+outlines, and ruled the same graph paper onto the page **and** onto every panel,
+card and muted surface on top of it. The result was texture in the one place
+someone is reading their own typing, and a screen that stacked three or four
+full-strength grids on itself.
+
+- **The dial now paints backgrounds and chart fills. Nothing else.** A button, an
+  input, a badge, a menu item and a timeline dot render identically at decoration
+  10 and at decoration 0. Charts still swap flat series colour for pattern fills
+  at high decoration, unchanged.
+- **The ground is painted once, behind the page, and fades out.** One fixed layer
+  carries the sheet; opaque panels simply cover it, the way a card on a desk
+  covers the paper under it. It also stops repainting the viewport on every scroll
+  frame, which was a known source of touch-scroll stutter.
+- **No decoration is flat any more.** Every ground — the ambient sheet, an opt-in
+  region ground, and the three paper classes — is masked so it fades into
+  transparency: a vignette by default, or a direction (`top`/`bottom`/`edges`/
+  `center`) when you pick one. The fade is on the texture layer, so a region's own
+  text and controls stay fully opaque.
+- **The paper classes are much quieter.** `bg-paper`, `bg-dot-grid` and
+  `bg-grid-paper` had inks two to three times too strong and a grain layer you
+  could see from across the room; all three were dialled down and now fade at
+  their edges. Retune with the `--paper-*` tokens, or per element with
+  `[--paper-fade:…]`.
+- **What high decoration still does to a control** is shape and elevation only:
+  it goes shadowless and squares the large corner radii. Both remove a gesture
+  rather than paint one.
+- **A whole compensating vocabulary could be deleted with it.** Re-inking the six
+  role plates to one appearance had collapsed six meanings into one colour, which
+  is why the system carried per-status line types, per-polarity glyphs, and
+  weight/underline cues in the calculation editor. None of that is needed once the
+  dial stops painting controls, so all of it is gone. A story now fails the build
+  if anyone paints a control from the dial again.
+
+### The blueprint theme and its drawing package are gone
+
+The experimental navy blueprint theme, the `@elabs/components-blueprint` drawing
+package, and the "paused surfaces" machinery that kept them frozen have all been
+removed. Two reference themes ship: `light` and `dark`.
+
+- **The decoration dial stays.** It was never the blueprint theme — it is a
+  hue-independent texture dial that rides any palette, including one you author,
+  and it keeps working exactly as before (with the policy above).
+- **Nothing needs un-pausing any more.** The pause list, its gate and its rule are
+  gone; a theme or package is either shipped or it is not.
+
 ### The default themes and the logo are no longer someone else's brand
 
 The two reference themes shipped a specific company's colour system, typeface and

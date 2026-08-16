@@ -170,13 +170,10 @@ function parseTokens(repoRoot) {
   css = css.replace(/\/\*[\s\S]*?\*\//g, "");
   // The user-selectable themes are the `[data-theme="…"]` blocks. `:root` holds a
   // neutral light BASE/fallback (not a selectable theme), so it is NOT listed.
-  // A PAUSED theme keeps its CSS block (pause ≠ delete) but is not selectable —
-  // see `.claude/rules/paused-surfaces.md`; the array is read, never hard-coded.
-  const paused = parsePausedThemes(repoRoot);
   const themes = [];
   for (const m of css.matchAll(/\[data-theme="([^"]+)"\]/g)) {
     const name = m[1];
-    if (name === "..." || themes.includes(name) || paused.includes(name)) continue;
+    if (name === "..." || themes.includes(name)) continue;
     themes.push(name);
   }
   // tokens from the :root block (first { ... })
@@ -188,14 +185,6 @@ function parseTokens(repoRoot) {
     tokens: [...new Set(tokens)],
     radius: radiusMatch ? radiusMatch[1].trim() : null,
   };
-}
-
-/** Paused theme names, read from `PAUSED_THEMES` in theme-types.ts (never hard-coded). */
-function parsePausedThemes(repoRoot) {
-  const t = read(join(repoRoot, "packages/tokens/src/theme-types.ts"));
-  const m = t && t.match(/PAUSED_THEMES\s*=\s*\[([^\]]*)\]/);
-  if (!m) return [];
-  return [...m[1].matchAll(/['"]([^'"]+)['"]/g)].map((x) => x[1]);
 }
 
 function parseDefaultTheme(repoRoot) {
@@ -987,9 +976,6 @@ export function generateManifest(repoRoot, opts = {}) {
       // (with the declared range, not a `*` wildcard) even in consumer mode,
       // where only the bundled manifest is reachable. #263 AC3.
       peerDependencies = pkgJson.peerDependencies;
-      // A PAUSED package (`brandUi.paused`) keeps its source but is out of every
-      // enumeration — see `.claude/rules/paused-surfaces.md`.
-      if (pkgJson.brandUi?.paused) continue;
     } catch {
       continue;
     }

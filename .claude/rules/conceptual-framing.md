@@ -16,7 +16,7 @@ Before committing an architecture (new package / new components / a mechanism):
 
 - Generate **2–3 conceptually distinct approaches**, not one idea's implementation.
 - Score each against the real success criterion (e.g. "any unmodified screen reads as a
-  blueprint, automatically") — not against ease of building.
+  drafting sheet, automatically") — not against ease of building.
 - **Prefer a systemic / automatic solution** (a token/theme re-encoding every consumer
   gets for free) over **additive, opt-in parts** (new components someone must
   hand-place). If a "theme" only works when you drop widgets onto each screen, the model

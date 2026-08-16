@@ -12,7 +12,7 @@ example and the default registry, not the menu.
   `[data-theme="name"]` block.
 - **Where the CSS lives:** `packages/tokens/src/themes.css` is the **engine**
   (Tailwind bridge, `:root` base, the dials, the base layer, the motion gate, and
-  the PAUSED blueprint blocks). Each reference theme is its own **opt-in** file —
+  the dials). Each reference theme is its own **opt-in** file —
   `src/themes/light.css`, `src/themes/dark.css`, exported as
   `@elabs/components-tokens/themes/<name>.css`. `styles.css` does **not** import
   them; a consumer imports the ones they want, or none.
@@ -22,15 +22,13 @@ example and the default registry, not the menu.
     DTCG pipeline uses `themeSourcePaths()` in `scripts/lib/themes-io.mjs`. All
     three THROW on an incomplete set, because the failure mode is not a crash —
     a block regex keeps matching, just less. `check-surface-elevation.mjs`
-    audited `:root` + the paused blueprint block and printed a cheerful
+    audited `:root` alone and printed a cheerful
     "2 theme block(s)" for exactly as long as that guard was missing.
 - **Provider:** `ThemeProvider` (from `@elabs/components-tokens`) writes `data-theme` and
   persists the choice; `useTheme()` reads/sets it and returns `themeDefinitions`.
 - **Reference themes:** `light` (default) and `dark` — the built-in registry
   (`BUILT_IN_THEMES` / `BUILT_IN_THEME_META` / `BUILT_IN_THEME_DEFINITIONS` in
-  `theme-types.ts`; `DEFAULT_THEME` picks the default). (`blueprint` is paused:
-  kept in `themes.css`, out of `BUILT_IN_THEMES`; see
-  @.claude/rules/paused-surfaces.md.)
+  `theme-types.ts`; `DEFAULT_THEME` picks the default).
 - **Registering a CONSUMER theme** (the supported path, no fork):
   `<ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, defineTheme({…})]}>`.
   The prop **replaces** the default registry, so shipping none of ours is
@@ -92,11 +90,11 @@ example and the default registry, not the menu.
   `tokens:build` / `pnpm tokens:check` unchanged.
   - **Two things must stay literals.** (1) Anything
     `themes-contrast.test.ts`/`charts-contrast.test.ts` asserts on — their
-    `tokenMap` regex only sees `oklch()`, which is why `--input` and blueprint's
-    `--border-strong` carry a comment saying so. (2) Roles that merely _coincide_
-    (blueprint's `--ring` and `--accent-foreground` are both the one white)
-    rather than mirroring: aliasing those would mean retuning the hover ink
-    silently moves the focus ring.
+    `tokenMap` regex only sees `oklch()`, which is why `--input` carries a
+    comment saying so. (2) Roles that merely _coincide_
+    (e.g. a monochrome theme whose `--ring` and `--accent-foreground` are both
+    the same white) rather than mirroring: aliasing those would mean retuning
+    the hover ink silently moves the focus ring.
 - **Roles that co-occur must stay PERCEPTIBLY apart — `pnpm roles:check` (#385).**
   Parity proves a token is _present_; the contrast gate proves it clears a ratio
   against a _surface_. Neither can see two independent roles collapsing onto one
@@ -105,16 +103,17 @@ example and the default registry, not the menu.
   `MUST_DIFFER` pair list per theme at the same 0.05 OKLab ΔE floor, resolving
   `var()` first so an alias can't launder a collision.
   - **Adding an exemption:** scope it to one `(theme, pair)` and cite the
-    **theme's own design contract** (blueprint's three ring rows are exempt
-    because it is monochrome by contract and its chart ramp is pinned by
-    `charts-contrast.test.ts`). If a pair needs an exemption in a _polychrome_
+    **theme's own design contract** (a monochrome-by-contract theme may exempt
+    its ring rows if its chart ramp is pinned by `charts-contrast.test.ts`). If
+    a pair needs an exemption in a _polychrome_
     theme, the pair is the mistake — delete it from `MUST_DIFFER`. That is why
     `(--primary, --chart-1)` is deliberately absent: shipping series 1 as a
     chart-tuned cousin of the brand hue is a convention, not a collision.
   - **This gate is token-level only.** It proves the tokens differ; it cannot
-    prove the difference survives to the pixel — `decoration.css` rewrites every
-    `.bg-<tone>` under blueprint to one declaration set, so non-aliased status
-    roles still render identically (#391 owns that half). Keep both.
+    prove the difference survives to the pixel — a downstream override that
+    rewrote every `.bg-<tone>` to one declaration set would render non-aliased
+    status roles identically (#391 owns that half; `pnpm decoration-collapse:check`
+    guards against reintroducing one). Keep both.
 - **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427).**
   `--ring` had no stated contract, only a negative comment ("distinct from the
   green brand AND `--info`"), which is why #334's fix was free to leave the
@@ -153,11 +152,12 @@ example and the default registry, not the menu.
   gets correct tokens but no `dark:` overrides (ADR 0029 "Watch for"). Semantic
   tokens are the only channel that reaches an unregistered theme.
 - **Brand assets** (logo, icons) should use `currentColor`/tokens so they adapt.
-- **Decoration dial (orthogonal to color):** `--decoration` (0–10) adds reprographic
-  "blueprint" texture (grid/hatch/drawn-not-filled/squared) to ANY theme, hue-independent.
-  Set it per theme (blueprint = 10), per region (`data-decoration="N"` or
-  `<DecorationProvider>`), or document-level (`ThemeProvider`/`useDecoration`). Overlay
-  rules live in `decoration.css`; policy in @.claude/rules/blueprint-decoration.md.
+- **Decoration dial (orthogonal to color):** `--decoration` (0–10) fades a drafting
+  ground in behind ANY theme, hue-independent, and at 8–10 squares the large radii and
+  goes shadowless. It paints BACKGROUNDS only — never the inside of a control. Set it
+  per theme, per region (`data-decoration="N"` or `<DecorationProvider>`), or
+  document-level (`ThemeProvider`/`useDecoration`). Overlay rules live in
+  `decoration.css`; policy in @.claude/rules/decoration.md.
 
 - **`color-scheme`** — every theme block sets `color-scheme: light|dark` so native
   scrollbars, form controls and page chrome match the active theme (see

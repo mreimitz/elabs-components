@@ -4,7 +4,7 @@
  * Milkdown core ships ZERO styles (headless), so this is where brand-ui owns the
  * look. Every value is a semantic design token (var(--foreground), --border,
  * --radius, …) — NO raw colors — so the editor matches all three themes
- * (light/dark/blueprint) for free. Every rule
+ * (light/dark) for free. Every rule
  * is scoped under `.milkdown-host` so nothing leaks globally.
  */
 

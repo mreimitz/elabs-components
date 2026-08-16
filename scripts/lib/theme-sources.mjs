@@ -4,13 +4,12 @@
  * ADR 0029 split the two REFERENCE themes out of `packages/tokens/src/themes.css`
  * into their own opt-in stylesheets (`src/themes/light.css`, `src/themes/dark.css`),
  * so a consumer who authors their own themes pays no bytes for ours. The engine
- * stylesheet keeps `:root` (the neutral base) and the PAUSED `blueprint` blocks
- * (pause ≠ move ≠ delete — @.claude/rules/paused-surfaces.md).
+ * stylesheet keeps `:root` (the neutral base), the Tailwind bridge and the dials.
  *
  * That split is a live hazard for every gate that parsed the single file: the
  * regexes still MATCH — they just match less. `check-surface-elevation.mjs` went
- * from auditing `:root` + light + dark to auditing `:root` + blueprint and
- * printed a cheerful "2 theme block(s)". Green, and meaningless. So the fix is
+ * from auditing `:root` + light + dark to auditing `:root` alone and
+ * printed a cheerful block count. Green, and meaningless. So the fix is
  * not "each gate opens more files"; it is ONE reader that fails loudly when the
  * set it returns cannot possibly be complete.
  *
@@ -26,13 +25,13 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { ACTIVE_THEMES } from "./paused-surfaces.mjs";
+import { ACTIVE_THEMES } from "./active-themes.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url)); // scripts/lib
 export const REPO_ROOT = dirname(dirname(HERE));
 export const TOKENS_SRC = join(REPO_ROOT, "packages", "tokens", "src");
 
-/** The engine stylesheet: `:root`, the Tailwind bridge, the dials, blueprint. */
+/** The engine stylesheet: `:root`, the Tailwind bridge, the dials. */
 export const THEMES_CSS = join(TOKENS_SRC, "themes.css");
 
 /** Where one active theme's block lives. */

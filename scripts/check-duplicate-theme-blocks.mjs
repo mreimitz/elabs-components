@@ -16,17 +16,17 @@
  * introduced by merge 7f5ead8). See issue #196.
  *
  * WHY "color block", not "any duplicate selector": some themes legitimately
- * declare a SECOND, machinery-only block for the same selector — e.g. blueprint's
+ * declare a SECOND, machinery-only block for the same selector — e.g. a theme's
  * font/mono *mechanism* block (`--font-sans`/`--font-mono` + `font-family`), and
  * the second `:root` carrying the `--expo-out` easing ramp. Those declare NO
  * synced color token (no `--x: oklch()/var()`), so the DTCG tooling does not
  * track them and they do not override the color layer. The gate counts only
  * color blocks — mirroring `themes-io.mjs isInScope()` (a token is synced iff its
- * value is an `oklch(...)` literal or a `var(--...)` alias) — so blueprint's
+ * value is an `oklch(...)` literal or a `var(--...)` alias) — so such a
  * mechanism block and the easing `:root` are correctly allowed.
  *
  * (Deliberately NOT done: hardening `locateBlock()` to throw on >1 match — that
- * would false-fail on blueprint's legitimate 2nd block. This dedicated gate, with
+ * would false-fail on a legitimate 2nd block. This dedicated gate, with
  * the color-block discriminator, is the correct enforcement; first-match stays
  * safe precisely because this gate guarantees one color block per selector.)
  *
@@ -38,8 +38,8 @@
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 // The ACTIVE theme set — a paused theme is kept as source but never gated
-// (single source of truth: PAUSED_THEMES in theme-types.ts).
-import { ACTIVE_THEMES } from "./lib/paused-surfaces.mjs";
+// (single source of truth: BUILT_IN_THEMES in theme-types.ts).
+import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
 // Every stylesheet that carries a theme block (ADR 0029 split the reference
 // themes out of themes.css). Throws rather than return an incomplete set.
 import { readThemesCss } from "./lib/theme-sources.mjs";
@@ -136,7 +136,7 @@ function main(argv) {
         "is invisible to the DTCG assembler / theme-parity / contrast gates (all\n" +
         "first-match), so the tools go green while the browser renders the stale\n" +
         "values. Delete the duplicate block(s) in packages/tokens/src/themes.css\n" +
-        "(keep the maintained one). Machinery-only secondary blocks (e.g. blueprint's\n" +
+        "(keep the maintained one). Machinery-only secondary blocks (e.g. a font/easing\n" +
         "font mechanism, the easing :root) are allowed — they declare no color token.\n" +
         "See GitHub issue #196.",
     );

@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-16T17:24:10.761Z",
+  "generatedAt": "2026-08-16T18:20:49.992Z",
   "name": "brand-ui",
   "themes": [
     "dark"
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 161,
+  "tokenCount": 162,
   "tokens": [
     "--font-sans",
     "--font-mono",
@@ -136,15 +136,15 @@
     "--decoration",
     "--decoration-factor",
     "--radius",
-    "--bp-grid-ink",
-    "--bp-grid-ink-major",
-    "--bp-hatch-ink",
-    "--bp-hatch-strong-ink",
-    "--bp-rule-weight",
-    "--bp-hatch-pitch",
-    "--bp-grid",
-    "--bp-hatch",
-    "--bp-hatch-strong",
+    "--deco-grid-ink",
+    "--deco-grid-ink-major",
+    "--deco-hatch-ink",
+    "--deco-hatch-strong-ink",
+    "--deco-rule-weight",
+    "--deco-hatch-pitch",
+    "--deco-grid",
+    "--deco-hatch",
+    "--deco-hatch-strong",
     "--paper-dot-ink",
     "--paper-dot-pitch",
     "--paper-dot-size",
@@ -152,11 +152,12 @@
     "--paper-rule-pitch",
     "--paper-grain-scale",
     "--paper-grain",
-    "--bp-fade-top",
-    "--bp-fade-bottom",
-    "--bp-fade-edges",
-    "--bp-fade-center",
-    "--bp-fade",
+    "--deco-fade-top",
+    "--deco-fade-bottom",
+    "--deco-fade-edges",
+    "--deco-fade-center",
+    "--deco-fade",
+    "--paper-fade",
     "--duration-fast",
     "--duration-base",
     "--duration-slow",
@@ -3873,7 +3874,7 @@
               "name": "accent",
               "optional": true,
               "type": "ReactNode",
-              "description": "Phrase rendered in `text-primary-text` with a bold underline, appended after `subtitle` (or alone). The underline + weight is a NON-hue channel deliberately layered on top of the color — `blueprint`’s `--primary` is a near-white \"pen\" (its whole monochrome design intent, see `blueprint-decoration.md`), so on that theme the accent colour alone is indistinguishable from the surrounding `--foreground` headline text. The underline/weight keep the phrase legible as an accent in EVERY theme, not only the two where hue alone would carry it."
+              "description": "Phrase rendered in `text-primary-text` with a bold underline, appended after `subtitle` (or alone). The underline + weight is a NON-hue channel deliberately layered on top of the color — a monochrome theme's `--primary` can be a near-white \"pen\" by design, in which case the accent colour alone is indistinguishable from the surrounding `--foreground` headline text. The underline/weight keep the phrase legible as an accent in EVERY theme, not only the two where hue alone would carry it."
             },
             {
               "name": "orb",
@@ -5500,7 +5501,7 @@
               "name": "tone",
               "optional": true,
               "type": "\"surface\" | \"card\"",
-              "description": "The fill of the inner well (the `InputGroup` `variant`). `\"surface\"` (default) is the standard muted composer look; `\"card\"` renders a `bg-card` well for nesting inside an already-tinted outer frame — the \"double card\" look (#254). e.g. `<div className=\"rounded-xl bg-surface-muted p-1.5\"><PromptInput tone=\"card\">…</PromptInput></div>`. The well fill is NOT universally \"white\": `--card` reads lighter (raised) than `--surface-muted` on light themes, but darker (recessed) on dark and blueprint — the same theme-dependent trade-off documented for `bg-surface-muted`-as-a-well in `styling-and-tokens.md`. The well stays a legible, distinct tone against the outer frame in every theme; only the \"raised\" framing is light-themes-specific."
+              "description": "The fill of the inner well (the `InputGroup` `variant`). `\"surface\"` (default) is the standard muted composer look; `\"card\"` renders a `bg-card` well for nesting inside an already-tinted outer frame — the \"double card\" look (#254). e.g. `<div className=\"rounded-xl bg-surface-muted p-1.5\"><PromptInput tone=\"card\">…</PromptInput></div>`. The well fill is NOT universally \"white\": `--card` reads lighter (raised) than `--surface-muted` on light themes, but darker (recessed) on dark — the same theme-dependent trade-off documented for `bg-surface-muted`-as-a-well in `styling-and-tokens.md`. The well stays a legible, distinct tone against the outer frame in every theme; only the \"raised\" framing is light-themes-specific."
             },
             {
               "name": "onError",
@@ -12757,7 +12758,7 @@
               "name": "radius",
               "optional": true,
               "type": "number | \"theme\"",
-              "description": "Corner radius for bar top corners. `\"theme\"` (default) follows the active theme's `--radius` token (squares in blueprint/high-decoration, scales with rounder themes); a number is an explicit px override. #165"
+              "description": "Corner radius for bar top corners. `\"theme\"` (default) follows the active theme's `--radius` token (squares in high decoration, scales with rounder themes); a number is an explicit px override. #165"
             },
             {
               "name": "animate",
@@ -14596,7 +14597,7 @@
         },
         "FlowMiniMap": {
           "extends": [
-            "Node = Node> = MiniMapProps<NodeType>;\n\n/**\n * Branded preset over React Flow's `<MiniMap>` — sources node/mask colors from\n * the `--flow-minimap-*` tokens so the overview stays theme-aware (the raw\n * `MiniMap` re-export defaults to library colors and renders theme-blind,\n * especially under `blueprint`). Every prop can still be overridden; render\n * inside a `<CanvasShell>` (it needs the React Flow context via `useStore`).\n */\nexport function FlowMiniMap<NodeType extends Node = Node>("
+            "Node = Node> = MiniMapProps<NodeType>;\n\n/**\n * Branded preset over React Flow's `<MiniMap>` — sources node/mask colors from\n * the `--flow-minimap-*` tokens so the overview stays theme-aware (the raw\n * `MiniMap` re-export defaults to library colors and renders theme-blind,\n * especially under a low-chroma theme). Every prop can still be overridden; render\n * inside a `<CanvasShell>` (it needs the React Flow context via `useStore`).\n */\nexport function FlowMiniMap<NodeType extends Node = Node>("
           ],
           "props": []
         },
@@ -16253,11 +16254,6 @@
           "module": "packages/tokens/src/theme-types.ts"
         },
         {
-          "name": "PAUSED_THEMES",
-          "kind": "value",
-          "module": "packages/tokens/src/theme-types.ts"
-        },
-        {
           "name": "TASTE_REGISTER_META",
           "kind": "value",
           "module": "packages/tokens/src/theme-types.ts"
@@ -16317,7 +16313,6 @@
         "isDecorationLevel",
         "isDensity",
         "isMotionPreference",
-        "isPausedThemeName",
         "isTasteRegister",
         "oklchToHex",
         "resolveThemeIsDark",
@@ -16329,7 +16324,6 @@
         "typeDensityMode",
         "typeMotionPreference",
         "typeMotionPreferenceMeta",
-        "typePausedThemeName",
         "typeResolveTokenColorOptions",
         "typeTasteProfile",
         "typeTasteRegister",
@@ -16401,7 +16395,7 @@
               "name": "defaultDecoration",
               "optional": true,
               "type": "DecorationLevel | null",
-              "description": "Initial decoration override when nothing is persisted. `null` (default) = follow the active theme's own level (blueprint = 10, others = 0), writing no attribute for zero-flash SSR."
+              "description": "Initial decoration override when nothing is persisted. `null` (default) = follow the active theme's own level (both reference themes = 0), writing no attribute for zero-flash SSR."
             },
             {
               "name": "decorationStorageKey",

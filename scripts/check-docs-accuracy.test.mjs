@@ -168,14 +168,14 @@ test("PASSES: an ADR title matching /two.*canvas/i (not just 'dual')", () => {
 // ── THEME COUNT (#64) — derived from THEMES, word AND numeric forms ────────────
 
 test("the count is DERIVED from packages/tokens/src/theme-types.ts", () => {
-  const src = 'export const THEMES = ["light", "dark", "blueprint"] as const;';
+  const src = 'export const THEMES = ["light", "dark", "drafting"] as const;';
   assert.equal(themeCountFromSource(src), 3);
   assert.equal(themeCountFromSource('export const THEMES = ["a", "b"] as const;'), 2);
   assert.equal(themeCountFromSource("no themes here"), null);
 });
 
 test("FLAGS: the word form ('all six themes') the PR template carried for months", () => {
-  const text = "- [ ] Works in all six themes (light, dark, light, dark, blueprint, high-contrast)";
+  const text = "- [ ] Works in all six themes (light, dark, light, dark, high-contrast)";
   const v = findThemeCountViolations(text, 3);
   assert.equal(v.length, 1);
   assert.equal(v[0].claimed, 6);

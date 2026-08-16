@@ -212,7 +212,7 @@ export const messageActionsVariants = cva(
        *   takes `shadow-ring-*` and NO border — the ring bakes the 1px edge in as
        *   the shadow's last layer, so there is no second crisp stroke beside it,
        *   and because the hairline sits OUTSIDE `--shadow-strength` the pill keeps
-       *   a drawn edge under blueprint / `data-decoration="8|9|10"` where the lift
+       *   a drawn edge at high decoration / `data-decoration="8|9|10"` where the lift
        *   is zeroed.
        */
       appearance: {

@@ -250,7 +250,7 @@ export const Drilldown: Story = {
  * Three-theme sweep for the categorical x-axis (#352 AC5). Same idiom as
  * `bar-chart.stories.tsx` — an explicit `<ThemeProvider>` around the SAME
  * render, so `test-storybook` renders and axe-asserts the band-mode axis
- * labels, grid and tooltip chrome in `dark` and `blueprint` every run
+ * labels, grid and tooltip chrome in `dark` every run
  * instead of relying on a one-off manual toggle.
  */
 export const CategoricalXScaleDark: Story = {

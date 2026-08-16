@@ -30,8 +30,8 @@
 #    repo is a debranded fork; the names were removed once, and a generated
 #    artifact, a dependency bump or a doc written from an old memory would put
 #    them back. Blocking (not best-effort) because there is no safe automatic
-#    rewrite — a name needs a replacement that reads right in context. Paused
-#    surfaces are exempt, derived from scripts/lib/paused-surfaces.mjs. The
+#    rewrite — a name needs a replacement that reads right in context. There
+#    are no exemptions beyond the gate's own source. The
 #    full-tree run is `pnpm debrand:check`; this stages-only arm is the cheap
 #    commit-time half.
 # 2) When a commit stages files that change the manifest's inputs (any package
