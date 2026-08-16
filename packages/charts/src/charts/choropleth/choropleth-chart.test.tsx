@@ -7,8 +7,8 @@
  * stub out the motion/react animation hooks so no timers bleed.
  *
  * Full render + a11y is covered by the Storybook story tests
- * (pnpm --filter @elabs/components-docs test-storybook), following the
- * @elabs/components-editor / @elabs/components-flow precedent.
+ * (pnpm --filter @elabs-ai/components-docs test-storybook), following the
+ * @elabs-ai/components-editor / @elabs-ai/components-flow precedent.
  */
 
 import { describe, expect, it, vi } from "vitest";

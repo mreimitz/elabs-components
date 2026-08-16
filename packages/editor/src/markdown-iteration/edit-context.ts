@@ -9,7 +9,7 @@
  * Instead the node-view emits an edit REQUEST through this context; the consumer
  * (above the editor) renders the dialog and writes the result back via `onSave`.
  * When no handler is provided, the `⋯` button is hidden and the template stays
- * editable inline. This keeps `@elabs/components-editor` a presentation layer — the app owns
+ * editable inline. This keeps `@elabs-ai/components-editor` a presentation layer — the app owns
  * how/where the modal mounts.
  */
 import { createContext } from "react";

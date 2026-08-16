@@ -170,7 +170,7 @@ const HATCH = hatchOffsets();
  * surface and white on a dark one, with no per-place override and no
  * `prefers-color-scheme` branch. The construction square takes
  * `--brand-mark-tail`, the theme's primary. Both are set per theme in
- * `@elabs/components-tokens`, so the mark always renders the active theme's
+ * `@elabs-ai/components-tokens`, so the mark always renders the active theme's
  * approved colorway. Pass `tone="white"` to force the monochrome white mark on a
  * colored background. No background fill — drop it straight onto any surface.
  *

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, Skeleton, useLocale } from "@elabs/components-ui";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button, Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { LucideIcon } from "lucide-react";
 import { XIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";

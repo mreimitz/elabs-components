@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * series-pattern — the deterministic series→pattern ramp for @elabs/components-charts.
+ * series-pattern — the deterministic series→pattern ramp for @elabs-ai/components-charts.
  *
  * Issue #164. Once a theme removes hue (any region at high
  * `--decoration`), chart series can no longer be told apart by color. This module

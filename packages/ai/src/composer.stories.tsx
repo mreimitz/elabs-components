@@ -24,7 +24,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The standard brand-ui AI chat input: a rounded two-tone double card (outer bg-card frame + muted status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a model pill, voice, and a circular send. Built on the real @elabs/components-ai PromptInput. Use it as the chat input everywhere — a ChatShell footer or a standalone empty-state composer. Semantic tokens only; reads in all themes.",
+          "The standard brand-ui AI chat input: a rounded two-tone double card (outer bg-card frame + muted status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a model pill, voice, and a circular send. Built on the real @elabs-ai/components-ai PromptInput. Use it as the chat input everywhere — a ChatShell footer or a standalone empty-state composer. Semantic tokens only; reads in all themes.",
       },
     },
   },

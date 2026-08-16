@@ -1,6 +1,6 @@
 "use client";
 
-import { Input, Label } from "@elabs/components-ui";
+import { Input, Label } from "@elabs-ai/components-ui";
 
 export interface FieldProps {
   id: string;

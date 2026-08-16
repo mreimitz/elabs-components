@@ -31,13 +31,13 @@ test("the lockstep train is derived, not hard-coded", () => {
     "component package",
   );
   assert.ok(
-    isDistributable({ name: "@elabs/components-cli" }),
+    isDistributable({ name: "@elabs-ai/components-cli" }),
     "the CLI — not private, no publishConfig",
   );
   // Off the train: private with nothing to publish (apps, config packages).
   assert.ok(!isDistributable({ private: true }), "an app");
   assert.ok(
-    !isDistributable({ private: true, name: "@elabs/components-eslint-config" }),
+    !isDistributable({ private: true, name: "@elabs-ai/components-eslint-config" }),
     "config package",
   );
 });

@@ -21,7 +21,7 @@ const FM = `---
 archetype: dashboard
 intent: "KPI overview screen"
 keywords: [dashboard, kpi]
-packages: ["@elabs/components-ui"]
+packages: ["@elabs-ai/components-ui"]
 ---
 
 # Playbook — Dashboard
@@ -31,7 +31,7 @@ const dashboardEntry = {
   archetype: "dashboard",
   intent: "KPI overview screen",
   keywords: ["dashboard", "kpi"],
-  packages: ["@elabs/components-ui"],
+  packages: ["@elabs-ai/components-ui"],
   file: "docs/playbooks/dashboard.md",
   template: "templates/dashboard.tsx",
 };

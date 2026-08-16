@@ -1,8 +1,8 @@
 "use client";
 
-import { Skeleton, StatusBadge, useLocale, type Status } from "@elabs/components-ui";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Skeleton, StatusBadge, useLocale, type Status } from "@elabs-ai/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { DynamicToolUIPart, ToolUIPart } from "ai";
 import { ChevronDownIcon, WrenchIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
@@ -41,7 +41,7 @@ export type ToolHeaderProps = {
 
 /**
  * Map the AI-SDK `ToolUIPart` 7-state machine onto the canonical `Status`
- * enum (#189, research 10 §B.1 mapping a). Lives here — not in `@elabs/components-ui` —
+ * enum (#189, research 10 §B.1 mapping a). Lives here — not in `@elabs-ai/components-ui` —
  * because it is typed against the SDK union; the `ai` import stays TYPES-ONLY
  * (D6, gate-enforced by `pnpm ai:types-only`).
  */

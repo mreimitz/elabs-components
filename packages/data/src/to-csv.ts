@@ -2,12 +2,12 @@
  * Minimal, dependency-free CSV serializer (RFC 4180).
  *
  * `toCsv` is pure + SSR-safe (no DOM, no deps). `downloadCsv` delegates the
- * browser save mechanics to `@elabs/components-ui`'s shared `downloadBlob` (one home for
- * the Blob → `<a download>` dance; @elabs/components-ui is already a peer dep here).
- * ChartFrame uses its own local copy of `toCsv` in @elabs/components-charts to avoid a
+ * browser save mechanics to `@elabs-ai/components-ui`'s shared `downloadBlob` (one home for
+ * the Blob → `<a download>` dance; @elabs-ai/components-ui is already a peer dep here).
+ * ChartFrame uses its own local copy of `toCsv` in @elabs-ai/components-charts to avoid a
  * cross-sibling dependency (charts → data is not allowed per the one-way rule).
  */
-import { downloadBlob } from "@elabs/components-ui";
+import { downloadBlob } from "@elabs-ai/components-ui";
 
 export type CsvColumn<TData> = { key: keyof TData & string; header?: string };
 

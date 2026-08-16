@@ -1,5 +1,5 @@
 import { Panel, useReactFlow, type PanelPosition } from "@xyflow/react";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface ZoomControlsProps {
   position?: PanelPosition;

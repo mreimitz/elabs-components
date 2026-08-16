@@ -13,12 +13,12 @@
  * never show a diagram never download the engine. Invalid sources render an
  * inline error block (message + source), never a thrown render.
  */
-import { Button, Dialog, DialogContent, DialogTitle } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button, Dialog, DialogContent, DialogTitle } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Download, Maximize2 } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState, type HTMLAttributes } from "react";
 
-import { oklchToHex } from "@elabs/components-tokens";
+import { oklchToHex } from "@elabs-ai/components-tokens";
 
 import { CopyButton } from "../copy-button";
 import { MermaidViewer } from "./mermaid-viewer";

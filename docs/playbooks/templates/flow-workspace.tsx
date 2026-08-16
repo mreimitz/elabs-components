@@ -23,7 +23,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import {
   CanvasShell,
   FlowEdge,
@@ -36,8 +36,8 @@ import {
   useNodesState,
   type BrandFlowNode,
   type Edge,
-} from "@elabs/components-flow";
-import { AppIcon } from "@elabs/components-icons";
+} from "@elabs-ai/components-flow";
+import { AppIcon } from "@elabs-ai/components-icons";
 
 const nodeTypes = { brand: FlowNode };
 const edgeTypes = { brand: FlowEdge };

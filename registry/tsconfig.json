@@ -6,10 +6,10 @@
   // Without this file those blocks fell back to the classic JSX transform and threw
   // "React is not defined" at render time — while still bundling successfully, so
   // only the story tests caught it.
-  "extends": "@elabs/components-typescript-config/vite-app.json",
+  "extends": "@elabs-ai/components-typescript-config/vite-app.json",
   "compilerOptions": {
     // `node` is here for the WORKSPACE SOURCES this program pulls in through the
-    // blocks' `@elabs/components-*` imports (they read `process.env.NODE_ENV`),
+    // blocks' `@elabs-ai/components-*` imports (they read `process.env.NODE_ENV`),
     // not for the blocks themselves — a registry block is browser code.
     "types": ["react", "node"],
     "allowImportingTsExtensions": false,

@@ -1,23 +1,23 @@
 /* Exactly what docs/CONSUMING.md tells a consumer to write.
    If this file drifts from those instructions, the docs are wrong. */
-@import "@elabs/components-tokens/styles.css";
+@import "@elabs-ai/components-tokens/styles.css";
 
 /* The reference themes are OPT-IN subpaths (ADR 0029) — the engine above ships
    only the neutral `:root` base. A consumer takes the ones they want, or none
    and registers their own. Importing them here is what proves the subpath
    exports actually resolve from an installed package. */
-@import "@elabs/components-tokens/themes/light.css";
-@import "@elabs/components-tokens/themes/dark.css";
+@import "@elabs-ai/components-tokens/themes/light.css";
+@import "@elabs-ai/components-tokens/themes/dark.css";
 
 /* Tailwind ignores node_modules unless you @source it. Skipping these is the
    single most common consumer mistake — components render unstyled. */
-@source "../node_modules/@elabs/components-ai/dist";
-@source "../node_modules/@elabs/components-charts/dist";
-@source "../node_modules/@elabs/components-data/dist";
-@source "../node_modules/@elabs/components-editor/dist";
-@source "../node_modules/@elabs/components-viewer/dist";
-@source "../node_modules/@elabs/components-flow/dist";
-@source "../node_modules/@elabs/components-icons/dist";
-@source "../node_modules/@elabs/components-maps/dist";
-@source "../node_modules/@elabs/components-marketing/dist";
-@source "../node_modules/@elabs/components-ui/dist";
+@source "../node_modules/@elabs-ai/components-ai/dist";
+@source "../node_modules/@elabs-ai/components-charts/dist";
+@source "../node_modules/@elabs-ai/components-data/dist";
+@source "../node_modules/@elabs-ai/components-editor/dist";
+@source "../node_modules/@elabs-ai/components-viewer/dist";
+@source "../node_modules/@elabs-ai/components-flow/dist";
+@source "../node_modules/@elabs-ai/components-icons/dist";
+@source "../node_modules/@elabs-ai/components-maps/dist";
+@source "../node_modules/@elabs-ai/components-marketing/dist";
+@source "../node_modules/@elabs-ai/components-ui/dist";

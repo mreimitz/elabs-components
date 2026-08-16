@@ -170,7 +170,7 @@ test("map: reaches every verdict — props, compose, drop, direct, gap", () => {
 
     assert.equal(by("Button").class, "direct", "an exact manifest match");
     assert.equal(by("Button").target, "Button");
-    assert.ok(by("Button").pkg.startsWith("@elabs/"));
+    assert.ok(by("Button").pkg.startsWith("@elabs-ai/"));
     assert.deepEqual(by("Button").unknownProps, ["color"], "reported, not a downgrade");
 
     assert.equal(by("ZzUnknown").class, "gap");

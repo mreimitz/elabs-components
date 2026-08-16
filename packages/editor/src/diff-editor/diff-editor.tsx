@@ -1,7 +1,7 @@
 "use client";
 
 import * as monaco from "monaco-editor";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
   useEffect,
@@ -129,7 +129,7 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
     try {
       applyBrandTheme(monaco, theme);
     } catch (err) {
-      console.error("[@elabs/components-editor] failed to apply brand theme", err);
+      console.error("[@elabs-ai/components-editor] failed to apply brand theme", err);
     }
     // `revision` re-applies once the data-theme attribute settles. See CodeEditor.
   }, [editor, theme, revision]);

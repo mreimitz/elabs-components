@@ -31,7 +31,7 @@ Keep changes scoped to one concern per PR where possible.
 
 ## Testing
 
-- Unit/smoke tests with Vitest + Testing Library: `pnpm --filter @elabs/components-<pkg> test`.
+- Unit/smoke tests with Vitest + Testing Library: `pnpm --filter @elabs-ai/components-<pkg> test`.
 - Every new component needs at least a render + key-behavior smoke test.
 - Type safety: `pnpm typecheck`. Lint: `pnpm lint`. Format: `pnpm format`.
 
@@ -99,7 +99,7 @@ rot). Full principle: `.claude/rules/quality-gates.md` → "Enforcement over rem
 - **Does a new component earn a place in a package?** There is no separate RFC
   process — use the two gates that already exist: the **dedupe/reuse audit** at
   the top of `.claude/rules/quality-gates.md` (does this already exist across
-  `@elabs/components-*` or `registry/`?) and decision **D4** in
+  `@elabs-ai/components-*` or `registry/`?) and decision **D4** in
   [`docs/DECISIONS.md`](./docs/DECISIONS.md) (stable shared primitive → package;
   prototype-specific composition → copy-own registry block).
 

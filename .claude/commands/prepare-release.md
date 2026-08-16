@@ -1,6 +1,6 @@
 ---
 description: Validate all packages before publishing or internal distribution
-argument-hint: [package filter, e.g. @elabs/components-ui]
+argument-hint: [package filter, e.g. @elabs-ai/components-ui]
 allowed-tools: Read, Grep, Glob, Bash(pnpm:*), Bash(node:*), Bash(git status:*), Bash(git diff:*)
 ---
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, waitFor } from "storybook/test";
-import { Badge, Button } from "@elabs/components-ui";
+import { Badge, Button } from "@elabs-ai/components-ui";
 import type {
   ColumnDef,
   SortingState,
@@ -68,7 +68,7 @@ const meta = {
         component:
           "The full data grid (TanStack Table): sorting, filtering, pagination, virtualization, row " +
           "selection and column management. For a simple static table with no interaction, the lighter " +
-          "Table primitive (see Data/Table, @elabs/components-ui) is enough.",
+          "Table primitive (see Data/Table, @elabs-ai/components-ui) is enough.",
       },
     },
   },

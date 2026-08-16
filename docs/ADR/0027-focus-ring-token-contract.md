@@ -73,7 +73,7 @@ component change."_ A token with no declared contract cannot be re-branded
 safely: a consumer cannot see that it is gated against four other roles, cannot
 see the WCAG 1.4.11 surface obligations, and has no documented list of what a
 replacement must satisfy. A downstream consumer on
-`@elabs/components-tokens` 3.0.0 hit exactly this: they shipped a
+`@elabs-ai/components-tokens` 3.0.0 hit exactly this: they shipped a
 private per-theme override aliasing `--ring` to `--primary-text` because there
 was no supported alternative — and that value measures **ΔE 0.0432 vs
 `--success`** (below the 0.05 floor `pnpm roles:check` enforces) and is
@@ -112,7 +112,7 @@ contract, stated once here and linked (not restated) everywhere else:
 >    reaches sidebar focus automatically. Never re-declare it with a literal.
 > 5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
 >    provided (1)–(3) still hold. Verify with `pnpm roles:check` and
->    `pnpm --filter @elabs/components-tokens test`. **Prefer
+>    `pnpm --filter @elabs-ai/components-tokens test`. **Prefer
 >    forking the theme (`/new-theme`) over patching one token.**
 > 6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
 >    blue (264°) and its ring is the same hue at a distinct rung (ΔE 0.1044).

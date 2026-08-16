@@ -5,7 +5,7 @@
 # freshness gate (WP-04 #61): the token VALUES live in the DTCG source under
 # packages/tokens/tokens/, and src/themes.css must stay in sync with them. Edit
 # a token value in the JSON (or hand-edit a synced value in themes.css) without
-# re-running `pnpm --filter @elabs/components-tokens tokens:build` and the file goes stale.
+# re-running `pnpm --filter @elabs-ai/components-tokens tokens:build` and the file goes stale.
 #
 # Detection logic lives ONCE in scripts/check-tokens-fresh.mjs (shared with the
 # blocking CI gate `pnpm tokens:check`) — this hook just runs it in --warn mode

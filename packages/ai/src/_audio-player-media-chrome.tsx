@@ -6,7 +6,7 @@
  * `media-chrome` declares no `sideEffects`, so a static import from
  * `audio-player.tsx` put the whole custom-element library (and the
  * `media-chrome/react` wrappers that register it) into the entry chunk of every
- * `@elabs/components-ai` consumer — including the vast majority that
+ * `@elabs-ai/components-ai` consumer — including the vast majority that
  * never render an `AudioPlayer`. Keeping every media-chrome *value* import in
  * this module, reached only through
  * `lazy(() => import("./_audio-player-media-chrome"))`, confines it to its own
@@ -19,8 +19,8 @@
  * fails if anything imports it statically, which would put media-chrome back in
  * the entry chunk and make the `lazy()` pointless.
  */
-import { Button, ButtonGroup, ButtonGroupText } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button, ButtonGroup, ButtonGroupText } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   MediaControlBar,
   MediaController,

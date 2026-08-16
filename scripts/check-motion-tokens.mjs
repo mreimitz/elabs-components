@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check-motion-tokens.mjs — raw motion utility gate for @elabs/components-charts + @elabs/components-ai (#178).
+ * check-motion-tokens.mjs — raw motion utility gate for @elabs-ai/components-charts + @elabs-ai/components-ai (#178).
  *
  * Enforces that packages/charts/src and packages/ai/src do NOT contain forbidden
  * raw Tailwind motion utilities that bypass the token gate:

@@ -4,7 +4,7 @@ description: Audit and refine UI built with brand-ui — visual quality, design 
 user-invocable: true
 argument-hint: "[audit|contrast|review|polish] [target]"
 allowed-tools:
-  - Bash(npx @elabs/components-cli *)
+  - Bash(npx @elabs-ai/components-cli *)
   - Bash(pnpm brand-ui *)
   - Bash(npx brand-ui *)
 ---
@@ -18,14 +18,13 @@ implementation-ready plan. **Read-only**: it reports and (with approval) files
 issues; the fix is done separately.
 
 > Run the CLI with the project's runner. In this monorepo: `pnpm brand-ui <cmd>`.
-> In a consuming project, the CLI is a **private GitHub Packages** dependency —
-> add it first (`.npmrc` scope mapping + a `read:packages` PAT, then
-> `pnpm add -D @elabs/components-cli`; see `docs/CONSUMING.md` §1 + §7a),
-> then run `pnpm exec brand-ui <cmd>`. **Inside Claude Code with the plugin
-> installed and the `@elabs` scope authenticated, prefer the
+> In a consuming project, add it with `pnpm add -D @elabs-ai/components-cli` (a
+> public npm package — no registry setup, no token), then run
+> `pnpm exec brand-ui <cmd>`; `npx -y @elabs-ai/components-cli <cmd>` works with no
+> install at all. **Inside Claude Code with the plugin installed, prefer the
 > `mcp__brand-ui__*` tools** (`mcp__brand-ui__info`, `mcp__brand-ui__audit`) — the
 > plugin launches the same CLI for you, so you skip the per-project
-> dev-dependency, but not the auth. Examples below say `brand-ui`.
+> dev-dependency. Examples below say `brand-ui`.
 
 ## Setup
 
@@ -49,8 +48,8 @@ issues; the fix is done separately.
      _earned familiarity_: one type family, fixed rem scale, restrained color,
      every component state present (default/hover/focus/active/disabled/loading/
      empty/error), skeletons over spinners, quick 150–250ms state-only motion, no
-     modal-as-first-thought. Most `@elabs/components-*` surfaces are here.
-   - **brand** — `@elabs/components-marketing` surfaces, landing pages, campaigns. Bar is
+     modal-as-first-thought. Most `@elabs-ai/components-*` surfaces are here.
+   - **brand** — `@elabs-ai/components-marketing` surfaces, landing pages, campaigns. Bar is
      _distinctiveness_: committed color, required real imagery (not colored blocks),
      ambitious first-load motion, a POV. "Restraint without intent reads as
      mediocre."

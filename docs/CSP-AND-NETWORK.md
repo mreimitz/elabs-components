@@ -1,6 +1,6 @@
 # CSP, Trusted Types & network egress
 
-What `@elabs/components-*` reaches on the network, and what breaks under a strict Content
+What `@elabs-ai/components-*` reaches on the network, and what breaks under a strict Content
 Security Policy. Read this before deploying into a locked-down environment
 (air-gapped, regulated, or CSP-enforcing).
 
@@ -137,7 +137,7 @@ account for all of them.
 ## 2. Trusted Types
 
 Under `require-trusted-types-for 'script'` two transitive dependencies of
-`@elabs/components-ai` reach DOM `innerHTML` sinks, and DOMPurify installs a pass-through
+`@elabs-ai/components-ai` reach DOM `innerHTML` sinks, and DOMPurify installs a pass-through
 policy. None of this is fixable inside the library — see §2.3 — so the mitigation
 is bundler configuration in **your** app.
 
@@ -146,7 +146,7 @@ is bundler configuration in **your** app.
 Both packages ship a DOM build _and_ a DOM-free build, and both select the DOM one
 via the `browser` export condition — which every web bundler picks by default.
 
-| Package                            | Reaches `@elabs/components-ai` via                                                                              | `browser` build does                             | DOM-free build                      |
+| Package                            | Reaches `@elabs-ai/components-ai` via                                                                           | `browser` build does                             | DOM-free build                      |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------- |
 | `decode-named-character-reference` | `@streamdown/cjk`→micromark, `@streamdown/math`→mdast-util-from-markdown, `streamdown`→hast-util-to-jsx-runtime | `element.innerHTML = '&' + value + ';'`          | a `character-entities` lookup table |
 | `hast-util-from-html-isomorphic`   | `@streamdown/math` → `rehype-katex`                                                                             | `new DOMParser()` + `template.innerHTML = value` | `hast-util-from-html` (parse5)      |
@@ -209,7 +209,7 @@ math render — worth it only when Trusted Types is actually enforced.
 ### 2.3 Why the library can't fix this for you
 
 - pnpm `overrides` / npm `overrides` / yarn `resolutions` are read from the **root
-  manifest of the project being installed**, so a field in the `@elabs/components-ai` tarball
+  manifest of the project being installed**, so a field in the `@elabs-ai/components-ai` tarball
   is ignored. And they remap **versions** — this is **export-condition
   selection**, which no package manager can change.
 - No `package.json` field of a dependency alters how _your_ bundler resolves a
@@ -251,9 +251,9 @@ sink write.
 
 The sinks that reach it, all third-party or third-party-shaped: `streamdown`'s
 mermaid block (via `MessageResponse`), Mermaid writing its generated CSS and its
-HTML node labels, `@elabs/components-editor`'s `mermaid-viewer` /
+HTML node labels, `@elabs-ai/components-editor`'s `mermaid-viewer` /
 `mermaid-diagram` / `markdown-academic/math`, and
-`@elabs/components-ai`'s `schema-display`.
+`@elabs-ai/components-ai`'s `schema-display`.
 
 **A `default` policy that returns its input switches Trusted Types off for the
 whole document.** Don't ship that. `docs/examples/trusted-types.ts` is the
@@ -283,7 +283,7 @@ The tempting fix is to add `'allow-duplicates'` to the `trusted-types` directive
 real relaxation for a bug that is not yours. Monaco checks
 `MonacoEnvironment.createTrustedTypesPolicy` before falling back to
 `trustedTypes.createPolicy`, so the fix is a memoizing hook.
-`@elabs/components-editor/monaco-environment` installs one — if you
+`@elabs-ai/components-editor/monaco-environment` installs one — if you
 wire `MonacoEnvironment` yourself, cache by policy name:
 
 ```ts
@@ -368,7 +368,7 @@ by not rendering a feature** — they are not a floor.
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | `style-src 'unsafe-inline'`           | **Not droppable, and not a dev artifact.** React writes a `style` attribute for every `style={{…}}` prop; React Flow (node/viewport transforms), Radix (popper positioning) and Recharts (responsive sizing) all depend on it. Attribute styles written from JS take no nonce, and their hashes are not knowable at build time. | nothing — measured 276 blocked inline styles (54 distinct) on one walkthrough |
 | `img-src data:`                       | Inline SVG/PNG data URIs in icon and chart output.                                                                                                                                                                                                                                                                              | nothing practical                                                             |
-| `img-src blob:` + `media-src blob:`   | `@elabs/components-viewer` opens files the app did not write. An upload or an agent's output arrives as a `File`/`Blob`, which has no URL — so the viewer mints one with `URL.createObjectURL` and revokes it on dispose. Same-origin, cannot execute script. **Derived from the code, not re-measured.**                       | viewing only files that already have a URL you control                        |
+| `img-src blob:` + `media-src blob:`   | `@elabs-ai/components-viewer` opens files the app did not write. An upload or an agent's output arrives as a `File`/`Blob`, which has no URL — so the viewer mints one with `URL.createObjectURL` and revokes it on dispose. Same-origin, cannot execute script. **Derived from the code, not re-measured.**                    | viewing only files that already have a URL you control                        |
 | `script-src 'wasm-unsafe-eval'`       | `Persona` instantiates the Rive WebGL2 runtime from a `.wasm` bundled on your own origin.                                                                                                                                                                                                                                       | not rendering `Persona`                                                       |
 | `trusted-types dompurify` + `default` | Mermaid's DOMPurify pass-through policy (§2.4) and React's `dangerouslySetInnerHTML` (§2.5).                                                                                                                                                                                                                                    | not rendering Mermaid, KaTeX math, or `SchemaDisplay`                         |
 | `trusted-types` × 10 Monaco names     | Monaco calls `trustedTypes.createPolicy` under ten fixed names at module init, including `defaultWorkerFactory` for its language workers. Ten **names** — not `'allow-duplicates'`, see §2.6.                                                                                                                                   | not rendering `CodeEditor`/`DiffEditor`/`CodeWorkspace`/`MermaidDiagram`      |
@@ -381,7 +381,7 @@ by not rendering a feature** — they are not a floor.
 2. Self-host provider logos; pass `src` to `ModelSelectorLogo` (or `fallback`).
 3. Pass `mapStyle` (or `blank`) to `MapCanvas`.
 4. Don't render `OpenIn*`.
-5. Fonts already ship inside `@elabs/components-tokens` — no remote font origin is used.
+5. Fonts already ship inside `@elabs-ai/components-tokens` — no remote font origin is used.
 6. Apply the §2.2 aliases if Trusted Types is enforced.
 7. Start from the §2.7 policy, then delete the relaxations for the features you
    don't render — three of the five come off that way. **Verify against your own

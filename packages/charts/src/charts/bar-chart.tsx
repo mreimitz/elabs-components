@@ -18,7 +18,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
 import type { BarProps } from "./bar";
 import {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MetricCard } from "@elabs/components-ui";
+import { MetricCard } from "@elabs-ai/components-ui";
 
 describe("MetricCard", () => {
   it("renders label and value", () => {

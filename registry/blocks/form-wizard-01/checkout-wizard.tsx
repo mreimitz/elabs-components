@@ -12,7 +12,7 @@ import {
   WizardNav,
   WizardStep,
   WizardSteps,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { STEPS } from "./data/steps";
 import { Field } from "./field";
 

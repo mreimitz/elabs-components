@@ -30,7 +30,7 @@ test("`brand-ui docs Button --json` emits valid JSON carrying the fields the mar
     data = JSON.parse(res.stdout);
   }, "stdout is valid JSON");
   assert.equal(data.name, "Button");
-  assert.equal(data.pkg, "@elabs/components-ui");
+  assert.equal(data.pkg, "@elabs-ai/components-ui");
   assert.ok(data.purpose, "purpose carried");
   assert.ok(data.relationships, "relationships carried");
   assert.ok(
@@ -52,7 +52,11 @@ test("`brand-ui docs Button` (no --json) still prints the markdown card, unaffec
   if (!repoRoot) return t.skip("not inside the monorepo — manifest unavailable");
   const res = run(["docs", "Button"]);
   assert.equal(res.status, 0);
-  assert.match(res.stdout, /^# Button {2}\(@elabs\/components-ui\)/, "markdown header unchanged");
+  assert.match(
+    res.stdout,
+    /^# Button {2}\(@elabs-ai\/components-ui\)/,
+    "markdown header unchanged",
+  );
   assert.throws(() => JSON.parse(res.stdout), "markdown output is not JSON");
 });
 

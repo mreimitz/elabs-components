@@ -16,10 +16,10 @@ importers:
 
   .:
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:packages/typescript-config
       prettier:
@@ -34,31 +34,31 @@ importers:
 
   apps/docs:
     dependencies:
-      '@elabs/components-ai':
+      '@elabs-ai/components-ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@elabs/components-charts':
+      '@elabs-ai/components-charts':
         specifier: workspace:*
         version: link:../../packages/charts
-      '@elabs/components-data':
+      '@elabs-ai/components-data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@elabs/components-editor':
+      '@elabs-ai/components-editor':
         specifier: workspace:*
         version: link:../../packages/editor
-      '@elabs/components-flow':
+      '@elabs-ai/components-flow':
         specifier: workspace:*
         version: link:../../packages/flow
-      '@elabs/components-icons':
+      '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../../packages/icons
-      '@elabs/components-marketing':
+      '@elabs-ai/components-marketing':
         specifier: workspace:*
         version: link:../../packages/marketing
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@xyflow/react':
@@ -77,10 +77,10 @@ importers:
       '@chromatic-com/storybook':
         specifier: ^5.2.1
         version: 5.2.1(storybook@10.4.2(@testing-library/dom@10.4.0)(@types/react@19.2.16)(prettier@3.8.3)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@storybook/addon-a11y':
@@ -222,22 +222,22 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
-      '@elabs/components-charts':
+      '@elabs-ai/components-charts':
         specifier: workspace:*
         version: link:../charts
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-icons':
+      '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -361,19 +361,19 @@ importers:
         specifier: ^2.1.7
         version: 2.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-icons':
+      '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -461,19 +461,19 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-icons':
+      '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -567,16 +567,16 @@ importers:
         specifier: ^5.0.0
         version: 5.1.0
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -664,19 +664,19 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-icons':
+      '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../icons
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -727,10 +727,10 @@ importers:
 
   packages/icons:
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@testing-library/jest-dom':
@@ -776,16 +776,16 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -833,16 +833,16 @@ importers:
 
   packages/marketing:
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -888,10 +888,10 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/react':
@@ -1062,13 +1062,13 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@testing-library/jest-dom':
@@ -1120,16 +1120,16 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.7)
     devDependencies:
-      '@elabs/components-eslint-config':
+      '@elabs-ai/components-eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../tokens
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../ui
       '@testing-library/jest-dom':
@@ -1198,31 +1198,31 @@ importers:
 
   registry:
     dependencies:
-      '@elabs/components-ai':
+      '@elabs-ai/components-ai':
         specifier: workspace:*
         version: link:../packages/ai
-      '@elabs/components-charts':
+      '@elabs-ai/components-charts':
         specifier: workspace:*
         version: link:../packages/charts
-      '@elabs/components-data':
+      '@elabs-ai/components-data':
         specifier: workspace:*
         version: link:../packages/data
-      '@elabs/components-editor':
+      '@elabs-ai/components-editor':
         specifier: workspace:*
         version: link:../packages/editor
-      '@elabs/components-flow':
+      '@elabs-ai/components-flow':
         specifier: workspace:*
         version: link:../packages/flow
-      '@elabs/components-icons':
+      '@elabs-ai/components-icons':
         specifier: workspace:*
         version: link:../packages/icons
-      '@elabs/components-marketing':
+      '@elabs-ai/components-marketing':
         specifier: workspace:*
         version: link:../packages/marketing
-      '@elabs/components-tokens':
+      '@elabs-ai/components-tokens':
         specifier: workspace:*
         version: link:../packages/tokens
-      '@elabs/components-ui':
+      '@elabs-ai/components-ui':
         specifier: workspace:*
         version: link:../packages/ui
       '@visx/curve':
@@ -1244,7 +1244,7 @@ importers:
         specifier: 3.1.0
         version: 3.1.0
     devDependencies:
-      '@elabs/components-typescript-config':
+      '@elabs-ai/components-typescript-config':
         specifier: workspace:*
         version: link:../packages/typescript-config
       '@types/geojson':

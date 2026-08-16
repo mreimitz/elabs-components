@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { oklchToHex } from "@elabs/components-tokens";
+import { oklchToHex } from "@elabs-ai/components-tokens";
 
 // xterm.js needs a real canvas + layout to render, so it cannot mount in
 // jsdom — mock the engine and assert the wrapper's lifecycle + theming
 // contract. Real rendering + a11y come from the Storybook interaction tests.
-// Mirrors the Monaco mocking pattern in @elabs/components-editor's code-editor.test.tsx.
+// Mirrors the Monaco mocking pattern in @elabs-ai/components-editor's code-editor.test.tsx.
 const h = vi.hoisted(() => {
   const state = {
     dataHandler: undefined as undefined | ((data: string) => void),

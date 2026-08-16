@@ -46,7 +46,7 @@ function buildOutputs() {
   const outputs = new Map();
   outputs.set(HUB, renderLlmsHub(manifest));
   for (const pkg of orderedPackages(manifest)) {
-    const slug = pkg.replace("@elabs/components-", "");
+    const slug = pkg.replace("@elabs-ai/components-", "");
     outputs.set(join(SPOKE_DIR, `${slug}.txt`), renderLlmsSpoke(manifest, pkg));
   }
   return outputs;

@@ -32,7 +32,7 @@
  * color is never the only signal (var-def = weight, unresolved = dotted underline),
  * so roles stay distinct in the high-contrast theme.
  */
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { TriangleAlert } from "lucide-react";
 import { forwardRef, useId, useMemo, type HTMLAttributes, type ReactNode } from "react";
 

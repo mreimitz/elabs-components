@@ -1,6 +1,6 @@
 "use client";
 
-import { useChart } from "@elabs/components-charts";
+import { useChart } from "@elabs-ai/components-charts";
 import { useEffect } from "react";
 import type { StatCardHoverState } from "./stat-card-chart";
 

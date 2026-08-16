@@ -9,8 +9,8 @@ import {
   CardTitle,
   Skeleton,
   useLocale,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   title: ReactNode;

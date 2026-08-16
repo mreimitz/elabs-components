@@ -5,10 +5,10 @@
  * WHY: a component imports its own stylesheet (`import "./maps.css"`). When tsup
  * bundles, esbuild EXTRACTS that CSS into a sibling artifact (`dist/index.css`)
  * and DROPS the import from the JS. Nothing fails — the package just ships
- * silently unstyled, which is exactly how `@elabs/components-maps` lost its popup overrides
- * and `@elabs/components-editor` lost the whole markdown-editor stylesheet.
+ * silently unstyled, which is exactly how `@elabs-ai/components-maps` lost its popup overrides
+ * and `@elabs-ai/components-editor` lost the whole markdown-editor stylesheet.
  *
- * Packages like `@elabs/components-maps` document "consumers add no CSS imports", so the
+ * Packages like `@elabs-ai/components-maps` document "consumers add no CSS imports", so the
  * self-contained contract has to survive the build. This re-inserts
  * `import "./<entry>.css";` into the emitted entry JS, after any directive
  * prologue (the "use client" banner MUST stay the first statement).

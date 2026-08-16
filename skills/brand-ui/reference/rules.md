@@ -5,8 +5,8 @@ mechanical ones.
 
 ## Color: semantic tokens only
 
-Raw colors live ONLY in the `@elabs/components-tokens` theme stylesheet
-(`@elabs/components-tokens/styles.css`). App code uses token-backed utilities so every
+Raw colors live ONLY in the `@elabs-ai/components-tokens` theme stylesheet
+(`@elabs-ai/components-tokens/styles.css`). App code uses token-backed utilities so every
 theme works.
 
 ```tsx

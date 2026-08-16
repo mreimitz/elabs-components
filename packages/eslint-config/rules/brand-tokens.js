@@ -1,5 +1,5 @@
 /**
- * @elabs/components-eslint-config — local rules that enforce the brand-ui TAXONOMY at the
+ * @elabs-ai/components-eslint-config — local rules that enforce the brand-ui TAXONOMY at the
  * CONSUMER's point of action (the apps coding-agents build), where the repo's
  * internal ratchets (scripts/check-text-scale.mjs, scripts/check-raw-palette.mjs)
  * do NOT reach. They run in the edit→lint loop, so an agent sees the violation
@@ -156,7 +156,7 @@ const noRawColor = makeRule({
 
 /** The flat-config plugin object. */
 const plugin = {
-  meta: { name: "@elabs/components-eslint-config/brand", version: "0.1.0" },
+  meta: { name: "@elabs-ai/components-eslint-config/brand", version: "0.1.0" },
   rules: {
     "no-raw-font-size": noRawFontSize,
     "no-raw-color": noRawColor,

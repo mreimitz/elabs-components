@@ -37,7 +37,7 @@ import {
   WizardStep,
   WizardSteps,
   type WizardStepMeta,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { Bell, Home, Shield, User } from "lucide-react";
 
 const WIZARD_STEPS: WizardStepMeta[] = [

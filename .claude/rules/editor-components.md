@@ -6,11 +6,11 @@ paths:
   - "packages/editor/**"
 ---
 
-# Code editor components (@elabs/components-editor)
+# Code editor components (@elabs-ai/components-editor)
 
-`@elabs/components-editor` wraps **Monaco** (the VS Code editor engine, `monaco-editor`) as
-brand-ui components — the same wrap-an-engine pattern as `@elabs/components-flow` (React
-Flow) and `@elabs/components-data` (TanStack). Monaco renders its own editing surface +
+`@elabs-ai/components-editor` wraps **Monaco** (the VS Code editor engine, `monaco-editor`) as
+brand-ui components — the same wrap-an-engine pattern as `@elabs-ai/components-flow` (React
+Flow) and `@elabs-ai/components-data` (TanStack). Monaco renders its own editing surface +
 widgets; this package themes them from brand tokens and supplies brand-ui chrome.
 
 - **Components:** `CodeEditor` (single editable editor, controlled/uncontrolled),
@@ -19,15 +19,15 @@ widgets; this package themes them from brand tokens and supplies brand-ui chrome
   `EditorToolbar` (filename + language `Select` + `CopyButton`),
 - **AI content-access API:** `EditorContentAccess` — engine-agnostic interface for AI-driven editing (get/replace selection, insert at cursor, subscribe to selection changes). `monacoContentAccess(editor)` adapter (`.` barrel + `./markdown`); `proseMirrorContentAccess(deps)` adapter (`./markdown` only — keeps `@milkdown` off the Monaco graph). `MarkdownEditorHandle` and `MarkdownWorkspaceHandle` extend `EditorContentAccess`; `CodeWorkspaceHandle` does too. Pass a raw `CodeEditor`/`DiffEditor` ref through `monacoContentAccess` for the same uniform API.
   `EditorContextMenu`, `CopyButton`. For **read-only** syntax display use
-  `CodeBlock` from `@elabs/components-ai` (Shiki) — `@elabs/components-editor` is for **editing**.
+  `CodeBlock` from `@elabs-ai/components-ai` (Shiki) — `@elabs-ai/components-editor` is for **editing**.
 - **Workers (required for IntelliSense):** import the worker setup ONCE at the app
-  entry — `import "@elabs/components-editor/monaco-environment";` (Vite). Without it the
+  entry — `import "@elabs-ai/components-editor/monaco-environment";` (Vite). Without it the
   editor still renders + highlights, but completions/diagnostics are off. `?worker`
   is Vite-only; non-Vite consumers wire `self.MonacoEnvironment.getWorker` themselves.
 - **Theming:** never pass Monaco a hardcoded theme. The bridge
   (`monaco-theme-bridge.ts`) reads the active `data-theme` tokens and re-applies on
   change, so the editor + its suggestion/find/context widgets track both themes.
-  Tokens are oklch → resolved to hex via the shared `oklchToHex` from `@elabs/components-tokens`
+  Tokens are oklch → resolved to hex via the shared `oklchToHex` from `@elabs-ai/components-tokens`
   (ADR 0015; a 1×1-canvas rasterize remains only as the non-oklch fallback —
   `getComputedStyle` won't serialize `oklch()`); syntax tokens are
   AA-contrast-clamped against the editor background. `mermaid-diagram` uses the
@@ -43,20 +43,20 @@ widgets; this package themes them from brand tokens and supplies brand-ui chrome
   diff, workspace tabs, context menu, minimap) across both themes. When the
   Storybook dev server is running, verify via `mcp__storybook__run-story-tests` +
   `mcp__storybook__preview-stories` (`globals=theme:<slug>`); otherwise
-  `pnpm --filter @elabs/components-docs test-storybook`. Monaco can't render in jsdom — unit
+  `pnpm --filter @elabs-ai/components-docs test-storybook`. Monaco can't render in jsdom — unit
   tests mock `monaco-editor`; real render/a11y come from the story tests. See
   @.claude/rules/storybook-mcp.md.
 
 ## The `./markdown` subpath (a second, opt-in surface)
 
-`@elabs/components-editor` ships a **markdown authoring + preview suite** under the
-`@elabs/components-editor/markdown` subpath — kept off the main barrel so Monaco-only
+`@elabs-ai/components-editor` ships a **markdown authoring + preview suite** under the
+`@elabs-ai/components-editor/markdown` subpath — kept off the main barrel so Monaco-only
 consumers never pull the markdown/WYSIWYG dependency tree (Milkdown, Streamdown,
 remark). It is a **gated subpath export** (see @.claude/rules/component-api.md
 "Subpath exports"): import it explicitly, e.g.
-`import { MarkdownWorkspace, MarkdownPreview } from "@elabs/components-editor/markdown";`.
+`import { MarkdownWorkspace, MarkdownPreview } from "@elabs-ai/components-editor/markdown";`.
 
-- **Surfaces (exported from `@elabs/components-editor/markdown`):**
+- **Surfaces (exported from `@elabs-ai/components-editor/markdown`):**
   - `MarkdownEditor` — a controlled/uncontrolled **Monaco** editor pre-tuned for
     markdown (the markdown-language sibling of `CodeEditor`).
   - `MarkdownWorkspace` — the hybrid authoring shell with `source` / `wysiwyg` /
@@ -81,11 +81,11 @@ privileged built-in). Inline directives render via a separate`brand-directive-in
   - **Markdown scale tokens** (`MARKDOWN_HEADING_REM`, `MARKDOWN_HEADING_WEIGHT`,
     `MARKDOWN_HEADING_TRACKING`, `MARKDOWN_MEASURE`, `markdownScaleVars`) — the
     single source of heading sizing shared by the preview and the WYSIWYG CSS.
-  - **Frontmatter utils** live one level deeper on `@elabs/components-editor/markdown/frontmatter`
+  - **Frontmatter utils** live one level deeper on `@elabs-ai/components-editor/markdown/frontmatter`
     (`parseFrontmatter`, `serializeFrontmatter`, `ParsedDocument`) — re-exported here
     for convenience, but importable in isolation (a pure, Monaco-free leaf) for
     server/RSC and unit-test paths.
-  - **Markdown parser** lives on `@elabs/components-editor/markdown/parse` (`parseMarkdown(md): Root`) —
+  - **Markdown parser** lives on `@elabs-ai/components-editor/markdown/parse` (`parseMarkdown(md): Root`) —
     a second pure, Monaco-free leaf (`unified` + `remark-*` only): parses the brand
     dialect (gfm + directives + frontmatter) to mdast so consumers don't add
     `mdast-util-*`/`micromark-extension-*` themselves. Returns RAW directive nodes
@@ -114,9 +114,9 @@ privileged built-in). Inline directives render via a separate`brand-directive-in
     - `toc` — a generated `::toc` block (reuses `parseMarkdownOutline`, the
       `DocumentOutline` extractor) + stable slug `id`s stamped on headings so the
       anchors resolve. Standalone `TableOfContents` is exported.
-    - `@elabs/components-editor` cannot import `@elabs/components-ai` (sibling in the one-way dep graph), so
-      the inline cite is composed from `@elabs/components-ui` + a native `title` hover — NOT
-      `@elabs/components-ai`'s `InlineCitation`.
+    - `@elabs-ai/components-editor` cannot import `@elabs-ai/components-ai` (sibling in the one-way dep graph), so
+      the inline cite is composed from `@elabs-ai/components-ui` + a native `title` hover — NOT
+      `@elabs-ai/components-ai`'s `InlineCitation`.
   - **Iteration (opt-in props on `MarkdownPreview`)** — `:::iterate` / `:::pivot`
     repeat a per-cell markdown TEMPLATE over consumer-resolved data (the
     calc/citation precedent again):
@@ -128,8 +128,8 @@ privileged built-in). Inline directives render via a separate`brand-directive-in
     - The directive BODY is the template, captured RAW via the seam's new
       `rawBodyNames` (`buildMarkdownPlugins({ rawBodyNames })` → `ctx.rawBody`) so it
       isn't rendered pre-interpolated. Layouts: `stacked` (vertical), `grid` + `matrix`
-      via the shared `@elabs/components-ui` `Table` — `@elabs/components-editor` can't import the sibling
-      `@elabs/components-data`'s DataTable, so it composes the shared primitive (same base), not a
+      via the shared `@elabs-ai/components-ui` `Table` — `@elabs-ai/components-editor` can't import the sibling
+      `@elabs-ai/components-data`'s DataTable, so it composes the shared primitive (same base), not a
       fork. Cells render through a nested, **depth-capped** `MarkdownPreview`
       (`IterationCell`, extracted to dodge the forwardRef self-reference). Standalone
       `IterationBlock` is exported.
@@ -149,7 +149,7 @@ privileged built-in). Inline directives render via a separate`brand-directive-in
   - **Rendering markdown the app already has** (read-only, branded) →
     `MarkdownPreview` (or the prose primitives) from `./markdown`.
   - **Read-only display of a CODE block** (syntax highlight, not prose) →
-    `CodeBlock` from `@elabs/components-ai` (Shiki). Don't reach for an external markdown lib —
+    `CodeBlock` from `@elabs-ai/components-ai` (Shiki). Don't reach for an external markdown lib —
     the suite above already exists.
 
 ## Calc authoring (the editor side of calc, #220)
@@ -192,6 +192,6 @@ only an enhancement, and it is announced to AT (not `aria-hidden`).
 
 **Verification.** Monaco can't render in jsdom — the engine-neutral helpers
 (`calc-block/calc-editor.ts`: fence detection + column math + hook resolution) are
-unit-tested; the live decoration passes come from `pnpm --filter @elabs/components-docs
+unit-tested; the live decoration passes come from `pnpm --filter @elabs-ai/components-docs
 test-storybook` on `Editor/CalcEditor`. Sweep both themes (the highlight collapses
 toward foreground at high decoration — confirm weight/underline still separate roles).

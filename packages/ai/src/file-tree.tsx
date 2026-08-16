@@ -5,8 +5,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   fileIconFor,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { LucideIcon } from "lucide-react";
 import {

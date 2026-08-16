@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 /**
  * PAPER GROUNDS — an opt-in drafting sheet for a panel, card or section.

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Button, Textarea } from "@elabs/components-ui";
+import { Button, Textarea } from "@elabs-ai/components-ui";
 import { JSXPreview, JSXPreviewContent, JSXPreviewError, JSXPreviewSkeleton } from "./jsx-preview";
 
 /**

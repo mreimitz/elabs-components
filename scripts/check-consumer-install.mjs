@@ -3,7 +3,7 @@
  * check-consumer-install.mjs — the published-artifact gate.
  *
  * WHY THIS EXISTS: nothing else in the repo consumes `dist/`. Every app and
- * every gate resolves `@elabs/components-*` to TypeScript SOURCE through the `exports` map
+ * every gate resolves `@elabs-ai/components-*` to TypeScript SOURCE through the `exports` map
  * (the Turborepo just-in-time-package pattern), while external consumers get
  * `publishConfig.exports` → `dist/`. That blind spot hid four real defects at
  * once: stripped "use client" directives, fonts copied one level too deep,
@@ -14,7 +14,7 @@
  *   1. `pnpm pack` every distributable package (which applies publishConfig and
  *      rewrites `workspace:*` to concrete versions, exactly like publishing).
  *   2. Copy fixtures/consumer-smoke/ to a temp dir OUTSIDE the workspace and
- *      point each @elabs/components-* dependency at its tarball.
+ *      point each @elabs-ai/components-* dependency at its tarball.
  *   3. `pnpm install` then `vite build`.
  *   4. Assert the installed artifact is actually usable (see CHECKS below).
  *
@@ -78,7 +78,7 @@ const BUILD_ENV = {
  * DELIBERATELY NARROWER than the release predicate in
  * `scripts/lib/distributables.mjs` (`publishConfig || !private`, #295): this gate
  * installs each tarball into a throwaway Vite app and imports from it, so it only
- * covers packages that expose a consumer IMPORT surface. `@elabs/components-cli`
+ * covers packages that expose a consumer IMPORT surface. `@elabs-ai/components-cli`
  * publishes (it is on the release train and gets packed, published and version-bumped
  * like the rest) but ships a `bin`, not `publishConfig.exports` — there is nothing for
  * the smoke app to import, so it is out of scope here by design, not by drift.
@@ -98,7 +98,7 @@ export function distributablePackages(
   return out;
 }
 
-/** `@elabs/components-ui` @ 1.9.0 → `brand-ui-1.9.0.tgz` (pnpm's pack naming). */
+/** `@elabs-ai/components-ui` @ 1.9.0 → `brand-ui-1.9.0.tgz` (pnpm's pack naming). */
 export function tarballName(pkgName, version) {
   return `${pkgName.replace(/^@/, "").replace(/\//g, "-")}-${version}.tgz`;
 }
@@ -113,7 +113,7 @@ export function pinToTarballs(pkgJson, packed) {
   for (const key of Object.keys(deps)) {
     const hit = packed.find((p) => p.name === key);
     if (hit) deps[key] = `file:${hit.tarball}`;
-    else if (key.startsWith("@elabs/components-")) missing.push(key);
+    else if (key.startsWith("@elabs-ai/components-")) missing.push(key);
   }
   return { pkgJson: { ...pkgJson, dependencies: deps }, missing };
 }
@@ -123,22 +123,22 @@ export function pinToTarballs(pkgJson, packed) {
 /** Client packages must carry the directive; server-safe leaves must not. */
 export function checkUseClient(modules, violations) {
   const mustHave = [
-    "@elabs/components-tokens/dist/index.js",
-    "@elabs/components-ui/dist/index.js",
-    "@elabs/components-data/dist/index.js",
-    "@elabs/components-ai/dist/index.js",
-    "@elabs/components-flow/dist/index.js",
-    "@elabs/components-maps/dist/index.js",
-    "@elabs/components-charts/dist/index.js",
-    "@elabs/components-editor/dist/index.js",
-    "@elabs/components-viewer/dist/index.js",
+    "@elabs-ai/components-tokens/dist/index.js",
+    "@elabs-ai/components-ui/dist/index.js",
+    "@elabs-ai/components-data/dist/index.js",
+    "@elabs-ai/components-ai/dist/index.js",
+    "@elabs-ai/components-flow/dist/index.js",
+    "@elabs-ai/components-maps/dist/index.js",
+    "@elabs-ai/components-charts/dist/index.js",
+    "@elabs-ai/components-editor/dist/index.js",
+    "@elabs-ai/components-viewer/dist/index.js",
   ];
   const mustNotHave = [
-    "@elabs/components-ui/dist/lib/cn.js",
-    "@elabs/components-editor/dist/markdown/parse.js",
-    "@elabs/components-editor/dist/markdown/frontmatter.js",
-    "@elabs/components-icons/dist/index.js",
-    "@elabs/components-marketing/dist/index.js",
+    "@elabs-ai/components-ui/dist/lib/cn.js",
+    "@elabs-ai/components-editor/dist/markdown/parse.js",
+    "@elabs-ai/components-editor/dist/markdown/frontmatter.js",
+    "@elabs-ai/components-icons/dist/index.js",
+    "@elabs-ai/components-marketing/dist/index.js",
   ];
 
   for (const rel of mustHave) {
@@ -194,7 +194,7 @@ export function checkExportsResolve(modules, packed, violations) {
 
 /** Every relative url() in the installed token CSS must resolve (the fonts bug). */
 export function checkFontAssets(modules, violations) {
-  const css = join(modules, "@elabs/components-tokens/dist/themes.css");
+  const css = join(modules, "@elabs-ai/components-tokens/dist/themes.css");
   if (!existsSync(css)) return;
   const text = readFileSync(css, "utf8");
   const base = dirname(css);
@@ -204,7 +204,7 @@ export function checkFontAssets(modules, violations) {
     if (!existsSync(resolve(base, ref))) {
       violations.push({
         rule: "unresolved-font",
-        detail: `@elabs/components-tokens themes.css references ${ref}, which is not in the tarball — text silently falls back`,
+        detail: `@elabs-ai/components-tokens themes.css references ${ref}, which is not in the tarball — text silently falls back`,
       });
     }
   }
@@ -216,7 +216,7 @@ export function checkFontAssets(modules, violations) {
  * Counting directories is wrong: pnpm's isolated layout legitimately materialises
  * the same version many times under `.pnpm/`. What actually breaks `useReactFlow`
  * or `globalThis.MonacoEnvironment` is two *distinct versions* being live — which
- * is exactly what @elabs/components-flow's ^12.11.1 vs @elabs/components-ai's ^12.3.6 could produce.
+ * is exactly what @elabs-ai/components-flow's ^12.11.1 vs @elabs-ai/components-ai's ^12.3.6 could produce.
  *
  * Searches the layouts real installers produce, rather than walking everything:
  *   <modules>/<dep>                       hoisted / top level

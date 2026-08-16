@@ -2,7 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { ArrowUp, ChevronDown, Globe, Mic, Paperclip, Sparkles } from "lucide-react";
-import { cn, useLocale } from "@elabs/components-ui";
+import { cn, useLocale } from "@elabs-ai/components-ui";
 
 import {
   PromptInput,

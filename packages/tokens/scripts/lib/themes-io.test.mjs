@@ -2,7 +2,7 @@
  * themes-io.test.mjs — locks the #401 comment-swallowing bug in
  * `parseScopedTokens` (the themes.css → DTCG re-seeding parser's scanner).
  *
- * Run via `pnpm --filter @elabs/components-tokens test` (vitest).
+ * Run via `pnpm --filter @elabs-ai/components-tokens test` (vitest).
  *
  * `themes.css` documents its own tokens inline, so a comment sitting directly
  * above a declaration routinely contains a `--token:`-shaped substring (see

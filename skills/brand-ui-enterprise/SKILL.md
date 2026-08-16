@@ -1,10 +1,10 @@
 ---
 name: brand-ui-enterprise
-description: "Design-judgment layer for building enterprise-grade app UIs with the brand-ui (@elabs/components-*) design system. Use when designing or laying out a professional/business app or screen — admin console, operator console, internal/back-office tool, dashboard, data app, dense data table, master-detail/drill-down screen, B2B SaaS app, or AI workspace — that must read enterprise-grade, not like a marketing or consumer app. It classifies the surface (professional vs consumer vs marketing) and commits to a register, picks the app-shell archetype (tool/workspace vs enterprise admin), models objects and screens, and stands up the mandatory baseline (shell, app icon + favicon, System/Light/Dark theme switcher, settings modal, toasts, detail panel). Also triggers on app-shell design and admin/dashboard layout. Not for marketing landing pages, consumer/mobile apps, pure data/SQL/analytics questions, theme-token-only work, or component-library picks; defers props to brand-ui and scored review to brand-ui-audit."
+description: "Design-judgment layer for building enterprise-grade app UIs with the brand-ui (@elabs-ai/components-*) design system. Use when designing or laying out a professional/business app or screen — admin console, operator console, internal/back-office tool, dashboard, data app, dense data table, master-detail/drill-down screen, B2B SaaS app, or AI workspace — that must read enterprise-grade, not like a marketing or consumer app. It classifies the surface (professional vs consumer vs marketing) and commits to a register, picks the app-shell archetype (tool/workspace vs enterprise admin), models objects and screens, and stands up the mandatory baseline (shell, app icon + favicon, System/Light/Dark theme switcher, settings modal, toasts, detail panel). Also triggers on app-shell design and admin/dashboard layout. Not for marketing landing pages, consumer/mobile apps, pure data/SQL/analytics questions, theme-token-only work, or component-library picks; defers props to brand-ui and scored review to brand-ui-audit."
 user-invocable: true
 argument-hint: "[what you're building, e.g. 'internal admin console for billing ops, dark']"
 allowed-tools:
-  - Bash(npx @elabs/components-cli *)
+  - Bash(npx @elabs-ai/components-cli *)
   - Bash(npx brand-ui *)
   - Bash(pnpm brand-ui *)
 ---
@@ -13,14 +13,14 @@ allowed-tools:
 
 Design **enterprise-grade applications** with brand-ui. This skill is the _judgment_
 layer: decide what kind of product you're building, pick the right shell, stand up the
-mandatory baseline, then build screens from `@elabs/components-*` with enterprise UX discipline.
+mandatory baseline, then build screens from `@elabs-ai/components-*` with enterprise UX discipline.
 Keep this file lean — load a `reference/` file when its step is active.
 
 ## What this skill owns — and defers
 
 - **Owns:** the professional / consumer / marketing call + register; the shell-archetype
   choice; the enterprise **app baseline** (definition of done); applying enterprise UX
-  principles mapped to `@elabs/components-*`.
+  principles mapped to `@elabs-ai/components-*`.
 - **Defers:** real component props/APIs → the **`brand-ui`** skill (`brand-ui search` /
   `brand-ui docs`); scored UX/a11y review → **`brand-ui-audit`** (set its register =
   _product/professional_); a brand-new scaffold interview → **`brand-ui-new-app`** (feed it
@@ -38,7 +38,7 @@ Infer from the request + the workspace — don't interrogate:
 - **Create** (greenfield) · **Extend** (add to a brand-ui app) · **Audit & fix** (review /
   remediate an existing app) · **Retrofit** (bring a non-brand-ui app onto brand-ui).
 
-Look first (`package.json` for `@elabs/components-*`, an existing shell/routes); ask one question
+Look first (`package.json` for `@elabs-ai/components-*`, an existing shell/routes); ask one question
 only if genuinely ambiguous. Each mode has its own short question set + hand-offs.
 → `reference/modes-and-interaction.md`.
 
@@ -71,7 +71,7 @@ Marketing → no sidebar; top nav + single scroll.
 Every professional app gets these **without being asked**: the chosen shell, the
 **collapsible brand app icon + favicon**, **ThemeProvider + System/Light/Dark
 switcher**, a **settings modal**, the **Sonner `Toaster`**, and a **right-side detail
-panel** (generic `Sheet`/`Drawer`; `@elabs/components-ai` `ContextPanel` for AI surfaces).
+panel** (generic `Sheet`/`Drawer`; `@elabs-ai/components-ai` `ContextPanel` for AI surfaces).
 → `reference/enterprise-app-baseline.md` (spec, root wiring, definition-of-done checklist).
 
 ### 4 · Model the objects & task flow, then build screens
@@ -95,10 +95,10 @@ order sections summary-first, and promote a high-value task to its own surface.
 mocked concept, then the full state grid. Skipping straight to component assembly is
 exactly the function-first "list + card" failure this skill exists to prevent.
 
-Then compose from `@elabs/components-*` with enterprise discipline: density-with-progressive-disclosure,
+Then compose from `@elabs-ai/components-*` with enterprise discipline: density-with-progressive-disclosure,
 every state designed, calm token-only visuals, motion that explains state, fix-oriented
 copy. Real props: default to `brand-ui docs`/`brand-ui search`, or compose with documented props
-and **flag** what's unconfirmed — never guess. Deep-verifying against the vendored `@elabs/components-*`
+and **flag** what's unconfirmed — never guess. Deep-verifying against the vendored `@elabs-ai/components-*`
 source is **optional** (shipping-critical only), not an every-run step. → `reference/principles.md`.
 
 ### 5 · Verify → hand off
@@ -160,14 +160,14 @@ Component lists and prop budgets are the LAST step, never the first. Full checkl
   visible focus, labels, `aria-label` on icon-only controls.
 - **Compose, don't reinvent.** Defer APIs to `brand-ui`; defer scoring to `brand-ui-audit`.
 - **Lean by default.** Load only the active step's `reference/*.md`, not all of them; deep
-  prop-verification against the vendored `@elabs/components-*` source is **opt-in** (shipping-critical only) —
+  prop-verification against the vendored `@elabs-ai/components-*` source is **opt-in** (shipping-critical only) —
   the default is `brand-ui docs` or compose-and-flag. Don't turn every run into a full audit.
 
 ## The category error this skill prevents
 
 "Build an internal admin console for X" must **not** produce a marketing landing (hero
 banner, three equal cards, big gradient headline, fake stats). An admin console is a
-**professional** surface → archetype B + the baseline. Reaching for `@elabs/components-marketing`
+**professional** surface → archetype B + the baseline. Reaching for `@elabs-ai/components-marketing`
 in an operational app? Stop and re-do step 1.
 
 ## Resources
@@ -180,9 +180,9 @@ in an operational app? Stop and re-do step 1.
 - `reference/screen-design-brief.md` — the design-first ritual for a net-new screen:
   intent → references → distinct concepts → mocked concept → full state grid →
   non-component layers → review, before component assembly.
-- `reference/principles.md` — enterprise UX principles (rulebook) → `@elabs/components-*` map.
+- `reference/principles.md` — enterprise UX principles (rulebook) → `@elabs-ai/components-*` map.
 - `reference/object-and-navigation-patterns.md` — OOUI, object detail hubs, drill-down/up
-  navigation, and the detail-surface decision tree (page/drawer/modal/inline) → `@elabs/components-*`.
+  navigation, and the detail-surface decision tree (page/drawer/modal/inline) → `@elabs-ai/components-*`.
 - `reference/screen-layout-patterns.md` — screen anatomy, **structural component selection**,
   master-detail split, and the MCP-server case study (what goes where, in which component).
 - `reference/information-priority-and-emphasis.md` — rank content by value; emphasis/space/

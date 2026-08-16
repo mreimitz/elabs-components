@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Textarea } from "@elabs/components-ui";
+import { Textarea } from "@elabs-ai/components-ui";
 import { SelectionToolbar } from "./selection-toolbar";
 import { Message, MessageContent } from "./message";
 

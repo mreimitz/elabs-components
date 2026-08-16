@@ -18,7 +18,7 @@
 
 import { useMemo, type HTMLAttributes } from "react";
 import { scaleTime } from "@visx/scale";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { useGantt } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
 import type { GanttFormatDate, GanttScale, GanttTimeUnit } from "./gantt";

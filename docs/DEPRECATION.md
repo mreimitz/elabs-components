@@ -45,7 +45,7 @@ using_ a prop. All four get the same treatment.
 ## 3. Breaking changes
 
 Every major ships a **migration section in `CHANGELOG.md`** with numbered
-consumer steps. The 2.0.0 entry (the `@brand/*` → `@elabs/components-*`
+consumer steps. The 2.0.0 entry (the `@brand/*` → `@elabs-ai/components-*`
 rename) is the template: what changed, _why_ it was not cosmetic, then the exact
 steps a consuming repo runs.
 

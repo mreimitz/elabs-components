@@ -1,8 +1,13 @@
 "use client";
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@elabs/components-ui";
-import { Badge } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@elabs-ai/components-ui";
+import { Badge } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Tool } from "ai";
 import { BotIcon } from "lucide-react";
 import type { ComponentProps } from "react";

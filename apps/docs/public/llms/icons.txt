@@ -1,8 +1,8 @@
-# @elabs/components-icons
+# @elabs-ai/components-icons
 
 > Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).
 
-Import from `@elabs/components-icons`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-icons`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

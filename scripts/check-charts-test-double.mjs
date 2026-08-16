@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check-charts-test-double.mjs — anti-drift gate for `@elabs/components-charts/test` (#364).
+ * check-charts-test-double.mjs — anti-drift gate for `@elabs-ai/components-charts/test` (#364).
  *
  * A test double that silently stops matching the real component's contract
  * makes a consumer's mocked tests lie again — the exact failure #364 fixes.
@@ -140,7 +140,7 @@ function isForbiddenSpecifier(specifier) {
 /**
  * A specifier that resolves to a package/family BARREL (pulls everything).
  * Covers the relative forms AND the package's own name — a self-reference
- * (`import { LineChart } from "@elabs/components-charts"`, legal
+ * (`import { LineChart } from "@elabs-ai/components-charts"`, legal
  * via the `exports` map and the most natural way to reintroduce the engine by
  * accident) resolves straight back to `src/index.ts`.
  */
@@ -151,7 +151,7 @@ function isForbiddenBarrel(specifier) {
     /^\.\.\/auto-chart(\/index)?$/.test(specifier) ||
     /^\.\.\/index$/.test(specifier) ||
     /^\.\.\/\.\.\/index$/.test(specifier) ||
-    specifier === "@elabs/components-charts"
+    specifier === "@elabs-ai/components-charts"
   );
 }
 
@@ -333,10 +333,10 @@ function main(argv) {
     return warnOnly ? 0 : 1;
   }
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
-  const chartsPkg = manifest?.packages?.["@elabs/components-charts"];
+  const chartsPkg = manifest?.packages?.["@elabs-ai/components-charts"];
   if (!chartsPkg) {
     console.error(
-      `✖ charts-test-double gate: manifest has no @elabs/components-charts package entry.`,
+      `✖ charts-test-double gate: manifest has no @elabs-ai/components-charts package entry.`,
     );
     return warnOnly ? 0 : 1;
   }

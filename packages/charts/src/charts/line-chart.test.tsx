@@ -12,7 +12,7 @@
  * failure pattern when Line/path children are included.)
  *
  * Real render, interaction, and a11y are covered by the Storybook story
- * (Charts/LineChart) running in a real browser via `pnpm --filter @elabs/components-docs
+ * (Charts/LineChart) running in a real browser via `pnpm --filter @elabs-ai/components-docs
  * test-storybook`.
  */
 

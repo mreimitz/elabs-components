@@ -119,7 +119,7 @@ describe("type-role rems (drift guards)", () => {
       // `--text-<role>` aliases it. Both halves are pinned here: the mirror must
       // track the literal, AND the role must still resolve to that literal —
       // a role re-inlined or re-pointed elsewhere would silently detach the
-      // runtime mirror @elabs/components-editor's markdown scale reads.
+      // runtime mirror @elabs-ai/components-editor's markdown scale reads.
       expect(css).toContain(`--type-size-${role}: ${rem}rem;`);
       expect(css).toContain(`--text-${role}: var(--type-size-${role});`);
     }

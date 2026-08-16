@@ -40,7 +40,7 @@ export function Counter({ start = 0 }: CounterProps) {
 `;
 
 const JSON_SAMPLE = `{
-  "name": "@elabs/components-editor",
+  "name": "@elabs-ai/components-editor",
   "version": "0.1.0",
   "private": true,
   "keywords": ["monaco", "editor", "tokens"],

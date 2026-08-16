@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 describe("Tabs", () => {
   // jsdom implements neither `Element.prototype.scrollIntoView` nor a real
   // layout, so a component that calls a scroll API unconditionally CRASHES
-  // every jsdom consumer of @elabs/components-ui (it did: 8/8
-  // of @elabs/components-editor's CodeWorkspace tests died on
+  // every jsdom consumer of @elabs-ai/components-ui (it did: 8/8
+  // of @elabs-ai/components-editor's CodeWorkspace tests died on
   // `node.scrollIntoView is not a function`). There is deliberately no stub in
   // `vitest.setup.ts` — this renders on bare jsdom, which is the assertion.
   it("mounts under jsdom without calling any scroll API", async () => {

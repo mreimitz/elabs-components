@@ -1,21 +1,21 @@
 /**
  * primitives.tsx — inert stand-ins for the COMPOSITION PRIMITIVES of
- * `@elabs/components-charts`, so the `./test` module namespace is
+ * `@elabs-ai/components-charts`, so the `./test` module namespace is
  * COMPLETE (issue #364).
  *
  * WHY THIS EXISTS (the bug it fixes): the documented consumer wiring is a
  * `vi.mock` FACTORY —
  *
  * ```ts
- * vi.mock("@elabs/components-charts", async () =>
- *   import("@elabs/components-charts/test"));
+ * vi.mock("@elabs-ai/components-charts", async () =>
+ *   import("@elabs-ai/components-charts/test"));
  * ```
  *
  * — and Vitest wraps a factory's result in a proxy that THROWS on any export the
  * factory did not return:
  *
  *     [vitest] No "Line" export is defined on the
- *     "@elabs/components-charts" mock.
+ *     "@elabs-ai/components-charts" mock.
  *
  * The throw happens when the consumer's module reads the binding (`<Line …/>`),
  * long before React would decide whether to reconcile it — so "a container
@@ -39,9 +39,9 @@
  * on a primitive's real MARKUP — composes the two modules instead:
  *
  * ```ts
- * vi.mock("@elabs/components-charts", async (importOriginal) => ({
+ * vi.mock("@elabs-ai/components-charts", async (importOriginal) => ({
  *   ...(await importOriginal<Record<string, unknown>>()),
- *   ...(await import("@elabs/components-charts/test")),
+ *   ...(await import("@elabs-ai/components-charts/test")),
  * }));
  * ```
  *

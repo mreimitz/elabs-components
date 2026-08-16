@@ -122,7 +122,7 @@ export interface ThemeProviderProps {
    * stays for the case it was built for (#355) — one registry, several products
    * each surfacing a slice of it.
    *
-   * `ThemeSwitcher` (`@elabs/components-ui`) automatically inherits this subset
+   * `ThemeSwitcher` (`@elabs-ai/components-ui`) automatically inherits this subset
    * (#384): it narrows its offered themes to the intersection of its own
    * `themes` prop and the provider's allowed list whenever the provider is
    * genuinely restricting (a strict subset of its registry). A non-restricting
@@ -230,7 +230,7 @@ function registryKey(themes: readonly ThemeDefinition[] | undefined): string | n
  * has no `@types/node`. Declaring the one shape used here keeps the expression
  * `process.env.NODE_ENV` intact, which is what every bundler replaces at build
  * time (so the diagnostics below compile out of production bundles). Mirrors the
- * same guard in `@elabs/components-data`'s DataTable.
+ * same guard in `@elabs-ai/components-data`'s DataTable.
  */
 declare const process: { env: { NODE_ENV?: string } };
 

@@ -20,7 +20,7 @@
  * re-exported below so the self-test keeps importing them from the gate.
  *
  * The schema (`skills/brand-ui-new-app/reference/app-spec.schema.json`) mirrors the
- * input shape of `planScaffold` in @elabs/components-cli
+ * input shape of `planScaffold` in @elabs-ai/components-cli
  * (packages/cli/lib/engine.mjs). The validator is a small, dependency-free
  * JSON-Schema subset (type/required/enum/minLength/minItems/properties/items) —
  * no ajv, no paid deps.

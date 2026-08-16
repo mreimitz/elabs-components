@@ -1,4 +1,4 @@
-# @elabs/components-\* Storybook design + a11y + QA review
+# @elabs-ai/components-\* Storybook design + a11y + QA review
 
 **Date:** 2026-06-16 · **Scope:** the running Storybook at `localhost:6006` · **Method:** parallel subagents drove a real browser (agent-browser, isolated sessions), opened each story's iframe, interacted as an end user (click/type/open/keyboard), read the console, inspected the a11y tree, and sampled the dark / high-contrast / blueprint themes. Rubric: the design-taste skill (AI-tells, interaction states, taste) + the repo's own a11y/token/interaction rules.
 

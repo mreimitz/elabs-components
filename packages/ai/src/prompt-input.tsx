@@ -8,31 +8,31 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@elabs/components-ui";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@elabs-ai/components-ui";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@elabs/components-ui";
-import { Spinner } from "@elabs/components-ui";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import { Spinner } from "@elabs-ai/components-ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import { CornerDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from "lucide-react";
 import { nanoid } from "nanoid";
@@ -1637,7 +1637,7 @@ export type PromptInputCommandItemProps = ComponentProps<typeof CommandItem>;
  * A selectable row inside `PromptInputCommand` (e.g. an `@`-mention popup).
  *
  * `id`/`role`/`aria-selected` are assigned internally by the `cmdk` dependency
- * itself — one layer below this wrapper and below `@elabs/components-ui`'s
+ * itself — one layer below this wrapper and below `@elabs-ai/components-ui`'s
  * own `CommandItem` — and applied AFTER any props you pass, so a
  * consumer-supplied `id`/`role`/`aria-selected` is silently overridden
  * (`CommandItem` warns about this in development; #365).
@@ -1645,7 +1645,7 @@ export type PromptInputCommandItemProps = ComponentProps<typeof CommandItem>;
  * To wire `aria-activedescendant` from an input rendered OUTSIDE this
  * `PromptInputCommand` tree (the composer textarea driving the popup), use
  * `PromptInputCommand`'s `onActiveItemIdChange` callback (inherited from
- * `@elabs/components-ui`'s `Command`, since `PromptInputCommandProps =
+ * `@elabs-ai/components-ui`'s `Command`, since `PromptInputCommandProps =
  * ComponentProps<typeof Command>`) instead of reading the id back
  * positionally from the DOM:
  *

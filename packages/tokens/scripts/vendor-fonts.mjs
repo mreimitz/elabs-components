@@ -2,7 +2,7 @@
 /**
  * vendor-fonts.mjs — download the self-hosted webfonts into src/fonts/.
  *
- * @elabs/components-tokens ships its faces rather than pulling a CDN at runtime, so a
+ * @elabs-ai/components-tokens ships its faces rather than pulling a CDN at runtime, so a
  * consumer gets correct typography with no network dependency and no CSP hole.
  * Inter was vendored by hand; this script does the same job
  * reproducibly for the remaining faces and can re-run to add weights.

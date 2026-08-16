@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Skeleton } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { ReactFlowProps } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { Suspense } from "react";

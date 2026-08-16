@@ -13,10 +13,10 @@
  * The library owns only layout + rendering. `render` turns a resolved cell's
  * markdown into a node (a nested `MarkdownPreview` when wired through the preview).
  *
- * `grid` / `matrix` reuse the shared `@elabs/components-ui` `Table` primitive (the same base
- * `@elabs/components-data`'s DataTable builds on — `@elabs/components-editor` can't import the sibling
- * `@elabs/components-data`, so we compose the shared primitive rather than fork it). `bento`
- * lays the cells out as varied-size `@elabs/components-ui` `BentoGrid` tiles.
+ * `grid` / `matrix` reuse the shared `@elabs-ai/components-ui` `Table` primitive (the same base
+ * `@elabs-ai/components-data`'s DataTable builds on — `@elabs-ai/components-editor` can't import the sibling
+ * `@elabs-ai/components-data`, so we compose the shared primitive rather than fork it). `bento`
+ * lays the cells out as varied-size `@elabs-ai/components-ui` `BentoGrid` tiles.
  */
 import {
   BentoGrid,
@@ -28,8 +28,8 @@ import {
   TableHeader,
   TableRow,
   type BentoGridSize,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { Repeat2 } from "lucide-react";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 

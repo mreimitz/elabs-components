@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import Ansi from "ansi-to-react";
 import { CheckIcon, CopyIcon, TerminalIcon, Trash2Icon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useReducedMotion, useTheme, type ThemeName } from "@elabs/components-tokens";
+import { useReducedMotion, useTheme, type ThemeName } from "@elabs-ai/components-tokens";
 
 /** Whole-screen reveal effects for the animated theme switch (View Transitions API). */
 export type ThemeTransitionEffect = "polygon" | "circle" | "circle-blur" | "triangle";
@@ -22,7 +22,7 @@ type ViewTransitionDocument = Document & {
  *   the browser lacks `startViewTransition` — it falls back to an instant,
  *   unanimated `setTheme`.
  *
- * The visual is pure CSS on `::view-transition-*` in `@elabs/components-tokens` themes.css;
+ * The visual is pure CSS on `::view-transition-*` in `@elabs-ai/components-tokens` themes.css;
  * this hook only orchestrates it.
  */
 export function useThemeTransition(effect: ThemeTransitionEffect = "polygon") {

@@ -1,9 +1,9 @@
 "use client";
 
-import { ChartStatFlow, Line, LineChart } from "@elabs/components-charts";
+import { ChartStatFlow, Line, LineChart } from "@elabs-ai/components-charts";
 import { curveBasis } from "@visx/curve";
 import { useState } from "react";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs-ai/components-ui";
 import { sessionsSeries, sessionsStats } from "./data/sessions-series";
 import {
   StatCardChart,

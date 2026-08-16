@@ -6,7 +6,7 @@ import {
   BUILT_IN_THEME_DEFINITIONS,
   defineTheme,
   ThemeProvider,
-} from "@elabs/components-tokens";
+} from "@elabs-ai/components-tokens";
 
 import { ThemeSwitcher, type ThemePreference } from "./theme-switcher";
 

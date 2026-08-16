@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@elabs/components-ui";
+import { Button } from "@elabs-ai/components-ui";
 import { Hero } from "./hero";
 
 const meta = {

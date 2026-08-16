@@ -1,11 +1,11 @@
 /**
- * @elabs/components-cli — the AGENT OUTPUT CONTRACT (how an agent structures output so the
- * `@elabs/components-ai` GenUI components render it). The "emit this shape" sidecar.
+ * @elabs-ai/components-cli — the AGENT OUTPUT CONTRACT (how an agent structures output so the
+ * `@elabs-ai/components-ai` GenUI components render it). The "emit this shape" sidecar.
  *
- * The GAP this fills: `@elabs/components-ai` ships ~chat/GenUI components that render
+ * The GAP this fills: `@elabs-ai/components-ai` ships ~chat/GenUI components that render
  * AGENT-PRODUCED data, but nothing told an agent WHAT SHAPE to emit. This is the
  * machine-readable contract, folded into the manifest under `agentOutput` and
- * rendered into the `brand-ui` skill + a Storybook page + the `@elabs/components-ai` llms
+ * rendered into the `brand-ui` skill + a Storybook page + the `@elabs-ai/components-ai` llms
  * spoke (one source → every surface, stale-gated).
  *
  * IT IS PATH-KEYED, NOT COMPONENT-KEYED (the D2 axis — `docs/DECISIONS.md` §D2):
@@ -48,7 +48,7 @@ export const TOOL_STATE_TO_STATUS = {
 };
 
 /**
- * The closed `@elabs/components-ui` Status enum (STATUSES, status-badge.tsx) a tool part
+ * The closed `@elabs-ai/components-ui` Status enum (STATUSES, status-badge.tsx) a tool part
  * maps onto. Authored here; gate-verified against source (drift = CI fail).
  * @type {string[]}
  */
@@ -113,7 +113,7 @@ export const AGENT_OUTPUT = {
       status: "shipped",
       title: "Conversation — the AI SDK UIMessage (the default)",
       summary:
-        "Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs/components-ai renders it. ~the default for any chat.",
+        "Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs-ai/components-ai renders it. ~the default for any chat.",
       model: "ai/UIMessage",
       modelAuthority:
         "Vercel AI SDK — import type only (D6). brand-ui does NOT redefine UIMessage/ToolUIPart; the SDK is authoritative for their shape.",
@@ -150,7 +150,7 @@ export const AGENT_OUTPUT = {
       ],
       example: CONVERSATION_EXAMPLE,
       wiring:
-        "Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs/components-ai never calls the model.",
+        "Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs-ai/components-ai never calls the model.",
     },
     jsxPreview: {
       status: "shipped",
@@ -184,7 +184,7 @@ export const AGENT_OUTPUT = {
   },
   /** What an agent must NOT do — rendered as the DON'T list. */
   donts: [
-    "Don't expect @elabs/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
+    "Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).",
     "Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.",
     "Don't emit tags outside the JSXPreview `components` allow-list.",
     "Don't emit A2UI surfaces — not shipped (WP-11).",
@@ -196,9 +196,9 @@ export const AGENT_OUTPUT = {
 /**
  * The structured `agentOutput` block folded into the manifest (parallels
  * `collectIntent`). Returns the authored contract verbatim — it is cross-cutting
- * (spans @elabs/components-ai's two surfaces + @elabs/components-ui's Status), so unlike `collectIntent`
+ * (spans @elabs-ai/components-ai's two surfaces + @elabs-ai/components-ui's Status), so unlike `collectIntent`
  * it is NOT filtered per package. Deterministic: authored key order, no clock.
- * Name accuracy (`consumedBy` ∈ @elabs/components-ai, the state/status maps) is enforced by
+ * Name accuracy (`consumedBy` ∈ @elabs-ai/components-ai, the state/status maps) is enforced by
  * the `agent-output:check` gate, not by mutating the manifest here.
  * @returns {typeof AGENT_OUTPUT}
  */

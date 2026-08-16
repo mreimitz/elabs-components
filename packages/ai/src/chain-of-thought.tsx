@@ -1,9 +1,9 @@
 "use client";
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import { Badge, type Status } from "@elabs/components-ui";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Badge, type Status } from "@elabs-ai/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ComponentProps } from "react";

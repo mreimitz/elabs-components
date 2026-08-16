@@ -1,7 +1,7 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Tabs, TabsList, TabsTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
   useCallback,

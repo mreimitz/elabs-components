@@ -4,9 +4,9 @@
  * Markdown adapter — a `.md` file read as a DOCUMENT, not as source.
  *
  * Renders through `streamdown`, the same markdown engine
- * `@elabs/components-ai`'s `MarkdownView` and
- * `@elabs/components-editor`'s preview use, mapped onto the same
- * `Prose*` primitives from `@elabs/components-ui`. That is the
+ * `@elabs-ai/components-ai`'s `MarkdownView` and
+ * `@elabs-ai/components-editor`'s preview use, mapped onto the same
+ * `Prose*` primitives from `@elabs-ai/components-ui`. That is the
  * point: a README must not look like three different documents depending on
  * which pane it opened in. The element map below is deliberately a near-copy of
  * `MarkdownView`'s — the packages are siblings and may not import each other,
@@ -38,8 +38,8 @@ import {
   cn,
   useLocale,
   useStreamdownTranslations,
-} from "@elabs/components-ui";
-import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs-ai/components-ui";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, use, useMemo, useRef } from "react";
 import type * as StreamdownExports from "streamdown";
@@ -254,7 +254,7 @@ const SHARED_COMPONENTS: StreamdownComponents = {
  * carries its own heading tree, correct only relative to the page hosting it —
  * a README's `#` inside an app that already has an `<h1>` would otherwise put
  * two `h1`s in a screen reader's flat heading list. Same seam, same arithmetic
- * as `@elabs/components-ai`'s `MarkdownView`.
+ * as `@elabs-ai/components-ai`'s `MarkdownView`.
  */
 function buildProseComponents(baseHeadingLevel: ProseHeadingLevel): StreamdownComponents {
   const heading =

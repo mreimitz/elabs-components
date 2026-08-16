@@ -58,7 +58,7 @@
   "elements.ai-sdk.dev": {
     "directive": "none",
     "kind": "comment",
-    "note": "Attribution comment — @elabs/components-ai is vendored from Vercel AI Elements. Never fetched.",
+    "note": "Attribution comment — @elabs-ai/components-ai is vendored from Vercel AI Elements. Never fetched.",
     "escapeHatch": "n/a",
     "usedBy": ["packages/ai/src/index.ts"]
   },
@@ -104,7 +104,7 @@
   "www.apache.org": {
     "directive": "none",
     "kind": "comment",
-    "note": "The canonical Apache-2.0 licence URL, carried in @elabs/components-ai's vendored-from notice. Apache-2.0 §4 requires the notice to travel with the source, and this is its standard form. Never fetched.",
+    "note": "The canonical Apache-2.0 licence URL, carried in @elabs-ai/components-ai's vendored-from notice. Apache-2.0 §4 requires the notice to travel with the source, and this is its standard form. Never fetched.",
     "escapeHatch": "n/a",
     "usedBy": ["packages/ai/src/index.ts"]
   },

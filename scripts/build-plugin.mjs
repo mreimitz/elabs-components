@@ -92,12 +92,11 @@ for (const p of [".claude-plugin", "brand-ui.manifest.json"]) {
 // `.mcp.json`: the repo-root copy points the persistent `brand-ui` MCP server at
 // the MONOREPO path (`node packages/cli/bin/brand-ui.mjs mcp`), which does NOT
 // exist in a consumer project. Rewrite that one server to the published-CLI
-// command (`npx -y @elabs/components-cli mcp`) so the plugin's MCP works wherever it's
-// installed. NOTE: this `npx` form only resolves where the consumer's npm config
-// maps the `@elabs` scope to GitHub Packages AND carries a `read:packages`
-// token (see docs/CONSUMING.md §1) — it is NOT a no-install fallback for an
-// unauthenticated consumer (#265). The Storybook server (HTTP localhost) is
-// environment-independent and passes through unchanged. (#81)
+// command (`npx -y @elabs-ai/components-cli mcp`) so the plugin's MCP works wherever it's
+// installed. Since ADR 0030 the packages are PUBLIC on npmjs.org, so this `npx`
+// form is turnkey — no scope mapping, no token (that precondition, and the
+// docs-accuracy rule that enforced it, are gone with #265). The Storybook server
+// (HTTP localhost) is environment-independent and passes through unchanged. (#81)
 const mcpSrc = join(root, ".mcp.json");
 if (!existsSync(mcpSrc)) {
   console.error("build-plugin: missing .mcp.json (the plugin manifest declares it).");
@@ -108,7 +107,7 @@ if (mcp.mcpServers?.["brand-ui"]) {
   mcp.mcpServers["brand-ui"] = {
     type: "stdio",
     command: "npx",
-    args: ["-y", "@elabs/components-cli", "mcp"],
+    args: ["-y", "@elabs-ai/components-cli", "mcp"],
   };
 }
 writeFileSync(join(stage, ".mcp.json"), `${JSON.stringify(mcp, null, 2)}\n`);
@@ -155,7 +154,7 @@ at this version.
   router, which routes build-new / improve / use-it). Maintainer-only skills are excluded.
 - \`agents/\` — the ${agents.length} consumer-clean reviewer agents.
 - \`.mcp.json\` — two MCP servers: the persistent \`brand-ui\` (API ground truth via
-  \`npx @elabs/components-cli mcp\` — requires the \`@elabs\` scope authenticated
+  \`npx @elabs-ai/components-cli mcp\` — requires the \`@elabs-ai\` scope authenticated
   to GitHub Packages, see \`docs/CONSUMING.md\` §1) and \`storybook\` (real-component
   previews when Storybook runs, no auth needed).
 - \`brand-ui.manifest.json\` — the inventory the skills read.

@@ -36,16 +36,16 @@ Web access was available; key facts were verified against official docs
 - **Status tokens** (`--success`, `--warning`, `--info`) were added beyond the
   base token list because data/status UIs need them; they follow the same
   semantic-token rules.
-- **Charts are library-agnostic:** `@elabs/components-charts` ships `MetricCard`/`MetricGrid`
+- **Charts are library-agnostic:** `@elabs-ai/components-charts` ships `MetricCard`/`MetricGrid`
   and a presentational `ChartCard` container (no heavy chart dependency). Series
   should use the `--chart-1..12` tokens. Bring Recharts/visx/Chart.js per app.
 - **SplitPanel is static** (no drag-to-resize) for predictable SSR/tests; wrap
   with a resize library at the app level if needed.
-- **`lucide-react` is NOT a dependency of `@elabs/components-icons`** — that package's
+- **`lucide-react` is NOT a dependency of `@elabs-ai/components-icons`** — that package's
   only peer is `react`; its branded sample icons (`createIcon`) have no runtime
   dependency on Lucide. `lucide-react` is the **default** library for generic UI
   glyphs and is declared directly by the packages that use it
-  (`@elabs/components-ui`, `@elabs/components-ai`, `@elabs/components-editor`) — see
+  (`@elabs-ai/components-ui`, `@elabs-ai/components-ai`, `@elabs-ai/components-editor`) — see
   @.claude/rules/icons.md.
 
 ## Placeholder brand (replace these)
@@ -63,7 +63,7 @@ Web access was available; key facts were verified against official docs
 
 - Smoke tests are provided for representative components (Button, Badge, Card,
   Input, EmptyState, DataTable, PromptInput). Storybook stories exist for all
-  `@elabs/components-ui` components and the headline component of each domain package.
+  `@elabs-ai/components-ui` components and the headline component of each domain package.
   Expanding coverage to every component is an intended contributor task (the
   quality gates require a story + smoke test per component going forward).
 
@@ -99,7 +99,7 @@ A full `pnpm install` for this monorepo (Storybook + Vite + React Flow + TanStac
   `registry/registry.json`, `.claude/settings.json`.
 - `pnpm registry:validate` → ✓ 8 items, all referenced files exist on disk.
 - Import resolution audit: 175 source files scanned; all 187 relative + 46
-  `@elabs/components-*` imports resolve to real files (no broken paths/typos).
+  `@elabs-ai/components-*` imports resolve to real files (no broken paths/typos).
 - Token consistency: 48 semantic tokens; every `@theme inline` `var()` maps to a
   defined token; every shipped theme covers the full set.
 - No raw hex colors in any component package (only `themes.css` defines colors).

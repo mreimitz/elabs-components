@@ -42,20 +42,20 @@ system is legible to coding agents through a CLI, an MCP server and a generated 
 
 ## Packages
 
-| Package                       | What it gives you                                                                                                                  |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `@elabs/components-tokens`    | The semantic token system, reference themes, `ThemeProvider`, and the density / motion / decoration dials                          |
-| `@elabs/components-ui`        | 106 application components — buttons, forms, overlays, navigation, tables, app shells, wizards, editors-of-lists                   |
-| `@elabs/components-icons`     | Icon primitives, `BrandLogo`, and a replaceable sample vocabulary (generic glyphs come from Lucide)                                |
-| `@elabs/components-data`      | TanStack-powered `DataTable` with filtering, faceting, column picking and virtualization                                           |
-| `@elabs/components-ai`        | 69 chat and agent surfaces — conversation, streaming messages, tool calls, reasoning, sources, artifacts, terminals, agent canvas  |
-| `@elabs/components-flow`      | A branded React Flow canvas: nodes, edges, controls, minimap, inspector                                                            |
-| `@elabs/components-maps`      | Token-driven MapLibre GL maps — theme-aware basemaps, markers, popups, routes, arcs, GeoJSON, clustering                           |
-| `@elabs/components-charts`    | Metric cards, chart frames with expand/flip/download, and `AutoChart` — the right chart from a serializable spec                   |
-| `@elabs/components-editor`    | A token-themed Monaco editor: code, diff, multi-file workspace, brand context menu                                                 |
-| `@elabs/components-viewer`    | `FileViewer` — render a file your app did not write (upload, signed URL, agent output) through a pluggable adapter registry        |
-| `@elabs/components-marketing` | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
-| `@elabs/components-cli`       | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
+| Package                          | What it gives you                                                                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`    | The semantic token system, reference themes, `ThemeProvider`, and the density / motion / decoration dials                          |
+| `@elabs-ai/components-ui`        | 106 application components — buttons, forms, overlays, navigation, tables, app shells, wizards, editors-of-lists                   |
+| `@elabs-ai/components-icons`     | Icon primitives, `BrandLogo`, and a replaceable sample vocabulary (generic glyphs come from Lucide)                                |
+| `@elabs-ai/components-data`      | TanStack-powered `DataTable` with filtering, faceting, column picking and virtualization                                           |
+| `@elabs-ai/components-ai`        | 69 chat and agent surfaces — conversation, streaming messages, tool calls, reasoning, sources, artifacts, terminals, agent canvas  |
+| `@elabs-ai/components-flow`      | A branded React Flow canvas: nodes, edges, controls, minimap, inspector                                                            |
+| `@elabs-ai/components-maps`      | Token-driven MapLibre GL maps — theme-aware basemaps, markers, popups, routes, arcs, GeoJSON, clustering                           |
+| `@elabs-ai/components-charts`    | Metric cards, chart frames with expand/flip/download, and `AutoChart` — the right chart from a serializable spec                   |
+| `@elabs-ai/components-editor`    | A token-themed Monaco editor: code, diff, multi-file workspace, brand context menu                                                 |
+| `@elabs-ai/components-viewer`    | `FileViewer` — render a file your app did not write (upload, signed URL, agent output) through a pluggable adapter registry        |
+| `@elabs-ai/components-marketing` | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
+| `@elabs-ai/components-cli`       | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
 
 Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a gate
 (`pnpm dep-direction:check`) fails any change that points an edge sideways or upward.
@@ -80,9 +80,9 @@ state, in both themes, with interaction and accessibility tests attached.
 
 ```tsx
 // once, at the app root
-import { ThemeProvider } from "@elabs/components-tokens";
-import { Button, Card, CardHeader, CardTitle, CardContent } from "@elabs/components-ui";
-import { DataTable } from "@elabs/components-data";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { Button, Card, CardHeader, CardTitle, CardContent } from "@elabs-ai/components-ui";
+import { DataTable } from "@elabs-ai/components-data";
 
 export function App() {
   return (
@@ -103,11 +103,11 @@ export function App() {
 
 ```css
 /* your CSS entry */
-@import "@elabs/components-tokens/styles.css"; /* Tailwind bridge + neutral base + fonts */
-@import "@elabs/components-tokens/themes/light.css"; /* opt-in reference themes */
-@import "@elabs/components-tokens/themes/dark.css";
+@import "@elabs-ai/components-tokens/styles.css"; /* Tailwind bridge + neutral base + fonts */
+@import "@elabs-ai/components-tokens/themes/light.css"; /* opt-in reference themes */
+@import "@elabs-ai/components-tokens/themes/dark.css";
 
-@source "../node_modules/@elabs/components-ui/dist"; /* one per package you render */
+@source "../node_modules/@elabs-ai/components-ui/dist"; /* one per package you render */
 ```
 
 > The `@source` line is required. Tailwind does not scan `node_modules` unless you
@@ -125,7 +125,11 @@ on a provider. That is the whole definition — it does not have to come from th
 repository.
 
 ```tsx
-import { BUILT_IN_THEME_DEFINITIONS, defineTheme, ThemeProvider } from "@elabs/components-tokens";
+import {
+  BUILT_IN_THEME_DEFINITIONS,
+  defineTheme,
+  ThemeProvider,
+} from "@elabs-ai/components-tokens";
 
 const acme = defineTheme({ value: "acme", label: "Acme", dark: false });
 
@@ -192,7 +196,7 @@ hooks. Start at [`CLAUDE.md`](CLAUDE.md) or [`AGENTS.md`](AGENTS.md).
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
-pnpm --filter @elabs/components-docs test-storybook   # interaction + axe, in a real browser
+pnpm --filter @elabs-ai/components-docs test-storybook   # interaction + axe, in a real browser
 ```
 
 75 gate scripts (`pnpm <name>:check`) enforce the conventions above, and 72 of them
@@ -225,7 +229,7 @@ pnpm test                 # unit + smoke
 pnpm storybook            # docs and reference implementation
 pnpm format               # prettier
 pnpm registry:validate    # validate the copy-own registry
-pnpm --filter @elabs/components-ui test   # scope any task to one package
+pnpm --filter @elabs-ai/components-ui test   # scope any task to one package
 ```
 
 ---

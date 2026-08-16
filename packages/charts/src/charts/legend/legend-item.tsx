@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { useLegend, useLegendItem } from "./legend-context";
 
 export interface LegendItemProps {

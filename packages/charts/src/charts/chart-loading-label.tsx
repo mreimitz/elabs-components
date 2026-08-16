@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { ShimmeringText } from "./shimmering-text";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import {
   LINE_LOADING_PULSE_EASE,
   LOADING_LABEL_EXIT_S,

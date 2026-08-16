@@ -1,5 +1,5 @@
 /**
- * @elabs/components-maps — token-driven MapLibre GL map components.
+ * @elabs-ai/components-maps — token-driven MapLibre GL map components.
  *
  * Adapted from mapcn (https://github.com/AnmolSaini16/mapcn, MIT License,
  * © 2025 Anmoldeep Singh), re-tokenized and renamed for brand-ui: semantic

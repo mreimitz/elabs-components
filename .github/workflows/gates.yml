@@ -1,0 +1,286 @@
+# The quality battery, declared ONCE.
+#
+# `ci.yml` calls this on every PR and every push to `main`. The release does NOT
+# call it: since the verdict model (#103) a `v*` tag inherits its authority from
+# the CI run that already passed on the exact commit being tagged, rather than
+# re-deriving the same verdict on a second ref. That makes this file the single
+# place a gate can be added — and `pnpm release-gates:check` rung 2 is what
+# notices if it is ever hollowed out, by diffing what ci.yml can reach against
+# `scripts/release-gates-baseline.json`.
+#
+# Two ordering rules are load-bearing:
+#   1. The conflict-marker and debrand scans run BEFORE `pnpm install`. A stray
+#      merge marker can corrupt a gate script's own source before it ever runs
+#      (#375/#379), so the scan cannot depend on a successful install.
+#   2. `pnpm build` precedes `consumer:check`, which packs the built tarballs and
+#      installs them into a throwaway app.
+name: Quality gates
+
+on:
+  workflow_call:
+
+jobs:
+  gates:
+    # NOTE: the name is read by tooling. `check-release-verdict.mjs` and
+    # `check-merge-readiness.mjs` both treat a job as BLOCKING unless its name
+    # matches /non-blocking/i — so this one must NOT say "non-blocking".
+    name: Quality gates (blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history: `changelog-entry:check` and `baseline-provenance:check`
+          # resolve a base ref and read the baseline's content at that ref. With
+          # a shallow clone they skip, and a skipped ratchet proves nothing.
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # ── pre-install: dependency-free scans of the source itself ─────────────
+      - name: Source integrity (pre-install)
+        run: |
+          pnpm conflict-markers:check
+          pnpm debrand:check
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # ── the compiler-grade checks ──────────────────────────────────────────
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      # ── tokens, themes, styling ────────────────────────────────────────────
+      - name: Tokens and themes
+        run: |
+          pnpm tokens:check
+          pnpm tokens:dup-blocks:check
+          pnpm token-contract:check
+          pnpm theme-parity:check
+          pnpm roles:check
+          pnpm palette:check
+          pnpm decoration:check
+          pnpm decoration-collapse:check
+          pnpm surface-elevation:check
+          pnpm elevation:check
+          pnpm separation:check
+          pnpm text-scale:check
+          pnpm motion:check
+
+      # ── component API, packages, structure ─────────────────────────────────
+      - name: Component and package contracts
+        run: |
+          pnpm components:check
+          pnpm data-slot:check
+          pnpm variants:check
+          pnpm states:check
+          pnpm loading-states:check
+          pnpm use-client:check
+          pnpm dep-direction:check
+          pnpm heavy-deps:check
+          pnpm lucide:check
+          pnpm charts:reuse:check
+          pnpm charts:test-double:check
+          pnpm timeline-fork:check
+          pnpm collapse-fork:check
+          pnpm sidebar-drift:check
+          pnpm viewer-highlight:check
+          pnpm microcopy:check
+          pnpm intent:check
+
+      # ── security, network, shipped assets ──────────────────────────────────
+      - name: Security and shipped assets
+        run: |
+          pnpm csp:check
+          pnpm csp-sinks:check
+          pnpm origins:check
+          pnpm tt-aliases:check
+          pnpm css-assets:check
+          pnpm machine-paths:check
+          pnpm biome-ignore:check
+          pnpm lockfile:check
+
+      # ── derived artifacts: generated, never hand-kept ──────────────────────
+      - name: Derived artifacts are fresh
+        run: |
+          pnpm manifest:check
+          pnpm inventory:check
+          pnpm llms:check
+          pnpm context:check
+          pnpm gen:check
+          pnpm gen:readmes:check
+          pnpm gen:registry:check
+          pnpm templates:check
+          pnpm playbooks:check
+          pnpm agent-output:check
+          pnpm audit-artifact:check
+          pnpm plugin:check
+          pnpm plugin:agents:check
+          pnpm plugin:consumer-clean:check
+          pnpm registry:validate
+          pnpm registry:resolve:check
+          pnpm skills:build:check:test
+
+      # ── docs, governance, process ──────────────────────────────────────────
+      - name: Docs and governance
+        run: |
+          pnpm docs:check
+          pnpm agents:check
+          pnpm rules:scoping:check
+          pnpm slop:check
+          pnpm app-spec:check
+          pnpm attributions:check
+          pnpm attribution:provenance:check
+          pnpm ai:types-only
+          pnpm a11y:baseline:check
+          pnpm worktree-branch:check
+
+      # ── release machinery ──────────────────────────────────────────────────
+      - name: Release machinery
+        run: |
+          pnpm version:check
+          pnpm changelog-entry:check
+          pnpm publish-ready:check
+          pnpm baseline-provenance:check
+          pnpm release-gates:check
+
+      # ── every gate's own self-test: a gate that stops firing is worse than
+      #    none, so the fixtures that prove each one still fails are gates too ─
+      - name: Gate self-tests
+        run: |
+          pnpm a11y:baseline:check:test
+          pnpm agent-docs-cascade:check:test
+          pnpm agent-output:check:test
+          pnpm agents:check:test
+          pnpm ai:types-only:test
+          pnpm app-spec:check:test
+          pnpm attribution:provenance:check:test
+          pnpm attributions:check:test
+          pnpm audit-artifact:check:test
+          pnpm baseline-provenance:check:test
+          pnpm bash-output:check:test
+          pnpm biome-ignore:check:test
+          pnpm cadence:check:test
+          pnpm changelog:check:test
+          pnpm changelog-entry:check:test
+          pnpm charts:reuse:check:test
+          pnpm charts:test-double:check:test
+          pnpm close-issues:check:test
+          pnpm collapse-fork:check:test
+          pnpm components:check:test
+          pnpm conflict-markers:check:test
+          pnpm consumer:check:test
+          pnpm csp:check:test
+          pnpm csp-sinks:check:test
+          pnpm css-assets:check:test
+          pnpm data-slot:check:test
+          pnpm debrand:check:test
+          pnpm decoration:check:test
+          pnpm decoration-collapse:check:test
+          pnpm dep-direction:check:test
+          pnpm deps-sync:test
+          pnpm dispatch:check:test
+          pnpm docs:check:test
+          pnpm elevation:check:test
+          pnpm format:check:test
+          pnpm gen:check:test
+          pnpm gen:registry:check:test
+          pnpm heavy-deps:check:test
+          pnpm intent:check:test
+          pnpm loading-states:check:test
+          pnpm lockfile:check:test
+          pnpm machine-paths:check:test
+          pnpm merge:check:test
+          pnpm microcopy:check:test
+          pnpm motion:check:test
+          pnpm origins:check:test
+          pnpm palette:check:test
+          pnpm playbooks:check:test
+          pnpm plugin:agents:check:test
+          pnpm plugin:check:test
+          pnpm plugin:consumer-clean:check:test
+          pnpm publish-ready:check:test
+          pnpm registry:resolve:check:test
+          pnpm registry:validate:test
+          pnpm release-gates:check:test
+          pnpm release-report:test
+          pnpm release-verdict:check:test
+          pnpm release:smoke:test
+          pnpm release:snapshot:test
+          pnpm roles:check:test
+          pnpm rules:scoping:check:test
+          pnpm separation:check:test
+          pnpm sidebar-drift:check:test
+          pnpm slop:check:test
+          pnpm states:check:test
+          pnpm surface-elevation:check:test
+          pnpm surface:preview:test
+          pnpm templates:check:test
+          pnpm text-scale:check:test
+          pnpm theme-parity:check:test
+          pnpm timeline-fork:check:test
+          pnpm tokens:check:test
+          pnpm tokens:dup-blocks:check:test
+          pnpm tt-aliases:check:test
+          pnpm use-client:check:test
+          pnpm variants:check:test
+          pnpm version:check:test
+          pnpm viewer-highlight:check:test
+          pnpm worktree-branch:check:test
+
+      # ── the shipped tarballs, installed like a real consumer would ──────────
+      - name: Consumer install smoke
+        run: pnpm consumer:check
+
+  storybook:
+    # Interaction + axe over every story. Slow (~25 min) and deliberately kept
+    # OFF the blocking path: `/non-blocking/i` in the name is what both
+    # check-release-verdict.mjs and check-merge-readiness.mjs read, and
+    # `continue-on-error` is what keeps it out of `pnpm release-gates:check`'s
+    # blocking-gate set. axe itself is still enforced — `preview.tsx` sets
+    # `a11y.test: "error"` and `scripts/a11y-baseline.json` ratchets down.
+    name: Storybook interaction + axe (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @elabs-ai/components-docs exec playwright install --with-deps chromium
+
+      - name: Story tests
+        run: pnpm --filter @elabs-ai/components-docs test-storybook

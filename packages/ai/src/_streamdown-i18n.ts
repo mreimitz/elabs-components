@@ -2,7 +2,7 @@
 
 /**
  * The shared Streamdown wiring for every streamed-markdown surface in
- * `@elabs/components-ai` — the plugin set and the locale bridge.
+ * `@elabs-ai/components-ai` — the plugin set and the locale bridge.
  *
  * Why the locale bridge exists (#310)
  * -----------------------------------
@@ -28,7 +28,7 @@ import {
   STREAMDOWN_TRANSLATION_KEYS,
   useStreamdownTranslations,
   type StreamdownTranslationKey,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { cjk } from "@streamdown/cjk";
 import { createCodePlugin } from "@streamdown/code";
 import { math } from "@streamdown/math";
@@ -81,7 +81,7 @@ function useReactiveCodePlugin() {
 }
 
 /**
- * The plugin set every `@elabs/components-ai` markdown surface renders with.
+ * The plugin set every `@elabs-ai/components-ai` markdown surface renders with.
  *
  * `mermaid` is the LAZY plugin (`./_lazy-mermaid`): the engine + d3 + DOMPurify
  * load on first diagram render, not in the entry chunk of every consumer. `code`
@@ -96,8 +96,8 @@ export function useStreamdownPlugins() {
 }
 
 /*
- * The translation MAP moved down to `@elabs/components-ui`
- * (`lib/streamdown-translations.ts`) when `@elabs/components-viewer`
+ * The translation MAP moved down to `@elabs-ai/components-ui`
+ * (`lib/streamdown-translations.ts`) when `@elabs-ai/components-viewer`
  * became a second Streamdown renderer — the two packages may not import each
  * other. What stays here is the half that needs the dependency itself: the
  * proof that the shared key list is still COMPLETE.

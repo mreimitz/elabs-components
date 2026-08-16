@@ -131,7 +131,7 @@ test("findStoryFilesFor: matches an import + JSX usage, ignores an unrelated pro
 function fixtureManifest(overrides) {
   return {
     packages: {
-      "@elabs/components-fixture": {
+      "@elabs-ai/components-fixture": {
         path: "pkg-fixture",
         components: [{ name: "Widget", module: "pkg-fixture/src/widget.tsx" }],
         props: { Widget: { props: [{ name: "loading", optional: true, type: "boolean" }] } },
@@ -152,7 +152,7 @@ test("PLANTED bad fixture (loading prop, no story) is caught end-to-end", () => 
     );
     const missing = findMissingLoadingStories(fixtureManifest(), root);
     assert.equal(missing.length, 1);
-    assert.equal(missing[0].key, "@elabs/components-fixture::Widget");
+    assert.equal(missing[0].key, "@elabs-ai/components-fixture::Widget");
     assert.equal(missing[0].signal, "loading");
   } finally {
     rmSync(root, { recursive: true, force: true });

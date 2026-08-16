@@ -1,6 +1,12 @@
 # ADR 0028 — Publishing is disabled (private fork, no registry, no remote)
 
-- **Status:** Accepted
+> **Superseded.** The fork now has a remote, is going public, and publishes
+> `@elabs-ai/*` to npmjs.org. See [ADR 0030](./0030-public-npm-distribution.md) for
+> what holds today. The reasoning below is kept as the record of why the
+> machinery was left dormant rather than deleted — which is what made re-enabling
+> it a configuration change instead of a rebuild.
+
+- **Status:** Superseded by [ADR 0030](./0030-public-npm-distribution.md) (2026-08-17)
 - **Date:** 2026-08-16
 - **Supersedes:** ADR [0016](./0016-distribution-via-github-packages.md)
 

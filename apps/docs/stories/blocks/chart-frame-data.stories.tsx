@@ -3,9 +3,9 @@ import { expect, userEvent, within } from "storybook/test";
 import { ChartFrameDataBlock } from "@/components/chart-frame-data/chart-frame-data-block";
 
 /**
- * The INTERACTIVE flip-to-table. `@elabs/components-charts` `ChartFrame` ships a static,
+ * The INTERACTIVE flip-to-table. `@elabs-ai/components-charts` `ChartFrame` ships a static,
  * dependency-free table on flip (the `charts ↛ data` rule forbids importing the
- * sibling `@elabs/components-data`). To flip to the REAL sortable `@elabs/components-data` `DataTable`,
+ * sibling `@elabs-ai/components-data`). To flip to the REAL sortable `@elabs-ai/components-data` `DataTable`,
  * compose both at a layer that may see both — an app, or the copy-own
  * **`chart-frame-data` registry block**, which is exactly what this story renders.
  * The wiring is the `ChartFrame` `renderTable` / `onDownload` seams — no second
@@ -20,7 +20,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Interactive flip-to-table = `ChartFrame` + the real `@elabs/components-data` `DataTable` + `downloadCsv`, composed in app/registry code via the `renderTable` / `onDownload` seams. Use the table toggle in the toolbar to flip; the flipped table sorts on header click.\n\nCopy-own it: `npx shadcn add chart-frame-data`.",
+          "Interactive flip-to-table = `ChartFrame` + the real `@elabs-ai/components-data` `DataTable` + `downloadCsv`, composed in app/registry code via the `renderTable` / `onDownload` seams. Use the table toggle in the toolbar to flip; the flipped table sorts on header click.\n\nCopy-own it: `npx shadcn add chart-frame-data`.",
       },
     },
   },
@@ -49,7 +49,7 @@ export const FlipAndSort: Story = {
 
     await userEvent.click(canvas.getByRole("button", { name: /flip to table view/i }));
 
-    // The flipped table is the @elabs/components-data DataTable: its sortable column headers
+    // The flipped table is the @elabs-ai/components-data DataTable: its sortable column headers
     // are <button>s — the proof it is interactive, not the static charts table.
     const revenueHeader = await canvas.findByRole("button", { name: /revenue/i });
 

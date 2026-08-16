@@ -7,7 +7,7 @@ import {
   type ElementRef,
 } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import { useReducedMotion } from "@elabs/components-tokens";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { cn } from "../../lib/cn";
 import { mergeRefs } from "../../lib/merge-refs";
 

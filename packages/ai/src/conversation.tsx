@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, downloadBlob } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button, downloadBlob } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { UIMessage } from "ai";
 import { ArrowDownIcon, DownloadIcon } from "lucide-react";
 import type { ComponentProps } from "react";

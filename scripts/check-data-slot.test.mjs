@@ -64,7 +64,7 @@ const WIDGET = "packages/ui/src/components/widget/widget.tsx";
 /** A manifest with one gated module exporting two value components. */
 const manifest = {
   packages: {
-    "@elabs/components-ui": {
+    "@elabs-ai/components-ui": {
       path: "packages/ui",
       components: [
         { name: "Widget", kind: "value", module: WIDGET },
@@ -80,10 +80,10 @@ const manifest = {
 /** The same manifest plus a THIRD export in the same module (the "new part"). */
 const manifestPlusOne = {
   packages: {
-    "@elabs/components-ui": {
+    "@elabs-ai/components-ui": {
       path: "packages/ui",
       components: [
-        ...manifest.packages["@elabs/components-ui"].components,
+        ...manifest.packages["@elabs-ai/components-ui"].components,
         { name: "WidgetFooter", kind: "value", module: WIDGET },
       ],
     },

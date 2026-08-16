@@ -19,8 +19,8 @@
  * opened here as untrusted input.
  */
 
-import type { ResolvedFileSource } from "@elabs/components-ui";
-import { cn, Tabs, TabsContent, TabsList, TabsTrigger, useLocale } from "@elabs/components-ui";
+import type { ResolvedFileSource } from "@elabs-ai/components-ui";
+import { cn, Tabs, TabsContent, TabsList, TabsTrigger, useLocale } from "@elabs-ai/components-ui";
 import { useEffect, useMemo, useState } from "react";
 
 import { gridToText, type GridRef } from "../../components/grid-text";
@@ -40,7 +40,7 @@ import { xlsxManifest } from "./xlsx-manifest";
 /**
  * Rows rendered per sheet before truncation. Same bound, same reason, as the CSV
  * adapter: a preview pane is for looking, and a real analysis grid is
- * `DataTable` in `@elabs/components-data`.
+ * `DataTable` in `@elabs-ai/components-data`.
  */
 export const XLSX_ROW_LIMIT = 5_000;
 

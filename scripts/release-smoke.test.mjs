@@ -103,7 +103,11 @@ test("the install argv carries NO process-wide --registry (it would 404 public d
 });
 
 test("the consumer .npmrc maps ONLY the release scopes and carries auth", () => {
-  const npmrc = consumerNpmrc(["@x/ui", "@x/cli"], { registry: DEFAULT_REGISTRY, token: "t0k" });
+  // Pinned to a PRIVATE host on purpose: the auth line is what a private target
+  // needs, and asserting it against DEFAULT_REGISTRY would silently stop
+  // exercising that shape the moment the default moved to public npm.
+  const PRIVATE_REGISTRY = "https://npm.pkg.github.com";
+  const npmrc = consumerNpmrc(["@x/ui", "@x/cli"], { registry: PRIVATE_REGISTRY, token: "t0k" });
   assert.match(npmrc, /^@x:registry=https:\/\/npm\.pkg\.github\.com$/m);
   assert.match(npmrc, /\/\/npm\.pkg\.github\.com\/:_authToken=t0k/);
   // exactly one line per distinct scope

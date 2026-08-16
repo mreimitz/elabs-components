@@ -3,11 +3,11 @@
  * instead of a hardcoded `github-light`/`github-dark` literal (issue #315).
  *
  * Shiki can't read CSS custom properties at tokenize time, so — the same
- * "wrap an engine, theme it from tokens" pattern as `@elabs/components-editor`'s
- * Monaco bridge (`monaco-theme-bridge.ts`), `@elabs/components-maps`' `useTokenColor`,
+ * "wrap an engine, theme it from tokens" pattern as `@elabs-ai/components-editor`'s
+ * Monaco bridge (`monaco-theme-bridge.ts`), `@elabs-ai/components-maps`' `useTokenColor`,
  * and this package's own `buildInteractiveTerminalTheme` — this module reads the
  * ACTIVE theme's resolved token colors at call time via `resolveTokenColor`
- * (`@elabs/components-tokens`, ADR 0015: oklch → hex, no canvas needed since every
+ * (`@elabs-ai/components-tokens`, ADR 0015: oklch → hex, no canvas needed since every
  * `--code-*` token is authored as `oklch()`) and builds a single Shiki
  * `ThemeRegistrationRaw` that matches whatever brand theme is currently active
  * — including a low-chroma monochrome ink palette, never a recolored GitHub
@@ -48,7 +48,7 @@
  * for the colors.
  */
 
-import { resolveThemeIsDark, resolveTokenColor } from "@elabs/components-tokens";
+import { resolveThemeIsDark, resolveTokenColor } from "@elabs-ai/components-tokens";
 import type { ThemeRegistrationRaw } from "shiki";
 
 const FALLBACK_BACKGROUND = "#ffffff";

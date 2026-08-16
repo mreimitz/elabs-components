@@ -33,11 +33,11 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-} from "@elabs/components-ui";
-import { BrandLogo } from "@elabs/components-icons";
-// Story-only composition: the agentic-workspace SHOWCASE renders REAL @elabs/components-charts
+} from "@elabs-ai/components-ui";
+import { BrandLogo } from "@elabs-ai/components-icons";
+// Story-only composition: the agentic-workspace SHOWCASE renders REAL @elabs-ai/components-charts
 // surfaces — AutoChart (in a ChartFrame: expand / flip-to-table / download) and KPI
-// MetricCards with sparklines. @elabs/components-charts is a devDependency of @elabs/components-ai used
+// MetricCards with sparklines. @elabs-ai/components-charts is a devDependency of @elabs-ai/components-ai used
 // ONLY by stories — never imported by shipped src (the package's dist stays
 // decoupled from its sibling). See research/ai-charts/01-ai-chart-integration-plan.md.
 import {
@@ -47,7 +47,7 @@ import {
   LineChart,
   MetricCard,
   MetricGrid,
-} from "@elabs/components-charts";
+} from "@elabs-ai/components-charts";
 import {
   Boxes,
   Calculator,
@@ -159,7 +159,7 @@ import { ToolResultCard } from "./tool-result-card";
 /*  Fixture data — the "managed" workspace entities                           */
 /* -------------------------------------------------------------------------- */
 
-// Q3 board-note figures, rendered as REAL @elabs/components-charts surfaces in the showcase:
+// Q3 board-note figures, rendered as REAL @elabs-ai/components-charts surfaces in the showcase:
 // a ChartFrame-wrapped AutoChart (expand / flip-to-table / download) plus KPI
 // MetricCards with sparkline visuals.
 const revenueByRegion = [
@@ -704,7 +704,7 @@ I'll ground the numbers in the Q3 filing and reconcile them against the warehous
       </Tool>
 
       {/* The produced chart — the elevation-channel headline (#192): a
-          ToolResultCard hosting a real @elabs/components-charts ChartFrame/AutoChart as
+          ToolResultCard hosting a real @elabs-ai/components-charts ChartFrame/AutoChart as
           children, with the tool's technical view behind ToolDetails. */}
       <ToolResultCard
         title="Revenue by region — Q3 vs Q2"
@@ -1081,7 +1081,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "A full-page demo scenario composed from the @elabs/components-* grammar: a double-sided application shell (collapsible left nav + the real ContextPanel right rail with animated collapse and asset drill-in) wrapping a complete agentic AI interaction — reasoning, a plan, the AgentTimeline execution rail, tools with JSON behind disclosure, a ToolResultCard chart headline, an ApprovalCard decision, a task summary, a checkpoint, and a grounded AgentMessage answer with an EvidenceChip and a SourceList.",
+          "A full-page demo scenario composed from the @elabs-ai/components-* grammar: a double-sided application shell (collapsible left nav + the real ContextPanel right rail with animated collapse and asset drill-in) wrapping a complete agentic AI interaction — reasoning, a plan, the AgentTimeline execution rail, tools with JSON behind disclosure, a ToolResultCard chart headline, an ApprovalCard decision, a task summary, a checkpoint, and a grounded AgentMessage answer with an EvidenceChip and a SourceList.",
       },
     },
   },

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@elabs/components-ui";
-import { Spinner } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button } from "@elabs-ai/components-ui";
+import { Spinner } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { MicIcon, SquareIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";

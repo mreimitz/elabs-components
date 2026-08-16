@@ -21,8 +21,8 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { Button, Skeleton, Spinner, useLocale } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Button, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 

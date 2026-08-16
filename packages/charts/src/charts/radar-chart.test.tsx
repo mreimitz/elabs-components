@@ -4,7 +4,7 @@
  * @visx/responsive's ParentSize uses ResizeObserver + DOM measurement which
  * jsdom does not support. We mock it to supply a fixed size so RadarChartInner
  * actually renders. Real rendering (SVG paths, animation, hover) is covered by
- * the Storybook build / test-storybook run (the @elabs/components-editor / @elabs/components-flow
+ * the Storybook build / test-storybook run (the @elabs-ai/components-editor / @elabs-ai/components-flow
  * precedent for engine-heavy components).
  */
 import { describe, expect, it, vi } from "vitest";

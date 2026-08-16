@@ -22,15 +22,15 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@elabs/components-ui";
-import { AppIcon } from "@elabs/components-icons";
+} from "@elabs-ai/components-ui";
+import { AppIcon } from "@elabs-ai/components-icons";
 import {
   ColumnPicker,
   DataTable,
   FilterBar,
   SearchInput,
   type ColumnDef,
-} from "@elabs/components-data";
+} from "@elabs-ai/components-data";
 
 type Status = "active" | "paused" | "error";
 

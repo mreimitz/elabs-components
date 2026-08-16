@@ -154,14 +154,14 @@ test("findEngineIsolationViolations FLAGS importing a package/family barrel", ()
 // FIXTURE (b'): the package's OWN name resolves back to src/index.ts via the
 // `exports` map — the most natural way to reintroduce the whole engine.
 test("FIXTURE: findEngineIsolationViolations FLAGS a self-referencing package-name import", () => {
-  const src = `import { LineChart } from "@elabs/components-charts";`;
+  const src = `import { LineChart } from "@elabs-ai/components-charts";`;
   const violations = findEngineIsolationViolations(src);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].rule, "forbidden-barrel");
 });
 
-test("findEngineIsolationViolations does NOT flag the sibling @elabs/components-ui package", () => {
-  const src = `import { MetricCard } from "@elabs/components-ui";`;
+test("findEngineIsolationViolations does NOT flag the sibling @elabs-ai/components-ui package", () => {
+  const src = `import { MetricCard } from "@elabs-ai/components-ui";`;
   assert.deepEqual(findEngineIsolationViolations(src), []);
 });
 
@@ -221,8 +221,8 @@ test("checkWiring FAILS when tsup.config.ts has no test/index entry", () => {
 test("FIXTURE: checkManifestExclusion FAILS when a /test subpath is crawled into the manifest", () => {
   const manifest = {
     packages: {
-      "@elabs/components-charts": {
-        subpaths: { "@elabs/components-charts/test": { components: [] } },
+      "@elabs-ai/components-charts": {
+        subpaths: { "@elabs-ai/components-charts/test": { components: [] } },
       },
     },
   };
@@ -234,10 +234,10 @@ test("FIXTURE: checkManifestExclusion FAILS when a /test subpath is crawled into
 test("checkManifestExclusion PASSES for a legitimate non-/test subpath", () => {
   const manifest = {
     packages: {
-      "@elabs/components-editor": {
-        subpaths: { "@elabs/components-editor/markdown/parse": { components: [] } },
+      "@elabs-ai/components-editor": {
+        subpaths: { "@elabs-ai/components-editor/markdown/parse": { components: [] } },
       },
-      "@elabs/components-charts": {},
+      "@elabs-ai/components-charts": {},
     },
   };
   assert.deepEqual(checkManifestExclusion(manifest), []);

@@ -1,7 +1,7 @@
 /**
- * Prose primitives — reading-surface typography, promoted from @elabs/components-editor
- * (#188; ADR-0012 own/re-export model: @elabs/components-ui owns the canonical source,
- * `@elabs/components-editor/markdown` re-exports them under their original names —
+ * Prose primitives — reading-surface typography, promoted from @elabs-ai/components-editor
+ * (#188; ADR-0012 own/re-export model: @elabs-ai/components-ui owns the canonical source,
+ * `@elabs-ai/components-editor/markdown` re-exports them under their original names —
  * Heading, Text, Link, List, Blockquote, InlineCode). The markdown preview maps
  * onto them (`#` → ProseHeading, paragraph → ProseText, `[]()` → ProseLink,
  * `-` → ProseList, `>` → ProseBlockquote, `` `code` `` → ProseInlineCode).
@@ -25,7 +25,7 @@ export type ProseHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
  * Canonical reading-scale heading sizes in rem — the single source the markdown
- * WYSIWYG editor derives its CSS vars from (@elabs/components-editor `markdown-scale`).
+ * WYSIWYG editor derives its CSS vars from (@elabs-ai/components-editor `markdown-scale`).
  * h2/h4/h5/h6 sit exactly on the title/subtitle/body roles; h1 (1.5rem) and
  * h3 (1.125rem) are intermediate reading rungs with no app role.
  */

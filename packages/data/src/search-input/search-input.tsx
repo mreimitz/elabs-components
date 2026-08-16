@@ -1,9 +1,9 @@
 "use client";
 
 import { useId, type InputHTMLAttributes } from "react";
-import { Input } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { SearchIcon } from "@elabs/components-icons";
+import { Input } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { SearchIcon } from "@elabs-ai/components-icons";
 
 export interface SearchInputProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,

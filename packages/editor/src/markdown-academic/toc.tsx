@@ -9,7 +9,7 @@
  * `TocProvider`; it also stamps the matching `id` on each rendered heading
  * (`useHeadingId`) so the links resolve.
  */
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { createContext, forwardRef, useContext, type HTMLAttributes } from "react";
 
 import type { MarkdownOutlineItem } from "../markdown-outline";

@@ -16,7 +16,7 @@ const meta = {
           "`:::iterate` / `:::pivot` repeat a per-cell markdown TEMPLATE (the directive body) " +
           "over consumer-resolved data. `evaluateIteration(spec)` returns the data (the app owns " +
           "the source); `interpolate(template, ctx)` fills each cell (a minimal `{{path}}` default " +
-          "is provided). Layouts: `stacked` (vertical), `grid` + `matrix` (a `@elabs/components-ui` Table). " +
+          "is provided). Layouts: `stacked` (vertical), `grid` + `matrix` (a `@elabs-ai/components-ui` Table). " +
           "Cells render through a nested, depth-capped `MarkdownPreview`.",
       },
     },

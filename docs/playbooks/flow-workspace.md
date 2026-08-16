@@ -3,7 +3,7 @@ archetype: flow-workspace
 intent: "Node-and-edge canvas for editing a pipeline or workflow, with a selection inspector"
 keywords:
   [flow, canvas, workflow, pipeline, graph, nodes, edges, diagram, workspace, react flow, inspector]
-packages: ["@elabs/components-ui", "@elabs/components-flow", "@elabs/components-ai"]
+packages: ["@elabs-ai/components-ui", "@elabs-ai/components-flow", "@elabs-ai/components-ai"]
 ---
 
 # Playbook — Flow workspace (node-and-edge canvas)
@@ -11,19 +11,19 @@ packages: ["@elabs/components-ui", "@elabs/components-flow", "@elabs/components-
 Visual pipeline/workflow editor: branded React Flow canvas, typed nodes,
 selection-driven inspector. Template source: `templates/flow-workspace.tsx` (generated from this Storybook story by `pnpm gen:templates`).
 
-**Which canvas?** App canvases use `@elabs/components-flow`'s `CanvasShell`. The
-`Canvas` in `@elabs/components-ai` is for agent/chat visualizations (see #183). If
-you're building a workspace, you want `@elabs/components-flow`.
+**Which canvas?** App canvases use `@elabs-ai/components-flow`'s `CanvasShell`. The
+`Canvas` in `@elabs-ai/components-ai` is for agent/chat visualizations (see #183). If
+you're building a workspace, you want `@elabs-ai/components-flow`.
 
 ## Building blocks
 
-| Layer     | Components                                                          | From                                              |
-| --------- | ------------------------------------------------------------------- | ------------------------------------------------- |
-| Shell     | `SidebarProvider` + `Sidebar` (saved items) + `SidebarInset`        | `@elabs/components-ui`                            |
-| Canvas    | `CanvasShell` (token-driven RF surface) + `ZoomControls` + `Legend` | `@elabs/components-flow`                          |
-| Graph     | `FlowNode` (via `nodeTypes`) + `FlowEdge` (via `edgeTypes`)         | `@elabs/components-flow`                          |
-| Inspector | `InspectorPanel` + `Input`/`Select`/`Switch` fields                 | `@elabs/components-flow` / `@elabs/components-ui` |
-| State     | `useNodesState` + `useEdgesState` + `addEdge` (re-exported)         | `@elabs/components-flow`                          |
+| Layer     | Components                                                          | From                                                    |
+| --------- | ------------------------------------------------------------------- | ------------------------------------------------------- |
+| Shell     | `SidebarProvider` + `Sidebar` (saved items) + `SidebarInset`        | `@elabs-ai/components-ui`                               |
+| Canvas    | `CanvasShell` (token-driven RF surface) + `ZoomControls` + `Legend` | `@elabs-ai/components-flow`                             |
+| Graph     | `FlowNode` (via `nodeTypes`) + `FlowEdge` (via `edgeTypes`)         | `@elabs-ai/components-flow`                             |
+| Inspector | `InspectorPanel` + `Input`/`Select`/`Switch` fields                 | `@elabs-ai/components-flow` / `@elabs-ai/components-ui` |
+| State     | `useNodesState` + `useEdgesState` + `addEdge` (re-exported)         | `@elabs-ai/components-flow`                             |
 
 One-time setup: `import "@xyflow/react/dist/style.css"` at the app root.
 
@@ -95,6 +95,6 @@ frame + empty state (`InspectorPanel`).
   node each render; keep it module-scope.
 - Forgetting `type: "brand"` on nodes/edges — you silently get unstyled RF
   defaults.
-- Reaching for `@elabs/components-ai`'s Canvas for an app workspace.
+- Reaching for `@elabs-ai/components-ai`'s Canvas for an app workspace.
 - Syncing selection into separate state with `useEffect` — derive it from
   `nodes` instead.

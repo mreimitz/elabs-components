@@ -15,7 +15,7 @@ group sorts to the bottom in arbitrary story-import order.
    detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI Output Contract).
 2. **Foundations** — the design/token layer: Colors, Typography, Spacing & Radius,
    Elevation, Motion, Decoration, Theming. (Tokens and scales, NOT components.)
-3. **Core** — base UI primitives from `@elabs/components-ui` (Badge, Button, Card, Input, …).
+3. **Core** — base UI primitives from `@elabs-ai/components-ui` (Badge, Button, Card, Input, …).
 4. **Icons** — brand/product icon vocabulary + BrandLogo.
 5. **Forms** — inputs and form controls.
 6. **Display** — presentational primitives (Avatar, Progress, Separator, …).
@@ -25,12 +25,12 @@ group sorts to the bottom in arbitrary story-import order.
 10. **Feedback** — Toast and other transient feedback.
 11. **States** — Alert, Empty / Error / Loading state, Skeleton.
 12. **Layout** — app shells, sidebars, page scaffolding.
-13. **Data** — tables and data surfaces (`@elabs/components-data` grid + `@elabs/components-ui` table primitives).
-14. **Charts** — `@elabs/components-charts`.
-15. **AI** — `@elabs/components-ai` chat / agent surfaces.
-16. **Editor** — `@elabs/components-editor`.
-17. **Flow** — `@elabs/components-flow` canvas.
-18. **Marketing** — `@elabs/components-marketing`.
+13. **Data** — tables and data surfaces (`@elabs-ai/components-data` grid + `@elabs-ai/components-ui` table primitives).
+14. **Charts** — `@elabs-ai/components-charts`.
+15. **AI** — `@elabs-ai/components-ai` chat / agent surfaces.
+16. **Editor** — `@elabs-ai/components-editor`.
+17. **Flow** — `@elabs-ai/components-flow` canvas.
+18. **Marketing** — `@elabs-ai/components-marketing`.
 19. **Providers** — non-visual providers (LocaleProvider, …).
 20. **Patterns** — full composed demos: `Patterns/Templates`, `Patterns/Scenarios`,
     `Patterns/Blocks`.
@@ -57,16 +57,16 @@ never go under Foundations.
 
 Stories are grouped by what a component is **for** (its concern), not strictly by
 which package ships it — e.g. `AI/ChangeReview`, `Data/Table` and
-`Data/RevisionTimeline` live in `@elabs/components-ui` but appear under AI/ and Data/ beside
+`Data/RevisionTimeline` live in `@elabs-ai/components-ui` but appear under AI/ and Data/ beside
 their domain peers. That is intentional.
 
 When the same capability is reachable two ways, pick a **canonical** entry and
 signpost the other on both stories (via `parameters.docs.description.component`):
 
-- `Core/MetricCard` (`@elabs/components-ui`, canonical, ADR 0012) ↔ `Charts/MetricCard`
+- `Core/MetricCard` (`@elabs-ai/components-ui`, canonical, ADR 0012) ↔ `Charts/MetricCard`
   (re-export) — the same component.
-- `Data/Table` (`@elabs/components-ui`, simple static table) ↔ `Data/DataTable`
-  (`@elabs/components-data`, TanStack grid) — choose by need.
+- `Data/Table` (`@elabs-ai/components-ui`, simple static table) ↔ `Data/DataTable`
+  (`@elabs-ai/components-data`, TanStack grid) — choose by need.
 
 ## Every story
 

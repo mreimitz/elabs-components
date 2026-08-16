@@ -125,7 +125,7 @@ function CollapsibleDemo() {
   );
 }
 
-/** Collapse (research 09 step 3): controlled open on the shared @elabs/components-ui base. */
+/** Collapse (research 09 step 3): controlled open on the shared @elabs-ai/components-ui base. */
 export const Collapsible: Story = {
   args: { children: null },
   render: () => <CollapsibleDemo />,

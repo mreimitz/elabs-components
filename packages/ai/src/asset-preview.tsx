@@ -18,7 +18,7 @@
  *
  * Formats beyond that switch — a PDF, a spreadsheet, a video — arrive through
  * `renderPreview` (prop, or injected once on `ContextPanelProvider`), because
- * `@elabs/components-viewer` is a layer PEER of this package and
+ * `@elabs-ai/components-viewer` is a layer PEER of this package and
  * neither may import the other (ADR 0024 §6). A renderer that returns `null`
  * declines, and everything below runs exactly as before.
  */
@@ -30,8 +30,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { HTMLAttributes, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import type { BundledLanguage } from "shiki";

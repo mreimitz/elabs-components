@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface StatCardHoverState {
   value: number | null;

@@ -2,7 +2,7 @@
 /**
  * gen-package-readmes.mjs — every published package ships the getting-started guide.
  *
- * WHY: a developer reaching for `@elabs/components-ui` lands on the package
+ * WHY: a developer reaching for `@elabs-ai/components-ui` lands on the package
  * directory and reads its README. Before this, 9 of 12 distributable packages
  * had **no README at all** — the `ui` package shipped zero documentation — so
  * the entry point was blank and the real guide was buried in `docs/CONSUMING.md`.
@@ -29,7 +29,7 @@ import { PKG_PURPOSE } from "../packages/cli/lib/render-docs.mjs";
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const START = "<!-- brand-ui:gen:readme:start -->";
 const END = "<!-- brand-ui:gen:readme:end -->";
-const SCOPE = "@elabs";
+const SCOPE = "@elabs-ai";
 
 /**
  * Per-package extras a consumer must know at install time. Only what is
@@ -59,7 +59,7 @@ const EXTRAS = {
     "`@xyflow/react` is a peer too, if you render the agent canvas.",
   ],
   [`${SCOPE}/components-charts`]: [
-    '`@visx/*`-backed charts do not render meaningfully under jsdom. `.../test` is the official jsdom-safe test double — `vi.mock("@elabs/components-charts", () => import("@elabs/components-charts/test"))` — and still THROWS on a missing/invalid required prop, so a mocked test doesn\'t silently pass a broken chart.',
+    '`@visx/*`-backed charts do not render meaningfully under jsdom. `.../test` is the official jsdom-safe test double — `vi.mock("@elabs-ai/components-charts", () => import("@elabs-ai/components-charts/test"))` — and still THROWS on a missing/invalid required prop, so a mocked test doesn\'t silently pass a broken chart.',
   ],
   [`${SCOPE}/components-ui`]: [
     "The class-merge helper is at `.../lib/cn` — a pure, server-safe entry point.",

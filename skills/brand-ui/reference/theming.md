@@ -6,26 +6,26 @@
   set (surfaces, sidebar, canvas/flow, chat, chart-1..5, radius) — and the set of
   themes is **open**: `ThemeName` is `string`, so a theme can come from this
   package or from your own app (ADR 0029).
-- `@elabs/components-tokens/styles.css` is the engine: Tailwind bridge, the
+- `@elabs-ai/components-tokens/styles.css` is the engine: Tailwind bridge, the
   `:root` neutral light base (a complete palette on its own), the dials.
 - The two **reference** themes are opt-in stylesheets —
-  `@elabs/components-tokens/themes/light.css` and `.../dark.css`. `styles.css`
+  `@elabs-ai/components-tokens/themes/light.css` and `.../dark.css`. `styles.css`
   does not import them. `light` is the default; confirm the live set with
   `brand-ui info`.
-- `ThemeProvider` (from `@elabs/components-tokens`) writes `data-theme` and persists the
+- `ThemeProvider` (from `@elabs-ai/components-tokens`) writes `data-theme` and persists the
   choice; `useTheme()` reads/sets it and returns `themeDefinitions` for rendering
   a switcher.
 
 ## Setup (once, at the app root)
 
 ```css
-@import "@elabs/components-tokens/styles.css";
-@import "@elabs/components-tokens/themes/light.css";
-@import "@elabs/components-tokens/themes/dark.css";
+@import "@elabs-ai/components-tokens/styles.css";
+@import "@elabs-ai/components-tokens/themes/light.css";
+@import "@elabs-ai/components-tokens/themes/dark.css";
 ```
 
 ```tsx
-import { ThemeProvider } from "@elabs/components-tokens";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 export function App() {
   return <ThemeProvider defaultTheme="light">{/* app */}</ThemeProvider>;
@@ -51,7 +51,7 @@ the exported `THEME_TOKEN_NAMES`), declare `color-scheme: light|dark` on it, and
 register it:
 
 ```tsx
-import { BUILT_IN_THEME_DEFINITIONS, defineTheme, ThemeProvider } from "@elabs/components-tokens";
+import { BUILT_IN_THEME_DEFINITIONS, defineTheme, ThemeProvider } from "@elabs-ai/components-tokens";
 
 const acme = defineTheme({ value: "acme", label: "Acme", dark: false });
 

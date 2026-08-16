@@ -113,7 +113,7 @@ test("planScaffold: an app-spec.md with no json block is a structured error", ()
 
 // ---- scaffold: the standalone install handoff (#263) ------------------------
 
-/** The `@elabs/*` specifiers a template ACTUALLY imports, read from source. */
+/** The `@elabs-ai/*` specifiers a template ACTUALLY imports, read from source. */
 function templatePkgsFromSource(archetype) {
   const src = readFileSync(join(root, `docs/playbooks/templates/${archetype}.tsx`), "utf8");
   const hits = [...src.matchAll(/^import\s[\s\S]*?from\s+["']([^"']+)["'];?\s*$/gm)]
@@ -155,16 +155,16 @@ for (const archetype of ["data-app", "flow-workspace"]) {
   });
 }
 
-test("planInstall: standalone names NO registry and emits no .npmrc (unpublished scope)", () => {
+test("planInstall: standalone resolves from public npm and emits no .npmrc", () => {
   const r = planScaffold(
     { archetype: "data-app", theme: "light", title: "X", standalone: true, release: "2.0.0" },
     { root },
   );
   assert.equal(r.install.standalone, true);
-  // The scope is private and unpublished — there is nothing to point an .npmrc at.
-  // A registry URL leaking back in here is what would silently re-create the
-  // "install works on my machine only" failure the debrand removed.
-  assert.equal(r.install.registry, null);
+  // The scope is PUBLIC on npmjs.org, so an ordinary `pnpm add` resolves it and
+  // the generated `.npmrc` stays empty. An `_authToken` line leaking back in is
+  // what would hand every generated app a secret it can never provision.
+  assert.equal(r.install.registry, "https://registry.npmjs.org/");
   assert.equal(r.install.npmrc, "");
   assert.match(r.install.addCommand, /^pnpm add /);
   assert.match(r.install.addCommand, /@\^2\.0\.0/, "real semver range, not workspace:*");
@@ -286,7 +286,7 @@ test("scanRepo: profiles a fixture repo deterministically", () => {
         name: "fixture-app",
         dependencies: {
           react: "19",
-          "@elabs/components-ui": "1",
+          "@elabs-ai/components-ui": "1",
           tailwindcss: "4",
           vite: "5",
         },
@@ -369,7 +369,7 @@ test("map: missing input is a structured error", () => {
 
 const FIXTURE_MAP = {
   mappings: [
-    { source: "Btn", target: "Button", pkg: "@elabs/components-ui", class: "direct" },
+    { source: "Btn", target: "Button", pkg: "@elabs-ai/components-ui", class: "direct" },
     { source: "Grid", target: null, class: "gap" },
   ],
 };

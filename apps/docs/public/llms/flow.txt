@@ -1,8 +1,8 @@
-# @elabs/components-flow
+# @elabs-ai/components-flow
 
 > Branded React Flow canvas, nodes, edges, controls, inspector.
 
-Import from `@elabs/components-flow`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 

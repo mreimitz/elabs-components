@@ -8,9 +8,9 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@elabs/components-ui";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { BotIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";

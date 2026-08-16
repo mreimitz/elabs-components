@@ -14,7 +14,7 @@ example and the default registry, not the menu.
   (Tailwind bridge, `:root` base, the dials, the base layer, the motion gate, and
   the dials). Each reference theme is its own **opt-in** file —
   `src/themes/light.css`, `src/themes/dark.css`, exported as
-  `@elabs/components-tokens/themes/<name>.css`. `styles.css` does **not** import
+  `@elabs-ai/components-tokens/themes/<name>.css`. `styles.css` does **not** import
   them; a consumer imports the ones they want, or none.
   - **Anything that PARSES theme blocks must read the SET, never one file.** Repo
     gates use `readThemesCss()` from `scripts/lib/theme-sources.mjs`; the tokens
@@ -24,7 +24,7 @@ example and the default registry, not the menu.
     a block regex keeps matching, just less. `check-surface-elevation.mjs`
     audited `:root` alone and printed a cheerful
     "2 theme block(s)" for exactly as long as that guard was missing.
-- **Provider:** `ThemeProvider` (from `@elabs/components-tokens`) writes `data-theme` and
+- **Provider:** `ThemeProvider` (from `@elabs-ai/components-tokens`) writes `data-theme` and
   persists the choice; `useTheme()` reads/sets it and returns `themeDefinitions`.
 - **Reference themes:** `light` (default) and `dark` — the built-in registry
   (`BUILT_IN_THEMES` / `BUILT_IN_THEME_META` / `BUILT_IN_THEME_DEFINITIONS` in
@@ -61,7 +61,7 @@ example and the default registry, not the menu.
   is rejected in the same mount pass that applies the theme (so it can never flash
   on boot), and `setTheme` with a disallowed name is a no-op that warns in dev.
   Omitting it keeps the whole registry. `ThemeSwitcher`
-  (`@elabs/components-ui`) automatically narrows to the provider's
+  (`@elabs-ai/components-ui`) automatically narrows to the provider's
   subset when restricting (#384); a non-restricting provider leaves the `themes`
   prop untouched for backward compatibility, so existing 2-theme toggles are
   unchanged. With an open registry this is the NARROWER of the two knobs — reach
@@ -150,7 +150,7 @@ example and the default registry, not the menu.
      reaches sidebar focus automatically. Never re-declare it with a literal.
   5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
      provided (1)–(3) still hold. Verify with `pnpm roles:check` and
-     `pnpm --filter @elabs/components-tokens test`. **Prefer
+     `pnpm --filter @elabs-ai/components-tokens test`. **Prefer
      forking the theme (`/new-theme`) over patching one token.**
   6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
      blue (264°) and its ring is the same hue at a distinct rung (ΔE 0.1044).
@@ -187,7 +187,7 @@ example and the default registry, not the menu.
 ## Taste profile (register × density × motion × expressiveness)
 
 The four axes that say what a surface should FEEL like, as one named object —
-`TasteProfile` in `@elabs/components-tokens`. ADR
+`TasteProfile` in `@elabs-ai/components-tokens`. ADR
 [`0020`](../../docs/ADR/0020-taste-profile.md) is the durable record.
 
 | Axis               | Values                                       | Dial                                                           |
@@ -220,7 +220,7 @@ The four axes that say what a surface should FEEL like, as one named object —
   defaults ⊕ an optional project-root `brand-ui.config.json` `taste` key. The
   `brand-ui-audit` skill reads this instead of asking a human to pick a register.
 - **`register` picks the BAR, never the styling.** `product` = earned familiarity
-  (app UI — the default for `@elabs/components-*`); `brand` =
+  (app UI — the default for `@elabs-ai/components-*`); `brand` =
   distinctiveness (marketing surfaces). `brand-ui audit` softens exactly three
   expressive tells (`over-round`, `side-stripe`, `bounce-easing`) to advisory in
   the brand register — it never softens a banned rule or content slop. No

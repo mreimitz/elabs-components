@@ -1,10 +1,10 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@elabs/components-ui";
-import { Button } from "@elabs/components-ui";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs/components-ui";
-import { useLocale } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Avatar, AvatarFallback } from "@elabs-ai/components-ui";
+import { Button } from "@elabs-ai/components-ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
+import { useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { CheckIcon, CopyIcon, FileIcon, GitCommitIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";

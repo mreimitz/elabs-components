@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
   useLocale,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { RotateCwIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { forwardRef, type HTMLAttributes } from "react";
 

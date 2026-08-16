@@ -6,7 +6,7 @@
  * Wrap a transcript region; when the user selects text inside it, a small
  * toolbar floats above the selection with a single default action: Quote.
  * `onQuote(selectedText)` fires — the consumer prepends a `>`-prefixed
- * blockquote into the composer. Positioned with the `@elabs/components-ui` Popover
+ * blockquote into the composer. Positioned with the `@elabs-ai/components-ui` Popover
  * primitives (a virtual anchor at the selection rect); dismisses when the
  * selection collapses. Presentational only.
  */
@@ -21,9 +21,9 @@ import {
   type ReactNode,
 } from "react";
 import { Quote } from "lucide-react";
-import { Button, Popover, PopoverAnchor, PopoverContent } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+import { Button, Popover, PopoverAnchor, PopoverContent } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 
 /** A captured selection snapshot: the trimmed text + its viewport rect. */
 export interface SelectionSnapshot {

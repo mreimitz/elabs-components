@@ -1,15 +1,15 @@
-# @elabs/components-editor
+# @elabs-ai/components-editor
 
 > Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.
 
-Import from `@elabs/components-editor`. Part of brand-ui — see the root `llms.txt` for routing.
+Import from `@elabs-ai/components-editor`. Part of brand-ui — see the root `llms.txt` for routing.
 
 ## Components
 
 - CodeEditor — Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens.
   - avoid: Passing Monaco a hardcoded theme — the bridge reads the active data-theme tokens; never override it.
-  - avoid: Using CodeEditor for read-only display — use CodeBlock (@elabs/components-ai, Shiki) for non-editable code.
-  - avoid: Forgetting the worker setup (import "@elabs/components-editor/monaco-environment") — IntelliSense is off without it.
+  - avoid: Using CodeEditor for read-only display — use CodeBlock (@elabs-ai/components-ai, Shiki) for non-editable code.
+  - avoid: Forgetting the worker setup (import "@elabs-ai/components-editor/monaco-environment") — IntelliSense is off without it.
 - CodeWorkspace
 - CopyButton
 - DiffEditor
@@ -24,49 +24,49 @@ Import from `@elabs/components-editor`. Part of brand-ui — see the root `llms.
 
 ## Subpath exports
 
-- Bibliography (`@elabs/components-editor/markdown` · component)
-- Blockquote (`@elabs/components-editor/markdown` · component)
-- BRAND_DIRECTIVES (`@elabs/components-editor/markdown` · component)
-- BRAND_SLASH_COMMANDS (`@elabs/components-editor/markdown` · component)
-- CALC_FENCE_SEED (`@elabs/components-editor/markdown` · component)
-- CalcBlock (`@elabs/components-editor/markdown` · component)
-- CalcInline (`@elabs/components-editor/markdown` · component)
-- DECISION_STATUSES (`@elabs/components-editor/markdown` · component)
-- DecisionCard (`@elabs/components-editor/markdown` · component)
-- DEFAULT_TEMPLATE (`@elabs/components-editor/markdown` · component)
-- DocumentOutline (`@elabs/components-editor/markdown` · component)
-- ENTITY_KINDS (`@elabs/components-editor/markdown` · component)
-- EntityCard (`@elabs/components-editor/markdown` · component)
-- EntityChip (`@elabs/components-editor/markdown` · component)
-- FootnoteList (`@elabs/components-editor/markdown` · component)
-- Heading (`@elabs/components-editor/markdown` · component)
-- InlineCode (`@elabs/components-editor/markdown` · component)
-- IterationBlock (`@elabs/components-editor/markdown` · component)
-- IterationBuilderDialog (`@elabs/components-editor/markdown` · component)
-- IterationBuilderProvider (`@elabs/components-editor/markdown` · component)
-- IterationEditContext (`@elabs/components-editor/markdown` · component)
-- IterationTemplateDialog (`@elabs/components-editor/markdown` · component)
-- IterationTemplateProvider (`@elabs/components-editor/markdown` · component)
-- KnowledgeCard (`@elabs/components-editor/markdown` · component)
-- Link (`@elabs/components-editor/markdown` · component)
-- List (`@elabs/components-editor/markdown` · component)
-- ListItem (`@elabs/components-editor/markdown` · component)
-- MARKDOWN_HEADING_REM (`@elabs/components-editor/markdown` · component)
-- MARKDOWN_HEADING_TRACKING (`@elabs/components-editor/markdown` · component)
-- MARKDOWN_HEADING_WEIGHT (`@elabs/components-editor/markdown` · component)
-- MARKDOWN_MEASURE (`@elabs/components-editor/markdown` · component)
-- MarkdownEditor (`@elabs/components-editor/markdown` · component)
-- MarkdownPreview (`@elabs/components-editor/markdown` · component)
-- MarkdownToolbar (`@elabs/components-editor/markdown` · component)
-- MarkdownWorkspace (`@elabs/components-editor/markdown` · component)
-- MathBlock (`@elabs/components-editor/markdown` · component)
-- MathInline (`@elabs/components-editor/markdown` · component)
-- MermaidDiagram (`@elabs/components-editor/markdown` · component)
-- MermaidWorkspace (`@elabs/components-editor/markdown` · component)
-- MetricBlock (`@elabs/components-editor/markdown` · component)
-- MonacoSlashMenu (`@elabs/components-editor/markdown` · component)
-- SlashMenu (`@elabs/components-editor/markdown` · component)
-- TableOfContents (`@elabs/components-editor/markdown` · component)
-- Text (`@elabs/components-editor/markdown` · component)
-- Timeline (`@elabs/components-editor/markdown` · component)
-- useMarkdownOutline (`@elabs/components-editor/markdown` · hook)
+- Bibliography (`@elabs-ai/components-editor/markdown` · component)
+- Blockquote (`@elabs-ai/components-editor/markdown` · component)
+- BRAND_DIRECTIVES (`@elabs-ai/components-editor/markdown` · component)
+- BRAND_SLASH_COMMANDS (`@elabs-ai/components-editor/markdown` · component)
+- CALC_FENCE_SEED (`@elabs-ai/components-editor/markdown` · component)
+- CalcBlock (`@elabs-ai/components-editor/markdown` · component)
+- CalcInline (`@elabs-ai/components-editor/markdown` · component)
+- DECISION_STATUSES (`@elabs-ai/components-editor/markdown` · component)
+- DecisionCard (`@elabs-ai/components-editor/markdown` · component)
+- DEFAULT_TEMPLATE (`@elabs-ai/components-editor/markdown` · component)
+- DocumentOutline (`@elabs-ai/components-editor/markdown` · component)
+- ENTITY_KINDS (`@elabs-ai/components-editor/markdown` · component)
+- EntityCard (`@elabs-ai/components-editor/markdown` · component)
+- EntityChip (`@elabs-ai/components-editor/markdown` · component)
+- FootnoteList (`@elabs-ai/components-editor/markdown` · component)
+- Heading (`@elabs-ai/components-editor/markdown` · component)
+- InlineCode (`@elabs-ai/components-editor/markdown` · component)
+- IterationBlock (`@elabs-ai/components-editor/markdown` · component)
+- IterationBuilderDialog (`@elabs-ai/components-editor/markdown` · component)
+- IterationBuilderProvider (`@elabs-ai/components-editor/markdown` · component)
+- IterationEditContext (`@elabs-ai/components-editor/markdown` · component)
+- IterationTemplateDialog (`@elabs-ai/components-editor/markdown` · component)
+- IterationTemplateProvider (`@elabs-ai/components-editor/markdown` · component)
+- KnowledgeCard (`@elabs-ai/components-editor/markdown` · component)
+- Link (`@elabs-ai/components-editor/markdown` · component)
+- List (`@elabs-ai/components-editor/markdown` · component)
+- ListItem (`@elabs-ai/components-editor/markdown` · component)
+- MARKDOWN_HEADING_REM (`@elabs-ai/components-editor/markdown` · component)
+- MARKDOWN_HEADING_TRACKING (`@elabs-ai/components-editor/markdown` · component)
+- MARKDOWN_HEADING_WEIGHT (`@elabs-ai/components-editor/markdown` · component)
+- MARKDOWN_MEASURE (`@elabs-ai/components-editor/markdown` · component)
+- MarkdownEditor (`@elabs-ai/components-editor/markdown` · component)
+- MarkdownPreview (`@elabs-ai/components-editor/markdown` · component)
+- MarkdownToolbar (`@elabs-ai/components-editor/markdown` · component)
+- MarkdownWorkspace (`@elabs-ai/components-editor/markdown` · component)
+- MathBlock (`@elabs-ai/components-editor/markdown` · component)
+- MathInline (`@elabs-ai/components-editor/markdown` · component)
+- MermaidDiagram (`@elabs-ai/components-editor/markdown` · component)
+- MermaidWorkspace (`@elabs-ai/components-editor/markdown` · component)
+- MetricBlock (`@elabs-ai/components-editor/markdown` · component)
+- MonacoSlashMenu (`@elabs-ai/components-editor/markdown` · component)
+- SlashMenu (`@elabs-ai/components-editor/markdown` · component)
+- TableOfContents (`@elabs-ai/components-editor/markdown` · component)
+- Text (`@elabs-ai/components-editor/markdown` · component)
+- Timeline (`@elabs-ai/components-editor/markdown` · component)
+- useMarkdownOutline (`@elabs-ai/components-editor/markdown` · hook)

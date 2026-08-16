@@ -1,9 +1,9 @@
 /**
  * Marketing hero scaffold (copy-owned block).
- * Depends on installed @elabs/components-marketing + @elabs/components-ui.
+ * Depends on installed @elabs-ai/components-marketing + @elabs-ai/components-ui.
  */
-import { Button } from "@elabs/components-ui";
-import { Hero, LogoStrip } from "@elabs/components-marketing";
+import { Button } from "@elabs-ai/components-ui";
+import { Hero, LogoStrip } from "@elabs-ai/components-marketing";
 
 export function MarketingHero() {
   return (

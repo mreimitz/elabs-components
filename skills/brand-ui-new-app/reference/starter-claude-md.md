@@ -19,7 +19,7 @@ judges the app against the profile it was built to.
 ````markdown
 # CLAUDE.md — {Title}
 
-This app is built on **brand-ui** (`@elabs/components-*`). It was scaffolded from the
+This app is built on **brand-ui** (`@elabs-ai/components-*`). It was scaffolded from the
 **{archetype}** template; the spec is in `./app-spec.md` — read it before
 making structural changes.
 
@@ -81,7 +81,7 @@ decoration dial (`--decoration`, 0–10), not a separate setting.
 ## What exists (don't guess an API)
 
 `./brand-ui-context.md` is the generated inventory of every component in every
-`@elabs/components-*` package — read it before inventing a component.
+`@elabs-ai/components-*` package — read it before inventing a component.
 `pnpm exec brand-ui docs <Name>` gives the real props; `brand-ui context`
 regenerates the inventory after a package upgrade.
 
@@ -123,16 +123,10 @@ without this. The scaffold fills it from the same package array that generated
 `src/styles.css`, so the dependency set and the `@source` lines can never diverge.
 
 ````markdown
-Packages come from GitHub Packages (private — a classic PAT with `read:packages`).
-
-```ini
-# .npmrc
-@elabs:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
+Packages come from the public npm registry — no `.npmrc`, no token.
 
 ```bash
-pnpm add "@elabs/components-tokens@^{release}" …    # the packages
+pnpm add "@elabs-ai/components-tokens@^{release}" …    # the packages
 pnpm add "react@^19.0.0" "@xyflow/react@^12.11.1" …               # + engine peers
 ```
 
@@ -148,7 +142,7 @@ without them. Full recipe: `docs/CONSUMING.md` §1-4 in the brand-ui repo.
 ### `{install-block}` — in-monorepo
 
 ```markdown
-This app lives inside the brand-ui monorepo: `@elabs/components-*`
+This app lives inside the brand-ui monorepo: `@elabs-ai/components-*`
 dependencies stay `workspace:*` and `pnpm install` at the repo root wires them.
 `src/styles.css` carries the token import and one `@source` line per package —
 **do not delete them**, the components render unstyled without them.
@@ -168,7 +162,7 @@ boundary). This file exists so agents that look for `AGENTS.md` find the same ru
 
 The short version:
 
-- Compose from `@elabs/components-*`; don't hand-roll tables, dialogs,
+- Compose from `@elabs-ai/components-*`; don't hand-roll tables, dialogs,
   chat bubbles or KPI tiles.
 - Type is a **role** (`text-title`/`text-body`/…), colour is a **token**
   (`bg-primary`, `text-muted-foreground`) — never a raw size or hex.

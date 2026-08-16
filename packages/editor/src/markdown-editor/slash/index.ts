@@ -103,5 +103,5 @@ export {
 // NOTE: `MonacoSlashMenu` is deliberately NOT re-exported here. It pulls the
 // Monaco runtime (via `markdown-commands`), and this barrel is imported by the
 // Milkdown `MarkdownEditor` graph, which must stay Monaco-free. It is exported
-// from the heavy `@elabs/components-editor/markdown` subpath instead (which already pulls
+// from the heavy `@elabs-ai/components-editor/markdown` subpath instead (which already pulls
 // Monaco via `MarkdownWorkspace`).

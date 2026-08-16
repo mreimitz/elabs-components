@@ -11,11 +11,11 @@
  *
  * Theming: xterm can't read CSS custom properties, so its `ITheme` (background/
  * foreground/cursor/selection + the 16 ANSI colors) is derived from semantic
- * tokens at runtime via `oklchToHex`/`resolveTokenColor` (`@elabs/components-tokens`, ADR
+ * tokens at runtime via `oklchToHex`/`resolveTokenColor` (`@elabs-ai/components-tokens`, ADR
  * 0015) — the same "wrap an engine, theme it from tokens" pattern as
- * `@elabs/components-editor`'s Monaco bridge and `@elabs/components-maps`' `useTokenColor`. It
+ * `@elabs-ai/components-editor`'s Monaco bridge and `@elabs-ai/components-maps`' `useTokenColor`. It
  * re-resolves whenever `data-theme` changes (a local MutationObserver, mirroring
- * `persona.tsx`'s theme watcher — `@elabs/components-ai` can't import `@elabs/components-editor`'s
+ * `persona.tsx`'s theme watcher — `@elabs-ai/components-ai` can't import `@elabs-ai/components-editor`'s
  * shared `useDataTheme` hook per the one-way package graph).
  *
  * Bundling: xterm and its stylesheet are reached through a dynamic
@@ -25,8 +25,8 @@
  * 0019 and `pnpm heavy-deps:check`.
  */
 
-import { resolveTokenColor } from "@elabs/components-tokens";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { resolveTokenColor } from "@elabs-ai/components-tokens";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { ITheme, Terminal as XTerm } from "@xterm/xterm";
 import {
@@ -63,10 +63,10 @@ export interface InteractiveTerminalProps extends Omit<HTMLAttributes<HTMLDivEle
 }
 
 // --- Runtime color helpers -------------------------------------------------
-// `resolveTokenColor` (@elabs/components-tokens, ADR 0015) is the shared "read a semantic
-// token off an element, oklch → hex" resolver — the same one `@elabs/components-maps`'
+// `resolveTokenColor` (@elabs-ai/components-tokens, ADR 0015) is the shared "read a semantic
+// token off an element, oklch → hex" resolver — the same one `@elabs-ai/components-maps`'
 // `useTokenColor` wraps. `withAlpha`/`lighten` below are the same "math on the
-// resolved hex" idiom as `monaco-theme-bridge.ts` (@elabs/components-editor) — never a
+// resolved hex" idiom as `monaco-theme-bridge.ts` (@elabs-ai/components-editor) — never a
 // hardcoded literal color.
 
 /** Mix `alpha` (0..1) into a `#rrggbb` color, returning `#rrggbbaa`. */

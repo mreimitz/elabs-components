@@ -5,7 +5,7 @@ import { Meta } from "@storybook/addon-docs/blocks";
 # AI Output Contract for Agents
 
 This page tells an agent (or the developer wiring one) **how to structure output so the
-`@elabs/components-ai` GenUI components render it**. `@elabs/components-ai` is a presentation layer — it renders a
+`@elabs-ai/components-ai` GenUI components render it**. `@elabs-ai/components-ai` is a presentation layer — it renders a
 data model; **your app owns the model call** (D5). So there is no system prompt to copy:
 there are two shipped output shapes and a wiring pattern.
 
@@ -19,7 +19,7 @@ form is the manifest's `agentOutput` block; the canonical routing decision is
 
 > **Generated** by `pnpm gen` from the CLI's agent-output module — edit there, not here. The `gen:check` gate fails on drift.
 
-`@elabs/components-ai` is a **presentation layer**: it renders a data model — your app owns the model calls (D5). There is **no system prompt to copy**; there are two shipped output shapes and a wiring pattern. Pick the path, emit the shape, let the components render it.
+`@elabs-ai/components-ai` is a **presentation layer**: it renders a data model — your app owns the model calls (D5). There is **no system prompt to copy**; there are two shipped output shapes and a wiring pattern. Pick the path, emit the shape, let the components render it.
 
 ### Which path (D2)
 
@@ -33,7 +33,7 @@ _Mental model: AI SDK = what the agent **said**; A2UI = a screen the agent **des
 
 ### Path A · Conversation — the AI SDK UIMessage (the default)
 
-Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs/components-ai renders it. ~the default for any chat.
+Render what the agent SAID: a transcript of turns. The agent produces an AI SDK UIMessage; @elabs-ai/components-ai renders it. ~the default for any chat.
 
 - **Authority:** Vercel AI SDK — import type only (D6). brand-ui does NOT redefine UIMessage/ToolUIPart; the SDK is authoritative for their shape.
 - **brand-ui owns:** brand-ui owns ONLY the projection: the tool-state→Status mapping, the role narrowing, the fields its components consume, and SourceListItem.
@@ -47,7 +47,7 @@ Render what the agent SAID: a transcript of turns. The agent produces an AI SDK 
 | `tool`       | `Tool`, `ToolHeader`, `ToolInput`, `ToolOutput` | A pre-rendered React-element `output` is deprecated — emit a JSON payload and render it with ToolResultCard. |
 | `source-url` | `Sources`, `Source`, `SourceList`               | brand-ui-owned grounding item — not an SDK source part.                                                      |
 
-A **tool part** is typed `tool-<name> | dynamic-tool` and carries `type`, `state`, `input`, `output`, `errorText`. Its `state` maps onto the closed `@elabs/components-ui` `Status` enum:
+A **tool part** is typed `tool-<name> | dynamic-tool` and carries `type`, `state`, `input`, `output`, `errorText`. Its `state` maps onto the closed `@elabs-ai/components-ui` `Status` enum:
 
 | Tool `state`         | → `Status`          |
 | -------------------- | ------------------- |
@@ -90,7 +90,7 @@ const messages = [
 ];
 ```
 
-Map each turn's parts onto the components (**in your app** — `@elabs/components-ai` never calls the model):
+Map each turn's parts onto the components (**in your app** — `@elabs-ai/components-ai` never calls the model):
 
 ```tsx
 {
@@ -123,7 +123,7 @@ Map each turn's parts onto the components (**in your app** — `@elabs/component
 }
 ```
 
-> Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs/components-ai never calls the model.
+> Your app owns the runtime: useChat() (from `ai`, in YOUR app) produces messages: UIMessage[]; map each message's parts onto the components above. @elabs-ai/components-ai never calls the model.
 
 ### Path B · Ad-hoc JSX — JSXPreview (the escape hatch)
 
@@ -162,7 +162,7 @@ The app owns the model. `useChat()` (from `ai`, **in your app**) gives you `mess
 
 ### Don't
 
-- Don't expect @elabs/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).
+- Don't expect @elabs-ai/components-ai to call your model, stream, or manage transport — it renders the result; your app owns the runtime (D5).
 - Don't paste a frozen system prompt from this contract — assemble tool defs / prompt fragments in YOUR app from the manifest + this block.
 - Don't emit tags outside the JSXPreview `components` allow-list.
 - Don't emit A2UI surfaces — not shipped (WP-11).

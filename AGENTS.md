@@ -16,22 +16,22 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 
 <!-- brand-ui:gen:packages:start -->
 
-| Package                               | Path                         | Purpose                                                                                  |
-| ------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `@elabs/components-tokens`            | `packages/tokens`            | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@elabs/components-icons`             | `packages/icons`             | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@elabs/components-ui`                | `packages/ui`                | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@elabs/components-data`              | `packages/data`              | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@elabs/components-ai`                | `packages/ai`                | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@elabs/components-flow`              | `packages/flow`              | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@elabs/components-maps`              | `packages/maps`              | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs/components-charts`            | `packages/charts`            | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@elabs/components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@elabs/components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@elabs/components-viewer`            | `packages/viewer`            | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
-| `@elabs/components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                |
-| `@elabs/components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                         |
-| `@elabs/components-docs`              | `apps/docs`                  | Storybook                                                                                |
+| Package                                  | Path                         | Purpose                                                                                  |
+| ---------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`            | `packages/tokens`            | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs-ai/components-icons`             | `packages/icons`             | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
+| `@elabs-ai/components-ui`                | `packages/ui`                | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs-ai/components-data`              | `packages/data`              | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs-ai/components-ai`                | `packages/ai`                | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs-ai/components-flow`              | `packages/flow`              | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
+| `@elabs-ai/components-maps`              | `packages/maps`              | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs-ai/components-charts`            | `packages/charts`            | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
+| `@elabs-ai/components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
+| `@elabs-ai/components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
+| `@elabs-ai/components-viewer`            | `packages/viewer`            | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| `@elabs-ai/components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                |
+| `@elabs-ai/components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                         |
+| `@elabs-ai/components-docs`              | `apps/docs`                  | Storybook                                                                                |
 
 <!-- brand-ui:gen:packages:end -->
 
@@ -41,19 +41,19 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 
 <!-- brand-ui:gen:selection:start -->
 
-| Package                       | Use it for                                                                               |
-| ----------------------------- | ---------------------------------------------------------------------------------------- |
-| `@elabs/components-tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@elabs/components-icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@elabs/components-ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@elabs/components-data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@elabs/components-ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@elabs/components-flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@elabs/components-maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs/components-charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@elabs/components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@elabs/components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@elabs/components-viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| Package                          | Use it for                                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`    | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
+| `@elabs-ai/components-icons`     | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
+| `@elabs-ai/components-ui`        | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs-ai/components-data`      | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs-ai/components-ai`        | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs-ai/components-flow`      | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
+| `@elabs-ai/components-maps`      | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
+| `@elabs-ai/components-charts`    | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
+| `@elabs-ai/components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
+| `@elabs-ai/components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
+| `@elabs-ai/components-viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
 
 <!-- brand-ui:gen:selection:end -->
 
@@ -65,15 +65,15 @@ is GENERATED into this region by `pnpm gen` — edit the decisions there, not he
 <!-- brand-ui:gen:decisions:start -->
 <!-- Generated from the DECISIONS:SUMMARY region of `docs/DECISIONS.md` — edit decisions there, not here. -->
 
-| #      | Decision                             | The short answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Detail rule                                                                                                                   |
-| ------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **D1** | Which paradigm?                      | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare.                                                                                                                                                                                                                                                                                                                                                                                               | [`decision-routing.md`](../.claude/rules/decision-routing.md)                                                                 |
-| **D2** | Rendering agent output               | A **conversation** → AI SDK `UIMessage` + `@elabs/components-ai`. An **agent-designed surface** → A2UI (WP-11).                                                                                                                                                                                                                                                                                                                                                                                    | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md)                                                                     |
-| **D3** | Which package                        | app UI → `@elabs/components-ui` · data → `@elabs/components-data` · chat → `@elabs/components-ai` · canvas → `@elabs/components-flow` (author-built diagrams) · in-chat agent workspace graph → `@elabs/components-ai` (ADR 0018) · KPIs → `@elabs/components-charts` · landing → `@elabs/components-marketing` · code → `@elabs/components-editor` · viewing a file the app did not write → `@elabs/components-viewer` · tokens → `@elabs/components-tokens` · icons → `@elabs/components-icons`. | `skills/brand-ui/SKILL.md` (generated table)                                                                                  |
-| **D4** | Import vs copy-own                   | Stable shared primitives → **import** `@elabs/components-*`. Prototype-specific blocks → **copy-own** (registry).                                                                                                                                                                                                                                                                                                                                                                                  | [`registry.md`](../.claude/rules/registry.md)                                                                                 |
-| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.                                                                                                                                                                                                                                                                                                                                                                                            | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md)                                                           |
-| **D6** | Dependency & import discipline       | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.                                                                                                                                                                                                                                                                                                                                                                                              | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
-| **D7** | Maintainer decisions                 | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory).                                                                                                                                                                                                                                                                                                                                                                                        | [`quality-gates.md`](../.claude/rules/quality-gates.md)                                                                       |
+| #      | Decision                             | The short answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Detail rule                                                                                                                   |
+| ------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Which paradigm?                      | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare.                                                                                                                                                                                                                                                                                                                                                                                                                                | [`decision-routing.md`](../.claude/rules/decision-routing.md)                                                                 |
+| **D2** | Rendering agent output               | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11).                                                                                                                                                                                                                                                                                                                                                                                                                  | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md)                                                                     |
+| **D3** | Which package                        | app UI → `@elabs-ai/components-ui` · data → `@elabs-ai/components-data` · chat → `@elabs-ai/components-ai` · canvas → `@elabs-ai/components-flow` (author-built diagrams) · in-chat agent workspace graph → `@elabs-ai/components-ai` (ADR 0018) · KPIs → `@elabs-ai/components-charts` · landing → `@elabs-ai/components-marketing` · code → `@elabs-ai/components-editor` · viewing a file the app did not write → `@elabs-ai/components-viewer` · tokens → `@elabs-ai/components-tokens` · icons → `@elabs-ai/components-icons`. | `skills/brand-ui/SKILL.md` (generated table)                                                                                  |
+| **D4** | Import vs copy-own                   | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry).                                                                                                                                                                                                                                                                                                                                                                                                                | [`registry.md`](../.claude/rules/registry.md)                                                                                 |
+| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls.                                                                                                                                                                                                                                                                                                                                                                                                                             | [`scope-and-non-goals.md`](../.claude/rules/scope-and-non-goals.md)                                                           |
+| **D6** | Dependency & import discipline       | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph.                                                                                                                                                                                                                                                                                                                                                                                                                               | [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md) · [`styling-and-tokens.md`](../.claude/rules/styling-and-tokens.md) |
+| **D7** | Maintainer decisions                 | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory).                                                                                                                                                                                                                                                                                                                                                                                                                         | [`quality-gates.md`](../.claude/rules/quality-gates.md)                                                                       |
 
 <!-- brand-ui:gen:decisions:end -->
 
@@ -90,7 +90,7 @@ pnpm test:e2e     # playwright E2E (auto-starts playground + Storybook)
 pnpm registry:validate
 pnpm storybook         # Storybook on :6006
 pnpm playground   # Vite dev server on :5173
-# scope: pnpm --filter @elabs/components-ui test
+# scope: pnpm --filter @elabs-ai/components-ui test
 ```
 
 See `docs/TESTING.md` for the full strategy (unit → E2E → agent-driven QA +
@@ -152,7 +152,7 @@ visual review).
 ## Validate before you finish (command contract)
 
 Compliant agents auto-run these and make them **green before reporting done** — do
-the same. Run from the repo root (scope to one package with `pnpm --filter @elabs/components-<pkg> <task>`):
+the same. Run from the repo root (scope to one package with `pnpm --filter @elabs-ai/components-<pkg> <task>`):
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build   # every change
@@ -165,11 +165,11 @@ pnpm registry:validate:test     # self-test for the registry `homepage`-placehol
 pnpm registry:resolve:check     # if registry/ touched — every relative import resolves in both the repo tree AND the install (target) tree
 pnpm registry:resolve:check:test # self-test for the registry relative-import resolution gate
 pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
-pnpm components:check           # every @elabs/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
+pnpm components:check           # every @elabs-ai/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
 pnpm variants:check:test        # self-test for the variant-coverage gate
-pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
+pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
 pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)
@@ -187,11 +187,11 @@ pnpm playbooks:check            # if docs/playbooks/ touched — every playbook 
 pnpm playbooks:check:test       # self-test for the playbook-registration gate
 pnpm cadence:check:test         # self-test for the Stop session-cadence nudge (.claude/hooks/session-cadence-nudge.sh, #67)
 pnpm format:check               # or fix with `pnpm format`
-pnpm ai:types-only              # if @elabs/components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
+pnpm ai:types-only              # if @elabs-ai/components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
 pnpm lucide:check               # if any `lucide-react` import touched — one Lucide version across the workspace
-pnpm charts:reuse:check         # if @elabs/components-charts touched — charts must not redefine @elabs/components-ui component names
+pnpm charts:reuse:check         # if @elabs-ai/components-charts touched — charts must not redefine @elabs-ai/components-ui component names
 pnpm charts:test-double:check   # if packages/charts/src/test/** or its wiring touched — the ./test double stays in parity with the real components, pulls no @visx/d3/motion engine, and exports/publishConfig/tsup.config.ts agree (#364)
-pnpm dep-direction:check        # if any packages/*/package.json touched — @elabs/components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)
+pnpm dep-direction:check        # if any packages/*/package.json touched — @elabs-ai/components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)
 pnpm dep-direction:check:test   # self-test for the dependency-direction gate
 pnpm agents:check               # if .claude/agents/ touched — agent names plugin-scoped, unique, name↔filename
 pnpm agents:check:test          # self-test for the agent-name gate
@@ -214,7 +214,7 @@ pnpm roles:check:test           # self-test for the role-distinctness gate
 pnpm surface-elevation:check    # if themes.css touched — app chrome (--sidebar) stays recessed below the content canvas (--background) in every theme (#187)
 pnpm surface-elevation:check:test  # self-test for the surface-elevation gate
 pnpm surface:preview:test       # self-test for the composed-surface preview generator (rung 2 of the visual loop, #57) — every archetype × theme builds self-contained, themed, with no colour literal outside the inlined tokens. Build one with `pnpm surface:preview -- --archetype <name> --theme <slug> --out <file.html>`.
-pnpm tokens:check               # if tokens/ or themes.css touched — themes.css matches the DTCG source (run `pnpm --filter @elabs/components-tokens tokens:build`)
+pnpm tokens:check               # if tokens/ or themes.css touched — themes.css matches the DTCG source (run `pnpm --filter @elabs-ai/components-tokens tokens:build`)
 pnpm tokens:check:test          # self-test for the tokens-freshness gate
 pnpm tokens:dup-blocks:check    # if themes.css touched — no duplicate [data-theme] color blocks (a 2nd block silently wins the cascade, #196)
 pnpm tokens:dup-blocks:check:test  # self-test for the duplicate-theme-block gate
@@ -234,9 +234,23 @@ pnpm consumer:check             # if a package's build/exports/deps changed — 
 pnpm consumer:check:test        # self-test for the published-artifact gate
 pnpm version:check              # if any version site changed — all 16 lockstep sites agree (11 packages + CLI + root + both plugin manifests + SERVER_INFO in the CLI's MCP server). `pnpm version:set X.Y.Z` is the only writer.
 pnpm version:check:test         # self-test for the lockstep-version gate
-pnpm publish-ready:check        # before a release — scope equals the GitHub owner, nothing is still private, every package has repository + publishConfig.registry, .npmrc maps the scope. Release-time only (not a per-PR gate).
+pnpm publish-ready:check        # before a release — nothing is still private, every package has repository + directory + publishConfig.registry, .npmrc maps every published scope to that registry. The scope-equals-repo-owner rule is GitHub-Packages-only (requiresOwnerScope) and does not apply on npmjs.org. Release-time only (not a per-PR gate).
 pnpm publish-ready:check:test   # self-test for the publish-readiness preflight
-pnpm heavy-deps:check           # if @elabs/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
+pnpm token-contract:check       # if packages/tokens changed — the exported THEME_TOKEN_NAMES contract is regenerated and non-empty (a consumer asserts their own theme against it)
+pnpm motion:check               # if a component's animation classes changed — motion uses the gated duration-*/ease-* utilities, never raw durations, and movement carries a motion-reduce: neutralizer
+pnpm motion:check:test          # self-test for the motion-token gate
+pnpm sidebar-drift:check        # if the sidebar block or its copy-own twin changed — the two copies have not drifted apart
+pnpm sidebar-drift:check:test   # self-test for the sidebar-drift gate
+pnpm lockfile:check             # if pnpm-lock.yaml changed — the lockfile agrees with every manifest (no hand-edited or stale entry)
+pnpm lockfile:check:test        # self-test for the lockfile gate
+pnpm deps-sync:test             # self-test for the auto-install-on-lockfile-change git hooks
+pnpm gen:registry:check         # if registry/ changed — the generated registry artifacts are fresh (run `pnpm gen:registry`)
+pnpm gen:registry:check:test    # self-test for the registry generator's stale gate
+pnpm templates:check            # if a scaffold template changed — every template still compiles against the current component API
+pnpm templates:check:test       # self-test for the template-freshness gate
+pnpm agent-output:check         # if an agent/skill's output contract changed — the shipped agents still declare the output shape their callers parse
+pnpm agent-output:check:test    # self-test for the agent-output-contract gate
+pnpm heavy-deps:check           # if @elabs-ai/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
 pnpm heavy-deps:check:test      # self-test for the eager-heavy-dependency ratchet
 pnpm origins:check              # if a packages/*/src file gained a URL — every remote origin is allowlisted (scripts/remote-origins-allowlist.json) AND documented in docs/CSP-AND-NETWORK.md
 pnpm origins:check:test         # self-test for the remote-origin inventory gate
@@ -270,7 +284,7 @@ pnpm slop:check                 # content anti-slop — the "Jane Doe effect" (J
 pnpm slop:check:test            # self-test for the anti-slop ratchet
 pnpm collapse-fork:check        # one collapse mechanism — no gap-spacer + fixed-slide width tween outside useCollapsiblePanel (#190)
 pnpm collapse-fork:check:test   # self-test for the collapse-fork gate
-pnpm timeline-fork:check        # one Timeline rail — no Timeline* re-declaration / hand-rolled connector+status rail outside @elabs/components-ui (#190)
+pnpm timeline-fork:check        # one Timeline rail — no Timeline* re-declaration / hand-rolled connector+status rail outside @elabs-ai/components-ui (#190)
 pnpm timeline-fork:check:test   # self-test for the timeline-fork gate
 pnpm machine-paths:check        # no absolute machine paths (e.g. /Users/...) committed in tracked source
 pnpm machine-paths:check:test   # self-test for the machine-paths gate
@@ -284,7 +298,7 @@ pnpm changelog-entry:check      # if packages/<pkg>/src changed — the branch m
 pnpm changelog-entry:check:test # self-test for the CHANGELOG-entry gate
 pnpm use-client:check           # if a client package's source changed — every package that uses React hooks carries a "use client" directive on ≥1 module, so RSC apps hydrate it correctly (#324)
 pnpm use-client:check:test      # self-test for the "use client" source gate
-pnpm --filter @elabs/components-docs test-storybook   # if a component/story changed (interaction + axe)
+pnpm --filter @elabs-ai/components-docs test-storybook   # if a component/story changed (interaction + axe)
 ```
 
 Add a story + smoke test for any new component (see `.claude/rules/quality-gates.md`).

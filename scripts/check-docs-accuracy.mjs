@@ -12,7 +12,7 @@
  *   2. WORKFLOW REFS — every `.github/workflows/<x>.yml` a doc references must exist,
  *      so docs can't claim a CI that isn't there (the original C1/C5 gap).
  *   3. PACKAGE-DESCRIPTION COMPONENT NAMES (#154) — every component named in a
- *      `@elabs/components-*` package-description line in CLAUDE.md / AGENTS.md must actually be
+ *      `@elabs-ai/components-*` package-description line in CLAUDE.md / AGENTS.md must actually be
  *      exported (verified against `brand-ui.manifest.json`), so the always-on context
  *      layer can't mis-instruct an agent about a package's API (the MessageBubble/
  *      ToolCallCard/AgentStep drift). Known framework/proper nouns are ignored.
@@ -33,13 +33,15 @@
  *      (`versionSites()` / `distributablePackages()`), so the runbook's counts
  *      cannot drift from the packages that actually ship. The pack loop stopped
  *      being a hand-kept literal in #295; these counts were the last one left.
- *   8. CONSUMING-PROJECT CLI PRECONDITION (#265) — a consuming-project
- *      `npx @elabs/components-cli <cmd>` / `npx brand-ui <cmd>` example
- *      must be paired with its install precondition (the CLI is a PRIVATE GitHub
- *      Packages dependency, ADR 0016), so a documented first command can't 404.
- *      Scanned over the union of the docs above and the consuming-project agent
- *      surfaces (`skills/**`, `agents/**`, `.claude/agents/**`,
- *      `apps/docs/stories/**`).
+ *
+ * RETIRED — rule 8, CONSUMING-PROJECT CLI PRECONDITION (#265). It required every
+ * consuming-project `npx @elabs-ai/components-cli <cmd>` / `npx brand-ui <cmd>`
+ * example to be paired with an install precondition, because the CLI was a
+ * PRIVATE GitHub Packages dependency that 404s without a scope mapping and a
+ * `read:packages` token. Since ADR 0030 the packages are PUBLIC on npmjs.org, so
+ * a bare `npx` is turnkey and the precondition it demanded no longer exists —
+ * keeping the rule would have forced docs to state a falsehood to stay green.
+ * Restore it (git history) if the packages ever go private again.
  *
  * Scope: the authoritative human/agent docs — NOT research/ (design notes may quote
  * historical state), and NOT the git-ignored generated per-harness skill mirrors.
@@ -56,15 +58,15 @@ const root = findRepoRoot(process.cwd()) ?? process.cwd();
 // ---------------------------------------------------------------------------
 // 5. VERSION LITERALS (#266)
 // ---------------------------------------------------------------------------
-// A concrete `vN.N.N` / `-N.N.N.tgz` / `-N.N.N.zip` / `@elabs/components-x@N.N.N` literal in
+// A concrete `vN.N.N` / `-N.N.N.tgz` / `-N.N.N.zip` / `@elabs-ai/components-x@N.N.N` literal in
 // a copy-paste doc must match the CURRENT release, or use the `X.Y.Z` placeholder
-// form. The package-pin form is scoped to `@elabs/components-*` specifically (not every
+// form. The package-pin form is scoped to `@elabs-ai/components-*` specifically (not every
 // `pkg@N.N.N` in the doc) so a third-party dependency's pinned version can't be
 // mistaken for a brand-ui release drift. Pure, exported for the self-test
 // (mirrors check-motion-tokens.mjs / check-raw-palette.mjs).
 const VERSION_TAG_RE = /\bv(\d+\.\d+\.\d+)\b/g;
 const VERSION_ARCHIVE_RE = /-(\d+\.\d+\.\d+)\.(?:tgz|zip)\b/g;
-const VERSION_PKG_PIN_RE = /@elabs\/components-[a-z0-9-]+@(\d+\.\d+\.\d+)\b/g;
+const VERSION_PKG_PIN_RE = /@elabs-ai\/components-[a-z0-9-]+@(\d+\.\d+\.\d+)\b/g;
 
 // Docs whose version literals are a worked EXAMPLE of the release procedure
 // itself (not a copy-paste install target) — exempt, mirroring PROSE_IGNORE/
@@ -148,51 +150,21 @@ function docFiles(rootDir) {
 
 const files = docFiles(root);
 
-/**
- * #265 — the consuming-project CLI PRECONDITION rule (8, below) runs over the
- * UNION of the docs above and the consuming-project agent surfaces:
- * `skills/**`, `agents/**`, `.claude/agents/**` and `apps/docs/stories/**` —
- * where the bare `npx @elabs/components-cli` / `npx brand-ui`
- * examples actually live. `docs/**` is included (the issue's Test-to-add says
- * "plus existing docs/**" — `docs/SKILLS.md` was an original offender), and so
- * are both agent copies, which AC2 names.
- *
- * The union is applied to rule 8 ONLY — `files` (rules 1–5) stays narrow, so the
- * widening can't drag skills/**'s own unrelated staleness into the theme-count /
- * workflow-ref / version-literal / phantom-component rules, which were never
- * meant to cover those trees. Exported so the self-test can prove the scope on a
- * planted temp tree.
- */
-export function collectCliPreconditionFiles(rootDir) {
-  return existingFiles([
-    ...new Set([
-      ...docFiles(rootDir),
-      ...walk(join(rootDir, "skills"), []),
-      ...walk(join(rootDir, "agents"), []),
-      ...walk(join(rootDir, ".claude", "agents"), []),
-      ...walk(join(rootDir, "apps", "docs", "stories"), [], [".mdx"]),
-    ]),
-  ]);
-}
-
-const cliPreconditionFiles = collectCliPreconditionFiles(root);
-
 const themeViolations = [];
 const workflowViolations = [];
 const versionViolations = [];
 const workflowRe = /\.github\/workflows\/([A-Za-z0-9_-]+\.ya?ml)/g;
 
 /**
- * This fork has no `.github/` at all (no CI, no remote — see
- * `docs/ADR/0028-publishing-disabled-private-fork.md`). The WORKFLOW REFS rule exists to
- * catch a doc naming a workflow that was RENAMED or DELETED out from under it; with the
- * whole directory absent there is no workflow layer to be stale against, and the rule
- * would only ever report the same 11 accurate-for-upstream references. Skip that ONE arm
- * — every other arm (theme count, version literals, component names, PR-template themes,
- * CLI preconditions) is CI-independent and stays live. Same honest-dormancy treatment as
- * `release-gates:check` and `a11y:baseline:check`.
+ * The WORKFLOW REFS + CI-GATE-CONTRACT rules read `.github/workflows/`. They are
+ * live again as of ADR 0030 (the fork has a remote, `ci.yml` and `gates.yml` are
+ * back) — this guard is what kept them honest while the directory was absent
+ * (ADR 0028): with no workflow layer there is nothing for a doc to be stale
+ * against, and the rules would only have reported the same accurate-for-upstream
+ * references. Every other arm is CI-independent and stays live either way.
  *
- * Restoring `.github/workflows/` re-arms this automatically — no flag to remember.
+ * Deleting `.github/workflows/` disarms these two automatically — no flag to
+ * remember, and no false red.
  */
 const workflowsPresent = existsSync(join(root, ".github", "workflows"));
 
@@ -295,7 +267,7 @@ for (const f of files) {
 // ---------------------------------------------------------------------------
 // 3. PACKAGE-DESCRIPTION COMPONENT NAMES (#154)
 // ---------------------------------------------------------------------------
-// Every PascalCase identifier presented as a component in a `@elabs/components-*`
+// Every PascalCase identifier presented as a component in a `@elabs-ai/components-*`
 // package-description line (CLAUDE.md / AGENTS.md) must exist as an export in the
 // manifest. We check against the UNION of all package exports (a name moved
 // between packages is still real), and ignore a curated set of framework /
@@ -323,7 +295,7 @@ const PROSE_IGNORE = new Set([
   "Shiki",
   "Streamdown",
   "Milkdown",
-  // File-parser libraries and format names named in @elabs/components-viewer
+  // File-parser libraries and format names named in @elabs-ai/components-viewer
   // prose (ADR 0024) — none of these are components.
   "SheetJS",
   "DOMPurify",
@@ -378,10 +350,10 @@ function manifestExportNames() {
 }
 
 const exportNames = manifestExportNames();
-// A line is a package-description line iff it names a `@elabs/components-<pkg>` package AND is
+// A line is a package-description line iff it names a `@elabs-ai/components-<pkg>` package AND is
 // a list item or table row (the package list in CLAUDE.md / AGENTS.md) — not an
 // arbitrary prose mention elsewhere in the file.
-const pkgLineRe = /`@elabs\/components-[a-z]+`/;
+const pkgLineRe = /`@elabs-ai\/components-[a-z]+`/;
 // Candidate component token: PascalCase (≥2 segments OR a known component shape).
 const compTokenRe = /\b([A-Z][a-z0-9]+(?:[A-Z][A-Za-z0-9]*)+)\b/g;
 
@@ -393,7 +365,7 @@ if (exportNames) {
     text.split("\n").forEach((line, i) => {
       if (!pkgLineRe.test(line)) return;
       // Strip code spans (`...`), markdown links, and parenthetical file refs so we
-      // don't read identifiers out of `@elabs/components-*`, `lucide-react`, paths, etc.
+      // don't read identifiers out of `@elabs-ai/components-*`, `lucide-react`, paths, etc.
       const prose = line
         .replace(/`[^`]*`/g, " ")
         .replace(/\([^)]*\.[a-z]+[^)]*\)/g, " ") // (foo.md) style refs
@@ -468,7 +440,7 @@ export const CONTRACT_EXEMPT = new Set([
   // Building the Storybook static site is a step OF the interaction-test job, not
   // a per-change agent gate — the contract already carries root `pnpm build` and
   // `pnpm --filter …-docs test-storybook` (the check that job actually enforces).
-  "--filter @elabs/components-docs build",
+  "--filter @elabs-ai/components-docs build",
 ]);
 
 /** Escape a gate identity for a literal regex match, with flexible whitespace. */
@@ -525,9 +497,9 @@ if (existsSync(ciYml) && existsSync(agentsMd)) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. DUAL-CANVAS DECISION (#183) — @elabs/components-ai vs @elabs/components-flow
+// 6. DUAL-CANVAS DECISION (#183) — @elabs-ai/components-ai vs @elabs-ai/components-flow
 // ---------------------------------------------------------------------------
-// Both `@elabs/components-ai` and `@elabs/components-flow` wrap `@xyflow/react`
+// Both `@elabs-ai/components-ai` and `@elabs-ai/components-flow` wrap `@xyflow/react`
 // as two intentionally distinct canvas surfaces (ADR 0018). Guard that the decision
 // stays recorded: (a) an ADR whose title names the dual-canvas decision exists, and
 // (b) the docs/DECISIONS.md D3 routing row names BOTH `-flow` and `-ai` for canvas —
@@ -538,8 +510,8 @@ export function findDualCanvasViolations({ adrTitles, decisionsMdText }) {
   const hasDualCanvasAdr = adrTitles.some((t) => /dual|two/i.test(t) && /canvas/i.test(t));
   if (!hasDualCanvasAdr) {
     violations.push(
-      "docs/ADR/: no ADR title matches /dual|two/i AND /canvas/i (the @elabs/components-ai vs " +
-        "@elabs/components-flow dual-canvas decision must be recorded — see issue #183)",
+      "docs/ADR/: no ADR title matches /dual|two/i AND /canvas/i (the @elabs-ai/components-ai vs " +
+        "@elabs-ai/components-flow dual-canvas decision must be recorded — see issue #183)",
     );
   }
   const d3Line = decisionsMdText.split("\n").find((l) => /^\|\s*\*\*D3\*\*/.test(l));
@@ -547,15 +519,20 @@ export function findDualCanvasViolations({ adrTitles, decisionsMdText }) {
     violations.push("docs/DECISIONS.md: could not find the D3 row to check canvas routing");
   } else {
     // The D3 cell is a `·`-joined list of "topic → package" clauses, and one of
-    // them is always `chat → `@elabs/components-ai`` — so naively checking the whole
+    // them is always `chat → `@elabs-ai/components-ai`` — so naively checking the whole
     // line for `-ai` is always true regardless of canvas routing. Drop the chat
     // clause before checking, so the remaining text must independently name both
     // `-flow` (canvas) and `-ai` (the in-chat agent workspace graph, ADR 0018).
+    //
+    // Match the PACKAGE suffix (`components-ai`), never the bare `-ai`: the npm
+    // scope is `@elabs-ai`, so a bare `/-ai\b/` is satisfied by *any* package
+    // name and the rule would pass vacuously — it did, the moment the scope was
+    // renamed from `@elabs` (the self-test caught it).
     const rest = d3Line
       .split("·")
       .filter((clause) => !/\bchat\s*→/i.test(clause))
       .join(" · ");
-    if (!/-flow\b/.test(rest) || !/-ai\b/.test(rest)) {
+    if (!/components-flow\b/.test(rest) || !/components-ai\b/.test(rest)) {
       violations.push(
         `docs/DECISIONS.md: D3 row's canvas routing must name BOTH \`-flow\` and \`-ai\` (found: ${d3Line.trim()})`,
       );
@@ -643,88 +620,6 @@ const adrTitles = existsSync(adrDirPath)
 const decisionsMdPath = join(root, "docs", "DECISIONS.md");
 const decisionsMdText = existsSync(decisionsMdPath) ? readFileSync(decisionsMdPath, "utf8") : "";
 const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdText });
-// 8. CONSUMING-PROJECT CLI PRECONDITION (#265)
-// ---------------------------------------------------------------------------
-// `@elabs/components-cli` is a PRIVATE GitHub Packages dependency (ADR 0016) — a bare
-// `npx @elabs/components-cli <cmd>` in a consuming project 404s/401s until the project's
-// npm config maps the `@elabs` scope to `npm.pkg.github.com` AND carries a
-// `read:packages` token (docs/CONSUMING.md §1). BOTH documented invocation forms
-// count: the scoped package name AND the `brand-ui` bin alias (`npx brand-ui …`,
-// pre-authorized in several skills' `allowed-tools`) — they 404 identically, so
-// the detector must match both or half the surface stays ungated. Any doc that
-// shows this command to a consuming-project reader must carry that precondition
-// somewhere in the same file — an `allowed-tools:` frontmatter permission line is
-// not an instruction to a reader, and an `mcp` launch-wiring line (how the MCP
-// server itself is configured, not a "try this" example) is exempt too. Pure,
-// exported for the self-test.
-const CLI_NPX_RE = /npx\s+(-y\s+)?(@elabs\/components-cli|brand-ui)\b/;
-const MCP_WIRING_RE = /(@elabs\/components-cli|brand-ui)["'\s,\]]*mcp\b/;
-const PRECONDITION_CUE_RE =
-  /read:packages|\.npmrc|GitHub Packages|pnpm add -D @elabs\/components-cli|from the release|docs\/CONSUMING\.md/i;
-
-/**
- * Find bare, consuming-project `npx @elabs/components-cli <cmd>` lines in `text` that
- * are not paired with an install precondition anywhere in the same file.
- * Returns `{ line, match }[]` (1-based line numbers) — empty if the file is
- * clean (no bare lines, or a precondition cue is present somewhere).
- */
-export function findCliPreconditionViolations(text) {
-  const lines = text.split("\n");
-  let inFrontmatter = false;
-  let inAllowedTools = false;
-  const bare = [];
-
-  lines.forEach((line, i) => {
-    const trimmed = line.trim();
-
-    if (i === 0 && trimmed === "---") {
-      inFrontmatter = true;
-      return;
-    }
-    if (inFrontmatter) {
-      if (trimmed === "---") {
-        inFrontmatter = false;
-        inAllowedTools = false;
-        return;
-      }
-      if (/^allowed-tools:\s*$/.test(line)) {
-        inAllowedTools = true;
-      } else if (/^\S/.test(line)) {
-        // an un-indented line is a new top-level frontmatter key — ends the
-        // allowed-tools block (its own entries are indented list items).
-        inAllowedTools = false;
-      }
-    }
-
-    if (inFrontmatter && inAllowedTools) return; // permissions, not instructions
-    if (!CLI_NPX_RE.test(line)) return;
-    if (MCP_WIRING_RE.test(line)) return; // launch-wiring, not a usage example
-
-    bare.push({ line: i + 1, match: line.trim() });
-  });
-
-  if (bare.length === 0) return [];
-  if (PRECONDITION_CUE_RE.test(text)) return []; // the file states the precondition somewhere
-  return bare;
-}
-
-/**
- * Run rule 8 over a whole tree. Returns `"<rel>:<line>: <text>"` strings.
- * Exported so the self-test can plant a bad fixture under `docs/` / `agents/`
- * in a temp root and assert the gate actually fires there (per quality-gates.md
- * "Self-tested gates" — a gate that can silently stop firing is worse than none).
- */
-export function scanCliPreconditions(rootDir) {
-  const out = [];
-  for (const f of collectCliPreconditionFiles(rootDir)) {
-    const text = readFileSync(f, "utf8");
-    const rel = f.slice(rootDir.length + 1);
-    for (const v of findCliPreconditionViolations(text)) out.push(`${rel}:${v.line}: ${v.match}`);
-  }
-  return out;
-}
-
-const cliPreconditionViolations = scanCliPreconditions(root);
 
 let failed = false;
 if (themeViolations.length) {
@@ -749,7 +644,7 @@ if (workflowViolations.length) {
 if (phantomViolations.length) {
   failed = true;
   console.error(
-    `\n✖ phantom component in a @elabs/components-* package description (${phantomViolations.length}):`,
+    `\n✖ phantom component in a @elabs-ai/components-* package description (${phantomViolations.length}):`,
   );
   for (const v of phantomViolations) console.error("  - " + v);
   console.error(
@@ -813,23 +708,10 @@ if (dualCanvasViolations.length) {
       "  BOTH `-flow` and `-ai` for canvas routing.",
   );
 }
-if (cliPreconditionViolations.length) {
-  failed = true;
-  console.error(
-    `\n✖ bare consuming-project \`npx @elabs/components-cli\` / \`npx brand-ui\` with no install precondition (${cliPreconditionViolations.length}):`,
-  );
-  for (const v of cliPreconditionViolations) console.error("  - " + v);
-  console.error(
-    "  Fix: add an install-precondition cue to the SAME file — mention `.npmrc`,\n" +
-      '  `read:packages`, "GitHub Packages", `pnpm add -D @elabs/components-cli`, or\n' +
-      "  `docs/CONSUMING.md` — so the example can't be read as a turnkey `npx` (#265).",
-  );
-}
 if (failed) process.exit(1);
 console.log(
-  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}@elabs/components-* component names + PR-template themes + ` +
-    "CI-gate contract + version literals + release-set counts + dual-canvas decision consistent, " +
-    "and consuming-project CLI preconditions present " +
-    `(${files.length} docs scanned for rules 1–7; ${cliPreconditionFiles.length} docs/skills/agents/stories files for the CLI-precondition rule)` +
-    `${workflowsPresent ? "" : ". NOTE: workflow-ref + CI-gate-contract rules SKIPPED — no .github/workflows (ADR 0028)"}.`,
+  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}@elabs-ai/components-* component names + PR-template themes + ` +
+    "CI-gate contract + version literals + release-set counts + dual-canvas decision consistent " +
+    `(${files.length} docs scanned)` +
+    `${workflowsPresent ? "" : ". NOTE: workflow-ref + CI-gate-contract rules SKIPPED — no .github/workflows"}.`,
 );

@@ -7,7 +7,7 @@
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { AppIcon } from "@elabs/components-icons";
+import { AppIcon } from "@elabs-ai/components-icons";
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +20,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import {
   Composer,
   Conversation,

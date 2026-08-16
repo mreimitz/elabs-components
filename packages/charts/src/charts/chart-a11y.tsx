@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * chart-a11y — shared accessible-label utilities for @elabs/components-charts.
+ * chart-a11y — shared accessible-label utilities for @elabs-ai/components-charts.
  *
  * Issue #145. All chart SVG bodies use aria-hidden="true" because the raw SVG
  * paths carry no semantic meaning for AT users. This module provides:

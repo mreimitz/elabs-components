@@ -1,12 +1,12 @@
 [
-  "@elabs/components-ai::ChatShell",
-  "@elabs/components-ai::Conversation",
-  "@elabs/components-ai::Tool",
-  "@elabs/components-ui::Accordion",
-  "@elabs/components-ui::Breadcrumb",
-  "@elabs/components-ui::Calendar",
-  "@elabs/components-ui::Command",
-  "@elabs/components-ui::DatePicker",
-  "@elabs/components-ui::Drawer",
-  "@elabs/components-ui::DropdownMenu"
+  "@elabs-ai/components-ai::ChatShell",
+  "@elabs-ai/components-ai::Conversation",
+  "@elabs-ai/components-ai::Tool",
+  "@elabs-ai/components-ui::Accordion",
+  "@elabs-ai/components-ui::Breadcrumb",
+  "@elabs-ai/components-ui::Calendar",
+  "@elabs-ai/components-ui::Command",
+  "@elabs-ai/components-ui::DatePicker",
+  "@elabs-ai/components-ui::Drawer",
+  "@elabs-ai/components-ui::DropdownMenu"
 ]

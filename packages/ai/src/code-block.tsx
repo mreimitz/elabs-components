@@ -1,14 +1,14 @@
 "use client";
 
-import { Button, useLocale } from "@elabs/components-ui";
+import { Button, useLocale } from "@elabs-ai/components-ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import type { ComponentProps, CSSProperties, HTMLAttributes } from "react";
 import { Shimmer } from "./shimmer";

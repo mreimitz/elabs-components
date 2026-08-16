@@ -49,7 +49,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { cn, useCopyToClipboard, useLocale } from "@elabs/components-ui";
+import { cn, useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import type {
   ChartDatapoint,
   ChartDatapointClickHandler,

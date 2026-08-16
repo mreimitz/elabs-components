@@ -1,4 +1,4 @@
-import { normalizeFileSource } from "@elabs/components-ui";
+import { normalizeFileSource } from "@elabs-ai/components-ui";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

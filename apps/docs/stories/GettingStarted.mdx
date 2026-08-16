@@ -11,30 +11,28 @@ today and what still needs a manual step.
 
 ## Pick your path
 
-| I want to…                                     | Go to                                                    | Needs                              |
-| ---------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
-| **Start a brand-new app** with an AI assistant | [Path A](#path-a--start-a-new-app-in-claude-code)        | Claude Code + the plugin           |
-| **Add brand-ui to an app I already have**      | [Path B](#path-b--add-brand-ui-to-an-existing-app)       | GitHub Packages access + a bundler |
-| **Make my coding agent brand-ui-aware**        | [Path C](#path-c--make-your-coding-agent-brand-ui-aware) | the plugin _or_ the agent kit      |
-| **Work inside this monorepo**                  | [Path D](#path-d--work-inside-this-monorepo)             | `pnpm install`                     |
+| I want to…                                     | Go to                                                    | Needs                         |
+| ---------------------------------------------- | -------------------------------------------------------- | ----------------------------- |
+| **Start a brand-new app** with an AI assistant | [Path A](#path-a--start-a-new-app-in-claude-code)        | Claude Code + the plugin      |
+| **Add brand-ui to an app I already have**      | [Path B](#path-b--add-brand-ui-to-an-existing-app)       | npm + a bundler               |
+| **Make my coding agent brand-ui-aware**        | [Path C](#path-c--make-your-coding-agent-brand-ui-aware) | the plugin _or_ the agent kit |
+| **Work inside this monorepo**                  | [Path D](#path-d--work-inside-this-monorepo)             | `pnpm install`                |
 
-> **The one thing to know first: this is _not_ on the public npm registry.**
-> `npm install @elabs/components-ui` **404s** there — the packages are
-> `private` and published to **GitHub Packages** instead. You need a one-time
-> `.npmrc` scope mapping + a `read:packages` token to install them; after that
-> they behave like any other npm dependency (real semver, lockfiles, `pnpm update`).
-> Everything below reflects that. (Full detail:
+> **The one thing to know first: there is nothing to set up.** The packages are
+> **public on npmjs.org**, so `pnpm add @elabs-ai/components-ui` works as-is — no
+> `.npmrc`, no token, no CI secret — and they behave like any other npm
+> dependency (real semver, lockfiles, `pnpm update`). (Full detail:
 > `docs/CONSUMING.md`.)
 
 ## The bundled offering — the five pieces and where each lives
 
-| Piece                                                                                                                                                                                                                                                                     | What it is                                                                                    | How you get it                               |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Component packages** (`@elabs/components-ui`, `@elabs/components-tokens`, `@elabs/components-data`, `@elabs/components-ai`, `@elabs/components-charts`, `@elabs/components-flow`, `@elabs/components-marketing`, `@elabs/components-editor`, `@elabs/components-icons`) | the actual React components + themes                                                          | **GitHub Packages** → `pnpm add` (Path B)    |
-| **The CLI** (`@elabs/components-cli`, bin `brand-ui`)                                                                                                                                                                                                                     | deterministic `info` / `search` / `docs` / `tokens` / `audit` over the component manifest     | GitHub Packages; then `pnpm exec brand-ui …` |
-| **The plugin**                                                                                                                                                                                                                                                            | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                    |
-| **The agent kit**                                                                                                                                                                                                                                                         | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo         |
-| **The registry**                                                                                                                                                                                                                                                          | copy-own block/template JSON (`shadcn add`)                                                   | **self-hosted** JSON (see Path B step 5)     |
+| Piece                                                                                                                                                                                                                                                                                                | What it is                                                                                    | How you get it                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Component packages** (`@elabs-ai/components-ui`, `@elabs-ai/components-tokens`, `@elabs-ai/components-data`, `@elabs-ai/components-ai`, `@elabs-ai/components-charts`, `@elabs-ai/components-flow`, `@elabs-ai/components-marketing`, `@elabs-ai/components-editor`, `@elabs-ai/components-icons`) | the actual React components + themes                                                          | **npmjs.org** — `pnpm add` (Path B)      |
+| **The CLI** (`@elabs-ai/components-cli`, bin `brand-ui`)                                                                                                                                                                                                                                             | deterministic `info` / `search` / `docs` / `tokens` / `audit` over the component manifest     | npmjs.org; then `pnpm exec brand-ui …`   |
+| **The plugin**                                                                                                                                                                                                                                                                                       | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                |
+| **The agent kit**                                                                                                                                                                                                                                                                                    | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo     |
+| **The registry**                                                                                                                                                                                                                                                                                     | copy-own block/template JSON (`shadcn add`)                                                   | **self-hosted** JSON (see Path B step 5) |
 
 ## Path A — Start a new app in Claude Code
 
@@ -53,19 +51,18 @@ plugin's skills do the work.
    "build me a sales dashboard" / "I need an admin console" to **`brand-ui-new-app`**,
    which runs a short interview, writes a reviewable **`app-spec.md`**, then
    **scaffolds from the matching template** — app code, the root wiring
-   (`@elabs/components-tokens` styles + `<ThemeProvider>` + Tailwind `@source` lines), and a
+   (`@elabs-ai/components-tokens` styles + `<ThemeProvider>` + Tailwind `@source` lines), and a
    **starter `CLAUDE.md`** so later sessions stay on-brand.
 
-3. **Make it run.** The scaffold is _code_; to actually start it you still install
-   the component packages from GitHub Packages — that's **Path B**. If you
+3. **Make it run.** The scaffold is _code_; to actually start it you still
+   install the component packages — that's **Path B**, one `pnpm add`. If you
    scaffold **inside this monorepo** (`apps/`), the workspace already provides
    them and it runs immediately.
 
 > **Status / gap:** the interview + template scaffold are shipped; the deeper
 > spec-driven file-emitting scaffold engine (the CLI `scaffold` command) is still
-> evolving (VP-02). And the new-app flow doesn't yet automate the Path B GitHub
-> Packages install (`.npmrc` + token) for a _standalone_ project — you do that
-> step yourself today.
+> evolving (VP-02). And the new-app flow doesn't yet run the Path B `pnpm add`
+> for a _standalone_ project — you do that one step yourself today.
 
 ## Path B — Add brand-ui to an existing app
 
@@ -73,20 +70,12 @@ Four steps. This is the condensed version; the authoritative, copy-pasteable gui
 (peers, Next.js, troubleshooting, upgrading) is
 `docs/CONSUMING.md`.
 
-**1 · Authenticate, then install the packages (GitHub Packages, not the public
-registry).** Add the `@elabs` scope mapping to your project's `.npmrc`:
-
-```ini
-@elabs:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Provide `GITHUB_TOKEN` (a **classic** PAT with `read:packages` — fine-grained PATs
-don't reliably work against GitHub Packages). Then install like any normal
+**1 · Install the packages.** They are public on npmjs.org, so there is no
+registry to configure and no token to provision — install them like any normal
 dependency:
 
 ```bash
-pnpm add @elabs/components-tokens @elabs/components-ui
+pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
 ```
 
 No `file:` deps and no `pnpm.overrides`/`resolutions` mirror block needed — real
@@ -96,12 +85,12 @@ registry resolution handles cross-package peers. (All packages are **ESM-only**.
 required; the reference themes are opt-in:
 
 ```css
-@import "@elabs/components-tokens/styles.css"; /* Tailwind + token→utility map + :root base + fonts */
-@source "../node_modules/@elabs/components-ui/dist"; /* one @source per @brand pkg you render */
+@import "@elabs-ai/components-tokens/styles.css"; /* Tailwind + token→utility map + :root base + fonts */
+@source "../node_modules/@elabs-ai/components-ui/dist"; /* one @source per @brand pkg you render */
 
 /* Opt-in reference themes. Import the ones you want, or none and ship your own. */
-@import "@elabs/components-tokens/themes/light.css";
-@import "@elabs/components-tokens/themes/dark.css";
+@import "@elabs-ai/components-tokens/themes/light.css";
+@import "@elabs-ai/components-tokens/themes/dark.css";
 ```
 
 > **The #1 consumer mistake:** skip the `@source` line and components render
@@ -116,9 +105,9 @@ required; the reference themes are opt-in:
 **4 · Wrap the app root** in `ThemeProvider`:
 
 ```tsx
-import "@elabs/components-tokens/styles.css";
-import { ThemeProvider } from "@elabs/components-tokens";
-import { Button, Card } from "@elabs/components-ui";
+import "@elabs-ai/components-tokens/styles.css";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { Button, Card } from "@elabs-ai/components-ui";
 
 export default function App() {
   return (
@@ -162,21 +151,20 @@ agent layer so it uses the real inventory instead of guessing.
 - **Other harnesses** (Cursor, Copilot, Gemini) — vendor the **agent kit** zip
   (sanitized `skills/` + `brand-ui.manifest.json` + `llms.txt`) and point the tool at
   `llms.txt`.
-- **The CLI** — install `@elabs/components-cli` from GitHub Packages (same auth as
-  Path B step 1: `.npmrc` scope mapping + a `read:packages` PAT), then the
-  skill's commands work in your project:
+- **The CLI** — install `@elabs-ai/components-cli` from npm (nothing to configure),
+  then the skill's commands work in your project:
 
   ```bash
-  pnpm add -D @elabs/components-cli
-  pnpm exec brand-ui info            # themes, tokens, the @elabs/components-* packages you have
+  pnpm add -D @elabs-ai/components-cli
+  pnpm exec brand-ui info            # themes, tokens, the @elabs-ai/components-* packages you have
   pnpm exec brand-ui search <query>  # find a component / hook / registry item
   pnpm exec brand-ui docs <Name>     # real props + intent — never guess the API
   ```
 
-> **Status / gap:** `brand-ui …` / `@elabs/components-cli …` only resolve **after** you install
-> `@elabs/components-cli` — it is a private GitHub Packages dependency, not on the
-> public npm registry. Inside Claude Code with the plugin **and the `@elabs`
-> scope authenticated**, prefer the `mcp__brand-ui__*` tools instead.
+> `brand-ui …` resolves once `@elabs-ai/components-cli` is installed; `npx -y
+@elabs-ai/components-cli <cmd>` runs it with no install at all. Inside Claude Code
+> with the plugin installed, prefer the `mcp__brand-ui__*` tools — the plugin
+> launches the same CLI for you.
 
 ## Path D — Work inside this monorepo
 
@@ -187,7 +175,7 @@ pnpm playground     # the Vite demo app
 pnpm build          # tsup → dist/ for every package
 ```
 
-Import across packages via the `@elabs/components-*` alias (never relative paths). Scaffold a
+Import across packages via the `@elabs-ai/components-*` alias (never relative paths). Scaffold a
 new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writes the
 `tsx`/`index.ts`/`stories`/`test`, adds the barrel export, and refreshes the manifest.
 
@@ -197,7 +185,7 @@ new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writ
 | --------------------------------------- | --------------------------------------------------------------------------- | ------------ |
 | Once per machine, to get the AI tooling | `/plugin marketplace add <path-to-this-repo>`                               | Claude Code  |
 | Start a new app                         | tell `brand-ui-start` what to build                                         | Claude Code  |
-| Install components into your app        | `.npmrc` scope + PAT, then `pnpm add @elabs/components-*`                   | your project |
+| Install components into your app        | `pnpm add @elabs-ai/components-ui @elabs-ai/components-tokens`              | your project |
 | Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                     | your project |
 | Find a component                        | `brand-ui search <q>`                                                       | your project |
 | Get a component's real props            | `brand-ui docs <Name>`                                                      | your project |
@@ -212,7 +200,7 @@ colors, they reference tokens (`bg-background`, `text-muted-foreground`,
 In these docs, switch with the **theme** toolbar control (and try the
 orthogonal **Decoration**, **Density**, **Motion** dials). In an app, wrap the tree in
 `ThemeProvider` and read/set with `useTheme()`. Re-branding is a token change in
-`@elabs/components-tokens` `themes.css`, never a component change.
+`@elabs-ai/components-tokens` `themes.css`, never a component change.
 
 ## Build with tokens, not raw colors
 

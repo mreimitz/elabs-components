@@ -1,8 +1,13 @@
 {
-  "name": "@elabs/components-cli",
+  "name": "@elabs-ai/components-cli",
   "version": "3.1.0",
   "description": "brand-ui CLI — the deterministic backend for the brand-ui AI skills (component manifest, project context, search, docs, design audit).",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreimitz/elabs-components.git",
+    "directory": "packages/cli"
+  },
   "type": "module",
   "bin": {
     "brand-ui": "./bin/brand-ui.mjs"
@@ -13,6 +18,10 @@
     "templates",
     "brand-ui.manifest.json"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "manifest": "node ./bin/brand-ui.mjs manifest --write",
     "bundle": "node ./scripts/bundle-assets.mjs",

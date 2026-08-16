@@ -2,7 +2,7 @@
  * The consumer surface, exercised the way a real app would.
  *
  * This is the ONLY place in the repo that consumes the built `dist/` artifact.
- * Everything else resolves `@elabs/components-*` to TypeScript source via the `exports`
+ * Everything else resolves `@elabs-ai/components-*` to TypeScript source via the `exports`
  * map, which is why dist-only defects (stripped "use client" directives, fonts
  * copied to the wrong depth, extracted-then-orphaned CSS, a subpath pointing at
  * raw .ts) survived every other gate in the repo.
@@ -13,36 +13,36 @@
 import { createRoot } from "react-dom/client";
 
 // Foundation
-import { ThemeProvider } from "@elabs/components-tokens";
-import { Button } from "@elabs/components-ui";
-import { BrandLogo } from "@elabs/components-icons";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { Button } from "@elabs-ai/components-ui";
+import { BrandLogo } from "@elabs-ai/components-icons";
 
 // The server-safe leaves. These deliberately carry NO "use client" directive,
 // so importing them must not drag in a client boundary.
-import { cn } from "@elabs/components-ui/lib/cn";
-import { parseMarkdown } from "@elabs/components-editor/markdown/parse";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { parseMarkdown } from "@elabs-ai/components-editor/markdown/parse";
 
-// The @elabs/components-charts jsdom-safe test double (#364) — a second subpath, proving
+// The @elabs-ai/components-charts jsdom-safe test double (#364) — a second subpath, proving
 // `dist/test/index.js`/`dist/test/index.d.ts` resolve AND bundle from a real
 // consumer app, not just that the tarball's `exports` map points at a file that
 // exists (`checkExportsResolve` already covers that structurally; this covers
 // Vite actually being able to import + tree-shake it).
-import { LineChart as LineChartDouble } from "@elabs/components-charts/test";
+import { LineChart as LineChartDouble } from "@elabs-ai/components-charts/test";
 
 // One representative surface per package — proves each barrel resolves and
 // bundles, including the heavy engines (Monaco, MapLibre, React Flow, visx).
-import { DataTable } from "@elabs/components-data";
-import { ChatShell } from "@elabs/components-ai";
-import { CanvasShell } from "@elabs/components-flow";
-import { MapCanvas } from "@elabs/components-maps";
-import { MetricCard } from "@elabs/components-charts";
-import { Hero } from "@elabs/components-marketing";
-import { CodeEditor } from "@elabs/components-editor";
+import { DataTable } from "@elabs-ai/components-data";
+import { ChatShell } from "@elabs-ai/components-ai";
+import { CanvasShell } from "@elabs-ai/components-flow";
+import { MapCanvas } from "@elabs-ai/components-maps";
+import { MetricCard } from "@elabs-ai/components-charts";
+import { Hero } from "@elabs-ai/components-marketing";
+import { CodeEditor } from "@elabs-ai/components-editor";
 // The viewer's parser engines are OPTIONAL peers and are deliberately NOT
 // installed here — this import must still resolve and bundle, which is the
 // proof that a consumer who skips them gets the graceful "format unavailable"
 // panel instead of a build error (ADR 0024 §2).
-import { FileViewer } from "@elabs/components-viewer";
+import { FileViewer } from "@elabs-ai/components-viewer";
 
 import "./index.css";
 

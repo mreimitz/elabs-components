@@ -14,8 +14,8 @@
  * follows the scroll, and the pager scrolls.
  */
 
-import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs/components-ui";
-import { cn, ProseHeading, useLocale } from "@elabs/components-ui";
+import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs-ai/components-ui";
+import { cn, ProseHeading, useLocale } from "@elabs-ai/components-ui";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { MarkedText } from "../../components/marked-text";

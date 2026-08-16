@@ -73,7 +73,7 @@ as the policy that makes the subtle default compliant.**
 ## Consequences
 
 - **Visual change is bounded.** Form fields (`Input`, `Textarea`, `Select`,
-  `Checkbox`, `Toggle`, `RadioGroup`, `InputOTP`, `InputGroup`, and `@elabs/components-data`
+  `Checkbox`, `Toggle`, `RadioGroup`, `InputOTP`, `InputGroup`, and `@elabs-ai/components-data`
   `FacetFilter`/`ColumnPicker` — the `border-input` sites) get a crisper, darker
   resting outline in the four light/dark themes. Nothing else changes until the
   follow-up migration moves _load-bearing_ dividers to `border-strong`.
@@ -117,7 +117,7 @@ the theme's subtle hairline, **including** text `Input`, `Textarea`, `InputOTP`,
 The change is a token-value edit in `themes.css` only; no component shape changes
 (the lowered token cascades to every `border-input` site for free — `Input`,
 `Textarea`, `InputOTP`, `Checkbox`, `RadioGroup`, `Toggle`, `Select`, color-picker,
-and `@elabs/components-data` `ColumnPicker`/`FacetFilter`).
+and `@elabs-ai/components-data` `ColumnPicker`/`FacetFilter`).
 
 | Theme           | old `--input` (vs card)        | new `--input` (vs card)        | Rationale                                                                                     |
 | --------------- | ------------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------- |

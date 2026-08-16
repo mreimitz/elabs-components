@@ -1,14 +1,14 @@
 /**
- * @elabs/components-editor — a token-themed Monaco (VS Code) editor wrapped as brand-ui
+ * @elabs-ai/components-editor — a token-themed Monaco (VS Code) editor wrapped as brand-ui
  * components.
  *
  * Monaco is a self-rendering editor engine; this package wraps it the way
- * @elabs/components-flow wraps React Flow and @elabs/components-data wraps TanStack. The editing
+ * @elabs-ai/components-flow wraps React Flow and @elabs-ai/components-data wraps TanStack. The editing
  * surface + widgets are Monaco's, recolored from the active brand theme via the
  * theming bridge; the chrome (toolbar, file tabs, copy button) is brand-ui.
  *
  * Worker setup (for completions/diagnostics) — import ONCE at the app entry:
- *   import "@elabs/components-editor/monaco-environment";   // Vite apps
+ *   import "@elabs-ai/components-editor/monaco-environment";   // Vite apps
  */
 export {
   CodeEditor,

@@ -1,5 +1,5 @@
 /**
- * @elabs/components-tokens — theme types
+ * @elabs-ai/components-tokens — theme types
  *
  * ## Theming is OPEN (ADR 0029)
  *

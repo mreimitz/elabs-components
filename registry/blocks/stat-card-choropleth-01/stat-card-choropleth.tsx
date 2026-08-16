@@ -1,15 +1,15 @@
 "use client";
 
-import type { ChoroplethFeature } from "@elabs/components-charts";
+import type { ChoroplethFeature } from "@elabs-ai/components-charts";
 import {
   ChartStatFlow,
   ChoroplethChart,
   ChoroplethFeatureComponent,
   ChoroplethTooltip,
-} from "@elabs/components-charts";
+} from "@elabs-ai/components-charts";
 import { useState } from "react";
 import { useWorldDataStandalone } from "./lib/use-world-data";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs-ai/components-ui";
 import { getVisitorColor, getVisitorValue, visitorStats } from "./data/visitors";
 import {
   StatCardChart,

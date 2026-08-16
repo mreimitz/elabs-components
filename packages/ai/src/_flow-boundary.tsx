@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The React Flow half of `@elabs/components-ai`'s in-chat agent
+ * The React Flow half of `@elabs-ai/components-ai`'s in-chat agent
  * workspace graph — `Canvas`, `Controls`, `Edge`, `Node`, `Panel`, `Toolbar` —
  * split out so the engine can be `lazy()`-loaded.
  *
@@ -24,8 +24,8 @@
  * fails if anything imports it statically, which would put React Flow back in
  * the entry chunk and make the `lazy()` pointless.
  */
-import { Card } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { Card } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { EdgeProps, InternalNode, Node as FlowNode } from "@xyflow/react";
 import {
   Background,
@@ -53,7 +53,7 @@ const deleteKeyCode = ["Backspace", "Delete"];
 
 /**
  * The React Flow attribution badge is hidden on both canvas surfaces (here and
- * `@elabs/components-flow`'s `CanvasShell`). `@xyflow/react` is
+ * `@elabs-ai/components-flow`'s `CanvasShell`). `@xyflow/react` is
  * MIT — the licence requires the notice in source copies, not a rendered badge —
  * and xyflow asks that the badge only be hidden under a React Flow Pro
  * subscription. Keeping it is therefore a product/commercial decision, and this

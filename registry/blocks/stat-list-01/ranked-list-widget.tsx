@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
   Progress,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { COUNTRIES } from "./data/countries";
 
 /** A ranked list (Sales by country) — code + label + share bar + delta. */

@@ -9,7 +9,7 @@ export interface PageShellProps {
    * "default" (unset) — `header` renders inline, scrolls with the body.
    * Byte-identical to today.
    *
-   * "toolbar" — for a `<ViewToolbar>` header (`@elabs/components-ui`,
+   * "toolbar" — for a `<ViewToolbar>` header (`@elabs-ai/components-ui`,
    * `Docs/View Toolbar Contract`): wraps `header` in a `sticky top-0` container
    * with an opaque/blurred fill and a bottom hairline, so it stays pinned while
    * the body scrolls beneath it. PLACES whatever node `header` is — it does not

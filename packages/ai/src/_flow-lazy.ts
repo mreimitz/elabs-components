@@ -1,6 +1,6 @@
 /**
  * The one dynamic-import seam every React-Flow-backed component in
- * `@elabs/components-ai` goes through.
+ * `@elabs-ai/components-ai` goes through.
  *
  * `@xyflow/react` declares no `sideEffects`, so a static import from any of the
  * six public modules (`canvas`, `controls`, `edge`, `node`, `panel`, `toolbar`)

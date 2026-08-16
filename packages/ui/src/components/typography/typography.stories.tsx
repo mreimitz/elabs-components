@@ -29,7 +29,7 @@ const meta = {
           "(−6.25%) as well as the spacing, and `spacious` grows it (+6.25%) — see the " +
           "*Density scale* story. `comfortable` is the exact identity.\n\n" +
           "**Font smoothing ships with the tokens stylesheet** (#345): the `@layer base` `body` rule in " +
-          "`@elabs/components-tokens/styles.css` sets `-webkit-font-smoothing: antialiased` and " +
+          "`@elabs-ai/components-tokens/styles.css` sets `-webkit-font-smoothing: antialiased` and " +
           "`-moz-osx-font-smoothing: grayscale`, so every consumer inherits it from the one import. Do not " +
           "re-add those two lines in an app stylesheet. It is a base-layer rule, so an app that genuinely " +
           "wants subpixel rendering can still override it.",
@@ -52,7 +52,7 @@ export const TextVariants: Story = {
       <Text variant="caption">Caption — secondary / supporting body.</Text>
       <Text variant="meta">Meta — metadata, eyebrows, timestamps.</Text>
       <Text variant="kpi">12,480</Text>
-      <Text variant="code">pnpm --filter @elabs/components-ui test</Text>
+      <Text variant="code">pnpm --filter @elabs-ai/components-ui test</Text>
     </div>
   ),
 };

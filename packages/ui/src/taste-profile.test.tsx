@@ -22,7 +22,7 @@ import {
   useMotionPreference,
   useTasteProfile,
   type DecorationLevel,
-} from "@elabs/components-tokens";
+} from "@elabs-ai/components-tokens";
 
 /** A probe that prints the live profile and drives every axis from context. */
 function Probe() {

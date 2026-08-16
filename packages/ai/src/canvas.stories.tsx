@@ -19,7 +19,7 @@ const meta = {
         component:
           "The **in-chat agent workspace graph** — a branded React Flow surface built from " +
           "`Canvas`, `Node`, `Edge`, `Controls`, `Panel` and `NodeToolbar`. For an author-built " +
-          "diagram screen reach for `@elabs/components-flow`'s `CanvasShell` " +
+          "diagram screen reach for `@elabs-ai/components-flow`'s `CanvasShell` " +
           "instead (ADR 0018). React Flow itself is loaded through a dynamic `import()` " +
           "(ADR 0019), so it is not in any consumer's entry chunk; the canvas reserves its " +
           "box with a layout-shaped `Skeleton` until the engine chunk arrives.",

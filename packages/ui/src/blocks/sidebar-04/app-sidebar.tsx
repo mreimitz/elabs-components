@@ -17,8 +17,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@elabs/components-ui";
-import { NavUser } from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
+import { NavUser } from "@elabs-ai/components-ui";
 import { useMail } from "./mail-context";
 
 const data = {

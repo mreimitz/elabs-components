@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { BUILT_IN_THEME_META, BUILT_IN_THEMES } from "@elabs/components-tokens";
+import { BUILT_IN_THEME_META, BUILT_IN_THEMES } from "@elabs-ai/components-tokens";
 
 /**
  * Regression lock for #3: the Tailwind `dark:` custom variant in themes.css must

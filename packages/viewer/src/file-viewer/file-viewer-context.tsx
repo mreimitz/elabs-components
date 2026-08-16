@@ -14,7 +14,7 @@
  * it feeds, in `file-viewer.tsx`.
  */
 
-import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs/components-ui";
+import type { ProseHeadingLevel, ResolvedFileSource } from "@elabs-ai/components-ui";
 import { createContext, use } from "react";
 
 import type { ViewerError } from "../core/errors";

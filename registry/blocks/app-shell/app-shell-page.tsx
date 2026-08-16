@@ -1,7 +1,7 @@
 /**
- * Basic app-shell scaffold (copy-owned block) using the @elabs/components-ui sidebar
+ * Basic app-shell scaffold (copy-owned block) using the @elabs-ai/components-ui sidebar
  * primitive. For richer shells see the sidebar-02 / sidebar-04 / sidebar-05
- * blocks. Depends on installed @elabs/components-ui + lucide-react.
+ * blocks. Depends on installed @elabs-ai/components-ui + lucide-react.
  */
 "use client";
 
@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 import { BarChart3, FileText, Home, Settings } from "lucide-react";
 
 const nav = [

@@ -1,5 +1,5 @@
 /**
- * @elabs/components-tokens — density.css
+ * @elabs-ai/components-tokens — density.css
  * --------------------------------------------------------------------------
  * The DENSITY overlay: rescales the system's two size channels — SPACING and
  * TYPE — so a whole surface tightens or opens up together, across ALL packages,
@@ -80,7 +80,7 @@
  *   identity inside a denser region (which is why that block redeclares
  *   everything rather than being empty).
  *
- * Copied to dist/ by the @elabs/components-tokens build. See theme-provider.tsx for the
+ * Copied to dist/ by the @elabs-ai/components-tokens build. See theme-provider.tsx for the
  * ThemeProvider/useDensity surface and theme-types.ts for type constants.
  */
 

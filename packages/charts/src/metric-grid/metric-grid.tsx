@@ -1,8 +1,8 @@
 "use client";
 
 import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
-import { MetricCard, RevealGroup, useLocale } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { MetricCard, RevealGroup, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface MetricGridProps {
   /** Optional so a `loading` grid can render its placeholder shape before any tiles exist. */

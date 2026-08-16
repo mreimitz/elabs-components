@@ -1,8 +1,12 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { BUILT_IN_THEME_DEFINITIONS, defineTheme, ThemeProvider } from "@elabs/components-tokens";
-import { ThemeSwitcher } from "@elabs/components-ui";
+import {
+  BUILT_IN_THEME_DEFINITIONS,
+  defineTheme,
+  ThemeProvider,
+} from "@elabs-ai/components-tokens";
+import { ThemeSwitcher } from "@elabs-ai/components-ui";
 
 /**
  * THEMING — how one set of components renders any number of different looks.
@@ -14,7 +18,7 @@ import { ThemeSwitcher } from "@elabs/components-ui";
  * — so re-theming is purely a token swap.
  *
  * **Theming is OPEN (ADR 0029).** `light` and `dark` are the two REFERENCE
- * themes shipped by `@elabs/components-tokens`; they are the worked example, not
+ * themes shipped by `@elabs-ai/components-tokens`; they are the worked example, not
  * the menu. You author your own `[data-theme]` block, register it with
  * `<ThemeProvider themes={…}>`, and every component themes correctly with no
  * change to the library — see "Bring your own theme" below.
@@ -212,7 +216,7 @@ export const Overview: Story = {
   // override collapses them to one identical declaration set. MUST pass
   // after the fix (and at decoration 0, where colour alone
   // already separates them). Run under both theme globals via
-  // `mcp__storybook__run-story-tests` / `pnpm --filter @elabs/components-docs test-storybook`.
+  // `mcp__storybook__run-story-tests` / `pnpm --filter @elabs-ai/components-docs test-storybook`.
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const completeChip = await canvas.findByText("Active");
@@ -243,10 +247,10 @@ export const ShippedThemes: Story = {
     <div className="space-y-4">
       <p className="m-0 max-w-prose text-caption text-muted-foreground">
         Two <strong>reference</strong> themes ship in{" "}
-        <code className="text-code">@elabs/components-tokens</code> — enough to prove the light/dark
-        contract, and the worked example for one you author yourself. Pass the <strong>slug</strong>{" "}
-        (the <code className="text-code">data-theme</code> value), never the display name, when
-        setting a theme programmatically or via the Storybook globals.
+        <code className="text-code">@elabs-ai/components-tokens</code> — enough to prove the
+        light/dark contract, and the worked example for one you author yourself. Pass the{" "}
+        <strong>slug</strong> (the <code className="text-code">data-theme</code> value), never the
+        display name, when setting a theme programmatically or via the Storybook globals.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {THEMES.map((t) => (

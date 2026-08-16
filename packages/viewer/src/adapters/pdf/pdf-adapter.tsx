@@ -46,7 +46,7 @@
  * reader is, and typing one is a scroll.
  */
 
-import { cn, StatePanel, useLocale, type ResolvedFileSource } from "@elabs/components-ui";
+import { cn, StatePanel, useLocale, type ResolvedFileSource } from "@elabs-ai/components-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toViewerError } from "../../core/errors";

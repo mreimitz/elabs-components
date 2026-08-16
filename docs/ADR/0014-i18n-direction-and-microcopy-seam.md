@@ -9,19 +9,19 @@
 
 ## Context
 
-`@elabs/components-ui` ships `LocaleProvider` / `useLocale()` with `locale`, `dir`, `t`,
+`@elabs-ai/components-ui` ships `LocaleProvider` / `useLocale()` with `locale`, `dir`, `t`,
 `formatNumber`, `formatDate`. It sets `dir` on its own wrapper `<div dir={dir}>`, but
 **portalled Radix content escapes that wrapper** — Dialog, Sheet, Popover, DropdownMenu,
 Select, Tooltip, ContextMenu, HoverCard, Menubar, NavigationMenu all render through a
 portal outside the `dir` ancestor, so in an RTL locale those overlays lay out LTR. Radix
 solves exactly this with `@radix-ui/react-direction`'s `DirectionProvider`, which every
 Radix primitive reads via context regardless of DOM position. That dep is **not yet in
-the tree** (verified absent); `@elabs/components-ui` already depends on ~25 `@radix-ui/*` packages
+the tree** (verified absent); `@elabs-ai/components-ui` already depends on ~25 `@radix-ui/*` packages
 at the `^1.x`/`^2.x` line.
 
-Separately, `@elabs/components-ai` hardcodes locale in formatters: `context.tsx` has 11
+Separately, `@elabs-ai/components-ai` hardcodes locale in formatters: `context.tsx` has 11
 `new Intl.NumberFormat("en-US", …)` and `commit.tsx` a `new Intl.RelativeTimeFormat("en", …)`.
-`@elabs/components-ai` depends on `@elabs/components-ui` (`workspace:*`), so it **can** consume `useLocale()`.
+`@elabs-ai/components-ai` depends on `@elabs-ai/components-ui` (`workspace:*`), so it **can** consume `useLocale()`.
 These hardcoded `"en-US"`/`"en"` strings are a microcopy/format-locale leak that defeats
 the LocaleProvider for any non-English consumer.
 
@@ -44,11 +44,11 @@ runtime dependency in the foundation package) — architect-gated.
 - No public API change — `LocaleProvider`'s `dir` prop already exists; this only makes it
   reach Radix portals. Backward compatible.
 
-### (b) Microcopy / format-locale seam in `@elabs/components-ai`
+### (b) Microcopy / format-locale seam in `@elabs-ai/components-ai`
 
-- The 11 `Intl.NumberFormat` and the `RelativeTimeFormat` in `@elabs/components-ai` read `locale`
-  from `useLocale()` instead of the hardcoded `"en-US"`/`"en"`. `@elabs/components-ai` already
-  depends on `@elabs/components-ui`, so this is an in-graph consumption, not a new edge.
+- The 11 `Intl.NumberFormat` and the `RelativeTimeFormat` in `@elabs-ai/components-ai` read `locale`
+  from `useLocale()` instead of the hardcoded `"en-US"`/`"en"`. `@elabs-ai/components-ai` already
+  depends on `@elabs-ai/components-ui`, so this is an in-graph consumption, not a new edge.
   - Prefer the **`formatNumber` helper on the context** (`useLocale().formatNumber(n, opts)`)
     over a raw `new Intl.NumberFormat(locale, opts)` — it already caches formatters per
     `locale+opts` (avoids re-allocating Intl objects per render). For `RelativeTimeFormat`
@@ -58,7 +58,7 @@ runtime dependency in the foundation package) — architect-gated.
     for a single caller).
   - These components stay **presentational + runtime-agnostic** (D5/D6): `useLocale()` is a
     pure presentation-layer read; no model/transport concern is introduced.
-- **Non-hook formatting path:** some `@elabs/components-ai` helpers may format outside a component
+- **Non-hook formatting path:** some `@elabs-ai/components-ai` helpers may format outside a component
   (module-scope utilities). For those, the consumer must pass `locale` explicitly (a
   function arg defaulting to `"en-US"`), since hooks can't run there. Do NOT introduce a
   module-level mutable "current locale" singleton — that breaks SSR/concurrent rendering.
@@ -87,10 +87,10 @@ seam is built either way.
 
 - `+` RTL becomes correct for portalled Radix overlays — the one structural i18n gap in
   the foundation — with no public API change.
-- `+` `@elabs/components-ai` numbers/dates/relative-times honor the active locale; the en-US leak is
+- `+` `@elabs-ai/components-ai` numbers/dates/relative-times honor the active locale; the en-US leak is
   closed; components stay presentational.
 - `+` English-only consumers see zero behavior change (opt-in seam).
-- `−` One new MIT runtime dep in `@elabs/components-ui` and a lockfile update (human-approved).
+- `−` One new MIT runtime dep in `@elabs-ai/components-ui` and a lockfile update (human-approved).
 
 ## References
 

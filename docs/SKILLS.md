@@ -1,7 +1,7 @@
 # brand-ui AI Skills
 
 An installable skill layer that supercharges UI work with brand-ui — for **two
-audiences**: developers building apps _with_ `@elabs/components-*`, and maintainers extending
+audiences**: developers building apps _with_ `@elabs-ai/components-*`, and maintainers extending
 the library itself. Concept and rationale: [CONCEPT-ai-skills.md](./CONCEPT-ai-skills.md).
 
 ## What ships
@@ -9,7 +9,7 @@ the library itself. Concept and rationale: [CONCEPT-ai-skills.md](./CONCEPT-ai-s
 | Skill                     | Audience              | What it does                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`brand-ui-start`**      | everyone (front door) | The router/concierge. One question → build a NEW app (`brand-ui-new-app`), improve an EXISTING app (`brand-ui-migrate`), or just USE brand-ui (`brand-ui`). Entry point: `/brand-ui-start`.                                                                                                                                                                                        |
-| **`brand-ui`**            | consumer              | Auto-triggers when building UI with `@elabs/components-*`. Live project context, real component API, composition patterns, token rules, theming.                                                                                                                                                                                                                                   |
+| **`brand-ui`**            | consumer              | Auto-triggers when building UI with `@elabs-ai/components-*`. Live project context, real component API, composition patterns, token rules, theming.                                                                                                                                                                                                                                |
 | **`brand-ui-audit`**      | both                  | Deterministic static lint **+** rendered cross-theme WCAG-contrast & visual review. Phased, token-referenced findings → `/file-issue`.                                                                                                                                                                                                                                             |
 | **`brand-ui-component`**  | maintainer            | Scaffold/extend a component with the dedupe gate + quality gates + manifest refresh.                                                                                                                                                                                                                                                                                               |
 | **`brand-ui-theme`**      | maintainer + consumer | Create/retune themes and global tokens (radius, surfaces, re-brand).                                                                                                                                                                                                                                                                                                               |
@@ -29,7 +29,7 @@ plugin (`plugin.json` → `"agents": "./.claude/agents"`). The headline evaluato
 root-cause-analyst, design-system-architect, docs-writer, registry-curator, and the
 `repo-architect-*` cluster). Subagents activate in Claude Code + Cowork, not plain chat.
 
-Backed by the **`@elabs/components-cli`** engine (`packages/cli`) — the deterministic backend
+Backed by the **`@elabs-ai/components-cli`** engine (`packages/cli`) — the deterministic backend
 the skills call so they never guess:
 
 ```bash
@@ -77,7 +77,7 @@ checkout. Locked by `packages/cli/test/packaging.test.mjs`.
 
 Every command accepts `--json` (agent-consumable). In this monorepo:
 `pnpm brand-ui <cmd>`. In a consuming project, install the CLI first — it's a
-private GitHub Packages dependency (`pnpm add -D @elabs/components-cli`, see
+private GitHub Packages dependency (`pnpm add -D @elabs-ai/components-cli`, see
 `docs/CONSUMING.md` §1 + §7a) — then `pnpm exec brand-ui <cmd>`.
 
 ## Ground truth, no drift
@@ -126,7 +126,7 @@ skills/                       # canonical skills (source of truth)
 .claude/agents/               # brand-ui subagents (shipped via plugin.json "agents")
 .claude-plugin/               # plugin.json (skills + agents) + marketplace.json
 .mcp.json                     # Storybook MCP (auto-adopted as the plugin's MCP config)
-packages/cli/                 # @elabs/components-cli — the engine (info/search/docs/manifest/audit + scaffold/scan/map/codemod)
+packages/cli/                 # @elabs-ai/components-cli — the engine (info/search/docs/manifest/audit + scaffold/scan/map/codemod)
 brand-ui.manifest.json        # generated ground truth
 scripts/check-plugin.mjs      # plugin-manifest gate (pnpm plugin:check)
 scripts/build-skills.mjs      # optional multi-harness mirror

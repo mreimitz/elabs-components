@@ -20,8 +20,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
   MetricCard,
-} from "@elabs/components-ui";
-import { AppIcon } from "@elabs/components-icons";
+} from "@elabs-ai/components-ui";
+import { AppIcon } from "@elabs-ai/components-icons";
 import { MetricGrid } from "./metric-grid/metric-grid";
 import { BarChart3, Home, Settings, Users } from "lucide-react";
 

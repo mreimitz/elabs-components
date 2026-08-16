@@ -1,7 +1,7 @@
 /**
  * Flow canvas scaffold (copy-owned block).
  * Remember to `import "@xyflow/react/dist/style.css"` once at the app root.
- * Depends on installed @elabs/components-flow + @xyflow/react.
+ * Depends on installed @elabs-ai/components-flow + @xyflow/react.
  */
 "use client";
 
@@ -14,7 +14,7 @@ import {
   useNodesState,
   type BrandFlowNode,
   type Edge,
-} from "@elabs/components-flow";
+} from "@elabs-ai/components-flow";
 
 const nodeTypes = { brand: FlowNode };
 const edgeTypes = { brand: FlowEdge };

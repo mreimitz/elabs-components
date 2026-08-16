@@ -6,7 +6,7 @@ Goal: ship an installable **AI skill layer** for `brand-ui` that supercharges UI
 creation for **two audiences at once**:
 
 1. **The maintainer (you)** — building and extending the library _inside_ this monorepo.
-2. **The consumer** — a developer building their _own_ app _with_ `@elabs/components-*`, in
+2. **The consumer** — a developer building their _own_ app _with_ `@elabs-ai/components-*`, in
    their own repo, in Claude Code / Cursor / Codex / etc.
 
 This document analyzes the reference systems, then proposes a concrete architecture
@@ -27,7 +27,7 @@ Three skill tracks:
 
 - **`brand-ui` (consumer skill)** — the shadcn-model auto-triggering skill that
   teaches a consuming project how to discover, install, compose, theme, and
-  correctly use `@elabs/components-*`. _This is the missing piece today._
+  correctly use `@elabs-ai/components-*`. _This is the missing piece today._
 - **maintainer skills** — thin skills wrapping the commands/agents you already
   have (`new-component`, `new-theme`, registry curation, release).
 - **`brand-ui-audit` (quality skill)** — productizes the deterministic checks I
@@ -54,7 +54,7 @@ corrected several points; the build was updated to match:
   OR `reference/product.md` per task, which flips the defaults. brand-ui is a
   **product-register** system by definition (its `product.md` equivalent reads almost
   verbatim like brand-ui's philosophy: one family, fixed rem scale, restrained color,
-  all component states, skeleton loading, no modal-first); `@elabs/components-marketing` surfaces
+  all component states, skeleton loading, no modal-first); `@elabs-ai/components-marketing` surfaces
   are **brand-register** (distinctiveness, required imagery, committed color). The
   `brand-ui-audit` skill now carries a register section.
 - **The detector is bigger than I first implied.** impeccable ships a **38-rule
@@ -62,7 +62,7 @@ corrected several points; the build was updated to match:
   (regex/source, static-html/jsdom, browser/DOM, visual/screenshot), each rule
   cross-linked to skill guidance via `<!-- rule:id -->` anchors. My first `brand-ui audit`
   was a 6-rule static linter; it's now **~16 token-aware static rules** (the
-  regex-engine-applicable subset), calibrated against the real `@elabs/components-ui` source with
+  regex-engine-applicable subset), calibrated against the real `@elabs-ai/components-ui` source with
   false positives fixed and an advisory/blocking split. The DOM/visual rules stay in the
   skill's browser pass by design.
 - **Rendered contrast — better technique available.** impeccable's
@@ -183,7 +183,7 @@ Phase 3 wrapper over the _same_ engine.
 ### Track A — `brand-ui` (consumer, the headline)
 
 - `name: brand-ui`, `user-invocable: false` (auto-triggers when a project depends
-  on `@elabs/components-*` or asks to build UI with it).
+  on `@elabs-ai/components-*` or asks to build UI with it).
 - **Live context:** `!`npx brand-ui info --json``→ installed`@brand` packages,
   active theme(s), token set, available components, registry URL.
 - **Critical rules** (linked files, reused from `.claude/rules/*`): semantic
@@ -249,14 +249,13 @@ to productize first.
   `.cursor/`, `.gemini/`, `.codex/.agents/`, `.github/` layouts (impeccable's
   approach) so Cursor/Codex/Copilot/Gemini users get the same skill.
 - **CLI:** `npx brand-ui ...` via the package `bin`; works with or without the
-  plugin installed — but **not** without auth. `@elabs/components-cli`
-  is a **private GitHub Packages** dependency (ADR 0016), so every `npx brand-ui …`
-  / `npx @elabs/components-cli …` example in this document assumes the
-  one-time setup first: map the `@elabs` scope in `.npmrc` to
-  `npm.pkg.github.com` with a `read:packages` PAT, then
-  `pnpm add -D @elabs/components-cli` and call it as
-  `pnpm exec brand-ui …`. See `docs/CONSUMING.md` §1 + §7a. Without that, a bare
-  `npx` 404s (#265).
+  plugin installed. `@elabs-ai/components-cli` is **public on npmjs.org** (ADR 0016,
+  as amended), so the `npx brand-ui …` / `npx @elabs-ai/components-cli …` examples in
+  this document resolve as written — no `.npmrc`, no PAT. Adding it as a
+  devDependency (`pnpm add -D @elabs-ai/components-cli`, then `pnpm exec brand-ui …`)
+  is still worth doing to pin the version. See `docs/CONSUMING.md` §1 + §7a. The
+  bare-`npx` 404 that #265 documented was a property of the private registry and
+  no longer applies.
 
 ---
 

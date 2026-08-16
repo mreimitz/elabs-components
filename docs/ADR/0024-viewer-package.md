@@ -1,4 +1,4 @@
-# ADR 0024 — `@elabs/components-viewer` (adapter-registry leaf) + a shared file model in `@elabs/components-ui`
+# ADR 0024 — `@elabs-ai/components-viewer` (adapter-registry leaf) + a shared file model in `@elabs-ai/components-ui`
 
 - **Status:** accepted (2026-08-10)
 - **Deciders:** `brand-ui-design-system-architect` review; maintainer decisions on package
@@ -47,7 +47,7 @@ not adoptable as code:
 
 ## Decision
 
-### 1. Ship `@elabs/components-viewer` as a Layer-2 leaf
+### 1. Ship `@elabs-ai/components-viewer` as a Layer-2 leaf
 
 `tokens → ui → viewer`, the established wrap-an-engine pattern of `…-flow` (React Flow),
 `…-editor` (Monaco), `…-maps` (MapLibre) and `…-data` (TanStack). Registered in `ALLOWED`
@@ -60,7 +60,7 @@ charts marketing editor blueprint`); the only hyphens in the repo are infra conf
 correctly and matches the `ContextPanel*` convention. `FileViewer` shadows no JS global, so
 the ADR 0015 `MapCanvas`-not-`Map` concern does not apply.
 
-**Why not inside `@elabs/components-ai`.** Not for bundle weight — that
+**Why not inside `@elabs-ai/components-ai`.** Not for bundle weight — that
 argument is false here: `…-ai` already ships `mermaid`, `@xterm/xterm`,
 `@rive-app/react-webgl2`, `media-chrome`, `shiki` and `streamdown` as plain `dependencies`,
 so every chat consumer already installs all of it, and this package's parsers are optional
@@ -75,7 +75,7 @@ peers that aren't installed at all unless requested. The real reasons:
 3. **The registry is a package-level public contract.** Priority override, a versioned adapter
    protocol and an optional-peer surface are properties of a package's API. Grafting a second,
    differently-shaped contract onto `ai`'s flat-file surface muddies both.
-4. **Why not `@elabs/components-data`.** That package is TanStack-table-shaped
+4. **Why not `@elabs-ai/components-data`.** That package is TanStack-table-shaped
    tabular UI. A PDF/video/docx viewer is not tabular, and the csv/xlsx overlap resolves to
    `ui`'s `Table`, not `data`'s `DataTable`.
 
@@ -157,7 +157,7 @@ change that introduces the first optional peer.** Budget for fallout — `stream
 worker and the canvas→blob download need are written into `docs/CSP-AND-NETWORK.md` §2.7 as
 named carve-outs (`pnpm csp:check` keeps the two byte-identical).
 
-### 4. The shared file model lives in `@elabs/components-ui`
+### 4. The shared file model lives in `@elabs-ai/components-ui`
 
 `ui` (Layer 1) is the only place `ai`, `viewer` and future consumers can all reach, and it
 already hosts exactly this class of non-visual leaf (`lib/download.ts`, `lib/merge-refs.ts`,
@@ -249,7 +249,7 @@ a dependency) — the same shape as every other `ui` Radix wrapper, and `accessi
 already says not to reimplement focus management the primitive provides. It ships
 `role="toolbar"` + `aria-orientation` + roving focus for free.
 
-`@elabs/components-ai` already barrel-exports `Toolbar`
+`@elabs-ai/components-ai` already barrel-exports `Toolbar`
 (`packages/ai/src/index.ts:75`), which is React Flow's node toolbar and is **mis-named
 today**. It is renamed **`NodeToolbar`**, with `export { NodeToolbar as Toolbar }` kept as a
 deprecated alias for one minor and a migration note in `CHANGELOG.md ## Unreleased`.

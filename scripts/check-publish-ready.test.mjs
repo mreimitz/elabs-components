@@ -10,6 +10,11 @@
  * own. These rules are about the scope-equals-owner relationship, not about any
  * particular name — pinning them to the live scope is what made this file break
  * the moment the repo was renamed, while proving nothing extra.
+ *
+ * The REGISTRY hosts, by contrast, are real and load-bearing: `scope-mismatch`
+ * is GitHub Packages' rule alone, so which host a fixture publishes to is now
+ * part of what is being asserted. A made-up host would silently exercise the
+ * npmjs branch for every case.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -17,11 +22,15 @@ import {
   publishTarget,
   ownerFromRepo,
   scopeOf,
+  requiresOwnerScope,
   publishBlockers,
   npmrcBlockers,
 } from "./check-publish-ready.mjs";
 
-const REGISTRY = "https://npm.example-registry.test";
+/** The registry that ties a package's scope to its repository owner. */
+const REGISTRY = "https://npm.pkg.github.com";
+/** The registry that does not — scopes are owned independently there. */
+const PUBLIC_REGISTRY = "https://registry.npmjs.org/";
 
 /** A package.json with everything correct; tests mutate one field at a time. */
 const ok = () => ({
@@ -110,8 +119,44 @@ test("FAILS: no publishConfig.registry — it would publish to npmjs.org", () =>
 
 test("FAILS: registry pointing somewhere else entirely", () => {
   const p = ok();
-  p.publishConfig.registry = "https://registry.npmjs.org";
+  p.publishConfig.registry = "https://npm.example-registry.test";
   assert.equal(publishBlockers(p, ctx)[0].rule, "missing-registry");
+});
+
+// ── the scope rule belongs to GitHub Packages, not to npm publishing ─────────
+
+test("requiresOwnerScope: true for GitHub Packages, false for npmjs and junk", () => {
+  assert.equal(requiresOwnerScope("https://npm.pkg.github.com"), true);
+  assert.equal(requiresOwnerScope("https://NPM.PKG.GITHUB.COM/"), true);
+  assert.equal(requiresOwnerScope(PUBLIC_REGISTRY), false);
+  assert.equal(requiresOwnerScope("not a url"), false);
+});
+
+test("PASSES on npmjs.org: a scope the GitHub owner does not match", () => {
+  // The live case: `@elabs-ai/*` published from `github.com/mreimitz/…`. npmjs
+  // sells the scope independently, so demanding scope === owner here would fail
+  // a valid release outright.
+  const p = { ...ok(), name: "@brand/ui" };
+  p.publishConfig = { registry: PUBLIC_REGISTRY, exports: {} };
+  assert.deepEqual(publishBlockers(p, { ...ctx, registry: PUBLIC_REGISTRY }), []);
+});
+
+test("PASSES on npmjs.org even when the owner cannot be resolved", () => {
+  const p = { ...ok(), name: "@brand/ui" };
+  p.publishConfig = { registry: PUBLIC_REGISTRY, exports: {} };
+  assert.deepEqual(publishBlockers(p, { ...ctx, owner: null, registry: PUBLIC_REGISTRY }), []);
+});
+
+test("the other three rules still apply on npmjs.org", () => {
+  const v = publishBlockers(
+    { name: "@brand/ui", private: true },
+    { ...ctx, registry: PUBLIC_REGISTRY },
+  );
+  assert.deepEqual(
+    new Set(v.map((x) => x.rule)),
+    new Set(["private-package", "missing-repository", "missing-registry"]),
+    "dropping scope-mismatch must not disarm the rest of the preflight",
+  );
 });
 
 test("reports every independent blocker at once, not just the first", () => {
@@ -125,12 +170,25 @@ test("reports every independent blocker at once, not just the first", () => {
 });
 
 test("FAILS: .npmrc that does not map the scope", () => {
-  const v = npmrcBlockers("auto-install-peers=true\n", "acme-org", REGISTRY);
+  const v = npmrcBlockers("auto-install-peers=true\n", ["acme-org"], REGISTRY);
   assert.equal(v.length, 1);
   assert.equal(v[0].rule, "npmrc-unmapped");
 });
 
 test("PASSES: .npmrc with the scope mapped", () => {
   const npmrc = `auto-install-peers=true\n@acme-org:registry=${REGISTRY}\n`;
-  assert.deepEqual(npmrcBlockers(npmrc, "acme-org", REGISTRY), []);
+  assert.deepEqual(npmrcBlockers(npmrc, ["acme-org"], REGISTRY), []);
+});
+
+test("npmrcBlockers checks EVERY published scope, not just the first", () => {
+  // The mapping is keyed on what actually ships, so a second scope is covered
+  // the day it appears — and a scope mapped to the WRONG registry still fails.
+  const npmrc = `@acme-org:registry=${REGISTRY}\n@other:registry=https://elsewhere.test\n`;
+  const v = npmrcBlockers(npmrc, ["acme-org", "other"], REGISTRY);
+  assert.equal(v.length, 1);
+  assert.match(v[0].detail, /@other/);
+});
+
+test("npmrcBlockers accepts a bare string scope", () => {
+  assert.deepEqual(npmrcBlockers(`@acme-org:registry=${REGISTRY}\n`, "acme-org", REGISTRY), []);
 });

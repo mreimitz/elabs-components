@@ -24,7 +24,7 @@ import {
   distributablePackages,
 } from "./check-consumer-install.mjs";
 
-/** Build a throwaway node_modules tree: { "@elabs/components-ui/dist/index.js": "…" }. */
+/** Build a throwaway node_modules tree: { "@elabs-ai/components-ui/dist/index.js": "…" }. */
 function plant(files) {
   const root = mkdtempSync(join(tmpdir(), "brand-ui-gatetest-"));
   for (const [rel, content] of Object.entries(files)) {
@@ -39,7 +39,7 @@ const cleanup = (dir) => rmSync(dir, { recursive: true, force: true });
 // ── Defect 1: esbuild strips "use client" out of every bundle ────────────────
 test("FAILS: a client package whose dist lost the use-client directive", () => {
   const dir = plant({
-    "@elabs/components-ui/dist/index.js": "export const Button = () => null;\n",
+    "@elabs-ai/components-ui/dist/index.js": "export const Button = () => null;\n",
   });
   const v = [];
   checkUseClient(dir, v);
@@ -51,7 +51,7 @@ test("FAILS: a client package whose dist lost the use-client directive", () => {
 
 test("PASSES: once the banner puts the directive back", () => {
   const dir = plant({
-    "@elabs/components-ui/dist/index.js": '"use client";\nexport const Button = () => null;\n',
+    "@elabs-ai/components-ui/dist/index.js": '"use client";\nexport const Button = () => null;\n',
   });
   const v = [];
   checkUseClient(dir, v);
@@ -63,8 +63,8 @@ test("FAILS: a server-safe leaf wrongly marked use client", () => {
   // `cn` and the Monaco-free markdown parser must stay callable from a server
   // component — a blanket banner across all entries would break exactly this.
   const dir = plant({
-    "@elabs/components-ui/dist/lib/cn.js": '"use client";\nexport const cn = () => "";\n',
-    "@elabs/components-editor/dist/markdown/parse.js":
+    "@elabs-ai/components-ui/dist/lib/cn.js": '"use client";\nexport const cn = () => "";\n',
+    "@elabs-ai/components-editor/dist/markdown/parse.js":
       '"use client";\nexport const parseMarkdown = () => ({});\n',
   });
   const v = [];
@@ -77,10 +77,10 @@ test("FAILS: a server-safe leaf wrongly marked use client", () => {
 // ── Defect 2: fonts copied to dist/fonts/fonts/… so every @font-face 404s ────
 test("FAILS: themes.css asking for a font that isn't in the tarball", () => {
   const dir = plant({
-    "@elabs/components-tokens/dist/themes.css":
+    "@elabs-ai/components-tokens/dist/themes.css":
       '@font-face { src: url("./fonts/inter/Inter-Variable.woff"); }',
     // The real bug: present, but one directory too deep.
-    "@elabs/components-tokens/dist/fonts/fonts/inter/Inter-Variable.woff": "x",
+    "@elabs-ai/components-tokens/dist/fonts/fonts/inter/Inter-Variable.woff": "x",
   });
   const v = [];
   checkFontAssets(dir, v);
@@ -91,9 +91,9 @@ test("FAILS: themes.css asking for a font that isn't in the tarball", () => {
 
 test("PASSES: the same font once copied to the referenced depth", () => {
   const dir = plant({
-    "@elabs/components-tokens/dist/themes.css":
+    "@elabs-ai/components-tokens/dist/themes.css":
       '@font-face { src: url("./fonts/inter/Inter-Variable.woff"); }',
-    "@elabs/components-tokens/dist/fonts/inter/Inter-Variable.woff": "x",
+    "@elabs-ai/components-tokens/dist/fonts/inter/Inter-Variable.woff": "x",
   });
   const v = [];
   checkFontAssets(dir, v);
@@ -104,13 +104,13 @@ test("PASSES: the same font once copied to the referenced depth", () => {
 // ── Defect 3/4: an export target that isn't actually in the tarball ──────────
 test("FAILS: publishConfig export pointing at a file the tarball lacks", () => {
   const dir = plant({
-    "@elabs/components-editor/package.json": JSON.stringify({
-      name: "@elabs/components-editor",
+    "@elabs-ai/components-editor/package.json": JSON.stringify({
+      name: "@elabs-ai/components-editor",
       exports: { "./monaco-environment": { default: "./dist/lib/monaco-environment.js" } },
     }),
   });
   const v = [];
-  checkExportsResolve(dir, [{ name: "@elabs/components-editor" }], v);
+  checkExportsResolve(dir, [{ name: "@elabs-ai/components-editor" }], v);
   cleanup(dir);
   assert.equal(v.length, 1);
   assert.equal(v[0].rule, "unresolved-export");
@@ -120,7 +120,7 @@ test("FAILS: publishConfig export pointing at a file the tarball lacks", () => {
 test("FAILS: a package that never installed at all", () => {
   const dir = plant({ "placeholder.txt": "" });
   const v = [];
-  checkExportsResolve(dir, [{ name: "@elabs/components-ui" }], v);
+  checkExportsResolve(dir, [{ name: "@elabs-ai/components-ui" }], v);
   cleanup(dir);
   assert.equal(v.length, 1);
   assert.equal(v[0].rule, "package-not-installed");
@@ -128,25 +128,25 @@ test("FAILS: a package that never installed at all", () => {
 
 test("PASSES: every export target present", () => {
   const dir = plant({
-    "@elabs/components-ui/package.json": JSON.stringify({
-      name: "@elabs/components-ui",
+    "@elabs-ai/components-ui/package.json": JSON.stringify({
+      name: "@elabs-ai/components-ui",
       exports: { ".": { types: "./dist/index.d.ts", default: "./dist/index.js" } },
     }),
-    "@elabs/components-ui/dist/index.js": "",
-    "@elabs/components-ui/dist/index.d.ts": "",
+    "@elabs-ai/components-ui/dist/index.js": "",
+    "@elabs-ai/components-ui/dist/index.d.ts": "",
   });
   const v = [];
-  checkExportsResolve(dir, [{ name: "@elabs/components-ui" }], v);
+  checkExportsResolve(dir, [{ name: "@elabs-ai/components-ui" }], v);
   cleanup(dir);
   assert.deepEqual(v, []);
 });
 
 // ── The reason monaco/maplibre/xyflow became peers ───────────────────────────
 test("FAILS: a context-carrying engine resolved at two different versions", () => {
-  // Precisely the @elabs/components-flow ^12.11.1 vs @elabs/components-ai ^12.3.6 split.
+  // Precisely the @elabs-ai/components-flow ^12.11.1 vs @elabs-ai/components-ai ^12.3.6 split.
   const dir = plant({
-    "@elabs/components-flow/node_modules/@xyflow/react/package.json": '{"version":"12.11.1"}',
-    "@elabs/components-ai/node_modules/@xyflow/react/package.json": '{"version":"12.3.6"}',
+    "@elabs-ai/components-flow/node_modules/@xyflow/react/package.json": '{"version":"12.11.1"}',
+    "@elabs-ai/components-ai/node_modules/@xyflow/react/package.json": '{"version":"12.3.6"}',
   });
   const v = [];
   checkSingletons(dir, v);
@@ -185,26 +185,26 @@ test("PASSES: pnpm's isolated layout materialising ONE version many times", () =
 test("tarball names match pnpm pack's scheme", () => {
   // pnpm strips the leading @ and turns the scope separator into a dash, so the
   // scope rename changed every tarball filename too.
-  assert.equal(tarballName("@elabs/components-ui", "1.9.0"), "elabs-components-ui-1.9.0.tgz");
+  assert.equal(tarballName("@elabs-ai/components-ui", "1.9.0"), "elabs-ai-components-ui-1.9.0.tgz");
   assert.equal(
-    tarballName("@elabs/components-tokens", "2.0.0"),
-    "elabs-components-tokens-2.0.0.tgz",
+    tarballName("@elabs-ai/components-tokens", "2.0.0"),
+    "elabs-ai-components-tokens-2.0.0.tgz",
   );
   assert.equal(tarballName("plain", "1.0.0"), "plain-1.0.0.tgz");
 });
 
 test("dependency pinning rewrites only the packed packages", () => {
   const { pkgJson, missing } = pinToTarballs(
-    { dependencies: { "@elabs/components-ui": "*", react: "^19.0.0" } },
+    { dependencies: { "@elabs-ai/components-ui": "*", react: "^19.0.0" } },
     [
       {
-        name: "@elabs/components-ui",
+        name: "@elabs-ai/components-ui",
         tarball: "/tmp/elabs-components-ui-1.9.0.tgz",
       },
     ],
   );
   assert.equal(
-    pkgJson.dependencies["@elabs/components-ui"],
+    pkgJson.dependencies["@elabs-ai/components-ui"],
     "file:/tmp/elabs-components-ui-1.9.0.tgz",
   );
   assert.equal(pkgJson.dependencies.react, "^19.0.0", "registry deps must resolve normally");
@@ -212,19 +212,19 @@ test("dependency pinning rewrites only the packed packages", () => {
 });
 
 test("a fixture dependency with no matching tarball is reported, not silently skipped", () => {
-  const { missing } = pinToTarballs({ dependencies: { "@elabs/components-newpkg": "*" } }, []);
-  assert.deepEqual(missing, ["@elabs/components-newpkg"]);
+  const { missing } = pinToTarballs({ dependencies: { "@elabs-ai/components-newpkg": "*" } }, []);
+  assert.deepEqual(missing, ["@elabs-ai/components-newpkg"]);
 });
 
 test("the distributable set is derived from publishConfig, never hard-coded", () => {
   const dir = plant({
     "ui/package.json": JSON.stringify({
-      name: "@elabs/components-ui",
+      name: "@elabs-ai/components-ui",
       version: "1.9.0",
       publishConfig: { exports: {} },
     }),
     "eslint-config/package.json": JSON.stringify({
-      name: "@elabs/components-eslint-config",
+      name: "@elabs-ai/components-eslint-config",
       version: "0.1.0",
     }),
   });
@@ -232,7 +232,7 @@ test("the distributable set is derived from publishConfig, never hard-coded", ()
   cleanup(dir);
   assert.deepEqual(
     found.map((p) => p.name),
-    ["@elabs/components-ui"],
+    ["@elabs-ai/components-ui"],
     "a tooling package with no publishConfig must not be treated as distributable",
   );
 });

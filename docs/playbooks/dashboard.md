@@ -2,7 +2,7 @@
 archetype: dashboard
 intent: "KPI overview screen — metrics first, charts second, records last"
 keywords: [dashboard, kpi, metrics, overview, analytics, charts, reporting, summary, drill-down]
-packages: ["@elabs/components-ui", "@elabs/components-charts", "@elabs/components-data"]
+packages: ["@elabs-ai/components-ui", "@elabs-ai/components-charts", "@elabs-ai/components-data"]
 ---
 
 # Playbook — Dashboard
@@ -12,13 +12,13 @@ a records table below. Template source: `templates/dashboard.tsx` (generated fro
 
 ## Building blocks
 
-| Layer  | Components                                                                                | From                       |
-| ------ | ----------------------------------------------------------------------------------------- | -------------------------- |
-| Shell  | `SidebarProvider` + `Sidebar` + `SidebarInset`                                            | `@elabs/components-ui`     |
-| KPIs   | `MetricGrid` + `MetricCard` (×3–5)                                                        | `@elabs/components-charts` |
-| Charts | `ChartFrame` wrapping `BarChart` / `LineChart` / `AreaChart` (or `AutoChart` from a spec) | `@elabs/components-charts` |
-| Table  | `DataTable` + `FilterBar` + `SearchInput`                                                 | `@elabs/components-data`   |
-| States | `Skeleton` (loading) · `EmptyState` (no results)                                          | `@elabs/components-ui`     |
+| Layer  | Components                                                                                | From                          |
+| ------ | ----------------------------------------------------------------------------------------- | ----------------------------- |
+| Shell  | `SidebarProvider` + `Sidebar` + `SidebarInset`                                            | `@elabs-ai/components-ui`     |
+| KPIs   | `MetricGrid` + `MetricCard` (×3–5)                                                        | `@elabs-ai/components-charts` |
+| Charts | `ChartFrame` wrapping `BarChart` / `LineChart` / `AreaChart` (or `AutoChart` from a spec) | `@elabs-ai/components-charts` |
+| Table  | `DataTable` + `FilterBar` + `SearchInput`                                                 | `@elabs-ai/components-data`   |
+| States | `Skeleton` (loading) · `EmptyState` (no results)                                          | `@elabs-ai/components-ui`     |
 
 ## Wiring diagram
 
@@ -51,7 +51,7 @@ import {
   Line,
   LineChart,
   XAxis,
-} from "@elabs/components-charts";
+} from "@elabs-ai/components-charts";
 
 <div className="grid gap-6 lg:grid-cols-2">
   <ChartFrame title="Revenue by quarter" data={revenue}>

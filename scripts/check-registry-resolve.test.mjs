@@ -24,7 +24,7 @@ test("findRelativeImports: extracts a same-dir and a sibling-dir import", () => 
   const src = `
     import { X } from "./data/x";
     import { Y } from "../data/y";
-    import Z from "@elabs/components-ui";
+    import Z from "@elabs-ai/components-ui";
   `;
   assert.deepEqual(findRelativeImports(src), ["./data/x", "../data/y"]);
 });

@@ -28,7 +28,7 @@ describe("InlineCitationCardTrigger — source labels", () => {
 
   it("renders a NON-URL source verbatim instead of throwing", () => {
     // The P0: `new URL("Q3 filing, FY25")` throws TypeError, and with no error
-    // boundary in @elabs/components-ai that took down the entire message subtree. An agent
+    // boundary in @elabs-ai/components-ai that took down the entire message subtree. An agent
     // citing a document id or a table name must not have to fake a URL.
     expect(() => renderTrigger(["Q3 filing, FY25"])).not.toThrow();
     expect(screen.getByText(/Q3 filing, FY25/)).toBeInTheDocument();

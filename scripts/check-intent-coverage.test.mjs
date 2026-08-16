@@ -31,8 +31,8 @@ const GATE = path.join(HERE, "check-intent-coverage.mjs");
 /** A minimal two-package manifest fixture. */
 const manifest = {
   packages: {
-    "@elabs/components-ui": { components: [{ name: "Button" }, { name: "Card" }] },
-    "@elabs/components-charts": { components: [{ name: "BarChart" }] },
+    "@elabs-ai/components-ui": { components: [{ name: "Button" }, { name: "Card" }] },
+    "@elabs-ai/components-charts": { components: [{ name: "BarChart" }] },
   },
 };
 
@@ -126,13 +126,13 @@ test("a missing purpose fails", () => {
 /** A manifest whose components carry `module`, plus a fake source tree. */
 const tokenManifest = {
   packages: {
-    "@elabs/components-ui": {
+    "@elabs-ai/components-ui": {
       components: [
         { name: "Button", module: "packages/ui/src/components/button/button.tsx" },
         { name: "Card", module: "packages/ui/src/components/card/card.tsx" },
       ],
     },
-    "@elabs/components-charts": {
+    "@elabs-ai/components-charts": {
       components: [
         { name: "BarChart", module: "packages/charts/src/charts/bar-chart.tsx" },
         { name: "ChartCard", module: "packages/charts/src/chart-card/chart-card.tsx" },
@@ -323,8 +323,8 @@ test("the shipped entries no longer carry the four verified-false claims", () =>
 // surface could ship with zero anti-patterns and nothing would fail. Rule 7 freezes
 // today's uncovered root exports and refuses any addition.
 
-const GATED_AI = "@elabs/components-ai";
-const GATED_CHARTS = "@elabs/components-charts";
+const GATED_AI = "@elabs-ai/components-ai";
+const GATED_CHARTS = "@elabs-ai/components-charts";
 
 /** A gated-package fixture with a root, its same-module sub-parts, and a constant. */
 const ratchetManifest = {
@@ -427,8 +427,8 @@ test("familyDocumented folds a same-module sibling into its documented family", 
 test("uncoveredRoots skips documented families and third-party re-exports", () => {
   const m = {
     packages: {
-      "@elabs/components-ai": { components: familyManifest },
-      "@elabs/components-charts": {
+      "@elabs-ai/components-ai": { components: familyManifest },
+      "@elabs-ai/components-charts": {
         components: [
           { name: "GradientTealBlue", module: "packages/charts/src/charts/index.ts" },
           { name: "Bar", module: "packages/charts/src/charts/bar.tsx" },
@@ -442,8 +442,8 @@ test("uncoveredRoots skips documented families and third-party re-exports", () =
       : "export const Bar = () => null;";
   const intent = { Message: okEntry("ai", ["a", "b", "c"]) };
   assert.deepEqual(uncoveredRoots({ intent, manifest: m, readModule }), [
-    "@elabs/components-ai::Persona",
-    "@elabs/components-charts::Bar",
+    "@elabs-ai/components-ai::Persona",
+    "@elabs-ai/components-charts::Bar",
   ]);
 });
 
@@ -451,7 +451,7 @@ test("isThirdPartyReExport only exempts genuinely foreign symbols", () => {
   const src =
     'export { GradientTealBlue } from "@visx/gradient";\n' +
     'export { Gauge } from "./gauge";\n' +
-    'export { MetricCard } from "@elabs/components-ui";\n';
+    'export { MetricCard } from "@elabs-ai/components-ui";\n';
   assert.equal(isThirdPartyReExport("GradientTealBlue", src), true);
   assert.equal(isThirdPartyReExport("Gauge", src), false, "a local re-export is our surface");
   assert.equal(
@@ -494,11 +494,11 @@ test("`--residual` lists the still-uncovered surfaces grouped by package", () =>
 
 test("the ai package's root surfaces are fully covered (the lopsided spoke, #60)", () => {
   const residual = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
-  const stillOwed = residual.filter((k) => k.startsWith("@elabs/components-ai::"));
+  const stillOwed = residual.filter((k) => k.startsWith("@elabs-ai/components-ai::"));
   assert.deepEqual(
     stillOwed,
     [],
-    "every @elabs/components-ai root surface carries its own anti-patterns",
+    "every @elabs-ai/components-ai root surface carries its own anti-patterns",
   );
 });
 
@@ -507,7 +507,7 @@ test("every shipped llms spoke carries at least one `avoid:` line (#60 acceptanc
     readFileSync(path.join(REPO_ROOT, "brand-ui.manifest.json"), "utf8"),
   );
   for (const pkg of Object.keys(manifestReal.packages ?? {})) {
-    const slug = pkg.replace("@elabs/components-", "");
+    const slug = pkg.replace("@elabs-ai/components-", "");
     const spoke = path.join(REPO_ROOT, "apps/docs/public/llms", `${slug}.txt`);
     const text = readFileSync(spoke, "utf8");
     assert.ok(

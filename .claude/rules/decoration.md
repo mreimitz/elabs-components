@@ -1,7 +1,7 @@
 ---
 # Path-scoped (Claude Code lazy-loads this only when a matching file is touched) — not
 # always-on context. Scoped to the decoration tokens
-# (decoration.css/themes.css live in @elabs/components-tokens). See `.claude/rules/quality-gates.md`
+# (decoration.css/themes.css live in @elabs-ai/components-tokens). See `.claude/rules/quality-gates.md`
 # "Enforcement over reminders" and the `rules:scoping:check` gate.
 paths:
   - "packages/tokens/**"
@@ -46,7 +46,7 @@ itself fades the host's CHILDREN (text, controls) with it.
 - **Theme default:** a theme block may set `--decoration` (both reference themes ship
   0). See `themes.css` "DECORATION DIAL" + `decoration.css` (overlay rules).
 - **Region:** put `data-decoration="N"` on any element (or use
-  `<DecorationProvider level={N}>` from `@elabs/components-tokens`) to dial a subtree —
+  `<DecorationProvider level={N}>` from `@elabs-ai/components-tokens`) to dial a subtree —
   a diagram, panel, or page — without changing the theme.
 - **Document:** `ThemeProvider` / `useDecoration()` persist a document-level override
   (`null` = follow the theme's default).

@@ -22,7 +22,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 <SidebarProvider>
   <Sidebar>
@@ -50,8 +50,8 @@ For ready-made shells, add a registry block: `brand-ui search sidebar` →
 ## Dashboard (KPIs + table)
 
 ```tsx
-import { MetricGrid, MetricCard } from "@elabs/components-charts";
-import { DataTable, SearchInput, FacetFilter, ColumnPicker } from "@elabs/components-data";
+import { MetricGrid, MetricCard } from "@elabs-ai/components-charts";
+import { DataTable, SearchInput, FacetFilter, ColumnPicker } from "@elabs-ai/components-data";
 
 <div className="flex flex-col gap-6 p-4">
   <MetricGrid>
@@ -97,7 +97,7 @@ import {
   PromptInputFooter,
   PromptInputTools,
   PromptInputSubmit,
-} from "@elabs/components-ai";
+} from "@elabs-ai/components-ai";
 
 <ChatShell
   header={<b>Ops Assistant</b>}
@@ -146,7 +146,7 @@ import {
   FlowEdge,
   ZoomControls,
   InspectorPanel,
-} from "@elabs/components-flow";
+} from "@elabs-ai/components-flow";
 
 <CanvasShell
   nodes={nodes}

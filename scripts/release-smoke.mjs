@@ -86,7 +86,15 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { REPO_ROOT } from "./lib/distributables.mjs";
 
-export const DEFAULT_REGISTRY = "https://npm.pkg.github.com";
+/**
+ * Where a release lands by default — the PUBLIC npm registry.
+ *
+ * Was `https://npm.pkg.github.com` while the packages were private. The smoke
+ * still writes a per-scope mapping rather than relying on npm's built-in default
+ * (see `consumerNpmrc`), so the shape it exercises stays identical if the target
+ * ever moves back to a private host; only the value changed.
+ */
+export const DEFAULT_REGISTRY = "https://registry.npmjs.org/";
 
 /** The published package names a release-manifest records. Pure. */
 export function packagesFromManifest(manifest) {
@@ -96,14 +104,17 @@ export function packagesFromManifest(manifest) {
 }
 
 /**
- * The `.npmrc` a CONSUMER writes: each RELEASE SCOPE resolves to the private
- * registry and carries auth. Derived from the package names so a new scope needs
- * no edit here. Pure.
+ * The `.npmrc` a CONSUMER writes: each RELEASE SCOPE resolves to the release
+ * registry, plus an auth line when a `token` is supplied. Derived from the
+ * package names so a new scope needs no edit here. Pure.
  *
  * Deliberately per-scope (`@scope:registry=…`) and never a bare `registry=…`
- * default: the release scopes live on GitHub Packages, every transitive
- * dependency still lives on npmjs.org, and GitHub Packages does not proxy it.
- * This is the same shape docs/CONSUMING.md hands a consumer.
+ * default. On the public registry that mapping is redundant at install time —
+ * npmjs.org is already npm's default — but writing it keeps the smoke exercising
+ * the shape a PRIVATE target requires, where a process-wide default would send
+ * every transitive dependency to a host that does not proxy npmjs and 404s them.
+ * `token` is likewise kept: unused for a public release, and the only thing that
+ * makes this reusable the day a scope goes private again.
  */
 export function consumerNpmrc(names, { registry = DEFAULT_REGISTRY, token } = {}) {
   const scopes = [...new Set(names.map((n) => n.split("/")[0]).filter((s) => s.startsWith("@")))];

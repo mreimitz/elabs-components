@@ -1,5 +1,5 @@
 /**
- * @elabs/components-cli — the migration report renderer (VP-03 #124).
+ * @elabs-ai/components-cli — the migration report renderer (VP-03 #124).
  *
  * Turns a `scan` + `map` result into the three markdown deliverables a brownfield
  * migration is planned from:

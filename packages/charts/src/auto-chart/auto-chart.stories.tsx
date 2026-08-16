@@ -312,10 +312,10 @@ export const Loading: Story = {
  * InChatConversation — shows AutoChart embedded inside an AI tool-call output.
  *
  * Uses a minimal token-styled mock shell (plain divs) instead of the full
- * `@elabs/components-ai` Conversation/Message/Tool stack, keeping this story self-contained
- * within the `@elabs/components-charts` package (which does NOT depend on `@elabs/components-ai`).
+ * `@elabs-ai/components-ai` Conversation/Message/Tool stack, keeping this story self-contained
+ * within the `@elabs-ai/components-charts` package (which does NOT depend on `@elabs-ai/components-ai`).
  *
- * The REAL composition with `@elabs/components-ai`'s Conversation/Message/Tool/ToolOutput
+ * The REAL composition with `@elabs-ai/components-ai`'s Conversation/Message/Tool/ToolOutput
  * components lives in the copy-owned `ai-chart` registry block
  * (`registry/blocks/ai-chart/`) — a registry block may import both siblings,
  * whereas a package (and therefore a package's story) may not. See

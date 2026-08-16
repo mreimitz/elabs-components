@@ -10,8 +10,8 @@ import {
   TabsList,
   TabsTrigger,
   useLocale,
-} from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
+} from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { ToolUIPart } from "ai";
 import { ChevronDownIcon, Code } from "lucide-react";
 import type { ComponentProps } from "react";

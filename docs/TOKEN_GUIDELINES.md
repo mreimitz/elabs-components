@@ -6,7 +6,7 @@ brands. Re-branding is a token change.
 ## Where tokens live
 
 `packages/tokens/src/themes.css` is the **engine** — shipped as
-`@elabs/components-tokens/styles.css` and always imported:
+`@elabs-ai/components-tokens/styles.css` and always imported:
 
 - `:root` — neutral light base/fallback. A complete palette, so an app that
   imports nothing else still renders correctly.
@@ -16,7 +16,7 @@ brands. Re-branding is a token change.
   `.claude/rules/paused-surfaces.md`.)
 
 Each **reference theme** is its own opt-in file — `src/themes/light.css`,
-`src/themes/dark.css`, exported as `@elabs/components-tokens/themes/<name>.css`.
+`src/themes/dark.css`, exported as `@elabs-ai/components-tokens/themes/<name>.css`.
 `styles.css` does **not** import them.
 
 `packages/tokens/src/theme-types.ts` holds the **built-in registry**

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { ThemeProvider } from "@elabs/components-tokens";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { Button } from "../button";
 import { ConfirmDialog } from "../confirm-dialog";
 import { Input } from "../input";

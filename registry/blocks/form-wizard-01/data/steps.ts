@@ -1,4 +1,4 @@
-import type { WizardStepMeta } from "@elabs/components-ui";
+import type { WizardStepMeta } from "@elabs-ai/components-ui";
 
 export const STEPS: WizardStepMeta[] = [
   { id: "customer", title: "Customer", description: "Contact details" },

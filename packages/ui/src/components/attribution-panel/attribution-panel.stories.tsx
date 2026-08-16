@@ -67,7 +67,7 @@ export const RequiredOnly: Story = {
 /** Scoped to one package — what an app that only renders maps has to credit. */
 export const ScopedToMaps: Story = {
   args: {
-    packages: ["@elabs/components-maps"],
+    packages: ["@elabs-ai/components-maps"],
     className: "max-w-2xl",
   },
 };

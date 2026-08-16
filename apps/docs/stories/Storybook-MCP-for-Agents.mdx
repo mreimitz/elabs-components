@@ -20,7 +20,7 @@ are simply unavailable — that's normal, not an error.
 
 > **Golden rule:** _if_ the tools are available, prefer them; _otherwise_ fall back —
 > read `*.stories.tsx` + component source, and run
-> `pnpm --filter @elabs/components-docs test-storybook`. Never block waiting on the server, and
+> `pnpm --filter @elabs-ai/components-docs test-storybook`. Never block waiting on the server, and
 > don't start it unless the task is about Storybook.
 
 ## The six tools (all active here because `addon-vitest` + `addon-a11y` are installed)
@@ -96,8 +96,8 @@ If the server is ever renamed, every `mcp__storybook__*` reference — `CLAUDE.m
 
 - [brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs) — the **always-on**
   companion (works with this dev server down): the API ground truth (props, variants,
-  tokens, search, audit) over `npx @elabs/components-cli mcp` (private GitHub
+  tokens, search, audit) over `npx @elabs-ai/components-cli mcp` (private GitHub
   Packages dependency — see `docs/CONSUMING.md` §1 for the one-time auth setup).
 - Enforcement rule (source of truth): `.claude/rules/storybook-mcp.md`
-- Story tests as a script: `pnpm --filter @elabs/components-docs test-storybook`
+- Story tests as a script: `pnpm --filter @elabs-ai/components-docs test-storybook`
 - Functional / visual finders: `/qa-flows`, `/visual-review`

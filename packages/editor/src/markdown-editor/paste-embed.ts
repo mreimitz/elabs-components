@@ -17,7 +17,7 @@
  *   - Error decoration: role="alert" (assertive; fires once and auto-dismisses)
  *
  * Motion: gated via `duration-normal ease-standard motion-reduce:transition-none`
- * token utilities (defined in @elabs/components-tokens).
+ * token utilities (defined in @elabs-ai/components-tokens).
  */
 
 import type { MilkdownPlugin } from "@milkdown/kit/ctx";
@@ -25,7 +25,7 @@ import { $prose } from "@milkdown/kit/utils";
 import { Plugin, PluginKey, type Transaction } from "@milkdown/kit/prose/state";
 import { Decoration, DecorationSet } from "@milkdown/kit/prose/view";
 import type { EditorView } from "@milkdown/kit/prose/view";
-import { toast } from "@elabs/components-ui";
+import { toast } from "@elabs-ai/components-ui";
 
 /** The host-provided hook: receives a File, resolves to a URL/path string. */
 export type EmbedAssetFn = (file: File) => Promise<string>;

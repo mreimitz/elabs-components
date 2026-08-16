@@ -1,5 +1,5 @@
 /**
- * @elabs/components-charts — KPI tiles, a chart container, and 14 compositional charts.
+ * @elabs-ai/components-charts — KPI tiles, a chart container, and 14 compositional charts.
  *
  * Token-driven: series use `--chart-1..12` tokens so visuals theme consistently.
  *

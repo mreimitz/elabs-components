@@ -3,7 +3,7 @@
 /**
  * Video / audio adapter — native elements, deliberately.
  *
- * `@elabs/components-ai` ships a designed `AudioPlayer` built on
+ * `@elabs-ai/components-ai` ships a designed `AudioPlayer` built on
  * `media-chrome`, and this adapter does NOT reach for it: `ai` is a Layer-2
  * sibling, so importing it would be a sideways edge the dependency gate rejects
  * (and would pull a chat package into a file viewer). Native `<video controls>`
@@ -16,7 +16,7 @@
  * tests and stories, so it is tracked separately rather than smuggled in here.
  */
 
-import { cn, StatePanel, useLocale, type ResolvedFileSource } from "@elabs/components-ui";
+import { cn, StatePanel, useLocale, type ResolvedFileSource } from "@elabs-ai/components-ui";
 import { useEffect, useState } from "react";
 
 import { toViewerError } from "../../core/errors";

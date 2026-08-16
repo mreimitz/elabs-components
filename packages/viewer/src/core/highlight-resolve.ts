@@ -20,7 +20,7 @@ import {
   type MatchRange,
   type NormalizedText,
   type QuoteAddress,
-} from "@elabs/components-ui";
+} from "@elabs-ai/components-ui";
 
 import type { DocumentHighlight, HighlightSupport, ResolvedHighlight } from "./highlight";
 

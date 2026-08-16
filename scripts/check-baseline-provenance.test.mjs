@@ -91,7 +91,7 @@ test("GATES registers exactly variant-coverage, loading-states, state-coverage",
 function fixtureManifest(variants) {
   return {
     packages: {
-      "@elabs/components-fixture": {
+      "@elabs-ai/components-fixture": {
         path: "pkg-fixture",
         components: [{ name: "Widget", module: "pkg-fixture/src/widget.tsx" }],
         variants: { Widget: variants },
@@ -128,7 +128,7 @@ test("checkGateProvenance: a HAND-RAISED (fabricated) baseline entry has no matc
     });
     // Sanity: this fixture genuinely has no real gaps (both values rendered).
     assert.deepEqual(findVariantGaps(manifest, root), []);
-    const fabricated = ["@elabs/components-fixture::Widget::variant=FABRICATED"];
+    const fabricated = ["@elabs-ai/components-fixture::Widget::variant=FABRICATED"];
     const variantGate = GATES.find((g) => g.name === "variant-coverage");
     const result = checkGateProvenance(variantGate, manifest, fabricated, root);
     assert.deepEqual(result.orphans, fabricated);
@@ -152,7 +152,7 @@ test("checkGateProvenance: a baseline shaped like a real --update output has zer
       defaultVariants: { variant: "default" },
     });
     const realGaps = findVariantGaps(manifest, root).map((g) => g.key);
-    assert.deepEqual(realGaps, ["@elabs/components-fixture::Widget::variant=success"]);
+    assert.deepEqual(realGaps, ["@elabs-ai/components-fixture::Widget::variant=success"]);
     const variantGate = GATES.find((g) => g.name === "variant-coverage");
     const result = checkGateProvenance(variantGate, manifest, realGaps, root);
     assert.deepEqual(result.orphans, []);
@@ -187,7 +187,7 @@ function writeCliFixtureRoot({
     join(root, "brand-ui.manifest.json"),
     JSON.stringify({
       packages: {
-        "@elabs/components-fixture": {
+        "@elabs-ai/components-fixture": {
           path: "pkg-fixture",
           components: [{ name: "Widget", module: "pkg-fixture/src/widget.tsx" }],
           variants: {
@@ -217,7 +217,7 @@ function writeCliFixtureRoot({
 
 test("CLI --root: a hand-raised (fabricated) baseline entry FAILS the meta-gate, non-zero exit", () => {
   const root = writeCliFixtureRoot({
-    variantBaseline: ["@elabs/components-fixture::Widget::variant=FABRICATED"],
+    variantBaseline: ["@elabs-ai/components-fixture::Widget::variant=FABRICATED"],
   });
   try {
     const result = spawnSync(
@@ -240,7 +240,7 @@ test("CLI --root: a baseline shaped exactly like the current derivation (the --u
   // story renders it) — a baseline recording exactly that, and nothing else,
   // is what a real `pnpm variants:check -- --update` run on it would write.
   const root = writeCliFixtureRoot({
-    variantBaseline: ["@elabs/components-fixture::Widget::variant=success"],
+    variantBaseline: ["@elabs-ai/components-fixture::Widget::variant=success"],
     storyLines: [
       'import { Widget } from "./widget";',
       "const meta = { argTypes: { variant: { options: ['default', 'success'] } } };",
@@ -294,7 +294,7 @@ function writeGitFixtureState(root, { variantOptions, variantBaseline, storyRend
     join(root, "brand-ui.manifest.json"),
     JSON.stringify({
       packages: {
-        "@elabs/components-fixture": {
+        "@elabs-ai/components-fixture": {
           path: "pkg-fixture",
           components: [{ name: "Widget", module: "pkg-fixture/src/widget.tsx" }],
           variants: {
@@ -337,7 +337,7 @@ test("CLI --root --base: a genuinely NEW, real violation hand-added to the basel
     // instead of adding the story — the issue's own §Reproduction, verbatim.
     writeGitFixtureState(root, {
       variantOptions: ["default", "critical"],
-      variantBaseline: ["@elabs/components-fixture::Widget::variant=critical"],
+      variantBaseline: ["@elabs-ai/components-fixture::Widget::variant=critical"],
       storyRendersCritical: false,
     });
     gitFixture(root, ["add", "-A"]);
@@ -380,7 +380,7 @@ test("CLI --root --base: baseline unchanged vs the base ref — git-provenance r
     gitFixture(root, ["config", "user.name", "Test"]);
     writeGitFixtureState(root, {
       variantOptions: ["default", "critical"],
-      variantBaseline: ["@elabs/components-fixture::Widget::variant=critical"],
+      variantBaseline: ["@elabs-ai/components-fixture::Widget::variant=critical"],
       storyRendersCritical: false,
     });
     gitFixture(root, ["add", "-A"]);

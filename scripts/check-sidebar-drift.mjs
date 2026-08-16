@@ -3,7 +3,7 @@
  * check-sidebar-drift.mjs — sidebar-block drift-guard gate (#99).
  *
  * Issue #99 consolidated the shared sidebar navigation primitives
- * (`TeamSwitcher`, `NavMain`, `NavUser`, `NavNotifications`) into `@elabs/components-ui`
+ * (`TeamSwitcher`, `NavMain`, `NavUser`, `NavNotifications`) into `@elabs-ai/components-ui`
  * and recomposed the registry sidebar blocks on top of them — sidebar-02 became
  * thin re-export shims; sidebar-04/05 stayed bespoke multi-pane layouts that
  * *import* the shared parts. Before that, `team-switcher` had been copied into
@@ -11,7 +11,7 @@
  *
  * This gate stops that from recurring: it FAILS if any sidebar block file
  * re-declares one of the shared nav primitives LOCALLY (re-forking it) instead
- * of importing / re-exporting it from `@elabs/components-ui`.
+ * of importing / re-exporting it from `@elabs-ai/components-ui`.
  *
  * NOTE on type-only exclusion: `export interface` / `export type` are intentionally
  * NOT flagged — the gate targets runtime value declarations only, so an incidental
@@ -25,10 +25,10 @@
  *     export default <Identifier>    — when <Identifier> has a local fn/const/class decl
  *     function <Name>( / const <Name> = / class <Name>  — non-exported local re-implementation
  *   Does NOT flag (these are reuse, not drift):
- *     import { TeamSwitcher } from "@elabs/components-ui"                 — usage
- *     export { TeamSwitcher } from "@elabs/components-ui"                 — pass-through re-export
- *     export { NavMain as DashboardNavigation } from "@elabs/components-ui" — aliased re-export
- *     export type { TeamSwitcherProps } from "@elabs/components-ui"       — types only
+ *     import { TeamSwitcher } from "@elabs-ai/components-ui"                 — usage
+ *     export { TeamSwitcher } from "@elabs-ai/components-ui"                 — pass-through re-export
+ *     export { NavMain as DashboardNavigation } from "@elabs-ai/components-ui" — aliased re-export
+ *     export type { TeamSwitcherProps } from "@elabs-ai/components-ui"       — types only
  *
  * Scope: packages/ui/src/blocks/sidebar-*\/**\/*.{ts,tsx} excluding *.test.* and
  * *.stories.*, dist, node_modules.
@@ -48,7 +48,7 @@ const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
 const BLOCKS_DIR = join(REPO_ROOT, "packages", "ui", "src", "blocks");
 
 /**
- * Shared nav primitives that now live in `@elabs/components-ui` (issue #99). A registry
+ * Shared nav primitives that now live in `@elabs-ai/components-ui` (issue #99). A registry
  * sidebar block must IMPORT or RE-EXPORT these — never re-declare them locally.
  * `AppSidebar` is intentionally NOT guarded: sidebar-04/05 legitimately declare
  * a block-local `AppSidebar` composition (a bespoke multi-pane layout built on
@@ -243,14 +243,14 @@ function main(argv) {
           ? relative(REPO_ROOT, v.file)
           : (v.file ?? "<inline>");
       console.error(
-        `  ${rel}:${v.line}  ${v.name} is re-declared locally — import it from @elabs/components-ui instead`,
+        `  ${rel}:${v.line}  ${v.name} is re-declared locally — import it from @elabs-ai/components-ui instead`,
       );
     }
     console.error(
-      `\nThe shared nav primitives (${[...GUARDED].join(", ")}) live in @elabs/components-ui (issue #99).\n` +
+      `\nThe shared nav primitives (${[...GUARDED].join(", ")}) live in @elabs-ai/components-ui (issue #99).\n` +
         `A registry sidebar block must IMPORT or RE-EXPORT them — never re-declare a local copy\n` +
         `(that is exactly the copy-paste drift #99 fixed). Replace the local declaration with\n` +
-        `\`import { ${[...GUARDED][0]} } from "@elabs/components-ui"\` (or \`export { ... } from "@elabs/components-ui"\`).`,
+        `\`import { ${[...GUARDED][0]} } from "@elabs-ai/components-ui"\` (or \`export { ... } from "@elabs-ai/components-ui"\`).`,
     );
     if (!warnOnly) process.exit(1);
     return;

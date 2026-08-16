@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@elabs/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import {
   CATEGORY_AXIS_PADDING,
   type CategoryAxisFit,

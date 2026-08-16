@@ -37,7 +37,7 @@ import type { Node as ProseNode } from "@milkdown/kit/prose/model";
 import { TextSelection } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { getMarkdown, replaceAll } from "@milkdown/kit/utils";
-import { cn } from "@elabs/components-ui/lib/cn";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   ProsemirrorAdapterProvider,
   useNodeViewFactory,

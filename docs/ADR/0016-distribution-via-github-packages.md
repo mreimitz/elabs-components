@@ -34,10 +34,10 @@ published by CI on a version tag.**
 This forces three coupled changes:
 
 1. **Scope rename.** GitHub Packages only accepts packages whose npm scope
-   equals the repository owner. `@brand/<pkg>` → `@elabs/components-<pkg>`.
+   equals the repository owner. `@brand/<pkg>` → `@elabs-ai/components-<pkg>`.
    The repo name is carried in the package name so the packages stay
    collision-free inside a scope shared by every repo in the org — otherwise the
-   design system would claim generic names like `@elabs/ui`.
+   design system would claim generic names like `@elabs-ai/ui`.
 2. **Publish metadata.** `private` removed (repo visibility is what keeps the
    package private); `repository` + `directory` added (GitHub Packages needs it
    to link the package and inherit visibility); `publishConfig.registry` added
@@ -62,7 +62,7 @@ and 200 cold installs per month. Not a constraint at this size.
 
 ## Consequences
 
-**Better.** Consumers write `"@elabs/components-ui": "^X.Y.Z"`
+**Better.** Consumers write `"@elabs-ai/components-ui": "^X.Y.Z"`
 and nothing else. The `pnpm.overrides` mirror is deleted. `npx` works on the
 CLI. Upgrades are `pnpm update`.
 
@@ -75,7 +75,7 @@ step that the tarball flow did not have.
 **Permanent.** Published npm versions and names are immutable. The package names
 chosen here cannot be cleanly changed later.
 
-**Verbose.** `@elabs/components-ui` is a 34-character specifier on
+**Verbose.** `@elabs-ai/components-ui` is a 34-character specifier on
 every import line. Accepted deliberately in exchange for collision-safety.
 
 ## What made this safe to do

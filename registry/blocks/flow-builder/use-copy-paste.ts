@@ -1,7 +1,7 @@
 /**
  * Copy-own copy/paste for the selected React Flow nodes.
  *
- * APP-OWNED state (not @elabs/components-flow) — kept in the block so it's easy to edit.
+ * APP-OWNED state (not @elabs-ai/components-flow) — kept in the block so it's easy to edit.
  * `copy()` snapshots the current selection + the edges wholly inside it into a
  * clipboard buffer; `paste()` clones them with fresh ids at a fixed offset and
  * selects the copies. Wire it to a toolbar button and Cmd/Ctrl+C / Cmd/Ctrl+V
@@ -10,7 +10,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { Edge, Node } from "@elabs/components-flow";
+import type { Edge, Node } from "@elabs-ai/components-flow";
 
 /** How far (px, in flow coordinates) a pasted node is offset from its source. */
 const PASTE_OFFSET = 40;

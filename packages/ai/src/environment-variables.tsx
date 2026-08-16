@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@elabs/components-ui";
-import { Button } from "@elabs/components-ui";
-import { Switch } from "@elabs/components-ui";
-import { cn } from "@elabs/components-ui/lib/cn";
-import { useLocale } from "@elabs/components-ui";
+import { Badge } from "@elabs-ai/components-ui";
+import { Button } from "@elabs-ai/components-ui";
+import { Switch } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { useLocale } from "@elabs-ai/components-ui";
 import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 import {

@@ -2,31 +2,39 @@
 /**
  * check-publish-ready.mjs — can these packages actually reach the registry?
  *
- * GitHub Packages rejects a publish for reasons that are invisible locally:
- * the npm scope MUST equal the repository owner, a `private: true` package is
- * refused by the client before it ever leaves the machine, and a package with
- * no `repository` field will not be linked to (or inherit visibility from) the
- * repo. Each of those surfaces as a late, cryptic failure mid-release.
+ * A registry rejects a publish for reasons that are invisible locally: a
+ * `private: true` package is refused by the client before it ever leaves the
+ * machine, a package with no `repository` field will not link back to the repo,
+ * and a `publishConfig.registry` pointing somewhere else sends the whole release
+ * to the wrong host. Each surfaces as a late, cryptic failure mid-release, and
+ * npm versions are immutable — a half-published release cannot be undone.
  *
  * So this runs BEFORE anything is tagged or published, and states plainly what
  * is missing. Checks, per distributable package:
  *
- *   1. scope-mismatch    the package scope equals the GitHub owner, lowercased
- *                        (GitHub Packages' hard requirement)
+ *   1. scope-mismatch    the package scope equals the GitHub owner, lowercased.
+ *                        **GitHub Packages ONLY** — it is that registry's hard
+ *                        requirement, not a general npm rule. On npmjs.org a
+ *                        scope is owned independently of any GitHub account
+ *                        (this repo publishes `@elabs-ai/*` from `mreimitz/…`), so
+ *                        applying it there would fail a perfectly valid release.
+ *                        Gated by `requiresOwnerScope(registry)`.
  *   2. private-package   `private: true` is gone — npm refuses to publish it
  *   3. missing-repository `repository` with a `directory`, so the package links
- *                        to this repo and inherits its visibility
+ *                        to this repo (and, on GitHub Packages, inherits its
+ *                        visibility)
  *   4. missing-registry  `publishConfig.registry` points at the registry
  *
- * Plus one repo-level check: the root `.npmrc` maps the scope to the registry,
- * or every install by every consumer silently goes to npmjs.org instead.
+ * Plus one repo-level check: the root `.npmrc` maps EVERY published scope to the
+ * registry. On a private host an unmapped scope means every consumer install
+ * silently resolves from npmjs.org instead; on npmjs.org the mapping is
+ * redundant at install time but is what declares the publish target here.
  *
- * PUBLISHING IS CURRENTLY DISABLED. This repo has no registry mapping in its
- * `.npmrc` and no git remote, so there is no target to be "ready" for — every
- * rule above would report a blocker for a publish nobody can perform, which is
- * noise, not a gate. So the preflight now SKIPS (exit 0, loud message) when the
- * root `.npmrc` declares no scoped registry. Re-adding that one line turns the
- * whole battery back on; nothing here was deleted. See docs/ADR/0016.
+ * PUBLISHING IS DISABLED WHENEVER `.npmrc` DECLARES NO SCOPED REGISTRY. Without
+ * a target there is nothing to be "ready" for, and every rule above would report
+ * a blocker for a publish nobody can perform — noise, not a gate. So the
+ * preflight SKIPS (exit 0, loud message) in that state; re-adding the one
+ * mapping line turns the whole battery back on. See docs/ADR/0016.
  *
  * Owner resolution: $GITHUB_REPOSITORY (set in Actions) → the `origin` remote.
  *
@@ -75,7 +83,26 @@ export function resolveOwner(root = REPO_ROOT) {
   return null;
 }
 
-/** `@elabs/components-ui` → `elabs`; unscoped → null. */
+/**
+ * Does this registry require the npm scope to equal the repository owner?
+ *
+ * TRUE for GitHub Packages only. It is a property of that host — it derives a
+ * package's owner and visibility from the repo — and NOT of npm publishing in
+ * general. npmjs.org sells scopes independently of GitHub, which is exactly how
+ * this repo publishes `@elabs-ai/*` out of `github.com/mreimitz/elabs-components`.
+ * Applying the rule everywhere would block that valid release; applying it
+ * nowhere would let a GitHub Packages release fail after the first package has
+ * already published irreversibly. So it is gated on the host, not dropped.
+ */
+export function requiresOwnerScope(registry) {
+  try {
+    return new URL(registry).host.toLowerCase() === "npm.pkg.github.com";
+  } catch {
+    return false;
+  }
+}
+
+/** `@elabs-ai/components-ui` → `elabs`; unscoped → null. */
 export function scopeOf(pkgName) {
   return pkgName.startsWith("@") ? pkgName.slice(1).split("/")[0].toLowerCase() : null;
 }
@@ -91,12 +118,13 @@ export function publishBlockers(pkgJson, { owner, relDir, registry }) {
   const name = pkgJson.name;
 
   const scope = scopeOf(name);
-  if (owner && scope !== owner) {
+  if (requiresOwnerScope(registry) && owner && scope !== owner) {
     out.push({
       rule: "scope-mismatch",
       detail:
         `"${name}" is scoped @${scope ?? "(unscoped)"}, but GitHub Packages only accepts ` +
-        `packages scoped to the repository owner — @${owner}. Rename it to @${owner}/<name>.`,
+        `packages scoped to the repository owner — @${owner}. Rename it to @${owner}/<name>, ` +
+        `or publish to a registry that sells scopes independently (npmjs.org).`,
     });
   }
   if (pkgJson.private === true) {
@@ -108,7 +136,7 @@ export function publishBlockers(pkgJson, { owner, relDir, registry }) {
   if (!pkgJson.repository?.url) {
     out.push({
       rule: "missing-repository",
-      detail: `"${name}" has no repository field — GitHub Packages needs it to link the package to the repo and inherit its visibility.`,
+      detail: `"${name}" has no repository field — the registry needs it to link the package back to its source (and GitHub Packages additionally derives visibility from it).`,
     });
   } else if (relDir && pkgJson.repository.directory !== relDir) {
     out.push({
@@ -125,18 +153,33 @@ export function publishBlockers(pkgJson, { owner, relDir, registry }) {
   return out;
 }
 
-/** The scope→registry mapping consumers and CI both rely on. */
-export function npmrcBlockers(npmrcText, owner, registry) {
-  if (!owner) return [];
-  const line = `@${owner}:registry=${registry}`;
-  return npmrcText.includes(line)
-    ? []
-    : [
-        {
-          rule: "npmrc-unmapped",
-          detail: `.npmrc does not contain "${line}" — installs would resolve @${owner}/* from npmjs.org.`,
-        },
-      ];
+/**
+ * The scope→registry mapping consumers and CI both rely on, asserted for EVERY
+ * scope actually being published.
+ *
+ * Keyed on the published scopes, not on the repository owner: the two are the
+ * same only on GitHub Packages. Checking the owner's scope here would demand a
+ * `@mreimitz:registry=` line for a release that publishes `@elabs-ai/*`, while
+ * saying nothing about the scope that ships — the check would be both wrong and
+ * vacuous. Derived from the package names, so a second scope is covered the day
+ * it is introduced.
+ *
+ * @param {string} npmrcText
+ * @param {string[]|string} scopes  scope names WITHOUT the `@` (e.g. `["elabs"]`)
+ * @param {string} registry
+ */
+export function npmrcBlockers(npmrcText, scopes, registry) {
+  const list = [...new Set([scopes].flat().filter(Boolean))];
+  const out = [];
+  for (const scope of list) {
+    const line = `@${scope}:registry=${registry}`;
+    if (npmrcText.includes(line)) continue;
+    out.push({
+      rule: "npmrc-unmapped",
+      detail: `.npmrc does not contain "${line}" — the publish target for @${scope}/* is undeclared, and on a private registry every consumer install would resolve it from npmjs.org instead.`,
+    });
+  }
+  return out;
 }
 
 /**
@@ -167,8 +210,12 @@ function main(argv) {
     return 0;
   }
 
+  // The owner is only load-bearing on GitHub Packages (rule 1). Refusing to run
+  // without it on npmjs.org would make the preflight unusable from a checkout
+  // with no `origin` — a tarball, a CI clone with a renamed remote — while
+  // proving nothing about a scope GitHub does not own.
   const owner = resolveOwner();
-  if (!owner) {
+  if (!owner && requiresOwnerScope(target.registry)) {
     console.error(
       "✖ publish-ready: could not resolve the GitHub owner (no $GITHUB_REPOSITORY, no origin remote).",
     );
@@ -183,13 +230,15 @@ function main(argv) {
     }
   }
 
-  for (const v of npmrcBlockers(npmrc, owner, target.registry)) {
+  const publishedScopes = [...new Set(pkgs.map(({ json }) => scopeOf(json.name)).filter(Boolean))];
+  for (const v of npmrcBlockers(npmrc, publishedScopes, target.registry)) {
     violations.push({ pkg: "(repo)", ...v });
   }
 
   if (violations.length === 0) {
     console.log(
-      `✔ publish-ready: ${pkgs.length} package(s) can publish to ${target.registry} as @${owner}/*.`,
+      `✔ publish-ready: ${pkgs.length} package(s) can publish to ${target.registry} as ` +
+        `${publishedScopes.map((s) => `@${s}/*`).join(", ")}.`,
     );
     return 0;
   }

@@ -89,7 +89,7 @@ async function main(argv) {
     }
   }
   console.error(
-    "\nRun `pnpm --filter @elabs/components-tokens tokens:build` (then commit the\n" +
+    "\nRun `pnpm --filter @elabs-ai/components-tokens tokens:build` (then commit the\n" +
       "regenerated stylesheets). The token VALUES live in\n" +
       "packages/tokens/tokens/themes/<theme>.tokens.json; the file STRUCTURE is\n" +
       "hand-authored. Since ADR 0029 the reference themes live in\n" +

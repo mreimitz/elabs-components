@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
-import { Badge } from "@elabs/components-ui";
+import { Badge } from "@elabs-ai/components-ui";
 import { Gallery, type GalleryImage } from "./gallery";
 
 /**

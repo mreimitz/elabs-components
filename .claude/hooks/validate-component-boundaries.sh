@@ -7,8 +7,8 @@
 #
 # Warns when an edited package/app source file:
 #   1. reaches across packages with deep relative paths (../../..) instead of
-#      the public @elabs/components-* package alias
-#   2. imports a package's private internals via @elabs/components-<pkg>/src/...
+#      the public @elabs-ai/components-* package alias
+#   2. imports a package's private internals via @elabs-ai/components-<pkg>/src/...
 #   3. hardcodes a raw hex color (use semantic tokens; tokens package exempt)
 set -u
 
@@ -38,12 +38,12 @@ warn() { echo "⚠ boundary check ($file_path): $1" >&2; }
 #    only two levels deep and are intentionally NOT flagged.
 if grep -Eq "from \"(\.\./){3,}" "$file_path" 2>/dev/null || \
    grep -Eq "from \"[^\"]*\.\./[^\"]*packages/" "$file_path" 2>/dev/null; then
-  warn "relative import escapes the package — import from the @elabs/components-* package alias instead of crossing boundaries."
+  warn "relative import escapes the package — import from the @elabs-ai/components-* package alias instead of crossing boundaries."
 fi
 
 # 2. importing a package's private internals
-if grep -Eq "from \"@elabs/components-[a-z-]+/src/" "$file_path" 2>/dev/null; then
-  warn "imports @elabs/components-<pkg>/src/... — use the package's public entry (its index) instead of internals."
+if grep -Eq "from \"@elabs-ai/components-[a-z-]+/src/" "$file_path" 2>/dev/null; then
+  warn "imports @elabs-ai/components-<pkg>/src/... — use the package's public entry (its index) instead of internals."
 fi
 
 # 3. raw hex colors outside the tokens package

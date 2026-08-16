@@ -171,7 +171,7 @@ const CALC_TEXT_TOKENS = [
 ] as const;
 
 /**
- * #315 — CodeBlock (@elabs/components-ai, Shiki) syntax-highlight TEXT tokens.
+ * #315 — CodeBlock (@elabs-ai/components-ai, Shiki) syntax-highlight TEXT tokens.
  * `--code-background`/`--code-foreground` are `var(--card)`/`var(--foreground)`
  * aliases (already covered by the foreground/card pairings used everywhere) so
  * they're not literal `oklch()` declarations this regex-based map can see; only
@@ -349,7 +349,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // Search / find-in-page match highlight — the ink on the `<mark>` plate must
     // clear AA body text in every theme (the dedicated pair that replaces the
     // sub-AA `bg-warning/40` improvisation, 3.48:1 in dark). Consumed by
-    // `MatchHighlight` (@elabs/components-ui). See #284 + the highlight-token issue.
+    // `MatchHighlight` (@elabs-ai/components-ui). See #284 + the highlight-token issue.
     it("highlight-foreground ≥ 4.5:1 on --highlight", () => {
       const ratio = contrast(token(theme, "--highlight-foreground"), token(theme, "--highlight"));
       expect(
@@ -519,7 +519,7 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // hover, with the resting border as a redundant hairline. Do NOT re-add a 3:1
     // gate on `--input`; the `--border-strong` rung above is the load-bearing one.
 
-    // #259 — the Gantt inside-bar-label pill (@elabs/components-charts
+    // #259 — the Gantt inside-bar-label pill (@elabs-ai/components-charts
     // gantt-bar.tsx `GANTT_INSIDE_LABEL_SCRIM`) is opaque `bg-foreground` +
     // `text-background`, chosen SPECIFICALLY because it is fill-independent and
     // guaranteed ≥4.5:1 in every theme — unlike `--primary-foreground`, which is

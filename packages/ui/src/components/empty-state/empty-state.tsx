@@ -1,5 +1,5 @@
 /**
- * @deprecated Use `StatePanel kind="empty"` from `@elabs/components-ui` instead.
+ * @deprecated Use `StatePanel kind="empty"` from `@elabs-ai/components-ui` instead.
  * This wrapper is kept for back-compat and will be removed in a future release.
  */
 import { type ReactNode } from "react";

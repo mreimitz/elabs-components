@@ -31,14 +31,14 @@
       "type": "registry:block",
       "root": "registry/blocks/chart-frame-data",
       "title": "ChartFrame + data table",
-      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs/components-data: full TanStack DataTable on flip and downloadCsv on export."
+      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs-ai/components-data: full TanStack DataTable on flip and downloadCsv on export."
     },
     {
       "name": "ai-chart",
       "type": "registry:block",
       "root": "registry/blocks/ai-chart",
       "title": "AI chart in conversation",
-      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs/components-charts) composed with Tool/ToolOutput from @elabs/components-ai. The canonical copy-owned home for @elabs/components-ai + @elabs/components-charts cross-sibling composition."
+      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs-ai/components-charts) composed with Tool/ToolOutput from @elabs-ai/components-ai. The canonical copy-owned home for @elabs-ai/components-ai + @elabs-ai/components-charts cross-sibling composition."
     },
     {
       "name": "flow-canvas",
@@ -66,8 +66,8 @@
       "type": "registry:block",
       "root": "registry/blocks/code-workspace",
       "title": "Code workspace",
-      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs/components-editor/monaco-environment once at the app entry).",
-      "$comment-extraDependencies": "A third-party PEER of a dependency that this block genuinely needs at runtime. Brand (@elabs/*) peers are added automatically; a third-party peer is conditional on what the block renders, so it is declared. @elabs/components-editor owns globalThis.MonacoEnvironment and cannot render without monaco-editor installed.",
+      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs-ai/components-editor/monaco-environment once at the app entry).",
+      "$comment-extraDependencies": "A third-party PEER of a dependency that this block genuinely needs at runtime. Brand (@elabs-ai/*) peers are added automatically; a third-party peer is conditional on what the block renders, so it is declared. @elabs-ai/components-editor owns globalThis.MonacoEnvironment and cannot render without monaco-editor installed.",
       "extraDependencies": ["monaco-editor"]
     },
     {

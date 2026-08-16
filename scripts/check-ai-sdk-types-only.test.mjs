@@ -71,7 +71,7 @@ test("BLOCKS a value re-export of `ai`", () => {
 test("IGNORES unrelated modules and lookalikes", () => {
   assert.ok(isClean(`import { useChat } from "ai-sdk-lookalike";`));
   assert.ok(isClean(`import { something } from "openai";`));
-  assert.ok(isClean(`import { Button } from "@elabs/components-ui";`));
+  assert.ok(isClean(`import { Button } from "@elabs-ai/components-ui";`));
   assert.ok(isClean(`import { useEffect } from "react";`));
 });
 

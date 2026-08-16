@@ -24,7 +24,7 @@ const meta = {
       description: {
         component:
           "The semantic color tokens, defined once per theme in " +
-          "`@elabs/components-tokens` `themes.css` and exposed to Tailwind via `@theme inline`. " +
+          "`@elabs-ai/components-tokens` `themes.css` and exposed to Tailwind via `@theme inline`. " +
           "Each swatch is theme-reactive: it fills from `var(--token)`, so switching " +
           "the toolbar theme recolors the entire page. Use the listed utility " +
           "(`bg-*` / `text-*` / `border-*`) — never a raw color.",
@@ -163,7 +163,7 @@ const GROUPS: TokenGroup[] = [
   },
   {
     heading: "Canvas & flow",
-    blurb: "The React Flow canvas, its grid, and node/edge ink (`@elabs/components-flow`).",
+    blurb: "The React Flow canvas, its grid, and node/edge ink (`@elabs-ai/components-flow`).",
     tokens: [
       { varName: "--canvas", utility: "bg-canvas" },
       { varName: "--canvas-grid", utility: "bg-canvas-grid" },
@@ -174,7 +174,7 @@ const GROUPS: TokenGroup[] = [
   {
     heading: "Chat",
     blurb:
-      "The conversation surfaces in `@elabs/components-ai` — user vs assistant message grounds.",
+      "The conversation surfaces in `@elabs-ai/components-ai` — user vs assistant message grounds.",
     tokens: [
       { varName: "--chat-user", utility: "bg-chat-user", foregroundVar: "--chat-user-foreground" },
       {
@@ -187,7 +187,7 @@ const GROUPS: TokenGroup[] = [
   {
     heading: "Categorical data palette",
     blurb:
-      "The twelve-series chart palette (`@elabs/components-charts`) — three interleaved hue families (yellow, blue, grey) so adjacent series never share a family. Series 1 is the brand colour itself. One ramp, identical in both themes — which means the light theme's series are deliberately pale against a white plot ground; see the note on the ramp in `themes/light.css`. Under monochrome themes series are also differentiated by pattern, not hue alone.",
+      "The twelve-series chart palette (`@elabs-ai/components-charts`) — three interleaved hue families (yellow, blue, grey) so adjacent series never share a family. Series 1 is the brand colour itself. One ramp, identical in both themes — which means the light theme's series are deliberately pale against a white plot ground; see the note on the ramp in `themes/light.css`. Under monochrome themes series are also differentiated by pattern, not hue alone.",
     tokens: [
       { varName: "--chart-1", utility: "bg-chart-1" },
       { varName: "--chart-2", utility: "bg-chart-2" },

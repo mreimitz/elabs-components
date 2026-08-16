@@ -65,12 +65,12 @@ test("FLAGS: type import from @base-ui/react (charts must have zero)", () => {
 
 // ── True negatives — must NOT FLAG ───────────────────────────────────────────
 
-test("DOES NOT FLAG: import { Card, Table, TooltipContent } from @elabs/components-ui", () => {
-  assert.ok(isClean(`import { Card, Table, TooltipContent } from "@elabs/components-ui";`));
+test("DOES NOT FLAG: import { Card, Table, TooltipContent } from @elabs-ai/components-ui", () => {
+  assert.ok(isClean(`import { Card, Table, TooltipContent } from "@elabs-ai/components-ui";`));
 });
 
-test("DOES NOT FLAG: export { Card } from @elabs/components-ui (pass-through re-export)", () => {
-  assert.ok(isClean(`export { Card } from "@elabs/components-ui";`));
+test("DOES NOT FLAG: export { Card } from @elabs-ai/components-ui (pass-through re-export)", () => {
+  assert.ok(isClean(`export { Card } from "@elabs-ai/components-ui";`));
 });
 
 test("DOES NOT FLAG: import { Table as TableIcon } from lucide-react", () => {
@@ -88,7 +88,7 @@ test("DOES NOT FLAG: export function ChartTooltipContent (post-#168 name)", () =
 test("DOES NOT FLAG: comments mentioning old names", () => {
   // A comment containing `@base-ui Progress` must not trip the gate.
   assert.ok(isClean(`// dropped @base-ui Progress`));
-  assert.ok(isClean(`/* import { Card } from "@elabs/components-ui" */`));
+  assert.ok(isClean(`/* import { Card } from "@elabs-ai/components-ui" */`));
 });
 
 test("DOES NOT FLAG: export interface with ui-owned name (type only)", () => {
@@ -102,7 +102,7 @@ test("DOES NOT FLAG: export type alias with ui-owned name", () => {
 test("DOES NOT FLAG: export default bare identifier without a local declaration", () => {
   // `Card` is imported, not declared locally — no local decl → no flag.
   const src = `
-import { Card } from "@elabs/components-ui";
+import { Card } from "@elabs-ai/components-ui";
 export default Card;
 `;
   assert.ok(isClean(src));
@@ -110,6 +110,6 @@ export default Card;
 
 test("does not flag unrelated modules or lookalikes", () => {
   assert.ok(isClean(`import { useSpring } from "motion/react";`));
-  assert.ok(isClean(`import { cn } from "@elabs/components-ui";`));
+  assert.ok(isClean(`import { cn } from "@elabs-ai/components-ui";`));
   assert.ok(isClean(`import { something } from "base-ui-lookalike";`));
 });

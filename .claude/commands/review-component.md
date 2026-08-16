@@ -29,7 +29,7 @@ the code; run `mcp__storybook__run-story-tests` scoped to this component (intera
 - axe a11y) and report failures with their story IDs; use
   `mcp__storybook__preview-stories` with `globals=theme:<slug>` to confirm it renders
   in both themes. If the server is unavailable, fall back to
-  `pnpm --filter @elabs/components-docs test-storybook` and reading the story/source. See
+  `pnpm --filter @elabs-ai/components-docs test-storybook` and reading the story/source. See
   @.claude/rules/storybook-mcp.md.
 
 Output a short report: ✅ passes, ⚠️ issues (with file:line and a concrete fix),
