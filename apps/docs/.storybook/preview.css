@@ -30,3 +30,7 @@
 @source "../../../packages/viewer/src/**/*.{ts,tsx}";
 /* Cross-package composition demos live in apps/docs/stories — scan them too. */
 @source "../stories/**/*.{ts,tsx}";
+/* Registry blocks are rendered by the Blocks stories straight from their shipped
+   source, so their classes must be compiled here too — without this they render
+   unstyled and the story proves nothing. */
+@source "../../../registry/blocks/**/*.{ts,tsx}";

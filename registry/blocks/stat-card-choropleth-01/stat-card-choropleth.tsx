@@ -16,9 +16,9 @@ import {
   type StatCardHoverState,
   statCardLabelClassName,
   statCardValueClassName,
-} from "./stat-card-chart";
+} from "@/components/stat-card-parts/stat-card-chart";
 import { StatCardChoroplethHoverBridge } from "./stat-card-choropleth-hover-bridge";
-import { TrendBadge } from "./trend-badge";
+import { TrendBadge } from "@/components/stat-card-parts/trend-badge";
 
 export function StatCardChoropleth() {
   const { worldData, isLoading } = useWorldDataStandalone();

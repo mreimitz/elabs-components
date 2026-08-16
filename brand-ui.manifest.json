@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T12:20:44.181Z",
+  "generatedAt": "2026-08-16T12:48:25.358Z",
   "name": "brand-ui",
   "themes": [
     "dark"
@@ -195,12 +195,6 @@
   },
   "registry": [
     {
-      "name": "button",
-      "type": "registry:ui",
-      "title": "Button",
-      "description": "Source-owned button with variants and sizes (Radix Slot for asChild)."
-    },
-    {
       "name": "app-shell",
       "type": "registry:block",
       "title": "App shell",
@@ -255,18 +249,6 @@
       "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs/components-editor/monaco-environment once at the app entry)."
     },
     {
-      "name": "default-theme",
-      "type": "registry:theme",
-      "title": "Default theme",
-      "description": "Neutral enterprise SaaS light + dark token set."
-    },
-    {
-      "name": "light-theme",
-      "type": "registry:theme",
-      "title": "Light theme",
-      "description": "Qlik brand theme — Qlik Green primary, deep-blue text, bright surfaces (light) with a deep-blue dark companion. Derived from the Qlik brand palette."
-    },
-    {
       "name": "sidebar-02",
       "type": "registry:block",
       "title": "App shell — dashboard inset",
@@ -283,6 +265,12 @@
       "type": "registry:block",
       "title": "App shell — double-sided nav",
       "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so."
+    },
+    {
+      "name": "stat-card-parts",
+      "type": "registry:block",
+      "title": "Stat Card — shared parts",
+      "description": "The pieces every stat-card block shares: the edge-to-edge chart bleed wrapper, the chart-hover→value/label/trend bridge, and the tokenized trend badge. Installed once and reused by the stat-card blocks rather than copied into each."
     },
     {
       "name": "stat-card-area-01",

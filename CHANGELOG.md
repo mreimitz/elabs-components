@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### The copy-own registry is now generated, blocks-only, and actually rendered
+
+`npx shadcn add <item>` used to install code that three separate places described
+and none of them agreed on: the file on disk, a Storybook story that re-typed the
+same JSX, and a hand-written `registry.json`. All three had drifted.
+
+- **Two item types are gone.** The `button` item was a stale fork of the
+  `@elabs/components-ui` Button — missing variants and motion tokens — and it
+  **shadowed the upstream shadcn `button` name**, so a block asking for `button`
+  silently got the fork instead of upstream shadcn. The `default-theme` and
+  `light-theme` items hand-copied token values that no longer matched
+  `themes.css`, under names that matched no shipped theme. All three are removed:
+  primitives come from `@elabs/components-ui`, themes from
+  `@elabs/components-tokens`.
+- **`registry.json` is generated** from the block source plus an authored
+  `registry.items.json` (`pnpm gen:registry`). This fixes installs that were
+  wrong: `sidebar-02` declared five dependencies on components its files never
+  import, `sidebar-04` and `sidebar-05` shipped incomplete file sets that could
+  not compile after install, and several items named packages the code does not
+  use while omitting ones it does.
+- **Shared stat-card parts exist once.** A new `stat-card-parts` item holds the
+  trend badge, chart wrapper and hover bridge that three stat-card blocks each
+  carried a byte-identical copy of; the blocks pull it in automatically.
+- **Every block story now renders the shipped file.** Six stories reimplemented
+  their block instead of importing it, and the registry files themselves had no
+  rendered coverage at all. Stat Card (Area), Stat Card (Line) and Stat Card
+  (Choropleth) gain their first story.
+- **The registry has commit-time teeth.** Committing anything under `registry/`
+  regenerates the manifest and blocks the commit if it is invalid or if an item's
+  imports would not resolve after install.
+
 ### Attribution is now a maintained, public document
 
 Every project brand-ui borrows from is credited in one place. `ATTRIBUTION.md` at

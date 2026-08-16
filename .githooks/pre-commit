@@ -32,7 +32,12 @@
 #    them — so none of the derived artifacts are ever stale. The CI stale-gates
 #    are the universal backstop; this is the convenience that makes the happy
 #    path pass by construction. (WP-10 #85, extended by #396.)
-# 3) Run Prettier over the staged Prettier-supported files and re-stage the
+# 3) When a commit stages anything under `registry/`, regenerate the DERIVED
+#    `registry/registry.json` from the block source and stage it, then HARD
+#    BLOCK if `validate-registry.mjs` or `check-registry-resolve.mjs` fails —
+#    a manifest that lies ships a broken `shadcn add` to a consumer, and no CI
+#    workflow runs these today.
+# 4) Run Prettier over the staged Prettier-supported files and re-stage the
 #    (idempotent) result — so `format:check` doesn't go red on direct commits
 #    from contributors without the `.claude/hooks/format-after-edit.sh` agent
 #    hook. `pnpm format:check` in CI (blocking `gates` job) stays the backstop
@@ -40,9 +45,9 @@
 #    (`core.hooksPath` unset). (#239 — "Enforcement over reminders": the format
 #    convention now has commit-time teeth, not just a CI post-hoc check.)
 #
-# Steps 2-3 are staged-files-only (never the whole tree) to keep the hook fast,
-# and both no-op safely if their tool isn't available yet (never blocks a commit
-# on a MISSING tool — steps 0-1 still block on a FOUND violation).
+# Steps 2-4 are staged-files-only (never the whole tree) to keep the hook fast,
+# and all no-op safely if their tool isn't available yet (never blocks a commit
+# on a MISSING tool — steps 0-1 and 3 still block on a FOUND violation).
 #
 # Wired via `core.hooksPath=.githooks` (set by the `prepare` npm script on install).
 set -u
@@ -87,7 +92,30 @@ if printf '%s\n' "$staged" | grep -Eq '^packages/[^/]+/src/|^packages/tokens/src
   fi
 fi
 
-# --- 2) format staged Prettier-supported files (#239) ------------------------
+# --- 3) keep the derived registry manifest fresh and installable -------------
+# `registry/registry.json` is GENERATED from `registry/registry.items.json` +
+# the block source (scripts/gen-registry.mjs) — it used to be hand-written, and
+# drifted: fabricated `registryDependencies`, a stale forked `button`, theme
+# token values copied out of themes.css. Regenerate + stage it like step 2 does
+# for the manifest, then HARD BLOCK if the result is invalid or has an import
+# that would not resolve after `shadcn add` rewrites paths. Unlike step 2 these
+# two are blocking: a broken manifest ships a broken install to a consumer, and
+# there is no CI backstop for it today.
+if printf '%s\n' "$staged" | grep -Eq '^registry/'; then
+  if command -v node >/dev/null 2>&1; then
+    node scripts/gen-registry.mjs >/dev/null 2>&1 || true
+    git diff --quiet -- registry/registry.json 2>/dev/null || {
+      git add -- registry/registry.json
+      echo "pre-commit: regenerated registry/registry.json from the block source."
+    }
+    if ! node scripts/validate-registry.mjs || ! node scripts/check-registry-resolve.mjs; then
+      echo "pre-commit: aborting commit — the registry manifest is invalid or an item's imports would not resolve after install (see above)." >&2
+      exit 1
+    fi
+  fi
+fi
+
+# --- 4) format staged Prettier-supported files (#239) ------------------------
 # Same binary-resolution pattern as .claude/hooks/format-after-edit.sh: prefer
 # the local node_modules binary, fall back to `pnpm exec`, else skip silently
 # (safe before `pnpm install` has run — no prettier binary is not a commit

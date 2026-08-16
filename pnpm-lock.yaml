@@ -1247,6 +1247,70 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
 
+  registry:
+    dependencies:
+      '@elabs/components-ai':
+        specifier: workspace:*
+        version: link:../packages/ai
+      '@elabs/components-charts':
+        specifier: workspace:*
+        version: link:../packages/charts
+      '@elabs/components-data':
+        specifier: workspace:*
+        version: link:../packages/data
+      '@elabs/components-editor':
+        specifier: workspace:*
+        version: link:../packages/editor
+      '@elabs/components-flow':
+        specifier: workspace:*
+        version: link:../packages/flow
+      '@elabs/components-icons':
+        specifier: workspace:*
+        version: link:../packages/icons
+      '@elabs/components-marketing':
+        specifier: workspace:*
+        version: link:../packages/marketing
+      '@elabs/components-tokens':
+        specifier: workspace:*
+        version: link:../packages/tokens
+      '@elabs/components-ui':
+        specifier: workspace:*
+        version: link:../packages/ui
+      '@visx/curve':
+        specifier: 4.0.1-alpha.0
+        version: 4.0.1-alpha.0
+      '@xyflow/react':
+        specifier: ^12.3.6
+        version: 12.11.1(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: ^0.577.0
+        version: 0.577.0(react@19.2.7)
+      monaco-editor:
+        specifier: ^0.55.1
+        version: 0.55.1
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      topojson-client:
+        specifier: 3.1.0
+        version: 3.1.0
+    devDependencies:
+      '@elabs/components-typescript-config':
+        specifier: workspace:*
+        version: link:../packages/typescript-config
+      '@types/geojson':
+        specifier: ^7946.0.16
+        version: 7946.0.16
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.19.19
+      '@types/react':
+        specifier: ^19.0.2
+        version: 19.2.16
+      '@types/topojson-client':
+        specifier: ^3.1.5
+        version: 3.1.5
+
 packages:
 
   '@adobe/css-tools@4.5.0':

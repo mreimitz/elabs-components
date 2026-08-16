@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Not a build config — nothing compiles from here. It exists because Vite/esbuild
+  // resolves `jsx` from the NEAREST tsconfig to each source file, and Storybook now
+  // renders these blocks straight from `registry/blocks/**` (apps/docs/stories/blocks/).
+  // Without this file those blocks fell back to the classic JSX transform and threw
+  // "React is not defined" at render time — while still bundling successfully, so
+  // only the story tests caught it.
+  "extends": "@elabs/components-typescript-config/vite-app.json",
+  "compilerOptions": {
+    // `node` is here for the WORKSPACE SOURCES this program pulls in through the
+    // blocks' `@elabs/components-*` imports (they read `process.env.NODE_ENV`),
+    // not for the blocks themselves — a registry block is browser code.
+    "types": ["react", "node"],
+    "allowImportingTsExtensions": false,
+    // Registry blocks are copy-own code whose source tree MIRRORS the tree
+    // `shadcn add` writes, so a block reaches a sibling block through the
+    // consumer-side alias. See .claude/rules/registry.md.
+    "paths": {
+      "@/components/*": ["./blocks/*"]
+    }
+  },
+  "include": ["blocks/**/*"],
+  "exclude": ["node_modules"]
+}

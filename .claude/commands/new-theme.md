@@ -1,5 +1,5 @@
 ---
-description: Add a new brand theme using semantic tokens (themes.css + theme-types + optional registry theme)
+description: Add a new brand theme using semantic tokens (theme stylesheet + theme-types + package surface)
 argument-hint: <theme-name> [brand description or key colors]
 allowed-tools: Read, Edit, Write, Grep, Bash(pnpm:*)
 ---
@@ -46,8 +46,12 @@ dist/themes`) — nothing to add, but confirm it still does.
    - import it where the reference themes are actually wanted:
      `apps/docs/.storybook/preview.css`, `fixtures/consumer-smoke/src/index.css`,
      and the scaffold CSS in `packages/cli/lib/engine.mjs`.
-4. (Optional) Mirror the palette as a `registry:theme` item in
-   `registry/registry.json` so other projects can `npx shadcn add <name>-theme`.
+4. Do **not** mirror the palette into `registry/registry.json`. A theme ships as
+   a stylesheet from `@elabs/components-tokens`, and the registry is blocks-only —
+   `registry:theme` items were removed because hand-copied `cssVars` are a second
+   home for the same colours and had already drifted from `themes.css`. A consumer
+   who wants only the palette imports the stylesheet or follows
+   `docs/CONSUMING.md` §5.1. See `@.claude/rules/registry.md`.
 5. Verify: switch to the theme in the playground/Storybook and confirm contrast,
    focus rings, and that no component breaks. Run
    `pnpm --filter @elabs/components-tokens typecheck test`, then
@@ -55,5 +59,5 @@ dist/themes`) — nothing to add, but confirm it still does.
    **Read the COUNTS these gates print, not just their exit code** — a theme
    parser that silently reads fewer blocks passes green.
 
-Do NOT hardcode the theme's colors anywhere except its own theme stylesheet (and
-the registry theme item). Components must remain brand-agnostic.
+Do NOT hardcode the theme's colors anywhere except its own theme stylesheet.
+Components must remain brand-agnostic.

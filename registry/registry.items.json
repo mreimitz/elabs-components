@@ -1,0 +1,165 @@
+{
+  "$comment": "AUTHORED source for registry.json. Prose and identity live here; `files`, `dependencies` and `registryDependencies` are DERIVED from the block source by `pnpm gen:registry` — never hand-write them. See .claude/rules/registry.md.",
+  "name": "brand-ui",
+  "items": [
+    {
+      "name": "app-shell",
+      "type": "registry:block",
+      "root": "registry/blocks/app-shell",
+      "title": "App shell",
+      "description": "Sidebar + top nav + page layout scaffold for an internal app.",
+      "fileOverrides": {
+        "app-shell-page.tsx": { "type": "registry:page", "target": "app/(app)/page.tsx" }
+      }
+    },
+    {
+      "name": "ai-chat-shell",
+      "type": "registry:block",
+      "root": "registry/blocks/ai-chat-shell",
+      "title": "AI chat shell",
+      "description": "Chat surface with transcript, composer, tool calls and a context rail."
+    },
+    {
+      "name": "data-table",
+      "type": "registry:block",
+      "root": "registry/blocks/data-table",
+      "title": "Data table",
+      "description": "Filterable, sortable, paginated TanStack data table with toolbar."
+    },
+    {
+      "name": "chart-frame-data",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-frame-data",
+      "title": "ChartFrame + data table",
+      "description": "ChartFrame (expand / flip-to-table / download-CSV) wired to @elabs/components-data: full TanStack DataTable on flip and downloadCsv on export."
+    },
+    {
+      "name": "ai-chart",
+      "type": "registry:block",
+      "root": "registry/blocks/ai-chart",
+      "title": "AI chart in conversation",
+      "description": "Renders a model's chart tool-output inside an AI conversation — AutoChart (@elabs/components-charts) composed with Tool/ToolOutput from @elabs/components-ai. The canonical copy-owned home for @elabs/components-ai + @elabs/components-charts cross-sibling composition."
+    },
+    {
+      "name": "flow-canvas",
+      "type": "registry:block",
+      "root": "registry/blocks/flow-canvas",
+      "title": "Flow canvas",
+      "description": "Branded React Flow canvas with custom nodes, edges and controls."
+    },
+    {
+      "name": "flow-builder",
+      "type": "registry:block",
+      "root": "registry/blocks/flow-builder",
+      "title": "Flow builder",
+      "description": "Workflow-builder canvas with a node palette, auto-layout, grouping, placeholder growth, insert-between, an inspector, and copy-own undo/redo + copy/paste."
+    },
+    {
+      "name": "marketing-hero",
+      "type": "registry:block",
+      "root": "registry/blocks/marketing-hero",
+      "title": "Marketing hero",
+      "description": "Landing hero section with eyebrow, headline, CTAs and logo strip."
+    },
+    {
+      "name": "code-workspace",
+      "type": "registry:block",
+      "root": "registry/blocks/code-workspace",
+      "title": "Code workspace",
+      "description": "Multi-file Monaco code editor with brand-ui tabs and token theming (wire @elabs/components-editor/monaco-environment once at the app entry).",
+      "$comment-extraDependencies": "A third-party PEER of a dependency that this block genuinely needs at runtime. Brand (@elabs/*) peers are added automatically; a third-party peer is conditional on what the block renders, so it is declared. @elabs/components-editor owns globalThis.MonacoEnvironment and cannot render without monaco-editor installed.",
+      "extraDependencies": ["monaco-editor"]
+    },
+    {
+      "name": "sidebar-02",
+      "type": "registry:block",
+      "root": "packages/ui/src/blocks/sidebar-02",
+      "title": "App shell — dashboard inset",
+      "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so.",
+      "categories": ["sidebar", "app-shell"]
+    },
+    {
+      "name": "sidebar-04",
+      "type": "registry:block",
+      "root": "packages/ui/src/blocks/sidebar-04",
+      "title": "App shell — mail (double-sided)",
+      "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so.",
+      "categories": ["sidebar", "app-shell"]
+    },
+    {
+      "name": "sidebar-05",
+      "type": "registry:block",
+      "root": "packages/ui/src/blocks/sidebar-05",
+      "title": "App shell — double-sided nav",
+      "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
+      "categories": ["sidebar", "app-shell"]
+    },
+    {
+      "name": "stat-card-parts",
+      "type": "registry:block",
+      "root": "registry/blocks/stat-card-parts",
+      "title": "Stat Card — shared parts",
+      "description": "The pieces every stat-card block shares: the edge-to-edge chart bleed wrapper, the chart-hover→value/label/trend bridge, and the tokenized trend badge. Installed once and reused by the stat-card blocks rather than copied into each.",
+      "categories": ["stat-card"]
+    },
+    {
+      "name": "stat-card-area-01",
+      "type": "registry:block",
+      "root": "registry/blocks/stat-card-area-01",
+      "title": "Stat Card — Area",
+      "description": "KPI stat card with a live area chart sparkline, hover-driven value/label updates, and a tokenized trend badge.",
+      "categories": ["stat-card"]
+    },
+    {
+      "name": "stat-card-line-01",
+      "type": "registry:block",
+      "root": "registry/blocks/stat-card-line-01",
+      "title": "Stat Card — Line",
+      "description": "KPI stat card with an inline line chart, hover-driven value/label updates, and a tokenized trend badge.",
+      "categories": ["stat-card"]
+    },
+    {
+      "name": "stat-card-choropleth-01",
+      "type": "registry:block",
+      "root": "registry/blocks/stat-card-choropleth-01",
+      "title": "Stat Card — Choropleth Map",
+      "description": "KPI stat card with a choropleth world-map chart, hover-driven country value/label updates, and a tokenized trend badge.",
+      "categories": ["stat-card"]
+    },
+    {
+      "name": "stat-cards-01",
+      "type": "registry:block",
+      "root": "registry/blocks/stat-cards-01",
+      "title": "Stat Cards — elevated KPI tiles",
+      "description": "Elevated KPI tiles beyond a flat number: MetricCard + inline Sparkline (bar or line, coloured by a --chart-* token), a goal/progress tile, and a this-vs-last comparison tile."
+    },
+    {
+      "name": "chart-card-kpi-01",
+      "type": "registry:block",
+      "root": "registry/blocks/chart-card-kpi-01",
+      "title": "Chart Card — KPI header",
+      "description": "An elevated chart-in-a-card: a header with a headline KPI + delta + a segmented period control (ToggleGroup), a token-coloured AreaChart, and a footer breakdown legend. The period control re-renders the chart."
+    },
+    {
+      "name": "stat-list-01",
+      "type": "registry:block",
+      "root": "registry/blocks/stat-list-01",
+      "title": "Stat List — ranked list, leaderboard, activity feed",
+      "description": "Compact summary widgets: a ranked list with share bars + delta (Sales by country), a leaderboard (Top performers), and a transaction/activity feed with signed amounts."
+    },
+    {
+      "name": "integration-grid-01",
+      "type": "registry:block",
+      "root": "registry/blocks/integration-grid-01",
+      "title": "Integration Grid",
+      "description": "A responsive grid of integration cards (icon + name + description + connect/manage action + connection status) under a page header with an Add action — the canonical ‘connect your tools’ surface. Logos are consumer-supplied (Lucide placeholders here)."
+    },
+    {
+      "name": "form-wizard-01",
+      "type": "registry:block",
+      "root": "registry/blocks/form-wizard-01",
+      "title": "Form Wizard — checkout flow",
+      "description": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step."
+    }
+  ]
+}

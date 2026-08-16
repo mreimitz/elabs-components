@@ -2,7 +2,17 @@
   "extends": "@elabs/components-typescript-config/vite-app.json",
   "compilerOptions": {
     "types": ["react", "react-dom"],
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    // The Blocks stories render the SHIPPED registry files rather than a copy, so
+    // the program contains sources from `registry/blocks/**`. Registry blocks are
+    // copy-own code whose source tree MIRRORS the tree `shadcn add` writes, so a
+    // block reaches a sibling block through the consumer-side alias — the same
+    // mapping as the Vite alias in .storybook/main.ts. Their own bare imports need
+    // no mapping: `registry/` is a workspace member with a real node_modules
+    // (registry/package.json). See .claude/rules/registry.md.
+    "paths": {
+      "@/components/*": ["../../registry/blocks/*"]
+    }
   },
   "include": [".storybook/**/*", "stories/**/*"],
   "exclude": ["node_modules", "storybook-static"]

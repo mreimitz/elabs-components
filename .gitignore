@@ -41,6 +41,9 @@ secrets.*
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/tasks.json
+# Pins the editor to the workspace TypeScript so the IDE and `pnpm typecheck`
+# agree — must be shared, or every clone re-hits editor-only resolution errors.
+!.vscode/settings.json
 # Referenced by the "dev: storybook" task in tasks.json — must be shared, or a fresh
 # clone gets a debug profile that points at a missing script.
 !.vscode/start-storybook.mjs

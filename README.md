@@ -1,211 +1,278 @@
 # brand-ui
 
-An internal, **source-owned, token-driven** React component system for internal
-apps, prototypes, POCs, AI/chat clients, data grids, dashboards, React Flow
-canvases and presales demos. Modern enterprise SaaS look by default, themeable to
-any brand. Built to be fast to use and easy for coding agents to extend.
+**A source-owned, token-driven React component system for building real applications —
+dashboards, data grids, AI chat clients, node canvases, maps, code editors and the
+marketing page in front of them.**
 
-> This is a **starting foundation**, not a finished brand. Tokens are neutral
-> placeholders — see `docs/TOKEN_GUIDELINES.md` for how to apply a real brand.
+React 19 · TypeScript · Tailwind CSS v4 · Radix UI · Storybook 10 · Vitest · pnpm + Turborepo
 
-## Who it's for
+Most component libraries give you buttons and inputs, then leave you to invent the
+hard parts. brand-ui ships the hard parts: a virtualized data table, a streaming chat
+transcript with tool calls and citations, a themed Monaco editor, a React Flow canvas,
+token-driven MapLibre maps, and a chart layer that picks the right chart from a spec.
+All of it renders through **one semantic token system**, so re-branding the entire
+surface is a stylesheet change — never a component change.
 
-Internal teams building many apps that should look consistent and on-brand:
-product prototypes, customer POCs, internal tools, AI assistants, data apps and
-flow/design surfaces — plus the occasional marketing page.
+It is also built to be **read and edited**. Nothing is hidden behind a clever
+abstraction, every component is plain TypeScript you can open and change, and the whole
+system is legible to coding agents through a CLI, an MCP server and a generated manifest.
 
-## What's inside
+---
 
-A pnpm + Turborepo monorepo:
+## Highlights
 
-- `packages/tokens` — semantic CSS-variable themes + `ThemeProvider`.
-- `packages/ui` — full shadcn-equivalent set (~57): foundation (Button, Card, Input…),
-  forms (Select, Checkbox, RadioGroup, Switch, Slider, Combobox, Form, Calendar,
-  DatePicker, InputOTP…), overlays (Dialog, Sheet, Drawer, Popover, Alert(Dialog),
-  Context/Menubar/Navigation menus, Command…), display & nav (Avatar, Progress,
-  Table, Breadcrumb, Pagination, Carousel, Resizable…), plus app shells.
-- `packages/icons` — branded monoline icons + `BrandLogo`.
-- `packages/data` — TanStack DataTable, filters, column picker.
-- `packages/ai` — chat shell, messages, tool calls, citations, context.
-- `packages/flow` — branded React Flow canvas, nodes, edges, controls.
-- `packages/charts` — KPI metric cards + chart container.
-- `packages/marketing` — landing-page sections.
-- `apps/docs` — Storybook.
-- `registry/` — shadcn-compatible registry for copy-owned blocks.
+- **Twelve packages, one design language.** App UI, data, AI, flow, maps, charts,
+  editor, viewer, marketing, icons and tokens — all built on the same semantic tokens,
+  the same variant conventions and the same accessibility baseline.
+- **Open theming.** A theme is not a member of a list this project controls. Write a
+  stylesheet, register it, done — no fork required. The two themes we ship are worked
+  examples, not the menu.
+- **Accessibility is enforced, not aspirational.** Every story runs `axe` in a real
+  browser as a blocking check, on a ratchet that can only tighten.
+- **Agent-native.** A `brand-ui` CLI and an MCP server expose real props, real tokens
+  and a static design-system linter, so an AI assistant extends the system from ground
+  truth instead of guessing.
+- **Self-maintaining.** 75 automated gates keep conventions true — token discipline,
+  contrast ratios, one-way package dependencies, focus-ring contracts, motion tokens,
+  microcopy, bundle weight and documentation accuracy.
+- **Two ways to consume.** Import stable primitives from the packages, or copy-own
+  prototype compositions from the shadcn-compatible registry and edit them freely.
 
-## Requirements
+---
 
-- Node ≥ 20
-- pnpm ≥ 9 (`corepack enable` or `npm i -g pnpm`)
+## Packages
 
-## Install
+| Package                       | What it gives you                                                                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs/components-tokens`    | The semantic token system, reference themes, `ThemeProvider`, and the density / motion / decoration dials                          |
+| `@elabs/components-ui`        | 106 application components — buttons, forms, overlays, navigation, tables, app shells, wizards, editors-of-lists                   |
+| `@elabs/components-icons`     | Icon primitives, `BrandLogo`, and a replaceable sample vocabulary (generic glyphs come from Lucide)                                |
+| `@elabs/components-data`      | TanStack-powered `DataTable` with filtering, faceting, column picking and virtualization                                           |
+| `@elabs/components-ai`        | 69 chat and agent surfaces — conversation, streaming messages, tool calls, reasoning, sources, artifacts, terminals, agent canvas  |
+| `@elabs/components-flow`      | A branded React Flow canvas: nodes, edges, controls, minimap, inspector                                                            |
+| `@elabs/components-maps`      | Token-driven MapLibre GL maps — theme-aware basemaps, markers, popups, routes, arcs, GeoJSON, clustering                           |
+| `@elabs/components-charts`    | Metric cards, chart frames with expand/flip/download, and `AutoChart` — the right chart from a serializable spec                   |
+| `@elabs/components-editor`    | A token-themed Monaco editor: code, diff, multi-file workspace, brand context menu                                                 |
+| `@elabs/components-viewer`    | `FileViewer` — render a file your app did not write (upload, signed URL, agent output) through a pluggable adapter registry        |
+| `@elabs/components-marketing` | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
+| `@elabs/components-cli`       | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
+
+Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a gate
+(`pnpm dep-direction:check`) fails any change that points an edge sideways or upward.
+
+---
+
+## Quick start
+
+**Requirements:** Node ≥ 20, pnpm ≥ 9 (`corepack enable`).
 
 ```bash
+git clone <this-repo>
+cd elabs-components
 pnpm install
-```
-
-## Run the docs (Storybook)
-
-```bash
 pnpm storybook        # http://localhost:6006
 ```
 
-Storybook loads stories co-located in every package and includes a theme
-switcher (Light [default], Dark).
+Storybook is the reference implementation: every component, every variant, every
+state, in both themes, with interaction and accessibility tests attached.
 
-## Use the packages (import mode)
+### Using the components
 
 ```tsx
-// once, at the app root:
-import "@elabs/components-tokens/styles.css";
+// once, at the app root
 import { ThemeProvider } from "@elabs/components-tokens";
-
-import { Button, Card, CardHeader, CardTitle } from "@elabs/components-ui";
+import { Button, Card, CardHeader, CardTitle, CardContent } from "@elabs/components-ui";
 import { DataTable } from "@elabs/components-data";
 
-function App() {
+export function App() {
   return (
     <ThemeProvider defaultTheme="light">
       <Card>
         <CardHeader>
-          <CardTitle>Hello</CardTitle>
+          <CardTitle>Revenue</CardTitle>
         </CardHeader>
-        <Button>Click me</Button>
+        <CardContent>
+          <DataTable columns={columns} data={rows} />
+          <Button>Export</Button>
+        </CardContent>
       </Card>
     </ThemeProvider>
   );
 }
 ```
 
-React Flow consumers also import its CSS once: `import "@xyflow/react/dist/style.css"`.
+```css
+/* your CSS entry */
+@import "@elabs/components-tokens/styles.css"; /* Tailwind bridge + neutral base + fonts */
+@import "@elabs/components-tokens/themes/light.css"; /* opt-in reference themes */
+@import "@elabs/components-tokens/themes/dark.css";
 
-Consuming `@elabs/components-*` from a **separate** project (tarball install, Tailwind v4 +
-token wiring, making your coding agent brand-ui-aware)? See
-[`docs/CONSUMING.md`](docs/CONSUMING.md).
-
-## Add components
-
-```bash
-# Claude Code: scaffold a component end-to-end
-/new-component ui Tooltip "hover hint for icon buttons"
+@source "../node_modules/@elabs/components-ui/dist"; /* one per package you render */
 ```
 
-Or follow `docs/COMPONENT_GUIDELINES.md`: create `component.tsx`, `index.ts`,
-`*.stories.tsx`, `*.test.tsx`, use semantic tokens, and add the barrel export.
+> The `@source` line is required. Tailwind does not scan `node_modules` unless you
+> tell it to, and skipping it renders every component unstyled.
 
-## Create themes
+Consuming from a separate project — peer dependencies, Next.js wiring, per-package
+extras, troubleshooting — is documented in [`docs/CONSUMING.md`](docs/CONSUMING.md).
 
-```bash
-/new-theme acme "deep teal primary, warm neutrals"
+---
+
+## Theming
+
+A theme is a `[data-theme]` block that covers the semantic token contract, registered
+on a provider. That is the whole definition — it does not have to come from this
+repository.
+
+```tsx
+import { BUILT_IN_THEME_DEFINITIONS, defineTheme, ThemeProvider } from "@elabs/components-tokens";
+
+const acme = defineTheme({ value: "acme", label: "Acme", dark: false });
+
+<ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, acme]} defaultTheme="acme">
+  {children}
+</ThemeProvider>;
 ```
 
-Add a `[data-theme="acme"]` block in `packages/tokens/src/themes.css` and an
-entry in `theme-types.ts`. See `docs/TOKEN_GUIDELINES.md`.
+The token contract ships as data (`THEME_TOKEN_NAMES`, 123 tokens), so you can assert
+in your own test suite that your stylesheet covers it. Every switcher and every
+darkness-dependent surface — the code editor's base theme, the map's basemap, toast
+styling — reads the active theme at runtime rather than looking a name up in a list,
+so a theme you wrote resolves correctly without registering anything anywhere.
 
-## Use the registry (copy-owned mode)
+Two reference themes ship: `light` (default) and `dark`. Beyond colour, three
+orthogonal dials adjust the same components without touching them:
 
-> **Status / gap:** the registry isn't hosted for you — there is no public
-> `/r/*.json` endpoint. Copy-own means either self-host the built JSON, or skip
-> `shadcn add` entirely and copy the block source straight from the repo.
+| Dial           | Values                           | Effect                                                      |
+| -------------- | -------------------------------- | ----------------------------------------------------------- |
+| **density**    | compact · comfortable · spacious | Scales spacing _and_ type together, with a legibility floor |
+| **motion**     | system · reduced · full          | Honours the OS preference; `full` is the user's own consent |
+| **decoration** | 0–10                             | Adds hue-independent drafting texture to any theme          |
 
-```bash
-# 1. build the registry JSON
-pnpm registry:validate
-pnpm dlx shadcn@latest build registry/registry.json --output registry/__output
+Design rationale: [`docs/ADR/0029-open-theme-registry.md`](docs/ADR/0029-open-theme-registry.md)
+and [`docs/TOKEN_GUIDELINES.md`](docs/TOKEN_GUIDELINES.md).
 
-# 2. serve registry/__output from a host YOU control, then:
-npx shadcn add https://<your-own-host>/ai-chat-shell.json
+---
 
-# — or, with no hosting at all —
-# 3. copy the block source directly out of registry/blocks/<name>/ into your repo.
-```
+## Built for coding agents
 
-See `docs/REGISTRY_GUIDELINES.md` for package-vs-registry guidance.
-
-## Testing
-
-Three layers (full guide in `docs/TESTING.md`):
+The system is designed so an AI assistant can extend it correctly without reading
+every file — and without inventing props that do not exist.
 
 ```bash
-pnpm test                 # 1. unit/smoke (Vitest) — fast, co-located
-pnpm --filter @elabs/components-docs test-storybook
-                          # 2. stories as real-browser interaction + axe a11y tests
+brand-ui info                 # packages, themes, tokens, registry, active taste profile
+brand-ui search "data table"  # find components, hooks, blocks, whole-screen playbooks
+brand-ui docs Button          # real props, read from source — not from a doc that drifted
+brand-ui audit src/Page.tsx   # static token, style and content lint (--strict to gate)
+brand-ui scaffold spec.md     # plan or emit a runnable, born-compliant app
+brand-ui scan . --out ./m     # profile an existing repo for migration
 ```
 
-The Playwright E2E suite was removed on 2026-08-02 (80a12fb) together with the
-Vite demo app it drove; the Storybook interaction + axe run above is the
-browser-level tier today.
+Two MCP servers are wired in [`.mcp.json`](.mcp.json): a persistent **`brand-ui`**
+server that answers from the committed manifest (works with Storybook down), and a
+**`storybook`** server that exposes live previews and browser-based test runs while the
+dev server is up.
 
-For exploratory and visual validation (AI-driven, via the agent-browser skill):
+The repository also carries its own operating manual — 28 rules, 31 architecture
+decision records, 16 slash commands, 15 specialised review agents and 20 edit-time
+hooks. Start at [`CLAUDE.md`](CLAUDE.md) or [`AGENTS.md`](AGENTS.md).
 
-- `/qa-flows` — functional QA across Storybook (screenshots, console health,
-  pass/fail report).
-- `/visual-review` (→ `brand-ui-visual-ux-reviewer` agent) — screenshots every page/story
-  in both themes and critiques hierarchy, spacing, contrast, typography and
-  accessibility using the UI/UX design skills.
+---
 
-CI (`.github/workflows/ci.yml`) runs a **blocking gate set** on every PR —
-`typecheck` · `lint` · `test` · `build` · `registry:validate` · `format:check` ·
-`manifest:check` · `components:check` · `docs:check` · `inventory:check` ·
-`llms:check` · `context:check` · `ai:types-only` · `lucide:check` ·
-`charts:reuse:check` · `agents:check` — plus two **non-blocking**
-(`continue-on-error`) layers: Playwright E2E (`pnpm test:e2e`) and Storybook
-interaction + axe (`pnpm --filter @elabs/components-docs test-storybook`).
+## Quality bar
 
-## How coding agents should work here
-
-Read `CLAUDE.md` (Claude Code) or `AGENTS.md` (any agent), then the relevant
-`.claude/rules/*`. Commands: `/new-component`, `/new-theme`, `/new-registry-item`,
-`/review-component`, `/prepare-release`, `/qa-flows`, `/visual-review`,
-`/file-issue`. Findings (tests, finder agents, feedback) are root-cause-analyzed
-and filed as GitHub issues — finders report, they don't fix (see
-`docs/ISSUE_WORKFLOW.md`). Hooks
-auto-format edits, block dangerous commands, and warn on boundary/token
-violations. Full workflow: `docs/AGENT_WORKFLOW.md`.
-
-## Scripts
+| Layer                 | What runs                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| **Unit**              | Vitest + Testing Library — 294 co-located test files, 3,293 assertions                      |
+| **Browser**           | Stories run as real browser interaction tests — 254 files, ~1,050 runs, each `axe`-asserted |
+| **Accessibility**     | `axe` violations are **blocking**, on a ratchet baseline that can only shrink               |
+| **Contrast & colour** | WCAG AA body text and 3:1 non-text contrast asserted per theme, in OKLab, per token role    |
+| **Architecture**      | One-way package dependency graph, subpath export discipline, no eager heavy engines         |
+| **Documentation**     | Generated regions, component manifest, inventory and agent context are all freshness-gated  |
 
 ```bash
-pnpm dev            # run all dev tasks (turbo)
-pnpm build          # build all packages/apps
-pnpm lint           # eslint
-pnpm typecheck      # tsc --noEmit per package
-pnpm test           # vitest (unit/smoke)
-pnpm test:e2e       # playwright end-to-end
-pnpm format         # prettier --write .
-pnpm registry:validate
-# scope any task: pnpm --filter @elabs/components-ui test
+pnpm typecheck && pnpm lint && pnpm test && pnpm build
+pnpm --filter @elabs/components-docs test-storybook   # interaction + axe, in a real browser
 ```
+
+75 gate scripts (`pnpm <name>:check`) enforce the conventions above, and 72 of them
+ship a self-test that plants a broken fixture and asserts the gate fails — because a
+gate that silently stops firing is worse than no gate at all.
+
+**Browser floor:** Chrome/Edge 119, Safari 16.4, Firefox 128 (set by CSS relative
+colour syntax). Below it the colour system still works and the decoration dial
+degrades to off. Details: [`docs/BROWSER-SUPPORT.md`](docs/BROWSER-SUPPORT.md).
+
+---
+
+## Repository layout
+
+```
+packages/     tokens · ui · icons · data · ai · flow · maps · charts
+              editor · viewer · marketing · cli
+apps/docs/    Storybook — the reference implementation
+registry/     shadcn-compatible blocks and templates for copy-own mode
+docs/         guidelines, ADRs, playbooks, consuming and releasing guides
+.claude/      rules, commands, agents and hooks that govern contributions
+```
+
+### Common tasks
+
+```bash
+pnpm dev                  # all dev tasks (turbo)
+pnpm build                # build every package
+pnpm test                 # unit + smoke
+pnpm storybook            # docs and reference implementation
+pnpm format               # prettier
+pnpm registry:validate    # validate the copy-own registry
+pnpm --filter @elabs/components-ui test   # scope any task to one package
+```
+
+---
 
 ## Documentation
 
-- `PROJECT.md` — vision, goals, roadmap, acceptance criteria.
-- `docs/ADR/` — architecture decisions.
-- `docs/COMPONENT_GUIDELINES.md`, `docs/TOKEN_GUIDELINES.md`,
-  `docs/REGISTRY_GUIDELINES.md`, `docs/AGENT_WORKFLOW.md`, `docs/TESTING.md`,
-  `docs/ISSUE_WORKFLOW.md`.
-- `docs/CONSUMING.md` — use `@elabs/components-*` from another project; `docs/RELEASING.md`
-  — cut a release (incl. § 7 Rollback); `docs/DEPRECATION.md` — how things are
-  retired, and what support you can expect.
-- `docs/ASSUMPTIONS.md` — assumptions and environment notes.
-- [`ATTRIBUTION.md`](ATTRIBUTION.md) — every project whose code, design, data or
-  type we use, with its licence and copyright.
+| Document                                                       | Covers                                                   |
+| -------------------------------------------------------------- | -------------------------------------------------------- |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md)                       | The seven decisions that govern how and when to use what |
+| [`docs/CONSUMING.md`](docs/CONSUMING.md)                       | Using the packages from another project, end to end      |
+| [`docs/COMPONENT_GUIDELINES.md`](docs/COMPONENT_GUIDELINES.md) | Component API conventions and the definition of done     |
+| [`docs/TOKEN_GUIDELINES.md`](docs/TOKEN_GUIDELINES.md)         | The token system and how to brand it                     |
+| [`docs/REGISTRY_GUIDELINES.md`](docs/REGISTRY_GUIDELINES.md)   | Package versus registry — import or copy-own             |
+| [`docs/TESTING.md`](docs/TESTING.md)                           | The testing layers and what each one proves              |
+| [`docs/MOTION_GUIDELINES.md`](docs/MOTION_GUIDELINES.md)       | Motion tokens and reduced-motion behaviour               |
+| [`docs/BROWSER-SUPPORT.md`](docs/BROWSER-SUPPORT.md)           | The support floor and what degrades below it             |
+| [`docs/CSP-AND-NETWORK.md`](docs/CSP-AND-NETWORK.md)           | Content Security Policy and every remote origin used     |
+| [`docs/ADR/`](docs/ADR/)                                       | 31 architecture decision records — the durable _why_     |
+| [`PROJECT.md`](PROJECT.md)                                     | Vision, goals, scope and non-goals                       |
+
+---
+
+## Contributing
+
+Setup, branch style, the component workflow, testing expectations and the pull-request
+checklist are in [`CONTRIBUTING.md`](CONTRIBUTING.md). In short: components use semantic
+tokens, compose with `forwardRef` + `className` + `cva`, lean on Radix for interactive
+behaviour, ship a co-located story and test, export their types, work in both themes,
+and pass the gate battery before they are considered done.
 
 ## Attribution
 
-brand-ui is built on other people's work. **[`ATTRIBUTION.md`](ATTRIBUTION.md)**
-credits all of it — adapted and vendored source, runtime map data, self-hosted
-fonts, and every open-source dependency — with the licence and copyright line for
-each. It is generated from the repo, not hand-kept, so it cannot drift from what
-is actually shipped.
+brand-ui is built on other people's work. [`ATTRIBUTION.md`](ATTRIBUTION.md) credits all
+of it — adapted and vendored source, runtime map data, self-hosted fonts and every
+dependency — with the licence and copyright line for each. It is generated from the
+repository, so it cannot drift from what actually ships. If you borrow from another
+project, credit it in the same change.
 
-If you borrow from another project, credit it in the same change:
-[`.claude/rules/attribution.md`](.claude/rules/attribution.md).
+## Status
 
-## License
+This is an actively developed system, not a finished 1.0 product surface:
 
-Internal / UNLICENSED. Not for external distribution without approval.
-
-> This applies to brand-ui's own source. It does **not** override the licences of
-> the third-party work listed in [`ATTRIBUTION.md`](ATTRIBUTION.md), several of
-> which oblige their notices to travel with the code.
+- **Not published to any registry.** Consume it from source in a workspace, or build
+  local tarballs with `pnpm build && pnpm -r pack`.
+- **No licence has been chosen yet.** Every package is currently marked `UNLICENSED`
+  and the repository is private. A licence must be selected before public release —
+  note that several dependencies listed in [`ATTRIBUTION.md`](ATTRIBUTION.md) oblige
+  their notices to travel with the code regardless of what is chosen.
+- **CI workflows are not checked in.** Every gate above runs locally through `pnpm`;
+  wiring them to a hosted CI provider is a deployment decision, not a code change.

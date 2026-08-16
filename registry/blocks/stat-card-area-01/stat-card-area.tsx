@@ -5,13 +5,17 @@ import { curveCardinal } from "@visx/curve";
 import { useState } from "react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@elabs/components-ui";
 import { revenueSeries, revenueStats } from "./data/revenue-series";
-import { StatCardChart, statCardLabelClassName, statCardValueClassName } from "./stat-card-chart";
+import {
+  StatCardChart,
+  statCardLabelClassName,
+  statCardValueClassName,
+} from "@/components/stat-card-parts/stat-card-chart";
 import {
   formatStatCardMonth,
   StatCardHoverBridge,
   type StatCardHoverState,
-} from "./stat-card-hover-bridge";
-import { TrendBadge } from "./trend-badge";
+} from "@/components/stat-card-parts/stat-card-hover-bridge";
+import { TrendBadge } from "@/components/stat-card-parts/trend-badge";
 
 export function StatCardArea() {
   const [hover, setHover] = useState<StatCardHoverState>({

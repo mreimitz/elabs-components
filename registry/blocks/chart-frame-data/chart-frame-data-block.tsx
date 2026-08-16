@@ -15,11 +15,14 @@
 import { Bar, BarChart, BarXAxis, ChartFrame, ChartTooltip, Grid } from "@elabs/components-charts";
 import { DataTable, downloadCsv, type ColumnDef } from "@elabs/components-data";
 
-interface Row {
+// A `type` alias, not an `interface`: only aliases get TypeScript's implicit index
+// signature, which is what makes `Row[]` assignable to `ChartFrame`'s
+// `Record<string, unknown>[]` data prop.
+type Row = {
   month: string;
   revenue: number;
   profit: number;
-}
+};
 
 const data: Row[] = [
   { month: "Jan", revenue: 12000, profit: 4500 },

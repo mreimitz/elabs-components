@@ -1,0 +1,16 @@
+{
+  // Use the workspace's own TypeScript, not the one bundled with VS Code, so the
+  // editor and `pnpm typecheck` resolve `extends`, paths and lib files identically.
+  // Without this, a workspace-link change (a scope rename, a fresh `pnpm install`)
+  // can leave the editor reporting module-resolution errors that the CLI does not.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // Format on save with the repo's Prettier config — matches the pre-commit hook,
+  // so an edit never lands unformatted and `pnpm format:check` stays green.
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // ESLint resolves each package's flat config from that package's own directory.
+  "eslint.workingDirectories": [{ "mode": "auto" }]
+}
