@@ -312,6 +312,40 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   will ever run again. **Practical consequence for the release flow:** push `main`,
   let CI's blocking jobs go green on that commit, THEN tag — `docs/RELEASING.md` § 4
   gives the one-line local probe.
+- **A documentation-only commit takes a reduced battery — the JOB still runs
+  (2026-08-17).** Prose cannot break a typecheck, a unit suite, a build or a
+  consumer install smoke, so `gates.yml` guards those steps on
+  `scripts/resolve-ci-scope.mjs` (`pnpm ci-scope`, self-tested by
+  `pnpm ci-scope:test`), which classifies the change and takes ~13 minutes down to
+  ~3 for a README fix.
+  - **`paths-ignore:` is the wrong tool here and must not be reintroduced.** Both
+    `release-verdict:check` and `merge:check` are fail-closed on a blocking check
+    that has not reported, so a workflow that does not RUN produces no verdict —
+    `paths-ignore` would not skip CI on docs, it would make every docs commit
+    unmergeable **and** unreleasable. Only the job's CONTENTS may shrink; the job
+    always runs and always concludes.
+  - **Why the reduced run is still sound:** by induction on `main`. If commit N
+    passed the full battery and N+1 changes only prose, N+1's source is
+    byte-identical to N's, so every source-derived gate would re-prove what N
+    already proved. That holds only while the classifier is conservative, which is
+    its entire design — `.md`/`.mdx` and `LICENSE` only; never `.txt`, `.json` or
+    an image; never anything under a `fixtures`/`tests` segment (that markdown is
+    test DATA and the fast path skips the tests); and every unresolvable state (no
+    base ref, a zero `before` SHA, a git error, an empty diff) falls back to the
+    full battery. A **release** commit writes 16 `package.json` version sites, so
+    it can never be classified docs-only — the commit a tag names always inherits
+    a full battery.
+  - **What still runs on the fast path:** `format:check`, the security/shipped-asset
+    scans, the derived-artifact freshness gates, docs + governance, and the release
+    machinery — i.e. everything a markdown edit can actually break, including a
+    hand-edited generated region.
+  - **The one thing the ratchet cannot see.** `release-gates:check` rung 2 asserts
+    each recorded gate step is still _reachable_ from `ci.yml`; a step that is
+    textually present but conditionally skipped still counts. That is why the
+    condition is one expression sourced from one self-tested script rather than
+    hand-written per step, and why `ci-scope:test` runs on **every** path — a
+    classifier that called a source change "prose" would hand a green blocking job
+    to a commit nothing compiled.
 - **A package-affecting change records itself (#64, ADR 0020).** A branch that
   touches `packages/<distributable>/src/**` (tests and stories excluded) must add
   a line under `CHANGELOG.md`'s `## Unreleased` — `pnpm changelog-entry:check`,
