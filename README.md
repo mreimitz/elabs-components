@@ -1,5 +1,9 @@
 # brand-ui
 
+[![npm](https://img.shields.io/npm/v/@elabs-ai/components-ui?label=npm&color=CB3837)](https://www.npmjs.com/package/@elabs-ai/components-ui)
+[![license](https://img.shields.io/npm/l/@elabs-ai/components-ui?color=0A7EA4)](LICENSE)
+[![CI](https://github.com/mreimitz/elabs-components/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mreimitz/elabs-components/actions/workflows/ci.yml)
+
 **A source-owned, token-driven React component system for building real applications —
 dashboards, data grids, AI chat clients, node canvases, maps, code editors and the
 marketing page in front of them.**
@@ -42,32 +46,54 @@ system is legible to coding agents through a CLI, an MCP server and a generated 
 
 ## Packages
 
-| Package                          | What it gives you                                                                                                                  |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`    | The semantic token system, reference themes, `ThemeProvider`, and the density / motion / decoration dials                          |
-| `@elabs-ai/components-ui`        | 106 application components — buttons, forms, overlays, navigation, tables, app shells, wizards, editors-of-lists                   |
-| `@elabs-ai/components-icons`     | Icon primitives, `BrandLogo`, and a replaceable sample vocabulary (generic glyphs come from Lucide)                                |
-| `@elabs-ai/components-data`      | TanStack-powered `DataTable` with filtering, faceting, column picking and virtualization                                           |
-| `@elabs-ai/components-ai`        | 69 chat and agent surfaces — conversation, streaming messages, tool calls, reasoning, sources, artifacts, terminals, agent canvas  |
-| `@elabs-ai/components-flow`      | A branded React Flow canvas: nodes, edges, controls, minimap, inspector                                                            |
-| `@elabs-ai/components-maps`      | Token-driven MapLibre GL maps — theme-aware basemaps, markers, popups, routes, arcs, GeoJSON, clustering                           |
-| `@elabs-ai/components-charts`    | Metric cards, chart frames with expand/flip/download, and `AutoChart` — the right chart from a serializable spec                   |
-| `@elabs-ai/components-editor`    | A token-themed Monaco editor: code, diff, multi-file workspace, brand context menu                                                 |
-| `@elabs-ai/components-viewer`    | `FileViewer` — render a file your app did not write (upload, signed URL, agent output) through a pluggable adapter registry        |
-| `@elabs-ai/components-marketing` | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
-| `@elabs-ai/components-cli`       | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
+All twelve publish to the public npm registry under the `@elabs-ai` scope. Package
+names below link to their npm page.
+
+| Package                                                                                          | What it gives you                                                                                                                  |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [`@elabs-ai/components-tokens`](https://www.npmjs.com/package/@elabs-ai/components-tokens)       | The semantic token system, reference themes, `ThemeProvider`, and the density / motion / decoration dials                          |
+| [`@elabs-ai/components-ui`](https://www.npmjs.com/package/@elabs-ai/components-ui)               | 106 application components — buttons, forms, overlays, navigation, tables, app shells, wizards, editors-of-lists                   |
+| [`@elabs-ai/components-icons`](https://www.npmjs.com/package/@elabs-ai/components-icons)         | Icon primitives, `BrandLogo`, and a replaceable sample vocabulary (generic glyphs come from Lucide)                                |
+| [`@elabs-ai/components-data`](https://www.npmjs.com/package/@elabs-ai/components-data)           | TanStack-powered `DataTable` with filtering, faceting, column picking and virtualization                                           |
+| [`@elabs-ai/components-ai`](https://www.npmjs.com/package/@elabs-ai/components-ai)               | 69 chat and agent surfaces — conversation, streaming messages, tool calls, reasoning, sources, artifacts, terminals, agent canvas  |
+| [`@elabs-ai/components-flow`](https://www.npmjs.com/package/@elabs-ai/components-flow)           | A branded React Flow canvas: nodes, edges, controls, minimap, inspector                                                            |
+| [`@elabs-ai/components-maps`](https://www.npmjs.com/package/@elabs-ai/components-maps)           | Token-driven MapLibre GL maps — theme-aware basemaps, markers, popups, routes, arcs, GeoJSON, clustering                           |
+| [`@elabs-ai/components-charts`](https://www.npmjs.com/package/@elabs-ai/components-charts)       | Metric cards, chart frames with expand/flip/download, and `AutoChart` — the right chart from a serializable spec                   |
+| [`@elabs-ai/components-editor`](https://www.npmjs.com/package/@elabs-ai/components-editor)       | A token-themed Monaco editor: code, diff, multi-file workspace, brand context menu                                                 |
+| [`@elabs-ai/components-viewer`](https://www.npmjs.com/package/@elabs-ai/components-viewer)       | `FileViewer` — render a file your app did not write (upload, signed URL, agent output) through a pluggable adapter registry        |
+| [`@elabs-ai/components-marketing`](https://www.npmjs.com/package/@elabs-ai/components-marketing) | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
+| [`@elabs-ai/components-cli`](https://www.npmjs.com/package/@elabs-ai/components-cli)             | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
 
 Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a gate
 (`pnpm dep-direction:check`) fails any change that points an edge sideways or upward.
+
+> The **Packages** panel on this repository's GitHub sidebar stays empty by design. It
+> only lists GitHub Packages (`npm.pkg.github.com`), a different registry that would
+> require every consumer to authenticate with a GitHub token before installing. These
+> packages ship to npmjs.org instead, where `pnpm add` needs no credentials at all.
 
 ---
 
 ## Quick start
 
+### Install into your app
+
+```bash
+pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
+# then add only what that screen needs
+pnpm add @elabs-ai/components-data @elabs-ai/components-charts
+```
+
+React 19 and `react-dom` are peer dependencies you provide. Every package carries its
+own extras — the map, editor, flow and chart engines are peers of their package, so you
+only install the ones you render.
+
+### Or work on the system itself
+
 **Requirements:** Node ≥ 20, pnpm ≥ 9 (`corepack enable`).
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/mreimitz/elabs-components.git
 cd elabs-components
 pnpm install
 pnpm storybook        # http://localhost:6006
@@ -270,13 +296,16 @@ project, credit it in the same change.
 
 ## Status
 
-This is an actively developed system, not a finished 1.0 product surface:
+Published and public, and still actively developed:
 
-- **Not published to any registry.** Consume it from source in a workspace, or build
-  local tarballs with `pnpm build && pnpm -r pack`.
-- **No licence has been chosen yet.** Every package is currently marked `UNLICENSED`
-  and the repository is private. A licence must be selected before public release —
-  note that several dependencies listed in [`ATTRIBUTION.md`](ATTRIBUTION.md) oblige
-  their notices to travel with the code regardless of what is chosen.
-- **CI workflows are not checked in.** Every gate above runs locally through `pnpm`;
-  wiring them to a hosted CI provider is a deployment decision, not a code change.
+- **Released to npm.** All twelve packages ship to the public registry under the
+  `@elabs-ai` scope, versioned in lockstep. Release procedure:
+  [`docs/RELEASING.md`](docs/RELEASING.md).
+- **MIT licensed** ([`LICENSE`](LICENSE)). Several dependencies listed in
+  [`ATTRIBUTION.md`](ATTRIBUTION.md) oblige their own notices to travel with the code —
+  that file is generated from the repository, so it cannot drift from what ships.
+- **CI runs on every push and pull request.** The gate battery lives in one reusable
+  workflow; a release publishes only against a green verdict for the exact commit it
+  tags, and never re-runs the battery to get it.
+- **The API is not frozen.** Breaking changes go out as majors and are recorded in
+  [`CHANGELOG.md`](CHANGELOG.md).
