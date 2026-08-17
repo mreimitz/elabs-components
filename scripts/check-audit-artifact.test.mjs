@@ -67,11 +67,9 @@ function blockBody(over = {}) {
     "--info-text": INK,
     "--border-strong": RUNG,
     "--chart-background": "var(--card)",
-    "--chart-1": RUNG,
-    "--chart-2": RUNG,
-    "--chart-3": RUNG,
-    "--chart-4": RUNG,
-    "--chart-5": RUNG,
+    // All twelve — the shipped ramp grew from 5 on 2026-08-16 and the gate audits
+    // every member, so a 5-series fixture would exercise a matrix nobody ships.
+    ...Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`--chart-${i + 1}`, RUNG])),
     "--chart-foreground": INK,
     "--chart-label": INK,
     "--chart-foreground-muted": RUNG,
@@ -269,4 +267,86 @@ test("a failing pairing is rendered as ❌ in the artifact, not silently omitted
   const artifact = renderArtifact(source, THEMES);
   assert.ok(/failure\(s\)/.test(artifact));
   assert.ok(artifact.includes("❌"));
+});
+
+// ── The signed-off 1.4.11 chart-ramp exemption (2026-08-16) ──────────────────
+// `light`'s twelve-series ramp is tuned for a mid/dark plot ground and ships
+// below 3:1 on this theme's white `--chart-background` on purpose. The carve-out
+// has to excuse exactly that and nothing else, so each boundary is planted here.
+
+/** A themes.css fixture whose theme block is named `light` (the exempt theme). */
+function lightCss(over = {}) {
+  return [
+    `:root {\n${blockBody()}\n}`,
+    "",
+    `[data-theme="light"] {\n${blockBody(over)}\n}`,
+    "",
+  ].join("\n");
+}
+const LIGHT_THEMES = ["light"];
+/** Too pale to clear 3:1 on white — what the shipped light ramp looks like. */
+const PALE = "oklch(0.92 0 0)";
+const PALE_RAMP = Object.fromEntries(
+  Array.from({ length: 12 }, (_, i) => [`--chart-${i + 1}`, PALE]),
+);
+
+test("DOES NOT FAIL: the exempt theme's below-bar chart ramp is accepted", () => {
+  const source = lightCss(PALE_RAMP);
+  const artifact = renderArtifact(source, LIGHT_THEMES);
+  assert.deepEqual(findArtifactViolations(artifact, source, LIGHT_THEMES), []);
+});
+
+test("the accepted ramp is still MEASURED and shown as ⚠️, never hidden", () => {
+  const artifact = renderArtifact(lightCss(PALE_RAMP), LIGHT_THEMES);
+  // Evidence, not suppression: the real ratio is in the table, the header names
+  // the decision, and the marker is distinct from a gate-failing ❌.
+  assert.ok(artifact.includes("⚠️"), "an accepted below-bar row renders as ⚠️");
+  assert.ok(/accepted below-bar pairing/.test(artifact), "the header records the decision");
+  assert.ok(/✅ no failures/.test(artifact), "an accepted row is not counted as a failure");
+});
+
+test("FAILS: the SAME below-bar ramp in a non-exempt theme", () => {
+  // The carve-out is per-theme. `mint` is not exempt, so the identical palette
+  // must still red the gate — otherwise the exemption is a hole, not a decision.
+  const source = css({ mint: PALE_RAMP });
+  const artifact = renderArtifact(source, THEMES);
+  assert.ok(
+    findArtifactViolations(artifact, source, THEMES).some(
+      (p) => /AA failure/.test(p) && /mint --chart-/.test(p),
+    ),
+  );
+});
+
+test("FAILS: chart TEXT tokens are never covered by the ramp exemption", () => {
+  // `--chart-foreground` is also a charts-group row measured against
+  // `--chart-background`; keying the exemption on the group would silently
+  // accept an illegible axis label in the exempt theme.
+  const source = lightCss({ ...PALE_RAMP, "--chart-foreground": PALE });
+  const artifact = renderArtifact(source, LIGHT_THEMES);
+  assert.ok(
+    findArtifactViolations(artifact, source, LIGHT_THEMES).some(
+      (p) => /AA failure/.test(p) && /--chart-foreground/.test(p),
+    ),
+  );
+});
+
+test("FAILS: the exemption is stale once the whole ramp clears the bar", () => {
+  // RUNG clears 3:1 on white. With nothing left to excuse, the carve-out must
+  // demand its own deletion rather than sit there looking like compliance.
+  const source = lightCss();
+  const artifact = renderArtifact(source, LIGHT_THEMES);
+  assert.ok(
+    findArtifactViolations(artifact, source, LIGHT_THEMES).some(
+      (p) => /STALE/.test(p) && /CHART_1411_EXEMPT/.test(p),
+    ),
+  );
+});
+
+test("a PARTLY-clearing ramp is not mistaken for a stale exemption", () => {
+  // Three of the twelve shipped light series already clear 3:1 while the ramp as
+  // a whole does not. The unit of the exemption is the ramp, so this is the
+  // ordinary shipped state — not a signal to delete the carve-out.
+  const source = lightCss({ ...PALE_RAMP, "--chart-6": RUNG, "--chart-8": RUNG });
+  const artifact = renderArtifact(source, LIGHT_THEMES);
+  assert.deepEqual(findArtifactViolations(artifact, source, LIGHT_THEMES), []);
 });

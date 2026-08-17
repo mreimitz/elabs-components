@@ -207,7 +207,43 @@ const CALC_TEXT_TOKENS = [
   "--calc-comment",
   "--calc-warning",
 ];
-const SERIES = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"];
+/**
+ * The chart ramp, all twelve. It was `--chart-1..5` long after the palette grew
+ * to twelve (2026-08-16), so the committed evidence silently spoke for 5 of the
+ * 12 series that actually ship — the exact under-reporting rot this gate exists
+ * to prevent, in the gate itself.
+ */
+const SERIES = Array.from({ length: 12 }, (_, i) => `--chart-${i + 1}`);
+
+/**
+ * Themes whose SERIES ramp is exempt from the ≥3:1 1.4.11 mark bar.
+ *
+ * `light` only, mirroring `CHART_1411_EXEMPT` in
+ * `packages/tokens/src/charts-contrast.test.ts`. It is a signed-off regression
+ * decided 2026-08-16, not an oversight: the authored twelve-colour palette is
+ * tuned for a mid/dark plot ground, and the maintainer chose to ship it verbatim
+ * in BOTH reference themes rather than keep the re-tuned light ramp that
+ * satisfied this bar and read as mud. The systemic repair is to darken the plot
+ * ground, not to lighten the palette.
+ *
+ * This gate is the EVIDENCE artifact, so an exempt row is still measured, still
+ * rendered, and still shown with its real ratio — it is marked accepted rather
+ * than hidden. `:root` is deliberately NOT exempt: a consumer who imports no
+ * theme stylesheet still gets a legible ramp.
+ */
+export const CHART_1411_EXEMPT = new Set(["light"]);
+
+/**
+ * Is this row the signed-off light-theme chart-ramp regression?
+ *
+ * Keyed on the SERIES token, not on `group`/`vs`: `--chart-foreground`,
+ * `--chart-label` and `--chart-foreground-muted` are also charts-group rows
+ * measured against `--chart-background`, and they are TEXT/mark tokens the
+ * exemption never covered. Widening it to the group would silently accept an
+ * illegible axis label.
+ */
+export const isExemptChartRow = (theme, token) =>
+  CHART_1411_EXEMPT.has(theme) && SERIES.includes(token);
 const CHART_TEXT = [
   ["--chart-foreground", AA_TEXT],
   ["--chart-label", AA_TEXT],
@@ -244,7 +280,16 @@ export function buildAuditRows(cssText) {
   const rows = [];
   const push = (theme, group, token, vs, fg, bg, threshold) => {
     const ratio = contrast(fg, bg);
-    rows.push({ theme, group, token, vs, ratio, threshold, pass: ratio >= threshold });
+    rows.push({
+      theme,
+      group,
+      token,
+      vs,
+      ratio,
+      threshold,
+      pass: ratio >= threshold,
+      exempt: isExemptChartRow(theme, token),
+    });
   };
 
   for (const theme of blockNames) {
@@ -329,7 +374,9 @@ function table(rows) {
   const out = ["| token | vs | ratio | min | |", "| --- | --- | --- | --- | --- |"];
   for (const r of rows) {
     out.push(
-      `| \`${r.token}\` | \`${r.vs}\` | ${r.ratio.toFixed(2)} | ${r.threshold.toFixed(1)} | ${r.pass ? "✅" : "❌"} |`,
+      // ⚠️ is a below-bar pairing that is shipped deliberately (see the accepted
+      // section in the header) — distinct from ❌, which fails the gate.
+      `| \`${r.token}\` | \`${r.vs}\` | ${r.ratio.toFixed(2)} | ${r.threshold.toFixed(1)} | ${r.pass ? "✅" : r.exempt ? "⚠️" : "❌"} |`,
     );
   }
   return out;
@@ -341,7 +388,8 @@ function table(rows) {
  */
 export function renderArtifact(cssText, shippedThemes) {
   const { blocks, rows } = buildAuditRows(cssText);
-  const fails = rows.filter((r) => !r.pass);
+  const fails = rows.filter((r) => !r.pass && !r.exempt);
+  const accepted = rows.filter((r) => !r.pass && r.exempt);
   const themeBlocks = blocks.filter((b) => b !== ROOT_MODE);
 
   const lines = [
@@ -369,7 +417,7 @@ export function renderArtifact(cssText, shippedThemes) {
     "- ✅ **Proven here:** every gated token pairing clears its WCAG threshold in every theme —",
     "  status/`-text` colors on all three text surfaces, muted text, sidebar nav text, the search",
     "  highlight plate, the `--border-strong` non-text rung (ADR 0010 / #172), the Gantt inside-label",
-    "  pill pair (#259), the calc syntax palette (#221), and the five chart series + chart text.",
+    "  pill pair (#259), the calc syntax palette (#221), and the twelve chart series + chart text.",
     "- ❌ **NOT proven here — still needs a rendered pass and human eyes:** which pairs a component",
     "  actually composes (a component may put `--muted-foreground` on `--card`, an ungated pair), text",
     "  over images/gradients/scrims, disabled and placeholder states, focus-ring visibility, hit-target",
@@ -383,7 +431,7 @@ export function renderArtifact(cssText, shippedThemes) {
     "| class | min | applies to |",
     "| --- | --- | --- |",
     "| AA body text (1.4.3) | 4.5:1 | `*-text`, `--muted-foreground`, `--foreground`, `--chart-foreground`, `--chart-label`, calc syntax |",
-    "| Non-text (1.4.11) | 3:1 | `--border-strong`, `--chart-1..5`, `--chart-foreground-muted` |",
+    "| Non-text (1.4.11) | 3:1 | `--border-strong`, `--chart-1..12`, `--chart-foreground-muted` |",
     "",
     "> `--input` and `--border` are deliberately **not** gated at 3:1 — both are the subtle,",
     "> redundant-boundary rung per the ADR 0010 Amendment (2026-06-20). See",
@@ -393,6 +441,25 @@ export function renderArtifact(cssText, shippedThemes) {
     "",
     `${rows.length} pairings across ${blocks.length} color blocks (${themeBlocks.length} shipped themes + the \`:root\` base).`,
     "",
+    ...(accepted.length > 0
+      ? [
+          `### ⚠️ ${accepted.length} accepted below-bar pairing(s)`,
+          "",
+          "Measured, below the bar, and shipped **on purpose** — they are marked `⚠️` in the",
+          "tables below rather than `❌`, and they do not fail the gate. They are NOT",
+          "compliant; they are a recorded decision, and the record is here so it stays",
+          "visible rather than becoming folklore.",
+          "",
+          `- **The \`${[...CHART_1411_EXEMPT].join("`, `")}\` theme's chart ramp vs \`--chart-background\`**`,
+          "  (signed off 2026-08-16). The authored twelve-colour palette is tuned for a mid/dark",
+          "  plot ground and ships verbatim in both reference themes; the light-only re-tune that",
+          "  satisfied 3:1 turned the brand colour to mud and was rejected. The systemic repair is",
+          "  to darken the plot ground, not to lighten the palette. Mirrored by `CHART_1411_EXEMPT`",
+          "  in `packages/tokens/src/charts-contrast.test.ts`; both sides fail if the ramp is ever",
+          "  re-tuned to clear the bar, so the carve-out cannot outlive the thing it excuses.",
+          "",
+        ]
+      : []),
   ];
 
   for (const block of blocks) {
@@ -447,11 +514,33 @@ export function findArtifactViolations(committed, cssText, shippedThemes) {
     );
   }
 
-  const failing = buildAuditRows(cssText).rows.filter((r) => !r.pass);
-  for (const r of failing) {
+  const { rows } = buildAuditRows(cssText);
+
+  for (const r of rows.filter((r) => !r.pass && !r.exempt)) {
     problems.push(
       `AA failure: ${r.theme} ${r.token} vs ${r.vs} = ${r.ratio.toFixed(2)} (min ${r.threshold.toFixed(1)}).`,
     );
+  }
+
+  // The exemption is not a hole: it is only valid while the ramp it excuses is
+  // still failing. A light ramp that has been re-tuned to clear 3:1 makes this
+  // carve-out stale, and a stale exemption is how a bar quietly stops applying —
+  // so passing here FAILS, with the remedy being to delete the exemption.
+  // (`charts-contrast.test.ts` pins the same invariant from the other side.)
+  // The unit of the exemption is the RAMP, not the series: individual members
+  // already clear the bar (light --chart-6/-8/-11 do today) while the ramp as a
+  // whole does not, so a per-row staleness test would fire on a palette nobody
+  // touched. It is stale only when the excuse has nothing left to excuse.
+  for (const theme of CHART_1411_EXEMPT) {
+    const ramp = rows.filter((r) => r.exempt && r.theme === theme);
+    if (ramp.length > 0 && ramp.every((r) => r.pass)) {
+      problems.push(
+        `The 1.4.11 chart-ramp exemption for "${theme}" is STALE — every series now clears ` +
+          `${NON_TEXT.toFixed(1)}:1, so the carve-out excuses nothing. Delete "${theme}" from ` +
+          `CHART_1411_EXEMPT here AND from CHART_1411_EXEMPT in ` +
+          `packages/tokens/src/charts-contrast.test.ts.`,
+      );
+    }
   }
 
   return problems;
@@ -478,8 +567,15 @@ if (isMain) {
       console.error("");
       process.exit(1);
     }
+    // Never report "all pairings pass" while an accepted below-bar pairing ships —
+    // that sentence is what turns a recorded decision into folklore.
+    const accepted = buildAuditRows(css).rows.filter((r) => r.exempt && !r.pass);
+    const acceptedNote =
+      accepted.length > 0
+        ? `, ${accepted.length} accepted below-bar (see the artifact's own header)`
+        : ", all pairings pass";
     console.log(
-      `✔ audit-artifact: ${ARTIFACT_REL} is current (${shipped.length} themes + :root base, all pairings pass)`,
+      `✔ audit-artifact: ${ARTIFACT_REL} is current (${shipped.length} themes + :root base${acceptedNote})`,
     );
   }
 }

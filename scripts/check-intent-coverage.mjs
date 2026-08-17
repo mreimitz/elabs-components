@@ -160,6 +160,22 @@ export const INHERITED_MODULES = {
     modules: ["packages/ui/src/components/command/command.tsx"],
     reason: "the highlighted row is the ui CommandItem's data-[selected=true] pair",
   },
+  // The React Flow parts reach their engine through ONE dynamic-import boundary
+  // (ADR 0019 / `_flow-lazy.ts`), so each public module is a `lazy()` wrapper of
+  // ~20 lines that renders no classes at all — every class these entries name is
+  // declared in that single boundary module.
+  Controls: {
+    modules: ["packages/ai/src/_flow-boundary.tsx"],
+    reason: "the public module is the ADR 0019 lazy wrapper; the classes are the boundary's",
+  },
+  Edge: {
+    modules: ["packages/ai/src/_flow-boundary.tsx"],
+    reason: "the public module is the ADR 0019 lazy wrapper; the classes are the boundary's",
+  },
+  Panel: {
+    modules: ["packages/ai/src/_flow-boundary.tsx"],
+    reason: "the public module is the ADR 0019 lazy wrapper; the classes are the boundary's",
+  },
 };
 
 /**

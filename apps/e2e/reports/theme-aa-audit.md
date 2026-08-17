@@ -22,7 +22,7 @@ This is **computation over tokens, not observation of a rendered screen.**
 - ✅ **Proven here:** every gated token pairing clears its WCAG threshold in every theme —
   status/`-text` colors on all three text surfaces, muted text, sidebar nav text, the search
   highlight plate, the `--border-strong` non-text rung (ADR 0010 / #172), the Gantt inside-label
-  pill pair (#259), the calc syntax palette (#221), and the five chart series + chart text.
+  pill pair (#259), the calc syntax palette (#221), and the twelve chart series + chart text.
 - ❌ **NOT proven here — still needs a rendered pass and human eyes:** which pairs a component
   actually composes (a component may put `--muted-foreground` on `--card`, an ungated pair), text
   over images/gradients/scrims, disabled and placeholder states, focus-ring visibility, hit-target
@@ -36,7 +36,7 @@ This is **computation over tokens, not observation of a rendered screen.**
 | class | min | applies to |
 | --- | --- | --- |
 | AA body text (1.4.3) | 4.5:1 | `*-text`, `--muted-foreground`, `--foreground`, `--chart-foreground`, `--chart-label`, calc syntax |
-| Non-text (1.4.11) | 3:1 | `--border-strong`, `--chart-1..5`, `--chart-foreground-muted` |
+| Non-text (1.4.11) | 3:1 | `--border-strong`, `--chart-1..12`, `--chart-foreground-muted` |
 
 > `--input` and `--border` are deliberately **not** gated at 3:1 — both are the subtle,
 > redundant-boundary rung per the ADR 0010 Amendment (2026-06-20). See
@@ -44,7 +44,22 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 ## Result: ✅ no failures
 
-147 pairings across 3 color blocks (2 shipped themes + the `:root` base).
+168 pairings across 3 color blocks (2 shipped themes + the `:root` base).
+
+### ⚠️ 9 accepted below-bar pairing(s)
+
+Measured, below the bar, and shipped **on purpose** — they are marked `⚠️` in the
+tables below rather than `❌`, and they do not fail the gate. They are NOT
+compliant; they are a recorded decision, and the record is here so it stays
+visible rather than becoming folklore.
+
+- **The `light` theme's chart ramp vs `--chart-background`**
+  (signed off 2026-08-16). The authored twelve-colour palette is tuned for a mid/dark
+  plot ground and ships verbatim in both reference themes; the light-only re-tune that
+  satisfied 3:1 turned the brand colour to mud and was rejected. The systemic repair is
+  to darken the plot ground, not to lighten the palette. Mirrored by `CHART_1411_EXEMPT`
+  in `packages/tokens/src/charts-contrast.test.ts`; both sides fail if the ramp is ever
+  re-tuned to clear the bar, so the carve-out cannot outlive the thing it excuses.
 
 ## :root (neutral base — not a selectable theme)
 
@@ -52,18 +67,18 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--success-text` | `--background` | 5.20 | 4.5 | ✅ |
-| `--success-text` | `--card` | 5.54 | 4.5 | ✅ |
-| `--success-text` | `--surface-muted` | 4.93 | 4.5 | ✅ |
-| `--destructive-text` | `--background` | 6.25 | 4.5 | ✅ |
-| `--destructive-text` | `--card` | 6.66 | 4.5 | ✅ |
-| `--destructive-text` | `--surface-muted` | 5.93 | 4.5 | ✅ |
-| `--warning-text` | `--background` | 5.23 | 4.5 | ✅ |
-| `--warning-text` | `--card` | 5.58 | 4.5 | ✅ |
-| `--warning-text` | `--surface-muted` | 4.96 | 4.5 | ✅ |
-| `--info-text` | `--background` | 5.35 | 4.5 | ✅ |
-| `--info-text` | `--card` | 5.70 | 4.5 | ✅ |
-| `--info-text` | `--surface-muted` | 5.07 | 4.5 | ✅ |
+| `--success-text` | `--background` | 4.98 | 4.5 | ✅ |
+| `--success-text` | `--card` | 5.31 | 4.5 | ✅ |
+| `--success-text` | `--surface-muted` | 4.73 | 4.5 | ✅ |
+| `--destructive-text` | `--background` | 5.01 | 4.5 | ✅ |
+| `--destructive-text` | `--card` | 5.34 | 4.5 | ✅ |
+| `--destructive-text` | `--surface-muted` | 4.75 | 4.5 | ✅ |
+| `--warning-text` | `--background` | 5.18 | 4.5 | ✅ |
+| `--warning-text` | `--card` | 5.52 | 4.5 | ✅ |
+| `--warning-text` | `--surface-muted` | 4.92 | 4.5 | ✅ |
+| `--info-text` | `--background` | 4.97 | 4.5 | ✅ |
+| `--info-text` | `--card` | 5.30 | 4.5 | ✅ |
+| `--info-text` | `--surface-muted` | 4.71 | 4.5 | ✅ |
 | `--highlight-foreground` | `--highlight` | 9.98 | 4.5 | ✅ |
 | `--muted-foreground` | `--muted` | 5.45 | 4.5 | ✅ |
 | `--muted-foreground` | `--surface-muted` | 5.34 | 4.5 | ✅ |
@@ -98,11 +113,18 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--chart-1` | `--chart-background` | 3.73 | 3.0 | ✅ |
-| `--chart-2` | `--chart-background` | 3.53 | 3.0 | ✅ |
-| `--chart-3` | `--chart-background` | 3.06 | 3.0 | ✅ |
-| `--chart-4` | `--chart-background` | 3.60 | 3.0 | ✅ |
-| `--chart-5` | `--chart-background` | 4.37 | 3.0 | ✅ |
+| `--chart-1` | `--chart-background` | 3.64 | 3.0 | ✅ |
+| `--chart-2` | `--chart-background` | 6.51 | 3.0 | ✅ |
+| `--chart-3` | `--chart-background` | 7.22 | 3.0 | ✅ |
+| `--chart-4` | `--chart-background` | 4.96 | 3.0 | ✅ |
+| `--chart-5` | `--chart-background` | 4.73 | 3.0 | ✅ |
+| `--chart-6` | `--chart-background` | 9.92 | 3.0 | ✅ |
+| `--chart-7` | `--chart-background` | 4.02 | 3.0 | ✅ |
+| `--chart-8` | `--chart-background` | 9.04 | 3.0 | ✅ |
+| `--chart-9` | `--chart-background` | 5.21 | 3.0 | ✅ |
+| `--chart-10` | `--chart-background` | 3.45 | 3.0 | ✅ |
+| `--chart-11` | `--chart-background` | 13.24 | 3.0 | ✅ |
+| `--chart-12` | `--chart-background` | 3.80 | 3.0 | ✅ |
 | `--chart-foreground` | `--chart-background` | 17.73 | 4.5 | ✅ |
 | `--chart-label` | `--chart-background` | 17.73 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.00 | 3.0 | ✅ |
@@ -113,18 +135,18 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--success-text` | `--background` | 6.16 | 4.5 | ✅ |
-| `--success-text` | `--card` | 6.43 | 4.5 | ✅ |
-| `--success-text` | `--surface-muted` | 5.73 | 4.5 | ✅ |
-| `--destructive-text` | `--background` | 6.43 | 4.5 | ✅ |
-| `--destructive-text` | `--card` | 6.71 | 4.5 | ✅ |
-| `--destructive-text` | `--surface-muted` | 5.98 | 4.5 | ✅ |
-| `--warning-text` | `--background` | 5.41 | 4.5 | ✅ |
-| `--warning-text` | `--card` | 5.65 | 4.5 | ✅ |
-| `--warning-text` | `--surface-muted` | 5.03 | 4.5 | ✅ |
-| `--info-text` | `--background` | 5.23 | 4.5 | ✅ |
-| `--info-text` | `--card` | 5.46 | 4.5 | ✅ |
-| `--info-text` | `--surface-muted` | 4.86 | 4.5 | ✅ |
+| `--success-text` | `--background` | 5.09 | 4.5 | ✅ |
+| `--success-text` | `--card` | 5.31 | 4.5 | ✅ |
+| `--success-text` | `--surface-muted` | 4.73 | 4.5 | ✅ |
+| `--destructive-text` | `--background` | 5.11 | 4.5 | ✅ |
+| `--destructive-text` | `--card` | 5.34 | 4.5 | ✅ |
+| `--destructive-text` | `--surface-muted` | 4.75 | 4.5 | ✅ |
+| `--warning-text` | `--background` | 5.29 | 4.5 | ✅ |
+| `--warning-text` | `--card` | 5.52 | 4.5 | ✅ |
+| `--warning-text` | `--surface-muted` | 4.92 | 4.5 | ✅ |
+| `--info-text` | `--background` | 5.07 | 4.5 | ✅ |
+| `--info-text` | `--card` | 5.30 | 4.5 | ✅ |
+| `--info-text` | `--surface-muted` | 4.72 | 4.5 | ✅ |
 | `--highlight-foreground` | `--highlight` | 9.98 | 4.5 | ✅ |
 | `--muted-foreground` | `--muted` | 5.47 | 4.5 | ✅ |
 | `--muted-foreground` | `--surface-muted` | 5.34 | 4.5 | ✅ |
@@ -159,11 +181,18 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--chart-1` | `--chart-background` | 3.49 | 3.0 | ✅ |
-| `--chart-2` | `--chart-background` | 4.79 | 3.0 | ✅ |
-| `--chart-3` | `--chart-background` | 3.53 | 3.0 | ✅ |
-| `--chart-4` | `--chart-background` | 5.13 | 3.0 | ✅ |
-| `--chart-5` | `--chart-background` | 3.67 | 3.0 | ✅ |
+| `--chart-1` | `--chart-background` | 1.42 | 3.0 | ⚠️ |
+| `--chart-2` | `--chart-background` | 2.50 | 3.0 | ⚠️ |
+| `--chart-3` | `--chart-background` | 2.62 | 3.0 | ⚠️ |
+| `--chart-4` | `--chart-background` | 1.71 | 3.0 | ⚠️ |
+| `--chart-5` | `--chart-background` | 1.36 | 3.0 | ⚠️ |
+| `--chart-6` | `--chart-background` | 4.03 | 3.0 | ✅ |
+| `--chart-7` | `--chart-background` | 1.26 | 3.0 | ⚠️ |
+| `--chart-8` | `--chart-background` | 3.72 | 3.0 | ✅ |
+| `--chart-9` | `--chart-background` | 1.99 | 3.0 | ⚠️ |
+| `--chart-10` | `--chart-background` | 1.16 | 3.0 | ⚠️ |
+| `--chart-11` | `--chart-background` | 5.07 | 3.0 | ✅ |
+| `--chart-12` | `--chart-background` | 1.62 | 3.0 | ⚠️ |
 | `--chart-foreground` | `--chart-background` | 13.63 | 4.5 | ✅ |
 | `--chart-label` | `--chart-background` | 13.63 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.00 | 3.0 | ✅ |
@@ -174,18 +203,18 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--success-text` | `--background` | 11.39 | 4.5 | ✅ |
-| `--success-text` | `--card` | 10.28 | 4.5 | ✅ |
-| `--success-text` | `--surface-muted` | 9.38 | 4.5 | ✅ |
-| `--destructive-text` | `--background` | 7.13 | 4.5 | ✅ |
-| `--destructive-text` | `--card` | 6.43 | 4.5 | ✅ |
-| `--destructive-text` | `--surface-muted` | 5.87 | 4.5 | ✅ |
-| `--warning-text` | `--background` | 9.82 | 4.5 | ✅ |
-| `--warning-text` | `--card` | 8.87 | 4.5 | ✅ |
-| `--warning-text` | `--surface-muted` | 8.09 | 4.5 | ✅ |
-| `--info-text` | `--background` | 7.76 | 4.5 | ✅ |
-| `--info-text` | `--card` | 7.01 | 4.5 | ✅ |
-| `--info-text` | `--surface-muted` | 6.39 | 4.5 | ✅ |
+| `--success-text` | `--background` | 8.29 | 4.5 | ✅ |
+| `--success-text` | `--card` | 7.49 | 4.5 | ✅ |
+| `--success-text` | `--surface-muted` | 6.83 | 4.5 | ✅ |
+| `--destructive-text` | `--background` | 6.66 | 4.5 | ✅ |
+| `--destructive-text` | `--card` | 6.02 | 4.5 | ✅ |
+| `--destructive-text` | `--surface-muted` | 5.49 | 4.5 | ✅ |
+| `--warning-text` | `--background` | 8.93 | 4.5 | ✅ |
+| `--warning-text` | `--card` | 8.06 | 4.5 | ✅ |
+| `--warning-text` | `--surface-muted` | 7.35 | 4.5 | ✅ |
+| `--info-text` | `--background` | 7.97 | 4.5 | ✅ |
+| `--info-text` | `--card` | 7.20 | 4.5 | ✅ |
+| `--info-text` | `--surface-muted` | 6.57 | 4.5 | ✅ |
 | `--highlight-foreground` | `--highlight` | 8.87 | 4.5 | ✅ |
 | `--muted-foreground` | `--muted` | 6.07 | 4.5 | ✅ |
 | `--muted-foreground` | `--surface-muted` | 5.88 | 4.5 | ✅ |
@@ -220,11 +249,18 @@ This is **computation over tokens, not observation of a rendered screen.**
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--chart-1` | `--chart-background` | 10.73 | 3.0 | ✅ |
-| `--chart-2` | `--chart-background` | 6.07 | 3.0 | ✅ |
-| `--chart-3` | `--chart-background` | 8.26 | 3.0 | ✅ |
-| `--chart-4` | `--chart-background` | 6.09 | 3.0 | ✅ |
-| `--chart-5` | `--chart-background` | 8.50 | 3.0 | ✅ |
+| `--chart-1` | `--chart-background` | 11.25 | 3.0 | ✅ |
+| `--chart-2` | `--chart-background` | 6.40 | 3.0 | ✅ |
+| `--chart-3` | `--chart-background` | 6.11 | 3.0 | ✅ |
+| `--chart-4` | `--chart-background` | 9.33 | 3.0 | ✅ |
+| `--chart-5` | `--chart-background` | 11.78 | 3.0 | ✅ |
+| `--chart-6` | `--chart-background` | 3.97 | 3.0 | ✅ |
+| `--chart-7` | `--chart-background` | 12.70 | 3.0 | ✅ |
+| `--chart-8` | `--chart-background` | 4.30 | 3.0 | ✅ |
+| `--chart-9` | `--chart-background` | 8.03 | 3.0 | ✅ |
+| `--chart-10` | `--chart-background` | 13.79 | 3.0 | ✅ |
+| `--chart-11` | `--chart-background` | 3.15 | 3.0 | ✅ |
+| `--chart-12` | `--chart-background` | 9.89 | 3.0 | ✅ |
 | `--chart-foreground` | `--chart-background` | 13.82 | 4.5 | ✅ |
 | `--chart-label` | `--chart-background` | 13.82 | 4.5 | ✅ |
 | `--chart-foreground-muted` | `--chart-background` | 6.45 | 3.0 | ✅ |

@@ -3,7 +3,7 @@
 
 Generated from `brand-ui.manifest.json` by `brand-ui context`. Do not hand-edit inside the markers. The live, queryable API is `brand-ui docs <Component>`.
 
-Themes (1): dark
+Themes (2): dark, light (default)
 Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 169 · Registry items: 21
 
 Rules: semantic tokens only (no raw hex); forwardRef + cn() + spread props; Radix for

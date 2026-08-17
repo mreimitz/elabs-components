@@ -6,7 +6,7 @@
 
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
-**Themes (1):** dark
+**Themes (2):** dark, light (default)
 **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 169
 
 ## Packages
@@ -546,7 +546,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChainOfThoughtSearchResult | component |  | `@elabs-ai/components-ai` |  |
 | ChainOfThoughtSearchResults | component |  | `@elabs-ai/components-ai` |  |
 | ChainOfThoughtStep | component |  | `@elabs-ai/components-ai` |  |
-| ChatGreeting | component |  | `@elabs-ai/components-ai` |  |
+| ChatGreeting | component |  | `@elabs-ai/components-ai` | The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message. |
 | ChatShell | component |  | `@elabs-ai/components-ai` | Assistant/chat application frame composing the conversation + composer surfaces. |
 | Checkpoint | component |  | `@elabs-ai/components-ai` | A restore-point divider in a transcript — a labelled rule the user can jump back to. |
 | CheckpointIcon | component |  | `@elabs-ai/components-ai` |  |
@@ -1025,8 +1025,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ChartBrushTrackOverlay | component |  | `@elabs-ai/components-charts` |  |
 | ChartCard | component |  | `@elabs-ai/components-charts` | Titled card surface around a chart — header, description, and the chart body. |
 | ChartConfigProvider | component |  | `@elabs-ai/components-charts` |  |
-| ChartDatapointLayer | component |  | `@elabs-ai/components-charts` |  |
-| ChartDatapointProvider | component |  | `@elabs-ai/components-charts` |  |
+| ChartDatapointLayer | component |  | `@elabs-ai/components-charts` | The keyboard/AT half of the chart interaction contract — real buttons in a sibling layer over the aria-hidden chart SVG (#349). |
+| ChartDatapointProvider | component |  | `@elabs-ai/components-charts` | Opt-in wrapper that makes a chart's datapoints activatable — mounted only when the consumer passes onDatapointClick or copyValueOnActivate. |
 | ChartFallback | component |  | `@elabs-ai/components-charts` |  |
 | ChartFrame | component |  | `@elabs-ai/components-charts` | Opt-in chart wrapper adding expand / flip-to-table / download-CSV to any chart child. |
 | ChartLegend | component |  | `@elabs-ai/components-charts` | Series key with label, value and an optional progress bar; pattern-aware under decoration. |

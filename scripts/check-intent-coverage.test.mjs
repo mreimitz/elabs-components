@@ -311,7 +311,11 @@ test("the shipped entries no longer carry the four verified-false claims", () =>
 
   const timeline = Object.values(INTENT.AgentTimeline.stateTokens).join(" ");
   assert.ok(!/border-s-(info|primary)/.test(timeline), "status is a node dot, not a left rail");
-  assert.match(timeline, /border-primary bg-primary/);
+  // The running rung is the ui Timeline's NODE_STYLE, which is `border-info
+  // bg-info ring-2 ring-info/25` — NOT the primary plate this line used to pin.
+  // The pin outlived the map it described: the entry kept claiming
+  // `border-primary bg-primary` until rule 5 caught it against timeline.tsx.
+  assert.match(timeline, /border-info bg-info/);
 
   const sources = INTENT.Sources.antiPatterns.join(" ");
   assert.ok(!sources.includes("{ id, label, url }"), "no such Source shape exists");

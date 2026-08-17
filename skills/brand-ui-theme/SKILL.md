@@ -42,22 +42,25 @@ a consumer imports the ones they want, or none.
 `defineTheme()` and `THEME_TOKEN_NAMES`. Run `brand-ui info` for the live theme
 list, token set, and current `--radius`.
 
-## Add a reference theme
+## Add a reference theme (the rare one — inside the brand-ui repo only)
 
-1. Create `packages/tokens/src/themes/<name>.css` with one `[data-theme="<name>"]`
-   block overriding **every** token (a missing token falls back to `:root` and
-   usually looks wrong). Use OKLCH. Declare `color-scheme: light|dark` — it is
-   load-bearing: `resolveThemeIsDark()` reads it to swap Monaco/basemap/Sonner
-   assets for themes it has never heard of.
-2. Add the `BUILT_IN_THEMES` + `BUILT_IN_THEME_META` entries; set `DEFAULT_THEME`
-   only if it should be the default.
-3. Export it: `"./themes/<name>.css"` in `exports` **and** `publishConfig.exports`,
-   then `pnpm --filter @elabs-ai/components-tokens tokens:extract` for the DTCG
-   round-trip. Import it in `apps/docs/.storybook/preview.css`,
-   `fixtures/consumer-smoke`, and the scaffold CSS in `packages/cli/lib/engine.mjs`.
-4. Optionally ship a `registry:theme` item (`brand-ui-registry`).
-5. Map any new visual concept in the `@theme inline` block so `bg-foo`/`text-foo`
-   resolve.
+A reference theme ships **from** `@elabs-ai/components-tokens`, so it is authored in
+the brand-ui repository itself and cannot be added from a consuming app. If that is
+where you are, run **`/new-theme <name>`** — it writes the theme stylesheet, the
+built-in registry entries, the package export wiring and the DTCG round-trip, and
+the repo's own theming rule carries the full checklist.
+
+From a consuming app you want a **consumer theme** (above): the same token work,
+registered on your own `ThemeProvider`, no fork and no PR. The only two things that
+are true of every theme either way:
+
+- **Override every token.** A missing one falls back to `:root` and usually looks
+  wrong; assert coverage against the exported `THEME_TOKEN_NAMES`.
+- **Declare `color-scheme: light|dark`.** It is load-bearing, not decoration:
+  `resolveThemeIsDark()` reads it to swap Monaco / basemap / Sonner assets for
+  themes the library has never heard of.
+- Map any new visual concept in the `@theme inline` block so `bg-foo`/`text-foo`
+  resolve.
 
 ## Re-brand from a customer palette
 

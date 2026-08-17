@@ -490,10 +490,18 @@ test("every named asset release.yml attaches is checksummed (or is the manifest)
   const cut = yml.indexOf("gh release create");
   assert.ok(cut > 0, "release.yml must still create the GitHub Release");
   const tail = yml.slice(cut);
-  // `"release/v$version"/*.tgz` — a glob, covered by ASSET_EXTENSIONS …
-  const globs = [...tail.matchAll(/"release\/v\$version"\/(\*\.\S+)/g)].map((m) => m[1]);
-  // … and `"release/v$version/NAME"` — a file attached by name.
-  const named = [...tail.matchAll(/"release\/v\$version\/([^"]+)"/g)].map((m) => m[1]);
+  // The snapshot directory may be written quoted (`"release/v$version"/*.tgz`)
+  // or bare (`release/v$version/*.tgz`) — both are shell-safe, since a git tag
+  // cannot contain whitespace. This test parses WHAT IS ATTACHED; it is not a
+  // quoting style gate, and pinning one style made it red on a workflow that
+  // attaches exactly the same five assets.
+  const DIR = String.raw`(?:"release\/v\$version"|release\/v\$version)`;
+  // `…/*.tgz` — a glob, covered by ASSET_EXTENSIONS …
+  const globs = [...tail.matchAll(new RegExp(`${DIR}\\/(\\*\\.\\S+)`, "g"))].map((m) => m[1]);
+  // … and `…/NAME` — a file attached by name (no `*`, so a glob cannot match).
+  const named = [
+    ...tail.matchAll(/(?:"release\/v\$version\/([^"*]+)"|release\/v\$version\/([\w.-]+))/g),
+  ].map((m) => m[1] ?? m[2]);
   assert.equal(globs.length, 2, `expected the .tgz + .zip globs; got ${globs.join(", ")}`);
   assert.ok(named.length >= 4, `parsed too few named attachments: ${named.join(", ")}`);
 

@@ -35,8 +35,15 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Hand-building expand / flip-to-table / download controls on the card — wrap it with ChartFrame instead.
   - avoid: Leaving the body blank when data is absent — render the loading/empty state; a blank card reads as broken.
 - ChartConfigProvider
-- ChartDatapointLayer
-- ChartDatapointProvider
+- ChartDatapointLayer — The keyboard/AT half of the chart interaction contract — real buttons in a sibling layer over the aria-hidden chart SVG (#349).
+  - avoid: Putting tabIndex on an SVG shape instead — every chart body is aria-hidden, so a focusable child inside it is the axe aria-hidden-focus violation, and axe is blocking here.
+  - avoid: Letting the layer take pointer events — it is pointer-events:none so the SVG underneath keeps mousemove; swallowing them silently kills hover tooltips on line/area charts.
+  - avoid: Giving every datapoint its own tab stop — the layer is a roving tabindex (one target at 0, the rest -1, arrows to move); a 500-point series must not add 500 tab stops.
+  - avoid: Measuring target geometry with getBBox/getBoundingClientRect — targets carry the geometry the shapes already computed from the scales; a layout read in render is the banned path.
+- ChartDatapointProvider — Opt-in wrapper that makes a chart's datapoints activatable — mounted only when the consumer passes onDatapointClick or copyValueOnActivate.
+  - avoid: Mounting it around every chart by default — a chart with no drill-down handler adds no context, no layer and no DOM, and that opt-out path is the point.
+  - avoid: Rendering more than ~500 targets — the provider warns in dev because a keyboard target per datapoint stops being navigable long before it stops rendering.
+  - avoid: Reading the click handler out of a state variable that changes every render — the provider keeps the context value stable via refs so an inline arrow function does not churn every shape.
 - ChartFallback
 - ChartFrame — Opt-in chart wrapper adding expand / flip-to-table / download-CSV to any chart child.
   - avoid: Expecting ChartFrame to read the chart's context — it is the PARENT of the chart's provider; pass the same data to both via props.

@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+## v4.0.0 — 2026-08-17
+
+### ⚠️ BREAKING: what a consumer has to change
+
+This major renames the scope, removes a package, a theme and three registry
+items, flips one default, and grows the theme-token contract. The detail for
+each is in the sections below; these are the steps.
+
+**Migrating a consumer:**
+
+1. **Rename the scope everywhere**: `@elabs/components-*` →
+   `@elabs-ai/components-*` — `package.json` dependencies, every import, and the
+   Tailwind `@source` lines that point into `node_modules`.
+2. **Delete the registry + auth setup.** The packages are public on npmjs.org,
+   so any `@elabs:registry=` / `//npm.pkg.github.com/:_authToken=` lines in
+   `.npmrc`, and the token step in CI, can go. See
+   [`docs/CONSUMING.md`](./docs/CONSUMING.md).
+3. **`@elabs-ai/components-blueprint` and the `blueprint` theme are gone.** There
+   is no drop-in replacement: author your own theme
+   ([`docs/CONSUMING.md`](./docs/CONSUMING.md) § 5.1) and drop the package
+   dependency. The `--decoration` dial is unaffected and still works on any
+   palette.
+4. **If you author a theme, define `--chart-6` … `--chart-12`.** The token
+   contract grew by seven entries; a theme block missing them fails the parity
+   assertion built off the exported `THEME_TOKEN_NAMES`.
+5. **If you install `button`, `default-theme` or `light-theme` with
+   `npx shadcn add`, stop.** All three are removed — take the primitive from
+   `@elabs-ai/components-ui` and the themes from `@elabs-ai/components-tokens`.
+6. **`BentoGrid`'s cursor glow is opt-in.** Pass `spotlight` on the grid (or on
+   a single `BentoGridItem`) to keep the old behaviour.
+7. **If you relied on `--decoration` styling controls, it no longer does.** The
+   dial paints backgrounds and chart fills only; buttons, inputs, badges, menu
+   items and timeline dots render identically at 0 and 10.
+8. **Source Sans 3 is no longer vendored.** Inter is the UI face in every theme;
+   if your own theme referenced Source Sans 3, ship the font yourself.
+9. **The light theme's focus ring is the brand lime and measures 1.23–1.42:1** —
+   a known WCAG 2.4.7 / 1.4.11 regression, taken deliberately (ADR 0027
+   amendment). If you need a visible focus ring on light, override `--ring` in
+   your own theme block.
+
 ### The packages are published again — public, on npmjs.org
 
 Installing `@elabs-ai/components-*` no longer needs a registry file, a token, or a
