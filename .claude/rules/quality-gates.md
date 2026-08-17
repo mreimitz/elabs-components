@@ -330,15 +330,23 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   `pnpm a11y:baseline:check --update` (add `--prune` to drop what is clean now). **A new
   violation is fixed, never exempted** — the ceiling makes adding one a red build.
 - **Merge discipline — a blocking job that is FAILING _or_ PENDING blocks the merge
-  (#386, #379).** Branch protection cannot make any check required on this repo's plan:
-  re-verified 2026-08-02, both `gh api repos/:owner/:repo/branches/main/protection`
-  and `gh api repos/:owner/:repo/rulesets` return `403 "Upgrade to GitHub Pro or make
-this repository public to enable this feature"`. **Do not re-derive this from the
-  older prose — re-probe it; the day the plan changes, required checks are the correct
-  fix and this whole section becomes a fallback.** Until then a red X is a _social_
-  control, and PR #375 proved it: it merged while `Quality gates (blocking)` reported
-  **fail** and `Storybook interaction + axe` was still **pending**, which is how #379
-  put conflict markers on `main`. The teeth that replace it:
+  (#386, #379).** **UPDATED 2026-08-17 — the repository is PUBLIC now, and branch
+  protection on `main` is ACTIVE.** `gh api repos/:owner/:repo/branches/main/protection`
+  returns a policy (no longer `403 "Upgrade to GitHub Pro…"`): pull requests are
+  required, `enforce_admins` is on, force pushes and deletions are blocked. A direct
+  `git push origin main` is rejected with `Changes must be made through a pull
+request` — which is why a release now lands through a PR (see
+  `docs/RELEASING.md` § 4 and the tag-target rule there; the merge commit is a NEW,
+  untested SHA and must not be the one you tag).
+  **But `required_status_checks` is still ABSENT from that policy**, so a red X
+  remains a _social_ control: the GitHub UI will still merge over a failing or
+  pending job. Everything below therefore stands unchanged. **The correct
+  structural fix is now available and is not yet done — add the blocking `CI` job
+  as a required status check** (`gh api -X PATCH …/branches/main/protection`); until
+  someone does, re-probe rather than trusting this paragraph. PR #375 is what the
+  gap costs: it merged while `Quality gates (blocking)` reported **fail** and
+  `Storybook interaction + axe` was still **pending**, which is how #379 put
+  conflict markers on `main`. The teeth that replace it:
   - **`pnpm merge:check`** (`scripts/check-merge-readiness.mjs`) — run it before
     `gh pr merge`. It reads the PR's check rollup and exits non-zero while any
     blocking check is failing **or has not reported yet**. _Pending is blocking_ —

@@ -146,6 +146,8 @@
     "release-gates:check": "node scripts/check-release-gates.mjs",
     "release-gates:check:test": "node --test scripts/check-release-gates.test.mjs",
     "release-report:test": "node --test scripts/write-release-report.test.mjs",
+    "release-tag-target": "node scripts/resolve-release-tag-target.mjs",
+    "release-tag-target:test": "node --test scripts/resolve-release-tag-target.test.mjs",
     "release-verdict:check": "node scripts/check-release-verdict.mjs",
     "release-verdict:check:test": "node --test scripts/check-release-verdict.test.mjs",
     "release:agent-kit": "pnpm gen:templates && pnpm manifest && pnpm llms && node scripts/build-agent-kit.mjs",

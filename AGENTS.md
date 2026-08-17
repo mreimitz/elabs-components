@@ -293,6 +293,7 @@ pnpm biome-ignore:check         # this repo lints with ESLint, not Biome — a `
 pnpm biome-ignore:check:test    # self-test for the biome-ignore gate
 pnpm release-gates:check        # if a workflow changed — the publishing job asks for the battery's verdict BEFORE it publishes, and no recorded gate vanished from gates.yml (#103)
 pnpm release-gates:check:test   # self-test for the release-gate verdict + ratchet gate
+pnpm release-tag-target:test    # self-test for the resolver that picks WHICH commit the release tag names (the PR head CI proved, not the untested merge commit)
 pnpm release-verdict:check:test # self-test for the gate that authorises a publish (blocking jobs of ci.yml's run for the exact tagged SHA must all be green; fails closed)
 pnpm changelog-entry:check      # if packages/<pkg>/src changed — the branch must add a line under CHANGELOG.md's `## Unreleased` (the lockstep stand-in for a changeset, #64 / ADR 0020)
 pnpm changelog-entry:check:test # self-test for the CHANGELOG-entry gate
