@@ -224,6 +224,7 @@ jobs:
           pnpm registry:validate:test
           pnpm release-gates:check:test
           pnpm release-report:test
+          pnpm release-tag-target:test
           pnpm release-verdict:check:test
           pnpm release:smoke:test
           pnpm release:snapshot:test

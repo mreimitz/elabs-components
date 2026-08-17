@@ -48,9 +48,36 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          registry-url: https://registry.npmjs.org
+          scope: "@elabs-ai"
 
       - name: Install
         run: pnpm install --frozen-lockfile
+
+      # ── AUTH, PROVED BEFORE ANYTHING EXPENSIVE. The v4.0.0 run reached the
+      #    publish with no credential at all and died on `npm error code
+      #    ENEEDAUTH` after ~6 minutes of verdict + build + preflight work:
+      #    `NODE_AUTH_TOKEN` is inert on its own — SOMETHING has to write the
+      #    `//registry.npmjs.org/:_authToken=` line, and `setup-node` only does
+      #    that when given `registry-url` (which it was not).
+      #
+      #    `registry-url` above is the fix; this step is the proof. It writes the
+      #    line into `~/.npmrc` as well, because pnpm reads that file directly
+      #    while setup-node's copy lives behind `NPM_CONFIG_USERCONFIG` — and
+      #    then asks the registry who we are. A missing, empty, expired or
+      #    wrong-account token fails HERE, where the fix is free, instead of at
+      #    the one step in this workflow that cannot be undone.
+      - name: Registry authentication
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "::error::secrets.NPM_TOKEN is empty — the publish would fail with ENEEDAUTH." >&2
+            echo "Add an npm automation token with publish rights for @elabs-ai as the NPM_TOKEN repository secret." >&2
+            exit 1
+          fi
+          printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" >> "${HOME}/.npmrc"
+          echo "npm identity: $(npm whoami --registry https://registry.npmjs.org)"
 
       # ── step 0: the battery already passed on THIS commit, and here is the run
       - name: Require the battery's verdict for this commit

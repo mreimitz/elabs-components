@@ -24,6 +24,20 @@ afterEach(() => {
   document.documentElement.style.removeProperty("--code-keyword");
 });
 
+/**
+ * Shiki highlights ASYNCHRONOUSLY, and how long it takes is a property of the
+ * machine, not of the code under test: ~324ms on a warm dev laptop, over 1.7s
+ * on a cold CI runner loading grammars for the first time. Testing Library's
+ * default `waitFor` timeout is 1s, so the highlight assertions below passed
+ * locally and reddened a blocking CI job with `Error: not yet highlighted` —
+ * a false failure about the runner's speed, not about the colours.
+ *
+ * The condition itself is precise ("a token span carries a resolved `--sdm-c`
+ * hex"), so waiting longer cannot make a broken result pass; it only stops the
+ * wait from expiring first.
+ */
+const HIGHLIGHT_TIMEOUT = { timeout: 10_000, interval: 50 } as const;
+
 /** The token span whose text is `keyword` — waits until it's actually highlighted (not the raw fallback). */
 async function findHighlightedKeywordSpan(container: HTMLElement, keyword: string) {
   return waitFor(() => {
@@ -33,7 +47,7 @@ async function findHighlightedKeywordSpan(container: HTMLElement, keyword: strin
     const style = span?.getAttribute("style") ?? "";
     if (!/--sdm-c:\s*#/.test(style)) throw new Error("not yet highlighted");
     return span as HTMLElement;
-  });
+  }, HIGHLIGHT_TIMEOUT);
 }
 
 describe("Streamdown chrome microcopy (#310)", () => {
@@ -144,6 +158,6 @@ describe("Streamdown code-block theme (#315 follow-up)", () => {
       // active at first mount.
       expect(style).not.toContain("--sdm-c: #133796");
       expect(style).toMatch(/--sdm-c: #[0-9a-f]{6}/);
-    });
+    }, HIGHLIGHT_TIMEOUT);
   });
 });

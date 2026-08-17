@@ -92,45 +92,77 @@ deep, esbuild-orphaned stylesheets, and a subpath pointing at raw `.ts` — all 
 a fully green `typecheck`/`lint`/`test`/`build`. `consumer:check` is the only
 thing that looks at what ships.
 
-## 4. Tag and push
+## 4. Merge, then tag the commit CI already proved
+
+`main` is **protected** — a direct `git push origin main` is rejected with
+`Changes must be made through a pull request` (re-verified 2026-08-17). A release
+therefore lands through a PR, and **the battery runs exactly once**, on the PR:
 
 ```bash
+git switch -c release/v2.1.0
 git commit -am "release: v2.1.0"
-git push origin main                          # <- MUST come first (see below)
+git push -u origin release/v2.1.0
+gh pr create --fill                           # <- THIS is the one battery run
 
-# Ask the release's own gate whether this commit is releasable yet.
-GH_TOKEN=$(gh auth token) pnpm release-verdict:check -- \
-  --sha "$(git rev-parse HEAD)" --repo <owner>/<repo>
+gh pr checks                                  # wait for the blocking job
+pnpm merge:check                              # refuses while anything blocking is red OR pending
+gh pr merge <n> --merge
 
-git tag v2.1.0
-git push origin v2.1.0                        # <- this triggers the publish
+git fetch origin --tags
+sha="$(pnpm -s release-tag-target)"           # NOT necessarily origin/main — see below
+GH_TOKEN=$(gh auth token) pnpm release-verdict:check -- --sha "$sha" --repo <owner>/<repo>
+
+git tag v2.1.0 "$sha"
+git push origin refs/tags/v2.1.0              # <- this triggers the publish
 ```
 
 Pushing the tag is the point of no return: published npm versions are immutable.
 
-**The CI run on that commit IS the battery — so ask before you tag.** Since
-2026-08-10 the release path does not re-run the blocking gates; it requires
-`ci.yml`'s verdict for the exact commit the tag points at (§ 5). The command above
-is that same gate, run locally, and it answers in about a second: green means the
-tag will publish, anything else prints exactly which blocking job is missing,
-pending or red. Tagging early is not destructive — the release run refuses in ~10
-seconds, before it installs, builds or publishes anything, and the remedy is
-always "wait or fix, then move the tag".
+### Tag the PR head, not the merge commit
+
+`release.yml` publishes only when `ci.yml`'s blocking battery already concluded
+success **for the exact tagged SHA** (§ 5). That pin is deliberate — "`main` is
+green" decays the moment `main` moves — but `gh pr merge` mints a **brand-new
+commit that no CI run has ever seen**. Tag that and you have asked the battery to
+re-prove, from scratch, a tree it proved minutes earlier: ~13 minutes for zero
+new information.
+
+A merge commit's **second parent is the PR head** — the commit CI actually ran
+on. When the merge changed nothing, that parent has `main`'s exact tree _and_
+already carries a verdict, so it is the right commit to tag.
+`pnpm release-tag-target` works this out mechanically and prints its reasoning;
+it **declines the shortcut** when it would be unsound (a direct push, an octopus
+merge, or a second parent whose tree no longer matches `main` because someone
+else landed a commit — then `main` itself has to go green, and the second run is
+unavoidable). Self-tested: `pnpm release-tag-target:test`.
+
+### If the tag is already on the wrong commit
+
+Nothing has published yet — `release-verdict:check` refuses in ~10 seconds,
+before the run installs, builds or publishes anything — so the repair is free and
+needs **no force push**:
+
+```bash
+git push origin :refs/tags/v2.1.0             # delete the remote tag
+git tag -d v2.1.0 && git tag v2.1.0 "$(pnpm -s release-tag-target)"
+git push origin refs/tags/v2.1.0              # re-push; the Release workflow re-fires
+```
 
 You do **not** have to wait for the whole CI run. The gate reads the blocking jobs,
 so the Storybook interaction + axe job (`(non-blocking)`, up to 25 minutes) never
 holds a release up. It also reads the **newest** run for the commit, so a superseded
 `cancelled` run from a double-push does not veto the green one that replaced it.
 
-**`main` before the tag is enforced, not stylistic.** The plugin pointer a
+**Merge before tag is enforced, not stylistic.** The plugin pointer a
 `/plugin marketplace add <path-to-this-repo>` consumer follows is
-`.claude-plugin/marketplace.json` **as served by the default branch** — so a tag
-pushed on its own publishes new packages while every plugin consumer stays on the
-previous version. `release.yml` runs `pnpm marketplace:check` as a publish-only
-preflight and fails the run if `main` does not already name this version, while
-the fix is still "push `main`, delete the tag, re-tag" rather than twelve burnt
-immutable versions. (The post-release smoke re-checks it, because a revert can
-land between the two.)
+`.claude-plugin/marketplace.json` **as served by the default branch** — read
+through the API, not from the tag's tree, which is why tagging the PR head is
+still correct. A tag pushed before the merge publishes new packages while every
+plugin consumer stays on the previous version. `release.yml` runs
+`pnpm marketplace:check` as a publish-only preflight and fails the run if the
+default branch does not already name this version, while the fix is still "merge,
+delete the tag, re-tag" rather than twelve burnt immutable versions. (The
+post-release smoke re-checks it, because a revert can land between the two.)
 
 ## 5. What CI does
 
@@ -140,26 +172,35 @@ already have a **completed, successful `CI` run**, and the gate refuses in every
 other state (no run, still queued, still running, `failure`, `cancelled`,
 `timed_out`, or an API it cannot read). The publish job then:
 
-0. builds the **packages only** (`pnpm build:packages`) — `ci.yml` already ran the
+0. proves the **registry credential** before anything expensive
+   (`Registry authentication`): it fails loudly when `secrets.NPM_TOKEN` is empty,
+   writes the `//registry.npmjs.org/:_authToken=` line into `~/.npmrc`, and runs
+   `npm whoami` to confirm the token is live and owns the scope. Setting
+   `NODE_AUTH_TOKEN` on the publish step is **not** enough on its own — something
+   has to write that `.npmrc` line, and `actions/setup-node` only does so when it
+   is given `registry-url`. It was not, and the first v4.0.0 attempt spent ~6
+   minutes on verdict + build + preflight before dying at the publish with
+   `npm error code ENEEDAUTH` and zero packages published,
+1. builds the **packages only** (`pnpm build:packages`) — `ci.yml` already ran the
    full `pnpm build` on this commit, but on a **different runner**, and
    `publishConfig.exports` points at `dist/`, so this job needs its own copy. It
    deliberately does not build `apps/docs`: a Storybook static site nothing
    publishes cost 2m50s of the v3.0.0 run's 5m23s build,
 1. re-checks the lockstep version and asserts the tag matches the version in the tree,
-2. `publish-ready:check` (+ its self-test): scope, private, repository, registry,
-3. `changelog:check` — asserts `CHANGELOG.md` carries a **non-empty
+1. `publish-ready:check` (+ its self-test): scope, private, repository, registry,
+1. `changelog:check` — asserts `CHANGELOG.md` carries a **non-empty
    `## v<version>` section**, because step 8 lists `RELEASE_NOTES.md` as a
    _required_ Release asset and that file is extracted from it. The rename in § 2
    above is a manual step; without this preflight, skipping it published every
    immutable version and only then died at `gh release create` — no Release, no
    assets, and neither post-release check ever ran,
-4. `marketplace:check` — asserts the plugin pointer **on the default branch**
+1. `marketplace:check` — asserts the plugin pointer **on the default branch**
    already names this version. It is the one post-release assertion that needs
    nothing the publish produces (two `gh api` calls), so it is hoisted in front of
    the publish: a tag pushed without `git push origin main` is then a re-tag, not
    twelve immutable versions with a stale plugin. It stays in the smoke too — the
    preflight saves the release, the smoke proves the end state,
-5. writes **`validation-report.json` / `.md`** — the derived record of which gates
+1. writes **`validation-report.json` / `.md`** — the derived record of which gates
    passed, on which commit, over which packages (`pnpm release:report`). A step
    behind an `if:` (today `marketplace:check`) is recorded as **`skipped`** rather
    than `passed` when the run is not a tag build, so a `workflow_dispatch` dry-run
@@ -169,15 +210,15 @@ other state (no run, still queued, still running, `failure`, `cancelled`,
    `release-verdict:check --out`. Without it a reader could not follow "these
    gates passed" to any evidence, so a report written with no provenance says so
    in its own first paragraph instead of implying otherwise,
-6. `pnpm -r publish --access public --no-git-checks` to npmjs.org. Public access is
+1. `pnpm -r publish --access public --no-git-checks` to npmjs.org. Public access is
    explicit rather than inherited, because a scoped package defaults to
    _restricted_ — the failure mode is a release that publishes but nobody can
    install. Provenance is requested through
    `NPM_CONFIG_PROVENANCE` (an env var, never a `--provenance`
    flag: an unrecognised flag would abort the publish mid-release), so it is
    **best-effort** — an unattested publish still succeeds,
-7. builds the agent-kit + plugin zips (`release:agent-kit`, `release:plugin`),
-8. `pnpm release:snapshot` — packs the `.tgz` rollback tarballs for the **derived**
+1. builds the agent-kit + plugin zips (`release:agent-kit`, `release:plugin`),
+1. `pnpm release:snapshot` — packs the `.tgz` rollback tarballs for the **derived**
    distributable set, writes the record half of the snapshot (`RELEASE_NOTES.md`
    extracted from the changelog, a `CHANGELOG.md` copy, and `ground-truth/` — the
    manifest, component inventory and `llms.txt` for exactly this version), picks up
@@ -195,48 +236,48 @@ other state (no run, still queued, still running, `failure`, `cancelled`,
    checksum of a version's ground truth and never get the bytes. A record it
    cannot write (a missing `RELEASE_NOTES.md`) **fails** the step rather than
    warning past it,
-9. creates the GitHub Release with all of it attached,
-10. **post-release fresh-install smoke** (`pnpm release:smoke`) — the last step of
-    the **same job**, not a dependent one, because it reads the snapshot folder:
-    `release/` is git-ignored and the runner is discarded when the job ends, so a
-    `needs:` job would have to re-download every asset to find the manifest it
-    already had. It is the check `npm view` cannot make. It installs every
-    published package **from the registry** into a scratch dir outside the
-    workspace, asserts each package's `exports` entry is really inside the tarball
-    and non-empty, asserts every asset `release-manifest.json` names is actually
-    attached to the Release, imports the published CLI and runs its consumer
-    commands (`brand-ui info --json`, `brand-ui docs Button`), and
-    **re-**confirms the plugin pointer a `/plugin marketplace add` consumer
-    follows names the released version (step 4 already asserted it pre-publish; a
-    revert can land in between). `consumer:check` covers the artifact **before**
-    publish, from local tarballs; this is the only step that installs what the
-    registry actually serves.
+1. creates the GitHub Release with all of it attached,
+1. **post-release fresh-install smoke** (`pnpm release:smoke`) — the last step of
+   the **same job**, not a dependent one, because it reads the snapshot folder:
+   `release/` is git-ignored and the runner is discarded when the job ends, so a
+   `needs:` job would have to re-download every asset to find the manifest it
+   already had. It is the check `npm view` cannot make. It installs every
+   published package **from the registry** into a scratch dir outside the
+   workspace, asserts each package's `exports` entry is really inside the tarball
+   and non-empty, asserts every asset `release-manifest.json` names is actually
+   attached to the Release, imports the published CLI and runs its consumer
+   commands (`brand-ui info --json`, `brand-ui docs Button`), and
+   **re-**confirms the plugin pointer a `/plugin marketplace add` consumer
+   follows names the released version (step 4 already asserted it pre-publish; a
+   revert can land in between). `consumer:check` covers the artifact **before**
+   publish, from local tarballs; this is the only step that installs what the
+   registry actually serves.
 
-    One detail it gets right that is easy to get wrong, and was: **the marketplace
-    pointer is read from the DEFAULT BRANCH**, over the GitHub API, not from the
-    tag this job checked out. The tag's own copy is forced to agree by
-    `pnpm version:check` two steps earlier, so comparing it proves nothing — while
-    a `/plugin marketplace add` consumer follows `main`, which § 4 pushes as a
-    _separate_ command and a revert can move afterwards.
+   One detail it gets right that is easy to get wrong, and was: **the marketplace
+   pointer is read from the DEFAULT BRANCH**, over the GitHub API, not from the
+   tag this job checked out. The tag's own copy is forced to agree by
+   `pnpm version:check` two steps earlier, so comparing it proves nothing — while
+   a `/plugin marketplace add` consumer follows `main`, which § 4 pushes as a
+   _separate_ command and a revert can move afterwards.
 
-    `npx shadcn add` is deliberately **not** smoked: a release does not build,
-    publish or host the shadcn registry (see below), so there is no URL to test.
-    `brand-ui context` is monorepo-only — it writes this repo's `CLAUDE.md` /
-    `AGENTS.md` — so the smoke runs the consumer-facing `info` / `docs` instead.
+   `npx shadcn add` is deliberately **not** smoked: a release does not build,
+   publish or host the shadcn registry (see below), so there is no URL to test.
+   `brand-ui context` is monorepo-only — it writes this repo's `CLAUDE.md` /
+   `AGENTS.md` — so the smoke runs the consumer-facing `info` / `docs` instead.
 
-    It runs **after** the publish, which is inherent: it installs what the registry
-    serves, and nothing serves it until it is published. Everything that _can_ be
-    checked earlier is — `consumer:check` before the tag, the preflights above
-    before the publish — so what this step catches is a registry-side or
-    pointer-side failure, for which the remedy is § 7 Rollback (patch forward),
-    never an undo.
+   It runs **after** the publish, which is inherent: it installs what the registry
+   serves, and nothing serves it until it is published. Everything that _can_ be
+   checked earlier is — `consumer:check` before the tag, the preflights above
+   before the publish — so what this step catches is a registry-side or
+   pointer-side failure, for which the remedy is § 7 Rollback (patch forward),
+   never an undo.
 
-    **Status: field-proven against the PREVIOUS registry, not this one.** The
-    v3.0.0 run (2026-08-10) installed the whole published set from GitHub Packages
-    and passed; it has never run against npmjs.org. Its self-test
-    (`pnpm release:smoke:test`, 27 assertions on injected fakes) covers the logic,
-    not the target. Read its output on the first public release rather than
-    assuming it.
+   **Status: field-proven against the PREVIOUS registry, not this one.** The
+   v3.0.0 run (2026-08-10) installed the whole published set from GitHub Packages
+   and passed; it has never run against npmjs.org. Its self-test
+   (`pnpm release:smoke:test`, 27 assertions on injected fakes) covers the logic,
+   not the target. Read its output on the first public release rather than
+   assuming it.
 
 Watch it with `gh run watch` or `gh run list --workflow=Release`.
 

@@ -6,11 +6,15 @@
 # `Quality gates (blocking)` reported FAIL and `Storybook interaction + axe` was
 # still PENDING — the mechanism behind #379 and the durable half of #386.
 #
-# It does NOT touch `git merge` / `git push` / `git checkout main`: on this repo's
-# plan branch protection is unavailable (403 "Upgrade to GitHub Pro"), local
+# It does NOT touch `git merge` / `git push` / `git checkout main`: local
 # integration is a normal part of the workflow, and a hook that bricked those
 # would be worked around within a day. Its sibling `pre-merge-review-gate.sh`
 # still warns on those. Scope is what keeps this one enforceable.
+#
+# 2026-08-17: the repository is public and branch protection on `main` IS active
+# (pull requests required) — but `required_status_checks` is absent from that
+# policy, so GitHub still merges over a red or pending X. This hook stays the
+# enforcement until the blocking `CI` job is added as a required check.
 #
 # Escape hatch: ALLOW_UNVERIFIED_MERGE=1 (loud, documented, shows up in the log).
 # See .claude/rules/quality-gates.md ▸ "Merge discipline" and issue #386.
@@ -61,9 +65,10 @@ cat >&2 <<MSG
 
 $out
 
-Why this is blocked rather than warned: branch protection is unavailable on this
-repo's plan (verified — \`gh api repos/:owner/:repo/branches/main/protection\`
-returns 403 "Upgrade to GitHub Pro"), so GitHub will merge over a red or pending
+Why this is blocked rather than warned: branch protection on \`main\` is active but
+declares NO required status checks (verified 2026-08-17 —
+\`gh api repos/:owner/:repo/branches/main/protection\` has no
+\`required_status_checks\` key), so GitHub will still merge over a red or pending
 X. PR #375 did exactly that and put conflict markers on \`main\` (#379, #386).
 
 Wait for the battery, fix what it reports, then merge.
