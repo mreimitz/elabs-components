@@ -18,9 +18,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { readThemesCss } from "./lib/theme-sources.mjs";
 import {
   findRoleCollisions,
   resolveToken,
@@ -42,11 +40,22 @@ const BASE = {
   // `(--ring, --success)` row is actually EXERCISED by the fixture: a role the
   // fixture never declares is reported `not-declared`, not "separated".
   "--success": "oklch(0.5 0.14 150)",
+  // ALL TWELVE series, because MUST_DIFFER enumerates all 66 pairs of the
+  // twelve-series ramp. A fixture that stops at `--chart-5` does not "cover
+  // less" — it makes every clean-fixture assertion report `not-declared` for
+  // 6-12, which is a different failure wearing the same red.
   "--chart-1": "oklch(0.55 0.2 300)",
   "--chart-2": "oklch(0.6 0.14 180)",
   "--chart-3": "oklch(0.65 0.15 140)",
   "--chart-4": "oklch(0.63 0.16 70)",
   "--chart-5": "oklch(0.6 0.2 20)",
+  "--chart-6": "oklch(0.45 0.12 260)",
+  "--chart-7": "oklch(0.75 0.13 100)",
+  "--chart-8": "oklch(0.4 0.16 330)",
+  "--chart-9": "oklch(0.7 0.18 50)",
+  "--chart-10": "oklch(0.5 0.1 200)",
+  "--chart-11": "oklch(0.82 0.09 160)",
+  "--chart-12": "oklch(0.33 0.08 20)",
   // The ADR 0025 pair: a current search match is orange, a destructive state is
   // red. Both are deep plates with white ink, which is why they are MUST_DIFFER.
   "--highlight-active": "oklch(0.56 0.16 60)",
@@ -87,12 +96,17 @@ test("PASSES: every MUST_DIFFER pair comfortably separated", () => {
 // ── B: a planted collision fails, and is attributed to the right theme/pair ───
 
 test("FAILS: two MUST_DIFFER roles on one literal, no exemption (the #385 bug)", () => {
-  const v = find(css({ [ROOT_MODE]: { "--ring": BASE["--primary"] } }));
-  const ringPrimary = v.filter((x) => x.a === "--ring" && x.b === "--primary");
-  assert.equal(ringPrimary.length, 1, "expected exactly one --ring/--primary collision");
-  assert.equal(ringPrimary[0].theme, ROOT_MODE);
-  assert.equal(ringPrimary[0].kind, "collision");
-  assert.equal(ringPrimary[0].deltaE, 0);
+  // #385's own example was `--ring` on `--primary`. That row was DELETED on
+  // 2026-08-16 (ADR 0027 Amendment — the reference themes alias the focus ring
+  // to the brand plate on purpose), so pinning the mechanism to it would assert
+  // a rule this repo no longer holds. The shape is identical on a row that IS
+  // still an invariant: the hover/selected ink vs the focus ring.
+  const v = find(css({ [ROOT_MODE]: { "--accent-foreground": BASE["--ring"] } }));
+  const hit = v.filter((x) => x.a === "--accent-foreground" && x.b === "--ring");
+  assert.equal(hit.length, 1, "expected exactly one --accent-foreground/--ring collision");
+  assert.equal(hit[0].theme, ROOT_MODE);
+  assert.equal(hit[0].kind, "collision");
+  assert.equal(hit[0].deltaE, 0);
 });
 
 test("FAILS: the brand-derived focus ring drifting onto the success mark (ADR 0027)", () => {
@@ -131,14 +145,15 @@ test("FAILS: the current search match drifting onto the destructive red (the ADR
 // ── C: string inequality is NOT enough — a cosmetic nudge still fails ─────────
 
 test("FAILS: a 0.001 nudge in L (byte-different, perceptually identical)", () => {
-  const nudged = "oklch(0.551 0.18 264)"; // vs --primary oklch(0.55 0.18 264)
-  assert.notEqual(nudged, BASE["--primary"], "fixture must be byte-DIFFERENT");
-  const v = find(css({ [ROOT_MODE]: { "--ring": nudged } })).filter((x) => x.a === "--ring");
+  // Two categorical series a hair apart are still ONE series to a reader.
+  const nudged = "oklch(0.551 0.2 300)"; // vs --chart-1 oklch(0.55 0.2 300)
+  assert.notEqual(nudged, BASE["--chart-1"], "fixture must be byte-DIFFERENT");
+  const v = find(css({ [ROOT_MODE]: { "--chart-2": nudged } })).filter((x) => x.a === "--chart-1");
   assert.ok(
-    v.some((x) => x.b === "--primary"),
+    v.some((x) => x.b === "--chart-2"),
     "a 0.001 nudge must NOT satisfy the gate — that is the whole point of the ΔE floor",
   );
-  const d = oklabDistance(nudged, BASE["--primary"]);
+  const d = oklabDistance(nudged, BASE["--chart-1"]);
   assert.ok(d > 0 && d < ROLE_SEPARATION_DELTA_E, `ΔE ${d} should be nonzero but below the floor`);
 });
 
@@ -149,12 +164,16 @@ test("PASSES: `--sidebar-primary: var(--primary)` (an intentional mirror, not MU
   assert.deepEqual(v, [], "an alias between roles the gate does not police is fine");
 });
 
-test("FAILS: `--ring: var(--primary)` — var() does not launder a MUST_DIFFER pair", () => {
-  const v = find(css({ [ROOT_MODE]: { "--ring": "var(--primary)" } }));
-  const hit = v.find((x) => x.a === "--ring" && x.b === "--primary" && x.theme === ROOT_MODE);
+test("FAILS: `--ring: var(--success)` — var() does not launder a MUST_DIFFER pair", () => {
+  // The historical example (`--ring: var(--primary)`) is now the SHIPPED intent,
+  // and its row is gone from MUST_DIFFER — so the "an alias is not a loophole"
+  // mechanism is pinned on a ring row that is still an invariant. The focus halo
+  // must not become the "this completed" mark by aliasing its way there.
+  const v = find(css({ [ROOT_MODE]: { "--ring": "var(--success)" } }));
+  const hit = v.find((x) => x.a === "--ring" && x.b === "--success" && x.theme === ROOT_MODE);
   assert.ok(hit, "an alias must be resolved to its literal before comparison");
   assert.equal(hit.kind, "collision");
-  assert.equal(hit.valueA, BASE["--primary"], "the alias must resolve to the target's literal");
+  assert.equal(hit.valueA, BASE["--success"], "the alias must resolve to the target's literal");
 });
 
 test("resolveToken follows a multi-hop alias chain and guards against cycles", () => {
@@ -198,12 +217,14 @@ test("a var() alias TARGET may live in :root — the cascade fallback still reso
 // ── E: the exemption list is honoured AND narrow (per-theme, not per-role) ────
 
 test("an exempted pair passes in ITS theme while the same pair still fails elsewhere", () => {
-  const collide = { "--ring": BASE["--primary"] };
-  const text = css({ drafting: collide, [ROOT_MODE]: collide });
-  const exemptions = new Map([["drafting/--ring|--primary", "by design (test fixture)"]]);
+  const collide = { "--accent-foreground": BASE["--ring"] };
+  const text = css({ light: collide, [ROOT_MODE]: collide });
+  const exemptions = new Map([["light/--accent-foreground|--ring", "by design (test fixture)"]]);
 
   const v = find(text, { exemptions });
-  const themes = v.filter((x) => x.a === "--ring" && x.b === "--primary").map((x) => x.theme);
+  const themes = v
+    .filter((x) => x.a === "--accent-foreground" && x.b === "--ring")
+    .map((x) => x.theme);
   assert.deepEqual(themes, [ROOT_MODE], "the exemption must NOT travel to another theme");
 });
 
@@ -225,7 +246,7 @@ test("every shipped EXEMPTIONS key is well-formed and names a real MUST_DIFFER p
 test("FAILS: a MUST_DIFFER token that cannot resolve to an oklch literal is reported", () => {
   const text =
     `:root {\n  --ring: #ff0000;\n  --primary: oklch(0.55 0.18 264);\n}\n\n` +
-    `[data-theme="drafting"] {\n  --ring: oklch(0.9 0.01 1);\n  --primary: oklch(0.2 0.1 200);\n}`;
+    `[data-theme="light"] {\n  --ring: oklch(0.9 0.01 1);\n  --primary: oklch(0.2 0.1 200);\n}`;
   const v = find(text, { mustDiffer: [["--ring", "--primary"]] });
   assert.equal(v.length, 1);
   assert.equal(v[0].kind, "unresolved", "a hex/calc value must be surfaced, not skipped");
@@ -296,17 +317,36 @@ test("FAILS loudly (not silently) when a MUST_DIFFER role is absent from a theme
   assert.equal(qb[0].a, "--ring");
 });
 
-// ── I: the gate is connected to the REAL file (the assertion that was missing) ─
+// ── I: the gate is connected to the REAL source (the assertion that was missing) ─
 //
 // Deliberate exception to "fixtures only": the defect was not in the logic, it
-// was in what the logic could SEE of `packages/tokens/src/themes.css`. Only a
-// check against the real bytes catches that. This is also the coverage
-// enumeration — it fails if any MUST_DIFFER role becomes invisible in any theme.
+// was in what the logic could SEE of the shipped theme source. Only a check
+// against the real bytes catches that. This is also the coverage enumeration —
+// it fails if any MUST_DIFFER role becomes invisible in any theme.
+//
+// It reads the theme SET through `readThemesCss()`, the same reader the gate
+// itself uses — NOT `themes.css` alone. Each reference theme now lives in its
+// own `src/themes/<name>.css`, so a direct read of `themes.css` finds only
+// `:root`; `extractBlock()` returns null for light and dark, the loop skips
+// them, and the assertion goes green having measured a third of the input. That
+// is the exact "a parser that quietly reads fewer blocks still exits 0" hazard
+// `.claude/rules/theming.md` names, in the file whose whole job is to stop the
+// gate from going blind.
 
-test("every MUST_DIFFER role resolves in every theme of the REAL themes.css", () => {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const real = readFileSync(join(here, "..", "packages", "tokens", "src", "themes.css"), "utf8");
+test("every MUST_DIFFER role resolves in every theme of the REAL theme set", () => {
+  const real = readThemesCss();
   const roles = [...new Set(MUST_DIFFER.flat())];
+
+  // A theme whose block never parsed cannot report `not-declared` — it is simply
+  // absent from the results — so assert the set was actually reached first.
+  const measuredThemes = new Set(
+    findRoleCollisions(real, { exemptions: new Map(), floor: Infinity }).map((v) => v.theme),
+  );
+  assert.deepEqual(
+    [...measuredThemes].sort(),
+    [...THEME_NAMES].sort(),
+    "every registered theme block must be reachable in the source the gate reads",
+  );
 
   // `not-declared` is emitted for any role the gate cannot see in a block.
   const blind = findRoleCollisions(real, { exemptions: new Map() }).filter(
@@ -315,7 +355,7 @@ test("every MUST_DIFFER role resolves in every theme of the REAL themes.css", ()
   assert.deepEqual(
     blind,
     [],
-    `the gate cannot see some role(s) in the real themes.css: ` +
+    `the gate cannot see some role(s) in the real theme set: ` +
       blind.map((b) => `${b.theme}/${b.a}`).join(", "),
   );
   assert.ok(roles.length >= 6, "MUST_DIFFER should cover a real set of roles");

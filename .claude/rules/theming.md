@@ -117,6 +117,29 @@ example and the default registry, not the menu.
     rewrote every `.bg-<tone>` to one declaration set would render non-aliased
     status roles identically (#391 owns that half; `pnpm decoration-collapse:check`
     guards against reintroducing one). Keep both.
+- **The chart RAMP is exempt from 1.4.11 in the `light` reference theme — signed off
+  2026-08-16, and it is a recorded regression, not a bar that moved.** The authored
+  twelve-colour palette is tuned for a mid/dark plot ground and ships **verbatim in
+  both reference themes**, so on `light`'s white `--chart-background` nine of the
+  twelve series measure under 3:1 (worst: `--chart-10` at 1.22:1). The light-only
+  re-tune that satisfied the bar turned the brand colour into an olive and was
+  rejected on sight; the palette won and the cost is carried in the open.
+  - **The systemic repair is to darken the plot ground, not to lighten the palette.**
+    Reach for that before proposing another exemption.
+  - **`:root` is deliberately NOT exempt** — a consumer who imports no theme
+    stylesheet still gets a legible ramp.
+  - **It is declared in two places and both fail if it goes stale**:
+    `CHART_1411_EXEMPT` in `packages/tokens/src/charts-contrast.test.ts` (which also
+    pins the ramp to `dark`'s values, so a light-only re-tune reds the suite) and
+    `CHART_1411_EXEMPT` in `scripts/check-audit-artifact.mjs` (which fails if the
+    whole ramp ever clears 3:1, i.e. once the carve-out excuses nothing). The unit
+    is the **ramp**, not the series — three members already clear the bar.
+  - **The exemption covers the SERIES only.** `--chart-foreground`, `--chart-label`
+    and `--chart-foreground-muted` are gated exactly as before; an illegible axis
+    label is still a failure.
+  - **The committed evidence records it rather than hiding it**:
+    `apps/e2e/reports/theme-aa-audit.md` measures every exempt pairing, renders it
+    `⚠️` (distinct from a gate-failing `❌`), and names the decision in its header.
 - **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427),
   AMENDED 2026-08-16: the reference themes now alias `--ring: var(--primary)`.**
   `--ring` had no stated contract, only a negative comment ("distinct from the

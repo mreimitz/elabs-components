@@ -12,9 +12,9 @@ This file is generated from `brand-ui.manifest.json` — the anti-hallucination 
 - Visible focus ring on every interactive element; must read in every theme.
 - One-way dependency: `tokens → ui/icons → data/ai/flow/charts/marketing/editor`.
 
-## Themes (1)
+## Themes (2)
 
-dark
+dark, light (default)
 
 ## Packages (which package for what)
 

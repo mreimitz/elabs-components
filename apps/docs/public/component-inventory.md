@@ -6,7 +6,7 @@
 
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
-**Themes (1):** dark
+**Themes (2):** dark, light (default)
 **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 169
 
 ## Packages

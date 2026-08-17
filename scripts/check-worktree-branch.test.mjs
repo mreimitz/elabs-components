@@ -22,6 +22,9 @@ import {
   mkdtempSync,
   mkdirSync,
   writeFileSync,
+  readFileSync,
+  readdirSync,
+  existsSync,
   rmSync,
   chmodSync,
   copyFileSync,
@@ -278,19 +281,35 @@ test("CLI --root (primary): NO orchestration running anywhere — ordinary main 
 function setupHookRepo(dir, branch) {
   mkdirSync(join(dir, ".githooks"), { recursive: true });
   mkdirSync(join(dir, "scripts"), { recursive: true });
+  const hookSrc = readFileSync(join(REPO_ROOT, ".githooks", "pre-commit"), "utf8");
   copyFileSync(join(REPO_ROOT, ".githooks", "pre-commit"), join(dir, ".githooks", "pre-commit"));
   chmodSync(join(dir, ".githooks", "pre-commit"), 0o755);
-  copyFileSync(
-    join(HERE, "check-worktree-branch.mjs"),
-    join(dir, "scripts", "check-worktree-branch.mjs"),
+
+  // Copy EVERY script the real hook invokes, DERIVED from the hook's own text
+  // rather than enumerated here. The enumerated version rotted the moment the
+  // hook gained its debrand step: the fixture had no `scripts/check-debrand.mjs`,
+  // node exited MODULE_NOT_FOUND, the hook aborted, and four happy-path tests
+  // went red for a reason that had nothing to do with the branch guard. A
+  // fixture that must be hand-updated whenever the file it exercises changes is
+  // a gate that stops firing.
+  const referenced = new Set(
+    [...hookSrc.matchAll(/node\s+scripts\/([\w.-]+\.mjs)/g)].map((m) => m[1]),
   );
-  // check-conflict-markers.mjs (step after the branch guard) is dependency-free
-  // and self-contained — copy it too so the REST of the real hook can run to
-  // completion on the happy path, exactly as it would in a real worktree.
-  copyFileSync(
-    join(REPO_ROOT, "scripts", "check-conflict-markers.mjs"),
-    join(dir, "scripts", "check-conflict-markers.mjs"),
-  );
+  for (const name of referenced) {
+    const src = join(REPO_ROOT, "scripts", name);
+    if (existsSync(src)) copyFileSync(src, join(dir, "scripts", name));
+  }
+  // …and the shared helpers those scripts import. Nothing here executes unless
+  // the hook's own staged-path guard fires, so copying the directory is cheap
+  // insurance against the same rot one import deeper.
+  const libSrc = join(REPO_ROOT, "scripts", "lib");
+  if (existsSync(libSrc)) {
+    mkdirSync(join(dir, "scripts", "lib"), { recursive: true });
+    for (const f of readdirSync(libSrc)) {
+      if (f.endsWith(".mjs")) copyFileSync(join(libSrc, f), join(dir, "scripts", "lib", f));
+    }
+  }
+
   initRepo(dir, branch);
   git(dir, ["config", "core.hooksPath", ".githooks"]);
 }

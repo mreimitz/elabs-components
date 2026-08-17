@@ -161,17 +161,37 @@ function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
   return out;
 }
 
-/** Parse themes.css for theme names, token names, and the data palette. */
+/** Parse the theme stylesheet SET for theme names, token names, and the palette. */
 function parseTokens(repoRoot) {
-  let css = read(join(repoRoot, "packages/tokens/src/themes.css"));
-  if (!css) return { themes: [], tokens: [], radius: null };
+  const engineFile = join(repoRoot, "packages/tokens/src/themes.css");
+  const engine = read(engineFile);
+  if (!engine) return { themes: [], tokens: [], radius: null };
+  // ADR 0029 moved each reference theme's block OUT of the engine stylesheet
+  // into its own opt-in file (`src/themes/<name>.css`); themes.css keeps
+  // `:root`, the Tailwind bridge and the dials. A reader that still opens only
+  // themes.css does not fail — it silently reports FEWER themes, which is how
+  // the manifest came to list `dark` alone (and that one only because a
+  // `@custom-variant` line happens to mention the attribute).
+  const themesDir = join(repoRoot, "packages/tokens/src/themes");
+  const themeFiles = existsSync(themesDir)
+    ? readdirSync(themesDir)
+        .filter((f) => f.endsWith(".css"))
+        .sort()
+        .map((f) => join(themesDir, f))
+    : [];
+  let css = [engine, ...themeFiles.map((f) => read(f) ?? "")].join("\n");
   // Strip CSS comments so example snippets ([data-theme="acme"], "...") in the
   // file header don't leak into the theme list.
   css = css.replace(/\/\*[\s\S]*?\*\//g, "");
-  // The user-selectable themes are the `[data-theme="…"]` blocks. `:root` holds a
-  // neutral light BASE/fallback (not a selectable theme), so it is NOT listed.
+  // The user-selectable themes are the `[data-theme="…"]` BLOCKS — the trailing
+  // `{` is load-bearing. The bare attribute also appears inside
+  // `@custom-variant dark (&:where([data-theme="dark"], …))`, a Tailwind variant
+  // declaration and not a theme; counting it made a missing theme block look
+  // like a present one.
+  // `:root` holds a neutral light BASE/fallback (not a selectable theme), so it
+  // is NOT listed.
   const themes = [];
-  for (const m of css.matchAll(/\[data-theme="([^"]+)"\]/g)) {
+  for (const m of css.matchAll(/\[data-theme="([^"]+)"\]\s*\{/g)) {
     const name = m[1];
     if (name === "..." || themes.includes(name)) continue;
     themes.push(name);
