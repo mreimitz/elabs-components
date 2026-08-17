@@ -295,6 +295,7 @@ pnpm release-gates:check        # if a workflow changed — the publishing job a
 pnpm release-gates:check:test   # self-test for the release-gate verdict + ratchet gate
 pnpm release-tag-target:test    # self-test for the resolver that picks WHICH commit the release tag names (the PR head CI proved, not the untested merge commit)
 pnpm release-verdict:check:test # self-test for the gate that authorises a publish (blocking jobs of ci.yml's run for the exact tagged SHA must all be green; fails closed)
+pnpm ci-scope:test              # self-test for the classifier that authorises CI's documentation-only fast path — it must never call a source change "prose" (runs on EVERY CI path, including the fast one)
 pnpm changelog-entry:check      # if packages/<pkg>/src changed — the branch must add a line under CHANGELOG.md's `## Unreleased` (the lockstep stand-in for a changeset, #64 / ADR 0020)
 pnpm changelog-entry:check:test # self-test for the CHANGELOG-entry gate
 pnpm use-client:check           # if a client package's source changed — every package that uses React hooks carries a "use client" directive on ≥1 module, so RSC apps hydrate it correctly (#324)

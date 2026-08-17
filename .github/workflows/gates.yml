@@ -14,6 +14,26 @@
 #      (#375/#379), so the scan cannot depend on a successful install.
 #   2. `pnpm build` precedes `consumer:check`, which packs the built tarballs and
 #      installs them into a throwaway app.
+#
+# ## The documentation-only fast path
+#
+# A commit that changes nothing but prose used to pay the full ~13 minutes:
+# typecheck, lint, the whole unit suite, a full build and a consumer install
+# smoke, none of which prose can affect. `scripts/resolve-ci-scope.mjs` (self-
+# tested, conservative, fail-closed) classifies the change, and the steps below
+# that can only be affected by SOURCE are guarded on its verdict.
+#
+# The job itself always runs and always concludes — that is not optional.
+# `check-release-verdict.mjs` publishes a `v*` tag only against a green blocking
+# job for the exact tagged SHA, and `check-merge-readiness.mjs` refuses while a
+# blocking check has not reported; both are fail-closed, so a `paths-ignore:`
+# that skipped the workflow would make every docs commit unmergeable AND
+# unreleasable. Only the job's CONTENTS shrink.
+#
+# The gate steps stay textually present either way, so `pnpm release-gates:check`
+# rung 2 still sees the whole recorded set. What that ratchet cannot see is a
+# step being CONDITIONALLY skipped — which is why the condition is one shared
+# expression sourced from one self-tested script, and never hand-written per step.
 name: Quality gates
 
 on:
@@ -45,6 +65,15 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      # Everything below guarded on `steps.scope.outputs.docs_only != 'true'` is
+      # a check prose cannot affect. See this file's header for why the JOB still
+      # runs unconditionally.
+      - name: Resolve change scope
+        id: scope
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: node scripts/resolve-ci-scope.mjs >> "$GITHUB_OUTPUT"
+
       # ── pre-install: dependency-free scans of the source itself ─────────────
       - name: Source integrity (pre-install)
         run: |
@@ -54,24 +83,36 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Runs on EVERY path, including the fast one it authorises: a classifier
+      # that wrongly called a source change "documentation" would hand a green
+      # blocking job to a commit nothing compiled. It is the one self-test the
+      # fast path cannot be trusted to skip.
+      - name: Change-scope classifier self-test
+        run: pnpm ci-scope:test
+
       # ── the compiler-grade checks ──────────────────────────────────────────
       - name: Typecheck
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm typecheck
 
       - name: Lint
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm lint
 
       - name: Format
         run: pnpm format:check
 
       - name: Unit tests
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm test
 
       - name: Build
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm build
 
       # ── tokens, themes, styling ────────────────────────────────────────────
       - name: Tokens and themes
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           pnpm tokens:check
           pnpm tokens:dup-blocks:check
@@ -89,6 +130,7 @@ jobs:
 
       # ── component API, packages, structure ─────────────────────────────────
       - name: Component and package contracts
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           pnpm components:check
           pnpm data-slot:check
@@ -166,7 +208,12 @@ jobs:
 
       # ── every gate's own self-test: a gate that stops firing is worse than
       #    none, so the fixtures that prove each one still fails are gates too ─
+      #
+      #    `ci-scope:test` is deliberately NOT in this list — it guards the fast
+      #    path, so it runs in its own always-on step above rather than inside
+      #    the one group the fast path skips.
       - name: Gate self-tests
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           pnpm a11y:baseline:check:test
           pnpm agent-docs-cascade:check:test
@@ -251,6 +298,7 @@ jobs:
 
       # ── the shipped tarballs, installed like a real consumer would ──────────
       - name: Consumer install smoke
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm consumer:check
 
   storybook:

@@ -48,6 +48,8 @@
     "charts:reuse:check:test": "node --test scripts/check-charts-reuse.test.mjs",
     "charts:test-double:check": "node scripts/check-charts-test-double.mjs",
     "charts:test-double:check:test": "node --test scripts/check-charts-test-double.test.mjs",
+    "ci-scope": "node scripts/resolve-ci-scope.mjs",
+    "ci-scope:test": "node --test scripts/resolve-ci-scope.test.mjs",
     "clean": "turbo run clean",
     "close-issues:check:test": "node --test scripts/check-close-issues-delegation.test.mjs",
     "collapse-fork:check": "node scripts/check-collapse-fork.mjs",
