@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-08-17T05:49:20.732Z",
+  "generatedAt": "2026-08-17T06:17:43.193Z",
   "name": "brand-ui",
   "themes": [
-    "dark"
+    "dark",
+    "light"
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
