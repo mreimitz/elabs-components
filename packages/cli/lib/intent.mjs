@@ -90,7 +90,8 @@ export const INTENT = {
     stateTokens: {
       overlay:
         "DialogOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
-      surface: "DialogContent: bg-card text-card-foreground + border + shadow-lg",
+      surface:
+        "DialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — a floating surface bakes its hairline into the shadow; it carries NO border)",
       focus: "ring-2 ring-ring (the close button)",
     },
     antiPatterns: [
@@ -115,7 +116,8 @@ export const INTENT = {
     },
     stateTokens: {
       overlay: "AlertDialogOverlay: bg-foreground/50 + backdrop-blur-sm",
-      surface: "AlertDialogContent: bg-card text-card-foreground + border + shadow-lg",
+      surface:
+        "AlertDialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — the hairline is the shadow's last layer, so there is no border)",
       focus: "ring-2 ring-ring — inherited: Action/Cancel are buttonVariants",
     },
     antiPatterns: [
@@ -289,7 +291,8 @@ export const INTENT = {
     stateTokens: {
       overlay:
         "SheetOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
-      surface: "SheetContent: bg-card text-card-foreground + shadow-lg",
+      surface:
+        "SheetContent: bg-card text-card-foreground + shadow-ring-lg, plus the anchored edge only (border-t / border-b / border-l / border-r per side)",
       focus: "ring-2 ring-ring (the close button)",
     },
     antiPatterns: [
@@ -303,7 +306,8 @@ export const INTENT = {
     category: "overlay",
     relationships: { contains: ["PopoverTrigger", "PopoverContent"] },
     stateTokens: {
-      surface: "PopoverContent: bg-popover text-popover-foreground + border + shadow-md",
+      surface:
+        "PopoverContent: bg-popover text-popover-foreground + shadow-ring-md (ADR 0020 — no border; the ring rung carries the edge)",
       focus: "PopoverContent is outline-none — the focus ring belongs to the trigger you supply",
     },
     antiPatterns: [
@@ -616,6 +620,30 @@ export const INTENT = {
     ],
   },
 
+  ChatGreeting: {
+    purpose:
+      "The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message.",
+    category: "ai",
+    relationships: {
+      usedInside: ["ChatShell"],
+      pairsWith: ["Composer", "Suggestions"],
+      avoidNextTo: [
+        "ConversationEmptyState — that is the generic 'no messages yet' panel; only one empty-state voice per scene",
+      ],
+    },
+    stateTokens: {
+      orb: "an aria-hidden bg-primary/15 blur, opt out with orb={false} for dense/embedded use",
+      accent:
+        "the accent phrase is text-primary-text (TEXT rung, #399) plus bold + underline — the non-hue channel that keeps it legible in a theme whose --primary is near-white",
+    },
+    antiPatterns: [
+      "Reaching for it as a status message — ConversationEmptyState is the 'no messages yet' panel; this is the display-scale greeting anatomy.",
+      "Carrying the accent on colour alone — the shipped accent pairs the hue with weight + an underline precisely because a monochrome theme's --primary is indistinguishable from the headline ink (WCAG 1.4.1).",
+      "Leaving level={1} when the route already renders its own h1 — Heading decouples level from size, so raise the level and keep the display rung.",
+      "Keeping the orb on inside a dense embedded panel — it is a 40-unit blur sized for a full first-run scene.",
+    ],
+  },
+
   Artifact: {
     purpose:
       "Panel surface for a durable object the agent produced (document, code, preview) with title, description and actions.",
@@ -716,7 +744,7 @@ export const INTENT = {
     relationships: { contains: ["AgentStep", "Checkpoint"], pairsWith: ["Plan", "Task", "Tool"] },
     stateTokens: {
       status:
-        "the rail NODE, owned by the composed @elabs-ai/components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-primary bg-primary ring-2 ring-primary/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning · failed border-destructive bg-destructive · denied/skipped border-border bg-muted",
+        "the rail NODE, owned by the composed @elabs-ai/components-ui Timeline (NODE_STYLE): pending border-border bg-background · running border-info bg-info ring-2 ring-info/25 · complete border-success bg-success · awaiting-approval border-warning bg-warning ring-1 ring-warning/40 · failed border-destructive bg-destructive ring-4 ring-destructive/20 · denied border-border bg-muted border-dashed · skipped border-border bg-muted border-dotted (every status carries a non-hue cue — a ring width or a border style — so it survives greyscale, #387)",
     },
     antiPatterns: [
       "Hand-rolling a connector + status-map rail — reuse the @elabs-ai/components-ui Timeline (the timeline-fork gate blocks a second one).",
@@ -993,6 +1021,34 @@ export const INTENT = {
       "Nesting a ChartCard inside a Card — it already IS the surface.",
       "Hand-building expand / flip-to-table / download controls on the card — wrap it with ChartFrame instead.",
       "Leaving the body blank when data is absent — render the loading/empty state; a blank card reads as broken.",
+    ],
+  },
+
+  ChartDatapointProvider: {
+    purpose:
+      "Opt-in wrapper that makes a chart's datapoints activatable — mounted only when the consumer passes onDatapointClick or copyValueOnActivate.",
+    category: "chart",
+    relationships: { contains: ["ChartDatapointLayer"], pairsWith: ["ChartFrame"] },
+    antiPatterns: [
+      "Mounting it around every chart by default — a chart with no drill-down handler adds no context, no layer and no DOM, and that opt-out path is the point.",
+      "Rendering more than ~500 targets — the provider warns in dev because a keyboard target per datapoint stops being navigable long before it stops rendering.",
+      "Reading the click handler out of a state variable that changes every render — the provider keeps the context value stable via refs so an inline arrow function does not churn every shape.",
+    ],
+  },
+
+  ChartDatapointLayer: {
+    purpose:
+      "The keyboard/AT half of the chart interaction contract — real buttons in a sibling layer over the aria-hidden chart SVG (#349).",
+    category: "chart",
+    relationships: { usedInside: ["ChartDatapointProvider"] },
+    stateTokens: {
+      focus: "each target is a real button: focus-visible:ring-2 ring-ring, outline-none",
+    },
+    antiPatterns: [
+      "Putting tabIndex on an SVG shape instead — every chart body is aria-hidden, so a focusable child inside it is the axe aria-hidden-focus violation, and axe is blocking here.",
+      "Letting the layer take pointer events — it is pointer-events:none so the SVG underneath keeps mousemove; swallowing them silently kills hover tooltips on line/area charts.",
+      "Giving every datapoint its own tab stop — the layer is a roving tabindex (one target at 0, the rest -1, arrows to move); a 500-point series must not add 500 tab stops.",
+      "Measuring target geometry with getBBox/getBoundingClientRect — targets carry the geometry the shapes already computed from the scales; a layout read in render is the banned path.",
     ],
   },
 

@@ -95,7 +95,11 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - ChainOfThoughtSearchResult
 - ChainOfThoughtSearchResults
 - ChainOfThoughtStep
-- ChatGreeting
+- ChatGreeting — The centered, display-scale first-run greeting for an empty chat scene — a headline, not a status message.
+  - avoid: Reaching for it as a status message — ConversationEmptyState is the 'no messages yet' panel; this is the display-scale greeting anatomy.
+  - avoid: Carrying the accent on colour alone — the shipped accent pairs the hue with weight + an underline precisely because a monochrome theme's --primary is indistinguishable from the headline ink (WCAG 1.4.1).
+  - avoid: Leaving level={1} when the route already renders its own h1 — Heading decouples level from size, so raise the level and keep the display rung.
+  - avoid: Keeping the orb on inside a dense embedded panel — it is a 40-unit blur sized for a full first-run scene.
 - ChatShell — Assistant/chat application frame composing the conversation + composer surfaces.
   - avoid: Calling a model inside the component — @elabs-ai/components-ai is presentational/runtime-agnostic; wire useChat in the app.
   - avoid: Hand-rolling the composer footer inside the shell — compose Composer; it is the shipped chat input.
