@@ -6,7 +6,7 @@ import {
   defineTheme,
   ThemeProvider,
 } from "@elabs-ai/components-tokens";
-import { ThemeSwitcher } from "@elabs-ai/components-ui";
+import { Button, ThemeSwitcher } from "@elabs-ai/components-ui";
 
 /**
  * THEMING — how one set of components renders any number of different looks.
@@ -523,6 +523,206 @@ const sandstone = defineTheme({
     await waitFor(() =>
       expect(canvasElement.ownerDocument.querySelector("[data-aria-hidden]")).toBeNull(),
     );
+  },
+};
+
+/**
+ * A tenant's runtime brand color — deliberately far from the shipped themes'
+ * own `--primary` (a brand lime), so the swatch's color change is unambiguous
+ * regardless of which reference theme the Storybook toolbar has active.
+ */
+const TENANT_COLORS = {
+  acme: "oklch(0.55 0.18 250)", // blue
+  globex: "oklch(0.62 0.2 25)", // red/orange
+} as const;
+type TenantId = keyof typeof TENANT_COLORS;
+
+/**
+ * Runtime `tokenOverrides` (#17, ADR 0031) driving a scoped brand patch — the
+ * multi-tenant/white-label scenario the feature exists for: a tenant's brand
+ * color is not known until an admin picks it or a lookup resolves, so it
+ * can't live in a build-time `[data-theme]` block the way `BringYourOwnTheme`
+ * above demonstrates.
+ *
+ * Deliberately mirrors the CALLBACK-REF pattern from `BringYourOwnThemeDemo`
+ * — `attributeTarget` starts `null` until `ref={setTarget}` resolves — but,
+ * UNLIKE that demo, mounts `ThemeProvider` from the very first render rather
+ * than gating on `target &&`. That is intentional: it is exactly the shape
+ * that used to leak the override onto `<html>` permanently, because the
+ * effect's fallback to `document.documentElement` on the first (null-target)
+ * run was never cleaned up once the ref resolved (ADR 0031 Amendment,
+ * 2026-08-30). The play function below asserts the document root never
+ * carries the override, in a REAL rendered browser — the "verified only
+ * statically, never observed rendering" gap that fix round's review named.
+ */
+function RuntimeTokenOverridesDemo() {
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+  const [tenant, setTenant] = useState<TenantId | null>("acme");
+  const [previewOpen, setPreviewOpen] = useState(true);
+
+  const overrides = tenant ? { "--primary": TENANT_COLORS[tenant] } : undefined;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={tenant === "acme" ? "default" : "outline"}
+          onClick={() => {
+            setTenant("acme");
+            setPreviewOpen(true);
+          }}
+        >
+          Acme (blue)
+        </Button>
+        <Button
+          size="sm"
+          variant={tenant === "globex" ? "default" : "outline"}
+          onClick={() => {
+            setTenant("globex");
+            setPreviewOpen(true);
+          }}
+        >
+          Globex (red)
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setTenant(null)}>
+          No override
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setPreviewOpen((open) => !open)}>
+          {previewOpen ? "Close" : "Open"} tenant preview
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <span className="block text-meta text-muted-foreground">
+            Reference — the theme&rsquo;s own <code className="text-code">--primary</code>,
+            untouched
+          </span>
+          <div
+            data-testid="reference-swatch"
+            aria-hidden="true"
+            className="h-12 w-full rounded-md bg-primary"
+          />
+        </div>
+
+        <div ref={setTarget} className="space-y-1.5 rounded-lg border border-border p-2">
+          <span className="block text-meta text-muted-foreground">
+            Tenant preview {previewOpen ? "(open)" : "(closed)"}
+          </span>
+          {previewOpen ? (
+            <ThemeProvider
+              attributeTarget={target}
+              tokenOverrides={overrides}
+              storageKey={null}
+              motionStorageKey={null}
+              decorationStorageKey={null}
+              densityStorageKey={null}
+              registerStorageKey={null}
+            >
+              <div
+                data-testid="primary-swatch"
+                aria-hidden="true"
+                className="h-12 w-full rounded-md bg-primary"
+              />
+            </ThemeProvider>
+          ) : (
+            <div
+              data-testid="primary-swatch"
+              aria-hidden="true"
+              className="h-12 w-full rounded-md bg-primary"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const RuntimeTokenOverrides: Story = {
+  name: "Runtime token overrides",
+  render: () => (
+    <div className="space-y-5">
+      <div className="max-w-prose space-y-2">
+        <p className="m-0 text-body text-foreground">
+          <code className="text-code">tokenOverrides</code> patches one or two tokens at{" "}
+          <strong>runtime</strong> — for a value not known until the app boots (a tenant&rsquo;s
+          brand color from a lookup, an admin-picked accent) — unlike{" "}
+          <code className="text-code">BringYourOwnTheme</code> above, which needs the value at{" "}
+          <strong>build</strong> time (issue #17, ADR 0031).
+        </p>
+        <p className="m-0 text-caption text-muted-foreground">
+          It layers over whichever theme is active — no{" "}
+          <code className="text-code">[data-theme]</code> block to author, no{" "}
+          <code className="text-code">THEME_TOKEN_NAMES</code> coverage required. Pick a tenant
+          below; only <code className="text-code">--primary</code> is forced, everything else keeps
+          coming from the active reference theme.
+        </p>
+      </div>
+
+      <pre className="m-0 overflow-x-auto rounded-lg border border-border bg-card p-4 text-code text-card-foreground">
+        {`<ThemeProvider tokenOverrides={{ "--primary": tenant.brandColor }}>
+  <App />
+</ThemeProvider>`}
+      </pre>
+
+      <RuntimeTokenOverridesDemo />
+
+      <ul className="m-0 max-w-prose space-y-1.5 ps-5 text-caption text-muted-foreground">
+        <li>
+          <strong>Partial, not a replacement.</strong> Only the keys you pass are forced; every
+          other token keeps coming from the active theme.
+        </li>
+        <li>
+          <strong>
+            Values are validated too (<code className="text-code">CSS.supports</code>)
+          </strong>
+          , not just keys — an invalid value is rejected with a console warning instead of silently
+          resolving to <code className="text-code">unset</code>.
+        </li>
+        <li>
+          <strong>Cleared when the target changes, and on unmount</strong> — closing the tenant
+          preview above removes the override instead of leaving it stuck.
+        </li>
+      </ul>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const docRoot = canvasElement.ownerDocument.documentElement;
+
+    const referenceColor = () =>
+      getComputedStyle(canvas.getByTestId("reference-swatch")).backgroundColor;
+    const primaryColor = () =>
+      getComputedStyle(canvas.getByTestId("primary-swatch")).backgroundColor;
+
+    // Initial state: Acme (blue) is active, so the tenant swatch reads
+    // differently from the untouched reference.
+    await waitFor(() => expect(primaryColor()).not.toBe(referenceColor()));
+    // I2 regression lock, in a REAL rendered browser (static review alone
+    // could not verify this): the override never lands on the document root,
+    // even though `attributeTarget` started `null` on the first render — see
+    // the component doc comment above for why that shape used to leak.
+    await expect(docRoot.style.getPropertyValue("--primary")).toBe("");
+
+    // "No override" restores the theme's own value — swatches match again.
+    await userEvent.click(canvas.getByRole("button", { name: "No override" }));
+    await waitFor(() => expect(primaryColor()).toBe(referenceColor()));
+
+    // Globex (red) diverges again.
+    await userEvent.click(canvas.getByRole("button", { name: "Globex (red)" }));
+    await waitFor(() => expect(primaryColor()).not.toBe(referenceColor()));
+    await expect(docRoot.style.getPropertyValue("--primary")).toBe("");
+
+    // I3 regression lock: closing the preview UNMOUNTS the provider — the
+    // override must be cleared, not left stuck on the target.
+    await userEvent.click(canvas.getByRole("button", { name: "Close tenant preview" }));
+    await waitFor(() => expect(primaryColor()).toBe(referenceColor()));
+
+    // Reopening re-applies it.
+    await userEvent.click(canvas.getByRole("button", { name: "Open tenant preview" }));
+    await waitFor(() => expect(primaryColor()).not.toBe(referenceColor()));
+    await expect(docRoot.style.getPropertyValue("--primary")).toBe("");
   },
 };
 

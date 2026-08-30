@@ -1,6 +1,6 @@
 # ADR 0031 — Runtime token-VALUE overrides on `ThemeProvider`
 
-- **Status:** Accepted
+- **Status:** Accepted, **amended 2026-08-30** (see Amendment)
 - **Date:** 2026-08-30
 - **Extends:** ADR [0029](./0029-open-theme-registry.md) (open theme registry) —
   that ADR decides WHICH named theme applies; this one decides how to patch
@@ -8,7 +8,64 @@
 - **Relates to:** ADR [0027](./0027-focus-ring-token-contract.md) (`--ring`
   contract) — its own documented remedy ("override `--ring` in your own theme
   block") is the concrete case that motivated this.
-- **Closes:** issue #17
+- **Partially addresses:** issue #17 — the runtime-override mechanism ships;
+  the SSR flash is documented rather than solved and `deriveTheme` is split
+  out to issue #39 (see Amendment). #17 stays open until both land.
+
+## Amendment (2026-08-30) — value validation, leak/unmount cleanup, and the `deriveTheme` split
+
+A code review of the initial implementation (commit that introduced this ADR)
+found the mechanism sound but three gaps between what shipped and what this
+document and `ThemeProviderProps.tokenOverrides`'s own doc comment claimed.
+All three are fixed in the same fix-round commit that added this amendment;
+recorded here rather than silently folded into the sections below because the
+original text (still accurate on the DESIGN) previously implied a stronger
+guarantee than the first implementation actually gave:
+
+- **Values were unvalidated.** Only KEYS were checked against
+  `THEME_TOKEN_NAMES`; a value like `tokenOverrides={{ "--primary": "not-a-color" }}`
+  was written to the DOM as-is and silently resolved to `unset` at the point of
+  use. Fixed: every token except `--shadow-strength` (the one non-color,
+  numeric-multiplier token in the contract) is now checked with
+  `CSS.supports("color", value)` before being applied, and rejected — with the
+  same `warnDev` treatment an unknown key already got — when the browser can
+  answer and says no. Where `CSS.supports` doesn't exist (this package's own
+  jsdom test environment implements no `CSS` global at all, and neither do
+  some older runtimes), the value is applied unchecked, since refusing every
+  override on an engine that cannot answer the question would regress
+  "unchecked" to "the feature never applies" for that engine's users.
+- **Overrides leaked onto the wrong element.** The apply effect fell back to
+  `document.documentElement` whenever `attributeTarget` was `null`, which is
+  exactly its value on a component's first render under the callback-ref
+  pattern ADR 0029 documents for scoping a provider to one subtree (see
+  `BringYourOwnThemeDemo` / `RuntimeTokenOverridesDemo` in
+  `apps/docs/stories/foundations/theming.stories.tsx`). Once the ref resolved
+  and `attributeTarget` became a real node, the effect re-ran and applied to
+  the NEW element — but never cleared the OLD one, so the override stayed on
+  `<html>` permanently. **Fixed**, along with unmount cleanup below, by a
+  single mechanism: the apply effect now returns a cleanup function that
+  removes exactly the properties it applied from exactly the element it
+  applied them to, tracked in one `useRef<{ el, keys }>` rather than the
+  previous bare `useRef<string[]>`. React invokes that cleanup before the
+  effect re-runs on a dependency change, which is what clears the OLD
+  target before the NEW one is written.
+- **No unmount cleanup.** Unmounting `<ThemeProvider tokenOverrides={…}>`
+  left every property it had applied in place forever, indistinguishable from
+  the theme's own value to anything reading the DOM afterward. Fixed by the
+  same cleanup-function mechanism above — React also invokes an effect's
+  cleanup on unmount, with no special-casing needed.
+- **`deriveTheme({ primary, background })` was deferred with no tracking
+  issue.** The "Alternatives considered" table below said "Left as a future
+  issue" without one existing. Filed as issue #39 rather than left
+  ambiguous; that issue owns the AA-safety-guarantee work this ADR's table
+  already correctly identified as separable and materially larger than the
+  mechanism this ADR ships.
+
+None of the above changes the DECISION this ADR records (the shape of
+`tokenOverrides`, why it's a partial patch, why it survives a theme switch);
+they close a gap between that decision and the first cut of its
+implementation. The sections below are otherwise unchanged and remain
+accurate to what ships today.
 
 ## Context
 
@@ -36,7 +93,7 @@ Verified against source before writing this ADR:
 
 So a multi-tenant/white-label consumer — or anyone following ADR 0027's own
 documented `--ring` remedy — has to author and maintain a CSS block covering
-all of `THEME_TOKEN_NAMES` (169 tokens at the time of writing) just to change
+all of `THEME_TOKEN_NAMES` (130 tokens at the time of writing) just to change
 one brand color. That is disproportionate to the ask and is issue #17's actual
 claim, which holds against current source.
 
@@ -150,7 +207,7 @@ off the same tenant lookup that would otherwise feed this prop client-side) —
 exactly the class of concern `.claude/rules/interaction-guidelines.md` calls
 out as belonging to the **app**, not the component library (RSC hydration
 specifics, `<meta name="theme-color">`, etc.). Documenting the flash and the
-recommended app-side workaround (`docs/CONSUMING.md` § 5.1) is this ADR's
+recommended app-side workaround (`docs/CONSUMING.md` § 5.2) is this ADR's
 answer for v1; a package-level SSR helper is a possible follow-up, not part of
 this change.
 
@@ -173,10 +230,10 @@ implementation uses `setProperty`/`removeProperty` throughout and never
 `style.cssText = …` or `setAttribute("style", …)` — those two ARE treated as
 style-attribute parsing and would need `'unsafe-inline'` to work under a
 strict policy. `pnpm csp:check` and `pnpm csp-sinks:check` both pass unchanged
-(see "Gates run" below) because nothing in this change touches
-`docs/csp-policy.json`, adds a new remote origin, or matches any of
-`check-csp-sinks.mjs`'s sink patterns (`dangerouslySetInnerHTML`,
-`.innerHTML =`, `.outerHTML =`, `insertAdjacentHTML`, `document.write`).
+because nothing in this change touches `docs/csp-policy.json`, adds a new
+remote origin, or matches any of `check-csp-sinks.mjs`'s sink patterns
+(`dangerouslySetInnerHTML`, `.innerHTML =`, `.outerHTML =`,
+`insertAdjacentHTML`, `document.write`).
 
 ### Why this does not weaken "semantic tokens only"
 
@@ -192,15 +249,15 @@ that channel (CSS custom properties resolving to whatever a theme or an inline
 override says) is the entire mechanism the token system is built on. `pnpm
 palette:check` (`scripts/check-raw-palette.mjs`) scans component source for
 raw Tailwind palette utilities (`bg-red-500`, …); it has nothing to scan here
-since no component source changed, and it passes unchanged (see "Gates run").
+since no component source changed, and it passes unchanged.
 
 ## Alternatives considered
 
 | Option                                                                                                                 | Why not                                                                                                                                                                                                                                                                                                                                                                   |
 | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`deriveTheme({ primary, background })`** — a color-theory helper deriving hover/active/`--ring` from 1-2 seed colors | Separable, materially larger (color math, AA-safety guarantees across every derived role). The issue itself lists it as a follow-up, not this fix. Left as a future issue.                                                                                                                                                                                                |
+| **`deriveTheme({ primary, background })`** — a color-theory helper deriving hover/active/`--ring` from 1-2 seed colors | Separable, materially larger (color math, AA-safety guarantees across every derived role). The issue itself lists it as a follow-up, not this fix. Tracked as issue #39 (see Amendment).                                                                                                                                                                                  |
 | **Shipped presets (`accessibleFocusRing` for light/dark)**                                                             | Once `tokenOverrides` exists, a preset is just a canned value for it — a small follow-up, not part of the mechanism itself.                                                                                                                                                                                                                                               |
-| **Require full `THEME_TOKEN_NAMES` coverage (mirror the theme-authoring rule exactly)**                                | Defeats the point — a tenant who wants to patch one color would still have to enumerate 169 tokens. Rejected; see "Partial patch" above.                                                                                                                                                                                                                                  |
+| **Require full `THEME_TOKEN_NAMES` coverage (mirror the theme-authoring rule exactly)**                                | Defeats the point — a tenant who wants to patch one color would still have to enumerate 130 tokens. Rejected; see "Partial patch" above.                                                                                                                                                                                                                                  |
 | **Silently apply an unknown key**                                                                                      | Reproduces the exact silent-no-op failure mode `warnDev` exists to catch elsewhere in this file (`setTheme` on a disallowed name already warns rather than silently applying). Rejected.                                                                                                                                                                                  |
 | **Expose `tokenOverrides` via `useTheme()`/a `setTokenOverrides` setter, mirroring theme/decoration/density**          | Adds internal state and a persistence question (should a tenant override survive a reload via localStorage — almost never, since it is re-derived from tenant config on every app boot) for no benefit: the consumer already holds the value it would be echoing back. Rejected in favor of a plain controlled prop.                                                      |
 | **A CSS class per override (`data-token-primary="…"`) instead of inline style**                                        | CSS cannot read an arbitrary attribute VALUE into a property value (no `attr()` support for color-typed custom properties in any shipping engine at the time of writing) — this would require a `<style>` block per unique value combination, reintroducing the exact style-attribute CSP surface this design avoids, for no benefit over inline `setProperty`. Rejected. |
@@ -238,9 +295,11 @@ since no component source changed, and it passes unchanged (see "Gates run").
   app-level concern, not a package one.
 - `docs/csp-policy.json` §`style-src` carve-out — the existing `'unsafe-inline'`
   reasoning this feature does not need to extend.
-- `docs/CONSUMING.md` § 5.1 — the consumer-facing recipe and SSR caveat.
+- `docs/CONSUMING.md` § 5.2 — the consumer-facing recipe and SSR caveat.
 - `packages/tokens/src/theme-provider.tsx` — `tokenOverrides`,
   `applyTokenOverrides`, `tokenOverridesKey`.
 - `packages/tokens/src/theme-provider.test.tsx` — `describe("ThemeProvider —
 tokenOverrides (#17)", …)`.
 - Issue #17.
+- Issue #39 — the `deriveTheme({ primary, background })` follow-up split out
+  by the 2026-08-30 Amendment above.

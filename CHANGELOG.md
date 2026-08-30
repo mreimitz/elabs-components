@@ -3,11 +3,13 @@
 ## Unreleased
 
 - **`@elabs-ai/components-tokens`** — `ThemeProvider` accepts `tokenOverrides`, a
-  runtime patch of individual `--token` values (inline custom properties,
-  validated against `THEME_TOKEN_NAMES`) layered over the active theme — for a
-  multi-tenant/white-label consumer who wants to change 1-2 brand colors
-  without authoring a full theme. See `docs/CONSUMING.md` § 5.2 and ADR 0031.
-  (#17)
+  runtime patch of individual `--token` values (inline custom properties) layered
+  over the active theme — for a multi-tenant/white-label consumer who wants to
+  change 1-2 brand colors without authoring a full theme. Both the token key
+  (against `THEME_TOKEN_NAMES`) and the value (via `CSS.supports`) are validated
+  before being applied, and overrides are cleared automatically when the target
+  element changes or the provider unmounts. See `docs/CONSUMING.md` § 5.2 and
+  ADR 0031. (#17)
 
 ## v4.0.0 — 2026-08-17
 
