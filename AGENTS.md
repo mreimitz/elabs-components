@@ -170,7 +170,7 @@ pnpm components:check:test      # self-test for the component-registration gate 
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
 pnpm variants:check:test        # self-test for the variant-coverage gate
 pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
-pnpm paused-surfaces-drift:check # the "paused surfaces" concept stays either fully real (a live mechanism + `.claude/rules/paused-surfaces.md` + citations) or fully gone — never split between the two (#35)
+pnpm paused-surfaces-drift:check # the deleted "paused surfaces" theme-pause concept must stay fully gone — no live mechanism, no rule doc, no dangling citation reappearing on its own (#35)
 pnpm paused-surfaces-drift:check:test # self-test for the paused-surfaces drift-lock gate
 pnpm skills:currency:check      # playbook/skill/plugin prose (docs/playbooks/**, skills/*/SKILL.md, .claude-plugin/*.json) agrees with brand-ui.manifest.json on theme count + package-name scope — the .md-only docs:check walk never reaches these files (#29)
 pnpm skills:currency:check:test # self-test for the skills-currency gate

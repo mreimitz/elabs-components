@@ -25,6 +25,7 @@ import {
   findOrphanThemeBlocks,
   findOrphanThemeFiles,
   evaluate,
+  main,
   RULE_FILE,
 } from "./check-paused-surfaces-drift.mjs";
 
@@ -203,9 +204,8 @@ test("RULE_FILE points at the doc this gate is about", () => {
 });
 
 test("this gate itself passes cleanly against the real repo (dogfood)", () => {
-  // Not a mock of main() — a light re-derivation of the same signals, run
-  // directly against THIS repo, so the self-test also proves the gate is
-  // currently green rather than only proving its pure functions behave.
+  // A light re-derivation of two of the four signals main() checks, so this
+  // assertion doesn't depend on main()'s own git/fs plumbing.
   const themeTypesPath = join(REPO_ROOT, "packages", "tokens", "src", "theme-types.ts");
   const themeTypesText = readFileSync(themeTypesPath, "utf8");
   assert.equal(/\bPAUSED_THEMES\b|\bisPausedThemeName\b/.test(themeTypesText), false);
@@ -214,4 +214,28 @@ test("this gate itself passes cleanly against the real repo (dogfood)", () => {
     false,
     `${RULE_FILE} should not exist — the concept is fully deleted per #35`,
   );
+});
+
+test("main() end-to-end returns 0 against the real repo (real dogfood, real git scan)", () => {
+  // Unlike the re-derivation above, this runs the FULL CLI logic — including
+  // the `git ls-files` scan over every tracked file — which is exactly what
+  // caught this gate's own two false-positive bugs during development: its
+  // pnpm script name self-matching (fixed by SELF_FILES + the `.md`/`.mjs`
+  // suffix requirement in CITATION_RE) and its own wiring line in AGENTS.md's
+  // command contract quoting the dead rule path as an example (fixed by
+  // rewording the contract entry, not by exempting AGENTS.md — a real citation
+  // there should still fail). A silent console.log/error from main() is
+  // expected and not asserted on.
+  const originalLog = console.log;
+  const originalError = console.error;
+  console.log = () => {};
+  console.error = () => {};
+  let exitCode;
+  try {
+    exitCode = main();
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+  }
+  assert.equal(exitCode, 0);
 });
