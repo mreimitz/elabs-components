@@ -36,6 +36,10 @@ beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   window.localStorage.clear();
   document.documentElement.removeAttribute("data-theme");
+  // tokenOverrides (#17) writes inline custom properties directly onto
+  // `documentElement.style` — reset between tests so one test's override
+  // can't leak into the next as a false-positive "already applied" reading.
+  document.documentElement.style.cssText = "";
 
   // jsdom ships no matchMedia; the provider tracks prefers-reduced-motion with
   // it on mount. Stub it as "no reduced-motion preference".
@@ -436,5 +440,247 @@ describe("ThemeProvider — the theme registry (ADR 0029)", () => {
 
     expect(latest?.themes).toEqual(["parchment"]);
     expect(latest?.theme).toBe("parchment");
+  });
+});
+
+/**
+ * Runtime token-VALUE overrides (#17 — no runtime token-override API,
+ * docs/ADR/0031-runtime-token-overrides.md). Distinct from `themes` (which
+ * registers a whole named CSS block): `tokenOverrides` patches individual
+ * `--token` VALUES as inline custom properties on `attributeTarget`, layered
+ * OVER whichever theme is active — the mechanism a multi-tenant/white-label
+ * consumer needs so changing 1-2 brand colors doesn't require authoring all
+ * ~169 THEME_TOKEN_NAMES in a forked theme block.
+ */
+describe("ThemeProvider — tokenOverrides (#17)", () => {
+  const PRIMARY = "--primary";
+  const OVERRIDE_A = "oklch(0.55 0.18 250)";
+  const OVERRIDE_B = "oklch(0.70 0.20 100)";
+
+  it("applies an override as an inline custom property on the target element — PARTIAL, not a replacement", () => {
+    mount(
+      <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+    // The theme machinery keeps working — this is a PATCH, not a swap.
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    // A token NOT named in the override is untouched (no inline property at all).
+    expect(document.documentElement.style.getPropertyValue("--secondary")).toBe("");
+  });
+
+  it("rejects (warns, does not apply) a key outside THEME_TOKEN_NAMES", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const bogus = { "--not-a-real-token": "red" } as unknown as NonNullable<
+      Parameters<typeof ThemeProvider>[0]["tokenOverrides"]
+    >;
+
+    mount(
+      <ThemeProvider tokenOverrides={bogus}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    // Not silently ignored (which would look identical to "worked") — a real
+    // dev warning naming the offending key, and the property is never set.
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("--not-a-real-token"));
+    expect(document.documentElement.style.getPropertyValue("--not-a-real-token")).toBe("");
+  });
+
+  it("updates the inline property reactively when the prop changes (not mount-once)", () => {
+    mount(
+      <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+    mount(
+      <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_B }}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_B);
+  });
+
+  it("removing the override restores the theme's own value (clears the inline property)", () => {
+    mount(
+      <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+    // Re-render with the prop gone entirely.
+    mount(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    // The inline property is cleared, so the cascade (the active theme's own
+    // `--primary`) governs again — no stale forced value left behind.
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("");
+  });
+
+  it("survives a theme switch — overrides are orthogonal to which theme is active", () => {
+    mount(
+      <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+        <Probe />
+        <SetThemeOnMount to="dark" />
+      </ThemeProvider>,
+    );
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+  });
+
+  it("honors a scoped attributeTarget instead of the document root", () => {
+    const scoped = document.createElement("div");
+    document.body.appendChild(scoped);
+
+    mount(
+      <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }} attributeTarget={scoped}>
+        <Probe />
+      </ThemeProvider>,
+    );
+
+    expect(scoped.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+    expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("");
+
+    scoped.remove();
+  });
+
+  describe("value validation (I1 — a bad VALUE, not just a bad key)", () => {
+    /** jsdom implements no `CSS` global at all, so every test here stubs it explicitly. */
+    it("applies the override when CSS.supports approves the value", () => {
+      vi.stubGlobal("CSS", { supports: vi.fn(() => true) });
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(CSS.supports).toHaveBeenCalledWith("color", OVERRIDE_A);
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+    });
+
+    it("rejects (warns, does not apply) a value CSS.supports refuses", () => {
+      vi.stubGlobal("CSS", { supports: vi.fn(() => false) });
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: "not-a-color" }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("not-a-color"));
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("");
+    });
+
+    it("treats a value as valid (unchecked) when CSS.supports is unavailable", () => {
+      // Explicit, rather than relying on jsdom's default absence of `CSS` —
+      // this is the exact shape of a legacy runtime, asserted rather than assumed.
+      vi.stubGlobal("CSS", undefined);
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+    });
+
+    it("accepts the non-color token --shadow-strength without consulting CSS.supports", () => {
+      const supports = vi.fn(() => false);
+      vi.stubGlobal("CSS", { supports });
+
+      mount(
+        <ThemeProvider tokenOverrides={{ "--shadow-strength": "0" }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(supports).not.toHaveBeenCalled();
+      expect(document.documentElement.style.getPropertyValue("--shadow-strength")).toBe("0");
+    });
+
+    it("skips an empty-string value instead of applying then immediately unsetting it", () => {
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: "" }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("");
+    });
+  });
+
+  describe("cleanup (I2/I3 — no leaked override once the target changes or the provider unmounts)", () => {
+    it("clears the OLD target when attributeTarget resolves from null to a real element (the callback-ref pattern)", () => {
+      // Mirrors `BringYourOwnThemeDemo`/`RuntimeTokenOverridesDemo`: on first
+      // render `attributeTarget` is `null` (the ref callback hasn't fired
+      // yet), so the effect falls back to `document.documentElement` — a real
+      // consumer usually never SEES that frame, but the leak (#17 review I2)
+      // was that the override stuck there permanently once a real target
+      // showed up on the next render.
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }} attributeTarget={null}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+      const scoped = document.createElement("div");
+      document.body.appendChild(scoped);
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }} attributeTarget={scoped}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      // The new target carries it now...
+      expect(scoped.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+      // ...and the root — which is NOT the active target anymore — does not.
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("");
+
+      scoped.remove();
+    });
+
+    it("restores the target's own value when the provider unmounts", () => {
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+      act(() => root.unmount());
+
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("");
+    });
+
+    it("restores a SCOPED target's own value when the provider unmounts", () => {
+      const scoped = document.createElement("div");
+      document.body.appendChild(scoped);
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }} attributeTarget={scoped}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(scoped.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+      act(() => root.unmount());
+
+      expect(scoped.style.getPropertyValue(PRIMARY)).toBe("");
+      scoped.remove();
+    });
   });
 });

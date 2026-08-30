@@ -246,6 +246,56 @@ expect(missing).toEqual([]);
 A theme missing a token silently falls back to the neutral `:root` base, which
 usually looks _almost_ right — which is why this is worth one test.
 
+### 5.2 Runtime token overrides (patch a color without a theme)
+
+Sometimes you don't want a whole new theme — you want to patch 1-2 tokens at
+runtime (a multi-tenant/white-label app whose brand color comes from a tenant
+lookup, or the `--ring` fix ADR 0027 recommends). `ThemeProvider` takes a
+`tokenOverrides` prop for exactly this (issue #17, ADR
+[0031](./ADR/0031-runtime-token-overrides.md)):
+
+```tsx
+<ThemeProvider tokenOverrides={{ "--primary": tenant.brandColor }}>
+```
+
+- **Partial, not a replacement.** Only the keys you pass are forced (as inline
+  CSS custom properties on the root element); every other token keeps coming
+  from whichever theme (`light`, `dark`, or your own) is active. Unlike a
+  hand-authored `[data-theme]` block, you do NOT need to cover all of
+  `THEME_TOKEN_NAMES` — that full-coverage rule is for a REPLACEMENT theme,
+  not a patch on top of one.
+- **Keys are validated.** A key that isn't in `THEME_TOKEN_NAMES` is rejected
+  (not applied) with a console warning in development — it would otherwise be
+  a silent no-op (a custom property nothing reads).
+- **Values are validated too.** Every token except `--shadow-strength` (a bare
+  numeric multiplier, not a color) is checked with `CSS.supports("color",
+value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
+  with a console warning instead of being written and silently resolving to
+  `unset` wherever the token is used. A `var(--other-token)` reference passes
+  this check, so aliasing one override to another still works. Where
+  `CSS.supports` doesn't exist (older runtimes), the value is applied
+  unchecked — this package can't validate what the platform can't answer.
+- **Reactive.** Change the prop (e.g. when the tenant lookup resolves) and it
+  re-applies; remove a key and its inline property is cleared, so the active
+  theme's own value takes over again. Overrides survive a `setTheme` call —
+  they hold across a light/dark toggle, which is the point.
+- **Cleared when the target changes, and on unmount.** If `attributeTarget`
+  resolves from `null` to a real element across renders (the callback-ref
+  pattern used to scope a provider to one subtree — see §5.1), the override is
+  removed from the first element before being applied to the new one, so it
+  never lingers on the wrong node. Unmounting the provider removes every
+  property it applied, restoring the target to its plain theme value.
+- **This flashes on first paint under SSR.** Like the rest of `ThemeProvider`,
+  overrides apply in a client-side effect, so server-rendered HTML and the
+  hydration frame show the UN-overridden theme; the tenant color appears one
+  paint later. If that's not acceptable, emit the same custom properties in
+  your server-rendered `<head>` (a small inline `<style>` keyed off the same
+  tenant lookup) — `ThemeProvider` does not do this for you.
+- **No new CSP relaxation needed.** It sets properties with
+  `CSSStyleDeclaration.setProperty()`, which a CSP `style-src` directive does
+  not restrict (that directive governs parsing a `style` attribute string or a
+  `<style>` element, not a script's direct CSSOM manipulation — see ADR 0031).
+
 ## 6. Per-package extras
 
 - **`@elabs-ai/components-flow`** — `import "@xyflow/react/dist/style.css"` once.
