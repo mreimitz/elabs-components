@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T11:42:09.666Z",
+  "generatedAt": "2026-08-30T12:05:26.522Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17294,9 +17294,19 @@
           "module": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx"
         },
         {
+          "name": "EmptyListIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/empty-list-illustration.tsx"
+        },
+        {
           "name": "EmptyState",
           "kind": "value",
           "module": "packages/ui/src/components/empty-state/empty-state.tsx"
+        },
+        {
+          "name": "ErrorIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/error-illustration.tsx"
         },
         {
           "name": "ErrorState",
@@ -17357,6 +17367,11 @@
           "name": "FilterChip",
           "kind": "value",
           "module": "packages/ui/src/components/view-toolbar/view-toolbar.tsx"
+        },
+        {
+          "name": "FirstRunIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/first-run-illustration.tsx"
         },
         {
           "name": "Form",
@@ -17684,9 +17699,24 @@
           "module": "packages/ui/src/components/nav-user/nav-user.tsx"
         },
         {
+          "name": "NoAccessIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/no-access-illustration.tsx"
+        },
+        {
+          "name": "NoResultsIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/no-results-illustration.tsx"
+        },
+        {
           "name": "NumberInput",
           "kind": "value",
           "module": "packages/ui/src/components/number-input/number-input.tsx"
+        },
+        {
+          "name": "OfflineIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/offline-illustration.tsx"
         },
         {
           "name": "PageShell",
@@ -18149,6 +18179,11 @@
           "module": "packages/ui/src/lib/streamdown-translations.ts"
         },
         {
+          "name": "SuccessIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/success-illustration.tsx"
+        },
+        {
           "name": "Switch",
           "kind": "value",
           "module": "packages/ui/src/components/switch/switch.tsx"
@@ -18477,6 +18512,7 @@
         "DialogBodyProps",
         "DialogDismissGuard",
         "DialogSectionProps",
+        "IllustrationProps",
         "LinkPreviewCardProps",
         "ModelPickerProps",
         "SeparatorProps",
@@ -21426,7 +21462,13 @@
               "name": "icon",
               "optional": true,
               "type": "ReactNode",
-              "description": "Icon or illustration shown above the title. For `\"error\"` defaults to a built-in warning triangle. For `\"loading\"` defaults to an animated spinner."
+              "description": "Icon shown above the title, clamped to a uniform 40×40 so mismatched glyphs stay tidy. For `\"error\"` defaults to a built-in warning triangle. For `\"loading\"` defaults to an animated spinner. Ignored when `illustration` is also provided — see `illustration`."
+            },
+            {
+              "name": "illustration",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A larger illustration (one of `@elabs-ai/components-ui`'s shipped `*Illustration` components, or a consumer's own `ReactNode`) shown above the title instead of `icon`. Unlike `icon`, it is **not** clamped to 40×40 — an illustration governs its own size (see each illustration's `size` prop, `rem`-based, ~64px–160px). Takes precedence over `icon` when both are given."
             },
             {
               "name": "loadingLabel",
