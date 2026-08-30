@@ -161,4 +161,33 @@ describe("MarkdownView sanitiser is not overridable (#36)", () => {
     );
     expect(container.querySelector("script")).toBeNull();
   });
+
+  it("SUPPORTS a caller-supplied remarkPlugins array, and still sanitises what it injects", () => {
+    // PR #74 review, round 1: `remarkPlugins` is NOT a sanitiser override. It runs
+    // upstream of [rehypeRaw, rehypeSanitize, harden], which Streamdown derives
+    // without reading it — so the prop stays supported (no `as any` below: the TYPE
+    // must accept it) while its output is still sanitised. Both halves are asserted,
+    // so re-adding it to the runtime strip fails, and dropping the rehype chain fails.
+    const ran = vi.fn();
+    const injectHostile = () => (tree: { children: unknown[] }) => {
+      ran();
+      tree.children.push({
+        type: "html",
+        value: '<script>globalThis.__pwned = true</script><img src="x" onerror="void 0">',
+      });
+      tree.children.push({
+        type: "paragraph",
+        data: { hName: "script", hChildren: [{ type: "text", value: "globalThis.__x = 1" }] },
+        children: [],
+      });
+    };
+    const { container } = render(
+      <MarkdownView remarkPlugins={[injectHostile]}>{"# hi"}</MarkdownView>,
+    );
+
+    expect(ran).toHaveBeenCalled(); // the prop really reached Streamdown
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.querySelector("[onerror]")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/pwned/);
+  });
 });

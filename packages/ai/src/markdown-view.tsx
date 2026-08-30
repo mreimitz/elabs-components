@@ -77,7 +77,7 @@ function buildProseComponents(baseHeadingLevel: ProseHeadingLevel): StreamdownCo
 
 export interface MarkdownViewProps extends Omit<
   ComponentProps<typeof Streamdown>,
-  "components" | "plugins" | "rehypePlugins" | "remarkPlugins"
+  "components" | "plugins" | "rehypePlugins"
 > {
   /**
    * The prose level a markdown `#` maps to; deeper headings shift with it
@@ -145,18 +145,30 @@ export interface MarkdownViewProps extends Omit<
    *   `string` prop, the same trusted-component boundary as a `components`
    *   override) do not bypass sanitisation.
    *
-   * **`rehypePlugins`/`remarkPlugins` are NOT exposed on this component (#36,
-   * fixed).** Unlike `plugins`, a caller-supplied `rehypePlugins`/
-   * `remarkPlugins` array would REPLACE Streamdown's default pipeline
-   * wholesale rather than extending it, silently dropping
-   * `rehype-sanitize`/`rehype-harden` and letting a plain markdown string
-   * execute script in the host page — so `MarkdownViewProps` `Omit`s both at
-   * the type level AND `stripSanitizerOverrides()` deletes them at runtime
-   * before the `{...props}` spread below, even if a JS consumer or a cast
-   * reaches this component with either prop set. If you need to widen
-   * sanitisation, use `allowedTags`/`literalTagContent`, which MERGE into the
-   * sanitize schema instead of replacing the pipeline. See
+   * **`rehypePlugins` is NOT exposed on this component (#36, fixed).** Unlike
+   * `plugins`, a caller-supplied `rehypePlugins` array would REPLACE
+   * Streamdown's default rehype pipeline wholesale rather than extending it,
+   * silently dropping `rehype-raw`/`rehype-sanitize`/`rehype-harden` and
+   * letting a plain markdown string execute script in the host page — so
+   * `MarkdownViewProps` `Omit`s it at the type level AND
+   * `stripSanitizerOverrides()` deletes it at runtime before the `{...props}`
+   * spread below, even if a JS consumer or a cast reaches this component with
+   * it set. If you need to widen sanitisation, use
+   * `allowedTags`/`literalTagContent`, which MERGE into the sanitize schema
+   * instead of replacing the pipeline. See
    * `packages/ai/src/_streamdown-safety.ts`.
+   *
+   * **`remarkPlugins` IS supported** (PR #74 review, round 1 — the original
+   * #36 fix over-reached and removed it too). The remark stage runs strictly
+   * upstream of the rehype chain, and Streamdown builds its rehype list
+   * without reading `remarkPlugins`, so everything a remark plugin emits is
+   * still sanitised downstream — measured across raw-`html` mdast nodes,
+   * `data.hName`/`hChildren` hast elements, `hProperties` event handlers,
+   * `javascript:` link URLs and smuggled `raw` hast children. Note the
+   * ordinary (non-security) footgun: your array REPLACES Streamdown's own
+   * remark defaults (`remark-gfm`, `codeMeta`), so spread
+   * `Object.values(defaultRemarkPlugins)` from `streamdown` back in if you
+   * want to keep GFM tables/strikethrough.
    */
   plugins?: StreamdownPlugins;
 }
@@ -173,6 +185,8 @@ export const MarkdownView = ({
   // `rehypePlugins`; a supplied array REPLACES it. This component renders untrusted
   // model output, so the chain is not overridable. Widen with `allowedTags` /
   // `literalTagContent`, which merge into the sanitize schema. See issue #36.
+  // `remarkPlugins` is deliberately left alone — it runs upstream of the rehype
+  // chain and cannot bypass it (PR #74 review; see `_streamdown-safety.ts`).
   stripSanitizerOverrides(props);
   const internalComponents = useMemo(
     () => buildProseComponents(baseHeadingLevel),

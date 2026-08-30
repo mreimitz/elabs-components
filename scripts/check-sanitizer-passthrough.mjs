@@ -6,9 +6,17 @@
  * sanitiser chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`) as the
  * DEFAULT VALUE of its `rehypePlugins` prop — a plain JS default parameter, not
  * a merge. A wrapper that re-exports `ComponentProps<typeof Streamdown>` (or
- * `Omit`s everything EXCEPT `rehypePlugins`/`remarkPlugins`) hands every
- * consumer a full XSS bypass: pass either prop and Streamdown's sanitiser is
- * gone, letting model-authored markdown execute script in the host page.
+ * `Omit`s everything EXCEPT `rehypePlugins`) hands every consumer a full XSS
+ * bypass: pass that prop and Streamdown's sanitiser is gone, letting
+ * model-authored markdown execute script in the host page.
+ *
+ * SCOPE (narrowed by the PR #74 review, round 1). `dangerousProps` lists only
+ * props that REPLACE the sanitiser itself. `remarkPlugins` is deliberately NOT
+ * one: the remark stage runs upstream of the rehype chain, Streamdown derives
+ * that chain without reading `remarkPlugins`, and everything a remark plugin
+ * injects is still sanitised downstream (measured — see
+ * `packages/ai/src/_streamdown-safety.ts`). Listing it here would gate a
+ * capability, not a hazard.
  * Every repo gate (`typecheck`, `lint`, `test`, `build`) was green over this —
  * a type surface is not a security control, and nothing else in the battery
  * looks for it. This gate does.
@@ -19,8 +27,8 @@
  *      a single-property indexed access (`…>["components"]`) must sit inside an
  *      `Omit<…, …>` whose key list names every one of the renderer's
  *      `dangerousProps`. A bare `ComponentProps<typeof Streamdown> & {...}` (no
- *      Omit at all) or an `Omit` that forgets one of the two keys both fail —
- *      this is exactly the shape `MessageResponseProps` shipped in before #36.
+ *      Omit at all) or an `Omit` that forgets a dangerous key both fail — this
+ *      is exactly the shape `MessageResponseProps` shipped in before #36.
  *   2. RUNTIME LEVEL — a module that renders `<Renderer … {...props}>` must
  *      call `stripSanitizerOverrides(props)` (or delete every dangerous prop
  *      key off `props` inline) BEFORE that spread. `Omit` alone is erased at
@@ -57,7 +65,7 @@ export const SAFE_RENDERERS = [
   {
     module: "streamdown",
     component: "Streamdown",
-    dangerousProps: ["rehypePlugins", "remarkPlugins"],
+    dangerousProps: ["rehypePlugins"],
   },
 ];
 
@@ -207,7 +215,7 @@ function main() {
     }
     console.error(
       "\nA wrapper around a safe-by-default renderer (Streamdown today) must both:\n" +
-        "  1. Omit<> every dangerous prop (rehypePlugins/remarkPlugins for Streamdown) at\n" +
+        "  1. Omit<> every dangerous prop (rehypePlugins for Streamdown) at\n" +
         "     the type level, AND\n" +
         "  2. call stripSanitizerOverrides(props) before spreading {...props} onto the\n" +
         "     renderer, so a JS consumer / `any` / wider spread can't reach it either.\n" +

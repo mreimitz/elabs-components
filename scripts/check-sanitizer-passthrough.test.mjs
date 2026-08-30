@@ -172,7 +172,7 @@ test("scanPackages: a clean fixture (Omit<> + strip call) reports nothing", () =
         "",
         "export type GoodProps = Omit<",
         "  ComponentProps<typeof Streamdown>,",
-        '  "rehypePlugins" | "remarkPlugins"',
+        '  "rehypePlugins"',
         "> & { loading?: boolean };",
         "",
         "export const GoodWrapper = ({ ...props }: GoodProps) => {",
@@ -208,10 +208,16 @@ test("scanPackages: a module that never imports the renderer is skipped entirely
   }
 });
 
-test("SAFE_RENDERERS names streamdown with both dangerous props (so the table can't silently shrink)", () => {
+test("SAFE_RENDERERS pins streamdown's dangerous-prop set exactly (it can neither shrink nor re-widen)", () => {
   const streamdown = SAFE_RENDERERS.find((r) => r.module === "streamdown");
   assert.ok(streamdown);
-  assert.deepEqual(new Set(streamdown.dangerousProps), new Set(["rehypePlugins", "remarkPlugins"]));
+  // Exactly `rehypePlugins`. `remarkPlugins` is NOT here by decision (PR #74
+  // review, round 1): it runs upstream of the rehype chain and cannot bypass the
+  // sanitiser, so gating it would gate a capability rather than a hazard. The
+  // security property is locked in `packages/ai/src/{markdown-view,message}.test.tsx`
+  // ("SUPPORTS a caller-supplied remarkPlugins array, and still sanitises what it
+  // injects"), which fail if the remark stage ever stops being sanitised.
+  assert.deepEqual(new Set(streamdown.dangerousProps), new Set(["rehypePlugins"]));
 });
 
 test("gate: passes on the committed tree (packages/ai's two Streamdown wrappers close both halves)", () => {

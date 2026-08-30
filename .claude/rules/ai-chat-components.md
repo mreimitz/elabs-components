@@ -126,8 +126,8 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   `prompt-input/`). Deleting is allowed; prefer it over leaving dead code.
 - **Never re-export a wrapped renderer's security-default prop (#36).** A
   vendored renderer that ships its own sanitiser as a plain default parameter
-  (Streamdown's `rehypePlugins`/`remarkPlugins` — see `docs/CSP-AND-NETWORK.md`)
-  is REPLACED, not merged, the moment a caller supplies that prop. A wrapper
+  (Streamdown's `rehypePlugins` — see `docs/CSP-AND-NETWORK.md`) is REPLACED,
+  not merged, the moment a caller supplies that prop. A wrapper
   (`MarkdownView`, `MessageResponse`, or any future one) that passes `...props`
   through to such a renderer must close the hole on **both** halves: `Omit<>`
   the dangerous keys off its public prop type, AND strip them off the object at
@@ -140,6 +140,17 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   reinstating the replaced prop. `pnpm sanitizer-passthrough:check` enforces
   this on every module that imports a renderer named in its `SAFE_RENDERERS`
   table (`scripts/check-sanitizer-passthrough.mjs`).
+  - **Scope the block to props that replace the SANITISER, not to every
+    replace-not-merge prop (PR #74 review).** `remarkPlugins` has the identical
+    shape and is deliberately still supported: the remark stage runs upstream of
+    the rehype chain, Streamdown builds that chain without reading
+    `remarkPlugins`, and everything a remark plugin injects is sanitised
+    downstream — measured across raw-`html` mdast nodes, `data.hName`/`hChildren`
+    hast elements, `hProperties` event handlers, `javascript:` URLs and smuggled
+    `raw` hast children. Blocking it removed real capability
+    (remark-directive, footnotes, custom syntax) and closed nothing. Before
+    adding a key to `dangerousProps`, prove by experiment that supplying it can
+    land executable content in the DOM.
 
 ## Microcopy (ADR 0017)
 

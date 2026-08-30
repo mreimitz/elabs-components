@@ -3,17 +3,20 @@
 ## Unreleased
 
 - Changed (breaking, narrow): `@elabs-ai/components-ai`'s `MarkdownView` and
-  `MessageResponse` no longer accept `rehypePlugins`/`remarkPlugins` — passing
-  either is now a TypeScript error, and the runtime silently drops the prop
-  (with a dev-only warning) even through a plain-JS caller or a force-cast.
-  Streamdown installs its sanitiser chain (`rehype-raw` → `rehype-sanitize` →
-  `rehype-harden`) as a plain default parameter, so supplying either prop
-  REPLACED the whole chain and let untrusted, model-authored markdown execute
-  `<script>`/`<iframe>` in the host page — verified with real code execution in
-  headless Chromium. Migration: use `allowedTags`/`literalTagContent` to widen
-  what the sanitizer allows through (they merge into the schema instead of
-  replacing the pipeline); there is no direct replacement yet for an extra
-  rehype/remark pass on these two components. (#36)
+  `MessageResponse` no longer accept `rehypePlugins` — passing it is now a
+  TypeScript error, and the runtime silently drops the prop (with a dev-only
+  warning) even through a plain-JS caller or a force-cast. Streamdown installs
+  its sanitiser chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`) as a
+  plain default parameter, so supplying that prop REPLACED the whole chain and
+  let untrusted, model-authored markdown execute `<script>`/`<iframe>` in the
+  host page — verified with real code execution in headless Chromium.
+  Migration: use `allowedTags`/`literalTagContent` to widen what the sanitizer
+  allows through (they merge into the schema instead of replacing the
+  pipeline). `remarkPlugins` is **unchanged and still supported** — the remark
+  stage runs upstream of the rehype chain, which Streamdown derives without
+  reading it, so a remark plugin's output is still sanitised; note only that
+  your array replaces Streamdown's own `remark-gfm`/`codeMeta` defaults, which
+  you can spread back in from its exported `defaultRemarkPlugins`. (#36)
 - Added: `@elabs-ai/components-tokens` ships an ordered neutral ramp —
   `--foreground-1..4`, `--border-1..2`, `--surface-1..4` (`text-foreground-*`,
   `border-border-*`, `bg-surface-*` utilities) — additive alongside the
@@ -254,9 +257,10 @@ work alongside `@elabs-ai/components-ai`.
   to the same per-key merge as `MarkdownView` in the same fix round. The
   narrow `plugins` prop cannot displace Streamdown's default `rehypePlugins`
   chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`); the broader
-  `rehypePlugins`/`remarkPlugins` passthrough both components also expose
-  (inherited from Streamdown) **can**, and doing so can remove sanitisation
-  entirely — tracked separately as **#36 (P1, unfixed)**. See the `plugins`
+  `rehypePlugins` passthrough both components also expose (inherited from
+  Streamdown) **can**, and doing so removes sanitisation entirely — fixed in
+  this same Unreleased round, see the `rehypePlugins` entry above (**#36**).
+  See the `plugins`
   prop TSDoc on `MarkdownView` for the full breakdown of which of the five
   plugin slots run before vs. after sanitisation.
 - **`@elabs-ai/components-ui` ships seven token-driven state illustrations** —
