@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### ⚠️ `@elabs-ai/components-ai`: the Vercel AI SDK peer moves to `ai@7` (#30)
+
+`@elabs-ai/components-ai` peered on `"ai": "^6.0.0"` while the published AI SDK had
+moved to the 7.x line, so a fresh install in a consuming app hit an unresolvable
+peer conflict. Per ADR 0008 ("pin the major; treat a major bump as a planned
+migration, not an automatic float"), this ships that migration rather than
+widening the range to cover both majors.
+
+`ai@7` restructured two pieces of the type surface this package renders:
+
+- `Tool.description` can now be a string **or** a function of the live call
+  context (`(options) => string`), for a per-call dynamic description.
+  `AgentTool` has no call context to invoke that function with, so it now
+  renders the description only when it is a plain string.
+- `LanguageModelUsage`'s deprecated flat `reasoningTokens` /
+  `cachedInputTokens` fields (kept in `ai@6` for back-compat) are gone in
+  `ai@7`; the values live at `outputTokenDetails.reasoningTokens` and
+  `inputTokenDetails.cacheReadTokens`, which `ContextReasoningUsage` and
+  `ContextCacheUsage` now read.
+
+Every import from `ai` in this package remains `import type` only — the
+types-only, peer-never-runtime contract (D6) is unaffected;
+`pnpm ai:types-only` stays green.
+
+**Migrating a consumer:** install `ai@^7.0.0` alongside `@elabs-ai/components-ai`.
+There is no drop-in support for `ai@6` — pin `@elabs-ai/components-ai` to the
+last version published before this change if you cannot move off `ai@6` yet.
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change

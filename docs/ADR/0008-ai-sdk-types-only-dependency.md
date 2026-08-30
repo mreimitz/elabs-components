@@ -60,3 +60,53 @@ in [`docs/DECISIONS.md`](../DECISIONS.md).
   seam into a real abstraction layer (and possibly relaxing the single-vendor pin).
 - See `docs/DECISIONS.md` (D6) and the rule above; the boundary it protects is
   ADR 0007 (D5).
+
+## Amendment (2026-08-30) — the peer moved from `ai@6` to `ai@7` (#30)
+
+- Status: Accepted (planned migration, per the Decision's own instruction to
+  "treat a major bump as a planned migration, not an automatic float").
+- Scope: updates the peer range in the Context/Decision above (`^6.0.0` →
+  `^7.0.0`); the types-only-never-runtime rule itself is unchanged and still
+  holds — every import from `ai` in `packages/ai/src/**` stayed `import type`
+  throughout this migration.
+
+### Why
+
+The published AI SDK had moved to the 7.x line while this package still peered
+on `^6.0.0`, so a fresh install in a consuming app hit an unresolvable peer
+conflict (issue #30). Two resolutions were considered: widen the peer to
+`^6.0.0 || ^7.0.0` (support both majors), or bump the pin outright. The
+dual-major range was rejected — verifying it would require confirming that
+every `ai@6.x` release back to `6.0.0` (not just the `6.0.197` this repo
+pinned in devDependencies) carries the same `LanguageModelUsage` shape the fix
+below relies on, which was not done. Pinning the major, as the Decision above
+already directs, needed no such assumption.
+
+### What changed
+
+Installing `ai@7.0.85` as the devDependency and running
+`pnpm --filter @elabs-ai/components-ai typecheck` against it (the decisive
+check — a name-level "does the export still exist" grep is not enough) surfaced
+two real, narrow type-shape changes in the surface this package renders:
+
+- **`Tool.description`** (`agent.tsx`, `AgentTool`) can now be a plain string
+  **or** a function of the live call context
+  (`(options: { context, experimental_sandbox? }) => string`) for a per-call
+  dynamic description. `AgentTool` renders a static list with no call context
+  to invoke that function with, so it now shows the description only when
+  `typeof tool.description === "string"`.
+- **`LanguageModelUsage`** (`context.tsx`, `ContextReasoningUsage` /
+  `ContextCacheUsage`) drops the deprecated flat `reasoningTokens` /
+  `cachedInputTokens` fields that `ai@6` kept only for its own back-compat;
+  the values now live at `outputTokenDetails.reasoningTokens` and
+  `inputTokenDetails.cacheReadTokens`, which both components read directly.
+
+Both fixes are additive narrowing on the consuming side — neither introduces a
+runtime import from `ai`. `pnpm ai:types-only` and the full `@elabs-ai/components-ai`
+test suite (424 tests) stayed green throughout.
+
+### Consequence
+
+`@elabs-ai/components-ai` no longer installs alongside `ai@6`. A consumer who cannot
+move yet stays on the last version published before this change; see the
+`CHANGELOG.md` `## Unreleased` entry for the migration step.

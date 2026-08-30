@@ -299,7 +299,9 @@ export const ContextReasoningUsage = ({
 }: ContextReasoningUsageProps) => {
   const { formatNumber } = useLocale();
   const { usage, modelId } = useContextValue();
-  const reasoningTokens = usage?.reasoningTokens ?? 0;
+  // `reasoningTokens` moved under `outputTokenDetails` in ai@7 (the flat,
+  // deprecated top-level alias from ai@6 was removed).
+  const reasoningTokens = usage?.outputTokenDetails?.reasoningTokens ?? 0;
 
   if (children) {
     return children;
@@ -333,7 +335,9 @@ export type ContextCacheUsageProps = ComponentProps<"div">;
 export const ContextCacheUsage = ({ className, children, ...props }: ContextCacheUsageProps) => {
   const { formatNumber } = useLocale();
   const { usage, modelId } = useContextValue();
-  const cacheTokens = usage?.cachedInputTokens ?? 0;
+  // `cachedInputTokens` moved under `inputTokenDetails.cacheReadTokens` in
+  // ai@7 (the flat, deprecated top-level alias from ai@6 was removed).
+  const cacheTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
 
   if (children) {
     return children;
