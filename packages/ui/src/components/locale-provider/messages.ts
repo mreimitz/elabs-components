@@ -170,6 +170,8 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.message.feedback": "Message feedback",
   "ai.message.previousBranch": "Previous branch",
   "ai.message.nextBranch": "Next branch",
+  "ai.messageCompare.error": "Error",
+  "ai.messageCompare.tabs": "Compare responses",
   "ai.persona.idle": "Assistant idle",
   "ai.persona.listening": "Assistant listening",
   "ai.persona.thinking": "Assistant thinking…",

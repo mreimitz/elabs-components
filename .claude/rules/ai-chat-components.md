@@ -22,6 +22,17 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
 - **Message** — `Message from="user|assistant|system"` + `MessageContent`;
   `MessageResponse` renders streamed markdown (Streamdown). Actions/branches via
   `MessageActions`, `MessageBranch*`.
+- **MessageCompare** — side-by-side multi-response comparison (issue #23), the
+  sibling of `MessageBranch*`: `MessageBranch` switches ONE response at a time;
+  `MessageCompare` shows 2-4 at once. `MessageCompare columns={2|3|4}` auto-wraps
+  `MessageCompareProvider` and lays out `MessageCompareColumn model={{ name }}
+status={ChatStatus}` children as resizable panels (`ResizablePanelGroup`),
+  collapsing to a `Tabs` strip under the `md` breakpoint. Each column owns its
+  own scroll position and status independently — there is no shared
+  "jump to bottom" — unless the opt-in `syncScroll` prop proportionally mirrors
+  scroll across columns. `useMessageCompare()` reads/drives `syncScroll` from a
+  sibling control. Each column is `role="region"` `aria-label={model.name}` so
+  assistive tech can tell responses apart.
 - **PromptInput** — a FORM composer (not the old controlled textarea):
   `PromptInput onSubmit={(message) => …}` with `PromptInputBody`,
   `PromptInputTextarea`, `PromptInputFooter`, `PromptInputTools`,

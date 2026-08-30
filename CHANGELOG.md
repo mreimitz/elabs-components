@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
+  a side-by-side 2-4 column surface for comparing multiple model responses to
+  the same prompt, each column with independent streaming status and scroll
+  position, an opt-in `syncScroll` prop that proportionally mirrors scroll
+  across columns, per-column `MessageFeedback` composability, and a responsive
+  collapse to a tab strip under the `md` breakpoint. (#23)
 - Fixed: every published package README said "these packages are **private**"
   and `License: UNLICENSED — private`, with a `workspace:*` install snippet —
   stale from before the public npm move. `scripts/gen-package-readmes.mjs` now
@@ -9,6 +15,7 @@
   `package.json` (all 12 distributable packages are `MIT`, published
   anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
   `brand-ui-migrate` skill agree with reality. (#28)
+
 ### Changed
 
 - **`@elabs-ai/components-tokens`: Inter now ships as WOFF2, subset by script** (#16).
@@ -44,6 +51,7 @@
   `initialView.rowSelection`, plus a ready-made `createSelectionColumn()`
   checkbox column (header select-all with `indeterminate`, per-row checkbox)
   in `@elabs-ai/components-data`.
+
 ### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
 
 `@elabs-ai/components-ai` peered on `"ai": "^6.0.0"` while the published AI SDK had
@@ -90,6 +98,7 @@ re-pinning.
 
 **Migrating a consumer:** no action needed — both `ai@6` and `ai@7` continue to
 work alongside `@elabs-ai/components-ai`.
+
 - **`@elabs-ai/components-tokens`** — `ThemeProvider` accepts `tokenOverrides`, a
   runtime patch of individual `--token` values (inline custom properties) layered
   over the active theme — for a multi-tenant/white-label consumer who wants to

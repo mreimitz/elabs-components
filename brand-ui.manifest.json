@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T11:27:44.200Z",
+  "generatedAt": "2026-08-30T11:50:25.386Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1639,6 +1639,21 @@
           "module": "packages/ai/src/message.tsx"
         },
         {
+          "name": "MessageCompare",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
+          "name": "MessageCompareColumn",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
+          "name": "MessageCompareProvider",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
           "name": "MessageContent",
           "kind": "value",
           "module": "packages/ai/src/message.tsx"
@@ -2951,6 +2966,11 @@
           "module": "packages/ai/src/jsx-preview.tsx"
         },
         {
+          "name": "useMessageCompare",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
           "name": "useMessageEdit",
           "kind": "value",
           "module": "packages/ai/src/message-edit.tsx"
@@ -3203,6 +3223,15 @@
         "MessageBranchPreviousProps",
         "MessageBranchProps",
         "MessageBranchSelectorProps",
+        "MessageCompareActions",
+        "MessageCompareColumnProps",
+        "MessageCompareColumnsCount",
+        "MessageCompareContextValue",
+        "MessageCompareMeta",
+        "MessageCompareModel",
+        "MessageCompareProps",
+        "MessageCompareProviderProps",
+        "MessageCompareState",
         "MessageContentProps",
         "MessageEditContentProps",
         "MessageEditFormProps",
@@ -4795,6 +4824,100 @@
               "name": "onBranchChange",
               "optional": true,
               "type": "(branchIndex: number) => void"
+            }
+          ]
+        },
+        "MessageCompare": {
+          "extends": [],
+          "props": [
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "`MessageCompareColumn` elements — 2 to 4."
+            },
+            {
+              "name": "columns",
+              "optional": false,
+              "type": "MessageCompareColumnsCount"
+            },
+            {
+              "name": "syncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled sync-scroll flag. Omit for the uncontrolled default (off)."
+            },
+            {
+              "name": "defaultSyncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Uncontrolled initial value. @default false"
+            },
+            {
+              "name": "onSyncScrollChange",
+              "optional": true,
+              "type": "(value: boolean) => void"
+            },
+            {
+              "name": "tabsLabel",
+              "optional": true,
+              "type": "string",
+              "description": "aria-label for the narrow-viewport tab strip. Defaults to microcopy."
+            }
+          ]
+        },
+        "MessageCompareColumn": {
+          "extends": [],
+          "props": [
+            {
+              "name": "model",
+              "optional": false,
+              "type": "MessageCompareModel",
+              "description": "Identifies the column — its `name` becomes the region's accessible name."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChatStatus",
+              "description": "In-flight state for this column's OWN response, independent of siblings."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The consumer's own `Message`/`MessageResponse` composition for this column."
+            }
+          ]
+        },
+        "MessageCompareProvider": {
+          "extends": [],
+          "props": [
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode"
+            },
+            {
+              "name": "columns",
+              "optional": false,
+              "type": "MessageCompareColumnsCount"
+            },
+            {
+              "name": "syncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled sync-scroll flag. Omit for the uncontrolled default."
+            },
+            {
+              "name": "defaultSyncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Uncontrolled initial value. @default false"
+            },
+            {
+              "name": "onSyncScrollChange",
+              "optional": true,
+              "type": "(value: boolean) => void"
             }
           ]
         },

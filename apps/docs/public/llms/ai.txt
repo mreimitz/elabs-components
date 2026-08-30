@@ -298,6 +298,9 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - MessageBranchPage
 - MessageBranchPrevious
 - MessageBranchSelector
+- MessageCompare
+- MessageCompareColumn
+- MessageCompareProvider
 - MessageContent
 - MessageEdit — Edit-in-place for a user message — swaps the bubble between content and an editor.
   - avoid: Mutating the original message on edit — it emits `onEditSubmit(newText)`; the consumer creates a branch.
@@ -680,6 +683,7 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - useAudioDevices
 - useContextPanel
 - useJSXPreview
+- useMessageCompare
 - useMessageEdit
 - usePromptInputAttachments
 - usePromptInputController

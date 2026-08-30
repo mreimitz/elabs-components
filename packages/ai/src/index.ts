@@ -52,6 +52,7 @@ export * from "./jsx-preview";
 export { createLazyMermaidPlugin, lazyMermaid, preloadMermaid } from "./_lazy-mermaid";
 export * from "./markdown-view";
 export * from "./message";
+export * from "./message-compare";
 export * from "./message-edit";
 export * from "./message-feedback";
 export * from "./message-form";
