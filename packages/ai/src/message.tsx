@@ -548,10 +548,28 @@ export type MessageResponseProps = ComponentProps<typeof Streamdown> & {
    * @default false
    */
   loading?: boolean;
+  /**
+   * Custom renderers for markdown elements. **Semantics differ from
+   * `MarkdownView`:** `components` here REPLACES (not merges) per key against
+   * Streamdown's own defaults, since `MessageResponse` has no internal
+   * component map to merge with. See `MarkdownView` for merge-over-defaults
+   * semantics and `#10` for details.
+   */
+  components?: ComponentProps<typeof Streamdown>["components"];
+  /**
+   * Custom plugins for markdown processing. **Merges** per key with the
+   * internal defaults (`math`, `code`, `mermaid`, `renderers`), so a
+   * consumer's entry wins for its key; every key the consumer does not set
+   * keeps the reactive, i18n-aware internal default. This is the same
+   * semantics as `MarkdownView` (#10 fix round). The `math.rehypePlugin`
+   * runs after sanitisation; see `MarkdownView` TSDoc for the full security
+   * model.
+   */
+  plugins?: ComponentProps<typeof Streamdown>["plugins"];
 };
 
 export const MessageResponse = memo(
-  ({ className, loading = false, ...props }: MessageResponseProps) => {
+  ({ className, loading = false, plugins: pluginOverrides, ...props }: MessageResponseProps) => {
     // Streamdown renders its own chrome (code copy, table menus, Mermaid
     // toolbar); route its labels through the locale seam (#310). Spread AFTER
     // so an explicit `translations` prop still wins (ADR 0017 override chain).
@@ -559,7 +577,19 @@ export const MessageResponse = memo(
     const { t } = useLocale();
     // Brand-token-derived `code` plugin, not the package's static github-*
     // default (#315 follow-up) — re-derives when the active theme changes.
-    const plugins = useStreamdownPlugins();
+    const internalPlugins = useStreamdownPlugins();
+    // MERGED per key over the internal defaults — the same semantics as
+    // `MarkdownView`'s `plugins` prop (#10 fix round, M4): a consumer entry
+    // wins for its key; every key the consumer does not set keeps the
+    // reactive, i18n-aware internal default. Previously this component
+    // REPLACED `plugins` wholesale (`{...props}` spread after `plugins=`),
+    // the opposite of `MarkdownView` for the same prop on a sibling
+    // Streamdown surface — aligned so both components mean the same thing by
+    // "override a plugin slot".
+    const plugins = useMemo(
+      () => ({ ...internalPlugins, ...pluginOverrides }),
+      [internalPlugins, pluginOverrides],
+    );
 
     if (loading) {
       return (

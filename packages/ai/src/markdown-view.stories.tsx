@@ -1,4 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ComponentProps } from "react";
+import {
+  InlineCitation,
+  InlineCitationCard,
+  InlineCitationCardBody,
+  InlineCitationCardTrigger,
+} from "./inline-citation";
 import { MarkdownView } from "./markdown-view";
 
 const meta = {
@@ -50,6 +57,61 @@ export const ConstrainedHeadings: Story = {
   decorators: [
     (Story) => (
       <div className="max-w-80">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+const CITED_DOC = `## Q3 answer
+
+Revenue grew **12.4% QoQ**, led by EMEA[1](https://example.com/q3-report) with a smaller
+lift from APAC[2](https://example.com/apac-notes).
+
+Regular links are unaffected — see the [dashboard](https://example.com/dashboard) for the
+full breakdown.
+`;
+
+/** A markdown `a` renderer that swaps a `[1](url)`-style citation marker for an
+ * interactive `InlineCitation` chip; any other link renders exactly as before. */
+const citationLinkComponent: NonNullable<
+  ComponentProps<typeof MarkdownView>["components"]
+>["a"] = ({ href, children, node: _node, ...props }) => {
+  const label = typeof children === "string" ? children : "";
+  if (href && /^\d+$/.test(label)) {
+    return (
+      <InlineCitation>
+        <InlineCitationCard>
+          <InlineCitationCardTrigger sources={[href]} />
+          <InlineCitationCardBody>
+            <div className="p-3 text-meta text-muted-foreground">Source {label}</div>
+          </InlineCitationCardBody>
+        </InlineCitationCard>
+      </InlineCitation>
+    );
+  }
+  return (
+    <a href={href} rel="noopener noreferrer" target="_blank" {...props}>
+      {children}
+    </a>
+  );
+};
+
+/**
+ * The #10 motivating use case: a RAG answer's markdown emits `[1](url)`-style
+ * citation markers. Overriding `components.a` swaps those for `InlineCitation`
+ * chips — every other element (the `##` heading, the "dashboard" link) still
+ * renders through the internal Prose* map because `MarkdownView` MERGES the
+ * override in per key rather than replacing the whole map.
+ */
+export const InlineCitations: Story = {
+  args: {
+    children: CITED_DOC,
+    components: { a: citationLinkComponent },
+  },
+  decorators: [
+    (Story) => (
+      <div className="max-w-prose">
         <Story />
       </div>
     ),

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -180,6 +181,53 @@ describe("MessageResponse loading (#269, loading-states.md)", () => {
   it("renders the real Streamdown content once loading clears", () => {
     render(<MessageResponse>{"Hello world"}</MessageResponse>);
     expect(screen.getByText("Hello world")).toBeInTheDocument();
+  });
+});
+
+describe("MessageResponse plugins/components overrides (#10 — merge-not-replace semantics)", () => {
+  it("merges a real `plugins.cjk` override in (append), keeps sanitisation on, and keeps the untouched `plugins.math` default alive (#10)", () => {
+    // A real, discriminating lock — NOT `plugins={{}}` (that exercises zero
+    // slots and passes identically under merge, replace, or a no-op; #10
+    // review I3). This test supplies a genuine `cjk` plugin (one of the two
+    // slots MessageResponse actually reaches — `code`/`mermaid`/`renderers` are
+    // consulted only inside Streamdown's OWN default `code` renderer, which
+    // `MessageResponse` always shadows) and proves BOTH halves of the
+    // merge property:
+    //   1. Streamdown's default rehypePlugins (raw → sanitize → harden)
+    //      still hold — a <script> is stripped.
+    //   2. The supplied `cjk` plugin APPENDS (its remark transformer runs)
+    //      *and* the internal `math` default the consumer did NOT set
+    //      SURVIVES alongside it (`$$x^2$$` renders as real KaTeX, not
+    //      literal text). A REPLACE implementation
+    //      (`plugins = pluginOverrides`) would drop `math` — along with
+    //      `code`/`mermaid` — the moment a consumer sets `cjk`, and this
+    //      assertion would fail.
+    const cjkRemarkSpy = vi.fn(() => (tree: unknown) => tree);
+    const customCjkPlugin: NonNullable<
+      NonNullable<ComponentProps<typeof MessageResponse>["plugins"]>["cjk"]
+    > = {
+      name: "cjk",
+      remarkPlugins: [],
+      remarkPluginsAfter: [cjkRemarkSpy],
+      remarkPluginsBefore: [],
+      type: "cjk",
+    };
+    const UNSAFE_DOC = `# Note
+
+<script>window.__pwned = true;</script>
+
+$$x^2$$
+`;
+    render(<MessageResponse plugins={{ cjk: customCjkPlugin }}>{UNSAFE_DOC}</MessageResponse>);
+
+    // (1) sanitisation still holds.
+    expect(document.querySelector("script")).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/pwned/);
+    // (2a) the supplied `cjk` plugin appended (its transformer ran)…
+    expect(cjkRemarkSpy).toHaveBeenCalled();
+    // (2b) …and the internal `math` default the consumer did not set is
+    // still active — real KaTeX markup, not the literal `$$x^2$$` text.
+    expect(document.querySelector(".katex")).toBeInTheDocument();
   });
 });
 

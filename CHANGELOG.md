@@ -9,6 +9,7 @@
   `package.json` (all 12 distributable packages are `MIT`, published
   anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
   `brand-ui-migrate` skill agree with reality. (#28)
+
 ### Changed
 
 - **`@elabs-ai/components-tokens`: Inter now ships as WOFF2, subset by script** (#16).
@@ -44,6 +45,7 @@
   `initialView.rowSelection`, plus a ready-made `createSelectionColumn()`
   checkbox column (header select-all with `indeterminate`, per-row checkbox)
   in `@elabs-ai/components-data`.
+
 ### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
 
 `@elabs-ai/components-ai` peered on `"ai": "^6.0.0"` while the published AI SDK had
@@ -90,6 +92,7 @@ re-pinning.
 
 **Migrating a consumer:** no action needed — both `ai@6` and `ai@7` continue to
 work alongside `@elabs-ai/components-ai`.
+
 - **`@elabs-ai/components-tokens`** — `ThemeProvider` accepts `tokenOverrides`, a
   runtime patch of individual `--token` values (inline custom properties) layered
   over the active theme — for a multi-tenant/white-label consumer who wants to
@@ -98,6 +101,24 @@ work alongside `@elabs-ai/components-ai`.
   before being applied, and overrides are cleared automatically when the target
   element changes or the provider unmounts. See `docs/CONSUMING.md` § 5.2 and
   ADR 0031. (#17)
+
+### `@elabs-ai/components-ai`
+
+- **`MarkdownView` and `MessageResponse` accept `components`/`plugins`
+  overrides, MERGED per key over the internal defaults (#10).** A consumer
+  entry wins per key (e.g. override `a` to render an `InlineCitation` chip for
+  a `[1](url)`-style marker); every element type / plugin slot the consumer
+  does not set still renders through the internal Prose\* map and the
+  brand-token-derived plugin set. `MessageResponse`'s `plugins` prop
+  previously REPLACED the internal set wholesale instead of merging — aligned
+  to the same per-key merge as `MarkdownView` in the same fix round. The
+  narrow `plugins` prop cannot displace Streamdown's default `rehypePlugins`
+  chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`); the broader
+  `rehypePlugins`/`remarkPlugins` passthrough both components also expose
+  (inherited from Streamdown) **can**, and doing so can remove sanitisation
+  entirely — tracked separately as **#36 (P1, unfixed)**. See the `plugins`
+  prop TSDoc on `MarkdownView` for the full breakdown of which of the five
+  plugin slots run before vs. after sanitisation.
 
 ## v4.0.0 — 2026-08-17
 
