@@ -1478,6 +1478,20 @@ export const INTENT = {
     ],
   },
 
+  AudioVisualizer: {
+    purpose: "Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop.",
+    category: "ai",
+    relationships: {
+      pairsWith: ["MicSelector", "SpeechInput"],
+    },
+    antiPatterns: [
+      "Passing it a MediaStream or calling getUserMedia inside it — it is presentation-only; feed it `levels` your own analyser loop already computed (D5).",
+      "Reaching for the opt-in useAudioLevel hook from inside this component — the hook only ever creates an AudioContext when a caller-supplied stream is handed to IT, and it stays a separate export the component never imports.",
+      "Relying on colour alone for level — bar/wave HEIGHT carries the amplitude; colour is decorative, never the only channel.",
+      "Expecting the scrolling waveform to keep animating under prefers-reduced-motion — the reduced-motion path renders a static bar chart of the current levels instead of interpolating, so the state stays legible rather than frozen mid-frame.",
+    ],
+  },
+
   BrandMotionConfig: {
     purpose:
       "Feeds descendant Motion components the brand transition (duration/ease mirrored from the motion tokens).",

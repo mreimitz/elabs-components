@@ -25,6 +25,7 @@ export * from "./artifact";
 export * from "./asset-preview";
 export * from "./attachments";
 export * from "./audio-player";
+export * from "./audio-visualizer";
 export * from "./canvas";
 export * from "./chain-of-thought";
 export * from "./chat-greeting";
@@ -88,6 +89,7 @@ export * from "./tool";
 export * from "./tool-result-card";
 export * from "./toolbar";
 export * from "./transcription";
+export * from "./use-audio-level";
 export * from "./voice-selector";
 export * from "./web-preview";
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T15:18:00.484Z",
+  "generatedAt": "2026-08-30T15:48:09.014Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -958,6 +958,11 @@
           "name": "AudioPlayerVolumeRange",
           "kind": "value",
           "module": "packages/ai/src/audio-player.tsx"
+        },
+        {
+          "name": "AudioVisualizer",
+          "kind": "value",
+          "module": "packages/ai/src/audio-visualizer.tsx"
         },
         {
           "name": "BrandMotionConfig",
@@ -2962,6 +2967,11 @@
           "module": "packages/ai/src/mic-selector.tsx"
         },
         {
+          "name": "useAudioLevel",
+          "kind": "value",
+          "module": "packages/ai/src/use-audio-level.ts"
+        },
+        {
           "name": "useContextPanel",
           "kind": "value",
           "module": "packages/ai/src/context-panel.tsx"
@@ -3064,6 +3074,9 @@
         "AudioPlayerTimeDisplayProps",
         "AudioPlayerTimeRangeProps",
         "AudioPlayerVolumeRangeProps",
+        "AudioVisualizerLevelState",
+        "AudioVisualizerProps",
+        "AudioVisualizerVariant",
         "BadgeTone",
         "BooleanFieldSpec",
         "BrandMotionConfigProps",
@@ -3482,6 +3495,8 @@
         "ToolResultCardProps",
         "TranscriptionProps",
         "TranscriptionSegmentProps",
+        "UseAudioLevelOptions",
+        "UseAudioLevelResult",
         "UserMessageProps",
         "VoiceSelectorAccentProps",
         "VoiceSelectorAgeProps",
@@ -3807,6 +3822,55 @@
               "name": "data",
               "optional": false,
               "type": "SpeechResult[\"audio\"]"
+            }
+          ]
+        },
+        "AudioVisualizer": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "levels",
+              "optional": true,
+              "type": "number[]",
+              "description": "Normalized 0–1 amplitude samples for the CURRENT frame — one per bar (or per sample point for `variant=\"wave\"`). Update this from your own analyser polling loop (or the opt-in `useAudioLevel` hook) on every frame you want reflected; the component never touches the microphone itself. Any length works — samples are resampled to `barCount`."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No stream connected yet — renders the idle baseline instead of `levels`."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "AudioVisualizerVariant",
+              "description": "`\"bars\"` (default) — a bar chart. `\"wave\"` — a filled envelope through the current samples. Both encode level as HEIGHT, never as hue alone."
+            },
+            {
+              "name": "sensitivity",
+              "optional": true,
+              "type": "number",
+              "description": "Multiplies each level before clamping to [0, 1] — turn up for a quiet input."
+            },
+            {
+              "name": "barCount",
+              "optional": true,
+              "type": "number",
+              "description": "Number of bars/points drawn."
+            },
+            {
+              "name": "silenceThreshold",
+              "optional": true,
+              "type": "number",
+              "description": "Average level, 0–1, at/above which the status text reads \"active\"."
+            },
+            {
+              "name": "statusLabel",
+              "optional": true,
+              "type": "ReactNode | null",
+              "description": "Visually-hidden text announced when the discretized level state changes. Defaults to a localized label (\"No input detected\" / \"Microphone active\" / …). Pass `null` when the consuming surface already renders its own live region, so assistive tech is not told twice."
             }
           ]
         },
@@ -6684,6 +6748,22 @@
             "Restyling it with utility classes or raw colors — the skin is the `--media-*` custom properties, already mapped to brand tokens.",
             "Autoplaying agent audio — playback is a user action; start it from a control, not on mount.",
             "Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible."
+          ]
+        },
+        "AudioVisualizer": {
+          "purpose": "Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop.",
+          "category": "ai",
+          "relationships": {
+            "pairsWith": [
+              "MicSelector",
+              "SpeechInput"
+            ]
+          },
+          "antiPatterns": [
+            "Passing it a MediaStream or calling getUserMedia inside it — it is presentation-only; feed it `levels` your own analyser loop already computed (D5).",
+            "Reaching for the opt-in useAudioLevel hook from inside this component — the hook only ever creates an AudioContext when a caller-supplied stream is handed to IT, and it stays a separate export the component never imports.",
+            "Relying on colour alone for level — bar/wave HEIGHT carries the amplitude; colour is decorative, never the only channel.",
+            "Expecting the scrolling waveform to keep animating under prefers-reduced-motion — the reduced-motion path renders a static bar chart of the current levels instead of interpolating, so the state stays legible rather than frozen mid-frame."
           ]
         },
         "BrandMotionConfig": {

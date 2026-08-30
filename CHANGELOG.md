@@ -19,6 +19,17 @@
   (ja/zh) and `word-break: keep-all` (ko) rules. System CJK faces only, no
   bundled font, no change to the existing per-script Inter `@font-face`
   subsets. (#15)
+- Added: `@elabs-ai/components-ai` ships `AudioVisualizer` — a canvas-drawn mic-level
+  / waveform meter (`variant="bars"|"wave"`) for voice input, plus the opt-in
+  `useAudioLevel(stream)` hook for the `AnalyserNode` plumbing. Presentation-only
+  per D5: it never calls `getUserMedia` or owns an `AudioContext` on its own —
+  it renders whatever `levels` a parent that already has a stream passes it.
+  Level is readable from bar/wave HEIGHT, never colour alone; a throttled
+  `role="status"` text alternative reports "Microphone active" / "No input
+  detected" / "Microphone not connected" (`loading`) for a canvas that stays
+  `aria-hidden`. Under `prefers-reduced-motion` it skips its internal smoothing
+  animation and paints a static bar chart of the current levels instead of
+  freezing mid-interpolation. (#21)
 - Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
   a side-by-side 2-4 column surface for comparing multiple model responses to
   the same prompt, each column with independent streaming status and scroll
