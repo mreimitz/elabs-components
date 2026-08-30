@@ -20,6 +20,8 @@ import {
   findDualCanvasViolations,
   findReleaseCountViolations,
   findThemeCountViolations,
+  findScriptPathViolations,
+  SCRIPT_PATH_REMOVED_EXEMPT,
   isSkippedWalkDir,
   stripEmphasis,
   themeCountFromSource,
@@ -386,6 +388,53 @@ test("'N component packages' is claimed by ONE rung, not two", () => {
   // The bare-`packages` rung must not also fire on "11 component packages"
   // (11 !== publishedPackages) — that would make the correct text unwritable.
   assert.deepEqual(findReleaseCountViolations("the 11 component packages", COUNTS), []);
+});
+
+// ── SCRIPT PATHS: refs to non-existent scripts must be caught ──────────────────
+
+test("FLAGS: a reference to a non-existent script path", () => {
+  const files = [
+    {
+      file: ".claude/rules/quality-gates.md",
+      content: "Exemptions are derived from `scripts/lib/does-not-exist.mjs`",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /scripts\/lib\/does-not-exist\.mjs which does not exist/);
+});
+
+test("PASSES: a reference to an existing script path", () => {
+  const files = [
+    {
+      file: ".claude/rules/quality-gates.md",
+      content: "The check is in `scripts/check-docs-accuracy.mjs` here.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 0);
+});
+
+test("FLAGS: multiple violations in the same file", () => {
+  const files = [
+    {
+      file: "docs/example.md",
+      content: "`scripts/lib/does-not-exist.mjs` and `scripts/fake/path.mjs`",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 2);
+});
+
+test("PASSES: a reference to a removed script that is exempted", () => {
+  const files = [
+    {
+      file: "docs/ADR/0016-example.md",
+      content: "The one-shot `scripts/rename-scope.mjs` (since removed) was used.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 0, "Exempted removed scripts must not flag");
 });
 
 // ── CLI: the REAL repo currently passes the gate ────────────────────────────────

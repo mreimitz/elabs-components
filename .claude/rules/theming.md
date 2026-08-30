@@ -19,7 +19,7 @@ example and the default registry, not the menu.
   - **Anything that PARSES theme blocks must read the SET, never one file.** Repo
     gates use `readThemesCss()` from `scripts/lib/theme-sources.mjs`; the tokens
     package's own tests use `readThemeCss()` from `src/_theme-css-source.ts`; the
-    DTCG pipeline uses `themeSourcePaths()` in `scripts/lib/themes-io.mjs`. All
+    DTCG pipeline uses `themeSourcePaths()` in `packages/tokens/scripts/lib/themes-io.mjs`. All
     three THROW on an incomplete set, because the failure mode is not a crash —
     a block regex keeps matching, just less. `check-surface-elevation.mjs`
     audited `:root` alone and printed a cheerful

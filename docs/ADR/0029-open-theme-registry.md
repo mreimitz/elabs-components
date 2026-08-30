@@ -110,7 +110,7 @@ So the contract ships as data:
 import { THEME_TOKEN_NAMES } from "@elabs-ai/components-tokens";
 ```
 
-`packages/tokens/scripts/gen-theme-token-names.mjs` derives it from the active
+`packages/tokens/packages/tokens/scripts/gen-theme-token-names.mjs` derives it from the active
 `[data-theme]` blocks in `themes.css` (root-only machinery excluded — the same
 union `check-theme-parity.mjs` holds every block to) and writes
 `src/theme-token-names.generated.ts`. `pnpm token-contract:check` fails CI when
@@ -182,7 +182,7 @@ unregistered name is a warn-and-no-op in dev, not a silent apply).
 - ADR [0027](./0027-focus-ring-token-contract.md) — what a theme's `--ring` must satisfy
 - @.claude/rules/theming.md · @.claude/rules/paused-surfaces.md
 - `packages/tokens/src/theme-types.ts` · `theme-provider.tsx` ·
-  `scripts/gen-theme-token-names.mjs`
+  `packages/tokens/scripts/gen-theme-token-names.mjs`
 - Tests: `theme-registry.test.ts` · `theme-provider.test.tsx` ·
   `gen-theme-token-names.test.mjs` ·
   `packages/ui/src/components/theme-switcher/theme-switcher.test.tsx`
