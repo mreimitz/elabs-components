@@ -294,6 +294,16 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Reveal (appear=fade|up*|down|left|right|zoom · speed=fast|base|slow*)
 - RevealGroup
 - RevisionTimeline (density=comfortable*|compact)
+- SchemaForm
+- SchemaFormDescription
+- SchemaFormError
+- SchemaFormFallback
+- SchemaFormField
+- SchemaFormFields
+- SchemaFormProvider
+- SchemaFormRoot
+- SchemaFormSubmit
+- SchemaFormTitle
 - ScrollArea
 - ScrollBar
 - SectionHeader

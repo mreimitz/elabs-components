@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 361 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 371 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -355,6 +355,16 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Reveal | component | appear=fade\|up*\|down\|left\|right\|zoom · speed=fast\|base\|slow* | `@elabs-ai/components-ui` |  |
 | RevealGroup | component |  | `@elabs-ai/components-ui` |  |
 | RevisionTimeline | component | density=comfortable*\|compact | `@elabs-ai/components-ui` |  |
+| SchemaForm | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormDescription | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormError | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormFallback | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormField | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormFields | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormProvider | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormRoot | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormSubmit | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormTitle | component |  | `@elabs-ai/components-ui` |  |
 | ScrollArea | component |  | `@elabs-ai/components-ui` |  |
 | ScrollBar | component |  | `@elabs-ai/components-ui` |  |
 | SectionHeader | component |  | `@elabs-ai/components-ui` |  |

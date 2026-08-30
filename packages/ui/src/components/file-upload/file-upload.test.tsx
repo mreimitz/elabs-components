@@ -88,7 +88,11 @@ describe("FileUpload", () => {
     expect(onFilesChange.mock.calls[0]![0]).toHaveLength(0);
   });
 
-  it("FileUploadList renders role=status and aria-live=polite", () => {
+  it("FileUploadList announces via aria-live while keeping its native list role", () => {
+    // NOT role="status" — that would override the <ul>'s implicit `list`
+    // role and strip `listitem` from every <FileUploadItem> inside it
+    // (an axe `listitem` violation). `aria-live="polite"` alone still
+    // announces additions/removals to assistive tech.
     const f = makeUploadFile();
     render(
       <FileUpload files={[f]} onFilesChange={() => {}}>
@@ -97,8 +101,9 @@ describe("FileUpload", () => {
         </FileUploadList>
       </FileUpload>,
     );
-    const list = screen.getByRole("status");
+    const list = screen.getByRole("list");
     expect(list).toHaveAttribute("aria-live", "polite");
+    expect(list).not.toHaveAttribute("role");
   });
 
   it("FileUploadList returns null when no files and no children", () => {

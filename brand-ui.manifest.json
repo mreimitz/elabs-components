@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T15:48:09.014Z",
+  "generatedAt": "2026-08-30T15:48:34.130Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18099,6 +18099,56 @@
           "module": "packages/ui/src/components/revision-timeline/revision-timeline.tsx"
         },
         {
+          "name": "SchemaForm",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormDescription",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormError",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormFallback",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormField",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormFields",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormProvider",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormRoot",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormSubmit",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormTitle",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
           "name": "ScrollArea",
           "kind": "value",
           "module": "packages/ui/src/components/scroll-area/scroll-area.tsx"
@@ -18739,35 +18789,58 @@
         "alertVariants",
         "badgeVariants",
         "bentoGridItemVariants",
+        "booleanFieldSchema",
         "buttonGroupVariants",
         "buttonVariants",
         "cardVariants",
+        "checkFileIssue",
         "cn",
+        "collectValidatableFields",
         "countItems",
         "defaultMentionFilter",
         "dialogContentVariants",
         "downloadBlob",
         "downloadUrl",
+        "enumFieldSchema",
+        "enumOptionSchema",
         "expandDialogPanesVariants",
         "extensionOf",
+        "fieldLabel",
+        "fieldSpecSchema",
+        "fileFieldSchema",
         "fileIconFor",
+        "fileMatchesAccept",
+        "findFieldByName",
+        "formSpecSchema",
         "fromTimelineStatus",
+        "groupFieldSchema",
+        "groupItemSchema",
         "headingVariants",
         "hunkVariants",
+        "initialFormValues",
         "inputGroupAddonVariants",
         "inputGroupVariants",
         "insertMention",
+        "integerFieldSchema",
         "isCustomStatus",
+        "keyValueFieldSchema",
+        "keyValueRowSchema",
         "laneColor",
+        "listFieldSchema",
         "mediaTypeFromName",
         "mentionAt",
         "mentionEnd",
         "modelPickerBody",
+        "multiEnumFieldSchema",
         "navigationMenuTriggerStyle",
         "normalizeFileSource",
+        "normalizeFormSpec",
         "normalizeQuoteText",
         "normalizeQuoteTextWithOffsets",
         "normalizeRanges",
+        "numberFieldSchema",
+        "optionLabel",
+        "optionValue",
         "progressIndicatorVariants",
         "queryToRanges",
         "remapMentions",
@@ -18779,6 +18852,7 @@
         "sidebarMenuButtonVariants",
         "statePanelVariants",
         "statusBadgeVariants",
+        "stringFieldSchema",
         "textVariants",
         "toast",
         "toggleVariants",
@@ -18792,6 +18866,7 @@
         "typeBentoGridItemVariants",
         "typeBentoGridProps",
         "typeBentoGridSize",
+        "typeBooleanFieldSpec",
         "typeBoundedNumberProps",
         "typeButtonProps",
         "typeCalendarProps",
@@ -18819,13 +18894,19 @@
         "typeDocumentAddressKind",
         "typeDocumentRect",
         "typeEmptyStateProps",
+        "typeEnumFieldSpec",
+        "typeEnumOption",
         "typeErrorStateProps",
         "typeExpandDialogContentProps",
         "typeExpandDialogHeaderProps",
         "typeExpandDialogPanesProps",
         "typeExpandDialogProps",
+        "typeFieldKeyValueRow",
         "typeFieldRowProps",
+        "typeFieldSpec",
         "typeFileCategory",
+        "typeFileFieldSpec",
+        "typeFileIssue",
         "typeFileKind",
         "typeFileSource",
         "typeFileUploadDropzoneProps",
@@ -18834,6 +18915,12 @@
         "typeFileUploadProps",
         "typeFileUploadStatus",
         "typeFilterChipProps",
+        "typeFormSpec",
+        "typeFormSubmitState",
+        "typeFormValue",
+        "typeFormValues",
+        "typeGroupFieldSpec",
+        "typeGroupItemSpec",
         "typeHeadingLevel",
         "typeHeadingProps",
         "typeHeadingSize",
@@ -18842,9 +18929,12 @@
         "typeInputGroupProps",
         "typeInputProps",
         "typeInsertMentionResult",
+        "typeIntegerFieldSpec",
         "typeKeyValueEditorProps",
+        "typeKeyValueFieldSpec",
         "typeKeyValueRow",
         "typeListEditorProps",
+        "typeListFieldSpec",
         "typeLoadingStateProps",
         "typeLocaleContextValue",
         "typeLocaleProviderProps",
@@ -18868,6 +18958,7 @@
         "typeModelPickerGroup",
         "typeModelPickerItem",
         "typeModelPickerStatus",
+        "typeMultiEnumFieldSpec",
         "typeNavMainProps",
         "typeNavMainRoute",
         "typeNavMainSubItem",
@@ -18875,7 +18966,9 @@
         "typeNavNotificationsProps",
         "typeNavUserProps",
         "typeNavUserUser",
+        "typeNormalizedFormSpec",
         "typeNormalizedText",
+        "typeNumberFieldSpec",
         "typeNumberInputProps",
         "typePageShellProps",
         "typePluralCategory",
@@ -18899,6 +18992,16 @@
         "typeRevisionEdge",
         "typeRevisionTimelineDensity",
         "typeRevisionTimelineProps",
+        "typeSchemaFormDescriptionProps",
+        "typeSchemaFormErrorProps",
+        "typeSchemaFormFallbackProps",
+        "typeSchemaFormFieldProps",
+        "typeSchemaFormFieldsProps",
+        "typeSchemaFormProps",
+        "typeSchemaFormProviderProps",
+        "typeSchemaFormRootProps",
+        "typeSchemaFormSubmitProps",
+        "typeSchemaFormTitleProps",
         "typeSectionHeaderProps",
         "typeSegmentedFieldOption",
         "typeSegmentedFieldProps",
@@ -18917,6 +19020,7 @@
         "typeStatusTone",
         "typeStreamdownTranslationKey",
         "typeStreamdownTranslationMap",
+        "typeStringFieldSpec",
         "typeTagInputProps",
         "typeTeamSwitcherProps",
         "typeTeamSwitcherTeam",
@@ -18958,7 +19062,9 @@
         "typeWizardStepMeta",
         "typeWizardStepProps",
         "typeWizardStepsProps",
-        "typeWizardValidator"
+        "typeWizardValidator",
+        "validateField",
+        "validateForm"
       ],
       "variants": {
         "Alert": {
@@ -21382,6 +21488,176 @@
               "optional": true,
               "type": "(count: number, branch: RevisionBranch) => string",
               "description": "Trailing summary text on a collapsed branch row. Defaults to `\"<n> commit(s)\"`; override to re-vocabulary the timeline (e.g. `\"<n> steps\"` when modelling a process flow rather than git history)."
+            }
+          ]
+        },
+        "SchemaForm": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSubmit\" | \"onChange\" | \"title\"\n>"
+          ],
+          "props": [
+            {
+              "name": "spec",
+              "optional": false,
+              "type": "FormSpec | unknown",
+              "description": "The serializable form specification."
+            },
+            {
+              "name": "values",
+              "optional": true,
+              "type": "FormValues",
+              "description": "Controlled values (`{ [fieldName]: value }`). Omit for uncontrolled."
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "(values: FormValues) => void",
+              "description": "Called with the next full values object on any change."
+            },
+            {
+              "name": "onSubmit",
+              "optional": true,
+              "type": "(state: FormSubmitState) => void",
+              "description": "Called with `{ formName, values }` on a valid submit."
+            },
+            {
+              "name": "submitLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Submit button label (overrides `spec.submitLabel`)."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (the whole form is read-only)."
+            },
+            {
+              "name": "submitted",
+              "optional": true,
+              "type": "boolean",
+              "description": "Terminal submitted state: inert, values visible, submit replaced."
+            },
+            {
+              "name": "submitting",
+              "optional": true,
+              "type": "boolean",
+              "description": "In-flight submit: controls transiently blocked, spinner on submit."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No fields to render yet (spec still loading) → skeleton."
+            },
+            {
+              "name": "error",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A terminal, form-level submission error rendered above the submit control."
+            }
+          ]
+        },
+        "SchemaFormFallback": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "message",
+              "optional": true,
+              "type": "string",
+              "description": "Short human reason the form could not render."
+            }
+          ]
+        },
+        "SchemaFormField": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "name",
+              "optional": false,
+              "type": "string",
+              "description": "The field's `name` (its key in the spec + values). Resolved anywhere in the tree, including inside `group` branches."
+            }
+          ]
+        },
+        "SchemaFormProvider": {
+          "extends": [],
+          "props": [
+            {
+              "name": "spec",
+              "optional": false,
+              "type": "NormalizedFormSpec",
+              "description": "A validated/normalized spec (a plain `FormSpec` also satisfies this)."
+            },
+            {
+              "name": "values",
+              "optional": true,
+              "type": "FormValues",
+              "description": "Controlled values. When provided the component is controlled and `onChange` is the only way to update state."
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "(values: FormValues) => void",
+              "description": "Called with the next full values object on any field change."
+            },
+            {
+              "name": "onSubmit",
+              "optional": true,
+              "type": "(state: FormSubmitState) => void",
+              "description": "Called with `{ formName, values }` when a valid form is submitted."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (form is read-only). A deliberate, durable state."
+            },
+            {
+              "name": "submitted",
+              "optional": true,
+              "type": "boolean",
+              "description": "Terminal submitted state: controls are inert, values visible, no submit."
+            },
+            {
+              "name": "submitting",
+              "optional": true,
+              "type": "boolean",
+              "description": "In-flight submit: controls transiently blocked, submit shows a spinner."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No fields to render yet (e.g. the spec is still being fetched) → skeleton."
+            },
+            {
+              "name": "error",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A terminal, form-level submission error rendered above the submit control."
+            },
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode"
+            }
+          ]
+        },
+        "SchemaFormSubmit": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLButtonElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Submit button label (overrides `spec.submitLabel`). @default \"Submit\""
             }
           ]
         },
