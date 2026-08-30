@@ -76,11 +76,16 @@ export type AgentToolProps = ComponentProps<typeof AccordionItem> & {
 
 export const AgentTool = memo(({ className, tool, value, ...props }: AgentToolProps) => {
   const schema = "jsonSchema" in tool && tool.jsonSchema ? tool.jsonSchema : tool.inputSchema;
+  // `tool.description` may be a fixed string OR (ai@7+) a function of the live
+  // call context (`(options) => string`) for a per-call dynamic description.
+  // AgentTool renders a static list, so it has no call context to invoke that
+  // function with — show it only when it is already a plain string.
+  const description = typeof tool.description === "string" ? tool.description : undefined;
 
   return (
     <AccordionItem className={cn("border-b last:border-b-0", className)} value={value} {...props}>
       <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-        {tool.description ?? "No description"}
+        {description ?? "No description"}
       </AccordionTrigger>
       <AccordionContent className="px-3 pb-3">
         <div className="rounded-md bg-muted/50">
