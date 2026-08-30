@@ -32,6 +32,7 @@ import { useMemo } from "react";
 import { Streamdown } from "streamdown";
 
 type StreamdownComponents = NonNullable<ComponentProps<typeof Streamdown>["components"]>;
+type StreamdownPlugins = ComponentProps<typeof Streamdown>["plugins"];
 
 const MAX_HEADING_LEVEL = 6;
 
@@ -83,21 +84,64 @@ export interface MarkdownViewProps extends Omit<
    * embeds (a context rail) so headings stay on the constrained rung.
    */
   baseHeadingLevel?: ProseHeadingLevel;
+  /**
+   * Per-element renderer overrides, MERGED over the internal Prose* map
+   * (#10) — a consumer entry wins for its key; every key the consumer does
+   * NOT set keeps rendering through `buildProseComponents()`. This is the
+   * seam for rendering inline citations: override `a` (or a custom node
+   * type) to swap a `[1](url)`-style marker for an `InlineCitation` chip
+   * while headings/lists/etc. keep the branded prose styling.
+   *
+   * Deliberately a MERGE, not a replace: sanitisation is unaffected either
+   * way (see `plugins` below), but a wholesale replace would silently drop
+   * the branded styling from every element the consumer didn't think to
+   * re-declare — a citation override should not have to also re-implement
+   * headings/lists/code to keep them on-brand.
+   */
+  components?: StreamdownComponents;
+  /**
+   * Streamdown plugin-slot overrides (`cjk`/`code`/`math`/`mermaid`/
+   * `renderers`), MERGED per key over the internal defaults (the reactive,
+   * brand-token-derived `code` plugin and i18n-aware `cjk`/`math`/`mermaid`
+   * set — see `_streamdown-i18n.ts`). None of these slots participate in
+   * sanitisation: `rehype-sanitize`/`rehype-harden` run as Streamdown's own
+   * default `rehypePlugins`, a pipeline `MarkdownView` never exposes here and
+   * never routes this merge through — so there is no plugin slot to lock
+   * down, and overriding one (e.g. supplying a custom `code` highlighter)
+   * cannot weaken sanitisation.
+   */
+  plugins?: StreamdownPlugins;
 }
 
 export const MarkdownView = ({
   baseHeadingLevel = 1,
   className,
   children,
+  components: componentOverrides,
+  plugins: pluginOverrides,
   ...props
 }: MarkdownViewProps) => {
-  const components = useMemo(() => buildProseComponents(baseHeadingLevel), [baseHeadingLevel]);
+  const internalComponents = useMemo(
+    () => buildProseComponents(baseHeadingLevel),
+    [baseHeadingLevel],
+  );
+  // Consumer entries win per key; every other key falls through to the
+  // internal Prose* map — see the `components` prop doc above.
+  const components = useMemo(
+    () => ({ ...internalComponents, ...componentOverrides }),
+    [internalComponents, componentOverrides],
+  );
   // Streamdown's own chrome (code copy, table menus) reads the locale seam (#310).
   // Spread AFTER so an explicit `translations` prop still wins (ADR 0017).
   const translations = useStreamdownTranslations();
   // Brand-token-derived `code` plugin, not the package's static github-*
   // default (#315 follow-up) — re-derives when the active theme changes.
-  const plugins = useStreamdownPlugins();
+  const internalPlugins = useStreamdownPlugins();
+  // Same per-key merge as `components` — see the `plugins` prop doc above.
+  const plugins = useMemo(
+    () => ({ ...internalPlugins, ...pluginOverrides }),
+    [internalPlugins, pluginOverrides],
+  );
   return (
     <Streamdown
       data-slot="markdown-view"

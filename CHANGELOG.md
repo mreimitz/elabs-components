@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### `@elabs-ai/components-ai`
+
+- **`MarkdownView` accepts `components` and `plugins` overrides, merged over the
+  internal defaults (#10).** A consumer entry wins per key (e.g. override `a` to
+  render an `InlineCitation` chip for a `[1](url)`-style marker); every element
+  type / plugin slot the consumer does not set still renders through the
+  internal Prose\* map and the brand-token-derived plugin set. Sanitisation
+  (`rehype-sanitize`/`rehype-harden`) is unaffected either way — it runs as
+  Streamdown's own default `rehypePlugins`, which this merge never touches.
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change

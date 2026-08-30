@@ -75,6 +75,14 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   than throwing), `Shimmer` (loading), and the
   workspace/agent set (`Artifact`, `Sandbox`, `WebPreview`, `Canvas`/`Node`/`Edge`,
   media `AudioPlayer`/`VoiceSelector`/`Transcription`, `Terminal`, etc.).
+- **Rendering `InlineCitation` inside `MarkdownView` output (#10):**
+  `MarkdownView`'s `components`/`plugins` props MERGE consumer entries over the
+  internal Prose\* map and plugin set (consumer wins per key; every
+  element/plugin the consumer does not set keeps the branded default) — the
+  seam that connects a RAG answer's `[1](url)`-style citation markers to
+  `InlineCitation`/`InlineCitationCard`. Override `components.a` (or a custom
+  node type) to swap the marker for a citation chip; see
+  `MarkdownView`'s `InlineCitations` story.
 - **Not to be confused with `@elabs-ai/components-flow`.** `Canvas`/`Node`/`Edge`/
   `Connection`/`Controls`/`Panel`/`Toolbar` are the **IN-CHAT agent workspace graph**;
   for an author-built diagram screen use `@elabs-ai/components-flow`'s `CanvasShell`

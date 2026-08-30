@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T06:17:43.193Z",
+  "generatedAt": "2026-08-30T10:19:02.999Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -4715,6 +4715,18 @@
               "optional": true,
               "type": "ProseHeadingLevel",
               "description": "The prose level a markdown `#` maps to; deeper headings shift with it (capped at 6). Default `1` (the full reading scale). Pass `2` in narrow embeds (a context rail) so headings stay on the constrained rung."
+            },
+            {
+              "name": "components",
+              "optional": true,
+              "type": "StreamdownComponents",
+              "description": "Per-element renderer overrides, MERGED over the internal Prose* map (#10) — a consumer entry wins for its key; every key the consumer does NOT set keeps rendering through `buildProseComponents()`. This is the seam for rendering inline citations: override `a` (or a custom node type) to swap a `[1](url)`-style marker for an `InlineCitation` chip while headings/lists/etc. keep the branded prose styling. Deliberately a MERGE, not a replace: sanitisation is unaffected either way (see `plugins` below), but a wholesale replace would silently drop the branded styling from every element the consumer didn't think to re-declare — a citation override should not have to also re-implement headings/lists/code to keep them on-brand."
+            },
+            {
+              "name": "plugins",
+              "optional": true,
+              "type": "StreamdownPlugins",
+              "description": "Streamdown plugin-slot overrides (`cjk`/`code`/`math`/`mermaid`/ `renderers`), MERGED per key over the internal defaults (the reactive, brand-token-derived `code` plugin and i18n-aware `cjk`/`math`/`mermaid` set — see `_streamdown-i18n.ts`). None of these slots participate in sanitisation: `rehype-sanitize`/`rehype-harden` run as Streamdown's own default `rehypePlugins`, a pipeline `MarkdownView` never exposes here and never routes this merge through — so there is no plugin slot to lock down, and overriding one (e.g. supplying a custom `code` highlighter) cannot weaken sanitisation."
             }
           ]
         },
