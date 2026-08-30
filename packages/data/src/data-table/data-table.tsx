@@ -167,12 +167,22 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   enableMultiRowSelection?: boolean;
   /**
-   * Stable row id, independent of row INDEX. Without it, TanStack keys
-   * selection by the row's position in `data` — so after a sort, filter,
-   * page change, or a re-fetch that reorders rows, the selection silently
-   * follows whichever row now sits at that index, not the row the user
-   * actually checked. Supply this whenever `rowSelection` is used with data
-   * that can reorder.
+   * Stable row id, independent of row INDEX. TanStack's default id is set
+   * ONCE per row object when the core row model is built, then reused by
+   * reference through sorting/filtering — so a client-side sort or filter
+   * does NOT disturb selection identity even without this prop. The real
+   * hazard is a `data` array replacement: when the app passes NEW object
+   * references (a re-fetch, an optimistic update), TanStack rebuilds the
+   * core row model from scratch and reassigns default (index-based) ids, so a
+   * row that kept its position but got a new object still keeps its
+   * selection — but one that MOVED position silently inherits whatever
+   * selection belonged to the id now sitting at its old index. This is
+   * unavoidable under `manualPagination`: each page IS a fresh `data` array,
+   * so the default index-based id restarts at `0` on every page and a
+   * selection made on one page can collide with a different record on the
+   * next. Supply `getRowId` whenever `data` can be replaced with new object
+   * references (including every server-paginated table) so identity survives
+   * the replacement instead of falling back to index.
    */
   getRowId?: (row: TData, index: number) => string;
 
@@ -377,6 +387,27 @@ function unsizedColumnIds<TData, TValue>(defs: readonly ColumnDef<TData, TValue>
 // hooks (`useLocale`) are safe inside them.
 
 /**
+ * The row's own "primary identifier" — the first visible DATA column's value,
+ * skipping display columns that carry no `accessorKey`/`accessorFn` (e.g. a
+ * leading `createSelectionColumn()` checkbox, or a decorative avatar column).
+ * `column.accessorFn` is public TanStack API, populated for any
+ * `accessorKey`/`accessorFn` column and `undefined` for a pure display column
+ * (`core/column.ts`) — so this is a reliable "is this a data column" test.
+ * Shared by `rowActionName` (#337) and the selection column's per-row
+ * accessible name (#11 I4/I6), so a leading selection column can't silently
+ * degrade either one to its generic fallback.
+ */
+function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
+  for (const cell of row.getVisibleCells()) {
+    if (!cell.column.accessorFn) continue;
+    const value = cell.getValue();
+    if (typeof value === "string" && value.trim() !== "") return value;
+    if (typeof value === "number") return String(value);
+  }
+  return undefined;
+}
+
+/**
  * Select-all header cell. Radix `Checkbox` renders a genuinely distinct
  * `indeterminate` glyph + `aria-checked="mixed"` for a partial page
  * selection (see `checkbox.tsx`), so the visual and the accessible state
@@ -396,16 +427,22 @@ function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) 
   );
 }
 
-/** Per-row checkbox cell — disabled when `enableRowSelection` excludes the row. */
+/**
+ * Per-row checkbox cell — disabled when `enableRowSelection` excludes the
+ * row. Names each checkbox from the row's own data (#11 I4) instead of the
+ * identical generic label every row previously shared, using the same
+ * "first data cell" lookup `rowActionName` (#337) already uses.
+ */
 function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
   const { t } = useLocale();
+  const name = firstDataCellValue(row);
   return (
     <Checkbox
       data-slot="data-table-select-cell"
       checked={row.getIsSelected()}
       disabled={!row.getCanSelect()}
       onCheckedChange={(checked) => row.toggleSelected(checked === true)}
-      aria-label={t("data.table.selectRow")}
+      aria-label={name ? t("data.table.selectRowNamed", { name }) : t("data.table.selectRow")}
     />
   );
 }
@@ -428,7 +465,14 @@ export function createSelectionColumn<TData>(): ColumnDef<TData> {
     size: 40,
     enableSorting: false,
     enableHiding: false,
-    header: ({ table }) => <SelectAllHeaderCell table={table} />,
+    header: ({ table }) =>
+      // #11 C1: `toggleAllPageRowsSelected` wipes-then-sets on every row when
+      // `enableMultiRowSelection` is off (TanStack's `mutateRowIsSelected`), so
+      // a select-all header under single-select leaves only the LAST row
+      // selected and pins the header at indeterminate forever. Suppress it.
+      table.options.enableMultiRowSelection === false ? null : (
+        <SelectAllHeaderCell table={table} />
+      ),
     cell: ({ row }) => <SelectRowCell row={row} />,
   };
 }
@@ -602,6 +646,35 @@ function DataTableInner<TData, TValue>(
       );
     }
   }, [manualPagination, rowCount, pageCount]);
+
+  // ── Dev-only guard: manualPagination + rowSelection with no getRowId ──────
+  // Under `manualPagination` each page IS a fresh `data` array, so TanStack's
+  // default index-based row id restarts at `0` on every page — a selection
+  // made on page 1's row 0 can silently apply to page 2's row 0 too (#11 I3).
+  // Warn once per mount so this footgun is diagnosable instead of silent (same
+  // idiom as the #227 warning above). Heuristic, not full usage tracing: fires
+  // whenever selection LOOKS wired up (controlled, or a change handler was
+  // passed) — it cannot see an uncontrolled table that never renders a
+  // selection column at all.
+  const warnedManualSelectionRef = useRef(false);
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "production" &&
+      manualPagination &&
+      getRowId === undefined &&
+      (isRowSelectionControlled || onRowSelectionChangeProp !== undefined) &&
+      !warnedManualSelectionRef.current
+    ) {
+      warnedManualSelectionRef.current = true;
+      console.warn(
+        "[DataTable] `rowSelection` is wired up under `manualPagination` with no `getRowId` " +
+          "— each page is a fresh `data` array, so the default index-based id restarts at " +
+          '"0" per page and a selection made on one page can silently apply to a different ' +
+          "record on the next. Pass `getRowId` so selection is keyed to a stable identity " +
+          "instead of position.",
+      );
+    }
+  }, [manualPagination, getRowId, isRowSelectionControlled, onRowSelectionChangeProp]);
 
   /** Fire onServerChange with the LATEST slice values (post-update). */
   function fireServerChange(overrides: Partial<DataTableServerArgs> = {}) {
@@ -1126,17 +1199,16 @@ function DataTableInner<TData, TValue>(
 
   /**
    * Accessible name for a row's hidden activation button (#337). Prefers the
-   * caller's `rowActionLabel`, then the first visible cell's primitive value
-   * (the row's primary identifier — the same name a link in that cell would
-   * get, so screen-reader users hear "billing, button", not five identically
-   * named buttons), then the localized generic fallback.
+   * caller's `rowActionLabel`, then the row's first DATA column value (via
+   * `firstDataCellValue` — skips a leading display column with no accessor,
+   * e.g. `createSelectionColumn()`'s own checkbox column, #11 I6), then the
+   * localized generic fallback.
    */
   function rowActionName(row: (typeof rows)[number]): string {
     const explicit = rowActionLabel?.(row);
     if (explicit) return explicit;
-    const firstValue = row.getVisibleCells()[0]?.getValue();
-    if (typeof firstValue === "string" && firstValue.trim() !== "") return firstValue;
-    if (typeof firstValue === "number") return String(firstValue);
+    const name = firstDataCellValue(row);
+    if (name !== undefined) return name;
     return t("data.table.rowAction");
   }
 

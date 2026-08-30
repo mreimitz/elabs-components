@@ -65,15 +65,35 @@ paths:
   the SAME controlled/uncontrolled shape as the others, seedable once via
   `initialView.rowSelection`. `enableRowSelection`, `enableMultiRowSelection` and
   `getRowId` pass straight through to `useReactTable`.
-  - **Always supply `getRowId` when rows can reorder.** Without it, TanStack keys
-    selection by row INDEX in `data` — a sort, filter, page change, or a re-fetch
-    that reorders rows then silently "selects" whatever new row landed at that
-    index, not the one the user actually checked.
+  - **`getRowId` protects against a `data` array REPLACEMENT, not a sort/filter
+    (corrected — the original prose here overclaimed).** TanStack's default row
+    id is assigned ONCE per row object when the core row model is built, then
+    reused by reference through sorting/filtering — a client-side sort or
+    filter never disturbs selection identity, with or without `getRowId`. The
+    real hazard is a `data` array replaced with NEW object references (a
+    re-fetch, an optimistic update): the core row model rebuilds and
+    reassigns default (index-based) ids from scratch, so a row that moved
+    position silently inherits whatever selection belonged to the id now
+    sitting at its old index. This is unavoidable under `manualPagination` —
+    each page IS a fresh `data` array, so the default id restarts at `0` per
+    page and a selection can collide across pages. Supply `getRowId` whenever
+    `data` can be replaced with new object references (every server-paginated
+    table, in particular). A dev-only warning fires when `rowSelection` looks
+    wired up under `manualPagination` with no `getRowId` (#11 I3).
   - **`createSelectionColumn<TData>()`** returns a ready-made checkbox column
     (header select-all with a real `indeterminate` state for a partial page
     selection, plus a per-row checkbox) built on `@elabs-ai/components-ui`'s
     `Checkbox` — never hand-roll one. It declares an explicit `size` so it plays
-    nicely if pinned (#333's dev warning stays silent).
+    nicely if pinned (#333's dev warning stays silent). Under
+    `enableMultiRowSelection={false}` the header renders nothing: TanStack's
+    `toggleAllPageRowsSelected` wipes-then-sets per row when multi-select is
+    off, so a select-all click would otherwise leave only the LAST row selected
+    and pin the header at `indeterminate` forever (#11 C1). Each row checkbox's
+    accessible name is derived from the row's own first DATA column (skipping
+    a non-accessor column like the selection checkbox itself), so screen-reader
+    users hear "Select Alpha", not an identical "Select row" on every checkbox
+    (#11 I4) — the same "first data cell" lookup the row-activation name
+    (#337) uses, so a leading selection column can't degrade either one.
   - Selection is LAYOUT/UI, not a query — like `columnPinning`, it never joins
     `DataTableServerArgs` / `onServerChange`.
 - **Saved views (shipped).** A view is the serializable `DataTableViewState`

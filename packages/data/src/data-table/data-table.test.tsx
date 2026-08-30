@@ -1112,13 +1112,35 @@ describe("DataTable — #337 onRowClick + rowClassName", () => {
     expect(screen.getByRole("button", { name: "Open Alpha details" })).toBeInTheDocument();
   });
 
-  it("falls back to the localized generic name when the first cell has no primitive value", () => {
+  it("skips a leading display column with no accessor and names the button from the first DATA column (#11 I6)", () => {
     const nonPrimitiveFirstColumn: ColumnDef<Row>[] = [
       { id: "avatar", header: "Avatar", cell: () => <span aria-hidden="true">◆</span> },
       { accessorKey: "name", header: "Name" },
     ];
     render(<DataTable columns={nonPrimitiveFirstColumn} data={data} onRowClick={vi.fn()} />);
+    // The leading column has no `accessorKey`/`accessorFn`, so `rowActionName`
+    // does not stop at it and falls through to `name` — a real per-row name,
+    // not the generic fallback every row would otherwise share.
+    expect(screen.getByRole("button", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Beta" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gamma" })).toBeInTheDocument();
+  });
+
+  it("falls back to the localized generic name when NO visible column has a data accessor", () => {
+    const allDisplayColumns: ColumnDef<Row>[] = [
+      { id: "avatar", header: "Avatar", cell: () => <span aria-hidden="true">◆</span> },
+      { id: "spacer", header: "", cell: () => null },
+    ];
+    render(<DataTable columns={allDisplayColumns} data={data} onRowClick={vi.fn()} />);
     expect(screen.getAllByRole("button", { name: "Activate row" })).toHaveLength(data.length);
+  });
+
+  it("#11 I6: a leading selection column does not degrade the row-activation name to the generic fallback", () => {
+    const withSelection: ColumnDef<Row>[] = [createSelectionColumn<Row>(), ...columns];
+    render(<DataTable columns={withSelection} data={data} onRowClick={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Beta" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gamma" })).toBeInTheDocument();
   });
 
   it("is keyboard-operable: activating the row's button fires onRowClick exactly once", () => {
@@ -1633,10 +1655,16 @@ describe("DataTable — #11 row selection is a controlled/uncontrolled slice", (
   });
 });
 
-describe("DataTable — #11 getRowId keeps selection keyed to a stable id, not row index", () => {
-  it("keeps selection attached to the right row across a client-side sort", () => {
+describe("DataTable — #11 a client-side sort never disturbs selection identity (with or without getRowId)", () => {
+  // TanStack's default row id is assigned ONCE per row object when the core
+  // row model is built, then reused by reference through the sorted row
+  // model — sorting reorders which `Row` objects appear where, it never
+  // reassigns their ids. So this holds identically with `getRowId` supplied
+  // or omitted; it is NOT evidence that `getRowId` did anything (#11 I1 — the
+  // discriminating case is the `data` object-replacement describe below).
+  function expectSortPreservesSelection(getRowId: ((row: Row) => string) | undefined) {
     const { container } = render(
-      <DataTable columns={selectableColumns} data={data} getRowId={(row: Row) => row.name} />,
+      <DataTable columns={selectableColumns} data={data} getRowId={getRowId} />,
     );
     // Initial order: Alpha, Beta, Gamma — select Beta (index 1).
     fireEvent.click(rowCheckboxes(container)[1]!);
@@ -1654,6 +1682,41 @@ describe("DataTable — #11 getRowId keeps selection keyed to a stable id, not r
     for (const tr of trs) {
       if (tr !== betaRow) expect(tr).not.toHaveAttribute("data-state", "selected");
     }
+  }
+
+  it("keeps selection attached to the right row across a sort, WITH getRowId", () => {
+    expectSortPreservesSelection((row: Row) => row.name);
+  });
+
+  it("keeps selection attached to the right row across a sort, WITHOUT getRowId too", () => {
+    expectSortPreservesSelection(undefined);
+  });
+});
+
+describe("DataTable — #11 getRowId keeps selection keyed to a stable id, not row index", () => {
+  it("WITHOUT getRowId, a data prop replacement re-keys selection by index, not identity (negative control)", () => {
+    const { container, rerender } = render(<DataTable columns={selectableColumns} data={data} />);
+    fireEvent.click(rowCheckboxes(container)[1]!); // select Beta (index 1)
+    expect(Array.from(container.querySelectorAll("tbody tr"))[1]).toHaveAttribute(
+      "data-state",
+      "selected",
+    );
+
+    // Same new-object-reference reorder as the positive case below, but with
+    // no `getRowId` — the default index-based id means the "selected" id (1)
+    // now belongs to whatever row the new array put at index 1: Alpha, not
+    // Beta. This is the exact footgun `getRowId` exists to prevent.
+    const reordered: Row[] = [
+      { name: "Gamma", value: 2 },
+      { name: "Alpha", value: 3 },
+      { name: "Beta", value: 1 },
+    ];
+    rerender(<DataTable columns={selectableColumns} data={reordered} />);
+    const trs = Array.from(container.querySelectorAll("tbody tr"));
+    const alphaRow = trs.find((tr) => tr.textContent?.includes("Alpha"));
+    const betaRow = trs.find((tr) => tr.textContent?.includes("Beta"));
+    expect(alphaRow).toHaveAttribute("data-state", "selected");
+    expect(betaRow).not.toHaveAttribute("data-state", "selected");
   });
 
   it("survives a data prop replacement with new object references, same ids", () => {
@@ -1712,5 +1775,84 @@ describe("DataTable — #11 selection survives row virtualization windowing", ()
     act(() => table!.getRow("Row 150")!.toggleSelected(true));
 
     expect(table!.getSelectedRowModel().rows.map((r) => r.id)).toEqual(["Row 150"]);
+  });
+});
+
+describe("DataTable — #11 C1: enableMultiRowSelection={false} suppresses the select-all header", () => {
+  it("renders no select-all checkbox in single-select mode", () => {
+    const { container } = render(
+      <DataTable columns={selectableColumns} data={data} enableMultiRowSelection={false} />,
+    );
+    expect(container.querySelector('thead [data-slot="data-table-select-all"]')).toBeNull();
+    // The per-row checkboxes are unaffected.
+    expect(rowCheckboxes(container)).toHaveLength(data.length);
+  });
+
+  it("selecting a second row deselects the first (single-select semantics)", () => {
+    const { container } = render(
+      <DataTable columns={selectableColumns} data={data} enableMultiRowSelection={false} />,
+    );
+    fireEvent.click(rowCheckboxes(container)[0]!); // Alpha
+    expect(Array.from(container.querySelectorAll("tbody tr"))[0]).toHaveAttribute(
+      "data-state",
+      "selected",
+    );
+
+    fireEvent.click(rowCheckboxes(container)[1]!); // Beta
+    const trs = Array.from(container.querySelectorAll("tbody tr"));
+    expect(trs[0]).not.toHaveAttribute("data-state", "selected");
+    expect(trs[1]).toHaveAttribute("data-state", "selected");
+  });
+});
+
+describe("DataTable — #11 I5: enableRowSelection restricts which rows can be selected", () => {
+  it("disables the checkbox for rows the predicate excludes", () => {
+    const { container } = render(
+      <DataTable
+        columns={selectableColumns}
+        data={data}
+        enableRowSelection={(row) => row.original.value !== 1}
+      />,
+    );
+    const checkboxes = rowCheckboxes(container);
+    // data[0] = Alpha/value 3, data[1] = Beta/value 1 (excluded), data[2] = Gamma/value 2.
+    expect(checkboxes[0]).not.toHaveAttribute("data-disabled");
+    expect(checkboxes[1]).toHaveAttribute("data-disabled");
+    expect(checkboxes[2]).not.toHaveAttribute("data-disabled");
+
+    // Clicking the disabled checkbox does not select its row.
+    fireEvent.click(checkboxes[1]!);
+    expect(Array.from(container.querySelectorAll("tbody tr"))[1]).not.toHaveAttribute(
+      "data-state",
+      "selected",
+    );
+  });
+
+  it("disables every row's checkbox when enableRowSelection is false", () => {
+    const { container } = render(
+      <DataTable columns={selectableColumns} data={data} enableRowSelection={false} />,
+    );
+    for (const checkbox of rowCheckboxes(container)) {
+      expect(checkbox).toHaveAttribute("data-disabled");
+    }
+  });
+});
+
+describe("DataTable — #11 I4: each row checkbox gets a distinguishing accessible name", () => {
+  it("names every row's checkbox from its own data, not an identical generic label", () => {
+    render(<DataTable columns={selectableColumns} data={data} />);
+    expect(screen.getByRole("checkbox", { name: "Select Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Select Beta" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Select Gamma" })).toBeInTheDocument();
+  });
+
+  it("falls back to the generic name when no data column value is derivable", () => {
+    const allDisplayColumns: ColumnDef<Row>[] = [
+      createSelectionColumn<Row>(),
+      { id: "avatar", header: "Avatar", cell: () => <span aria-hidden="true">◆</span> },
+    ];
+    const { container } = render(<DataTable columns={allDisplayColumns} data={data} />);
+    expect(rowCheckboxes(container)).toHaveLength(data.length);
+    expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(data.length);
   });
 });

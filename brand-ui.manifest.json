@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T10:28:09.648Z",
+  "generatedAt": "2026-08-30T11:13:20.927Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13665,7 +13665,7 @@
               "name": "getRowId",
               "optional": true,
               "type": "(row: TData, index: number) => string",
-              "description": "Stable row id, independent of row INDEX. Without it, TanStack keys selection by the row's position in `data` — so after a sort, filter, page change, or a re-fetch that reorders rows, the selection silently follows whichever row now sits at that index, not the row the user actually checked. Supply this whenever `rowSelection` is used with data that can reorder."
+              "description": "Stable row id, independent of row INDEX. TanStack's default id is set ONCE per row object when the core row model is built, then reused by reference through sorting/filtering — so a client-side sort or filter does NOT disturb selection identity even without this prop. The real hazard is a `data` array replacement: when the app passes NEW object references (a re-fetch, an optimistic update), TanStack rebuilds the core row model from scratch and reassigns default (index-based) ids, so a row that kept its position but got a new object still keeps its selection — but one that MOVED position silently inherits whatever selection belonged to the id now sitting at its old index. This is unavoidable under `manualPagination`: each page IS a fresh `data` array, so the default index-based id restarts at `0` on every page and a selection made on one page can collide with a different record on the next. Supply `getRowId` whenever `data` can be replaced with new object references (including every server-paginated table) so identity survives the replacement instead of falling back to index."
             },
             {
               "name": "initialView",

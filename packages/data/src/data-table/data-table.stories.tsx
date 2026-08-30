@@ -900,3 +900,20 @@ export const RowSelectionWithToolbar: Story = {
     await expect(canvas.queryByText(/selected$/)).toBeNull();
   },
 };
+
+/**
+ * Dark-theme pass for the same interaction + a11y coverage (#11 fix round —
+ * the light-only Storybook run isn't sufficient for the "both shipping
+ * themes" quality gate). Reuses `RowSelectionWithToolbar`'s render/play under
+ * `globals: { theme: "dark" }`, same pattern as `dialog.stories.tsx`'s
+ * `FocusRingClearanceDark`.
+ */
+export const RowSelectionWithToolbarDark: Story = {
+  name: "Row selection — with toolbar (dark)",
+  globals: { theme: "dark" },
+  render: RowSelectionWithToolbar.render,
+  play: async (context) => {
+    await waitFor(() => expect(document.documentElement.getAttribute("data-theme")).toBe("dark"));
+    await RowSelectionWithToolbar.play!(context);
+  },
+};
