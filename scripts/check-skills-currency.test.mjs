@@ -17,7 +17,7 @@ import {
   findPackageScopeViolations,
   currencyProseFiles,
   manifestFacts,
-  CURRENT_SCOPE,
+  deriveCurrentScope,
   INFRA_PACKAGE_SUFFIXES,
 } from "./check-skills-currency.mjs";
 import { findThemeCountViolations } from "./lib/theme-count-prose.mjs";
@@ -25,7 +25,11 @@ import { findThemeCountViolations } from "./lib/theme-count-prose.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.dirname(HERE);
 
-const FACTS = { themeCount: 2, packageNames: new Set(["@elabs-ai/components-ui"]) };
+const FACTS = {
+  themeCount: 2,
+  packageNames: new Set(["@elabs-ai/components-ui"]),
+  currentScope: "elabs-ai",
+};
 
 // ── FLAG: the actual #29 defect shape ────────────────────────────────────────
 
@@ -74,6 +78,7 @@ test("FLAGS: a legacy scope on a components-* package", () => {
   const violations = findPackageScopeViolations(
     "Build UI with @brand/components-ui and @brand/components-data.",
     FACTS.packageNames,
+    FACTS.currentScope,
   );
   assert.equal(violations.length, 2);
   assert.match(violations[0].reason, /not the current package scope/);
@@ -83,6 +88,7 @@ test("FLAGS: the current scope naming a package that does not exist", () => {
   const violations = findPackageScopeViolations(
     "See @elabs-ai/components-nonexistent for details.",
     FACTS.packageNames,
+    FACTS.currentScope,
   );
   assert.equal(violations.length, 1);
   assert.match(violations[0].reason, /is not a real package/);
@@ -94,6 +100,7 @@ test("PASSES: the current scope naming a real manifest package", () => {
   const violations = findPackageScopeViolations(
     "Import from @elabs-ai/components-ui.",
     FACTS.packageNames,
+    FACTS.currentScope,
   );
   assert.equal(violations.length, 0);
 });
@@ -102,6 +109,7 @@ test("PASSES: an infra package not tracked by the component manifest (cli/docs/e
   const violations = findPackageScopeViolations(
     "Backed by the @elabs-ai/components-cli CLI and the @elabs-ai/components-docs Storybook app.",
     FACTS.packageNames,
+    FACTS.currentScope,
   );
   assert.equal(violations.length, 0);
 });
@@ -110,14 +118,30 @@ test("PASSES: the wildcard mention @elabs-ai/components-* never matches a slug",
   const violations = findPackageScopeViolations(
     "Build UI with @elabs-ai/components-* (ui, data, ai, flow).",
     FACTS.packageNames,
+    FACTS.currentScope,
   );
   assert.equal(violations.length, 0);
 });
 
 // ── Sanity: constants and discovery haven't drifted ──────────────────────────
 
-test("CURRENT_SCOPE is elabs-ai", () => {
-  assert.equal(CURRENT_SCOPE, "elabs-ai");
+test("deriveCurrentScope: a single shared @<scope>/components-* prefix resolves to that scope", () => {
+  const names = new Set([
+    "@elabs-ai/components-ui",
+    "@elabs-ai/components-data",
+    "@elabs-ai/components-ai",
+  ]);
+  assert.equal(deriveCurrentScope(names), "elabs-ai");
+});
+
+test("deriveCurrentScope: throws when the manifest carries two different scopes", () => {
+  const names = new Set(["@elabs-ai/components-ui", "@brand/components-data"]);
+  assert.throws(() => deriveCurrentScope(names), /expected exactly one/);
+});
+
+test("deriveCurrentScope: throws when nothing matches the @<scope>/components-* shape", () => {
+  const names = new Set(["@elabs-ai/cli", "@elabs-ai/docs"]);
+  assert.throws(() => deriveCurrentScope(names), /expected exactly one/);
 });
 
 test("INFRA_PACKAGE_SUFFIXES covers the shipped non-component packages", () => {
