@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T12:05:26.522Z",
+  "generatedAt": "2026-08-30T12:36:32.678Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1639,6 +1639,16 @@
           "module": "packages/ai/src/message.tsx"
         },
         {
+          "name": "MessageCompare",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
+          "name": "MessageCompareColumn",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
           "name": "MessageContent",
           "kind": "value",
           "module": "packages/ai/src/message.tsx"
@@ -3203,6 +3213,10 @@
         "MessageBranchPreviousProps",
         "MessageBranchProps",
         "MessageBranchSelectorProps",
+        "MessageCompareColumnProps",
+        "MessageCompareColumnsCount",
+        "MessageCompareModel",
+        "MessageCompareProps",
         "MessageContentProps",
         "MessageEditContentProps",
         "MessageEditFormProps",
@@ -4807,6 +4821,68 @@
               "name": "onBranchChange",
               "optional": true,
               "type": "(branchIndex: number) => void"
+            }
+          ]
+        },
+        "MessageCompare": {
+          "extends": [],
+          "props": [
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "`MessageCompareColumn` elements — 2 to 4."
+            },
+            {
+              "name": "columns",
+              "optional": false,
+              "type": "MessageCompareColumnsCount"
+            },
+            {
+              "name": "syncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled sync-scroll flag. Omit for the uncontrolled default (off)."
+            },
+            {
+              "name": "defaultSyncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Uncontrolled initial value. @default false"
+            },
+            {
+              "name": "onSyncScrollChange",
+              "optional": true,
+              "type": "(value: boolean) => void"
+            },
+            {
+              "name": "tabsLabel",
+              "optional": true,
+              "type": "string",
+              "description": "aria-label for the narrow-viewport tab strip. Defaults to microcopy."
+            }
+          ]
+        },
+        "MessageCompareColumn": {
+          "extends": [],
+          "props": [
+            {
+              "name": "model",
+              "optional": false,
+              "type": "MessageCompareModel",
+              "description": "Identifies the column — its `name` becomes the region's accessible name."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChatStatus",
+              "description": "In-flight state for this column's OWN response, independent of siblings."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The consumer's own `Message`/`MessageResponse` composition for this column."
             }
           ]
         },
@@ -7182,6 +7258,30 @@
             "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
             "Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.",
             "Calling a model inside the component — @elabs-ai/components-ai is presentational; the app owns useChat/transport (D5)."
+          ]
+        },
+        "MessageCompare": {
+          "purpose": "Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.",
+          "category": "ai",
+          "relationships": {
+            "contains": [
+              "MessageCompareColumn"
+            ],
+            "pairsWith": [
+              "MessageFeedback",
+              "MessageResponse",
+              "MessageBranch"
+            ]
+          },
+          "stateTokens": {
+            "divider": "border-b (default border color, the subtle rung) between a column's header and body — same as the package's other header/body dividers",
+            "error": "text-destructive-text (TEXT rung, not -foreground) paired with AlertTriangleIcon + role=\"alert\" — colour is never the only channel"
+          },
+          "antiPatterns": [
+            "Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.",
+            "Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.",
+            "Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.",
+            "Lifting MessageFeedback state above the column boundary — each MessageCompareColumn composes its own independent MessageFeedback instance with no shared vote state."
           ]
         },
         "MessageEdit": {

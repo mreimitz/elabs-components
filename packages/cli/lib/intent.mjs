@@ -1620,6 +1620,28 @@ export const INTENT = {
     ],
   },
 
+  MessageCompare: {
+    purpose:
+      "Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.",
+    category: "ai",
+    relationships: {
+      contains: ["MessageCompareColumn"],
+      pairsWith: ["MessageFeedback", "MessageResponse", "MessageBranch"],
+    },
+    stateTokens: {
+      divider:
+        "border-b (default border color, the subtle rung) between a column's header and body — same as the package's other header/body dividers",
+      error:
+        'text-destructive-text (TEXT rung, not -foreground) paired with AlertTriangleIcon + role="alert" — colour is never the only channel',
+    },
+    antiPatterns: [
+      "Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.",
+      "Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.",
+      "Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.",
+      "Lifting MessageFeedback state above the column boundary — each MessageCompareColumn composes its own independent MessageFeedback instance with no shared vote state.",
+    ],
+  },
+
   MessageEdit: {
     purpose: "Edit-in-place for a user message — swaps the bubble between content and an editor.",
     category: "ai",

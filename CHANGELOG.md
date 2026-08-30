@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
+  a side-by-side 2-4 column surface for comparing multiple model responses to
+  the same prompt, each column with independent streaming status and scroll
+  position, an opt-in `syncScroll` prop that proportionally mirrors scroll
+  across columns, per-column `MessageFeedback` composability, and a responsive
+  collapse to a tab strip under the `md` breakpoint. (#23)
 - Fixed: every published package README said "these packages are **private**"
   and `License: UNLICENSED — private`, with a `workspace:*` install snippet —
   stale from before the public npm move. `scripts/gen-package-readmes.mjs` now

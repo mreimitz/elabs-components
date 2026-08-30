@@ -298,6 +298,12 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - MessageBranchPage
 - MessageBranchPrevious
 - MessageBranchSelector
+- MessageCompare — Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.
+  - avoid: Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.
+  - avoid: Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.
+  - avoid: Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.
+  - avoid: Lifting MessageFeedback state above the column boundary — each MessageCompareColumn composes its own independent MessageFeedback instance with no shared vote state.
+- MessageCompareColumn
 - MessageContent
 - MessageEdit — Edit-in-place for a user message — swaps the bubble between content and an editor.
   - avoid: Mutating the original message on edit — it emits `onEditSubmit(newText)`; the consumer creates a branch.

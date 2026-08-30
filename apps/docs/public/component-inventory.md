@@ -17,7 +17,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 361 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 443 | 13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 445 | 13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 130 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -682,6 +682,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MessageBranchPage | component |  | `@elabs-ai/components-ai` |  |
 | MessageBranchPrevious | component |  | `@elabs-ai/components-ai` |  |
 | MessageBranchSelector | component |  | `@elabs-ai/components-ai` |  |
+| MessageCompare | component |  | `@elabs-ai/components-ai` | Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch. |
+| MessageCompareColumn | component |  | `@elabs-ai/components-ai` |  |
 | MessageContent | component |  | `@elabs-ai/components-ai` |  |
 | MessageEdit | component |  | `@elabs-ai/components-ai` | Edit-in-place for a user message — swaps the bubble between content and an editor. |
 | MessageEditContent | component |  | `@elabs-ai/components-ai` |  |

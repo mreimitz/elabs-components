@@ -39,3 +39,18 @@ pair them with.
   measured tables) for a bounded delta pass on exactly two questions — did the P0/P1s
   land, and does the redrawn set hold up at the ~64px legibility floor. Does NOT merge
   until that returns.
+- state-illustrations (#24): MERGED into integration as `79eeddb`. Twelfth unit.
+  Delta pass by the ORIGINAL reviewer, re-measured independently: accent now 7.49:1 /
+  10.71:1 (was 1.42:1), the hand-built `kind="error"` pairing resolves every ink to
+  `--destructive` with no lime left, ink-area spread 2.1x -> 1.09x, redrawn set clears
+  the 64px floor in both themes. CHANGELOG heading audit clean; manifest staged before
+  its gate, fresh first run; no conflict markers.
+  DEFERRED, and owed a follow-up issue: 6 P2s from the first pass + 4 P2-grade residuals
+  from the delta pass, one of which is a real API gap rather than polish
+  (`ILLUSTRATION_ACCENT_VAR` is not barrel-exported, so a consumer cannot retint an
+  illustration the way `StatePanel` does internally).
+
+## Reading 14 (latest measured — quote THIS one in the report)
+
+58 dispatches · largest parallel batch 1 · haiku 6 · inherited-model 0 ·
+orchestrator source files edited 0.
