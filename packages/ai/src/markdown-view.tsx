@@ -97,18 +97,66 @@ export interface MarkdownViewProps extends Omit<
    * the branded styling from every element the consumer didn't think to
    * re-declare — a citation override should not have to also re-implement
    * headings/lists/code to keep them on-brand.
+   *
+   * **Known constraint: a `components` change alone does not force a
+   * re-render of already-rendered markdown (#10).** Streamdown memoizes on
+   * `children`/`plugins`/theme/etc but NOT on `components`
+   * (`streamdown@2.5.0`'s top-level `memo` comparator omits it), so if the
+   * SAME markdown string is still current when an override's closed-over
+   * data changes — e.g. an inline-citation chip that resolves its title
+   * asynchronously — the new render function is captured but nothing
+   * schedules Streamdown to call it again. Don't rely on a `components`
+   * closure to reflect state that arrives after the initial render; instead
+   * have the overriding component read that state itself (a shared context,
+   * a store keyed by citation id, or an internal `useState`/subscription
+   * inside the override) so IT re-renders independently of `MarkdownView`'s
+   * own render pass — the pattern `InlineCitation`/`InlineCitationCard`
+   * already use.
    */
   components?: StreamdownComponents;
   /**
    * Streamdown plugin-slot overrides (`cjk`/`code`/`math`/`mermaid`/
    * `renderers`), MERGED per key over the internal defaults (the reactive,
    * brand-token-derived `code` plugin and i18n-aware `cjk`/`math`/`mermaid`
-   * set — see `_streamdown-i18n.ts`). None of these slots participate in
-   * sanitisation: `rehype-sanitize`/`rehype-harden` run as Streamdown's own
-   * default `rehypePlugins`, a pipeline `MarkdownView` never exposes here and
-   * never routes this merge through — so there is no plugin slot to lock
-   * down, and overriding one (e.g. supplying a custom `code` highlighter)
-   * cannot weaken sanitisation.
+   * set — see `_streamdown-i18n.ts`).
+   *
+   * **This narrow `plugins` prop can only APPEND — it can never displace
+   * Streamdown's default `rehypePlugins` chain** (`rehype-raw` →
+   * `rehype-sanitize` → `rehype-harden`). `MarkdownView` never sets
+   * `rehypePlugins` itself, and nothing in `PluginConfig` removes or replaces
+   * a member of that pipeline, so the sanitiser cannot be turned off through
+   * this prop. But two of the five slots are **not** upstream of it and must
+   * be treated as trusted code:
+   * - **`math.rehypePlugin` runs AFTER `rehype-sanitize`/`rehype-harden`**
+   *   (appended to the end of the rehype pipeline, verified against
+   *   `streamdown@2.5.0`'s `dist/chunk-BO2N2NFS.js`) — its output is never
+   *   re-sanitised.
+   * - **`mermaid` never enters the rehype/remark pipeline at all.** Its
+   *   `getMermaid().render()` result is written via
+   *   `dangerouslySetInnerHTML` (streamdown's only such sink). brand-ui's own
+   *   `useStreamdownPlugins()` default pins `securityLevel: "strict"`
+   *   (`_lazy-mermaid.ts`); a replacement `mermaid` plugin must sanitise its
+   *   own SVG output the same way.
+   * - `cjk` (remark-stage only — its output is re-sanitised downstream by
+   *   the rehype pipeline like any other remark result), `code` (feeds only
+   *   `shikiTheme`, no HTML injection) and `renderers` (ordinary React
+   *   components rendered with the fenced block's raw `code` string as a
+   *   `string` prop, the same trusted-component boundary as a `components`
+   *   override) do not bypass sanitisation.
+   *
+   * **This guarantee does NOT extend to the `rehypePlugins`/`remarkPlugins`
+   * props also exposed on this component** (inherited straight from
+   * Streamdown's own `ComponentProps` — `MarkdownViewProps` only omits
+   * `components`/`plugins`, not these). Unlike `plugins`, a caller-supplied
+   * `rehypePlugins`/`remarkPlugins` array REPLACES Streamdown's default
+   * pipeline wholesale rather than extending it, silently dropping
+   * `rehype-sanitize`/`rehype-harden` and letting a plain markdown string
+   * execute script in the host page — tracked as **#36 (P1, unfixed on this
+   * component)**. If you need to add a rehype/remark step, start from
+   * Streamdown's own `defaultRehypePlugins`/`defaultRemarkPlugins` and spread
+   * the sanitiser back in (the pattern `@elabs-ai/components-editor`'s
+   * `MarkdownPreview` already uses — see `markdown-preview.tsx`'s
+   * `rehypePlugins` constant) rather than passing a plugin list from scratch.
    */
   plugins?: StreamdownPlugins;
 }

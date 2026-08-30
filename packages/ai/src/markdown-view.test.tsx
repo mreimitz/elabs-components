@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import type { ComponentProps } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownView } from "./markdown-view";
 
 afterEach(cleanup);
@@ -91,15 +92,48 @@ A paragraph with [a link](https://example.com) and \`inline\` code.
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
-  it("keeps the default sanitisation pipeline active even when the consumer passes `plugins` (#10)", () => {
-    // rehype-sanitize/rehype-harden run as Streamdown's own default
-    // rehypePlugins — a pipeline MarkdownView never exposes or routes the
-    // `plugins` (PluginConfig: cjk/code/math/mermaid) merge through. A
-    // <script> survives only if that default pipeline was bypassed.
-    const UNSAFE_DOC = `# Note\n\n<script>window.__pwned = true;</script>\n\nSafe text.`;
-    render(<MarkdownView plugins={{}}>{UNSAFE_DOC}</MarkdownView>);
+  it("merges a real `plugins.cjk` override in (append), keeps sanitisation on, and keeps the untouched `plugins.math` default alive (#10)", () => {
+    // A real, discriminating lock — NOT `plugins={{}}` (that exercises zero
+    // slots and passes identically under merge, replace, or a no-op; #10
+    // review I3). This test supplies a genuine `cjk` plugin (one of the two
+    // slots MarkdownView actually reaches — `code`/`mermaid`/`renderers` are
+    // consulted only inside Streamdown's OWN default `code` renderer, which
+    // `buildProseComponents()` always shadows) and proves BOTH halves of the
+    // merge property:
+    //   1. Streamdown's default rehypePlugins (raw → sanitize → harden)
+    //      still hold — a <script> is stripped.
+    //   2. The supplied `cjk` plugin APPENDS (its remark transformer runs)
+    //      *and* the internal `math` default the consumer did NOT set
+    //      SURVIVES alongside it (`$$x^2$$` renders as real KaTeX, not
+    //      literal text). A REPLACE implementation
+    //      (`plugins = pluginOverrides`) would drop `math` — along with
+    //      `code`/`mermaid` — the moment a consumer sets `cjk`, and this
+    //      assertion would fail.
+    const cjkRemarkSpy = vi.fn(() => (tree: unknown) => tree);
+    const customCjkPlugin: NonNullable<
+      NonNullable<ComponentProps<typeof MarkdownView>["plugins"]>["cjk"]
+    > = {
+      name: "cjk",
+      remarkPlugins: [],
+      remarkPluginsAfter: [cjkRemarkSpy],
+      remarkPluginsBefore: [],
+      type: "cjk",
+    };
+    const UNSAFE_DOC = `# Note
 
+<script>window.__pwned = true;</script>
+
+$$x^2$$
+`;
+    render(<MarkdownView plugins={{ cjk: customCjkPlugin }}>{UNSAFE_DOC}</MarkdownView>);
+
+    // (1) sanitisation still holds.
     expect(document.querySelector("script")).not.toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/pwned/);
+    // (2a) the supplied `cjk` plugin appended (its transformer ran)…
+    expect(cjkRemarkSpy).toHaveBeenCalled();
+    // (2b) …and the internal `math` default the consumer did not set is
+    // still active — real KaTeX markup, not the literal `$$x^2$$` text.
+    expect(document.querySelector(".katex")).toBeInTheDocument();
   });
 });
