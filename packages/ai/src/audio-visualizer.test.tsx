@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { ThemeProvider, useTheme } from "@elabs-ai/components-tokens";
 
 import { AudioVisualizer } from "./audio-visualizer";
 import { useAudioLevel } from "./use-audio-level";
@@ -140,6 +141,135 @@ describe("AudioVisualizer — reduced motion (colour is never the only channel e
     const raf = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(0);
     render(<AudioVisualizer levels={SPEECH_LEVELS} />);
     expect(raf).toHaveBeenCalled();
+  });
+});
+
+describe("AudioVisualizer — painted colour tracks the active theme, not a mount-time snapshot (F1)", () => {
+  // `resolveFillColor` reads `--color-primary`/`--primary` via
+  // `getComputedStyle(canvas)` — a value a REAL browser resolves by cascading
+  // down from wherever `data-theme` lives (normally `<html>`, which
+  // `ThemeProvider` writes in its own mount effect). jsdom implements neither
+  // the cascade nor custom-property inheritance (`getComputedStyle` only ever
+  // reflects an element's OWN inline style — verified against a live jsdom
+  // instance while investigating this bug), so this mock stands in for the
+  // browser's computed value while still exercising the REAL race: React
+  // runs a child's `useEffect` before its parent's, so `AudioVisualizer`'s
+  // paint effect (a child of `ThemeProvider`) fires before `ThemeProvider`'s
+  // own effect has written `data-theme` — reading whatever the un-themed
+  // `:root` fallback resolves to, exactly like the reported
+  // `rgb(57, 105, 217)`.
+  const ROOT_FALLBACK = "rgb(57, 105, 217)"; // :root's un-themed --primary
+  const THEME_PRIMARY: Record<string, string> = {
+    light: "rgb(10, 20, 30)",
+    dark: "rgb(200, 210, 220)",
+  };
+
+  let paintedColor: string | undefined;
+
+  beforeEach(() => {
+    paintedColor = undefined;
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
+      function mockGetContext() {
+        const ctx = {
+          clearRect: vi.fn(),
+          fillRect: vi.fn(() => {
+            paintedColor = ctx.fillStyle;
+          }),
+          beginPath: vi.fn(),
+          moveTo: vi.fn(),
+          lineTo: vi.fn(),
+          closePath: vi.fn(),
+          fill: vi.fn(() => {
+            paintedColor = ctx.fillStyle;
+          }),
+          canvas: { width: 320, height: 64 },
+          fillStyle: "",
+        };
+        return ctx as unknown as CanvasRenderingContext2D;
+      },
+    );
+
+    vi.spyOn(window, "getComputedStyle").mockImplementation((..._args: unknown[]) => {
+      const theme = document.documentElement.getAttribute("data-theme");
+      const primary = (theme && THEME_PRIMARY[theme]) || ROOT_FALLBACK;
+      return {
+        getPropertyValue: (prop: string) =>
+          prop === "--color-primary" || prop === "--primary" ? primary : "",
+        color: "",
+      } as CSSStyleDeclaration;
+    });
+
+    // `ThemeProvider` reads `window.matchMedia` on mount (OS reduced-motion
+    // tracking). Re-defined here, not just relied on from the setup file's
+    // default stub, because a sibling `describe` above permanently replaces
+    // `window.matchMedia` with a `vi.fn()` — `vi.restoreAllMocks()` in that
+    // block's own `afterEach` then resets (not removes) that mock function,
+    // so it starts returning `undefined` for every test that runs after it in
+    // this file. This block must render `ThemeProvider` correctly regardless
+    // of what ran before it.
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      configurable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+  });
+
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-theme");
+  });
+
+  it("paints the active theme's --primary once ThemeProvider has applied data-theme — never the :root fallback", async () => {
+    render(
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
+        <AudioVisualizer loading />
+      </ThemeProvider>,
+    );
+
+    // The attribute IS on <html> by the time render() returns...
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    // ...but the fix's own correction (the MutationObserver callback, and the
+    // re-render it schedules) lands as a MICROTASK, same as it would in a
+    // real browser — flush it inside `act` before asserting the FINAL painted
+    // colour, not whatever was painted mid-race.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(paintedColor).not.toBe(ROOT_FALLBACK);
+    expect(paintedColor).toBe(THEME_PRIMARY.dark);
+  });
+
+  it("repaints to track a theme change after mount, rather than keeping the colour painted at mount", async () => {
+    function ThemeToggleButton() {
+      const { setTheme } = useTheme();
+      return (
+        <button type="button" onClick={() => setTheme("light")}>
+          switch to light
+        </button>
+      );
+    }
+
+    render(
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
+        <AudioVisualizer loading />
+        <ThemeToggleButton />
+      </ThemeProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(paintedColor).toBe(THEME_PRIMARY.dark);
+
+    fireEvent.click(screen.getByRole("button", { name: "switch to light" }));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(paintedColor).toBe(THEME_PRIMARY.light);
   });
 });
 

@@ -19,6 +19,17 @@
   (ja/zh) and `word-break: keep-all` (ko) rules. System CJK faces only, no
   bundled font, no change to the existing per-script Inter `@font-face`
   subsets. (#15)
+- Fixed: `@elabs-ai/components-ai`'s `AudioVisualizer` `loading` state painted the
+  un-themed `:root` fallback `--primary` instead of the active theme's colour,
+  identically in `light` and `dark` (F1). Root cause: `resolveFillColor` reads
+  `--color-primary`/`--primary` via `getComputedStyle` inside a `useEffect` that
+  paints once and never loops for `loading`/reduced-motion; React runs a child's
+  effects before its parent's, so this ran before `ThemeProvider`'s own mount
+  effect had written `data-theme`, permanently locking in the un-themed read.
+  Fixed by tracking `data-theme` with a `MutationObserver` (the same pattern
+  already shipped in `InteractiveTerminal`) and re-running the paint once the
+  attribute lands or later changes, so both the first paint and a runtime theme
+  switch resolve the live token.
 - Added: `@elabs-ai/components-ai` ships `AudioVisualizer` — a canvas-drawn mic-level
   / waveform meter (`variant="bars"|"wave"`) for voice input, plus the opt-in
   `useAudioLevel(stream)` hook for the `AnalyserNode` plumbing. Presentation-only

@@ -182,6 +182,17 @@ export const AudioVisualizer = forwardRef<HTMLDivElement, AudioVisualizerProps>(
     const rafRef = useRef<number | null>(null);
     const bucketRef = useRef<AudioVisualizerLevelState>("idle");
     const [levelState, setLevelState] = useState<AudioVisualizerLevelState>("idle");
+    // Bumped whenever `data-theme` actually changes on the document — see the
+    // MutationObserver effect below. `resolveFillColor` cannot read a token
+    // value that isn't there yet: a theme-setting provider (e.g.
+    // `ThemeProvider`) applies `data-theme` in its OWN mount effect, and React
+    // fires a CHILD's effects before its parent's, so this component's paint
+    // effect otherwise runs first and reads whatever the un-themed `:root`
+    // fallback resolves to. Re-running the paint once the attribute lands
+    // (rather than only on the next animation frame, which the `loading`/
+    // reduced-motion path never schedules) is what fixes both the first paint
+    // AND a theme change after mount.
+    const [themeRevision, setThemeRevision] = useState(0);
 
     const sampleCount = Math.max(2, barCount);
 
@@ -249,7 +260,23 @@ export const AudioVisualizer = forwardRef<HTMLDivElement, AudioVisualizerProps>(
         if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       };
-    }, [targetLevels, variant, loading, prefersReducedMotion, silenceThreshold]);
+      // `themeRevision` is the trigger; `resolveFillColor` re-reads the token
+      // live, so the value itself never needs to be a dependency.
+    }, [targetLevels, variant, loading, prefersReducedMotion, silenceThreshold, themeRevision]);
+
+    // Track `data-theme` (whatever sets it — `ThemeProvider`'s own mount
+    // effect, a later `setTheme` call, or Storybook's theme decorator) and
+    // re-run the paint effect above once it actually changes. Same fix as
+    // `InteractiveTerminal`'s identical `data-theme` race.
+    useEffect(() => {
+      if (typeof document === "undefined") return undefined;
+      const observer = new MutationObserver(() => setThemeRevision((r) => r + 1));
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+      return () => observer.disconnect();
+    }, []);
 
     const label =
       statusLabel === null ? null : (statusLabel ?? t(AUDIO_VISUALIZER_STATE_KEYS[levelState]));
