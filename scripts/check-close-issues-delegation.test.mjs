@@ -62,23 +62,59 @@ const PROSE = JSON.stringify({
   },
 });
 
-/** One assistant turn dispatching `models.length` agents (all in this one message). */
+/**
+ * A parallel dispatch of `models.length` agents, in the REAL on-disk shape (#55):
+ * Claude Code writes ONE JSONL record per `tool_use` block, never one record whose
+ * `content` array holds several — so this returns an ARRAY of `models.length`
+ * separate assistant records, each carrying exactly one Agent `tool_use`, all
+ * sharing a single `message.id` (the actual "one turn" key). Callers must SPREAD
+ * the result into `transcript([...])` (`...dispatch([...])`), not push it as one
+ * line — pushing it as one line is exactly the fictitious shape that let #55 ship.
+ */
 function dispatch(models) {
+  const id = `msg_${Math.random().toString(36).slice(2)}`;
+  return models.map((model, i) =>
+    JSON.stringify({
+      type: "assistant",
+      message: {
+        id,
+        role: "assistant",
+        content: [
+          {
+            type: "tool_use",
+            id: `t${Math.random().toString(36).slice(2)}${i}`,
+            name: "Agent",
+            input: {
+              subagent_type: "general-purpose",
+              description: "unit",
+              prompt: "x",
+              ...(model === null ? {} : { model }),
+            },
+          },
+        ],
+      },
+    }),
+  );
+}
+
+/**
+ * A single dispatch record with NO `message.id` at all — exercises trap 1 from
+ * #55: an id-less record must be treated as its own singleton turn, never merged
+ * with other id-less records into one shared, phantom-inflated batch.
+ */
+function dispatchNoId(model) {
   return JSON.stringify({
     type: "assistant",
     message: {
       role: "assistant",
-      content: models.map((model, i) => ({
-        type: "tool_use",
-        id: `t${Math.random().toString(36).slice(2)}${i}`,
-        name: "Agent",
-        input: {
-          subagent_type: "general-purpose",
-          description: "unit",
-          prompt: "x",
-          ...(model === null ? {} : { model }),
+      content: [
+        {
+          type: "tool_use",
+          id: `t${Math.random().toString(36).slice(2)}`,
+          name: "Agent",
+          input: { subagent_type: "general-purpose", description: "unit", prompt: "x", model },
         },
-      })),
+      ],
     },
   });
 }
@@ -135,9 +171,9 @@ test("SERIAL: 3+ dispatches, never more than one per message", () => {
     transcript([
       ROSTER,
       INVOCATION,
-      dispatch(["sonnet"]),
-      dispatch(["sonnet"]),
-      dispatch(["haiku"]),
+      ...dispatch(["sonnet"]),
+      ...dispatch(["sonnet"]),
+      ...dispatch(["haiku"]),
     ]),
   );
   assert.equal(r.status, 2);
@@ -145,11 +181,63 @@ test("SERIAL: 3+ dispatches, never more than one per message", () => {
   assert.doesNotMatch(r.stderr, /NO CHEAP TIER/);
 });
 
+test("REGRESSION (#55): a genuine parallel batch of 4, in the REAL on-disk shape (4 records sharing one message.id), must not be scored as serial", () => {
+  // Against the OLD per-JSONL-record measurement this fixture (one tool_use block
+  // per record, exactly as Claude Code writes it) always reports "largest
+  // parallel batch 1" no matter how many records share a message.id — so SERIAL
+  // fires here unconditionally. That is the defect #55 diagnoses; stashing the
+  // measure() fix and re-running this test reproduces it (see the fix's PR/issue
+  // for the before/after transcript).
+  const r = run(transcript([INVOCATION, ...dispatch(["sonnet", "sonnet", "haiku", "opus"])]));
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stderr, /SERIAL/);
+});
+
+test("REGRESSION (#55) --ledger: 4 dispatches sharing one message.id score batch 4, not 1", () => {
+  const file = transcript([INVOCATION, ...dispatch(["sonnet", "sonnet", "haiku", "opus"])]);
+  const r = spawnSync("bash", [HOOK, "--ledger", file], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /4 dispatches · largest parallel batch 4 · haiku 1 · inherited-model 0/);
+});
+
+test("TRAP (#55): records with no message.id must not collapse into one phantom batch", () => {
+  // 5 dispatches, none sharing a message.id (each its own serial turn) — the
+  // largest REAL batch is 1, so SERIAL correctly fires. If id-less records were
+  // (wrongly) merged into one shared "no-id" bucket, this would score a phantom
+  // batch of 5 and SERIAL would incorrectly stay silent.
+  const r = run(
+    transcript([
+      INVOCATION,
+      dispatchNoId("sonnet"),
+      dispatchNoId("sonnet"),
+      dispatchNoId("sonnet"),
+      dispatchNoId("haiku"),
+      dispatchNoId("sonnet"),
+    ]),
+  );
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /SERIAL: 5 dispatches/);
+});
+
+test("--ledger: no-message.id records score batch 1, never a phantom 5", () => {
+  const file = transcript([
+    INVOCATION,
+    dispatchNoId("sonnet"),
+    dispatchNoId("sonnet"),
+    dispatchNoId("sonnet"),
+    dispatchNoId("haiku"),
+    dispatchNoId("sonnet"),
+  ]);
+  const r = spawnSync("bash", [HOOK, "--ledger", file], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /5 dispatches · largest parallel batch 1 · haiku 1/);
+});
+
 test("SOURCE EDIT: orchestrator edits product source (worktree copies count)", () => {
   const r = run(
     transcript([
       INVOCATION,
-      dispatch(["sonnet", "haiku"]),
+      ...dispatch(["sonnet", "haiku"]),
       edits([
         "/repo/.claude/worktrees/fix-main/packages/cli/lib/app-spec.mjs",
         "/repo/packages/ui/src/components/button/button.tsx",
@@ -164,7 +252,7 @@ test("briefs, scratchpad, memory and docs are NOT source edits", () => {
   const r = run(
     transcript([
       INVOCATION,
-      dispatch(["sonnet", "haiku"]),
+      ...dispatch(["sonnet", "haiku"]),
       edits([
         "/tmp/scratchpad/CODER-CONTRACT.md",
         "/repo/.claude/scratch/close-issues/run1/unit-brief.md",
@@ -181,7 +269,7 @@ test("a SIDECHAIN (subagent) editing source is not an orchestrator failure", () 
   const r = run(
     transcript([
       INVOCATION,
-      dispatch(["sonnet", "haiku"]),
+      ...dispatch(["sonnet", "haiku"]),
       edits(["/repo/packages/ui/src/components/button/button.tsx"], { sidechain: true }),
     ]),
   );
@@ -189,13 +277,13 @@ test("a SIDECHAIN (subagent) editing source is not an orchestrator failure", () 
 });
 
 test("INHERITED MODEL: a dispatch with no model field", () => {
-  const r = run(transcript([INVOCATION, dispatch(["sonnet", null])]));
+  const r = run(transcript([INVOCATION, ...dispatch(["sonnet", null])]));
   assert.equal(r.status, 2);
   assert.match(r.stderr, /INHERITED MODEL: 1 dispatch/);
 });
 
 test("NO CHEAP TIER: a large wave that never used haiku", () => {
-  const r = run(transcript([INVOCATION, dispatch(Array(8).fill("sonnet"))]));
+  const r = run(transcript([INVOCATION, ...dispatch(Array(8).fill("sonnet"))]));
   assert.equal(r.status, 2);
   assert.match(r.stderr, /NO CHEAP TIER: 8 dispatches/);
   assert.doesNotMatch(r.stderr, /SERIAL/); // batch of 8 is not serial
@@ -209,8 +297,8 @@ test("a compliant run is silent", () => {
       ROSTER,
       INVOCATION,
       PROSE,
-      dispatch(["haiku", "haiku", "sonnet"]),
-      dispatch(["sonnet", "opus"]),
+      ...dispatch(["haiku", "haiku", "sonnet"]),
+      ...dispatch(["sonnet", "opus"]),
       edits(["/repo/.claude/scratch/close-issues/run1/unit-brief.md"]),
     ]),
   );
@@ -224,9 +312,9 @@ test("a session that never INVOKED the command is silent, roster and prose notwi
     transcript([
       ROSTER,
       PROSE,
-      dispatch(["sonnet"]),
-      dispatch(["sonnet"]),
-      dispatch(["sonnet"]),
+      ...dispatch(["sonnet"]),
+      ...dispatch(["sonnet"]),
+      ...dispatch(["sonnet"]),
       edits(["/repo/packages/ui/src/components/button/button.tsx"]),
     ]),
   );
@@ -234,16 +322,16 @@ test("a session that never INVOKED the command is silent, roster and prose notwi
 });
 
 test("two dispatches are allowed to be serial (below the threshold)", () => {
-  const r = run(transcript([INVOCATION, dispatch(["sonnet"]), dispatch(["haiku"])]));
+  const r = run(transcript([INVOCATION, ...dispatch(["sonnet"]), ...dispatch(["haiku"])]));
   assert.equal(r.status, 0, r.stderr);
 });
 
 test("stop_hook_active bounds it to one fire — it can never loop", () => {
   const file = transcript([
     INVOCATION,
-    dispatch(["sonnet"]),
-    dispatch(["sonnet"]),
-    dispatch(["sonnet"]),
+    ...dispatch(["sonnet"]),
+    ...dispatch(["sonnet"]),
+    ...dispatch(["sonnet"]),
   ]);
   assert.equal(run(file).status, 2);
   assert.equal(run(file, { active: true }).status, 0);
@@ -262,8 +350,8 @@ test("a missing or unreadable transcript is silent, not an error", () => {
 test("--ledger prints the measured numbers and exits 0", () => {
   const file = transcript([
     INVOCATION,
-    dispatch(["haiku", "sonnet"]),
-    dispatch(["opus", null]),
+    ...dispatch(["haiku", "sonnet"]),
+    ...dispatch(["opus", null]),
     edits(["/repo/packages/ui/src/components/button/button.tsx"]),
   ]);
   const r = spawnSync("bash", [HOOK, "--ledger", file], { encoding: "utf8" });
@@ -275,7 +363,7 @@ test("--ledger prints the measured numbers and exits 0", () => {
 });
 
 test("--ledger works on a session that never invoked the command (report tooling, not a gate)", () => {
-  const file = transcript([ROSTER, dispatch(["sonnet"])]);
+  const file = transcript([ROSTER, ...dispatch(["sonnet"])]);
   const r = spawnSync("bash", [HOOK, "--ledger", file], { encoding: "utf8" });
   assert.equal(r.status, 0);
   assert.match(r.stdout, /1 dispatches · largest parallel batch 1/);

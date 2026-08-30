@@ -34,6 +34,17 @@
   deliberately keeps `text-destructive` (it is a mark, not text). Fixes
   `StatePanel`'s `error`/`error-custom` stories and the deprecated `ErrorState`
   wrapper that renders through it. (#40)
+- Fixed: `.claude/hooks/close-issues-delegation-nudge.sh`'s SERIAL clause measured
+  "largest parallel batch" by maxing over per-JSONL-record `tool_use` counts —
+  since Claude Code writes one record per `tool_use` block, all sharing one
+  `message.id`, that value was bounded at 1 by construction and the clause fired
+  on every `/close-issues` run regardless of what the run actually did. Now
+  groups Agent/Task dispatches by `message.id` (the real turn) before taking the
+  max; a record with no `message.id` is treated as its own singleton so id-less
+  records can't collapse into one phantom-inflated batch. Rebuilt the self-test's
+  fixtures to the real on-disk shape (N records sharing one `message.id`, not one
+  record with N `tool_use` blocks) and added a locking regression test, verified
+  against a real transcript. (#55)
 
 ### Changed
 

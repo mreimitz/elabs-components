@@ -13,6 +13,13 @@
 #                        batch 1 · haiku 0 · 0 source edits (its 2 Writes were
 #                        scratchpad briefs — exactly what the contract asks for)
 #
+#   NOTE (#55): both "largest parallel batch 1" figures above were captured with
+#   the pre-fix per-JSONL-record measurement, which is bounded at 1 by
+#   construction and cannot distinguish serial from parallel dispatch (their
+#   transcripts have since rotated off disk, so they cannot be re-measured).
+#   Treat them as "batch size unknown", not as evidence either run was serial.
+#   The batch is now computed per `message.id` (the real turn) — see measure().
+#
 # So this hook fires ONCE, at Stop, on a session that actually invoked
 # /close-issues, and reports which of the four contract clauses the run broke:
 #
@@ -61,10 +68,27 @@ $(jq -rs '
     def tools: (.message.content // []) | if type == "array" then . else [] end;
     [ .[]
       | select(((.isSidechain? // false) | not) and ((.message.role? // "") == "assistant"))
-      | [ tools[] | select((.type? // "") == "tool_use" and (((.name? // "") == "Agent") or ((.name? // "") == "Task"))) ]
-    ] as $per
+      | { id: (.message.id? // null),
+          items: [ tools[] | select((.type? // "") == "tool_use" and (((.name? // "") == "Agent") or ((.name? // "") == "Task"))) ] }
+    ] as $recs
+    | ($recs | map(.items)) as $per
     | [ ($per | map(length) | add // 0),
-        ($per | map(length) | max // 0),
+        (
+          # "Largest parallel batch" is a TURN, not a JSONL record — Claude Code
+          # writes one record per tool_use block, all sharing one message.id, so a
+          # max taken per-record is bounded at 1 by construction (#55). Group by
+          # message.id and sum the Agent/Task tool_use counts within each group
+          # before taking the max. A record with no message.id gets a unique
+          # synthetic key (its array index) instead of falling into one shared
+          # "no-id" bucket — otherwise unrelated id-less records would collapse
+          # into a single, fictitiously huge batch.
+          $recs
+          | to_entries
+          | map(.value + { gid: (.value.id // ("no-id-" + (.key | tostring))) })
+          | group_by(.gid)
+          | map([.[].items] | flatten | length)
+          | max // 0
+        ),
         ($per | flatten | map(select((.input.model? // "") == "haiku")) | length),
         ($per | flatten | map(select((.input.model? // "") == "")) | length) ]
     | @tsv
