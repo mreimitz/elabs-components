@@ -257,7 +257,7 @@ work alongside `@elabs-ai/components-ai`.
   to the same per-key merge as `MarkdownView` in the same fix round. The
   narrow `plugins` prop cannot displace Streamdown's default `rehypePlugins`
   chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`); the broader
-  `rehypePlugins` passthrough both components also expose (inherited from
+  `rehypePlugins` passthrough both components used to expose (inherited from
   Streamdown) **can**, and doing so removes sanitisation entirely — fixed in
   this same Unreleased round, see the `rehypePlugins` entry above (**#36**).
   See the `plugins`

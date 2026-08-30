@@ -139,9 +139,7 @@ bypass. Consumers who need to widen what survives sanitisation use `allowedTags`
 / `literalTagContent` — both **merge** into the sanitize schema instead of
 replacing the pipeline. Enforced by `pnpm sanitizer-passthrough:check`
 (`scripts/check-sanitizer-passthrough.mjs`), which fails on any wrapper that
-re-exposes a safe renderer's sanitiser-override prop without the matching `Omit`
-
-- runtime strip.
+re-exposes a safe renderer's sanitiser-override prop without the matching `Omit` and the runtime strip.
 
 **`remarkPlugins` is NOT part of that boundary and is still a supported prop.**
 It has the same replace-not-merge shape (a consumer array displaces Streamdown's
