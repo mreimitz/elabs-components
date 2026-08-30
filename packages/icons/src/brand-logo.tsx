@@ -12,7 +12,7 @@ const WORDMARK_TRAIL = 8;
 
 /**
  * Advance widths in EM for the wordmark's face, grouped by width. Measured from
- * the vendored `Inter-Variable.woff` at `wght 600` (its `hmtx` table over
+ * the vendored Inter Variable face at `wght 600` (its `hmtx` table over
  * `unitsPerEm`), not estimated — SVG cannot measure text before it lays out, and
  * a component must not read the DOM to size itself, so the lockup's viewBox has
  * to be computed. An under-estimate CLIPS the wordmark, which is why this is a
