@@ -11,8 +11,9 @@ rendered surface (`brand-ui-visual-ux-reviewer`, `brand-ui-accessibility-reviewe
 process (`/session-retro`) — plus a point-in-time advisory architect
 (`brand-ui-design-system-architect`). What it lacked was a **recurring, repo/system-tier** review:
 a holistic read of the whole repo as one artifact. The only prior instance was the
-one-shot `research/enterprise-gap/` benchmark (2026-06-06), a human-directed **static**
-analysis that explicitly did not run the toolchain.
+one-shot enterprise-gap benchmark (2026-06-06), a human-directed **static** analysis that
+explicitly did not run the toolchain. Its working papers were removed when this fork was
+debranded, so this ADR and the review command are what remain of it.
 
 We want that benchmark made **standing, agent-run, and runtime-verified**, so architecture
 health can be re-measured on demand and tracked as movement against a baseline — and,
@@ -78,5 +79,5 @@ CLAUDE.md always-import).
 ## References
 
 `research/repo-architect-review/{01,02,03}*.md` · `.claude/rules/architecture-review.md` ·
-`research/enterprise-gap/` (baseline) · ADR `0004` (Claude Code setup) · `0007` (scope
+the enterprise-gap benchmark (baseline, since removed) · ADR `0004` (Claude Code setup) · `0007` (scope
 boundary) · `.claude/rules/{issue-workflow,conceptual-framing,quality-gates}.md`.

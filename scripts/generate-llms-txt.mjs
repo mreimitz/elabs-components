@@ -3,7 +3,8 @@
  * generate-llms-txt.mjs — WP-03 #156 (+ doc 11) llms.txt generator.
  *
  * Emits the always-on, server-independent agent hub doc FROM the manifest, as a
- * HUB + SPOKES (decision record research/enterprise-gap/11-agent-docs-architecture.md):
+ * HUB + SPOKES (decision record: docs/CONCEPT-ai-skills.md — the agent-docs
+ * architecture working paper was removed when the fork was debranded):
  *
  *   apps/docs/public/llms.txt            ← root HUB: purpose, package routing map,
  *                                          six themes, CLI + MCP entry points

@@ -114,5 +114,5 @@ component packages.
   (use `Intl.*`), `user-scalable=no`.
 
 _Source: Vercel Web Interface Guidelines (`vercel-labs/web-interface-guidelines`),
-adopted delta-only into brand-ui's idiom. Adoption record:
-`research/enterprise-gap/12-interaction-guidelines-adoption.md`._
+adopted delta-only into brand-ui's idiom. This rule IS the surviving adoption record —
+the working paper it was distilled from was removed when this fork was debranded._
