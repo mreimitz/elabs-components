@@ -12,6 +12,7 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type ColumnPinningState,
+  type ColumnSizingState,
   type OnChangeFn,
   type PaginationState,
   type Row,
@@ -45,6 +46,12 @@ export interface DataTableViewState {
    * like `columnPinning`, for the same reason: the other members predate it.
    */
   rowSelection?: RowSelectionState;
+  /**
+   * Per-column widths after resizing (#12), keyed by column id. OPTIONAL like
+   * `columnPinning`/`rowSelection`, for the same reason: the other members
+   * predate it.
+   */
+  columnSizing?: ColumnSizingState;
 }
 
 /**
@@ -140,6 +147,38 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   columnPinning?: ColumnPinningState;
   onColumnPinningChange?: OnChangeFn<ColumnPinningState>;
+
+  /**
+   * Opt in to column resizing (#12): a drag handle renders on every
+   * resizable column's trailing edge — pointer-draggable (TanStack's own
+   * `header.getResizeHandler()`) and keyboard-operable (ArrowLeft/ArrowRight
+   * on the focused handle, per the WAI-ARIA separator-as-slider practice).
+   * Default `false` so a table that doesn't opt in renders byte-identical
+   * markup to before this feature existed — no handle, no per-cell width
+   * styling.
+   */
+  enableColumnResizing?: boolean;
+  /**
+   * When `columnSizing` updates: `"onChange"` (default here — TanStack's own
+   * default is `"onEnd"`) live-updates while dragging; `"onEnd"` updates once
+   * on release. Only meaningful when `enableColumnResizing` is set.
+   */
+  columnResizeMode?: "onChange" | "onEnd";
+  /**
+   * Controlled column-widths state (#12), keyed by column id — the SAME
+   * controlled/uncontrolled shape as `columnPinning`/`rowSelection`.
+   * Uncontrolled sizing can be seeded once via `initialView.columnSizing`.
+   *
+   * A pinned column's sticky offset (`getStart("left")`/`getAfter("right")`)
+   * already sums `column.getSize()`, which folds in a `columnSizing`
+   * override automatically — so pinning and resizing compose with no extra
+   * wiring once this state reaches the table.
+   *
+   * Sizing is a LAYOUT concern, like `columnPinning`/`rowSelection` — it is
+   * client-only and never joins `DataTableServerArgs` / `onServerChange`.
+   */
+  columnSizing?: ColumnSizingState;
+  onColumnSizingChange?: OnChangeFn<ColumnSizingState>;
 
   /**
    * Controlled row-selection state (#11) — which rows are checked, keyed by
@@ -379,6 +418,26 @@ function unsizedColumnIds<TData, TValue>(defs: readonly ColumnDef<TData, TValue>
   return out;
 }
 
+// ─── Column resizing (#12) ────────────────────────────────────────────────────
+
+/**
+ * Explicit width/min/max triad for one column at its CURRENT size.
+ *
+ * The table is auto-layout (see the note on `pinnedCellGeometry` below), so
+ * without an explicit width an unpinned column is pure browser auto-layout —
+ * `column.getSize()` can change (via a drag or a keyboard resize) with
+ * nothing rendering differently. A pinned cell already gets this triad from
+ * `pinnedCellGeometry`'s own `style`; this is the same triad for the
+ * UNPINNED case, so every call site can compute it once and use it in both
+ * the pinned-or-not branches (`geometry?.style ?? resizeWidthStyle(size)`).
+ * Every call site gates this behind `enableColumnResizing`, so a table that
+ * doesn't opt in renders byte-identical markup to before this feature
+ * existed.
+ */
+function resizeWidthStyle(size: number): React.CSSProperties {
+  return { width: size, minWidth: size, maxWidth: size };
+}
+
 // ─── Row-selection column (#11) ──────────────────────────────────────────────
 //
 // `flexRender` mounts a function `header`/`cell` as a real React component
@@ -517,6 +576,10 @@ function DataTableInner<TData, TValue>(
     onPaginationChange: onPaginationChangeProp,
     columnPinning: columnPinningProp,
     onColumnPinningChange: onColumnPinningChangeProp,
+    enableColumnResizing = false,
+    columnResizeMode = "onChange",
+    columnSizing: columnSizingProp,
+    onColumnSizingChange: onColumnSizingChangeProp,
     rowSelection: rowSelectionProp,
     onRowSelectionChange: onRowSelectionChangeProp,
     enableRowSelection,
@@ -566,6 +629,7 @@ function DataTableInner<TData, TValue>(
   const isPaginationControlled = paginationProp !== undefined;
   const isFilterControlled = globalFilterProp !== undefined;
   const isColumnPinningControlled = columnPinningProp !== undefined;
+  const isColumnSizingControlled = columnSizingProp !== undefined;
   const isRowSelectionControlled = rowSelectionProp !== undefined;
 
   // ── Internal state (only drives a slice when uncontrolled) ───────────────
@@ -591,6 +655,9 @@ function DataTableInner<TData, TValue>(
   const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>(
     () => initialView?.columnPinning ?? { left: [], right: [] },
   );
+  const [internalColumnSizing, setInternalColumnSizing] = useState<ColumnSizingState>(
+    () => initialView?.columnSizing ?? {},
+  );
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>(
     () => initialView?.rowSelection ?? {},
   );
@@ -604,6 +671,7 @@ function DataTableInner<TData, TValue>(
   const pagination = isPaginationControlled ? paginationProp : internalPagination;
   const globalFilter = isFilterControlled ? globalFilterProp : internalGlobalFilter;
   const columnPinning = isColumnPinningControlled ? columnPinningProp : internalColumnPinning;
+  const columnSizing = isColumnSizingControlled ? columnSizingProp : internalColumnSizing;
   const rowSelection = isRowSelectionControlled ? rowSelectionProp : internalRowSelection;
 
   // ── Refs for post-change server callback ─────────────────────────────────
@@ -621,6 +689,8 @@ function DataTableInner<TData, TValue>(
   columnVisibilityRef.current = columnVisibility;
   const columnPinningRef = useRef(columnPinning);
   columnPinningRef.current = columnPinning;
+  const columnSizingRef = useRef(columnSizing);
+  columnSizingRef.current = columnSizing;
   const rowSelectionRef = useRef(rowSelection);
   rowSelectionRef.current = rowSelection;
 
@@ -716,6 +786,11 @@ function DataTableInner<TData, TValue>(
   ): ColumnPinningState {
     return typeof updater === "function" ? updater(columnPinningRef.current) : updater;
   }
+  function resolveColumnSizing(
+    updater: Parameters<OnChangeFn<ColumnSizingState>>[0],
+  ): ColumnSizingState {
+    return typeof updater === "function" ? updater(columnSizingRef.current) : updater;
+  }
   function resolveRowSelection(
     updater: Parameters<OnChangeFn<RowSelectionState>>[0],
   ): RowSelectionState {
@@ -744,6 +819,7 @@ function DataTableInner<TData, TValue>(
       globalFilter,
       pagination,
       columnPinning,
+      columnSizing,
       rowSelection,
     },
 
@@ -806,6 +882,21 @@ function DataTableInner<TData, TValue>(
       const next = resolveColumnPinning(updater);
       if (!isColumnPinningControlled) setInternalColumnPinning(next);
       onColumnPinningChangeProp?.(updater);
+    },
+
+    // Column resizing (#12) — a LAYOUT slice, like column pinning: a column's
+    // width changes nothing the server would need to re-query, so this never
+    // fires onServerChange either. Routed through by BOTH the pointer path
+    // (TanStack's own `header.getResizeHandler()`, wired below) and the
+    // keyboard path (`handleResizeKeyDown`, via `table.setColumnSizing`) so
+    // the two input modes can never diverge in controlled/uncontrolled
+    // behaviour.
+    columnResizeMode,
+    enableColumnResizing,
+    onColumnSizingChange: (updater) => {
+      const next = resolveColumnSizing(updater);
+      if (!isColumnSizingControlled) setInternalColumnSizing(next);
+      onColumnSizingChangeProp?.(updater);
     },
 
     // Row selection (#11) — also a LAYOUT/UI slice, so it never fires
@@ -965,6 +1056,29 @@ function DataTableInner<TData, TValue>(
     };
   }
 
+  // ── Column resizing keyboard path (#12) ───────────────────────────────────
+  // TanStack's own `header.getResizeHandler()` is pointer/touch-only — no
+  // keyboard path exists in the library — so the WAI-ARIA separator-as-slider
+  // practice (drag handle operable via ArrowLeft/ArrowRight when focused)
+  // needs one small hand-rolled step. It goes through `table.setColumnSizing`
+  // (`table.setColumnSizing = updater => table.options.onColumnSizingChange
+  // ?.(updater)`, TanStack's own `ColumnSizing` feature), which is the SAME
+  // `onColumnSizingChange` handler passed to `useReactTable` above — so
+  // keyboard and pointer resizing share one controlled/uncontrolled code path
+  // and can never diverge in behaviour.
+  const RESIZE_STEP = 10;
+  function handleResizeKeyDown(event: React.KeyboardEvent, column: Column<TData, unknown>) {
+    let delta = 0;
+    if (event.key === "ArrowRight") delta = RESIZE_STEP;
+    else if (event.key === "ArrowLeft") delta = -RESIZE_STEP;
+    else return;
+    event.preventDefault();
+    const minSize = column.columnDef.minSize ?? 20;
+    const maxSize = column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
+    const nextSize = Math.min(maxSize, Math.max(minSize, column.getSize() + delta));
+    table.setColumnSizing((old) => ({ ...old, [column.id]: nextSize }));
+  }
+
   // ── Scroll container ref for virtualizer ─────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -1068,6 +1182,15 @@ function DataTableInner<TData, TValue>(
                 sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "not sorted";
               const SortIcon =
                 sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;
+              // #12: every column gets the same explicit width triad a pinned
+              // column already has, gated behind `enableColumnResizing` so a
+              // table that doesn't opt in stays byte-identical to before.
+              const resizeStyle = enableColumnResizing
+                ? resizeWidthStyle(header.getSize())
+                : undefined;
+              const canResize =
+                enableColumnResizing && !header.isPlaceholder && header.column.getCanResize();
+              const resizeMax = header.column.columnDef.maxSize;
               return (
                 <th
                   key={header.id}
@@ -1082,9 +1205,13 @@ function DataTableInner<TData, TValue>(
                       : undefined
                   }
                   data-pinned={geometry?.pinned ?? undefined}
-                  style={geometry?.style}
+                  style={geometry?.style ?? resizeStyle}
                   className={cn(
                     "h-10 px-3 text-start align-middle font-medium text-muted-foreground",
+                    // `sticky`/pinned already establishes a positioning context
+                    // for the resize handle's `absolute`; an unpinned resizable
+                    // header needs its own.
+                    !geometry && canResize && "relative",
                     // A pinned HEADER cell is the corner where both freezes meet,
                     // so it stacks above the sticky header row (z-20) which is
                     // above the pinned body cells (z-10). It needs an OPAQUE
@@ -1128,6 +1255,58 @@ function DataTableInner<TData, TValue>(
                     </button>
                   ) : (
                     flexRender(header.column.columnDef.header, header.getContext())
+                  )}
+                  {canResize && (
+                    <div
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-valuenow={Math.round(header.getSize())}
+                      aria-valuemin={header.column.columnDef.minSize}
+                      aria-valuemax={
+                        resizeMax !== undefined && resizeMax < Number.MAX_SAFE_INTEGER
+                          ? resizeMax
+                          : undefined
+                      }
+                      aria-label={t("data.table.resizeColumn", { name: headerLabel })}
+                      tabIndex={0}
+                      data-slot="data-table-resize-handle"
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      onKeyDown={(event) => handleResizeKeyDown(event, header.column)}
+                      className={cn(
+                        "absolute inset-y-0 end-0 w-2 cursor-col-resize touch-none select-none",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                        // a11y fix (#12 review, blocking): this handle is the
+                        // SOLE boundary between two adjacent header cells once
+                        // resizing is on — no fill/elevation change separates
+                        // them otherwise — so per the border/border-strong
+                        // decision test (styling-and-tokens.md) it needs a
+                        // rung that clears WCAG 1.4.11's 3:1 on its OWN, in
+                        // EVERY state, including rest (a control with no
+                        // affordance until hover is unusable without a
+                        // pointer). `border-strong` measures only 2.86-2.96:1
+                        // against this `bg-surface-muted` header — that rung
+                        // is guaranteed only vs `--card`/`--background`, not a
+                        // same-tone surface, which is the exact trap the rule
+                        // warns about. `muted-foreground` is guaranteed AA
+                        // text contrast against `--surface-muted`
+                        // (TEXT_SURFACES), so it clears the 3:1 non-text
+                        // minimum with wide margin (measured ~5.3-6.4:1 in
+                        // both themes, unaffected by density) and is already
+                        // the header's own label color. A slim persistent
+                        // `after:` seam (not just a hover reveal) gives the
+                        // real resting boundary; hover/focus widen it to the
+                        // full hit-zone using the same compliant color.
+                        // Dragging keeps the pre-existing full-fill
+                        // `bg-primary` treatment — a separate, already-
+                        // accepted `--ring`/`--primary` light-theme exemption
+                        // (see `.claude/rules/theming.md`), not something
+                        // this fix changes.
+                        header.column.getIsResizing()
+                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-['']"
+                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2",
+                      )}
+                    />
                   )}
                 </th>
               );
@@ -1269,11 +1448,15 @@ function DataTableInner<TData, TValue>(
       >
         {row.getVisibleCells().map((cell, cellIndex) => {
           const geometry = pinnedCellGeometry(cell.column);
+          // #12: same width triad as the header cell — see `resizeWidthStyle`.
+          const resizeStyle = enableColumnResizing
+            ? resizeWidthStyle(cell.column.getSize())
+            : undefined;
           return (
             <td
               key={cell.id}
               data-pinned={geometry?.pinned ?? undefined}
-              style={geometry?.style}
+              style={geometry?.style ?? resizeStyle}
               className={cn(
                 "px-3 py-2 align-middle",
                 // z-10: above the normal (unpositioned) cells it scrolls over,

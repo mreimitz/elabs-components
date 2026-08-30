@@ -61,6 +61,23 @@ paths:
     tabbing to a control in a scrolled-under centre column parks the focus ring behind the
     frozen columns — the browser scrolls to the scrollport edge and knows nothing about
     sticky occluders (WCAG 2.2 SC 2.4.11).
+- **Column resizing (shipped, #12).** `enableColumnResizing` turns on a drag handle at the
+  end of every resizable header cell, wired through TanStack's own `ColumnSizing` feature —
+  the `columnSizing` / `onColumnSizingChange` slice is the SAME controlled/uncontrolled
+  shape as the others, seedable once via `initialView.columnSizing`. Two input paths share
+  one code path on purpose: pointer/touch drags go through TanStack's own
+  `header.getResizeHandler()`, and a keyboard resize (ArrowLeft/ArrowRight on the handle, a
+  WAI-ARIA separator-as-slider) calls `table.setColumnSizing()` — TanStack's own dispatcher —
+  rather than writing internal state directly, so the two input modes can never diverge in
+  controlled/uncontrolled behaviour.
+  - **It already composes with column pinning (#333) — no changes needed on the pinning
+    side.** A pinned column's sticky offset is computed from `column.getSize()` (the SAME
+    accessor resizing writes to), so resizing a pinned or unpinned column that precedes a
+    pinned one updates the frozen offsets for free. The one caveat pinning already
+    documents still applies: a pinned column with no explicit `size` starts at TanStack's
+    default (150) and warns in dev, exactly as before resizing existed.
+  - Resizing is LAYOUT, not a query — like pinning and selection, it never joins
+    `DataTableServerArgs` / `onServerChange`.
 - **Row selection (shipped, #11).** The `rowSelection` / `onRowSelectionChange` slice is
   the SAME controlled/uncontrolled shape as the others, seedable once via
   `initialView.rowSelection`. `enableRowSelection`, `enableMultiRowSelection` and
@@ -98,7 +115,7 @@ paths:
     `DataTableServerArgs` / `onServerChange`.
 - **Saved views (shipped).** A view is the serializable `DataTableViewState`
   snapshot
-  `{ sorting, columnVisibility, columnFilters, globalFilter?, pagination?, columnPinning?, rowSelection? }`.
+  `{ sorting, columnVisibility, columnFilters, globalFilter?, pagination?, columnPinning?, columnSizing?, rowSelection? }`.
   Persist the JSON; rehydrate uncontrolled slices once via the `initialView` prop, or
   keep slices fully controlled in the app and re-pass on remount. Do **not** reach for
   TanStack `initialState` — the component drives every slice through `state`, so an
