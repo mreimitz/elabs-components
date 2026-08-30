@@ -13,6 +13,8 @@ export type PluralCategory = Intl.LDMLPluralRule;
  * A per-count message: one string per plural category, selected at render
  * time via `Intl.PluralRules(locale).select(count)`. Each string still
  * supports the same `{name}`-style interpolation as a plain message.
+ * Note: when passed to `t()`, `count` in `vars` must be a number, not a
+ * numeric string, to select the correct plural category.
  */
 export type PluralMessage = Partial<Record<PluralCategory, string>>;
 

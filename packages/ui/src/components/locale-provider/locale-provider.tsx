@@ -27,7 +27,9 @@ export interface LocaleContextValue {
    * given one) → consumer `messages` → English default → the key itself.
    * Supports simple `{name}`-style variable interpolation, and ICU
    * cardinal-plural forms (`Intl.PluralRules`) when the resolved message is a
-   * `PluralMessage` map and `vars.count` is a number.
+   * `PluralMessage` map and `vars.count` is a number. Note: `count` must be a
+   * number, not a numeric string (e.g., `count: 3`, not `count: "3"`) to select
+   * the correct plural category.
    */
   t: (key: string, vars?: Record<string, string | number>) => string;
   /** Format a number using the active locale. Memoized per locale+opts hash. */

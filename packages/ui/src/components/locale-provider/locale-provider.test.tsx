@@ -385,7 +385,7 @@ describe("LocaleProvider — plural forms (Intl.PluralRules)", () => {
     return <span data-testid="result">{t("fileCount", { count })}</span>;
   }
 
-  it("selects the correct Polish plural category for 1 (one), 2 (few), and 5 (many)", () => {
+  it("selects the correct Polish plural category for 1 (one), 2 (few), 5 (many), 12 (many), and 22 (few) — teens boundary", () => {
     const { rerender } = render(
       <LocaleProvider locale="pl-PL" messages={{ fileCount: PL_FILE_MESSAGE }}>
         <PlPluralReader count={1} />
@@ -406,6 +406,22 @@ describe("LocaleProvider — plural forms (Intl.PluralRules)", () => {
       </LocaleProvider>,
     );
     expect(screen.getByTestId("result").textContent).toBe("5 plików");
+
+    // Polish teens (11–21) always use "many" category, breaking the pattern.
+    // 12 → "many"; 22 → "few" demonstrates this non-contiguous boundary.
+    rerender(
+      <LocaleProvider locale="pl-PL" messages={{ fileCount: PL_FILE_MESSAGE }}>
+        <PlPluralReader count={12} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("result").textContent).toBe("12 plików");
+
+    rerender(
+      <LocaleProvider locale="pl-PL" messages={{ fileCount: PL_FILE_MESSAGE }}>
+        <PlPluralReader count={22} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("result").textContent).toBe("22 pliki");
   });
 
   it("falls back to the 'other' form when a category has no entry", () => {
@@ -418,6 +434,46 @@ describe("LocaleProvider — plural forms (Intl.PluralRules)", () => {
       </LocaleProvider>,
     );
     expect(screen.getByTestId("result").textContent).toBe("2 rzeczy");
+  });
+
+  it("handles locales with zero/two categories (Arabic example)", () => {
+    // Arabic (ar-EG) has categories: zero, one, two, few, many, other.
+    // This test verifies that locales with non-English category sets work
+    // and that partial maps (not providing every category) fall back correctly.
+    const AR_MESSAGE: Record<string, string> = {
+      zero: "{count} ملفات", // zero
+      one: "{count} ملف", // one
+      two: "{count} ملفان", // two
+      few: "{count} ملفات", // few
+      many: "{count} ملف", // many
+      other: "{count} ملف", // other
+    };
+
+    function ArPluralReader({ count }: { count: number }) {
+      const { t } = useLocale();
+      return <span data-testid="result">{t("fileCount", { count })}</span>;
+    }
+
+    const { rerender } = render(
+      <LocaleProvider locale="ar-EG" messages={{ fileCount: AR_MESSAGE }}>
+        <ArPluralReader count={0} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("result").textContent).toBe("0 ملفات");
+
+    rerender(
+      <LocaleProvider locale="ar-EG" messages={{ fileCount: AR_MESSAGE }}>
+        <ArPluralReader count={1} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("result").textContent).toBe("1 ملف");
+
+    rerender(
+      <LocaleProvider locale="ar-EG" messages={{ fileCount: AR_MESSAGE }}>
+        <ArPluralReader count={2} />
+      </LocaleProvider>,
+    );
+    expect(screen.getByTestId("result").textContent).toBe("2 ملفان");
   });
 
   it("the no-provider default value also resolves plural forms (en-US)", () => {
