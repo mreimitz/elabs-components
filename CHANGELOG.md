@@ -19,6 +19,8 @@
   floor (`docs/CONSUMING.md`) supports WOFF2, variable fonts and
   `unicode-range` natively.
 
+## v4.0.0 — 2026-08-17
+
 ### ⚠️ BREAKING: what a consumer has to change
 
 This major renames the scope, removes a package, a theme and three registry
