@@ -46,8 +46,63 @@ const DEFAULT_SILENCE_THRESHOLD = 0.04;
  * cost stays O(barCount) no matter how long the session has run.
  */
 const SMOOTHING_FACTOR = 0.35;
+/** Once every displayed level is within this of its target, the smoothing has
+ * visually converged — stop scheduling more animation frames rather than
+ * looping forever on a static input. */
+const CONVERGENCE_EPSILON = 0.002;
+/**
+ * Hysteresis margin (as a fraction of `silenceThreshold`) around the active/
+ * silent boundary. A live signal hovering right at the threshold can cross it
+ * on consecutive samples; without a dead zone, every such graze would flip
+ * the announced `role="status"` text, flooding assistive tech with
+ * alternating "active"/"no input" announcements. A clear crossing (past the
+ * margin on either side) still flips immediately — only a graze inside the
+ * dead zone holds the previous state.
+ */
+const HYSTERESIS_RATIO = 0.25;
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+/** A finite, rounded, >=2 bar count safe to use as an array length — an
+ * unsanitized `barCount` (NaN, Infinity, a fractional value from a
+ * misconfigured/computed prop) would otherwise throw `RangeError: Invalid
+ * array length` the moment it reaches `new Array(count)`. */
+function normalizeBarCount(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_BAR_COUNT;
+  return Math.max(2, Math.round(value));
+}
+
+/** True once every displayed level is within `CONVERGENCE_EPSILON` of its
+ * target — i.e. the smoothing animation has nothing left to visibly close. */
+function hasConverged(display: number[], target: number[]): boolean {
+  for (let i = 0; i < target.length; i += 1) {
+    if (Math.abs((display[i] ?? 0) - (target[i] ?? 0)) > CONVERGENCE_EPSILON) return false;
+  }
+  return true;
+}
+
+/**
+ * The discretized level bucket, with hysteresis around `silenceThreshold` —
+ * see `HYSTERESIS_RATIO`. `previous` is only consulted inside the dead zone;
+ * a clear reading on either side is decisive regardless of history.
+ */
+function computeLevelBucket(
+  average: number,
+  loading: boolean,
+  silenceThreshold: number,
+  previous: AudioVisualizerLevelState,
+): AudioVisualizerLevelState {
+  if (loading) return "idle";
+  const margin = silenceThreshold * HYSTERESIS_RATIO;
+  if (average >= silenceThreshold + margin) return "active";
+  if (average < silenceThreshold - margin) return "silent";
+  // Inside the dead zone: hold the previous bucket. `previous` starts as
+  // "idle" (mount, or just-exited `loading`), which isn't itself a valid
+  // active/silent reading to hold onto — fall back to the plain threshold
+  // check for that one transition only.
+  if (previous === "idle") return average >= silenceThreshold ? "active" : "silent";
+  return previous;
+}
 
 /** Nearest-neighbor resample of an arbitrary-length sample array to `count`
  * entries, applying `sensitivity` and clamping to [0, 1]. Never allocates
@@ -194,7 +249,7 @@ export const AudioVisualizer = forwardRef<HTMLDivElement, AudioVisualizerProps>(
     // AND a theme change after mount.
     const [themeRevision, setThemeRevision] = useState(0);
 
-    const sampleCount = Math.max(2, barCount);
+    const sampleCount = normalizeBarCount(barCount);
 
     const targetLevels = useMemo(
       () => resampleLevels(loading ? [] : levels, sampleCount, sensitivity),
@@ -212,11 +267,7 @@ export const AudioVisualizer = forwardRef<HTMLDivElement, AudioVisualizerProps>(
       // though the visual bars/wave may still be easing toward it.
       const average =
         targetLevels.reduce((sum, value) => sum + value, 0) / (targetLevels.length || 1);
-      const bucket: AudioVisualizerLevelState = loading
-        ? "idle"
-        : average >= silenceThreshold
-          ? "active"
-          : "silent";
+      const bucket = computeLevelBucket(average, loading, silenceThreshold, bucketRef.current);
       if (bucket !== bucketRef.current) {
         bucketRef.current = bucket;
         setLevelState(bucket);
@@ -252,6 +303,10 @@ export const AudioVisualizer = forwardRef<HTMLDivElement, AudioVisualizerProps>(
         );
         displayLevelsRef.current = next;
         paint(next);
+        // Stop rescheduling once the smoothing has visually converged — the
+        // `targetLevels` dependency above restarts the loop the moment a real
+        // prop change gives it somewhere new to go.
+        if (hasConverged(next, targetLevels)) return;
         rafRef.current = requestAnimationFrame(tick);
       };
 

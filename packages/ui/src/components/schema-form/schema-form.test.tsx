@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SchemaForm } from "./schema-form";
 import {
@@ -195,6 +195,80 @@ describe("SchemaForm — validation (submit) + focus-first-invalid", () => {
       values: expect.objectContaining({ auth: "oauth", clientId: "abc123" }),
     });
   });
+
+  it("strips the INACTIVE tab branch's fields from the submitted values, not just its validation", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(<SchemaForm spec={groupSpec} onSubmit={onSubmit} />);
+    // Type into the API-key branch first, then switch away from it. The role
+    // narrows past the "API key" tab trigger, which shares the visible text.
+    await user.type(screen.getByRole("textbox", { name: /API key/ }), "secret-key");
+    await user.click(screen.getByRole("tab", { name: "OAuth" }));
+    await user.type(screen.getByLabelText(/Client ID/), "abc123");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+    // Exact match (not objectContaining): a stray "apiKey" key left over from
+    // the now-inactive branch would fail this.
+    expect(onSubmit).toHaveBeenCalledWith({
+      formName: "connector",
+      values: { auth: "oauth", clientId: "abc123" },
+    });
+  });
+
+  it("blocks submit and shows an inline error for a file that fails validation (wrong type)", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const badFile = new File(["x"], "creds.exe", { type: "application/x-msdownload" });
+    render(
+      <SchemaForm
+        spec={{
+          formName: "f",
+          fields: [{ type: "file", name: "creds", label: "Credentials", accept: ".json" }],
+        }}
+        values={{ creds: [badFile] }}
+        onSubmit={onSubmit}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getAllByText("This file type isn't accepted.").length).toBeGreaterThan(0);
+  });
+
+  it("auto-reveals a collapsed advanced-group branch that holds the first invalid field, and focuses it", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(
+      <SchemaForm
+        spec={{
+          formName: "f",
+          fields: [
+            {
+              type: "group",
+              name: "advanced",
+              label: "Advanced",
+              variant: "advanced",
+              groups: [
+                {
+                  key: "retry",
+                  label: "Retry policy",
+                  fields: [{ type: "string", name: "apiKey", label: "API key", required: true }],
+                },
+              ],
+            },
+          ],
+        }}
+        onSubmit={onSubmit}
+      />,
+    );
+    // Collapsed by default — the field isn't reachable yet.
+    expect(screen.queryByLabelText(/API key/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByLabelText(/API key/)).toHaveFocus();
+    });
+  });
 });
 
 describe("SchemaForm — submit control a11y (never natively disabled while submitting)", () => {
@@ -217,6 +291,50 @@ describe("SchemaForm — submit control a11y (never natively disabled while subm
     render(<SchemaForm spec={simpleSpec} disabled />);
     expect(screen.getByLabelText(/Name/)).toBeDisabled();
     expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+  });
+});
+
+describe("SchemaForm — spec swap (uncontrolled values)", () => {
+  it("resets uncontrolled internal values when the spec's formName changes", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <SchemaForm spec={{ formName: "a", fields: [{ type: "string", name: "x", label: "X" }] }} />,
+    );
+    await user.type(screen.getByLabelText("X"), "hello");
+    expect(screen.getByLabelText("X")).toHaveValue("hello");
+
+    // A different spec (new formName) that happens to reuse the field name
+    // "x" — without a reset, the stale "hello" would leak into the new spec.
+    rerender(
+      <SchemaForm
+        spec={{ formName: "b", fields: [{ type: "string", name: "x", label: "X (form b)" }] }}
+      />,
+    );
+    expect(screen.getByLabelText("X (form b)")).toHaveValue("");
+  });
+
+  it("does NOT reset values on an ordinary re-render with the SAME formName", async () => {
+    const user = userEvent.setup();
+    const spec = { formName: "a", fields: [{ type: "string" as const, name: "x", label: "X" }] };
+    const { rerender } = render(<SchemaForm spec={spec} />);
+    await user.type(screen.getByLabelText("X"), "hello");
+    // A fresh object with the SAME formName/content (SchemaForm normalizes it
+    // fresh every render) must not be mistaken for a spec swap.
+    rerender(<SchemaForm spec={{ ...spec }} />);
+    expect(screen.getByLabelText("X")).toHaveValue("hello");
+  });
+});
+
+describe("SchemaForm — file field is controlled", () => {
+  it("renders a file seeded via `values` in the picker (not just its own internal state)", () => {
+    const file = new File(["{}"], "creds.json", { type: "application/json" });
+    render(
+      <SchemaForm
+        spec={{ formName: "f", fields: [{ type: "file", name: "creds", label: "Credentials" }] }}
+        values={{ creds: [file] }}
+      />,
+    );
+    expect(screen.getByText("creds.json")).toBeInTheDocument();
   });
 });
 
@@ -285,6 +403,45 @@ describe("schema-form-spec", () => {
   it("findFieldByName resolves a field nested inside a group branch", () => {
     const found = findFieldByName(groupSpec.fields, "clientId");
     expect(found?.name).toBe("clientId");
+  });
+
+  it("normalizeFormSpec drops a nested field whose name collides with an already-accepted one", () => {
+    const result = normalizeFormSpec({
+      formName: "f",
+      fields: [
+        { type: "string", name: "shared" },
+        {
+          type: "group",
+          name: "g",
+          variant: "advanced",
+          groups: [{ key: "a", label: "A", fields: [{ type: "string", name: "shared" }] }],
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.spec.fields).toHaveLength(1);
+      expect(result.spec.fields[0]?.name).toBe("shared");
+    }
+  });
+
+  it("normalizeFormSpec drops a group whose OWN two branches collide with each other", () => {
+    const result = normalizeFormSpec({
+      formName: "f",
+      fields: [
+        {
+          type: "group",
+          name: "g",
+          variant: "advanced",
+          groups: [
+            { key: "a", label: "A", fields: [{ type: "string", name: "dup" }] },
+            { key: "b", label: "B", fields: [{ type: "string", name: "dup" }] },
+          ],
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.spec.fields).toHaveLength(0);
   });
 
   it("validateField enforces the declarative vocabulary", () => {

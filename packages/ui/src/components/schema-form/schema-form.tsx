@@ -40,8 +40,10 @@ import {
   forwardRef,
   use,
   useCallback,
+  useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
   type HTMLAttributes,
@@ -89,6 +91,7 @@ import {
   type FormValue,
   type FormValues,
   type GroupFieldSpec,
+  type GroupItemSpec,
   type NormalizedFormSpec,
 } from "./schema-form-spec";
 
@@ -148,6 +151,26 @@ function effectiveValue(field: FieldSpec, values: FormValues): FormValue {
   return undefined;
 }
 
+/** Remove every field's key (recursively, including nested group branches) from `values`. */
+function stripFields(fields: FieldSpec[], values: FormValues): void {
+  for (const field of fields) {
+    delete values[field.name];
+    if (field.type === "group") {
+      for (const group of field.groups) stripFields(group.fields, values);
+    }
+  }
+}
+
+/** The active branch of a `variant: "tabs"` group, given its own (possibly-just-computed) value. */
+function activeTabBranch(field: GroupFieldSpec, activeKey: FormValue): GroupItemSpec | undefined {
+  const key = typeof activeKey === "string" ? activeKey : undefined;
+  return (
+    field.groups.find((g) => g.key === key) ??
+    field.groups.find((g) => g.key === field.default) ??
+    field.groups[0]
+  );
+}
+
 // ─── Provider ───────────────────────────────────────────────────────────────
 
 export interface SchemaFormProviderProps {
@@ -200,6 +223,23 @@ export function SchemaFormProvider({
   );
   const [attempted, setAttempted] = useState(false);
 
+  // Re-seed the UNCONTROLLED values when the caller swaps in a genuinely
+  // different spec (a different `formName`) — otherwise a parent that
+  // fetches a new spec into the same mounted <SchemaForm> would keep
+  // showing the PREVIOUS spec's typed-in values (and even submit them
+  // under fields the new spec never declared). Keyed on `formName`, not
+  // object identity: `SchemaForm`'s wrapper calls `normalizeFormSpec(spec)`
+  // fresh on every render (unmemoized), so an identity/reference check
+  // would reset on every keystroke. Controlled forms are unaffected — the
+  // caller already owns `values` and decides when to reset them. This is
+  // the "adjust state during render" pattern (not a useEffect) so the reset
+  // is visible in the SAME render as the new spec, with no stale-values frame.
+  const lastFormNameRef = useRef(spec.formName);
+  if (!isControlled && lastFormNameRef.current !== spec.formName) {
+    lastFormNameRef.current = spec.formName;
+    setInternalValues(initialFormValues(spec.fields));
+  }
+
   const resolvedValues = isControlled ? (valuesProp as FormValues) : internalValues;
 
   const setValue = useCallback(
@@ -218,7 +258,23 @@ export function SchemaFormProvider({
       const fill = (fields: FieldSpec[]) => {
         for (const field of fields) {
           merged[field.name] = effectiveValue(field, merged);
-          if (field.type === "group") {
+          if (field.type !== "group") continue;
+          if (field.variant === "tabs") {
+            // Only the ACTIVE branch's fields participate — mirrors
+            // `collectValidatableFields`'s own active-branch resolution, so
+            // what gets validated and what gets submitted agree. The
+            // inactive branch(es) are stripped from `merged` rather than
+            // left as-is: a value typed into "API key" before switching to
+            // "OAuth" must not still ride along (and be treated as valid)
+            // once OAuth is what actually submits.
+            const active = activeTabBranch(field, merged[field.name]);
+            for (const group of field.groups) {
+              if (group === active) fill(group.fields);
+              else stripFields(group.fields, merged);
+            }
+          } else {
+            // `variant: "advanced"` — nothing is mutually exclusive; every
+            // branch is always live.
             for (const group of field.groups) fill(group.fields);
           }
         }
@@ -229,6 +285,20 @@ export function SchemaFormProvider({
     [spec.fields],
   );
 
+  // The field to focus after an invalid submit, applied from a `useEffect`
+  // below rather than synchronously here. `setAttempted(true)` (which is
+  // what makes an error-containing `AdvancedGroup` branch open itself — see
+  // `AdvancedGroupBranch`) and this focus request are dispatched in the same
+  // synchronous call, so React batches them into ONE commit; a synchronous
+  // `document.getElementById(...).focus()` right here would run against the
+  // PRE-update DOM and can never find a control that only exists once the
+  // just-opened disclosure mounts its content. Deferring to an effect lets
+  // it run after React has committed (and Radix has mounted) the newly-open
+  // group. A fresh object on every call (not just the name) guarantees the
+  // effect re-fires even when the SAME field is invalid on consecutive
+  // submit attempts, where a primitive dependency wouldn't change.
+  const [pendingFocus, setPendingFocus] = useState<{ name: string } | null>(null);
+
   const submit = useCallback(() => {
     setAttempted(true);
     const merged = mergedValues(resolvedValues);
@@ -238,14 +308,17 @@ export function SchemaFormProvider({
     if (invalidNames.length > 0) {
       // Focus the first field with an error (a11y: don't leave the user hunting).
       const firstInvalid = collectValidatableFields(spec.fields, merged).find((f) => errs[f.name]);
-      if (firstInvalid && typeof document !== "undefined") {
-        const el = document.getElementById(controlId(formId, firstInvalid.name));
-        el?.focus();
-      }
+      if (firstInvalid) setPendingFocus({ name: firstInvalid.name });
       return;
     }
     onSubmit?.({ formName: spec.formName, values: merged });
-  }, [resolvedValues, mergedValues, spec.fields, spec.formName, formId, onSubmit]);
+  }, [resolvedValues, mergedValues, spec.fields, spec.formName, onSubmit]);
+
+  useEffect(() => {
+    if (!pendingFocus || typeof document === "undefined") return;
+    const el = document.getElementById(controlId(formId, pendingFocus.name));
+    el?.focus();
+  }, [pendingFocus, formId]);
 
   const reset = useCallback(() => {
     setAttempted(false);
@@ -585,14 +658,33 @@ function FileControlList({ field }: { field: Extract<FieldSpec, { type: "file" }
   );
 }
 
+/** A stable per-file id, since `FormValue`'s `File[]` carries no id of its own (unlike `FileUpload`'s own `UploadFile`). */
+function fileIdentity(file: File): string {
+  return `${file.name}-${file.size}-${file.lastModified}`;
+}
+
 function FileControl({
   field,
+  value,
   disabled,
   id,
   labelId,
   describedBy,
   setValue,
 }: FieldControlProps & { field: Extract<FieldSpec, { type: "file" }> }) {
+  // Bind `FileUpload` to the field's OWN value rather than letting it manage
+  // uncontrolled internal state: an externally-seeded `values` prop (a
+  // controlled `SchemaForm`, or a spec swap that reseeds `values`) must show
+  // up in the picker, and `setValue` must stay the single source of truth —
+  // otherwise the picker's internal file list and the form's submitted
+  // `values[field.name]` can silently diverge.
+  const controlledFiles = useMemo(() => {
+    const selected = Array.isArray(value) ? (value as File[]) : [];
+    return selected.map((file) => ({
+      id: fileIdentity(file),
+      file,
+    }));
+  }, [value]);
   return (
     <FileUpload
       id={id}
@@ -608,6 +700,7 @@ function FileControl({
       // below, which renders the oversized file WITH an error item.
       maxFiles={field.multiple ? field.maxFiles : 1}
       disabled={disabled}
+      files={controlledFiles}
       onFilesChange={(list) =>
         setValue(
           field.name,
@@ -663,15 +756,52 @@ function GroupTabsControl({
   );
 }
 
+/** Does any field in this branch (including nested group branches) currently have an error? */
+function branchHasError(fields: FieldSpec[], errors: Record<string, string | null>): boolean {
+  for (const field of fields) {
+    if (errors[field.name]) return true;
+    if (field.type === "group") {
+      for (const group of field.groups) {
+        if (branchHasError(group.fields, errors)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * One `variant: "advanced"` branch. Radix's `CollapsibleContent` UNMOUNTS its
+ * children while closed, so a required field inside a still-collapsed branch
+ * is invisible to both `document.getElementById` (submit's focus step) and
+ * the user — reveal the branch automatically the moment it holds a
+ * validation error. "Controlled with override": the derived open state
+ * (`hasError`) drives the disclosure until the user explicitly toggles it
+ * themselves, at which point their choice takes over for good (an ordinary
+ * disclosure never re-imposes itself over a deliberate user action).
+ */
+function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
+  const { errors } = useSchemaFormContext();
+  const [manualOpen, setManualOpen] = useState<boolean | undefined>(undefined);
+  const open = manualOpen ?? branchHasError(group.fields, errors);
+  return (
+    <AdvancedGroup
+      title={group.label}
+      summary={group.description}
+      open={open}
+      onOpenChange={setManualOpen}
+    >
+      {group.fields.map((child) => (
+        <SchemaFormField key={child.name} name={child.name} />
+      ))}
+    </AdvancedGroup>
+  );
+}
+
 function GroupAdvancedControl({ field }: { field: GroupFieldSpec }) {
   return (
     <div className="flex flex-col gap-3">
       {field.groups.map((group) => (
-        <AdvancedGroup key={group.key} title={group.label} summary={group.description}>
-          {group.fields.map((child) => (
-            <SchemaFormField key={child.name} name={child.name} />
-          ))}
-        </AdvancedGroup>
+        <AdvancedGroupBranch key={group.key} group={group} />
       ))}
     </div>
   );
@@ -903,7 +1033,7 @@ export interface SchemaFormSubmitProps extends Omit<HTMLAttributes<HTMLButtonEle
 export const SchemaFormSubmit = forwardRef<HTMLButtonElement, SchemaFormSubmitProps>(
   function SchemaFormSubmit({ label, className, onClick, ...props }, ref) {
     const { t } = useLocale();
-    const { spec, submitting, submitted, disabled } = useSchemaFormContext();
+    const { spec, submitting, submitted, disabled, loading } = useSchemaFormContext();
 
     if (submitted) {
       return (
@@ -915,11 +1045,17 @@ export const SchemaFormSubmit = forwardRef<HTMLButtonElement, SchemaFormSubmitPr
     }
 
     const text = label ?? spec.submitLabel ?? t("ui.schemaForm.submit");
+    // The spec is still loading (`SchemaFormFields` shows a skeleton, not the
+    // real fields yet) — blocked exactly like `submitting`: transient, so
+    // `aria-disabled` + a handler guard, never the native attribute (see the
+    // module doc comment). Submitting while the fields haven't rendered would
+    // validate/submit whatever placeholder `values` happen to exist.
+    const blocked = submitting || loading;
 
     const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
       // aria-disabled does not block activation the way the native attribute
       // does, so the handler (and SchemaFormRoot's onSubmit) has to.
-      if (submitting) {
+      if (blocked) {
         e.preventDefault();
         return;
       }
@@ -932,10 +1068,10 @@ export const SchemaFormSubmit = forwardRef<HTMLButtonElement, SchemaFormSubmitPr
         type="submit"
         data-slot="schema-form-submit"
         disabled={disabled}
-        aria-disabled={submitting || undefined}
+        aria-disabled={blocked || undefined}
         aria-busy={submitting || undefined}
         onClick={handleClick}
-        className={cn(submitting && "cursor-not-allowed", className)}
+        className={cn(blocked && "cursor-not-allowed", className)}
         {...props}
       >
         {submitting && <Spinner aria-hidden="true" className="text-current" />}
@@ -956,12 +1092,14 @@ export type SchemaFormRootProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmi
 export const SchemaFormRoot = forwardRef<HTMLFormElement, SchemaFormRootProps>(
   function SchemaFormRoot({ className, children, ...props }, ref) {
     const { t } = useLocale();
-    const { submit, headingId, spec, disabled, submitting } = useSchemaFormContext();
+    const { submit, headingId, spec, disabled, submitting, loading } = useSchemaFormContext();
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       // The submit control's `aria-disabled` is a signal, not a lock — this is
-      // the actual guard against a double/blocked submit.
-      if (disabled || submitting) return;
+      // the actual guard against a double/blocked submit. `loading` blocks it
+      // too (see `SchemaFormSubmit`): the fields are still a skeleton, so
+      // there is nothing real to validate/submit yet.
+      if (disabled || submitting || loading) return;
       submit();
     };
     return (

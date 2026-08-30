@@ -836,6 +836,19 @@
 :lang(zh) {
   --font-cjk-sans: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
 }
+/* Traditional Chinese (Taiwan / Hong Kong) - a MORE SPECIFIC override than the
+   bare :lang(zh) above would otherwise resolve to. Per the CSS Selectors
+   spec, :lang(zh) matches ANY language tag starting "zh-" (zh-Hant, zh-TW,
+   zh-HK included), so without this a Traditional-Chinese document would
+   silently inherit the Simplified-oriented stack above. Both selectors carry
+   equal specificity, so placing this block AFTER :lang(zh) is what lets
+   cascade source order resolve it correctly for these three subtags. */
+:lang(zh-Hant),
+:lang(zh-TW),
+:lang(zh-HK) {
+  --font-cjk-sans:
+    "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", sans-serif;
+}
 :lang(ko) {
   --font-cjk-sans:
     "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
