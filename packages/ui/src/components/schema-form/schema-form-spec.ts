@@ -343,6 +343,24 @@ export interface NormalizedFormSpec {
  * it is for `MessageForm`; tightening this is a reasonable follow-up if a
  * consumer streams a spec into SchemaForm.
  */
+/**
+ * Every field `name` in a subtree, INCLUDING inside nested `group` branches
+ * — walked recursively because `values` is one flat object keyed by `name`
+ * regardless of how deep the field that wrote it was nested. Returns the
+ * names in encounter order (NOT de-duplicated) so a caller can detect an
+ * internal collision (two branches of one group both defining the same
+ * field) by comparing its length against a `Set` of itself.
+ */
+function collectFieldNames(fields: FieldSpec[], names: string[] = []): string[] {
+  for (const field of fields) {
+    names.push(field.name);
+    if (field.type === "group") {
+      for (const group of field.groups) collectFieldNames(group.fields, names);
+    }
+  }
+  return names;
+}
+
 export function normalizeFormSpec(
   spec: unknown,
 ): { ok: true; spec: NormalizedFormSpec } | { ok: false; reason: string } {
@@ -357,8 +375,17 @@ export function normalizeFormSpec(
   for (const candidate of rawFields) {
     const parsed = fieldSpecSchema.safeParse(candidate);
     if (!parsed.success) continue; // drop invalid field
-    if (seen.has(parsed.data.name)) continue; // de-dupe by name (last-writer avoided)
-    seen.add(parsed.data.name);
+    // De-dupe by name across the WHOLE tree, not just this loop's own
+    // top-level `name` — a `group` field can nest a branch whose field name
+    // collides with an already-accepted field (top-level or nested), and two
+    // branches of the SAME group can collide with each other. Either case
+    // means two fields write the same `values` key, so the later, colliding
+    // field/group is dropped whole rather than partially merged.
+    const names = collectFieldNames([parsed.data as FieldSpec]);
+    const hasInternalDuplicate = new Set(names).size !== names.length;
+    const collidesWithAccepted = names.some((name) => seen.has(name));
+    if (hasInternalDuplicate || collidesWithAccepted) continue;
+    for (const name of names) seen.add(name);
     fields.push(parsed.data as FieldSpec);
   }
 
@@ -552,6 +579,24 @@ export function validateField(field: FieldSpec, value: FormValue): string | null
       }
       if (field.maxItems !== undefined && items.length > field.maxItems) {
         return `Add at most ${field.maxItems} item${field.maxItems === 1 ? "" : "s"}.`;
+      }
+      return null;
+    }
+    case "file": {
+      // Mirror the immediate, per-file UI check (`checkFileIssue`, used by
+      // `FileControl` while the picker is open) here too — a file that was
+      // wrong-type/too-large is otherwise submittable, because that check was
+      // wired to disable ADDING a file, not to gate submit: a file already
+      // seeded via a controlled `values` prop, or added before an `accept`/
+      // `maxSize` prop changed, never passes back through the picker's own
+      // validation at all.
+      const files = Array.isArray(value) ? (value as File[]) : [];
+      for (const file of files) {
+        const issue = checkFileIssue(file, field);
+        if (issue) return issue.message;
+      }
+      if (field.maxFiles !== undefined && files.length > field.maxFiles) {
+        return `Add at most ${field.maxFiles} file${field.maxFiles === 1 ? "" : "s"}.`;
       }
       return null;
     }

@@ -106,6 +106,94 @@ describe("AudioVisualizer — level announced to assistive tech", () => {
   });
 });
 
+describe("AudioVisualizer — barCount is normalized before it sizes any array (crash guard)", () => {
+  it("does not throw for a NaN barCount", () => {
+    expect(() => render(<AudioVisualizer levels={SPEECH_LEVELS} barCount={NaN} />)).not.toThrow();
+  });
+
+  it("does not throw for an Infinity barCount, and falls back to the default bar count", () => {
+    const fillRect = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      clearRect: vi.fn(),
+      fillRect,
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      fill: vi.fn(),
+      canvas: { width: 320, height: 64 },
+    } as unknown as CanvasRenderingContext2D);
+    expect(() =>
+      render(<AudioVisualizer levels={SPEECH_LEVELS} barCount={Infinity} />),
+    ).not.toThrow();
+    // One `fillRect` per bar (see `drawBars`) — the default bar count, since
+    // `Infinity` cannot size the sample array itself.
+    expect(fillRect).toHaveBeenCalledTimes(32);
+  });
+
+  it("rounds and clamps a fractional/too-small barCount to a safe integer >= 2", () => {
+    const fillRect = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      clearRect: vi.fn(),
+      fillRect,
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      fill: vi.fn(),
+      canvas: { width: 320, height: 64 },
+    } as unknown as CanvasRenderingContext2D);
+    // 0.4 alone would round-clamp to 2 under the OLD `Math.max(2, barCount)`
+    // too (2 > 0.4) — use a fractional count ABOVE 2 so only the fix's
+    // `Math.round` (not the pre-existing floor) makes this non-throwing.
+    render(<AudioVisualizer levels={SPEECH_LEVELS} barCount={5.7} />);
+    expect(fillRect).toHaveBeenCalledTimes(6);
+  });
+});
+
+describe("AudioVisualizer — status hysteresis around the silence threshold (no flapping)", () => {
+  // A uniform-value samples array resamples to that same constant, so the
+  // announced average is exactly the fill value — no need to reason about
+  // `resampleLevels`'s bucketing here. Values are chosen relative to the
+  // DEFAULT_SILENCE_THRESHOLD (0.04) and its ±25% hysteresis margin (0.01):
+  // clearly active (>=0.05), clearly silent (<0.03), and inside the dead
+  // zone [0.03, 0.05).
+  const ACTIVE_LEVELS = Array.from({ length: 8 }, () => 0.06);
+  const SILENT_LEVELS = Array.from({ length: 8 }, () => 0.01);
+  // Below the PLAIN threshold (0.04) but inside the dead zone — a naive
+  // `average >= threshold` check flips this to "silent", so this value locks
+  // the "coming from active, holds active" direction.
+  const DEAD_ZONE_BELOW_PLAIN_THRESHOLD = Array.from({ length: 8 }, () => 0.035);
+  // ABOVE the plain threshold but still inside the dead zone — a naive check
+  // flips this to "active", so this value locks the opposite, "coming from
+  // silent, holds silent" direction.
+  const DEAD_ZONE_ABOVE_PLAIN_THRESHOLD = Array.from({ length: 8 }, () => 0.045);
+
+  it("holds the 'active' status while the level dips into the dead zone, only flipping on a clear crossing", () => {
+    const { rerender } = render(<AudioVisualizer levels={ACTIVE_LEVELS} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Microphone active");
+
+    rerender(<AudioVisualizer levels={DEAD_ZONE_BELOW_PLAIN_THRESHOLD} />);
+    // A graze inside the dead zone must NOT flip the announced status.
+    expect(screen.getByRole("status")).toHaveTextContent("Microphone active");
+
+    rerender(<AudioVisualizer levels={SILENT_LEVELS} />);
+    // A clear crossing past the margin still flips immediately.
+    expect(screen.getByRole("status")).toHaveTextContent("No input detected");
+  });
+
+  it("holds the 'silent' status while the level rises into the dead zone from below", () => {
+    const { rerender } = render(<AudioVisualizer levels={SILENT_LEVELS} />);
+    expect(screen.getByRole("status")).toHaveTextContent("No input detected");
+
+    rerender(<AudioVisualizer levels={DEAD_ZONE_ABOVE_PLAIN_THRESHOLD} />);
+    expect(screen.getByRole("status")).toHaveTextContent("No input detected");
+
+    rerender(<AudioVisualizer levels={ACTIVE_LEVELS} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Microphone active");
+  });
+});
+
 describe("AudioVisualizer — reduced motion (colour is never the only channel either)", () => {
   const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -141,6 +229,43 @@ describe("AudioVisualizer — reduced motion (colour is never the only channel e
     const raf = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(0);
     render(<AudioVisualizer levels={SPEECH_LEVELS} />);
     expect(raf).toHaveBeenCalled();
+  });
+
+  it("stops scheduling further animation frames once the smoothing has converged to the target — never loops forever on a settled signal", () => {
+    mockPrefersReducedMotion(false);
+    const callbacks: FrameRequestCallback[] = [];
+    let nextId = 1;
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      callbacks.push(cb);
+      return nextId++;
+    });
+    vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+
+    // Mount snaps the smoothing buffer straight to its target (see the
+    // component's own "seed/reset" comment), so a rerender with a genuinely
+    // DIFFERENT target is what actually gives the smoothing animation
+    // somewhere to go.
+    const { rerender } = render(<AudioVisualizer levels={QUIET_LEVELS} />);
+    rerender(<AudioVisualizer levels={SPEECH_LEVELS} />);
+
+    const callsBeforeFrames = raf.mock.calls.length;
+    // Manually pump up to 40 animation frames (real smoothing converges in
+    // ~14 at SMOOTHING_FACTOR=0.35 from this large a gap) by always invoking
+    // the MOST RECENTLY scheduled callback — mirroring how a browser would
+    // drive the same recursive `requestAnimationFrame(tick)` chain.
+    for (let i = 0; i < 40; i += 1) {
+      const cb = callbacks[callbacks.length - 1];
+      if (!cb) break;
+      act(() => {
+        cb(0);
+      });
+    }
+
+    const framesActuallyScheduled = raf.mock.calls.length - callsBeforeFrames;
+    // A never-converging loop would have scheduled all 40; the fix stops
+    // well before that once the displayed levels are within epsilon of target.
+    expect(framesActuallyScheduled).toBeGreaterThan(0);
+    expect(framesActuallyScheduled).toBeLessThan(40);
   });
 });
 
