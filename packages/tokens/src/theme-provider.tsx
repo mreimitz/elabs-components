@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -27,6 +28,7 @@ import {
   type ThemeDefinition,
   type ThemeName,
 } from "./theme-types";
+import { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.generated";
 
 interface ThemeContextValue {
   /** The active theme. */
@@ -168,6 +170,88 @@ export interface ThemeProviderProps {
    * backstop continues to track the document root.
    */
   attributeTarget?: HTMLElement | null;
+  /**
+   * Runtime CSS custom-property overrides (#17,
+   * `docs/ADR/0031-runtime-token-overrides.md`), layered OVER the active
+   * `[data-theme]` block as inline properties on `attributeTarget` — for a
+   * multi-tenant/white-label consumer who wants to patch 1-2 brand colors
+   * without authoring a whole theme covering every `THEME_TOKEN_NAMES` entry.
+   *
+   * **Partial, not a replacement.** Only the keys you pass are forced; every
+   * other token keeps coming from the active theme's own CSS block. This is
+   * the point of the mechanism — unlike a hand-authored `[data-theme]` block, a
+   * missing key here does NOT fall through to the neutral `:root` base, it
+   * simply isn't overridden.
+   *
+   * **Keys are validated against `THEME_TOKEN_NAMES`.** A key this package
+   * does not recognize as a theme token is REJECTED (not applied) with a dev
+   * warning — the failure mode this guards against is a typo'd `--foo` that
+   * silently does nothing because nothing in `themes.css` reads it, which
+   * would otherwise look identical to success.
+   *
+   * **Values are ALSO checked, not just keys.** Every `THEME_TOKEN_NAMES`
+   * entry except `--shadow-strength` resolves through a color-typed CSS
+   * property somewhere in `themes.css`, so a value is checked with
+   * `CSS.supports("color", value)` before it is applied; `--shadow-strength`
+   * (a bare multiplier — `themes.css` § ELEVATION RAMP:
+   * `calc(1% * var(--shadow-strength))`) is checked against a numeric CSS
+   * grammar instead, since a plain number is not a valid CSS color. Either
+   * way, a value that fails is REJECTED (not applied) with a dev warning, the
+   * same treatment as an unknown key. This closes the more likely footgun
+   * than a bad key: unlike an unrecognized custom-property NAME, `setProperty`
+   * never rejects an invalid VALUE (custom properties accept any token
+   * stream), so a typo'd color would otherwise silently compute to `unset` at
+   * the point of use — transparent for a `background-color`, inherited for
+   * `color` — and a typo'd `--shadow-strength` would invalidate every
+   * `calc()` that references it, silently zeroing elevation. Where
+   * `CSS.supports` itself is unavailable (some legacy runtimes; also this
+   * package's own jsdom test environment, which does not implement it) a
+   * COLOR value is applied UNCHECKED rather than blocked — this package has
+   * no way to validate it there, and refusing every value on an engine that
+   * can't answer the question would be worse than the risk it's declining to
+   * check. `--shadow-strength`'s grammar check needs no `CSS` global, so it
+   * is always enforced regardless.
+   *
+   * **Reactive, not mount-once.** Every render where this prop's content
+   * changes re-applies it; a key removed between renders has its inline
+   * property cleared so the theme's own value governs again. Overrides
+   * survive a `setTheme` call — they are orthogonal to which theme is active,
+   * which is what makes them useful for a tenant whose accent color must hold
+   * across a light/dark toggle.
+   *
+   * **Cleared when the target changes, and on unmount — RESTORED, not just
+   * deleted.** If `attributeTarget` resolves late (the callback-ref pattern
+   * ADR 0029 documents: `null` on the first render, a real element once the
+   * ref lands), the properties this provider forced on the FIRST target are
+   * put back to whatever they held immediately before this provider touched
+   * them — not simply removed — before anything is written to the new one.
+   * The same restore runs when the provider unmounts, so closing a tenant
+   * theme preview (e.g. an admin settings screen) restores the region to
+   * whatever it carried before the preview, rather than either leaving the
+   * previewed colors on the page OR erasing an unrelated inline value that
+   * happened to occupy the same property first (e.g. the SSR-authored
+   * anti-flash override `docs/CONSUMING.md` §5.2 recommends). Only a property
+   * that was genuinely unset beforehand is removed outright.
+   *
+   * **SSR flashes.** Like every other apply in this provider, this runs in a
+   * `useEffect` — never during server rendering. The first paint (and the
+   * hydration frame) therefore shows the UN-overridden theme; the override
+   * appears one paint later. For a tenant whose brand color must be correct
+   * on the very first paint, emit the same custom properties in server-
+   * rendered `<html>`/`<head>` (a small inline `<style>` or attribute keyed
+   * off the same tenant data) — this prop does not do that for you. See
+   * `docs/CONSUMING.md` § 5.2 and ADR 0031.
+   *
+   * **Uses `CSSStyleDeclaration.setProperty`/`removeProperty`, never
+   * `style.cssText` or a `style="…"` attribute string.** Confirmed against
+   * `docs/csp-policy.json`: a CSP `style-src` directive restricts parsing CSS
+   * text from an HTML `style` attribute or a `<style>` element; it does not
+   * restrict a script calling `setProperty` on the CSSOM directly (that is
+   * gated by `script-src` alone, since a script that can call it already runs
+   * under whatever `script-src` allows). So this needs no NEW CSP relaxation
+   * beyond what `script-src` already grants the app's own bundle.
+   */
+  tokenOverrides?: Partial<Record<ThemeTokenName, string>>;
 }
 
 /**
@@ -279,6 +363,202 @@ function applyDensity(mode: DensityMode, target: HTMLElement | null) {
   else el.setAttribute("data-density", mode);
 }
 
+/** O(1) membership check for `tokenOverrides` key validation. */
+const KNOWN_THEME_TOKEN_NAMES = new Set<string>(THEME_TOKEN_NAMES);
+
+/**
+ * A stable, order-independent string key for a `tokenOverrides` object, so the
+ * apply effect below can depend on CONTENT rather than object identity — an
+ * inline `tokenOverrides={{...}}` literal is a new object on every render, the
+ * same problem `registryKey`/`allowedKey` solve for the theme registry above.
+ *
+ * `JSON.stringify` of the sorted `[key, value]` pairs, not a hand-joined
+ * `"k=v"` string — a delimiter-joined key can collide (`{"--a": "x --b=y"}`
+ * and `{"--a": "x", "--b": "y"}` would otherwise produce the same key).
+ */
+function tokenOverridesKey(overrides: Partial<Record<ThemeTokenName, string>> | undefined): string {
+  if (!overrides) return "";
+  return JSON.stringify(
+    Object.entries(overrides)
+      .filter((entry): entry is [string, string] => entry[1] !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
+/**
+ * `THEME_TOKEN_NAMES` entries whose value is NOT a color — the
+ * `CSS.supports("color", …)` check below only makes sense for the other 129.
+ * `--shadow-strength` is a bare multiplier (`themes.css` § ELEVATION RAMP:
+ * "0 = shadowless"), the one non-color token in the contract; it gets its own
+ * numeric grammar check (`isValidShadowStrengthValue`) instead of being
+ * exempted from validation entirely.
+ */
+const NON_COLOR_TOKEN_NAMES = new Set<string>(["--shadow-strength"]);
+
+/**
+ * A bare CSS `<number>` token — signed, optional fractional part, optional
+ * exponent — the grammar `--shadow-strength` requires, since `themes.css` §
+ * ELEVATION RAMP multiplies it directly: `calc(1% * var(--shadow-strength))`.
+ * A non-numeric value (a typo like `"oops"`) would make every `calc()` that
+ * references it invalid, silently zeroing elevation everywhere.
+ */
+const CSS_NUMBER_RE = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
+
+/**
+ * A `var(--x)` reference — valid syntax for ANY property, color or numeric,
+ * until it resolves (mirrors the `CSS.supports`-based color check below) —
+ * so an intentional alias like `{"--shadow-strength": "var(--some-token)"}`
+ * still validates.
+ */
+const CSS_VAR_REF_RE = /^var\(\s*--[\w-]+\s*(?:,[^)]*)?\)$/i;
+
+/**
+ * Validates `--shadow-strength`'s numeric grammar. `CSS.supports("color", …)`
+ * cannot be reused here — a bare number like `"2"` is not a valid CSS color,
+ * so routing a legitimate multiplier through the color check would reject
+ * it. This check is a plain regex, so (unlike the color branch) it applies
+ * consistently whether or not the `CSS` global/`CSS.supports` exists.
+ */
+function isValidShadowStrengthValue(value: string): boolean {
+  return CSS_NUMBER_RE.test(value) || CSS_VAR_REF_RE.test(value);
+}
+
+/**
+ * Is `value` a plausible value for token `key` — the check `tokenOverrides`
+ * needs on top of key validation (§ `ThemeProviderProps.tokenOverrides`,
+ * "Values are ALSO checked"). `setProperty` never rejects a bad VALUE the way
+ * key validation rejects a bad NAME, but an invalid color computes to `unset`
+ * at the point of use with no signal anything went wrong — this is the
+ * failure mode this closes.
+ *
+ * Uses `CSS.supports("color", value)`, which also accepts `var(--x)` (a
+ * custom-property reference is valid syntax for any property until it's
+ * resolved) — so an intentional alias like `{"--ring": "var(--primary)"}`
+ * (the pattern `.claude/rules/theming.md` recommends for a mirrored token)
+ * still validates.
+ *
+ * Where `CSS.supports` is unavailable — some legacy runtimes, and this
+ * package's own jsdom test environment, which implements no `CSS` global at
+ * all — a COLOR value is treated as valid (unchecked): this package cannot
+ * validate it there, and refusing every override on an engine that can't
+ * answer the question would regress every consumer on that engine from
+ * "unchecked" to "the feature never applies." `--shadow-strength` is exempt
+ * from that fallback — its regex check needs no `CSS` global, so it is
+ * always enforced.
+ */
+function isValidTokenValue(key: string, value: string): boolean {
+  if (NON_COLOR_TOKEN_NAMES.has(key)) return isValidShadowStrengthValue(value);
+  if (typeof CSS === "undefined" || typeof CSS.supports !== "function") return true;
+  return CSS.supports("color", value);
+}
+
+/**
+ * One `tokenOverrides` key this call forced onto `target`, plus a snapshot of
+ * whatever that property held on `target` immediately BEFORE this call —
+ * `prevValue`/`prevPriority` straight from `CSSStyleDeclaration`. Cleanup
+ * restores this snapshot instead of unconditionally deleting the property, so
+ * a pre-existing inline value on the target — a hand-authored `style=` prop,
+ * the SSR-authored anti-flash override `docs/CONSUMING.md` §5.2 recommends,
+ * or (the callback-ref case) unrelated document-level branding another script
+ * put on `document.documentElement` before this ran — survives a mount/target
+ * -change/unmount cycle instead of being erased. `prevValue === ""` means the
+ * property was unset before, so cleanup removes it rather than restoring "".
+ */
+interface AppliedTokenOverrideEntry {
+  key: string;
+  prevValue: string;
+  prevPriority: string;
+}
+
+/**
+ * Applies `tokenOverrides` as inline custom properties on `target` (§
+ * `ThemeProviderProps.tokenOverrides` for the full contract). Returns the
+ * entries actually applied, each carrying the pre-override snapshot cleanup
+ * needs to restore rather than delete (see `AppliedTokenOverrideEntry` and
+ * `clearAppliedTokenOverrides`).
+ *
+ * Unknown keys (not in `THEME_TOKEN_NAMES`) and invalid values (rejected by
+ * `isValidTokenValue`) are REJECTED, not applied: setting an unrecognized
+ * custom property, or one with a syntactically-invalid value, "succeeds" at
+ * the DOM level but does nothing visually (or resolves to `unset`) — silent
+ * failure is exactly what the dev warning here prevents. An empty-string
+ * value is skipped outright: `setProperty(key, "")` actually REMOVES the
+ * property per CSSOM, so applying it would leave nothing to track as
+ * "applied."
+ */
+function applyTokenOverrides(
+  overrides: Partial<Record<ThemeTokenName, string>> | undefined,
+  target: HTMLElement | null,
+): AppliedTokenOverrideEntry[] {
+  const el = target ?? (typeof document !== "undefined" ? document.documentElement : null);
+  if (!el) return [];
+
+  const applied: AppliedTokenOverrideEntry[] = [];
+  for (const [key, value] of Object.entries(overrides ?? {})) {
+    if (value === undefined || value === "") continue;
+    if (!KNOWN_THEME_TOKEN_NAMES.has(key)) {
+      warnDev(
+        `ThemeProvider: tokenOverrides key "${key}" is not one of THEME_TOKEN_NAMES — ` +
+          `ignored (setting it would create a custom property no theme rule reads).`,
+      );
+      continue;
+    }
+    if (!isValidTokenValue(key, value)) {
+      const expectation = NON_COLOR_TOKEN_NAMES.has(key)
+        ? "not a valid CSS number (or var() reference)"
+        : "not a valid CSS color";
+      warnDev(
+        `ThemeProvider: tokenOverrides["${key}"] = "${value}" is ${expectation} — ` +
+          `ignored (it would compute to \`unset\` wherever this token is used).`,
+      );
+      continue;
+    }
+    // Snapshot what this property held BEFORE we overwrite it — the only way
+    // cleanup can tell "nothing was here" from "something else was here" (see
+    // `AppliedTokenOverrideEntry`).
+    const prevValue = el.style.getPropertyValue(key);
+    const prevPriority = el.style.getPropertyPriority(key);
+    // CSSStyleDeclaration.setProperty, never `style.cssText`/a `style="…"`
+    // attribute string — see the CSP note on `ThemeProviderProps.tokenOverrides`.
+    el.style.setProperty(key, value);
+    applied.push({ key, prevValue, prevPriority });
+  }
+
+  return applied;
+}
+
+/**
+ * What `tokenOverrides` last forced, and on which element — tracked so the
+ * effect below can clear exactly those properties from exactly that element,
+ * whether the CONTENT changed, the TARGET changed, or the provider unmounted.
+ */
+interface AppliedTokenOverrides {
+  el: HTMLElement | null;
+  entries: readonly AppliedTokenOverrideEntry[];
+}
+
+/**
+ * Undoes every entry in `applied.entries` on `applied.el` — the single
+ * cleanup primitive shared by a target change and an unmount (§
+ * `ThemeProviderProps.tokenOverrides`, "Cleared when the target changes, and
+ * on unmount"). RESTORES each property to its pre-override snapshot rather
+ * than deleting it outright — an empty `prevValue` means the property was
+ * genuinely unset before, so only that case removes it; otherwise the prior
+ * value/priority is written back verbatim so unrelated inline state (see
+ * `AppliedTokenOverrideEntry`) comes back exactly as it was. A no-op when
+ * nothing has been applied yet.
+ */
+function clearAppliedTokenOverrides(applied: AppliedTokenOverrides): void {
+  if (!applied.el) return;
+  for (const { key, prevValue, prevPriority } of applied.entries) {
+    if (prevValue === "") {
+      applied.el.style.removeProperty(key);
+    } else {
+      applied.el.style.setProperty(key, prevValue, prevPriority);
+    }
+  }
+}
+
 /**
  * Applies a theme by writing `data-theme` onto the target element (the document
  * root by default) and a motion preference via `data-motion-pref`. Persists both
@@ -311,6 +591,7 @@ export function ThemeProvider({
   defaultRegister = DEFAULT_TASTE_REGISTER,
   registerStorageKey = "brand-ui-taste-register",
   attributeTarget = null,
+  tokenOverrides,
 }: ThemeProviderProps) {
   // The themes THIS provider exposes: its registry (ADR 0029), narrowed by
   // `allowedThemes` (#355). BOTH are keyed by VALUE, not identity, so an inline
@@ -439,6 +720,41 @@ export function ThemeProvider({
     applyRegister(initial, attributeTarget);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Apply `tokenOverrides` (#17) — unlike theme/decoration/density/register
+  // above, this is a plain CONTROLLED prop (no internal state, no setter, no
+  // persistence): the consumer already owns the source of truth (e.g. fetched
+  // tenant branding), so the provider's only job is to keep the DOM in sync
+  // with it. Keyed on CONTENT (`tokenOverridesKeyValue`), not the object
+  // reference, so an inline literal doesn't churn the effect every render; runs
+  // on every render where the content or target actually changes — not
+  // mount-once — so it stays reactive to prop changes and survives a
+  // `setTheme` call untouched (overrides are orthogonal to which theme block
+  // is active).
+  //
+  // The effect's cleanup clears exactly what THIS run applied, from exactly
+  // the element it applied it to (`appliedTokenOverridesRef`) — React invokes
+  // that cleanup before the effect re-runs on a dependency change AND on
+  // unmount, so it is the single mechanism behind both fixes below:
+  //   - `attributeTarget` resolving from `null` to a real node (the
+  //     callback-ref pattern in `BringYourOwnThemeDemo`/
+  //     `RuntimeTokenOverridesDemo`) no longer leaves the first run's
+  //     properties stuck on `document.documentElement` — the cleanup removes
+  //     them from THAT element before the next run applies to the new one.
+  //   - Unmounting the provider restores the target to its plain theme
+  //     value instead of leaving the override in place forever.
+  const tokenOverridesKeyValue = tokenOverridesKey(tokenOverrides);
+  const appliedTokenOverridesRef = useRef<AppliedTokenOverrides>({ el: null, entries: [] });
+  useEffect(() => {
+    const el =
+      attributeTarget ?? (typeof document !== "undefined" ? document.documentElement : null);
+    const entries = applyTokenOverrides(tokenOverrides, attributeTarget);
+    appliedTokenOverridesRef.current = { el, entries };
+    return () => {
+      clearAppliedTokenOverrides(appliedTokenOverridesRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenOverridesKeyValue, attributeTarget]);
 
   const setTheme = useCallback(
     (next: ThemeName) => {

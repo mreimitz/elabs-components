@@ -2,14 +2,19 @@
 
 import { createContext, use, useMemo, type ReactNode } from "react";
 import { DirectionProvider } from "@radix-ui/react-direction";
-import { DEFAULT_MESSAGES } from "./messages";
+import { DEFAULT_MESSAGES, type MessageValue, type PluralCategory } from "./messages";
 
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
-/** A flat map of string keys to their translated values. */
-export type Messages = Record<string, string>;
+/**
+ * A flat map of string keys to their translated values — a plain string, or a
+ * `PluralMessage` (one string per ICU cardinal-plural category, e.g.
+ * `{ one: "{count} item", other: "{count} items" }`) for microcopy whose
+ * wording changes with a count. See `PluralMessage` in `./messages`.
+ */
+export type Messages = Record<string, MessageValue>;
 
 export interface LocaleContextValue {
   /** BCP-47 locale tag, e.g. "en-US", "ar-EG", "de-DE". */
@@ -18,8 +23,13 @@ export interface LocaleContextValue {
   dir: "ltr" | "rtl";
   /**
    * Translate a key.
-   * Falls back to: consumer messages → English default → the key itself.
-   * Supports simple `{name}`-style variable interpolation.
+   * Falls back to: an external `translate` resolver (if the provider was
+   * given one) → consumer `messages` → English default → the key itself.
+   * Supports simple `{name}`-style variable interpolation, and ICU
+   * cardinal-plural forms (`Intl.PluralRules`) when the resolved message is a
+   * `PluralMessage` map and `vars.count` is a number. Note: `count` must be a
+   * number, not a numeric string (e.g., `count: 3`, not `count: "3"`) to select
+   * the correct plural category.
    */
   t: (key: string, vars?: Record<string, string | number>) => string;
   /** Format a number using the active locale. Memoized per locale+opts hash. */
@@ -45,18 +55,41 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
   );
 }
 
+/**
+ * Resolve a `MessageValue` (a plain string or a `PluralMessage`) to its final,
+ * interpolated string.
+ *
+ * A `PluralMessage` selects its category via `Intl.PluralRules(locale).select(count)`
+ * when `vars.count` is a number; with no `count`, or when the selected
+ * category has no entry, it falls back to `"other"` (the one category every
+ * locale defines), then to the raw `key` if even `"other"` is missing.
+ */
+function resolveMessage(
+  key: string,
+  template: MessageValue,
+  vars: Record<string, string | number> | undefined,
+  pluralRules: Intl.PluralRules,
+): string {
+  if (typeof template === "string") return interpolate(template, vars);
+  const count = typeof vars?.count === "number" ? vars.count : undefined;
+  const category: PluralCategory = count !== undefined ? pluralRules.select(count) : "other";
+  const form = template[category] ?? template.other ?? key;
+  return interpolate(form, vars);
+}
+
 function makeDefaultValue(): LocaleContextValue {
   const locale = "en-US";
   // Simple cache: one Intl object per serialized opts string
   const numberCache = new Map<string, Intl.NumberFormat>();
   const dateCache = new Map<string, Intl.DateTimeFormat>();
+  const pluralRules = new Intl.PluralRules(locale);
 
   return {
     locale,
     dir: "ltr",
     t(key, vars) {
       const template = DEFAULT_MESSAGES[key] ?? key;
-      return interpolate(template, vars);
+      return resolveMessage(key, template, vars, pluralRules);
     },
     formatNumber(n, opts) {
       const k = JSON.stringify(opts ?? null);
@@ -95,6 +128,21 @@ export interface LocaleProviderProps {
    * to the English bundle.
    */
   messages?: Messages;
+  /**
+   * Optional external resolver — hand brand-ui's microcopy off to an app's own
+   * i18n runtime (next-intl, react-intl, i18next, …) instead of maintaining a
+   * second, flattened message catalogue. Called with the raw key and vars
+   * (not pre-interpolated), so a real ICU formatter gets real values and can
+   * do its own pluralization/number/date formatting.
+   *
+   * Return a string to use it as-is (brand-ui does NOT re-run its own
+   * `{name}` interpolation on it — the app's runtime already formatted it).
+   * Return `undefined`/`null` to decline a key; brand-ui then falls back to
+   * `messages` → `DEFAULT_MESSAGES` → the raw key, in that order — so a
+   * resolver only needs to cover the keys it actually wants to override.
+   * See `docs/I18N.md`.
+   */
+  translate?: (key: string, vars?: Record<string, string | number>) => string | undefined | null;
   children: ReactNode;
 }
 
@@ -118,6 +166,7 @@ export function LocaleProvider({
   locale = "en-US",
   dir = "ltr",
   messages,
+  translate,
   children,
 }: LocaleProviderProps) {
   // Merge consumer messages over the shipped English defaults.
@@ -131,14 +180,20 @@ export function LocaleProvider({
   // Memoized Intl formatter caches — keyed by serialised opts
   const numberCache = useMemo(() => new Map<string, Intl.NumberFormat>(), [locale]);
   const dateCache = useMemo(() => new Map<string, Intl.DateTimeFormat>(), [locale]);
+  const pluralRules = useMemo(() => new Intl.PluralRules(locale), [locale]);
 
   const value = useMemo<LocaleContextValue>(
     () => ({
       locale,
       dir,
       t(key, vars) {
+        // An external runtime (next-intl, react-intl, i18next, …) gets first
+        // say, and its result is used AS-IS — it already interpolated and
+        // pluralized. `undefined`/`null` means "I decline this key".
+        const resolved = translate?.(key, vars);
+        if (resolved != null) return resolved;
         const template = merged[key] ?? key;
-        return interpolate(template, vars);
+        return resolveMessage(key, template, vars, pluralRules);
       },
       formatNumber(n, opts) {
         const k = JSON.stringify(opts ?? null);
@@ -151,7 +206,7 @@ export function LocaleProvider({
         return dateCache.get(k)!.format(d);
       },
     }),
-    [locale, dir, merged, numberCache, dateCache],
+    [locale, dir, merged, numberCache, dateCache, pluralRules, translate],
   );
 
   return (

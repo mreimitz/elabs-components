@@ -1,7 +1,12 @@
 "use client";
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  useLocale,
+} from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
@@ -140,24 +145,24 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
   getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
 };
 
-const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
+const defaultGetThinkingMessage = (
+  isStreaming: boolean,
+  duration: number | undefined,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) => {
   if (isStreaming || duration === 0) {
     return <Shimmer duration={1}>Thinking...</Shimmer>;
   }
   if (duration === undefined) {
-    return <p>Thought for a few seconds</p>;
+    return <p>{t("ai.reasoning.thoughtDefault")}</p>;
   }
   return <p>Thought for {duration} seconds</p>;
 };
 
 export const ReasoningTrigger = memo(
-  ({
-    className,
-    children,
-    getThinkingMessage = defaultGetThinkingMessage,
-    ...props
-  }: ReasoningTriggerProps) => {
+  ({ className, children, getThinkingMessage, ...props }: ReasoningTriggerProps) => {
     const { isStreaming, isOpen, duration } = useReasoning();
+    const { t } = useLocale();
 
     return (
       <CollapsibleTrigger
@@ -170,7 +175,9 @@ export const ReasoningTrigger = memo(
         {children ?? (
           <>
             <BrainIcon className="size-4" />
-            {getThinkingMessage(isStreaming, duration)}
+            {getThinkingMessage
+              ? getThinkingMessage(isStreaming, duration)
+              : defaultGetThinkingMessage(isStreaming, duration, t)}
             <ChevronDownIcon
               className={cn("size-4 transition-transform", isOpen ? "rotate-180" : "rotate-0")}
             />

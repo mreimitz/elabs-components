@@ -21,8 +21,10 @@ the scoring rules, and the synthesizer output contract (③). Conform exactly.
 
 - The **four auditor blocks** (D1–D4 · D5,D8 · D6,D9 · D7).
 - The **evidence pack** (`index.json` / `index.md`) — the shared Measured base.
-- The **baseline** scorecard (last run, else `research/enterprise-gap/03-gap-analysis.md`)
-  — for the trend arrows.
+- The **baseline** scorecard (the last run). The one-shot enterprise-gap gap analysis
+  that used to serve as the first baseline was removed when this fork was debranded, so
+  on a first run there is **no** baseline — score without one and say so, rather than
+  inventing a trend.
 
 ## What you do
 

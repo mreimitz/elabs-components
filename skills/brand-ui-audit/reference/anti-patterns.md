@@ -3,8 +3,9 @@
 Flag these in review. Each maps to a brand-ui fix — a token, a variant, or an
 existing component. Never recommend a raw value.
 
-This catalog harvests the taste-skill's **AI-TELLS** list (WP-15, research
-[`09-taste-adoption.md`](../../../research/enterprise-gap/09-taste-adoption.md)),
+This catalog harvests the taste-skill's **AI-TELLS** list (WP-15; the taste-adoption
+working paper was removed when this fork was debranded — see
+[ADR 0020 — the taste profile](../../../docs/ADR/0020-taste-profile.md)),
 **token-translated**: where the source prescribes a literal (`#000`, `Geist`,
 emerald), we name the brand-ui token/rule instead — **the styling/token rules win
 every conflict.** Many of these are checked deterministically by

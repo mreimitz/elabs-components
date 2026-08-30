@@ -2,6 +2,298 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-tokens` ships an ordered neutral ramp —
+  `--foreground-1..4`, `--border-1..2`, `--surface-1..4` (`text-foreground-*`,
+  `border-border-*`, `bg-surface-*` utilities) — additive alongside the
+  existing semantic slots (`-1`/`-3` alias `--foreground`/`--muted-foreground`
+  and both border rungs alias `--border`/`--border-strong`; `-2`/`-4` on the
+  foreground ramp are new literals) so a dense product UI gets a third/fourth
+  text weight without a new naming scheme. The border ramp is deliberately
+  two rungs, mapped 1:1 onto the existing binary 1.4.11 contract — no "mid"
+  rung, which would have no legitimate role in that contract. Guidance table:
+  `docs/TOKEN_GUIDELINES.md` § "Ordered neutral ramp". (#14)
+- Added: `@elabs-ai/components-tokens` ships a CJK fallback + per-locale seam
+  for `--font-sans`/`--font-display` — a new `--font-cjk-sans` token inserted
+  right after the Latin face, re-pointed by `:lang(zh)`/`:lang(ko)` overrides
+  (default is JP-leaning), plus theme-independent `line-break: strict`
+  (ja/zh) and `word-break: keep-all` (ko) rules. System CJK faces only, no
+  bundled font, no change to the existing per-script Inter `@font-face`
+  subsets. (#15)
+- Fixed: `@elabs-ai/components-ai`'s `AudioVisualizer` `loading` state painted the
+  un-themed `:root` fallback `--primary` instead of the active theme's colour,
+  identically in `light` and `dark` (F1). Root cause: `resolveFillColor` reads
+  `--color-primary`/`--primary` via `getComputedStyle` inside a `useEffect` that
+  paints once and never loops for `loading`/reduced-motion; React runs a child's
+  effects before its parent's, so this ran before `ThemeProvider`'s own mount
+  effect had written `data-theme`, permanently locking in the un-themed read.
+  Fixed by tracking `data-theme` with a `MutationObserver` (the same pattern
+  already shipped in `InteractiveTerminal`) and re-running the paint once the
+  attribute lands or later changes, so both the first paint and a runtime theme
+  switch resolve the live token.
+- Added: `@elabs-ai/components-ai` ships `AudioVisualizer` — a canvas-drawn mic-level
+  / waveform meter (`variant="bars"|"wave"`) for voice input, plus the opt-in
+  `useAudioLevel(stream)` hook for the `AnalyserNode` plumbing. Presentation-only
+  per D5: it never calls `getUserMedia` or owns an `AudioContext` on its own —
+  it renders whatever `levels` a parent that already has a stream passes it.
+  Level is readable from bar/wave HEIGHT, never colour alone; a throttled
+  `role="status"` text alternative reports "Microphone active" / "No input
+  detected" / "Microphone not connected" (`loading`) for a canvas that stays
+  `aria-hidden`. Under `prefers-reduced-motion` it skips its internal smoothing
+  animation and paints a static bar chart of the current levels instead of
+  freezing mid-interpolation. (#21)
+- Added: `@elabs-ai/components-ui` ships `SchemaForm` — a spec-driven
+  configuration-form renderer for developer-authored forms (connector
+  settings, environment variables, an auth-method picker): describe a form as
+  a serializable `FormSpec`, render it, receive `{ formName, values }` on
+  submit. Adds four field types beyond the chat-scoped `MessageForm` this
+  library already ships (`@elabs-ai/components-ai`): `list` (→ `ListEditor`),
+  `key-value` (→ `KeyValueEditor`), `file` (→ `FileUpload`, with designed
+  no-file/wrong-type/too-large states), and `group` (mutually-exclusive
+  `variant: "tabs"` or always-visible `variant: "advanced"` disclosures, both
+  → existing primitives, both recursive). Deliberately a NEW, separate schema
+  rather than a generalization of `MessageForm`'s `fieldSpecSchema` — that
+  schema is intentionally restricted to the safe, flat-scalar vocabulary an
+  LLM tool-call may emit inside a chat message (no file input, no
+  password/credential format); `SchemaForm`'s spec is developer-authored and
+  carries a different trust boundary, so the two stay separate rather than
+  smuggling `file`/`group` into the chat-safe union. Compound + lifted-state
+  (`SchemaFormProvider`/`SchemaFormRoot`/`SchemaFormFields`/`SchemaFormField`/
+  `SchemaFormSubmit`, plus the `SchemaForm` convenience composition),
+  controlled or uncontrolled, never throws (a malformed/empty spec renders
+  `SchemaFormFallback`). The submit control is never natively `disabled` while
+  transiently blocked (submitting) — `aria-disabled` + a click/submit handler
+  guard, so a keyboard user is never dropped from the tab order right after
+  they activate it; an explicit, caller-set `disabled` (the whole form is
+  read-only) stays native, since that is a deliberate, durable state rather
+  than a transient auto-flip. (#22)
+- Fixed: `@elabs-ai/components-ui`'s `FileUploadList` gave its `<ul>` an
+  explicit `role="status"`, which overrides the element's implicit `list`
+  role and strips `listitem` from every `FileUploadItem` (`<li>`) inside it —
+  an axe `listitem` violation the moment the list holds a file. `aria-live`
+  alone already announces additions/removals without a role change, so the
+  `role="status"` is removed and the native list semantics are kept. Found
+  while building `SchemaForm`'s file field. (#22)
+- Fixed: the shadcn registry had no hosted endpoint, so the documented
+  `npx shadcn add <url>/<item>.json` command didn't resolve against anything —
+  `docs/REGISTRY_GUIDELINES.md` said so outright, reasoning from "the repo is
+  private", which stopped being true when the repo went public. The registry
+  is now built and published to GitHub Pages on every release
+  (`.github/workflows/release.yml`'s `publish-registry` job,
+  `scripts/publish-registry-pages.mjs`), at a versioned path
+  (`r/<version>/<item>.json`) plus a moving `r/latest/<item>.json` alias, and
+  `pnpm registry:published:check` gates that every published item stays
+  reachable. GitHub Pages itself still needs a one-time, maintainer-only
+  toggle (Settings → Pages → "Deploy from a branch" → `gh-pages` → `/(root)`)
+  before the hosted URLs resolve for real. (#31)
+- Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
+  a side-by-side 2-4 column surface for comparing multiple model responses to
+  the same prompt, each column with independent streaming status and scroll
+  position, an opt-in `syncScroll` prop that proportionally mirrors scroll
+  across columns, per-column `MessageFeedback` composability, and a responsive
+  collapse to a tab strip under the `md` breakpoint. (#23)
+- Fixed: every published package README said "these packages are **private**"
+  and `License: UNLICENSED — private`, with a `workspace:*` install snippet —
+  stale from before the public npm move. `scripts/gen-package-readmes.mjs` now
+  derives the license and install command from each package's own
+  `package.json` (all 12 distributable packages are `MIT`, published
+  anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
+  `brand-ui-migrate` skill agree with reality. (#28)
+- Fixed: 32 hardcoded English strings across `@elabs-ai/components-ui`,
+  `@elabs-ai/components-ai` and `@elabs-ai/components-data` now go through
+  `useLocale().t()` instead of a literal, per ADR 0017 — several of them
+  sr-only (`BreadcrumbEllipsis`'s "More", `PaginationEllipsis`'s "More pages",
+  `ArtifactClose`'s "Close", `PlanTrigger`'s "Toggle plan"), so a
+  `<LocaleProvider>` consumer no longer sees English leak through those
+  controls' accessible names. Reused the existing generic `more` / `previous` /
+  `next` / `close` keys where an exact match existed; minted namespaced keys
+  for the rest. `pnpm microcopy:check`'s ratchet moves from 177 to 145 known
+  strings. (#18)
+- Fixed: `StatePanel kind="error"`'s "Error" eyebrow painted the destructive
+  **fill** rung (`text-destructive`) as 12px running text on the panel's own
+  `bg-destructive/5` wash — the fill rung's contract is only the WCAG 1.4.11
+  ≥3:1 mark bar, not the ≥4.5:1 text floor, and it measured 4.34:1 in `light`.
+  Moved the eyebrow to the on-surface ink rung (`text-destructive-text`,
+  ≥4.5:1) and its raw `text-xs` to the `meta` role; the destructive **icon**
+  deliberately keeps `text-destructive` (it is a mark, not text). Fixes
+  `StatePanel`'s `error`/`error-custom` stories and the deprecated `ErrorState`
+  wrapper that renders through it. (#40)
+- Fixed: `.claude/hooks/close-issues-delegation-nudge.sh`'s SERIAL clause measured
+  "largest parallel batch" by maxing over per-JSONL-record `tool_use` counts —
+  since Claude Code writes one record per `tool_use` block, all sharing one
+  `message.id`, that value was bounded at 1 by construction and the clause fired
+  on every `/close-issues` run regardless of what the run actually did. Now
+  groups Agent/Task dispatches by `message.id` (the real turn) before taking the
+  max; a record with no `message.id` is treated as its own singleton so id-less
+  records can't collapse into one phantom-inflated batch. Rebuilt the self-test's
+  fixtures to the real on-disk shape (N records sharing one `message.id`, not one
+  record with N `tool_use` blocks) and added a locking regression test, verified
+  against a real transcript. (#55)
+
+### Changed
+
+- **`@elabs-ai/components-tokens`: Inter now ships as WOFF2, subset by script** (#16).
+  The vendored Inter face was still `.woff` (~30% larger than `.woff2` for
+  identical content), while Source Code Pro in the same package was already
+  `.woff2`. The old file was also a single unsubsetted binary covering Latin,
+  Latin Extended, Cyrillic, Cyrillic Extended, Greek and Vietnamese, so the fix
+  is not a same-shape swap: Inter is now vendored as 14 `.woff2` files (7
+  `unicode-range` subsets × {normal, italic}), matching upstream
+  `@fontsource-variable/inter`'s own subsetting, so a browser only fetches the
+  script(s) the rendered text actually needs. Combined on-disk size drops from
+  957,168 B to 452,780 B (−52.6%); a Latin-only page now loads ~100 KB
+  (−89.5%). The `.woff` fallback is dropped, matching Source Code Pro's
+  existing no-fallback precedent — every browser in this repo's documented
+  floor (`docs/CONSUMING.md`) supports WOFF2, variable fonts and
+  `unicode-range` natively.
+- **`LocaleProvider` gains cardinal-plural messages and a pluggable
+  `translate` resolver bridge (#19).** A `messages`/`DEFAULT_MESSAGES` entry
+  may now be a `PluralMessage` (one string per `Intl.PluralRules` category —
+  `one`/`few`/`many`/`other`/…), selected automatically from a `count` var —
+  dependency-free, via the `Intl.PluralRules` API already built into every
+  target runtime. `LocaleProvider` also accepts an optional
+  `translate?: (key, vars) => string | undefined | null` prop so an app
+  already running its own i18n runtime (next-intl, react-intl, i18next, …) can
+  hand brand-ui that runtime's own translator instead of maintaining a second
+  message catalogue; returning `undefined`/`null` falls through to `messages`
+  then `DEFAULT_MESSAGES` then the raw key exactly as before. Fully backward
+  compatible — no resolver and no plural messages behaves identically to
+  today. See [`docs/I18N.md`](docs/I18N.md).
+- **Added:** `DataTable` row selection (#11) — a controlled/uncontrolled
+  `rowSelection` slice (`onRowSelectionChange`, `enableRowSelection`,
+  `enableMultiRowSelection`, `getRowId`), seedable via
+  `initialView.rowSelection`, plus a ready-made `createSelectionColumn()`
+  checkbox column (header select-all with `indeterminate`, per-row checkbox)
+  in `@elabs-ai/components-data`.
+- **Added:** `DataTable` column resizing (#12) — `enableColumnResizing` adds a
+  drag handle to every resizable header cell, operable by pointer/touch
+  (TanStack's own resize handler) or keyboard (a WAI-ARIA separator-as-slider,
+  ArrowLeft/ArrowRight in 10px steps). The resulting `columnSizing` is the
+  SAME controlled/uncontrolled shape as the other slices
+  (`onColumnSizingChange`, `columnResizeMode`, seedable via
+  `initialView.columnSizing`) and composes with column pinning (#333) for
+  free — a pinned column's sticky offset already reads `column.getSize()` —
+  in `@elabs-ai/components-data`.
+
+### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
+
+`@elabs-ai/components-ai` peered on `"ai": "^6.0.0"` while the published AI SDK had
+moved to the 7.x line, so a fresh install in a consuming app hit an unresolvable
+peer conflict. The peer now reads `"ai": "^6.0.0 || ^7.0.0"` — a non-breaking
+widening, not a version bump — verified by compiling this package's source
+against both a real `ai@6.0.0` install and `ai@7.0.85` with zero type errors.
+`ai` is also now declared `peerDependenciesMeta: { "ai": { "optional": true } }`,
+since only 12 of 51 source files import from it and every import is `import type`.
+**Consumer-visible trade-off:** this also turns off npm/pnpm's peer auto-install
+for anyone who never adds `ai` to their own `package.json` — most consumers of
+this package, since the common case is importing `Message`/`Tool`/`Context`
+without separately declaring the SDK. Before this change, a bare install
+resolved a compatible `ai` for you; now it does not, and you may need to add
+`"ai": "^6.0.0 || ^7.0.0"` to your own dependencies to get one installed. A
+genuinely incompatible `ai` you already have installed still correctly fails
+with `ERESOLVE` — this only removes the free ride when `ai` is absent.
+
+`ai@7` restructured two pieces of the type surface this package renders, and the
+fix reads the shape that is present in **both** majors:
+
+- `Tool.description` can now be a string **or** a function of the live call
+  context (`(options) => string`), for a per-call dynamic description.
+  `AgentTool` has no call context to invoke that function with, so it now
+  renders the description only when it is a plain string.
+- `LanguageModelUsage`'s deprecated flat `reasoningTokens` /
+  `cachedInputTokens` fields (kept in `ai@6` for back-compat, removed in
+  `ai@7`) are no longer read; the values live at
+  `outputTokenDetails.reasoningTokens` and `inputTokenDetails.cacheReadTokens`
+  in both majors, which `ContextReasoningUsage` and `ContextCacheUsage` now
+  read directly.
+
+Every import from `ai` in this package remains `import type` only — the
+types-only, peer-never-runtime contract (D6) is unaffected;
+`pnpm ai:types-only` stays green.
+
+**Node note:** `ai@7.0.85` declares `engines.node: >=22`; this repo's own
+toolchain (and CI) stays pinned to Node 20, unaffected by this change. A
+consumer choosing `ai@7` on Node 20 will see an engine-mismatch warning from
+npm/pnpm (non-fatal, since `engine-strict` is off by default) rather than an
+install failure; `ai@6` has no such requirement (`>=18`). See ADR 0008's
+Amendment for the full writeup, including why the peer widened instead of
+re-pinning.
+
+**Migrating a consumer:** no action needed — both `ai@6` and `ai@7` continue to
+work alongside `@elabs-ai/components-ai`.
+
+- **`@elabs-ai/components-tokens`** — `ThemeProvider` accepts `tokenOverrides`, a
+  runtime patch of individual `--token` values (inline custom properties) layered
+  over the active theme — for a multi-tenant/white-label consumer who wants to
+  change 1-2 brand colors without authoring a full theme. Both the token key
+  (against `THEME_TOKEN_NAMES`) and the value (via `CSS.supports`) are validated
+  before being applied, and overrides are cleared automatically when the target
+  element changes or the provider unmounts. See `docs/CONSUMING.md` § 5.2 and
+  ADR 0031. (#17)
+
+### `@elabs-ai/components-ai`
+
+- **`MarkdownView` and `MessageResponse` accept `components`/`plugins`
+  overrides, MERGED per key over the internal defaults (#10).** A consumer
+  entry wins per key (e.g. override `a` to render an `InlineCitation` chip for
+  a `[1](url)`-style marker); every element type / plugin slot the consumer
+  does not set still renders through the internal Prose\* map and the
+  brand-token-derived plugin set. `MessageResponse`'s `plugins` prop
+  previously REPLACED the internal set wholesale instead of merging — aligned
+  to the same per-key merge as `MarkdownView` in the same fix round. The
+  narrow `plugins` prop cannot displace Streamdown's default `rehypePlugins`
+  chain (`rehype-raw` → `rehype-sanitize` → `rehype-harden`); the broader
+  `rehypePlugins`/`remarkPlugins` passthrough both components also expose
+  (inherited from Streamdown) **can**, and doing so can remove sanitisation
+  entirely — tracked separately as **#36 (P1, unfixed)**. See the `plugins`
+  prop TSDoc on `MarkdownView` for the full breakdown of which of the five
+  plugin slots run before vs. after sanitisation.
+- **`@elabs-ai/components-ui` ships seven token-driven state illustrations** —
+  `EmptyListIllustration`, `NoResultsIllustration`, `NoAccessIllustration`,
+  `ErrorIllustration`, `OfflineIllustration`, `SuccessIllustration`,
+  `FirstRunIllustration` (`packages/ui/src/illustrations`) — and `StatePanel`
+  gains an `illustration` prop that renders one above the title in place of the
+  smaller, size-clamped `icon` slot. Every illustration draws its subject in
+  `currentColor` plus one meaning-bearing accent (`--primary-text` by default;
+  `--success-text` on `SuccessIllustration`, `--destructive` on
+  `ErrorIllustration`) that follows a `--illustration-accent` custom property
+  `StatePanel` retints to `--destructive` for any illustration placed in a
+  `kind="error"` slot. Is `aria-hidden` (decorative; the panel's title/
+  description carry the accessible content), and sizes in `rem` (~4rem–10rem).
+  See issue #24. Fix round 1 (accent contrast, error-slot tint, optical-size/
+  stroke consistency, and the `ErrorIllustration`/`OfflineIllustration`
+  redesigns) is tracked in the same issue.
+- fix(tokens): darken `--success-text`/`--info-text`/`--destructive-text`/`--warning-text`
+  in `light` and `:root` so colored status text also clears WCAG AA 4.5:1 against its own
+  `bg-<tone>/10` wash (not just the bare surface) — the pairing `StatusBadge`, inline
+  citations, the editor entity chip and the `trend-badge` registry block actually render.
+  Adds a `WASH_SURFACES` contrast sweep (`packages/tokens/src/themes-contrast.test.ts`) and
+  a compositing helper (`mixOverSrgb`/`contrastSrgb` in `color-contrast.ts`) so this class of
+  gap is locked going forward. `dark` was already compliant and is unchanged (#38).
+  - **Fix round (independent review):** the sweep above still missed `--secondary`/`--muted`
+    as wash hosts, so the four `-text` tokens measured ~4.36–4.39:1 (sub-AA) there. Widened
+    `WASH_SURFACES`/`TEXT_SURFACES` to include `--muted` and `--secondary` and darkened the
+    four tokens a second time. A live-browser `getComputedStyle` re-measurement (real
+    Chromium oklch compositing, not the deterministic Vitest math) then found the
+    Vitest-passing values (`0.511`/`0.488`/`0.518`/`0.497`) still landed at ~4.47–4.48:1 in
+    practice — the two models disagree by roughly half a percent near the AA line, most
+    likely oklch-to-sRGB gamut handling on these high-chroma hues. Darkened once more
+    (`0.496`/`0.473`/`0.503`/`0.482`) and re-verified live in both themes: all 40
+    tone × surface × theme pairings now clear ≥4.5:1 in a real browser (worst case
+    `destructive` on `light`'s `--secondary`, 4.6666:1). `apps/e2e/reports/theme-aa-audit.md`
+    regenerated to match.
+  - **a11y-baseline review finding:** the same commit had silently added 7 real axe
+    violations to `scripts/a11y-baseline.json` alongside the token retune.
+    `charts-funnelchart--default` did not reproduce on a fresh 3× re-measurement and was
+    dropped (ceiling 110 → 109). The other 6 are real and stay exempted, each now traceable
+    to a filed issue instead of a bare ratchet entry: `states-errorstate--default`,
+    `states-statepanel--error`, `states-statepanel--error-custom` → pre-existing #40
+    (StatePanel error-eyebrow contrast); `layout-app-shell-mail--default`,
+    `layout-app-shell-mail--density-comparison` → new #49 (`SidebarInput`/`Input` inherits
+    ambient `text-sidebar-foreground` instead of its own `text-foreground` — typed search
+    text is ~1.1:1 in `light`); `layout-app-shell-double-sided--default` → new #50
+    (`sidebar-05`'s sub-item description uses `text-muted-foreground` on `bg-sidebar`
+    instead of `text-sidebar-muted-foreground`, ~2.29:1 in `light`).
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change
@@ -888,8 +1180,9 @@ package from the release set are both removals, and removals ship in a major
 
 **Nothing was deleted.** The `[data-theme="blueprint"]` CSS block, its DTCG
 token file and the whole package directory stay on disk untouched. Pause is
-reversible; un-pausing is the maintainer's call
-(`.claude/rules/paused-surfaces.md`).
+reversible; un-pausing is the maintainer's call. (As of `v4.0.0` this pause was
+superseded by a full removal — see "The blueprint theme and its drawing
+package are gone" below.)
 
 **Migrating a consumer:**
 
@@ -944,8 +1237,10 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
 
 - **The `blueprint` theme and `@elabs-ai/components-blueprint` are
   PAUSED — kept as source, out of everything else.** Blueprint was always an
-  experimental/testing surface; it is now frozen on the maintainer's call
-  (`.claude/rules/paused-surfaces.md`). **Breaking for anyone who selected it:**
+  experimental/testing surface; it is now frozen on the maintainer's call.
+  (As of `v4.0.0` this pause was superseded by a full removal — see "The
+  blueprint theme and its drawing package are gone" below.) **Breaking for
+  anyone who selected it:**
   `THEMES` and `THEME_META` ship two themes (`light`, `dark`), so
   `ThemeName` narrows accordingly and a persisted `"blueprint"` preference is
   rejected on boot instead of applied. The theme's `[data-theme="blueprint"]`

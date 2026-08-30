@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@elabs-ai/components-ui";
 import { Badge } from "@elabs-ai/components-ui";
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Tool } from "ai";
 import { BotIcon } from "lucide-react";
@@ -51,24 +52,32 @@ export type AgentInstructionsProps = ComponentProps<"div"> & {
 };
 
 export const AgentInstructions = memo(
-  ({ className, children, ...props }: AgentInstructionsProps) => (
-    <div className={cn("space-y-2", className)} {...props}>
-      <span className="font-medium text-muted-foreground text-sm">Instructions</span>
-      <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
-        <p>{children}</p>
+  ({ className, children, ...props }: AgentInstructionsProps) => {
+    const { t } = useLocale();
+    return (
+      <div className={cn("space-y-2", className)} {...props}>
+        <span className="font-medium text-muted-foreground text-sm">
+          {t("ai.agent.instructions")}
+        </span>
+        <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
+          <p>{children}</p>
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 );
 
 export type AgentToolsProps = ComponentProps<typeof Accordion>;
 
-export const AgentTools = memo(({ className, ...props }: AgentToolsProps) => (
-  <div className={cn("space-y-2", className)}>
-    <span className="font-medium text-muted-foreground text-sm">Tools</span>
-    <Accordion className="rounded-md border" {...props} />
-  </div>
-));
+export const AgentTools = memo(({ className, ...props }: AgentToolsProps) => {
+  const { t } = useLocale();
+  return (
+    <div className={cn("space-y-2", className)}>
+      <span className="font-medium text-muted-foreground text-sm">{t("ai.agent.tools")}</span>
+      <Accordion className="rounded-md border" {...props} />
+    </div>
+  );
+});
 
 export type AgentToolProps = ComponentProps<typeof AccordionItem> & {
   tool: Tool;
@@ -76,11 +85,16 @@ export type AgentToolProps = ComponentProps<typeof AccordionItem> & {
 
 export const AgentTool = memo(({ className, tool, value, ...props }: AgentToolProps) => {
   const schema = "jsonSchema" in tool && tool.jsonSchema ? tool.jsonSchema : tool.inputSchema;
+  // `tool.description` may be a fixed string OR (ai@7+) a function of the live
+  // call context (`(options) => string`) for a per-call dynamic description.
+  // AgentTool renders a static list, so it has no call context to invoke that
+  // function with — show it only when it is already a plain string.
+  const description = typeof tool.description === "string" ? tool.description : undefined;
 
   return (
     <AccordionItem className={cn("border-b last:border-b-0", className)} value={value} {...props}>
       <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-        {tool.description ?? "No description"}
+        {description ?? "No description"}
       </AccordionTrigger>
       <AccordionContent className="px-3 pb-3">
         <div className="rounded-md bg-muted/50">

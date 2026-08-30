@@ -4,8 +4,9 @@
  *
  * @elabs-ai/components-tokens ships its faces rather than pulling a CDN at runtime, so a
  * consumer gets correct typography with no network dependency and no CSP hole.
- * Inter was vendored by hand; this script does the same job
- * reproducibly for the remaining faces and can re-run to add weights.
+ * Inter was originally vendored by hand as `.woff`; this script now vendors it
+ * (as `.woff2`) the same reproducible way as the other faces, and can re-run
+ * to add weights or families.
  *
  * WHY: `light` / `dark` (the DEFAULT themes) ask for Source Code Pro as their
  * mono, but only Storybook ever loaded it — from Google Fonts, with a comment
@@ -28,8 +29,71 @@ import { fileURLToPath } from "node:url";
 const FONTS_DIR = join(dirname(dirname(fileURLToPath(import.meta.url))), "src", "fonts");
 const CDN = "https://cdn.jsdelivr.net/npm";
 
-/** Weights match what apps/docs/.storybook/preview.css used to fetch. */
-const FAMILIES = [{ pkg: "source-code-pro", dir: "source-code-pro", weights: [400, 500, 600] }];
+/**
+ * Font families to vendor. Two source-file shapes, since a fixed-weight face
+ * and a variable font aren't named the same way upstream:
+ *
+ *  - `weights` — @fontsource's fixed-weight naming, one file per weight:
+ *    `${pkg}-latin-${w}-normal.woff2`. Weights match what
+ *    apps/docs/.storybook/preview.css used to fetch (Source Code Pro).
+ *  - `files` — an explicit src→dest map, for a variable font whose upstream
+ *    package (`@fontsource-variable/<pkg>`) splits each style into SEVEN
+ *    per-script unicode-range subsets (latin, latin-ext, cyrillic,
+ *    cyrillic-ext, greek, greek-ext, vietnamese) instead of one file per
+ *    weight. Issue #16 was scoped as "swap the one Inter file for its woff2
+ *    equivalent", but the previously hand-vendored `Inter-Variable.woff`
+ *    carries all of these scripts in a single unsubsetted file (verified via
+ *    `fontTools` cmap inspection — Latin, Latin Extended, Cyrillic, Cyrillic
+ *    Extended, Greek and Vietnamese combining marks all present, 2849 glyphs).
+ *    Vendoring only the "latin" file would silently drop the rest, so all
+ *    seven subsets are vendored per style (14 files) and declared as 14
+ *    separate `@font-face` blocks in themes.css, each scoped by
+ *    `unicode-range` — the standard web-font subsetting pattern, and the
+ *    reason the *combined* size still comes out well under the original
+ *    single file (see themes.css for the measured before/after). `dest`
+ *    names follow this repo's `Inter(-Italic)-Variable-<subset>.woff2`
+ *    convention rather than upstream's own filenames.
+ */
+const FAMILIES = [
+  {
+    pkg: "source-code-pro",
+    scope: "@fontsource",
+    dir: "source-code-pro",
+    weights: [400, 500, 600],
+  },
+  {
+    pkg: "inter",
+    scope: "@fontsource-variable",
+    dir: "inter",
+    files: [
+      // normal
+      { src: "inter-latin-wght-normal.woff2", dest: "Inter-Variable-latin.woff2" },
+      { src: "inter-latin-ext-wght-normal.woff2", dest: "Inter-Variable-latin-ext.woff2" },
+      { src: "inter-cyrillic-wght-normal.woff2", dest: "Inter-Variable-cyrillic.woff2" },
+      { src: "inter-cyrillic-ext-wght-normal.woff2", dest: "Inter-Variable-cyrillic-ext.woff2" },
+      { src: "inter-greek-wght-normal.woff2", dest: "Inter-Variable-greek.woff2" },
+      { src: "inter-greek-ext-wght-normal.woff2", dest: "Inter-Variable-greek-ext.woff2" },
+      { src: "inter-vietnamese-wght-normal.woff2", dest: "Inter-Variable-vietnamese.woff2" },
+      // italic
+      { src: "inter-latin-wght-italic.woff2", dest: "Inter-Italic-Variable-latin.woff2" },
+      { src: "inter-latin-ext-wght-italic.woff2", dest: "Inter-Italic-Variable-latin-ext.woff2" },
+      { src: "inter-cyrillic-wght-italic.woff2", dest: "Inter-Italic-Variable-cyrillic.woff2" },
+      {
+        src: "inter-cyrillic-ext-wght-italic.woff2",
+        dest: "Inter-Italic-Variable-cyrillic-ext.woff2",
+      },
+      { src: "inter-greek-wght-italic.woff2", dest: "Inter-Italic-Variable-greek.woff2" },
+      {
+        src: "inter-greek-ext-wght-italic.woff2",
+        dest: "Inter-Italic-Variable-greek-ext.woff2",
+      },
+      {
+        src: "inter-vietnamese-wght-italic.woff2",
+        dest: "Inter-Italic-Variable-vietnamese.woff2",
+      },
+    ],
+  },
+];
 
 const WOFF2_MAGIC = "wOF2";
 const force = process.argv.includes("--force");
@@ -58,15 +122,16 @@ async function fetchTo(url, dest, { binary }) {
   console.log(`  vendor ${dest.slice(FONTS_DIR.length + 1)} (${buf.length} bytes)`);
 }
 
-for (const { pkg, dir, weights } of FAMILIES) {
+for (const { pkg, scope, dir, weights, files } of FAMILIES) {
   console.log(`${pkg}:`);
-  for (const w of weights) {
-    const file = `${pkg}-latin-${w}-normal.woff2`;
-    await fetchTo(`${CDN}/@fontsource/${pkg}@5/files/${file}`, join(FONTS_DIR, dir, file), {
+  const sourceFiles =
+    files ?? weights.map((w) => ({ src: `${pkg}-latin-${w}-normal.woff2`, dest: null }));
+  for (const { src, dest } of sourceFiles) {
+    await fetchTo(`${CDN}/${scope}/${pkg}@5/files/${src}`, join(FONTS_DIR, dir, dest ?? src), {
       binary: true,
     });
   }
-  await fetchTo(`${CDN}/@fontsource/${pkg}@5/LICENSE`, join(FONTS_DIR, dir, "OFL.txt"), {
+  await fetchTo(`${CDN}/${scope}/${pkg}@5/LICENSE`, join(FONTS_DIR, dir, "OFL.txt"), {
     binary: false,
   });
 }

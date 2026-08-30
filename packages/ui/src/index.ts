@@ -64,6 +64,10 @@ export {
   type StreamdownTranslationKey,
   type StreamdownTranslationMap,
 } from "./lib/streamdown-translations";
+// Empty/error/success/etc. state illustrations for StatePanel's `illustration`
+// slot (#24) — token-driven line art, kept alongside the utilities above
+// because it lives outside the folder-per-component `./components/` tree.
+export * from "./illustrations";
 
 // Components
 export * from "./components/accordion";
@@ -136,6 +140,7 @@ export * from "./components/radio-group";
 export * from "./components/rating";
 export * from "./components/resizable";
 export * from "./components/reveal";
+export * from "./components/schema-form";
 export * from "./components/scroll-area";
 export * from "./components/section-header";
 export * from "./components/segmented-field";

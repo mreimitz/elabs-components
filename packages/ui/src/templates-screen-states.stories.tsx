@@ -14,8 +14,8 @@
  *   • Error     — StatePanel kind="error" with a retry action (role="alert").
  *   • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA.
  *
- * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all
- * three themes. Verify with globals=theme:<slug>.
+ * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in
+ * every theme. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Inbox, Plus, RotateCcw, Search, UploadCloud, UserPlus } from "lucide-react";
@@ -273,7 +273,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'One representative data screen (Customers) rendered across the FULL state grid — Ready, Loading, Empty, Error, FirstRun — with the same chrome and the real state primitives (Table, Skeleton, StatePanel kind="empty"|"error"). This is the design-first state grid that the Patterns/Templates examples omit. Semantic tokens only; reads in all three themes.',
+          'One representative data screen (Customers) rendered across the FULL state grid — Ready, Loading, Empty, Error, FirstRun — with the same chrome and the real state primitives (Table, Skeleton, StatePanel kind="empty"|"error"). This is the design-first state grid that the Patterns/Templates examples omit. Semantic tokens only; reads in every theme.',
       },
     },
   },

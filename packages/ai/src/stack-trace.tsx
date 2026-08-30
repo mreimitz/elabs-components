@@ -3,6 +3,7 @@
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import { Button } from "@elabs-ai/components-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { AlertTriangleIcon, CheckIcon, ChevronDownIcon, CopyIcon } from "lucide-react";
 import type { ComponentProps } from "react";
@@ -426,6 +427,7 @@ FilePathButton.displayName = "FilePathButton";
 export const StackTraceFrames = memo(
   ({ className, showInternalFrames = true, ...props }: StackTraceFramesProps) => {
     const { trace, onFilePathClick } = useStackTrace();
+    const { t } = useLocale();
 
     const framesToShow = showInternalFrames
       ? trace.frames
@@ -460,7 +462,7 @@ export const StackTraceFrames = memo(
           </div>
         ))}
         {framesToShow.length === 0 && (
-          <div className="text-muted-foreground text-xs">No stack frames</div>
+          <div className="text-muted-foreground text-xs">{t("ai.stackTrace.empty")}</div>
         )}
       </div>
     );

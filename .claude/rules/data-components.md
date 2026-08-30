@@ -12,8 +12,9 @@ paths:
   (`useReactTable`) with core/sorted/filtered row models, optional client
   pagination, optional row virtualization, and an opt-in server-side data model.
   Every slice (sorting / columnVisibility / columnFilters / globalFilter /
-  pagination / columnPinning) is independently controllable; uncontrolled slices
-  are managed internally and can be seeded once via `initialView`.
+  pagination / columnPinning / rowSelection) is independently controllable;
+  uncontrolled slices are managed internally and can be seeded once via
+  `initialView`.
 - **Toolbar via render-prop.** `DataTable`'s `toolbar={(table) => …}` hands the
   instance to `SearchInput`, `FacetFilter` and `ColumnPicker` so filtering and
   column visibility drive the same table. Don't fork table state.
@@ -60,9 +61,61 @@ paths:
     tabbing to a control in a scrolled-under centre column parks the focus ring behind the
     frozen columns — the browser scrolls to the scrollport edge and knows nothing about
     sticky occluders (WCAG 2.2 SC 2.4.11).
+- **Column resizing (shipped, #12).** `enableColumnResizing` turns on a drag handle at the
+  end of every resizable header cell, wired through TanStack's own `ColumnSizing` feature —
+  the `columnSizing` / `onColumnSizingChange` slice is the SAME controlled/uncontrolled
+  shape as the others, seedable once via `initialView.columnSizing`. Two input paths share
+  one code path on purpose: pointer/touch drags go through TanStack's own
+  `header.getResizeHandler()`, and a keyboard resize (ArrowLeft/ArrowRight on the handle, a
+  WAI-ARIA separator-as-slider) calls `table.setColumnSizing()` — TanStack's own dispatcher —
+  rather than writing internal state directly, so the two input modes can never diverge in
+  controlled/uncontrolled behaviour.
+  - **It already composes with column pinning (#333) — no changes needed on the pinning
+    side.** A pinned column's sticky offset is computed from `column.getSize()` (the SAME
+    accessor resizing writes to), so resizing a pinned or unpinned column that precedes a
+    pinned one updates the frozen offsets for free. The one caveat pinning already
+    documents still applies: a pinned column with no explicit `size` starts at TanStack's
+    default (150) and warns in dev, exactly as before resizing existed.
+  - Resizing is LAYOUT, not a query — like pinning and selection, it never joins
+    `DataTableServerArgs` / `onServerChange`.
+- **Row selection (shipped, #11).** The `rowSelection` / `onRowSelectionChange` slice is
+  the SAME controlled/uncontrolled shape as the others, seedable once via
+  `initialView.rowSelection`. `enableRowSelection`, `enableMultiRowSelection` and
+  `getRowId` pass straight through to `useReactTable`.
+  - **`getRowId` protects against a `data` array REPLACEMENT, not a sort/filter
+    (corrected — the original prose here overclaimed).** TanStack's default row
+    id is assigned ONCE per row object when the core row model is built, then
+    reused by reference through sorting/filtering — a client-side sort or
+    filter never disturbs selection identity, with or without `getRowId`. The
+    real hazard is a `data` array replaced with NEW object references (a
+    re-fetch, an optimistic update): the core row model rebuilds and
+    reassigns default (index-based) ids from scratch, so a row that moved
+    position silently inherits whatever selection belonged to the id now
+    sitting at its old index. This is unavoidable under `manualPagination` —
+    each page IS a fresh `data` array, so the default id restarts at `0` per
+    page and a selection can collide across pages. Supply `getRowId` whenever
+    `data` can be replaced with new object references (every server-paginated
+    table, in particular). A dev-only warning fires when `rowSelection` looks
+    wired up under `manualPagination` with no `getRowId` (#11 I3).
+  - **`createSelectionColumn<TData>()`** returns a ready-made checkbox column
+    (header select-all with a real `indeterminate` state for a partial page
+    selection, plus a per-row checkbox) built on `@elabs-ai/components-ui`'s
+    `Checkbox` — never hand-roll one. It declares an explicit `size` so it plays
+    nicely if pinned (#333's dev warning stays silent). Under
+    `enableMultiRowSelection={false}` the header renders nothing: TanStack's
+    `toggleAllPageRowsSelected` wipes-then-sets per row when multi-select is
+    off, so a select-all click would otherwise leave only the LAST row selected
+    and pin the header at `indeterminate` forever (#11 C1). Each row checkbox's
+    accessible name is derived from the row's own first DATA column (skipping
+    a non-accessor column like the selection checkbox itself), so screen-reader
+    users hear "Select Alpha", not an identical "Select row" on every checkbox
+    (#11 I4) — the same "first data cell" lookup the row-activation name
+    (#337) uses, so a leading selection column can't degrade either one.
+  - Selection is LAYOUT/UI, not a query — like `columnPinning`, it never joins
+    `DataTableServerArgs` / `onServerChange`.
 - **Saved views (shipped).** A view is the serializable `DataTableViewState`
   snapshot
-  `{ sorting, columnVisibility, columnFilters, globalFilter?, pagination?, columnPinning? }`.
+  `{ sorting, columnVisibility, columnFilters, globalFilter?, pagination?, columnPinning?, columnSizing?, rowSelection? }`.
   Persist the JSON; rehydrate uncontrolled slices once via the `initialView` prop, or
   keep slices fully controlled in the app and re-pass on remount. Do **not** reach for
   TanStack `initialState` — the component drives every slice through `state`, so an

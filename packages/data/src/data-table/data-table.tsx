@@ -12,16 +12,18 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type ColumnPinningState,
+  type ColumnSizingState,
   type OnChangeFn,
   type PaginationState,
   type Row,
+  type RowSelectionState,
   type SortingState,
   type Table as TanstackTable,
   type VisibilityState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { Button, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
+import { Button, Checkbox, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -39,6 +41,17 @@ export interface DataTableViewState {
    * that already constructs a `DataTableViewState` literal.
    */
   columnPinning?: ColumnPinningState;
+  /**
+   * Which rows are checked (#11), keyed by row id — see `getRowId`. OPTIONAL
+   * like `columnPinning`, for the same reason: the other members predate it.
+   */
+  rowSelection?: RowSelectionState;
+  /**
+   * Per-column widths after resizing (#12), keyed by column id. OPTIONAL like
+   * `columnPinning`/`rowSelection`, for the same reason: the other members
+   * predate it.
+   */
+  columnSizing?: ColumnSizingState;
 }
 
 /**
@@ -134,6 +147,83 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   columnPinning?: ColumnPinningState;
   onColumnPinningChange?: OnChangeFn<ColumnPinningState>;
+
+  /**
+   * Opt in to column resizing (#12): a drag handle renders on every
+   * resizable column's trailing edge — pointer-draggable (TanStack's own
+   * `header.getResizeHandler()`) and keyboard-operable (ArrowLeft/ArrowRight
+   * on the focused handle, per the WAI-ARIA separator-as-slider practice).
+   * Default `false` so a table that doesn't opt in renders byte-identical
+   * markup to before this feature existed — no handle, no per-cell width
+   * styling.
+   */
+  enableColumnResizing?: boolean;
+  /**
+   * When `columnSizing` updates: `"onChange"` (default here — TanStack's own
+   * default is `"onEnd"`) live-updates while dragging; `"onEnd"` updates once
+   * on release. Only meaningful when `enableColumnResizing` is set.
+   */
+  columnResizeMode?: "onChange" | "onEnd";
+  /**
+   * Controlled column-widths state (#12), keyed by column id — the SAME
+   * controlled/uncontrolled shape as `columnPinning`/`rowSelection`.
+   * Uncontrolled sizing can be seeded once via `initialView.columnSizing`.
+   *
+   * A pinned column's sticky offset (`getStart("left")`/`getAfter("right")`)
+   * already sums `column.getSize()`, which folds in a `columnSizing`
+   * override automatically — so pinning and resizing compose with no extra
+   * wiring once this state reaches the table.
+   *
+   * Sizing is a LAYOUT concern, like `columnPinning`/`rowSelection` — it is
+   * client-only and never joins `DataTableServerArgs` / `onServerChange`.
+   */
+  columnSizing?: ColumnSizingState;
+  onColumnSizingChange?: OnChangeFn<ColumnSizingState>;
+
+  /**
+   * Controlled row-selection state (#11) — which rows are checked, keyed by
+   * row id (see `getRowId`). When provided the component is
+   * selection-controlled; otherwise it manages the slice internally and can
+   * be seeded once via `initialView.rowSelection`. Pair it with a selection
+   * column built by `createSelectionColumn` (or drive it yourself off the
+   * `table` instance handed to `toolbar`).
+   *
+   * Selection is a LAYOUT/UI concern, not a query concern — like
+   * `columnPinning`, it is client-only and never joins `DataTableServerArgs` /
+   * `onServerChange`.
+   */
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  /**
+   * Which rows can be selected: `true`/`false` for all rows, or a predicate
+   * evaluated per row. Passed straight through to `useReactTable`. Default
+   * (TanStack's own): `true`.
+   */
+  enableRowSelection?: boolean | ((row: Row<TData>) => boolean);
+  /**
+   * Allow more than one row to be selected at once. Default (TanStack's own):
+   * `true`. Set `false` for single-select (radio-style) behaviour.
+   */
+  enableMultiRowSelection?: boolean;
+  /**
+   * Stable row id, independent of row INDEX. TanStack's default id is set
+   * ONCE per row object when the core row model is built, then reused by
+   * reference through sorting/filtering — so a client-side sort or filter
+   * does NOT disturb selection identity even without this prop. The real
+   * hazard is a `data` array replacement: when the app passes NEW object
+   * references (a re-fetch, an optimistic update), TanStack rebuilds the
+   * core row model from scratch and reassigns default (index-based) ids, so a
+   * row that kept its position but got a new object still keeps its
+   * selection — but one that MOVED position silently inherits whatever
+   * selection belonged to the id now sitting at its old index. This is
+   * unavoidable under `manualPagination`: each page IS a fresh `data` array,
+   * so the default index-based id restarts at `0` on every page and a
+   * selection made on one page can collide with a different record on the
+   * next. Supply `getRowId` whenever `data` can be replaced with new object
+   * references (including every server-paginated table) so identity survives
+   * the replacement instead of falling back to index.
+   */
+  getRowId?: (row: TData, index: number) => string;
 
   /**
    * One-shot rehydrate for uncontrolled slices only (ignored for any slice
@@ -328,6 +418,124 @@ function unsizedColumnIds<TData, TValue>(defs: readonly ColumnDef<TData, TValue>
   return out;
 }
 
+// ─── Column resizing (#12) ────────────────────────────────────────────────────
+
+/**
+ * Explicit width/min/max triad for one column at its CURRENT size.
+ *
+ * The table is auto-layout (see the note on `pinnedCellGeometry` below), so
+ * without an explicit width an unpinned column is pure browser auto-layout —
+ * `column.getSize()` can change (via a drag or a keyboard resize) with
+ * nothing rendering differently. A pinned cell already gets this triad from
+ * `pinnedCellGeometry`'s own `style`; this is the same triad for the
+ * UNPINNED case, so every call site can compute it once and use it in both
+ * the pinned-or-not branches (`geometry?.style ?? resizeWidthStyle(size)`).
+ * Every call site gates this behind `enableColumnResizing`, so a table that
+ * doesn't opt in renders byte-identical markup to before this feature
+ * existed.
+ */
+function resizeWidthStyle(size: number): React.CSSProperties {
+  return { width: size, minWidth: size, maxWidth: size };
+}
+
+// ─── Row-selection column (#11) ──────────────────────────────────────────────
+//
+// `flexRender` mounts a function `header`/`cell` as a real React component
+// (`React.createElement(Comp, props)`, not a bare function call — see
+// `@tanstack/react-table`'s `flexRender`), so these are ordinary components:
+// hooks (`useLocale`) are safe inside them.
+
+/**
+ * The row's own "primary identifier" — the first visible DATA column's value,
+ * skipping display columns that carry no `accessorKey`/`accessorFn` (e.g. a
+ * leading `createSelectionColumn()` checkbox, or a decorative avatar column).
+ * `column.accessorFn` is public TanStack API, populated for any
+ * `accessorKey`/`accessorFn` column and `undefined` for a pure display column
+ * (`core/column.ts`) — so this is a reliable "is this a data column" test.
+ * Shared by `rowActionName` (#337) and the selection column's per-row
+ * accessible name (#11 I4/I6), so a leading selection column can't silently
+ * degrade either one to its generic fallback.
+ */
+function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
+  for (const cell of row.getVisibleCells()) {
+    if (!cell.column.accessorFn) continue;
+    const value = cell.getValue();
+    if (typeof value === "string" && value.trim() !== "") return value;
+    if (typeof value === "number") return String(value);
+  }
+  return undefined;
+}
+
+/**
+ * Select-all header cell. Radix `Checkbox` renders a genuinely distinct
+ * `indeterminate` glyph + `aria-checked="mixed"` for a partial page
+ * selection (see `checkbox.tsx`), so the visual and the accessible state
+ * agree without any extra wiring here.
+ */
+function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) {
+  const { t } = useLocale();
+  const allSelected = table.getIsAllPageRowsSelected();
+  const someSelected = table.getIsSomePageRowsSelected();
+  return (
+    <Checkbox
+      data-slot="data-table-select-all"
+      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+      onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)}
+      aria-label={t("data.table.selectAllRows")}
+    />
+  );
+}
+
+/**
+ * Per-row checkbox cell — disabled when `enableRowSelection` excludes the
+ * row. Names each checkbox from the row's own data (#11 I4) instead of the
+ * identical generic label every row previously shared, using the same
+ * "first data cell" lookup `rowActionName` (#337) already uses.
+ */
+function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
+  const { t } = useLocale();
+  const name = firstDataCellValue(row);
+  return (
+    <Checkbox
+      data-slot="data-table-select-cell"
+      checked={row.getIsSelected()}
+      disabled={!row.getCanSelect()}
+      onCheckedChange={(checked) => row.toggleSelected(checked === true)}
+      aria-label={name ? t("data.table.selectRowNamed", { name }) : t("data.table.selectRow")}
+    />
+  );
+}
+
+/**
+ * Ready-made checkbox selection column (#11): header select-all (with a real
+ * `indeterminate` state for a partial page selection) + a per-row checkbox,
+ * both built on `@elabs-ai/components-ui`'s `Checkbox` — never hand-roll one.
+ *
+ * Add it to `columns` and pair it with `rowSelection` / `onRowSelectionChange`
+ * (or leave both uncontrolled and read `table.getSelectedRowModel()` from a
+ * `toolbar` render-prop to build a bulk-action bar).
+ *
+ * Declares an explicit `size` (40px) so it plays nicely if a caller pins it —
+ * every pinned column must declare one (#333) — without the dev warning.
+ */
+export function createSelectionColumn<TData>(): ColumnDef<TData> {
+  return {
+    id: "select",
+    size: 40,
+    enableSorting: false,
+    enableHiding: false,
+    header: ({ table }) =>
+      // #11 C1: `toggleAllPageRowsSelected` wipes-then-sets on every row when
+      // `enableMultiRowSelection` is off (TanStack's `mutateRowIsSelected`), so
+      // a select-all header under single-select leaves only the LAST row
+      // selected and pins the header at indeterminate forever. Suppress it.
+      table.options.enableMultiRowSelection === false ? null : (
+        <SelectAllHeaderCell table={table} />
+      ),
+    cell: ({ row }) => <SelectRowCell row={row} />,
+  };
+}
+
 // ─── Component (inner, generic) ───────────────────────────────────────────────
 
 /**
@@ -368,6 +576,15 @@ function DataTableInner<TData, TValue>(
     onPaginationChange: onPaginationChangeProp,
     columnPinning: columnPinningProp,
     onColumnPinningChange: onColumnPinningChangeProp,
+    enableColumnResizing = false,
+    columnResizeMode = "onChange",
+    columnSizing: columnSizingProp,
+    onColumnSizingChange: onColumnSizingChangeProp,
+    rowSelection: rowSelectionProp,
+    onRowSelectionChange: onRowSelectionChangeProp,
+    enableRowSelection,
+    enableMultiRowSelection,
+    getRowId,
 
     // Saved views rehydration
     initialView,
@@ -403,7 +620,13 @@ function DataTableInner<TData, TValue>(
 ) {
   // Component microcopy goes through the locale seam (ADR 0017) — a screen-reader
   // user in a non-English locale has no workaround for a hardcoded accessible name.
-  const { t } = useLocale();
+  // `dir` also drives column-resize direction below (#12 review, P1): the resize
+  // handle already sits at the column's logical `end` edge (`end-0`, which
+  // Tailwind's logical properties flip to the physical LEFT under RTL), so both
+  // TanStack's own pointer-drag math and the hand-rolled keyboard path must be
+  // told the active direction too, or dragging/pressing an arrow moves the width
+  // opposite the visible boundary.
+  const { t, dir } = useLocale();
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
   const isSortingControlled = sortingProp !== undefined;
@@ -412,6 +635,8 @@ function DataTableInner<TData, TValue>(
   const isPaginationControlled = paginationProp !== undefined;
   const isFilterControlled = globalFilterProp !== undefined;
   const isColumnPinningControlled = columnPinningProp !== undefined;
+  const isColumnSizingControlled = columnSizingProp !== undefined;
+  const isRowSelectionControlled = rowSelectionProp !== undefined;
 
   // ── Internal state (only drives a slice when uncontrolled) ───────────────
   const [internalSorting, setInternalSorting] = useState<SortingState>(
@@ -436,6 +661,12 @@ function DataTableInner<TData, TValue>(
   const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>(
     () => initialView?.columnPinning ?? { left: [], right: [] },
   );
+  const [internalColumnSizing, setInternalColumnSizing] = useState<ColumnSizingState>(
+    () => initialView?.columnSizing ?? {},
+  );
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>(
+    () => initialView?.rowSelection ?? {},
+  );
 
   // ── Resolved state (controlled wins over internal) ───────────────────────
   const sorting = isSortingControlled ? sortingProp : internalSorting;
@@ -446,6 +677,8 @@ function DataTableInner<TData, TValue>(
   const pagination = isPaginationControlled ? paginationProp : internalPagination;
   const globalFilter = isFilterControlled ? globalFilterProp : internalGlobalFilter;
   const columnPinning = isColumnPinningControlled ? columnPinningProp : internalColumnPinning;
+  const columnSizing = isColumnSizingControlled ? columnSizingProp : internalColumnSizing;
+  const rowSelection = isRowSelectionControlled ? rowSelectionProp : internalRowSelection;
 
   // ── Refs for post-change server callback ─────────────────────────────────
   // We need the current values of ALL slices when any one fires; use refs to
@@ -462,6 +695,10 @@ function DataTableInner<TData, TValue>(
   columnVisibilityRef.current = columnVisibility;
   const columnPinningRef = useRef(columnPinning);
   columnPinningRef.current = columnPinning;
+  const columnSizingRef = useRef(columnSizing);
+  columnSizingRef.current = columnSizing;
+  const rowSelectionRef = useRef(rowSelection);
+  rowSelectionRef.current = rowSelection;
 
   // ── Dev-only guard: manualPagination needs a total to compute page count ──
   // Without `rowCount` (or `pageCount`), TanStack's `getPageCount()` falls back
@@ -485,6 +722,35 @@ function DataTableInner<TData, TValue>(
       );
     }
   }, [manualPagination, rowCount, pageCount]);
+
+  // ── Dev-only guard: manualPagination + rowSelection with no getRowId ──────
+  // Under `manualPagination` each page IS a fresh `data` array, so TanStack's
+  // default index-based row id restarts at `0` on every page — a selection
+  // made on page 1's row 0 can silently apply to page 2's row 0 too (#11 I3).
+  // Warn once per mount so this footgun is diagnosable instead of silent (same
+  // idiom as the #227 warning above). Heuristic, not full usage tracing: fires
+  // whenever selection LOOKS wired up (controlled, or a change handler was
+  // passed) — it cannot see an uncontrolled table that never renders a
+  // selection column at all.
+  const warnedManualSelectionRef = useRef(false);
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "production" &&
+      manualPagination &&
+      getRowId === undefined &&
+      (isRowSelectionControlled || onRowSelectionChangeProp !== undefined) &&
+      !warnedManualSelectionRef.current
+    ) {
+      warnedManualSelectionRef.current = true;
+      console.warn(
+        "[DataTable] `rowSelection` is wired up under `manualPagination` with no `getRowId` " +
+          "— each page is a fresh `data` array, so the default index-based id restarts at " +
+          '"0" per page and a selection made on one page can silently apply to a different ' +
+          "record on the next. Pass `getRowId` so selection is keyed to a stable identity " +
+          "instead of position.",
+      );
+    }
+  }, [manualPagination, getRowId, isRowSelectionControlled, onRowSelectionChangeProp]);
 
   /** Fire onServerChange with the LATEST slice values (post-update). */
   function fireServerChange(overrides: Partial<DataTableServerArgs> = {}) {
@@ -526,6 +792,16 @@ function DataTableInner<TData, TValue>(
   ): ColumnPinningState {
     return typeof updater === "function" ? updater(columnPinningRef.current) : updater;
   }
+  function resolveColumnSizing(
+    updater: Parameters<OnChangeFn<ColumnSizingState>>[0],
+  ): ColumnSizingState {
+    return typeof updater === "function" ? updater(columnSizingRef.current) : updater;
+  }
+  function resolveRowSelection(
+    updater: Parameters<OnChangeFn<RowSelectionState>>[0],
+  ): RowSelectionState {
+    return typeof updater === "function" ? updater(rowSelectionRef.current) : updater;
+  }
 
   // ── Row models — omit client model for manual slices ─────────────────────
   const sortedRowModel = manualSorting ? {} : { getSortedRowModel: getSortedRowModel() };
@@ -542,7 +818,16 @@ function DataTableInner<TData, TValue>(
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnVisibility, columnFilters, globalFilter, pagination, columnPinning },
+    state: {
+      sorting,
+      columnVisibility,
+      columnFilters,
+      globalFilter,
+      pagination,
+      columnPinning,
+      columnSizing,
+      rowSelection,
+    },
 
     // Sorting
     onSortingChange: (updater) => {
@@ -604,6 +889,40 @@ function DataTableInner<TData, TValue>(
       if (!isColumnPinningControlled) setInternalColumnPinning(next);
       onColumnPinningChangeProp?.(updater);
     },
+
+    // Column resizing (#12) — a LAYOUT slice, like column pinning: a column's
+    // width changes nothing the server would need to re-query, so this never
+    // fires onServerChange either. Routed through by BOTH the pointer path
+    // (TanStack's own `header.getResizeHandler()`, wired below) and the
+    // keyboard path (`handleResizeKeyDown`, via `table.setColumnSizing`) so
+    // the two input modes can never diverge in controlled/uncontrolled
+    // behaviour.
+    columnResizeMode,
+    // RTL fix (#12 review, P1): TanStack's pointer-drag math hardcodes LTR
+    // unless told otherwise — `deltaDirection = columnResizeDirection ===
+    // 'rtl' ? -1 : 1` internally — so under `dir="rtl"` (the resize handle's
+    // own edge already flips via `end-0`, see the `useLocale()` call above)
+    // dragging would otherwise move the column's width opposite the visible
+    // boundary. `handleResizeKeyDown` below mirrors this for the keyboard path.
+    columnResizeDirection: dir,
+    enableColumnResizing,
+    onColumnSizingChange: (updater) => {
+      const next = resolveColumnSizing(updater);
+      if (!isColumnSizingControlled) setInternalColumnSizing(next);
+      onColumnSizingChangeProp?.(updater);
+    },
+
+    // Row selection (#11) — also a LAYOUT/UI slice, so it never fires
+    // onServerChange: which rows are checked changes nothing the server
+    // would need to re-query.
+    onRowSelectionChange: (updater) => {
+      const next = resolveRowSelection(updater);
+      if (!isRowSelectionControlled) setInternalRowSelection(next);
+      onRowSelectionChangeProp?.(updater);
+    },
+    enableRowSelection,
+    enableMultiRowSelection,
+    getRowId,
 
     getCoreRowModel: getCoreRowModel(),
     ...sortedRowModel,
@@ -750,6 +1069,50 @@ function DataTableInner<TData, TValue>(
     };
   }
 
+  // ── Column resizing keyboard path (#12) ───────────────────────────────────
+  // TanStack's own `header.getResizeHandler()` is pointer/touch-only — no
+  // keyboard path exists in the library — so the WAI-ARIA separator-as-slider
+  // practice (drag handle operable via ArrowLeft/ArrowRight when focused)
+  // needs one small hand-rolled step. It goes through `table.setColumnSizing`
+  // (`table.setColumnSizing = updater => table.options.onColumnSizingChange
+  // ?.(updater)`, TanStack's own `ColumnSizing` feature), which is the SAME
+  // `onColumnSizingChange` handler passed to `useReactTable` above — so
+  // keyboard and pointer resizing share one controlled/uncontrolled code path
+  // and can never diverge in behaviour.
+  const RESIZE_STEP = 10;
+  // ARIA fallback ceiling for the resize separator's `aria-valuemax` when the
+  // column declares no explicit `maxSize` — a `ColumnDef` with no `maxSize`
+  // resolves through TanStack's own default to `Number.MAX_SAFE_INTEGER`,
+  // which is not a value any AT should announce, so the header below omits
+  // `aria-valuemax` entirely in that case. Per the WAI-ARIA separator-as-
+  // widget pattern, an ELEMENT WITH NO `aria-valuemax` is read with an
+  // IMPLICIT default of 100 — so a column at its ordinary starting width
+  // (150) already announces as "150 of 100", out of its own stated range
+  // (#12 review, P2). `Math.max` with the live size at the call site below
+  // keeps this always containing the current value: a column dragged past
+  // this floor simply raises its own announced ceiling instead of going out
+  // of range again.
+  const RESIZE_UNBOUNDED_ARIA_MAX = 2000;
+  function handleResizeKeyDown(event: React.KeyboardEvent, column: Column<TData, unknown>) {
+    let delta = 0;
+    if (event.key === "ArrowRight") delta = RESIZE_STEP;
+    else if (event.key === "ArrowLeft") delta = -RESIZE_STEP;
+    else return;
+    event.preventDefault();
+    // Mirror TanStack's own `columnResizeDirection` reversal (passed to
+    // `useReactTable` above) for the keyboard path: the handle sits at the
+    // column's logical `end` edge, which `end-0` renders on the physical
+    // LEFT under `dir="rtl"` — so ArrowRight (physical right, toward the
+    // column's own body) must SHRINK the column and ArrowLeft must GROW it,
+    // the mirror image of LTR. Without this the keyboard path would diverge
+    // from the now-direction-aware pointer path.
+    if (dir === "rtl") delta = -delta;
+    const minSize = column.columnDef.minSize ?? 20;
+    const maxSize = column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
+    const nextSize = Math.min(maxSize, Math.max(minSize, column.getSize() + delta));
+    table.setColumnSizing((old) => ({ ...old, [column.id]: nextSize }));
+  }
+
   // ── Scroll container ref for virtualizer ─────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -853,6 +1216,15 @@ function DataTableInner<TData, TValue>(
                 sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "not sorted";
               const SortIcon =
                 sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;
+              // #12: every column gets the same explicit width triad a pinned
+              // column already has, gated behind `enableColumnResizing` so a
+              // table that doesn't opt in stays byte-identical to before.
+              const resizeStyle = enableColumnResizing
+                ? resizeWidthStyle(header.getSize())
+                : undefined;
+              const canResize =
+                enableColumnResizing && !header.isPlaceholder && header.column.getCanResize();
+              const resizeMax = header.column.columnDef.maxSize;
               return (
                 <th
                   key={header.id}
@@ -867,9 +1239,13 @@ function DataTableInner<TData, TValue>(
                       : undefined
                   }
                   data-pinned={geometry?.pinned ?? undefined}
-                  style={geometry?.style}
+                  style={geometry?.style ?? resizeStyle}
                   className={cn(
                     "h-10 px-3 text-start align-middle font-medium text-muted-foreground",
+                    // `sticky`/pinned already establishes a positioning context
+                    // for the resize handle's `absolute`; an unpinned resizable
+                    // header needs its own.
+                    !geometry && canResize && "relative",
                     // A pinned HEADER cell is the corner where both freezes meet,
                     // so it stacks above the sticky header row (z-20) which is
                     // above the pinned body cells (z-10). It needs an OPAQUE
@@ -913,6 +1289,58 @@ function DataTableInner<TData, TValue>(
                     </button>
                   ) : (
                     flexRender(header.column.columnDef.header, header.getContext())
+                  )}
+                  {canResize && (
+                    <div
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-valuenow={Math.round(header.getSize())}
+                      aria-valuemin={header.column.columnDef.minSize}
+                      aria-valuemax={
+                        resizeMax !== undefined && resizeMax < Number.MAX_SAFE_INTEGER
+                          ? resizeMax
+                          : Math.max(header.getSize(), RESIZE_UNBOUNDED_ARIA_MAX)
+                      }
+                      aria-label={t("data.table.resizeColumn", { name: headerLabel })}
+                      tabIndex={0}
+                      data-slot="data-table-resize-handle"
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      onKeyDown={(event) => handleResizeKeyDown(event, header.column)}
+                      className={cn(
+                        "absolute inset-y-0 end-0 w-2 cursor-col-resize touch-none select-none",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                        // a11y fix (#12 review, blocking): this handle is the
+                        // SOLE boundary between two adjacent header cells once
+                        // resizing is on — no fill/elevation change separates
+                        // them otherwise — so per the border/border-strong
+                        // decision test (styling-and-tokens.md) it needs a
+                        // rung that clears WCAG 1.4.11's 3:1 on its OWN, in
+                        // EVERY state, including rest (a control with no
+                        // affordance until hover is unusable without a
+                        // pointer). `border-strong` measures only 2.86-2.96:1
+                        // against this `bg-surface-muted` header — that rung
+                        // is guaranteed only vs `--card`/`--background`, not a
+                        // same-tone surface, which is the exact trap the rule
+                        // warns about. `muted-foreground` is guaranteed AA
+                        // text contrast against `--surface-muted`
+                        // (TEXT_SURFACES), so it clears the 3:1 non-text
+                        // minimum with wide margin (measured ~5.3-6.4:1 in
+                        // both themes, unaffected by density) and is already
+                        // the header's own label color. A slim persistent
+                        // `after:` seam (not just a hover reveal) gives the
+                        // real resting boundary; hover/focus widen it to the
+                        // full hit-zone using the same compliant color.
+                        // Dragging keeps the pre-existing full-fill
+                        // `bg-primary` treatment — a separate, already-
+                        // accepted `--ring`/`--primary` light-theme exemption
+                        // (see `.claude/rules/theming.md`), not something
+                        // this fix changes.
+                        header.column.getIsResizing()
+                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-['']"
+                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2",
+                      )}
+                    />
                   )}
                 </th>
               );
@@ -984,17 +1412,16 @@ function DataTableInner<TData, TValue>(
 
   /**
    * Accessible name for a row's hidden activation button (#337). Prefers the
-   * caller's `rowActionLabel`, then the first visible cell's primitive value
-   * (the row's primary identifier — the same name a link in that cell would
-   * get, so screen-reader users hear "billing, button", not five identically
-   * named buttons), then the localized generic fallback.
+   * caller's `rowActionLabel`, then the row's first DATA column value (via
+   * `firstDataCellValue` — skips a leading display column with no accessor,
+   * e.g. `createSelectionColumn()`'s own checkbox column, #11 I6), then the
+   * localized generic fallback.
    */
   function rowActionName(row: (typeof rows)[number]): string {
     const explicit = rowActionLabel?.(row);
     if (explicit) return explicit;
-    const firstValue = row.getVisibleCells()[0]?.getValue();
-    if (typeof firstValue === "string" && firstValue.trim() !== "") return firstValue;
-    if (typeof firstValue === "number") return String(firstValue);
+    const name = firstDataCellValue(row);
+    if (name !== undefined) return name;
     return t("data.table.rowAction");
   }
 
@@ -1055,11 +1482,15 @@ function DataTableInner<TData, TValue>(
       >
         {row.getVisibleCells().map((cell, cellIndex) => {
           const geometry = pinnedCellGeometry(cell.column);
+          // #12: same width triad as the header cell — see `resizeWidthStyle`.
+          const resizeStyle = enableColumnResizing
+            ? resizeWidthStyle(cell.column.getSize())
+            : undefined;
           return (
             <td
               key={cell.id}
               data-pinned={geometry?.pinned ?? undefined}
-              style={geometry?.style}
+              style={geometry?.style ?? resizeStyle}
               className={cn(
                 "px-3 py-2 align-middle",
                 // z-10: above the normal (unpositioned) cells it scrolls over,

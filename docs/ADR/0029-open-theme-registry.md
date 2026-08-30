@@ -48,8 +48,11 @@ mean one of the two reference themes.
 
 The old names are renamed rather than widened, so nothing keeps its old meaning
 under a new definition: `THEMES` → `BUILT_IN_THEMES`, `THEME_META` →
-`BUILT_IN_THEME_META`, `ThemeMeta` → `ThemeDefinition`. `PAUSED_THEMES` is
-unchanged and still governs @.claude/rules/paused-surfaces.md.
+`BUILT_IN_THEME_META`, `ThemeMeta` → `ThemeDefinition`. (`PAUSED_THEMES` /
+`isPausedThemeName` and the paused-theme mechanism they described were
+themselves fully removed shortly after this ADR — see `CHANGELOG.md` "The
+blueprint theme and its drawing package are gone", `v4.0.0` — so neither
+survives to be renamed or widened.)
 
 ### 2. The registry is a `ThemeProvider` prop
 
@@ -180,9 +183,9 @@ unregistered name is a warn-and-no-op in dev, not a silent apply).
 - ADR [0003](./0003-theming-model.md) — the `data-theme` + semantic-token mechanism
 - ADR [0006](./0006-subpath-exports.md) — the gate a reference-theme subpath clears
 - ADR [0027](./0027-focus-ring-token-contract.md) — what a theme's `--ring` must satisfy
-- @.claude/rules/theming.md · @.claude/rules/paused-surfaces.md
+- @.claude/rules/theming.md
 - `packages/tokens/src/theme-types.ts` · `theme-provider.tsx` ·
-  `scripts/gen-theme-token-names.mjs`
+  `packages/tokens/scripts/gen-theme-token-names.mjs`
 - Tests: `theme-registry.test.ts` · `theme-provider.test.tsx` ·
   `gen-theme-token-names.test.mjs` ·
   `packages/ui/src/components/theme-switcher/theme-switcher.test.tsx`

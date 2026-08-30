@@ -53,6 +53,24 @@ function LocaleDemo() {
 }
 
 // ---------------------------------------------------------------------------
+// Demo component: cardinal-plural microcopy via `Intl.PluralRules`
+// ---------------------------------------------------------------------------
+
+function PluralDemo() {
+  const { t } = useLocale();
+  return (
+    <div className="space-y-1 rounded-md border border-border p-4 text-body">
+      {[0, 1, 2, 5].map((count) => (
+        <p key={count}>
+          <span className="font-medium text-muted-foreground">count={count}: </span>
+          {t("itemsSelected", { count })}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Stories
 // ---------------------------------------------------------------------------
 
@@ -80,4 +98,60 @@ export const RtlArabic: Story = {
 /** Without a provider — `useLocale` degrades to en-US / ltr defaults. */
 export const NoProvider: Story = {
   render: () => <LocaleDemo />,
+};
+
+/**
+ * The `translate` resolver bridge (#19) — stands in for an app's own i18n
+ * runtime (next-intl, react-intl, i18next, …). It takes precedence over both
+ * `messages` and the shipped English defaults; returning `undefined` for a
+ * key falls through to the normal chain. See `docs/I18N.md` for a worked
+ * next-intl example.
+ */
+export const ExternalTranslateResolver: Story = {
+  render: () => (
+    <LocaleProvider
+      locale="de-DE"
+      messages={{ close: "Schließen (via messages)" }}
+      translate={(key) => (key === "close" ? "Schließen (via translate)" : undefined)}
+    >
+      <LocaleDemo />
+    </LocaleProvider>
+  ),
+};
+
+/**
+ * Cardinal-plural microcopy (#19) — `t("itemsSelected", { count })` selects
+ * the right English form ("1 item selected" vs "N items selected") from a
+ * `PluralMessage` map as `count` changes, via `Intl.PluralRules`.
+ */
+export const PluralForms: Story = {
+  render: () => (
+    <LocaleProvider locale="en-US">
+      <PluralDemo />
+    </LocaleProvider>
+  ),
+};
+
+/**
+ * The same plural key resolved for Polish (`pl-PL`), which has FOUR cardinal
+ * categories (one/few/many/other) with different count boundaries than
+ * English's two (one/other) — the case a plural design that only handles
+ * English silently gets wrong. Count 1 → "one", 2 → "few", 5 → "many".
+ */
+export const PluralFormsPolish: Story = {
+  render: () => (
+    <LocaleProvider
+      locale="pl-PL"
+      messages={{
+        itemsSelected: {
+          one: "{count} plik zaznaczony",
+          few: "{count} pliki zaznaczone",
+          many: "{count} plików zaznaczonych",
+          other: "{count} pliku zaznaczonego",
+        },
+      }}
+    >
+      <PluralDemo />
+    </LocaleProvider>
+  ),
 };

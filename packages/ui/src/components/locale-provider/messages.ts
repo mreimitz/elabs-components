@@ -1,13 +1,34 @@
 "use client";
 
 /**
+ * ICU cardinal-plural category, per `Intl.PluralRules` ("zero" | "one" | "two"
+ * | "few" | "many" | "other"). Locales vary in which categories they use —
+ * English has only "one"/"other"; Polish and Russian also use "few"/"many" —
+ * so a `PluralMessage` may omit any category it doesn't need. `"other"` is the
+ * universal fallback every locale defines.
+ */
+export type PluralCategory = Intl.LDMLPluralRule;
+
+/**
+ * A per-count message: one string per plural category, selected at render
+ * time via `Intl.PluralRules(locale).select(count)`. Each string still
+ * supports the same `{name}`-style interpolation as a plain message.
+ * Note: when passed to `t()`, `count` in `vars` must be a number, not a
+ * numeric string, to select the correct plural category.
+ */
+export type PluralMessage = Partial<Record<PluralCategory, string>>;
+
+/** A single message value: a plain string, or a plural-form map. */
+export type MessageValue = string | PluralMessage;
+
+/**
  * Shipped English (en-US) default microcopy bundle.
  *
  * Keys are intentionally terse, semantic, and framework-agnostic so they
  * translate cleanly into any target locale. Keep this list small and real —
  * only add a key here when a component actually needs it.
  */
-export const DEFAULT_MESSAGES: Record<string, string> = {
+export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // ── Generic (shared across packages — reuse these before minting a new key) ──
   close: "Close",
   copy: "Copy",
@@ -20,6 +41,11 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   loading: "Loading…",
   more: "More",
   selectAll: "Select all",
+  // Cardinal-plural example (#19) — a shared "N item(s) selected" microcopy
+  // any multi-select surface can reuse via `t("itemsSelected", { count })`.
+  // Demonstrates the plural-form shape: pick the primitive over inventing a
+  // near-duplicate flat string per component.
+  itemsSelected: { one: "{count} item selected", other: "{count} items selected" },
 
   // ── @elabs-ai/components-ui ───────────────────────────────────────────────────────────────
   "ui.metricCard.loading": "Loading metric…",
@@ -81,6 +107,31 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   "ui.confirmDialog.cancel": "Cancel",
   "ui.advancedGroup.title": "Advanced",
   "ui.advancedGroup.changed": "{count} changed",
+  // SchemaForm — the spec-driven config-form renderer (issue #22).
+  "ui.schemaForm.selectPlaceholder": "Select…",
+  "ui.schemaForm.label": "Form",
+  "ui.schemaForm.submit": "Submit",
+  "ui.schemaForm.submitting": "Submitting…",
+  "ui.schemaForm.submitted": "Submitted",
+  // Pagination's ellipsis (sr-only — the visible glyph is decorative).
+  "ui.pagination.morePages": "More pages",
+  // Pagination's prev/next links — the ACCESSIBLE NAME (`aria-label`), distinct
+  // from the visible `previous`/`next` text below it: an `aria-label` overrides
+  // visible text content as the accessible name, so leaving these hardcoded in
+  // English meant a non-English `LocaleProvider` translated the visible label
+  // but a screen-reader user still heard English (#12/#53 review, P2).
+  "ui.pagination.previous": "Go to previous page",
+  "ui.pagination.next": "Go to next page",
+  // Sidebar's mobile Sheet title (sr-only header — the sheet itself has no
+  // visible chrome, so this is only ever read by assistive tech).
+  "ui.sidebar.title": "Sidebar",
+  // Tree's error row — shared by the virtualized and non-virtualized branches.
+  "ui.tree.failedToLoad": "Failed to load",
+  // ThemeSwitcher's "follow the OS" option, in both dropdown and toggle modes.
+  "ui.themeSwitcher.system": "System",
+  "ui.navNotifications.label": "Notifications",
+  "ui.teamSwitcher.label": "Teams",
+  "ui.teamSwitcher.addTeam": "Add team",
 
   // ── @elabs-ai/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
@@ -89,6 +140,21 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   // Fallback name for a row's activation control when the row's first cell holds
   // no primitive value to name it after (see `rowActionLabel`).
   "data.table.rowAction": "Activate row",
+  // createSelectionColumn (#11) — the header select-all checkbox and each row's
+  // own checkbox. Kept table-scoped (not the generic `selectAll` key) so a
+  // translator can phrase "rows" distinctly from other bulk-select surfaces.
+  "data.table.selectAllRows": "Select all rows",
+  // `selectRowNamed` names each row's checkbox from its own first data column
+  // (#11 I4) so screen-reader users hear "Select Alpha", not `selectRow`'s
+  // identical generic label repeated on every row; `selectRow` stays the
+  // fallback when no data column value is derivable.
+  "data.table.selectRowNamed": "Select {name}",
+  "data.table.selectRow": "Select row",
+  // Column resizing (#12) — the accessible name for the WAI-ARIA
+  // separator-as-slider resize handle at the end of a resizable header cell.
+  "data.table.resizeColumn": "Resize column, {name}",
+  "data.facetFilter.clearFilters": "Clear filters",
+  "data.columnPicker.toggleColumns": "Toggle columns",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton
@@ -120,25 +186,54 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   "ai.promptInput.uploadFiles": "Upload files",
   "ai.promptInput.submit": "Submit",
   "ai.promptInput.stop": "Stop",
+  "ai.agent.instructions": "Instructions",
+  "ai.agent.tools": "Tools",
   "ai.codeBlock.generating": "Generating…",
   "ai.composer.placeholder": "Ask me anything…",
   "ai.context.usage": "Model context usage",
+  "ai.context.totalCost": "Total cost",
+  "ai.context.input": "Input",
+  "ai.context.output": "Output",
+  "ai.context.reasoning": "Reasoning",
+  "ai.context.cache": "Cache",
   "ai.contextPanel.back": "Back to context",
   "ai.contextPanel.toggle": "Toggle context panel",
+  // The mobile Sheet's sr-only title (#18) — distinct from `contextPanel.toggle`,
+  // which labels the button that opens/closes it.
+  "ai.contextPanel.title": "Context panel",
   "ai.environmentVariables.toggleVisibility": "Toggle value visibility",
   "ai.gallery.label": "Image gallery",
   "ai.gallery.expandImage": "Expand image",
   "ai.gallery.downloadImage": "Download image",
+  "ai.gallery.noImages": "No images",
+  "ai.gallery.noDetails": "No details",
+  // Shared by Tool's technical view and SchemaDisplay's request panel.
+  "ai.schemaDisplay.parameters": "Parameters",
+  "ai.schemaDisplay.response": "Response",
+  // ReasoningTrigger's default not-yet-timed message (before `duration` is known).
+  "ai.reasoning.thoughtDefault": "Thought for a few seconds",
+  "ai.stackTrace.empty": "No stack frames",
+  "ai.webPreview.noConsoleOutput": "No console output",
+  // PlanTrigger's icon-only collapse/expand control (sr-only).
+  "ai.plan.togglePlan": "Toggle plan",
   "ai.message.actions": "Message actions",
   "ai.message.editMessage": "Edit message",
   "ai.message.feedback": "Message feedback",
   "ai.message.previousBranch": "Previous branch",
   "ai.message.nextBranch": "Next branch",
+  "ai.messageCompare.error": "Error",
+  "ai.messageCompare.tabs": "Compare responses",
   "ai.persona.idle": "Assistant idle",
   "ai.persona.listening": "Assistant listening",
   "ai.persona.thinking": "Assistant thinking…",
   "ai.persona.speaking": "Assistant speaking",
   "ai.persona.asleep": "Assistant asleep",
+  // AudioVisualizer. Announced through a throttled `role="status"` region —
+  // the canvas itself is decorative (see .claude/rules/loading-states.md and
+  // issue #21's accessibility guidance).
+  "ai.audioVisualizer.idle": "Microphone not connected",
+  "ai.audioVisualizer.silent": "No input detected",
+  "ai.audioVisualizer.active": "Microphone active",
   "ai.selectionToolbar.label": "Selection actions",
   "ai.webPreview.urlPlaceholder": "Enter URL...",
   "ai.micSelector.searchPlaceholder": "Search microphones...",

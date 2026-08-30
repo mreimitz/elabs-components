@@ -16,7 +16,8 @@ CLI, the repo root, both `.claude-plugin` manifests (`plugin.json` and
 version the MCP server reports to agents. Only the first 12 are npm packages; the
 rest are plain files.
 
-The original design (`research/enterprise-gap/08-release-process.md`, filed as
+The original design (a release-process working paper, since removed with the rest of the
+enterprise-gap tree when this fork was debranded; filed as
 issue #104) specified **Changesets with a fixed/locked group**: contributors add a
 changeset per change, `changeset version` computes the bump and writes the
 CHANGELOG, and a post-version script syncs the non-package files.

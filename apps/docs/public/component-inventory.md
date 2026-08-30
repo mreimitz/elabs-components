@@ -7,7 +7,7 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (2):** dark, light (default)
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 169
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 180
 
 ## Packages
 
@@ -15,9 +15,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 354 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 372 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 443 | 13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 130 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -237,7 +237,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DropdownMenuSubContent | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuSubTrigger | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuTrigger | component |  | `@elabs-ai/components-ui` |  |
+| EmptyListIllustration | component |  | `@elabs-ai/components-ui` |  |
 | EmptyState | component |  | `@elabs-ai/components-ui` |  |
+| ErrorIllustration | component |  | `@elabs-ai/components-ui` |  |
 | ErrorState | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialog | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialogContent | component |  | `@elabs-ai/components-ui` |  |
@@ -250,6 +252,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FileUploadItem | component |  | `@elabs-ai/components-ui` |  |
 | FileUploadList | component |  | `@elabs-ai/components-ui` |  |
 | FilterChip | component |  | `@elabs-ai/components-ui` |  |
+| FirstRunIllustration | component |  | `@elabs-ai/components-ui` |  |
 | Form | component |  | `@elabs-ai/components-ui` | Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema. |
 | FormControl | component |  | `@elabs-ai/components-ui` |  |
 | FormDescription | component |  | `@elabs-ai/components-ui` |  |
@@ -262,6 +265,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | HoverCardContent | component |  | `@elabs-ai/components-ui` |  |
 | HoverCardTrigger | component |  | `@elabs-ai/components-ui` |  |
 | IconButton | component |  | `@elabs-ai/components-ui` |  |
+| ILLUSTRATION_ACCENT_VAR | component |  | `@elabs-ai/components-ui` |  |
 | Input | component |  | `@elabs-ai/components-ui` | Single-line text field — the base form input. |
 | InputGroup | component | variant=outline*\|surface\|card | `@elabs-ai/components-ui` |  |
 | InputGroupAddon | component | align=inline-start*\|inline-end\|block-start\|block-end | `@elabs-ai/components-ui` |  |
@@ -315,7 +319,10 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | NavMain | component |  | `@elabs-ai/components-ui` |  |
 | NavNotifications | component |  | `@elabs-ai/components-ui` |  |
 | NavUser | component |  | `@elabs-ai/components-ui` |  |
+| NoAccessIllustration | component |  | `@elabs-ai/components-ui` |  |
+| NoResultsIllustration | component |  | `@elabs-ai/components-ui` |  |
 | NumberInput | component |  | `@elabs-ai/components-ui` |  |
+| OfflineIllustration | component |  | `@elabs-ai/components-ui` |  |
 | PageShell | component |  | `@elabs-ai/components-ui` |  |
 | Pagination | component |  | `@elabs-ai/components-ui` |  |
 | PaginationContent | component |  | `@elabs-ai/components-ui` |  |
@@ -349,6 +356,16 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Reveal | component | appear=fade\|up*\|down\|left\|right\|zoom · speed=fast\|base\|slow* | `@elabs-ai/components-ui` |  |
 | RevealGroup | component |  | `@elabs-ai/components-ui` |  |
 | RevisionTimeline | component | density=comfortable*\|compact | `@elabs-ai/components-ui` |  |
+| SchemaForm | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormDescription | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormError | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormFallback | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormField | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormFields | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormProvider | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormRoot | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormSubmit | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormTitle | component |  | `@elabs-ai/components-ui` |  |
 | ScrollArea | component |  | `@elabs-ai/components-ui` |  |
 | ScrollBar | component |  | `@elabs-ai/components-ui` |  |
 | SectionHeader | component |  | `@elabs-ai/components-ui` |  |
@@ -408,6 +425,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | STATUSES | component |  | `@elabs-ai/components-ui` |  |
 | StatusIcon | component |  | `@elabs-ai/components-ui` |  |
 | STREAMDOWN_TRANSLATION_KEYS | component |  | `@elabs-ai/components-ui` |  |
+| SuccessIllustration | component |  | `@elabs-ai/components-ui` |  |
 | Switch | component |  | `@elabs-ai/components-ui` | Immediate on/off setting toggle (applies on change, not on submit). |
 | Table | component |  | `@elabs-ai/components-ui` |  |
 | TableBody | component |  | `@elabs-ai/components-ui` |  |
@@ -537,6 +555,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AudioPlayerTimeDisplay | component |  | `@elabs-ai/components-ai` |  |
 | AudioPlayerTimeRange | component |  | `@elabs-ai/components-ai` |  |
 | AudioPlayerVolumeRange | component |  | `@elabs-ai/components-ai` |  |
+| AudioVisualizer | component |  | `@elabs-ai/components-ai` | Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop. |
 | BrandMotionConfig | component |  | `@elabs-ai/components-ai` | Feeds descendant Motion components the brand transition (duration/ease mirrored from the motion tokens). |
 | Canvas | component |  | `@elabs-ai/components-ai` | The in-chat agent workspace graph surface (React Flow) — the canvas an agent renders inside a conversation (ADR 0018). |
 | ChainOfThought | component |  | `@elabs-ai/components-ai` | Step-by-step live reasoning trace with per-step status and search results. |
@@ -675,6 +694,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MessageBranchPage | component |  | `@elabs-ai/components-ai` |  |
 | MessageBranchPrevious | component |  | `@elabs-ai/components-ai` |  |
 | MessageBranchSelector | component |  | `@elabs-ai/components-ai` |  |
+| MessageCompare | component |  | `@elabs-ai/components-ai` | Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch. |
+| MessageCompareColumn | component |  | `@elabs-ai/components-ai` |  |
 | MessageContent | component |  | `@elabs-ai/components-ai` |  |
 | MessageEdit | component |  | `@elabs-ai/components-ai` | Edit-in-place for a user message — swaps the bubble between content and an editor. |
 | MessageEditContent | component |  | `@elabs-ai/components-ai` |  |
@@ -909,6 +930,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useAttachmentContext | hook |  | `@elabs-ai/components-ai` |  |
 | useAttachmentsContext | hook |  | `@elabs-ai/components-ai` |  |
 | useAudioDevices | hook |  | `@elabs-ai/components-ai` |  |
+| useAudioLevel | hook |  | `@elabs-ai/components-ai` |  |
 | useContextPanel | hook |  | `@elabs-ai/components-ai` |  |
 | useJSXPreview | hook |  | `@elabs-ai/components-ai` |  |
 | useMessageEdit | hook |  | `@elabs-ai/components-ai` |  |

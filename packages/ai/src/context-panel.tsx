@@ -355,6 +355,7 @@ export const ContextPanel = forwardRef<HTMLDivElement, ContextPanelProps>(functi
 ) {
   const { state, actions, meta } = useContextPanel();
   const { panelId } = useContextPanelInternal();
+  const { t } = useLocale();
 
   const panel = useCollapsiblePanel({
     side: "right",
@@ -380,7 +381,7 @@ export const ContextPanel = forwardRef<HTMLDivElement, ContextPanelProps>(functi
           style={{ "--context-panel-width": CONTEXT_PANEL_WIDTH_MOBILE } as CSSProperties}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Context panel</SheetTitle>
+            <SheetTitle>{t("ai.contextPanel.title")}</SheetTitle>
             <SheetDescription>Displays the chat context panel.</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>

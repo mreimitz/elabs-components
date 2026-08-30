@@ -55,8 +55,8 @@ Apply it with the routing checklist in [`decision-routing.md`](../.claude/rules/
 
 Mental model: **AI SDK = "what the agent said" (a chat). A2UI = "what the agent wants you to
 show" (a screen). A2UI rides _inside_ the AI SDK chat.** Full distinction + import discipline
-in [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md); concept in
-[`research/enterprise-gap/05-a2ui-concept.md`](../research/enterprise-gap/05-a2ui-concept.md).
+in [`ai-sdk-vs-a2ui.md`](../.claude/rules/ai-sdk-vs-a2ui.md). The A2UI concept paper was
+removed when this fork was debranded; this section and that rule are what survive of it.
 
 ## D5 — Scope boundary (what brand-ui is NOT)
 
@@ -103,7 +103,7 @@ _single link_, never by re-authoring (the WP-12 #96 generator + WP-10 stale-gate
 
 ## References
 
-- [`research/enterprise-gap/06-guidance-architecture.md`](../research/enterprise-gap/06-guidance-architecture.md)
-  — the full design (surface map + enforcement) this file distills.
-- [`research/enterprise-gap/05-a2ui-concept.md`](../research/enterprise-gap/05-a2ui-concept.md) — A2UI vs AI SDK (D2).
+- The enterprise-gap working papers this file distilled (guidance architecture, the A2UI
+  concept) were **removed when this fork was debranded**. This file is now the source, not
+  a summary of one — don't go looking for them.
 - `.claude/rules/*`, `PROJECT.md` (Non-goals), `docs/ADR/`.

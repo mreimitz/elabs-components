@@ -19,7 +19,7 @@ example and the default registry, not the menu.
   - **Anything that PARSES theme blocks must read the SET, never one file.** Repo
     gates use `readThemesCss()` from `scripts/lib/theme-sources.mjs`; the tokens
     package's own tests use `readThemeCss()` from `src/_theme-css-source.ts`; the
-    DTCG pipeline uses `themeSourcePaths()` in `scripts/lib/themes-io.mjs`. All
+    DTCG pipeline uses `themeSourcePaths()` in `packages/tokens/scripts/lib/themes-io.mjs`. All
     three THROW on an incomplete set, because the failure mode is not a crash —
     a block regex keeps matching, just less. `check-surface-elevation.mjs`
     audited `:root` alone and printed a cheerful
@@ -171,10 +171,28 @@ example and the default registry, not the menu.
     reaching for another exemption.
   4. **`--sidebar-ring: var(--ring)`** is the sanctioned mirror — an override
      reaches sidebar focus automatically. Never re-declare it with a literal.
-  5. **Overriding it is supported**, in a `[data-theme="…"]`-scoped block,
-     provided (1)–(3) still hold. Verify with `pnpm roles:check` and
-     `pnpm --filter @elabs-ai/components-tokens test`. **Prefer
-     forking the theme (`/new-theme`) over patching one token.**
+  5. **Overriding it is supported — pick the mechanism by WHEN the value is
+     known.** Two distinct paths, not a single "prefer forking" default:
+     - **Known at build time, and permanent** (you're authoring/retuning a
+       theme this repo or a consumer ships) — a `[data-theme="…"]`-scoped
+       block, provided (1)–(3) still hold. Verify with `pnpm roles:check` and
+       `pnpm --filter @elabs-ai/components-tokens test`. **Prefer forking the
+       theme (`/new-theme`) over patching one token** when you're in this
+       path — a hand-patched single-property override living inside a
+       committed theme file is exactly the kind of drift `theme-parity:check`
+       exists to catch.
+     - **Not known until runtime** (a tenant's brand color from a lookup, an
+       admin-picked accent, anything that varies per request/session) — do
+       NOT fork a theme for this. Use `ThemeProvider`'s `tokenOverrides` prop
+       instead (issue #17, ADR
+       [0031](../../docs/ADR/0031-runtime-token-overrides.md)):
+       `tokenOverrides={{ "--ring": tenant.ringColor }}`. It patches the same
+       token, layered over whichever theme is active, without requiring a
+       committed CSS block or `THEME_TOKEN_NAMES` coverage — the whole point
+       is that a runtime patch shouldn't cost a fork. Values are validated
+       (`CSS.supports`) and keys against `THEME_TOKEN_NAMES`, same as (1)–(3)
+       above; it does not relax the contract, only where the value comes
+       from.
   6. `:root`'s blue ring is **not** an exception — `:root`'s `--primary` is a
      blue (264°) and its ring is the same hue at a distinct rung (ΔE 0.1044).
      It already satisfies this contract, and is deliberately **left un-aliased**

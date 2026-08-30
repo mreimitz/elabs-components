@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T06:17:43.193Z",
+  "generatedAt": "2026-08-30T18:40:00.115Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,8 +7,9 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 169,
+  "tokenCount": 180,
   "tokens": [
+    "--font-cjk-sans",
     "--font-sans",
     "--font-mono",
     "--font-display",
@@ -50,6 +51,16 @@
     "--surface",
     "--surface-muted",
     "--surface-elevated",
+    "--foreground-1",
+    "--foreground-2",
+    "--foreground-3",
+    "--foreground-4",
+    "--border-1",
+    "--border-2",
+    "--surface-1",
+    "--surface-2",
+    "--surface-3",
+    "--surface-4",
     "--sidebar",
     "--sidebar-foreground",
     "--sidebar-muted-foreground",
@@ -353,7 +364,7 @@
     {
       "name": "dashboard",
       "title": "Patterns/Templates/Dashboard",
-      "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-icons",
@@ -365,7 +376,7 @@
     {
       "name": "data-app",
       "title": "Patterns/Templates/Data App",
-      "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-data",
         "@elabs-ai/components-icons",
@@ -377,7 +388,7 @@
     {
       "name": "flow-workspace",
       "title": "Patterns/Templates/Flow Workspace",
-      "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-flow",
         "@elabs-ai/components-icons",
@@ -410,7 +421,7 @@
     {
       "name": "screen-states",
       "title": "Patterns/Templates/Screen States",
-      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all three themes. Verify with globals=theme:<slug>.",
+      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in every theme. Verify with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
       ],
@@ -420,7 +431,7 @@
     {
       "name": "settings",
       "title": "Patterns/Templates/Settings",
-      "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
       ],
@@ -698,7 +709,7 @@
         "@elabs-ai/components-tokens": "workspace:*",
         "@elabs-ai/components-ui": "workspace:*",
         "@xyflow/react": "^12.11.1",
-        "ai": "^6.0.0",
+        "ai": "^6.0.0 || ^7.0.0",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
@@ -947,6 +958,11 @@
           "name": "AudioPlayerVolumeRange",
           "kind": "value",
           "module": "packages/ai/src/audio-player.tsx"
+        },
+        {
+          "name": "AudioVisualizer",
+          "kind": "value",
+          "module": "packages/ai/src/audio-visualizer.tsx"
         },
         {
           "name": "BrandMotionConfig",
@@ -1637,6 +1653,16 @@
           "name": "MessageBranchSelector",
           "kind": "value",
           "module": "packages/ai/src/message.tsx"
+        },
+        {
+          "name": "MessageCompare",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
+        },
+        {
+          "name": "MessageCompareColumn",
+          "kind": "value",
+          "module": "packages/ai/src/message-compare.tsx"
         },
         {
           "name": "MessageContent",
@@ -2941,6 +2967,11 @@
           "module": "packages/ai/src/mic-selector.tsx"
         },
         {
+          "name": "useAudioLevel",
+          "kind": "value",
+          "module": "packages/ai/src/use-audio-level.ts"
+        },
+        {
           "name": "useContextPanel",
           "kind": "value",
           "module": "packages/ai/src/context-panel.tsx"
@@ -3043,6 +3074,9 @@
         "AudioPlayerTimeDisplayProps",
         "AudioPlayerTimeRangeProps",
         "AudioPlayerVolumeRangeProps",
+        "AudioVisualizerLevelState",
+        "AudioVisualizerProps",
+        "AudioVisualizerVariant",
         "BadgeTone",
         "BooleanFieldSpec",
         "BrandMotionConfigProps",
@@ -3203,6 +3237,10 @@
         "MessageBranchPreviousProps",
         "MessageBranchProps",
         "MessageBranchSelectorProps",
+        "MessageCompareColumnProps",
+        "MessageCompareColumnsCount",
+        "MessageCompareModel",
+        "MessageCompareProps",
         "MessageContentProps",
         "MessageEditContentProps",
         "MessageEditFormProps",
@@ -3457,6 +3495,8 @@
         "ToolResultCardProps",
         "TranscriptionProps",
         "TranscriptionSegmentProps",
+        "UseAudioLevelOptions",
+        "UseAudioLevelResult",
         "UserMessageProps",
         "VoiceSelectorAccentProps",
         "VoiceSelectorAgeProps",
@@ -3782,6 +3822,55 @@
               "name": "data",
               "optional": false,
               "type": "SpeechResult[\"audio\"]"
+            }
+          ]
+        },
+        "AudioVisualizer": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "levels",
+              "optional": true,
+              "type": "number[]",
+              "description": "Normalized 0–1 amplitude samples for the CURRENT frame — one per bar (or per sample point for `variant=\"wave\"`). Update this from your own analyser polling loop (or the opt-in `useAudioLevel` hook) on every frame you want reflected; the component never touches the microphone itself. Any length works — samples are resampled to `barCount`."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No stream connected yet — renders the idle baseline instead of `levels`."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "AudioVisualizerVariant",
+              "description": "`\"bars\"` (default) — a bar chart. `\"wave\"` — a filled envelope through the current samples. Both encode level as HEIGHT, never as hue alone."
+            },
+            {
+              "name": "sensitivity",
+              "optional": true,
+              "type": "number",
+              "description": "Multiplies each level before clamping to [0, 1] — turn up for a quiet input."
+            },
+            {
+              "name": "barCount",
+              "optional": true,
+              "type": "number",
+              "description": "Number of bars/points drawn."
+            },
+            {
+              "name": "silenceThreshold",
+              "optional": true,
+              "type": "number",
+              "description": "Average level, 0–1, at/above which the status text reads \"active\"."
+            },
+            {
+              "name": "statusLabel",
+              "optional": true,
+              "type": "ReactNode | null",
+              "description": "Visually-hidden text announced when the discretized level state changes. Defaults to a localized label (\"No input detected\" / \"Microphone active\" / …). Pass `null` when the consuming surface already renders its own live region, so assistive tech is not told twice."
             }
           ]
         },
@@ -4715,6 +4804,18 @@
               "optional": true,
               "type": "ProseHeadingLevel",
               "description": "The prose level a markdown `#` maps to; deeper headings shift with it (capped at 6). Default `1` (the full reading scale). Pass `2` in narrow embeds (a context rail) so headings stay on the constrained rung."
+            },
+            {
+              "name": "components",
+              "optional": true,
+              "type": "StreamdownComponents",
+              "description": "Per-element renderer overrides, MERGED over the internal Prose* map (#10) — a consumer entry wins for its key; every key the consumer does NOT set keeps rendering through `buildProseComponents()`. This is the seam for rendering inline citations: override `a` (or a custom node type) to swap a `[1](url)`-style marker for an `InlineCitation` chip while headings/lists/etc. keep the branded prose styling. Deliberately a MERGE, not a replace: sanitisation is unaffected either way (see `plugins` below), but a wholesale replace would silently drop the branded styling from every element the consumer didn't think to re-declare — a citation override should not have to also re-implement headings/lists/code to keep them on-brand. **Known constraint: a `components` change alone does not force a re-render of already-rendered markdown (#10).** Streamdown memoizes on `children`/`plugins`/theme/etc but NOT on `components` (`streamdown@2.5.0`'s top-level `memo` comparator omits it), so if the SAME markdown string is still current when an override's closed-over data changes — e.g. an inline-citation chip that resolves its title asynchronously — the new render function is captured but nothing schedules Streamdown to call it again. Don't rely on a `components` closure to reflect state that arrives after the initial render; instead have the overriding component read that state itself (a shared context, a store keyed by citation id, or an internal `useState`/subscription inside the override) so IT re-renders independently of `MarkdownView`'s own render pass — the pattern `InlineCitation`/`InlineCitationCard` already use."
+            },
+            {
+              "name": "plugins",
+              "optional": true,
+              "type": "StreamdownPlugins",
+              "description": "Streamdown plugin-slot overrides (`cjk`/`code`/`math`/`mermaid`/ `renderers`), MERGED per key over the internal defaults (the reactive, brand-token-derived `code` plugin and i18n-aware `cjk`/`math`/`mermaid` set — see `_streamdown-i18n.ts`). **This narrow `plugins` prop can only APPEND — it can never displace Streamdown's default `rehypePlugins` chain** (`rehype-raw` → `rehype-sanitize` → `rehype-harden`). `MarkdownView` never sets `rehypePlugins` itself, and nothing in `PluginConfig` removes or replaces a member of that pipeline, so the sanitiser cannot be turned off through this prop. But two of the five slots are **not** upstream of it and must be treated as trusted code: - **`math.rehypePlugin` runs AFTER `rehype-sanitize`/`rehype-harden`** (appended to the end of the rehype pipeline, verified against `streamdown@2.5.0`'s `dist/chunk-BO2N2NFS.js`) — its output is never re-sanitised. - **`mermaid` never enters the rehype/remark pipeline at all.** Its `getMermaid().render()` result is written via `dangerouslySetInnerHTML` (streamdown's only such sink). brand-ui's own `useStreamdownPlugins()` default pins `securityLevel: \"strict\"` (`_lazy-mermaid.ts`); a replacement `mermaid` plugin must sanitise its own SVG output the same way. - `cjk` (remark-stage only — its output is re-sanitised downstream by the rehype pipeline like any other remark result), `code` (feeds only `shikiTheme`, no HTML injection) and `renderers` (ordinary React components rendered with the fenced block's raw `code` string as a `string` prop, the same trusted-component boundary as a `components` override) do not bypass sanitisation. **This guarantee does NOT extend to the `rehypePlugins`/`remarkPlugins` props also exposed on this component** (inherited straight from Streamdown's own `ComponentProps` — `MarkdownViewProps` only omits `components`/`plugins`, not these). Unlike `plugins`, a caller-supplied `rehypePlugins`/`remarkPlugins` array REPLACES Streamdown's default pipeline wholesale rather than extending it, silently dropping `rehype-sanitize`/`rehype-harden` and letting a plain markdown string execute script in the host page — tracked as **#36 (P1, unfixed on this component)**. If you need to add a rehype/remark step, start from Streamdown's own `defaultRehypePlugins`/`defaultRemarkPlugins` and spread the sanitiser back in (the pattern `@elabs-ai/components-editor`'s `MarkdownPreview` already uses — see `markdown-preview.tsx`'s `rehypePlugins` constant) rather than passing a plugin list from scratch."
             }
           ]
         },
@@ -4795,6 +4896,68 @@
               "name": "onBranchChange",
               "optional": true,
               "type": "(branchIndex: number) => void"
+            }
+          ]
+        },
+        "MessageCompare": {
+          "extends": [],
+          "props": [
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "`MessageCompareColumn` elements — 2 to 4."
+            },
+            {
+              "name": "columns",
+              "optional": false,
+              "type": "MessageCompareColumnsCount"
+            },
+            {
+              "name": "syncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled sync-scroll flag. Omit for the uncontrolled default (off)."
+            },
+            {
+              "name": "defaultSyncScroll",
+              "optional": true,
+              "type": "boolean",
+              "description": "Uncontrolled initial value. @default false"
+            },
+            {
+              "name": "onSyncScrollChange",
+              "optional": true,
+              "type": "(value: boolean) => void"
+            },
+            {
+              "name": "tabsLabel",
+              "optional": true,
+              "type": "string",
+              "description": "aria-label for the narrow-viewport tab strip. Defaults to microcopy."
+            }
+          ]
+        },
+        "MessageCompareColumn": {
+          "extends": [],
+          "props": [
+            {
+              "name": "model",
+              "optional": false,
+              "type": "MessageCompareModel",
+              "description": "Identifies the column — its `name` becomes the region's accessible name."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ChatStatus",
+              "description": "In-flight state for this column's OWN response, independent of siblings."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The consumer's own `Message`/`MessageResponse` composition for this column."
             }
           ]
         },
@@ -5108,6 +5271,18 @@
               "optional": true,
               "type": "boolean",
               "description": "No content has arrived yet (loading-states.md `loading`) — renders skeleton lines at the body line-height instead of `<Streamdown>`, so the bubble reserves its space before the first token. @default false"
+            },
+            {
+              "name": "components",
+              "optional": true,
+              "type": "ComponentProps<typeof Streamdown>[\"components\"]",
+              "description": "Custom renderers for markdown elements. **Semantics differ from `MarkdownView`:** `components` here REPLACES (not merges) per key against Streamdown's own defaults, since `MessageResponse` has no internal component map to merge with. See `MarkdownView` for merge-over-defaults semantics and `#10` for details."
+            },
+            {
+              "name": "plugins",
+              "optional": true,
+              "type": "ComponentProps<typeof Streamdown>[\"plugins\"]",
+              "description": "Custom plugins for markdown processing. **Merges** per key with the internal defaults (`math`, `code`, `mermaid`, `renderers`), so a consumer's entry wins for its key; every key the consumer does not set keeps the reactive, i18n-aware internal default. This is the same semantics as `MarkdownView` (#10 fix round). The `math.rehypePlugin` runs after sanitisation; see `MarkdownView` TSDoc for the full security model."
             }
           ]
         },
@@ -6575,6 +6750,22 @@
             "Shipping audio with no transcript — pair it with Transcription so the content is readable, not only audible."
           ]
         },
+        "AudioVisualizer": {
+          "purpose": "Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop.",
+          "category": "ai",
+          "relationships": {
+            "pairsWith": [
+              "MicSelector",
+              "SpeechInput"
+            ]
+          },
+          "antiPatterns": [
+            "Passing it a MediaStream or calling getUserMedia inside it — it is presentation-only; feed it `levels` your own analyser loop already computed (D5).",
+            "Reaching for the opt-in useAudioLevel hook from inside this component — the hook only ever creates an AudioContext when a caller-supplied stream is handed to IT, and it stays a separate export the component never imports.",
+            "Relying on colour alone for level — bar/wave HEIGHT carries the amplitude; colour is decorative, never the only channel.",
+            "Expecting the scrolling waveform to keep animating under prefers-reduced-motion — the reduced-motion path renders a static bar chart of the current levels instead of interpolating, so the state stays legible rather than frozen mid-frame."
+          ]
+        },
         "BrandMotionConfig": {
           "purpose": "Feeds descendant Motion components the brand transition (duration/ease mirrored from the motion tokens).",
           "category": "ai",
@@ -7158,6 +7349,30 @@
             "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
             "Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.",
             "Calling a model inside the component — @elabs-ai/components-ai is presentational; the app owns useChat/transport (D5)."
+          ]
+        },
+        "MessageCompare": {
+          "purpose": "Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.",
+          "category": "ai",
+          "relationships": {
+            "contains": [
+              "MessageCompareColumn"
+            ],
+            "pairsWith": [
+              "MessageFeedback",
+              "MessageResponse",
+              "MessageBranch"
+            ]
+          },
+          "stateTokens": {
+            "divider": "border-b (default border color, the subtle rung) between a column's header and body — same as the package's other header/body dividers",
+            "error": "text-destructive-text (TEXT rung, not -foreground) paired with AlertTriangleIcon + role=\"alert\" — colour is never the only channel"
+          },
+          "antiPatterns": [
+            "Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.",
+            "Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.",
+            "Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.",
+            "Lifting MessageFeedback state above the column boundary — each MessageCompareColumn composes its own independent MessageFeedback instance with no shared vote state."
           ]
         },
         "MessageEdit": {
@@ -13493,13 +13708,16 @@
         "CellContext",
         "ColumnDef",
         "ColumnPinningState",
+        "ColumnSizingState",
         "CsvColumn",
         "DownloadCsvOptions",
         "Row",
+        "RowSelectionState",
         "Table",
         "ToCsvOptions"
       ],
       "otherExports": [
+        "createSelectionColumn",
         "downloadCsv",
         "toCsv",
         "typeColumnPickerProps",
@@ -13635,6 +13853,58 @@
               "name": "onColumnPinningChange",
               "optional": true,
               "type": "OnChangeFn<ColumnPinningState>"
+            },
+            {
+              "name": "enableColumnResizing",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opt in to column resizing (#12): a drag handle renders on every resizable column's trailing edge — pointer-draggable (TanStack's own `header.getResizeHandler()`) and keyboard-operable (ArrowLeft/ArrowRight on the focused handle, per the WAI-ARIA separator-as-slider practice). Default `false` so a table that doesn't opt in renders byte-identical markup to before this feature existed — no handle, no per-cell width styling."
+            },
+            {
+              "name": "columnResizeMode",
+              "optional": true,
+              "type": "\"onChange\" | \"onEnd\"",
+              "description": "When `columnSizing` updates: `\"onChange\"` (default here — TanStack's own default is `\"onEnd\"`) live-updates while dragging; `\"onEnd\"` updates once on release. Only meaningful when `enableColumnResizing` is set."
+            },
+            {
+              "name": "columnSizing",
+              "optional": true,
+              "type": "ColumnSizingState",
+              "description": "Controlled column-widths state (#12), keyed by column id — the SAME controlled/uncontrolled shape as `columnPinning`/`rowSelection`. Uncontrolled sizing can be seeded once via `initialView.columnSizing`. A pinned column's sticky offset (`getStart(\"left\")`/`getAfter(\"right\")`) already sums `column.getSize()`, which folds in a `columnSizing` override automatically — so pinning and resizing compose with no extra wiring once this state reaches the table. Sizing is a LAYOUT concern, like `columnPinning`/`rowSelection` — it is client-only and never joins `DataTableServerArgs` / `onServerChange`."
+            },
+            {
+              "name": "onColumnSizingChange",
+              "optional": true,
+              "type": "OnChangeFn<ColumnSizingState>"
+            },
+            {
+              "name": "rowSelection",
+              "optional": true,
+              "type": "RowSelectionState",
+              "description": "Controlled row-selection state (#11) — which rows are checked, keyed by row id (see `getRowId`). When provided the component is selection-controlled; otherwise it manages the slice internally and can be seeded once via `initialView.rowSelection`. Pair it with a selection column built by `createSelectionColumn` (or drive it yourself off the `table` instance handed to `toolbar`). Selection is a LAYOUT/UI concern, not a query concern — like `columnPinning`, it is client-only and never joins `DataTableServerArgs` / `onServerChange`."
+            },
+            {
+              "name": "onRowSelectionChange",
+              "optional": true,
+              "type": "OnChangeFn<RowSelectionState>"
+            },
+            {
+              "name": "enableRowSelection",
+              "optional": true,
+              "type": "boolean | ((row: Row<TData>) => boolean)",
+              "description": "Which rows can be selected: `true`/`false` for all rows, or a predicate evaluated per row. Passed straight through to `useReactTable`. Default (TanStack's own): `true`."
+            },
+            {
+              "name": "enableMultiRowSelection",
+              "optional": true,
+              "type": "boolean",
+              "description": "Allow more than one row to be selected at once. Default (TanStack's own): `true`. Set `false` for single-select (radio-style) behaviour."
+            },
+            {
+              "name": "getRowId",
+              "optional": true,
+              "type": "(row: TData, index: number) => string",
+              "description": "Stable row id, independent of row INDEX. TanStack's default id is set ONCE per row object when the core row model is built, then reused by reference through sorting/filtering — so a client-side sort or filter does NOT disturb selection identity even without this prop. The real hazard is a `data` array replacement: when the app passes NEW object references (a re-fetch, an optimistic update), TanStack rebuilds the core row model from scratch and reassigns default (index-based) ids, so a row that kept its position but got a new object still keeps its selection — but one that MOVED position silently inherits whatever selection belonged to the id now sitting at its old index. This is unavoidable under `manualPagination`: each page IS a fresh `data` array, so the default index-based id restarts at `0` on every page and a selection made on one page can collide with a different record on the next. Supply `getRowId` whenever `data` can be replaced with new object references (including every server-paginated table) so identity survives the replacement instead of falling back to index."
             },
             {
               "name": "initialView",
@@ -16501,6 +16771,12 @@
               "optional": true,
               "type": "HTMLElement | null",
               "description": "Element that receives the `data-theme` and `data-motion-pref` attributes. Defaults to the document root (`<html>`). Pass a ref'd element for scoped theming. NOTE: the OS-reduce backstop in themes.css is keyed off `:root`, so a scoped target still honors per-instance theme/motion but the document-level backstop continues to track the document root."
+            },
+            {
+              "name": "tokenOverrides",
+              "optional": true,
+              "type": "Partial<Record<ThemeTokenName, string>>",
+              "description": "Runtime CSS custom-property overrides (#17, `docs/ADR/0031-runtime-token-overrides.md`), layered OVER the active `[data-theme]` block as inline properties on `attributeTarget` — for a multi-tenant/white-label consumer who wants to patch 1-2 brand colors without authoring a whole theme covering every `THEME_TOKEN_NAMES` entry. **Partial, not a replacement.** Only the keys you pass are forced; every other token keeps coming from the active theme's own CSS block. This is the point of the mechanism — unlike a hand-authored `[data-theme]` block, a missing key here does NOT fall through to the neutral `:root` base, it simply isn't overridden. **Keys are validated against `THEME_TOKEN_NAMES`.** A key this package does not recognize as a theme token is REJECTED (not applied) with a dev warning — the failure mode this guards against is a typo'd `--foo` that silently does nothing because nothing in `themes.css` reads it, which would otherwise look identical to success. **Values are ALSO checked, not just keys.** Every `THEME_TOKEN_NAMES` entry except `--shadow-strength` resolves through a color-typed CSS property somewhere in `themes.css`, so a value is checked with `CSS.supports(\"color\", value)` before it is applied; `--shadow-strength` (a bare multiplier — `themes.css` § ELEVATION RAMP: `calc(1% * var(--shadow-strength))`) is checked against a numeric CSS grammar instead, since a plain number is not a valid CSS color. Either way, a value that fails is REJECTED (not applied) with a dev warning, the same treatment as an unknown key. This closes the more likely footgun than a bad key: unlike an unrecognized custom-property NAME, `setProperty` never rejects an invalid VALUE (custom properties accept any token stream), so a typo'd color would otherwise silently compute to `unset` at the point of use — transparent for a `background-color`, inherited for `color` — and a typo'd `--shadow-strength` would invalidate every `calc()` that references it, silently zeroing elevation. Where `CSS.supports` itself is unavailable (some legacy runtimes; also this package's own jsdom test environment, which does not implement it) a COLOR value is applied UNCHECKED rather than blocked — this package has no way to validate it there, and refusing every value on an engine that can't answer the question would be worse than the risk it's declining to check. `--shadow-strength`'s grammar check needs no `CSS` global, so it is always enforced regardless. **Reactive, not mount-once.** Every render where this prop's content changes re-applies it; a key removed between renders has its inline property cleared so the theme's own value governs again. Overrides survive a `setTheme` call — they are orthogonal to which theme is active, which is what makes them useful for a tenant whose accent color must hold across a light/dark toggle. **Cleared when the target changes, and on unmount — RESTORED, not just deleted.** If `attributeTarget` resolves late (the callback-ref pattern ADR 0029 documents: `null` on the first render, a real element once the ref lands), the properties this provider forced on the FIRST target are put back to whatever they held immediately before this provider touched them — not simply removed — before anything is written to the new one. The same restore runs when the provider unmounts, so closing a tenant theme preview (e.g. an admin settings screen) restores the region to whatever it carried before the preview, rather than either leaving the previewed colors on the page OR erasing an unrelated inline value that happened to occupy the same property first (e.g. the SSR-authored anti-flash override `docs/CONSUMING.md` §5.2 recommends). Only a property that was genuinely unset beforehand is removed outright. **SSR flashes.** Like every other apply in this provider, this runs in a `useEffect` — never during server rendering. The first paint (and the hydration frame) therefore shows the UN-overridden theme; the override appears one paint later. For a tenant whose brand color must be correct on the very first paint, emit the same custom properties in server- rendered `<html>`/`<head>` (a small inline `<style>` or attribute keyed off the same tenant data) — this prop does not do that for you. See `docs/CONSUMING.md` § 5.2 and ADR 0031. **Uses `CSSStyleDeclaration.setProperty`/`removeProperty`, never `style.cssText` or a `style=\"…\"` attribute string.** Confirmed against `docs/csp-policy.json`: a CSP `style-src` directive restricts parsing CSS text from an HTML `style` attribute or a `<style>` element; it does not restrict a script calling `setProperty` on the CSSOM directly (that is gated by `script-src` alone, since a script that can call it already runs under whatever `script-src` allows). So this needs no NEW CSP relaxation beyond what `script-src` already grants the app's own bundle."
             }
           ]
         }
@@ -17233,9 +17509,19 @@
           "module": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx"
         },
         {
+          "name": "EmptyListIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/empty-list-illustration.tsx"
+        },
+        {
           "name": "EmptyState",
           "kind": "value",
           "module": "packages/ui/src/components/empty-state/empty-state.tsx"
+        },
+        {
+          "name": "ErrorIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/error-illustration.tsx"
         },
         {
           "name": "ErrorState",
@@ -17298,6 +17584,11 @@
           "module": "packages/ui/src/components/view-toolbar/view-toolbar.tsx"
         },
         {
+          "name": "FirstRunIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/first-run-illustration.tsx"
+        },
+        {
           "name": "Form",
           "kind": "value",
           "module": "packages/ui/src/components/form/form.tsx"
@@ -17356,6 +17647,11 @@
           "name": "IconButton",
           "kind": "value",
           "module": "packages/ui/src/components/icon-button/icon-button.tsx"
+        },
+        {
+          "name": "ILLUSTRATION_ACCENT_VAR",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/illustration-base.tsx"
         },
         {
           "name": "Input",
@@ -17623,9 +17919,24 @@
           "module": "packages/ui/src/components/nav-user/nav-user.tsx"
         },
         {
+          "name": "NoAccessIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/no-access-illustration.tsx"
+        },
+        {
+          "name": "NoResultsIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/no-results-illustration.tsx"
+        },
+        {
           "name": "NumberInput",
           "kind": "value",
           "module": "packages/ui/src/components/number-input/number-input.tsx"
+        },
+        {
+          "name": "OfflineIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/offline-illustration.tsx"
         },
         {
           "name": "PageShell",
@@ -17791,6 +18102,56 @@
           "name": "RevisionTimeline",
           "kind": "value",
           "module": "packages/ui/src/components/revision-timeline/revision-timeline.tsx"
+        },
+        {
+          "name": "SchemaForm",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormDescription",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormError",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormFallback",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormField",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormFields",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormProvider",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormRoot",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormSubmit",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormTitle",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
         },
         {
           "name": "ScrollArea",
@@ -18086,6 +18447,11 @@
           "name": "STREAMDOWN_TRANSLATION_KEYS",
           "kind": "value",
           "module": "packages/ui/src/lib/streamdown-translations.ts"
+        },
+        {
+          "name": "SuccessIllustration",
+          "kind": "value",
+          "module": "packages/ui/src/illustrations/success-illustration.tsx"
         },
         {
           "name": "Switch",
@@ -18416,6 +18782,7 @@
         "DialogBodyProps",
         "DialogDismissGuard",
         "DialogSectionProps",
+        "IllustrationProps",
         "LinkPreviewCardProps",
         "ModelPickerProps",
         "SeparatorProps",
@@ -18427,35 +18794,58 @@
         "alertVariants",
         "badgeVariants",
         "bentoGridItemVariants",
+        "booleanFieldSchema",
         "buttonGroupVariants",
         "buttonVariants",
         "cardVariants",
+        "checkFileIssue",
         "cn",
+        "collectValidatableFields",
         "countItems",
         "defaultMentionFilter",
         "dialogContentVariants",
         "downloadBlob",
         "downloadUrl",
+        "enumFieldSchema",
+        "enumOptionSchema",
         "expandDialogPanesVariants",
         "extensionOf",
+        "fieldLabel",
+        "fieldSpecSchema",
+        "fileFieldSchema",
         "fileIconFor",
+        "fileMatchesAccept",
+        "findFieldByName",
+        "formSpecSchema",
         "fromTimelineStatus",
+        "groupFieldSchema",
+        "groupItemSchema",
         "headingVariants",
         "hunkVariants",
+        "initialFormValues",
         "inputGroupAddonVariants",
         "inputGroupVariants",
         "insertMention",
+        "integerFieldSchema",
         "isCustomStatus",
+        "keyValueFieldSchema",
+        "keyValueRowSchema",
         "laneColor",
+        "listFieldSchema",
         "mediaTypeFromName",
         "mentionAt",
         "mentionEnd",
         "modelPickerBody",
+        "multiEnumFieldSchema",
         "navigationMenuTriggerStyle",
         "normalizeFileSource",
+        "normalizeFormSpec",
         "normalizeQuoteText",
         "normalizeQuoteTextWithOffsets",
         "normalizeRanges",
+        "numberFieldSchema",
+        "optionLabel",
+        "optionValue",
         "progressIndicatorVariants",
         "queryToRanges",
         "remapMentions",
@@ -18467,6 +18857,7 @@
         "sidebarMenuButtonVariants",
         "statePanelVariants",
         "statusBadgeVariants",
+        "stringFieldSchema",
         "textVariants",
         "toast",
         "toggleVariants",
@@ -18480,6 +18871,7 @@
         "typeBentoGridItemVariants",
         "typeBentoGridProps",
         "typeBentoGridSize",
+        "typeBooleanFieldSpec",
         "typeBoundedNumberProps",
         "typeButtonProps",
         "typeCalendarProps",
@@ -18507,13 +18899,19 @@
         "typeDocumentAddressKind",
         "typeDocumentRect",
         "typeEmptyStateProps",
+        "typeEnumFieldSpec",
+        "typeEnumOption",
         "typeErrorStateProps",
         "typeExpandDialogContentProps",
         "typeExpandDialogHeaderProps",
         "typeExpandDialogPanesProps",
         "typeExpandDialogProps",
+        "typeFieldKeyValueRow",
         "typeFieldRowProps",
+        "typeFieldSpec",
         "typeFileCategory",
+        "typeFileFieldSpec",
+        "typeFileIssue",
         "typeFileKind",
         "typeFileSource",
         "typeFileUploadDropzoneProps",
@@ -18522,6 +18920,12 @@
         "typeFileUploadProps",
         "typeFileUploadStatus",
         "typeFilterChipProps",
+        "typeFormSpec",
+        "typeFormSubmitState",
+        "typeFormValue",
+        "typeFormValues",
+        "typeGroupFieldSpec",
+        "typeGroupItemSpec",
         "typeHeadingLevel",
         "typeHeadingProps",
         "typeHeadingSize",
@@ -18530,9 +18934,12 @@
         "typeInputGroupProps",
         "typeInputProps",
         "typeInsertMentionResult",
+        "typeIntegerFieldSpec",
         "typeKeyValueEditorProps",
+        "typeKeyValueFieldSpec",
         "typeKeyValueRow",
         "typeListEditorProps",
+        "typeListFieldSpec",
         "typeLoadingStateProps",
         "typeLocaleContextValue",
         "typeLocaleProviderProps",
@@ -18549,12 +18956,14 @@
         "typeMentionOption",
         "typeMentionValue",
         "typeMessages",
+        "typeMessageValue",
         "typeMetricCardEmphasis",
         "typeMetricCardProps",
         "typeModelPickerBody",
         "typeModelPickerGroup",
         "typeModelPickerItem",
         "typeModelPickerStatus",
+        "typeMultiEnumFieldSpec",
         "typeNavMainProps",
         "typeNavMainRoute",
         "typeNavMainSubItem",
@@ -18562,9 +18971,13 @@
         "typeNavNotificationsProps",
         "typeNavUserProps",
         "typeNavUserUser",
+        "typeNormalizedFormSpec",
         "typeNormalizedText",
+        "typeNumberFieldSpec",
         "typeNumberInputProps",
         "typePageShellProps",
+        "typePluralCategory",
+        "typePluralMessage",
         "typeProgressProps",
         "typeProseHeadingLevel",
         "typeProseHeadingProps",
@@ -18584,6 +18997,16 @@
         "typeRevisionEdge",
         "typeRevisionTimelineDensity",
         "typeRevisionTimelineProps",
+        "typeSchemaFormDescriptionProps",
+        "typeSchemaFormErrorProps",
+        "typeSchemaFormFallbackProps",
+        "typeSchemaFormFieldProps",
+        "typeSchemaFormFieldsProps",
+        "typeSchemaFormProps",
+        "typeSchemaFormProviderProps",
+        "typeSchemaFormRootProps",
+        "typeSchemaFormSubmitProps",
+        "typeSchemaFormTitleProps",
         "typeSectionHeaderProps",
         "typeSegmentedFieldOption",
         "typeSegmentedFieldProps",
@@ -18602,6 +19025,7 @@
         "typeStatusTone",
         "typeStreamdownTranslationKey",
         "typeStreamdownTranslationMap",
+        "typeStringFieldSpec",
         "typeTagInputProps",
         "typeTeamSwitcherProps",
         "typeTeamSwitcherTeam",
@@ -18643,7 +19067,9 @@
         "typeWizardStepMeta",
         "typeWizardStepProps",
         "typeWizardStepsProps",
-        "typeWizardValidator"
+        "typeWizardValidator",
+        "validateField",
+        "validateForm"
       ],
       "variants": {
         "Alert": {
@@ -20337,6 +20763,12 @@
               "description": "Additional/overriding message strings merged on top of the shipped English defaults. Only the keys you provide are overridden; the rest fall through to the English bundle."
             },
             {
+              "name": "translate",
+              "optional": true,
+              "type": "(key: string, vars?: Record<string, string | number>) => string | undefined | null",
+              "description": "Optional external resolver — hand brand-ui's microcopy off to an app's own i18n runtime (next-intl, react-intl, i18next, …) instead of maintaining a second, flattened message catalogue. Called with the raw key and vars (not pre-interpolated), so a real ICU formatter gets real values and can do its own pluralization/number/date formatting. Return a string to use it as-is (brand-ui does NOT re-run its own `{name}` interpolation on it — the app's runtime already formatted it). Return `undefined`/`null` to decline a key; brand-ui then falls back to `messages` → `DEFAULT_MESSAGES` → the raw key, in that order — so a resolver only needs to cover the keys it actually wants to override. See `docs/I18N.md`."
+            },
+            {
               "name": "children",
               "optional": false,
               "type": "ReactNode"
@@ -21064,6 +21496,176 @@
             }
           ]
         },
+        "SchemaForm": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSubmit\" | \"onChange\" | \"title\"\n>"
+          ],
+          "props": [
+            {
+              "name": "spec",
+              "optional": false,
+              "type": "FormSpec | unknown",
+              "description": "The serializable form specification."
+            },
+            {
+              "name": "values",
+              "optional": true,
+              "type": "FormValues",
+              "description": "Controlled values (`{ [fieldName]: value }`). Omit for uncontrolled."
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "(values: FormValues) => void",
+              "description": "Called with the next full values object on any change."
+            },
+            {
+              "name": "onSubmit",
+              "optional": true,
+              "type": "(state: FormSubmitState) => void",
+              "description": "Called with `{ formName, values }` on a valid submit."
+            },
+            {
+              "name": "submitLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Submit button label (overrides `spec.submitLabel`)."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (the whole form is read-only)."
+            },
+            {
+              "name": "submitted",
+              "optional": true,
+              "type": "boolean",
+              "description": "Terminal submitted state: inert, values visible, submit replaced."
+            },
+            {
+              "name": "submitting",
+              "optional": true,
+              "type": "boolean",
+              "description": "In-flight submit: controls transiently blocked, spinner on submit."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No fields to render yet (spec still loading) → skeleton."
+            },
+            {
+              "name": "error",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A terminal, form-level submission error rendered above the submit control."
+            }
+          ]
+        },
+        "SchemaFormFallback": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "message",
+              "optional": true,
+              "type": "string",
+              "description": "Short human reason the form could not render."
+            }
+          ]
+        },
+        "SchemaFormField": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "name",
+              "optional": false,
+              "type": "string",
+              "description": "The field's `name` (its key in the spec + values). Resolved anywhere in the tree, including inside `group` branches."
+            }
+          ]
+        },
+        "SchemaFormProvider": {
+          "extends": [],
+          "props": [
+            {
+              "name": "spec",
+              "optional": false,
+              "type": "NormalizedFormSpec",
+              "description": "A validated/normalized spec (a plain `FormSpec` also satisfies this)."
+            },
+            {
+              "name": "values",
+              "optional": true,
+              "type": "FormValues",
+              "description": "Controlled values. When provided the component is controlled and `onChange` is the only way to update state."
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "(values: FormValues) => void",
+              "description": "Called with the next full values object on any field change."
+            },
+            {
+              "name": "onSubmit",
+              "optional": true,
+              "type": "(state: FormSubmitState) => void",
+              "description": "Called with `{ formName, values }` when a valid form is submitted."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disable every control (form is read-only). A deliberate, durable state."
+            },
+            {
+              "name": "submitted",
+              "optional": true,
+              "type": "boolean",
+              "description": "Terminal submitted state: controls are inert, values visible, no submit."
+            },
+            {
+              "name": "submitting",
+              "optional": true,
+              "type": "boolean",
+              "description": "In-flight submit: controls transiently blocked, submit shows a spinner."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No fields to render yet (e.g. the spec is still being fetched) → skeleton."
+            },
+            {
+              "name": "error",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A terminal, form-level submission error rendered above the submit control."
+            },
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode"
+            }
+          ]
+        },
+        "SchemaFormSubmit": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLButtonElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Submit button label (overrides `spec.submitLabel`). @default \"Submit\""
+            }
+          ]
+        },
         "SectionHeader": {
           "extends": [],
           "props": [
@@ -21356,7 +21958,13 @@
               "name": "icon",
               "optional": true,
               "type": "ReactNode",
-              "description": "Icon or illustration shown above the title. For `\"error\"` defaults to a built-in warning triangle. For `\"loading\"` defaults to an animated spinner."
+              "description": "Icon shown above the title, clamped to a uniform 40×40 so mismatched glyphs stay tidy. For `\"error\"` defaults to a built-in warning triangle. For `\"loading\"` defaults to an animated spinner. Ignored when `illustration` is also provided — see `illustration`."
+            },
+            {
+              "name": "illustration",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A larger illustration (one of `@elabs-ai/components-ui`'s shipped `*Illustration` components, or a consumer's own `ReactNode`) shown above the title instead of `icon`. Unlike `icon`, it is **not** clamped to 40×40 — an illustration governs its own size (see each illustration's `size` prop, `rem`-based, ~64px–160px). Takes precedence over `icon` when both are given."
             },
             {
               "name": "loadingLabel",

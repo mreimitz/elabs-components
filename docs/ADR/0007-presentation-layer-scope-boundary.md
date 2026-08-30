@@ -11,9 +11,9 @@ packages also own the _runtime_ — model calls, streaming, transport, the chat 
 protocol engines (AG-UI/A2UI transport)? The convenience argument ("just add
 `useChat` to the chat component so it works out of the box") is real and recurring,
 and it is exactly how a component library quietly becomes a framework — and then
-lock-in. This is decision **D5** in [`docs/DECISIONS.md`](../DECISIONS.md); the
-authoritative design is
-[`research/enterprise-gap/06-guidance-architecture.md`](../../research/enterprise-gap/06-guidance-architecture.md).
+lock-in. This is decision **D5** in [`docs/DECISIONS.md`](../DECISIONS.md), which is now
+the authoritative statement — the guidance-architecture working paper it distilled was
+removed when this fork was debranded.
 
 ## Decision
 

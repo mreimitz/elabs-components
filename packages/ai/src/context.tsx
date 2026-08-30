@@ -178,7 +178,7 @@ export const ContextContentFooter = ({
   className,
   ...props
 }: ContextContentFooterProps) => {
-  const { formatNumber } = useLocale();
+  const { formatNumber, t } = useLocale();
   const { modelId, usage } = useContextValue();
   const costUSD = modelId
     ? getUsage({
@@ -204,7 +204,7 @@ export const ContextContentFooter = ({
     >
       {children ?? (
         <>
-          <span className="text-muted-foreground">Total cost</span>
+          <span className="text-muted-foreground">{t("ai.context.totalCost")}</span>
           <span>{totalCost}</span>
         </>
       )}
@@ -225,7 +225,7 @@ const TokensWithCost = ({ tokens, costText }: { tokens?: number; costText?: stri
 export type ContextInputUsageProps = ComponentProps<"div">;
 
 export const ContextInputUsage = ({ className, children, ...props }: ContextInputUsageProps) => {
-  const { formatNumber } = useLocale();
+  const { formatNumber, t } = useLocale();
   const { usage, modelId } = useContextValue();
   const inputTokens = usage?.inputTokens ?? 0;
 
@@ -250,7 +250,7 @@ export const ContextInputUsage = ({ className, children, ...props }: ContextInpu
 
   return (
     <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
-      <span className="text-muted-foreground">Input</span>
+      <span className="text-muted-foreground">{t("ai.context.input")}</span>
       <TokensWithCost costText={inputCostText} tokens={inputTokens} />
     </div>
   );
@@ -259,7 +259,7 @@ export const ContextInputUsage = ({ className, children, ...props }: ContextInpu
 export type ContextOutputUsageProps = ComponentProps<"div">;
 
 export const ContextOutputUsage = ({ className, children, ...props }: ContextOutputUsageProps) => {
-  const { formatNumber } = useLocale();
+  const { formatNumber, t } = useLocale();
   const { usage, modelId } = useContextValue();
   const outputTokens = usage?.outputTokens ?? 0;
 
@@ -284,7 +284,7 @@ export const ContextOutputUsage = ({ className, children, ...props }: ContextOut
 
   return (
     <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
-      <span className="text-muted-foreground">Output</span>
+      <span className="text-muted-foreground">{t("ai.context.output")}</span>
       <TokensWithCost costText={outputCostText} tokens={outputTokens} />
     </div>
   );
@@ -297,9 +297,11 @@ export const ContextReasoningUsage = ({
   children,
   ...props
 }: ContextReasoningUsageProps) => {
-  const { formatNumber } = useLocale();
+  const { formatNumber, t } = useLocale();
   const { usage, modelId } = useContextValue();
-  const reasoningTokens = usage?.reasoningTokens ?? 0;
+  // `reasoningTokens` moved under `outputTokenDetails` in ai@7 (the flat,
+  // deprecated top-level alias from ai@6 was removed).
+  const reasoningTokens = usage?.outputTokenDetails?.reasoningTokens ?? 0;
 
   if (children) {
     return children;
@@ -322,7 +324,7 @@ export const ContextReasoningUsage = ({
 
   return (
     <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
-      <span className="text-muted-foreground">Reasoning</span>
+      <span className="text-muted-foreground">{t("ai.context.reasoning")}</span>
       <TokensWithCost costText={reasoningCostText} tokens={reasoningTokens} />
     </div>
   );
@@ -331,9 +333,11 @@ export const ContextReasoningUsage = ({
 export type ContextCacheUsageProps = ComponentProps<"div">;
 
 export const ContextCacheUsage = ({ className, children, ...props }: ContextCacheUsageProps) => {
-  const { formatNumber } = useLocale();
+  const { formatNumber, t } = useLocale();
   const { usage, modelId } = useContextValue();
-  const cacheTokens = usage?.cachedInputTokens ?? 0;
+  // `cachedInputTokens` moved under `inputTokenDetails.cacheReadTokens` in
+  // ai@7 (the flat, deprecated top-level alias from ai@6 was removed).
+  const cacheTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
 
   if (children) {
     return children;
@@ -356,7 +360,7 @@ export const ContextCacheUsage = ({ className, children, ...props }: ContextCach
 
   return (
     <div className={cn("flex items-center justify-between text-xs", className)} {...props}>
-      <span className="text-muted-foreground">Cache</span>
+      <span className="text-muted-foreground">{t("ai.context.cache")}</span>
       <TokensWithCost costText={cacheCostText} tokens={cacheTokens} />
     </div>
   );

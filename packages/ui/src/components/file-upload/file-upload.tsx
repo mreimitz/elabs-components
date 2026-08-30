@@ -343,9 +343,13 @@ export const FileUploadList = forwardRef<HTMLUListElement, FileUploadListProps>(
     if (files.length === 0 && !children) return null;
 
     return (
+      // `aria-live="polite"` alone is enough to announce additions/removals —
+      // it does NOT require `role="status"`. Adding that role here used to
+      // override the `<ul>`'s implicit `list` role, which strips the
+      // `listitem` role from every `<FileUploadItem>` (`<li>`) inside it and
+      // fails axe's `listitem` rule the moment the list is non-empty.
       <ul
         ref={ref}
-        role="status"
         aria-live="polite"
         aria-label="Selected files"
         data-slot="file-upload-list"

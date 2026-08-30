@@ -164,12 +164,19 @@ pnpm registry:validate          # if registry/ touched
 pnpm registry:validate:test     # self-test for the registry `homepage`-placeholder gate (#264)
 pnpm registry:resolve:check     # if registry/ touched — every relative import resolves in both the repo tree AND the install (target) tree
 pnpm registry:resolve:check:test # self-test for the registry relative-import resolution gate
+pnpm registry:published:check   # every already-published registry item is still reachable at its hosted GitHub Pages URL (#31); skips (exit 0) until the maintainer enables Pages and a version has released — never fails on a new, unreleased item
+pnpm registry:published:check:test # self-test for the published-registry reachability gate
+pnpm registry:publish:test      # self-test for scripts/publish-registry-pages.mjs's planning logic (the mutating `pnpm registry:publish` itself only runs from release.yml, never as a per-change check)
 pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
 pnpm components:check           # every @elabs-ai/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
 pnpm variants:check:test        # self-test for the variant-coverage gate
 pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
+pnpm paused-surfaces-drift:check # the deleted "paused surfaces" theme-pause concept must stay fully gone — no live mechanism, no rule doc, no dangling citation reappearing on its own (#35)
+pnpm paused-surfaces-drift:check:test # self-test for the paused-surfaces drift-lock gate
+pnpm skills:currency:check      # playbook/skill/plugin prose (docs/playbooks/**, skills/*/SKILL.md, .claude-plugin/*.json) agrees with brand-ui.manifest.json on theme count + package-name scope — the .md-only docs:check walk never reaches these files (#29)
+pnpm skills:currency:check:test # self-test for the skills-currency gate
 pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)
@@ -229,7 +236,8 @@ pnpm a11y:baseline:check:test   # self-test for the axe ratchet gate
 pnpm merge:check:test           # self-test for the merge guard (#386): branch protection is unavailable on this plan (403 "Upgrade to GitHub Pro"), so `pnpm merge:check` refuses while a blocking check is FAILING or still PENDING and `.claude/hooks/gate-pr-merge-readiness.sh` blocks `gh pr merge`. This asserts both halves are still wired. (Run `pnpm merge:check` itself before merging a PR — it needs a PR context, so it is not a CI gate.)
 pnpm css-assets:check           # if a package's shipped CSS or its deps changed — every relative url()/@import in an exported stylesheet resolves in dist, and bare @imports are real deps (not devDeps). Add `--require-dist` after `pnpm build`.
 pnpm css-assets:check:test      # self-test for the shipped-CSS asset gate
-pnpm gen:readmes:check          # if a package was added/renamed or its purpose changed — every publishable package's README carries the getting-started guide, and that README is what a consumer SEES on the GitHub Packages page after `pnpm add`. Generator-owned region; run `pnpm gen:readmes`.
+pnpm gen:readmes:check          # if a package was added/renamed or its purpose changed — every publishable package's README carries the getting-started guide, and that README is what a consumer SEES on the GitHub Packages page after `pnpm add`. Generator-owned region; run `pnpm gen:readmes`. The license/install story is derived from each package's own package.json (license, private), never hardcoded — #28.
+pnpm gen:readmes:check:test     # self-test for the README generator's stale + license-drift gates
 pnpm consumer:check             # if a package's build/exports/deps changed — packs every distributable package, installs the tarballs into a throwaway Vite app OUTSIDE the workspace and builds it. The ONLY check that consumes dist/ the way a consumer does (everything else resolves src/ via the exports map), so it is the only one that sees stripped "use client" directives, missing fonts, orphaned CSS or a subpath pointing at raw .ts. Slow — it is a real install + build.
 pnpm consumer:check:test        # self-test for the published-artifact gate
 pnpm version:check              # if any version site changed — all 16 lockstep sites agree (11 packages + CLI + root + both plugin manifests + SERVER_INFO in the CLI's MCP server). `pnpm version:set X.Y.Z` is the only writer.

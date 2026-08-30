@@ -2,6 +2,7 @@ import { forwardRef, type ComponentProps, type ReactNode } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useLocale } from "../locale-provider";
 
 export const Breadcrumb = forwardRef<HTMLElement, ComponentProps<"nav">>(
   function Breadcrumb(props, ref) {
@@ -69,6 +70,7 @@ export function BreadcrumbSeparator({ children, className, ...props }: Component
   );
 }
 export function BreadcrumbEllipsis({ className, ...props }: ComponentProps<"span">) {
+  const { t } = useLocale();
   return (
     <span
       role="presentation"
@@ -77,7 +79,7 @@ export function BreadcrumbEllipsis({ className, ...props }: ComponentProps<"span
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{t("more")}</span>
     </span>
   );
 }

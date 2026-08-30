@@ -6,15 +6,15 @@
 > ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.
 
 Part of **brand-ui**, a source-owned, token-driven React component system.
-These packages are **private** and are not published to any registry — they are
-consumed from this workspace. See `docs/CONSUMING.md`.
+Published to the **public npm registry** under the `@elabs-ai` scope — it
+installs like any other npm dependency, with no registry configuration and
+no token required. See `docs/CONSUMING.md`.
 
 ## Install
 
-Inside this monorepo the packages resolve as workspace dependencies:
-
-```json
-"@elabs-ai/components-ai": "workspace:*"
+```bash
+pnpm add @elabs-ai/components-tokens @elabs-ai/components-ai
+pnpm add ai@"^6.0.0 || ^7.0.0"  # optional peer
 ```
 
 ## Set up styling (do not skip)
@@ -39,12 +39,12 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## This package specifically
 
-- `ai` (Vercel AI SDK) `^6` is a **types-only** peer — your app owns the model calls.
+- `ai` (Vercel AI SDK) is a **types-only, optional** peer (see the `pnpm add ai@…` line above) — your app owns the model calls.
 - `@xyflow/react` is a peer too, if you render the agent canvas.
 
 ## What's in it
 
-443 exported components — including `Agent`, `AgentContent`, `AgentHeader`, `AgentInstructions`, `AgentMessage`.
+446 exported components — including `Agent`, `AgentContent`, `AgentHeader`, `AgentInstructions`, `AgentMessage`.
 
 Don't guess the API — ask the CLI:
 
@@ -74,7 +74,7 @@ prompt for migrating an existing project: `docs/CONSUMING.md`.
 
 ## License
 
-UNLICENSED — private.
+MIT
 
 <!-- brand-ui:gen:readme:end -->
 

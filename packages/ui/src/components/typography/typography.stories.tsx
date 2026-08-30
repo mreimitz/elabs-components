@@ -242,3 +242,186 @@ export const Prose: Story = {
     </div>
   ),
 };
+
+/**
+ * The CJK FONT FALLBACK + LINE-BREAKING seam (#15). `--font-cjk-sans` is a
+ * dedicated tail in `--font-sans` (system faces only — never bundled; a CJK
+ * face is megabytes and every target platform already ships one) that
+ * `:lang(zh)` / `:lang(ko)` re-point per locale (`ja` is the root default);
+ * `:lang(ja)`/`:lang(zh)` also get `line-break: strict` and `:lang(ko)` gets
+ * `word-break: keep-all` (`themes.css` §§ "CJK PER-LOCALE FONT SEAM" / "CJK
+ * line-breaking"). Before this story, no story anywhere rendered CJK text, so
+ * none of this was exercised.
+ *
+ * The designed real-world shape is `<html lang="zh">` for a whole document,
+ * with `font-family: var(--font-sans)` declared ONCE at that same theme-root
+ * element. That matters for how this story has to be built: a custom
+ * property's `var()` references are substituted at the element that declares
+ * the property, and the RESULT — not the raw token stream — is what
+ * descendants inherit. So `--font-sans`'s `var(--font-cjk-sans)` is resolved
+ * once, at the theme root, using whatever `lang` is active THERE; a nested
+ * `:lang(zh)` further down only re-points `--font-cjk-sans` on that
+ * descendant — it does nothing for `--font-sans`, which the descendant never
+ * redeclares, only inherits pre-resolved. To show all three locales side by
+ * side under one shared theme root (whose own `lang` cannot be three things
+ * at once), each "with the seam" sample below redeclares the SAME expansion
+ * `--font-sans` itself uses (see `themes/light.css`/`themes/dark.css`)
+ * directly in its `style`, so the `var(--font-cjk-sans)` substitution happens
+ * fresh, at that element, against the `--font-cjk-sans` value its own `lang`
+ * cascades in via `:lang()`.
+ */
+type CjkSample = {
+  lang: "ja" | "zh" | "ko";
+  label: string;
+  rule: string;
+  text: string;
+};
+
+const CJK_SAMPLES: readonly CjkSample[] = [
+  {
+    lang: "ja",
+    label: "Japanese (ja)",
+    rule: "line-break: strict",
+    text:
+      "この文章は十分に長く、コンテナの幅を超えるとブラウザが自動的に折り返しを行います。" +
+      "折り返しの際に句読点や閉じ括弧（このように）が行頭に来ないようにするのが、" +
+      "line-break: strict の役割です。",
+  },
+  {
+    lang: "zh",
+    label: "Chinese (zh)",
+    rule: "line-break: strict",
+    text:
+      "这段文字足够长，当容器宽度不足时浏览器会自动换行。line-break: strict 的作用是避免" +
+      "标点符号（例如逗号、句号或右括号）出现在行首，让排版更符合中文书写习惯。",
+  },
+  {
+    lang: "ko",
+    label: "Korean (ko)",
+    rule: "word-break: keep-all",
+    text:
+      "이 문장은 충분히 길어서 컨테이너 너비를 넘으면 자동으로 줄바꿈이 일어납니다. " +
+      "word-break: keep-all 속성은 한글 단어 중간에서 줄이 바뀌지 않도록 보장하여 " +
+      "가독성을 지켜 줍니다.",
+  },
+];
+
+/** One locale panel: the seam ON (real `lang`) next to the seam forced OFF, for comparison. */
+function CjkPanel({ sample }: { sample: CjkSample }) {
+  const { lang, label, rule, text } = sample;
+  const withSeamRef = useRef<HTMLParagraphElement>(null);
+  const [measured, setMeasured] = useState("");
+  useLayoutEffect(() => {
+    const el = withSeamRef.current;
+    if (!el) return;
+    const { lineBreak, wordBreak, fontFamily } = getComputedStyle(el);
+    setMeasured(`line-break: ${lineBreak} · word-break: ${wordBreak} · font-family: ${fontFamily}`);
+  }, []);
+  return (
+    <section aria-labelledby={`cjk-${lang}`} className="space-y-2">
+      <h3 id={`cjk-${lang}`} className="text-subtitle text-foreground">
+        {label} — <code className="text-code">{rule}</code>
+      </h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <figure className="m-0 space-y-1">
+          <figcaption className="text-meta text-muted-foreground">
+            Without the seam (comparison only — line-break/word-break forced to the CSS-initial
+            default)
+          </figcaption>
+          {/* Comparison-only override to show what the seam replaces; a real
+              consumer never does this. Font-family is left alone here — this
+              column isolates the LINE-BREAKING half of the seam. */}
+          <p
+            lang={lang}
+            style={{ fontFamily: "var(--font-sans)", lineBreak: "auto", wordBreak: "normal" }}
+            className="m-0 w-56 rounded-md border border-border bg-card p-3 text-body"
+          >
+            {text}
+          </p>
+        </figure>
+        <figure className="m-0 space-y-1">
+          <figcaption className="text-meta text-muted-foreground">
+            With the seam (the default result of{" "}
+            <code className="text-code">lang=&quot;{lang}&quot;</code>)
+          </figcaption>
+          <p
+            ref={withSeamRef}
+            lang={lang}
+            data-testid={`cjk-with-seam-${lang}`}
+            // Redeclares --font-sans's own expansion (themes/light.css,
+            // themes/dark.css) directly, rather than using
+            // `var(--font-sans)`, because --font-sans is inherited from the
+            // shared theme root as an ALREADY-substituted string — see the
+            // comment above CjkSample. Writing the expansion here forces the
+            // `var(--font-cjk-sans)` substitution to happen at THIS element,
+            // against the value its own `lang` cascades in.
+            style={{
+              fontFamily:
+                'Inter, var(--font-cjk-sans), "Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
+            className="m-0 w-56 rounded-md border border-border bg-card p-3 text-body"
+          >
+            {text}
+          </p>
+        </figure>
+      </div>
+      {/* The declared (not rendered) values — a real, un-bundled system CJK
+          face never looks identical across two machines, so THIS is what a
+          reviewer can actually verify: the correct stack is being asked for. */}
+      <p className="m-0 text-meta text-muted-foreground" data-testid={`cjk-measured-${lang}`}>
+        {measured || "measuring…"}
+      </p>
+    </section>
+  );
+}
+
+export const CJKFontAndLineBreaking: Story = {
+  name: "CJK font fallback + line-breaking (#15)",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Japanese, Chinese and Korean samples, each wrapped in a narrow (14rem) column so " +
+          "the text wraps across multiple lines — the line-breaking rules need a real wrap " +
+          "point to have anything to do. The measured line under each pair reads the browser's " +
+          "OWN computed `line-break` / `word-break` / `font-family`, live, so this cannot claim " +
+          "a difference it does not render. Rendered glyph shape depends on which CJK system " +
+          "fonts are installed on the machine viewing this story (none are bundled, by design " +
+          "— #15); the declared font STACK is what is verifiable everywhere.",
+      },
+    },
+  },
+  render: () => (
+    <div className="max-w-3xl space-y-8">
+      {CJK_SAMPLES.map((s) => (
+        <CjkPanel key={s.lang} sample={s} />
+      ))}
+    </div>
+  ),
+  // Asserts the seam on the REAL rendered surface, mirroring the DensityScale
+  // play function above: read the browser's actual computed style rather than
+  // re-deriving the CSS by hand.
+  play: async ({ canvas }) => {
+    const ja = canvas.getByTestId("cjk-with-seam-ja");
+    const zh = canvas.getByTestId("cjk-with-seam-zh");
+    const ko = canvas.getByTestId("cjk-with-seam-ko");
+
+    // :lang(ja), :lang(zh) => line-break: strict. :lang(ko) is NOT in that
+    // rule, so it stays at the CSS-initial value ("auto").
+    expect(getComputedStyle(ja).lineBreak).toBe("strict");
+    expect(getComputedStyle(zh).lineBreak).toBe("strict");
+    expect(getComputedStyle(ko).lineBreak).toBe("auto");
+
+    // :lang(ko) => word-break: keep-all. ja/zh are NOT in that rule, so they
+    // stay at the CSS-initial value ("normal").
+    expect(getComputedStyle(ko).wordBreak).toBe("keep-all");
+    expect(getComputedStyle(ja).wordBreak).toBe("normal");
+    expect(getComputedStyle(zh).wordBreak).toBe("normal");
+
+    // --font-cjk-sans is re-pointed per :lang() — the DECLARED face list
+    // differs by locale, which is what the fallback seam actually ships.
+    expect(getComputedStyle(ja).fontFamily).toContain("Hiragino Sans");
+    expect(getComputedStyle(zh).fontFamily).toContain("PingFang SC");
+    expect(getComputedStyle(ko).fontFamily).toContain("Apple SD Gothic Neo");
+  },
+};

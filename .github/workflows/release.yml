@@ -34,6 +34,15 @@ jobs:
     timeout-minutes: 30
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # `npm-published` decouples `publish-registry` (below) from this job's
+    # OVERALL conclusion — see the "Publish" step's `id:` and the comment on
+    # `publish-registry`'s `if:` for why (PR #58 review, "Decouple registry
+    # publication from post-publish failures"). Evaluated from the "Publish"
+    # step's own outcome regardless of what any LATER step in this job does;
+    # if the "Publish" step itself never ran (an earlier step failed first),
+    # `steps.npm-publish.outcome` is empty, so this correctly resolves falsy.
+    outputs:
+      npm-published: ${{ steps.npm-publish.outcome == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,6 +149,7 @@ jobs:
       # a `--provenance` flag, because an unrecognised FLAG would abort the
       # publish mid-release.
       - name: Publish
+        id: npm-publish
         run: pnpm -r publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -170,3 +180,94 @@ jobs:
       #    the job ends.
       - name: Post-release fresh-install smoke
         run: pnpm release:smoke --manifest "release/v${GITHUB_REF_NAME#v}/release-manifest.json"
+
+  # ── host the built shadcn registry on GitHub Pages (#31) ───────────────────
+  #
+  # `needs: publish` — this only runs once the npm packages for this exact tag
+  # are out; a registry publish for a version whose packages failed to ship
+  # would advertise blocks nobody can `npx shadcn add` against consistently.
+  #
+  # `if:` is DELIBERATELY not the implicit default (`needs.publish` result ==
+  # success). PR #58 review, "Decouple registry publication from post-publish
+  # failures": the `publish` job's LAST three steps (release record, GitHub
+  # Release, post-release smoke) run strictly after the irreversible `pnpm -r
+  # publish`, so a failure in any of them — none of which can undo the npm
+  # publish — used to also skip this job outright (GitHub Actions' default
+  # `needs:` behaviour treats any non-success upstream conclusion as a reason
+  # to skip a downstream job). That is the wrong failure mode: the packages
+  # are already out, so the registry should still get published for them.
+  # `!cancelled()` opts out of that default gate and the second clause reads
+  # the `publish` job's own `npm-published` output (set from the "Publish"
+  # step's outcome specifically, not the job's overall conclusion) — so this
+  # job runs whenever npm publish itself succeeded, REGARDLESS of what a
+  # later step in that job did, and still correctly skips when npm publish
+  # failed or the job was cancelled.
+  #
+  # HOW: `scripts/publish-registry-pages.mjs` pushes the built JSON to a
+  # `gh-pages` branch (a plain git push, not `actions/deploy-pages`) at
+  # `r/<version>/*.json` plus a moving `r/latest/*.json` alias — see that
+  # script's header comment for why a branch push is the right mechanism here
+  # (works whether or not Pages is enabled yet, and is naturally cumulative
+  # across releases). `contents: write` at the workflow level already covers
+  # the push.
+  #
+  # THIS DOES NOT ENABLE GITHUB PAGES. Pushing a branch is an ordinary git
+  # operation; GitHub only starts SERVING it once a human sets, once,
+  # Settings → Pages → "Deploy from a branch" → gh-pages → /(root) on the repo.
+  # That switch is deliberately not flipped by this workflow — see #31.
+  publish-registry:
+    name: Publish the registry to GitHub Pages
+    needs: publish
+    if: ${{ !cancelled() && needs.publish.outputs.npm-published == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # ── AUTH, PROVED BEFORE ANYTHING ELSE (mirrors "Registry authentication"
+      #    in the `publish` job above). PR #58 review, "Use credentials that
+      #    trigger the Pages branch build": GitHub documents that a push made
+      #    with the default `GITHUB_TOKEN` does NOT trigger a "Deploy from a
+      #    branch" Pages build — see actions/toolkit#247 and
+      #    JuliaDocs/Documenter.jl#1177. `actions/checkout` below is therefore
+      #    given a maintainer-provided token instead of the implicit default,
+      #    and THIS step fails loudly, before checkout, if that secret was
+      #    never added — rather than letting `git push` deep inside
+      #    `publish-registry-pages.mjs` either fail with a confusing
+      #    permission error, or (worse) silently SUCCEED as a git push while
+      #    Pages never rebuilds, which is the failure mode this whole finding
+      #    is about.
+      - name: Verify Pages deploy credential
+        env:
+          PAGES_DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "${PAGES_DEPLOY_TOKEN}" ]; then
+            echo "::error::secrets.PAGES_DEPLOY_TOKEN is empty — a push made with the default" >&2
+            echo "GITHUB_TOKEN does not trigger a GitHub Pages 'Deploy from a branch' build," >&2
+            echo "so the registry would appear to publish successfully while the hosted site" >&2
+            echo "never actually updates. Add a fine-grained PAT (Contents: Read and write on" >&2
+            echo "this repo) or a deploy key as the PAGES_DEPLOY_TOKEN repository secret." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the registry
+        run: pnpm registry:build
+
+      - name: Publish to gh-pages
+        run: pnpm registry:publish

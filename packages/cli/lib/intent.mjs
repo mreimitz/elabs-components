@@ -1478,6 +1478,20 @@ export const INTENT = {
     ],
   },
 
+  AudioVisualizer: {
+    purpose: "Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop.",
+    category: "ai",
+    relationships: {
+      pairsWith: ["MicSelector", "SpeechInput"],
+    },
+    antiPatterns: [
+      "Passing it a MediaStream or calling getUserMedia inside it — it is presentation-only; feed it `levels` your own analyser loop already computed (D5).",
+      "Reaching for the opt-in useAudioLevel hook from inside this component — the hook only ever creates an AudioContext when a caller-supplied stream is handed to IT, and it stays a separate export the component never imports.",
+      "Relying on colour alone for level — bar/wave HEIGHT carries the amplitude; colour is decorative, never the only channel.",
+      "Expecting the scrolling waveform to keep animating under prefers-reduced-motion — the reduced-motion path renders a static bar chart of the current levels instead of interpolating, so the state stays legible rather than frozen mid-frame.",
+    ],
+  },
+
   BrandMotionConfig: {
     purpose:
       "Feeds descendant Motion components the brand transition (duration/ease mirrored from the motion tokens).",
@@ -1617,6 +1631,28 @@ export const INTENT = {
       "Omitting `alt` — a generated image with no accessible name is invisible to assistive tech.",
       "Rendering it with no reserved box — a data URI decodes late, so give the image its width/height (or an aspect box) to avoid layout shift.",
       "Using it for a remote URL — it builds a `data:` src from base64; a hosted image is a plain <img>/Gallery item.",
+    ],
+  },
+
+  MessageCompare: {
+    purpose:
+      "Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.",
+    category: "ai",
+    relationships: {
+      contains: ["MessageCompareColumn"],
+      pairsWith: ["MessageFeedback", "MessageResponse", "MessageBranch"],
+    },
+    stateTokens: {
+      divider:
+        "border-b (default border color, the subtle rung) between a column's header and body — same as the package's other header/body dividers",
+      error:
+        'text-destructive-text (TEXT rung, not -foreground) paired with AlertTriangleIcon + role="alert" — colour is never the only channel',
+    },
+    antiPatterns: [
+      "Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.",
+      "Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.",
+      "Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.",
+      "Lifting MessageFeedback state above the column boundary — each MessageCompareColumn composes its own independent MessageFeedback instance with no shared vote state.",
     ],
   },
 

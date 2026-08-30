@@ -13,10 +13,13 @@ reference for what that command does and why each step exists.
 > `v2.0.0` went out on 2026-08-01 through the previous, GitHub Packages model; the
 > fork then disabled publishing entirely (ADR 0028) before re-targeting it here.
 > The `@elabs-ai` scope is registered on npmjs.org by this maintainer (`elabs` was
-> already taken, which is why the scope is `@elabs-ai`). One thing is still owed
+> already taken, which is why the scope is `@elabs-ai`). Two things are still owed
 > before the first public release: `NPM_TOKEN` — an npm **granular automation**
-> token with publish rights on that scope — as a repository secret. The release
-> set is **12 packages**.
+> token with publish rights on that scope — and `PAGES_DEPLOY_TOKEN` — a
+> fine-grained PAT (or deploy key) with `Contents: Read and write` on this repo,
+> used only to push the built shadcn registry to `gh-pages` (§5 below covers why
+> the default `GITHUB_TOKEN` cannot do this) — both as repository secrets. The
+> release set is **12 packages**.
 
 ## The division of labour
 
@@ -325,12 +328,39 @@ the gate is reading a different tree's verdict. It cannot be: the lookup key is 
 commit SHA the tag resolves to. What genuinely changed is that a release now depends
 on the GitHub Actions API being readable; the gate fails closed when it is not.
 
-**The shadcn registry is NOT published by a release.** `registry/` is validated on
-every PR (`pnpm registry:validate`) but is not built or attached, because there is
-no hosted consumer path: consumers build and self-host it themselves (see
-`README.md` and `docs/REGISTRY_GUIDELINES.md`). Two of the three distribution
-surfaces move in lockstep with a release — npm packages and the plugin marketplace
-pointer — and the registry deliberately does not.
+**The shadcn registry IS published by a release (#31).** `registry/` is validated
+on every PR (`pnpm registry:validate`) and, once the `pnpm -r publish` step of the
+`publish` job itself has succeeded, the `publish-registry` job builds it
+(`pnpm registry:build`) and pushes the output to the `gh-pages` branch at a
+versioned path plus a `latest` alias (`pnpm registry:publish`; see
+`docs/REGISTRY_GUIDELINES.md` "Distribution"). All three distribution surfaces now
+move in lockstep with a release: npm packages, the plugin marketplace pointer, and
+the hosted registry.
+
+**`publish-registry`'s `if:` is deliberately not "the `publish` job succeeded"
+(PR #58 review, "Decouple registry publication from post-publish failures").**
+`needs: publish` alone inherits GitHub's default gate — any non-success
+conclusion of the `publish` job skips this one — but three of that job's steps
+(the release record, the GitHub Release, the post-release smoke) run **after**
+the irreversible `pnpm -r publish` and cannot undo it, so a failure in any of
+them used to also withhold the registry for packages that had already shipped.
+`if: ${{ !cancelled() && needs.publish.outputs.npm-published == 'true' }}` reads
+a job `output` set from the **"Publish" step's own `outcome`** (not the job's
+overall conclusion), so `publish-registry` now runs whenever `pnpm -r publish`
+itself succeeded, regardless of what a later step in that job did, and still
+correctly skips when the publish failed or the job was cancelled.
+
+**`publish-registry` proves its own push credential before doing anything else**
+(mirroring step 0's `NPM_TOKEN` check above), for the same reason: GitHub
+documents that a push made with the workflow's default `GITHUB_TOKEN` does
+**not** trigger a GitHub Pages "Deploy from a branch" build (`actions/toolkit#247`,
+`JuliaDocs/Documenter.jl#1177`) — so without a maintainer-provided credential the
+job would push to `gh-pages` successfully, report green, and the hosted registry
+would simply never update. The "Verify Pages deploy credential" step fails loudly
+when `secrets.PAGES_DEPLOY_TOKEN` is empty, and `actions/checkout` in this job is
+given that token (not the implicit default) so the `git push` inside
+`scripts/publish-registry-pages.mjs` inherits a credential that actually triggers
+the Pages build.
 
 **The workflow ASSERTS the marketplace pointer; it never writes it.** The pointer
 is `.claude-plugin/marketplace.json` on the **default branch**, and it is already

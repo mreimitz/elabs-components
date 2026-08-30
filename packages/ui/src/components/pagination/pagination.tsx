@@ -2,6 +2,7 @@ import { forwardRef, type ComponentProps } from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { buttonVariants } from "../button";
+import { useLocale } from "../locale-provider";
 
 export function Pagination({ className, ...props }: ComponentProps<"nav">) {
   return (
@@ -40,30 +41,33 @@ export function PaginationLink({ className, isActive, ...props }: PaginationLink
   );
 }
 export function PaginationPrevious({ className, ...props }: ComponentProps<"a">) {
+  const { t } = useLocale();
   return (
     <a
-      aria-label="Go to previous page"
+      aria-label={t("ui.pagination.previous")}
       className={cn(buttonVariants({ variant: "ghost" }), "gap-1 ps-2.5 cursor-pointer", className)}
       {...props}
     >
       <ChevronLeft className="size-4" data-rtl-flip />
-      <span>Previous</span>
+      <span>{t("previous")}</span>
     </a>
   );
 }
 export function PaginationNext({ className, ...props }: ComponentProps<"a">) {
+  const { t } = useLocale();
   return (
     <a
-      aria-label="Go to next page"
+      aria-label={t("ui.pagination.next")}
       className={cn(buttonVariants({ variant: "ghost" }), "gap-1 pe-2.5 cursor-pointer", className)}
       {...props}
     >
-      <span>Next</span>
+      <span>{t("next")}</span>
       <ChevronRight className="size-4" data-rtl-flip />
     </a>
   );
 }
 export function PaginationEllipsis({ className, ...props }: ComponentProps<"span">) {
+  const { t } = useLocale();
   return (
     <span
       aria-hidden
@@ -71,7 +75,7 @@ export function PaginationEllipsis({ className, ...props }: ComponentProps<"span
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{t("ui.pagination.morePages")}</span>
     </span>
   );
 }

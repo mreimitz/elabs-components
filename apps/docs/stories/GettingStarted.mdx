@@ -26,13 +26,13 @@ today and what still needs a manual step.
 
 ## The bundled offering — the five pieces and where each lives
 
-| Piece                                                                                                                                                                                                                                                                                                | What it is                                                                                    | How you get it                           |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| **Component packages** (`@elabs-ai/components-ui`, `@elabs-ai/components-tokens`, `@elabs-ai/components-data`, `@elabs-ai/components-ai`, `@elabs-ai/components-charts`, `@elabs-ai/components-flow`, `@elabs-ai/components-marketing`, `@elabs-ai/components-editor`, `@elabs-ai/components-icons`) | the actual React components + themes                                                          | **npmjs.org** — `pnpm add` (Path B)      |
-| **The CLI** (`@elabs-ai/components-cli`, bin `brand-ui`)                                                                                                                                                                                                                                             | deterministic `info` / `search` / `docs` / `tokens` / `audit` over the component manifest     | npmjs.org; then `pnpm exec brand-ui …`   |
-| **The plugin**                                                                                                                                                                                                                                                                                       | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                |
-| **The agent kit**                                                                                                                                                                                                                                                                                    | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo     |
-| **The registry**                                                                                                                                                                                                                                                                                     | copy-own block/template JSON (`shadcn add`)                                                   | **self-hosted** JSON (see Path B step 5) |
+| Piece                                                                                                                                                                                                                                                                                                | What it is                                                                                    | How you get it                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Component packages** (`@elabs-ai/components-ui`, `@elabs-ai/components-tokens`, `@elabs-ai/components-data`, `@elabs-ai/components-ai`, `@elabs-ai/components-charts`, `@elabs-ai/components-flow`, `@elabs-ai/components-marketing`, `@elabs-ai/components-editor`, `@elabs-ai/components-icons`) | the actual React components + themes                                                          | **npmjs.org** — `pnpm add` (Path B)                       |
+| **The CLI** (`@elabs-ai/components-cli`, bin `brand-ui`)                                                                                                                                                                                                                                             | deterministic `info` / `search` / `docs` / `tokens` / `audit` over the component manifest     | npmjs.org; then `pnpm exec brand-ui …`                    |
+| **The plugin**                                                                                                                                                                                                                                                                                       | the AI skills + reviewer subagents + **two MCP servers** for Claude Code / Cowork             | `/plugin marketplace add`                                 |
+| **The agent kit**                                                                                                                                                                                                                                                                                    | sanitized skills + `brand-ui.manifest.json` + `llms.txt` for _any_ harness (Cursor/Copilot/…) | release zip, vendored into your repo                      |
+| **The registry**                                                                                                                                                                                                                                                                                     | copy-own block/template JSON (`shadcn add`)                                                   | **GitHub Pages** — hosted per release (see Path B step 5) |
 
 ## Path A — Start a new app in Claude Code
 
@@ -125,15 +125,17 @@ are meant to be _copied into your repo_ to edit freely, with `components.json`
 configured:
 
 ```bash
-npx shadcn add https://<your-own-host>/ai-chat-shell.json
+npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/ai-chat-shell.json
 ```
 
-> **Status / gap:** the registry isn't hosted for you — `<your-own-host>` is a
-> placeholder for a host YOU control. Self-host the built JSON
-> (`pnpm dlx shadcn build registry/registry.json`) and serve it from there, or skip
-> hosting entirely and copy block source straight from `registry/blocks/<name>/`.
-> Most consumers only need the imported packages (steps 1–4); reach for copy-own
-> only for one-off prototype blocks.
+> **Pin to a version** for stability across a later major:
+> `.../r/4.0.0/ai-chat-shell.json` instead of `.../r/latest/...`. The registry is
+> built and published to GitHub Pages by `.github/workflows/release.yml` on every
+> version tag (issue #31) — `latest` always tracks the newest release. If you'd
+> rather not depend on the hosted copy at all, skip hosting entirely and copy
+> block source straight from `registry/blocks/<name>/`. Most consumers only need
+> the imported packages (steps 1–4); reach for copy-own only for one-off
+> prototype blocks.
 
 ## Path C — Make your coding agent brand-ui-aware
 
@@ -181,16 +183,16 @@ new component end-to-end with `/new-component <pkg> <Name> "<purpose>"`; it writ
 
 ## Commands & when
 
-| When                                    | Command                                                                     | Where        |
-| --------------------------------------- | --------------------------------------------------------------------------- | ------------ |
-| Once per machine, to get the AI tooling | `/plugin marketplace add <path-to-this-repo>`                               | Claude Code  |
-| Start a new app                         | tell `brand-ui-start` what to build                                         | Claude Code  |
-| Install components into your app        | `pnpm add @elabs-ai/components-ui @elabs-ai/components-tokens`              | your project |
-| Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                     | your project |
-| Find a component                        | `brand-ui search <q>`                                                       | your project |
-| Get a component's real props            | `brand-ui docs <Name>`                                                      | your project |
-| Copy-own a prototype block              | self-host the built JSON, then `npx shadcn add <your-own-host>/<item>.json` | your project |
-| Check token/style violations            | `brand-ui audit <path>`                                                     | your project |
+| When                                    | Command                                                                           | Where        |
+| --------------------------------------- | --------------------------------------------------------------------------------- | ------------ |
+| Once per machine, to get the AI tooling | `/plugin marketplace add <path-to-this-repo>`                                     | Claude Code  |
+| Start a new app                         | tell `brand-ui-start` what to build                                               | Claude Code  |
+| Install components into your app        | `pnpm add @elabs-ai/components-ui @elabs-ai/components-tokens`                    | your project |
+| Before writing UI (every session)       | `brand-ui info` / `mcp__brand-ui__info`                                           | your project |
+| Find a component                        | `brand-ui search <q>`                                                             | your project |
+| Get a component's real props            | `brand-ui docs <Name>`                                                            | your project |
+| Copy-own a prototype block              | `npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/<item>.json` | your project |
+| Check token/style violations            | `brand-ui audit <path>`                                                           | your project |
 
 ## Theming basics
 

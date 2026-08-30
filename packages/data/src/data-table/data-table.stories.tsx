@@ -8,7 +8,7 @@ import type {
   ColumnFiltersState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { DataTable } from "./data-table";
+import { DataTable, createSelectionColumn } from "./data-table";
 import type { DataTableServerArgs, DataTableViewState } from "./data-table";
 import { FilterBar } from "../filter-bar";
 import { SearchInput } from "../search-input";
@@ -800,5 +800,160 @@ export const PinnedColumnsClassicLines: Story = {
     );
     // …and the row divider is still the visible separation cue.
     await expect(getComputedStyle(oddPinned.closest("tr")!).borderBottomWidth).toBe("1px");
+  },
+};
+
+// ─── WithColumnResizing (#12) ───────────────────────────────────────────────────
+
+/**
+ * `enableColumnResizing` adds a drag handle to the end of every resizable header
+ * cell — a WAI-ARIA separator-as-slider, operable by pointer/touch (TanStack's own
+ * `getResizeHandler()`) or keyboard (ArrowLeft/ArrowRight while the handle is
+ * focused). `columnSizing`/`onColumnSizingChange` make it a controlled slice,
+ * exactly like sorting or column pinning; omit them to let the table manage its
+ * own widths. A resized column that is ALSO pinned keeps its sticky offset in
+ * sync for free — pinning already reads `column.getSize()`.
+ */
+export const WithColumnResizing: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`enableColumnResizing` lets a reader drag — or, with the handle focused, " +
+          "arrow-key — a column's edge to change its width.",
+      },
+    },
+  },
+  render: () => <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />,
+  play: async ({ canvas, userEvent }) => {
+    const serviceHeader = canvas.getAllByRole("columnheader")[0]!;
+    await expect(serviceHeader.style.width).toBe("150px");
+
+    const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+    handle.focus();
+    await expect(handle).toHaveAttribute("aria-valuenow", "150");
+
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(handle).toHaveAttribute("aria-valuenow", "160");
+    await expect(serviceHeader.style.width).toBe("160px");
+
+    await userEvent.keyboard("{ArrowLeft}");
+    await expect(handle).toHaveAttribute("aria-valuenow", "150");
+    await expect(serviceHeader.style.width).toBe("150px");
+  },
+};
+
+// ─── Row selection (#11) ───────────────────────────────────────────────────────
+
+const selectableColumns: ColumnDef<Deployment>[] = [
+  createSelectionColumn<Deployment>(),
+  ...columnsNoBadge,
+];
+
+/**
+ * `createSelectionColumn()` drops a ready-made checkbox column onto any table:
+ * a header select-all (real `indeterminate` for a partial page selection) plus
+ * a per-row checkbox. Uncontrolled here — the table owns `rowSelection`
+ * internally; pass `rowSelection`/`onRowSelectionChange` to drive it from the
+ * app instead.
+ */
+export const RowSelectionUnselected: Story = {
+  render: () => <DataTable columns={selectableColumns} data={rows} />,
+  play: async ({ canvas }) => {
+    const selectAll = canvas.getAllByRole("checkbox")[0]!;
+    await expect(selectAll).toHaveAttribute("aria-checked", "false");
+  },
+};
+
+/** A controlled, partial selection: the header checkbox reads `indeterminate`. */
+export const RowSelectionPartial: Story = {
+  render: () => (
+    <DataTable
+      columns={selectableColumns}
+      data={rows}
+      rowSelection={{ "0": true, "2": true }}
+      onRowSelectionChange={fn()}
+    />
+  ),
+  play: async ({ canvas }) => {
+    const selectAll = canvas.getAllByRole("checkbox")[0]!;
+    await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+  },
+};
+
+/** A controlled, full-page selection: the header checkbox reads `checked`. */
+export const RowSelectionAllSelected: Story = {
+  render: () => (
+    <DataTable
+      columns={selectableColumns}
+      data={rows}
+      rowSelection={Object.fromEntries(rows.map((_, i) => [String(i), true]))}
+      onRowSelectionChange={fn()}
+    />
+  ),
+  play: async ({ canvas }) => {
+    const selectAll = canvas.getAllByRole("checkbox")[0]!;
+    await expect(selectAll).toHaveAttribute("aria-checked", "true");
+  },
+};
+
+/**
+ * A bulk-action toolbar is not a separate prop — `toolbar={(table) => …}`
+ * already hands the live table instance to the render-prop, so a consumer
+ * builds "N selected · Clear" from `table.getSelectedRowModel()` the same way
+ * `WithToolbar` builds a filter bar from the same instance.
+ */
+export const RowSelectionWithToolbar: Story = {
+  render: () => (
+    <DataTable
+      columns={selectableColumns}
+      data={rows}
+      toolbar={(table) => {
+        const selectedCount = table.getSelectedRowModel().rows.length;
+        if (selectedCount === 0) return null;
+        return (
+          <FilterBar
+            actions={
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => table.resetRowSelection()}
+              >
+                Clear selection
+              </Button>
+            }
+          >
+            <span className="text-body">{selectedCount} selected</span>
+          </FilterBar>
+        );
+      }}
+    />
+  ),
+  play: async ({ canvas, userEvent }) => {
+    await expect(canvas.queryByText(/selected$/)).toBeNull();
+    const rowCheckboxes = canvas.getAllByRole("checkbox").slice(1);
+    await userEvent.click(rowCheckboxes[0]!);
+    await userEvent.click(rowCheckboxes[1]!);
+    await expect(canvas.getByText("2 selected")).toBeVisible();
+    await userEvent.click(canvas.getByText("Clear selection"));
+    await expect(canvas.queryByText(/selected$/)).toBeNull();
+  },
+};
+
+/**
+ * Dark-theme pass for the same interaction + a11y coverage (#11 fix round —
+ * the light-only Storybook run isn't sufficient for the "both shipping
+ * themes" quality gate). Reuses `RowSelectionWithToolbar`'s render/play under
+ * `globals: { theme: "dark" }`, same pattern as `dialog.stories.tsx`'s
+ * `FocusRingClearanceDark`.
+ */
+export const RowSelectionWithToolbarDark: Story = {
+  name: "Row selection — with toolbar (dark)",
+  globals: { theme: "dark" },
+  render: RowSelectionWithToolbar.render,
+  play: async (context) => {
+    await waitFor(() => expect(document.documentElement.getAttribute("data-theme")).toBe("dark"));
+    await RowSelectionWithToolbar.play!(context);
   },
 };

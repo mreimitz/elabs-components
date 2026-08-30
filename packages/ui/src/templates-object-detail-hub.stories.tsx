@@ -449,7 +449,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The canonical master-detail enterprise screen: a searchable object list (SplitPanel `start`) drives a detail HUB (`end`) with a sticky SectionHeader identity + status, a ButtonGroup toolbar, Tabs for the object's sections (Overview / Activity / Settings), Descriptions for attributes, a related-runs list, and a high-value Run task promoted to its own Dialog. Selecting nothing shows a real StatePanel empty state. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all three themes.",
+          "The canonical master-detail enterprise screen: a searchable object list (SplitPanel `start`) drives a detail HUB (`end`) with a sticky SectionHeader identity + status, a ButtonGroup toolbar, Tabs for the object's sections (Overview / Activity / Settings), Descriptions for attributes, a related-runs list, and a high-value Run task promoted to its own Dialog. Selecting nothing shows a real StatePanel empty state. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in every theme.",
       },
     },
   },

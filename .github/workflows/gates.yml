@@ -181,12 +181,15 @@ jobs:
           pnpm plugin:consumer-clean:check
           pnpm registry:validate
           pnpm registry:resolve:check
+          pnpm registry:published:check
           pnpm skills:build:check:test
 
       # ── docs, governance, process ──────────────────────────────────────────
       - name: Docs and governance
         run: |
           pnpm docs:check
+          pnpm paused-surfaces-drift:check
+          pnpm skills:currency:check
           pnpm agents:check
           pnpm rules:scoping:check
           pnpm slop:check
@@ -251,6 +254,7 @@ jobs:
           pnpm elevation:check:test
           pnpm format:check:test
           pnpm gen:check:test
+          pnpm gen:readmes:check:test
           pnpm gen:registry:check:test
           pnpm heavy-deps:check:test
           pnpm intent:check:test
@@ -262,11 +266,14 @@ jobs:
           pnpm motion:check:test
           pnpm origins:check:test
           pnpm palette:check:test
+          pnpm paused-surfaces-drift:check:test
           pnpm playbooks:check:test
           pnpm plugin:agents:check:test
           pnpm plugin:check:test
           pnpm plugin:consumer-clean:check:test
           pnpm publish-ready:check:test
+          pnpm registry:publish:test
+          pnpm registry:published:check:test
           pnpm registry:resolve:check:test
           pnpm registry:validate:test
           pnpm release-gates:check:test
@@ -279,6 +286,7 @@ jobs:
           pnpm rules:scoping:check:test
           pnpm separation:check:test
           pnpm sidebar-drift:check:test
+          pnpm skills:currency:check:test
           pnpm slop:check:test
           pnpm states:check:test
           pnpm surface-elevation:check:test

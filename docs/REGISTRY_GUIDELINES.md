@@ -39,20 +39,43 @@ array; each item has `$schema`, `name`, `type`, `title`, `description`,
 4. (Optional) `pnpm dlx shadcn@latest build registry/registry.json --output registry/__output`
    to emit the per-item JSON for static hosting.
 
-## Distribution: self-hosted (no turnkey URL)
+## Distribution: hosted on GitHub Pages, versioned (#31)
 
-This repo does **not** serve `registry/registry.json` or the per-item JSON at any
-URL — there is no `/r/*.json` endpoint and no docs-deploy step in CI that would
-publish one (the repo is private, so a public host isn't an option either). A
-consumer's `npx shadcn add <url>/<item>.json` therefore only works after **they**
-run `pnpm registry:build` (`pnpm dlx shadcn@latest build registry/registry.json
---output registry/__output`) and serve the `registry/__output/` directory from a
-host they control, then point `shadcn add` at that host. The alternative that
-needs no hosting at all: copy the item's source straight out of
-`registry/blocks/<name>/` (or `registry/components/<name>/`) into the consuming
-repo and fix up import aliases. Never document a bare
-`npx shadcn add https://<placeholder>/...json` as if it resolves out of the box —
-`pnpm registry:validate` fails on a placeholder `homepage`.
+The registry **is** served at a real URL. `registry/registry.items.json` sets
+`homepage` to `https://mreimitz.github.io/elabs-components/r` — the base every
+built item resolves under — and `.github/workflows/release.yml`'s
+`publish-registry` job builds it (`pnpm registry:build`) and pushes the output
+to the repo's `gh-pages` branch (`pnpm registry:publish`, i.e.
+`scripts/publish-registry-pages.mjs`) on every version tag, right after that
+version's npm packages publish successfully.
+
+The path is **versioned**, so a block pinned to a version keeps resolving
+across a later major:
+
+```
+https://mreimitz.github.io/elabs-components/r/<version>/<item>.json   # immutable per release
+https://mreimitz.github.io/elabs-components/r/latest/<item>.json      # moving alias
+```
+
+So, once the maintainer has enabled GitHub Pages for this repo (**Settings →
+Pages → "Deploy from a branch" → `gh-pages` → `/(root)`** — that switch is a
+manual, outward-facing step this workflow deliberately does not flip):
+
+```sh
+npx shadcn add https://mreimitz.github.io/elabs-components/r/latest/data-table.json
+# or pinned to a version:
+npx shadcn add https://mreimitz.github.io/elabs-components/r/4.0.0/data-table.json
+```
+
+`pnpm registry:published:check` (wired into `.github/workflows/gates.yml`) gates
+this: it fails a build only if a **published** item stops resolving (real
+rot); until Pages is enabled and a version has shipped, it prints a skip
+notice and passes, since there is nothing to check yet. See that script's
+header comment for the full design.
+
+The alternative that needs no hosting at all still works: copy the item's
+source straight out of `registry/blocks/<name>/` into the consuming repo and
+fix up import aliases.
 
 ## How to test an item
 
@@ -74,16 +97,16 @@ repo and fix up import aliases. Never document a bare
 - Stable, broadly-shared, centrally-updated → **package** (`@elabs-ai/components-*`).
 - Prototype-specific, per-app customization expected → **registry** block.
 
-## The registry is not published by a release (#106)
+## The registry IS published by a release (#106, superseded by #31)
 
-`pnpm registry:validate` runs on every PR, but `.github/workflows/release.yml`
-neither runs `pnpm registry:build` nor attaches `registry/__output` to the GitHub
-Release. That is a **decision, not an omission**: there is no hosted consumer path
-for the built registry JSON — `README.md` and the Getting Started story tell
-consumers to build and **self-host** it — so shipping it as a release asset would
-create an artifact nobody resolves.
+`pnpm registry:validate` runs on every PR, and — since #31 —
+`.github/workflows/release.yml` also runs `pnpm registry:build` and publishes
+the output to GitHub Pages via its `publish-registry` job (see "Distribution"
+above). #106 originally documented the opposite as a **deliberate** decision,
+reasoned from "there is no hosted consumer path" — that premise stopped being
+true once GitHub Pages became reachable for this hosting shape, so the
+decision was reversed rather than left to rot as stale prose.
 
-So a release moves **two** distribution surfaces in lockstep (the npm packages and
-the plugin marketplace pointer), and deliberately not this third one. If a hosted
-registry ever gains a real consumer, that is a new piece of work: add
-`pnpm registry:build` + a zipped asset to `release.yml`, and say so here.
+A release now moves **three** distribution surfaces in lockstep: the npm
+packages, the plugin marketplace pointer, and the hosted registry — each keyed
+to the same tagged version.

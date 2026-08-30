@@ -2,7 +2,8 @@
 /**
  * check-state-coverage.mjs — state-story coverage ratchet (#247).
  *
- * research/enterprise-gap/14-example-coverage-gap-analysis.md §G7 found per-component
+ * A one-shot example-coverage gap analysis (§G7, since removed with the rest of the
+ * enterprise-gap working papers) found per-component
  * story coverage of non-happy states uneven and untracked (Empty 19, Loading 12,
  * Disabled 11, Error 5, Skeleton 1, FirstRun 0 across 190 stories) — several
  * high-traffic interactive components (chat-shell, conversation, tool, combobox,
@@ -55,8 +56,8 @@ const BASELINE_PATH = join(SCRIPT_DIR, "state-coverage-baseline.json");
 const MANIFEST_PATH = join(REPO_ROOT, "brand-ui.manifest.json");
 
 /**
- * Curated allowlist of high-traffic, semantically-stateful components (§G7 of
- * research/enterprise-gap/14-example-coverage-gap-analysis.md) that currently ship
+ * Curated allowlist of high-traffic, semantically-stateful components (§G7 of the
+ * removed example-coverage gap analysis) that currently ship
  * only a single happy-path story. Deliberately hand-maintained — see file header.
  */
 export const STATEFUL_COMPONENTS = [

@@ -7,7 +7,7 @@
  * fails CI (and runs locally via `pnpm docs:check`) when authoritative docs drift:
  *
  *   1. THEME COUNT — no prose may say "four/five/six themes" (all stale counts); the
- *      system ships (BUILT_IN_THEMES in theme-types.ts — paused themes excluded).
+ *      system ships whatever BUILT_IN_THEMES (theme-types.ts) currently lists.
  *      Also: the PR template must enumerate all three themes, not a stale subset (#158).
  *   2. WORKFLOW REFS — every `.github/workflows/<x>.yml` a doc references must exist,
  *      so docs can't claim a CI that isn't there (the original C1/C5 gap).
@@ -52,6 +52,11 @@ import { findRepoRoot } from "../packages/cli/lib/core.mjs";
 import { collectGates } from "./lib/workflow-gates.mjs";
 import { distributablePackages } from "./lib/distributables.mjs";
 import { versionSites } from "./set-version.mjs";
+import { NUMBER_WORDS, findThemeCountViolations } from "./lib/theme-count-prose.mjs";
+
+// Re-exported for check-docs-accuracy.test.mjs and check-skills-currency.mjs — the
+// regex now lives once in ./lib/theme-count-prose.mjs (#29).
+export { NUMBER_WORDS, findThemeCountViolations };
 
 const root = findRepoRoot(process.cwd()) ?? process.cwd();
 
@@ -72,6 +77,14 @@ const VERSION_PKG_PIN_RE = /@elabs-ai\/components-[a-z0-9-]+@(\d+\.\d+\.\d+)\b/g
 // itself (not a copy-paste install target) — exempt, mirroring PROSE_IGNORE/
 // CONTRACT_EXEMPT above. Matched by path suffix, repo-root relative.
 export const VERSION_LITERAL_EXEMPT = new Set(["docs/RELEASING.md", "CHANGELOG.md"]);
+
+// Script paths that are documented as removed/historical. The gate flagged them
+// but they are intentionally cited with "since removed" / historical context,
+// so they do not violate this rule. Format: exact script path as it appears in
+// docs (e.g., "scripts/rename-scope.mjs").
+export const SCRIPT_PATH_REMOVED_EXEMPT = new Set([
+  "scripts/rename-scope.mjs", // One-shot codemod for scope rename, documented as removed in ADR 0016
+]);
 
 /**
  * Find version-literal lines in `text` that disagree with `currentVersion`.
@@ -181,49 +194,16 @@ export function themeNamesFromSource(text) {
 export function themeCountFromSource(text) {
   return themeNamesFromSource(text)?.length ?? null;
 }
-// The NAMES are derived too, not hard-coded: a theme that is paused
-// (@.claude/rules/paused-surfaces.md) leaves BUILT_IN_THEMES, and the docs must stop
-// naming it in the same move — otherwise this gate would demand the docs
-// enumerate a theme nothing tests any more.
+// The NAMES are derived too, not hard-coded: if a theme is ever retired it
+// leaves BUILT_IN_THEMES, and the docs must stop naming it in the same move —
+// otherwise this gate would demand the docs enumerate a theme nothing tests
+// any more. (There is no such retired/paused-theme mechanism today — see #35 —
+// but the derivation stays robust to one existing again.)
 const THEME_NAMES = existsSync(themeTypesPath)
   ? themeNamesFromSource(readFileSync(themeTypesPath, "utf8"))
   : null;
 const THEME_COUNT = THEME_NAMES?.length ?? null;
 const THEME_LIST = (THEME_NAMES ?? []).join(", ");
-
-const NUMBER_WORDS = {
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-};
-
-/**
- * Lines claiming a theme COUNT that disagrees with `themeCount`. Handles both the
- * word form ("all six themes") and the numeric form ("6 themes"). Pure — exported
- * for the self-test.
- */
-export function findThemeCountViolations(text, themeCount) {
-  if (!themeCount) return [];
-  const re = new RegExp(`\\b(${Object.keys(NUMBER_WORDS).join("|")}|\\d+)\\s+themes\\b`, "gi");
-  const out = [];
-  text.split("\n").forEach((line, i) => {
-    for (const m of line.matchAll(re)) {
-      const token = m[1].toLowerCase();
-      const claimed = NUMBER_WORDS[token] ?? Number(token);
-      if (Number.isFinite(claimed) && claimed !== themeCount) {
-        out.push({ line: i + 1, match: m[0], claimed });
-      }
-    }
-  });
-  return out;
-}
 
 /**
  * ADRs are DATED decision records: an ADR that measured "4 of 6 themes" in 2026-06
@@ -621,6 +601,57 @@ const decisionsMdPath = join(root, "docs", "DECISIONS.md");
 const decisionsMdText = existsSync(decisionsMdPath) ? readFileSync(decisionsMdPath, "utf8") : "";
 const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdText });
 
+// ---------------------------------------------------------------------------
+// 8. SCRIPT PATH REFERENCES (#32) — scripts/**.mjs paths cited in docs/rules
+// ---------------------------------------------------------------------------
+// Every `scripts/**` path referenced in .claude/rules/*.md or docs/**/*.md
+// must exist on disk — bare (`scripts/foo.mjs`) AND nested under a package or
+// dotdir prefix (`packages/tokens/scripts/foo.mjs`, `.claude/scripts/foo.mjs`).
+// This catches stale references like scripts/lib/does-not-exist.mjs that do
+// not actually exist, AND a doubled/wrong prefix on an otherwise-real nested
+// path (e.g. `packages/tokens/packages/tokens/scripts/foo.mjs`) — the exact
+// regression an earlier, bare-only version of this matcher could not see
+// (round-2 fix for #32: it flagged nothing because its negative lookbehind
+// excluded any `scripts/` preceded by another path segment, so a nested path
+// was never checked at all, correct or not).
+export function findScriptPathViolations(files) {
+  const violations = [];
+  // Capture the FULL path: zero or more leading directory segments (word
+  // chars, hyphens, dots — so ".claude/" and "packages/tokens/" both count),
+  // each followed by "/", then the literal "scripts/" anchor, then the rest
+  // of the path down to a ".mjs" file. The leading `(?<![\w.\/-])` boundary
+  // stops the match from starting mid-path (e.g. inside a URL host or a
+  // longer token) so the captured string is the reference as authored, not a
+  // truncated tail of it.
+  const scriptPathRe = /(?<![\w.\/-])(?:[\w.-]+\/)*scripts\/[\w.-]+(?:\/[\w.-]+)*\.mjs\b/g;
+  for (const { file, content } of files) {
+    for (const match of content.matchAll(scriptPathRe)) {
+      const scriptPath = match[0];
+      // Skip if this path is explicitly exempted (documented as removed/historical)
+      if (SCRIPT_PATH_REMOVED_EXEMPT.has(scriptPath)) {
+        continue;
+      }
+      const fullPath = join(root, scriptPath);
+      if (!existsSync(fullPath)) {
+        violations.push(`${file}: references ${scriptPath} which does not exist`);
+      }
+    }
+  }
+  return violations;
+}
+
+const scriptPathViolations = [];
+for (const f of files) {
+  const rel = f.slice(root.length + 1);
+  // Only scan rules and docs directories for script references
+  if (rel.startsWith(".claude/rules/") || rel.startsWith("docs/")) {
+    const text = readFileSync(f, "utf8");
+    for (const v of findScriptPathViolations([{ file: rel, content: text }])) {
+      scriptPathViolations.push(v);
+    }
+  }
+}
+
 let failed = false;
 if (themeViolations.length) {
   failed = true;
@@ -640,6 +671,12 @@ if (workflowViolations.length) {
   console.error(`\n✖ doc references a non-existent workflow (${workflowViolations.length}):`);
   for (const v of workflowViolations) console.error("  - " + v);
   console.error("  Fix: create the workflow or correct the reference.");
+}
+if (scriptPathViolations.length) {
+  failed = true;
+  console.error(`\n✖ doc references a non-existent script path (${scriptPathViolations.length}):`);
+  for (const v of scriptPathViolations) console.error("  - " + v);
+  console.error("  Fix: create the script or correct the reference.");
 }
 if (phantomViolations.length) {
   failed = true;
@@ -710,8 +747,8 @@ if (dualCanvasViolations.length) {
 }
 if (failed) process.exit(1);
 console.log(
-  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}@elabs-ai/components-* component names + PR-template themes + ` +
-    "CI-gate contract + version literals + release-set counts + dual-canvas decision consistent " +
-    `(${files.length} docs scanned)` +
+  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}script paths + ` +
+    "@elabs-ai/components-* component names + PR-template themes + CI-gate contract + version literals + " +
+    `release-set counts + dual-canvas decision consistent (${files.length} docs scanned)` +
     `${workflowsPresent ? "" : ". NOTE: workflow-ref + CI-gate-contract rules SKIPPED — no .github/workflows"}.`,
 );
