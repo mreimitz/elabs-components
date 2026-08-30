@@ -187,6 +187,7 @@ jobs:
       - name: Docs and governance
         run: |
           pnpm docs:check
+          pnpm skills:currency:check
           pnpm agents:check
           pnpm rules:scoping:check
           pnpm slop:check
@@ -279,6 +280,7 @@ jobs:
           pnpm rules:scoping:check:test
           pnpm separation:check:test
           pnpm sidebar-drift:check:test
+          pnpm skills:currency:check:test
           pnpm slop:check:test
           pnpm states:check:test
           pnpm surface-elevation:check:test

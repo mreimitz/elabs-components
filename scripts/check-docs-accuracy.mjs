@@ -52,6 +52,11 @@ import { findRepoRoot } from "../packages/cli/lib/core.mjs";
 import { collectGates } from "./lib/workflow-gates.mjs";
 import { distributablePackages } from "./lib/distributables.mjs";
 import { versionSites } from "./set-version.mjs";
+import { NUMBER_WORDS, findThemeCountViolations } from "./lib/theme-count-prose.mjs";
+
+// Re-exported for check-docs-accuracy.test.mjs and check-skills-currency.mjs — the
+// regex now lives once in ./lib/theme-count-prose.mjs (#29).
+export { NUMBER_WORDS, findThemeCountViolations };
 
 const root = findRepoRoot(process.cwd()) ?? process.cwd();
 
@@ -190,40 +195,6 @@ const THEME_NAMES = existsSync(themeTypesPath)
   : null;
 const THEME_COUNT = THEME_NAMES?.length ?? null;
 const THEME_LIST = (THEME_NAMES ?? []).join(", ");
-
-const NUMBER_WORDS = {
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-};
-
-/**
- * Lines claiming a theme COUNT that disagrees with `themeCount`. Handles both the
- * word form ("all six themes") and the numeric form ("6 themes"). Pure — exported
- * for the self-test.
- */
-export function findThemeCountViolations(text, themeCount) {
-  if (!themeCount) return [];
-  const re = new RegExp(`\\b(${Object.keys(NUMBER_WORDS).join("|")}|\\d+)\\s+themes\\b`, "gi");
-  const out = [];
-  text.split("\n").forEach((line, i) => {
-    for (const m of line.matchAll(re)) {
-      const token = m[1].toLowerCase();
-      const claimed = NUMBER_WORDS[token] ?? Number(token);
-      if (Number.isFinite(claimed) && claimed !== themeCount) {
-        out.push({ line: i + 1, match: m[0], claimed });
-      }
-    }
-  });
-  return out;
-}
 
 /**
  * ADRs are DATED decision records: an ADR that measured "4 of 6 themes" in 2026-06
