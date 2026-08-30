@@ -91,10 +91,12 @@ export const WithIllustration: Story = {
   },
 };
 
-export const NoAccessError: Story = {
-  name: "Error (no-access illustration)",
+export const NoAccess: Story = {
+  name: "Empty (no-access illustration)",
   args: {
-    kind: "error",
+    // "No access" is a blocked/informational state, not a system failure —
+    // kind stays "empty" (no alarm-red "Error" eyebrow) rather than "error".
+    kind: "empty",
     title: "You don't have access",
     description: "Ask a workspace admin to grant you permission.",
     illustration: <NoAccessIllustration />,
