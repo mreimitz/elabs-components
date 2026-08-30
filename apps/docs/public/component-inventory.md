@@ -17,7 +17,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 361 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 445 | 13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 130 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -544,6 +544,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AudioPlayerTimeDisplay | component |  | `@elabs-ai/components-ai` |  |
 | AudioPlayerTimeRange | component |  | `@elabs-ai/components-ai` |  |
 | AudioPlayerVolumeRange | component |  | `@elabs-ai/components-ai` |  |
+| AudioVisualizer | component |  | `@elabs-ai/components-ai` | Canvas-drawn live mic-level / waveform meter, driven entirely by a `levels` prop. |
 | BrandMotionConfig | component |  | `@elabs-ai/components-ai` | Feeds descendant Motion components the brand transition (duration/ease mirrored from the motion tokens). |
 | Canvas | component |  | `@elabs-ai/components-ai` | The in-chat agent workspace graph surface (React Flow) — the canvas an agent renders inside a conversation (ADR 0018). |
 | ChainOfThought | component |  | `@elabs-ai/components-ai` | Step-by-step live reasoning trace with per-step status and search results. |
@@ -918,6 +919,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useAttachmentContext | hook |  | `@elabs-ai/components-ai` |  |
 | useAttachmentsContext | hook |  | `@elabs-ai/components-ai` |  |
 | useAudioDevices | hook |  | `@elabs-ai/components-ai` |  |
+| useAudioLevel | hook |  | `@elabs-ai/components-ai` |  |
 | useContextPanel | hook |  | `@elabs-ai/components-ai` |  |
 | useJSXPreview | hook |  | `@elabs-ai/components-ai` |  |
 | useMessageEdit | hook |  | `@elabs-ai/components-ai` |  |

@@ -215,6 +215,12 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.persona.thinking": "Assistant thinking…",
   "ai.persona.speaking": "Assistant speaking",
   "ai.persona.asleep": "Assistant asleep",
+  // AudioVisualizer. Announced through a throttled `role="status"` region —
+  // the canvas itself is decorative (see .claude/rules/loading-states.md and
+  // issue #21's accessibility guidance).
+  "ai.audioVisualizer.idle": "Microphone not connected",
+  "ai.audioVisualizer.silent": "No input detected",
+  "ai.audioVisualizer.active": "Microphone active",
   "ai.selectionToolbar.label": "Selection actions",
   "ai.webPreview.urlPlaceholder": "Enter URL...",
   "ai.micSelector.searchPlaceholder": "Search microphones...",
