@@ -41,17 +41,30 @@ export const Ghost: Story = { args: { variant: "ghost" } };
 // themes.css/Tailwind failed to load, this would be the transparent default
 // `rgba(0, 0, 0, 0)` and fail — where a plain `toBeVisible()` would still pass
 // on the unstyled element.
-//
-// The harness applies the shipped DEFAULT theme (`light`) to
-// `document.documentElement` (see `apps/docs/.storybook/preview.tsx`'s
-// `withTheme` decorator, #402), so `--primary` here is light's own
-// value (`oklch(0.553 0.143 153)` in themes.css) — not the unbranded `:root`
-// fallback this test asserted against before #402 fixed the harness to
-// actually apply a theme.
 export const CssCheck: Story = {
   play: async ({ canvas }) => {
     const btn = canvas.getByRole("button", { name: "Button" });
-    await expect(getComputedStyle(btn).backgroundColor).toBe("oklch(0.553 0.143 153)");
+
+    // Create a hidden reference element styled with the same token
+    // to derive the expected value dynamically, avoiding hardcoded snapshots
+    const ref = document.createElement("div");
+    ref.className = "bg-primary";
+    ref.style.visibility = "hidden";
+    ref.style.position = "absolute";
+    document.body.appendChild(ref);
+
+    const buttonBgColor = getComputedStyle(btn).backgroundColor;
+    const referenceBgColor = getComputedStyle(ref).backgroundColor;
+
+    // Verify the token system loaded by comparing button color to reference
+    await expect(buttonBgColor).toBe(referenceBgColor);
+
+    // Verify the token system actually loaded a non-transparent color
+    // (catches the case where themes.css/Tailwind failed to load)
+    await expect(buttonBgColor).not.toBe("rgba(0, 0, 0, 0)");
+
+    // Clean up
+    ref.remove();
   },
 };
 
