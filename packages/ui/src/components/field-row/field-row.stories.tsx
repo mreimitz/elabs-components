@@ -11,8 +11,43 @@ const meta = {
   parameters: {
     docs: {
       description: {
-        component:
-          "Label/description/error/aria-describedby wiring for a single field OUTSIDE a react-hook-form context. See Forms/Form for the RHF-bound equivalent.",
+        component: `Label/description/error/aria-describedby wiring for a single field OUTSIDE a react-hook-form context. See Forms/Form for the RHF-bound equivalent.
+
+**Using \`FieldRow\` with a form runtime other than react-hook-form (#26).** \`FieldRow\` never imports \`react-hook-form\` — it renders entirely from plain \`label\`/\`description\`/\`error\` props, so it works with a plain \`useState\`-controlled field, Formik, Final Form, TanStack Form or a bespoke reducer just as readily. \`react-hook-form\`/\`@hookform/resolvers\` are optional peers of \`@elabs-ai/components-ui\` — a consumer who only uses \`FieldRow\` never installs or bundles either (the RHF-bound \`Form\` family lives on the separate \`@elabs-ai/components-ui/form\` subpath).
+
+Plain \`useState\` (no form library at all):
+
+\`\`\`tsx
+import { useState } from "react";
+import { FieldRow, Input } from "@elabs-ai/components-ui";
+
+function NameField() {
+  const [name, setName] = useState("");
+  const error = name.trim() === "" ? "Name is required." : undefined;
+
+  return (
+    <FieldRow label="Name" error={error}>
+      <Input value={name} onChange={(e) => setName(e.target.value)} />
+    </FieldRow>
+  );
+}
+\`\`\`
+
+Formik (illustrative — this repo does not depend on \`formik\`; the shape is the same for Final Form or TanStack Form, since \`FieldRow\` only ever reads \`label\`/\`description\`/\`error\`):
+
+\`\`\`tsx
+import { Field, useField } from "formik";
+import { FieldRow, Input } from "@elabs-ai/components-ui";
+
+function NameField() {
+  const [field, meta] = useField("name");
+  return (
+    <FieldRow label="Name" error={meta.touched ? meta.error : undefined}>
+      <Input {...field} />
+    </FieldRow>
+  );
+}
+\`\`\``,
       },
     },
   },

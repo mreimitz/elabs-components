@@ -105,7 +105,14 @@ export * from "./components/error-state";
 export * from "./components/expand-dialog";
 export * from "./components/field-row";
 export * from "./components/file-upload";
-export * from "./components/form";
+// `Form`/`FormField`/… are NOT re-exported from the main barrel — they are the
+// ONLY module in this package that imports `react-hook-form`/`@hookform/resolvers`
+// (peer, optional per issue #26). Re-exporting them here would pull that static
+// import into every consumer's bundled `dist/index.js` (bundlers must resolve a
+// top-level ESM import to build the module graph, even if the binding is never
+// used), forcing react-hook-form on every consumer regardless of whether they
+// use Form. Import the RHF-bound family from the dedicated subpath instead:
+// `import { Form, FormField, … } from "@elabs-ai/components-ui/form"`.
 export * from "./components/hover-card";
 export * from "./components/icon-button";
 export * from "./components/input";

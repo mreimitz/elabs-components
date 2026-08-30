@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T06:17:43.193Z",
+  "generatedAt": "2026-08-30T11:10:25.637Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16548,8 +16548,10 @@
       "path": "packages/ui",
       "peerDependencies": {
         "@elabs-ai/components-tokens": "workspace:*",
+        "@hookform/resolvers": "^3.9.1",
         "react": "^18.2.0 || ^19.0.0",
-        "react-dom": "^18.2.0 || ^19.0.0"
+        "react-dom": "^18.2.0 || ^19.0.0",
+        "react-hook-form": "^7.54.2"
       },
       "components": [
         {
@@ -17296,41 +17298,6 @@
           "name": "FilterChip",
           "kind": "value",
           "module": "packages/ui/src/components/view-toolbar/view-toolbar.tsx"
-        },
-        {
-          "name": "Form",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
-        },
-        {
-          "name": "FormControl",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
-        },
-        {
-          "name": "FormDescription",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
-        },
-        {
-          "name": "FormField",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
-        },
-        {
-          "name": "FormItem",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
-        },
-        {
-          "name": "FormLabel",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
-        },
-        {
-          "name": "FormMessage",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
         },
         {
           "name": "Heading",
@@ -18348,11 +18315,6 @@
           "name": "useFileUpload",
           "kind": "value",
           "module": "packages/ui/src/components/file-upload/file-upload.tsx"
-        },
-        {
-          "name": "useFormField",
-          "kind": "value",
-          "module": "packages/ui/src/components/form/form.tsx"
         },
         {
           "name": "useIsMobile",
@@ -22249,32 +22211,6 @@
             "Confirming a destructive action in a plain Dialog — use AlertDialog (it traps focus on the safe action)."
           ]
         },
-        "Form": {
-          "purpose": "Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema.",
-          "category": "input",
-          "relationships": {
-            "contains": [
-              "FormField",
-              "FormItem",
-              "FormLabel",
-              "FormControl",
-              "FormMessage"
-            ],
-            "pairsWith": [
-              "Button",
-              "Input",
-              "Select"
-            ]
-          },
-          "stateTokens": {
-            "invalid": "text-destructive (FormMessage)"
-          },
-          "antiPatterns": [
-            "Disabling submit until valid — keep submit enabled until the request starts, then show a spinner.",
-            "Errors not rendered inline next to the field; not focusing the first error on submit.",
-            "Warning the user before navigating away from unsaved changes is missing."
-          ]
-        },
         "Input": {
           "purpose": "Single-line text field — the base form input.",
           "category": "input",
@@ -22499,6 +22435,54 @@
           "otherExports": [
             "cn"
           ]
+        },
+        "@elabs-ai/components-ui/form": {
+          "components": [
+            {
+              "name": "Form",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            },
+            {
+              "name": "FormControl",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            },
+            {
+              "name": "FormDescription",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            },
+            {
+              "name": "FormField",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            },
+            {
+              "name": "FormItem",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            },
+            {
+              "name": "FormLabel",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            },
+            {
+              "name": "FormMessage",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            }
+          ],
+          "hooks": [
+            {
+              "name": "useFormField",
+              "kind": "value",
+              "module": "packages/ui/src/components/form/form.tsx"
+            }
+          ],
+          "types": [],
+          "otherExports": []
         }
       }
     },

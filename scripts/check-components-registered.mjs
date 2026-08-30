@@ -165,18 +165,56 @@ function runGate({ update = false } = {}) {
     // a story may live in apps/docs referencing this component
     storyIndex.has(base.toLowerCase());
 
+  // A component folder can ALSO be registered by being the target of its own
+  // dedicated `package.json` subpath export (ADR 0006) instead of the main
+  // barrel — e.g. `./form` -> `src/components/form/index.ts`, split off the
+  // main `.` barrel specifically so importing it does not drag its peer
+  // dependency (react-hook-form) into every consumer, issue #26. That is still
+  // "registered": `pnpm manifest`'s `readSubpathBarrels()` crawls every
+  // non-`.` export and files its members under `packages[pkg].subpaths`, so it
+  // reaches the manifest/MCP agent path this gate exists to protect — it is
+  // just reached via a different, equally discoverable entry point.
+  function subpathComponentDirs(pkgDir, componentsDir) {
+    const out = new Set();
+    const pkgJsonPath = join(pkgDir, "package.json");
+    if (!existsSync(pkgJsonPath)) return out;
+    let pkgJson;
+    try {
+      pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf8"));
+    } catch {
+      return out;
+    }
+    const exportsMap = pkgJson.exports;
+    if (!exportsMap || typeof exportsMap !== "object") return out;
+    for (const [subpath, target] of Object.entries(exportsMap)) {
+      if (subpath === ".") continue; // the main barrel — not a subpath
+      const rel = typeof target === "string" ? target : (target?.types ?? target?.default);
+      if (typeof rel !== "string") continue;
+      const abs = join(pkgDir, rel);
+      if (abs.startsWith(componentsDir + "/") || abs === componentsDir) {
+        const under = abs.slice(componentsDir.length + 1);
+        const name = under.split("/")[0];
+        if (name) out.add(name);
+      }
+    }
+    return out;
+  }
+
   // ---- @elabs-ai/components-ui : folder-per-component ----
   const missingStory = [];
-  const uiComponents = join(root, "packages", "ui", "src", "components");
+  const uiPkgDir = join(root, "packages", "ui");
+  const uiComponents = join(uiPkgDir, "src", "components");
   if (existsSync(uiComponents)) {
-    const barrel = readFileSync(join(root, "packages", "ui", "src", "index.ts"), "utf8");
+    const barrel = readFileSync(join(uiPkgDir, "src", "index.ts"), "utf8");
+    const subpathRegistered = subpathComponentDirs(uiPkgDir, uiComponents);
     for (const name of readdirSync(uiComponents)) {
       const dir = join(uiComponents, name);
       if (!statSync(dir).isDirectory() || ignored(name)) continue;
       const spec = `./components/${name}`;
-      const exported = new RegExp(
-        `["']${spec.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/index)?["']`,
-      ).test(barrel);
+      const exported =
+        new RegExp(`["']${spec.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/index)?["']`).test(
+          barrel,
+        ) || subpathRegistered.has(name);
       if (!exported) {
         blocking.push(
           `@elabs-ai/components-ui: components/${name}/ is NOT re-exported from src/index.ts.\n` +

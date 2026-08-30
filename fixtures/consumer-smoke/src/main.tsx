@@ -14,7 +14,7 @@ import { createRoot } from "react-dom/client";
 
 // Foundation
 import { ThemeProvider } from "@elabs-ai/components-tokens";
-import { Button } from "@elabs-ai/components-ui";
+import { Button, FieldRow, Input } from "@elabs-ai/components-ui";
 import { BrandLogo } from "@elabs-ai/components-icons";
 
 // The server-safe leaves. These deliberately carry NO "use client" directive,
@@ -46,10 +46,22 @@ import { FileViewer } from "@elabs-ai/components-viewer";
 
 import "./index.css";
 
+// react-hook-form / @hookform/resolvers are OPTIONAL peers of
+// @elabs-ai/components-ui (issue #26) and are deliberately NOT installed in
+// this fixture (see package.json — no react-hook-form dependency). FieldRow
+// is the headless field primitive that renders label/description/error/
+// aria-describedby wiring from plain props, with no react-hook-form import of
+// its own; it lives on the MAIN barrel. The RHF-bound `Form`/`FormField`/…
+// family lives on the separate `@elabs-ai/components-ui/form` subpath
+// (ADR 0006) precisely so it is NOT imported anywhere in this file — doing so
+// would require react-hook-form to resolve, which is exactly what this
+// fixture proves a FieldRow-only consumer never has to pay for.
+
 // Reference every import so nothing is tree-shaken away before it is resolved.
 const surfaces = [
   ThemeProvider,
   Button,
+  FieldRow,
   BrandLogo,
   DataTable,
   ChatShell,
@@ -74,6 +86,9 @@ function App() {
           {surfaces.length} surfaces resolved; markdown root is {ast.type}.
         </p>
         <Button>Ship it</Button>
+        <FieldRow label="Name">
+          <Input />
+        </FieldRow>
       </main>
     </ThemeProvider>
   );

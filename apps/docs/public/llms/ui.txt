@@ -175,16 +175,6 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - FileUploadItem
 - FileUploadList
 - FilterChip
-- Form — Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema.
-  - avoid: Disabling submit until valid — keep submit enabled until the request starts, then show a spinner.
-  - avoid: Errors not rendered inline next to the field; not focusing the first error on submit.
-  - avoid: Warning the user before navigating away from unsaved changes is missing.
-- FormControl
-- FormDescription
-- FormField
-- FormItem
-- FormLabel
-- FormMessage
 - Heading (size=display|title*|subtitle)
 - HoverCard
 - HoverCardContent
@@ -415,7 +405,6 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - useCopyToClipboard
 - useDialogDismissGuard
 - useFileUpload
-- useFormField
 - useIsMobile
 - useLocale
 - useMentionInput
@@ -424,3 +413,14 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - useThemeTransition
 - useTreeKeyboard
 - useVirtualListbox
+
+## Subpath exports
+
+- Form (`@elabs-ai/components-ui/form` · component)
+- FormControl (`@elabs-ai/components-ui/form` · component)
+- FormDescription (`@elabs-ai/components-ui/form` · component)
+- FormField (`@elabs-ai/components-ui/form` · component)
+- FormItem (`@elabs-ai/components-ui/form` · component)
+- FormLabel (`@elabs-ai/components-ui/form` · component)
+- FormMessage (`@elabs-ai/components-ui/form` · component)
+- useFormField (`@elabs-ai/components-ui/form` · hook)

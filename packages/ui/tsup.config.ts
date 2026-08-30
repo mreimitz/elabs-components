@@ -10,7 +10,18 @@ export default defineConfig([
     // The component surface. esbuild strips the per-module "use client"
     // directives when it bundles, so the 28 in src/ never reach dist/ —
     // without this banner every RSC consumer breaks on the first hook.
-    entry: { index: "src/index.ts" },
+    //
+    // `form` is a second entry in THIS SAME pass (not a third pass) so it
+    // shares the "use client" banner and, more importantly, shares chunks
+    // with `index` — `Label`/`cn`/Radix `Slot` land in one common chunk
+    // instead of a duplicated copy inside dist/form.js. It is a dedicated
+    // subpath (`@elabs-ai/components-ui/form`, ADR 0006) precisely so its
+    // sole `react-hook-form`/`@hookform/resolvers` import (issue #26, both
+    // optional peers) never reaches `dist/index.js` — a bundler must resolve
+    // every static top-level import to build its module graph, even one
+    // whose binding is unused, so a consumer who never imports Form must
+    // never have that import statement in the file they DO import.
+    entry: { index: "src/index.ts", form: "src/components/form/index.ts" },
     format: ["esm"],
     dts: true,
     sourcemap: true,
