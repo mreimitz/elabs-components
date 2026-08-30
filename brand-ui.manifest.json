@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T11:08:15.221Z",
+  "generatedAt": "2026-08-30T11:40:52.681Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -5120,6 +5120,18 @@
               "optional": true,
               "type": "boolean",
               "description": "No content has arrived yet (loading-states.md `loading`) — renders skeleton lines at the body line-height instead of `<Streamdown>`, so the bubble reserves its space before the first token. @default false"
+            },
+            {
+              "name": "components",
+              "optional": true,
+              "type": "ComponentProps<typeof Streamdown>[\"components\"]",
+              "description": "Custom renderers for markdown elements. **Semantics differ from `MarkdownView`:** `components` here REPLACES (not merges) per key against Streamdown's own defaults, since `MessageResponse` has no internal component map to merge with. See `MarkdownView` for merge-over-defaults semantics and `#10` for details."
+            },
+            {
+              "name": "plugins",
+              "optional": true,
+              "type": "ComponentProps<typeof Streamdown>[\"plugins\"]",
+              "description": "Custom plugins for markdown processing. **Merges** per key with the internal defaults (`math`, `code`, `mermaid`, `renderers`), so a consumer's entry wins for its key; every key the consumer does not set keeps the reactive, i18n-aware internal default. This is the same semantics as `MarkdownView` (#10 fix round). The `math.rehypePlugin` runs after sanitisation; see `MarkdownView` TSDoc for the full security model."
             }
           ]
         },

@@ -548,6 +548,24 @@ export type MessageResponseProps = ComponentProps<typeof Streamdown> & {
    * @default false
    */
   loading?: boolean;
+  /**
+   * Custom renderers for markdown elements. **Semantics differ from
+   * `MarkdownView`:** `components` here REPLACES (not merges) per key against
+   * Streamdown's own defaults, since `MessageResponse` has no internal
+   * component map to merge with. See `MarkdownView` for merge-over-defaults
+   * semantics and `#10` for details.
+   */
+  components?: ComponentProps<typeof Streamdown>["components"];
+  /**
+   * Custom plugins for markdown processing. **Merges** per key with the
+   * internal defaults (`math`, `code`, `mermaid`, `renderers`), so a
+   * consumer's entry wins for its key; every key the consumer does not set
+   * keeps the reactive, i18n-aware internal default. This is the same
+   * semantics as `MarkdownView` (#10 fix round). The `math.rehypePlugin`
+   * runs after sanitisation; see `MarkdownView` TSDoc for the full security
+   * model.
+   */
+  plugins?: ComponentProps<typeof Streamdown>["plugins"];
 };
 
 export const MessageResponse = memo(
