@@ -115,6 +115,16 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Fallback name for a row's activation control when the row's first cell holds
   // no primitive value to name it after (see `rowActionLabel`).
   "data.table.rowAction": "Activate row",
+  // createSelectionColumn (#11) — the header select-all checkbox and each row's
+  // own checkbox. Kept table-scoped (not the generic `selectAll` key) so a
+  // translator can phrase "rows" distinctly from other bulk-select surfaces.
+  "data.table.selectAllRows": "Select all rows",
+  // `selectRowNamed` names each row's checkbox from its own first data column
+  // (#11 I4) so screen-reader users hear "Select Alpha", not `selectRow`'s
+  // identical generic label repeated on every row; `selectRow` stays the
+  // fallback when no data column value is derivable.
+  "data.table.selectRowNamed": "Select {name}",
+  "data.table.selectRow": "Select row",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton

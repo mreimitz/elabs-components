@@ -15,13 +15,14 @@ import {
   type OnChangeFn,
   type PaginationState,
   type Row,
+  type RowSelectionState,
   type SortingState,
   type Table as TanstackTable,
   type VisibilityState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { Button, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
+import { Button, Checkbox, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -39,6 +40,11 @@ export interface DataTableViewState {
    * that already constructs a `DataTableViewState` literal.
    */
   columnPinning?: ColumnPinningState;
+  /**
+   * Which rows are checked (#11), keyed by row id — see `getRowId`. OPTIONAL
+   * like `columnPinning`, for the same reason: the other members predate it.
+   */
+  rowSelection?: RowSelectionState;
 }
 
 /**
@@ -134,6 +140,51 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   columnPinning?: ColumnPinningState;
   onColumnPinningChange?: OnChangeFn<ColumnPinningState>;
+
+  /**
+   * Controlled row-selection state (#11) — which rows are checked, keyed by
+   * row id (see `getRowId`). When provided the component is
+   * selection-controlled; otherwise it manages the slice internally and can
+   * be seeded once via `initialView.rowSelection`. Pair it with a selection
+   * column built by `createSelectionColumn` (or drive it yourself off the
+   * `table` instance handed to `toolbar`).
+   *
+   * Selection is a LAYOUT/UI concern, not a query concern — like
+   * `columnPinning`, it is client-only and never joins `DataTableServerArgs` /
+   * `onServerChange`.
+   */
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  /**
+   * Which rows can be selected: `true`/`false` for all rows, or a predicate
+   * evaluated per row. Passed straight through to `useReactTable`. Default
+   * (TanStack's own): `true`.
+   */
+  enableRowSelection?: boolean | ((row: Row<TData>) => boolean);
+  /**
+   * Allow more than one row to be selected at once. Default (TanStack's own):
+   * `true`. Set `false` for single-select (radio-style) behaviour.
+   */
+  enableMultiRowSelection?: boolean;
+  /**
+   * Stable row id, independent of row INDEX. TanStack's default id is set
+   * ONCE per row object when the core row model is built, then reused by
+   * reference through sorting/filtering — so a client-side sort or filter
+   * does NOT disturb selection identity even without this prop. The real
+   * hazard is a `data` array replacement: when the app passes NEW object
+   * references (a re-fetch, an optimistic update), TanStack rebuilds the
+   * core row model from scratch and reassigns default (index-based) ids, so a
+   * row that kept its position but got a new object still keeps its
+   * selection — but one that MOVED position silently inherits whatever
+   * selection belonged to the id now sitting at its old index. This is
+   * unavoidable under `manualPagination`: each page IS a fresh `data` array,
+   * so the default index-based id restarts at `0` on every page and a
+   * selection made on one page can collide with a different record on the
+   * next. Supply `getRowId` whenever `data` can be replaced with new object
+   * references (including every server-paginated table) so identity survives
+   * the replacement instead of falling back to index.
+   */
+  getRowId?: (row: TData, index: number) => string;
 
   /**
    * One-shot rehydrate for uncontrolled slices only (ignored for any slice
@@ -328,6 +379,104 @@ function unsizedColumnIds<TData, TValue>(defs: readonly ColumnDef<TData, TValue>
   return out;
 }
 
+// ─── Row-selection column (#11) ──────────────────────────────────────────────
+//
+// `flexRender` mounts a function `header`/`cell` as a real React component
+// (`React.createElement(Comp, props)`, not a bare function call — see
+// `@tanstack/react-table`'s `flexRender`), so these are ordinary components:
+// hooks (`useLocale`) are safe inside them.
+
+/**
+ * The row's own "primary identifier" — the first visible DATA column's value,
+ * skipping display columns that carry no `accessorKey`/`accessorFn` (e.g. a
+ * leading `createSelectionColumn()` checkbox, or a decorative avatar column).
+ * `column.accessorFn` is public TanStack API, populated for any
+ * `accessorKey`/`accessorFn` column and `undefined` for a pure display column
+ * (`core/column.ts`) — so this is a reliable "is this a data column" test.
+ * Shared by `rowActionName` (#337) and the selection column's per-row
+ * accessible name (#11 I4/I6), so a leading selection column can't silently
+ * degrade either one to its generic fallback.
+ */
+function firstDataCellValue<TData>(row: Row<TData>): string | undefined {
+  for (const cell of row.getVisibleCells()) {
+    if (!cell.column.accessorFn) continue;
+    const value = cell.getValue();
+    if (typeof value === "string" && value.trim() !== "") return value;
+    if (typeof value === "number") return String(value);
+  }
+  return undefined;
+}
+
+/**
+ * Select-all header cell. Radix `Checkbox` renders a genuinely distinct
+ * `indeterminate` glyph + `aria-checked="mixed"` for a partial page
+ * selection (see `checkbox.tsx`), so the visual and the accessible state
+ * agree without any extra wiring here.
+ */
+function SelectAllHeaderCell<TData>({ table }: { table: TanstackTable<TData> }) {
+  const { t } = useLocale();
+  const allSelected = table.getIsAllPageRowsSelected();
+  const someSelected = table.getIsSomePageRowsSelected();
+  return (
+    <Checkbox
+      data-slot="data-table-select-all"
+      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+      onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)}
+      aria-label={t("data.table.selectAllRows")}
+    />
+  );
+}
+
+/**
+ * Per-row checkbox cell — disabled when `enableRowSelection` excludes the
+ * row. Names each checkbox from the row's own data (#11 I4) instead of the
+ * identical generic label every row previously shared, using the same
+ * "first data cell" lookup `rowActionName` (#337) already uses.
+ */
+function SelectRowCell<TData>({ row }: { row: Row<TData> }) {
+  const { t } = useLocale();
+  const name = firstDataCellValue(row);
+  return (
+    <Checkbox
+      data-slot="data-table-select-cell"
+      checked={row.getIsSelected()}
+      disabled={!row.getCanSelect()}
+      onCheckedChange={(checked) => row.toggleSelected(checked === true)}
+      aria-label={name ? t("data.table.selectRowNamed", { name }) : t("data.table.selectRow")}
+    />
+  );
+}
+
+/**
+ * Ready-made checkbox selection column (#11): header select-all (with a real
+ * `indeterminate` state for a partial page selection) + a per-row checkbox,
+ * both built on `@elabs-ai/components-ui`'s `Checkbox` — never hand-roll one.
+ *
+ * Add it to `columns` and pair it with `rowSelection` / `onRowSelectionChange`
+ * (or leave both uncontrolled and read `table.getSelectedRowModel()` from a
+ * `toolbar` render-prop to build a bulk-action bar).
+ *
+ * Declares an explicit `size` (40px) so it plays nicely if a caller pins it —
+ * every pinned column must declare one (#333) — without the dev warning.
+ */
+export function createSelectionColumn<TData>(): ColumnDef<TData> {
+  return {
+    id: "select",
+    size: 40,
+    enableSorting: false,
+    enableHiding: false,
+    header: ({ table }) =>
+      // #11 C1: `toggleAllPageRowsSelected` wipes-then-sets on every row when
+      // `enableMultiRowSelection` is off (TanStack's `mutateRowIsSelected`), so
+      // a select-all header under single-select leaves only the LAST row
+      // selected and pins the header at indeterminate forever. Suppress it.
+      table.options.enableMultiRowSelection === false ? null : (
+        <SelectAllHeaderCell table={table} />
+      ),
+    cell: ({ row }) => <SelectRowCell row={row} />,
+  };
+}
+
 // ─── Component (inner, generic) ───────────────────────────────────────────────
 
 /**
@@ -368,6 +517,11 @@ function DataTableInner<TData, TValue>(
     onPaginationChange: onPaginationChangeProp,
     columnPinning: columnPinningProp,
     onColumnPinningChange: onColumnPinningChangeProp,
+    rowSelection: rowSelectionProp,
+    onRowSelectionChange: onRowSelectionChangeProp,
+    enableRowSelection,
+    enableMultiRowSelection,
+    getRowId,
 
     // Saved views rehydration
     initialView,
@@ -412,6 +566,7 @@ function DataTableInner<TData, TValue>(
   const isPaginationControlled = paginationProp !== undefined;
   const isFilterControlled = globalFilterProp !== undefined;
   const isColumnPinningControlled = columnPinningProp !== undefined;
+  const isRowSelectionControlled = rowSelectionProp !== undefined;
 
   // ── Internal state (only drives a slice when uncontrolled) ───────────────
   const [internalSorting, setInternalSorting] = useState<SortingState>(
@@ -436,6 +591,9 @@ function DataTableInner<TData, TValue>(
   const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>(
     () => initialView?.columnPinning ?? { left: [], right: [] },
   );
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>(
+    () => initialView?.rowSelection ?? {},
+  );
 
   // ── Resolved state (controlled wins over internal) ───────────────────────
   const sorting = isSortingControlled ? sortingProp : internalSorting;
@@ -446,6 +604,7 @@ function DataTableInner<TData, TValue>(
   const pagination = isPaginationControlled ? paginationProp : internalPagination;
   const globalFilter = isFilterControlled ? globalFilterProp : internalGlobalFilter;
   const columnPinning = isColumnPinningControlled ? columnPinningProp : internalColumnPinning;
+  const rowSelection = isRowSelectionControlled ? rowSelectionProp : internalRowSelection;
 
   // ── Refs for post-change server callback ─────────────────────────────────
   // We need the current values of ALL slices when any one fires; use refs to
@@ -462,6 +621,8 @@ function DataTableInner<TData, TValue>(
   columnVisibilityRef.current = columnVisibility;
   const columnPinningRef = useRef(columnPinning);
   columnPinningRef.current = columnPinning;
+  const rowSelectionRef = useRef(rowSelection);
+  rowSelectionRef.current = rowSelection;
 
   // ── Dev-only guard: manualPagination needs a total to compute page count ──
   // Without `rowCount` (or `pageCount`), TanStack's `getPageCount()` falls back
@@ -485,6 +646,35 @@ function DataTableInner<TData, TValue>(
       );
     }
   }, [manualPagination, rowCount, pageCount]);
+
+  // ── Dev-only guard: manualPagination + rowSelection with no getRowId ──────
+  // Under `manualPagination` each page IS a fresh `data` array, so TanStack's
+  // default index-based row id restarts at `0` on every page — a selection
+  // made on page 1's row 0 can silently apply to page 2's row 0 too (#11 I3).
+  // Warn once per mount so this footgun is diagnosable instead of silent (same
+  // idiom as the #227 warning above). Heuristic, not full usage tracing: fires
+  // whenever selection LOOKS wired up (controlled, or a change handler was
+  // passed) — it cannot see an uncontrolled table that never renders a
+  // selection column at all.
+  const warnedManualSelectionRef = useRef(false);
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "production" &&
+      manualPagination &&
+      getRowId === undefined &&
+      (isRowSelectionControlled || onRowSelectionChangeProp !== undefined) &&
+      !warnedManualSelectionRef.current
+    ) {
+      warnedManualSelectionRef.current = true;
+      console.warn(
+        "[DataTable] `rowSelection` is wired up under `manualPagination` with no `getRowId` " +
+          "— each page is a fresh `data` array, so the default index-based id restarts at " +
+          '"0" per page and a selection made on one page can silently apply to a different ' +
+          "record on the next. Pass `getRowId` so selection is keyed to a stable identity " +
+          "instead of position.",
+      );
+    }
+  }, [manualPagination, getRowId, isRowSelectionControlled, onRowSelectionChangeProp]);
 
   /** Fire onServerChange with the LATEST slice values (post-update). */
   function fireServerChange(overrides: Partial<DataTableServerArgs> = {}) {
@@ -526,6 +716,11 @@ function DataTableInner<TData, TValue>(
   ): ColumnPinningState {
     return typeof updater === "function" ? updater(columnPinningRef.current) : updater;
   }
+  function resolveRowSelection(
+    updater: Parameters<OnChangeFn<RowSelectionState>>[0],
+  ): RowSelectionState {
+    return typeof updater === "function" ? updater(rowSelectionRef.current) : updater;
+  }
 
   // ── Row models — omit client model for manual slices ─────────────────────
   const sortedRowModel = manualSorting ? {} : { getSortedRowModel: getSortedRowModel() };
@@ -542,7 +737,15 @@ function DataTableInner<TData, TValue>(
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnVisibility, columnFilters, globalFilter, pagination, columnPinning },
+    state: {
+      sorting,
+      columnVisibility,
+      columnFilters,
+      globalFilter,
+      pagination,
+      columnPinning,
+      rowSelection,
+    },
 
     // Sorting
     onSortingChange: (updater) => {
@@ -604,6 +807,18 @@ function DataTableInner<TData, TValue>(
       if (!isColumnPinningControlled) setInternalColumnPinning(next);
       onColumnPinningChangeProp?.(updater);
     },
+
+    // Row selection (#11) — also a LAYOUT/UI slice, so it never fires
+    // onServerChange: which rows are checked changes nothing the server
+    // would need to re-query.
+    onRowSelectionChange: (updater) => {
+      const next = resolveRowSelection(updater);
+      if (!isRowSelectionControlled) setInternalRowSelection(next);
+      onRowSelectionChangeProp?.(updater);
+    },
+    enableRowSelection,
+    enableMultiRowSelection,
+    getRowId,
 
     getCoreRowModel: getCoreRowModel(),
     ...sortedRowModel,
@@ -984,17 +1199,16 @@ function DataTableInner<TData, TValue>(
 
   /**
    * Accessible name for a row's hidden activation button (#337). Prefers the
-   * caller's `rowActionLabel`, then the first visible cell's primitive value
-   * (the row's primary identifier — the same name a link in that cell would
-   * get, so screen-reader users hear "billing, button", not five identically
-   * named buttons), then the localized generic fallback.
+   * caller's `rowActionLabel`, then the row's first DATA column value (via
+   * `firstDataCellValue` — skips a leading display column with no accessor,
+   * e.g. `createSelectionColumn()`'s own checkbox column, #11 I6), then the
+   * localized generic fallback.
    */
   function rowActionName(row: (typeof rows)[number]): string {
     const explicit = rowActionLabel?.(row);
     if (explicit) return explicit;
-    const firstValue = row.getVisibleCells()[0]?.getValue();
-    if (typeof firstValue === "string" && firstValue.trim() !== "") return firstValue;
-    if (typeof firstValue === "number") return String(firstValue);
+    const name = firstDataCellValue(row);
+    if (name !== undefined) return name;
     return t("data.table.rowAction");
   }
 

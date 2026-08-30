@@ -38,6 +38,12 @@
   then `DEFAULT_MESSAGES` then the raw key exactly as before. Fully backward
   compatible — no resolver and no plural messages behaves identically to
   today. See [`docs/I18N.md`](docs/I18N.md).
+- **Added:** `DataTable` row selection (#11) — a controlled/uncontrolled
+  `rowSelection` slice (`onRowSelectionChange`, `enableRowSelection`,
+  `enableMultiRowSelection`, `getRowId`), seedable via
+  `initialView.rowSelection`, plus a ready-made `createSelectionColumn()`
+  checkbox column (header select-all with `indeterminate`, per-row checkbox)
+  in `@elabs-ai/components-data`.
 
 ## v4.0.0 — 2026-08-17
 

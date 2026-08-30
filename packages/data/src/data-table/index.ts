@@ -1,5 +1,6 @@
 export {
   DataTable,
+  createSelectionColumn,
   type DataTableProps,
   type DataTableViewState,
   type DataTableServerArgs,
