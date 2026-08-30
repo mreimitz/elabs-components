@@ -124,6 +124,22 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   delete the superseded file and update `src/index.ts` — never leave an orphaned
   folder or a flat-file-vs-folder name collision (e.g. `prompt-input.tsx` vs
   `prompt-input/`). Deleting is allowed; prefer it over leaving dead code.
+- **Never re-export a wrapped renderer's security-default prop (#36).** A
+  vendored renderer that ships its own sanitiser as a plain default parameter
+  (Streamdown's `rehypePlugins`/`remarkPlugins` — see `docs/CSP-AND-NETWORK.md`)
+  is REPLACED, not merged, the moment a caller supplies that prop. A wrapper
+  (`MarkdownView`, `MessageResponse`, or any future one) that passes `...props`
+  through to such a renderer must close the hole on **both** halves: `Omit<>`
+  the dangerous keys off its public prop type, AND strip them off the object at
+  runtime before the spread (`stripSanitizerOverrides` in
+  `packages/ai/src/_streamdown-safety.ts` is the shared helper — reuse it, don't
+  re-derive the strip). The type-level `Omit` alone does not count: it is erased
+  at compile time and does nothing against a plain-JS caller, an `as any` cast,
+  or a wider spread object. Widen what the renderer allows through
+  `allowedTags`/`literalTagContent`-style **merging** seams, never by
+  reinstating the replaced prop. `pnpm sanitizer-passthrough:check` enforces
+  this on every module that imports a renderer named in its `SAFE_RENDERERS`
+  table (`scripts/check-sanitizer-passthrough.mjs`).
 
 ## Microcopy (ADR 0017)
 

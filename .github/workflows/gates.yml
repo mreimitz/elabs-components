@@ -155,6 +155,7 @@ jobs:
         run: |
           pnpm csp:check
           pnpm csp-sinks:check
+          pnpm sanitizer-passthrough:check
           pnpm origins:check
           pnpm tt-aliases:check
           pnpm css-assets:check
@@ -284,6 +285,7 @@ jobs:
           pnpm release:snapshot:test
           pnpm roles:check:test
           pnpm rules:scoping:check:test
+          pnpm sanitizer-passthrough:check:test
           pnpm separation:check:test
           pnpm sidebar-drift:check:test
           pnpm skills:currency:check:test

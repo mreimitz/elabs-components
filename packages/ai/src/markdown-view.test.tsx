@@ -137,3 +137,28 @@ $$x^2$$
     expect(document.querySelector(".katex")).toBeInTheDocument();
   });
 });
+
+describe("MarkdownView sanitiser is not overridable (#36)", () => {
+  it("ignores a caller-supplied rehypePlugins array (the sanitiser is not overridable)", () => {
+    // A rehype plugin that appends a <script> AFTER the pipeline. Under the bug the
+    // consumer array REPLACES [rehypeRaw, rehypeSanitize, harden], so nothing strips it.
+    const injectScript = () => (tree: { children: unknown[] }) => {
+      tree.children.push({
+        type: "element",
+        tagName: "script",
+        properties: {},
+        children: [{ type: "text", value: "globalThis.__pwned = true" }],
+      });
+    };
+    const { container } = render(
+      // `as any`: a JS consumer, an `any`, or a wider spread object still reaches
+      // this path even after the type-level `Omit`, so the assertion must exercise
+      // the RUNTIME strip, not the type. (`as never` doesn't typecheck as a JSX
+      // spread — TS2698, "Spread types may only be created from object types" —
+      // `any` is the cast the issue itself names as the bypass vector.)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberate: proves the runtime strip, not the type
+      <MarkdownView {...({ rehypePlugins: [injectScript] } as any)}>{"# hi"}</MarkdownView>,
+    );
+    expect(container.querySelector("script")).toBeNull();
+  });
+});

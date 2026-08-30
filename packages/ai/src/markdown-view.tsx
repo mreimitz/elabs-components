@@ -26,6 +26,7 @@ import {
   type ProseHeadingLevel,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { stripSanitizerOverrides } from "./_streamdown-safety";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
@@ -76,7 +77,7 @@ function buildProseComponents(baseHeadingLevel: ProseHeadingLevel): StreamdownCo
 
 export interface MarkdownViewProps extends Omit<
   ComponentProps<typeof Streamdown>,
-  "components" | "plugins"
+  "components" | "plugins" | "rehypePlugins" | "remarkPlugins"
 > {
   /**
    * The prose level a markdown `#` maps to; deeper headings shift with it
@@ -144,19 +145,18 @@ export interface MarkdownViewProps extends Omit<
    *   `string` prop, the same trusted-component boundary as a `components`
    *   override) do not bypass sanitisation.
    *
-   * **This guarantee does NOT extend to the `rehypePlugins`/`remarkPlugins`
-   * props also exposed on this component** (inherited straight from
-   * Streamdown's own `ComponentProps` — `MarkdownViewProps` only omits
-   * `components`/`plugins`, not these). Unlike `plugins`, a caller-supplied
-   * `rehypePlugins`/`remarkPlugins` array REPLACES Streamdown's default
-   * pipeline wholesale rather than extending it, silently dropping
+   * **`rehypePlugins`/`remarkPlugins` are NOT exposed on this component (#36,
+   * fixed).** Unlike `plugins`, a caller-supplied `rehypePlugins`/
+   * `remarkPlugins` array would REPLACE Streamdown's default pipeline
+   * wholesale rather than extending it, silently dropping
    * `rehype-sanitize`/`rehype-harden` and letting a plain markdown string
-   * execute script in the host page — tracked as **#36 (P1, unfixed on this
-   * component)**. If you need to add a rehype/remark step, start from
-   * Streamdown's own `defaultRehypePlugins`/`defaultRemarkPlugins` and spread
-   * the sanitiser back in (the pattern `@elabs-ai/components-editor`'s
-   * `MarkdownPreview` already uses — see `markdown-preview.tsx`'s
-   * `rehypePlugins` constant) rather than passing a plugin list from scratch.
+   * execute script in the host page — so `MarkdownViewProps` `Omit`s both at
+   * the type level AND `stripSanitizerOverrides()` deletes them at runtime
+   * before the `{...props}` spread below, even if a JS consumer or a cast
+   * reaches this component with either prop set. If you need to widen
+   * sanitisation, use `allowedTags`/`literalTagContent`, which MERGE into the
+   * sanitize schema instead of replacing the pipeline. See
+   * `packages/ai/src/_streamdown-safety.ts`.
    */
   plugins?: StreamdownPlugins;
 }
@@ -169,6 +169,11 @@ export const MarkdownView = ({
   plugins: pluginOverrides,
   ...props
 }: MarkdownViewProps) => {
+  // Streamdown installs [rehypeRaw, rehypeSanitize, harden] as the DEFAULT VALUE of
+  // `rehypePlugins`; a supplied array REPLACES it. This component renders untrusted
+  // model output, so the chain is not overridable. Widen with `allowedTags` /
+  // `literalTagContent`, which merge into the sanitize schema. See issue #36.
+  stripSanitizerOverrides(props);
   const internalComponents = useMemo(
     () => buildProseComponents(baseHeadingLevel),
     [baseHeadingLevel],

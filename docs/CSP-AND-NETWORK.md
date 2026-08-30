@@ -126,6 +126,22 @@ dependency, and — the rung that matters most — if either Radix patch ever st
 applying. **Limit:** it scans direct dependencies, not a full transitive fixpoint,
 so a sink reached only through a transitive dependency is not caught yet.
 
+**`streamdown`'s sanitiser is a deletable prop default, not a merged pipeline
+(#36).** Streamdown installs `rehype-raw` → `rehype-sanitize` → `rehype-harden` as
+the plain JS default value of its `rehypePlugins` prop (`remarkPlugins` feeds the
+same pipeline upstream); supplying either prop to `<Streamdown>` REPLACES the
+whole chain, it does not merge into it. `MarkdownView`/`MessageResponse`
+(`@elabs-ai/components-ai`) both close this off the prop surface: `rehypePlugins`/
+`remarkPlugins` are removed from their public types (`Omit`) **and** stripped at
+runtime (`stripSanitizerOverrides` in `packages/ai/src/_streamdown-safety.ts`)
+before the props reach `<Streamdown>`, so neither a TypeScript force-cast nor a
+plain-JS caller can reinstate the bypass. Consumers who need to widen what
+survives sanitisation use `allowedTags` / `literalTagContent` — both **merge**
+into the sanitize schema instead of replacing the pipeline. Enforced by
+`pnpm sanitizer-passthrough:check` (`scripts/check-sanitizer-passthrough.mjs`),
+which fails on any wrapper that re-exposes a safe renderer's sanitiser-override
+props without the matching `Omit` + runtime strip.
+
 ### Never fetched
 
 `chanhdai.com`, `elements.ai-sdk.dev`, `github.com`, `www.apache.org` appear only

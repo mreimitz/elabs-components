@@ -170,6 +170,8 @@
     "roles:check:test": "node --test scripts/check-role-distinctness.test.mjs",
     "rules:scoping:check": "node scripts/check-rule-scoping.mjs",
     "rules:scoping:check:test": "node --test scripts/check-rule-scoping.test.mjs",
+    "sanitizer-passthrough:check": "node scripts/check-sanitizer-passthrough.mjs",
+    "sanitizer-passthrough:check:test": "node --test scripts/check-sanitizer-passthrough.test.mjs",
     "separation:check": "node scripts/check-separation.mjs",
     "separation:check:test": "node --test scripts/check-separation.test.mjs",
     "sidebar-drift:check": "node scripts/check-sidebar-drift.mjs",
