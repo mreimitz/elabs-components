@@ -126,6 +126,35 @@ dependency, and — the rung that matters most — if either Radix patch ever st
 applying. **Limit:** it scans direct dependencies, not a full transitive fixpoint,
 so a sink reached only through a transitive dependency is not caught yet.
 
+**`streamdown`'s sanitiser is a deletable prop default, not a merged pipeline
+(#36).** Streamdown installs `rehype-raw` → `rehype-sanitize` → `rehype-harden` as
+the plain JS default value of its `rehypePlugins` prop; supplying that prop to
+`<Streamdown>` REPLACES the whole chain, it does not merge into it.
+`MarkdownView`/`MessageResponse` (`@elabs-ai/components-ai`) both close this off
+the prop surface: `rehypePlugins` is removed from their public types (`Omit`)
+**and** stripped at runtime (`stripSanitizerOverrides` in
+`packages/ai/src/_streamdown-safety.ts`) before the props reach `<Streamdown>`,
+so neither a TypeScript force-cast nor a plain-JS caller can reinstate the
+bypass. Consumers who need to widen what survives sanitisation use `allowedTags`
+/ `literalTagContent` — both **merge** into the sanitize schema instead of
+replacing the pipeline. Enforced by `pnpm sanitizer-passthrough:check`
+(`scripts/check-sanitizer-passthrough.mjs`), which fails on any wrapper that
+re-exposes a safe renderer's sanitiser-override prop without the matching `Omit` and the runtime strip.
+
+**`remarkPlugins` is NOT part of that boundary and is still a supported prop.**
+It has the same replace-not-merge shape (a consumer array displaces Streamdown's
+`remark-gfm`/`codeMeta` defaults), but the remark stage runs strictly upstream of
+the rehype chain and Streamdown derives that chain without reading
+`remarkPlugins` — so a raw `html` mdast node, a `data.hName`/`hChildren` hast
+element, an `hProperties` event handler, a `javascript:` link URL or a smuggled
+`raw` hast child injected by a remark plugin all still go through
+`rehype-raw` → `rehype-sanitize` → `rehype-harden` before reaching the DOM.
+Measured across all five channels with the strip removed (PR #74 review, round
+1); the locking tests live in `packages/ai/src/{markdown-view,message}.test.tsx`.
+When adding a future renderer to `SAFE_RENDERERS`, list only props that replace
+the sanitiser itself — an upstream-stage plugin prop is a capability, not a
+hazard.
+
 ### Never fetched
 
 `chanhdai.com`, `elements.ai-sdk.dev`, `github.com`, `www.apache.org` appear only

@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useLocale } from "@elabs-ai/components-ui";
 import { cva, type VariantProps } from "class-variance-authority";
+import { stripSanitizerOverrides } from "./_streamdown-safety";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import type { UIMessage } from "ai";
 import { BotIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -540,7 +541,19 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
   );
 };
 
-export type MessageResponseProps = ComponentProps<typeof Streamdown> & {
+/**
+ * `rehypePlugins` is NOT exposed on `MessageResponse` (#36, fixed). This
+ * renders untrusted, streamed model output — the type-level `Omit` below plus
+ * a runtime `stripSanitizerOverrides()` call before the `{...props}` spread
+ * onto `<Streamdown>` keep Streamdown's default sanitiser chain (rehype-raw →
+ * rehype-sanitize → rehype-harden) non-overridable, even through a JS consumer
+ * or a force-cast.
+ *
+ * `remarkPlugins` IS supported: the remark stage runs upstream of that chain
+ * and cannot bypass it (PR #74 review, round 1). See `MarkdownView`'s TSDoc and
+ * `packages/ai/src/_streamdown-safety.ts` for the full security model.
+ */
+export type MessageResponseProps = Omit<ComponentProps<typeof Streamdown>, "rehypePlugins"> & {
   /**
    * No content has arrived yet (loading-states.md `loading`) — renders
    * skeleton lines at the body line-height instead of `<Streamdown>`, so the
@@ -570,6 +583,13 @@ export type MessageResponseProps = ComponentProps<typeof Streamdown> & {
 
 export const MessageResponse = memo(
   ({ className, loading = false, plugins: pluginOverrides, ...props }: MessageResponseProps) => {
+    // Streamdown installs [rehypeRaw, rehypeSanitize, harden] as the DEFAULT VALUE of
+    // `rehypePlugins`; a supplied array REPLACES it. This component renders untrusted,
+    // streamed model output, so the chain is not overridable. Widen with `allowedTags` /
+    // `literalTagContent`, which merge into the sanitize schema. See issue #36.
+    // `remarkPlugins` is deliberately left alone — it runs upstream of the rehype
+    // chain and cannot bypass it (PR #74 review; see `_streamdown-safety.ts`).
+    stripSanitizerOverrides(props);
     // Streamdown renders its own chrome (code copy, table menus, Mermaid
     // toolbar); route its labels through the locale seam (#310). Spread AFTER
     // so an explicit `translations` prop still wins (ADR 0017 override chain).
