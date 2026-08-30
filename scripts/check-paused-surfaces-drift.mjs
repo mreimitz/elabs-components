@@ -43,9 +43,21 @@
  *   - a rule document with NEITHER a citation pointing at it NOR a live
  *     mechanism behind it is an orphaned rule — the same "intention with no
  *     code" shape the maintainer's decision rejected → FAIL.
+ *   - a rule document that IS cited but has no live mechanism behind it is
+ *     prose describing behaviour the code doesn't implement — the #35 shape
+ *     again, this time with the rule file itself (not just its citations)
+ *     left behind → FAIL. (PR #58 review, "Reject every partial paused-
+ *     surface state" — the original three checks left this combination, and
+ *     the next one, silently passing as `ok`.)
+ *   - a rule document that has a live mechanism behind it but that NOTHING
+ *     cites is an undiscoverable exemption — the mechanism exists in code
+ *     with no pointer to the rule meant to govern it → FAIL.
  *
  * If the concept is ever reintroduced for real, it has to land as all three —
- * mechanism, rule and citations — together, or not at all.
+ * mechanism, rule and citations — together, or not at all. `evaluate()`
+ * checks all four possible "the rule document exists" combinations of
+ * (citation, mechanism) symmetrically with the three "the rule document is
+ * absent" combinations, so there is no partial state left unchecked.
  *
  * Dependency-free; ESM; cwd-independent. Exports the pure detectors + verdict
  * for the self-test (`scripts/check-paused-surfaces-drift.test.mjs`,
@@ -179,6 +191,29 @@ export function evaluate({
       `${RULE_FILE} exists, but nothing cites it and no paused-surface mechanism was found — ` +
         "an orphaned rule documenting no real behaviour (the shape #35's maintainer decision " +
         "explicitly rejected).",
+    );
+  }
+
+  // The two remaining partial states (PR #58 finding "Reject every partial
+  // paused-surface state"): the rule document exists, so the concept is
+  // "documented" — but the other two legs don't both stand behind it. The
+  // header comment above states the design as "all-there or all-gone"; these
+  // are the two combinations that fell through the FIRST two branches
+  // (which only fire when the rule is ABSENT or when NEITHER other leg is
+  // present) and were silently treated as `ok`.
+  if (ruleExists && hasCitation && !hasMechanism) {
+    violations.push(
+      `${RULE_FILE} exists and is cited, but no live paused-surface mechanism was found — ` +
+        "prose describing behaviour the code does not implement (the #35 shape, with the rule " +
+        "itself — not just its citations — left behind after the mechanism was removed).",
+    );
+  }
+
+  if (ruleExists && hasMechanism && !hasCitation) {
+    violations.push(
+      `${RULE_FILE} exists and a live paused-surface mechanism was found, but nothing cites ` +
+        "the rule — an undiscoverable exemption: a reader who finds the mechanism in code has " +
+        "no pointer to the rule that is supposed to govern it.",
     );
   }
 
