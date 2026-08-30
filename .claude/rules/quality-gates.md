@@ -197,9 +197,9 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   fork, and no tracked text file may name the upstream organisation, matched
   case-insensitively and with no `@scope` required, since the case-sensitive one-shot
   codemods are exactly what let ~140 prose/identifier/camelCase survivors through. The
-  ONLY exemptions are paused surfaces, derived from `scripts/lib/paused-surfaces.mjs`
-  — a whole directory for a paused package, and inside `themes.css` only the paused
-  theme's own block. `--staged` runs the same detector over the index and is wired as
+  ONLY exemptions are this gate's own source (`scripts/check-debrand.mjs`) and its
+  self-test (`scripts/check-debrand.test.mjs`), which must quote the names to verify the gate
+  works correctly. `--staged` runs the same detector over the index and is wired as
   a blocking step in `.githooks/pre-commit`, which in this fork is the only
   enforcement point: it has no `.github/workflows`. Self-tested by
   `pnpm debrand:check:test`, which asserts the hook wiring too), the manifest

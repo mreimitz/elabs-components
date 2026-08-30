@@ -81,7 +81,7 @@ every import line. Accepted deliberately in exchange for collision-safety.
 ## What made this safe to do
 
 The rename touched 4,683 occurrences across 758 files, so it was executed as a
-committed codemod (`scripts/rename-scope.mjs`) rewriting the scope **token**,
+committed codemod (a one-shot `scripts/rename-scope.mjs` (since removed)) rewriting the scope **token**,
 not a map of package names. The name-map approach was tried first and was wrong:
 it renamed the packages but left executable prefix checks like
 `name.startsWith("@brand/")` in `check-dep-direction.mjs`, which would have left

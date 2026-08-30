@@ -78,6 +78,14 @@ const VERSION_PKG_PIN_RE = /@elabs-ai\/components-[a-z0-9-]+@(\d+\.\d+\.\d+)\b/g
 // CONTRACT_EXEMPT above. Matched by path suffix, repo-root relative.
 export const VERSION_LITERAL_EXEMPT = new Set(["docs/RELEASING.md", "CHANGELOG.md"]);
 
+// Script paths that are documented as removed/historical. The gate flagged them
+// but they are intentionally cited with "since removed" / historical context,
+// so they do not violate this rule. Format: exact script path as it appears in
+// docs (e.g., "scripts/rename-scope.mjs").
+export const SCRIPT_PATH_REMOVED_EXEMPT = new Set([
+  "scripts/rename-scope.mjs", // One-shot codemod for scope rename, documented as removed in ADR 0016
+]);
+
 /**
  * Find version-literal lines in `text` that disagree with `currentVersion`.
  * Returns `{ line, match }[]` (1-based line numbers). A literal equal to
@@ -592,6 +600,57 @@ const decisionsMdPath = join(root, "docs", "DECISIONS.md");
 const decisionsMdText = existsSync(decisionsMdPath) ? readFileSync(decisionsMdPath, "utf8") : "";
 const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdText });
 
+// ---------------------------------------------------------------------------
+// 8. SCRIPT PATH REFERENCES (#32) — scripts/**.mjs paths cited in docs/rules
+// ---------------------------------------------------------------------------
+// Every `scripts/**` path referenced in .claude/rules/*.md or docs/**/*.md
+// must exist on disk — bare (`scripts/foo.mjs`) AND nested under a package or
+// dotdir prefix (`packages/tokens/scripts/foo.mjs`, `.claude/scripts/foo.mjs`).
+// This catches stale references like scripts/lib/paused-surfaces.mjs that do
+// not actually exist, AND a doubled/wrong prefix on an otherwise-real nested
+// path (e.g. `packages/tokens/packages/tokens/scripts/foo.mjs`) — the exact
+// regression an earlier, bare-only version of this matcher could not see
+// (round-2 fix for #32: it flagged nothing because its negative lookbehind
+// excluded any `scripts/` preceded by another path segment, so a nested path
+// was never checked at all, correct or not).
+export function findScriptPathViolations(files) {
+  const violations = [];
+  // Capture the FULL path: zero or more leading directory segments (word
+  // chars, hyphens, dots — so ".claude/" and "packages/tokens/" both count),
+  // each followed by "/", then the literal "scripts/" anchor, then the rest
+  // of the path down to a ".mjs" file. The leading `(?<![\w.\/-])` boundary
+  // stops the match from starting mid-path (e.g. inside a URL host or a
+  // longer token) so the captured string is the reference as authored, not a
+  // truncated tail of it.
+  const scriptPathRe = /(?<![\w.\/-])(?:[\w.-]+\/)*scripts\/[\w.-]+(?:\/[\w.-]+)*\.mjs\b/g;
+  for (const { file, content } of files) {
+    for (const match of content.matchAll(scriptPathRe)) {
+      const scriptPath = match[0];
+      // Skip if this path is explicitly exempted (documented as removed/historical)
+      if (SCRIPT_PATH_REMOVED_EXEMPT.has(scriptPath)) {
+        continue;
+      }
+      const fullPath = join(root, scriptPath);
+      if (!existsSync(fullPath)) {
+        violations.push(`${file}: references ${scriptPath} which does not exist`);
+      }
+    }
+  }
+  return violations;
+}
+
+const scriptPathViolations = [];
+for (const f of files) {
+  const rel = f.slice(root.length + 1);
+  // Only scan rules and docs directories for script references
+  if (rel.startsWith(".claude/rules/") || rel.startsWith("docs/")) {
+    const text = readFileSync(f, "utf8");
+    for (const v of findScriptPathViolations([{ file: rel, content: text }])) {
+      scriptPathViolations.push(v);
+    }
+  }
+}
+
 let failed = false;
 if (themeViolations.length) {
   failed = true;
@@ -611,6 +670,12 @@ if (workflowViolations.length) {
   console.error(`\n✖ doc references a non-existent workflow (${workflowViolations.length}):`);
   for (const v of workflowViolations) console.error("  - " + v);
   console.error("  Fix: create the workflow or correct the reference.");
+}
+if (scriptPathViolations.length) {
+  failed = true;
+  console.error(`\n✖ doc references a non-existent script path (${scriptPathViolations.length}):`);
+  for (const v of scriptPathViolations) console.error("  - " + v);
+  console.error("  Fix: create the script or correct the reference.");
 }
 if (phantomViolations.length) {
   failed = true;
@@ -681,8 +746,8 @@ if (dualCanvasViolations.length) {
 }
 if (failed) process.exit(1);
 console.log(
-  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}@elabs-ai/components-* component names + PR-template themes + ` +
-    "CI-gate contract + version literals + release-set counts + dual-canvas decision consistent " +
-    `(${files.length} docs scanned)` +
+  `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}script paths + ` +
+    "@elabs-ai/components-* component names + PR-template themes + CI-gate contract + version literals + " +
+    `release-set counts + dual-canvas decision consistent (${files.length} docs scanned)` +
     `${workflowsPresent ? "" : ". NOTE: workflow-ref + CI-gate-contract rules SKIPPED — no .github/workflows"}.`,
 );
