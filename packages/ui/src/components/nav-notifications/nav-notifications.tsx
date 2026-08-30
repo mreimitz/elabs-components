@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../dropdown-menu";
+import { useLocale } from "../locale-provider";
 
 export interface NavNotification {
   id: string;
@@ -34,6 +35,7 @@ export function NavNotifications({
   notifications,
   viewAllLabel = "View all notifications",
 }: NavNotificationsProps) {
+  const { t } = useLocale();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -47,7 +49,7 @@ export function NavNotifications({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" className="my-6 w-80">
-        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("ui.navNotifications.label")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.map(({ id, fallback, text, time }) => (
           <DropdownMenuItem key={id} className="flex items-start gap-3">

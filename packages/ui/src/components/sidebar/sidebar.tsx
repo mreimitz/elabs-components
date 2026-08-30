@@ -19,6 +19,7 @@ import { useIsMobile } from "../../lib/use-mobile";
 import { Button } from "../button";
 import { useCollapsiblePanel } from "../collapsible-panel";
 import { Input } from "../input";
+import { useLocale } from "../locale-provider";
 import { Separator } from "../separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../sheet";
 import { Skeleton } from "../skeleton";
@@ -155,6 +156,7 @@ export const Sidebar = forwardRef<
   ref,
 ) {
   const { isMobile, openMobile, setOpenMobile, open, setOpen } = useSidebar();
+  const { t } = useLocale();
 
   // The collapse mechanism (gap spacer + fixed slide) is the canonical
   // useCollapsiblePanel hook (#190, research 09 §B.2) — Sidebar passes its
@@ -200,7 +202,7 @@ export const Sidebar = forwardRef<
           style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE } as CSSProperties}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
+            <SheetTitle>{t("ui.sidebar.title")}</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>

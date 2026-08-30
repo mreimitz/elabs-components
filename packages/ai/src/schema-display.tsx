@@ -2,6 +2,7 @@
 
 import { Badge } from "@elabs-ai/components-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/components-ui";
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
@@ -172,12 +173,13 @@ export const SchemaDisplayParameters = ({
   ...props
 }: SchemaDisplayParametersProps) => {
   const { parameters } = useContext(SchemaDisplayContext);
+  const { t } = useLocale();
 
   return (
     <Collapsible className={cn(className)} defaultOpen {...props}>
       <CollapsibleTrigger className="group flex w-full items-center gap-2 px-4 py-3 text-start transition-colors hover:bg-muted/50">
         <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-        <span className="font-medium text-sm">Parameters</span>
+        <span className="font-medium text-sm">{t("ai.schemaDisplay.parameters")}</span>
         <Badge className="ms-auto text-xs" variant="secondary">
           {parameters?.length}
         </Badge>
@@ -313,12 +315,13 @@ export const SchemaDisplayResponse = ({
   ...props
 }: SchemaDisplayResponseProps) => {
   const { responseBody } = useContext(SchemaDisplayContext);
+  const { t } = useLocale();
 
   return (
     <Collapsible className={cn(className)} defaultOpen {...props}>
       <CollapsibleTrigger className="group flex w-full items-center gap-2 px-4 py-3 text-start transition-colors hover:bg-muted/50">
         <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-        <span className="font-medium text-sm">Response</span>
+        <span className="font-medium text-sm">{t("ai.schemaDisplay.response")}</span>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="border-t">

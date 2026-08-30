@@ -9,6 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
@@ -22,6 +23,7 @@ function ColumnPickerInner<TData>(
   { table, label = "Columns", className, ...props }: ColumnPickerProps<TData>,
   ref: Ref<HTMLButtonElement>,
 ) {
+  const { t } = useLocale();
   const columns = table.getAllColumns().filter((c) => c.getCanHide());
   return (
     <DropdownMenu>
@@ -31,7 +33,7 @@ function ColumnPickerInner<TData>(
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("data.columnPicker.toggleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => (
           <DropdownMenuItem

@@ -15,6 +15,7 @@ import { ChevronRight, AlertCircle, RotateCcw } from "lucide-react";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import { cn } from "../../lib/cn";
 import { Checkbox } from "../checkbox/checkbox";
+import { useLocale } from "../locale-provider";
 import { Skeleton } from "../skeleton/skeleton";
 import { Spinner } from "../spinner/spinner";
 import { useTreeKeyboard } from "./use-tree-keyboard";
@@ -222,6 +223,7 @@ function VirtualFlatRow<T>({
   registerNodeRef,
   setActiveId,
 }: VirtualFlatRowProps<T>) {
+  const { t } = useLocale();
   const { node, level, setSize, posInSet } = row;
   const isLoading = lazyState === "loading";
   const isError = lazyState === "error";
@@ -321,7 +323,7 @@ function VirtualFlatRow<T>({
       {isError ? (
         <span id={labelId} className="min-w-0 flex items-center gap-1 text-destructive">
           <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
-          <span className="truncate">Failed to load</span>
+          <span className="truncate">{t("ui.tree.failedToLoad")}</span>
           <button
             type="button"
             aria-label="Retry loading children"
@@ -392,11 +394,12 @@ function LoadingRow({ level }: { level: number }) {
 }
 
 function ErrorRow({ level, onRetry }: { level: number; onRetry: () => void }) {
+  const { t } = useLocale();
   const indentStyle = { paddingLeft: `${(level - 1) * 1}rem` };
   return (
     <div
       role="treeitem"
-      aria-label="Failed to load"
+      aria-label={t("ui.tree.failedToLoad")}
       aria-disabled="true"
       tabIndex={-1}
       className="flex min-w-0 items-center gap-1.5 px-2 py-1.5 text-body text-destructive"
@@ -404,7 +407,7 @@ function ErrorRow({ level, onRetry }: { level: number; onRetry: () => void }) {
     >
       <span aria-hidden="true" className="size-4 shrink-0" />
       <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
-      <span className="truncate">Failed to load</span>
+      <span className="truncate">{t("ui.tree.failedToLoad")}</span>
       <button
         type="button"
         onClick={(e) => {

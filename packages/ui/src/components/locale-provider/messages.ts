@@ -107,6 +107,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.confirmDialog.cancel": "Cancel",
   "ui.advancedGroup.title": "Advanced",
   "ui.advancedGroup.changed": "{count} changed",
+  // Pagination's ellipsis (sr-only — the visible glyph is decorative).
+  "ui.pagination.morePages": "More pages",
+  // Sidebar's mobile Sheet title (sr-only header — the sheet itself has no
+  // visible chrome, so this is only ever read by assistive tech).
+  "ui.sidebar.title": "Sidebar",
+  // Tree's error row — shared by the virtualized and non-virtualized branches.
+  "ui.tree.failedToLoad": "Failed to load",
+  // ThemeSwitcher's "follow the OS" option, in both dropdown and toggle modes.
+  "ui.themeSwitcher.system": "System",
+  "ui.navNotifications.label": "Notifications",
+  "ui.teamSwitcher.label": "Teams",
+  "ui.teamSwitcher.addTeam": "Add team",
 
   // ── @elabs-ai/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
@@ -128,6 +140,8 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Column resizing (#12) — the accessible name for the WAI-ARIA
   // separator-as-slider resize handle at the end of a resizable header cell.
   "data.table.resizeColumn": "Resize column, {name}",
+  "data.facetFilter.clearFilters": "Clear filters",
+  "data.columnPicker.toggleColumns": "Toggle columns",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton
@@ -159,15 +173,36 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.promptInput.uploadFiles": "Upload files",
   "ai.promptInput.submit": "Submit",
   "ai.promptInput.stop": "Stop",
+  "ai.agent.instructions": "Instructions",
+  "ai.agent.tools": "Tools",
   "ai.codeBlock.generating": "Generating…",
   "ai.composer.placeholder": "Ask me anything…",
   "ai.context.usage": "Model context usage",
+  "ai.context.totalCost": "Total cost",
+  "ai.context.input": "Input",
+  "ai.context.output": "Output",
+  "ai.context.reasoning": "Reasoning",
+  "ai.context.cache": "Cache",
   "ai.contextPanel.back": "Back to context",
   "ai.contextPanel.toggle": "Toggle context panel",
+  // The mobile Sheet's sr-only title (#18) — distinct from `contextPanel.toggle`,
+  // which labels the button that opens/closes it.
+  "ai.contextPanel.title": "Context panel",
   "ai.environmentVariables.toggleVisibility": "Toggle value visibility",
   "ai.gallery.label": "Image gallery",
   "ai.gallery.expandImage": "Expand image",
   "ai.gallery.downloadImage": "Download image",
+  "ai.gallery.noImages": "No images",
+  "ai.gallery.noDetails": "No details",
+  // Shared by Tool's technical view and SchemaDisplay's request panel.
+  "ai.schemaDisplay.parameters": "Parameters",
+  "ai.schemaDisplay.response": "Response",
+  // ReasoningTrigger's default not-yet-timed message (before `duration` is known).
+  "ai.reasoning.thoughtDefault": "Thought for a few seconds",
+  "ai.stackTrace.empty": "No stack frames",
+  "ai.webPreview.noConsoleOutput": "No console output",
+  // PlanTrigger's icon-only collapse/expand control (sr-only).
+  "ai.plan.togglePlan": "Toggle plan",
   "ai.message.actions": "Message actions",
   "ai.message.editMessage": "Edit message",
   "ai.message.feedback": "Message feedback",

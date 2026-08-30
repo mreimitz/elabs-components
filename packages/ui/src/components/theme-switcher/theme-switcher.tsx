@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "../dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../tooltip";
+import { useLocale } from "../locale-provider";
 import { useThemeTransition, type ThemeTransitionEffect } from "./use-theme-transition";
 
 const SYSTEM_STORAGE_KEY = "brand-ui-theme-system";
@@ -107,6 +108,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     ref,
   ) {
     const { theme, themeDefinitions, setTheme } = useTheme();
+    const { t } = useLocale();
     const switchTheme = useThemeTransition(effect);
     const isControlled = preference !== undefined;
     const [uncontrolledIsSystem, setUncontrolledIsSystem] = useState(false);
@@ -215,7 +217,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
             {showSystem ? (
               <DropdownMenuItem onSelect={() => pickSystem()}>
                 <Monitor />
-                <span>System</span>
+                <span>{t("ui.themeSwitcher.system")}</span>
                 {isSystem ? <Check className="ml-auto" /> : null}
               </DropdownMenuItem>
             ) : null}
@@ -254,7 +256,9 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     // `role` is optional only because `order[i]` is an indexed read under
     // `noUncheckedIndexedAccess`; the modulo above makes it always present.
     const roleLabel = (role: "light" | "dark" | "system" | undefined) =>
-      role === "system" ? "System" : labelOf(role === "dark" ? darkTheme : lightTheme);
+      role === "system"
+        ? t("ui.themeSwitcher.system")
+        : labelOf(role === "dark" ? darkTheme : lightTheme);
 
     return (
       <TooltipProvider>
