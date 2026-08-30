@@ -1275,9 +1275,36 @@ function DataTableInner<TData, TValue>(
                       onKeyDown={(event) => handleResizeKeyDown(event, header.column)}
                       className={cn(
                         "absolute inset-y-0 end-0 w-2 cursor-col-resize touch-none select-none",
-                        "hover:bg-border-strong",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                        header.column.getIsResizing() && "bg-primary",
+                        // a11y fix (#12 review, blocking): this handle is the
+                        // SOLE boundary between two adjacent header cells once
+                        // resizing is on — no fill/elevation change separates
+                        // them otherwise — so per the border/border-strong
+                        // decision test (styling-and-tokens.md) it needs a
+                        // rung that clears WCAG 1.4.11's 3:1 on its OWN, in
+                        // EVERY state, including rest (a control with no
+                        // affordance until hover is unusable without a
+                        // pointer). `border-strong` measures only 2.86-2.96:1
+                        // against this `bg-surface-muted` header — that rung
+                        // is guaranteed only vs `--card`/`--background`, not a
+                        // same-tone surface, which is the exact trap the rule
+                        // warns about. `muted-foreground` is guaranteed AA
+                        // text contrast against `--surface-muted`
+                        // (TEXT_SURFACES), so it clears the 3:1 non-text
+                        // minimum with wide margin (measured ~5.3-6.4:1 in
+                        // both themes, unaffected by density) and is already
+                        // the header's own label color. A slim persistent
+                        // `after:` seam (not just a hover reveal) gives the
+                        // real resting boundary; hover/focus widen it to the
+                        // full hit-zone using the same compliant color.
+                        // Dragging keeps the pre-existing full-fill
+                        // `bg-primary` treatment — a separate, already-
+                        // accepted `--ring`/`--primary` light-theme exemption
+                        // (see `.claude/rules/theming.md`), not something
+                        // this fix changes.
+                        header.column.getIsResizing()
+                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-['']"
+                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2",
                       )}
                     />
                   )}
