@@ -138,6 +138,32 @@ const GROUPS: TokenGroup[] = [
     ],
   },
   {
+    heading: "Ordered neutral ramp (#14)",
+    blurb:
+      "An ADDITIVE, ordered view onto the semantic tokens above (docs/TOKEN_GUIDELINES.md § " +
+      '"Ordered neutral ramp") — for a dense row that needs more than the two text weights ' +
+      "or two divider weights the slots above name. Every rung is either a `var()` alias of " +
+      "an existing slot (foreground-1/-3, border-1/-2, surface-1..4) or a new literal filling " +
+      "the gap (foreground-2/-4). See the dedicated hierarchy story below for the ordered, " +
+      "judgeable rendering — these swatches are the flat catalog entry.",
+    tokens: [
+      { varName: "--foreground-1", utility: "text-foreground-1", note: "== --foreground" },
+      { varName: "--foreground-2", utility: "text-foreground-2", note: "NEW — secondary label" },
+      { varName: "--foreground-3", utility: "text-foreground-3", note: "== --muted-foreground" },
+      {
+        varName: "--foreground-4",
+        utility: "text-foreground-4",
+        note: "NEW — disabled, sub-AA by design",
+      },
+      { varName: "--border-1", utility: "border-border-1", note: "== --border" },
+      { varName: "--border-2", utility: "border-border-2", note: "== --border-strong" },
+      { varName: "--surface-1", utility: "bg-surface-1", note: "== --background" },
+      { varName: "--surface-2", utility: "bg-surface-2", note: "== --surface" },
+      { varName: "--surface-3", utility: "bg-surface-3", note: "== --card" },
+      { varName: "--surface-4", utility: "bg-surface-4", note: "== --surface-elevated" },
+    ],
+  },
+  {
     heading: "App chrome (sidebar)",
     blurb: "The application shell / sidebar surfaces, so dark-sidebar brands stay legible.",
     tokens: [
@@ -320,6 +346,136 @@ export const Primary: Story = {
           foregroundVar: "--primary-foreground",
         }}
       />
+    </div>
+  ),
+};
+
+// #14 — the ordered neutral ramp, rendered so the ORDER is judgeable, not just
+// the swatches above. Each rung is labelled with its own token + utility so a
+// reviewer can tell "rung N really is quieter than rung N-1" from the actual
+// rendered text/border/surface, in both themes — the finding this story exists
+// to close was that these ten tokens had zero consumers anywhere in the repo,
+// so "theme-safe, observed" was unverifiable for them however green the gates.
+const FOREGROUND_RUNGS = [
+  {
+    cls: "text-foreground-1",
+    token: "--foreground-1",
+    role: "Primary value",
+    sample: "$128,400.00",
+  },
+  {
+    cls: "text-foreground-2",
+    token: "--foreground-2",
+    role: "Secondary label",
+    sample: "Q3 revenue",
+  },
+  {
+    cls: "text-foreground-3",
+    token: "--foreground-3",
+    role: "Tertiary / metadata",
+    sample: "Updated 3 minutes ago",
+  },
+  {
+    cls: "text-foreground-4",
+    token: "--foreground-4",
+    role: "Disabled (intentionally sub-AA — WCAG 1.4.3 exempts inactive-control text)",
+    sample: "Archived — no longer editable",
+  },
+] as const;
+
+export const OrderedNeutralRamp: Story = {
+  name: "Ordered neutral ramp — judgeable hierarchy (#14)",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The three ramps stacked so the ORDER reads directly off the page: each foreground " +
+          "rung must look quieter than the one above it (and the quietest, foreground-4, must " +
+          "still be legible — it is sub-AA by design, not illegible); border-1 is the redundant " +
+          "hairline and border-2 the sole-cue rung; surface-1..4 is a lift ladder from page " +
+          "ground to most-elevated. Switch the toolbar theme (light/dark) — the ordering must " +
+          "hold in both. Two adjacent rungs CAN render identically in one theme (e.g. " +
+          "surface-1/surface-2 in `light`, where `--surface` == `--background`) — that is " +
+          "documented as correct in docs/TOKEN_GUIDELINES.md, not a bug.",
+      },
+    },
+    // --foreground-4 is DELIBERATELY sub-AA (docs/TOKEN_GUIDELINES.md § "Ordered
+    // neutral ramp": "disabled, sub-AA by design" — WCAG 1.4.3 exempts inactive-
+    // control text). Excluding it from axe's color-contrast scan documents that
+    // as an accepted design decision rather than papering over it in the a11y
+    // ratchet baseline; every OTHER rung in this story (foreground-1..3, both
+    // border rungs, all four surface rungs) stays fully checked, so a real
+    // regression on any of those still fails this test.
+    a11y: {
+      context: { exclude: ".text-foreground-4" },
+    },
+  },
+  render: () => (
+    <div className="max-w-2xl space-y-8">
+      <section aria-labelledby="ramp-foreground" className="space-y-2">
+        <h3 id="ramp-foreground" className="text-subtitle text-foreground">
+          Foreground rungs — each row quieter than the last
+        </h3>
+        <div className="space-y-1 rounded-lg border border-border bg-card p-4">
+          {FOREGROUND_RUNGS.map((r) => (
+            <div key={r.token} className="flex flex-wrap items-baseline justify-between gap-2 py-1">
+              <span className={`text-body ${r.cls}`}>{r.sample}</span>
+              <span className="text-meta text-muted-foreground">
+                <code className="text-code">{r.token}</code> ·{" "}
+                <code className="text-code">{r.cls}</code> — {r.role}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="ramp-border" className="space-y-2">
+        <h3 id="ramp-border" className="text-subtitle text-foreground">
+          Border rungs — subtle vs. sole-cue
+        </h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2 rounded-lg border border-border-1 bg-card p-4">
+            <code className="block text-code text-foreground">--border-1 / border-border-1</code>
+            <p className="m-0 text-caption text-muted-foreground">
+              Subtle — a redundant boundary (== --border). Legitimate here because the card fill
+              already separates it from the page.
+            </p>
+          </div>
+          <div className="space-y-2 rounded-lg border border-border-2 bg-card p-4">
+            <code className="block text-code text-foreground">--border-2 / border-border-2</code>
+            <p className="m-0 text-caption text-muted-foreground">
+              Strong — the sole structural cue (== --border-strong, ≥3:1). Reach for this rung when
+              there is no fill/elevation change to fall back on.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="ramp-surface" className="space-y-2">
+        <h3 id="ramp-surface" className="text-subtitle text-foreground">
+          Surface rungs — a lift ladder, page ground to most elevated
+        </h3>
+        <div className="rounded-lg bg-surface-1 p-6">
+          <p className="m-0 mb-3 text-meta text-muted-foreground">
+            <code className="text-code">--surface-1 / bg-surface-1</code> — page ground
+          </p>
+          <div className="rounded-lg bg-surface-2 p-6">
+            <p className="m-0 mb-3 text-meta text-muted-foreground">
+              <code className="text-code">--surface-2 / bg-surface-2</code> — base layer
+            </p>
+            <div className="rounded-lg bg-surface-3 p-6">
+              <p className="m-0 mb-3 text-meta text-muted-foreground">
+                <code className="text-code">--surface-3 / bg-surface-3</code> — raised card
+              </p>
+              <div className="rounded-lg bg-surface-4 p-6 shadow-sm">
+                <p className="m-0 text-meta text-muted-foreground">
+                  <code className="text-code">--surface-4 / bg-surface-4</code> — most elevated
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   ),
 };
