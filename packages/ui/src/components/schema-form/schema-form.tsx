@@ -857,14 +857,22 @@ export const SchemaFormError = forwardRef<HTMLDivElement, SchemaFormErrorProps>(
       <div
         ref={ref}
         role="alert"
-        // The status wash is the separation gesture (styling-and-tokens.md
-        // "Surface separation"): `bg-destructive/10` + `text-destructive-text`
-        // already mark the region as distinct from the surrounding form, so a
-        // bare `border` on top was a redundant boundary — dropped. Mirrors the
-        // terminal-error boxes in `@elabs-ai/components-ai` (`JSXPreviewError`, `TestError`).
+        // #F2: the `bg-destructive/10` wash alone measures 1.18:1 (light) /
+        // 1.09:1 (dark) against the form ground — the earlier "the wash already
+        // marks the region" reasoning (styling-and-tokens.md's own decision
+        // test: "if I deleted this line, could a sighted user still tell the
+        // two regions apart?") had a measured answer of no, so the wash was the
+        // SOLE structural cue and dropping the border was wrong. Restore the
+        // boundary as an accent RAIL (`border-s-2 border-s-destructive`), not a
+        // full border — the gate permits rails, and a rail is the idiom the
+        // rest of the repo already uses for a destructive/error box that keeps
+        // its wash (`MermaidDiagram`'s error panel, `packages/editor/src/mermaid-diagram/mermaid-diagram.tsx`).
+        // `border-s-destructive` is the FILL rung (styling-and-tokens.md "status
+        // rung"), guaranteed >=3:1 against every surface token — measured here
+        // at 4.70:1 (light) / 4.71:1 (dark) against `--background`.
         data-slot="schema-form-error"
         className={cn(
-          "rounded-md bg-destructive/10 px-3 py-2 text-body text-destructive-text",
+          "rounded-md border-s-2 border-s-destructive bg-destructive/10 px-3 py-2 text-body text-destructive-text",
           className,
         )}
         {...props}
