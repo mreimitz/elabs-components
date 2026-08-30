@@ -9,6 +9,7 @@
   `package.json` (all 12 distributable packages are `MIT`, published
   anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
   `brand-ui-migrate` skill agree with reality. (#28)
+
 ### Changed
 
 - **`@elabs-ai/components-tokens`: Inter now ships as WOFF2, subset by script** (#16).
@@ -44,6 +45,16 @@
   `initialView.rowSelection`, plus a ready-made `createSelectionColumn()`
   checkbox column (header select-all with `indeterminate`, per-row checkbox)
   in `@elabs-ai/components-data`.
+- **Added:** `DataTable` column resizing (#12) — `enableColumnResizing` adds a
+  drag handle to every resizable header cell, operable by pointer/touch
+  (TanStack's own resize handler) or keyboard (a WAI-ARIA separator-as-slider,
+  ArrowLeft/ArrowRight in 10px steps). The resulting `columnSizing` is the
+  SAME controlled/uncontrolled shape as the other slices
+  (`onColumnSizingChange`, `columnResizeMode`, seedable via
+  `initialView.columnSizing`) and composes with column pinning (#333) for
+  free — a pinned column's sticky offset already reads `column.getSize()` —
+  in `@elabs-ai/components-data`.
+
 ### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
 
 `@elabs-ai/components-ai` peered on `"ai": "^6.0.0"` while the published AI SDK had
@@ -90,6 +101,7 @@ re-pinning.
 
 **Migrating a consumer:** no action needed — both `ai@6` and `ai@7` continue to
 work alongside `@elabs-ai/components-ai`.
+
 - **`@elabs-ai/components-tokens`** — `ThemeProvider` accepts `tokenOverrides`, a
   runtime patch of individual `--token` values (inline custom properties) layered
   over the active theme — for a multi-tenant/white-label consumer who wants to

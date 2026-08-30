@@ -15,6 +15,7 @@ export * from "./column-picker";
 export type {
   ColumnDef,
   ColumnPinningState,
+  ColumnSizingState,
   RowSelectionState,
   Table,
   Row,

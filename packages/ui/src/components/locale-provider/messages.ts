@@ -125,6 +125,9 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // fallback when no data column value is derivable.
   "data.table.selectRowNamed": "Select {name}",
   "data.table.selectRow": "Select row",
+  // Column resizing (#12) — the accessible name for the WAI-ARIA
+  // separator-as-slider resize handle at the end of a resizable header cell.
+  "data.table.resizeColumn": "Resize column, {name}",
 
   // ── @elabs-ai/components-charts ───────────────────────────────────────────────────────────
   // Shared caption for any bare chart surface's layout-shaped skeleton

@@ -1534,6 +1534,128 @@ describe("DataTable — #333 dev warning for a pinned column with no explicit si
   });
 });
 
+// ─── #12: column resizing ─────────────────────────────────────────────────────
+//
+// TanStack's resize handler (`ColumnSizing.ts`) computes, for a leaf (non-grouped)
+// header, `newSize = round((startSize + startSize * deltaOffset / startSize) * 100) / 100`,
+// which for a single leaf column simplifies to `startSize + deltaOffset` where
+// `deltaOffset = moveClientX - mouseDownClientX`. Starting the drag at `clientX: 0`
+// makes the move's `clientX` equal to `deltaOffset` directly, which is why these
+// tests drag from `0`.
+
+/** Columns wide enough to resize meaningfully; both declare an explicit `size`. */
+const resizableColumns: ColumnDef<Row>[] = [
+  { accessorKey: "name", header: "Name", size: 150 },
+  { accessorKey: "value", header: "Value", size: 100 },
+];
+
+describe("DataTable — #12 column resizing", () => {
+  it("is a no-op (no resize handle, no inline width) when enableColumnResizing is unset", () => {
+    const { container } = render(<DataTable columns={resizableColumns} data={data} />);
+    expect(container.querySelectorAll('[data-slot="data-table-resize-handle"]')).toHaveLength(0);
+    const th = container.querySelector("thead th")!;
+    expect(th.getAttribute("style")).toBeNull();
+  });
+
+  it("resizes a column via pointer drag (uncontrolled)", () => {
+    const { container } = render(
+      <DataTable columns={resizableColumns} data={data} enableColumnResizing />,
+    );
+    const th = container.querySelector<HTMLElement>("thead th")!;
+    expect(th.style.width).toBe("150px");
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    fireEvent.mouseDown(handle, { clientX: 0 });
+    fireEvent.mouseMove(document, { clientX: 40 });
+    fireEvent.mouseUp(document, { clientX: 40 });
+    expect(th.style.width).toBe("190px");
+    // The `<td>`s in every row follow the same resolved `getSize()`.
+    for (const td of container.querySelectorAll("tbody tr td:first-child")) {
+      expect((td as HTMLElement).style.width).toBe("190px");
+    }
+  });
+
+  it("resizes via the keyboard (ArrowRight/ArrowLeft) and keeps aria-valuenow in sync", () => {
+    const { container } = render(
+      <DataTable columns={resizableColumns} data={data} enableColumnResizing />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(handle).toHaveAttribute("aria-valuenow", "150");
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(handle).toHaveAttribute("aria-valuenow", "160");
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("160px");
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    expect(handle).toHaveAttribute("aria-valuenow", "140");
+  });
+
+  it("is a controlled/uncontrolled slice: a keyboard resize notifies the caller but the DOM only moves once the prop does", () => {
+    const onColumnSizingChange = vi.fn();
+    const { container, rerender } = render(
+      <DataTable
+        columns={resizableColumns}
+        data={data}
+        enableColumnResizing
+        columnSizing={{ name: 150 }}
+        onColumnSizingChange={onColumnSizingChange}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(onColumnSizingChange).toHaveBeenCalledTimes(1);
+    // Controlled: the prop still says 150, so the DOM must not have moved.
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("150px");
+    rerender(
+      <DataTable
+        columns={resizableColumns}
+        data={data}
+        enableColumnResizing
+        columnSizing={{ name: 220 }}
+        onColumnSizingChange={onColumnSizingChange}
+      />,
+    );
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("220px");
+  });
+
+  it("seeds an uncontrolled slice once from initialView.columnSizing", () => {
+    const { container } = render(
+      <DataTable
+        columns={resizableColumns}
+        data={data}
+        enableColumnResizing
+        initialView={{ columnSizing: { name: 300 } }}
+      />,
+    );
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("300px");
+  });
+
+  it("composes with column pinning — a pinned column's sticky offset already tracks getSize()", () => {
+    let table: TanstackTable<Row> | undefined;
+    const { container } = render(
+      <DataTable
+        columns={pinnableColumns}
+        data={data}
+        enableColumnResizing
+        columnPinning={{ left: ["name", "value"] }}
+        toolbar={(t) => {
+          table = t;
+          return null;
+        }}
+      />,
+    );
+    const pinnedHeaders = Array.from(
+      container.querySelectorAll<HTMLElement>("th[data-pinned='left']"),
+    );
+    // Before resizing: `value` (the second pinned column) sits at the declared
+    // size of `name` (150) per the #333 offset arithmetic.
+    expect(pinnedHeaders[1]!.style.left).toBe("150px");
+    act(() => table!.setColumnSizing((old) => ({ ...old, name: 210 })));
+    // After resizing `name` to 210, `value`'s sticky offset follows it —
+    // proving pinning already composes with resizing via `column.getSize()`,
+    // with no changes needed on the pinning side.
+    expect(pinnedHeaders[1]!.style.left).toBe("210px");
+  });
+});
+
 // ─── #11: row selection ───────────────────────────────────────────────────────
 
 const selectableColumns: ColumnDef<Row>[] = [createSelectionColumn<Row>(), ...columns];

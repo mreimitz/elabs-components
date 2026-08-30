@@ -803,6 +803,46 @@ export const PinnedColumnsClassicLines: Story = {
   },
 };
 
+// ─── WithColumnResizing (#12) ───────────────────────────────────────────────────
+
+/**
+ * `enableColumnResizing` adds a drag handle to the end of every resizable header
+ * cell — a WAI-ARIA separator-as-slider, operable by pointer/touch (TanStack's own
+ * `getResizeHandler()`) or keyboard (ArrowLeft/ArrowRight while the handle is
+ * focused). `columnSizing`/`onColumnSizingChange` make it a controlled slice,
+ * exactly like sorting or column pinning; omit them to let the table manage its
+ * own widths. A resized column that is ALSO pinned keeps its sticky offset in
+ * sync for free — pinning already reads `column.getSize()`.
+ */
+export const WithColumnResizing: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`enableColumnResizing` lets a reader drag — or, with the handle focused, " +
+          "arrow-key — a column's edge to change its width.",
+      },
+    },
+  },
+  render: () => <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />,
+  play: async ({ canvas, userEvent }) => {
+    const serviceHeader = canvas.getAllByRole("columnheader")[0]!;
+    await expect(serviceHeader.style.width).toBe("150px");
+
+    const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+    handle.focus();
+    await expect(handle).toHaveAttribute("aria-valuenow", "150");
+
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(handle).toHaveAttribute("aria-valuenow", "160");
+    await expect(serviceHeader.style.width).toBe("160px");
+
+    await userEvent.keyboard("{ArrowLeft}");
+    await expect(handle).toHaveAttribute("aria-valuenow", "150");
+    await expect(serviceHeader.style.width).toBe("150px");
+  },
+};
+
 // ─── Row selection (#11) ───────────────────────────────────────────────────────
 
 const selectableColumns: ColumnDef<Deployment>[] = [

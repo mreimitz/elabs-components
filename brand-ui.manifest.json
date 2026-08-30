@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T11:27:44.200Z",
+  "generatedAt": "2026-08-30T12:00:03.584Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13493,6 +13493,7 @@
         "CellContext",
         "ColumnDef",
         "ColumnPinningState",
+        "ColumnSizingState",
         "CsvColumn",
         "DownloadCsvOptions",
         "Row",
@@ -13637,6 +13638,29 @@
               "name": "onColumnPinningChange",
               "optional": true,
               "type": "OnChangeFn<ColumnPinningState>"
+            },
+            {
+              "name": "enableColumnResizing",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opt in to column resizing (#12): a drag handle renders on every resizable column's trailing edge — pointer-draggable (TanStack's own `header.getResizeHandler()`) and keyboard-operable (ArrowLeft/ArrowRight on the focused handle, per the WAI-ARIA separator-as-slider practice). Default `false` so a table that doesn't opt in renders byte-identical markup to before this feature existed — no handle, no per-cell width styling."
+            },
+            {
+              "name": "columnResizeMode",
+              "optional": true,
+              "type": "\"onChange\" | \"onEnd\"",
+              "description": "When `columnSizing` updates: `\"onChange\"` (default here — TanStack's own default is `\"onEnd\"`) live-updates while dragging; `\"onEnd\"` updates once on release. Only meaningful when `enableColumnResizing` is set."
+            },
+            {
+              "name": "columnSizing",
+              "optional": true,
+              "type": "ColumnSizingState",
+              "description": "Controlled column-widths state (#12), keyed by column id — the SAME controlled/uncontrolled shape as `columnPinning`/`rowSelection`. Uncontrolled sizing can be seeded once via `initialView.columnSizing`. A pinned column's sticky offset (`getStart(\"left\")`/`getAfter(\"right\")`) already sums `column.getSize()`, which folds in a `columnSizing` override automatically — so pinning and resizing compose with no extra wiring once this state reaches the table. Sizing is a LAYOUT concern, like `columnPinning`/`rowSelection` — it is client-only and never joins `DataTableServerArgs` / `onServerChange`."
+            },
+            {
+              "name": "onColumnSizingChange",
+              "optional": true,
+              "type": "OnChangeFn<ColumnSizingState>"
             },
             {
               "name": "rowSelection",
