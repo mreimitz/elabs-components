@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T06:17:43.193Z",
+  "generatedAt": "2026-08-30T10:28:09.648Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13496,10 +13496,12 @@
         "CsvColumn",
         "DownloadCsvOptions",
         "Row",
+        "RowSelectionState",
         "Table",
         "ToCsvOptions"
       ],
       "otherExports": [
+        "createSelectionColumn",
         "downloadCsv",
         "toCsv",
         "typeColumnPickerProps",
@@ -13635,6 +13637,35 @@
               "name": "onColumnPinningChange",
               "optional": true,
               "type": "OnChangeFn<ColumnPinningState>"
+            },
+            {
+              "name": "rowSelection",
+              "optional": true,
+              "type": "RowSelectionState",
+              "description": "Controlled row-selection state (#11) — which rows are checked, keyed by row id (see `getRowId`). When provided the component is selection-controlled; otherwise it manages the slice internally and can be seeded once via `initialView.rowSelection`. Pair it with a selection column built by `createSelectionColumn` (or drive it yourself off the `table` instance handed to `toolbar`). Selection is a LAYOUT/UI concern, not a query concern — like `columnPinning`, it is client-only and never joins `DataTableServerArgs` / `onServerChange`."
+            },
+            {
+              "name": "onRowSelectionChange",
+              "optional": true,
+              "type": "OnChangeFn<RowSelectionState>"
+            },
+            {
+              "name": "enableRowSelection",
+              "optional": true,
+              "type": "boolean | ((row: Row<TData>) => boolean)",
+              "description": "Which rows can be selected: `true`/`false` for all rows, or a predicate evaluated per row. Passed straight through to `useReactTable`. Default (TanStack's own): `true`."
+            },
+            {
+              "name": "enableMultiRowSelection",
+              "optional": true,
+              "type": "boolean",
+              "description": "Allow more than one row to be selected at once. Default (TanStack's own): `true`. Set `false` for single-select (radio-style) behaviour."
+            },
+            {
+              "name": "getRowId",
+              "optional": true,
+              "type": "(row: TData, index: number) => string",
+              "description": "Stable row id, independent of row INDEX. Without it, TanStack keys selection by the row's position in `data` — so after a sort, filter, page change, or a re-fetch that reorders rows, the selection silently follows whichever row now sits at that index, not the row the user actually checked. Supply this whenever `rowSelection` is used with data that can reorder."
             },
             {
               "name": "initialView",

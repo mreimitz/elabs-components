@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Added:** `DataTable` row selection (#11) — a controlled/uncontrolled
+  `rowSelection` slice (`onRowSelectionChange`, `enableRowSelection`,
+  `enableMultiRowSelection`, `getRowId`), seedable via
+  `initialView.rowSelection`, plus a ready-made `createSelectionColumn()`
+  checkbox column (header select-all with `indeterminate`, per-row checkbox)
+  in `@elabs-ai/components-data`.
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change

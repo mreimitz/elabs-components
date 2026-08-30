@@ -12,7 +12,14 @@ export * from "./facet-filter";
 export * from "./column-picker";
 
 // Re-export the most common TanStack types so consumers don't need a direct dep.
-export type { ColumnDef, ColumnPinningState, Table, Row, CellContext } from "@tanstack/react-table";
+export type {
+  ColumnDef,
+  ColumnPinningState,
+  RowSelectionState,
+  Table,
+  Row,
+  CellContext,
+} from "@tanstack/react-table";
 
 // CSV helpers — pure, dependency-free serializer + browser download trigger.
 export * from "./to-csv";

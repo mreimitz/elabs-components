@@ -12,8 +12,9 @@ paths:
   (`useReactTable`) with core/sorted/filtered row models, optional client
   pagination, optional row virtualization, and an opt-in server-side data model.
   Every slice (sorting / columnVisibility / columnFilters / globalFilter /
-  pagination / columnPinning) is independently controllable; uncontrolled slices
-  are managed internally and can be seeded once via `initialView`.
+  pagination / columnPinning / rowSelection) is independently controllable;
+  uncontrolled slices are managed internally and can be seeded once via
+  `initialView`.
 - **Toolbar via render-prop.** `DataTable`'s `toolbar={(table) => …}` hands the
   instance to `SearchInput`, `FacetFilter` and `ColumnPicker` so filtering and
   column visibility drive the same table. Don't fork table state.
@@ -60,9 +61,24 @@ paths:
     tabbing to a control in a scrolled-under centre column parks the focus ring behind the
     frozen columns — the browser scrolls to the scrollport edge and knows nothing about
     sticky occluders (WCAG 2.2 SC 2.4.11).
+- **Row selection (shipped, #11).** The `rowSelection` / `onRowSelectionChange` slice is
+  the SAME controlled/uncontrolled shape as the others, seedable once via
+  `initialView.rowSelection`. `enableRowSelection`, `enableMultiRowSelection` and
+  `getRowId` pass straight through to `useReactTable`.
+  - **Always supply `getRowId` when rows can reorder.** Without it, TanStack keys
+    selection by row INDEX in `data` — a sort, filter, page change, or a re-fetch
+    that reorders rows then silently "selects" whatever new row landed at that
+    index, not the one the user actually checked.
+  - **`createSelectionColumn<TData>()`** returns a ready-made checkbox column
+    (header select-all with a real `indeterminate` state for a partial page
+    selection, plus a per-row checkbox) built on `@elabs-ai/components-ui`'s
+    `Checkbox` — never hand-roll one. It declares an explicit `size` so it plays
+    nicely if pinned (#333's dev warning stays silent).
+  - Selection is LAYOUT/UI, not a query — like `columnPinning`, it never joins
+    `DataTableServerArgs` / `onServerChange`.
 - **Saved views (shipped).** A view is the serializable `DataTableViewState`
   snapshot
-  `{ sorting, columnVisibility, columnFilters, globalFilter?, pagination?, columnPinning? }`.
+  `{ sorting, columnVisibility, columnFilters, globalFilter?, pagination?, columnPinning?, rowSelection? }`.
   Persist the JSON; rehydrate uncontrolled slices once via the `initialView` prop, or
   keep slices fully controlled in the app and re-pass on remount. Do **not** reach for
   TanStack `initialState` — the component drives every slice through `state`, so an
