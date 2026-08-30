@@ -333,7 +333,7 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
 
   // Peer ranges come from the packages' own `peerDependencies` — so the app
   // installs the range the library actually supports (`@xyflow/react ^12.11.1`,
-  // `ai ^6.0.0`), never a `*` wildcard on a context-singleton engine.
+  // `ai ^6.0.0 || ^7.0.0`), never a `*` wildcard on a context-singleton engine.
   const mf = manifest ?? loadManifest(root);
   const peerRanges = { ...BASE_PEERS };
   const extras = [];

@@ -12,7 +12,7 @@ const staticTool: Tool = {
 // per-call dynamic description). `AgentTool` renders a static list with no
 // call context to invoke that function with.
 const dynamicTool: Tool = {
-  description: (() => "computed at call time") as unknown as Tool["description"],
+  description: () => "computed at call time",
   inputSchema: { type: "object" } as never,
 };
 

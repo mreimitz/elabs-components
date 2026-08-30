@@ -9,8 +9,9 @@
 `ToolUIPart`, `FileUIPart`, and friends so its components are typed to the same
 message shape the app's runtime produces. Verified at the time of this ADR: **12 of
 51 `@elabs-ai/components-ai` source files** import from `ai`, **all `import type`, zero runtime
-imports** (no `useChat`, no `@ai-sdk/*` providers, no `streamText`); `ai` is declared
-a **peer** dependency at `^6.0.0`.
+imports** (no `useChat`, no `@ai-sdk/*` providers, no `streamText`); `ai` was declared
+a **peer** dependency at `^6.0.0` as of this ADR's original 2026-06-07 date (see the
+2026-08-30 Amendment below for the current range, `^6.0.0 || ^7.0.0`).
 
 That is the right posture — but it is the kind of boundary that erodes by a single
 well-meaning edit ("just add `useChat` here for convenience"). The moment a component
@@ -28,7 +29,10 @@ in [`docs/DECISIONS.md`](../DECISIONS.md).
   `generateText`, providers, default/namespace/side-effect/dynamic imports, or value
   re-exports.
 - Keep `ai` a **peer** dependency and **pin the major**; treat a major bump as a
-  planned migration, not an automatic float.
+  planned migration, not an automatic float. (See the 2026-08-30 Amendment's
+  "Reconciling with the Decision" — a migration MAY widen across two majors
+  instead of re-pinning, once direct verification shows both are compatible
+  for the type surface consumed.)
 - **Alias the SDK types behind a brand-ui seam** where practical, so a major bump —
   or a second message model (A2UI/AG-UI) — is a mapping edit, not a repo-wide sweep.
 - This is **enforced, not just stated**: the gate `scripts/check-ai-sdk-types-only.mjs`
@@ -61,26 +65,38 @@ in [`docs/DECISIONS.md`](../DECISIONS.md).
 - See `docs/DECISIONS.md` (D6) and the rule above; the boundary it protects is
   ADR 0007 (D5).
 
-## Amendment (2026-08-30) — the peer moved from `ai@6` to `ai@7` (#30)
+## Amendment (2026-08-30) — the peer widens to `^6.0.0 || ^7.0.0` (#30)
 
-- Status: Accepted (planned migration, per the Decision's own instruction to
-  "treat a major bump as a planned migration, not an automatic float").
+- Status: Accepted.
 - Scope: updates the peer range in the Context/Decision above (`^6.0.0` →
-  `^7.0.0`); the types-only-never-runtime rule itself is unchanged and still
-  holds — every import from `ai` in `packages/ai/src/**` stayed `import type`
-  throughout this migration.
+  `^6.0.0 || ^7.0.0`); the types-only-never-runtime rule itself is unchanged
+  and still holds — every import from `ai` in `packages/ai/src/**` stayed
+  `import type` throughout this migration. This supersedes the Context
+  paragraph's `^6.0.0` figure and the original Decision's "pin the major"
+  instruction for **this specific transition** — see "Reconciling with the
+  Decision" below.
 
 ### Why
 
 The published AI SDK had moved to the 7.x line while this package still peered
 on `^6.0.0`, so a fresh install in a consuming app hit an unresolvable peer
 conflict (issue #30). Two resolutions were considered: widen the peer to
-`^6.0.0 || ^7.0.0` (support both majors), or bump the pin outright. The
-dual-major range was rejected — verifying it would require confirming that
-every `ai@6.x` release back to `6.0.0` (not just the `6.0.197` this repo
-pinned in devDependencies) carries the same `LanguageModelUsage` shape the fix
-below relies on, which was not done. Pinning the major, as the Decision above
-already directs, needed no such assumption.
+`^6.0.0 || ^7.0.0` (support both majors), or drop `ai@6` and pin `^7.0.0`
+outright.
+
+The dual-major range is what shipped, on **direct verification, not
+assumption**: `ai@6.0.0`'s own shipped type declarations (downloaded and read
+from the published tarball) already define `LanguageModelUsage` with the
+nested `inputTokenDetails` / `outputTokenDetails` shape the fix below relies
+on — the flat `reasoningTokens` / `cachedInputTokens` aliases were already
+`@deprecated` at `6.0.0`, not something added partway through the 6.x line.
+The full post-fix `packages/ai/src` was then compiled against a real,
+freshly-installed `ai@6.0.0` (not just the `6.0.197` this repo pins as its
+devDependency) with `pnpm --filter @elabs-ai/components-ai typecheck`:
+**zero errors.** A narrower `^7.0.0`-only range was drafted in an earlier pass
+of this migration on the unverified assumption that the nested shape might be
+`ai@7`-only; that assumption was wrong, and dropping v6 support on it would
+have broken every consumer still on the 6.x line for no reason.
 
 ### What changed
 
@@ -96,17 +112,58 @@ two real, narrow type-shape changes in the surface this package renders:
   to invoke that function with, so it now shows the description only when
   `typeof tool.description === "string"`.
 - **`LanguageModelUsage`** (`context.tsx`, `ContextReasoningUsage` /
-  `ContextCacheUsage`) drops the deprecated flat `reasoningTokens` /
-  `cachedInputTokens` fields that `ai@6` kept only for its own back-compat;
-  the values now live at `outputTokenDetails.reasoningTokens` and
-  `inputTokenDetails.cacheReadTokens`, which both components read directly.
+  `ContextCacheUsage`) reads `outputTokenDetails.reasoningTokens` and
+  `inputTokenDetails.cacheReadTokens` instead of the flat, deprecated aliases.
+  Both fields — nested shape and flat alias — are present in `ai@6.0.0`
+  through `ai@7.0.85`, so this read works unchanged across the whole widened
+  range; it only stops leaning on the aliases `ai@7` removed.
 
 Both fixes are additive narrowing on the consuming side — neither introduces a
 runtime import from `ai`. `pnpm ai:types-only` and the full `@elabs-ai/components-ai`
-test suite (424 tests) stayed green throughout.
+test suite (430 tests) stayed green throughout, compiled against **both**
+floor (`ai@6.0.0`) and ceiling (`ai@7.0.85`) of the declared range.
+
+### `peerDependenciesMeta` — declared optional
+
+`packages/ai/package.json` now also declares
+`peerDependenciesMeta: { ai: { optional: true } }`, per issue #30's second
+suggestion. Rationale: `ai` reaches only 12 of 51 `@elabs-ai/components-ai`
+source files, purely as `import type`, so a consumer who imports none of
+those types (a subset of the surface that doesn't touch messages/tools/usage)
+has nothing to satisfy at runtime — the same reasoning already applied to
+every optional peer in `packages/viewer/package.json`. Marking it optional
+silences the peer-conflict warning for that consumer without weakening the
+gate: `pnpm ai:types-only` still fails on any runtime import regardless of
+how the peer is declared.
+
+### Node engine floor — noted, not changed
+
+`ai@7.0.85` declares `engines.node: >=22`; this repo's own `engines.node`,
+`.nvmrc`, and all 4 GitHub Actions workflows are pinned to Node `20`
+(`ai@6.0.197`, by contrast, only requires `>=18`, comfortably under the
+repo's floor). `engine-strict` is unset in both this repo's `.npmrc` and the
+ambient npm/pnpm config, which defaults it to `false` — an engine mismatch
+warns, it does not fail an install or a CI run. This migration does **not**
+change the repository's Node baseline: that is a separate, larger decision
+(every workflow's `node-version`, `.nvmrc`, and `engines.node`) out of scope
+for a peer-range fix, and is left as a follow-up to evaluate independently.
+A consumer who installs `ai@7` on Node 20 will see pnpm's engine warning but
+the install will proceed; a consumer who needs the warning silenced or who
+hits a genuine `ai@7` runtime requirement on Node `>=22` should upgrade their
+own Node version — this package cannot do that for them.
+
+### Reconciling with the Decision
+
+The original Decision text says to "pin the major; treat a major bump as a
+planned migration, not an automatic float." This amendment widens instead of
+re-pinning because the verification above showed both majors genuinely
+compatible for the type surface this package consumes — "pin the major" is
+the right default when compatibility is unverified or false, not a mandate to
+narrow a range that measurement shows is safe to widen. The next major (`ai@8`,
+if and when it changes a type this package depends on) should repeat this same
+verification before deciding whether to widen further or finally drop `ai@6`.
 
 ### Consequence
 
-`@elabs-ai/components-ai` no longer installs alongside `ai@6`. A consumer who cannot
-move yet stays on the last version published before this change; see the
-`CHANGELOG.md` `## Unreleased` entry for the migration step.
+`@elabs-ai/components-ai` now installs alongside either `ai@6` or `ai@7`. See the
+`CHANGELOG.md` `## Unreleased` entry for the consumer-facing summary.

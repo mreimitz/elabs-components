@@ -2,33 +2,44 @@
 
 ## Unreleased
 
-### ⚠️ `@elabs-ai/components-ai`: the Vercel AI SDK peer moves to `ai@7` (#30)
+### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
 
 `@elabs-ai/components-ai` peered on `"ai": "^6.0.0"` while the published AI SDK had
 moved to the 7.x line, so a fresh install in a consuming app hit an unresolvable
-peer conflict. Per ADR 0008 ("pin the major; treat a major bump as a planned
-migration, not an automatic float"), this ships that migration rather than
-widening the range to cover both majors.
+peer conflict. The peer now reads `"ai": "^6.0.0 || ^7.0.0"` — a non-breaking
+widening, not a version bump — verified by compiling this package's source
+against both a real `ai@6.0.0` install and `ai@7.0.85` with zero type errors.
+`ai` is also now declared `peerDependenciesMeta: { "ai": { "optional": true } }`,
+since only 12 of 51 source files import from it and every import is `import type`.
 
-`ai@7` restructured two pieces of the type surface this package renders:
+`ai@7` restructured two pieces of the type surface this package renders, and the
+fix reads the shape that is present in **both** majors:
 
 - `Tool.description` can now be a string **or** a function of the live call
   context (`(options) => string`), for a per-call dynamic description.
   `AgentTool` has no call context to invoke that function with, so it now
   renders the description only when it is a plain string.
 - `LanguageModelUsage`'s deprecated flat `reasoningTokens` /
-  `cachedInputTokens` fields (kept in `ai@6` for back-compat) are gone in
-  `ai@7`; the values live at `outputTokenDetails.reasoningTokens` and
-  `inputTokenDetails.cacheReadTokens`, which `ContextReasoningUsage` and
-  `ContextCacheUsage` now read.
+  `cachedInputTokens` fields (kept in `ai@6` for back-compat, removed in
+  `ai@7`) are no longer read; the values live at
+  `outputTokenDetails.reasoningTokens` and `inputTokenDetails.cacheReadTokens`
+  in both majors, which `ContextReasoningUsage` and `ContextCacheUsage` now
+  read directly.
 
 Every import from `ai` in this package remains `import type` only — the
 types-only, peer-never-runtime contract (D6) is unaffected;
 `pnpm ai:types-only` stays green.
 
-**Migrating a consumer:** install `ai@^7.0.0` alongside `@elabs-ai/components-ai`.
-There is no drop-in support for `ai@6` — pin `@elabs-ai/components-ai` to the
-last version published before this change if you cannot move off `ai@6` yet.
+**Node note:** `ai@7.0.85` declares `engines.node: >=22`; this repo's own
+toolchain (and CI) stays pinned to Node 20, unaffected by this change. A
+consumer choosing `ai@7` on Node 20 will see an engine-mismatch warning from
+npm/pnpm (non-fatal, since `engine-strict` is off by default) rather than an
+install failure; `ai@6` has no such requirement (`>=18`). See ADR 0008's
+Amendment for the full writeup, including why the peer widened instead of
+re-pinning.
+
+**Migrating a consumer:** no action needed — both `ai@6` and `ai@7` continue to
+work alongside `@elabs-ai/components-ai`.
 
 ## v4.0.0 — 2026-08-17
 
