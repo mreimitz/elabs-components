@@ -208,8 +208,20 @@ function MessageCompareProvider({
       if (otherId === id) return;
       const otherRange = other.node.scrollHeight - other.node.clientHeight;
       if (otherRange <= 0) return;
-      other.suppressNextScroll = true;
+      // Assign first, THEN compare the browser's actual (possibly rounded)
+      // scrollTop to what it was before — never predict equality from the
+      // unrounded `ratio * otherRange` math, since scrollTop is an integer
+      // pixel value and the destination can already sit at that pixel. Only
+      // arm suppression when the write really changed something: if it
+      // didn't, no scroll event will fire to clear the flag, and the
+      // destination's NEXT real user scroll (a single keyboard PageDown/Home
+      // in particular) would otherwise be silently swallowed instead of
+      // propagating to its siblings (#12/#53 review, P2).
+      const previousScrollTop = other.node.scrollTop;
       other.node.scrollTop = ratio * otherRange;
+      if (other.node.scrollTop !== previousScrollTop) {
+        other.suppressNextScroll = true;
+      }
     });
   }, []);
 
