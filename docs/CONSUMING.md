@@ -324,7 +324,11 @@ usually looks _almost_ right — which is why this is worth one test.
 - **`@elabs-ai/components-maps`** — no CSS import needed; `MapCanvas`
   pulls in MapLibre's stylesheet and the brand overrides itself.
 - **`@elabs-ai/components-ui`** — the class-merge helper is at
-  `@elabs-ai/components-ui/lib/cn` (server-safe).
+  `@elabs-ai/components-ui/lib/cn` (server-safe). `LocaleProvider` supports
+  cardinal-plural messages out of the box (`Intl.PluralRules`, no dependency)
+  and a pluggable `translate` prop so an app already running next-intl /
+  react-intl / i18next can hand it that runtime's own translator instead of a
+  second message catalogue — see [`docs/I18N.md`](I18N.md).
 - **`@elabs-ai/components-ai`** — `MarkdownPreview` math needs
   `import "katex/dist/katex.min.css"` once, only if you enable it.
 

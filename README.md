@@ -266,6 +266,7 @@ pnpm --filter @elabs-ai/components-ui test   # scope any task to one package
 | -------------------------------------------------------------- | -------------------------------------------------------- |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md)                       | The seven decisions that govern how and when to use what |
 | [`docs/CONSUMING.md`](docs/CONSUMING.md)                       | Using the packages from another project, end to end      |
+| [`docs/I18N.md`](docs/I18N.md)                                 | Plurals and bridging LocaleProvider to your i18n runtime |
 | [`docs/COMPONENT_GUIDELINES.md`](docs/COMPONENT_GUIDELINES.md) | Component API conventions and the definition of done     |
 | [`docs/TOKEN_GUIDELINES.md`](docs/TOKEN_GUIDELINES.md)         | The token system and how to brand it                     |
 | [`docs/REGISTRY_GUIDELINES.md`](docs/REGISTRY_GUIDELINES.md)   | Package versus registry — import or copy-own             |

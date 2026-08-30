@@ -25,6 +25,19 @@
   existing no-fallback precedent — every browser in this repo's documented
   floor (`docs/CONSUMING.md`) supports WOFF2, variable fonts and
   `unicode-range` natively.
+- **`LocaleProvider` gains cardinal-plural messages and a pluggable
+  `translate` resolver bridge (#19).** A `messages`/`DEFAULT_MESSAGES` entry
+  may now be a `PluralMessage` (one string per `Intl.PluralRules` category —
+  `one`/`few`/`many`/`other`/…), selected automatically from a `count` var —
+  dependency-free, via the `Intl.PluralRules` API already built into every
+  target runtime. `LocaleProvider` also accepts an optional
+  `translate?: (key, vars) => string | undefined | null` prop so an app
+  already running its own i18n runtime (next-intl, react-intl, i18next, …) can
+  hand brand-ui that runtime's own translator instead of maintaining a second
+  message catalogue; returning `undefined`/`null` falls through to `messages`
+  then `DEFAULT_MESSAGES` then the raw key exactly as before. Fully backward
+  compatible — no resolver and no plural messages behaves identically to
+  today. See [`docs/I18N.md`](docs/I18N.md).
 
 ## v4.0.0 — 2026-08-17
 

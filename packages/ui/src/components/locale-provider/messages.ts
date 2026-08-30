@@ -1,13 +1,34 @@
 "use client";
 
 /**
+ * ICU cardinal-plural category, per `Intl.PluralRules` ("zero" | "one" | "two"
+ * | "few" | "many" | "other"). Locales vary in which categories they use —
+ * English has only "one"/"other"; Polish and Russian also use "few"/"many" —
+ * so a `PluralMessage` may omit any category it doesn't need. `"other"` is the
+ * universal fallback every locale defines.
+ */
+export type PluralCategory = Intl.LDMLPluralRule;
+
+/**
+ * A per-count message: one string per plural category, selected at render
+ * time via `Intl.PluralRules(locale).select(count)`. Each string still
+ * supports the same `{name}`-style interpolation as a plain message.
+ * Note: when passed to `t()`, `count` in `vars` must be a number, not a
+ * numeric string, to select the correct plural category.
+ */
+export type PluralMessage = Partial<Record<PluralCategory, string>>;
+
+/** A single message value: a plain string, or a plural-form map. */
+export type MessageValue = string | PluralMessage;
+
+/**
  * Shipped English (en-US) default microcopy bundle.
  *
  * Keys are intentionally terse, semantic, and framework-agnostic so they
  * translate cleanly into any target locale. Keep this list small and real —
  * only add a key here when a component actually needs it.
  */
-export const DEFAULT_MESSAGES: Record<string, string> = {
+export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // ── Generic (shared across packages — reuse these before minting a new key) ──
   close: "Close",
   copy: "Copy",
@@ -20,6 +41,11 @@ export const DEFAULT_MESSAGES: Record<string, string> = {
   loading: "Loading…",
   more: "More",
   selectAll: "Select all",
+  // Cardinal-plural example (#19) — a shared "N item(s) selected" microcopy
+  // any multi-select surface can reuse via `t("itemsSelected", { count })`.
+  // Demonstrates the plural-form shape: pick the primitive over inventing a
+  // near-duplicate flat string per component.
+  itemsSelected: { one: "{count} item selected", other: "{count} items selected" },
 
   // ── @elabs-ai/components-ui ───────────────────────────────────────────────────────────────
   "ui.metricCard.loading": "Loading metric…",
