@@ -1,6 +1,7 @@
 {
   "$comment": "AUTHORED source for registry.json. Prose and identity live here; `files`, `dependencies` and `registryDependencies` are DERIVED from the block source by `pnpm gen:registry` — never hand-write them. See .claude/rules/registry.md.",
   "name": "brand-ui",
+  "homepage": "https://mreimitz.github.io/elabs-components/r",
   "items": [
     {
       "name": "app-shell",

@@ -62,6 +62,18 @@
   alone already announces additions/removals without a role change, so the
   `role="status"` is removed and the native list semantics are kept. Found
   while building `SchemaForm`'s file field. (#22)
+- Fixed: the shadcn registry had no hosted endpoint, so the documented
+  `npx shadcn add <url>/<item>.json` command didn't resolve against anything —
+  `docs/REGISTRY_GUIDELINES.md` said so outright, reasoning from "the repo is
+  private", which stopped being true when the repo went public. The registry
+  is now built and published to GitHub Pages on every release
+  (`.github/workflows/release.yml`'s `publish-registry` job,
+  `scripts/publish-registry-pages.mjs`), at a versioned path
+  (`r/<version>/<item>.json`) plus a moving `r/latest/<item>.json` alias, and
+  `pnpm registry:published:check` gates that every published item stays
+  reachable. GitHub Pages itself still needs a one-time, maintainer-only
+  toggle (Settings → Pages → "Deploy from a branch" → `gh-pages` → `/(root)`)
+  before the hosted URLs resolve for real. (#31)
 - Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
   a side-by-side 2-4 column surface for comparing multiple model responses to
   the same prompt, each column with independent streaming status and scroll

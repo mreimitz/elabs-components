@@ -63,9 +63,13 @@ lists named packages the code never imported while omitting ones it did.
 
 Top-level, `registry.items.json` also carries an optional **`homepage`**, passed
 straight through. The shadcn CLI **requires** it on a root registry —
-`pnpm registry:build` refuses without one — but it is a published-location fact,
-not something derivable from source, so it stays unset rather than invented while
-this repo has no canonical public URL. Set it there when the URL exists.
+`pnpm registry:build` refuses without one — and since #31 it is set to this
+repo's real GitHub Pages base (`https://mreimitz.github.io/elabs-components/r`),
+published on every release by `scripts/publish-registry-pages.mjs` (see
+`docs/REGISTRY_GUIDELINES.md` "Distribution" and `pnpm registry:published:check`,
+the gate that keeps the published items reachable). It is a published-location
+fact, not something derivable from source — a fork with no public host of its own
+may still omit it rather than invent one.
 
 Two authored escape hatches, both narrow:
 
