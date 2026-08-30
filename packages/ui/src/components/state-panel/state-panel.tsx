@@ -1,7 +1,8 @@
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
+import { ILLUSTRATION_ACCENT_VAR } from "../../illustrations/illustration-base";
 
 // ─── Variants ────────────────────────────────────────────────────────────────
 
@@ -148,8 +149,21 @@ export function StatePanel({
       {illustration ? (
         // Illustration wins over `icon` when both are given. No `[&_svg]:size-10`
         // clamp here — an illustration governs its own (rem-based) size, unlike
-        // the fixed-size icon slot below.
-        <div className={cn(isError ? "text-destructive" : "text-muted-foreground")}>
+        // the fixed-size icon slot below. For `kind="error"` this also sets the
+        // `--illustration-accent` custom property every illustration's accent
+        // ink reads through, so ANY illustration (not just `ErrorIllustration`)
+        // retints its accent to `--destructive` instead of staying pinned to
+        // its default hue inside a red-tinted slot (#24 fix round 1, P0-2) —
+        // without this a lime "add"/keyhole/checkmark badge sits on a
+        // destructive-washed panel, meaning nothing.
+        <div
+          className={cn(isError ? "text-destructive" : "text-muted-foreground")}
+          style={
+            isError
+              ? ({ [ILLUSTRATION_ACCENT_VAR]: "var(--destructive)" } as CSSProperties)
+              : undefined
+          }
+        >
           {illustration}
         </div>
       ) : resolvedIcon ? (

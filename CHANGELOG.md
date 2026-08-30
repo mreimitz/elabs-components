@@ -7,10 +7,16 @@
   `ErrorIllustration`, `OfflineIllustration`, `SuccessIllustration`,
   `FirstRunIllustration` (`packages/ui/src/illustrations`) — and `StatePanel`
   gains an `illustration` prop that renders one above the title in place of the
-  smaller, size-clamped `icon` slot. Every illustration draws on `currentColor`
-  plus `--border`/`--primary`, is `aria-hidden` (decorative; the panel's title/
+  smaller, size-clamped `icon` slot. Every illustration draws its subject in
+  `currentColor` plus one meaning-bearing accent (`--primary-text` by default;
+  `--success-text` on `SuccessIllustration`, `--destructive` on
+  `ErrorIllustration`) that follows a `--illustration-accent` custom property
+  `StatePanel` retints to `--destructive` for any illustration placed in a
+  `kind="error"` slot. Is `aria-hidden` (decorative; the panel's title/
   description carry the accessible content), and sizes in `rem` (~4rem–10rem).
-  See issue #24.
+  See issue #24. Fix round 1 (accent contrast, error-slot tint, optical-size/
+  stroke consistency, and the `ErrorIllustration`/`OfflineIllustration`
+  redesigns) is tracked in the same issue.
 
 ## v4.0.0 — 2026-08-17
 

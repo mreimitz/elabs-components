@@ -1,12 +1,12 @@
 import { forwardRef } from "react";
 import {
   illustrationSvgProps,
-  IllustrationStage,
+  illustrationAccent,
   type IllustrationProps,
 } from "./illustration-base";
 
 /**
- * First-run / onboarding state. A line-art planted flag with a `--primary`
+ * First-run / onboarding state. A line-art planted flag with a `--primary-text`
  * sparkle — reads as "start here", distinct in silhouette from `SuccessIllustration`.
  */
 export const FirstRunIllustration = forwardRef<SVGSVGElement, IllustrationProps>(
@@ -18,14 +18,13 @@ export const FirstRunIllustration = forwardRef<SVGSVGElement, IllustrationProps>
         data-slot="first-run-illustration"
         {...props}
       >
-        <IllustrationStage />
-        <line x1="64" y1="112" x2="64" y2="46" />
+        <line x1="64" y1="122" x2="64" y2="46" />
         <path d="M64,46 L100,54 L86,64 L100,74 L64,82 Z" strokeLinejoin="round" />
-        <line x1="46" y1="112" x2="90" y2="112" />
+        <line x1="36" y1="122" x2="90" y2="122" />
         <path
-          d="M116,26 L119,36 L129,40 L119,44 L116,54 L113,44 L103,40 L113,36 Z"
-          style={{ stroke: "var(--primary)" }}
-          strokeWidth={2.5}
+          d="M114,32.1 L116.6,40.6 L125.1,44 L116.6,47.4 L114,55.9 L111.5,47.4 L103,44 L111.5,40.6 Z"
+          style={{ stroke: illustrationAccent("var(--primary-text)") }}
+          strokeWidth={3}
           strokeLinejoin="round"
         />
       </svg>

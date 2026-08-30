@@ -12,10 +12,15 @@ import {
 } from "./index";
 
 /**
- * Demo wrapper: illustrations are pure `currentColor` line art (plus a
- * `--border` backdrop and a `--primary` accent), so a story renders them
- * inside a `text-muted-foreground` container — the same ambient color
- * `StatePanel` applies via its icon/illustration slot.
+ * Demo wrapper: illustrations are pure `currentColor` line art plus one
+ * meaning-bearing accent (`--primary-text` by default; `--success-text` on
+ * `SuccessIllustration`, `--destructive` on `ErrorIllustration`), so a story
+ * renders them inside a `text-muted-foreground` container — the same ambient
+ * color `StatePanel` applies via its icon/illustration slot. `StatePanel`
+ * retints the accent to `--destructive` for any illustration placed in a
+ * `kind="error"` slot via the `--illustration-accent` custom property (see
+ * `illustration-base.tsx`) — see `States/StatePanel`'s "Error (with
+ * illustration, #24 P0-2)" story for that pairing.
  */
 function Demo(props: IllustrationProps & { as: ComponentType<IllustrationProps> }) {
   const { as: Illustration, ...rest } = props;

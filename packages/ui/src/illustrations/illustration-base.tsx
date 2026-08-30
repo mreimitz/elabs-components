@@ -1,10 +1,12 @@
-import type { CSSProperties, SVGProps } from "react";
+import type { SVGProps } from "react";
 import { cn } from "../lib/cn";
 
 /**
  * Shared 160×160 canvas every illustration draws on. Keeping one constant
  * means every illustration's hand-authored coordinates line up on the same
- * grid, so the dashed "stage" backdrop always frames the subject the same way.
+ * grid — every subject's ink is drawn to fill an ~88×88 box centered at
+ * (80, 78) (#24 fix round 1, P1-1), so the seven read as one optically-sized
+ * family instead of varying 2.1× against each other.
  */
 export const ILLUSTRATION_VIEW_BOX = "0 0 160 160";
 
@@ -48,16 +50,27 @@ export function illustrationSvgProps(size: string | number = "7rem", className?:
   };
 }
 
-const STAGE_STYLE: CSSProperties = { stroke: "var(--border)" };
+/**
+ * The custom property every illustration's single meaning-bearing accent
+ * reads through. `StatePanel` sets it on the illustration slot's wrapper for
+ * `kind="error"` (`var(--destructive)`) so the accent follows the panel's
+ * tint instead of staying pinned to one hue inside a re-colored slot (#24
+ * fix round 1, P0-2) — without this, an illustration whose accent defaults
+ * to the brand hue renders a lime badge on a red error panel. Falls back to
+ * each illustration's own default hue when no ambient override is set.
+ */
+export const ILLUSTRATION_ACCENT_VAR = "--illustration-accent";
 
 /**
- * The dashed "stage" backdrop every illustration sits in — echoes
- * `StatePanel`'s own dashed empty-state border (`--border`) so the artwork
- * and the panel read as one family instead of an unrelated sticker. Shared
- * across all seven so the set reads as one system.
+ * Build the `style` value for an illustration's accent ink: honors the
+ * ambient `--illustration-accent` override when set, otherwise `fallback`.
+ * `fallback` must be the correct **mark rung** for the accent's hue — e.g.
+ * `var(--primary-text)` (NOT `var(--primary)`, a plate color that measures
+ * 1.42:1 on `--card` in the `light` theme — #24 fix round 1, P0-1; see
+ * `.claude/rules/styling-and-tokens.md` "Which status rung a graphical MARK
+ * reaches for"), `var(--success-text)` for a positive-outcome accent, or
+ * `var(--destructive)` for an error accent.
  */
-export function IllustrationStage() {
-  return (
-    <circle cx="80" cy="78" r="50" style={STAGE_STYLE} strokeWidth={3} strokeDasharray="6 8" />
-  );
+export function illustrationAccent(fallback: string): string {
+  return `var(${ILLUSTRATION_ACCENT_VAR}, ${fallback})`;
 }

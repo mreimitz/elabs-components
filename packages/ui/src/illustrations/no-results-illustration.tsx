@@ -1,13 +1,13 @@
 import { forwardRef } from "react";
 import {
   illustrationSvgProps,
-  IllustrationStage,
+  illustrationAccent,
   type IllustrationProps,
 } from "./illustration-base";
 
 /**
  * Search / filter with zero matches. A line-art magnifying glass with a
- * `--primary` "×" inside the lens standing in for "nothing matched".
+ * `--primary-text` "×" inside the lens standing in for "nothing matched".
  */
 export const NoResultsIllustration = forwardRef<SVGSVGElement, IllustrationProps>(
   function NoResultsIllustration({ size, className, ...props }, ref) {
@@ -18,23 +18,22 @@ export const NoResultsIllustration = forwardRef<SVGSVGElement, IllustrationProps
         data-slot="no-results-illustration"
         {...props}
       >
-        <IllustrationStage />
-        <circle cx="68" cy="70" r="22" />
-        <line x1="84" y1="86" x2="104" y2="106" />
+        <circle cx="68" cy="66" r="30" />
+        <line x1="89.2" y1="87.2" x2="124" y2="122" />
         <line
-          x1="58"
-          y1="60"
-          x2="78"
-          y2="80"
-          style={{ stroke: "var(--primary)" }}
+          x1="56"
+          y1="54"
+          x2="80"
+          y2="78"
+          style={{ stroke: illustrationAccent("var(--primary-text)") }}
           strokeWidth={3}
         />
         <line
-          x1="78"
-          y1="60"
-          x2="58"
-          y2="80"
-          style={{ stroke: "var(--primary)" }}
+          x1="80"
+          y1="54"
+          x2="56"
+          y2="78"
+          style={{ stroke: illustrationAccent("var(--primary-text)") }}
           strokeWidth={3}
         />
       </svg>
