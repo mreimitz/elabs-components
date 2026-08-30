@@ -37,7 +37,9 @@ const QUIET_LEVELS = Array.from({ length: 8 }, () => 0.01);
 describe("AudioVisualizer — presentation-layer boundary (D5, issue #21)", () => {
   it("renders with no microphone and no AudioContext available", () => {
     const originalAudioContext = (window as { AudioContext?: unknown }).AudioContext;
-    // biome-ignore lint: deliberately deleting to simulate an environment with no Web Audio API
+    // Deliberately deleting to simulate an environment with no Web Audio API.
+    // (No ESLint rule in this repo's config flags a dot-notation `delete` — the
+    // property is restored below regardless.)
     delete (window as { AudioContext?: unknown }).AudioContext;
     expect(() => render(<AudioVisualizer levels={SPEECH_LEVELS} />)).not.toThrow();
     (window as { AudioContext?: unknown }).AudioContext = originalAudioContext;
@@ -162,7 +164,9 @@ describe("useAudioLevel — never requests the microphone itself", () => {
 
   it("degrades to empty levels (never throws) when a stream is given but no Web Audio API exists", () => {
     const originalAudioContext = (window as { AudioContext?: unknown }).AudioContext;
-    // biome-ignore lint: deliberately deleting to simulate an environment with no Web Audio API
+    // Deliberately deleting to simulate an environment with no Web Audio API.
+    // (No ESLint rule in this repo's config flags a dot-notation `delete` — the
+    // property is restored below regardless.)
     delete (window as { AudioContext?: unknown }).AudioContext;
 
     const fakeStream = {} as MediaStream;
