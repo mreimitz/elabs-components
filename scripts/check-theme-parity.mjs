@@ -28,8 +28,9 @@
  */
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-// The ACTIVE theme set — a paused theme is kept as source but never gated
-// (single source of truth: BUILT_IN_THEMES in theme-types.ts).
+// The ACTIVE theme set — single source of truth: BUILT_IN_THEMES in
+// theme-types.ts. Whatever that export lists is what parity is checked
+// against; nothing here filters it further.
 import { ACTIVE_THEMES } from "./lib/active-themes.mjs";
 // Every stylesheet that carries a theme block (ADR 0029 split the reference
 // themes out of themes.css). Throws rather than return an incomplete set.
@@ -48,9 +49,8 @@ const ROOT_MODE = "root";
  * `ROOT_MODE` is `:root`; the rest are `[data-theme="name"]`.
  * Order is the report order.
  *
- * Derived from the ACTIVE theme set, so a paused theme's block is never held to
- * parity — it is kept as source and updated by nobody
- * (@.claude/rules/paused-surfaces.md).
+ * Derived from the ACTIVE theme set (BUILT_IN_THEMES), so this list can never
+ * drift from what the codebase actually ships.
  */
 const THEME_NAMES = [ROOT_MODE, ...ACTIVE_THEMES];
 

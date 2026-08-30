@@ -28,9 +28,10 @@ Tailwind v4 via `@theme inline`.
 - `ThemeProvider` writes `data-theme` and persists the choice; `useTheme()`
   reads/sets it. The available themes are the provider's REGISTRY (ADR 0029);
   `BUILT_IN_THEME_DEFINITIONS` is its default.
-- Reference themes: **light** (the default) and **dark**. `blueprint`
-  (cyanotype paper, white ink, full reprographic texture) is kept as source but
-  PAUSED — see @.claude/rules/paused-surfaces.md.
+- Reference themes: **light** (the default) and **dark**. A third theme,
+  `blueprint` (cyanotype paper, white ink, full reprographic texture), was
+  shipped and later fully removed — see `CHANGELOG.md` "The blueprint theme
+  and its drawing package are gone" (`v4.0.0`).
 
 ## Consequences
 

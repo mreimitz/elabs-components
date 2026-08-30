@@ -1097,8 +1097,9 @@ package from the release set are both removals, and removals ship in a major
 
 **Nothing was deleted.** The `[data-theme="blueprint"]` CSS block, its DTCG
 token file and the whole package directory stay on disk untouched. Pause is
-reversible; un-pausing is the maintainer's call
-(`.claude/rules/paused-surfaces.md`).
+reversible; un-pausing is the maintainer's call. (As of `v4.0.0` this pause was
+superseded by a full removal — see "The blueprint theme and its drawing
+package are gone" below.)
 
 **Migrating a consumer:**
 
@@ -1153,8 +1154,10 @@ was deleted, and the `pnpm playground` / `pnpm test:e2e*` scripts.
 
 - **The `blueprint` theme and `@elabs-ai/components-blueprint` are
   PAUSED — kept as source, out of everything else.** Blueprint was always an
-  experimental/testing surface; it is now frozen on the maintainer's call
-  (`.claude/rules/paused-surfaces.md`). **Breaking for anyone who selected it:**
+  experimental/testing surface; it is now frozen on the maintainer's call.
+  (As of `v4.0.0` this pause was superseded by a full removal — see "The
+  blueprint theme and its drawing package are gone" below.) **Breaking for
+  anyone who selected it:**
   `THEMES` and `THEME_META` ship two themes (`light`, `dark`), so
   `ThemeName` narrows accordingly and a persisted `"blueprint"` preference is
   rejected on boot instead of applied. The theme's `[data-theme="blueprint"]`

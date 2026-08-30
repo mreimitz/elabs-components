@@ -187,6 +187,7 @@ jobs:
       - name: Docs and governance
         run: |
           pnpm docs:check
+          pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
           pnpm agents:check
           pnpm rules:scoping:check
@@ -264,6 +265,7 @@ jobs:
           pnpm motion:check:test
           pnpm origins:check:test
           pnpm palette:check:test
+          pnpm paused-surfaces-drift:check:test
           pnpm playbooks:check:test
           pnpm plugin:agents:check:test
           pnpm plugin:check:test

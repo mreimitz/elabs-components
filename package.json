@@ -128,6 +128,8 @@
     "origins:check:test": "node --test scripts/check-remote-origins.test.mjs",
     "palette:check": "node scripts/check-raw-palette.mjs",
     "palette:check:test": "node --test scripts/check-raw-palette.test.mjs",
+    "paused-surfaces-drift:check": "node scripts/check-paused-surfaces-drift.mjs",
+    "paused-surfaces-drift:check:test": "node --test scripts/check-paused-surfaces-drift.test.mjs",
     "playbooks:check": "node scripts/check-playbooks.mjs",
     "playbooks:check:test": "node --test scripts/check-playbooks.test.mjs",
     "plugin:agents": "node scripts/gen-plugin-agents.mjs",

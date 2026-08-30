@@ -249,11 +249,12 @@ assumed.
   Re-declaring it with a literal would break the sanctioned intentional-mirror
   pattern (`.claude/rules/theming.md`) and let the two drift apart the next
   time either is retuned.
-- **`:root` and the paused `blueprint` theme are unaffected.** `:root` already
-  satisfies the contract (see above) and needs no change. `blueprint` is
-  monochrome by contract and excluded from `MUST_DIFFER`/`ROLE_PAIRS`
-  evaluation per `.claude/rules/paused-surfaces.md`; no value is proposed for
-  it here or anywhere in issue #427.
+- **`:root` is unaffected.** It already satisfies the contract (see above) and
+  needs no change. The `blueprint` theme, at the time of this ADR paused and
+  excluded from `MUST_DIFFER`/`ROLE_PAIRS` evaluation as monochrome-by-contract,
+  was itself fully removed six days later (`CHANGELOG.md` "The blueprint theme
+  and its drawing package are gone", `v4.0.0`) — no value was ever proposed for
+  it here or anywhere in issue #427, and the question is now moot.
 - **A consumer with a local `--ring` override keeps working**, but the
   `CHANGELOG.md` entry for the companion change tells them the patch can be
   dropped once they upgrade.
@@ -271,7 +272,6 @@ assumed.
   mirror is declared with `var()`".
 - `.claude/rules/styling-and-tokens.md` — the three-rung status doctrine; the
   1.4.11 decision test.
-- `.claude/rules/paused-surfaces.md` — why `blueprint` carries no value here.
 - `.claude/rules/quality-gates.md` — Meta #161 (a token-value edit requires an
   observed visual sweep); "Enforcement over reminders".
 - `.claude/rules/design-system.md` — "Re-branding is a token change, not a
