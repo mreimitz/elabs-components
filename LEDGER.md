@@ -54,3 +54,59 @@ pair them with.
 
 58 dispatches · largest parallel batch 1 · haiku 6 · inherited-model 0 ·
 orchestrator source files edited 0.
+
+---
+
+## Run 20260830-195822 — the stranded-stack wave
+
+**What this run actually found.** The backlog was not unbuilt. A previous run had produced
+71 commits across 22 unit branches and 3 stacked integration branches, with open,
+CI-green PRs — and never merged them. The blocker was never the gates. It was
+`required_conversation_resolution: true` on `main` plus 28 unresolved automated-review
+threads across PRs #53 / #57 / #58.
+
+**What was done.** Consolidated all 28 review fixes onto `integration/close-issues-w3`
+(the strict superset of the other two branches) using three worktrees partitioned by file
+set, retargeted PR #58 to `main`, and merged it as `f659220` (83 commits). PRs #53 and #57
+close as superseded; every review thread on all three is replied-to and resolved.
+
+**Evidence.** The gate list is derived at run time from `.github/workflows/gates.yml`
+(159 commands). Baseline on untouched `main`: 157 PASS / 2 FAIL — both environmental
+(25 stale `.claude/worktrees/*/.expected-branch` markers left by the previous run, which
+make `worktree-branch:check` and `agent-docs-cascade:check:test` fail in the primary
+checkout). No unit was blamed for either. After the merge and the worktree cleanup:
+**159 PASS / 0 FAIL**, and CI on the merged head reported success on both the blocking
+and the non-blocking job.
+
+**Issues.** 51 open at Phase 0 → 39 open now: 21 closed (14 by closing keyword on merge,
+7 by hand with `file:line` evidence), 9 new filed during the run (#64–#72). Not closed,
+deliberately: #22 and #29 (partial — amendment comments name the residual), #26 (folded
+into #33), #34, #46, #60, #61 (re-adjudicated post-merge against shipped `main`; each
+carries a comment naming exactly what is still owed), #63 (nothing addresses it).
+
+**Two corrections worth keeping.**
+
+1. _A commit-body `#N` regex is not evidence in this fork._ It marked #49 and #50 as
+   covered; `git diff --stat main...integration/close-issues-w3` shows both files
+   untouched and the #50 defect still at `packages/ui/src/blocks/sidebar-05/app-sidebar.tsx:358`.
+   This fork's issue numbers collide with the upstream numbers cited throughout
+   `.claude/rules/**` — which is open issue #63. Only a diff-verified audit was trusted.
+2. _The gate list was under-extracted once._ Slicing `gates.yml` by line range started
+   below the pre-install step and silently dropped `conflict-markers:check` and
+   `debrand:check` — the two gates that matter most for a 206-file merge assembled from
+   ten merges. Both were added, baselined, and pass.
+
+**Ledger.** 21 dispatches · batch sizes 6 / 5 / 3 / 3 / 1×4 · largest parallel batch 6 ·
+sonnet 17 · opus 3 · haiku 1 · inherited-model 0 · orchestrator source files edited 0.
+
+`haiku` fired once (tooling triage). It stayed rare for a reason specific to this run:
+almost nothing here was "apply the stated change" work. The wave was adjudication —
+deciding whether shipped code meets an issue's acceptance criteria, against a fork whose
+issue numbers lie — and a verdict that is wrong in the cheap direction closes a live
+issue. That is the failure this command spends money to avoid.
+
+**A measurement caveat.** The batch sizes above were counted by grouping `Agent` tool
+calls by their assistant message id. The repo's own `close-issues-delegation-nudge.sh`
+counts per JSONL record instead and therefore reported "largest parallel batch 1" for
+every batch in this run, including a batch of 6. That is open issue #55; its fix is on
+`main` now.
