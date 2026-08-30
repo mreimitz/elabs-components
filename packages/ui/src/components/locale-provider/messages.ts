@@ -115,6 +115,13 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.schemaForm.submitted": "Submitted",
   // Pagination's ellipsis (sr-only — the visible glyph is decorative).
   "ui.pagination.morePages": "More pages",
+  // Pagination's prev/next links — the ACCESSIBLE NAME (`aria-label`), distinct
+  // from the visible `previous`/`next` text below it: an `aria-label` overrides
+  // visible text content as the accessible name, so leaving these hardcoded in
+  // English meant a non-English `LocaleProvider` translated the visible label
+  // but a screen-reader user still heard English (#12/#53 review, P2).
+  "ui.pagination.previous": "Go to previous page",
+  "ui.pagination.next": "Go to next page",
   // Sidebar's mobile Sheet title (sr-only header — the sheet itself has no
   // visible chrome, so this is only ever read by assistive tech).
   "ui.sidebar.title": "Sidebar",

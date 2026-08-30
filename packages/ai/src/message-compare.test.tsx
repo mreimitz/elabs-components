@@ -95,6 +95,44 @@ describe("MessageCompare", () => {
     expect(b!.scrollTop).toBe(200); // 50% of B's range
   });
 
+  // #12/#53 review (P2): when the destination column's scroll position ALREADY
+  // sits at the computed proportional offset, writing the same value produces
+  // no real change — real browsers emit no `scroll` event for it, so a naive
+  // "always arm suppression" left the flag permanently set, and the
+  // destination's next genuine user scroll (a keyboard PageDown/Home in
+  // particular) got silently swallowed instead of propagating to its siblings.
+  it("does not swallow a column's own next real scroll when a sync write left its offset unchanged", () => {
+    const { container } = render(
+      <MessageCompare columns={2} syncScroll>
+        <MessageCompareColumn model={{ name: "Model A" }}>A</MessageCompareColumn>
+        <MessageCompareColumn model={{ name: "Model B" }}>B</MessageCompareColumn>
+      </MessageCompare>,
+    );
+
+    const [a, b] = columnBodies(container);
+    mockScrollMetrics(a!, { scrollHeight: 1000, clientHeight: 200 }); // range 800
+    mockScrollMetrics(b!, { scrollHeight: 500, clientHeight: 100 }); // range 400
+
+    // B is already sitting at the exact offset A's forthcoming scroll will
+    // compute for it (50% of 400 = 200) — set directly, no scroll event, so
+    // no suppression flag is armed yet.
+    b!.scrollTop = 200;
+
+    // A scrolls to 50% of its own range. The sync write to B assigns 200 —
+    // identical to B's current value, i.e. a genuine no-op write.
+    a!.scrollTop = 400;
+    fireEvent.scroll(a!);
+    expect(b!.scrollTop).toBe(200); // unchanged, as expected
+
+    // B's OWN next real scroll (e.g. keyboard PageDown) must still propagate
+    // to A — it must NOT be swallowed by a suppression flag left armed from
+    // the no-op write above.
+    b!.scrollTop = 300; // 75% of B's range
+    fireEvent.scroll(b!);
+
+    expect(a!.scrollTop).toBe(600); // 75% of A's range — propagated, not swallowed
+  });
+
   it("labels each column as a region with a distinct accessible name from its model", () => {
     render(
       <MessageCompare columns={3}>

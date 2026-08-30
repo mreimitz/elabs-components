@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 371 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 372 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -265,6 +265,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | HoverCardContent | component |  | `@elabs-ai/components-ui` |  |
 | HoverCardTrigger | component |  | `@elabs-ai/components-ui` |  |
 | IconButton | component |  | `@elabs-ai/components-ui` |  |
+| ILLUSTRATION_ACCENT_VAR | component |  | `@elabs-ai/components-ui` |  |
 | Input | component |  | `@elabs-ai/components-ui` | Single-line text field — the base form input. |
 | InputGroup | component | variant=outline*\|surface\|card | `@elabs-ai/components-ui` |  |
 | InputGroupAddon | component | align=inline-start*\|inline-end\|block-start\|block-end | `@elabs-ai/components-ui` |  |

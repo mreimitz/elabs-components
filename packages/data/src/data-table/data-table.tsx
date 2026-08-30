@@ -620,7 +620,13 @@ function DataTableInner<TData, TValue>(
 ) {
   // Component microcopy goes through the locale seam (ADR 0017) — a screen-reader
   // user in a non-English locale has no workaround for a hardcoded accessible name.
-  const { t } = useLocale();
+  // `dir` also drives column-resize direction below (#12 review, P1): the resize
+  // handle already sits at the column's logical `end` edge (`end-0`, which
+  // Tailwind's logical properties flip to the physical LEFT under RTL), so both
+  // TanStack's own pointer-drag math and the hand-rolled keyboard path must be
+  // told the active direction too, or dragging/pressing an arrow moves the width
+  // opposite the visible boundary.
+  const { t, dir } = useLocale();
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
   const isSortingControlled = sortingProp !== undefined;
@@ -892,6 +898,13 @@ function DataTableInner<TData, TValue>(
     // the two input modes can never diverge in controlled/uncontrolled
     // behaviour.
     columnResizeMode,
+    // RTL fix (#12 review, P1): TanStack's pointer-drag math hardcodes LTR
+    // unless told otherwise — `deltaDirection = columnResizeDirection ===
+    // 'rtl' ? -1 : 1` internally — so under `dir="rtl"` (the resize handle's
+    // own edge already flips via `end-0`, see the `useLocale()` call above)
+    // dragging would otherwise move the column's width opposite the visible
+    // boundary. `handleResizeKeyDown` below mirrors this for the keyboard path.
+    columnResizeDirection: dir,
     enableColumnResizing,
     onColumnSizingChange: (updater) => {
       const next = resolveColumnSizing(updater);
@@ -1067,12 +1080,33 @@ function DataTableInner<TData, TValue>(
   // keyboard and pointer resizing share one controlled/uncontrolled code path
   // and can never diverge in behaviour.
   const RESIZE_STEP = 10;
+  // ARIA fallback ceiling for the resize separator's `aria-valuemax` when the
+  // column declares no explicit `maxSize` — a `ColumnDef` with no `maxSize`
+  // resolves through TanStack's own default to `Number.MAX_SAFE_INTEGER`,
+  // which is not a value any AT should announce, so the header below omits
+  // `aria-valuemax` entirely in that case. Per the WAI-ARIA separator-as-
+  // widget pattern, an ELEMENT WITH NO `aria-valuemax` is read with an
+  // IMPLICIT default of 100 — so a column at its ordinary starting width
+  // (150) already announces as "150 of 100", out of its own stated range
+  // (#12 review, P2). `Math.max` with the live size at the call site below
+  // keeps this always containing the current value: a column dragged past
+  // this floor simply raises its own announced ceiling instead of going out
+  // of range again.
+  const RESIZE_UNBOUNDED_ARIA_MAX = 2000;
   function handleResizeKeyDown(event: React.KeyboardEvent, column: Column<TData, unknown>) {
     let delta = 0;
     if (event.key === "ArrowRight") delta = RESIZE_STEP;
     else if (event.key === "ArrowLeft") delta = -RESIZE_STEP;
     else return;
     event.preventDefault();
+    // Mirror TanStack's own `columnResizeDirection` reversal (passed to
+    // `useReactTable` above) for the keyboard path: the handle sits at the
+    // column's logical `end` edge, which `end-0` renders on the physical
+    // LEFT under `dir="rtl"` — so ArrowRight (physical right, toward the
+    // column's own body) must SHRINK the column and ArrowLeft must GROW it,
+    // the mirror image of LTR. Without this the keyboard path would diverge
+    // from the now-direction-aware pointer path.
+    if (dir === "rtl") delta = -delta;
     const minSize = column.columnDef.minSize ?? 20;
     const maxSize = column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
     const nextSize = Math.min(maxSize, Math.max(minSize, column.getSize() + delta));
@@ -1265,7 +1299,7 @@ function DataTableInner<TData, TValue>(
                       aria-valuemax={
                         resizeMax !== undefined && resizeMax < Number.MAX_SAFE_INTEGER
                           ? resizeMax
-                          : undefined
+                          : Math.max(header.getSize(), RESIZE_UNBOUNDED_ARIA_MAX)
                       }
                       aria-label={t("data.table.resizeColumn", { name: headerLabel })}
                       tabIndex={0}

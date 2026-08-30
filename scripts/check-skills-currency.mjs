@@ -67,32 +67,59 @@ export const INFRA_PACKAGE_SUFFIXES = new Set([
   "typescript-config",
 ]);
 
-/** The current package scope. A `@<scope>/components-<slug>` mention with any
- * other scope is the "old `@brand/*` scope" drift class #29's original evidence
- * named. */
-export const CURRENT_SCOPE = "elabs-ai";
+/**
+ * The current package scope, DERIVED from `brand-ui.manifest.json`'s own
+ * `packages` keys rather than hardcoded — a hardcoded `"elabs-ai"` is exactly
+ * the "supposedly manifest-backed gate keeps treating the OLD scope as
+ * current" drift class #29 exists to catch (#12/#53 review, P2): the moment
+ * the scope changes again, a hardcoded constant would keep failing correct
+ * new-scope references while letting stale old-scope ones slip through
+ * `INFRA_PACKAGE_SUFFIXES`. Every manifest package name is expected to share
+ * ONE `@<scope>/components-*` prefix; anything else means the manifest itself
+ * is malformed (not this gate's job to guess around), so it throws rather
+ * than silently picking one.
+ */
+export function deriveCurrentScope(manifestPackageNames) {
+  const scopes = new Set();
+  for (const name of manifestPackageNames) {
+    const m = /^@([a-z0-9][a-z0-9-]*)\/components-/i.exec(name);
+    if (m) scopes.add(m[1].toLowerCase());
+  }
+  if (scopes.size !== 1) {
+    throw new Error(
+      `deriveCurrentScope: expected exactly one @<scope>/components-* prefix across ` +
+        `brand-ui.manifest.json's packages, found ${scopes.size} (${
+          [...scopes].join(", ") || "none"
+        }). Run \`pnpm manifest\` if this looks stale.`,
+    );
+  }
+  return [...scopes][0];
+}
 
 /**
  * Package-name-scope violations in `text`. `manifestPackageNames` is the Set of
  * full package names from `brand-ui.manifest.json`'s `packages` keys (e.g.
- * "@elabs-ai/components-ui"). Pure — exported for the self-test.
+ * "@elabs-ai/components-ui"); `currentScope` is that same manifest's derived
+ * scope (`deriveCurrentScope(manifestPackageNames)` — callers share one
+ * derivation via `manifestFacts()` rather than re-deriving it here). Pure —
+ * exported for the self-test.
  */
-export function findPackageScopeViolations(text, manifestPackageNames) {
+export function findPackageScopeViolations(text, manifestPackageNames, currentScope) {
   const violations = [];
   const re = /@([a-z0-9][a-z0-9-]*)\/components-([a-z0-9-]+)\b/gi;
   text.split("\n").forEach((line, i) => {
     for (const m of line.matchAll(re)) {
       const scope = m[1].toLowerCase();
       const slug = m[2].toLowerCase();
-      if (scope !== CURRENT_SCOPE) {
+      if (scope !== currentScope) {
         violations.push({
           line: i + 1,
           match: m[0],
-          reason: `scope "@${scope}" is not the current package scope (@${CURRENT_SCOPE})`,
+          reason: `scope "@${scope}" is not the current package scope (@${currentScope})`,
         });
         continue;
       }
-      const full = `@${CURRENT_SCOPE}/components-${slug}`;
+      const full = `@${currentScope}/components-${slug}`;
       if (!manifestPackageNames.has(full) && !INFRA_PACKAGE_SUFFIXES.has(slug)) {
         violations.push({
           line: i + 1,
@@ -149,9 +176,11 @@ export function manifestFacts(root = REPO_ROOT) {
   const mPath = join(root, "brand-ui.manifest.json");
   if (!existsSync(mPath)) return null;
   const manifest = JSON.parse(readFileSync(mPath, "utf8"));
+  const packageNames = new Set(Object.keys(manifest.packages ?? {}));
   return {
     themeCount: Array.isArray(manifest.themes) ? manifest.themes.length : null,
-    packageNames: new Set(Object.keys(manifest.packages ?? {})),
+    packageNames,
+    currentScope: deriveCurrentScope(packageNames),
   };
 }
 
@@ -168,7 +197,7 @@ export function checkCurrency(entries, facts) {
     for (const v of findThemeCountViolations(text, facts.themeCount)) {
       themeViolations.push(`${file}:${v.line}: claims "${v.match}"`);
     }
-    for (const v of findPackageScopeViolations(text, facts.packageNames)) {
+    for (const v of findPackageScopeViolations(text, facts.packageNames, facts.currentScope)) {
       scopeViolations.push(`${file}:${v.line}: "${v.match}" — ${v.reason}`);
     }
   }
@@ -214,7 +243,7 @@ if (invokedDirectly) {
     );
     for (const v of scopeViolations) console.error("  - " + v);
     console.error(
-      `  Fix: use the current scope (@${CURRENT_SCOPE}) and a real package name (see\n` +
+      `  Fix: use the current scope (@${facts.currentScope}) and a real package name (see\n` +
         "  brand-ui.manifest.json's `packages` keys, or add a genuinely new infra package's\n" +
         "  suffix to INFRA_PACKAGE_SUFFIXES in this script).",
     );

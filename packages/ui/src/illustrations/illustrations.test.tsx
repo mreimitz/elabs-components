@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import {
@@ -8,6 +9,7 @@ import {
   OfflineIllustration,
   SuccessIllustration,
   FirstRunIllustration,
+  ILLUSTRATION_ACCENT_VAR,
 } from "./index";
 
 // No literal hex anywhere in a rendered attribute — only `currentColor` or a
@@ -67,5 +69,22 @@ describe("state illustrations", () => {
     const { container } = render(<SuccessIllustration className="text-primary" />);
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("class")).toContain("text-primary");
+  });
+
+  // #12/#53 review (P2): `ILLUSTRATION_ACCENT_VAR` is the mechanism `StatePanel`
+  // uses internally to safely retint an illustration's meaning-bearing accent
+  // (see illustration-base.tsx). A consumer rendering an illustration OUTSIDE
+  // `StatePanel` needs the same seam without duplicating the private
+  // "--illustration-accent" string, so the barrel must export it.
+  it("exports ILLUSTRATION_ACCENT_VAR — the public retint seam for consumers outside StatePanel", () => {
+    expect(ILLUSTRATION_ACCENT_VAR).toBe("--illustration-accent");
+    // A consumer can set it inline exactly the way StatePanel does internally.
+    const { container } = render(
+      <div style={{ [ILLUSTRATION_ACCENT_VAR]: "var(--success-text)" } as CSSProperties}>
+        <SuccessIllustration />
+      </div>,
+    );
+    const wrapper = container.firstChild as HTMLElement;
+    expect(wrapper.style.getPropertyValue(ILLUSTRATION_ACCENT_VAR)).toBe("var(--success-text)");
   });
 });

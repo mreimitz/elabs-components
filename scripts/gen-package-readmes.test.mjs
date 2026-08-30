@@ -11,7 +11,19 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { renderReadmeRegion, spliceRegion, licenseMismatch } from "./gen-package-readmes.mjs";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import {
+  renderReadmeRegion,
+  spliceRegion,
+  licenseMismatch,
+  optionalPeersOf,
+} from "./gen-package-readmes.mjs";
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.dirname(HERE);
 
 const baseOpts = {
   purpose: "Example purpose.",
@@ -142,4 +154,99 @@ test("licenseMismatch: flags a README claiming UNLICENSED for an MIT package.jso
 test("licenseMismatch: null when there is no existing README (nothing to compare)", () => {
   assert.equal(licenseMismatch("", { license: "MIT", private: false }), null);
   assert.equal(licenseMismatch(null, { license: "MIT", private: false }), null);
+});
+
+// ── optionalPeersOf + Install-block rendering (#12/#53 review, P2): a package
+// with an OPTIONAL peer (peerDependenciesMeta[x].optional === true) is not
+// auto-installed by npm/pnpm, so the generated Install guide must spell it
+// out explicitly rather than leaving the requirement undocumented outside
+// the changelog. ─────────────────────────────────────────────────────────
+
+test("optionalPeersOf: finds a peer marked optional, paired with its declared range", () => {
+  const pkg = {
+    peerDependencies: { ai: "^6.0.0 || ^7.0.0", react: "^19.0.0" },
+    peerDependenciesMeta: { ai: { optional: true } },
+  };
+  assert.deepEqual(optionalPeersOf(pkg), [{ name: "ai", range: "^6.0.0 || ^7.0.0" }]);
+});
+
+test("optionalPeersOf: a REQUIRED peer (no optional:true) is not returned", () => {
+  const pkg = {
+    peerDependencies: { react: "^19.0.0" },
+    peerDependenciesMeta: { react: { optional: false } },
+  };
+  assert.deepEqual(optionalPeersOf(pkg), []);
+});
+
+test("optionalPeersOf: peerDependenciesMeta with no matching peerDependencies entry is dropped", () => {
+  const pkg = {
+    peerDependencies: {},
+    peerDependenciesMeta: { ghost: { optional: true } },
+  };
+  assert.deepEqual(optionalPeersOf(pkg), []);
+});
+
+test("optionalPeersOf: no peerDependenciesMeta at all returns []", () => {
+  assert.deepEqual(optionalPeersOf({ peerDependencies: { react: "^19.0.0" } }), []);
+});
+
+test("renderReadmeRegion: an optional peer gets its own explicit `pnpm add` line in Install", () => {
+  const region = renderReadmeRegion("@elabs-ai/components-ai", {
+    ...baseOpts,
+    license: "MIT",
+    isPrivate: false,
+    optionalPeers: [{ name: "ai", range: "^6.0.0 || ^7.0.0" }],
+  });
+  const install = region.slice(region.indexOf("## Install"), region.indexOf("## Set up styling"));
+  assert.match(install, /pnpm add ai@"\^6\.0\.0 \|\| \^7\.0\.0"/);
+});
+
+test("renderReadmeRegion: no optionalPeers means no extra install line (default [])", () => {
+  const region = renderReadmeRegion("@elabs-ai/components-ui", {
+    ...baseOpts,
+    license: "MIT",
+    isPrivate: false,
+  });
+  const install = region.slice(region.indexOf("## Install"), region.indexOf("## Set up styling"));
+  assert.ok(!install.includes("optional peer"));
+});
+
+// ── the real repo: the shipped ai README documents its real optional peer,
+// and the shipped viewer README (which already documents its 7 per-format
+// adapter peers by hand, below the generated markers) is NOT force-fed a
+// blanket install of all of them ────────────────────────────────────────
+
+test("REAL repo: packages/ai/README.md's generated Install block names the real ai peer range", () => {
+  const pkgJson = JSON.parse(
+    readFileSync(path.join(REPO_ROOT, "packages", "ai", "package.json"), "utf8"),
+  );
+  const aiPeer = optionalPeersOf(pkgJson).find((p) => p.name === "ai");
+  assert.ok(aiPeer, "packages/ai/package.json must declare ai as an optional peer");
+  const readme = readFileSync(path.join(REPO_ROOT, "packages", "ai", "README.md"), "utf8");
+  assert.ok(
+    readme.includes(`pnpm add ai@"${aiPeer.range}"`),
+    "README's Install block must spell out the exact peer range from package.json",
+  );
+});
+
+test("REAL repo: packages/viewer/README.md's generated Install block stays free of its 7 adapter peers", () => {
+  const readme = readFileSync(path.join(REPO_ROOT, "packages", "viewer", "README.md"), "utf8");
+  const generatedRegion = readme.slice(
+    readme.indexOf("<!-- brand-ui:gen:readme:start -->"),
+    readme.indexOf("<!-- brand-ui:gen:readme:end -->"),
+  );
+  assert.ok(
+    !generatedRegion.includes("optional peer"),
+    "viewer's adapter peers are documented per-format below the generated markers — " +
+      "the generated Install block must not blanket-install all seven",
+  );
+});
+
+test("the REAL repo currently passes gen:readmes:check (CLI run)", () => {
+  assert.doesNotThrow(() => {
+    execFileSync(process.execPath, ["scripts/gen-package-readmes.mjs", "--check"], {
+      cwd: REPO_ROOT,
+      stdio: "pipe",
+    });
+  });
 });

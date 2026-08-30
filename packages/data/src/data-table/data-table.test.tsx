@@ -8,6 +8,7 @@ import type {
   Table as TanstackTable,
   VisibilityState,
 } from "@tanstack/react-table";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import { DataTable, createSelectionColumn } from "./data-table";
 import type { DataTableServerArgs } from "./data-table";
 
@@ -1653,6 +1654,103 @@ describe("DataTable — #12 column resizing", () => {
     // proving pinning already composes with resizing via `column.getSize()`,
     // with no changes needed on the pinning side.
     expect(pinnedHeaders[1]!.style.left).toBe("210px");
+  });
+});
+
+// #12 code-review finding (P1): the resize handle sits at the column's logical
+// `end` edge (`end-0`), which renders on the physical LEFT under `dir="rtl"` —
+// but TanStack's own pointer-drag math and the hand-rolled keyboard path both
+// default to LTR unless told the active direction, so dragging/pressing an
+// arrow moved the width opposite the visible boundary. Fixed by threading
+// `useLocale().dir` into `columnResizeDirection` (pointer path) and reversing
+// the keyboard delta.
+describe('DataTable — #12 review P1: column resizing under dir="rtl"', () => {
+  it("reverses the keyboard resize delta — ArrowRight shrinks, ArrowLeft grows", () => {
+    render(
+      <LocaleProvider dir="rtl">
+        <DataTable columns={resizableColumns} data={data} enableColumnResizing />
+      </LocaleProvider>,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(handle).toHaveAttribute("aria-valuenow", "150");
+
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(handle).toHaveAttribute("aria-valuenow", "140");
+
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    expect(handle).toHaveAttribute("aria-valuenow", "160");
+  });
+
+  it("reverses the pointer-drag resize direction (columnResizeDirection wired to useReactTable)", () => {
+    const { container } = render(
+      <LocaleProvider dir="rtl">
+        <DataTable columns={resizableColumns} data={data} enableColumnResizing />
+      </LocaleProvider>,
+    );
+    const th = container.querySelector<HTMLElement>("thead th")!;
+    expect(th.style.width).toBe("150px");
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    // Same drag as the LTR pointer-drag test above (0 → 40, which GROWS the
+    // column to 190px there) — under RTL it must SHRINK instead.
+    fireEvent.mouseDown(handle, { clientX: 0 });
+    fireEvent.mouseMove(document, { clientX: 40 });
+    fireEvent.mouseUp(document, { clientX: 40 });
+    expect(th.style.width).toBe("110px");
+  });
+
+  it("keyboard and pointer resizing stay in agreement under RTL (never diverge)", () => {
+    const { container } = render(
+      <LocaleProvider dir="rtl">
+        <DataTable columns={resizableColumns} data={data} enableColumnResizing />
+      </LocaleProvider>,
+    );
+    const th = container.querySelector<HTMLElement>("thead th")!;
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    fireEvent.keyDown(handle, { key: "ArrowLeft" }); // grows under RTL
+    expect(th.style.width).toBe("160px");
+    fireEvent.mouseDown(handle, { clientX: 0 });
+    fireEvent.mouseMove(document, { clientX: -20 }); // physical-left drag also grows
+    fireEvent.mouseUp(document, { clientX: -20 });
+    expect(th.style.width).toBe("180px");
+  });
+});
+
+// #12 code-review finding (P2): a resizable column with no explicit `maxSize`
+// omitted `aria-valuemax` entirely, so WAI-ARIA's implicit default of 100
+// applied — a column at its ordinary 150px starting width announced as
+// "150 of 100", out of its own stated range. Fixed by always supplying a
+// numeric ceiling that contains the live value.
+describe("DataTable — #12 review P2: resize separator aria-valuemax stays in range", () => {
+  it("supplies an explicit aria-valuemax containing the current size when the column declares no maxSize", () => {
+    render(<DataTable columns={resizableColumns} data={data} enableColumnResizing />);
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(handle).toHaveAttribute("aria-valuenow", "150");
+    const max = Number(handle.getAttribute("aria-valuemax"));
+    expect(Number.isFinite(max)).toBe(true);
+    expect(max).toBeGreaterThanOrEqual(150);
+  });
+
+  it("keeps raising the announced ceiling as the column grows past it", () => {
+    const wideColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name", size: 2500 },
+      { accessorKey: "value", header: "Value", size: 100 },
+    ];
+    render(<DataTable columns={wideColumns} data={data} enableColumnResizing />);
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(handle).toHaveAttribute("aria-valuenow", "2500");
+    const max = Number(handle.getAttribute("aria-valuemax"));
+    expect(max).toBeGreaterThanOrEqual(2500);
+  });
+
+  it("still honors an explicit columnDef.maxSize unchanged", () => {
+    const cappedColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name", size: 150, maxSize: 300 },
+      { accessorKey: "value", header: "Value", size: 100 },
+    ];
+    render(<DataTable columns={cappedColumns} data={data} enableColumnResizing />);
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(handle).toHaveAttribute("aria-valuemax", "300");
   });
 });
 

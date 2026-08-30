@@ -63,7 +63,7 @@ const EXTRAS = {
     'Import `"@xyflow/react/dist/style.css"` once.',
   ],
   [`${SCOPE}/components-ai`]: [
-    "`ai` (Vercel AI SDK) `^6` is a **types-only** peer — your app owns the model calls.",
+    "`ai` (Vercel AI SDK) is a **types-only, optional** peer (see the `pnpm add ai@…` line above) — your app owns the model calls.",
     "`@xyflow/react` is a peer too, if you render the agent canvas.",
   ],
   [`${SCOPE}/components-charts`]: [
@@ -77,10 +77,25 @@ const EXTRAS = {
   ],
 };
 
+/**
+ * Packages whose optional peers must NOT get an unconditional `pnpm add`
+ * line in the base Install block, because they already document a per-format
+ * / per-feature opt-in install story elsewhere in their README (hand-written
+ * prose below the generated markers). `@elabs-ai/components-viewer` declares
+ * SEVEN optional adapter peers (papaparse, pdfjs-dist, mammoth, xlsx, jszip,
+ * shiki, streamdown) precisely so an app that only opens CSVs never downloads
+ * a PDF or spreadsheet parser — blanket-installing all seven in the base
+ * Install block would contradict that design and the README's own "Only
+ * install what you open" table. Keep this list to genuine per-feature-adapter
+ * packages; a package with one broadly-relevant optional peer (e.g. `ai` on
+ * `@elabs-ai/components-ai`) belongs in the base Install block, not here.
+ */
+const SKIP_OPTIONAL_PEER_INSTALL = new Set([`${SCOPE}/components-viewer`]);
+
 /** The generated region for one package. */
 export function renderReadmeRegion(
   pkgName,
-  { purpose, componentCount, sample, extras, license, isPrivate },
+  { purpose, componentCount, sample, extras, license, isPrivate, optionalPeers = [] },
 ) {
   const short = pkgName.replace(`${SCOPE}/components-`, "");
   const isCli = short === "cli";
@@ -126,6 +141,14 @@ export function renderReadmeRegion(
         : isTokens
           ? `pnpm add ${pkgName}`
           : `pnpm add ${SCOPE}/components-tokens ${pkgName}`,
+      // Optional peers (peerDependenciesMeta[name].optional === true) are NOT
+      // auto-installed by npm/pnpm — a bare install above silently omits them,
+      // so a consumer whose app doesn't already declare a compatible version
+      // hits a missing-module/type error the moment they import from this
+      // package. Spell out the exact supported range from THIS package's own
+      // package.json (never hand-typed) so the install guide can't drift from
+      // the peer contract it documents (#12/#53 review, P2).
+      ...optionalPeers.map((p) => `pnpm add ${p.name}@"${p.range}"  # optional peer`),
       "```",
       "",
     );
@@ -240,6 +263,23 @@ export function licenseMismatch(existingReadme, pkg) {
   return null;
 }
 
+/**
+ * The `{ name, range }` optional peers declared in a package's own
+ * `package.json` — `peerDependenciesMeta[name].optional === true`, paired
+ * with that peer's `peerDependencies[name]` range. Derived, never
+ * hand-maintained, so the generated install guide can't drift from the real
+ * peer contract (#12/#53 review, P2 — the `ai` peer widened to `^6 || ^7`
+ * and went `optional: true` without the install guide ever mentioning it).
+ */
+export function optionalPeersOf(pkg) {
+  const meta = pkg.peerDependenciesMeta ?? {};
+  const peers = pkg.peerDependencies ?? {};
+  return Object.keys(meta)
+    .filter((name) => meta[name]?.optional === true && peers[name])
+    .sort()
+    .map((name) => ({ name, range: peers[name] }));
+}
+
 /** Splice the region into existing content, preserving anything outside it. */
 export function spliceRegion(existing, region) {
   if (!existing) return region + "\n";
@@ -286,6 +326,7 @@ function runCli() {
       extras: EXTRAS[pkg.name] ?? [],
       license: pkg.license ?? null,
       isPrivate,
+      optionalPeers: SKIP_OPTIONAL_PEER_INSTALL.has(pkg.name) ? [] : optionalPeersOf(pkg),
     });
 
     const readmePath = join(REPO_ROOT, "packages", dir, "README.md");

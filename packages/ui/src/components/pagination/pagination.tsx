@@ -44,7 +44,7 @@ export function PaginationPrevious({ className, ...props }: ComponentProps<"a">)
   const { t } = useLocale();
   return (
     <a
-      aria-label="Go to previous page"
+      aria-label={t("ui.pagination.previous")}
       className={cn(buttonVariants({ variant: "ghost" }), "gap-1 ps-2.5 cursor-pointer", className)}
       {...props}
     >
@@ -57,7 +57,7 @@ export function PaginationNext({ className, ...props }: ComponentProps<"a">) {
   const { t } = useLocale();
   return (
     <a
-      aria-label="Go to next page"
+      aria-label={t("ui.pagination.next")}
       className={cn(buttonVariants({ variant: "ghost" }), "gap-1 pe-2.5 cursor-pointer", className)}
       {...props}
     >
