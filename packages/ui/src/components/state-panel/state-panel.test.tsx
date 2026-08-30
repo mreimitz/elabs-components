@@ -25,6 +25,27 @@ describe("StatePanel", () => {
     expect(alert).toHaveAttribute("data-kind", "error");
   });
 
+  it("error eyebrow uses the destructive INK rung, not the fill rung (#40)", () => {
+    // The eyebrow is running TEXT on the panel's own `bg-destructive/5` wash, so
+    // it must reach for `text-destructive-text` (>= 4.5:1, the text-rung
+    // contract) — never the bare `text-destructive` fill rung, whose contract
+    // is only the 3:1 mark bar. See styling-and-tokens.md "Which status rung a
+    // graphical MARK reaches for" (#381).
+    render(<StatePanel kind="error" />);
+    const eyebrow = screen.getByText("Error");
+    expect(eyebrow.className).toContain("text-destructive-text");
+    expect(eyebrow.className).not.toMatch(/(?<!-)\btext-destructive\b(?!-)/);
+  });
+
+  it("error icon keeps the destructive FILL rung (a mark, not text)", () => {
+    // Inverse of the eyebrow lock above: an icon IS a mark, so it correctly
+    // stays on the fill rung — the fix must not "tidy" it onto -text too.
+    const { container } = render(<StatePanel kind="error" />);
+    const iconWrapper = container.querySelector("svg")?.parentElement;
+    expect(iconWrapper?.className ?? "").toMatch(/\btext-destructive\b/);
+    expect(iconWrapper?.className ?? "").not.toContain("text-destructive-text");
+  });
+
   it("renders error kind with custom title", () => {
     render(<StatePanel kind="error" title="Custom error" description="Custom description" />);
     expect(screen.getByRole("alert")).toBeInTheDocument();

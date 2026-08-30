@@ -136,12 +136,17 @@ export function StatePanel({
   return (
     <div data-kind={kind} className={cn(statePanelVariants({ kind }), className)} {...roleProps}>
       {/* Error eyebrow: "Error" label shown above the icon so the panel reads
-          as an error structurally even in monochrome themes. The
-          eyebrow uses text-destructive which resolves to a drawable
-          foreground at high decoration — combined with the thick left border from
-          statePanelVariants it gives two non-color structural cues. */}
+          as an error structurally even in monochrome themes. This is running
+          TEXT, not a mark, so it takes the ink rung `text-destructive-text`
+          (>= 4.5:1, gated in themes-contrast.test.ts) — not the fill rung
+          `text-destructive`, whose contract is only the 3:1 mark bar (see
+          "Which status rung a graphical MARK reaches for", styling-and-tokens.md
+          #381). Combined with the thick left border from statePanelVariants it
+          gives two non-color structural cues. The icon below deliberately
+          KEEPS text-destructive: an icon is a mark, so the fill rung is
+          correct there — do not "tidy" it onto -text too. */}
       {isError && (
-        <span className="text-xs font-semibold uppercase tracking-widest text-destructive">
+        <span className="text-meta font-semibold uppercase tracking-widest text-destructive-text">
           Error
         </span>
       )}

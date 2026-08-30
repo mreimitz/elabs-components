@@ -84,7 +84,7 @@
   "packages/ui/src/components/section-header/section-header.tsx": 2,
   "packages/ui/src/components/select/select.tsx": 3,
   "packages/ui/src/components/sheet/sheet.tsx": 2,
-  "packages/ui/src/components/state-panel/state-panel.tsx": 4,
+  "packages/ui/src/components/state-panel/state-panel.tsx": 3,
   "packages/ui/src/components/tabs/tabs.tsx": 1,
   "packages/ui/src/components/tag-input/tag-input.tsx": 2,
   "packages/ui/src/components/team-switcher/team-switcher.tsx": 3,

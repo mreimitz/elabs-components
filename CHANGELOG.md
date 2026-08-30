@@ -25,6 +25,15 @@
   `next` / `close` keys where an exact match existed; minted namespaced keys
   for the rest. `pnpm microcopy:check`'s ratchet moves from 177 to 145 known
   strings. (#18)
+- Fixed: `StatePanel kind="error"`'s "Error" eyebrow painted the destructive
+  **fill** rung (`text-destructive`) as 12px running text on the panel's own
+  `bg-destructive/5` wash — the fill rung's contract is only the WCAG 1.4.11
+  ≥3:1 mark bar, not the ≥4.5:1 text floor, and it measured 4.34:1 in `light`.
+  Moved the eyebrow to the on-surface ink rung (`text-destructive-text`,
+  ≥4.5:1) and its raw `text-xs` to the `meta` role; the destructive **icon**
+  deliberately keeps `text-destructive` (it is a mark, not text). Fixes
+  `StatePanel`'s `error`/`error-custom` stories and the deprecated `ErrorState`
+  wrapper that renders through it. (#40)
 
 ### Changed
 
