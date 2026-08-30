@@ -7,7 +7,7 @@
  * fails CI (and runs locally via `pnpm docs:check`) when authoritative docs drift:
  *
  *   1. THEME COUNT — no prose may say "four/five/six themes" (all stale counts); the
- *      system ships (BUILT_IN_THEMES in theme-types.ts — paused themes excluded).
+ *      system ships whatever BUILT_IN_THEMES (theme-types.ts) currently lists.
  *      Also: the PR template must enumerate all three themes, not a stale subset (#158).
  *   2. WORKFLOW REFS — every `.github/workflows/<x>.yml` a doc references must exist,
  *      so docs can't claim a CI that isn't there (the original C1/C5 gap).
@@ -194,10 +194,11 @@ export function themeNamesFromSource(text) {
 export function themeCountFromSource(text) {
   return themeNamesFromSource(text)?.length ?? null;
 }
-// The NAMES are derived too, not hard-coded: a theme that is paused
-// (@.claude/rules/paused-surfaces.md) leaves BUILT_IN_THEMES, and the docs must stop
-// naming it in the same move — otherwise this gate would demand the docs
-// enumerate a theme nothing tests any more.
+// The NAMES are derived too, not hard-coded: if a theme is ever retired it
+// leaves BUILT_IN_THEMES, and the docs must stop naming it in the same move —
+// otherwise this gate would demand the docs enumerate a theme nothing tests
+// any more. (There is no such retired/paused-theme mechanism today — see #35 —
+// but the derivation stays robust to one existing again.)
 const THEME_NAMES = existsSync(themeTypesPath)
   ? themeNamesFromSource(readFileSync(themeTypesPath, "utf8"))
   : null;
@@ -606,7 +607,7 @@ const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdTe
 // Every `scripts/**` path referenced in .claude/rules/*.md or docs/**/*.md
 // must exist on disk — bare (`scripts/foo.mjs`) AND nested under a package or
 // dotdir prefix (`packages/tokens/scripts/foo.mjs`, `.claude/scripts/foo.mjs`).
-// This catches stale references like scripts/lib/paused-surfaces.mjs that do
+// This catches stale references like scripts/lib/does-not-exist.mjs that do
 // not actually exist, AND a doubled/wrong prefix on an otherwise-real nested
 // path (e.g. `packages/tokens/packages/tokens/scripts/foo.mjs`) — the exact
 // regression an earlier, bare-only version of this matcher could not see

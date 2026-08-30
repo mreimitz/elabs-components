@@ -12,8 +12,7 @@ brands. Re-branding is a token change.
   imports nothing else still renders correctly.
 - `@theme inline { --color-*: var(--*) }` — maps tokens to Tailwind utilities.
 - the dials (decoration, density, motion), the base layer, the view-transition
-  block. (A paused theme's block stays in the file but is not shipped — see
-  `.claude/rules/paused-surfaces.md`.)
+  block.
 
 Each **reference theme** is its own opt-in file — `src/themes/light.css`,
 `src/themes/dark.css`, exported as `@elabs-ai/components-tokens/themes/<name>.css`.
