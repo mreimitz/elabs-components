@@ -467,6 +467,64 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
       },
     );
 
+    // #14 — the ordered neutral ramp's two NEW text rungs (foreground-2
+    // secondary label, foreground-4 disabled). -1/-3 are var() aliases of
+    // --foreground/--muted-foreground and inherit those tokens' own gated
+    // assertions; only the two new literals need their own lock.
+    it.each(TEXT_SURFACES)("foreground-2 ≥ 4.5:1 on %s (secondary label, AA)", (surface) => {
+      const ratio = contrast(token(theme, "--foreground-2"), token(theme, surface));
+      expect(
+        ratio,
+        `foreground-2 vs ${surface} in ${theme} = ${ratio.toFixed(2)}`,
+      ).toBeGreaterThanOrEqual(AA);
+    });
+
+    // foreground-4 (disabled) is INTENTIONALLY sub-AA (WCAG 1.4.3 exempts
+    // inactive-control text) — the lock is the RAMP ORDERING, not a contrast
+    // floor: it must read dimmer than foreground-3 (muted-foreground) on every
+    // surface, never brighter/inverted, while staying above a "not literally
+    // invisible" sanity floor.
+    it.each(TEXT_SURFACES)("foreground-4 stays between 1.5:1 and foreground-3 on %s", (surface) => {
+      const disabledRatio = contrast(token(theme, "--foreground-4"), token(theme, surface));
+      const tertiaryRatio = contrast(token(theme, "--foreground-3"), token(theme, surface));
+      expect(
+        disabledRatio,
+        `foreground-4 vs ${surface} in ${theme} = ${disabledRatio.toFixed(2)}`,
+      ).toBeGreaterThanOrEqual(1.5);
+      expect(
+        disabledRatio,
+        `foreground-4 (${disabledRatio.toFixed(2)}) should be dimmer than foreground-3 ` +
+          `(${tertiaryRatio.toFixed(2)}) vs ${surface} in ${theme}, not brighter/inverted`,
+      ).toBeLessThan(tertiaryRatio);
+    });
+
+    // #14 — the ordered ramp's new mid divider rung. NOT 1.4.11-gated (that is
+    // --border-3/--border-strong's job) — the lock is that it sits strictly
+    // BETWEEN --border-1 and --border-3 on the canonical divider surfaces, so
+    // the three-rung ramp actually orders low → high.
+    it.each(NONTEXT_SURFACES)(
+      "border-2 sits strictly between border-1 and border-3 on %s",
+      (surface) => {
+        const subtle = contrast(token(theme, "--border-1"), token(theme, surface));
+        const mid = contrast(token(theme, "--border-2"), token(theme, surface));
+        const strong = contrast(token(theme, "--border-3"), token(theme, surface));
+        expect(mid, `border-2 vs ${surface} in ${theme} = ${mid.toFixed(2)}`).toBeGreaterThan(
+          subtle,
+        );
+        expect(mid, `border-2 vs ${surface} in ${theme} = ${mid.toFixed(2)}`).toBeLessThan(strong);
+      },
+    );
+
+    // #14 — surface-1..4 are pure var() aliases (an ordered VIEW onto existing
+    // surfaces, not new colors), so the lock is that each rung still resolves
+    // to the token it claims to mirror — not a contrast number.
+    it("surface-1..4 resolve to background/surface/card/surface-elevated", () => {
+      expect(token(theme, "--surface-1")).toBe(token(theme, "--background"));
+      expect(token(theme, "--surface-2")).toBe(token(theme, "--surface"));
+      expect(token(theme, "--surface-3")).toBe(token(theme, "--card"));
+      expect(token(theme, "--surface-4")).toBe(token(theme, "--surface-elevated"));
+    });
+
     // Issue #23 — sidebar muted nav foreground on the sidebar ground.
     it("sidebar-muted-foreground ≥ 4.5:1 on --sidebar", () => {
       const ratio = contrast(token(theme, "--sidebar-muted-foreground"), token(theme, "--sidebar"));

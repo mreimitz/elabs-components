@@ -12,6 +12,9 @@ export const THEME_TOKEN_NAMES = [
   "--accent-foreground",
   "--background",
   "--border",
+  "--border-1",
+  "--border-2",
+  "--border-3",
   "--border-strong",
   "--brand-mark-ring",
   "--brand-mark-tail",
@@ -91,6 +94,10 @@ export const THEME_TOKEN_NAMES = [
   "--flow-node",
   "--flow-node-foreground",
   "--foreground",
+  "--foreground-1",
+  "--foreground-2",
+  "--foreground-3",
+  "--foreground-4",
   "--grid-line",
   "--grid-line-major",
   "--highlight",
@@ -133,6 +140,10 @@ export const THEME_TOKEN_NAMES = [
   "--success-foreground",
   "--success-text",
   "--surface",
+  "--surface-1",
+  "--surface-2",
+  "--surface-3",
+  "--surface-4",
   "--surface-elevated",
   "--surface-muted",
   "--warning",
@@ -140,5 +151,5 @@ export const THEME_TOKEN_NAMES = [
   "--warning-text",
 ] as const;
 
-/** One of the 130 semantic tokens a complete theme defines. */
+/** One of the 141 semantic tokens a complete theme defines. */
 export type ThemeTokenName = (typeof THEME_TOKEN_NAMES)[number];

@@ -252,7 +252,23 @@
   color-scheme: light;
   /* Typography — Inter is the default sans (self-hosted @font-face above).
      A theme may override --font-sans/--font-mono to re-skin the whole surface. */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* CJK fallback seam (#15) — a dedicated tail token, inserted into --font-sans
+     right after the Latin face and before the generic keywords. Inter's
+     shipped @font-face subsets above (Latin/Latin-ext/Cyrillic/Greek/
+     Vietnamese) do NOT cover CJK, so without this tail, Japanese/Chinese/
+     Korean text fell through straight to the browser default — inconsistent
+     across platforms and metric-mismatched against Inter. SYSTEM faces only
+     (never bundled): a CJK face is megabytes and every target platform already
+     ships a good one (see docs/TOKEN_GUIDELINES.md). This root value is the
+     locale-agnostic default (JP-leaning, the common single-CJK-stack choice);
+     `:lang(zh)` / `:lang(ko)` below re-point the SAME token per locale, so a
+     consumer whose document sets `<html lang>` gets the correct regional face
+     with no themes.css fork — the exact seam issue #15's cited adopter
+     (Onyx, commit ec08b5f94) had to build for itself. */
+  --font-cjk-sans: "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP", "Noto Sans JP", sans-serif;
+  --font-sans:
+    "Inter", var(--font-cjk-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
   /* Explicit mono default (#187) — declaring the default here makes the seam
      visible and theme-overridable (parity: root-only `font-` machinery,
      allowlisted). */
@@ -437,6 +453,59 @@
   --surface: oklch(0.978 0.005 264);
   --surface-muted: oklch(0.96 0.008 264);
   --surface-elevated: oklch(1 0 0);
+
+  /* ----------------------------------------------------------------------
+     ORDERED NEUTRAL RAMP (#14) — text/border/surface rungs for dense product
+     UI, ADDITIVE alongside the semantic slots above (nothing above changes
+     meaning or value). A single table row routinely needs more than the two
+     text weights (--foreground/--muted-foreground) or two divider weights
+     (--border/--border-strong) the slot vocabulary offers; these ramps add a
+     rung the slots skip, without inventing a new naming scheme. Every rung is
+     either an ALIAS of an existing token (retuning that token still moves the
+     ramp) or a genuinely new literal for the gap. Usage guidance:
+     docs/TOKEN_GUIDELINES.md § "Ordered neutral ramp".
+
+       --foreground-1  primary value       == --foreground
+       --foreground-2  secondary label     NEW — between foreground/muted
+       --foreground-3  tertiary / metadata == --muted-foreground
+       --foreground-4  disabled            NEW — lighter than muted-foreground;
+                                            WCAG 1.4.3 exempts inactive-control
+                                            text from the AA floor, so this
+                                            rung is deliberately sub-AA —
+                                            visibly dimmer, never the vehicle
+                                            for real content.
+
+       --border-1  subtle (redundant boundary)  == --border
+       --border-2  mid — more presence than --border but NOT the sole
+                   structural cue 1.4.11 requires (not contrast-guaranteed;
+                   reach for --border-3 when the boundary is the only cue)
+       --border-3  strong (sole structural cue, ≥3:1)  == --border-strong
+
+       --surface-1  page ground, most recessed  == --background
+       --surface-2  --surface (existing base-layer slot, at/near ground)
+       --surface-3  raised card / panel         == --card
+       --surface-4  most elevated / floating    == --surface-elevated
+     ---------------------------------------------------------------------- */
+  --foreground-1: var(--foreground);
+  /* Measured ~8.2-9.2:1 vs background/card/surface-muted/muted/secondary
+     (contrast.mjs, oklch→sRGB→WCAG — themes-contrast.test.ts asserts ≥4.5:1). */
+  --foreground-2: oklch(0.4 0.02 264);
+  --foreground-3: var(--muted-foreground);
+  /* Measured ~2.4-2.7:1 vs the same five surfaces — sub-AA by design (see
+     above); themes-contrast.test.ts asserts it stays BELOW --foreground-3's
+     contrast so the ramp doesn't invert. */
+  --foreground-4: oklch(0.7 0.015 264);
+
+  --border-1: var(--border);
+  /* Measured ~1.75-1.87:1 vs --card/--background (between --border's ~1.27:1
+     and --border-strong's ≥3:1; NOT 1.4.11-gated). */
+  --border-2: oklch(0.8 0.01 264);
+  --border-3: var(--border-strong);
+
+  --surface-1: var(--background);
+  --surface-2: var(--surface);
+  --surface-3: var(--card);
+  --surface-4: var(--surface-elevated);
 
   /* App chrome */
   --sidebar: oklch(0.955 0.005 264);
@@ -743,6 +812,24 @@
 }
 
 /* ========================================================================
+   CJK PER-LOCALE FONT SEAM (#15) — re-point --font-cjk-sans by document
+   language, theme-independent. `:lang()` matches on the (possibly inherited)
+   `lang` attribute — typically `<html lang="zh">` — and a custom property set
+   there cascades down through `:root` / `[data-theme]` alike, so this needs no
+   per-theme duplication: `light`/`dark`'s own --font-sans (in their own
+   stylesheets) reference the SAME --font-cjk-sans token and inherit whichever
+   value wins here. `:root`'s declaration above is the default (JP-leaning);
+   these two rules override it for zh/ko documents. Root-only font machinery —
+   parity-allowlisted, like --font-sans/--font-mono/--font-display. */
+:lang(zh) {
+  --font-cjk-sans: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+}
+:lang(ko) {
+  --font-cjk-sans:
+    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
+}
+
+/* ========================================================================
    DECORATION — BELOW-FLOOR FALLBACK (#29 item 2)
    The decoration inks above are derived from the active theme's --foreground
    with RELATIVE COLOR SYNTAX (`oklch(from … l c h / α)`) — the one feature in
@@ -848,6 +935,20 @@
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-surface-elevated: var(--surface-elevated);
+
+  /* Ordered neutral ramp (#14) — text-foreground-1..4, border-1..3,
+     bg-surface-1..4 utilities. See the :root block for the rung → role map. */
+  --color-foreground-1: var(--foreground-1);
+  --color-foreground-2: var(--foreground-2);
+  --color-foreground-3: var(--foreground-3);
+  --color-foreground-4: var(--foreground-4);
+  --color-border-1: var(--border-1);
+  --color-border-2: var(--border-2);
+  --color-border-3: var(--border-3);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -1277,6 +1378,21 @@
        override with a utility or its own rule. No-op outside WebKit/Gecko. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* CJK line-breaking (#15) — locale-driven (`:lang()`), not theme-driven, so
+     one declaration covers every `data-theme`. Without `line-break: strict`,
+     Japanese/Chinese text can start a line with disallowed leading punctuation
+     (e.g. a closing bracket); without `word-break: keep-all`, Korean breaks
+     mid-syllable-block the way the default `word-break: normal` treats any
+     CJK-adjacent script. Matches the cited adopter's fix (Onyx, commit
+     ec08b5f94) and needs the SAME `:lang()` scoping as --font-cjk-sans above. */
+  :lang(ja),
+  :lang(zh) {
+    line-break: strict;
+  }
+  :lang(ko) {
+    word-break: keep-all;
   }
 
   /* Pointer affordance for interactive controls — theme-invariant, automatic.

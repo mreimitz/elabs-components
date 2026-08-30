@@ -40,6 +40,42 @@ Canvas/flow: `--canvas`, `--canvas-grid`, `--flow-node(-foreground)`, `--flow-ed
 Chat: `--chat-user(-foreground)`, `--chat-assistant(-foreground)`.
 Data: `--chart-1..12`. Shape: `--radius` (+ derived `--radius-sm/md/lg/xl`).
 
+## Ordered neutral ramp (#14)
+
+The semantic slots above give TWO text weights (`--foreground` /
+`--muted-foreground`) and TWO divider weights (`--border` / `--border-strong`).
+A dense product UI — a table row with a primary value, a secondary label,
+tertiary metadata and a disabled action, all in one row — routinely needs more
+rungs than that. `--foreground-1..4`, `--border-1..3` and `--surface-1..4` are
+an ADDITIVE, ORDERED view onto the same tokens: every rung is either a `var()`
+alias of an existing semantic slot (so retuning that slot still moves the
+ramp) or a new literal for the gap the slots skip. Nothing above changes
+meaning or value — reach for the ramp only when you need a rung the slots
+don't name.
+
+| Rung             | Role                    | Utility             | Relation                                                                                         |
+| ---------------- | ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
+| `--foreground-1` | primary value           | `text-foreground-1` | `== --foreground`                                                                                |
+| `--foreground-2` | secondary label         | `text-foreground-2` | new — between foreground and muted                                                               |
+| `--foreground-3` | tertiary / metadata     | `text-foreground-3` | `== --muted-foreground`                                                                          |
+| `--foreground-4` | disabled                | `text-foreground-4` | new — lighter than muted-foreground; sub-AA by design (WCAG 1.4.3 exempts inactive-control text) |
+| `--border-1`     | subtle (redundant edge) | `border-border-1`   | `== --border`                                                                                    |
+| `--border-2`     | mid divider             | `border-border-2`   | new — more presence than `-1`, NOT 1.4.11-gated                                                  |
+| `--border-3`     | strong (sole cue, ≥3:1) | `border-border-3`   | `== --border-strong`                                                                             |
+| `--surface-1`    | page ground             | `bg-surface-1`      | `== --background`                                                                                |
+| `--surface-2`    | base layer, near ground | `bg-surface-2`      | `== --surface`                                                                                   |
+| `--surface-3`    | raised card / panel     | `bg-surface-3`      | `== --card`                                                                                      |
+| `--surface-4`    | most elevated / float   | `bg-surface-4`      | `== --surface-elevated`                                                                          |
+
+**Pick the rung by ROLE, not by "what looks right."** If two rungs render the
+same in one theme (e.g. `surface-1`/`surface-2` in `light`, where `--surface`
+and `--background` share a value), that is fine — the ramp still orders
+correctly in every theme (verified in `themes-contrast.test.ts`), and a theme
+that DOES separate them (both reference `dark` themes do) renders the
+hierarchy for free. Don't invent a THIRD naming scheme for the same concept —
+the existing `border` vs `border-strong` 1.4.11 decision test
+(`styling-and-tokens.md`) still governs whether a divider needs `-3`.
+
 ## Rules
 
 1. **Only `themes.css` (and registry `registry:theme` items) may contain raw

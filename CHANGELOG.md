@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-tokens` ships an ordered neutral ramp —
+  `--foreground-1..4`, `--border-1..3`, `--surface-1..4` (`text-foreground-*`,
+  `border-border-*`, `bg-surface-*` utilities) — additive alongside the
+  existing semantic slots (`-1`/`-3` alias `--foreground`/`--muted-foreground`
+  and `--border`/`--border-strong`; `-2`/`-4` and the border mid-rung are new
+  literals) so a dense product UI gets a third/fourth text weight and a mid
+  divider weight without a new naming scheme. Guidance table:
+  `docs/TOKEN_GUIDELINES.md` § "Ordered neutral ramp". (#14)
+- Added: `@elabs-ai/components-tokens` ships a CJK fallback + per-locale seam
+  for `--font-sans`/`--font-display` — a new `--font-cjk-sans` token inserted
+  right after the Latin face, re-pointed by `:lang(zh)`/`:lang(ko)` overrides
+  (default is JP-leaning), plus theme-independent `line-break: strict`
+  (ja/zh) and `word-break: keep-all` (ko) rules. System CJK faces only, no
+  bundled font, no change to the existing per-script Inter `@font-face`
+  subsets. (#15)
 - Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
   a side-by-side 2-4 column surface for comparing multiple model responses to
   the same prompt, each column with independent streaming status and scroll
