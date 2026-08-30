@@ -170,3 +170,50 @@ jobs:
       #    the job ends.
       - name: Post-release fresh-install smoke
         run: pnpm release:smoke --manifest "release/v${GITHUB_REF_NAME#v}/release-manifest.json"
+
+  # ── host the built shadcn registry on GitHub Pages (#31) ───────────────────
+  #
+  # `needs: publish` — this only runs once the npm packages for this exact tag
+  # are out; a registry publish for a version whose packages failed to ship
+  # would advertise blocks nobody can `npx shadcn add` against consistently.
+  #
+  # HOW: `scripts/publish-registry-pages.mjs` pushes the built JSON to a
+  # `gh-pages` branch (a plain git push, not `actions/deploy-pages`) at
+  # `r/<version>/*.json` plus a moving `r/latest/*.json` alias — see that
+  # script's header comment for why a branch push is the right mechanism here
+  # (works whether or not Pages is enabled yet, and is naturally cumulative
+  # across releases). `contents: write` at the workflow level already covers
+  # the push.
+  #
+  # THIS DOES NOT ENABLE GITHUB PAGES. Pushing a branch is an ordinary git
+  # operation; GitHub only starts SERVING it once a human sets, once,
+  # Settings → Pages → "Deploy from a branch" → gh-pages → /(root) on the repo.
+  # That switch is deliberately not flipped by this workflow — see #31.
+  publish-registry:
+    name: Publish the registry to GitHub Pages
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the registry
+        run: pnpm registry:build
+
+      - name: Publish to gh-pages
+        run: pnpm registry:publish

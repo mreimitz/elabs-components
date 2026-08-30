@@ -164,6 +164,9 @@ pnpm registry:validate          # if registry/ touched
 pnpm registry:validate:test     # self-test for the registry `homepage`-placeholder gate (#264)
 pnpm registry:resolve:check     # if registry/ touched — every relative import resolves in both the repo tree AND the install (target) tree
 pnpm registry:resolve:check:test # self-test for the registry relative-import resolution gate
+pnpm registry:published:check   # every already-published registry item is still reachable at its hosted GitHub Pages URL (#31); skips (exit 0) until the maintainer enables Pages and a version has released — never fails on a new, unreleased item
+pnpm registry:published:check:test # self-test for the published-registry reachability gate
+pnpm registry:publish:test      # self-test for scripts/publish-registry-pages.mjs's planning logic (the mutating `pnpm registry:publish` itself only runs from release.yml, never as a per-change check)
 pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
 pnpm components:check           # every @elabs-ai/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet

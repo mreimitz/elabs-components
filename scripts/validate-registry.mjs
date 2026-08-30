@@ -18,49 +18,24 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { findHomepageViolation } from "./lib/registry-homepage.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const registryPath = resolve(root, "registry/registry.json");
 
 // ---------------------------------------------------------------------------
-// `homepage` — OPTIONAL, but a real resolvable URL when present (#264)
+// `homepage` — OPTIONAL, but a real resolvable URL when present (#264, #31)
 // ---------------------------------------------------------------------------
-// The registry is SELF-HOSTED (there is no `/r/*.json` publisher in this repo —
-// see docs/REGISTRY_GUIDELINES.md "Distribution: self-hosted"), so `homepage`
-// can't point at a serving origin. It used to be REQUIRED and point at the repo
-// on GitHub; this repo has no remote, so requiring it would only force a URL
-// that resolves to nothing — exactly what the placeholder rule below exists to
-// prevent. So: omit it, or give a real one. The placeholder/absolute rules still
-// apply to whatever IS supplied. Pure, exported for the self-test (mirrors
-// findVersionLiteralViolations in check-docs-accuracy.mjs).
-const PLACEHOLDER_HOMEPAGE_RE =
-  /example\.(internal|com|org)|<[^>]+>|localhost|your-registry-host|your-own-host/i;
-
-/**
- * Validate a registry manifest's top-level `homepage`. Returns a violation
- * message string, or `null` if `homepage` is fine.
- * @param {string | undefined | null} homepage
- */
-export function findHomepageViolation(homepage) {
-  // Absent is fine — there is no canonical origin to name (see above).
-  if (homepage === undefined || homepage === null) return null;
-  if (typeof homepage !== "string" || !homepage.trim()) {
-    return (
-      "registry.json `homepage` is present but empty. Either omit the key, or " +
-      "give an absolute, resolvable https:// URL."
-    );
-  }
-  if (!/^https:\/\//.test(homepage)) {
-    return `registry.json \`homepage\` "${homepage}" must be an absolute https:// URL.`;
-  }
-  if (PLACEHOLDER_HOMEPAGE_RE.test(homepage)) {
-    return (
-      `registry.json \`homepage\` "${homepage}" looks like a placeholder host — ` +
-      "nothing serves it. Use a real, resolvable URL (e.g. the repo's GitHub URL)."
-    );
-  }
-  return null;
-}
+// The registry IS hosted since #31: `registry/registry.items.json` sets
+// `homepage` to the real GitHub Pages base URL, published on every release by
+// `scripts/publish-registry-pages.mjs` (see docs/REGISTRY_GUIDELINES.md). A
+// fork with no public host may still omit `homepage` (a private/internal
+// clone has nothing to name), so this stays a validator of SHAPE — absent is
+// fine, present-but-placeholder/non-https/empty is not — rather than a hard
+// requirement. Re-exported for the self-test AND for
+// check-registry-published.mjs, which needs the same rule without importing
+// this whole top-level-executing script. See lib/registry-homepage.mjs.
+export { findHomepageViolation };
 
 const VALID_TYPES = new Set([
   "registry:base",

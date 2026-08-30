@@ -325,12 +325,13 @@ the gate is reading a different tree's verdict. It cannot be: the lookup key is 
 commit SHA the tag resolves to. What genuinely changed is that a release now depends
 on the GitHub Actions API being readable; the gate fails closed when it is not.
 
-**The shadcn registry is NOT published by a release.** `registry/` is validated on
-every PR (`pnpm registry:validate`) but is not built or attached, because there is
-no hosted consumer path: consumers build and self-host it themselves (see
-`README.md` and `docs/REGISTRY_GUIDELINES.md`). Two of the three distribution
-surfaces move in lockstep with a release — npm packages and the plugin marketplace
-pointer — and the registry deliberately does not.
+**The shadcn registry IS published by a release (#31).** `registry/` is validated
+on every PR (`pnpm registry:validate`) and, after the npm packages for the tag
+publish successfully, the `publish-registry` job builds it (`pnpm registry:build`)
+and pushes the output to the `gh-pages` branch at a versioned path plus a `latest`
+alias (`pnpm registry:publish`; see `docs/REGISTRY_GUIDELINES.md` "Distribution").
+All three distribution surfaces now move in lockstep with a release: npm packages,
+the plugin marketplace pointer, and the hosted registry.
 
 **The workflow ASSERTS the marketplace pointer; it never writes it.** The pointer
 is `.claude-plugin/marketplace.json` on the **default branch**, and it is already

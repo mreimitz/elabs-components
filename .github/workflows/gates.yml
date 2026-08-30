@@ -181,6 +181,7 @@ jobs:
           pnpm plugin:consumer-clean:check
           pnpm registry:validate
           pnpm registry:resolve:check
+          pnpm registry:published:check
           pnpm skills:build:check:test
 
       # ── docs, governance, process ──────────────────────────────────────────
@@ -269,6 +270,8 @@ jobs:
           pnpm plugin:check:test
           pnpm plugin:consumer-clean:check:test
           pnpm publish-ready:check:test
+          pnpm registry:publish:test
+          pnpm registry:published:check:test
           pnpm registry:resolve:check:test
           pnpm registry:validate:test
           pnpm release-gates:check:test
