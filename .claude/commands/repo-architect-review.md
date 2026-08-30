@@ -7,7 +7,8 @@ allowed-tools: Task, AskUserQuestion, Read, Write(./research/repo-architect-revi
 Run a holistic, repo/system-tier architecture audit and hand back two surfaces from one
 evidence base: a **manager scorecard** and an **agent-pickup findings register**. This is
 the only review tier above the component / surface / process reviews — the recurring,
-runtime-verified successor to the one-shot `research/enterprise-gap/` benchmark.
+runtime-verified successor to the one-shot enterprise-gap benchmark (2026-06-06, whose
+working papers were removed when this fork was debranded).
 
 **Load `.claude/rules/architecture-review.md` first** — it is the spec (nine dimensions,
 anchored ●-rubrics, evidence labels, named-check catalog, depth tiers, the three handover
@@ -32,7 +33,8 @@ components:check/docs:check/format:check at depth ≥ standard), and the garden 
 (dead links, unresolved `@import`s, oversized context files, orphan/un-scoped agents,
 missing hooks, stale manifest, CI presence, raw-hex candidates). The auditors **read** this
 pack; they do not re-run the toolchain. Load the **baseline** (the `--baseline` run, else
-the latest `runs/*/scorecard.md`, else `research/enterprise-gap/03-gap-analysis.md`).
+the latest `runs/*/scorecard.md`). If there is neither, run **without** a baseline and
+say so in the scorecard — the original enterprise-gap analysis is gone.
 
 At `--depth quick`: skip Phases 1–2, render the scorecard from the deterministic pack only,
 stamp it **Estimated**, and go to Phase 3.

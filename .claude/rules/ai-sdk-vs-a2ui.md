@@ -26,8 +26,9 @@ Component rules: [`ai-chat-components.md`](./ai-chat-components.md).
 
 The mental model ("AI SDK = the chat; A2UI = a screen the agent designed, riding _inside_ the
 chat") and the when-to-use routing are canonical in
-[`docs/DECISIONS.md`](../../docs/DECISIONS.md) §D2. Full concept:
-[`research/enterprise-gap/05-a2ui-concept.md`](../../research/enterprise-gap/05-a2ui-concept.md).
+[`docs/DECISIONS.md`](../../docs/DECISIONS.md) §D2, which is now the fullest surviving
+statement of the concept — the working paper it distilled was removed when this fork was
+debranded.
 Practical takeaway: prefer A2UI's safety over `JSXPreview`'s flexibility once A2UI ships.
 
 ## D6 import discipline — how to apply (the rule a hook enforces)

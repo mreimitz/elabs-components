@@ -51,7 +51,8 @@ When deciding or reviewing a component API, enforce `.claude/rules/component-api
 → **Composition patterns**: avoid boolean-prop proliferation, compound components +
 `state/actions/meta` provider-injection, explicit variants, children over
 render-props; keep `forwardRef` (ref-as-prop deferred), prefer `use()`. Adoption
-record: `research/enterprise-gap/13-composition-patterns-adoption.md`.
+record: the **Composition patterns** section of `.claude/rules/component-api.md` (the
+original working paper was removed when this fork was debranded).
 
 ## Decision output (act on it, don't re-verify it)
 

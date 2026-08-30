@@ -65,5 +65,6 @@ front matter is missing/incomplete, if the archetype is unknown to the engine, o
 if the regeneration was skipped.
 
 _Related: `research/define-to-build/` (the requirements these answer),
-WP-09 in `research/enterprise-gap/` (machine-readable playbooks, the
-follow-on), `skills/brand-ui/` (agent-facing component skill)._
+`skills/brand-ui/` (agent-facing component skill). The enterprise-gap working
+papers that specified the machine-readable follow-on were removed when this
+fork was debranded._

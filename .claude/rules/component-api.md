@@ -11,7 +11,7 @@
   Radix content). Name the render function for good stacks. **React 19's
   ref-as-prop is intentionally deferred** — keep `forwardRef` for consistency
   across the library; ref-as-prop is a future codemod, not a now-migration (see
-  Composition patterns + `research/enterprise-gap/13-composition-patterns-adoption.md`).
+  Composition patterns, below).
 - **Variants:** use `class-variance-authority`. Export the `xxxVariants` fn for
   composition. Provide sensible `defaultVariants`. Don't hand-roll conditional
   class strings for anything with more than one axis.
@@ -83,8 +83,8 @@
 
 For anything beyond a single primitive, **compose — don't configure**. Adopted from
 the Vercel `composition-patterns` skill in brand-ui's idiom (Radix, `cn`, our
-`forwardRef` convention). Decision record:
-`research/enterprise-gap/13-composition-patterns-adoption.md`.
+`forwardRef` convention). This section IS the surviving decision record — the working
+paper it was distilled from was removed when this fork was debranded.
 
 - **Avoid boolean-prop proliferation.** Don't add `isThread`/`isEditing`/`isMini`
   flags to fork behaviour — each boolean doubles the state space and breeds

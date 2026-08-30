@@ -30,6 +30,26 @@ theming, and unpolished states.
   render URLs with `mcp__storybook__preview-stories` (`globals=theme:<slug>`) so you
   screenshot every story across themes systematically instead of hunting in the UI;
   fall back to manual navigation if unavailable. See @.claude/rules/storybook-mcp.md.
+
+### Screenshot budget (measured — images are the second-largest context term)
+
+A `/repo-cleanup` audit of 32 transcripts (2026-08-30) measured **image material at
+14.7 % of all context characters — 2.4 M of 16.4 M**, second only to tool results.
+Every screenshot is re-read on every later request of this context, so an
+unnecessary capture is not paid once; it is paid for the rest of the review.
+
+- **Crop to the surface under review**, not the whole page. A full-page capture to
+  judge one card's spacing spends the page to look at the card.
+- **One capture per (surface × theme) that you will actually cite.** If a finding
+  does not reference the image, the image should not have been taken.
+- **Both themes only where the finding is theme-dependent.** Spacing, hierarchy and
+  type findings are theme-independent — capture them once. Contrast, elevation and
+  surface-separation findings genuinely need both.
+- **Budget ~12 captures for a routine sweep.** Past that, say why in the report.
+  A systematic every-story-every-theme sweep is a deliberate, announced exception.
+- This is a **cost** rule, not a rigour rule: a theme-safety claim still requires
+  the observation (@.claude/rules/quality-gates.md). Take the screenshot you need —
+  do not take the one you don't.
 - Apply these design skills to structure the critique (invoke them as needed):
   - `ux-design:refactoring-ui` — hierarchy, spacing scale, depth, color use.
   - `ux-design:ux-heuristics` — Nielsen heuristics + severity ratings.

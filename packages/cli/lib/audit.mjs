@@ -18,8 +18,9 @@
  * and the CONTENT "Jane Doe effect" — token-translated. Every prescription that
  * conflicted with brand-ui's rules was reconciled in brand-ui's favor: no raw
  * hex/font literals leak in (the styling/token rules win), and nothing mandates
- * motion. See research/enterprise-gap/09-taste-adoption.md and
- * skills/brand-ui-audit/reference/anti-patterns.md.
+ * motion. See docs/ADR/0020-taste-profile.md and
+ * skills/brand-ui-audit/reference/anti-patterns.md. (The taste-adoption working
+ * paper this was harvested from was removed when the fork was debranded.)
  */
 
 /**

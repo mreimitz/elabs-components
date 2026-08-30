@@ -7,11 +7,14 @@
 # whole output really is wanted, and a blocking hook here would be routed around
 # within a day.
 #
-# Why this exists (measured, `.repo-cleanup/report.md`, 2026-08-02): tool results
-# are 79 % of all context characters in this repo (115.6 M of 146.3 M) and Bash is
-# 18,955 of 27,766 tool calls. Every unfiltered command output is re-read on every
-# later request of that context, so an unbounded dump is not paid once — it is paid
-# for the rest of the session. See .claude/rules/quality-gates.md ("Enforcement
+# Why this exists (measured, `.repo-cleanup/report.md`). Re-measured 2026-08-30 over
+# 32 transcripts / 6,324 requests: tool results are 63.6 % of all context characters
+# (10.4 M of 16.4 M) and Bash is 2,671 of the tool calls — still the dominant term by
+# a wide margin, and still the one this hook exists for. (The 2026-08-02 run of the
+# same analyzer read a larger, older transcript set and reported 79 % / 18,955; the
+# share moved, the conclusion did not.) Every unfiltered command output is re-read on
+# every later request of that context, so an unbounded dump is not paid once — it is
+# paid for the rest of the session. See .claude/rules/quality-gates.md ("Enforcement
 # over reminders").
 #
 # Quiet on the happy path: a command that already bounds itself (head/tail/wc, a
@@ -71,7 +74,7 @@ fi
 
 cat >&2 <<MSG
 ⚠ unbounded output ($hit): this looks like it will dump an unbounded amount of text
-into the context. Tool results are already 79 % of context characters in this repo,
+into the context. Tool results are already 64 % of context characters in this repo,
 and an unfiltered result is re-read on every later request of this context.
   → $fix
   → Or write it to a file and read a slice: \`… > /tmp/out.txt\` then read what you need.
