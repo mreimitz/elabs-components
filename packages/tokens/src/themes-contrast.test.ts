@@ -11,7 +11,7 @@
 import { describe, expect, it } from "vitest";
 
 import { readThemeCss } from "./_theme-css-source";
-import { contrast, parseOklch } from "./color-contrast";
+import { contrast, contrastSrgb, mixOverSrgb, parseOklch } from "./color-contrast";
 
 // ADR 0029 — the reference themes live in their own stylesheets now, so read
 // the SET. The helper throws if a theme's block is missing rather than let a
@@ -108,6 +108,31 @@ const TOKENS: Record<string, Record<string, string>> = Object.fromEntries(
 const THEMES = Object.keys(THEME_BLOCKS);
 /** The surfaces colored TEXT is rendered on (issue #20). */
 const TEXT_SURFACES = ["--background", "--card", "--surface-muted"] as const;
+/**
+ * #38 — the surfaces a status `-text` rung is rendered on, ALIASED to
+ * `TEXT_SURFACES` (same three grounds — the missing invariant was never a
+ * different surface set, it was the missing wash on top of it). Kept as its
+ * own name because it documents a distinct CLAIM: not "text on a bare
+ * surface" but "text on that surface's composited bg-<tone>/10 wash", which
+ * is the pairing `StatusBadge`, `InlineCitationCardTrigger`, the editor entity
+ * chip and the registry trend-badge actually render. `.claude/rules/styling-
+ * and-tokens.md` prescribes exactly this pairing (the fill rung as the
+ * "attention" wash, `-text` as its ink); until this block existed, the bare-
+ * surface assertions below were necessary but not sufficient to prove it AA.
+ */
+const WASH_SURFACES = TEXT_SURFACES;
+/**
+ * #38 — every status tone's [fill token, on-surface TEXT token] pair, the
+ * inputs `mixOverSrgb`/`contrastSrgb` need to model the composited wash.
+ */
+const WASH_TONES = [
+  ["--success", "--success-text"],
+  ["--info", "--info-text"],
+  ["--destructive", "--destructive-text"],
+  ["--warning", "--warning-text"],
+] as const;
+/** Tailwind's `/10` opacity modifier, e.g. `bg-success/10`. */
+const WASH_ALPHA = 0.1;
 /**
  * #399 — the surfaces the BRAND accent is rendered on as ordinary text. A
  * superset of `TEXT_SURFACES`: a `ProseLink` / `Button variant="link"` /
@@ -314,6 +339,33 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
         ratio,
         `info-text vs ${surface} in ${theme} = ${ratio.toFixed(2)}`,
       ).toBeGreaterThanOrEqual(AA);
+    });
+
+    // #38 — the MISSING invariant: every status `-text` rung against its OWN
+    // composited `bg-<tone>/10` wash, on every surface the wash is rendered
+    // over. The four blocks above assert `-text` against the BARE surface,
+    // which is necessary but not sufficient — `StatusBadge`,
+    // `InlineCitationCardTrigger`, the editor entity chip and the registry
+    // trend-badge all render `-text` ON TOP OF the fill's own 10% wash, never
+    // on the bare surface alone. In `light`/`:root` the bare-surface margin
+    // was thin enough (+0.22-0.84) that the wash consumed it entirely,
+    // measuring 4.05-4.46:1 — a real, shipped AA failure axe caught on
+    // `ai-markdownview--inline-citations`. Modeled with `mixOverSrgb` (see
+    // color-contrast.test.ts for the axe-anchored ground truth) rather than
+    // approximated, so this reproduces exactly what a browser paints.
+    it.each(WASH_TONES)("%s wash: %s ≥ 4.5:1 on its own bg/10 wash", (fillToken, textToken) => {
+      for (const surface of WASH_SURFACES) {
+        const wash = mixOverSrgb(
+          parseOklch(token(theme, fillToken)),
+          parseOklch(token(theme, surface)),
+          WASH_ALPHA,
+        );
+        const ratio = contrastSrgb(parseOklch(token(theme, textToken)), wash);
+        expect(
+          ratio,
+          `${textToken} vs ${fillToken}@${WASH_ALPHA * 100}% over ${surface} in ${theme} = ${ratio.toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(AA);
+      }
     });
 
     // #399 — the BRAND accent as on-surface TEXT. Every status tone shipped

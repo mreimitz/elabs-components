@@ -67,18 +67,18 @@ visible rather than becoming folklore.
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--success-text` | `--background` | 4.98 | 4.5 | ✅ |
-| `--success-text` | `--card` | 5.31 | 4.5 | ✅ |
-| `--success-text` | `--surface-muted` | 4.73 | 4.5 | ✅ |
-| `--destructive-text` | `--background` | 5.01 | 4.5 | ✅ |
-| `--destructive-text` | `--card` | 5.34 | 4.5 | ✅ |
-| `--destructive-text` | `--surface-muted` | 4.75 | 4.5 | ✅ |
-| `--warning-text` | `--background` | 5.18 | 4.5 | ✅ |
-| `--warning-text` | `--card` | 5.52 | 4.5 | ✅ |
-| `--warning-text` | `--surface-muted` | 4.92 | 4.5 | ✅ |
-| `--info-text` | `--background` | 4.97 | 4.5 | ✅ |
-| `--info-text` | `--card` | 5.30 | 4.5 | ✅ |
-| `--info-text` | `--surface-muted` | 4.71 | 4.5 | ✅ |
+| `--success-text` | `--background` | 5.40 | 4.5 | ✅ |
+| `--success-text` | `--card` | 5.75 | 4.5 | ✅ |
+| `--success-text` | `--surface-muted` | 5.12 | 4.5 | ✅ |
+| `--destructive-text` | `--background` | 5.58 | 4.5 | ✅ |
+| `--destructive-text` | `--card` | 5.94 | 4.5 | ✅ |
+| `--destructive-text` | `--surface-muted` | 5.29 | 4.5 | ✅ |
+| `--warning-text` | `--background` | 5.30 | 4.5 | ✅ |
+| `--warning-text` | `--card` | 5.64 | 4.5 | ✅ |
+| `--warning-text` | `--surface-muted` | 5.02 | 4.5 | ✅ |
+| `--info-text` | `--background` | 5.42 | 4.5 | ✅ |
+| `--info-text` | `--card` | 5.77 | 4.5 | ✅ |
+| `--info-text` | `--surface-muted` | 5.14 | 4.5 | ✅ |
 | `--highlight-foreground` | `--highlight` | 9.98 | 4.5 | ✅ |
 | `--muted-foreground` | `--muted` | 5.45 | 4.5 | ✅ |
 | `--muted-foreground` | `--surface-muted` | 5.34 | 4.5 | ✅ |
@@ -135,18 +135,18 @@ visible rather than becoming folklore.
 
 | token | vs | ratio | min | |
 | --- | --- | --- | --- | --- |
-| `--success-text` | `--background` | 5.09 | 4.5 | ✅ |
-| `--success-text` | `--card` | 5.31 | 4.5 | ✅ |
-| `--success-text` | `--surface-muted` | 4.73 | 4.5 | ✅ |
-| `--destructive-text` | `--background` | 5.11 | 4.5 | ✅ |
-| `--destructive-text` | `--card` | 5.34 | 4.5 | ✅ |
-| `--destructive-text` | `--surface-muted` | 4.75 | 4.5 | ✅ |
-| `--warning-text` | `--background` | 5.29 | 4.5 | ✅ |
-| `--warning-text` | `--card` | 5.52 | 4.5 | ✅ |
-| `--warning-text` | `--surface-muted` | 4.92 | 4.5 | ✅ |
-| `--info-text` | `--background` | 5.07 | 4.5 | ✅ |
-| `--info-text` | `--card` | 5.30 | 4.5 | ✅ |
-| `--info-text` | `--surface-muted` | 4.72 | 4.5 | ✅ |
+| `--success-text` | `--background` | 5.51 | 4.5 | ✅ |
+| `--success-text` | `--card` | 5.75 | 4.5 | ✅ |
+| `--success-text` | `--surface-muted` | 5.12 | 4.5 | ✅ |
+| `--destructive-text` | `--background` | 5.69 | 4.5 | ✅ |
+| `--destructive-text` | `--card` | 5.94 | 4.5 | ✅ |
+| `--destructive-text` | `--surface-muted` | 5.29 | 4.5 | ✅ |
+| `--warning-text` | `--background` | 5.41 | 4.5 | ✅ |
+| `--warning-text` | `--card` | 5.64 | 4.5 | ✅ |
+| `--warning-text` | `--surface-muted` | 5.02 | 4.5 | ✅ |
+| `--info-text` | `--background` | 5.53 | 4.5 | ✅ |
+| `--info-text` | `--card` | 5.77 | 4.5 | ✅ |
+| `--info-text` | `--surface-muted` | 5.14 | 4.5 | ✅ |
 | `--highlight-foreground` | `--highlight` | 9.98 | 4.5 | ✅ |
 | `--muted-foreground` | `--muted` | 5.47 | 4.5 | ✅ |
 | `--muted-foreground` | `--surface-muted` | 5.34 | 4.5 | ✅ |

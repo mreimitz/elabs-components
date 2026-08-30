@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- fix(tokens): darken `--success-text`/`--info-text`/`--destructive-text`/`--warning-text`
+  in `light` and `:root` so colored status text also clears WCAG AA 4.5:1 against its own
+  `bg-<tone>/10` wash (not just the bare surface) — the pairing `StatusBadge`, inline
+  citations, the editor entity chip and the `trend-badge` registry block actually render.
+  Adds a `WASH_SURFACES` contrast sweep (`packages/tokens/src/themes-contrast.test.ts`) and
+  a compositing helper (`mixOverSrgb`/`contrastSrgb` in `color-contrast.ts`) so this class of
+  gap is locked going forward. `dark` was already compliant and is unchanged (#38).
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change
