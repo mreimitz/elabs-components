@@ -69,7 +69,7 @@
   },
   "destructive-text": {
     "$type": "color",
-    "$value": "oklch(0.52 0.224 25.3)"
+    "$value": "oklch(0.496 0.224 25.3)"
   },
   "success": {
     "$type": "color",
@@ -81,7 +81,7 @@
   },
   "success-text": {
     "$type": "color",
-    "$value": "oklch(0.495 0.112 162.5)"
+    "$value": "oklch(0.473 0.112 162.5)"
   },
   "warning": {
     "$type": "color",
@@ -93,7 +93,7 @@
   },
   "warning-text": {
     "$type": "color",
-    "$value": "oklch(0.525 0.13 55)"
+    "$value": "oklch(0.503 0.13 55)"
   },
   "info": {
     "$type": "color",
@@ -105,7 +105,7 @@
   },
   "info-text": {
     "$type": "color",
-    "$value": "oklch(0.504 0.114 237.3)"
+    "$value": "oklch(0.482 0.114 237.3)"
   },
   "border": {
     "$type": "color",

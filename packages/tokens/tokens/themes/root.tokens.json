@@ -86,8 +86,8 @@
   },
   "destructive-text": {
     "$type": "color",
-    "$value": "oklch(0.52 0.224 25.3)",
-    "$description": "On-surface error TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-destructive/10 wash (#38 — darkened from 0.555 so the pairing every wash-based badge actually ships stays AA, not just the bare surface)."
+    "$value": "oklch(0.496 0.224 25.3)",
+    "$description": "On-surface error TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-destructive/10 wash (#38 — darkened from 0.555, then 0.52 to 0.511 once the wash sweep's surface list was widened to include --muted/--secondary and the --secondary wash measured 4.386:1, then 0.511 to 0.496 once a live-browser getComputedStyle re-measurement showed the deterministic Vitest math (4.5013:1 at 0.511) and real Chromium compositing of the oklch wash (4.4783:1 at 0.511) disagree by ~0.5% near the AA line — this step adds headroom against that gap rather than relying on the idealized math alone)."
   },
   "success": {
     "$type": "color",
@@ -101,8 +101,8 @@
   },
   "success-text": {
     "$type": "color",
-    "$value": "oklch(0.495 0.112 162.5)",
-    "$description": "On-surface success TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-success/10 wash (#38 — darkened from 0.515 so the pairing every wash-based badge actually ships stays AA, not just the bare surface)."
+    "$value": "oklch(0.473 0.112 162.5)",
+    "$description": "On-surface success TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-success/10 wash (#38 — darkened from 0.515, then 0.495 to 0.488 once the wash sweep's surface list was widened to include --muted/--secondary and the --secondary wash measured 4.362:1, then 0.488 to 0.473 once a live-browser getComputedStyle re-measurement showed real Chromium compositing of the oklch wash still under 4.5:1 (4.4707:1) despite the Vitest math clearing the bar — see the sibling --destructive-text note for why)."
   },
   "warning": {
     "$type": "color",
@@ -116,8 +116,8 @@
   },
   "warning-text": {
     "$type": "color",
-    "$value": "oklch(0.525 0.13 55)",
-    "$description": "On-surface warning TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-warning/10 wash (#38 — darkened from 0.53 so the pairing every wash-based badge actually ships stays AA, not just the bare surface)."
+    "$value": "oklch(0.503 0.13 55)",
+    "$description": "On-surface warning TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-warning/10 wash (#38 — darkened from 0.53, then 0.525 to 0.518 once the wash sweep's surface list was widened to include --muted/--secondary and the --secondary wash measured 4.367:1, then 0.518 to 0.503 once a live-browser getComputedStyle re-measurement showed real Chromium compositing of the oklch wash still under 4.5:1 (4.4793:1) despite the Vitest math clearing the bar — see the sibling --destructive-text note for why)."
   },
   "info": {
     "$type": "color",
@@ -131,8 +131,8 @@
   },
   "info-text": {
     "$type": "color",
-    "$value": "oklch(0.504 0.114 237.3)",
-    "$description": "On-surface info TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-info/10 wash (#38 — darkened from 0.525 so the pairing every wash-based badge actually ships stays AA, not just the bare surface)."
+    "$value": "oklch(0.482 0.114 237.3)",
+    "$description": "On-surface info TEXT color; ≥4.5:1 on content surfaces AND on those surfaces' composited bg-info/10 wash (#38 — darkened from 0.525, then 0.504 to 0.497 once the wash sweep's surface list was widened to include --muted/--secondary and the --secondary wash measured 4.386:1, then 0.497 to 0.482 once a live-browser getComputedStyle re-measurement showed real Chromium compositing of the oklch wash still under 4.5:1 (4.4835:1) despite the Vitest math clearing the bar — see the sibling --destructive-text note for why)."
   },
   "border": {
     "$type": "color",

@@ -9,6 +9,30 @@
   Adds a `WASH_SURFACES` contrast sweep (`packages/tokens/src/themes-contrast.test.ts`) and
   a compositing helper (`mixOverSrgb`/`contrastSrgb` in `color-contrast.ts`) so this class of
   gap is locked going forward. `dark` was already compliant and is unchanged (#38).
+  - **Fix round (independent review):** the sweep above still missed `--secondary`/`--muted`
+    as wash hosts, so the four `-text` tokens measured ~4.36–4.39:1 (sub-AA) there. Widened
+    `WASH_SURFACES`/`TEXT_SURFACES` to include `--muted` and `--secondary` and darkened the
+    four tokens a second time. A live-browser `getComputedStyle` re-measurement (real
+    Chromium oklch compositing, not the deterministic Vitest math) then found the
+    Vitest-passing values (`0.511`/`0.488`/`0.518`/`0.497`) still landed at ~4.47–4.48:1 in
+    practice — the two models disagree by roughly half a percent near the AA line, most
+    likely oklch-to-sRGB gamut handling on these high-chroma hues. Darkened once more
+    (`0.496`/`0.473`/`0.503`/`0.482`) and re-verified live in both themes: all 40
+    tone × surface × theme pairings now clear ≥4.5:1 in a real browser (worst case
+    `destructive` on `light`'s `--secondary`, 4.6666:1). `apps/e2e/reports/theme-aa-audit.md`
+    regenerated to match.
+  - **a11y-baseline review finding:** the same commit had silently added 7 real axe
+    violations to `scripts/a11y-baseline.json` alongside the token retune.
+    `charts-funnelchart--default` did not reproduce on a fresh 3× re-measurement and was
+    dropped (ceiling 110 → 109). The other 6 are real and stay exempted, each now traceable
+    to a filed issue instead of a bare ratchet entry: `states-errorstate--default`,
+    `states-statepanel--error`, `states-statepanel--error-custom` → pre-existing #40
+    (StatePanel error-eyebrow contrast); `layout-app-shell-mail--default`,
+    `layout-app-shell-mail--density-comparison` → new #49 (`SidebarInput`/`Input` inherits
+    ambient `text-sidebar-foreground` instead of its own `text-foreground` — typed search
+    text is ~1.1:1 in `light`); `layout-app-shell-double-sided--default` → new #50
+    (`sidebar-05`'s sub-item description uses `text-muted-foreground` on `bg-sidebar`
+    instead of `text-sidebar-muted-foreground`, ~2.29:1 in `light`).
 
 ## v4.0.0 — 2026-08-17
 

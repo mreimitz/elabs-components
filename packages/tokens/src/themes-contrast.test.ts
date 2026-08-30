@@ -106,11 +106,29 @@ const TOKENS: Record<string, Record<string, string>> = Object.fromEntries(
 );
 
 const THEMES = Object.keys(THEME_BLOCKS);
-/** The surfaces colored TEXT is rendered on (issue #20). */
-const TEXT_SURFACES = ["--background", "--card", "--surface-muted"] as const;
+/**
+ * The surfaces colored TEXT is rendered on (issue #20). Originally just the
+ * three "obvious" content grounds (`--background`/`--card`/`--surface-muted`);
+ * WIDENED in the #38 fix round to also include `--muted`/`--secondary` after
+ * an independent review found the `-text` wash sweep below (`WASH_TONES` ×
+ * `WASH_SURFACES`) landed under AA specifically on `--secondary` — a real
+ * content well (`InlineCitationCarouselHeader`, `StatusBadge`'s
+ * `pending`/`skipped`/`neutral` variants, `Badge variant="secondary"`) that
+ * this list never touched. `--muted` already passed at the old three-surface
+ * literals; it's included here for the same reason `--secondary` is: nothing
+ * should have to re-derive "is this surface covered" from which array a token
+ * happens to appear in.
+ */
+const TEXT_SURFACES = [
+  "--background",
+  "--card",
+  "--surface-muted",
+  "--muted",
+  "--secondary",
+] as const;
 /**
  * #38 — the surfaces a status `-text` rung is rendered on, ALIASED to
- * `TEXT_SURFACES` (same three grounds — the missing invariant was never a
+ * `TEXT_SURFACES` (same grounds — the missing invariant was never a
  * different surface set, it was the missing wash on top of it). Kept as its
  * own name because it documents a distinct CLAIM: not "text on a bare
  * surface" but "text on that surface's composited bg-<tone>/10 wash", which
@@ -135,17 +153,17 @@ const WASH_TONES = [
 const WASH_ALPHA = 0.1;
 /**
  * #399 — the surfaces the BRAND accent is rendered on as ordinary text. A
- * superset of `TEXT_SURFACES`: a `ProseLink` / `Button variant="link"` /
- * `Text tone="primary"` lands on the two mid-tone wells too (a link inside a
- * `--muted` panel, a `--secondary` chip), and `--primary` was under AA on all
- * five in light (3.87-4.48:1), so the new `-text` rung is gated on the
- * widest set rather than only the three the status `-text` rungs use.
+ * `ProseLink` / `Button variant="link"` / `Text tone="primary"` lands on the
+ * two mid-tone wells too (a link inside a `--muted` panel, a `--secondary`
+ * chip), and `--primary` was under AA on all five in light (3.87-4.48:1) —
+ * the original reason this list existed separately from `TEXT_SURFACES`.
+ * Since the #38 fix round folded `--muted`/`--secondary` into `TEXT_SURFACES`
+ * itself (the status `-text` wash had the identical gap), the two sets are
+ * now the SAME five surfaces. Kept as its own name because it documents a
+ * distinct claim (brand-as-text, not a status wash) — not because the
+ * surface list still differs.
  */
-const PRIMARY_TEXT_SURFACES = [
-  ...TEXT_SURFACES,
-  "--muted",
-  "--secondary",
-] as const satisfies readonly string[];
+const PRIMARY_TEXT_SURFACES = TEXT_SURFACES;
 /**
  * Canonical content surfaces a load-bearing divider/outline is drawn against
  * (issue #172). 1.4.11 is pair-relative — `--border-strong`/`--input` are

@@ -186,8 +186,13 @@
      chip, the registry trend-badge) consumed it entirely, measuring 4.05-4.35:1
      — below AA on the exact pairing components render. Retuned so the
      COMPOSITED wash also clears 4.5:1 on background/card/surface-muted (now
-     4.51-5.04:1); see the WASH_SURFACES sweep in themes-contrast.test.ts. */
-  --destructive-text: oklch(0.52 0.224 25.3);
+     4.51-5.04:1); see the WASH_SURFACES sweep in themes-contrast.test.ts.
+     Fix round 1 — DEEPENED again from 0.52 to 0.511: WASH_SURFACES was still
+     scoped to background/card/surface-muted only, and the composited wash on
+     --secondary (a real wash-badge ground — see the surfaces list above)
+     measured 4.386:1, sub-AA. WASH_SURFACES/TEXT_SURFACES now also cover
+     --muted/--secondary; worst case is 4.5056:1 on --secondary in `light`. */
+  --destructive-text: oklch(0.496 0.224 25.3);
 
   /* Status tokens (extension beyond the base spec — used by data/status UI). */
   /* #406 — DEEPENED from `oklch(0.6 0.14 150)`. #321/#383 escaped the L 0.6 dead
@@ -209,8 +214,12 @@
      consumed that margin, measuring 4.16-4.46:1 — a real, shipped AA failure.
      Retuned so the COMPOSITED wash also clears 4.5:1 on
      background/card/surface-muted (now 4.51-5.03:1); see the WASH_SURFACES
-     sweep in themes-contrast.test.ts. */
-  --success-text: oklch(0.495 0.112 162.5);
+     sweep in themes-contrast.test.ts.
+     Fix round 1 — DEEPENED again from 0.495 to 0.488: the sweep above never
+     tested --secondary, and the composited wash there measured 4.362:1,
+     sub-AA. WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary;
+     worst case is 4.5074:1 on --secondary in `light`. */
+  --success-text: oklch(0.473 0.112 162.5);
   /* #381 — DEEP amber, not the old light `oklch(0.78 0.15 80)` plate. A warning
      mark whose colour is its ONLY cue (a status dot, a node stroke, a rating
      star) has to clear WCAG 1.4.11 non-text contrast (≥3:1) against every
@@ -236,8 +245,12 @@
      --background/--card but the shipped bg-warning/10 wash failed on
      --surface-muted (4.41:1). Retuned so the COMPOSITED wash also clears
      4.5:1 on all three surfaces (now 4.51-5.03:1); see the WASH_SURFACES sweep
-     in themes-contrast.test.ts. */
-  --warning-text: oklch(0.525 0.13 55);
+     in themes-contrast.test.ts.
+     Fix round 1 — nudged again from 0.525 to 0.518: those three surfaces never
+     included --secondary, and the composited wash there measured 4.367:1,
+     sub-AA. WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary;
+     worst case is 4.5053:1 on --secondary in `light`. */
+  --warning-text: oklch(0.503 0.13 55);
   /* #406 — DEEPENED from `oklch(0.6 0.15 240)`, same one-polarity reasoning as
      `--success` above. Mark rung 4.68-5.71:1, up from 3.42-4.17:1.
      Hue 240 -> 237.3, the authored SKY blue. */
@@ -249,8 +262,12 @@
      the bg-info/10 wash every wash badge composites consumed the bare-surface
      margin, measuring 4.14-4.44:1. Retuned so the COMPOSITED wash also clears
      4.5:1 on background/card/surface-muted (now 4.51-5.04:1); see the
-     WASH_SURFACES sweep in themes-contrast.test.ts. */
-  --info-text: oklch(0.504 0.114 237.3);
+     WASH_SURFACES sweep in themes-contrast.test.ts.
+     Fix round 1 — DEEPENED again from 0.504 to 0.497: the sweep above never
+     tested --secondary, and the composited wash there measured 4.386:1,
+     sub-AA. WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary;
+     worst case is 4.5069:1 on --secondary in `light`. */
+  --info-text: oklch(0.482 0.114 237.3);
 
   /* Search / find-in-page match highlight. `bg-highlight` is the `<mark>` plate;
      `text-highlight-foreground` is the ink on it — tuned so the matched text

@@ -1,6 +1,6 @@
 {
   "$comment": "GENERATED — do not hand-edit. `pnpm a11y:baseline:run` measures, `pnpm a11y:baseline:check --update` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. `ratchet.maxStories` only ever goes DOWN (#316).",
-  "ratchet": { "maxStories": 110 },
+  "ratchet": { "maxStories": 109 },
   "stories": {
     "ai-changereview--all-approved": ["aria-prohibited-attr"],
     "ai-changereview--all-rejected": ["aria-prohibited-attr"],
@@ -24,7 +24,6 @@
     "charts-chartcard--title-only": ["aria-prohibited-attr"],
     "charts-chartcard--with-actions": ["aria-prohibited-attr"],
     "charts-chartframe--table-flipped": ["scrollable-region-focusable"],
-    "charts-funnelchart--default": ["color-contrast"],
     "core-card--detail-bottom-hover": ["aria-hidden-focus"],
     "core-card--detail-side-hover": ["aria-hidden-focus"],
     "display-progress--default": ["aria-progressbar-name"],
