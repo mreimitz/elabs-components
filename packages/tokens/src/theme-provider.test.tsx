@@ -596,7 +596,7 @@ describe("ThemeProvider — tokenOverrides (#17)", () => {
       expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
     });
 
-    it("accepts the non-color token --shadow-strength without consulting CSS.supports", () => {
+    it("accepts a numeric --shadow-strength without consulting CSS.supports", () => {
       const supports = vi.fn(() => false);
       vi.stubGlobal("CSS", { supports });
 
@@ -608,6 +608,37 @@ describe("ThemeProvider — tokenOverrides (#17)", () => {
 
       expect(supports).not.toHaveBeenCalled();
       expect(document.documentElement.style.getPropertyValue("--shadow-strength")).toBe("0");
+    });
+
+    it("accepts a decimal --shadow-strength and a var() alias", () => {
+      mount(
+        <ThemeProvider tokenOverrides={{ "--shadow-strength": "0.5" }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(document.documentElement.style.getPropertyValue("--shadow-strength")).toBe("0.5");
+
+      mount(
+        <ThemeProvider tokenOverrides={{ "--shadow-strength": "var(--some-other-token)" }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(document.documentElement.style.getPropertyValue("--shadow-strength")).toBe(
+        "var(--some-other-token)",
+      );
+    });
+
+    it("rejects (warns, does not apply) a non-numeric --shadow-strength", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      mount(
+        <ThemeProvider tokenOverrides={{ "--shadow-strength": "oops" }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("oops"));
+      expect(document.documentElement.style.getPropertyValue("--shadow-strength")).toBe("");
     });
 
     it("skips an empty-string value instead of applying then immediately unsetting it", () => {
@@ -680,6 +711,58 @@ describe("ThemeProvider — tokenOverrides (#17)", () => {
       act(() => root.unmount());
 
       expect(scoped.style.getPropertyValue(PRIMARY)).toBe("");
+      scoped.remove();
+    });
+
+    it("restores (does not delete) a PRE-EXISTING inline value the target already carried — e.g. an SSR anti-flash override", () => {
+      // Mirrors docs/CONSUMING.md §5.2's recommended workaround: a
+      // server-rendered inline value on the target, present before
+      // ThemeProvider's effect ever runs, unrelated to this provider's own
+      // machinery. Overwriting it is expected (it's the same property); but
+      // cleanup must put the ORIGINAL value back, not erase the property
+      // outright — otherwise mounting-then-unmounting this provider silently
+      // deletes branding this provider never owned.
+      document.documentElement.style.setProperty(PRIMARY, "oklch(0.4 0.1 30)");
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+      act(() => root.unmount());
+
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("oklch(0.4 0.1 30)");
+    });
+
+    it("restores the pre-existing value on the OLD target when attributeTarget resolves from null to a real element", () => {
+      // Same scenario as the callback-ref test above, but the document root
+      // already carried unrelated branding before the first (attributeTarget
+      // === null, falls back to documentElement) effect run — that value must
+      // survive the handoff to the scoped target, not just get deleted.
+      document.documentElement.style.setProperty(PRIMARY, "oklch(0.4 0.1 30)");
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }} attributeTarget={null}>
+          <Probe />
+        </ThemeProvider>,
+      );
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+
+      const scoped = document.createElement("div");
+      document.body.appendChild(scoped);
+
+      mount(
+        <ThemeProvider tokenOverrides={{ [PRIMARY]: OVERRIDE_A }} attributeTarget={scoped}>
+          <Probe />
+        </ThemeProvider>,
+      );
+
+      expect(scoped.style.getPropertyValue(PRIMARY)).toBe(OVERRIDE_A);
+      // The root's original (pre-provider) branding is back, not erased.
+      expect(document.documentElement.style.getPropertyValue(PRIMARY)).toBe("oklch(0.4 0.1 30)");
+
       scoped.remove();
     });
   });

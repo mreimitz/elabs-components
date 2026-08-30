@@ -193,6 +193,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - HoverCardContent
 - HoverCardTrigger
 - IconButton
+- ILLUSTRATION_ACCENT_VAR
 - Input — Single-line text field — the base form input.
   - avoid: Input without an associated Label (visible or sr-only) — it has no accessible name.
   - avoid: Blocking paste (onPaste + preventDefault) — never block paste.
