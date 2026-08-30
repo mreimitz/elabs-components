@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-ui` ships `SchemaForm` — a spec-driven
+  configuration-form renderer for developer-authored forms (connector
+  settings, environment variables, an auth-method picker): describe a form as
+  a serializable `FormSpec`, render it, receive `{ formName, values }` on
+  submit. Adds four field types beyond the chat-scoped `MessageForm` this
+  library already ships (`@elabs-ai/components-ai`): `list` (→ `ListEditor`),
+  `key-value` (→ `KeyValueEditor`), `file` (→ `FileUpload`, with designed
+  no-file/wrong-type/too-large states), and `group` (mutually-exclusive
+  `variant: "tabs"` or always-visible `variant: "advanced"` disclosures, both
+  → existing primitives, both recursive). Deliberately a NEW, separate schema
+  rather than a generalization of `MessageForm`'s `fieldSpecSchema` — that
+  schema is intentionally restricted to the safe, flat-scalar vocabulary an
+  LLM tool-call may emit inside a chat message (no file input, no
+  password/credential format); `SchemaForm`'s spec is developer-authored and
+  carries a different trust boundary, so the two stay separate rather than
+  smuggling `file`/`group` into the chat-safe union. Compound + lifted-state
+  (`SchemaFormProvider`/`SchemaFormRoot`/`SchemaFormFields`/`SchemaFormField`/
+  `SchemaFormSubmit`, plus the `SchemaForm` convenience composition),
+  controlled or uncontrolled, never throws (a malformed/empty spec renders
+  `SchemaFormFallback`). The submit control is never natively `disabled` while
+  transiently blocked (submitting) — `aria-disabled` + a click/submit handler
+  guard, so a keyboard user is never dropped from the tab order right after
+  they activate it; an explicit, caller-set `disabled` (the whole form is
+  read-only) stays native, since that is a deliberate, durable state rather
+  than a transient auto-flip. (#22)
+- Fixed: `@elabs-ai/components-ui`'s `FileUploadList` gave its `<ul>` an
+  explicit `role="status"`, which overrides the element's implicit `list`
+  role and strips `listitem` from every `FileUploadItem` (`<li>`) inside it —
+  an axe `listitem` violation the moment the list holds a file. `aria-live`
+  alone already announces additions/removals without a role change, so the
+  `role="status"` is removed and the native list semantics are kept. Found
+  while building `SchemaForm`'s file field. (#22)
 - Added: `@elabs-ai/components-ai` ships `MessageCompare` / `MessageCompareColumn` —
   a side-by-side 2-4 column surface for comparing multiple model responses to
   the same prompt, each column with independent streaming status and scroll

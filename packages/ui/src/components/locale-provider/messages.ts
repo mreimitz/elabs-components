@@ -107,6 +107,12 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.confirmDialog.cancel": "Cancel",
   "ui.advancedGroup.title": "Advanced",
   "ui.advancedGroup.changed": "{count} changed",
+  // SchemaForm — the spec-driven config-form renderer (issue #22).
+  "ui.schemaForm.selectPlaceholder": "Select…",
+  "ui.schemaForm.label": "Form",
+  "ui.schemaForm.submit": "Submit",
+  "ui.schemaForm.submitting": "Submitting…",
+  "ui.schemaForm.submitted": "Submitted",
   // Pagination's ellipsis (sr-only — the visible glyph is decorative).
   "ui.pagination.morePages": "More pages",
   // Sidebar's mobile Sheet title (sr-only header — the sheet itself has no

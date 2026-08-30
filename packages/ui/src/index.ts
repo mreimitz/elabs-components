@@ -140,6 +140,7 @@ export * from "./components/radio-group";
 export * from "./components/rating";
 export * from "./components/resizable";
 export * from "./components/reveal";
+export * from "./components/schema-form";
 export * from "./components/scroll-area";
 export * from "./components/section-header";
 export * from "./components/segmented-field";
