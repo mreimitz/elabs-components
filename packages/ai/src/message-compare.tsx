@@ -7,13 +7,20 @@
  * shows several at once, each with its own status, its own scroll position, and
  * its own `MessageFeedback`.
  *
- * Architecture (doc-13 lifted state, ChartFrame/PromptInputProvider shape):
- * `MessageCompareProvider` holds the PUBLIC `state`/`actions`/`meta` a sibling
- * control (e.g. a "Sync scroll" toggle rendered outside the grid) can read and
- * drive via `useMessageCompare()`. Column registration and the scroll-sync
- * broadcast are internal plumbing, not part of that public surface, so they
- * live on a second, unexported context — the same public/internal split
- * `context-panel.tsx` uses for its own refs.
+ * Architecture (lifted state, INTERNAL-ONLY — not the ChartFrame/PromptInputProvider
+ * PUBLIC-provider shape): `MessageCompareProvider` + `useMessageCompare()` hold the
+ * `state`/`actions`/`meta` that back the grid, but both are unexported implementation
+ * details, like `ChartFrameProvider` (`.claude/rules/chart-components.md` — "not
+ * exported publicly"). `MessageCompare` always mounts its own private instance and
+ * treats every child as a column (`Children.toArray`), so there is no seam where an
+ * ambient provider or a sibling control could attach to that SAME instance without
+ * corrupting the grid (an extra `ResizablePanel`, or a spurious tab with no model
+ * name). The supported way to add a "Sync scroll" toggle beside the grid is the
+ * ordinary controlled-prop pattern — external `useState` plus `syncScroll`/
+ * `onSyncScrollChange` on `MessageCompare` (see `SyncedScrollDemo` in
+ * `message-compare.stories.tsx`) — which needs neither export. Column registration
+ * and the scroll-sync broadcast live on a second, also-unexported context — the same
+ * internal-context-splitting shape `context-panel.tsx` uses for its own refs.
  *
  * Independent streaming/scroll (the issue's core requirement): a column never
  * auto-scrolls itself or a sibling — there is no shared "stick to bottom"
@@ -75,31 +82,35 @@ export interface MessageCompareModel {
 /** `MessageCompare` supports 2-4 side-by-side responses (issue #23). */
 export type MessageCompareColumnsCount = 2 | 3 | 4;
 
-export interface MessageCompareState {
+interface MessageCompareState {
   syncScroll: boolean;
 }
 
-export interface MessageCompareActions {
+interface MessageCompareActions {
   setSyncScroll: (value: boolean) => void;
 }
 
-export interface MessageCompareMeta {
+interface MessageCompareMeta {
   columns: MessageCompareColumnsCount;
   isMobile: boolean;
 }
 
-export interface MessageCompareContextValue {
+interface MessageCompareContextValue {
   state: MessageCompareState;
   actions: MessageCompareActions;
   meta: MessageCompareMeta;
 }
 
-// ── Public context ────────────────────────────────────────────────────────────
+// ── Internal state context (NOT exported — see the file's architecture comment) ─
 
 const MessageCompareContext = createContext<MessageCompareContextValue | null>(null);
 
-/** Read/drive sync-scroll from anywhere inside (or, via the Provider, beside) a `MessageCompare`. */
-export function useMessageCompare(): MessageCompareContextValue {
+/**
+ * INTERNAL — reads the `state`/`actions`/`meta` `MessageCompareProvider` computes.
+ * Not exported: `MessageCompare` always owns a private `MessageCompareProvider`
+ * instance, so there is no ambient instance for an outside caller to read.
+ */
+function useMessageCompare(): MessageCompareContextValue {
   const ctx = use(MessageCompareContext);
   if (!ctx) {
     throw new Error("useMessageCompare must be used within a MessageCompareProvider.");
@@ -131,9 +142,9 @@ function useMessageCompareInternal(): MessageCompareInternalValue {
   return ctx;
 }
 
-// ── Provider ──────────────────────────────────────────────────────────────────
+// ── Provider (INTERNAL — not exported; see the file's architecture comment) ────
 
-export interface MessageCompareProviderProps {
+interface MessageCompareProviderProps {
   children: ReactNode;
   columns: MessageCompareColumnsCount;
   /** Controlled sync-scroll flag. Omit for the uncontrolled default. */
@@ -143,7 +154,7 @@ export interface MessageCompareProviderProps {
   onSyncScrollChange?: (value: boolean) => void;
 }
 
-export function MessageCompareProvider({
+function MessageCompareProvider({
   children,
   columns,
   syncScroll: syncScrollProp,

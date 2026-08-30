@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T11:50:25.386Z",
+  "generatedAt": "2026-08-30T12:27:34.947Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1649,11 +1649,6 @@
           "module": "packages/ai/src/message-compare.tsx"
         },
         {
-          "name": "MessageCompareProvider",
-          "kind": "value",
-          "module": "packages/ai/src/message-compare.tsx"
-        },
-        {
           "name": "MessageContent",
           "kind": "value",
           "module": "packages/ai/src/message.tsx"
@@ -2966,11 +2961,6 @@
           "module": "packages/ai/src/jsx-preview.tsx"
         },
         {
-          "name": "useMessageCompare",
-          "kind": "value",
-          "module": "packages/ai/src/message-compare.tsx"
-        },
-        {
           "name": "useMessageEdit",
           "kind": "value",
           "module": "packages/ai/src/message-edit.tsx"
@@ -3223,15 +3213,10 @@
         "MessageBranchPreviousProps",
         "MessageBranchProps",
         "MessageBranchSelectorProps",
-        "MessageCompareActions",
         "MessageCompareColumnProps",
         "MessageCompareColumnsCount",
-        "MessageCompareContextValue",
-        "MessageCompareMeta",
         "MessageCompareModel",
         "MessageCompareProps",
-        "MessageCompareProviderProps",
-        "MessageCompareState",
         "MessageContentProps",
         "MessageEditContentProps",
         "MessageEditFormProps",
@@ -4886,38 +4871,6 @@
               "optional": true,
               "type": "ReactNode",
               "description": "The consumer's own `Message`/`MessageResponse` composition for this column."
-            }
-          ]
-        },
-        "MessageCompareProvider": {
-          "extends": [],
-          "props": [
-            {
-              "name": "children",
-              "optional": false,
-              "type": "ReactNode"
-            },
-            {
-              "name": "columns",
-              "optional": false,
-              "type": "MessageCompareColumnsCount"
-            },
-            {
-              "name": "syncScroll",
-              "optional": true,
-              "type": "boolean",
-              "description": "Controlled sync-scroll flag. Omit for the uncontrolled default."
-            },
-            {
-              "name": "defaultSyncScroll",
-              "optional": true,
-              "type": "boolean",
-              "description": "Uncontrolled initial value. @default false"
-            },
-            {
-              "name": "onSyncScrollChange",
-              "optional": true,
-              "type": "(value: boolean) => void"
             }
           ]
         },
@@ -7281,6 +7234,30 @@
             "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
             "Rendering raw model markdown in MessageContent — use MessageResponse so streamed markdown, code and links render safely.",
             "Calling a model inside the component — @elabs-ai/components-ai is presentational; the app owns useChat/transport (D5)."
+          ]
+        },
+        "MessageCompare": {
+          "purpose": "Side-by-side 2-4 column comparison of model responses to the same prompt — the one-at-a-time sibling of MessageBranch.",
+          "category": "ai",
+          "relationships": {
+            "contains": [
+              "MessageCompareColumn"
+            ],
+            "pairsWith": [
+              "MessageFeedback",
+              "MessageResponse",
+              "MessageBranch"
+            ]
+          },
+          "stateTokens": {
+            "divider": "border-b (default border color, the subtle rung) between a column's header and body — same as the package's other header/body dividers",
+            "error": "text-destructive-text (TEXT rung, not -foreground) paired with AlertTriangleIcon + role=\"alert\" — colour is never the only channel"
+          },
+          "antiPatterns": [
+            "Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.",
+            "Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.",
+            "Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.",
+            "Lifting MessageFeedback state above the column boundary — each MessageCompareColumn composes its own independent MessageFeedback instance with no shared vote state."
           ]
         },
         "MessageEdit": {
