@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -27,6 +28,7 @@ import {
   type ThemeDefinition,
   type ThemeName,
 } from "./theme-types";
+import { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.generated";
 
 interface ThemeContextValue {
   /** The active theme. */
@@ -168,6 +170,51 @@ export interface ThemeProviderProps {
    * backstop continues to track the document root.
    */
   attributeTarget?: HTMLElement | null;
+  /**
+   * Runtime CSS custom-property overrides (#17,
+   * `docs/ADR/0031-runtime-token-overrides.md`), layered OVER the active
+   * `[data-theme]` block as inline properties on `attributeTarget` — for a
+   * multi-tenant/white-label consumer who wants to patch 1-2 brand colors
+   * without authoring a whole theme covering every `THEME_TOKEN_NAMES` entry.
+   *
+   * **Partial, not a replacement.** Only the keys you pass are forced; every
+   * other token keeps coming from the active theme's own CSS block. This is
+   * the point of the mechanism — unlike a hand-authored `[data-theme]` block, a
+   * missing key here does NOT fall through to the neutral `:root` base, it
+   * simply isn't overridden.
+   *
+   * **Keys are validated against `THEME_TOKEN_NAMES`.** A key this package
+   * does not recognize as a theme token is REJECTED (not applied) with a dev
+   * warning — the failure mode this guards against is a typo'd `--foo` that
+   * silently does nothing because nothing in `themes.css` reads it, which
+   * would otherwise look identical to success.
+   *
+   * **Reactive, not mount-once.** Every render where this prop's content
+   * changes re-applies it; a key removed between renders has its inline
+   * property cleared so the theme's own value governs again. Overrides
+   * survive a `setTheme` call — they are orthogonal to which theme is active,
+   * which is what makes them useful for a tenant whose accent color must hold
+   * across a light/dark toggle.
+   *
+   * **SSR flashes.** Like every other apply in this provider, this runs in a
+   * `useEffect` — never during server rendering. The first paint (and the
+   * hydration frame) therefore shows the UN-overridden theme; the override
+   * appears one paint later. For a tenant whose brand color must be correct
+   * on the very first paint, emit the same custom properties in server-
+   * rendered `<html>`/`<head>` (a small inline `<style>` or attribute keyed
+   * off the same tenant data) — this prop does not do that for you. See
+   * `docs/CONSUMING.md` § 5.1 and ADR 0031.
+   *
+   * **Uses `CSSStyleDeclaration.setProperty`/`removeProperty`, never
+   * `style.cssText` or a `style="…"` attribute string.** Confirmed against
+   * `docs/csp-policy.json`: a CSP `style-src` directive restricts parsing CSS
+   * text from an HTML `style` attribute or a `<style>` element; it does not
+   * restrict a script calling `setProperty` on the CSSOM directly (that is
+   * gated by `script-src` alone, since a script that can call it already runs
+   * under whatever `script-src` allows). So this needs no NEW CSP relaxation
+   * beyond what `script-src` already grants the app's own bundle.
+   */
+  tokenOverrides?: Partial<Record<ThemeTokenName, string>>;
 }
 
 /**
@@ -279,6 +326,70 @@ function applyDensity(mode: DensityMode, target: HTMLElement | null) {
   else el.setAttribute("data-density", mode);
 }
 
+/** O(1) membership check for `tokenOverrides` key validation. */
+const KNOWN_THEME_TOKEN_NAMES = new Set<string>(THEME_TOKEN_NAMES);
+
+/**
+ * A stable, order-independent string key for a `tokenOverrides` object, so the
+ * apply effect below can depend on CONTENT rather than object identity — an
+ * inline `tokenOverrides={{...}}` literal is a new object on every render, the
+ * same problem `registryKey`/`allowedKey` solve for the theme registry above.
+ */
+function tokenOverridesKey(overrides: Partial<Record<ThemeTokenName, string>> | undefined): string {
+  if (!overrides) return "";
+  return Object.entries(overrides)
+    .filter((entry): entry is [string, string] => entry[1] !== undefined)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join(" ");
+}
+
+/**
+ * Applies `tokenOverrides` as inline custom properties on `target` (§
+ * `ThemeProviderProps.tokenOverrides` for the full contract). Returns the set
+ * of keys actually applied, so the caller can diff against the PREVIOUS set on
+ * the next call and clear whatever is no longer present — a key that
+ * disappears between renders must fall back to the active theme's own value,
+ * not linger as a stale forced property.
+ *
+ * Unknown keys (not in `THEME_TOKEN_NAMES`) are REJECTED, not applied: setting
+ * an unrecognized custom property "succeeds" at the DOM level but does nothing
+ * visually, since no theme rule reads it — silent no-op is exactly the failure
+ * mode a dev warning here prevents.
+ */
+function applyTokenOverrides(
+  overrides: Partial<Record<ThemeTokenName, string>> | undefined,
+  previouslyAppliedKeys: readonly string[],
+  target: HTMLElement | null,
+): string[] {
+  const el = target ?? (typeof document !== "undefined" ? document.documentElement : null);
+  if (!el) return [];
+
+  const nextKeys: string[] = [];
+  for (const [key, value] of Object.entries(overrides ?? {})) {
+    if (value === undefined) continue;
+    if (!KNOWN_THEME_TOKEN_NAMES.has(key)) {
+      warnDev(
+        `ThemeProvider: tokenOverrides key "${key}" is not one of THEME_TOKEN_NAMES — ` +
+          `ignored (setting it would create a custom property no theme rule reads).`,
+      );
+      continue;
+    }
+    // CSSStyleDeclaration.setProperty, never `style.cssText`/a `style="…"`
+    // attribute string — see the CSP note on `ThemeProviderProps.tokenOverrides`.
+    el.style.setProperty(key, value);
+    nextKeys.push(key);
+  }
+
+  // Clear any override that was applied last time but is absent this time
+  // (key removed, or the whole prop unset) — restores the theme's own value.
+  for (const key of previouslyAppliedKeys) {
+    if (!nextKeys.includes(key)) el.style.removeProperty(key);
+  }
+
+  return nextKeys;
+}
+
 /**
  * Applies a theme by writing `data-theme` onto the target element (the document
  * root by default) and a motion preference via `data-motion-pref`. Persists both
@@ -311,6 +422,7 @@ export function ThemeProvider({
   defaultRegister = DEFAULT_TASTE_REGISTER,
   registerStorageKey = "brand-ui-taste-register",
   attributeTarget = null,
+  tokenOverrides,
 }: ThemeProviderProps) {
   // The themes THIS provider exposes: its registry (ADR 0029), narrowed by
   // `allowedThemes` (#355). BOTH are keyed by VALUE, not identity, so an inline
@@ -439,6 +551,27 @@ export function ThemeProvider({
     applyRegister(initial, attributeTarget);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Apply `tokenOverrides` (#17) — unlike theme/decoration/density/register
+  // above, this is a plain CONTROLLED prop (no internal state, no setter, no
+  // persistence): the consumer already owns the source of truth (e.g. fetched
+  // tenant branding), so the provider's only job is to keep the DOM in sync
+  // with it. Keyed on CONTENT (`tokenOverridesKeyValue`), not the object
+  // reference, so an inline literal doesn't churn the effect every render; runs
+  // on every render where the content or target actually changes — not
+  // mount-once — so it stays reactive to prop changes and survives a
+  // `setTheme` call untouched (overrides are orthogonal to which theme block
+  // is active).
+  const tokenOverridesKeyValue = tokenOverridesKey(tokenOverrides);
+  const appliedTokenOverrideKeys = useRef<string[]>([]);
+  useEffect(() => {
+    appliedTokenOverrideKeys.current = applyTokenOverrides(
+      tokenOverrides,
+      appliedTokenOverrideKeys.current,
+      attributeTarget,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenOverridesKeyValue, attributeTarget]);
 
   const setTheme = useCallback(
     (next: ThemeName) => {

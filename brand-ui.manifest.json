@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T06:17:43.193Z",
+  "generatedAt": "2026-08-30T10:26:50.575Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16501,6 +16501,12 @@
               "optional": true,
               "type": "HTMLElement | null",
               "description": "Element that receives the `data-theme` and `data-motion-pref` attributes. Defaults to the document root (`<html>`). Pass a ref'd element for scoped theming. NOTE: the OS-reduce backstop in themes.css is keyed off `:root`, so a scoped target still honors per-instance theme/motion but the document-level backstop continues to track the document root."
+            },
+            {
+              "name": "tokenOverrides",
+              "optional": true,
+              "type": "Partial<Record<ThemeTokenName, string>>",
+              "description": "Runtime CSS custom-property overrides (#17, `docs/ADR/0031-runtime-token-overrides.md`), layered OVER the active `[data-theme]` block as inline properties on `attributeTarget` — for a multi-tenant/white-label consumer who wants to patch 1-2 brand colors without authoring a whole theme covering every `THEME_TOKEN_NAMES` entry. **Partial, not a replacement.** Only the keys you pass are forced; every other token keeps coming from the active theme's own CSS block. This is the point of the mechanism — unlike a hand-authored `[data-theme]` block, a missing key here does NOT fall through to the neutral `:root` base, it simply isn't overridden. **Keys are validated against `THEME_TOKEN_NAMES`.** A key this package does not recognize as a theme token is REJECTED (not applied) with a dev warning — the failure mode this guards against is a typo'd `--foo` that silently does nothing because nothing in `themes.css` reads it, which would otherwise look identical to success. **Reactive, not mount-once.** Every render where this prop's content changes re-applies it; a key removed between renders has its inline property cleared so the theme's own value governs again. Overrides survive a `setTheme` call — they are orthogonal to which theme is active, which is what makes them useful for a tenant whose accent color must hold across a light/dark toggle. **SSR flashes.** Like every other apply in this provider, this runs in a `useEffect` — never during server rendering. The first paint (and the hydration frame) therefore shows the UN-overridden theme; the override appears one paint later. For a tenant whose brand color must be correct on the very first paint, emit the same custom properties in server- rendered `<html>`/`<head>` (a small inline `<style>` or attribute keyed off the same tenant data) — this prop does not do that for you. See `docs/CONSUMING.md` § 5.1 and ADR 0031. **Uses `CSSStyleDeclaration.setProperty`/`removeProperty`, never `style.cssText` or a `style=\"…\"` attribute string.** Confirmed against `docs/csp-policy.json`: a CSP `style-src` directive restricts parsing CSS text from an HTML `style` attribute or a `<style>` element; it does not restrict a script calling `setProperty` on the CSSOM directly (that is gated by `script-src` alone, since a script that can call it already runs under whatever `script-src` allows). So this needs no NEW CSP relaxation beyond what `script-src` already grants the app's own bundle."
             }
           ]
         }
