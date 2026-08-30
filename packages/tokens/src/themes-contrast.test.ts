@@ -498,22 +498,19 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
       ).toBeLessThan(tertiaryRatio);
     });
 
-    // #14 — the ordered ramp's new mid divider rung. NOT 1.4.11-gated (that is
-    // --border-3/--border-strong's job) — the lock is that it sits strictly
-    // BETWEEN --border-1 and --border-3 on the canonical divider surfaces, so
-    // the three-rung ramp actually orders low → high.
-    it.each(NONTEXT_SURFACES)(
-      "border-2 sits strictly between border-1 and border-3 on %s",
-      (surface) => {
-        const subtle = contrast(token(theme, "--border-1"), token(theme, surface));
-        const mid = contrast(token(theme, "--border-2"), token(theme, surface));
-        const strong = contrast(token(theme, "--border-3"), token(theme, surface));
-        expect(mid, `border-2 vs ${surface} in ${theme} = ${mid.toFixed(2)}`).toBeGreaterThan(
-          subtle,
-        );
-        expect(mid, `border-2 vs ${surface} in ${theme} = ${mid.toFixed(2)}`).toBeLessThan(strong);
-      },
-    );
+    // #14 (fix round 1, 2026-08-30) — the border ramp is TWO rungs, mapped 1:1
+    // onto the existing binary 1.4.11 contract (--border = redundant boundary,
+    // --border-strong = sole cue). A third "mid" rung was dropped: it was too
+    // weak to be a sole cue and added nothing over the subtle rung when the
+    // boundary is redundant, so it had no legitimate job and only invited
+    // picking it for a sole-cue divider (a silent 1.4.11 failure). The lock is
+    // that both rungs are exactly what they claim to alias — not a contrast
+    // number, since --border/--border-strong already carry their own gated
+    // assertions elsewhere in this file.
+    it("border-1/border-2 resolve to border/border-strong", () => {
+      expect(token(theme, "--border-1")).toBe(token(theme, "--border"));
+      expect(token(theme, "--border-2")).toBe(token(theme, "--border-strong"));
+    });
 
     // #14 — surface-1..4 are pure var() aliases (an ordered VIEW onto existing
     // surfaces, not new colors), so the lock is that each rung still resolves

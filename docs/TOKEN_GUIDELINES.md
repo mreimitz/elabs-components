@@ -46,12 +46,12 @@ The semantic slots above give TWO text weights (`--foreground` /
 `--muted-foreground`) and TWO divider weights (`--border` / `--border-strong`).
 A dense product UI — a table row with a primary value, a secondary label,
 tertiary metadata and a disabled action, all in one row — routinely needs more
-rungs than that. `--foreground-1..4`, `--border-1..3` and `--surface-1..4` are
-an ADDITIVE, ORDERED view onto the same tokens: every rung is either a `var()`
-alias of an existing semantic slot (so retuning that slot still moves the
-ramp) or a new literal for the gap the slots skip. Nothing above changes
-meaning or value — reach for the ramp only when you need a rung the slots
-don't name.
+text/surface rungs than that. `--foreground-1..4`, `--border-1..2` and
+`--surface-1..4` are an ADDITIVE, ORDERED view onto the same tokens: every
+rung is either a `var()` alias of an existing semantic slot (so retuning that
+slot still moves the ramp) or a new literal for the gap the slots skip.
+Nothing above changes meaning or value — reach for the ramp only when you
+need a rung the slots don't name.
 
 | Rung             | Role                    | Utility             | Relation                                                                                         |
 | ---------------- | ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
@@ -60,21 +60,37 @@ don't name.
 | `--foreground-3` | tertiary / metadata     | `text-foreground-3` | `== --muted-foreground`                                                                          |
 | `--foreground-4` | disabled                | `text-foreground-4` | new — lighter than muted-foreground; sub-AA by design (WCAG 1.4.3 exempts inactive-control text) |
 | `--border-1`     | subtle (redundant edge) | `border-border-1`   | `== --border`                                                                                    |
-| `--border-2`     | mid divider             | `border-border-2`   | new — more presence than `-1`, NOT 1.4.11-gated                                                  |
-| `--border-3`     | strong (sole cue, ≥3:1) | `border-border-3`   | `== --border-strong`                                                                             |
+| `--border-2`     | strong (sole cue, ≥3:1) | `border-border-2`   | `== --border-strong`                                                                             |
 | `--surface-1`    | page ground             | `bg-surface-1`      | `== --background`                                                                                |
 | `--surface-2`    | base layer, near ground | `bg-surface-2`      | `== --surface`                                                                                   |
 | `--surface-3`    | raised card / panel     | `bg-surface-3`      | `== --card`                                                                                      |
 | `--surface-4`    | most elevated / float   | `bg-surface-4`      | `== --surface-elevated`                                                                          |
 
-**Pick the rung by ROLE, not by "what looks right."** If two rungs render the
-same in one theme (e.g. `surface-1`/`surface-2` in `light`, where `--surface`
-and `--background` share a value), that is fine — the ramp still orders
-correctly in every theme (verified in `themes-contrast.test.ts`), and a theme
-that DOES separate them (both reference `dark` themes do) renders the
-hierarchy for free. Don't invent a THIRD naming scheme for the same concept —
-the existing `border` vs `border-strong` 1.4.11 decision test
-(`styling-and-tokens.md`) still governs whether a divider needs `-3`.
+**The border ramp is deliberately TWO rungs, not three or four.**
+`--border`/`--border-strong` is a BINARY WCAG 1.4.11 contract
+(`styling-and-tokens.md`'s decision test: _"if I deleted this line, could a
+sighted user still tell the two regions apart? Yes → the subtle rung. No →
+the ≥3:1 rung."_) — every boundary in the system answers that question one of
+exactly two ways, so `--border-1`/`--border-2` alias those two answers and
+stop there. **A rung "between" them is never correct for a sole-cue
+boundary** — it is too weak to clear ≥3:1, so 1.4.11 still fails — **and it
+adds nothing over `--border-1` when the boundary is redundant.** An earlier
+draft of this ramp shipped exactly such a rung (`--border-2` at ~2:1, with
+`--border-3` as the real strong rung) and it was dropped in review: a token
+whose only description is "between the other two" is a naming artifact, not
+a design decision, and a numbered 1/2/3 ramp actively invites reaching for
+the middle one on a divider that IS the sole cue. If you find yourself
+wanting a border weight this table doesn't name, that is a sign the boundary
+needs a REDUNDANT cue (fill/elevation/spacing) added alongside `--border-1`,
+not a new numbered rung.
+
+**Pick a foreground/surface rung by ROLE, not by "what looks right."** If two
+rungs render the same in one theme (e.g. `surface-1`/`surface-2` in `light`,
+where `--surface` and `--background` share a value), that is fine — the ramp
+still orders correctly in every theme (verified in
+`themes-contrast.test.ts`), and a theme that DOES separate them (both
+reference `dark` themes do) renders the hierarchy for free. Don't invent a
+THIRD naming scheme for the same concept.
 
 ## Rules
 

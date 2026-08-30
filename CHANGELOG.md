@@ -3,12 +3,14 @@
 ## Unreleased
 
 - Added: `@elabs-ai/components-tokens` ships an ordered neutral ramp —
-  `--foreground-1..4`, `--border-1..3`, `--surface-1..4` (`text-foreground-*`,
+  `--foreground-1..4`, `--border-1..2`, `--surface-1..4` (`text-foreground-*`,
   `border-border-*`, `bg-surface-*` utilities) — additive alongside the
   existing semantic slots (`-1`/`-3` alias `--foreground`/`--muted-foreground`
-  and `--border`/`--border-strong`; `-2`/`-4` and the border mid-rung are new
-  literals) so a dense product UI gets a third/fourth text weight and a mid
-  divider weight without a new naming scheme. Guidance table:
+  and both border rungs alias `--border`/`--border-strong`; `-2`/`-4` on the
+  foreground ramp are new literals) so a dense product UI gets a third/fourth
+  text weight without a new naming scheme. The border ramp is deliberately
+  two rungs, mapped 1:1 onto the existing binary 1.4.11 contract — no "mid"
+  rung, which would have no legitimate role in that contract. Guidance table:
   `docs/TOKEN_GUIDELINES.md` § "Ordered neutral ramp". (#14)
 - Added: `@elabs-ai/components-tokens` ships a CJK fallback + per-locale seam
   for `--font-sans`/`--font-display` — a new `--font-cjk-sans` token inserted

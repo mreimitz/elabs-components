@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T15:03:16.210Z",
+  "generatedAt": "2026-08-30T15:18:00.484Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 181,
+  "tokenCount": 180,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -57,7 +57,6 @@
     "--foreground-4",
     "--border-1",
     "--border-2",
-    "--border-3",
     "--surface-1",
     "--surface-2",
     "--surface-3",
