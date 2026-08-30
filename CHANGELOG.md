@@ -11,6 +11,14 @@ widening, not a version bump — verified by compiling this package's source
 against both a real `ai@6.0.0` install and `ai@7.0.85` with zero type errors.
 `ai` is also now declared `peerDependenciesMeta: { "ai": { "optional": true } }`,
 since only 12 of 51 source files import from it and every import is `import type`.
+**Consumer-visible trade-off:** this also turns off npm/pnpm's peer auto-install
+for anyone who never adds `ai` to their own `package.json` — most consumers of
+this package, since the common case is importing `Message`/`Tool`/`Context`
+without separately declaring the SDK. Before this change, a bare install
+resolved a compatible `ai` for you; now it does not, and you may need to add
+`"ai": "^6.0.0 || ^7.0.0"` to your own dependencies to get one installed. A
+genuinely incompatible `ai` you already have installed still correctly fails
+with `ERESOLVE` — this only removes the free ride when `ai` is absent.
 
 `ai@7` restructured two pieces of the type surface this package renders, and the
 fix reads the shape that is present in **both** majors:

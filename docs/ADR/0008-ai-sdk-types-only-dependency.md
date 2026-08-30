@@ -136,6 +136,24 @@ silences the peer-conflict warning for that consumer without weakening the
 gate: `pnpm ai:types-only` still fails on any runtime import regardless of
 how the peer is declared.
 
+**The cost, verified empirically (round-2 review):** `optional: true` also
+turns off npm's and pnpm's peer **auto-install**. With the peer required
+(no `peerDependenciesMeta` entry), a consumer who declares no `ai` dependency
+of their own still gets a compatible `ai` installed automatically — both npm
+and pnpm resolve and place one to satisfy the peer, unprompted. With
+`optional: true`, neither package manager does this: a consumer who never
+adds `ai` to their own `package.json` gets no `ai` in `node_modules` at all,
+which most consumers of `@elabs-ai/components-ai` will hit, since they reach
+for `Message`/`Tool`/`Context` without separately declaring the SDK. The
+failure surfaces later and less clearly, as a missing-module/type error at
+the `import type` site rather than an install-time signal. This does **not**
+reopen a correctness gap: a consumer who has a genuinely incompatible `ai`
+installed (e.g. `ai@5.x`) still gets a correct `ERESOLVE` — `optional: true`
+only removes the free ride for the "no `ai` declared at all" case, it does
+not weaken conflict detection. The trade is accepted for the minority who
+truly don't touch these types (issue #30's own rationale), at the cost of a
+less convenient default for the majority who do.
+
 ### Node engine floor — noted, not changed
 
 `ai@7.0.85` declares `engines.node: >=22`; this repo's own `engines.node`,
