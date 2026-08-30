@@ -437,6 +437,79 @@ test("PASSES: a reference to a removed script that is exempted", () => {
   assert.equal(violations.length, 0, "Exempted removed scripts must not flag");
 });
 
+// ── SCRIPT PATHS: nested/prefixed paths (round-2 fix for #32) ──────────────────
+//
+// A prior version of this matcher had a negative lookbehind that excluded any
+// `scripts/` occurrence preceded by another path segment, so it could never
+// see a NESTED path at all — correct or not. That let a doubled-prefix
+// regression (`packages/tokens/packages/tokens/scripts/...`) ship green. These
+// cases lock the fix: a nested path is now actually validated, in both
+// directions (fabricated → fails, correct → passes), not just assumed clean.
+
+test("FLAGS: a fabricated BARE broken path (scripts/does-not-exist.mjs)", () => {
+  const files = [
+    {
+      file: "docs/example.md",
+      content: "See `scripts/does-not-exist.mjs` for details.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /scripts\/does-not-exist\.mjs which does not exist/);
+});
+
+test("FLAGS: a fabricated NESTED broken path (packages/tokens/scripts/does-not-exist.mjs) — the case the old matcher missed", () => {
+  const files = [
+    {
+      file: "docs/example.md",
+      content: "See `packages/tokens/scripts/does-not-exist.mjs` for details.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 1);
+  assert.match(
+    violations[0],
+    /packages\/tokens\/scripts\/does-not-exist\.mjs which does not exist/,
+  );
+});
+
+test("FLAGS: a doubled-prefix nested path (the exact #32 round-1 regression shape)", () => {
+  const files = [
+    {
+      file: "docs/example.md",
+      content: "`packages/tokens/packages/tokens/scripts/gen-theme-token-names.mjs` derives it.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 1);
+  assert.match(
+    violations[0],
+    /packages\/tokens\/packages\/tokens\/scripts\/gen-theme-token-names\.mjs which does not exist/,
+  );
+});
+
+test("PASSES: a correct NESTED path (packages/tokens/scripts/gen-theme-token-names.mjs)", () => {
+  const files = [
+    {
+      file: "docs/example.md",
+      content: "`packages/tokens/scripts/gen-theme-token-names.mjs` derives it from the theme.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 0);
+});
+
+test("PASSES: a correct dotdir-prefixed path (.claude/scripts/arch-evidence-pack.mjs)", () => {
+  const files = [
+    {
+      file: "docs/example.md",
+      content: "The evidence pack is built by `.claude/scripts/arch-evidence-pack.mjs`.",
+    },
+  ];
+  const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 0);
+});
+
 // ── CLI: the REAL repo currently passes the gate ────────────────────────────────
 
 test("the REAL repo currently passes docs:check (CLI run)", () => {

@@ -71,7 +71,7 @@ files is reported `partial` (exit 1), never a silent success. The
 `brand-ui audit` → report.
 
 The published CLI **ships the archetype templates** (`files: ["templates", …]`,
-copied by `prepack` — `packages/cli/packages/cli/scripts/bundle-assets.mjs`) alongside the
+copied by `prepack` — `packages/cli/scripts/bundle-assets.mjs`) alongside the
 manifest, so `scaffold --write` works in a consuming project with no brand-ui
 checkout. Locked by `packages/cli/test/packaging.test.mjs`.
 

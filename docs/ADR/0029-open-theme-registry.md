@@ -110,7 +110,7 @@ So the contract ships as data:
 import { THEME_TOKEN_NAMES } from "@elabs-ai/components-tokens";
 ```
 
-`packages/tokens/packages/tokens/scripts/gen-theme-token-names.mjs` derives it from the active
+`packages/tokens/scripts/gen-theme-token-names.mjs` derives it from the active
 `[data-theme]` blocks in `themes.css` (root-only machinery excluded — the same
 union `check-theme-parity.mjs` holds every block to) and writes
 `src/theme-token-names.generated.ts`. `pnpm token-contract:check` fails CI when

@@ -633,12 +633,25 @@ const dualCanvasViolations = findDualCanvasViolations({ adrTitles, decisionsMdTe
 // 8. SCRIPT PATH REFERENCES (#32) — scripts/**.mjs paths cited in docs/rules
 // ---------------------------------------------------------------------------
 // Every `scripts/**` path referenced in .claude/rules/*.md or docs/**/*.md
-// must exist on disk. This catches stale references like scripts/lib/paused-surfaces.mjs
-// that do not actually exist.
+// must exist on disk — bare (`scripts/foo.mjs`) AND nested under a package or
+// dotdir prefix (`packages/tokens/scripts/foo.mjs`, `.claude/scripts/foo.mjs`).
+// This catches stale references like scripts/lib/paused-surfaces.mjs that do
+// not actually exist, AND a doubled/wrong prefix on an otherwise-real nested
+// path (e.g. `packages/tokens/packages/tokens/scripts/foo.mjs`) — the exact
+// regression an earlier, bare-only version of this matcher could not see
+// (round-2 fix for #32: it flagged nothing because its negative lookbehind
+// excluded any `scripts/` preceded by another path segment, so a nested path
+// was never checked at all, correct or not).
 export function findScriptPathViolations(files) {
   const violations = [];
-  // Match scripts/*.mjs but not when preceded by / or . (e.g., avoid .claude/scripts or packages/tokens/scripts)
-  const scriptPathRe = /(?<![/.\w])scripts\/[\w\-/]+\.mjs\b/g;
+  // Capture the FULL path: zero or more leading directory segments (word
+  // chars, hyphens, dots — so ".claude/" and "packages/tokens/" both count),
+  // each followed by "/", then the literal "scripts/" anchor, then the rest
+  // of the path down to a ".mjs" file. The leading `(?<![\w.\/-])` boundary
+  // stops the match from starting mid-path (e.g. inside a URL host or a
+  // longer token) so the captured string is the reference as authored, not a
+  // truncated tail of it.
+  const scriptPathRe = /(?<![\w.\/-])(?:[\w.-]+\/)*scripts\/[\w.-]+(?:\/[\w.-]+)*\.mjs\b/g;
   for (const { file, content } of files) {
     for (const match of content.matchAll(scriptPathRe)) {
       const scriptPath = match[0];
