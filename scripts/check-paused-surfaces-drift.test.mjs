@@ -160,6 +160,33 @@ test("evaluate: FAILS on a rule file that documents nothing real (the rejected '
   assert.match(violations.join("\n"), /orphaned rule/i);
 });
 
+// PR #58 finding "Reject every partial paused-surface state": the original
+// three branches only fired when the rule was ABSENT, or when the rule was
+// present with NEITHER other leg — so a rule present with exactly ONE of
+// (citation, mechanism) silently passed as `ok`. These two cases lock that.
+
+test("evaluate: FAILS when the rule is cited but no live mechanism backs it (prose with no code)", () => {
+  const { ok, violations } = evaluate({
+    ...CLEAN,
+    ruleExists: true,
+    citations: [
+      { file: "docs/ADR/9999-x.md", line: 1, text: "see .claude/rules/paused-surfaces.md" },
+    ],
+  });
+  assert.equal(ok, false);
+  assert.match(violations.join("\n"), /no live paused-surface mechanism was found/i);
+});
+
+test("evaluate: FAILS when a live mechanism and the rule both exist but nothing cites the rule (undiscoverable)", () => {
+  const { ok, violations } = evaluate({
+    ...CLEAN,
+    ruleExists: true,
+    pausedExportFound: true,
+  });
+  assert.equal(ok, false);
+  assert.match(violations.join("\n"), /nothing cites the rule/i);
+});
+
 test("evaluate: PASSES when the concept is fully absent — today's real state", () => {
   const { ok, violations } = evaluate({ ...CLEAN });
   assert.equal(ok, true);
