@@ -94,6 +94,7 @@
     "gen:check:test": "node --test scripts/check-gen.test.mjs",
     "gen:readmes": "node scripts/gen-package-readmes.mjs",
     "gen:readmes:check": "node scripts/gen-package-readmes.mjs --check",
+    "gen:readmes:check:test": "node --test scripts/gen-package-readmes.test.mjs",
     "gen:registry": "node scripts/gen-registry.mjs",
     "gen:registry:check": "node scripts/gen-registry.mjs --check",
     "gen:registry:check:test": "node --test scripts/gen-registry.test.mjs",

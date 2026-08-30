@@ -18,11 +18,12 @@ every phase. The order matters: understand → map → plan → migrate → veri
 
 ## 0 · Preconditions (check, don't assume)
 
-The analysis commands come from the brand-ui CLI, which is a **private package**.
-If `brand-ui` is not already runnable in the project, say so and point the user at
-the install steps (scope-to-registry mapping in `.npmrc` plus a read token — see
-`docs/CONSUMING.md` §1 and §7a) before running anything. Do not paper over a
-missing CLI by guessing at the codebase.
+The analysis commands come from the brand-ui CLI, a **public package** —
+`pnpm add -D @elabs-ai/components-cli` installs anonymously, nothing to
+configure (see `docs/CONSUMING.md` §1 and §7a). If `brand-ui` is not already
+runnable in the project, say so and point the user at that one install command
+before running anything. Do not paper over a missing CLI by guessing at the
+codebase.
 
 Inside the brand-ui repository itself, use `pnpm brand-ui <cmd>`; in a consuming
 project, `pnpm exec brand-ui <cmd>` once the CLI is installed.

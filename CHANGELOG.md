@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fixed: every published package README said "these packages are **private**"
+  and `License: UNLICENSED — private`, with a `workspace:*` install snippet —
+  stale from before the public npm move. `scripts/gen-package-readmes.mjs` now
+  derives the license and install command from each package's own
+  `package.json` (all 12 distributable packages are `MIT`, published
+  anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
+  `brand-ui-migrate` skill agree with reality. (#28)
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change

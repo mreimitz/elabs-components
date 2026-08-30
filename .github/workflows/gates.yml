@@ -251,6 +251,7 @@ jobs:
           pnpm elevation:check:test
           pnpm format:check:test
           pnpm gen:check:test
+          pnpm gen:readmes:check:test
           pnpm gen:registry:check:test
           pnpm heavy-deps:check:test
           pnpm intent:check:test

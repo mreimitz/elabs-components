@@ -59,9 +59,9 @@ pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
 ```jsonc
 {
   "dependencies": {
-    "@elabs-ai/components-tokens": "^2.0.0",
-    "@elabs-ai/components-ui": "^2.0.0",
-    "@elabs-ai/components-data": "^2.0.0",
+    "@elabs-ai/components-tokens": "^4.0.0",
+    "@elabs-ai/components-ui": "^4.0.0",
+    "@elabs-ai/components-data": "^4.0.0",
   },
 }
 ```

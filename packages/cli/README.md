@@ -4,15 +4,14 @@
 # `@elabs-ai/components-cli`
 
 Part of **brand-ui**, a source-owned, token-driven React component system.
-These packages are **private** and are not published to any registry — they are
-consumed from this workspace. See `docs/CONSUMING.md`.
+Published to the **public npm registry** under the `@elabs-ai` scope — it
+installs like any other npm dependency, with no registry configuration and
+no token required. See `docs/CONSUMING.md`.
 
 ## Install
 
-Inside this monorepo the packages resolve as workspace dependencies:
-
-```json
-"@elabs-ai/components-cli": "workspace:*"
+```bash
+pnpm add -D @elabs-ai/components-cli
 ```
 
 ## This package specifically
@@ -39,6 +38,6 @@ prompt for migrating an existing project: `docs/CONSUMING.md`.
 
 ## License
 
-UNLICENSED — private.
+MIT
 
 <!-- brand-ui:gen:readme:end -->
