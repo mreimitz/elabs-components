@@ -228,6 +228,7 @@ export const WebPreviewConsole = ({
   ...props
 }: WebPreviewConsoleProps) => {
   const { consoleOpen, setConsoleOpen } = useWebPreview();
+  const { t } = useLocale();
 
   return (
     <Collapsible
@@ -258,7 +259,7 @@ export const WebPreviewConsole = ({
       >
         <div className="max-h-48 space-y-1 overflow-y-auto">
           {logs.length === 0 ? (
-            <p className="text-muted-foreground">No console output</p>
+            <p className="text-muted-foreground">{t("ai.webPreview.noConsoleOutput")}</p>
           ) : (
             logs.map((log) => (
               <div

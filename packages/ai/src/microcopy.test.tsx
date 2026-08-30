@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { LocaleProvider } from "@elabs-ai/components-ui";
 
+import { Artifact, ArtifactClose } from "./artifact";
 import { Composer } from "./composer";
 import { InlineCitationCard, InlineCitationCarouselNext } from "./inline-citation";
 import { Message, MessageBranch, MessageBranchNext } from "./message";
+import { Plan, PlanTrigger } from "./plan";
 import { PromptInput, PromptInputBody, PromptInputTextarea } from "./prompt-input";
 
 /**
@@ -19,7 +21,9 @@ const de = {
   "ai.message.nextBranch": "Nächster Zweig",
   "ai.promptInput.placeholder": "Was möchtest du wissen?",
   "ai.promptInput.uploadFiles": "Dateien hochladen",
+  "ai.plan.togglePlan": "Plan umschalten",
   next: "Weiter",
+  close: "Schließen",
 };
 
 describe("microcopy — English defaults are unchanged", () => {
@@ -47,6 +51,20 @@ describe("microcopy — English defaults are unchanged", () => {
       </MessageBranch>,
     );
     expect(screen.getByRole("button", { name: "Next branch" })).toBeInTheDocument();
+  });
+
+  it("ArtifactClose keeps its sr-only 'Close' name (#18 — reuses the generic `close` key)", () => {
+    render(<ArtifactClose />);
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+  });
+
+  it("PlanTrigger keeps its sr-only 'Toggle plan' name (#18)", () => {
+    render(
+      <Plan>
+        <PlanTrigger />
+      </Plan>,
+    );
+    expect(screen.getByRole("button", { name: "Toggle plan" })).toBeInTheDocument();
   });
 });
 
@@ -105,6 +123,28 @@ describe("microcopy — a LocaleProvider overrides it", () => {
       </LocaleProvider>,
     );
     expect(screen.getByPlaceholderText("Explicit wins")).toBeInTheDocument();
+  });
+
+  it("translates ArtifactClose's sr-only name via the reused generic `close` key (#18)", () => {
+    render(
+      <LocaleProvider locale="de-DE" messages={de}>
+        <Artifact>
+          <ArtifactClose />
+        </Artifact>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Schließen" })).toBeInTheDocument();
+  });
+
+  it("translates PlanTrigger's sr-only name via the new `ai.plan.togglePlan` key (#18)", () => {
+    render(
+      <LocaleProvider locale="de-DE" messages={de}>
+        <Plan>
+          <PlanTrigger />
+        </Plan>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Plan umschalten" })).toBeInTheDocument();
   });
 });
 

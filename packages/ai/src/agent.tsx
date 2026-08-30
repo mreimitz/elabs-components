@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@elabs-ai/components-ui";
 import { Badge } from "@elabs-ai/components-ui";
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Tool } from "ai";
 import { BotIcon } from "lucide-react";
@@ -51,24 +52,32 @@ export type AgentInstructionsProps = ComponentProps<"div"> & {
 };
 
 export const AgentInstructions = memo(
-  ({ className, children, ...props }: AgentInstructionsProps) => (
-    <div className={cn("space-y-2", className)} {...props}>
-      <span className="font-medium text-muted-foreground text-sm">Instructions</span>
-      <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
-        <p>{children}</p>
+  ({ className, children, ...props }: AgentInstructionsProps) => {
+    const { t } = useLocale();
+    return (
+      <div className={cn("space-y-2", className)} {...props}>
+        <span className="font-medium text-muted-foreground text-sm">
+          {t("ai.agent.instructions")}
+        </span>
+        <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
+          <p>{children}</p>
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 );
 
 export type AgentToolsProps = ComponentProps<typeof Accordion>;
 
-export const AgentTools = memo(({ className, ...props }: AgentToolsProps) => (
-  <div className={cn("space-y-2", className)}>
-    <span className="font-medium text-muted-foreground text-sm">Tools</span>
-    <Accordion className="rounded-md border" {...props} />
-  </div>
-));
+export const AgentTools = memo(({ className, ...props }: AgentToolsProps) => {
+  const { t } = useLocale();
+  return (
+    <div className={cn("space-y-2", className)}>
+      <span className="font-medium text-muted-foreground text-sm">{t("ai.agent.tools")}</span>
+      <Accordion className="rounded-md border" {...props} />
+    </div>
+  );
+});
 
 export type AgentToolProps = ComponentProps<typeof AccordionItem> & {
   tool: Tool;

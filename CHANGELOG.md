@@ -15,6 +15,16 @@
   `package.json` (all 12 distributable packages are `MIT`, published
   anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
   `brand-ui-migrate` skill agree with reality. (#28)
+- Fixed: 32 hardcoded English strings across `@elabs-ai/components-ui`,
+  `@elabs-ai/components-ai` and `@elabs-ai/components-data` now go through
+  `useLocale().t()` instead of a literal, per ADR 0017 — several of them
+  sr-only (`BreadcrumbEllipsis`'s "More", `PaginationEllipsis`'s "More pages",
+  `ArtifactClose`'s "Close", `PlanTrigger`'s "Toggle plan"), so a
+  `<LocaleProvider>` consumer no longer sees English leak through those
+  controls' accessible names. Reused the existing generic `more` / `previous` /
+  `next` / `close` keys where an exact match existed; minted namespaced keys
+  for the rest. `pnpm microcopy:check`'s ratchet moves from 177 to 145 known
+  strings. (#18)
 
 ### Changed
 

@@ -317,10 +317,11 @@ function GalleryTilt({ className, children }: { className?: string; children: Re
 }
 
 function GalleryEmpty() {
+  const { t } = useLocale();
   return (
     <div className="flex min-h-32 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
       <ImageOff className="size-6" aria-hidden="true" />
-      <p className="text-body">No images</p>
+      <p className="text-body">{t("ai.gallery.noImages")}</p>
     </div>
   );
 }
@@ -485,6 +486,7 @@ function GalleryDetailPanel({
   index: number;
   renderMeta?: GalleryProps["renderMeta"];
 }) {
+  const { t } = useLocale();
   const custom = renderMeta?.(image, index);
   if (custom != null) {
     return <div className="flex flex-col gap-4">{custom}</div>;
@@ -494,7 +496,7 @@ function GalleryDetailPanel({
   const hasBody = Boolean(image.description) || hasMeta;
 
   if (!hasBody) {
-    return <p className="text-body text-muted-foreground">No details</p>;
+    return <p className="text-body text-muted-foreground">{t("ai.gallery.noDetails")}</p>;
   }
 
   return (

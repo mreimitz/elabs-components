@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "../dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "../sidebar";
+import { useLocale } from "../locale-provider";
 import { cn } from "../../lib/cn";
 
 export type TeamSwitcherTeam = {
@@ -37,6 +38,7 @@ export interface TeamSwitcherProps {
  */
 export function TeamSwitcher({ teams, logoClassName, className }: TeamSwitcherProps) {
   const { isMobile } = useSidebar();
+  const { t } = useLocale();
   const [activeTeam, setActiveTeam] = React.useState(teams[0]);
   if (!activeTeam) return null;
   const Logo = activeTeam.logo;
@@ -71,7 +73,9 @@ export function TeamSwitcher({ teams, logoClassName, className }: TeamSwitcherPr
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">Teams</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              {t("ui.teamSwitcher.label")}
+            </DropdownMenuLabel>
             {teams.map((team, index) => (
               <DropdownMenuItem
                 key={team.name}
@@ -90,7 +94,9 @@ export function TeamSwitcher({ teams, logoClassName, className }: TeamSwitcherPr
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <Plus className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add team</div>
+              <div className="font-medium text-muted-foreground">
+                {t("ui.teamSwitcher.addTeam")}
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

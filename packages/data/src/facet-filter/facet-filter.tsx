@@ -9,6 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
@@ -42,6 +43,7 @@ export const FacetFilter = forwardRef<HTMLButtonElement, FacetFilterProps>(funct
   { title, options, selected, onSelectedChange, className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
   const selectedSet = new Set(selected);
   const toggle = (value: string) => {
     const next = new Set(selectedSet);
@@ -93,7 +95,9 @@ export const FacetFilter = forwardRef<HTMLButtonElement, FacetFilterProps>(funct
         {selected.length > 0 ? (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onSelectedChange([])}>Clear filters</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onSelectedChange([])}>
+              {t("data.facetFilter.clearFilters")}
+            </DropdownMenuItem>
           </>
         ) : null}
       </DropdownMenuContent>
