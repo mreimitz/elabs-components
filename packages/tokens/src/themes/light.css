@@ -95,7 +95,16 @@
      white ink on it 4.51:1. */
   --destructive: oklch(0.575 0.225 25.3);
   --destructive-foreground: oklch(0.985 0 0);
-  --destructive-text: oklch(0.555 0.224 25.3);
+  /* #38 — DEEPENED from 0.555 to 0.52: the bare-surface AA margin (+0.23-0.84)
+     was consumed by the shipped bg-destructive/10 wash (InlineCitationCardTrigger,
+     StatusBadge, the editor entity chip), which measured 4.05-4.35:1. Retuned
+     so the COMPOSITED wash also clears 4.5:1 on background/card/surface-muted
+     (now 4.51-5.04:1); see the WASH_SURFACES sweep in themes-contrast.test.ts.
+     Fix round 1 — DEEPENED again from 0.52 to 0.511: that sweep never tested
+     --secondary, and the composited wash there measured 4.386:1, sub-AA.
+     WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary; worst case
+     is 4.5056:1 on --secondary. */
+  --destructive-text: oklch(0.496 0.224 25.3);
 
   /* #334 — success is its own pine/emerald, never the brand hue: a success chip
      that reads as a primary button collapses two different messages onto one
@@ -107,7 +116,16 @@
      (#10B981), which is the dark theme's fill verbatim. */
   --success: oklch(0.535 0.115 162.5);
   --success-foreground: oklch(0.985 0 0);
-  --success-text: oklch(0.515 0.112 162.5);
+  /* #38 — DEEPENED from 0.515 to 0.495: the bare-surface AA margin (+0.22-0.81)
+     was consumed by the shipped bg-success/10 wash (InlineCitationCardTrigger,
+     StatusBadge, the editor entity chip), which measured 4.16-4.46:1. Retuned
+     so the COMPOSITED wash also clears 4.5:1 on background/card/surface-muted
+     (now 4.51-5.03:1); see the WASH_SURFACES sweep in themes-contrast.test.ts.
+     Fix round 1 — DEEPENED again from 0.495 to 0.488: that sweep never tested
+     --secondary, and the composited wash there measured 4.362:1, sub-AA.
+     WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary; worst case
+     is 4.5074:1 on --secondary. */
+  --success-text: oklch(0.473 0.112 162.5);
   /* #381 — DEEP amber (was the light `oklch(0.78 0.16 67)` plate, which cleared
      3:1 against NO shipped surface in this theme: 2.07:1 on --card at best,
      1.79:1 on --secondary). A colour-only warning mark (Timeline's
@@ -128,7 +146,16 @@
      warning is the one light status plate with dark ink. */
   --warning: oklch(0.635 0.157 55);
   --warning-foreground: oklch(0.2 0.02 55);
-  --warning-text: oklch(0.53 0.13 55);
+  /* #38 — nudged from 0.53 to 0.525: the bare-surface margin already held on
+     --background/--card but the shipped bg-warning/10 wash failed on
+     --surface-muted (4.41:1). Retuned so the COMPOSITED wash also clears
+     4.5:1 on all three surfaces (now 4.51-5.03:1); see the WASH_SURFACES sweep
+     in themes-contrast.test.ts.
+     Fix round 1 — nudged again from 0.525 to 0.518: those three surfaces never
+     included --secondary, and the composited wash there measured 4.367:1,
+     sub-AA. WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary;
+     worst case is 4.5053:1 on --secondary. */
+  --warning-text: oklch(0.503 0.13 55);
   /* Status blue, DEEPENED from `oklch(0.6 0.13 245)` by #406. #383 chose
      the other exit from the L 0.6 dead zone (white on that fill was 3.74:1, and
      AA-Large never applies at the 12px `Badge`/`StatusBadge` call sites) by
@@ -150,7 +177,16 @@
   --info: oklch(0.545 0.12 237.3);
   /* #406 — white, like the other four light status plates. */
   --info-foreground: oklch(0.985 0 0);
-  --info-text: oklch(0.525 0.114 237.3);
+  /* #38 — DEEPENED from 0.525 to 0.504, the same reasoning as success-text:
+     the bg-info/10 wash every wash badge composites consumed the bare-surface
+     margin, measuring 4.14-4.44:1. Retuned so the COMPOSITED wash also clears
+     4.5:1 on background/card/surface-muted (now 4.51-5.04:1); see the
+     WASH_SURFACES sweep in themes-contrast.test.ts.
+     Fix round 1 — DEEPENED again from 0.504 to 0.497: that sweep never tested
+     --secondary, and the composited wash there measured 4.386:1, sub-AA.
+     WASH_SURFACES/TEXT_SURFACES now also cover --muted/--secondary; worst case
+     is 4.5069:1 on --secondary. */
+  --info-text: oklch(0.482 0.114 237.3);
 
   /* Match highlight — warm amber plate, dark ink; AA-verified. */
   --highlight: oklch(0.865 0.155 90);

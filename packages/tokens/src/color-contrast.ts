@@ -78,15 +78,48 @@ export function relativeLuminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-/** WCAG contrast ratio (1..21) between two oklch colors (alpha ignored). */
-export function contrastRatio(fg: Oklch, bg: Oklch): number {
-  const lf = relativeLuminance(oklchToSrgb(fg));
-  const lb = relativeLuminance(oklchToSrgb(bg));
+/** WCAG contrast ratio (1..21) between two sRGB (0..1) triples. */
+function contrastRatioSrgb(fg: [number, number, number], bg: [number, number, number]): number {
+  const lf = relativeLuminance(fg);
+  const lb = relativeLuminance(bg);
   const [hi, lo] = lf >= lb ? [lf, lb] : [lb, lf];
   return (hi + 0.05) / (lo + 0.05);
+}
+
+/** WCAG contrast ratio (1..21) between two oklch colors (alpha ignored). */
+export function contrastRatio(fg: Oklch, bg: Oklch): number {
+  return contrastRatioSrgb(oklchToSrgb(fg), oklchToSrgb(bg));
 }
 
 /** Convenience: contrast between two raw `oklch(...)` strings. */
 export function contrast(fg: string, bg: string): number {
   return contrastRatio(parseOklch(fg), parseOklch(bg));
+}
+
+/**
+ * Composite `fill` over `ground` at `alpha` (straight, source-over, in
+ * GAMMA-ENCODED sRGB space) and return the resulting sRGB triple.
+ *
+ * This is the model a browser actually applies when it paints
+ * `background-color: oklch(... / 0.1)` (Tailwind's `bg-<tone>/10`) over an
+ * opaque ancestor: a simple per-channel linear blend of the two colors' own
+ * 8-bit sRGB values, NOT a blend in linear light. Verified against axe's own
+ * measured pair for `bg-success/10` over `light`'s `--background`
+ * (`mixOverSrgb` reproduces `#e1eeeb` exactly — see
+ * `color-contrast.test.ts`), so this is a faithful model of the rendered
+ * pixel, not an approximation.
+ */
+export function mixOverSrgb(fill: Oklch, ground: Oklch, alpha: number): [number, number, number] {
+  const [fr, fg, fb] = oklchToSrgb(fill);
+  const [gr, gg, gb] = oklchToSrgb(ground);
+  return [
+    fr * alpha + gr * (1 - alpha),
+    fg * alpha + gg * (1 - alpha),
+    fb * alpha + gb * (1 - alpha),
+  ];
+}
+
+/** WCAG contrast ratio between an opaque oklch color and an sRGB triple. */
+export function contrastSrgb(fg: Oklch, bgSrgb: [number, number, number]): number {
+  return contrastRatioSrgb(oklchToSrgb(fg), bgSrgb);
 }
