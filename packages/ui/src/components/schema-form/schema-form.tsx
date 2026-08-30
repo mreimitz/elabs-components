@@ -857,9 +857,14 @@ export const SchemaFormError = forwardRef<HTMLDivElement, SchemaFormErrorProps>(
       <div
         ref={ref}
         role="alert"
+        // The status wash is the separation gesture (styling-and-tokens.md
+        // "Surface separation"): `bg-destructive/10` + `text-destructive-text`
+        // already mark the region as distinct from the surrounding form, so a
+        // bare `border` on top was a redundant boundary — dropped. Mirrors the
+        // terminal-error boxes in `@elabs-ai/components-ai` (`JSXPreviewError`, `TestError`).
         data-slot="schema-form-error"
         className={cn(
-          "rounded-md border border-border-strong bg-destructive/10 px-3 py-2 text-body text-destructive-text",
+          "rounded-md bg-destructive/10 px-3 py-2 text-body text-destructive-text",
           className,
         )}
         {...props}
