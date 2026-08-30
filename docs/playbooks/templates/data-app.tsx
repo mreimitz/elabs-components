@@ -6,7 +6,7 @@
  * (app-shell + DataTable with toolbar). This story is the single source of
  * truth: `pnpm gen:templates` derives the consumer template source
  * (`docs/playbooks/templates/data-app.tsx`) from it.
- * Verify across all three themes with globals=theme:<slug>.
+ * Verify across every theme with globals=theme:<slug>.
  */
 import { useState } from "react";
 import {

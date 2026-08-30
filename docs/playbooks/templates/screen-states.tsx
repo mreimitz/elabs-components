@@ -17,8 +17,8 @@
  *   • Error     — StatePanel kind="error" with a retry action (role="alert").
  *   • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA.
  *
- * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all
- * three themes. Verify with globals=theme:<slug>.
+ * Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in
+ * every theme. Verify with globals=theme:<slug>.
  */
 import { Inbox, Plus, RotateCcw, Search, UploadCloud, UserPlus } from "lucide-react";
 import {

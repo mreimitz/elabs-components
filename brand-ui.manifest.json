@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T06:17:43.193Z",
+  "generatedAt": "2026-08-30T10:19:02.654Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -353,7 +353,7 @@
     {
       "name": "dashboard",
       "title": "Patterns/Templates/Dashboard",
-      "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Dashboard template — the canonical full-screen dashboard composition (app-shell + MetricGrid + MetricCard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/dashboard.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-icons",
@@ -365,7 +365,7 @@
     {
       "name": "data-app",
       "title": "Patterns/Templates/Data App",
-      "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Data app template — the canonical full-screen data-app composition (app-shell + DataTable with toolbar). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/data-app.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-data",
         "@elabs-ai/components-icons",
@@ -377,7 +377,7 @@
     {
       "name": "flow-workspace",
       "title": "Patterns/Templates/Flow Workspace",
-      "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Flow workspace template — the canonical full-screen flow-workspace composition (app-shell + branded React Flow canvas). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/flow-workspace.tsx`) from it. Remember `import \"@xyflow/react/dist/style.css\"` is wired in Storybook preview. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-flow",
         "@elabs-ai/components-icons",
@@ -410,7 +410,7 @@
     {
       "name": "screen-states",
       "title": "Patterns/Templates/Screen States",
-      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in all three themes. Verify with globals=theme:<slug>.",
+      "description": "Screen States — the full state grid the templates omit. `design-first` requires that empty, loading, error and first-run states are designed WITH the happy path, never retrofitted — yet every existing `Patterns/Templates/*` ships only a populated \"Ready\" variant. This scenario fixes that: ONE representative data screen (Customers), rendered across the complete state grid as separate stories, with the SAME chrome and the real state primitives wired in: • Ready     — populated Table (the happy path). • Loading   — Skeleton rows (never a bare spinner on a data screen). • Empty     — StatePanel kind=\"empty\" after a filter returns nothing. • Error     — StatePanel kind=\"error\" with a retry action (role=\"alert\"). • FirstRun  — onboarding empty: illustration slot + one sentence + one CTA. Compose-only from @elabs-ai/components-* primitives; semantic tokens only; reads in every theme. Verify with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
       ],
@@ -420,7 +420,7 @@
     {
       "name": "settings",
       "title": "Patterns/Templates/Settings",
-      "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across all three themes with globals=theme:<slug>.",
+      "description": "Settings template — the canonical full-screen settings composition (app-shell + Descriptions + Wizard). This story is the single source of truth: `pnpm gen:templates` derives the consumer template source (`docs/playbooks/templates/settings.tsx`) from it. Verify across every theme with globals=theme:<slug>.",
       "packages": [
         "@elabs-ai/components-ui"
       ],

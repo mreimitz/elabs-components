@@ -170,6 +170,8 @@ pnpm components:check:test      # self-test for the component-registration gate 
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
 pnpm variants:check:test        # self-test for the variant-coverage gate
 pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
+pnpm skills:currency:check      # playbook/skill/plugin prose (docs/playbooks/**, skills/*/SKILL.md, .claude-plugin/*.json) agrees with brand-ui.manifest.json on theme count + package-name scope — the .md-only docs:check walk never reaches these files (#29)
+pnpm skills:currency:check:test # self-test for the skills-currency gate
 pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)

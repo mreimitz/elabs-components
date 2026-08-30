@@ -170,6 +170,8 @@
     "sidebar-drift:check:test": "node --test scripts/check-sidebar-drift.test.mjs",
     "skills:build": "node scripts/build-skills.mjs",
     "skills:build:check:test": "node --test scripts/build-skills.test.mjs",
+    "skills:currency:check": "node scripts/check-skills-currency.mjs",
+    "skills:currency:check:test": "node --test scripts/check-skills-currency.test.mjs",
     "slop:check": "node scripts/check-anti-slop.mjs",
     "slop:check:test": "node --test scripts/check-anti-slop.test.mjs",
     "states:check": "node scripts/check-state-coverage.mjs",
