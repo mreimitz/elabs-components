@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **`@elabs-ai/components-ui` ships seven token-driven state illustrations** —
+  `EmptyListIllustration`, `NoResultsIllustration`, `NoAccessIllustration`,
+  `ErrorIllustration`, `OfflineIllustration`, `SuccessIllustration`,
+  `FirstRunIllustration` (`packages/ui/src/illustrations`) — and `StatePanel`
+  gains an `illustration` prop that renders one above the title in place of the
+  smaller, size-clamped `icon` slot. Every illustration draws on `currentColor`
+  plus `--border`/`--primary`, is `aria-hidden` (decorative; the panel's title/
+  description carry the accessible content), and sizes in `rem` (~4rem–10rem).
+  See issue #24.
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change

@@ -162,7 +162,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - DropdownMenuSubContent
 - DropdownMenuSubTrigger
 - DropdownMenuTrigger
+- EmptyListIllustration
 - EmptyState
+- ErrorIllustration
 - ErrorState
 - ExpandDialog
 - ExpandDialogContent
@@ -175,6 +177,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - FileUploadItem
 - FileUploadList
 - FilterChip
+- FirstRunIllustration
 - Form — Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema.
   - avoid: Disabling submit until valid — keep submit enabled until the request starts, then show a spinner.
   - avoid: Errors not rendered inline next to the field; not focusing the first error on submit.
@@ -250,7 +253,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - NavMain
 - NavNotifications
 - NavUser
+- NoAccessIllustration
+- NoResultsIllustration
 - NumberInput
+- OfflineIllustration
 - PageShell
 - Pagination
 - PaginationContent
@@ -351,6 +357,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - STATUSES
 - StatusIcon
 - STREAMDOWN_TRANSLATION_KEYS
+- SuccessIllustration
 - Switch — Immediate on/off setting toggle (applies on change, not on submit).
   - avoid: Switch that needs a separate Save to apply — use a Checkbox in a form instead; a Switch should apply immediately.
 - Table

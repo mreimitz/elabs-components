@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 354 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 361 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 443 | 13 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -237,7 +237,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DropdownMenuSubContent | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuSubTrigger | component |  | `@elabs-ai/components-ui` |  |
 | DropdownMenuTrigger | component |  | `@elabs-ai/components-ui` |  |
+| EmptyListIllustration | component |  | `@elabs-ai/components-ui` |  |
 | EmptyState | component |  | `@elabs-ai/components-ui` |  |
+| ErrorIllustration | component |  | `@elabs-ai/components-ui` |  |
 | ErrorState | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialog | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialogContent | component |  | `@elabs-ai/components-ui` |  |
@@ -250,6 +252,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FileUploadItem | component |  | `@elabs-ai/components-ui` |  |
 | FileUploadList | component |  | `@elabs-ai/components-ui` |  |
 | FilterChip | component |  | `@elabs-ai/components-ui` |  |
+| FirstRunIllustration | component |  | `@elabs-ai/components-ui` |  |
 | Form | component |  | `@elabs-ai/components-ui` | Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema. |
 | FormControl | component |  | `@elabs-ai/components-ui` |  |
 | FormDescription | component |  | `@elabs-ai/components-ui` |  |
@@ -315,7 +318,10 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | NavMain | component |  | `@elabs-ai/components-ui` |  |
 | NavNotifications | component |  | `@elabs-ai/components-ui` |  |
 | NavUser | component |  | `@elabs-ai/components-ui` |  |
+| NoAccessIllustration | component |  | `@elabs-ai/components-ui` |  |
+| NoResultsIllustration | component |  | `@elabs-ai/components-ui` |  |
 | NumberInput | component |  | `@elabs-ai/components-ui` |  |
+| OfflineIllustration | component |  | `@elabs-ai/components-ui` |  |
 | PageShell | component |  | `@elabs-ai/components-ui` |  |
 | Pagination | component |  | `@elabs-ai/components-ui` |  |
 | PaginationContent | component |  | `@elabs-ai/components-ui` |  |
@@ -408,6 +414,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | STATUSES | component |  | `@elabs-ai/components-ui` |  |
 | StatusIcon | component |  | `@elabs-ai/components-ui` |  |
 | STREAMDOWN_TRANSLATION_KEYS | component |  | `@elabs-ai/components-ui` |  |
+| SuccessIllustration | component |  | `@elabs-ai/components-ui` |  |
 | Switch | component |  | `@elabs-ai/components-ui` | Immediate on/off setting toggle (applies on change, not on submit). |
 | Table | component |  | `@elabs-ai/components-ui` |  |
 | TableBody | component |  | `@elabs-ai/components-ui` |  |

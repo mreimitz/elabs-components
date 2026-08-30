@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { StatePanel } from "./state-panel";
+import { EmptyListIllustration } from "../../illustrations";
 
 describe("StatePanel", () => {
   it("renders empty kind with title and description", () => {
@@ -60,5 +61,30 @@ describe("StatePanel", () => {
       />,
     );
     expect(screen.getByTestId("custom-icon")).toBeInTheDocument();
+  });
+
+  it("renders an illustration without the size-10 icon clamp, decoratively (#24)", () => {
+    const { container } = render(
+      <StatePanel kind="empty" title="No items" illustration={<EmptyListIllustration />} />,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+    expect(svg).toHaveAttribute("aria-hidden", "true");
+    // The illustration's own wrapper must NOT carry the `[&_svg]:size-10`
+    // clamp the default icon slot uses — its rem sizing governs instead.
+    const wrapper = svg?.parentElement;
+    expect(wrapper?.className ?? "").not.toContain("size-10");
+  });
+
+  it("prefers illustration over icon when both are given", () => {
+    render(
+      <StatePanel
+        kind="empty"
+        title="Both given"
+        icon={<span data-testid="custom-icon">icon</span>}
+        illustration={<EmptyListIllustration />}
+      />,
+    );
+    expect(screen.queryByTestId("custom-icon")).toBeNull();
   });
 });

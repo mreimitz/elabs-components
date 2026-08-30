@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "../button";
 import { StatePanel } from "./state-panel";
+import { EmptyListIllustration, NoAccessIllustration } from "../../illustrations";
 
 const meta = {
   title: "States/StatePanel",
@@ -76,5 +77,31 @@ export const EmptyNoIcon: Story = {
     kind: "empty",
     title: "Nothing here",
     description: "Items will appear here once available.",
+  },
+};
+
+export const WithIllustration: Story = {
+  name: "Empty (with illustration, #24)",
+  args: {
+    kind: "empty",
+    title: "No projects yet",
+    description: "Create your first project to get started.",
+    illustration: <EmptyListIllustration />,
+    actions: <Button size="sm">New project</Button>,
+  },
+};
+
+export const NoAccessError: Story = {
+  name: "Error (no-access illustration)",
+  args: {
+    kind: "error",
+    title: "You don't have access",
+    description: "Ask a workspace admin to grant you permission.",
+    illustration: <NoAccessIllustration />,
+    actions: (
+      <Button size="sm" variant="outline">
+        Request access
+      </Button>
+    ),
   },
 };

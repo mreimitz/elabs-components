@@ -41,11 +41,21 @@ export interface StatePanelProps extends VariantProps<typeof statePanelVariants>
   /** Supporting description below the title. */
   description?: ReactNode;
   /**
-   * Icon or illustration shown above the title.
-   * For `"error"` defaults to a built-in warning triangle.
-   * For `"loading"` defaults to an animated spinner.
+   * Icon shown above the title, clamped to a uniform 40×40 so mismatched
+   * glyphs stay tidy. For `"error"` defaults to a built-in warning triangle.
+   * For `"loading"` defaults to an animated spinner. Ignored when
+   * `illustration` is also provided — see `illustration`.
    */
   icon?: ReactNode;
+  /**
+   * A larger illustration (one of `@elabs-ai/components-ui`'s shipped
+   * `*Illustration` components, or a consumer's own `ReactNode`) shown above
+   * the title instead of `icon`. Unlike `icon`, it is **not** clamped to
+   * 40×40 — an illustration governs its own size (see each illustration's
+   * `size` prop, `rem`-based, ~64px–160px). Takes precedence over `icon`
+   * when both are given.
+   */
+  illustration?: ReactNode;
   /** Accessible label for the spinner in loading state. @default "Loading…" */
   loadingLabel?: string;
   /** Spinner size (loading kind only). @default "md" */
@@ -91,6 +101,7 @@ export function StatePanel({
   title,
   description,
   icon,
+  illustration,
   loadingLabel = "Loading…",
   size = "md",
   actions,
@@ -134,7 +145,14 @@ export function StatePanel({
         </span>
       )}
 
-      {resolvedIcon ? (
+      {illustration ? (
+        // Illustration wins over `icon` when both are given. No `[&_svg]:size-10`
+        // clamp here — an illustration governs its own (rem-based) size, unlike
+        // the fixed-size icon slot below.
+        <div className={cn(isError ? "text-destructive" : "text-muted-foreground")}>
+          {illustration}
+        </div>
+      ) : resolvedIcon ? (
         // Error icon keeps text-destructive (not muted) so it stays visible even
         // when rendered at low contrast. In monochrome themes the icon shape
         // (CircleAlert) carries the cue; the color is supplemental.
