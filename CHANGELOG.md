@@ -9,6 +9,22 @@
   `package.json` (all 12 distributable packages are `MIT`, published
   anonymously to npmjs.org), so the READMEs, `docs/CONSUMING.md`, and the
   `brand-ui-migrate` skill agree with reality. (#28)
+### Changed
+
+- **`@elabs-ai/components-tokens`: Inter now ships as WOFF2, subset by script** (#16).
+  The vendored Inter face was still `.woff` (~30% larger than `.woff2` for
+  identical content), while Source Code Pro in the same package was already
+  `.woff2`. The old file was also a single unsubsetted binary covering Latin,
+  Latin Extended, Cyrillic, Cyrillic Extended, Greek and Vietnamese, so the fix
+  is not a same-shape swap: Inter is now vendored as 14 `.woff2` files (7
+  `unicode-range` subsets × {normal, italic}), matching upstream
+  `@fontsource-variable/inter`'s own subsetting, so a browser only fetches the
+  script(s) the rendered text actually needs. Combined on-disk size drops from
+  957,168 B to 452,780 B (−52.6%); a Latin-only page now loads ~100 KB
+  (−89.5%). The `.woff` fallback is dropped, matching Source Code Pro's
+  existing no-fallback precedent — every browser in this repo's documented
+  floor (`docs/CONSUMING.md`) supports WOFF2, variable fonts and
+  `unicode-range` natively.
 
 ## v4.0.0 — 2026-08-17
 
