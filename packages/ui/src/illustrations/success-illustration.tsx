@@ -7,7 +7,9 @@ import {
 
 /**
  * Completed / positive-outcome state. A line-art ring with a `--success-text`
- * checkmark — a ring + check needs no rays.
+ * checkmark — a ring + check needs no rays. The checkmark is meaning-bearing
+ * (per the accent-semantics convention in `illustration-base.tsx`, #48
+ * finding 1) — a bare ring alone carries no state at all.
  *
  * Redrawn for #24 fix round 1 (P0-1, P1-4) — the checkmark previously used
  * `--primary` (re-creating the "success chips read as primary" confusion #334

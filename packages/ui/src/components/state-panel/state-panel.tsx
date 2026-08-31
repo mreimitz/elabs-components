@@ -168,15 +168,21 @@ export function StatePanel({
         // the fixed-size icon slot below. For `kind="error"` this also sets the
         // `--illustration-accent` custom property every illustration's accent
         // ink reads through, so ANY illustration (not just `ErrorIllustration`)
-        // retints its accent to `--destructive` instead of staying pinned to
-        // its default hue inside a red-tinted slot (#24 fix round 1, P0-2) —
-        // without this a lime "add"/keyhole/checkmark badge sits on a
-        // destructive-washed panel, meaning nothing.
+        // retints its accent to `--destructive-text` instead of staying pinned
+        // to its default hue inside a red-tinted slot (#24 fix round 1, P0-2).
+        // TEXT rung, not the FILL token below: the wrapper's `text-destructive`
+        // class already puts the SUBJECT (silhouette) on the fill rung, so an
+        // accent override reading the same `--destructive` token collapsed
+        // onto it and disappeared (#48 finding 2) — `--destructive-text` is a
+        // deliberately distinct, deeper rung (matches the fallback every
+        // other illustration's own accent already uses: `--primary-text`,
+        // `--success-text`) so the accent stays visible against the retinted
+        // silhouette.
         <div
           className={cn(isError ? "text-destructive" : "text-muted-foreground")}
           style={
             isError
-              ? ({ [ILLUSTRATION_ACCENT_VAR]: "var(--destructive)" } as CSSProperties)
+              ? ({ [ILLUSTRATION_ACCENT_VAR]: "var(--destructive-text)" } as CSSProperties)
               : undefined
           }
         >

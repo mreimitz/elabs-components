@@ -7,7 +7,9 @@ import {
 
 /**
  * Permission / access-denied state. A line-art padlock with a `--primary-text`
- * keyhole — reads as "restricted", not "broken".
+ * keyhole — reads as "restricted", not "broken". The keyhole is meaning-bearing
+ * (per the accent-semantics convention in `illustration-base.tsx`, #48
+ * finding 1) — it's what distinguishes a padlock from a generic rounded box.
  */
 export const NoAccessIllustration = forwardRef<SVGSVGElement, IllustrationProps>(
   function NoAccessIllustration({ size, className, ...props }, ref) {
