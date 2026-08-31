@@ -16,6 +16,7 @@ import {
   type OnChangeFn,
   type PaginationState,
   type Row,
+  type RowData,
   type RowSelectionState,
   type SortingState,
   type Table as TanstackTable,
@@ -25,6 +26,67 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Button, Checkbox, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+
+// ─── Column meta seam (#69) ─────────────────────────────────────────────────────
+// `columnDef.meta` is where TanStack lets a caller attach column-specific,
+// renderer-agnostic data — `DataTable` reads exactly two keys from it so
+// numeric-column styling (interaction-guidelines.md § Micro-typography:
+// "tabular-nums for any number column … DataTable numeric cells") is the
+// component's job, not a per-caller convention rediscovered at every call
+// site. Exported (not just declared) so a consumer's own `ColumnDef` literal
+// type-checks against a NAMED type, per component-api.md § Types.
+
+/**
+ * `DataTable`'s `columnDef.meta` contract, read by the header/body/skeleton
+ * cell renderers. Set `numeric: true` on a column to get `tabular-nums` +
+ * end-alignment on both the `<th>` and every `<td>` (including the loading
+ * skeleton) for free.
+ */
+export interface DataTableColumnMeta {
+  /** Numeric column: tabular figures + end alignment on header and cells. */
+  numeric?: boolean;
+  /**
+   * Explicit alignment override for when `numeric` isn't the right cue (or
+   * to align a non-numeric column). Independent of `numeric` — `numeric`
+   * alone still drives `tabular-nums` even when `align` overrides the
+   * alignment away from `"end"`.
+   */
+  align?: "start" | "center" | "end";
+}
+
+declare module "@tanstack/react-table" {
+  // `TData`/`TValue` must stay in the signature to match the interface being
+  // augmented, even though `DataTableColumnMeta` (deliberately) doesn't use
+  // them; the empty extends-body is how TanStack's own module-augmentation
+  // pattern for `ColumnMeta` is documented.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
+  interface ColumnMeta<TData extends RowData, TValue> extends DataTableColumnMeta {}
+}
+
+/**
+ * `<th>`/`<td>`/skeleton-`<td>` className for a column's `meta.numeric`/`meta.align`
+ * (#69). A pure, module-level helper (no component state) so all three call
+ * sites — header, body cell, loading skeleton — stay in lockstep; a drift
+ * between them is exactly the "skeleton doesn't mirror the real layout" bug
+ * loading-states.md warns about. `meta` is typed as the exported
+ * `DataTableColumnMeta` (structurally satisfied by TanStack's augmented
+ * `ColumnMeta<TData, TValue>`) so the helper doesn't need the table's generic
+ * row type.
+ */
+function numericColumnClasses(meta: DataTableColumnMeta | undefined) {
+  if (!meta?.numeric && !meta?.align) return undefined;
+  const alignClass =
+    meta?.align === "start"
+      ? "text-start"
+      : meta?.align === "center"
+        ? "text-center"
+        : meta?.align === "end"
+          ? "text-end"
+          : meta?.numeric
+            ? "text-end"
+            : undefined;
+  return cn(alignClass, meta?.numeric && "tabular-nums");
+}
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -1268,6 +1330,10 @@ function DataTableInner<TData, TValue>(
                   style={geometry?.style ?? resizeStyle}
                   className={cn(
                     "h-10 px-3 text-start align-middle font-medium text-muted-foreground",
+                    // #69: a numeric column's `meta` overrides the default
+                    // `text-start` — placed right after the base string so
+                    // tailwind-merge lets it win over that default.
+                    numericColumnClasses(header.column.columnDef.meta),
                     // `sticky`/pinned already establishes a positioning context
                     // for the resize handle's `absolute`; an unpinned resizable
                     // header needs its own.
@@ -1563,6 +1629,9 @@ function DataTableInner<TData, TValue>(
               style={geometry?.style ?? resizeStyle}
               className={cn(
                 "px-3 py-2 align-middle",
+                // #69: same numeric-column seam as the header — see
+                // `numericColumnClasses`.
+                numericColumnClasses(cell.column.columnDef.meta),
                 // z-10: above the normal (unpositioned) cells it scrolls over,
                 // below the sticky header row (z-20) and the pinned corner (z-30).
                 geometry && "sticky z-10",
@@ -1594,10 +1663,19 @@ function DataTableInner<TData, TValue>(
    * renderers so a markup/token/a11y fix only needs to be made once (#231).
    */
   function renderSkeletonBody(count: number) {
+    // #69: iterate the real leaf columns (not just a count) so each skeleton
+    // `<td>` can read the same `meta.numeric`/`meta.align` as the loaded
+    // header/body cells — a loading table whose skeleton didn't mirror the
+    // real alignment is exactly the column-shift-on-load bug
+    // loading-states.md § "CLS / space reservation" warns about.
+    const visibleColumns = table.getVisibleLeafColumns();
     return Array.from({ length: count }).map((_, i) => (
       <tr key={`skeleton-${i}`} aria-hidden="true" className={rowSeparationClass(i)}>
-        {Array.from({ length: colCount }).map((_, j) => (
-          <td key={j} className="px-3 py-2 align-middle">
+        {visibleColumns.map((column) => (
+          <td
+            key={column.id}
+            className={cn("px-3 py-2 align-middle", numericColumnClasses(column.columnDef.meta))}
+          >
             <Skeleton className="h-4 w-full" />
           </td>
         ))}

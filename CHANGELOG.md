@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-data`'s `DataTable` reads a `columnDef.meta` seam —
+  `meta.numeric: true` applies `tabular-nums` + end-alignment to a column's
+  `<th>`, every `<td>`, and the loading skeleton for free; `meta.align:
+"start"|"center"|"end"` overrides alignment independently. Previously
+  `columnDef.meta` was never read, so every caller hand-rolled its own numeric
+  styling (or forgot to, as the shipped `data-datatable--with-toolbar` story's
+  "Latency (ms)" column did). The augmented `DataTableColumnMeta` type is
+  exported from `@elabs-ai/components-data`. (#69)
+- Fixed: `@elabs-ai/components-data`'s `DataTable` resize-handle double-click
+  reset and the header's sort-toggle button now carry real-browser Storybook
+  interaction-test coverage — a real double-click (the actual
+  `mousedown`/`mouseup` ×2 + `dblclick` sequence a browser fires, not jsdom's
+  synthetic `dblclick`-only event) still resets a resized column to its
+  declared size, and the sort-toggle button stays hit-testable at its own
+  on-screen coordinates alongside the resize handle's 24px hit box. No
+  behaviour change — test coverage only. (#82)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded

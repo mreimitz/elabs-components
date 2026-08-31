@@ -45,7 +45,10 @@ const columns: ColumnDef<Deployment>[] = [
       return <Badge variant={statusVariant[s]}>{s}</Badge>;
     },
   },
-  { accessorKey: "latencyMs", header: "Latency (ms)" },
+  // #69: `meta.numeric` is the component seam — the header/body/skeleton
+  // renderers apply `tabular-nums` + end-alignment for free, instead of a
+  // per-story wrapper span.
+  { accessorKey: "latencyMs", header: "Latency (ms)", meta: { numeric: true } },
 ];
 
 // `columns` minus the Badge-rendering "Status" cell — for stories below whose
@@ -186,6 +189,16 @@ export const WithToolbar: Story = {
   // matching row should survive. Proves the render-prop toolbar and table share
   // one filter state.
   play: async ({ canvas, userEvent }) => {
+    // #69 — this IS the exact "data-datatable--with-toolbar" acceptance
+    // surface the issue names: the "Latency (ms)" column's `meta.numeric`
+    // must reach the REAL rendered header + cell (computed style, not just a
+    // class-name assertion) as `text-align: end` + `tabular-nums`.
+    const latencyHeader = canvas.getByRole("columnheader", { name: "Latency (ms)" });
+    await expect(getComputedStyle(latencyHeader).textAlign).toBe("end");
+    const latencyCell = canvas.getByRole("cell", { name: "82" });
+    await expect(getComputedStyle(latencyCell).textAlign).toBe("end");
+    await expect(getComputedStyle(latencyCell).fontVariantNumeric).toContain("tabular-nums");
+
     await expect(canvas.getByText("api-gateway")).toBeVisible();
     await userEvent.type(canvas.getByPlaceholderText(/Filter services/), "billing");
     await waitFor(() => expect(canvas.queryByText("api-gateway")).toBeNull());
@@ -890,6 +903,98 @@ export const WithColumnResizingCompactDensity: Story = {
     // allow for sub-pixel rounding.
     await expect(rect.width).toBeGreaterThan(20);
     await expect(rect.width).toBeLessThanOrEqual(24.5);
+  },
+};
+
+/**
+ * #82 gap 1 — the double-click-reset regression locks in `data-table.test.tsx`
+ * use jsdom's `fireEvent.doubleClick`, which dispatches ONLY a synthetic
+ * `dblclick` event — never the two real `mousedown`/`mouseup` pairs a browser
+ * fires for an actual double click, which `header.getResizeHandler()` (wired
+ * to `onMouseDown` on the SAME handle) also listens for. `userEvent.dblClick`
+ * DOES synthesize the full mousedown/mouseup ×2 + dblclick sequence, and this
+ * play function runs in a real browser (Storybook test runner), so it
+ * exercises the actual event path a user's double click takes — and asserts
+ * the column lands exactly at its declared size, with no partial resize left
+ * behind by whatever `getResizeHandler()`'s pointer-drag state machine did
+ * with those two extra mousedown/mouseup pairs.
+ */
+export const WithColumnResizingRealDoubleClick: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A REAL double-click (mousedown/mouseup ×2 + dblclick, not jsdom's " +
+          "synthetic dblclick-only event) resets a resized column to its " +
+          "declared size, with no partial resize left behind by the drag path.",
+      },
+    },
+  },
+  render: () => <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />,
+  play: async ({ canvas, userEvent }) => {
+    const serviceHeader = canvas.getAllByRole("columnheader")[0]!;
+    const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+    await expect(serviceHeader.style.width).toBe("150px");
+
+    // Move away from the declared size first (keyboard path — already proven
+    // real-pointer-equivalent by the plain WithColumnResizing story above),
+    // so the double click below has something to reset FROM.
+    handle.focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    await expect(serviceHeader.style.width).toBe("170px");
+
+    // The real double click — the actual mousedown/mouseup ×2 + dblclick
+    // sequence, not jsdom's dblclick-only synthetic event.
+    await userEvent.dblClick(handle);
+    await expect(handle).toHaveAttribute("aria-valuenow", "150");
+    await expect(serviceHeader.style.width).toBe("150px");
+  },
+};
+
+/**
+ * #82 gap 2 — the resize handle's `min(24px, 50%)` hit box sits over the
+ * trailing edge of the SAME header cell a sortable column's own toggle
+ * button occupies. jsdom's `fireEvent.click` dispatches straight to a target
+ * node with no real hit-testing, so the regression lock in
+ * `data-table.test.tsx` can only prove the button RESPONDS to a click
+ * addressed to it — not that a real screen click at the button's own
+ * on-screen coordinates actually resolves to the button rather than the
+ * handle. `document.elementFromPoint` is the browser's real hit-test; this
+ * play function samples it right at the sort button's own trailing edge (the
+ * side nearest the handle) and asserts it resolves inside the button, then
+ * performs the click there and asserts the sort actually toggled.
+ */
+export const WithColumnResizingSortToggleHitTest: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The header's sort-toggle button stays hit-testable at its own " +
+          "coordinates when the column is ALSO resizable, i.e. when the " +
+          "24px resize handle is present on the same header cell.",
+      },
+    },
+  },
+  render: () => <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />,
+  play: async ({ canvas, userEvent }) => {
+    const sortButton = canvas.getByRole("button", { name: "Sort by Service, not sorted" });
+    const rect = sortButton.getBoundingClientRect();
+    // A real layout pass must have happened before this means anything.
+    await expect(rect.width).toBeGreaterThan(0);
+
+    // The browser's REAL hit-test, sampled 2px inside the button's own
+    // trailing edge — the side nearest the resize handle — so the sample
+    // point can't land outside the button from sub-pixel rounding.
+    const x = rect.right - 2;
+    const y = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    await expect(hit).not.toBeNull();
+    await expect(sortButton.contains(hit)).toBe(true);
+
+    const serviceHeader = canvas.getAllByRole("columnheader")[0]!;
+    await expect(serviceHeader).toHaveAttribute("aria-sort", "none");
+    await userEvent.click(hit!);
+    await expect(serviceHeader).toHaveAttribute("aria-sort", "ascending");
   },
 };
 
