@@ -11,6 +11,18 @@
   shared theme-count detector now catches an adjective between the number and
   "themes" ("three shipped themes") and a markdown line-wrap splitting the two.
   (#29, #34)
+- Fixed: `@elabs-ai/components-ui`'s `Input` component now explicitly sets
+  `text-foreground` so typed text remains legible when the input is nested under
+  an ancestor with a different text color (e.g., inside a sidebar with
+  `text-sidebar-foreground`). Previously the text inherited the ambient ink
+  color and could become nearly invisible on the input's own `bg-background`.
+  Tested in both light and dark themes. (#49)
+- Fixed: `@elabs-ai/components-ui`'s `NavigationMenu` story play function now
+  awaits the close transition after dispatching Escape, preventing a race where
+  Storybook's axe scan could catch the DOM mid-close and flag an
+  `aria-hidden-focus` violation. No change to the component itself — this is a
+  test-authoring fix that ensures the menu is fully dismissed before the a11y
+  scan runs. (#54)
 - Changed (breaking, narrow): `@elabs-ai/components-ai`'s `MarkdownView` and
   `MessageResponse` no longer accept `rehypePlugins` — passing it is now a
   TypeScript error, and the runtime silently drops the prop (with a dev-only
