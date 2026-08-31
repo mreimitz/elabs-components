@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T00:59:12.404Z",
+  "generatedAt": "2026-08-31T08:29:05.653Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -3617,8 +3617,22 @@
         }
       },
       "props": {
+        "Agent": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "AgentContent": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "AgentHeader": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "name",
@@ -3633,7 +3647,9 @@
           ]
         },
         "AgentInstructions": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -3642,8 +3658,17 @@
             }
           ]
         },
+        "AgentMessage": {
+          "extends": [
+            "Omit<MessageProps, \"from\">",
+            "VariantProps<typeof agentMessageVariants>"
+          ],
+          "props": []
+        },
         "AgentOutput": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "schema",
@@ -3695,8 +3720,16 @@
             }
           ]
         },
+        "AgentTimeline": {
+          "extends": [
+            "TimelineRootProps"
+          ],
+          "props": []
+        },
         "AgentTool": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof AccordionItem>"
+          ],
           "props": [
             {
               "name": "tool",
@@ -3705,8 +3738,76 @@
             }
           ]
         },
+        "AgentTools": {
+          "extends": [
+            "ComponentProps<typeof Accordion>"
+          ],
+          "props": []
+        },
+        "ApprovalCard": {
+          "extends": [
+            "ConfirmationProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardAccepted": {
+          "extends": [
+            "ConfirmationAcceptedProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardAction": {
+          "extends": [
+            "ConfirmationActionProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardActions": {
+          "extends": [
+            "ConfirmationActionsProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardApprove": {
+          "extends": [
+            "ConfirmationApproveProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardDeny": {
+          "extends": [
+            "ConfirmationDenyProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardDescription": {
+          "extends": [
+            "ConfirmationDescriptionProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardRejected": {
+          "extends": [
+            "ConfirmationRejectedProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardRequest": {
+          "extends": [
+            "ConfirmationRequestProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardTitle": {
+          "extends": [
+            "ConfirmationTitleProps"
+          ],
+          "props": []
+        },
         "Artifact": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "loading",
@@ -3717,7 +3818,9 @@
           ]
         },
         "ArtifactAction": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "tooltip",
@@ -3735,6 +3838,42 @@
               "type": "LucideIcon"
             }
           ]
+        },
+        "ArtifactActions": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "ArtifactClose": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "ArtifactContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "ArtifactDescription": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
+        "ArtifactHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "ArtifactTitle": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
         },
         "AssetPreview": {
           "extends": [
@@ -3761,7 +3900,9 @@
           ]
         },
         "Attachment": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "data",
@@ -3775,8 +3916,34 @@
             }
           ]
         },
+        "AttachmentEmpty": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "AttachmentHoverCard": {
+          "extends": [
+            "ComponentProps<typeof HoverCard>"
+          ],
+          "props": []
+        },
+        "AttachmentHoverCardContent": {
+          "extends": [
+            "ComponentProps<typeof HoverCardContent>"
+          ],
+          "props": []
+        },
+        "AttachmentHoverCardTrigger": {
+          "extends": [
+            "ComponentProps<typeof HoverCardTrigger>"
+          ],
+          "props": []
+        },
         "AttachmentInfo": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "showMediaType",
@@ -3786,7 +3953,9 @@
           ]
         },
         "AttachmentPreview": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "fallbackIcon",
@@ -3796,7 +3965,9 @@
           ]
         },
         "AttachmentRemove": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "label",
@@ -3806,7 +3977,9 @@
           ]
         },
         "Attachments": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "variant",
@@ -3815,15 +3988,72 @@
             }
           ]
         },
+        "AudioPlayer": {
+          "extends": [
+            "Omit<ComponentProps<typeof MediaController>, \"audio\">"
+          ],
+          "props": []
+        },
+        "AudioPlayerControlBar": {
+          "extends": [
+            "ComponentProps<typeof MediaControlBar>"
+          ],
+          "props": []
+        },
+        "AudioPlayerDurationDisplay": {
+          "extends": [
+            "ComponentProps<typeof MediaDurationDisplay>"
+          ],
+          "props": []
+        },
         "AudioPlayerElement": {
-          "extends": [],
-          "props": [
-            {
-              "name": "data",
-              "optional": false,
-              "type": "SpeechResult[\"audio\"]"
-            }
-          ]
+          "extends": [
+            "Omit<ComponentProps<\"audio\">, \"src\">",
+            "(\n    | {\n        data: SpeechResult[\"audio\"];\n      }\n    | {\n        src: string;\n      }\n  )"
+          ],
+          "props": []
+        },
+        "AudioPlayerMuteButton": {
+          "extends": [
+            "ComponentProps<typeof MediaMuteButton>"
+          ],
+          "props": []
+        },
+        "AudioPlayerPlayButton": {
+          "extends": [
+            "ComponentProps<typeof MediaPlayButton>"
+          ],
+          "props": []
+        },
+        "AudioPlayerSeekBackwardButton": {
+          "extends": [
+            "ComponentProps<typeof MediaSeekBackwardButton>"
+          ],
+          "props": []
+        },
+        "AudioPlayerSeekForwardButton": {
+          "extends": [
+            "ComponentProps<typeof MediaSeekForwardButton>"
+          ],
+          "props": []
+        },
+        "AudioPlayerTimeDisplay": {
+          "extends": [
+            "ComponentProps<typeof MediaTimeDisplay>"
+          ],
+          "props": []
+        },
+        "AudioPlayerTimeRange": {
+          "extends": [
+            "ComponentProps<typeof MediaTimeRange>"
+          ],
+          "props": []
+        },
+        "AudioPlayerVolumeRange": {
+          "extends": [
+            "ComponentProps<typeof MediaVolumeRange>"
+          ],
+          "props": []
         },
         "AudioVisualizer": {
           "extends": [
@@ -3891,7 +4121,9 @@
           ]
         },
         "Canvas": {
-          "extends": [],
+          "extends": [
+            "ReactFlowProps"
+          ],
           "props": [
             {
               "name": "children",
@@ -3901,7 +4133,9 @@
           ]
         },
         "ChainOfThought": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "open",
@@ -3920,8 +4154,22 @@
             }
           ]
         },
+        "ChainOfThoughtContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
+        "ChainOfThoughtHeader": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
+          "props": []
+        },
         "ChainOfThoughtImage": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "caption",
@@ -3930,8 +4178,22 @@
             }
           ]
         },
+        "ChainOfThoughtSearchResult": {
+          "extends": [
+            "ComponentProps<typeof Badge>"
+          ],
+          "props": []
+        },
+        "ChainOfThoughtSearchResults": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "ChainOfThoughtStep": {
-          "extends": [],
+          "extends": [
+            "Omit<\n  AgentStepProps,\n  \"name\" | \"summary\" | \"status\" | \"hideBadge\"\n>"
+          ],
           "props": [
             {
               "name": "label",
@@ -4027,8 +4289,22 @@
             }
           ]
         },
+        "Checkpoint": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CheckpointIcon": {
+          "extends": [
+            "LucideProps"
+          ],
+          "props": []
+        },
         "CheckpointTrigger": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "tooltip",
@@ -4038,7 +4314,9 @@
           ]
         },
         "CodeBlock": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "code",
@@ -4070,7 +4348,9 @@
           ]
         },
         "CodeBlockCopyButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "onCopy",
@@ -4089,8 +4369,58 @@
             }
           ]
         },
+        "CodeBlockLanguageSelector": {
+          "extends": [
+            "ComponentProps<typeof Select>"
+          ],
+          "props": []
+        },
+        "CodeBlockLanguageSelectorContent": {
+          "extends": [
+            "ComponentProps<typeof SelectContent>"
+          ],
+          "props": []
+        },
+        "CodeBlockLanguageSelectorItem": {
+          "extends": [
+            "ComponentProps<typeof SelectItem>"
+          ],
+          "props": []
+        },
+        "CodeBlockLanguageSelectorTrigger": {
+          "extends": [
+            "ComponentProps<typeof SelectTrigger>"
+          ],
+          "props": []
+        },
+        "CodeBlockLanguageSelectorValue": {
+          "extends": [
+            "ComponentProps<typeof SelectValue>"
+          ],
+          "props": []
+        },
+        "Commit": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
+        },
+        "CommitActions": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CommitAuthor": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "CommitAuthorAvatar": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Avatar>"
+          ],
           "props": [
             {
               "name": "initials",
@@ -4099,8 +4429,16 @@
             }
           ]
         },
+        "CommitContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
         "CommitCopyButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "hash",
@@ -4124,8 +4462,16 @@
             }
           ]
         },
+        "CommitFile": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "CommitFileAdditions": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
           "props": [
             {
               "name": "count",
@@ -4133,9 +4479,17 @@
               "type": "number"
             }
           ]
+        },
+        "CommitFileChanges": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         },
         "CommitFileDeletions": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
           "props": [
             {
               "name": "count",
@@ -4144,8 +4498,34 @@
             }
           ]
         },
+        "CommitFileIcon": {
+          "extends": [
+            "ComponentProps<typeof FileIcon>"
+          ],
+          "props": []
+        },
+        "CommitFileInfo": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CommitFilePath": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "CommitFiles": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "CommitFileStatus": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
           "props": [
             {
               "name": "status",
@@ -4154,8 +4534,46 @@
             }
           ]
         },
+        "CommitHash": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "CommitHeader": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
+          "props": []
+        },
+        "CommitInfo": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CommitMessage": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "CommitMetadata": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "CommitSeparator": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
         "CommitTimestamp": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLTimeElement>"
+          ],
           "props": [
             {
               "name": "date",
@@ -4254,7 +4672,9 @@
           ]
         },
         "Confirmation": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Alert>"
+          ],
           "props": [
             {
               "name": "approval",
@@ -4278,6 +4698,36 @@
             }
           ]
         },
+        "ConfirmationAction": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "ConfirmationActions": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ConfirmationApprove": {
+          "extends": [
+            "ConfirmationActionProps"
+          ],
+          "props": []
+        },
+        "ConfirmationDeny": {
+          "extends": [
+            "ConfirmationActionProps"
+          ],
+          "props": []
+        },
+        "ConfirmationDescription": {
+          "extends": [
+            "ComponentProps<typeof AlertDescription>"
+          ],
+          "props": []
+        },
         "ConfirmationRejected": {
           "extends": [],
           "props": [
@@ -4297,6 +4747,61 @@
               "type": "ReactNode"
             }
           ]
+        },
+        "ConfirmationTitle": {
+          "extends": [
+            "ComponentProps<typeof AlertTitle>"
+          ],
+          "props": []
+        },
+        "Context": {
+          "extends": [
+            "ComponentProps<typeof HoverCard>",
+            "ContextSchema"
+          ],
+          "props": []
+        },
+        "ContextCacheUsage": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ContextContent": {
+          "extends": [
+            "ComponentProps<typeof HoverCardContent>"
+          ],
+          "props": []
+        },
+        "ContextContentBody": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ContextContentFooter": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ContextContentHeader": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ContextInputUsage": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ContextOutputUsage": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
         },
         "ContextPanel": {
           "extends": [
@@ -4335,6 +4840,12 @@
               "description": "Accessible name of the region. Default `\"Context\"`."
             }
           ]
+        },
+        "ContextPanelDetail": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         },
         "ContextPanelHeader": {
           "extends": [
@@ -4429,8 +4940,46 @@
             }
           ]
         },
+        "ContextPanelTrigger": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "ContextReasoningUsage": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ContextTrigger": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "Controls": {
+          "extends": [
+            "ComponentProps<typeof ControlsPrimitive>"
+          ],
+          "props": []
+        },
+        "Conversation": {
+          "extends": [
+            "ComponentProps<typeof StickToBottom>"
+          ],
+          "props": []
+        },
+        "ConversationContent": {
+          "extends": [
+            "ComponentProps<typeof StickToBottom.Content>"
+          ],
+          "props": []
+        },
         "ConversationDownload": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof Button>, \"onClick\">"
+          ],
           "props": [
             {
               "name": "messages",
@@ -4450,7 +4999,9 @@
           ]
         },
         "ConversationEmptyState": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "title",
@@ -4469,8 +5020,16 @@
             }
           ]
         },
+        "ConversationScrollButton": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
         "EnvironmentVariable": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "name",
@@ -4485,7 +5044,9 @@
           ]
         },
         "EnvironmentVariableCopyButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "onCopy",
@@ -4509,8 +5070,28 @@
             }
           ]
         },
+        "EnvironmentVariableGroup": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "EnvironmentVariableName": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "EnvironmentVariableRequired": {
+          "extends": [
+            "ComponentProps<typeof Badge>"
+          ],
+          "props": []
+        },
         "EnvironmentVariables": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "showValues",
@@ -4529,8 +5110,47 @@
             }
           ]
         },
+        "EnvironmentVariablesContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "EnvironmentVariablesHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "EnvironmentVariablesTitle": {
+          "extends": [
+            "HTMLAttributes<HTMLHeadingElement>"
+          ],
+          "props": []
+        },
+        "EnvironmentVariablesToggle": {
+          "extends": [
+            "ComponentProps<typeof Switch>"
+          ],
+          "props": []
+        },
+        "EnvironmentVariableValue": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "EvidenceChip": {
+          "extends": [
+            "InlineCitationCardTriggerProps"
+          ],
+          "props": []
+        },
         "FileTree": {
-          "extends": [],
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">",
+            "VariantProps<typeof fileTreeVariants>"
+          ],
           "props": [
             {
               "name": "expanded",
@@ -4559,8 +5179,16 @@
             }
           ]
         },
+        "FileTreeActions": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "FileTreeFile": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "path",
@@ -4580,7 +5208,9 @@
           ]
         },
         "FileTreeFolder": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "path",
@@ -4593,6 +5223,18 @@
               "type": "string"
             }
           ]
+        },
+        "FileTreeIcon": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "FileTreeName": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
         },
         "Gallery": {
           "extends": [
@@ -4676,7 +5318,10 @@
           ]
         },
         "Image": {
-          "extends": [],
+          "extends": [
+            "Experimental_GeneratedImage",
+            "Omit<ImgHTMLAttributes<HTMLImageElement>, \"src\">"
+          ],
           "props": [
             {
               "name": "showSkeleton",
@@ -4686,8 +5331,28 @@
             }
           ]
         },
+        "InlineCitation": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "InlineCitationCard": {
+          "extends": [
+            "ComponentProps<typeof HoverCard>"
+          ],
+          "props": []
+        },
+        "InlineCitationCardBody": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "InlineCitationCardTrigger": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Badge>"
+          ],
           "props": [
             {
               "name": "sources",
@@ -4696,8 +5361,58 @@
             }
           ]
         },
+        "InlineCitationCarousel": {
+          "extends": [
+            "ComponentProps<typeof Carousel>"
+          ],
+          "props": []
+        },
+        "InlineCitationCarouselContent": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "InlineCitationCarouselHeader": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "InlineCitationCarouselIndex": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "InlineCitationCarouselItem": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "InlineCitationCarouselNext": {
+          "extends": [
+            "ComponentProps<\"button\">"
+          ],
+          "props": []
+        },
+        "InlineCitationCarouselPrev": {
+          "extends": [
+            "ComponentProps<\"button\">"
+          ],
+          "props": []
+        },
+        "InlineCitationQuote": {
+          "extends": [
+            "ComponentProps<\"blockquote\">"
+          ],
+          "props": []
+        },
         "InlineCitationSource": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "title",
@@ -4715,6 +5430,12 @@
               "type": "string"
             }
           ]
+        },
+        "InlineCitationText": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
         },
         "InteractiveTerminal": {
           "extends": [
@@ -4748,7 +5469,9 @@
           ]
         },
         "JSXPreview": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "jsx",
@@ -4784,8 +5507,16 @@
             }
           ]
         },
+        "JSXPreviewContent": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\">"
+          ],
+          "props": []
+        },
         "JSXPreviewError": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -4793,6 +5524,12 @@
               "type": "ReactNode | ((error: Error) => ReactNode)"
             }
           ]
+        },
+        "JSXPreviewSkeleton": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
         },
         "MarkdownView": {
           "extends": [
@@ -4820,7 +5557,9 @@
           ]
         },
         "Message": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "from",
@@ -4830,7 +5569,9 @@
           ]
         },
         "MessageAction": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "tooltip",
@@ -4845,7 +5586,10 @@
           ]
         },
         "MessageActions": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">",
+            "VariantProps<typeof messageActionsVariants>"
+          ],
           "props": [
             {
               "name": "label",
@@ -4856,7 +5600,9 @@
           ]
         },
         "MessageAvatar": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Avatar>"
+          ],
           "props": [
             {
               "name": "src",
@@ -4879,7 +5625,9 @@
           ]
         },
         "MessageBranch": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "branch",
@@ -4899,8 +5647,40 @@
             }
           ]
         },
+        "MessageBranchContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "MessageBranchNext": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "MessageBranchPage": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "MessageBranchPrevious": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "MessageBranchSelector": {
+          "extends": [
+            "ComponentProps<typeof ButtonGroup>"
+          ],
+          "props": []
+        },
         "MessageCompare": {
-          "extends": [],
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -4939,7 +5719,9 @@
           ]
         },
         "MessageCompareColumn": {
-          "extends": [],
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
           "props": [
             {
               "name": "model",
@@ -4960,6 +5742,12 @@
               "description": "The consumer's own `Message`/`MessageResponse` composition for this column."
             }
           ]
+        },
+        "MessageContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         },
         "MessageEdit": {
           "extends": [
@@ -5004,8 +5792,16 @@
             }
           ]
         },
+        "MessageEditContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "MessageEditForm": {
-          "extends": [],
+          "extends": [
+            "Omit<HTMLAttributes<HTMLFormElement>, \"onSubmit\">"
+          ],
           "props": [
             {
               "name": "saveLabel",
@@ -5060,6 +5856,12 @@
               "type": "ReactNode"
             }
           ]
+        },
+        "MessageEditTrigger": {
+          "extends": [
+            "React.ComponentProps<typeof Button>"
+          ],
+          "props": []
         },
         "MessageFeedback": {
           "extends": [
@@ -5166,6 +5968,12 @@
             }
           ]
         },
+        "MessageFormDescription": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
         "MessageFormFallback": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -5191,6 +5999,12 @@
               "description": "The field's `name` (its key in the spec + values)."
             }
           ]
+        },
+        "MessageFormFields": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         },
         "MessageFormProvider": {
           "extends": [],
@@ -5250,6 +6064,12 @@
             }
           ]
         },
+        "MessageFormRoot": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLFormElement>, \"onSubmit\">"
+          ],
+          "props": []
+        },
         "MessageFormSubmit": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
@@ -5263,8 +6083,22 @@
             }
           ]
         },
+        "MessageFormTitle": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
+        "MessageHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "MessageResponse": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof Streamdown>, \"rehypePlugins\">"
+          ],
           "props": [
             {
               "name": "loading",
@@ -5354,8 +6188,16 @@
             }
           ]
         },
+        "MessageToolbar": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "MicSelector": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Popover>"
+          ],
           "props": [
             {
               "name": "defaultValue",
@@ -5385,7 +6227,9 @@
           ]
         },
         "MicSelectorContent": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Command>"
+          ],
           "props": [
             {
               "name": "popoverOptions",
@@ -5394,8 +6238,16 @@
             }
           ]
         },
+        "MicSelectorEmpty": {
+          "extends": [
+            "ComponentProps<typeof CommandEmpty>"
+          ],
+          "props": []
+        },
         "MicSelectorInput": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof CommandInput>"
+          ],
           "props": [
             {
               "name": "value",
@@ -5414,8 +6266,16 @@
             }
           ]
         },
+        "MicSelectorItem": {
+          "extends": [
+            "ComponentProps<typeof CommandItem>"
+          ],
+          "props": []
+        },
         "MicSelectorLabel": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
           "props": [
             {
               "name": "device",
@@ -5425,7 +6285,9 @@
           ]
         },
         "MicSelectorList": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof CommandList>, \"children\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -5434,8 +6296,28 @@
             }
           ]
         },
+        "MicSelectorTrigger": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "MicSelectorValue": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "ModelSelector": {
+          "extends": [
+            "ComponentProps<typeof Dialog>"
+          ],
+          "props": []
+        },
         "ModelSelectorContent": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof DialogContent>"
+          ],
           "props": [
             {
               "name": "title",
@@ -5444,8 +6326,46 @@
             }
           ]
         },
+        "ModelSelectorDialog": {
+          "extends": [
+            "ComponentProps<typeof CommandDialog>"
+          ],
+          "props": []
+        },
+        "ModelSelectorEmpty": {
+          "extends": [
+            "ComponentProps<typeof CommandEmpty>"
+          ],
+          "props": []
+        },
+        "ModelSelectorGroup": {
+          "extends": [
+            "ComponentProps<typeof CommandGroup>"
+          ],
+          "props": []
+        },
+        "ModelSelectorInput": {
+          "extends": [
+            "ComponentProps<typeof CommandInput>"
+          ],
+          "props": []
+        },
+        "ModelSelectorItem": {
+          "extends": [
+            "ComponentProps<typeof CommandItem>"
+          ],
+          "props": []
+        },
+        "ModelSelectorList": {
+          "extends": [
+            "ComponentProps<typeof CommandList>"
+          ],
+          "props": []
+        },
         "ModelSelectorLogo": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<\"img\">, \"alt\">"
+          ],
           "props": [
             {
               "name": "src",
@@ -5461,8 +6381,40 @@
             }
           ]
         },
+        "ModelSelectorLogoGroup": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "ModelSelectorName": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "ModelSelectorSeparator": {
+          "extends": [
+            "ComponentProps<typeof CommandSeparator>"
+          ],
+          "props": []
+        },
+        "ModelSelectorShortcut": {
+          "extends": [
+            "ComponentProps<typeof CommandShortcut>"
+          ],
+          "props": []
+        },
+        "ModelSelectorTrigger": {
+          "extends": [
+            "ComponentProps<typeof DialogTrigger>"
+          ],
+          "props": []
+        },
         "Node": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Card>"
+          ],
           "props": [
             {
               "name": "handles",
@@ -5471,8 +6423,52 @@
             }
           ]
         },
+        "NodeAction": {
+          "extends": [
+            "ComponentProps<typeof CardAction>"
+          ],
+          "props": []
+        },
+        "NodeContent": {
+          "extends": [
+            "ComponentProps<typeof CardContent>"
+          ],
+          "props": []
+        },
+        "NodeDescription": {
+          "extends": [
+            "ComponentProps<typeof CardDescription>"
+          ],
+          "props": []
+        },
+        "NodeFooter": {
+          "extends": [
+            "ComponentProps<typeof CardFooter>"
+          ],
+          "props": []
+        },
+        "NodeHeader": {
+          "extends": [
+            "ComponentProps<typeof CardHeader>"
+          ],
+          "props": []
+        },
+        "NodeTitle": {
+          "extends": [
+            "ComponentProps<typeof CardTitle>"
+          ],
+          "props": []
+        },
+        "NodeToolbar": {
+          "extends": [
+            "ComponentProps<typeof FlowNodeToolbar>"
+          ],
+          "props": []
+        },
         "OpenIn": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof DropdownMenu>"
+          ],
           "props": [
             {
               "name": "query",
@@ -5481,8 +6477,76 @@
             }
           ]
         },
+        "OpenInChatGPT": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "OpenInClaude": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "OpenInContent": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuContent>"
+          ],
+          "props": []
+        },
+        "OpenInCursor": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "OpenInItem": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "OpenInLabel": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuLabel>"
+          ],
+          "props": []
+        },
+        "OpenInScira": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "OpenInSeparator": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuSeparator>"
+          ],
+          "props": []
+        },
+        "OpenInT3": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "OpenInTrigger": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuTrigger>"
+          ],
+          "props": []
+        },
+        "OpenInv0": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
         "PackageInfo": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "name",
@@ -5506,8 +6570,28 @@
             }
           ]
         },
+        "PackageInfoChangeType": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PackageInfoContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PackageInfoDependencies": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "PackageInfoDependency": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "name",
@@ -5520,6 +6604,36 @@
               "type": "string"
             }
           ]
+        },
+        "PackageInfoDescription": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
+        "PackageInfoHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PackageInfoName": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PackageInfoVersion": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "Panel": {
+          "extends": [
+            "ComponentProps<typeof PanelPrimitive>"
+          ],
+          "props": []
         },
         "Persona": {
           "extends": [],
@@ -5590,7 +6704,9 @@
           ]
         },
         "Plan": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
           "props": [
             {
               "name": "isStreaming",
@@ -5599,8 +6715,22 @@
             }
           ]
         },
+        "PlanAction": {
+          "extends": [
+            "ComponentProps<typeof CardAction>"
+          ],
+          "props": []
+        },
+        "PlanContent": {
+          "extends": [
+            "ComponentProps<typeof CardContent>"
+          ],
+          "props": []
+        },
         "PlanDescription": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof CardDescription>, \"children\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -5608,9 +6738,23 @@
               "type": "string"
             }
           ]
+        },
+        "PlanFooter": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "PlanHeader": {
+          "extends": [
+            "ComponentProps<typeof CardHeader>"
+          ],
+          "props": []
         },
         "PlanTitle": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof CardTitle>, \"children\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -5619,8 +6763,16 @@
             }
           ]
         },
+        "PlanTrigger": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
+          "props": []
+        },
         "ProducedAssetTree": {
-          "extends": [],
+          "extends": [
+            "Omit<\n  FileTreeProps,\n  \"variant\" | \"onSelect\" | \"selectedPath\"\n>"
+          ],
           "props": [
             {
               "name": "assets",
@@ -5643,7 +6795,9 @@
           ]
         },
         "PromptInput": {
-          "extends": [],
+          "extends": [
+            "Omit<HTMLAttributes<HTMLFormElement>, \"onSubmit\" | \"onError\">"
+          ],
           "props": [
             {
               "name": "accept",
@@ -5705,7 +6859,9 @@
           ]
         },
         "PromptInputActionAddAttachments": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
           "props": [
             {
               "name": "label",
@@ -5715,7 +6871,9 @@
           ]
         },
         "PromptInputActionAddScreenshot": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
           "props": [
             {
               "name": "label",
@@ -5724,8 +6882,40 @@
             }
           ]
         },
+        "PromptInputActionMenu": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenu>"
+          ],
+          "props": []
+        },
+        "PromptInputActionMenuContent": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuContent>"
+          ],
+          "props": []
+        },
+        "PromptInputActionMenuItem": {
+          "extends": [
+            "ComponentProps<typeof DropdownMenuItem>"
+          ],
+          "props": []
+        },
+        "PromptInputActionMenuTrigger": {
+          "extends": [
+            "PromptInputButtonProps"
+          ],
+          "props": []
+        },
+        "PromptInputBody": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "PromptInputButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof InputGroupButton>"
+          ],
           "props": [
             {
               "name": "tooltip",
@@ -5734,18 +6924,118 @@
             }
           ]
         },
+        "PromptInputCommand": {
+          "extends": [
+            "ComponentProps<typeof Command>"
+          ],
+          "props": []
+        },
+        "PromptInputCommandEmpty": {
+          "extends": [
+            "ComponentProps<typeof CommandEmpty>"
+          ],
+          "props": []
+        },
+        "PromptInputCommandGroup": {
+          "extends": [
+            "ComponentProps<typeof CommandGroup>"
+          ],
+          "props": []
+        },
+        "PromptInputCommandInput": {
+          "extends": [
+            "ComponentProps<typeof CommandInput>"
+          ],
+          "props": []
+        },
+        "PromptInputCommandItem": {
+          "extends": [
+            "ComponentProps<typeof CommandItem>"
+          ],
+          "props": []
+        },
+        "PromptInputCommandList": {
+          "extends": [
+            "ComponentProps<typeof CommandList>"
+          ],
+          "props": []
+        },
+        "PromptInputCommandSeparator": {
+          "extends": [
+            "ComponentProps<typeof CommandSeparator>"
+          ],
+          "props": []
+        },
+        "PromptInputFooter": {
+          "extends": [
+            "Omit<ComponentProps<typeof InputGroupAddon>, \"align\">"
+          ],
+          "props": []
+        },
+        "PromptInputHeader": {
+          "extends": [
+            "Omit<ComponentProps<typeof InputGroupAddon>, \"align\">"
+          ],
+          "props": []
+        },
+        "PromptInputHoverCard": {
+          "extends": [
+            "ComponentProps<typeof HoverCard>"
+          ],
+          "props": []
+        },
+        "PromptInputHoverCardContent": {
+          "extends": [
+            "ComponentProps<typeof HoverCardContent>"
+          ],
+          "props": []
+        },
+        "PromptInputHoverCardTrigger": {
+          "extends": [
+            "ComponentProps<typeof HoverCardTrigger>"
+          ],
+          "props": []
+        },
         "PromptInputProvider": {
-          "extends": [],
-          "props": [
-            {
-              "name": "initialInput",
-              "optional": true,
-              "type": "string"
-            }
-          ]
+          "extends": [
+            "PropsWithChildren<{\n  initialInput?: string;\n}>"
+          ],
+          "props": []
+        },
+        "PromptInputSelect": {
+          "extends": [
+            "ComponentProps<typeof Select>"
+          ],
+          "props": []
+        },
+        "PromptInputSelectContent": {
+          "extends": [
+            "ComponentProps<typeof SelectContent>"
+          ],
+          "props": []
+        },
+        "PromptInputSelectItem": {
+          "extends": [
+            "ComponentProps<typeof SelectItem>"
+          ],
+          "props": []
+        },
+        "PromptInputSelectTrigger": {
+          "extends": [
+            "ComponentProps<typeof SelectTrigger>"
+          ],
+          "props": []
+        },
+        "PromptInputSelectValue": {
+          "extends": [
+            "ComponentProps<typeof SelectValue>"
+          ],
+          "props": []
         },
         "PromptInputStop": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof InputGroupButton>"
+          ],
           "props": [
             {
               "name": "status",
@@ -5766,7 +7056,9 @@
           ]
         },
         "PromptInputSubmit": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof InputGroupButton>"
+          ],
           "props": [
             {
               "name": "status",
@@ -5792,8 +7084,82 @@
             }
           ]
         },
+        "PromptInputTab": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PromptInputTabBody": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PromptInputTabItem": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PromptInputTabLabel": {
+          "extends": [
+            "HTMLAttributes<HTMLHeadingElement>"
+          ],
+          "props": []
+        },
+        "PromptInputTabsList": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "PromptInputTextarea": {
+          "extends": [
+            "ComponentProps<typeof InputGroupTextarea>"
+          ],
+          "props": []
+        },
+        "PromptInputTools": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "Queue": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "QueueItem": {
+          "extends": [
+            "ComponentProps<\"li\">"
+          ],
+          "props": []
+        },
+        "QueueItemAction": {
+          "extends": [
+            "Omit<ComponentProps<typeof Button>, \"variant\" | \"size\">"
+          ],
+          "props": []
+        },
+        "QueueItemActions": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "QueueItemAttachment": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "QueueItemContent": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
           "props": [
             {
               "name": "completed",
@@ -5803,7 +7169,9 @@
           ]
         },
         "QueueItemDescription": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "completed",
@@ -5811,9 +7179,23 @@
               "type": "boolean"
             }
           ]
+        },
+        "QueueItemFile": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "QueueItemImage": {
+          "extends": [
+            "ComponentProps<\"img\">"
+          ],
+          "props": []
         },
         "QueueItemIndicator": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
           "props": [
             {
               "name": "completed",
@@ -5822,8 +7204,28 @@
             }
           ]
         },
+        "QueueList": {
+          "extends": [
+            "ComponentProps<typeof ScrollArea>"
+          ],
+          "props": []
+        },
+        "QueueSection": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
+        },
+        "QueueSectionContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
         "QueueSectionLabel": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
           "props": [
             {
               "name": "count",
@@ -5842,8 +7244,16 @@
             }
           ]
         },
+        "QueueSectionTrigger": {
+          "extends": [
+            "ComponentProps<\"button\">"
+          ],
+          "props": []
+        },
         "Reasoning": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
           "props": [
             {
               "name": "isStreaming",
@@ -5873,7 +7283,9 @@
           ]
         },
         "ReasoningContent": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof CollapsibleContent>, \"children\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -5884,7 +7296,9 @@
           ]
         },
         "ReasoningTrigger": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
           "props": [
             {
               "name": "getThinkingMessage",
@@ -5894,7 +7308,9 @@
           ]
         },
         "Sandbox": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
           "props": [
             {
               "name": "loading",
@@ -5903,6 +7319,12 @@
               "description": "The run output has not arrived yet (loading-states.md loading signal). SandboxContent renders a layout-shaped skeleton instead of its children; SandboxHeader keeps rendering as passed. @default false"
             }
           ]
+        },
+        "SandboxContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
         },
         "SandboxHeader": {
           "extends": [],
@@ -5924,8 +7346,40 @@
             }
           ]
         },
+        "SandboxTabContent": {
+          "extends": [
+            "ComponentProps<typeof TabsContent>"
+          ],
+          "props": []
+        },
+        "SandboxTabs": {
+          "extends": [
+            "ComponentProps<typeof Tabs>"
+          ],
+          "props": []
+        },
+        "SandboxTabsBar": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "SandboxTabsList": {
+          "extends": [
+            "ComponentProps<typeof TabsList>"
+          ],
+          "props": []
+        },
+        "SandboxTabsTrigger": {
+          "extends": [
+            "ComponentProps<typeof TabsTrigger>"
+          ],
+          "props": []
+        },
         "SchemaDisplay": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "method",
@@ -5959,8 +7413,66 @@
             }
           ]
         },
+        "SchemaDisplayBody": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayDescription": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayExample": {
+          "extends": [
+            "HTMLAttributes<HTMLPreElement>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayMethod": {
+          "extends": [
+            "ComponentProps<typeof Badge>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayParameter": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>",
+            "SchemaParameter"
+          ],
+          "props": []
+        },
+        "SchemaDisplayParameters": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayPath": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
         "SchemaDisplayProperty": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>",
+            "SchemaProperty"
+          ],
           "props": [
             {
               "name": "depth",
@@ -5968,6 +7480,18 @@
               "type": "number"
             }
           ]
+        },
+        "SchemaDisplayRequest": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
+        },
+        "SchemaDisplayResponse": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
         },
         "SelectionToolbar": {
           "extends": [
@@ -6007,7 +7531,9 @@
           ]
         },
         "Snippet": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof InputGroup>"
+          ],
           "props": [
             {
               "name": "code",
@@ -6016,8 +7542,16 @@
             }
           ]
         },
+        "SnippetAddon": {
+          "extends": [
+            "ComponentProps<typeof InputGroupAddon>"
+          ],
+          "props": []
+        },
         "SnippetCopyButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof InputGroupButton>"
+          ],
           "props": [
             {
               "name": "onCopy",
@@ -6036,8 +7570,28 @@
             }
           ]
         },
+        "SnippetInput": {
+          "extends": [
+            "Omit<ComponentProps<typeof InputGroupInput>, \"readOnly\" | \"value\">"
+          ],
+          "props": []
+        },
+        "SnippetText": {
+          "extends": [
+            "ComponentProps<typeof InputGroupText>"
+          ],
+          "props": []
+        },
+        "Source": {
+          "extends": [
+            "ComponentProps<\"a\">"
+          ],
+          "props": []
+        },
         "SourceList": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof Sources>, \"children\">"
+          ],
           "props": [
             {
               "name": "sources",
@@ -6053,8 +7607,22 @@
             }
           ]
         },
+        "Sources": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "SourcesContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
         "SourcesTrigger": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
           "props": [
             {
               "name": "count",
@@ -6064,7 +7632,9 @@
           ]
         },
         "SpeechInput": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "onTranscriptionChange",
@@ -6085,7 +7655,9 @@
           ]
         },
         "StackTrace": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "trace",
@@ -6114,8 +7686,16 @@
             }
           ]
         },
+        "StackTraceActions": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "StackTraceContent": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
           "props": [
             {
               "name": "maxHeight",
@@ -6125,7 +7705,9 @@
           ]
         },
         "StackTraceCopyButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "onCopy",
@@ -6144,8 +7726,34 @@
             }
           ]
         },
+        "StackTraceError": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "StackTraceErrorMessage": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "StackTraceErrorType": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "StackTraceExpandButton": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "StackTraceFrames": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "showInternalFrames",
@@ -6154,8 +7762,16 @@
             }
           ]
         },
+        "StackTraceHeader": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
+          "props": []
+        },
         "StreamingSuggestions": {
-          "extends": [],
+          "extends": [
+            "Omit<SuggestionsProps, \"children\">"
+          ],
           "props": [
             {
               "name": "suggestions",
@@ -6184,7 +7800,9 @@
           ]
         },
         "Suggestion": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<typeof Button>, \"onClick\">"
+          ],
           "props": [
             {
               "name": "suggestion",
@@ -6199,7 +7817,9 @@
           ]
         },
         "SuggestionLoading": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "label",
@@ -6209,8 +7829,28 @@
             }
           ]
         },
+        "Suggestions": {
+          "extends": [
+            "ComponentProps<typeof ScrollArea>"
+          ],
+          "props": []
+        },
+        "Task": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
+        },
+        "TaskContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
         "TaskItem": {
-          "extends": [],
+          "extends": [
+            "Omit<AgentStepProps, \"name\" | \"children\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -6219,8 +7859,16 @@
             }
           ]
         },
+        "TaskItemFile": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
         "TaskTrigger": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
           "props": [
             {
               "name": "title",
@@ -6230,7 +7878,9 @@
           ]
         },
         "Terminal": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "output",
@@ -6254,8 +7904,28 @@
             }
           ]
         },
+        "TerminalActions": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalClearButton": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "TerminalContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "TerminalCopyButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "onCopy",
@@ -6274,8 +7944,28 @@
             }
           ]
         },
+        "TerminalHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalStatus": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalTitle": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "Test": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "name",
@@ -6294,8 +7984,40 @@
             }
           ]
         },
+        "TestDuration": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "TestError": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TestErrorMessage": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
+        "TestErrorStack": {
+          "extends": [
+            "HTMLAttributes<HTMLPreElement>"
+          ],
+          "props": []
+        },
+        "TestName": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
         "TestResults": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "summary",
@@ -6304,8 +8026,52 @@
             }
           ]
         },
+        "TestResultsContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TestResultsDuration": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
+        "TestResultsHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TestResultsMeta": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TestResultsProgress": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TestResultsSummary": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TestStatus": {
+          "extends": [
+            "HTMLAttributes<HTMLSpanElement>"
+          ],
+          "props": []
+        },
         "TestSuite": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
           "props": [
             {
               "name": "name",
@@ -6319,8 +8085,22 @@
             }
           ]
         },
+        "TestSuiteContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
+        "TestSuiteName": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleTrigger>"
+          ],
+          "props": []
+        },
         "TestSuiteStats": {
-          "extends": [],
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
           "props": [
             {
               "name": "passed",
@@ -6339,8 +8119,28 @@
             }
           ]
         },
+        "Tool": {
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
+          "props": []
+        },
+        "Toolbar": {
+          "extends": [
+            "NodeToolbarProps"
+          ],
+          "props": []
+        },
+        "ToolContent": {
+          "extends": [
+            "ComponentProps<typeof CollapsibleContent>"
+          ],
+          "props": []
+        },
         "ToolDetails": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Collapsible>"
+          ],
           "props": [
             {
               "name": "label",
@@ -6351,7 +8151,9 @@
           ]
         },
         "ToolHeader": {
-          "extends": [],
+          "extends": [
+            "(\n  | { type: ToolUIPart[\"type\"]; state: ToolUIPart[\"state\"]; toolName?: never }\n  | {\n      type: DynamicToolUIPart[\"type\"];\n      state: DynamicToolUIPart[\"state\"];\n      toolName: string;\n    }\n)"
+          ],
           "props": [
             {
               "name": "title",
@@ -6372,7 +8174,9 @@
           ]
         },
         "ToolInput": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "input",
@@ -6382,7 +8186,9 @@
           ]
         },
         "ToolOutput": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "output",
@@ -6441,7 +8247,9 @@
           ]
         },
         "Transcription": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\">"
+          ],
           "props": [
             {
               "name": "segments",
@@ -6466,7 +8274,9 @@
           ]
         },
         "TranscriptionSegment": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"button\">"
+          ],
           "props": [
             {
               "name": "segment",
@@ -6480,8 +8290,16 @@
             }
           ]
         },
+        "UserMessage": {
+          "extends": [
+            "Omit<MessageProps, \"from\">"
+          ],
+          "props": []
+        },
         "VoiceSelector": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Dialog>"
+          ],
           "props": [
             {
               "name": "value",
@@ -6500,8 +8318,34 @@
             }
           ]
         },
+        "VoiceSelectorAccent": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "VoiceSelectorAge": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "VoiceSelectorAttributes": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "VoiceSelectorBullet": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
         "VoiceSelectorContent": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof DialogContent>"
+          ],
           "props": [
             {
               "name": "title",
@@ -6510,8 +8354,28 @@
             }
           ]
         },
+        "VoiceSelectorDescription": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
+        "VoiceSelectorDialog": {
+          "extends": [
+            "ComponentProps<typeof CommandDialog>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorEmpty": {
+          "extends": [
+            "ComponentProps<typeof CommandEmpty>"
+          ],
+          "props": []
+        },
         "VoiceSelectorGender": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
           "props": [
             {
               "name": "value",
@@ -6520,8 +8384,40 @@
             }
           ]
         },
+        "VoiceSelectorGroup": {
+          "extends": [
+            "ComponentProps<typeof CommandGroup>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorInput": {
+          "extends": [
+            "ComponentProps<typeof CommandInput>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorItem": {
+          "extends": [
+            "ComponentProps<typeof CommandItem>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorList": {
+          "extends": [
+            "ComponentProps<typeof CommandList>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorName": {
+          "extends": [
+            "ComponentProps<\"span\">"
+          ],
+          "props": []
+        },
         "VoiceSelectorPreview": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<\"button\">, \"children\">"
+          ],
           "props": [
             {
               "name": "playing",
@@ -6540,8 +8436,28 @@
             }
           ]
         },
+        "VoiceSelectorSeparator": {
+          "extends": [
+            "ComponentProps<typeof CommandSeparator>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorShortcut": {
+          "extends": [
+            "ComponentProps<typeof CommandShortcut>"
+          ],
+          "props": []
+        },
+        "VoiceSelectorTrigger": {
+          "extends": [
+            "ComponentProps<typeof DialogTrigger>"
+          ],
+          "props": []
+        },
         "WebPreview": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "defaultUrl",
@@ -6556,7 +8472,9 @@
           ]
         },
         "WebPreviewBody": {
-          "extends": [],
+          "extends": [
+            "Omit<ComponentProps<\"iframe\">, \"loading\">"
+          ],
           "props": [
             {
               "name": "loading",
@@ -6567,7 +8485,9 @@
           ]
         },
         "WebPreviewConsole": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "logs",
@@ -6576,8 +8496,16 @@
             }
           ]
         },
+        "WebPreviewNavigation": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
         "WebPreviewNavigationButton": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
           "props": [
             {
               "name": "tooltip",
@@ -6585,6 +8513,12 @@
               "type": "string"
             }
           ]
+        },
+        "WebPreviewUrl": {
+          "extends": [
+            "ComponentProps<typeof Input>"
+          ],
+          "props": []
         }
       },
       "intent": {
@@ -12174,7 +14108,9 @@
           ]
         },
         "PieCenterShell": {
-          "extends": [],
+          "extends": [
+            "Omit<PieCenterProps, \"children\">"
+          ],
           "props": [
             {
               "name": "centerValue",
@@ -14936,7 +16872,7 @@
         },
         "FlowMiniMap": {
           "extends": [
-            "Node = Node> = MiniMapProps<NodeType>;\n\n/**\n * Branded preset over React Flow's `<MiniMap>` — sources node/mask colors from\n * the `--flow-minimap-*` tokens so the overview stays theme-aware (the raw\n * `MiniMap` re-export defaults to library colors and renders theme-blind,\n * especially under a low-chroma theme). Every prop can still be overridden; render\n * inside a `<CanvasShell>` (it needs the React Flow context via `useStore`).\n */\nexport function FlowMiniMap<NodeType extends Node = Node>("
+            "MiniMapProps<NodeType>"
           ],
           "props": []
         },
@@ -15582,9 +17518,7 @@
       ],
       "props": {
         "MapArc": {
-          "extends": [
-            "MapArcDatum = MapArcDatum> ="
-          ],
+          "extends": [],
           "props": [
             {
               "name": "data",
@@ -15655,7 +17589,9 @@
           ]
         },
         "MapCanvas": {
-          "extends": [],
+          "extends": [
+            "Omit<MapLibreGL.MapOptions, \"container\" | \"style\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -15713,9 +17649,7 @@
           ]
         },
         "MapClusterLayer": {
-          "extends": [
-            "GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> ="
-          ],
+          "extends": [],
           "props": [
             {
               "name": "data",
@@ -15821,9 +17755,7 @@
           ]
         },
         "MapGeoJSON": {
-          "extends": [
-            "GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties> ="
-          ],
+          "extends": [],
           "props": [
             {
               "name": "data",
@@ -15888,7 +17820,9 @@
           ]
         },
         "MapMarker": {
-          "extends": [],
+          "extends": [
+            "Omit<MarkerOptions, \"element\">"
+          ],
           "props": [
             {
               "name": "longitude",
@@ -15987,7 +17921,9 @@
           ]
         },
         "MapMarkerPopup": {
-          "extends": [],
+          "extends": [
+            "Omit<PopupOptions, \"className\" | \"closeButton\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -16010,7 +17946,9 @@
           ]
         },
         "MapMarkerTooltip": {
-          "extends": [],
+          "extends": [
+            "Omit<PopupOptions, \"className\" | \"closeButton\" | \"closeOnClick\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -16027,7 +17965,9 @@
           ]
         },
         "MapPopup": {
-          "extends": [],
+          "extends": [
+            "Omit<PopupOptions, \"className\" | \"closeButton\">"
+          ],
           "props": [
             {
               "name": "longitude",
@@ -19664,6 +21604,12 @@
             }
           ]
         },
+        "Calendar": {
+          "extends": [
+            "React.ComponentProps<typeof DayPicker>"
+          ],
+          "props": []
+        },
         "Card": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>",
@@ -19777,6 +21723,12 @@
             }
           ]
         },
+        "ChangeReviewHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "ChangeReviewHunk": {
           "extends": [
             "Omit<HTMLAttributes<HTMLLIElement>, \"children\">",
@@ -19795,6 +21747,12 @@
               "description": "Override the default before/after layout. Receives the hunk data and current approval state. Return `null` to suppress the default content area."
             }
           ]
+        },
+        "ChangeReviewList": {
+          "extends": [
+            "HTMLAttributes<HTMLOListElement>"
+          ],
+          "props": []
         },
         "ChangeReviewProvenance": {
           "extends": [
@@ -20171,6 +22129,12 @@
             }
           ]
         },
+        "DialogBody": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "DialogSection": {
           "extends": [
             "Omit<HTMLAttributes<HTMLElement>, \"title\">"
@@ -20280,6 +22244,12 @@
               "description": "Class on the recessed field the panes sit in."
             }
           ]
+        },
+        "ExpandDialogContent": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof DialogContent>"
+          ],
+          "props": []
         },
         "ExpandDialogHeader": {
           "extends": [
@@ -20497,6 +22467,12 @@
             }
           ]
         },
+        "FileUploadList": {
+          "extends": [
+            "HTMLAttributes<HTMLUListElement>"
+          ],
+          "props": []
+        },
         "FilterChip": {
           "extends": [
             "Omit<ButtonHTMLAttributes<HTMLButtonElement>, \"children\">"
@@ -20573,6 +22549,19 @@
               "description": "Tooltip placement. Default `\"top\"`."
             }
           ]
+        },
+        "Input": {
+          "extends": [
+            "InputHTMLAttributes<HTMLInputElement>"
+          ],
+          "props": []
+        },
+        "InputGroup": {
+          "extends": [
+            "ComponentProps<\"div\">",
+            "VariantProps<typeof inputGroupVariants>"
+          ],
+          "props": []
         },
         "KeyValueEditor": {
           "extends": [
@@ -20879,6 +22868,18 @@
               "type": "ReactNode"
             }
           ]
+        },
+        "MentionInputContent": {
+          "extends": [
+            "React.ComponentPropsWithoutRef<typeof PopoverContent>"
+          ],
+          "props": []
+        },
+        "MentionInputEmpty": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         },
         "MentionInputItem": {
           "extends": [
@@ -21565,6 +23566,18 @@
             }
           ]
         },
+        "SchemaFormDescription": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
+        },
+        "SchemaFormError": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "SchemaFormFallback": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -21590,6 +23603,12 @@
               "description": "The field's `name` (its key in the spec + values). Resolved anywhere in the tree, including inside `group` branches."
             }
           ]
+        },
+        "SchemaFormFields": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         },
         "SchemaFormProvider": {
           "extends": [],
@@ -21655,6 +23674,12 @@
             }
           ]
         },
+        "SchemaFormRoot": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLFormElement>, \"onSubmit\">"
+          ],
+          "props": []
+        },
         "SchemaFormSubmit": {
           "extends": [
             "Omit<HTMLAttributes<HTMLButtonElement>, \"children\">"
@@ -21667,6 +23692,12 @@
               "description": "Submit button label (overrides `spec.submitLabel`). @default \"Submit\""
             }
           ]
+        },
+        "SchemaFormTitle": {
+          "extends": [
+            "HTMLAttributes<HTMLParagraphElement>"
+          ],
+          "props": []
         },
         "SectionHeader": {
           "extends": [],
@@ -21756,7 +23787,9 @@
           ]
         },
         "SelectTrigger": {
-          "extends": [],
+          "extends": [
+            "ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>"
+          ],
           "props": [
             {
               "name": "size",
@@ -21771,6 +23804,13 @@
             }
           ]
         },
+        "Separator": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>",
+            "VariantProps<typeof separatorVariants>"
+          ],
+          "props": []
+        },
         "SheetContent": {
           "extends": [
             "ComponentPropsWithoutRef<typeof SheetPrimitive.Content>",
@@ -21778,8 +23818,16 @@
           ],
           "props": []
         },
+        "Skeleton": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "Slider": {
-          "extends": [],
+          "extends": [
+            "ComponentPropsWithoutRef<typeof SliderPrimitive.Root>"
+          ],
           "props": [
             {
               "name": "thumbProps",
@@ -22140,6 +24188,12 @@
             }
           ]
         },
+        "Textarea": {
+          "extends": [
+            "TextareaHTMLAttributes<HTMLTextAreaElement>"
+          ],
+          "props": []
+        },
         "ThemeSwitcher": {
           "extends": [
             "Omit<HTMLAttributes<HTMLButtonElement>, \"onChange\">"
@@ -22232,6 +24286,18 @@
             }
           ]
         },
+        "TimelineRoot": {
+          "extends": [
+            "HTMLAttributes<HTMLOListElement>"
+          ],
+          "props": []
+        },
+        "Toaster": {
+          "extends": [
+            "React.ComponentProps<typeof SonnerToaster>"
+          ],
+          "props": []
+        },
         "Toolbar": {
           "extends": [
             "Omit<ComponentPropsWithoutRef<typeof ToolbarPrimitive.Root>, \"orientation\">",
@@ -22243,6 +24309,18 @@
           "extends": [
             "ComponentPropsWithoutRef<typeof ToolbarPrimitive.Button>",
             "Pick<VariantProps<typeof buttonVariants>, \"variant\" | \"size\">"
+          ],
+          "props": []
+        },
+        "ToolbarSeparator": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof ToolbarPrimitive.Separator>"
+          ],
+          "props": []
+        },
+        "ToolbarToggleGroup": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof ToolbarPrimitive.ToggleGroup>"
           ],
           "props": []
         },
@@ -22675,6 +24753,12 @@
               "description": "Run before advancing past this step. Return false to block."
             }
           ]
+        },
+        "WizardSteps": {
+          "extends": [
+            "HTMLAttributes<HTMLOListElement>"
+          ],
+          "props": []
         }
       },
       "intent": {
@@ -23334,6 +25418,36 @@
             }
           ]
         },
+        "FileViewerContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "FileViewerFind": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "FileViewerFrame": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "FileViewerHighlightStatus": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "FileViewerPager": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
         "FileViewerProvider": {
           "extends": [],
           "props": [
@@ -23452,6 +25566,12 @@
             }
           ]
         },
+        "FileViewerRotate": {
+          "extends": [
+            "HTMLAttributes<HTMLButtonElement>"
+          ],
+          "props": []
+        },
         "FileViewerToolbar": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -23464,6 +25584,12 @@
               "description": "Extra controls, placed after the built-in actions."
             }
           ]
+        },
+        "FileViewerZoom": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
         }
       },
       "intent": {
