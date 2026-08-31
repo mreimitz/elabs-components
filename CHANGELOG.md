@@ -56,9 +56,10 @@
   `packages/viewer/src/adapters/markdown/markdown-adapter.tsx`, does — it was
   never opened by the gate); importing it under an alias; and putting a
   non-compliant wrapper AFTER a compliant one in the same module. The gate now
-  resolves renderer bindings across every import form and **fails closed** on a
-  module it cannot follow, checks the props-alias and namespace-indexed type
-  shapes, keys the runtime arm on whatever identifier is actually spread with
+  resolves renderer bindings across every import form (including a local rebind
+  chain, `const S2 = Streamdown`) and **fails closed** on a module it cannot
+  follow, scans both render forms — `<Tag …>` and `createElement(Tag, …)` —
+  checks the props-alias and namespace-indexed type shapes, keys the runtime arm on whatever identifier is actually spread with
   the search window bounded to the enclosing scope, adds a literal
   `rehypePlugins={…}` attribute channel with a reasoned two-site allowlist for
   `@elabs-ai/components-editor`'s `MarkdownPreview`, asserts its key list equals

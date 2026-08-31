@@ -347,6 +347,53 @@ test("CHANNEL G: a compliant wrapper cannot vouch for a later non-compliant sibl
   );
 });
 
+test("the gate follows the RENDER, not only the import: local rebind and createElement", () => {
+  // Both shapes were found by the independent validator of this change. They
+  // resolve their import cleanly, so `bindings` is non-empty and the fail-closed
+  // net never fires — the render site itself was simply not scanned.
+  const rebind = [
+    'import { Streamdown } from "streamdown";',
+    "const S2 = Streamdown;",
+    "export const Bad = ({ ...props }) => <S2 {...props} />;",
+  ].join("\n");
+  const r1 = resolveRendererBindings(rebind, streamdown);
+  assert.ok(r1.bindings.includes("S2"), "a local rebind is a binding");
+  assert.equal(findUnstrippedSpreads(rebind, r1.bindings, DANGEROUS).length, 1);
+
+  // …and a chain of rebinds resolves to a fixed point.
+  const chain = 'import { Streamdown } from "streamdown";\nconst A = Streamdown;\nconst B = A;';
+  assert.ok(resolveRendererBindings(chain, streamdown).bindings.includes("B"));
+
+  // createElement with the props object handed over whole — no spread syntax.
+  const call = [
+    'import { Streamdown } from "streamdown";',
+    "export const Bad = (props) => createElement(Streamdown, props);",
+  ].join("\n");
+  const r2 = resolveRendererBindings(call, streamdown);
+  const callProblems = findUnstrippedSpreads(call, r2.bindings, DANGEROUS);
+  assert.equal(callProblems.length, 1);
+  assert.match(callProblems[0].detail, /createElement/);
+
+  // createElement setting the dangerous prop as an object KEY, not a JSX attribute.
+  const explicit =
+    'import { Streamdown } from "streamdown";\nexport const Bad = () => createElement(Streamdown, { rehypePlugins: [] });';
+  const r3 = resolveRendererBindings(explicit, streamdown);
+  assert.equal(findExplicitDangerousProps(explicit, r3.bindings, DANGEROUS).length, 1);
+
+  // A compliant createElement caller is still clean.
+  const ok = [
+    'import { Streamdown } from "streamdown";',
+    "export const Good = (props) => {",
+    "  stripSanitizerOverrides(props);",
+    "  return createElement(Streamdown, props);",
+    "};",
+  ].join("\n");
+  assert.deepEqual(
+    findUnstrippedSpreads(ok, resolveRendererBindings(ok, streamdown).bindings, DANGEROUS),
+    [],
+  );
+});
+
 test("spreadSearchWindowStart: a CALL passing the identifier is not a binding site", () => {
   // The regression this pins: `\(\s*props\s*[,)]` also matched
   // `stripSanitizerOverrides(props)`, moving the window start PAST the very
@@ -510,7 +557,11 @@ test("REPRODUCTION E: the literal #36 vulnerability, reopened, is caught end to 
 
 test("scanPackages: shapes A–D each produce at least one finding", () => {
   const dir = fixtureRoot("sanitizer-shapes", {
-    // A — the package's own props alias, no Omit<>.
+    // A — the package's own props alias, no Omit<>. The render line is load-bearing:
+    // a module that ONLY declares `type Bad = StreamdownProps & …` renders nothing and
+    // binds nothing, so `scanPackages` skips it — correctly, since a type alias grants
+    // no runtime capability and any module that RENDERS with it is caught by channel 2.
+    // The finding this fixture asserts is the type half of a real render site.
     "packages/fake-a/src/a.tsx": [
       'import { Streamdown, type StreamdownProps } from "streamdown";',
       "export type BadA = StreamdownProps & { loading?: boolean };",

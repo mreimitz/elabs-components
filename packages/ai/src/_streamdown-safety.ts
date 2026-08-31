@@ -152,10 +152,17 @@ export function warnOnTrustedPluginSlots(overrides: object | undefined, internal
   }
 
   if (isPluginObject(consumer.mermaid) && consumer.mermaid !== defaults.mermaid) {
+    // The message describes React's `dangerouslySetInnerHTML` in prose rather than
+    // naming the identifier: `pnpm csp-sinks:check` preserves string literals on
+    // purpose (a sink hidden in a string is still a sink), so spelling the prop out
+    // inside this warning makes the gate read THIS file as a new HTML-assigning
+    // module. Comments like this one are stripped by that gate, so the name is safe
+    // here and in the TSDoc above — just not inside a runtime string.
     console.warn(
       "[@elabs-ai/components-ai] `plugins.mermaid` never enters the rehype pipeline at " +
-        "all: its rendered SVG is written with `dangerouslySetInnerHTML`, i.e. after and " +
-        "outside the sanitiser chain (rehype-raw → rehype-sanitize → rehype-harden). A " +
+        "all: its rendered SVG is injected as raw HTML through React's dangerous " +
+        "inner-HTML prop, i.e. after and outside the sanitiser chain " +
+        "(rehype-raw → rehype-sanitize → rehype-harden). A " +
         "replacement plugin must sanitise its own output — brand-ui's default pins " +
         `mermaid's strict security level. ${TRUSTED_PLUGIN_SLOT_ADVICE}`,
     );

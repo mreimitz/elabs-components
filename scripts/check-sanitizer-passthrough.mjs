@@ -57,7 +57,8 @@
  *      i.e. roughly the enclosing function — so a compliant wrapper earlier in
  *      the file cannot vouch for a non-compliant one later (channel G).
  *   3. EXPLICIT PROP — a literal `rehypePlugins={…}` attribute on a renderer
- *      tag, outside the named `explicitPropAllowlist`. This is the channel that
+ *      tag (or a `rehypePlugins:` key in a `createElement` props object),
+ *      outside the named `explicitPropAllowlist`. This is the channel that
  *      catches "I never spread anything, I just set the prop".
  *   4. KEY-LIST PARITY — this table's `dangerousProps` must equal the runtime
  *      helper's own `SANITIZER_OVERRIDE_KEYS`, in BOTH directions. Removing a
@@ -86,6 +87,14 @@
  *     spread identifier). It cannot see through a helper function that does the
  *     stripping on the caller's behalf, and it will accept a strip call that is
  *     in the window but on an unreachable branch.
+ *   - Channels 2 and 3 follow the RENDER, and understand exactly two forms:
+ *     `<Tag …>` and `createElement(Tag, …)` (see `renderSites`), where `Tag` is
+ *     any resolved binding INCLUDING a local rebind chain (`const S2 = Streamdown`).
+ *     Following the import is not the same as following the render: a render
+ *     written some third way resolves its binding cleanly, so the fail-closed
+ *     net stays quiet and no channel scans it. `cloneElement`, a component
+ *     stored in an object/array and read back out, or a factory that returns the
+ *     element are the shapes that do this.
  *   - Channel 0 fires only on a module that NAMES the specifier somewhere it can
  *     see (`from "streamdown"`, `import("streamdown")`, `require("streamdown")`).
  *     A module that reaches the package through a computed string, or through a
@@ -362,6 +371,24 @@ export function resolveRendererBindings(text, renderer) {
     }
   }
 
+  // ── transitive local rebinding: `const S2 = Streamdown;` ─────────────────
+  // Channel 0 resolved the IMPORT, so `bindings` is non-empty and the fail-closed
+  // net never fires — but a one-line rebind moves the render site to a tag name
+  // channels 1–3 were not looking for. Iterated to a fixed point so a chain
+  // (`const A = Streamdown; const B = A;`) resolves too.
+  for (let pass = 0; pass < 8; pass += 1) {
+    const before = bindings.size;
+    for (const b of [...bindings]) {
+      const rebindRe = new RegExp(
+        `(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*(?::[^=;]*)?=\\s*${esc(b)}\\s*[;,\\n]`,
+        "g",
+      );
+      let rb;
+      while ((rb = rebindRe.exec(text))) bindings.add(rb[1]);
+    }
+    if (bindings.size === before) break;
+  }
+
   return {
     referenced: referencesModule(text, moduleName),
     bindings: [...bindings],
@@ -451,6 +478,54 @@ function openingTagEnd(text, start) {
   return text.length;
 }
 
+/** End of a `createElement(` argument list: the matching close paren. */
+function callArgsEnd(text, openParen) {
+  let depth = 0;
+  for (let i = openParen; i < text.length; i++) {
+    const c = text[i];
+    if (c === "(") depth++;
+    else if (c === ")") {
+      depth--;
+      if (depth === 0) return i + 1;
+    }
+  }
+  return text.length;
+}
+
+/**
+ * Every place `tag` is RENDERED, in either form the codebase can write it.
+ *
+ * Channel 0 follows the IMPORT; channels 2 and 3 have to follow the RENDER, and
+ * for a while they only understood `<Tag …>`. A `createElement(Tag, props)` call
+ * resolved its binding cleanly (so the fail-closed net stayed quiet) and then
+ * passed the whole props object through a site nothing scanned. Returns
+ * `{ index, body, isCall }`, where `body` is the JSX opening tag or the call's
+ * argument list.
+ */
+function renderSites(scan, tag) {
+  const sites = [];
+  const jsxRe = new RegExp(`<${esc(tag)}(?![\\w$])`, "g");
+  let jm;
+  while ((jm = jsxRe.exec(scan)))
+    sites.push({
+      index: jm.index,
+      body: scan.slice(jm.index, openingTagEnd(scan, jm.index)),
+      isCall: false,
+    });
+
+  const callRe = new RegExp(`createElement\\s*\\(\\s*${esc(tag)}\\s*,`, "g");
+  let cm;
+  while ((cm = callRe.exec(scan))) {
+    const open = scan.indexOf("(", cm.index);
+    sites.push({
+      index: cm.index,
+      body: scan.slice(cm.index, callArgsEnd(scan, open)),
+      isCall: true,
+    });
+  }
+  return sites.sort((a, b) => a.index - b.index);
+}
+
 /**
  * Channel 2's window (#75 channel G). The nearest preceding DECLARATION of the
  * spread identifier, so a compliant wrapper earlier in the same module cannot
@@ -496,18 +571,25 @@ export function findUnstrippedSpreads(text, bindings, dangerousProps) {
   const scan = maskComments(text);
   const problems = [];
   for (const tag of toArray(bindings)) {
-    const tagRe = new RegExp(`<${esc(tag)}(?![\\w$])`, "g");
-    let tm;
-    while ((tm = tagRe.exec(scan))) {
-      const body = scan.slice(tm.index, openingTagEnd(scan, tm.index));
+    for (const site of renderSites(scan, tag)) {
+      const { index: tagIndex, body, isCall } = site;
+      const idents = [];
       const spreadRe = /\{\s*\.\.\.\s*\(?\s*([A-Za-z_$][\w$]*)/g;
       let sm;
+      while ((sm = spreadRe.exec(body))) idents.push([sm[1], `{...${sm[1]}}`]);
+      // `createElement(Tag, props)` hands the whole object over with no spread
+      // syntax at all — the second argument IS the props bag.
+      if (isCall) {
+        const bare = new RegExp(
+          `createElement\\s*\\(\\s*${esc(tag)}\\s*,\\s*([A-Za-z_$][\\w$]*)\\s*[,)]`,
+        ).exec(body);
+        if (bare) idents.push([bare[1], `the props argument \`${bare[1]}\``]);
+      }
       const seen = new Set();
-      while ((sm = spreadRe.exec(body))) {
-        const ident = sm[1];
+      for (const [ident, shown] of idents) {
         if (seen.has(ident)) continue;
         seen.add(ident);
-        const win = scan.slice(spreadSearchWindowStart(scan, ident, tm.index), tm.index);
+        const win = scan.slice(spreadSearchWindowStart(scan, ident, tagIndex), tagIndex);
         const hasHelperCall = new RegExp(
           `stripSanitizerOverrides\\s*\\(\\s*${esc(ident)}\\s*\\)`,
         ).test(win);
@@ -519,11 +601,11 @@ export function findUnstrippedSpreads(text, bindings, dangerousProps) {
         if (!hasHelperCall && !hasInlineDeletes) {
           problems.push({
             kind: "unstripped-spread",
-            index: tm.index,
-            line: lineOf(scan, tm.index),
+            index: tagIndex,
+            line: lineOf(scan, tagIndex),
             detail:
-              `<${tag}> spreads {...${ident}} without a preceding ` +
-              `stripSanitizerOverrides(${ident}) call (or an inline delete of every ` +
+              `${isCall ? `createElement(${tag}, …)` : `<${tag}>`} passes ${shown} without a ` +
+              `preceding stripSanitizerOverrides(${ident}) call (or an inline delete of every ` +
               `dangerous prop) inside the enclosing scope`,
           });
         }
@@ -542,18 +624,19 @@ export function findExplicitDangerousProps(text, bindings, dangerousProps) {
   const scan = maskComments(text);
   const problems = [];
   for (const tag of toArray(bindings)) {
-    const tagRe = new RegExp(`<${esc(tag)}(?![\\w$])`, "g");
-    let tm;
-    while ((tm = tagRe.exec(scan))) {
-      const body = scan.slice(tm.index, openingTagEnd(scan, tm.index));
+    for (const { index: tagIndex, body, isCall } of renderSites(scan, tag)) {
       for (const prop of dangerousProps) {
-        if (new RegExp(`(?:^|[\\s{])${esc(prop)}\\s*=`).test(body)) {
+        // JSX writes `prop={…}`; a createElement props object writes `prop: …`.
+        const assign = isCall ? `\\s*[:=]` : `\\s*=`;
+        if (new RegExp(`(?:^|[\\s{,])${esc(prop)}${assign}`).test(body)) {
           problems.push({
             kind: "explicit-dangerous-prop",
-            index: tm.index,
-            line: lineOf(scan, tm.index),
+            index: tagIndex,
+            line: lineOf(scan, tagIndex),
             prop,
-            detail: `<${tag}> sets \`${prop}\` literally, replacing the renderer's sanitiser chain`,
+            detail:
+              `${isCall ? `createElement(${tag}, …)` : `<${tag}>`} sets \`${prop}\` literally, ` +
+              "replacing the renderer's sanitiser chain",
           });
         }
       }
