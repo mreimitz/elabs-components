@@ -1375,8 +1375,10 @@ function DataTableInner<TData, TValue>(
                         // both themes, unaffected by density) and is already
                         // the header's own label color. A slim persistent
                         // `after:` seam (not just a hover reveal) gives the
-                        // real resting boundary; hover/focus widen it to the
-                        // full hit-zone using the same compliant color.
+                        // real resting boundary; hover/focus widen the drawn
+                        // seam to 8px (`after:w-2`) using the same compliant
+                        // color — a separate width from the 24px pointer hit
+                        // box below (#51), which the seam does not fill.
                         // Dragging keeps the pre-existing full-fill
                         // `bg-primary` treatment — a separate, already-
                         // accepted `--ring`/`--primary` light-theme exemption

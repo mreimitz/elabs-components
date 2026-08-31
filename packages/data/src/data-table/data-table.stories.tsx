@@ -830,7 +830,18 @@ export const WithColumnResizing: Story = {
     await expect(serviceHeader.style.width).toBe("150px");
 
     const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+
+    // #51 — the focus ring moved from the hit box itself onto the `after:`
+    // drawn-seam pseudo-element (`focus-visible:after:ring-2`), so the now-24px
+    // hit box doesn't draw a 24px focus rectangle over an 8px sliver's worth of
+    // approved contrast. Measure the REAL rendered ring via computed style on
+    // the pseudo-element — not a class-name string comparison — so a later
+    // refactor can't silently drop a visible focus indicator (WCAG 2.4.7)
+    // without failing this test.
+    await expect(getComputedStyle(handle, "::after").boxShadow).toBe("none");
     handle.focus();
+    await expect(getComputedStyle(handle, "::after").boxShadow).not.toBe("none");
+
     await expect(handle).toHaveAttribute("aria-valuenow", "150");
 
     await userEvent.keyboard("{ArrowRight}");
