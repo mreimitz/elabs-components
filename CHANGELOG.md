@@ -309,6 +309,7 @@ work alongside `@elabs-ai/components-ai`.
     text is ~1.1:1 in `light`); `layout-app-shell-double-sided--default` → new #50
     (`sidebar-05`'s sub-item description uses `text-muted-foreground` on `bg-sidebar`
     instead of `text-sidebar-muted-foreground`, ~2.29:1 in `light`).
+- Added: `@elabs-ai/components-ui` exports `illustrationAccent()` helper — consumers authoring custom `*Illustration` components can now safely retint the illustration's stroke/fill accent outside `StatePanel` by using `illustrationAccent(fallbackColor)` to produce the correct CSS fallback syntax. (#46)
 
 ## v4.0.0 — 2026-08-17
 
