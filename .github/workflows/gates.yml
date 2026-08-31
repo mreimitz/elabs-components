@@ -283,6 +283,7 @@ jobs:
           pnpm loading-states:check:test
           pnpm lockfile:check:test
           pnpm machine-paths:check:test
+          pnpm manifest:check:test
           pnpm merge:check:test
           pnpm microcopy:check:test
           pnpm motion:check:test
