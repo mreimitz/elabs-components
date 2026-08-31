@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   planScaffold,
+  emitScaffold,
   resolveTemplateFile,
   scanRepo,
   mapComponents,
@@ -257,6 +258,86 @@ test("planInstall: standalone:false keeps workspace:* and names no registry", ()
   assert.equal(r.install.dependencyRange, "workspace:*");
   assert.equal(r.install.addCommand, undefined, "no install command for an in-monorepo app");
   assert.doesNotMatch(JSON.stringify(r), /npm\.pkg\.github\.com/);
+});
+
+// ---- scaffold: standalone auto-detects OUTSIDE this monorepo (#52) ----------
+//
+// #52: an app-spec with NO `standalone` key used to default to `false`
+// (workspace:* + the private shared eslint config) REGARDLESS of where the
+// scaffold ran. Emitting from anywhere but a brand-ui checkout produced an
+// app that could not `pnpm install`, with no warning. The fix makes the
+// default depend on whether `root` resolves to THIS repo (a `packages/ui`
+// sibling) — everywhere else, standalone auto-detects `true`.
+
+test("emitScaffold: outside this monorepo + no `standalone` key emits an installable app", () => {
+  // `root` must NOT be this monorepo: a bare tmp dir has no `packages/ui`
+  // sibling, so `isThisRepo(root)` is false and the fix's default kicks in.
+  // `bundledDir` points at this checkout's real template dir explicitly (a dev
+  // checkout has no `packages/cli/templates` — that only exists post-`prepack`
+  // — so the CLI's own BUNDLED_TEMPLATE_DIR default would 404 here); passing it
+  // does not affect `isThisRepo`, which only ever looks at `root`.
+  const outsideRoot = mkdtempSync(join(tmpdir(), "brand-ui-outside-root-"));
+  const target = mkdtempSync(join(tmpdir(), "brand-ui-outside-target-"));
+  const bundledDir = join(root, "docs/playbooks/templates");
+  try {
+    const r = emitScaffold(
+      { archetype: "dashboard", theme: "light", title: "X" }, // no `standalone` key
+      { root: outsideRoot, target, bundledDir, force: true },
+    );
+    assert.equal(r.status, "written", r.error);
+    assert.equal(r.plan.install.standalone, true, "auto-detected standalone outside this repo");
+    assert.ok(
+      !r.plan.install.uninstallable,
+      "an auto-detected default is never flagged uninstallable",
+    );
+
+    const pkgJson = readFileSync(join(target, "package.json"), "utf8");
+    assert.doesNotMatch(
+      pkgJson,
+      /workspace:\*/,
+      "real semver ranges, not an unresolvable workspace protocol",
+    );
+
+    const eslintConfig = readFileSync(join(target, "eslint.config.js"), "utf8");
+    assert.doesNotMatch(
+      eslintConfig,
+      // Only the IMPORT specifier is disqualifying — the standalone config's own
+      // explanatory comment names the private package in prose, which is fine.
+      new RegExp(`from ["']${PKG_SCOPE}eslint-config`),
+      "not importing the private, unpublished shared config",
+    );
+  } finally {
+    rmSync(outsideRoot, { recursive: true, force: true });
+    rmSync(target, { recursive: true, force: true });
+  }
+});
+
+test("planScaffold: no `standalone` key defaults false INSIDE this monorepo (unchanged)", () => {
+  // The companion case: root resolving to this repo keeps the pre-#52 default
+  // so every existing in-monorepo scaffold call (including the ones above that
+  // omit `standalone`) is unaffected.
+  const r = planScaffold({ archetype: "dashboard", theme: "light", title: "X" }, { root });
+  assert.equal(r.install.standalone, false);
+  assert.equal(r.install.dependencyRange, "workspace:*");
+});
+
+test("planScaffold: explicit standalone:false OUTSIDE this monorepo is honored but flagged uninstallable", () => {
+  const outsideRoot = mkdtempSync(join(tmpdir(), "brand-ui-uninstallable-"));
+  const bundledDir = join(root, "docs/playbooks/templates");
+  try {
+    const r = planScaffold(
+      { archetype: "dashboard", theme: "light", title: "X", standalone: false },
+      { root: outsideRoot, bundledDir },
+    );
+    assert.equal(r.install.standalone, false, "the explicit override still wins");
+    assert.equal(r.install.uninstallable, true);
+    assert.ok(
+      r.notes.some((n) => n.includes("UNINSTALLABLE")),
+      "the scaffold summary surfaces the warning, not just the install block",
+    );
+  } finally {
+    rmSync(outsideRoot, { recursive: true, force: true });
+  }
 });
 
 test("planInstall: entities pull in the data package (the ColumnDef the scaffold emits)", () => {

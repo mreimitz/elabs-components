@@ -264,6 +264,7 @@ jobs:
           pnpm collapse-fork:check:test
           pnpm components:check:test
           pnpm conflict-markers:check:test
+          pnpm consultation-claims:check:test
           pnpm consumer:check:test
           pnpm csp:check:test
           pnpm csp-sinks:check:test
@@ -273,6 +274,7 @@ jobs:
           pnpm decoration:check:test
           pnpm decoration-collapse:check:test
           pnpm dep-direction:check:test
+          pnpm dep-field-move:check:test
           pnpm deps-sync:test
           pnpm dispatch:check:test
           pnpm docs:check:test

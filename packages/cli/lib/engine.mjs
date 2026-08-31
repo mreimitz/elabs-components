@@ -315,20 +315,43 @@ function repoVersion(root) {
 }
 
 /**
+ * Is `root` actually THIS monorepo — not merely some unrelated pnpm workspace
+ * the caller happens to be inside (#52)? `findRepoRoot()` (core.mjs) only checks
+ * for `pnpm-workspace.yaml` + a `packages` dir, which any pnpm monorepo has —
+ * that is not specific enough to default a scaffold to `workspace:*` deps.
+ * Require the sibling this repo actually ships — `packages/ui`, whose
+ * package.json name matches `PKG_SCOPE` — the same signal the issue names
+ * ("a packages/ui sibling"). A consumer's own coincidental pnpm workspace, or a
+ * globally-installed CLI run from inside one, correctly reads as "not this repo".
+ */
+function isThisRepo(root) {
+  if (!root) return false;
+  return readPkgJson(join(root, "packages", "ui"))?.name === `${PKG_SCOPE}ui`;
+}
+
+/**
  * The "make it runnable" handoff (#263). A scaffold that targets a folder OUTSIDE
  * this monorepo cannot install anything without the GitHub-Packages recipe, and
  * renders **unstyled** without the `@source` lines — the single most common
  * consumer mistake (`docs/CONSUMING.md` §4). So the plan carries the whole block,
  * generated from ONE package array.
  *
- * `standalone: false` (the default) keeps `workspace:*` and emits no registry
- * block at all.
+ * `standalone` DEFAULTS to whichever mode is installable for where the scaffold
+ * actually runs (#52): `true` (real semver ranges, no shared eslint config)
+ * everywhere except when `root` resolves to THIS monorepo (`isThisRepo`), where
+ * it defaults to `false` (`workspace:*` + the shared config) — the in-monorepo
+ * case is the special one, so it is the one that has to declare itself. An
+ * explicit `spec.standalone` always wins over the default either way.
  */
 export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}) {
   const set = scaffoldPackages(archetype, spec, { root, bundledDir });
   if (set.error) return { error: set.error };
   const packages = set.all;
-  const standalone = spec.standalone === true;
+  const standalone = spec.standalone === undefined ? !isThisRepo(root) : spec.standalone === true;
+  // An explicit `standalone: false` outside this monorepo is honored (the
+  // caller asked for workspace:* on purpose) but cannot actually install —
+  // planScaffold's summary must say so instead of reporting quiet success.
+  const uninstallable = !standalone && !isThisRepo(root);
   const release = spec.release || repoVersion(root) || null;
 
   // Peer ranges come from the packages' own `peerDependencies` — so the app
@@ -367,6 +390,7 @@ export function planInstall(archetype, spec, { root, manifest, bundledDir } = {}
   if (!standalone) {
     return {
       standalone: false,
+      ...(uninstallable ? { uninstallable: true } : {}),
       packages,
       peers,
       peerRanges,
@@ -515,6 +539,15 @@ export function planScaffold(spec, { root, bundledDir } = {}) {
       install.standalone
         ? "Standalone: the install handoff (registry + deps + CSS) is in `install` — see docs/CONSUMING.md §1-4."
         : "In-monorepo: dependencies stay `workspace:*` (set `standalone: true` in the spec for the registry handoff).",
+      ...(install.uninstallable
+        ? [
+            '⚠ UNINSTALLABLE: "standalone": false was set explicitly, but this is not the brand-ui ' +
+              "monorepo — the emitted package.json will carry `workspace:*` dependencies and an " +
+              "eslint.config.js importing the private `@elabs-ai/components-eslint-config`, neither of " +
+              "which resolves outside this repo. Remove `standalone: false` (or set `standalone: true`) " +
+              "unless this app really lives inside the brand-ui monorepo.",
+          ]
+        : []),
     ],
   };
 }
@@ -1361,6 +1394,19 @@ export function emitScaffold(
         ? `Dry run — nothing was written. Re-run with --write ${target} to emit ${written.length} file(s).`
         : `Wrote ${written.length} file(s) into ${targetAbs}.`,
       `brand-ui audit: ${audit.issues} issue(s), ${audit.advisory} advisory across ${audit.files} emitted file(s).`,
+      // #52: an explicit `standalone: false` outside this monorepo emits an app
+      // that cannot install (workspace:* deps, a private eslint-config import) —
+      // that must be in THIS summary, not only buried in `plan.notes`, or the
+      // "Wrote N file(s)" / "0 issue(s)" lines above read as unqualified success.
+      ...(install.uninstallable
+        ? [
+            '⚠ UNINSTALLABLE: "standalone": false was set explicitly, but this is not the brand-ui ' +
+              "monorepo — the emitted package.json carries `workspace:*` dependencies and " +
+              "eslint.config.js imports the private `@elabs-ai/components-eslint-config`, neither of " +
+              "which resolves outside this repo. Remove `standalone: false` (or set `standalone: true`) " +
+              "unless this app really lives inside the brand-ui monorepo.",
+          ]
+        : []),
       ...(skipped.length
         ? [
             `PARTIAL — ${skipped.length} file(s) already existed and were NOT written: ${skipped.join(", ")}.`,

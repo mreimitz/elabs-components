@@ -869,7 +869,11 @@ const SUBCOMMAND_HELP = {
   audit:
     "usage: brand-ui audit <path> [--json] [--strict] [--register=product|brand]\n  Static token/style + content & visual anti-slop lint",
   scaffold:
-    "usage: brand-ui scaffold <app-spec.md> [--write <dir>] [--dry-run] [--force]\n  Plan / emit a born-compliant app from an app-spec",
+    "usage: brand-ui scaffold <app-spec.md> [--write <dir>] [--dry-run] [--force]\n" +
+    "  Plan / emit a born-compliant app from an app-spec\n" +
+    '  The spec\'s "standalone" key (default: auto-detected — true unless run from\n' +
+    "  inside the brand-ui monorepo) picks real semver deps + the full install\n" +
+    "  handoff vs. `workspace:*` + the shared eslint config. See docs/CONSUMING.md.",
   scan: "usage: brand-ui scan [path] [--out <dir>]\n  Read-only repo profile: framework, UI lib, styling, components",
   map: "usage: brand-ui map <scan.json> [--out <dir>]\n  Map existing components → brand-ui via the manifest",
   codemod:

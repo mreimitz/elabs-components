@@ -9,7 +9,31 @@
   "comment": [
     "Every @elabs-ai/components-* version below is a PLACEHOLDER. check-consumer-install.mjs",
     "rewrites each one to a file: reference pointing at a freshly packed tarball,",
-    "then installs this app OUTSIDE the workspace. Do not add real ranges here."
+    "then installs this app OUTSIDE the workspace. Do not add real ranges here",
+    "-- that instruction is scoped to the @elabs-ai/components-* entries only.",
+    "",
+    "@xyflow/react, monaco-editor and maplibre-gl below are DIFFERENT: they are",
+    "each package's own SDK/engine peerDependency, pinned to a real, current",
+    "version on purpose (issue #41). Nothing else in this fixture's install graph",
+    "declares a competing version of those three, so pnpm's auto-install-peers",
+    "(.npmrc: strict-peer-dependencies=true, set below by check-consumer-install.mjs)",
+    "would otherwise silently satisfy a narrowed/wrong peer range from thin air --",
+    "a #30-shaped regression could ship undetected. Keep these real; do not",
+    "genericize them back to \"*\".",
+    "",
+    "pnpm.peerDependencyRules.allowedVersions below is a SEPARATE, narrowly-scoped",
+    "exemption -- not a relaxation of the strict-peer-dependencies=true check above.",
+    "@visx/brush@3.12.0 (a transitive dep of @elabs-ai/components-charts) still",
+    "declares its own react peer at ^16-18 and pulls @visx/drag/@visx/group/@visx/shape",
+    "at the same old major, all with the same stale peer range -- a pre-existing,",
+    "already-tolerated gap (this repo's own root .npmrc sets",
+    "strict-peer-dependencies=false for exactly this reason) that is UNRELATED to the",
+    "@xyflow/react / monaco-editor / maplibre-gl peers this fixture exists to guard.",
+    "Each entry is scoped to one requester>react pair so a real regression on any of",
+    "the three SDK peers above -- or on react itself for any @elabs-ai/components-*",
+    "package -- still fails strict-peer-dependencies. Do not widen this to a bare",
+    "\"react\" key; that would silently swallow the class of regression this fixture",
+    "was built to catch."
   ],
   "dependencies": {
     "@elabs-ai/components-ai": "*",
@@ -23,6 +47,9 @@
     "@elabs-ai/components-tokens": "*",
     "@elabs-ai/components-ui": "*",
     "@elabs-ai/components-viewer": "*",
+    "@xyflow/react": "^12.11.1",
+    "maplibre-gl": "^5.15.0",
+    "monaco-editor": "^0.55.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -33,5 +60,15 @@
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.0",
     "vite": "^6.0.7"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@visx/brush>react": "19",
+        "@visx/drag>react": "19",
+        "@visx/group>react": "19",
+        "@visx/shape>react": "19"
+      }
+    }
   }
 }

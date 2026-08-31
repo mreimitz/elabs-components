@@ -11,9 +11,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   checkUseClient,
   checkExportsResolve,
@@ -22,6 +24,7 @@ import {
   tarballName,
   pinToTarballs,
   distributablePackages,
+  APP_NPMRC,
 } from "./check-consumer-install.mjs";
 
 /** Build a throwaway node_modules tree: { "@elabs-ai/components-ui/dist/index.js": "…" }. */
@@ -236,3 +239,125 @@ test("the distributable set is derived from publishConfig, never hard-coded", ()
     "a tooling package with no publishConfig must not be treated as distributable",
   );
 });
+
+// ── Defect 5 (#41): the fixture never pinned a peer independently, so a
+// narrowed/wrong peer range on @xyflow/react / monaco-editor / maplibre-gl
+// could never conflict with anything and auto-install-peers silently "fixed"
+// it. This is the one real, end-to-end test in this file (a genuine `pnpm
+// install`, no vite build) -- it exists specifically to prove the mechanism
+// (strict-peer-dependencies=true + an independently-pinned peer) actually
+// catches a #30-shaped regression, not merely that our own violation-array
+// bookkeeping is correct. Network/registry-touching, so it gets a generous
+// timeout; @xyflow/react is already in this monorepo's pnpm store (a
+// devDependency of @elabs-ai/components-flow), so it resolves from the local
+// store rather than a cold network fetch.
+// Pin the SAME package manager the repo pins (mirrors check-consumer-install.mjs's
+// own rootPkg.packageManager injection) -- otherwise this test's peer-conflict
+// behavior depends on whatever pnpm happens to be on the developer's PATH.
+const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const ROOT_PACKAGE_MANAGER = JSON.parse(
+  readFileSync(join(REPO_ROOT, "package.json"), "utf8"),
+).packageManager;
+
+function writeConsumerAppFixture({ peerPackageName, declaredPeerRange, pinnedPeerVersion }) {
+  const work = mkdtempSync(join(tmpdir(), "brand-ui-peertest-"));
+  const pkgSrc = join(work, "peer-check-fixture");
+  const app = join(work, "app");
+  mkdirSync(pkgSrc, { recursive: true });
+  mkdirSync(app, { recursive: true });
+
+  // A synthetic package standing in for @elabs-ai/components-flow: all that
+  // matters is that it declares a peerDependency on a REAL, already-cached
+  // npm package, exactly like the real distributable packages do.
+  writeFileSync(
+    join(pkgSrc, "package.json"),
+    JSON.stringify(
+      {
+        name: "peer-check-fixture",
+        version: "1.0.0",
+        main: "index.js",
+        peerDependencies: { [peerPackageName]: declaredPeerRange },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFileSync(join(pkgSrc, "index.js"), "module.exports = {};\n");
+
+  // The consumer app: depends on the synthetic package (by directory, no pack
+  // step needed -- pnpm resolves a `file:` dependency straight from a
+  // package.json) AND independently pins the peer, exactly like #41's fix to
+  // fixtures/consumer-smoke/package.json.
+  writeFileSync(
+    join(app, "package.json"),
+    JSON.stringify(
+      {
+        name: "peer-check-app",
+        version: "0.0.0",
+        packageManager: ROOT_PACKAGE_MANAGER,
+        dependencies: {
+          "peer-check-fixture": `file:${pkgSrc}`,
+          [peerPackageName]: pinnedPeerVersion,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  // The SAME .npmrc content check-consumer-install.mjs actually writes (not a
+  // hand-copied duplicate) -- so if the real fix is ever reverted, this test
+  // fails instead of quietly testing its own private copy.
+  writeFileSync(join(app, ".npmrc"), APP_NPMRC);
+
+  return { work, app };
+}
+
+test(
+  "FAILS: pnpm install when an independently-pinned peer does not satisfy the declared peer range (#30-shaped regression)",
+  { timeout: 120_000 },
+  () => {
+    const { work, app } = writeConsumerAppFixture({
+      peerPackageName: "@xyflow/react",
+      declaredPeerRange: "^12.11.1", // what @elabs-ai/components-flow actually declares
+      pinnedPeerVersion: "12.0.0", // real, published, but < the declared floor -- mirrors #30
+    });
+    try {
+      let failed = false;
+      let output = "";
+      try {
+        execFileSync("pnpm", ["install", "--ignore-workspace", "--no-frozen-lockfile"], {
+          cwd: app,
+          stdio: "pipe",
+          encoding: "utf8",
+        });
+      } catch (err) {
+        failed = true;
+        output = `${err.stdout ?? ""}${err.stderr ?? ""}${err.message ?? ""}`;
+      }
+      assert.equal(failed, true, "an unmet peer range must fail the install, not just warn");
+      assert.match(output, /ERESOLVE|peer|unmet/i);
+    } finally {
+      rmSync(work, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "PASSES: pnpm install when the pinned peer satisfies the declared range",
+  { timeout: 120_000 },
+  () => {
+    const { work, app } = writeConsumerAppFixture({
+      peerPackageName: "@xyflow/react",
+      declaredPeerRange: "^12.11.1",
+      pinnedPeerVersion: "^12.11.1",
+    });
+    try {
+      execFileSync("pnpm", ["install", "--ignore-workspace", "--no-frozen-lockfile"], {
+        cwd: app,
+        stdio: "pipe",
+      });
+    } finally {
+      rmSync(work, { recursive: true, force: true });
+    }
+  },
+);
