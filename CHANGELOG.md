@@ -206,6 +206,20 @@
   `initialView.columnSizing`) and composes with column pinning (#333) for
   free — a pinned column's sticky offset already reads `column.getSize()` —
   in `@elabs-ai/components-data`.
+- **Fixed:** three a11y fast-follows on `DataTable`'s column-resize handle
+  (#51), all in `@elabs-ai/components-data`: (1) the handle's accessible value
+  was a bare number — it now also exposes `aria-valuetext` ("150 pixels", via
+  a new `data.table.resizeColumnValue` locale key) alongside the unchanged
+  numeric `aria-valuenow`; (2) double-clicking the handle now resets that
+  column to its declared `ColumnDef.size` (or TanStack's own 150px default),
+  dispatched through the same `table.setColumnSizing` path as keyboard/pointer
+  resizing so a controlled `columnSizing` consumer observes it via
+  `onColumnSizingChange`; (3) the handle's interactive hit box grows from a
+  literal 8px (`w-2`, which — being on the Tailwind spacing scale — also
+  shrank further under `data-density="compact"`) to a density-independent
+  `w-[min(24px,50%)]`, with the focus ring moved from the hit box itself onto
+  the drawn seam (`focus-visible:after:ring-2`) so the visible ring stays the
+  original, reviewed 8px sliver rather than ballooning to the new 24px box.
 
 ### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
 
