@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { StatePanel } from "./state-panel";
-import { EmptyListIllustration } from "../../illustrations";
+import {
+  EmptyListIllustration,
+  ErrorIllustration,
+  ILLUSTRATION_ACCENT_VAR,
+} from "../../illustrations";
 
 describe("StatePanel", () => {
   it("renders empty kind with title and description", () => {
@@ -44,6 +48,27 @@ describe("StatePanel", () => {
     const iconWrapper = container.querySelector("svg")?.parentElement;
     expect(iconWrapper?.className ?? "").toMatch(/\btext-destructive\b/);
     expect(iconWrapper?.className ?? "").not.toContain("text-destructive-text");
+  });
+
+  it("error rail carries the width cue (border-s-4) AND a destructive-family colour, not the neutral border-strong grey (#71)", () => {
+    // The rail's WIDTH (4px vs 1px) is the monochrome-survivable structural
+    // cue (per styling-and-tokens.md's border/border-strong decision test);
+    // its HUE should match the rest of the destructive family, not fall back
+    // to the neutral `border-strong` rung — that reads as a CSS-specificity
+    // bug, a 4px grey rail beside three red hairlines, not a deliberate
+    // accent (#71).
+    const { container } = render(<StatePanel kind="error" />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/\bborder-s-4\b/);
+    expect(root.className).toMatch(/\bborder-s-destructive\b/);
+    expect(root.className).not.toMatch(/\bborder-s-border-strong\b/);
+  });
+
+  it("empty kind's rail carries neither the error width nor its destructive colour", () => {
+    const { container } = render(<StatePanel kind="empty" />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).not.toMatch(/\bborder-s-4\b/);
+    expect(root.className).not.toMatch(/\bborder-s-destructive\b/);
   });
 
   it("renders error kind with custom title", () => {
@@ -95,6 +120,47 @@ describe("StatePanel", () => {
     // clamp the default icon slot uses — its rem sizing governs instead.
     const wrapper = svg?.parentElement;
     expect(wrapper?.className ?? "").not.toContain("size-10");
+  });
+
+  it("illustration path renders the title at the subtitle role, distinct from the icon path's text-sm (#47)", () => {
+    // A 112px+ illustration needs a heavier title to group with — bumping the
+    // title to `text-subtitle` (styling-and-tokens.md's typography-scale
+    // roles) only on the illustration path, so the plain `icon` path (a
+    // fixed 40x40 glyph) stays byte-identical to before.
+    const { container: withIllustration } = render(
+      <StatePanel kind="empty" title="No items" illustration={<EmptyListIllustration />} />,
+    );
+    const titleWithIllustration = withIllustration.querySelector("h3");
+    expect(titleWithIllustration?.className ?? "").toContain("text-subtitle");
+    expect(titleWithIllustration?.className ?? "").not.toMatch(/\btext-sm\b/);
+
+    const { container: withIcon } = render(
+      <StatePanel kind="empty" title="No items" icon={<span data-testid="i" />} />,
+    );
+    const titleWithIcon = withIcon.querySelector("h3");
+    expect(titleWithIcon?.className ?? "").toMatch(/\btext-sm\b/);
+    expect(titleWithIcon?.className ?? "").not.toContain("text-subtitle");
+  });
+
+  it("error-kind illustration retints the accent to the TEXT rung, distinct from the retinted subject's FILL rung (#48)", () => {
+    // StatePanel wraps the illustration slot in `text-destructive` (the FILL
+    // rung — a mark, per styling-and-tokens.md "which status rung a
+    // graphical MARK reaches for") for kind="error". If the ambient
+    // `--illustration-accent` override it sets ALSO resolved to
+    // `--destructive`, the accent would collapse onto the subject the moment
+    // both read the same token (#48 finding 2). It must resolve to the TEXT
+    // rung instead — matching the convention every other illustration's own
+    // default fallback already uses (`--primary-text`, `--success-text`).
+    const { container } = render(<StatePanel kind="error" illustration={<ErrorIllustration />} />);
+    const svg = container.querySelector("svg");
+    const wrapper = svg?.parentElement as HTMLElement;
+    expect(wrapper.className).toMatch(/\btext-destructive\b/);
+    expect(wrapper.style.getPropertyValue(ILLUSTRATION_ACCENT_VAR)).toBe("var(--destructive-text)");
+    // Sanity: ErrorIllustration's own fallback (used when no ambient override
+    // is set) also reaches for the TEXT rung, not the FILL token the subject
+    // above just read.
+    const accentRect = container.querySelector("rect");
+    expect(accentRect?.getAttribute("style") ?? "").toContain("--destructive-text");
   });
 
   it("prefers illustration over icon when both are given", () => {

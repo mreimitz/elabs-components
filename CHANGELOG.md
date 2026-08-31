@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
+  (`border-s-4`) was tinted with the neutral `border-border-strong` token
+  instead of a destructive-family colour, reading as a 4px grey bar beside
+  three red hairlines rather than a deliberate accent. Now uses
+  `border-s-destructive` (the FILL rung, still ≥3:1 against `--card`/
+  `--background` per WCAG 1.4.11). `kind="empty"`/`kind="loading"` are
+  unchanged. (#71)
+- Fixed: `StatePanel`'s `illustration` slot rendered its title at the same
+  `text-sm` size as the plain `icon` slot, so a 112px+ illustration sat over
+  a 14px caption with no visual grouping. The illustration path now renders
+  the title at the `subtitle` role and gives the illustration→copy gap more
+  room than the title→description gap; the plain `icon` path is unchanged.
+  Also corrected `EmptyState`'s JSDoc, which claimed it forwards an
+  `icon/illustration` when it has only ever forwarded (and clamped to 40×40)
+  `icon` — and fixed a straight apostrophe in `StatePanel`'s "no access"
+  story copy. (#47)
+- Fixed: inside a `StatePanel kind="error"` panel, any illustration's
+  meaning-bearing accent retinted to the same `--destructive` FILL token the
+  silhouette already reads (via `text-destructive`), so the accent
+  collapsed into the subject and disappeared — worst on `ErrorIllustration`,
+  whose own default accent fallback made the same mistake. Both now resolve
+  to `--destructive-text` (the TEXT rung), matching the fallback convention
+  every other illustration's accent already used. Also repositioned
+  `ErrorIllustration`'s exclamation mark out of the gap where its two
+  document halves converge (it read as a knot of lines, not a "!"),
+  documented a repo-wide accent-semantics convention (an accent exists only
+  when it carries information the silhouette doesn't already supply), and,
+  per that convention, removed the now-decorative-only accents from
+  `EmptyListIllustration`, `FirstRunIllustration`, and
+  `OfflineIllustration` (whose "broken link" fragments read as debris) —
+  their silhouettes already carry the full state alone. (#48)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded
