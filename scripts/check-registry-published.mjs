@@ -10,7 +10,7 @@
  * "the endpoint rots silently and the docs go back to describing something
  * that does not work."
  *
- * ## Two checks, deliberately different in character
+ * ## Three checks, deliberately different in character
  *
  * 1. **Configuration (always runs, no network, a real defect if it fails).**
  *    `registry.json`'s top-level `homepage` must be a real, resolvable,
@@ -37,51 +37,58 @@
  *    That catches real rot (a published item whose file went missing or the
  *    branch got corrupted) without ever penalizing an unreleased addition.
  *
- *    Three outcomes for the `latest` canary — but which two are reachable
- *    depends on `everPublished` (PR #58 finding "Fail after a published
- *    registry canary disappears", NARROWING but not fully closing issue #60):
- *    a canary that is unreachable while `publish-registry-pages.mjs` has
- *    NEVER successfully pushed the `gh-pages` branch is "nothing published
- *    yet" (expected, not a defect); the SAME unreachable canary AFTER that
- *    branch demonstrably exists on `origin` means content that was pushed is
- *    not resolving — that is much more likely to be real rot than a pending
- *    setup step, and must fail the build rather than be silently skipped
- *    forever. `everPublished` is computed with the exact same
- *    `remoteBranchExists` helper `publish-registry-pages.mjs` uses to decide
- *    "first publish vs. not" — reused rather than reimplemented, and
- *    deliberately NOT a `git tag` check: a version tag can exist (a package
- *    release happened) with the registry-publish step never having run for
- *    it yet, which would make a tag-based signal false-positive-fail on the
- *    ordinary "registry publishing was just added, no release has gone
- *    through it yet" bootstrap window — verified against this exact repo's
- *    own state while building this fix (a `v4.0.0` tag exists here with no
- *    `gh-pages` branch ever pushed).
- *      - canary unreachable/non-ok AND `gh-pages` does not exist on origin →
- *        SKIPPED. Covers "the registry has never been published", "the
- *        maintainer has not enabled Pages yet", and "this runner has no/flaky
- *        egress" — none of those are things a PR can fix, so this never reds
- *        a build for a human's pending setting change.
- *      - canary unreachable/non-ok AND `gh-pages` EXISTS on origin → FAILS.
- *        Content has demonstrably been pushed at least once; a canary that
- *        still won't resolve is far more likely to be rot (a broken branch,
- *        Pages disabled after being enabled, a CDN/DNS issue) than an
- *        as-yet-unflipped Settings toggle.
- *      - the snapshot is reachable and every item it lists resolves → OK.
- *      - the snapshot is reachable but an item it lists does NOT resolve →
- *        FAILS regardless of `everPublished` — this is real rot by definition.
+ *    An unreachable `latest` canary is ambiguous on its own — it means either
+ *    "nothing published yet" (benign) or "was live, now broken" (real rot),
+ *    and conflating them was the original #60 bug: both produced the same
+ *    silent SKIP. Which outcome applies is decided by a **priority chain of
+ *    two signals**, checked in this order:
  *
- *    **Honest residual gap (why #60 narrows here rather than closes):** branch
- *    existence proves content was PUSHED, not that GitHub Pages was ever
- *    actually TOGGLED ON in Settings — that flag lives in GitHub's repo
- *    settings, unreadable here without a Pages-scoped API token this script
- *    deliberately does not take on (rejected for the same reasons noted
- *    below: added complexity, unreliable for fork PRs). So a repo that has
- *    pushed `gh-pages` content but whose maintainer has not yet flipped that
- *    one manual switch will still fail this rung, not skip it. That is a
- *    real, known false-positive window, strictly narrower and shorter-lived
- *    than the one this fix closes (which was permanent — a stale git tag
- *    would false-fail forever) — it lasts only until the maintainer visits
- *    Settings → Pages once, immediately after the FIRST successful publish.
+ *      1. **`pagesConfigured` (authoritative) — GitHub's own Settings → Pages
+ *         flag**, read via `isPagesConfigured()` (`gh api
+ *         repos/:owner/:repo/pages`). This is the ground truth the issue asked
+ *         for: it answers "was the one manual Settings switch ever flipped",
+ *         which branch existence alone cannot.
+ *           - `"not-configured"` (API returns 404) → **always SKIPPED**,
+ *             REGARDLESS of `everPublished` below. This is what closes the
+ *             residual: a repo that pushed `gh-pages` once but never enabled
+ *             Pages in Settings no longer false-positive-FAILs.
+ *           - `"configured"` (API returns a clean response) → **always
+ *             FAILED** on an unreachable canary. Pages is demonstrably live,
+ *             so there is nothing ambiguous left — this is rot.
+ *      2. **`everPublished` (fallback) — `gh-pages` branch existence on
+ *         origin**, via the same `remoteBranchExists` helper
+ *         `publish-registry-pages.mjs` uses to decide first-publish vs. not.
+ *         Consulted ONLY when `pagesConfigured` is `"unknown"` — the Pages API
+ *         call itself failed for a reason that says nothing about Pages being
+ *         on or off (no `gh` binary, not authenticated, rate-limited, a
+ *         network blip). This gate runs in the shared, unauthenticated
+ *         `quality-gates.md` job on every PR with no elevated `permissions:`
+ *         block, so treating an API hiccup as either "configured" or
+ *         "not-configured" — or failing closed on it, the issue's alternative
+ *         suggestion — would make an unrelated PR's CI hostage to `gh`
+ *         flakiness. Falling back to the already-shipped, already-tested
+ *         branch-existence signal is a **deliberate, commented choice**
+ *         (`isPagesConfigured`'s doc comment), not a silent default: it costs
+ *         nothing new and never regresses pre-#60 behaviour. Deliberately NOT
+ *         a `git tag` check either — see `listReleasedVersions`'s doc comment
+ *         for why a tag-based signal false-positive-fails during the ordinary
+ *         "registry publishing was just added, no release has gone through it
+ *         yet" bootstrap window (verified against this exact repo: a
+ *         `v4.0.0` tag exists here with no `gh-pages` branch ever pushed).
+ *           - unreachable AND `gh-pages` does not exist on origin → SKIPPED.
+ *           - unreachable AND `gh-pages` EXISTS on origin → FAILED.
+ *
+ *    Once the canary IS reachable, neither signal matters:
+ *      - every item the snapshot lists resolves → OK.
+ *      - an item the snapshot lists does NOT resolve → FAILS, unconditionally
+ *        — this is real rot by definition regardless of either signal above.
+ *
+ *    **Residual, stated rather than hidden:** the only remaining ambiguous
+ *    window is `pagesConfigured === "unknown"` — i.e. this runner could not
+ *    reach the GitHub API at all (no `gh`, no auth, rate-limited, offline). In
+ *    that narrow case the gate is exactly as accurate as it was before this
+ *    fix (the `everPublished` proxy) — never less accurate, and the common
+ *    case (a `gh`-authenticated CI runner) now gets the authoritative answer.
  *
  * 3. **Historical/immutable-version liveness (network, best-effort, ONLY once
  *    rung 2 is OK).** PR #58 finding "Check immutable version directories for
@@ -100,7 +107,8 @@
  *    "Pages not live yet" skip doesn't cascade into N more misleading probes.
  *
  * `checkPublishedItems` / `checkVersionedSnapshots` take an injected
- * `fetchImpl` so the self-test never touches the network. Dependency-free
+ * `fetchImpl`, and `isPagesConfigured` takes an injected `execImpl`, so the
+ * self-test never touches the network or shells out to `gh`. Dependency-free
  * otherwise; ESM.
  *
  *   pnpm registry:published:check
@@ -121,6 +129,72 @@ const REGISTRY_PATH = join(REPO_ROOT, "registry", "registry.json");
 // grows — the N most recent tags are checked, not the entire history.
 const MAX_VERSIONED_SNAPSHOTS_CHECKED = 10;
 
+// A `gh api` call that hangs (e.g. an interactive auth prompt with no TTY)
+// must not hang the gate forever — kill it and fall back to "unknown" like
+// any other exec failure.
+const GH_API_TIMEOUT_MS = 10_000;
+
+/**
+ * The default `execImpl` for {@link isPagesConfigured} — shells out to
+ * `gh api repos/:owner/:repo/pages`, the authoritative GitHub Pages
+ * Settings-configuration endpoint (same `gh api repos/:owner/:repo/...`
+ * idiom `check-merge-readiness.mjs` already uses against this exact repo).
+ * Returns the raw stdout string on success; throws (with `.stderr` set,
+ * matching `execFileSync`'s own error shape) on any failure — a 404
+ * because Pages was never enabled, no `gh` binary, no auth, a rate limit,
+ * or a network blip. Callers never see the child process directly; only
+ * {@link isPagesConfigured} interprets the failure.
+ *
+ * @returns {string}
+ */
+function defaultGhApi() {
+  return execFileSync("gh", ["api", "repos/:owner/:repo/pages"], {
+    encoding: "utf8",
+    stdio: "pipe",
+    timeout: GH_API_TIMEOUT_MS,
+  });
+}
+
+/**
+ * The authoritative Pages-configuration signal (#60) — asks GitHub itself
+ * whether Pages has ever been toggled on in Settings, rather than inferring
+ * it from `gh-pages` branch existence (the `everPublished` proxy, which only
+ * proves content was PUSHED, not that the one manual Settings switch was
+ * ever flipped — see the module header comment). `execImpl` is injectable
+ * (mirrors the `fetchImpl` convention on `checkPublishedItems` /
+ * `checkVersionedSnapshots`) so the self-test never makes a real `gh`/network
+ * call.
+ *
+ * Deliberately three-valued, not boolean — a `gh api` failure that is NOT a
+ * 404 (no `gh` installed, not authenticated, rate-limited, offline runner) is
+ * genuinely ambiguous and must not be read as either "configured" or
+ * "not-configured": this gate runs in the shared, unauthenticated
+ * `quality-gates.md` job on every PR with no elevated `permissions:` block,
+ * so a `gh` hiccup failing an unrelated PR would be new brittleness, not a
+ * signal. Callers fall back to the pre-existing `everPublished` behaviour on
+ * `"unknown"` — see `checkPublishedItems`.
+ *
+ * @param {{ execImpl?: () => (string | Promise<string>) }} [args]
+ * @returns {Promise<"configured" | "not-configured" | "unknown">}
+ */
+export async function isPagesConfigured({ execImpl = defaultGhApi } = {}) {
+  let raw;
+  try {
+    raw = await execImpl();
+  } catch (err) {
+    const stderr = typeof err?.stderr === "string" ? err.stderr : (err?.stderr?.toString?.() ?? "");
+    const message = `${stderr}\n${err?.message ?? ""}`;
+    if (/Not Found|404/i.test(message)) return "not-configured";
+    return "unknown"; // no `gh`, no auth, rate-limited, network — genuinely unknown, not "off".
+  }
+  try {
+    JSON.parse(raw);
+  } catch {
+    return "unknown"; // a clean exit with unparseable output is not trustworthy either way.
+  }
+  return "configured";
+}
+
 /**
  * Rung 2 — the liveness check. Pure aside from the injected `fetchImpl`, so
  * it is unit-testable with a canned fetch and no real network.
@@ -130,6 +204,7 @@ const MAX_VERSIONED_SNAPSHOTS_CHECKED = 10;
  *   fetchImpl: (url: string, init?: object) => Promise<{ ok: boolean, status: number, json?: () => Promise<any> }>,
  *   timeoutMs?: number,
  *   everPublished?: boolean,
+ *   pagesConfigured?: "configured" | "not-configured" | "unknown",
  * }} args
  * @returns {Promise<{ status: "skipped" | "ok" | "failed", reason?: string, unreachable?: string[] }>}
  */
@@ -138,21 +213,50 @@ export async function checkPublishedItems({
   fetchImpl,
   timeoutMs = 5000,
   everPublished = false,
+  pagesConfigured = "unknown",
 }) {
   const base = baseUrl.replace(/\/+$/, "");
   const canaryUrl = `${base}/latest/registry.json`;
-  // Once `publish-registry-pages.mjs` has successfully pushed the `gh-pages`
-  // branch at least once, an unreachable `latest` canary is no longer
-  // "nothing published yet" — content demonstrably exists and isn't
-  // resolving. See the module header comment (PR #58 / issue #60) for why
-  // this is branch-existence, not a `git tag` check, and for the residual
-  // gap it does NOT close (Pages may still be un-toggled in Settings).
-  const unreachableStatus = everPublished ? "failed" : "skipped";
-  const unreachableSuffix = everPublished
-    ? "the `gh-pages` branch already exists on origin (publish-registry-pages.mjs has " +
+
+  // What does an UNREACHABLE canary mean? Priority order (#60):
+  //   1. pagesConfigured === "not-configured" → always "skipped", regardless
+  //      of everPublished. GitHub's own Settings flag is authoritative and
+  //      overrides the branch-existence proxy — this is what closes the
+  //      residual: a repo that pushed `gh-pages` once but never flipped
+  //      Settings → Pages no longer false-positive-FAILs.
+  //   2. pagesConfigured === "configured" → always "failed". Pages is
+  //      demonstrably live, so an unreachable canary is unambiguous rot.
+  //   3. pagesConfigured === "unknown" (the API call itself couldn't answer)
+  //      → fall back to the pre-existing `everPublished` (branch-existence)
+  //      behaviour, unchanged. Keeps the gate network-tolerant: a `gh api`
+  //      hiccup must not fail an unrelated PR (see `isPagesConfigured`'s doc
+  //      comment for why this is a deliberate, commented choice rather than
+  //      the issue's alternative "fail closed" suggestion).
+  let unreachableStatus;
+  let unreachableSuffix;
+  if (pagesConfigured === "not-configured") {
+    unreachableStatus = "skipped";
+    unreachableSuffix =
+      "GitHub Pages has not been enabled for this repo (Settings → Pages returned Not Found) " +
+      "— hosting is not live yet.";
+  } else if (pagesConfigured === "configured") {
+    unreachableStatus = "failed";
+    unreachableSuffix =
+      "GitHub Pages IS enabled for this repo (Settings → Pages confirms it), so this endpoint " +
+      "should be resolving — this looks like real rot, not a pending setup step.";
+  } else if (everPublished) {
+    unreachableStatus = "failed";
+    unreachableSuffix =
+      "the `gh-pages` branch already exists on origin (publish-registry-pages.mjs has " +
       "pushed content before), so this endpoint should be resolving — this looks like " +
-      "real rot, not a pending first publish."
-    : "hosting is likely not live yet.";
+      "real rot, not a pending first publish. (The Pages-configuration API was unreachable; " +
+      "falling back to branch-existence.)";
+  } else {
+    unreachableStatus = "skipped";
+    unreachableSuffix =
+      "hosting is likely not live yet. (The Pages-configuration API was unreachable; falling " +
+      "back to branch-existence.)";
+  }
 
   let canaryRes;
   try {
@@ -334,9 +438,14 @@ async function main() {
   }
   console.log(`✔ registry.json homepage: ${registry.homepage}`);
 
-  // Has `publish-registry-pages.mjs` ever successfully pushed the `gh-pages`
-  // branch? Decides whether an unreachable `latest` canary means "not set up
-  // yet" (skip) or "content exists but isn't resolving" (fail) — reuses the
+  // The authoritative signal (#60): has GitHub's own Settings → Pages flag
+  // ever been toggled on for this repo? See `isPagesConfigured`'s doc comment
+  // for the three-valued contract and why "unknown" falls back rather than
+  // failing closed.
+  const pagesConfigured = await isPagesConfigured();
+  // Fallback signal: has `publish-registry-pages.mjs` ever successfully
+  // pushed the `gh-pages` branch? Only consulted when `pagesConfigured` is
+  // "unknown" (the Pages-config API itself couldn't answer) — reuses the
   // exact same helper that script uses to decide first-publish vs. not, per
   // the module header comment (PR #58 / issue #60).
   const everPublished = remoteBranchExists(REPO_ROOT, "gh-pages");
@@ -348,6 +457,7 @@ async function main() {
     baseUrl: registry.homepage,
     fetchImpl: fetch,
     everPublished,
+    pagesConfigured,
   });
 
   if (result.status === "skipped") {
