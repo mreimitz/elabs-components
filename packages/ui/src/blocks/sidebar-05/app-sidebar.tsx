@@ -355,7 +355,7 @@ export function AppSidebar() {
                           <div className="min-w-0 flex-1 text-start">
                             <div className="font-medium">{subItem.label}</div>
                             {subItem.description && (
-                              <div className="mt-0.5 text-xs text-muted-foreground">
+                              <div className="mt-0.5 text-xs text-sidebar-muted-foreground">
                                 {subItem.description}
                               </div>
                             )}

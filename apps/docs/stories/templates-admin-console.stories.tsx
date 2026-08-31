@@ -27,6 +27,7 @@
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { expect, within } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
@@ -181,7 +182,9 @@ function ConsoleSidebar({ active, onSelect }: { active: string; onSelect: (id: s
                 <AppIcon height={20} aria-hidden />
                 <span className="grid flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate text-body font-semibold">Integrations</span>
-                  <span className="truncate text-meta text-muted-foreground">Admin console</span>
+                  <span className="truncate text-meta text-sidebar-muted-foreground">
+                    Admin console
+                  </span>
                 </span>
               </a>
             </SidebarMenuButton>
@@ -222,7 +225,9 @@ function ConsoleSidebar({ active, onSelect }: { active: string; onSelect: (id: s
                   </Avatar>
                   <span className="grid flex-1 text-start leading-tight group-data-[collapsible=icon]:hidden">
                     <span className="truncate text-body font-medium">Avery Rao</span>
-                    <span className="truncate text-meta text-muted-foreground">avery@acme.co</span>
+                    <span className="truncate text-meta text-sidebar-muted-foreground">
+                      avery@acme.co
+                    </span>
                   </span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -408,6 +413,7 @@ function OverviewView({ onInspect }: { onInspect: (c: Connection) => void }) {
           value="1"
           delta="1"
           deltaDirection="up"
+          positiveIsGood={false}
           description="needs attention"
         />
         <MetricCard
@@ -415,6 +421,7 @@ function OverviewView({ onInspect }: { onInspect: (c: Connection) => void }) {
           value="1.4s"
           delta="0.2s"
           deltaDirection="down"
+          positiveIsGood={false}
           description="p95 sync time"
         />
       </div>
@@ -615,6 +622,45 @@ function AuditView() {
 /*  Stories                                                                      */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * WCAG contrast ratio between two CSS color strings, computed by rasterizing
+ * each through a 1×1 canvas (normalizes any color function — oklch(), rgb(),
+ * etc. — to concrete sRGB the way the browser actually paints it) and applying
+ * the WCAG 2.x relative-luminance + contrast formulas. Used by the #50
+ * (amendment) locking test below to assert the REAL rendered ratio, not just
+ * the class name.
+ */
+function cssColorToRgb(color: string): [number, number, number] {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 1, 1);
+  const data = ctx.getImageData(0, 0, 1, 1).data;
+  return [(data[0] ?? 0) / 255, (data[1] ?? 0) / 255, (data[2] ?? 0) / 255];
+}
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+function wcagContrast(fg: string, bg: string): number {
+  const lf = relativeLuminance(cssColorToRgb(fg));
+  const lb = relativeLuminance(cssColorToRgb(bg));
+  const [hi, lo] = lf >= lb ? [lf, lb] : [lb, lf];
+  return (hi + 0.05) / (lo + 0.05);
+}
+/** Walk up from `el` to the nearest ancestor (inclusive) with a painted background. */
+function resolvedBackgroundColor(el: Element): string {
+  let node: Element | null = el;
+  while (node) {
+    const bg = getComputedStyle(node).backgroundColor;
+    if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") return bg;
+    node = node.parentElement;
+  }
+  return getComputedStyle(document.body).backgroundColor;
+}
+
 const meta = {
   title: "Patterns/Templates/Enterprise Admin Console",
   component: AdminConsole,
@@ -644,7 +690,50 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** The full baseline-complete console. */
-export const Default: Story = {};
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // #68 — "Failed runs" is a cost-like metric (up is BAD) and must set
+    // `positiveIsGood={false}` so its delta reads as unfavorable, not
+    // favorable. Assert the accessible name / `data-polarity`, never the
+    // colour class (WCAG 1.4.1 — colour is never the only channel).
+    const failedRunsLabel = canvas.getByText("Failed runs");
+    const failedRunsCard = failedRunsLabel.closest(".overflow-hidden") as HTMLElement;
+    const failedRunsDelta = failedRunsCard.querySelector("[data-polarity]") as HTMLElement;
+    expect(failedRunsDelta.dataset.polarity).toBe("bad");
+    expect(failedRunsDelta.getAttribute("aria-label")).toContain("unfavorable");
+
+    // #68 — "Avg latency" is also cost-like (down is GOOD).
+    const latencyLabel = canvas.getByText("Avg latency");
+    const latencyCard = latencyLabel.closest(".overflow-hidden") as HTMLElement;
+    const latencyDelta = latencyCard.querySelector("[data-polarity]") as HTMLElement;
+    expect(latencyDelta.dataset.polarity).toBe("good");
+    expect(latencyDelta.getAttribute("aria-label")).toContain("favorable");
+    expect(latencyDelta.getAttribute("aria-label")).not.toContain("unfavorable");
+
+    // "Rows synced (24h)" stays favorable/green — unaffected by the fix.
+    const rowsSyncedLabel = canvas.getByText("Rows synced (24h)");
+    const rowsSyncedCard = rowsSyncedLabel.closest(".overflow-hidden") as HTMLElement;
+    const rowsSyncedDelta = rowsSyncedCard.querySelector("[data-polarity]") as HTMLElement;
+    expect(rowsSyncedDelta.dataset.polarity).toBe("good");
+    expect(rowsSyncedDelta.getAttribute("aria-label")).toContain("favorable");
+
+    // #50 (amendment) — the two sidebar chrome labels ("Admin console",
+    // "avery@acme.co") sit on `bg-sidebar` and must reach for
+    // `text-sidebar-muted-foreground`, not the canvas `text-muted-foreground`
+    // (~2.29:1 there).
+    const consoleLabel = canvas.getByText("Admin console");
+    expect(
+      wcagContrast(getComputedStyle(consoleLabel).color, resolvedBackgroundColor(consoleLabel)),
+    ).toBeGreaterThanOrEqual(4.5);
+
+    const emailLabel = canvas.getByText("avery@acme.co");
+    expect(
+      wcagContrast(getComputedStyle(emailLabel).color, resolvedBackgroundColor(emailLabel)),
+    ).toBeGreaterThanOrEqual(4.5);
+  },
+};
 
 /** Same console with the primary navigation collapsed to the icon rail. */
 export const CollapsedNav: Story = { args: { defaultSidebarOpen: false } };
