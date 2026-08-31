@@ -22,6 +22,29 @@ export const NUMBER_WORDS = {
 };
 
 /**
+ * The closed vocabulary of adjectives allowed between a number and "themes"
+ * ("three SHIPPED themes", "3 REFERENCE themes") — see the PR #81 review note
+ * on `findThemeCountViolations` below for why this is a whitelist rather than
+ * "any word".
+ */
+const COUNT_ADJECTIVES = [
+  "shipped",
+  "reference",
+  "supported",
+  "built-in",
+  "available",
+  "existing",
+  "live",
+  "active",
+  "distinct",
+  "unique",
+  "total",
+  "possible",
+  "current",
+  "documented",
+];
+
+/**
  * Lines in `text` claiming a theme COUNT that disagrees with `themeCount`. Handles
  * both the word form ("all six themes") and the numeric form ("6 themes") —
  * INCLUDING when an adjective sits between the number and "themes" ("three
@@ -29,9 +52,19 @@ export const NUMBER_WORDS = {
  * number word from "themes" across two lines ("all three\nshipped themes").
  * Returns `{ line, match, claimed }[]` (1-based line numbers in the ORIGINAL text).
  *
- * Three techniques make this robust to both gaps (#29):
- *  1. The regex tolerates 0-2 intervening words between the number and "themes"
- *     (`(?:\s+\S+){0,2}?`, non-greedy so it prefers the shortest span).
+ * Four techniques make this robust to both gaps (#29, #81 review):
+ *  1. The regex tolerates 0-2 intervening words between the number and "themes",
+ *     but (PR #81 review) each intervening word must be one of `COUNT_ADJECTIVES`
+ *     — NOT an arbitrary token. The original `(?:\s+\S+){0,2}?` accepted any
+ *     word, so an unrelated nearby number followed a couple of words later by
+ *     "themes" anywhere in the sentence ("React 19 supports themes through
+ *     context") misread "19" as a stale theme-count claim. Restricting the gap
+ *     to adjectives that actually modify "themes" ("three SHIPPED themes", "3
+ *     REFERENCE themes") keeps the legitimate cases while rejecting verbs/nouns
+ *     that merely happen to sit between an unrelated number and the word
+ *     "themes". The trade-off is a closed vocabulary: a real stale-count claim
+ *     using an adjective not on the list is a false NEGATIVE — extend
+ *     `COUNT_ADJECTIVES` if one is found.
  *  2. Matching runs on `text` with every `\n` replaced by a single space — a
  *     1-for-1 substitution, so character OFFSETS are unchanged from the
  *     original string. That lets a match span a line-wrap while still letting
@@ -47,8 +80,9 @@ export const NUMBER_WORDS = {
  */
 export function findThemeCountViolations(text, themeCount) {
   if (!themeCount) return [];
+  const adj = COUNT_ADJECTIVES.join("|");
   const re = new RegExp(
-    `(?<![\\d.:-])\\b(${Object.keys(NUMBER_WORDS).join("|")}|\\d+)\\b(?:\\s+\\S+){0,2}?\\s+themes\\b`,
+    `(?<![\\d.:-])\\b(${Object.keys(NUMBER_WORDS).join("|")}|\\d+)\\b(?:\\s+(?:${adj})){0,2}?\\s+themes\\b`,
     "gi",
   );
   const joined = text.replace(/\n/g, " ");

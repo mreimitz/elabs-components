@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SchemaForm } from "./schema-form";
+import { SchemaForm, SchemaFormField, SchemaFormProvider } from "./schema-form";
 import {
   fieldSpecSchema,
   fileMatchesAccept,
@@ -57,6 +57,29 @@ const conditionalSpec: FormSpec = {
       name: "authMethod",
       label: "Auth method",
       options: ["oauth", "apikey"],
+    },
+    {
+      type: "string",
+      name: "clientSecret",
+      label: "Client secret",
+      required: true,
+      visibleWhen: { field: "authMethod", equals: "oauth" },
+    },
+  ],
+};
+
+// Same shape, but the controller carries a spec `default` — a controlled
+// consumer may omit it from its `values` object entirely and still expect
+// the default to be what's actually in force (PR #81 review finding).
+const defaultedConditionalSpec: FormSpec = {
+  formName: "defaulted_auth",
+  fields: [
+    {
+      type: "enum",
+      name: "authMethod",
+      label: "Auth method",
+      options: ["oauth", "apikey"],
+      default: "oauth",
     },
     {
       type: "string",
@@ -276,6 +299,68 @@ describe("SchemaForm — validation (submit) + focus-first-invalid", () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/Client secret/)).toHaveFocus();
     });
+  });
+
+  it("strips a hidden `visibleWhen` field's stale value from the submitted payload, even if it was set before the field became hidden", async () => {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <SchemaForm
+        spec={conditionalSpec}
+        values={{ authMethod: "oauth", clientSecret: "sekret" }}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(screen.getByLabelText(/Client secret/)).toBeInTheDocument();
+
+    // The controller flips away from "oauth" — clientSecret is now hidden,
+    // but a controlled consumer's `values` object still carries the
+    // previously-typed value (nothing clears it automatically).
+    rerender(
+      <SchemaForm
+        spec={conditionalSpec}
+        values={{ authMethod: "apikey", clientSecret: "sekret" }}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(screen.queryByLabelText(/Client secret/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    // Exact match (not objectContaining): a leaked "clientSecret" key from
+    // before the field was hidden would fail this.
+    expect(onSubmit).toHaveBeenCalledWith({
+      formName: "connector_auth",
+      values: { authMethod: "apikey" },
+    });
+  });
+
+  it("resolves visibility against the controller's EFFECTIVE (default-applied) value, not a raw value a controlled consumer may have omitted", async () => {
+    const onSubmit = vi.fn();
+    // The controlled `values` object omits `authMethod` entirely — the
+    // spec's own default ("oauth") is what actually renders and submits
+    // (via `effectiveValue`), so the OAuth-only field must be visible too,
+    // not hidden because the RAW value happens to be `undefined`.
+    render(<SchemaForm spec={defaultedConditionalSpec} values={{}} onSubmit={onSubmit} />);
+    expect(screen.getByLabelText(/Client secret/)).toBeInTheDocument();
+
+    // It's required and empty, so submit must block on it with a VISIBLE,
+    // focusable control to fix — not silently drop it as "hidden" while
+    // validation (which resolves the same default) still requires it.
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Client secret/)).toHaveFocus();
+    });
+  });
+
+  it("SchemaFormField enforces its own visibleWhen even when placed directly in a custom layout, bypassing SchemaFormFields' filter", () => {
+    const result = normalizeFormSpec(conditionalSpec);
+    if (!result.ok) throw new Error("expected conditionalSpec to normalize");
+    render(
+      <SchemaFormProvider spec={result.spec} values={{ authMethod: "apikey" }}>
+        <SchemaFormField name="clientSecret" />
+      </SchemaFormProvider>,
+    );
+    expect(screen.queryByLabelText(/Client secret/)).not.toBeInTheDocument();
   });
 
   it("blocks submit and shows an inline error for a file that fails validation (wrong type)", async () => {

@@ -193,6 +193,25 @@ test("PASSES: an unrelated, still-TRUE 'private' claim near the word 'registry'"
   assert.equal(violations.length, 0);
 });
 
+test("PASSES: generic consumer-facing 'private registry' advice with no self-reference (#81 review)", () => {
+  // Legitimate guidance for a CONSUMER's own private-registry setup, naming
+  // none of our packages — must not be confused with a claim that
+  // @elabs-ai/components-* itself is private.
+  const violations = findPrivateRegistryClaims(
+    "If your company uses a private npm registry, configure authentication here.",
+  );
+  assert.equal(violations.length, 0);
+});
+
+test("PASSES: 'private GitHub Packages registry' advice with no self-reference (#81 review)", () => {
+  // "GitHub Packages" is the hosting service's own proper noun — it must not
+  // be mistaken for a self-reference just because it contains "Packages".
+  const violations = findPrivateRegistryClaims(
+    "For enterprise users behind a private GitHub Packages registry, set NODE_AUTH_TOKEN.",
+  );
+  assert.equal(violations.length, 0);
+});
+
 test("PASSES: private-registry check does not run outside skills/** (docs/ historical narrative is exempt)", () => {
   const entries = [
     {

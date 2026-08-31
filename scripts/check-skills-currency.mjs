@@ -165,6 +165,12 @@ export function findPackageScopeViolations(text, manifestPackageNames, currentSc
  * correct (that package really is private/unpublished) and must not be
  * flagged just because the word "registry" appears later in the paragraph.
  *
+ * ALSO requires a self-reference near the match (PR #81 review) — a private-
+ * registry phrase with no mention of `@elabs-ai/components-*`/"the packages"
+ * is generic CONSUMER-facing advice ("if your company uses a private npm
+ * registry, configure authentication here"), not a claim about brand-ui's own
+ * distribution model, and must not be flagged either.
+ *
  * Callers are expected to scope this to `skills/**` prose only (see
  * `checkCurrency`) — `docs/ADR/0016` and `CHANGELOG.md` legitimately narrate
  * the old private-registry era in the past tense and must never be flagged;
@@ -183,10 +189,28 @@ export function findPrivateRegistryClaims(text) {
     // "GitHub Packages, so ... cannot install" / "GitHub Packages ... is private"
     /\bgithub packages\b\S{0,2}(?:\s+\S+){0,4}?\s+(?:private|cannot install)\b/gi,
   ];
+  // A "private registry" PHRASE is only a stale claim about THIS project's own
+  // distribution model when it's actually talking about the @elabs-ai/components-*
+  // packages — plenty of legitimate skill guidance tells a CONSUMER how to point
+  // their OWN private registry at brand-ui ("If your company uses a private npm
+  // registry, configure authentication here"), which names none of our packages
+  // and must not be flagged (PR #81 review). Require a self-reference — an
+  // explicit `@scope/components-*` mention, or a "the/these/our packages"/"this
+  // package" demonstrative — within a bounded window around the match. Checking
+  // for the bare substring "package" would NOT discriminate here: "GitHub
+  // Packages" (the hosting service's own proper noun) already contains it, so
+  // the regex instead requires a determiner immediately before "package(s)",
+  // which the service name never has.
+  const SELF_REF =
+    /@[a-z0-9][a-z0-9-]*\/components-[a-z0-9-]+|\b(?:the|these|our|this)\s+packages?\b|\bthis\s+(?:library|sdk)\b|\bbrand-ui\b/i;
+  const WINDOW = 80;
   const joined = text.replace(/\n/g, " ");
   const out = [];
   for (const re of patterns) {
     for (const m of joined.matchAll(re)) {
+      const start = Math.max(0, m.index - WINDOW);
+      const end = Math.min(joined.length, m.index + m[0].length + WINDOW);
+      if (!SELF_REF.test(joined.slice(start, end))) continue;
       const line = text.slice(0, m.index).split("\n").length;
       out.push({ line, match: m[0].replace(/\s+/g, " ").trim() });
     }

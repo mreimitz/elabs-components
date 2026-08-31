@@ -156,18 +156,23 @@ test("checkPublishedItems: a reachable canary with real item rot still fails reg
   assert.ok(result.unreachable);
 });
 
-// ── pagesConfigured: the authoritative GitHub Pages-Settings signal (#60) ──
-// `everPublished` (branch existence) only proves content was PUSHED, not that
-// Settings → Pages was ever toggled on — so it collapses "pushed once, Pages
-// never enabled" and "Pages live, canary genuinely broken" into the same
-// "failed" outcome. `pagesConfigured` is the authoritative override.
+// ── pagesConfigured: the authoritative GitHub Pages-Settings signal (#60,
+//    AMENDED by the PR #81 review "Do not treat every Pages 404 as never
+//    configured") ────────────────────────────────────────────────────────
+// `everPublished` (branch existence) only proves content was PUSHED; it says
+// nothing about whether Settings → Pages is toggled on RIGHT NOW.
+// `pagesConfigured` is a CURRENT-TENSE signal — a 404 there means either
+// "never configured" OR "was configured, since disabled/deleted", and it
+// cannot tell the two apart. So `pagesConfigured === "not-configured"` must
+// NOT unconditionally override `everPublished`: branch existence, being
+// persistent, wins when the two disagree.
 
-test("checkPublishedItems: PLANTED REGRESSION — Pages not configured (404) wins over everPublished=true, still SKIPS", async () => {
-  // This is the exact case the pre-#60-fix decision tree gets wrong: a repo
-  // that pushed `gh-pages` at least once (everPublished=true) but whose
-  // maintainer never flipped Settings → Pages. Before this fix, everPublished
-  // alone drove the decision and this reported "failed" — a false positive.
-  // With the fix, the authoritative Pages-config signal must override it.
+test("checkPublishedItems: everPublished=true wins over a Pages-not-configured (404) reading — FAILS (#81 review)", async () => {
+  // The exact regression the PR #81 review caught: a `gh-pages` branch that
+  // already exists (content was pushed at least once) is PERSISTENT evidence
+  // that survives a later Settings change — a current "not-configured" 404
+  // cannot rule out "Pages was live and has since been disabled/deleted",
+  // which is real rot, not a pending first publish. Branch evidence must win.
   const fetchImpl = async () => {
     throw new Error("getaddrinfo ENOTFOUND");
   };
@@ -175,6 +180,21 @@ test("checkPublishedItems: PLANTED REGRESSION — Pages not configured (404) win
     baseUrl: BASE,
     fetchImpl,
     everPublished: true,
+    pagesConfigured: "not-configured",
+  });
+  assert.equal(result.status, "failed");
+});
+
+test("checkPublishedItems: no branch evidence + Pages not configured (404) → SKIPS (the genuine bootstrap window)", async () => {
+  // Both signals agree nothing has ever been published — still the one case
+  // that must not false-positive-fail (the original #60 bootstrap window).
+  const fetchImpl = async () => {
+    throw new Error("getaddrinfo ENOTFOUND");
+  };
+  const result = await checkPublishedItems({
+    baseUrl: BASE,
+    fetchImpl,
+    everPublished: false,
     pagesConfigured: "not-configured",
   });
   assert.equal(result.status, "skipped");

@@ -626,7 +626,7 @@ function DataTableInner<TData, TValue>(
   // TanStack's own pointer-drag math and the hand-rolled keyboard path must be
   // told the active direction too, or dragging/pressing an arrow moves the width
   // opposite the visible boundary.
-  const { t, dir } = useLocale();
+  const { t, dir, formatNumber } = useLocale();
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
   const isSortingControlled = sortingProp !== undefined;
@@ -1116,13 +1116,27 @@ function DataTableInner<TData, TValue>(
   // #51 — double-click resets a resize handle's column back to its declared
   // `ColumnDef.size`, falling back to TanStack's own default (150, the same
   // fallback idiom as `minSize ?? 20`/`maxSize ?? MAX_SAFE_INTEGER` above) when
-  // the author left it unset. Goes through the SAME `table.setColumnSizing`
-  // dispatch path as `handleResizeKeyDown` — never `column.resetSize()` — so a
-  // controlled `columnSizing` consumer observes the reset via
-  // `onColumnSizingChange` exactly like every other resize.
+  // the author left it unset — by REMOVING any explicit `columnSizing` entry
+  // for the column, not by writing the size back in as a literal (PR #81
+  // review, "Remove the sizing override when resetting a column"). `columnSizing`
+  // only ever carries EXPLICIT per-column overrides; a column absent from it
+  // always tracks its live `ColumnDef.size` (or the 150 default). Writing the
+  // CURRENT declared size back in as a value looks identical today but turns
+  // the default into a permanent override: if the `columns` prop later
+  // changes this column's authored `size` (e.g. switching table
+  // configurations), a column that was never resized follows the new
+  // definition for free, while a double-click-reset column would stay pinned
+  // to the OLD number forever. Deleting the entry keeps it dynamic, exactly
+  // like a column that was never touched. Still goes through the SAME
+  // `table.setColumnSizing` dispatch path as `handleResizeKeyDown` — never
+  // `column.resetSize()` — so a controlled `columnSizing` consumer observes
+  // the reset via `onColumnSizingChange` exactly like every other resize.
   function handleResizeDoubleClick(column: Column<TData, unknown>) {
-    const declaredSize = column.columnDef.size ?? 150;
-    table.setColumnSizing((old) => ({ ...old, [column.id]: declaredSize }));
+    table.setColumnSizing((old) => {
+      if (!(column.id in old)) return old;
+      const { [column.id]: _removed, ...rest } = old;
+      return rest;
+    });
   }
 
   // ── Scroll container ref for virtualizer ─────────────────────────────────
@@ -1316,9 +1330,17 @@ function DataTableInner<TData, TValue>(
                       // #51: a bare number reads to AT as a dimensionless
                       // ordinal ("150") rather than a size — aria-valuetext
                       // supplies the unit while aria-valuenow (above) stays
-                      // the plain numeric value TanStack/AT expect.
+                      // the plain numeric value TanStack/AT expect. PR #81
+                      // review, "Format the announced resize value for the
+                      // active locale": `count` (the raw number) drives
+                      // PluralMessage category selection so a locale whose
+                      // plural rules pick something other than "other" is
+                      // reachable, and `size` goes through `formatNumber` so
+                      // an overriding locale renders its own digits/grouping
+                      // instead of a raw Latin-digit JS number.
                       aria-valuetext={t("data.table.resizeColumnValue", {
-                        size: Math.round(header.getSize()),
+                        count: Math.round(header.getSize()),
+                        size: formatNumber(Math.round(header.getSize())),
                       })}
                       aria-label={t("data.table.resizeColumn", { name: headerLabel })}
                       tabIndex={0}

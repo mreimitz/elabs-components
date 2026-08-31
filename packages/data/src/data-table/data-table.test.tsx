@@ -1606,6 +1606,36 @@ describe("DataTable — #12 column resizing", () => {
     expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("160px");
   });
 
+  // PR #81 review, "Format the announced resize value for the active
+  // locale": the announced value must go through `formatNumber` (so a
+  // non-Latin-digit locale doesn't hear raw JS-number Latin digits) and pass
+  // the numeric `count` a `PluralMessage` override needs to select its own
+  // plural category, not just interpolate `{size}` into a fixed "other" form.
+  it("formats the announced resize value for the active locale (non-Latin digits) and reaches PluralMessage's singular form", () => {
+    const singularSizeColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name", size: 1, minSize: 1 },
+      { accessorKey: "value", header: "Value", size: 100 },
+    ];
+    render(
+      <LocaleProvider
+        locale="ar-EG"
+        messages={{
+          "data.table.resizeColumnValue": { one: "{size} بكسل واحد", other: "{size} بكسل" },
+        }}
+      >
+        <DataTable columns={singularSizeColumns} data={data} enableColumnResizing />
+      </LocaleProvider>,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    // aria-valuenow stays a plain numeric value for AT/TanStack regardless of
+    // locale — only aria-valuetext is localized.
+    expect(handle).toHaveAttribute("aria-valuenow", "1");
+    // ar-EG renders "1" as the Arabic-Indic digit "١", proving the value went
+    // through `formatNumber` rather than a raw `String(1)` interpolation —
+    // and the "one" plural form fired, proving `count` reached the message.
+    expect(handle).toHaveAttribute("aria-valuetext", "١ بكسل واحد");
+  });
+
   it("is a controlled/uncontrolled slice: a keyboard resize notifies the caller but the DOM only moves once the prop does", () => {
     const onColumnSizingChange = vi.fn();
     const { container, rerender } = render(
@@ -1699,6 +1729,35 @@ describe("DataTable — #12 column resizing", () => {
       />,
     );
     expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("150px");
+  });
+
+  // PR #81 review, "Remove the sizing override when resetting a column": a
+  // double-click reset must actually RESET (remove the override), not pin the
+  // column to whatever its declared size happened to be at reset time — else
+  // the column stops tracking a later authored `size` change, unlike a column
+  // that was never resized at all.
+  it("double-click reset does not pin the column — it still tracks a LATER change to the column's declared size", () => {
+    const { container, rerender } = render(
+      <DataTable columns={resizableColumns} data={data} enableColumnResizing />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("160px");
+
+    fireEvent.doubleClick(handle);
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("150px");
+
+    // The `columns` prop now declares a DIFFERENT authored size for "name" —
+    // e.g. a caller switching table configurations. A column that was never
+    // resized would pick this up for free; the double-click-reset column must
+    // too, because the reset should have removed its override rather than
+    // freezing it at 150.
+    const resizedDeclaredColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name", size: 300 },
+      { accessorKey: "value", header: "Value", size: 100 },
+    ];
+    rerender(<DataTable columns={resizedDeclaredColumns} data={data} enableColumnResizing />);
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("300px");
   });
 
   it("seeds an uncontrolled slice once from initialView.columnSizing", () => {

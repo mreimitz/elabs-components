@@ -200,6 +200,13 @@ test("PASSES: prose that never states a count", () => {
   assert.deepEqual(findThemeCountViolations("themes are data-theme blocks", 3), []);
 });
 
+test("PASSES: an unrelated number followed by an ordinary VERB near 'themes' (PR #81 review)", () => {
+  // "19" is React's version number, not a theme count — the intervening word
+  // "supports" is a verb, not one of the count-modifying adjectives
+  // ("shipped", "reference", …) the gap is restricted to, so it must not match.
+  assert.deepEqual(findThemeCountViolations("React 19 supports themes through context", 2), []);
+});
+
 test("a missing THEMES export disables the rung rather than flagging everything", () => {
   assert.deepEqual(findThemeCountViolations("all six themes", null), []);
 });
