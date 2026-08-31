@@ -17,8 +17,8 @@ maintainer (human or agent) either proliferates subpaths as a general
 API-organization habit — fragmenting every package's surface — or re-litigates
 whether subpaths are allowed at all. The concrete trigger: `markdown/frontmatter`
 was added on an agent's own initiative to dodge a Monaco-in-jsdom test failure,
-without architect review and without discovery registration (issues #42, #43,
-#47). A brand-ui-design-system-architect review judged the subpath itself the _right_
+without architect review and without discovery registration (issues upstream#42, upstream#43,
+upstream#47). A brand-ui-design-system-architect review judged the subpath itself the _right_
 model for that case — this ADR codifies _when_ that is true.
 
 ## Decision

@@ -65,7 +65,7 @@ three rows, not one):
 
 Order: run the battery → fix what it finds → **then** commit/merge/push. If the
 battery runs only after you've merged (because someone asked "did you run the
-quality agents?"), the gate failed — that is exactly the failure #45 records. The
+quality agents?"), the gate failed — that is exactly the failure upstream#45 records. The
 named agents/commands all exist; binding them to a pre-integration gate is what
 makes them load-bearing.
 
@@ -147,7 +147,7 @@ wrote. They apply to all work, not just components. Before reporting completion:
   `vi.mock`s a `@elabs-ai/components-*` component and then asserts a11y attributes on the
   stand-in proves nothing about the real surface — the mock (e.g. a `<textarea>`
   that happens to honor `aria-label`) can **mask** a P0 a11y bug in the real
-  component (the #34/#46 lesson). Likewise a three-theme pass scoped to one
+  component (the upstream#34/upstream#46 lesson). Likewise a three-theme pass scoped to one
   self-authored story does not cover the surfaces a feature actually adds. State
   the exact surface (story ID + theme slug, or the real screen) you observed.
 
@@ -207,7 +207,7 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   (`pnpm components:check` — barrel export AND a co-located story, the latter a ratchet
   vs `scripts/components-story-baseline.json`: a NEW `@elabs-ai/components-ui`
   component with no `*.stories.tsx` FAILS, and the baseline only ratchets down; the
-  `*.test.tsx` arm stays advisory-by-design per "where practical" + #59), the
+  `*.test.tsx` arm stays advisory-by-design per "where practical" + upstream#59), the
   intent-content gate (`pnpm intent:check` — a `stateTokens` class or a relationship name
   that does not resolve against real source fails; the authored ground truth may not
   hallucinate. The class match is **boundary-anchored, not a substring**: claiming
@@ -219,11 +219,11 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   the baseline only goes down, via `--update`. A "root surface" excludes a sibling whose
   module already carries intent (`UserMessage` under `Message`) and a verbatim
   third-party re-export (visx's `GradientTealBlue`), so the count means "still owed",
-  not "not yet enumerated". **A green run is NOT "#60 satisfied":** the gate proves no
+  not "not yet enumerated". **A green run is NOT "upstream#60 satisfied":** the gate proves no
   spoke is empty, no shipped entry is thin/wrong, and the gap cannot grow — it does not
   prove the gap is closed. Every run prints the residual and `pnpm intent:check --
 --residual` lists it; `@elabs-ai/components-ai` is fully covered, the
-  `@elabs-ai/components-charts` internals are not, and **#60 stays open until
+  `@elabs-ai/components-charts` internals are not, and **upstream#60 stays open until
   the residual is 0**), the docs-accuracy gate (`pnpm docs:check`), the agent-name
   gate (`pnpm agents:check`), the AI-SDK types-only gate (`pnpm ai:types-only` + its
   PostToolUse hook), the content anti-slop ratchet (`pnpm slop:check` — the
@@ -286,7 +286,32 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   ratchet's "only goes down" contract at the git level instead of trusting
   the file's own contents; skipped, never a false failure, when no base is
   resolvable (a fixture tree, a shallow clone with nothing fetchable) —
-  `--force` bypasses it for a rare, justified ratchet-up).
+  `--force` bypasses it for a rare, justified ratchet-up), and the issue-citation
+  guard (`pnpm issue-citations:check`, #63 — a bare `#N` citation is ambiguous
+  once a fork's own issue tracker restarts numbering from 1: `upstream#45` and
+  `upstream#59`/`upstream#60` in THIS file, and `upstream#42`/`upstream#43`/
+  `upstream#47` in `docs/ADR/0006-subpath-exports.md`, once read as
+  self-evidently about the topic being described, actually name real,
+  unrelated, CURRENT fork issues. The recorded disambiguation convention — one of
+  three the issue weighed (historical marker vs. rewrite-to-fork-equivalent vs.
+  drop-the-number) — is the historical marker: a citation that does not refer to
+  the live fork issue at that number is rewritten `upstream#N`, non-destructively
+  preserving what it used to point to. `scripts/issue-citations-registry.json`
+  is the maintained, evidence-backed list of citations already confirmed (via
+  `gh issue view <N>`) as collisions; the gate verifies every registered file
+  still carries the `upstream#N` form and no longer carries the bare, unmarked
+  one — self-tested via `pnpm issue-citations:check:test`. It deliberately does
+  NOT scan the whole doc corpus with a live-fetched "current head" — most bare
+  citations correctly name a live fork issue, and telling the two apart needs a
+  human or an agent reading the actual GitHub issue, not a regex; growing the
+  registry is that manual, evidence-backed step. Two candidate collisions —
+  `.claude/rules/decoration.md`'s and `AGENTS.md`'s "upstream#29" candidate — are
+  deliberately left UNREGISTERED and unmarked (still a bare "#29" in both files):
+  `docs/ADR/0017-microcopy-adoption-and-namespacing.md` and
+  `docs/ADR/0019-lazy-engine-boundaries.md` both cite a "consumer report (a
+  workbench app) item #N" in the same shape, which is evidence (not proof) that
+  decoration.md's "#29 item 3" names an item in that external report, not GitHub
+  issue #29 — a different numbering space this gate has no business rewriting).
 - **Nothing is published from a commit the battery has not passed (#103) — but the
   release path no longer RE-RUNS it (2026-08-10).** Every blocking gate lives once,
   in the reusable `.github/workflows/gates.yml`, which `ci.yml` calls on every PR

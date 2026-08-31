@@ -190,7 +190,7 @@ pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerous
 pnpm csp-sinks:check:test       # self-test for the Trusted-Types sink gate
 pnpm sanitizer-passthrough:check       # no @elabs-ai/components-* wrapper re-exposes a safe renderer's sanitiser-override prop (Streamdown's rehypePlugins) without closing both the type-level Omit and the runtime strip (#36)
 pnpm sanitizer-passthrough:check:test  # self-test for the sanitizer-passthrough gate
-pnpm intent:check               # if packages/cli/lib/intent.mjs touched — every authored intent entry names a real export, every `stateTokens` class resolves as a WHOLE class in real source, every package is covered (no zero-`avoid:` llms spoke), ai/chart entries carry >= 3 anti-patterns, and no NEW uncovered ai/charts root export (ratchet vs scripts/intent-coverage-baseline.json) (#60)
+pnpm intent:check               # if packages/cli/lib/intent.mjs touched — every authored intent entry names a real export, every `stateTokens` class resolves as a WHOLE class in real source, every package is covered (no zero-`avoid:` llms spoke), ai/chart entries carry >= 3 anti-patterns, and no NEW uncovered ai/charts root export (ratchet vs scripts/intent-coverage-baseline.json) (upstream#60)
 pnpm intent:check:test          # self-test for the intent-coverage gate
 pnpm playbooks:check            # if docs/playbooks/ touched — every playbook has front matter and reached the manifest, the agent-context file and `brand-ui search` (run `pnpm agent-docs`) (#66/#84)
 pnpm playbooks:check:test       # self-test for the playbook-registration gate
