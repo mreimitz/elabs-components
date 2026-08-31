@@ -18,16 +18,27 @@
  * instead of removing it, which is exactly what issue #80 rejects (see #83,
  * superseded by #80 for this reason).
  *
- * Run via `pnpm test-concurrency:check`; self-tested via `pnpm test-concurrency:check:test`.
- * Dependency-free; ESM; cwd-independent.
+ * Measured cost of the fix (16-core host, cold `--force` runs, back to back):
+ *   unbounded (`turbo run test --force`)         1m01.09s  (1098% cpu)
+ *   bounded   (`turbo run test --concurrency=1`)  1m26.45s  ( 755% cpu)
+ * i.e. **+42% wall-clock** on developer hardware in exchange for removing the
+ * oversubscription — the trade #80 accepts explicitly (a CI runner with far
+ * fewer cores than this host is the shape the regression actually hit, and
+ * there the serialized run is expected to be faster, not slower).
+ *
+ * Run via `pnpm test-concurrency:check` (only the GATE, wired into
+ * .github/workflows/gates.yml's blocking step, has any CI teeth — see the note
+ * below); self-tested via `pnpm test-concurrency:check:test`, which spawns this
+ * file as a real subprocess against planted `package.json` fixtures so the CLI
+ * arm (not just the pure `checkTestScript` function) is exercised.
+ *
+ * Dependency-free; ESM; cwd-independent (accepts `--root <dir>` for tests).
  */
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = dirname(HERE); // scripts/ -> repo root
-const PKG_JSON = join(REPO_ROOT, "package.json");
+const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url))); // scripts/ -> repo root
 
 /**
  * Check one `test` npm-script string (+ optional env) for an explicit turbo
@@ -64,21 +75,36 @@ export function checkTestScript(script, env = {}) {
   ];
 }
 
-// Only run the gate when executed directly (not when imported by the self-test).
-const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (invokedDirectly) {
-  if (!existsSync(PKG_JSON)) {
-    console.error(`✖ test-concurrency: cannot find ${PKG_JSON}`);
-    process.exit(1);
+// ──────────────────────────────── CLI ─────────────────────────────────────────
+function argValue(argv, flag) {
+  const i = argv.indexOf(flag);
+  return i >= 0 ? argv[i + 1] : undefined;
+}
+
+/**
+ * @param {string[]} argv - process.argv.slice(2)
+ * @param {Record<string, string | undefined>} env - process.env (or a fixture)
+ * @returns {number} process exit code
+ */
+export function main(argv = [], env = process.env) {
+  const root = argValue(argv, "--root") ?? REPO_ROOT;
+  const pkgPath = join(root, "package.json");
+  if (!existsSync(pkgPath)) {
+    console.error(`✖ test-concurrency: cannot find ${pkgPath}`);
+    return 1;
   }
-  const pkg = JSON.parse(readFileSync(PKG_JSON, "utf8"));
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
   const script = pkg.scripts?.test;
-  const findings = checkTestScript(script, process.env);
+  const findings = checkTestScript(script, env);
   if (findings.length) {
     console.error(`✖ test-concurrency (${findings.length}):`);
     for (const f of findings) console.error("  - " + f);
-    process.exit(1);
-  } else {
-    console.log(`✔ test-concurrency: root "test" script bounds turbo's fan-out ("${script}").`);
+    return 1;
   }
+  console.log(`✔ test-concurrency: root "test" script bounds turbo's fan-out ("${script}").`);
+  return 0;
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  process.exit(main(process.argv.slice(2)));
 }

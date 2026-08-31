@@ -195,6 +195,7 @@ jobs:
           pnpm gen:readmes:check
           pnpm gen:registry:check
           pnpm templates:check
+          pnpm test-concurrency:check
           pnpm playbooks:check
           pnpm agent-output:check
           pnpm audit-artifact:check
