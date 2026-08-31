@@ -637,8 +637,8 @@ function cssColorToRgb(color: string): [number, number, number] {
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, 1, 1);
-  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-  return [r / 255, g / 255, b / 255];
+  const data = ctx.getImageData(0, 0, 1, 1).data;
+  return [(data[0] ?? 0) / 255, (data[1] ?? 0) / 255, (data[2] ?? 0) / 255];
 }
 function relativeLuminance([r, g, b]: [number, number, number]): number {
   const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
