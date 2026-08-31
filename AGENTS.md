@@ -275,6 +275,8 @@ pnpm csp:check                  # if apps/playground/csp-policy.json, its vite c
 pnpm csp:check:test             # self-test for the CSP dogfood gate
 pnpm microcopy:check            # user-visible strings (aria-label/placeholder/title/JSX text) go through `t()` from useLocale, not hardcoded English (ADR 0017; ratchet, baseline only goes down)
 pnpm microcopy:check:test       # self-test for the microcopy ratchet
+pnpm microtypography:check      # `…` not `...` (hard, un-ratcheted) and curly `’` not straight `'` (ratchet, baseline only goes down) in attributes/JSX text, including `.stories.tsx` (#70)
+pnpm microtypography:check:test # self-test for the micro-typography gate
 pnpm text-scale:check           # type is a role, not a size — raw font-size utilities are ratcheted (#187; baseline only goes down)
 pnpm text-scale:check:test      # self-test for the type-scale ratchet
 pnpm separation:check           # one focal separation gesture — bare `border` + non-default fill co-occurrence is ratcheted (#187)

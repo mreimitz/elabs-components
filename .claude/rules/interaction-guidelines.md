@@ -42,7 +42,15 @@ component packages.
 ## Micro-typography
 
 - `…` not `...`; curly quotes `“ ” ‘ ’` not straight. Loading/among-actions text
-  ends with `…` ("Loading…", "Saving…").
+  ends with `…` ("Loading…", "Saving…"). **Enforced** by `pnpm microtypography:check`
+  (`scripts/check-microtypography.mjs`, #70) — scans `aria-label`/`placeholder`/
+  `title`/`description` attributes and JSX text nodes across every `.tsx`
+  (`.stories.tsx` included, `.test.tsx`/`.spec.tsx` excluded). The ellipsis half is
+  **hard, un-ratcheted** (any `"..."` fails); the apostrophe half is a per-file
+  ratchet vs `scripts/microtypography-baseline.json` (counts only go down). A
+  genuine non-prose match (a code sample, an import path) opts out with a
+  trailing `// microtypography-exempt: <reason>` comment. Self-tested via
+  `pnpm microtypography:check:test`; wired into `gates.yml`'s blocking job.
 - Non-breaking space in units / shortcuts / brand names: `10&nbsp;MB`,
   `⌘&nbsp;K`. Wrap brand + code tokens with `translate="no"` (don't auto-translate
   "brand-ui", `⌘K`, identifiers) — see `Kbd`.

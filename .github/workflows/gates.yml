@@ -157,6 +157,7 @@ jobs:
           pnpm sidebar-drift:check
           pnpm viewer-highlight:check
           pnpm microcopy:check
+          pnpm microtypography:check
           pnpm intent:check
 
       # ── security, network, shipped assets ──────────────────────────────────
@@ -289,6 +290,7 @@ jobs:
           pnpm manifest:check:test
           pnpm merge:check:test
           pnpm microcopy:check:test
+          pnpm microtypography:check:test
           pnpm motion:check:test
           pnpm origins:check:test
           pnpm palette:check:test

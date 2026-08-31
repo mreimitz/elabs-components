@@ -125,6 +125,8 @@
     "merge:check:test": "node --test scripts/check-merge-readiness.test.mjs",
     "microcopy:check": "node scripts/check-microcopy.mjs",
     "microcopy:check:test": "node --test scripts/check-microcopy.test.mjs",
+    "microtypography:check": "node scripts/check-microtypography.mjs",
+    "microtypography:check:test": "node --test scripts/check-microtypography.test.mjs",
     "motion:check": "node scripts/check-motion-tokens.mjs",
     "motion:check:test": "node --test scripts/check-motion-tokens.test.mjs",
     "origins:check": "node scripts/check-remote-origins.mjs",

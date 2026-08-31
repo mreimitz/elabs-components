@@ -210,8 +210,8 @@ function CustomersScreen({ state = "ready" }: { state?: ScreenState }) {
         {state === "error" && (
           <StatePanel
             kind="error"
-            title="Couldn't load customers"
-            description="The billing service didn't respond. Your data is safe — this is a display error."
+            title="Couldn’t load customers"
+            description="The billing service didn’t respond. Your data is safe — this is a display error."
             actions={
               <Button variant="outline" size="sm" onClick={() => toast.success("Retrying…")}>
                 <RotateCcw className="size-4" aria-hidden="true" />

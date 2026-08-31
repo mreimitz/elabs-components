@@ -43,7 +43,7 @@ const data = {
       subject: "Welcome to Acme Mail",
       date: "08:15 AM",
       teaser:
-        "Hi there — here's a quick tour of your new inbox.\nPin, label, and schedule messages to stay organized.",
+        "Hi there — here’s a quick tour of your new inbox.\nPin, label, and schedule messages to stay organized.",
     },
     {
       name: "Stripe",
@@ -67,12 +67,12 @@ const data = {
       subject: "Agenda for Friday standup",
       date: "Mon",
       teaser:
-        "Let's cover onboarding, billing bugs, and Q4 goals.\nReply with anything you want to add.",
+        "Let’s cover onboarding, billing bugs, and Q4 goals.\nReply with anything you want to add.",
     },
     {
       name: "Figma",
       email: "updates@figma.com",
-      subject: "What's new in Figma",
+      subject: "What’s new in Figma",
       date: "Sep 12",
       teaser:
         "Variables, auto layout improvements, and dev mode updates.\nWatch the recap to learn more.",
@@ -198,7 +198,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </div>
           </div>
           <SidebarInput
-            placeholder="Type to search..."
+            placeholder="Type to search…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />

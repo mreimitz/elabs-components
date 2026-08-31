@@ -151,7 +151,7 @@ const defaultGetThinkingMessage = (
   t: (key: string, vars?: Record<string, string | number>) => string,
 ) => {
   if (isStreaming || duration === 0) {
-    return <Shimmer duration={1}>Thinking...</Shimmer>;
+    return <Shimmer duration={1}>Thinking…</Shimmer>;
   }
   if (duration === undefined) {
     return <p>{t("ai.reasoning.thoughtDefault")}</p>;

@@ -18,6 +18,20 @@
   `app-sidebar.tsx` (`text-foreground` inside `bg-sidebar` chrome, the exact #66/#50 bug
   class) with a fully green `pnpm lint`. The rule now resolves and walks a documented
   chrome slot's JSX (inline or via a same-file `const`), and the live instance is fixed.
+- Fixed: six micro-typography violations (straight `...`/`'` instead of
+  `…`/`'`) on two reference screens — `@elabs-ai/components-ui`'s
+  `sidebar-04` mail block (`app-sidebar.tsx`'s search placeholder and two
+  onboarding-tour strings) and `templates-screen-states.stories.tsx`'s
+  errored-state copy — plus a pre-existing `Thinking...` in
+  `@elabs-ai/components-ai`'s `Reasoning` trigger found by the new gate's
+  repo-wide scan. Added `pnpm microtypography:check`
+  (`scripts/check-microtypography.mjs`): the ellipsis rule is hard and
+  un-ratcheted, the straight-apostrophe rule ships as a per-file ratchet
+  (`scripts/microtypography-baseline.json`, 8 known instances across 5
+  files); scans `aria-label`/`placeholder`/`title`/`description` attributes
+  and JSX text across every `.tsx` including `.stories.tsx`. Wired into
+  `gates.yml`'s blocking job and `AGENTS.md`'s validate-before-you-finish
+  contract. (#70)
 - Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
   (`border-s-4`) was tinted with the neutral `border-border-strong` token
   instead of a destructive-family colour, reading as a 4px grey bar beside
@@ -25,6 +39,20 @@
   `border-s-destructive` (the FILL rung, still ≥3:1 against `--card`/
   `--background` per WCAG 1.4.11). `kind="empty"`/`kind="loading"` are
   unchanged. (#71)
+- Fixed: three reference empty states did not follow the EmptyState anatomy
+  (icon/illustration + title + one sentence + one action). `@elabs-ai/components-ai`'s
+  `ConversationEmptyState` was pinned to the top of a tall canvas instead of
+  centred (`ConversationContent`'s content div had no definite height for the
+  empty state's `size-full` to resolve against — its `StickToBottom.Content`
+  scroll viewport is now a flex column via `scrollClassName`, and the content
+  div gets `flex-1 min-h-0`) and had no way to offer a next step; it now
+  accepts an `actions?: React.ReactNode` prop, rendered in the same slot
+  pattern as `StatePanel`'s `actions`. The `ai-assistant` template now passes
+  two suggested-prompt buttons through it. `@elabs-ai/components-ui`'s
+  `sidebar-04` mail block's hand-rolled empty-preview `<div>` is replaced with
+  `StatePanel kind="empty"` (bordered/backgroundless to avoid a double edge
+  inside its already-bordered container, mirroring the
+  `templates-object-detail-hub` convention). (#72)
 - Fixed: `StatePanel`'s `illustration` slot rendered its title at the same
   `text-sm` size as the plain `icon` slot, so a 112px+ illustration sat over
   a 14px caption with no visual grouping. The illustration path now renders
