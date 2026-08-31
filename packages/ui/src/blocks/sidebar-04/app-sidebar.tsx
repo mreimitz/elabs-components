@@ -193,7 +193,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <Sidebar collapsible="none" className="hidden min-w-96 flex-1 border-e md:flex">
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
-            <div className="text-subtitle font-medium text-foreground">{activeItem?.title}</div>
+            <div className="text-subtitle font-medium text-sidebar-foreground">
+              {activeItem?.title}
+            </div>
           </div>
           <SidebarInput
             placeholder="Type to search..."
@@ -205,7 +207,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroup className="px-0 pt-0">
             <SidebarGroupContent>
               {filteredMails.length === 0 && (
-                <div className="p-4 text-body text-muted-foreground">No results</div>
+                <div className="p-4 text-body text-sidebar-muted-foreground">No results</div>
               )}
               {filteredMails.map((mail) => (
                 <a

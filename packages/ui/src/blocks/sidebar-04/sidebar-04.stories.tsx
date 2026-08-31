@@ -1,8 +1,46 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { SidebarInset, SidebarProvider } from "@elabs-ai/components-ui";
 import { AppSidebar } from "./app-sidebar";
 import { MailProvider, useMail } from "./mail-context";
+
+/**
+ * WCAG contrast ratio between two CSS color strings, computed by rasterizing
+ * each through a 1×1 canvas (normalizes any color function — oklch(), rgb(),
+ * etc. — to concrete sRGB the way the browser actually paints it) and applying
+ * the WCAG 2.x relative-luminance + contrast formulas. Used by the #66 locking
+ * test below to assert the REAL rendered ratio, not just the class name.
+ */
+function cssColorToRgb(color: string): [number, number, number] {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return [r / 255, g / 255, b / 255];
+}
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+function wcagContrast(fg: string, bg: string): number {
+  const lf = relativeLuminance(cssColorToRgb(fg));
+  const lb = relativeLuminance(cssColorToRgb(bg));
+  const [hi, lo] = lf >= lb ? [lf, lb] : [lb, lf];
+  return (hi + 0.05) / (lo + 0.05);
+}
+/** Walk up from `el` to the nearest ancestor (inclusive) with a painted background. */
+function resolvedBackgroundColor(el: Element): string {
+  let node: Element | null = el;
+  while (node) {
+    const bg = getComputedStyle(node).backgroundColor;
+    if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") return bg;
+    node = node.parentElement;
+  }
+  return getComputedStyle(document.body).backgroundColor;
+}
 
 function MailPreview() {
   const { selectedMail } = useMail();
@@ -48,6 +86,32 @@ export const Default: Story = {
       </MailProvider>
     </SidebarProvider>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // #66 — the mail-list heading ("Inbox") sits on the `bg-sidebar` chrome
+    // ground and must reach for `text-sidebar-foreground`, not the canvas
+    // `text-foreground` (which was byte-identical to `--sidebar` in `light`,
+    // i.e. invisible — 1.00:1). `{ selector: "div" }` disambiguates from the
+    // icon-rail's nav-item `<span>Inbox</span>`.
+    const heading = canvas.getByText("Inbox", { selector: "div" });
+    const headingRatio = wcagContrast(
+      getComputedStyle(heading).color,
+      resolvedBackgroundColor(heading),
+    );
+    expect(headingRatio).toBeGreaterThanOrEqual(4.5);
+
+    // #66 — "No results" (same ambient) must reach for
+    // `text-sidebar-muted-foreground`, not `text-muted-foreground`.
+    const searchInput = canvas.getByPlaceholderText("Type to search...");
+    await userEvent.type(searchInput, "zzz-no-such-mail-zzz");
+    const noResults = await canvas.findByText("No results");
+    const noResultsRatio = wcagContrast(
+      getComputedStyle(noResults).color,
+      resolvedBackgroundColor(noResults),
+    );
+    expect(noResultsRatio).toBeGreaterThanOrEqual(4.5);
+  },
 };
 
 /**
