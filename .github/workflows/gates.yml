@@ -218,6 +218,7 @@ jobs:
           pnpm app-spec:check
           pnpm attributions:check
           pnpm attribution:provenance:check
+          pnpm issue-citations:check
           pnpm ai:types-only
           pnpm a11y:baseline:check
           pnpm worktree-branch:check
@@ -280,6 +281,7 @@ jobs:
           pnpm gen:registry:check:test
           pnpm heavy-deps:check:test
           pnpm intent:check:test
+          pnpm issue-citations:check:test
           pnpm loading-states:check:test
           pnpm lockfile:check:test
           pnpm machine-paths:check:test
