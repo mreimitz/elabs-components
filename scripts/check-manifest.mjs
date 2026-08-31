@@ -8,9 +8,15 @@
  *
  *   1. DETERMINISM — two consecutive `generateManifest` runs must be byte-identical
  *      (the `generatedAt` timestamp is held idempotent by `writeManifest`).
- *   2. FRESHNESS  — regenerating must produce no change vs the committed file;
- *      otherwise the manifest is stale (someone changed code without running
- *      `pnpm manifest`).
+ *   2. FRESHNESS  — regenerating must produce no change vs the file committed at
+ *      HEAD; otherwise the manifest is stale (someone changed code without
+ *      running `pnpm manifest`). Compared against `git show HEAD:<path>`,
+ *      NEVER `git diff` (which — with no ref — compares against the git INDEX,
+ *      not HEAD): the verdict is a pure function of (HEAD, working tree),
+ *      independent of git staging state. See #44 — the old index-based compare
+ *      false-STALEd during the documented Phase 4 merge-conflict-resolution
+ *      workflow, where the manifest is legitimately unmerged/unstaged relative
+ *      to a correct regeneration.
  *
  * Run by `pnpm manifest:check` and in CI. Exits non-zero with an actionable message.
  */
@@ -43,37 +49,46 @@ if (run1 !== run2) {
   process.exit(1);
 }
 
-// (2) freshness — did regenerating change the committed file?
-let gitDiff = "";
+// (2) freshness — does regenerating produce content different from the
+// COMMITTED HEAD? Compared against `git show HEAD:<path>`, never the git
+// INDEX/`git diff` (no ref) — the verdict must be a pure function of
+// (HEAD, working tree), independent of git staging state (plain,
+// staged-different, or mid-merge-conflict on this file). `git show HEAD:`
+// always resolves to HEAD's committed blob regardless of index state, which
+// sidesteps the unmerged-path edge case entirely (#44).
+let headContent = null;
 try {
-  gitDiff = execFileSync("git", ["diff", "--", "brand-ui.manifest.json"], {
+  headContent = execFileSync("git", ["show", "HEAD:brand-ui.manifest.json"], {
     cwd: root,
     encoding: "utf8",
   });
 } catch {
-  /* not a git checkout (e.g. tarball) — skip the freshness half */
+  /* not a git checkout (e.g. tarball), or the file doesn't exist at HEAD yet
+     (first commit) — skip the freshness half, same as before */
 }
-if (gitDiff.trim()) {
-  // restore the committed version so the working tree isn't left dirty by the check
-  try {
-    execFileSync("git", ["checkout", "--", "brand-ui.manifest.json"], { cwd: root });
-  } catch {
-    /* ignore */
-  }
+const regenerated = read();
+if (headContent !== null && headContent !== regenerated) {
+  // Deliberately NOT restoring the committed version here (the old
+  // `git checkout -- <path>` recovery step is REMOVED, not made safer): a
+  // read-only CI check has no business mutating the working tree, and a human
+  // running `pnpm agent-docs` locally to eyeball the diff would have their
+  // just-computed regeneration silently discarded right when they need it.
+  // The freshly regenerated (correct) content is already on disk above.
   console.error(
     "✖ brand-ui.manifest.json is STALE — it does not match the source.\n" +
       "  Run `pnpm agent-docs` (not just `pnpm manifest`) and commit the result — it also\n" +
       "  refreshes the 5 generators that read this manifest (inventory/llms/context/gen),\n" +
       "  which go stale right alongside it otherwise (#396).\n" +
-      "  (The manifest is generated; never hand-edit it.)",
+      "  (The manifest is generated; never hand-edit it. The regenerated content is already\n" +
+      "  on disk — review it with `git diff` and commit it, don't discard it.)",
   );
   process.exit(1);
 }
 
-// leave the (unchanged) regenerated file in place; it equals `before`
-if (read() !== before) {
-  // should not happen given the freshness check passed, but be safe
-  console.error("✖ unexpected manifest change after check; run `pnpm manifest`.");
+if (before !== regenerated && headContent === null) {
+  // Non-git context: we can't compare to HEAD, so fall back to "did
+  // regenerating change what was already on disk" as the best available signal.
+  console.error("✖ brand-ui.manifest.json changed after regeneration; run `pnpm manifest`.");
   process.exit(1);
 }
 console.log("✔ manifest is deterministic and fresh.");

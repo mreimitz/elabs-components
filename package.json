@@ -119,6 +119,7 @@
     "machine-paths:check:test": "node --test scripts/check-machine-paths.test.mjs",
     "manifest": "node packages/cli/bin/brand-ui.mjs manifest --write",
     "manifest:check": "node scripts/check-manifest.mjs",
+    "manifest:check:test": "node --test scripts/check-manifest.test.mjs",
     "marketplace:check": "node scripts/release-smoke.mjs --pointer-only",
     "merge:check": "node scripts/check-merge-readiness.mjs",
     "merge:check:test": "node --test scripts/check-merge-readiness.test.mjs",

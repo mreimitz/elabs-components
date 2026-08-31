@@ -168,6 +168,7 @@ pnpm registry:published:check   # every already-published registry item is still
 pnpm registry:published:check:test # self-test for the published-registry reachability gate
 pnpm registry:publish:test      # self-test for scripts/publish-registry-pages.mjs's planning logic (the mutating `pnpm registry:publish` itself only runs from release.yml, never as a per-change check)
 pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
+pnpm manifest:check:test        # self-test for the manifest freshness gate
 pnpm components:check           # every @elabs-ai/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
