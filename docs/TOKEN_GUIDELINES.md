@@ -101,7 +101,17 @@ wants to be "the lightest surface"; see the comment at their declaration in
 ## Rules
 
 1. **Only `themes.css` (and registry `registry:theme` items) may contain raw
-   colors.** Everywhere else, use token-backed utilities.
+   colors.** Everywhere else, use token-backed utilities. **One narrow,
+   documented exception:** a mark rendered through `ServiceLogo`
+   (`@elabs-ai/components-icons`, issue #25) may paint itself with the
+   THIRD-PARTY SERVICE's own brand colour as a raw literal — that colour is
+   the service's identity, not ours, so it cannot be tokenized. Scope it to
+   the mark itself (never leak the literal onto a token-owned element beside
+   it) and mark the line with the component name or a `data-service-logo`
+   attribute so `brand-ui audit`'s raw-color rules can tell it apart from an
+   ordinary component reaching for a literal — see
+   `packages/cli/lib/audit.mjs`'s `SERVICE_LOGO_MARKER` and
+   `packages/icons/src/service-logo.tsx`.
 2. **Adding a visual concept = adding a token** in _every_ theme block + a
    mapping in `@theme inline`. Then use `bg-foo` / `text-foo`.
 3. **Every theme overrides every token.** Missing tokens fall back to `:root`.

@@ -35,6 +35,13 @@ matches `docs/csp-policy.json` and every relaxation carries a named carve-out).
 | `ejiidnob33g9ap1r.public.blob.vercel-storage.com` | `connect-src`             | `Persona` Rive `.riv` artwork             | Self-host the six files (see `PERSONA_SOURCES`) and pass `<Persona src={…}>`. A blocked load renders the fallback orb.  |
 | `basemaps.cartocdn.com`                           | `connect-src` + `img-src` | `MapCanvas` default basemap style + tiles | Pass `mapStyle` for a self-hosted style, or `blank` for no basemap.                                                     |
 
+`ServiceLogo` (`@elabs-ai/components-icons`, issue #25) is the CSP-clean alternative to the
+`models.dev` fetch above: it never fetches a remote asset — a consuming app
+registers its own marks (`registerServiceLogos`) as local/bundled assets or
+inline JSX, so it needs no `img-src`/`connect-src` allowance at all. Reach for
+it when you don't want the `models.dev` dependency; `ModelSelectorLogo` stays
+for its existing consumers.
+
 Minimum policy to keep all three working as shipped:
 
 ```

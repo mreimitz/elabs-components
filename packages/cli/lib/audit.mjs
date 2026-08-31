@@ -249,6 +249,19 @@ export const RULES = [
  * @param {string} register
  * @returns {boolean} whether `brandTolerant` rules downgrade to advisory.
  */
+/**
+ * @elabs-ai/components-icons' `ServiceLogo` lets a consumer REGISTER their own service's mark
+ * (`registerServiceLogos`) — that mark legitimately paints itself with the
+ * service's own brand colour as a raw literal (a Slack purple, a GitHub black),
+ * which the raw-color rules below cannot otherwise tell apart from an ordinary
+ * component reaching for a literal instead of a token. This is a narrow,
+ * LINE-scoped carve-out (consistent with this file's single-line-regex scope,
+ * see the file header) keyed off the component name or an explicit
+ * `data-service-logo` marker attribute — not a blanket colorRule exemption.
+ * See docs/TOKEN_GUIDELINES.md and .claude/rules/icons.md.
+ */
+const SERVICE_LOGO_MARKER = /\bServiceLogo\b|\bdata-service-logo\b/;
+
 function softensBrandTells(register) {
   return register === "brand";
 }
@@ -267,6 +280,7 @@ export function scanText(text, { isCss = false, isThemeFile = false, register = 
   text.split("\n").forEach((line, i) => {
     for (const rule of RULES) {
       if (isThemeFile && rule.colorRule) continue; // themes.css owns raw color
+      if (rule.colorRule && SERVICE_LOGO_MARKER.test(line)) continue; // registered service mark — its own brand colour (icons.md)
       if (isCss && rule.copyRule) continue; // no JSX/prose copy in .css
       if (rule.re.test(line)) {
         findings.push({

@@ -145,3 +145,30 @@ test("CONTENT_SLOP_RULES patterns are non-global (safe for per-line .test())", (
     assert.ok(!r.re.flags.includes("g"), `${r.id} must be non-global for .test()`);
   }
 });
+
+// ── ServiceLogo raw-color carve-out (#25) ────────────────────────────────────
+// @elabs-ai/components-icons' ServiceLogo lets a consumer register their OWN service mark,
+// which legitimately carries that service's own brand colour as a raw literal —
+// the raw-color rule can't tell that apart from an ordinary component painting
+// itself with a literal, so it needs a narrow, line-scoped carve-out keyed off
+// the component name / a `data-service-logo` marker (styling-and-tokens.md).
+
+test("ServiceLogo carve-out: a raw-color line naming ServiceLogo (or data-service-logo) is exempt — narrow, not blanket", () => {
+  const marked = scanText('<path d="M0 0" fill="#4A154B" /> {/* ServiceLogo */}', {});
+  assert.equal(
+    marked.filter((x) => x.rule === "raw-hex").length,
+    0,
+    "raw-hex exempt when the line names ServiceLogo",
+  );
+
+  const dataAttr = scanText('<svg data-service-logo fill="#4A154B">', {});
+  assert.equal(
+    dataAttr.filter((x) => x.rule === "raw-hex").length,
+    0,
+    "raw-hex exempt via the data-service-logo marker",
+  );
+
+  // Teeth: an UNRELATED raw-hex line still fails — this is not a blanket exemption.
+  const unrelated = scanText('<div style={{ color: "#4A154B" }} />', {});
+  assert.ok(ids(unrelated).includes("raw-hex"), "raw-hex still fires without the marker");
+});

@@ -32,6 +32,29 @@
   and JSX text across every `.tsx` including `.stories.tsx`. Wired into
   `gates.yml`'s blocking job and `AGENTS.md`'s validate-before-you-finish
   contract. (#70)
+- Added: `ServiceLogo` (`@elabs-ai/components-icons`) — a consistently-sized slot for a
+  third-party service's own mark (an SSO provider, a chat platform, a customer's
+  brand), with an accessible monogram fallback for anything not yet registered.
+  brand-ui never vendors a trademark-bearing asset itself — the package ships
+  the machinery (`registerServiceLogos`, a themable `render`/`src` contract, a
+  `variant="mono"` seam) and the consuming app supplies the marks it is
+  licensed to display, mirroring `@elabs-ai/components-ai`'s `ModelSelectorLogo`
+  without any remote fetch (see `docs/CSP-AND-NETWORK.md`). A registered mark's
+  own raw brand colour is a documented, narrow exception to the semantic-tokens
+  rule (`docs/TOKEN_GUIDELINES.md`), carved out of `brand-ui audit`'s raw-color
+  rules by the `ServiceLogo` / `data-service-logo` line marker
+  (`packages/cli/lib/audit.mjs`). (#25)
+- Fixed: `apps/docs/public/brand-favicon.svg` carried the full `BrandLogo` mark
+  byte-for-byte (45° hatch, two stray strokes, two register dots) at the 16px
+  a browser tab actually renders it at, where the hatch fuses into a
+  textureless blob and the mark stops reading as a circle-over-square. Per
+  the maintainer's decision on #2, the favicon is now a simplified small-size
+  variant — circle + square only, with the plane's `fill-opacity` raised
+  (0.22 → 0.6, this asset only) so it still reads as a plane once the hatch
+  that used to carry its texture is gone. `BrandLogo`/`AppIcon` themselves are
+  unchanged. `packages/icons/src/brand-mark-assets.test.tsx` now encodes the
+  deliberate exception instead of asserting byte-for-byte favicon parity.
+  (#2)
 - Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
   (`border-s-4`) was tinted with the neutral `border-border-strong` token
   instead of a destructive-family colour, reading as a 4px grey bar beside
