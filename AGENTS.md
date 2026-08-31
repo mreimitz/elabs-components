@@ -168,6 +168,7 @@ pnpm registry:published:check   # every already-published registry item is still
 pnpm registry:published:check:test # self-test for the published-registry reachability gate
 pnpm registry:publish:test      # self-test for scripts/publish-registry-pages.mjs's planning logic (the mutating `pnpm registry:publish` itself only runs from release.yml, never as a per-change check)
 pnpm manifest:check             # manifest is fresh + deterministic (never hand-edit it; run `pnpm manifest`)
+pnpm manifest:check:test        # self-test for the manifest freshness gate
 pnpm components:check           # every @elabs-ai/components-ui component is barrel-registered AND story-covered (ratchet vs scripts/components-story-baseline.json; `-- --update` only ratchets down)
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
@@ -186,15 +187,20 @@ pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset ar
 pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
 pnpm attribution:provenance:check       # if you borrowed from another project — shipped source may not say "adapted/vendored/ported from X" unless X is credited in scripts/attributions.sources.json (see .claude/rules/attribution.md)
 pnpm attribution:provenance:check:test  # self-test for the attribution-provenance gate
+pnpm dep-field-move:check       # if a staged package.json moves a dependency between dependencies/devDependencies/peerDependencies/optionalDependencies — automatically runs attributions:check itself (best-effort wiring in .githooks/pre-commit; `pnpm attributions:check` in CI is still the blocking backstop) (#42)
+pnpm dep-field-move:check:test  # self-test for the dependency-field-move detector
 pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerouslySetInnerHTML) in our source or a direct dep, and the Radix scroll-area/select patches still applied — a dropped patch renders a BLANK WINDOW for strict-CSP consumers with a green test suite
 pnpm csp-sinks:check:test       # self-test for the Trusted-Types sink gate
 pnpm sanitizer-passthrough:check       # no @elabs-ai/components-* wrapper re-exposes a safe renderer's sanitiser-override prop (Streamdown's rehypePlugins) without closing both the type-level Omit and the runtime strip (#36)
 pnpm sanitizer-passthrough:check:test  # self-test for the sanitizer-passthrough gate
-pnpm intent:check               # if packages/cli/lib/intent.mjs touched — every authored intent entry names a real export, every `stateTokens` class resolves as a WHOLE class in real source, every package is covered (no zero-`avoid:` llms spoke), ai/chart entries carry >= 3 anti-patterns, and no NEW uncovered ai/charts root export (ratchet vs scripts/intent-coverage-baseline.json) (#60)
+pnpm intent:check               # if packages/cli/lib/intent.mjs touched — every authored intent entry names a real export, every `stateTokens` class resolves as a WHOLE class in real source, every package is covered (no zero-`avoid:` llms spoke), ai/chart entries carry >= 3 anti-patterns, and no NEW uncovered ai/charts root export (ratchet vs scripts/intent-coverage-baseline.json) (upstream#60)
 pnpm intent:check:test          # self-test for the intent-coverage gate
+pnpm issue-citations:check      # no bare #N issue citation collides with a live fork issue; marked upstream#N where they do (upstream#63)
+pnpm issue-citations:check:test # self-test for the issue-citations gate
 pnpm playbooks:check            # if docs/playbooks/ touched — every playbook has front matter and reached the manifest, the agent-context file and `brand-ui search` (run `pnpm agent-docs`) (#66/#84)
 pnpm playbooks:check:test       # self-test for the playbook-registration gate
 pnpm cadence:check:test         # self-test for the Stop session-cadence nudge (.claude/hooks/session-cadence-nudge.sh, #67)
+pnpm consultation-claims:check:test  # self-test for the Stop consultation-claims nudge (.claude/hooks/gate-consultation-claims.sh) — a Write/Edit claiming a named-agent consultation with no matching prior Task dispatch in the transcript is caught (#42)
 pnpm format:check               # or fix with `pnpm format`
 pnpm ai:types-only              # if @elabs-ai/components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
 pnpm lucide:check               # if any `lucide-react` import touched — one Lucide version across the workspace
@@ -258,6 +264,8 @@ pnpm gen:registry:check         # if registry/ changed — the generated registr
 pnpm gen:registry:check:test    # self-test for the registry generator's stale gate
 pnpm templates:check            # if a scaffold template changed — every template still compiles against the current component API
 pnpm templates:check:test       # self-test for the template-freshness gate
+pnpm test-concurrency:check     # if the root package.json test script is touched — turbo's fan-out concurrency is bounded (either --concurrency=<int> or TURBO_CONCURRENCY env var) to prevent CPU oversubscription and intermittent test flakiness (#80)
+pnpm test-concurrency:check:test # self-test for the test-concurrency gate
 pnpm agent-output:check         # if an agent/skill's output contract changed — the shipped agents still declare the output shape their callers parse
 pnpm agent-output:check:test    # self-test for the agent-output-contract gate
 pnpm heavy-deps:check           # if @elabs-ai/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
@@ -270,6 +278,8 @@ pnpm csp:check                  # if apps/playground/csp-policy.json, its vite c
 pnpm csp:check:test             # self-test for the CSP dogfood gate
 pnpm microcopy:check            # user-visible strings (aria-label/placeholder/title/JSX text) go through `t()` from useLocale, not hardcoded English (ADR 0017; ratchet, baseline only goes down)
 pnpm microcopy:check:test       # self-test for the microcopy ratchet
+pnpm microtypography:check      # `…` not `...` (hard, un-ratcheted) and curly `’` not straight `'` (ratchet, baseline only goes down) in attributes/JSX text, including `.stories.tsx` (#70)
+pnpm microtypography:check:test # self-test for the micro-typography gate
 pnpm text-scale:check           # type is a role, not a size — raw font-size utilities are ratcheted (#187; baseline only goes down)
 pnpm text-scale:check:test      # self-test for the type-scale ratchet
 pnpm separation:check           # one focal separation gesture — bare `border` + non-default fill co-occurrence is ratcheted (#187)

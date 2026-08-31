@@ -43,7 +43,7 @@ const data = {
       subject: "Welcome to Acme Mail",
       date: "08:15 AM",
       teaser:
-        "Hi there — here's a quick tour of your new inbox.\nPin, label, and schedule messages to stay organized.",
+        "Hi there — here’s a quick tour of your new inbox.\nPin, label, and schedule messages to stay organized.",
     },
     {
       name: "Stripe",
@@ -67,12 +67,12 @@ const data = {
       subject: "Agenda for Friday standup",
       date: "Mon",
       teaser:
-        "Let's cover onboarding, billing bugs, and Q4 goals.\nReply with anything you want to add.",
+        "Let’s cover onboarding, billing bugs, and Q4 goals.\nReply with anything you want to add.",
     },
     {
       name: "Figma",
       email: "updates@figma.com",
-      subject: "What's new in Figma",
+      subject: "What’s new in Figma",
       date: "Sep 12",
       teaser:
         "Variables, auto layout improvements, and dev mode updates.\nWatch the recap to learn more.",
@@ -193,10 +193,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <Sidebar collapsible="none" className="hidden min-w-96 flex-1 border-e md:flex">
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
-            <div className="text-subtitle font-medium text-foreground">{activeItem?.title}</div>
+            <div className="text-subtitle font-medium text-sidebar-foreground">
+              {activeItem?.title}
+            </div>
           </div>
           <SidebarInput
-            placeholder="Type to search..."
+            placeholder="Type to search…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -205,7 +207,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroup className="px-0 pt-0">
             <SidebarGroupContent>
               {filteredMails.length === 0 && (
-                <div className="p-4 text-body text-muted-foreground">No results</div>
+                <div className="p-4 text-body text-sidebar-muted-foreground">No results</div>
               )}
               {filteredMails.map((mail) => (
                 <a

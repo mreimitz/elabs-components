@@ -117,6 +117,49 @@ describe("density type scale — wiring", () => {
   });
 });
 
+// #56 — `@theme` is a Tailwind-only at-rule; a browser that never compiles
+// Tailwind (a standalone HTML export, an exported report, an artifact iframe)
+// drops it as an unknown at-rule and falls back to `:root`. Before this fix
+// `--text-<role>--font-weight`/`--letter-spacing` were declared ONLY inside
+// `@theme`, so such a consumer got correct size/leading but every rung
+// rendered at the same weight/tracking — the hierarchy silently flattened.
+// The fix moves both companions into the plain `:root` TYPE SCALE BASE block
+// (parallel to `--type-size-*`/`--type-leading-*`) and has `@theme` alias them.
+describe("density type scale — weight & tracking resolve outside @theme (#56)", () => {
+  it.each(ROLES)(
+    "--type-weight-%s / --type-tracking-%s are declared in the base :root block",
+    (role) => {
+      expect(decl(themesCss, `--type-weight-${role}`)).toBeTruthy();
+      expect(decl(themesCss, `--type-tracking-${role}`)).toBeTruthy();
+    },
+  );
+
+  it.each(ROLES)(
+    "@theme --text-%s--font-weight / --letter-spacing alias the base layer",
+    (role) => {
+      expect(decl(themesCss, `--text-${role}--font-weight`)).toBe(`var(--type-weight-${role})`);
+      expect(decl(themesCss, `--text-${role}--letter-spacing`)).toBe(
+        `var(--type-tracking-${role})`,
+      );
+    },
+  );
+
+  // Values are unchanged — only their location and naming convention moved.
+  it.each([
+    ["display", "600", "-0.02em"],
+    ["title", "600", "-0.014em"],
+    ["subtitle", "600", "-0.006em"],
+    ["body", "400", "0em"],
+    ["caption", "400", "0em"],
+    ["meta", "500", "0.01em"],
+    ["kpi", "600", "-0.02em"],
+    ["code", "400", "0em"],
+  ] as const)("%s base weight/tracking is still %s / %s", (role, weight, tracking) => {
+    expect(decl(themesCss, `--type-weight-${role}`)).toBe(weight);
+    expect(decl(themesCss, `--type-tracking-${role}`)).toBe(tracking);
+  });
+});
+
 describe("density type scale — comfortable is the exact identity", () => {
   it("declares --type-factor: 1", () => {
     expect(factor("comfortable")).toBe(1);

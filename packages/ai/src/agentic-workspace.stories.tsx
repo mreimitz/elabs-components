@@ -321,13 +321,15 @@ function WorkspaceSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="Atlas workspace">
+            <SidebarMenuButton size="lg" tooltip="Atlas workspace" className="group">
               <span className="flex aspect-square size-8 shrink-0 items-center justify-center group-data-[collapsible=icon]:size-4">
                 <BrandLogo variant="mark" className="size-full" aria-hidden />
               </span>
               <span className="grid flex-1 text-start leading-tight">
                 <span className="truncate text-body font-semibold">Atlas</span>
-                <span className="truncate text-meta text-muted-foreground">Agentic workspace</span>
+                <span className="truncate text-meta text-sidebar-muted-foreground group-hover:text-sidebar-accent-foreground">
+                  Agentic workspace
+                </span>
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -378,13 +380,16 @@ function WorkspaceSidebar({
                           <SidebarMenuSubButton asChild isActive={activeProject === p.id}>
                             <a
                               href={`#project-${p.id}`}
+                              className="group"
                               onClick={(e) => {
                                 e.preventDefault();
                                 onSelectProject(p.id);
                               }}
                             >
                               <span className="flex-1 truncate">{p.name}</span>
-                              <span className="text-meta text-muted-foreground">{p.tag}</span>
+                              <span className="text-meta text-sidebar-muted-foreground group-hover:text-sidebar-accent-foreground group-data-[active=true]:text-sidebar-accent-foreground">
+                                {p.tag}
+                              </span>
                             </a>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
@@ -455,9 +460,9 @@ function WorkspaceSidebar({
                       {ASSET_CATEGORIES.map((c) => (
                         <SidebarMenuSubItem key={c.id}>
                           <SidebarMenuSubButton asChild>
-                            <a href={`#assets-${c.id}`}>
+                            <a href={`#assets-${c.id}`} className="group">
                               <span className="flex-1 truncate">{c.name}</span>
-                              <span className="text-meta tabular-nums text-muted-foreground">
+                              <span className="text-meta tabular-nums text-sidebar-muted-foreground group-hover:text-sidebar-accent-foreground">
                                 {c.count}
                               </span>
                             </a>
@@ -478,13 +483,15 @@ function WorkspaceSidebar({
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" tooltip="Account">
+                <SidebarMenuButton size="lg" tooltip="Account" className="group">
                   <Avatar className="size-7 rounded-md">
                     <AvatarFallback className="rounded-md text-meta">AR</AvatarFallback>
                   </Avatar>
                   <span className="grid flex-1 text-start leading-tight">
                     <span className="truncate text-body font-medium">Avery Rao</span>
-                    <span className="truncate text-meta text-muted-foreground">avery@acme.co</span>
+                    <span className="truncate text-meta text-sidebar-muted-foreground group-hover:text-sidebar-accent-foreground">
+                      avery@acme.co
+                    </span>
                   </span>
                   <ChevronsUpDown className="ms-auto size-4" />
                 </SidebarMenuButton>

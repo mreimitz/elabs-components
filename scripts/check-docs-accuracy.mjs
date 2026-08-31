@@ -652,6 +652,47 @@ for (const f of files) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// 9. .github/**.md CITATIONS (#37) — generalizes rule 2 (WORKFLOW REFS) from
+// `.github/workflows/*.yml` to ANY `.github/**.md` path a rule/command/doc cites
+// (issue templates, the labels doc, …). Before this rule, `issue-workflow.md`
+// told every finder agent to structure issues per `.github/ISSUE_TEMPLATE/
+// agent-finding.md` and label them per `.github/labels.md` — neither existed —
+// so an agent following the rule was confidently wrong with nothing to catch it.
+// Deliberately NO semantic matching (does this prose plausibly describe the
+// template's purpose) — only existsSync against the filesystem, same contract
+// as rule 8's script-path check. This is the `.github/**.md` variant; the
+// `scripts/**.mjs` variant is rule 8 above (#32); the two are adjacent, not
+// duplicated. Scope is `files` (docFiles(), which already walks `.github`)
+// PLUS `.claude/commands/**.md` — a citation can live in either tree (the
+// original defect included `.claude/commands/session-retro.md:124`, which
+// docFiles() does not walk).
+// ---------------------------------------------------------------------------
+const githubMdRe = /\.github\/[A-Za-z0-9_./-]+\.md\b/g;
+
+export function findGithubMdCitationViolations(files) {
+  const violations = [];
+  for (const { file, content } of files) {
+    for (const m of content.matchAll(githubMdRe)) {
+      const relPath = m[0];
+      if (!existsSync(join(root, relPath))) {
+        violations.push(`${file}: references ${relPath} which does not exist`);
+      }
+    }
+  }
+  return violations;
+}
+
+const commandFiles = existingFiles(walk(join(root, ".claude", "commands"), []));
+const githubMdViolations = [];
+for (const f of [...files, ...commandFiles]) {
+  const rel = f.slice(root.length + 1);
+  const text = readFileSync(f, "utf8");
+  for (const v of findGithubMdCitationViolations([{ file: rel, content: text }])) {
+    githubMdViolations.push(v);
+  }
+}
+
 let failed = false;
 if (themeViolations.length) {
   failed = true;
@@ -745,10 +786,18 @@ if (dualCanvasViolations.length) {
       "  BOTH `-flow` and `-ai` for canvas routing.",
   );
 }
+if (githubMdViolations.length) {
+  failed = true;
+  console.error(
+    `\n✖ doc references a non-existent .github/**.md path (${githubMdViolations.length}):`,
+  );
+  for (const v of githubMdViolations) console.error("  - " + v);
+  console.error("  Fix: create the file, or correct the reference.");
+}
 if (failed) process.exit(1);
 console.log(
   `✔ docs-accuracy: theme count + ${workflowsPresent ? "workflow refs + " : ""}script paths + ` +
     "@elabs-ai/components-* component names + PR-template themes + CI-gate contract + version literals + " +
-    `release-set counts + dual-canvas decision consistent (${files.length} docs scanned)` +
+    `release-set counts + dual-canvas decision consistent + .github/**.md citations consistent (${files.length} docs scanned)` +
     `${workflowsPresent ? "" : ". NOTE: workflow-ref + CI-gate-contract rules SKIPPED — no .github/workflows"}.`,
 );

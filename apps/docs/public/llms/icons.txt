@@ -38,6 +38,7 @@ Import from `@elabs-ai/components-icons`. Part of brand-ui — see the root `llm
 - PipelineIcon
 - PivotIcon
 - SearchIcon
+- ServiceLogo
 - SheetIcon
 - SparklesIcon
 - StoryIcon

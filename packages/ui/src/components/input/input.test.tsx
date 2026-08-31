@@ -16,4 +16,17 @@ describe("Input", () => {
     const el = screen.getByLabelText<HTMLInputElement>("email");
     expect(el).toBeDisabled();
   });
+
+  it("applies text-foreground class to ensure text color is not inherited from parent", () => {
+    // Render Input inside a container with a different text color (simulating sidebar)
+    render(
+      <div className="text-sidebar-foreground">
+        <Input aria-label="search" />
+      </div>,
+    );
+    const el = screen.getByLabelText<HTMLInputElement>("search");
+    // Verify that the Input element has the text-foreground class
+    // This ensures its text color is explicitly set and not inherited
+    expect(el.className).toContain("text-foreground");
+  });
 });

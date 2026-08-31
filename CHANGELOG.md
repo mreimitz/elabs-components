@@ -2,6 +2,158 @@
 
 ## Unreleased
 
+- Fixed: three automated-review findings on PR #87. (1) `scripts/check-manifest.mjs`'s
+  freshness check compared against `git show HEAD:brand-ui.manifest.json`, which
+  false-STALEd a legitimately fresh, already-regenerated-but-uncommitted manifest (the
+  ordinary single-commit workflow) — it now compares against the pre-check working-tree
+  content instead, independent of git state entirely. (2) `packages/cli/lib/core.mjs`'s
+  `extractTypeAliasPropTable` lost a type alias's own props when they were nested inside
+  a utility-type generic argument (`PropsWithChildren<{ initialInput?: string }>`), so
+  `PromptInputProvider`'s manifest entry regressed to `props: []`; a new Arm C recovers
+  them, scoped to identifier-led segments only so the disclosed `AudioPlayerElementProps`
+  discriminated-union limitation is unaffected. (3) the `sidebar-a11y/no-canvas-ink-in-sidebar`
+  ESLint rule's ancestor walk only saw the authored JSX tree, so canvas ink passed through
+  a chrome-slot prop (`<AppSidebar header={header}>`, where `header` is a same-file JSX
+  variable) was invisible to it — a real instance shipped in `sidebar-02`'s
+  `app-sidebar.tsx` (`text-foreground` inside `bg-sidebar` chrome, the exact #66/#50 bug
+  class) with a fully green `pnpm lint`. The rule now resolves and walks a documented
+  chrome slot's JSX (inline or via a same-file `const`), and the live instance is fixed.
+- Fixed: six micro-typography violations (straight `...`/`'` instead of
+  `…`/`'`) on two reference screens — `@elabs-ai/components-ui`'s
+  `sidebar-04` mail block (`app-sidebar.tsx`'s search placeholder and two
+  onboarding-tour strings) and `templates-screen-states.stories.tsx`'s
+  errored-state copy — plus a pre-existing `Thinking...` in
+  `@elabs-ai/components-ai`'s `Reasoning` trigger found by the new gate's
+  repo-wide scan. Added `pnpm microtypography:check`
+  (`scripts/check-microtypography.mjs`): the ellipsis rule is hard and
+  un-ratcheted, the straight-apostrophe rule ships as a per-file ratchet
+  (`scripts/microtypography-baseline.json`, 8 known instances across 5
+  files); scans `aria-label`/`placeholder`/`title`/`description` attributes
+  and JSX text across every `.tsx` including `.stories.tsx`. Wired into
+  `gates.yml`'s blocking job and `AGENTS.md`'s validate-before-you-finish
+  contract. (#70)
+- Added: `ServiceLogo` (`@elabs-ai/components-icons`) — a consistently-sized slot for a
+  third-party service's own mark (an SSO provider, a chat platform, a customer's
+  brand), with an accessible monogram fallback for anything not yet registered.
+  brand-ui never vendors a trademark-bearing asset itself — the package ships
+  the machinery (`registerServiceLogos`, a themable `render`/`src` contract, a
+  `variant="mono"` seam) and the consuming app supplies the marks it is
+  licensed to display, mirroring `@elabs-ai/components-ai`'s `ModelSelectorLogo`
+  without any remote fetch (see `docs/CSP-AND-NETWORK.md`). A registered mark's
+  own raw brand colour is a documented, narrow exception to the semantic-tokens
+  rule (`docs/TOKEN_GUIDELINES.md`), carved out of `brand-ui audit`'s raw-color
+  rules by the `ServiceLogo` / `data-service-logo` line marker
+  (`packages/cli/lib/audit.mjs`). (#25)
+- Fixed: `apps/docs/public/brand-favicon.svg` carried the full `BrandLogo` mark
+  byte-for-byte (45° hatch, two stray strokes, two register dots) at the 16px
+  a browser tab actually renders it at, where the hatch fuses into a
+  textureless blob and the mark stops reading as a circle-over-square. Per
+  the maintainer's decision on #2, the favicon is now a simplified small-size
+  variant — circle + square only, with the plane's `fill-opacity` raised
+  (0.22 → 0.6, this asset only) so it still reads as a plane once the hatch
+  that used to carry its texture is gone. `BrandLogo`/`AppIcon` themselves are
+  unchanged. `packages/icons/src/brand-mark-assets.test.tsx` now encodes the
+  deliberate exception instead of asserting byte-for-byte favicon parity.
+  (#2)
+- Changed: `brand-ui scaffold`'s `standalone` app-spec key now **auto-detects**
+  instead of defaulting to `false` everywhere. An app-spec with no `standalone`
+  key scaffolded from OUTSIDE the brand-ui monorepo now defaults to
+  `standalone: true` (real semver dependency ranges + the install handoff)
+  instead of the old unconditional default of `false` (`workspace:*` deps and
+  an eslint config importing the private, unpublished
+  `@elabs-ai/components-eslint-config`) — the previous default silently
+  produced an app that could not `pnpm install`. Root resolving to the
+  brand-ui monorepo itself (a `packages/ui` sibling) is unaffected and still
+  defaults to `standalone: false`. An explicit `"standalone": true|false` in
+  the app-spec always wins over the default, as before; an explicit
+  `standalone: false` outside the monorepo is honored but now flagged
+  "⚠ UNINSTALLABLE" in the scaffold's summary instead of failing silently.
+  (#52)
+- Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
+  (`border-s-4`) was tinted with the neutral `border-border-strong` token
+  instead of a destructive-family colour, reading as a 4px grey bar beside
+  three red hairlines rather than a deliberate accent. Now uses
+  `border-s-destructive` (the FILL rung, still ≥3:1 against `--card`/
+  `--background` per WCAG 1.4.11). `kind="empty"`/`kind="loading"` are
+  unchanged. (#71)
+- Fixed: three reference empty states did not follow the EmptyState anatomy
+  (icon/illustration + title + one sentence + one action). `@elabs-ai/components-ai`'s
+  `ConversationEmptyState` was pinned to the top of a tall canvas instead of
+  centred (`ConversationContent`'s content div had no definite height for the
+  empty state's `size-full` to resolve against — its `StickToBottom.Content`
+  scroll viewport is now a flex column via `scrollClassName`, and the content
+  div gets `flex-1 min-h-0`) and had no way to offer a next step; it now
+  accepts an `actions?: React.ReactNode` prop, rendered in the same slot
+  pattern as `StatePanel`'s `actions`. The `ai-assistant` template now passes
+  two suggested-prompt buttons through it. `@elabs-ai/components-ui`'s
+  `sidebar-04` mail block's hand-rolled empty-preview `<div>` is replaced with
+  `StatePanel kind="empty"` (bordered/backgroundless to avoid a double edge
+  inside its already-bordered container, mirroring the
+  `templates-object-detail-hub` convention). (#72)
+- Fixed: `StatePanel`'s `illustration` slot rendered its title at the same
+  `text-sm` size as the plain `icon` slot, so a 112px+ illustration sat over
+  a 14px caption with no visual grouping. The illustration path now renders
+  the title at the `subtitle` role and gives the illustration→copy gap more
+  room than the title→description gap; the plain `icon` path is unchanged.
+  Also corrected `EmptyState`'s JSDoc, which claimed it forwards an
+  `icon/illustration` when it has only ever forwarded (and clamped to 40×40)
+  `icon` — and fixed a straight apostrophe in `StatePanel`'s "no access"
+  story copy. (#47)
+- Fixed: inside a `StatePanel kind="error"` panel, any illustration's
+  meaning-bearing accent retinted to the same `--destructive` FILL token the
+  silhouette already reads (via `text-destructive`), so the accent
+  collapsed into the subject and disappeared — worst on `ErrorIllustration`,
+  whose own default accent fallback made the same mistake. Both now resolve
+  to `--destructive-text` (the TEXT rung), matching the fallback convention
+  every other illustration's accent already used. Also repositioned
+  `ErrorIllustration`'s exclamation mark out of the gap where its two
+  document halves converge (it read as a knot of lines, not a "!"),
+  documented a repo-wide accent-semantics convention (an accent exists only
+  when it carries information the silhouette doesn't already supply), and,
+  per that convention, removed the now-decorative-only accents from
+  `EmptyListIllustration`, `FirstRunIllustration`, and
+  `OfflineIllustration` (whose "broken link" fragments read as debris) —
+  their silhouettes already carry the full state alone. (#48)
+- Fixed: `@elabs-ai/components-ui`'s `sidebar-04` (mail shell heading and
+  "No results" row) and `sidebar-05` (nav sub-item description) blocks used
+  canvas ink (`text-foreground` / `text-muted-foreground`) on the
+  `bg-sidebar` chrome ground instead of the chrome-tuned
+  `text-sidebar-foreground` / `text-sidebar-muted-foreground` — in the
+  `light` theme the mail heading measured 1.00:1 (`--foreground` and
+  `--sidebar` share the same literal there), effectively invisible. Both
+  swapped to the sidebar-tuned tokens, which clear 4.5:1 against
+  `--sidebar`. (#66, #50)
+- Fixed: `@elabs-ai/components-editor`'s vendored Milkdown lifecycle
+  (`use-get-editor.ts`) now tracks its async `editor.destroy()` teardown in a
+  module-scoped registry and exposes `hasPendingMilkdownTeardown()` /
+  `waitForPendingMilkdownTeardown()` so a consumer (or a test's `afterEach`)
+  can await unmount cleanup. Previously nothing awaited `destroy()`, so
+  `@milkdown/ctx`'s own internal async cleanup timer could fire after a test
+  runner had already recycled its environment (`ReferenceError:
+removeEventListener is not defined`). (#65)
+- Added: `@elabs-ai/components-data`'s `DataTable` reads a `columnDef.meta` seam —
+  `meta.numeric: true` applies `tabular-nums` + end-alignment to a column's
+  `<th>`, every `<td>`, and the loading skeleton for free; `meta.align:
+"start"|"center"|"end"` overrides alignment independently. Previously
+  `columnDef.meta` was never read, so every caller hand-rolled its own numeric
+  styling (or forgot to, as the shipped `data-datatable--with-toolbar` story's
+  "Latency (ms)" column did). The augmented `DataTableColumnMeta` type is
+  exported from `@elabs-ai/components-data`. (#69)
+- Fixed: `@elabs-ai/components-data`'s `DataTable` resize-handle double-click
+  reset and the header's sort-toggle button now carry real-browser Storybook
+  interaction-test coverage — a real double-click (the actual
+  `mousedown`/`mouseup` ×2 + `dblclick` sequence a browser fires, not jsdom's
+  synthetic `dblclick`-only event) still resets a resized column to its
+  declared size, and the sort-toggle button stays hit-testable at its own
+  on-screen coordinates alongside the resize handle's 24px hit box, on both a
+  start-aligned header and an end-aligned numeric one. The button wins the
+  overlap by being promoted into its own stacking context (`relative z-10` on
+  the button, so it paints above the handle's `position: absolute` layer per
+  normal CSS painting order) rather than by reserving header padding for the
+  handle — an earlier padding-based approach was replaced after review because
+  it pushed the numeric header's trailing edge 24px further in than its own
+  body cells, misaligning the column it was meant to fix. Header and body now
+  share byte-identical `px-3` padding in every column, resizable or not. (#82)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded
@@ -11,6 +163,30 @@
   shared theme-count detector now catches an adjective between the number and
   "themes" ("three shipped themes") and a markdown line-wrap splitting the two.
   (#29, #34)
+- Fixed: `@elabs-ai/components-ui`'s `Input` component now explicitly sets
+  `text-foreground` so typed text remains legible when the input is nested under
+  an ancestor with a different text color (e.g., inside a sidebar with
+  `text-sidebar-foreground`). Previously the text inherited the ambient ink
+  color and could become nearly invisible on the input's own `bg-background`.
+  Locked by a Storybook browser-project regression test
+  (`Core/Input`'s `InAmbientTextContainer` story) that asserts the resolved
+  `getComputedStyle(...).color`, not just the class list, in both `light` and
+  `dark` themes via an in-place `data-theme` flip. The `layout-app-shell-mail`
+  stories' `color-contrast` axe exemption is unresolved — blocked by #66 (a
+  different element, same story). (#49)
+- Fixed: `@elabs-ai/components-ui`'s `NavigationMenu` story play function now
+  cancels a stray Radix hover-intent timer (via `userEvent.unhover`) before
+  dispatching Escape. Root cause: `userEvent.click()` synthesizes real pointer
+  events that arm `@radix-ui/react-navigation-menu`'s `delayDuration`-based
+  open timer independently of the click's own open path; that timer is cleared
+  only by a pointer leave/enter — never by the click-open path or by Escape's
+  dismiss path — so it silently reopened the menu ~200ms after an explicit
+  Escape dismissal, intermittently exposing the trigger's `aria-hidden`
+  focus-proxy span to Storybook's `afterEach` axe scan
+  (`aria-hidden-focus`). No change to the component itself — this is a
+  test-authoring fix; the underlying spontaneous-reopen behavior is a residual
+  Radix-level finding, filed separately. Verified 20/20 consecutive idle runs
+  and 5/5 runs under 16-way CPU contention. (#54)
 - Changed (breaking, narrow): `@elabs-ai/components-ai`'s `MarkdownView` and
   `MessageResponse` no longer accept `rehypePlugins` — passing it is now a
   TypeScript error, and the runtime silently drops the prop (with a dev-only
@@ -25,7 +201,48 @@
   stage runs upstream of the rehype chain, which Streamdown derives without
   reading it, so a remark plugin's output is still sanitised; note only that
   your array replaces Streamdown's own `remark-gfm`/`codeMeta` defaults, which
-  you can spread back in from its exported `defaultRemarkPlugins`. (#36)
+  you can spread back in from its exported `defaultRemarkPlugins`. **Scope of
+  the guarantee, stated exactly:** the sanitiser chain can no longer be
+  _replaced_. It is not a claim that no consumer-supplied code can reach the DOM
+  unsanitised — `plugins.math.rehypePlugin` (appended to the END of the rehype
+  pipeline, so it runs after the chain) and `plugins.mermaid` (written with
+  `dangerouslySetInnerHTML`, outside the pipeline entirely) remain reachable,
+  by design, as documented trusted-code seams. See the `plugins`-slot entry
+  below and `docs/CSP-AND-NETWORK.md`. (#36)
+- Fixed: `@elabs-ai/components-ai`'s `MarkdownView`/`MessageResponse` now emit a
+  dev-only `console.warn` when a consumer's `plugins` override replaces
+  `math.rehypePlugin` or `mermaid` — the two plugin slots that reach the DOM
+  after, or outside, Streamdown's sanitiser chain. The plugin still runs
+  (unchanged behaviour, non-breaking): these are deliberate trusted-code seams,
+  and the tests pin them open. What was missing was the runtime half of a
+  boundary that existed only in prose — the practical hazard is
+  misconfiguration, most sharply KaTeX's `trust` option, which silently
+  disables KaTeX's own sanitisation for model-authored content. No warning
+  fires for the default plugin set, for a `cjk`/`code`/`renderers` override, or
+  in production. `MessageResponse`'s `plugins` TSDoc is now self-contained
+  about the boundary instead of pointing at `MarkdownView`, and
+  `docs/CSP-AND-NETWORK.md` names both residual slots. (#76)
+- Fixed (tooling, no runtime change): the blocking `sanitizer-passthrough` gate
+  that makes the #36 XSS-passthrough class un-shippable could be evaded five
+  ways and silently disabled. Reproduced live before the fix, each returning
+  zero findings: re-exporting Streamdown's own `StreamdownProps` alias instead
+  of `ComponentProps<typeof Streamdown>`; naming the rest element anything but
+  `props`; reaching the component through a namespace or dynamic `import()`
+  (which is what a real shipped file,
+  `packages/viewer/src/adapters/markdown/markdown-adapter.tsx`, does — it was
+  never opened by the gate); importing it under an alias; and putting a
+  non-compliant wrapper AFTER a compliant one in the same module. The gate now
+  resolves renderer bindings across every import form (including a local rebind
+  chain, `const S2 = Streamdown`) and **fails closed** on a module it cannot
+  follow, scans both render forms — `<Tag …>` and `createElement(Tag, …)` —
+  checks the props-alias and namespace-indexed type shapes, keys the runtime arm on whatever identifier is actually spread with
+  the search window bounded to the enclosing scope, adds a literal
+  `rehypePlugins={…}` attribute channel with a reasoned two-site allowlist for
+  `@elabs-ai/components-editor`'s `MarkdownPreview`, asserts its key list equals
+  `SANITIZER_OVERRIDE_KEYS` in both directions, and asserts `StreamdownProps` is
+  still exported upstream. `main()` takes a root, so the self-test now drives
+  the CLI's failure path: deleting `process.exit(1)` reds it. The header comment
+  no longer claims coverage the gate does not have. (#75)
 - Added: `@elabs-ai/components-tokens` ships an ordered neutral ramp —
   `--foreground-1..4`, `--border-1..2`, `--surface-1..4` (`text-foreground-*`,
   `border-border-*`, `bg-surface-*` utilities) — additive alongside the
@@ -342,6 +559,27 @@ work alongside `@elabs-ai/components-ai`.
     (`sidebar-05`'s sub-item description uses `text-muted-foreground` on `bg-sidebar`
     instead of `text-sidebar-muted-foreground`, ~2.29:1 in `light`).
 - Added: `@elabs-ai/components-ui` exports `illustrationAccent()` helper — consumers authoring custom `*Illustration` components can now safely retint the illustration's stroke/fill accent outside `StatePanel` by using `illustrationAccent(fallbackColor)` to produce the correct CSS fallback syntax. (#46)
+- Fixed: `@elabs-ai/components-tokens`'s type-scale weight (`--text-<role>--font-weight`) and
+  tracking (`--text-<role>--letter-spacing`) companions are now resolvable from a
+  plain `:root` block, not only inside `@theme`. `@theme` is a Tailwind-only
+  at-rule that a browser dropping unknown at-rules (a standalone HTML export, an
+  exported report, a design artboard, an artifact iframe) ignores entirely, so a
+  consumer reading these custom properties directly without compiling Tailwind
+  previously got the correct size/leading but every rung fell back to inherited
+  weight/tracking — hierarchy silently flattened. The two companions now live
+  as `--type-weight-<role>`/`--type-tracking-<role>` in the existing "TYPE
+  SCALE BASE" `:root` block (parallel to `--type-size-*`/`--type-leading-*`),
+  and `@theme` aliases them exactly as it already aliases size/leading. Values
+  and role names are unchanged — only location and naming convention moved. (#56)
+- Fixed: documented, at their declaration site, that `--card`, `--popover` and
+  `--surface-elevated` render byte-identical pure white in `@elabs-ai/components-tokens`'s
+  `light` reference theme (`packages/tokens/src/themes/light.css`) — a real
+  design coincidence (all three hit OKLCH's lightness ceiling with no headroom
+  left), previously documented only once, several lines away, in `themes.css`'s
+  `:root` comment. `docs/TOKEN_GUIDELINES.md` and the `Foundations/Colors`
+  "Ordered neutral ramp" story now name `surface-3`/`surface-4` as a second
+  accepted "renders identically in light" pair, alongside the existing
+  `surface-1`/`surface-2` note. No token values changed. (#59)
 
 ## v4.0.0 — 2026-08-17
 

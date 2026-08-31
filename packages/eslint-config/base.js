@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 import brandTokens from "./rules/brand-tokens.js";
+import sidebarInk from "./rules/sidebar-ink.js";
 
 /**
  * Shared, framework-agnostic ESLint flat config for all @brand packages.
@@ -15,7 +16,7 @@ export const baseConfig = [
   prettier,
   {
     files: ["**/*.{ts,tsx,js,jsx,mts,cts}"],
-    plugins: { brand: brandTokens },
+    plugins: { brand: brandTokens, "sidebar-a11y": sidebarInk },
     rules: {
       // Taxonomy enforcement at the consumer's point of action — type is a role, colour
       // is a token (see ./rules/brand-tokens.js). "warn" is non-breaking and surfaces the
@@ -24,6 +25,9 @@ export const baseConfig = [
       // ratchets; these reach the CONSUMER apps those scripts don't.
       "brand/no-raw-font-size": "warn",
       "brand/no-raw-color": "warn",
+      // Sidebar chrome/canvas ink discipline (#66, #50 — see ./rules/sidebar-ink.js).
+      // Same "warn" severity as the two rules above, for the same reason.
+      "sidebar-a11y/no-canvas-ink-in-sidebar": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },

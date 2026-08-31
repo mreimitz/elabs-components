@@ -15,11 +15,22 @@ export const statePanelVariants = cva(
     variants: {
       kind: {
         empty: "border border-dashed bg-surface",
-        // error: primary cue is color (destructive bg/border); structural cue
-        // (border-s-4 + border-border-strong top strip) survives monochrome /
-        // a monochrome palette so the panel is distinguishable from empty/loading even
-        // without hue. border-border-strong satisfies WCAG 1.4.11 non-text contrast.
-        error: "border border-destructive/30 bg-destructive/5 border-s-4 border-s-border-strong",
+        // error: the non-color, monochrome-survivable cue is the rail's WIDTH
+        // (border-s-4, 4px, vs the 1px hairline on the other three edges) —
+        // not its hue (per styling-and-tokens.md's border/border-strong
+        // decision test: "if I deleted this line, could a sighted user still
+        // tell the two regions apart?" here it's the thickness that answers
+        // yes). So the rail's COLOR should stay in the destructive family
+        // like the rest of the panel, not fall back to the neutral
+        // `border-strong` rung — a 4px grey rail beside three red hairlines
+        // read as a CSS-specificity bug, not a deliberate accent (#71).
+        // `border-s-destructive` is the FILL rung (styling-and-tokens.md
+        // "which status rung a graphical MARK reaches for") — guaranteed
+        // >=3:1 against --card/--background in every theme, so it still
+        // satisfies the WCAG 1.4.11 non-text-contrast guarantee the old
+        // `border-border-strong` comment claimed. The icon (:87-91) and the
+        // eyebrow (:148-152 below) are the third and fourth non-color cues.
+        error: "border border-destructive/30 bg-destructive/5 border-s-4 border-s-destructive",
         loading: "",
       },
     },
@@ -157,15 +168,21 @@ export function StatePanel({
         // the fixed-size icon slot below. For `kind="error"` this also sets the
         // `--illustration-accent` custom property every illustration's accent
         // ink reads through, so ANY illustration (not just `ErrorIllustration`)
-        // retints its accent to `--destructive` instead of staying pinned to
-        // its default hue inside a red-tinted slot (#24 fix round 1, P0-2) —
-        // without this a lime "add"/keyhole/checkmark badge sits on a
-        // destructive-washed panel, meaning nothing.
+        // retints its accent to `--destructive-text` instead of staying pinned
+        // to its default hue inside a red-tinted slot (#24 fix round 1, P0-2).
+        // TEXT rung, not the FILL token below: the wrapper's `text-destructive`
+        // class already puts the SUBJECT (silhouette) on the fill rung, so an
+        // accent override reading the same `--destructive` token collapsed
+        // onto it and disappeared (#48 finding 2) — `--destructive-text` is a
+        // deliberately distinct, deeper rung (matches the fallback every
+        // other illustration's own accent already uses: `--primary-text`,
+        // `--success-text`) so the accent stays visible against the retinted
+        // silhouette.
         <div
           className={cn(isError ? "text-destructive" : "text-muted-foreground")}
           style={
             isError
-              ? ({ [ILLUSTRATION_ACCENT_VAR]: "var(--destructive)" } as CSSProperties)
+              ? ({ [ILLUSTRATION_ACCENT_VAR]: "var(--destructive-text)" } as CSSProperties)
               : undefined
           }
         >
@@ -183,9 +200,25 @@ export function StatePanel({
       ) : null}
 
       {(resolvedTitle || resolvedDescription) && (
-        <div className="space-y-1">
+        // A 112px+ illustration (default `size="7rem"`) needs a heavier title
+        // to group with, and more air between the artwork and the copy than
+        // between the title and its own description — otherwise the caption
+        // reads as an afterthought under the artwork instead of one grouped
+        // unit (#47). `mt-2` (on top of the root's `gap-3`) only fires on the
+        // illustration path; the plain `icon` path (a fixed 40x40 glyph) is
+        // untouched. The title/description gap stays the tight `space-y-1`
+        // either way — that's the "one visually distinct unit" the two lines
+        // read as.
+        <div className={cn("space-y-1", illustration && "mt-2")}>
           {resolvedTitle && (
-            <h3 className="text-sm font-semibold text-foreground">{resolvedTitle}</h3>
+            <h3
+              className={cn(
+                "font-semibold text-foreground",
+                illustration ? "text-subtitle" : "text-sm",
+              )}
+            >
+              {resolvedTitle}
+            </h3>
           )}
           {resolvedDescription && (
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">{resolvedDescription}</p>

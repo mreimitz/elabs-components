@@ -1,6 +1,5 @@
 [
   "@elabs-ai/components-ai::ChatShell",
-  "@elabs-ai/components-ai::Conversation",
   "@elabs-ai/components-ai::Tool",
   "@elabs-ai/components-ui::Accordion",
   "@elabs-ai/components-ui::Breadcrumb",

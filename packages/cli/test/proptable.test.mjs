@@ -203,6 +203,173 @@ test("extractPropTable is not fooled by a prose apostrophe inside a `//` doc com
   assert.match(bar.description, /isn't optional either/);
 });
 
+// ── Type-alias intersections (#77) ──────────────────────────────────────────
+// `export type XProps = Base & { ... }` never went through the `interface`
+// path's `extends\s+…` header regex (that syntax is `interface`-only), so
+// every such component silently lost its base type, and a base-only alias
+// (`export type XProps = Base;`, no object literal) was dropped from the
+// manifest entirely. Every case below asserts on the `extends` VALUE, not
+// merely non-emptiness.
+
+test("extractPropTable records the base of a type-alias intersection", () => {
+  const src = `
+    export type FooProps = Omit<ComponentProps<typeof Bar>, "rehypePlugins"> & { a?: string };
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.extends, ['Omit<ComponentProps<typeof Bar>, "rehypePlugins">']);
+  assert.ok(
+    t.props.find((p) => p.name === "a"),
+    "own prop `a` is still parsed",
+  );
+});
+
+test("extractPropTable records the base with the object literal FIRST", () => {
+  const src = `
+    export type FooProps = { a?: string } & ComponentProps<"div">;
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.extends, ['ComponentProps<"div">']);
+  assert.ok(
+    t.props.find((p) => p.name === "a"),
+    "own prop `a` is still parsed",
+  );
+});
+
+test("extractPropTable records multiple intersection members, in source order", () => {
+  const src = `
+    export type FooProps = ComponentProps<"div"> & VariantProps<typeof v> & { a?: string };
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.extends, ['ComponentProps<"div">', "VariantProps<typeof v>"]);
+  assert.ok(
+    t.props.find((p) => p.name === "a"),
+    "own prop `a` is still parsed",
+  );
+});
+
+test("extractPropTable does not mistake a union for a base", () => {
+  const src = `
+    export type FooProps = A | B;
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.ok(t, "table extracted (never null for a valid type-alias decl)");
+  assert.deepEqual(t.extends, []);
+  assert.deepEqual(t.props, []);
+});
+
+test("extractPropTable survives an arrow-function type in the body (the splitTopLevel trap)", () => {
+  // `splitTopLevel`'s naive depth counter treats every `>` as a closer, so the
+  // `>` of `=> void` inside the object-literal member would decrement depth to
+  // 0 and split the top-level `&` in the WRONG place. The fix reuses the
+  // separate `angle` counter + `isIdent` guard already proven in `splitMembers`.
+  const src = `
+    export type FooProps = ComponentProps<"div"> & { onPick?: (id: string) => void; a?: string };
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.extends, ['ComponentProps<"div">']);
+  const onPick = t.props.find((p) => p.name === "onPick");
+  assert.ok(onPick, "onPick is parsed, not swallowed by a mis-split");
+  assert.equal(onPick.type, "(id: string) => void");
+  assert.ok(
+    t.props.find((p) => p.name === "a"),
+    "the member AFTER the arrow-typed one still splits correctly",
+  );
+});
+
+test("extractPropTable records a base-only type alias (Arm B)", () => {
+  const src = `
+    export type FooProps = HTMLAttributes<HTMLSpanElement>;
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t, { extends: ["HTMLAttributes<HTMLSpanElement>"], props: [] });
+});
+
+test("extractPropTable recovers own props nested inside a utility-type generic argument (Arm C — PR #87 review finding)", () => {
+  // `PropsWithChildren<{ initialInput?: string }>` is neither a plain
+  // object-literal alias (Arm A/no-`&`-object) nor a base-only alias (Arm B) —
+  // it's a single non-`{`-led segment whose OWN generic argument is an object
+  // literal. Before this fix, `PromptInputProviderProps` (the real,
+  // pre-existing shape this reproduces verbatim) silently degraded from
+  // `props:[initialInput]` to `props:[]`, even though the public API is
+  // unchanged — a real regression caught in code review, confirmed against
+  // git history (`brand-ui.manifest.json` before/after the #77 commit).
+  const src = `
+    export type FooProps = PropsWithChildren<{
+      initialInput?: string;
+    }>;
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.extends, ["PropsWithChildren<{\n      initialInput?: string;\n    }>"]);
+  const initialInput = t.props.find((p) => p.name === "initialInput");
+  assert.ok(
+    initialInput,
+    "own prop `initialInput` nested inside the utility-type generic is recovered",
+  );
+  assert.equal(initialInput.optional, true);
+  assert.equal(initialInput.type, "string");
+});
+
+test("extractPropTable Arm C does not reach into a parenthesized union member (the disclosed AudioPlayerElementProps limitation stays as-is)", () => {
+  // `Omit<X, Y> & (A | B)` — a parenthesized discriminated union as one `&`
+  // member — is NOT a flat prop table (the props are mutually exclusive
+  // between arms), so Arm C's identifier-led-only guard must not reach into
+  // it: the segment starts with `(`, not an identifier. Reproduces the real,
+  // disclosed `AudioPlayerElementProps` shape (`packages/ai/src/audio-player.tsx`)
+  // verbatim, scoped down. Flattening the first arm's `data` into `props`
+  // would misrepresent the API (the `src` arm would be silently hidden) —
+  // strictly worse than the pre-existing, disclosed `props: []`.
+  const src = `
+    export type FooProps = Omit<Bar, "src"> &
+      (
+        | {
+            data: string;
+          }
+        | {
+            src: string;
+          }
+      );
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.props, []);
+  assert.ok(t.extends.includes('Omit<Bar, "src">'));
+});
+
+test("extractPropTable: the interface form is unchanged (no-regression pair)", () => {
+  // Re-asserts the existing cases above explicitly, so a change to the type-alias
+  // path that accidentally touches the interface path is caught here too.
+  const withExtends = extractPropTable(
+    `
+      export interface ButtonProps
+        extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+        asChild?: boolean;
+        label: string;
+      }
+    `,
+    "Button",
+  );
+  assert.deepEqual(withExtends.extends, [
+    "ButtonHTMLAttributes<HTMLButtonElement>",
+    "VariantProps<typeof buttonVariants>",
+  ]);
+  const extendsOnly = extractPropTable(
+    `export interface PlainProps extends HTMLAttributes<HTMLDivElement> {}`,
+    "Plain",
+  );
+  assert.deepEqual(extendsOnly.extends, ["HTMLAttributes<HTMLDivElement>"]);
+  assert.deepEqual(extendsOnly.props, []);
+});
+
+test("extractPropTable never throws on a type alias with no terminating top-level `;` (parser must stay total)", () => {
+  // Malformed/truncated input must never throw — `extractPropTable` runs during
+  // `pnpm manifest`, invoked by the pre-commit hook; a throw breaks the commit
+  // path for the whole repo. The spec calls this the graceful bail: fall back
+  // to today's (pre-#77) object-literal-only parse.
+  const src = `export type FooProps = Omit<Bar, "x"> & { a?: string }`; // no trailing `;`
+  assert.doesNotThrow(() => extractPropTable(src, "Foo"));
+  const t = extractPropTable(src, "Foo");
+  assert.ok(t && Array.isArray(t.extends) && Array.isArray(t.props));
+});
+
 test("extractPropTable keeps two adjacent multi-line TSDoc'd members separate (#269 regression)", () => {
   // Before the fix, `leadingDoc`'s block-comment regex started scanning from
   // the FIRST `/**` in the preceding source rather than the nearest one, so

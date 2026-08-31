@@ -55,6 +55,13 @@
   --background: oklch(0.985 0.002 257);
   --foreground: oklch(0.3 0.021 257); /* #404040 neutral grey — not blue */
 
+  /* #59 — --card and --popover are byte-identical pure white here, and
+     --surface-elevated (declared further below, aliased by --surface-4) is
+     too. A real design coincidence, not an oversight: all three want to read
+     as "the lightest surface in the system", and OKLCH's lightness ceiling
+     (L 1.0) leaves no headroom left to tell them apart once they're already
+     there. See dark.css, where the same three tokens ARE differentiated —
+     the dark ground has headroom to spare, so they don't collide there. */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.3 0.021 257);
 
@@ -234,6 +241,12 @@
 
   --surface: oklch(0.985 0.002 257);
   --surface-muted: oklch(0.96 0.003 257);
+  /* #59 — pure white; the same lightness-ceiling collision as --card/--popover
+     above (see that comment) — --surface-elevated, --card and --popover all
+     land on the same L 1.0 value with no headroom left to separate them.
+     --surface-4 aliases this token, so surface-3 (== --card) and surface-4
+     also render identically in `light` — documented alongside surface-1/
+     surface-2 in docs/TOKEN_GUIDELINES.md. dark.css differentiates all three. */
   --surface-elevated: oklch(1 0 0);
 
   /* Ordered neutral ramp (#14) — see themes.css :root for the rung -> role

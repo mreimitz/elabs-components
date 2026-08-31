@@ -8,6 +8,9 @@ import {
 /**
  * Search / filter with zero matches. A line-art magnifying glass with a
  * `--primary-text` "×" inside the lens standing in for "nothing matched".
+ * The "×" is meaning-bearing (per the accent-semantics convention in
+ * `illustration-base.tsx`, #48 finding 1) — a bare magnifying glass alone
+ * reads as "search", not "no results".
  */
 export const NoResultsIllustration = forwardRef<SVGSVGElement, IllustrationProps>(
   function NoResultsIllustration({ size, className, ...props }, ref) {

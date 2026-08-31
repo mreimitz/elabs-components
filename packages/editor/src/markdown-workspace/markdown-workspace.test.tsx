@@ -3,6 +3,10 @@ import { createRef } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { SlashCommand } from "../markdown-editor/slash";
+import {
+  hasPendingMilkdownTeardown,
+  waitForPendingMilkdownTeardown,
+} from "../markdown-editor/milkdown-react/use-get-editor";
 
 // ---------------------------------------------------------------------------
 // Monaco mock — extended with revealLine / revealLineInCenter / getLineCount
@@ -83,8 +87,15 @@ vi.mock("monaco-editor", () => ({
 
 import { MarkdownWorkspace, type MarkdownWorkspaceHandle } from "./markdown-workspace";
 
-afterEach(() => {
+// #65 — `cleanup()` unmounts synchronously but Milkdown's own `editor.destroy()`
+// is async (`@milkdown/ctx` schedules an internal cleanup timer inside it), so
+// returning here without waiting let that timer fire after Vitest recycled this
+// file's jsdom environment: `ReferenceError: removeEventListener is not defined`.
+// Await every pending Milkdown teardown (tracked in `use-get-editor.ts`) before
+// the next test's `vi.clearAllMocks()` / setup runs.
+afterEach(async () => {
   cleanup();
+  await waitForPendingMilkdownTeardown();
   vi.clearAllMocks();
 });
 
@@ -96,6 +107,25 @@ test("renders the mode switcher and the WYSIWYG editor", async () => {
   expect(screen.getByRole("radio", { name: "Split" })).toBeInTheDocument();
   // Milkdown mounts the heading.
   await waitFor(() => expect(screen.getByText("Hello")).toBeInTheDocument());
+});
+
+// #65 — regression lock for the awaitable Milkdown-destroy handle itself. Proves
+// (a) unmounting a Milkdown-backed surface registers a real pending teardown
+// (not a no-op — a reverted fix would leave nothing tracked and fail the first
+// assertion), and (b) awaiting the exposed handle actually drains it rather than
+// resolving early. Five mount/unmount cycles back to back so a leak in the
+// tracking Set itself (an entry that never gets removed) would also fail.
+test("#65 awaits Milkdown teardown on unmount via the exposed handle", async () => {
+  for (let i = 0; i < 5; i += 1) {
+    const { unmount } = render(<MarkdownWorkspace defaultMode="wysiwyg" defaultValue="# Hello" />);
+    await waitFor(() => expect(screen.getByText("Hello")).toBeInTheDocument());
+
+    unmount();
+    expect(hasPendingMilkdownTeardown()).toBe(true);
+
+    await waitForPendingMilkdownTeardown();
+    expect(hasPendingMilkdownTeardown()).toBe(false);
+  }
 });
 
 // #270 — focusWriting opt-out

@@ -198,6 +198,13 @@ brand-ui scaffold spec.md     # plan or emit a runnable, born-compliant app
 brand-ui scan . --out ./m     # profile an existing repo for migration
 ```
 
+`scaffold` auto-detects whether it is running **inside** this monorepo (a
+`packages/ui` sibling) and defaults its app-spec's `"standalone"` key accordingly —
+real semver `@elabs-ai/components-*` ranges (+ the full install handoff) everywhere
+else, `workspace:*` + the shared eslint config only when it really is this repo. Set
+`"standalone"` explicitly in the spec to override the detection; see
+[`docs/CONSUMING.md`](docs/CONSUMING.md).
+
 Two MCP servers are wired in [`.mcp.json`](.mcp.json): a persistent **`brand-ui`**
 server that answers from the committed manifest (works with Storybook down), and a
 **`storybook`** server that exposes live previews and browser-based test runs while the

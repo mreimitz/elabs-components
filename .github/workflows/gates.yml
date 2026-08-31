@@ -157,6 +157,7 @@ jobs:
           pnpm sidebar-drift:check
           pnpm viewer-highlight:check
           pnpm microcopy:check
+          pnpm microtypography:check
           pnpm intent:check
 
       # ── security, network, shipped assets ──────────────────────────────────
@@ -195,6 +196,7 @@ jobs:
           pnpm gen:readmes:check
           pnpm gen:registry:check
           pnpm templates:check
+          pnpm test-concurrency:check
           pnpm playbooks:check
           pnpm agent-output:check
           pnpm audit-artifact:check
@@ -218,6 +220,7 @@ jobs:
           pnpm app-spec:check
           pnpm attributions:check
           pnpm attribution:provenance:check
+          pnpm issue-citations:check
           pnpm ai:types-only
           pnpm a11y:baseline:check
           pnpm worktree-branch:check
@@ -261,6 +264,7 @@ jobs:
           pnpm collapse-fork:check:test
           pnpm components:check:test
           pnpm conflict-markers:check:test
+          pnpm consultation-claims:check:test
           pnpm consumer:check:test
           pnpm csp:check:test
           pnpm csp-sinks:check:test
@@ -270,6 +274,7 @@ jobs:
           pnpm decoration:check:test
           pnpm decoration-collapse:check:test
           pnpm dep-direction:check:test
+          pnpm dep-field-move:check:test
           pnpm deps-sync:test
           pnpm dispatch:check:test
           pnpm docs:check:test
@@ -280,11 +285,14 @@ jobs:
           pnpm gen:registry:check:test
           pnpm heavy-deps:check:test
           pnpm intent:check:test
+          pnpm issue-citations:check:test
           pnpm loading-states:check:test
           pnpm lockfile:check:test
           pnpm machine-paths:check:test
+          pnpm manifest:check:test
           pnpm merge:check:test
           pnpm microcopy:check:test
+          pnpm microtypography:check:test
           pnpm motion:check:test
           pnpm origins:check:test
           pnpm palette:check:test
@@ -315,6 +323,7 @@ jobs:
           pnpm surface-elevation:check:test
           pnpm surface:preview:test
           pnpm templates:check:test
+          pnpm test-concurrency:check:test
           pnpm text-scale:check:test
           pnpm theme-parity:check:test
           pnpm timeline-fork:check:test

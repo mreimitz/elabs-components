@@ -85,7 +85,7 @@ function readSubpathBarrels(pkgDir, exportsMap) {
 }
 
 /** Collect + de-dupe (prefer value kind) a barrel's exports, sorted by name. */
-function collectBarrelExports(barrel, repoRoot) {
+export function collectBarrelExports(barrel, repoRoot) {
   const byName = new Map();
   for (const e of collectExports(barrel, repoRoot)) {
     const prev = byName.get(e.name);
@@ -110,7 +110,7 @@ function bucketExports(all) {
  * Collect the exported identifiers of a TS module, resolving `export * from`
  * one or two levels deep. Returns [{ name, kind: "value"|"type", module }].
  */
-function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
+export function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
   if (!file || seen.has(file) || depth > 3) return [];
   seen.add(file);
   const src = read(file);
@@ -136,17 +136,47 @@ function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
       const target = resolveModule(dir, m[3]);
       if (target) sourceRel = target.replace(repoRoot + "/", "");
     }
-    const names = m[2]
+    // Strip comments BEFORE splitting on comma. A barrel is free to interleave
+    // `//`/`/* */` comments between named exports (valid TS, and Prettier
+    // doesn't reformat them away) — a comma inside one of those comments used
+    // to survive into the split, corrupting the parse: a real named export
+    // (e.g. a `type X,` line) got silently swallowed into the same field as
+    // the comment text, while a comment fragment that happened to look like
+    // an identifier (e.g. the word "exported" inside a sentence) leaked out
+    // as a phantom export name — reproduced by `packages/data/src/data-table/index.ts`'s
+    // round-1 `#69`/`#82` doc comment (round-2 fix, #82 follow-up). This is a
+    // real crawler bug, not something the caller can be asked to work around
+    // by comment placement: any future barrel comment containing a comma
+    // would hit the same corruption.
+    const namesSource = m[2].replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    const names = namesSource
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean)
       .map((s) => {
-        const asMatch = s.match(/\bas\s+([A-Za-z0-9_$]+)/);
-        return (asMatch ? asMatch[1] : s).replace(/\s+/g, "");
+        // A PER-SPECIFIER `type` keyword (`export { A, type B, type C as D }`)
+        // marks just that one name as a type export — independent of `isType`
+        // above, which only fires for the OUTER `export type { ... }` form
+        // (every name in the block). This used to be left in place and then
+        // `.replace(/\s+/g, "")` joined it straight onto the name
+        // ("type DataTableProps" → "typeDataTableProps"): a real bug, not
+        // hypothetical — `brand-ui.manifest.json` already shipped
+        // `"typeDataTableProps"`/`"typeColumnPickerProps"`/etc. as literal
+        // `otherExports` strings for THIS SAME barrel, so every mixed-block
+        // type export in the file was already undiscoverable under its real
+        // name before the #69/#82 round-1 `DataTableColumnMeta` fix ever
+        // touched it — that fix's own `type DataTableColumnMeta` specifier
+        // would have hit the identical mis-parse even with the comment
+        // (fixed above) out of the way. Strip the keyword and mark the
+        // specifier as a type BEFORE resolving an `as` alias.
+        const specifierIsType = /^type\s+/.test(s);
+        const withoutTypeKeyword = specifierIsType ? s.replace(/^type\s+/, "") : s;
+        const asMatch = withoutTypeKeyword.match(/\bas\s+([A-Za-z0-9_$]+)/);
+        const name = (asMatch ? asMatch[1] : withoutTypeKeyword).replace(/\s+/g, "");
+        return { name, kind: isType || specifierIsType ? "type" : "value" };
       })
-      .filter((n) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(n) && n !== "type");
-    for (const name of names)
-      out.push({ name, kind: isType ? "type" : "value", module: sourceRel });
+      .filter(({ name }) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) && name !== "type");
+    for (const { name, kind } of names) out.push({ name, kind, module: sourceRel });
   }
   // export const/function/class X
   for (const m of src.matchAll(
@@ -816,6 +846,26 @@ export function extractPropTable(src, name) {
   // NB: keep comments — we read the TSDoc above each member for descriptions.
   const decl = new RegExp(`export\\s+(interface|type)\\s+${name}Props\\b`).exec(src);
   if (!decl) return null;
+  if (decl[1] === "type") {
+    // `export type XProps = Base & { … }` never carries the `interface`
+    // syntax's `extends` keyword, so the object-literal-only parse below
+    // silently dropped every intersection's base type(s) (#77). Parse the
+    // alias's RHS on its own terms; on any parse hazard (no depth-0 `;`
+    // found — e.g. truncated/malformed input), gracefully bail to the
+    // pre-#77 object-literal-only parse rather than risk a wrong answer or a
+    // throw (this runs during `pnpm manifest`, invoked by the pre-commit
+    // hook — it must stay total).
+    const aliasResult = extractTypeAliasPropTable(src, decl);
+    if (aliasResult) return aliasResult;
+  }
+  return extractPropTableFromBrace(src, decl);
+}
+
+/** The pre-#77 parse: first `{` after the declaration is the object-literal
+ *  body; `extends A, B<...>` (interface-only syntax) between the name and
+ *  that `{` is the base list. Used for the `interface` path (unchanged) and
+ *  as the type-alias path's graceful-bail fallback. */
+function extractPropTableFromBrace(src, decl) {
   const open = src.indexOf("{", decl.index);
   if (open < 0) return null;
   // `extends A, B<...>` between the name and the `{`.
@@ -829,6 +879,13 @@ export function extractPropTable(src, name) {
   const close = matchDelim(src, open);
   if (close < 0) return { extends: extendsList, props: [] };
   const body = src.slice(open + 1, close);
+  return { extends: extendsList, props: parseObjectLiteralMembers(body) };
+}
+
+/** Parse an object-literal BODY (text between, not including, the outer
+ *  braces) into prop records — the per-member regex + TSDoc extraction
+ *  shared by every path that finds one. */
+function parseObjectLiteralMembers(body) {
   const props = [];
   // Split body into member statements at depth-0 `;` or newline.
   for (const member of splitMembers(body)) {
@@ -849,7 +906,181 @@ export function extractPropTable(src, name) {
       ...(description ? { description } : {}),
     });
   }
+  return props;
+}
+
+/**
+ * Parse `export type <name>Props = RHS;` — the intersection/base-only-alias
+ * path (#77 Arm A + Arm B). Returns null on any parse hazard (no depth-0 `=`
+ * or terminating `;` found), signalling the caller to fall back to
+ * `extractPropTableFromBrace`.
+ *
+ * RHS handling:
+ *   - a top-level `|` (union) is NOT an inheritance relation — return
+ *     `{ extends: [], props: [] }` without attempting a body parse (a union
+ *     member is never reported as a base);
+ *   - otherwise split at top-level `&`; a member matching `^\s*\{` is the
+ *     object-literal body (own props, parsed exactly as the `interface`
+ *     path); every other member, trimmed, is a base type → `extends`, in
+ *     source order (Arm A). A single non-`{` member with no `&` at all is a
+ *     base-only alias (`type XProps = Base;`) → `{ extends: [Base], props: [] }`
+ *     (Arm B). An identifier-led member additionally has its generic argument
+ *     probed for a NESTED object literal (Arm C, PR #87 review finding) —
+ *     `PropsWithChildren<{ initialInput?: string }>` still carries an
+ *     own-declared `initialInput` prop that Arm A alone would silently drop.
+ */
+function extractTypeAliasPropTable(src, decl) {
+  const nameEnd = decl.index + decl[0].length;
+  const eqIdx = findAliasTopLevel(src, nameEnd, "=");
+  if (eqIdx < 0) return null;
+  const rhsStart = eqIdx + 1;
+  const semiIdx = findAliasTopLevel(src, rhsStart, ";");
+  if (semiIdx < 0) return null; // graceful bail — see extractPropTable's doc comment
+  const rhs = src.slice(rhsStart, semiIdx);
+  // A top-level union is not an inheritance relation.
+  if (findAliasTopLevel(rhs, 0, "|") >= 0) return { extends: [], props: [] };
+  const extendsList = [];
+  let props = [];
+  let offset = 0;
+  for (const segment of splitAliasTopLevel(rhs, "&")) {
+    const leadingWs = segment.match(/^\s*/)[0].length;
+    if (segment.slice(leadingWs).startsWith("{")) {
+      const open = rhsStart + offset + leadingWs;
+      const close = matchDelim(src, open);
+      if (close >= 0) props = props.concat(parseObjectLiteralMembers(src.slice(open + 1, close)));
+    } else {
+      const trimmed = segment.trim();
+      if (trimmed) {
+        extendsList.push(trimmed);
+        // Arm C: a utility type WRAPPING an object literal as a generic
+        // argument (`PropsWithChildren<{ initialInput?: string }>`,
+        // `Partial<{ x: string }>`) still carries own props inside that
+        // nested `{...}` — probe for one, scoped to identifier-led segments
+        // only (`/^[A-Za-z_$]/`). This deliberately EXCLUDES a parenthesized
+        // member like `Omit<X, Y> & (\n | { data: … }\n | { src: … }\n)`
+        // (starts with `(`, not an identifier) — that shape is a
+        // discriminated union, not a flat prop table, and flattening its
+        // first arm would misrepresent the API (see the disclosed
+        // `AudioPlayerElementProps` limitation, u6 validation report) rather
+        // than merely lose information the way the pre-fix `props: []` did.
+        if (/^[A-Za-z_$]/.test(trimmed)) {
+          const nestedRel = findFirstBrace(segment, leadingWs);
+          if (nestedRel >= 0) {
+            const open = rhsStart + offset + nestedRel;
+            const close = matchDelim(src, open);
+            if (close >= 0) {
+              const nested = parseObjectLiteralMembers(src.slice(open + 1, close));
+              if (nested.length) props = props.concat(nested);
+            }
+          }
+        }
+      }
+    }
+    offset += segment.length + 1; // +1 for the consumed `&`
+  }
   return { extends: extendsList, props };
+}
+
+/**
+ * Index of the first UNQUOTED, non-comment `{` in `text` starting at `from`,
+ * or -1 — string/comment-aware but deliberately NOT depth-gated (unlike
+ * `findAliasTopLevel`), since the brace we're after is nested INSIDE a
+ * generic's `<...>` (depth 1+ relative to the segment), not at depth 0.
+ */
+function findFirstBrace(text, from = 0) {
+  let q = null;
+  for (let i = from; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+    if (q) {
+      if (c === "\\") i++;
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === "/" && n === "/") {
+      while (i < text.length && text[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && n === "*") {
+      i += 2;
+      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      q = c;
+      continue;
+    }
+    if (c === "{") return i;
+  }
+  return -1;
+}
+
+/**
+ * Find the first depth-0 occurrence of a single-char separator in `text`
+ * starting at `from` — generic/paren/brace/bracket-aware, string- and
+ * comment-aware. Returns -1 if none found.
+ *
+ * Reuses the angle-bracket discipline already proven in `splitMembers` (a
+ * SEPARATE `angle` counter, gated on `isIdent(prev)` + `next !== "="`) rather
+ * than `splitTopLevel`'s single shared depth counter, which treats every `>`
+ * as a closer and would mis-split on the `>` of an arrow-function type
+ * (`(id: string) => void`) nested inside an object-literal intersection
+ * member (#77's named implementation trap).
+ */
+function findAliasTopLevel(text, from, sep) {
+  let depth = 0; // () [] {}
+  let angle = 0; // <>
+  let q = null;
+  const isIdent = (ch) => ch !== undefined && /[A-Za-z0-9_$>)\]]/.test(ch);
+  for (let i = from; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+    const p = text[i - 1];
+    if (q) {
+      if (c === "\\") i++;
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === "/" && n === "/") {
+      while (i < text.length && text[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && n === "*") {
+      i += 2;
+      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      q = c;
+      continue;
+    }
+    if (c === "(" || c === "{" || c === "[") depth++;
+    else if (c === ")" || c === "}" || c === "]") depth = Math.max(0, depth - 1);
+    else if (c === "<" && isIdent(p) && n !== "=" && n !== "<") angle++;
+    else if (c === ">" && angle > 0 && p !== "=") angle--;
+    else if (depth === 0 && angle === 0 && c === sep) return i;
+  }
+  return -1;
+}
+
+/** Split `text` at every top-level (depth-0) occurrence of `sep` — same
+ *  discipline as `findAliasTopLevel`, returning the segments (rejoining them
+ *  with `sep` reconstructs `text` exactly). */
+function splitAliasTopLevel(text, sep) {
+  const out = [];
+  let last = 0;
+  let from = 0;
+  for (;;) {
+    const i = findAliasTopLevel(text, from, sep);
+    if (i < 0) break;
+    out.push(text.slice(last, i));
+    last = i + 1;
+    from = i + 1;
+  }
+  out.push(text.slice(last));
+  return out;
 }
 
 /** Split `A, B<C, D>, E` at top-level commas (generic/brace/paren-aware). */

@@ -1,0 +1,47 @@
+[
+  {
+    "file": ".claude/rules/quality-gates.md",
+    "number": 45,
+    "issueTitle": "[ui] Button CssCheck story hardcodes a pre-debrand `--primary` literal — fails every run, masked by the non-blocking Storybook job"
+  },
+  {
+    "file": ".claude/rules/quality-gates.md",
+    "number": 34,
+    "issueTitle": "brand-ui-new-app skill still tells new projects to install from a private registry"
+  },
+  {
+    "file": ".claude/rules/quality-gates.md",
+    "number": 46,
+    "issueTitle": "[ui] ILLUSTRATION_ACCENT_VAR/illustrationAccent not exported — consumers can't retint an illustration's accent outside StatePanel"
+  },
+  {
+    "file": ".claude/rules/quality-gates.md",
+    "number": 59,
+    "issueTitle": "[tokens] --card/--popover/--surface-elevated collide at the OKLCH lightness ceiling in light/:root with no comment at the shipped declaration site"
+  },
+  {
+    "file": ".claude/rules/quality-gates.md",
+    "number": 60,
+    "issueTitle": "[tooling] registry:published:check can't tell \"Pages never enabled\" from \"Pages was live and broke\" — both report SKIP"
+  },
+  {
+    "file": "docs/ADR/0006-subpath-exports.md",
+    "number": 42,
+    "issueTitle": "[meta] result files claim agent consultation and gate compliance that never happened — no mechanism cross-checks either"
+  },
+  {
+    "file": "docs/ADR/0006-subpath-exports.md",
+    "number": 43,
+    "issueTitle": "[ui] No compound Field* anatomy (FieldRoot/FieldLabel/FieldControl/FieldDescription/FieldError) — FieldRow is prop-configured only"
+  },
+  {
+    "file": "docs/ADR/0006-subpath-exports.md",
+    "number": 47,
+    "issueTitle": "[ui] StatePanel-with-illustration exemplar trails #24: title hierarchy, story copy, and EmptyState's stale icon/illustration doc"
+  },
+  {
+    "file": "AGENTS.md",
+    "number": 60,
+    "issueTitle": "[tooling] registry:published:check can't tell \"Pages never enabled\" from \"Pages was live and broke\" — both report SKIP"
+  }
+]

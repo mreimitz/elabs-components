@@ -14,7 +14,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Package | Path | Components | Hooks | Purpose |
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
-| `@elabs-ai/components-icons` | packages/icons | 31 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
+| `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 372 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
@@ -88,6 +88,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PipelineIcon | component |  | `@elabs-ai/components-icons` |  |
 | PivotIcon | component |  | `@elabs-ai/components-icons` |  |
 | SearchIcon | component |  | `@elabs-ai/components-icons` |  |
+| ServiceLogo | component |  | `@elabs-ai/components-icons` |  |
 | SheetIcon | component |  | `@elabs-ai/components-icons` |  |
 | SparklesIcon | component |  | `@elabs-ai/components-icons` |  |
 | StoryIcon | component |  | `@elabs-ai/components-icons` |  |

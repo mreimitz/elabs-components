@@ -22,14 +22,30 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
 
 export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>;
 
-export const ConversationContent = ({ className, ...props }: ConversationContentProps) => (
-  <StickToBottom.Content className={cn("flex flex-col gap-8 p-4", className)} {...props} />
+export const ConversationContent = ({
+  className,
+  scrollClassName,
+  ...props
+}: ConversationContentProps) => (
+  <StickToBottom.Content
+    // `use-stick-to-bottom` renders a scroll viewport (`scrollClassName`)
+    // wrapping a content div (`className`, via `...props`). The viewport must
+    // be a flex column so its height is a DEFINITE main size the content div
+    // can consume via `flex-1` — a bare `height:100%` on the content div
+    // can't resolve against a block-level parent whose own height is
+    // `min-height`-only (the #72 empty-state-pinned-to-the-top bug).
+    scrollClassName={cn("flex flex-col", scrollClassName)}
+    className={cn("flex flex-1 min-h-0 flex-col gap-8 p-4", className)}
+    {...props}
+  />
 );
 
 export type ConversationEmptyStateProps = ComponentProps<"div"> & {
   title?: string;
   description?: string;
   icon?: React.ReactNode;
+  /** Primary / secondary action(s) below the description (e.g. suggested prompts). */
+  actions?: React.ReactNode;
 };
 
 export const ConversationEmptyState = ({
@@ -37,6 +53,7 @@ export const ConversationEmptyState = ({
   title = "No messages yet",
   description = "Start a conversation to see messages here",
   icon,
+  actions,
   children,
   ...props
 }: ConversationEmptyStateProps) => (
@@ -54,6 +71,7 @@ export const ConversationEmptyState = ({
           <h3 className="font-medium text-sm">{title}</h3>
           {description && <p className="text-muted-foreground text-sm">{description}</p>}
         </div>
+        {actions ? <div className="mt-1 flex items-center gap-2">{actions}</div> : null}
       </>
     )}
   </div>

@@ -17,9 +17,9 @@ const h = vi.hoisted(() => {
   };
   const textarea = { setAttribute: vi.fn(), getAttribute: vi.fn() };
 
-  function makeInstance() {
+  function makeInstance(opts: Record<string, unknown> = {}) {
     return {
-      options: { fontSize: 13, disableStdin: false } as Record<string, unknown>,
+      options: { fontSize: 13, disableStdin: false, ...opts } as Record<string, unknown>,
       textarea,
       loadAddon: vi.fn(),
       open: vi.fn(),
@@ -40,8 +40,8 @@ const h = vi.hoisted(() => {
   }
 
   const instances: Array<ReturnType<typeof makeInstance>> = [];
-  const Terminal = vi.fn(() => {
-    const instance = makeInstance();
+  const Terminal = vi.fn((opts: Record<string, unknown>) => {
+    const instance = makeInstance(opts);
     instances.push(instance);
     return instance;
   });
@@ -149,9 +149,32 @@ describe("InteractiveTerminal", () => {
   });
 
   describe("readOnly", () => {
-    it("constructs xterm with disableStdin: true", async () => {
+    // Constructor contract: asserts the SYNCHRONOUS `new engine.XTerm(...)` call
+    // itself, not a derived, effect-mutated field — deterministic because the
+    // call already happened by the time `renderTerminal`'s `waitFor` resolves
+    // (it is literally what pushes the instance). See #80's Part 2: the old,
+    // single "constructs xterm with disableStdin: true" test read
+    // `instances[0]?.options.disableStdin` instead, which is ALSO set (to the
+    // same value) by the readOnly-toggle effect below — so it only passed
+    // because React's effect flush happened to land inside `waitFor`'s polling
+    // window, not because the constructor call was actually being checked.
+    it("constructs xterm with disableStdin: true (constructor contract)", async () => {
       await renderTerminal(<InteractiveTerminal aria-label="Agent log" readOnly />);
-      expect(h.instances[0]?.options.disableStdin).toBe(true);
+      expect(h.Terminal).toHaveBeenCalledWith(expect.objectContaining({ disableStdin: true }));
+    });
+
+    // Runtime contract: `readOnly` toggles xterm's own stdin gate on a LIVE
+    // instance too (interactive-terminal.tsx's `[term, readOnly]` effect), not
+    // just at construction. Gate the wait on the exact field the assertion
+    // reads, not on mount alone.
+    it("propagates a runtime readOnly toggle onto the live xterm instance", async () => {
+      const { rerender } = await renderTerminal(
+        <InteractiveTerminal aria-label="Agent log" readOnly={false} />,
+      );
+      expect(h.instances[0]?.options.disableStdin).toBe(false);
+
+      rerender(<InteractiveTerminal aria-label="Agent log" readOnly />);
+      await waitFor(() => expect(h.instances[0]?.options.disableStdin).toBe(true));
     });
 
     it("does not wire onData", async () => {

@@ -1821,6 +1821,39 @@ describe("DataTable — #12 column resizing", () => {
   });
 });
 
+// ─── #82 gap 2: resize handle vs the header's own controls ───────────────────
+// The resize handle's 24px hit box (`w-[min(24px,50%)]`, absolutely positioned
+// at the header cell's trailing edge) sits over part of the SAME header cell a
+// sortable column's toggle button occupies. jsdom dispatches `fireEvent.click`
+// straight to the target node with no real hit-testing, so this test can only
+// prove the button still RESPONDS to a click addressed to it — it cannot prove
+// a real screen click at the button's own on-screen coordinates lands on the
+// button rather than the overlapping handle. That geometric claim is covered
+// by the `WithColumnResizingSortToggleHitTest` story's play function (real
+// browser, coordinate-targeted click) alongside this regression lock.
+describe("DataTable — #82 resize handle vs header's own controls", () => {
+  it("the sort-toggle button stays clickable when the column is ALSO resizable (24px handle present)", () => {
+    const onSortingChange = vi.fn();
+    render(
+      <DataTable
+        columns={resizableColumns}
+        data={data}
+        enableColumnResizing
+        sorting={[]}
+        onSortingChange={onSortingChange}
+      />,
+    );
+    // Column is both resizable (prop) and sortable (resizableColumns sets no
+    // `enableSorting: false`, and the table applies no table-wide override —
+    // TanStack's own default is `true`), so the handle and the sort button
+    // are both present on the same header cell.
+    expect(screen.getByRole("separator", { name: /Resize column, Name/i })).toBeInTheDocument();
+    const sortButton = screen.getByRole("button", { name: /Sort by Name/i });
+    fireEvent.click(sortButton);
+    expect(onSortingChange).toHaveBeenCalledTimes(1);
+  });
+});
+
 // #12 code-review finding (P1): the resize handle sits at the column's logical
 // `end` edge (`end-0`), which renders on the physical LEFT under `dir="rtl"` —
 // but TanStack's own pointer-drag math and the hand-rolled keyboard path both
@@ -2238,5 +2271,61 @@ describe("DataTable — #11 I4: each row checkbox gets a distinguishing accessib
     const { container } = render(<DataTable columns={allDisplayColumns} data={data} />);
     expect(rowCheckboxes(container)).toHaveLength(data.length);
     expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(data.length);
+  });
+});
+
+// ─── #69: columnDef.meta numeric-column seam ─────────────────────────────────
+
+describe("DataTable — #69 columnDef.meta numeric column seam", () => {
+  const metaColumns: ColumnDef<Row>[] = [
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "value", header: "Value", meta: { numeric: true } },
+  ];
+
+  it("applies tabular-nums + end-alignment to the numeric column's <th> AND <td>, leaving the plain column unchanged", () => {
+    render(<DataTable columns={metaColumns} data={data} />);
+
+    const headers = screen.getAllByRole("columnheader");
+    const [nameHeader, valueHeader] = headers;
+    // A column without `meta.numeric` stays the default: start-aligned, proportional.
+    expect(nameHeader!.className).not.toContain("text-end");
+    expect(nameHeader!.className).not.toContain("tabular-nums");
+    // `meta.numeric` reaches the header too — a fix that only aligns the cells
+    // and leaves the header start-aligned looks worse than no fix.
+    expect(valueHeader!.className).toContain("text-end");
+    expect(valueHeader!.className).toContain("tabular-nums");
+
+    const cells = screen.getAllByRole("cell");
+    // First data row's pair, in column order: [name, value].
+    const [nameCell, valueCell] = cells;
+    expect(nameCell!.className).not.toContain("text-end");
+    expect(nameCell!.className).not.toContain("tabular-nums");
+    expect(valueCell!.className).toContain("text-end");
+    expect(valueCell!.className).toContain("tabular-nums");
+  });
+
+  it("mirrors the same numeric alignment on the loading skeleton, so no column shifts when data arrives", () => {
+    const { container } = render(
+      <DataTable columns={metaColumns} data={[]} loading loadingRows={1} />,
+    );
+    const skeletonCells = container.querySelectorAll<HTMLElement>(
+      'tbody tr[aria-hidden="true"] td',
+    );
+    expect(skeletonCells).toHaveLength(2);
+    const [nameSkeleton, valueSkeleton] = skeletonCells;
+    expect(nameSkeleton!.className).not.toContain("text-end");
+    expect(valueSkeleton!.className).toContain("text-end");
+    expect(valueSkeleton!.className).toContain("tabular-nums");
+  });
+
+  it("meta.align alone controls alignment without pulling in tabular-nums", () => {
+    const alignColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name", meta: { align: "center" } },
+      { accessorKey: "value", header: "Value" },
+    ];
+    render(<DataTable columns={alignColumns} data={data} />);
+    const [nameHeader] = screen.getAllByRole("columnheader");
+    expect(nameHeader!.className).toContain("text-center");
+    expect(nameHeader!.className).not.toContain("tabular-nums");
   });
 });

@@ -35,6 +35,13 @@ matches `docs/csp-policy.json` and every relaxation carries a named carve-out).
 | `ejiidnob33g9ap1r.public.blob.vercel-storage.com` | `connect-src`             | `Persona` Rive `.riv` artwork             | Self-host the six files (see `PERSONA_SOURCES`) and pass `<Persona src={…}>`. A blocked load renders the fallback orb.  |
 | `basemaps.cartocdn.com`                           | `connect-src` + `img-src` | `MapCanvas` default basemap style + tiles | Pass `mapStyle` for a self-hosted style, or `blank` for no basemap.                                                     |
 
+`ServiceLogo` (`@elabs-ai/components-icons`, issue #25) is the CSP-clean alternative to the
+`models.dev` fetch above: it never fetches a remote asset — a consuming app
+registers its own marks (`registerServiceLogos`) as local/bundled assets or
+inline JSX, so it needs no `img-src`/`connect-src` allowance at all. Reach for
+it when you don't want the `models.dev` dependency; `ModelSelectorLogo` stays
+for its existing consumers.
+
 Minimum policy to keep all three working as shipped:
 
 ```
@@ -140,6 +147,36 @@ bypass. Consumers who need to widen what survives sanitisation use `allowedTags`
 replacing the pipeline. Enforced by `pnpm sanitizer-passthrough:check`
 (`scripts/check-sanitizer-passthrough.mjs`), which fails on any wrapper that
 re-exposes a safe renderer's sanitiser-override prop without the matching `Omit` and the runtime strip.
+
+**State that guarantee in its exact scope: the sanitiser chain cannot be
+_replaced_ (#76).** It is not the claim that no consumer-supplied code can reach
+the DOM unsanitised. Two `plugins` slots remain reachable, deliberately, and are
+**trust-bearing** — treat anything you put in them as code you ship:
+
+| Slot                        | Why it is outside the chain                                                                                                                                                                  | What that means for you                                                                                                                                                                          |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `plugins.math.rehypePlugin` | Streamdown **appends** it to the END of the rehype pipeline, i.e. after `rehype-raw` → `rehype-sanitize` → `rehype-harden` (verified against `streamdown@2.5.0`'s `dist/chunk-BO2N2NFS.js`). | Its output is never re-sanitised. The sharp edge in practice is KaTeX's `trust` option — needed for anything beyond `singleDollarTextMath`/`errorColor`, and it disables KaTeX's own sanitising. |
+| `plugins.mermaid`           | Never enters the rehype/remark pipeline at all: the engine's render result is written with `dangerouslySetInnerHTML` (streamdown's only such sink).                                          | A replacement plugin must sanitise its own SVG. brand-ui's default (`_lazy-mermaid.ts`) pins mermaid's strict security level.                                                                    |
+
+`cjk` (remark-stage, re-sanitised downstream), `code` (feeds `shikiTheme` only)
+and `renderers` (ordinary React components) are **not** trust-bearing.
+
+This is not a live vulnerability: supplying an executable `Pluggable` takes code
+in the consuming app's own bundle, and an app author who can do that can already
+run code. The realistic hazard is **misconfiguration** — a consumer who reaches
+for `plugins.math` to change one KaTeX option and inherits a post-sanitiser
+seam they did not know they were opening. So the boundary has a runtime half as
+well as a documented one: replacing either slot emits a dev-only `console.warn`
+from both `MarkdownView` and `MessageResponse` (`warnOnTrustedPluginSlots` in
+`packages/ai/src/_streamdown-safety.ts`). It **warns and never strips** — the
+seam is legitimate, and the locking tests in
+`packages/ai/src/{markdown-view,message}.test.tsx` assert the injected node
+still reaches the DOM, so a future "hardening" that closes the slot fails loudly
+instead of silently breaking a real consumer.
+
+`pnpm sanitizer-passthrough:check` does **not** model the `plugins` prop —
+`dangerousProps` covers only props that _replace_ the sanitiser. The two slots
+above are a documented trust boundary, not a gate-able passthrough.
 
 **`remarkPlugins` is NOT part of that boundary and is still a supported prop.**
 It has the same replace-not-merge shape (a consumer array displaces Streamdown's

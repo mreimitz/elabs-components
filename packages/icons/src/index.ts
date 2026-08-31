@@ -11,4 +11,13 @@
 export { Icon, createIcon, type IconProps } from "./icon";
 export { BrandLogo, type BrandLogoProps, type BrandLogoVariant } from "./brand-logo";
 export { AppIcon, type AppIconProps, type AppIconMorph } from "./app-icon";
+export {
+  ServiceLogo,
+  registerServiceLogos,
+  clearServiceLogos,
+  type ServiceLogoProps,
+  type ServiceLogoDefinition,
+  type ServiceLogoRegistry,
+  type ServiceLogoRender,
+} from "./service-logo";
 export * from "./sample-icons";

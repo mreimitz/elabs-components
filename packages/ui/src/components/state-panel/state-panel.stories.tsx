@@ -101,7 +101,7 @@ export const NoAccess: Story = {
     // "No access" is a blocked/informational state, not a system failure —
     // kind stays "empty" (no alarm-red "Error" eyebrow) rather than "error".
     kind: "empty",
-    title: "You don't have access",
+    title: "You don’t have access",
     description: "Ask a workspace admin to grant you permission.",
     illustration: <NoAccessIllustration />,
     actions: (

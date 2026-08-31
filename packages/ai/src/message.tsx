@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@elabs
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useLocale } from "@elabs-ai/components-ui";
 import { cva, type VariantProps } from "class-variance-authority";
-import { stripSanitizerOverrides } from "./_streamdown-safety";
+import { stripSanitizerOverrides, warnOnTrustedPluginSlots } from "./_streamdown-safety";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import type { UIMessage } from "ai";
 import { BotIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -570,13 +570,36 @@ export type MessageResponseProps = Omit<ComponentProps<typeof Streamdown>, "rehy
    */
   components?: ComponentProps<typeof Streamdown>["components"];
   /**
-   * Custom plugins for markdown processing. **Merges** per key with the
-   * internal defaults (`math`, `code`, `mermaid`, `renderers`), so a
+   * Streamdown plugin-slot overrides (`cjk`/`code`/`math`/`mermaid`/
+   * `renderers`), **merged** per key over the internal defaults, so a
    * consumer's entry wins for its key; every key the consumer does not set
-   * keeps the reactive, i18n-aware internal default. This is the same
-   * semantics as `MarkdownView` (#10 fix round). The `math.rehypePlugin`
-   * runs after sanitisation; see `MarkdownView` TSDoc for the full security
-   * model.
+   * keeps the reactive, i18n-aware internal default. Same semantics as
+   * `MarkdownView` (#10 fix round).
+   *
+   * **This narrow `plugins` prop can only APPEND — it can never displace
+   * Streamdown's default `rehypePlugins` chain** (`rehype-raw` →
+   * `rehype-sanitize` → `rehype-harden`). `MessageResponse` never sets
+   * `rehypePlugins` itself, and nothing in `PluginConfig` removes a member of
+   * that pipeline. But two of the five slots are **not** upstream of it and
+   * must be treated as TRUSTED CODE (#76):
+   * - **`math.rehypePlugin` runs AFTER `rehype-sanitize`/`rehype-harden`** —
+   *   it is appended to the end of the rehype pipeline (verified against
+   *   `streamdown@2.5.0`'s `dist/chunk-BO2N2NFS.js`), so its output is never
+   *   re-sanitised. Replacing it emits a dev-only `console.warn`; the plugin
+   *   still runs (the seam is deliberate, not a hole to close). The sharp
+   *   edge in practice is KaTeX's `trust` option — it disables KaTeX's own
+   *   sanitisation, so leave it off for model-authored content.
+   * - **`mermaid` never enters the rehype/remark pipeline at all.** Its
+   *   render output is written via `dangerouslySetInnerHTML` (streamdown's
+   *   only such sink); brand-ui's default pins mermaid's strict security
+   *   level, and a replacement must sanitise its own SVG. Also dev-warned.
+   * - `cjk` (remark-stage, re-sanitised downstream), `code` (feeds
+   *   `shikiTheme` only) and `renderers` (ordinary React components) do not
+   *   bypass sanitisation and are never warned about.
+   *
+   * See `docs/CSP-AND-NETWORK.md` §1 and
+   * `packages/ai/src/_streamdown-safety.ts`; `MarkdownView`'s TSDoc carries
+   * the same model for the sibling surface.
    */
   plugins?: ComponentProps<typeof Streamdown>["plugins"];
 };
@@ -606,10 +629,15 @@ export const MessageResponse = memo(
     // the opposite of `MarkdownView` for the same prop on a sibling
     // Streamdown surface — aligned so both components mean the same thing by
     // "override a plugin slot".
-    const plugins = useMemo(
-      () => ({ ...internalPlugins, ...pluginOverrides }),
-      [internalPlugins, pluginOverrides],
-    );
+    // `math.rehypePlugin`/`mermaid` are the two slots that land in the DOM
+    // after (or outside) the sanitiser chain, so replacing one is a
+    // TRUSTED-CODE decision. The runtime half of that documented boundary is a
+    // dev warning — the plugin still runs; stripping it would break the
+    // legitimate use (#76).
+    const plugins = useMemo(() => {
+      warnOnTrustedPluginSlots(pluginOverrides, internalPlugins);
+      return { ...internalPlugins, ...pluginOverrides };
+    }, [internalPlugins, pluginOverrides]);
 
     if (loading) {
       return (
