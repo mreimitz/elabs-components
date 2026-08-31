@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-editor`'s vendored Milkdown lifecycle
+  (`use-get-editor.ts`) now tracks its async `editor.destroy()` teardown in a
+  module-scoped registry and exposes `hasPendingMilkdownTeardown()` /
+  `waitForPendingMilkdownTeardown()` so a consumer (or a test's `afterEach`)
+  can await unmount cleanup. Previously nothing awaited `destroy()`, so
+  `@milkdown/ctx`'s own internal async cleanup timer could fire after a test
+  runner had already recycled its environment (`ReferenceError:
+removeEventListener is not defined`). (#65)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded
