@@ -1,5 +1,5 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { MarkdownPreview } from "./markdown-preview";
 
@@ -249,16 +249,33 @@ describe("MarkdownPreview — code fences (highlight + chip + copy)", () => {
 });
 
 describe("MarkdownPreview — mermaid fences (#L1)", () => {
+  // #64 — under a full, parallel, uncached monorepo run this describe block's
+  // FIRST `import("mermaid")` (fired inside MermaidDiagram's effect,
+  // mermaid-diagram.tsx) is a large, cold module-graph evaluation
+  // (d3/dagre/cytoscape/khroma/katex) that can lose the race against Vitest's
+  // 5000ms default test timeout — not because the spec is wrong, but because it
+  // shares the event loop with every other worker on a CPU-starved host. Warm
+  // the module graph here, OUTSIDE any timed assertion, so the two specs below
+  // only ever pay a warm re-import. `mermaid` stays a dynamic import in
+  // mermaid-diagram.tsx (`pnpm heavy-deps:check` requires it) — this does not
+  // change that, it just pays the cold cost once, up front, off the clock.
+  beforeAll(async () => {
+    await import("mermaid");
+  });
+
+  // Explicit, generous timeouts as the second, independent half of the fix —
+  // belt-and-suspenders alongside the warm-up above, in case the warm-up itself
+  // lands inside a contended window. See #64.
   it("routes ```mermaid fences to the MermaidDiagram component", async () => {
     render(<MarkdownPreview>{"```mermaid\ngraph TD; A-->B\n```"}</MarkdownPreview>);
     await waitFor(() => expect(screen.getByTestId("mermaid-diagram")).toBeInTheDocument());
-  });
+  }, 15_000);
 
   it("keeps non-mermaid fences as plain pre blocks", async () => {
     const { container } = render(<MarkdownPreview>{"```ts\nconst x = 1;\n```"}</MarkdownPreview>);
     await waitFor(() => expect(container.querySelector("pre")).toBeInTheDocument());
     expect(container.querySelector('[data-testid="mermaid-diagram"]')).toBeNull();
-  });
+  }, 15_000);
 });
 
 describe("MarkdownPreview — colon false-positives (#workbench live finding)", () => {
