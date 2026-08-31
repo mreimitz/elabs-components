@@ -89,7 +89,14 @@ where `--surface` and `--background` share a value), that is fine — the ramp
 still orders correctly in every theme (verified in
 `themes-contrast.test.ts`), and a theme that DOES separate them (both
 reference `dark` themes do) renders the hierarchy for free. Don't invent a
-THIRD naming scheme for the same concept.
+THIRD naming scheme for the same concept. **`surface-3`/`surface-4` is a
+second accepted identical-pair case in `light`** — `--card`, `--popover` and
+`--surface-elevated` are all byte-identical pure white there (OKLCH's
+lightness ceiling leaves no headroom to separate them once every one of them
+wants to be "the lightest surface"; see the comment at their declaration in
+`packages/tokens/src/themes/light.css`), so `surface-3` (`== --card`) and
+`surface-4` (`== --surface-elevated`) render the same for the same reason
+`surface-1`/`surface-2` do. `dark.css` differentiates all of these.
 
 ## Rules
 

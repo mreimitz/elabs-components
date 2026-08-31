@@ -455,6 +455,27 @@ work alongside `@elabs-ai/components-ai`.
     (`sidebar-05`'s sub-item description uses `text-muted-foreground` on `bg-sidebar`
     instead of `text-sidebar-muted-foreground`, ~2.29:1 in `light`).
 - Added: `@elabs-ai/components-ui` exports `illustrationAccent()` helper — consumers authoring custom `*Illustration` components can now safely retint the illustration's stroke/fill accent outside `StatePanel` by using `illustrationAccent(fallbackColor)` to produce the correct CSS fallback syntax. (#46)
+- Fixed: `@elabs-ai/components-tokens`'s type-scale weight (`--text-<role>--font-weight`) and
+  tracking (`--text-<role>--letter-spacing`) companions are now resolvable from a
+  plain `:root` block, not only inside `@theme`. `@theme` is a Tailwind-only
+  at-rule that a browser dropping unknown at-rules (a standalone HTML export, an
+  exported report, a design artboard, an artifact iframe) ignores entirely, so a
+  consumer reading these custom properties directly without compiling Tailwind
+  previously got the correct size/leading but every rung fell back to inherited
+  weight/tracking — hierarchy silently flattened. The two companions now live
+  as `--type-weight-<role>`/`--type-tracking-<role>` in the existing "TYPE
+  SCALE BASE" `:root` block (parallel to `--type-size-*`/`--type-leading-*`),
+  and `@theme` aliases them exactly as it already aliases size/leading. Values
+  and role names are unchanged — only location and naming convention moved. (#56)
+- Fixed: documented, at their declaration site, that `--card`, `--popover` and
+  `--surface-elevated` render byte-identical pure white in `@elabs-ai/components-tokens`'s
+  `light` reference theme (`packages/tokens/src/themes/light.css`) — a real
+  design coincidence (all three hit OKLCH's lightness ceiling with no headroom
+  left), previously documented only once, several lines away, in `themes.css`'s
+  `:root` comment. `docs/TOKEN_GUIDELINES.md` and the `Foundations/Colors`
+  "Ordered neutral ramp" story now name `surface-3`/`surface-4` as a second
+  accepted "renders identically in light" pair, alongside the existing
+  `surface-1`/`surface-2` note. No token values changed. (#59)
 
 ## v4.0.0 — 2026-08-17
 

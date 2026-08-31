@@ -394,9 +394,11 @@ export const OrderedNeutralRamp: Story = {
           "still be legible — it is sub-AA by design, not illegible); border-1 is the redundant " +
           "hairline and border-2 the sole-cue rung; surface-1..4 is a lift ladder from page " +
           "ground to most-elevated. Switch the toolbar theme (light/dark) — the ordering must " +
-          "hold in both. Two adjacent rungs CAN render identically in one theme (e.g. " +
-          "surface-1/surface-2 in `light`, where `--surface` == `--background`) — that is " +
-          "documented as correct in docs/TOKEN_GUIDELINES.md, not a bug.",
+          "hold in both. Two adjacent rungs CAN render identically in one theme — `light` has " +
+          "two such pairs: surface-1/surface-2 (`--surface` == `--background`) and " +
+          "surface-3/surface-4 (`--card`/`--popover`/`--surface-elevated` all hit OKLCH's " +
+          "lightness ceiling with no headroom left to separate them) — that is documented as " +
+          "correct in docs/TOKEN_GUIDELINES.md, not a bug.",
       },
     },
     // --foreground-4 is DELIBERATELY sub-AA (docs/TOKEN_GUIDELINES.md § "Ordered
