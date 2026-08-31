@@ -19,7 +19,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  copyFileSync,
+  existsSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -29,6 +37,7 @@ import {
   listPublishedVersions,
   shouldUpdateLatest,
   pinLockstepDependencies,
+  publishRegistrySite,
 } from "./publish-registry-pages.mjs";
 
 test("planRegistrySite: computes a versioned dir and a latest alias", () => {
@@ -238,4 +247,123 @@ test("pinLockstepDependencies: tolerates a document with no dependencies field",
     pinLockstepDependencies(input, new Set(["@elabs-ai/components-ui"]), "4.0.0"),
     input,
   );
+});
+
+// ── publishRegistrySite: the no-overwrite guarantee, end-to-end (#61) ───────
+//
+// `main()`'s I/O body only ever ran uncovered, so a widened `rmSync` (e.g.
+// #61's root cause: `join(WORKTREE_DIR, plan.versionDir)` accidentally
+// broadened to `join(WORKTREE_DIR, "r")`) could delete every earlier
+// published version and nothing would go red. These tests drive the real
+// publish flow twice against a disposable local git repo (bare "origin" +
+// working repo, exactly like `remoteBranchExists`'s tests above — no real
+// network, no real `gh-pages`) and assert the first version's files survive
+// the second publish byte-for-byte.
+
+test("publishRegistrySite: a second version's publish never touches an earlier version's files", () => {
+  const origin = makeBareOrigin("pub-reg-origin-e2e-");
+  const workDir = makeWorkingRepo("pub-reg-work-e2e-", origin, "main");
+  const outputDir = mkdtempSync(join(tmpdir(), "pub-reg-output-e2e-"));
+  const worktreeDir = join(workDir, ".gh-pages-worktree");
+  const checkouts = [];
+  try {
+    // v1
+    writeFileSync(join(outputDir, "app-shell.json"), JSON.stringify({ name: "app-shell", v: 1 }));
+    publishRegistrySite({ repoRoot: workDir, outputDir, worktreeDir, version: "1.0.0" });
+
+    const checkout1 = mkdtempSync(join(tmpdir(), "pub-reg-checkout-e2e-v1-"));
+    checkouts.push(checkout1);
+    git(checkout1, ["clone", "--quiet", "--branch", "gh-pages", origin, "."]);
+    const v1Content = readFileSync(join(checkout1, "r", "1.0.0", "app-shell.json"), "utf8");
+    assert.equal(
+      readFileSync(join(checkout1, "r", "latest", "app-shell.json"), "utf8"),
+      v1Content,
+      "r/latest must match r/1.0.0 right after the first publish",
+    );
+
+    // v2 — different content published under a new version
+    writeFileSync(join(outputDir, "app-shell.json"), JSON.stringify({ name: "app-shell", v: 2 }));
+    publishRegistrySite({ repoRoot: workDir, outputDir, worktreeDir, version: "2.0.0" });
+
+    const checkout2 = mkdtempSync(join(tmpdir(), "pub-reg-checkout-e2e-v2-"));
+    checkouts.push(checkout2);
+    git(checkout2, ["clone", "--quiet", "--branch", "gh-pages", origin, "."]);
+    const v1AfterSecondPublish = readFileSync(
+      join(checkout2, "r", "1.0.0", "app-shell.json"),
+      "utf8",
+    );
+    const v2Content = readFileSync(join(checkout2, "r", "2.0.0", "app-shell.json"), "utf8");
+    const latestContent = readFileSync(join(checkout2, "r", "latest", "app-shell.json"), "utf8");
+
+    // THE GUARANTEE: publishing v2 must not have touched v1's files at all.
+    assert.equal(
+      v1AfterSecondPublish,
+      v1Content,
+      "r/1.0.0/app-shell.json must be byte-identical after a later version is published",
+    );
+    assert.notEqual(v2Content, v1Content, "v2's content must actually differ from v1's fixture");
+    assert.equal(latestContent, v2Content, "r/latest must advance to the newer version");
+  } finally {
+    for (const dir of checkouts) rmSync(dir, { recursive: true, force: true });
+    rmSync(origin, { recursive: true, force: true });
+    rmSync(workDir, { recursive: true, force: true });
+    rmSync(outputDir, { recursive: true, force: true });
+  }
+});
+
+// ── planted-failure fixture: proves the byte-identical assertion has teeth ─
+//
+// Simulates the exact regression the byte-identical assertion above exists
+// to catch (see the module's `versionPath`-scoped `rmSync` at the write step
+// in `publishRegistrySite`) — a wipe of the WHOLE `r/` tree instead of just
+// this run's own version directory.
+function buggyPublishSecondVersion(worktreeDir, outputDir, files) {
+  rmSync(join(worktreeDir, "r"), { recursive: true, force: true }); // BUG: not scoped to plan.versionDir
+  const versionPath = join(worktreeDir, "r", "2.0.0");
+  mkdirSync(versionPath, { recursive: true });
+  for (const f of files) copyFileSync(join(outputDir, f), join(versionPath, f));
+}
+
+test("planted regression: a whole-r/ wipe destroys the earlier version (proves the guarantee's test has teeth)", () => {
+  const origin = makeBareOrigin("pub-reg-origin-bug-");
+  const workDir = makeWorkingRepo("pub-reg-work-bug-", origin, "main");
+  const outputDir = mkdtempSync(join(tmpdir(), "pub-reg-output-bug-"));
+  const worktreeDir = join(workDir, ".gh-pages-worktree");
+  try {
+    // Run the REAL publish for v1, establishing r/1.0.0/app-shell.json on
+    // gh-pages exactly as the happy-path test above does.
+    writeFileSync(join(outputDir, "app-shell.json"), JSON.stringify({ name: "app-shell", v: 1 }));
+    publishRegistrySite({ repoRoot: workDir, outputDir, worktreeDir, version: "1.0.0" });
+
+    // Re-create the worktree the same way a second real publish's
+    // worktree-prepare step would (the real function always removes its own
+    // worktree when it finishes), then substitute the BUGGY write step in
+    // place of a real v2 publish.
+    execFileSync("git", ["worktree", "add", worktreeDir, "gh-pages"], {
+      cwd: workDir,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+    assert.equal(
+      existsSync(join(worktreeDir, "r", "1.0.0", "app-shell.json")),
+      true,
+      "sanity check: v1's file must exist before the buggy step runs",
+    );
+
+    writeFileSync(join(outputDir, "app-shell.json"), JSON.stringify({ name: "app-shell", v: 2 }));
+    buggyPublishSecondVersion(worktreeDir, outputDir, ["app-shell.json"]);
+
+    // This is what the happy-path test's byte-identical assertion is FOR:
+    // had this bug shipped in `publishRegistrySite` itself, that assertion
+    // would have failed exactly like this.
+    assert.equal(
+      existsSync(join(worktreeDir, "r", "1.0.0", "app-shell.json")),
+      false,
+      "planted bug: a whole-r/ wipe destroys the earlier version's files",
+    );
+  } finally {
+    rmSync(origin, { recursive: true, force: true });
+    rmSync(workDir, { recursive: true, force: true });
+    rmSync(outputDir, { recursive: true, force: true });
+  }
 });

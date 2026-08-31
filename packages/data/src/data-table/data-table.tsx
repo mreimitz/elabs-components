@@ -626,7 +626,7 @@ function DataTableInner<TData, TValue>(
   // TanStack's own pointer-drag math and the hand-rolled keyboard path must be
   // told the active direction too, or dragging/pressing an arrow moves the width
   // opposite the visible boundary.
-  const { t, dir } = useLocale();
+  const { t, dir, formatNumber } = useLocale();
 
   // ── Controlled/uncontrolled detection ────────────────────────────────────
   const isSortingControlled = sortingProp !== undefined;
@@ -1113,6 +1113,32 @@ function DataTableInner<TData, TValue>(
     table.setColumnSizing((old) => ({ ...old, [column.id]: nextSize }));
   }
 
+  // #51 — double-click resets a resize handle's column back to its declared
+  // `ColumnDef.size`, falling back to TanStack's own default (150, the same
+  // fallback idiom as `minSize ?? 20`/`maxSize ?? MAX_SAFE_INTEGER` above) when
+  // the author left it unset — by REMOVING any explicit `columnSizing` entry
+  // for the column, not by writing the size back in as a literal (PR #81
+  // review, "Remove the sizing override when resetting a column"). `columnSizing`
+  // only ever carries EXPLICIT per-column overrides; a column absent from it
+  // always tracks its live `ColumnDef.size` (or the 150 default). Writing the
+  // CURRENT declared size back in as a value looks identical today but turns
+  // the default into a permanent override: if the `columns` prop later
+  // changes this column's authored `size` (e.g. switching table
+  // configurations), a column that was never resized follows the new
+  // definition for free, while a double-click-reset column would stay pinned
+  // to the OLD number forever. Deleting the entry keeps it dynamic, exactly
+  // like a column that was never touched. Still goes through the SAME
+  // `table.setColumnSizing` dispatch path as `handleResizeKeyDown` — never
+  // `column.resetSize()` — so a controlled `columnSizing` consumer observes
+  // the reset via `onColumnSizingChange` exactly like every other resize.
+  function handleResizeDoubleClick(column: Column<TData, unknown>) {
+    table.setColumnSizing((old) => {
+      if (!(column.id in old)) return old;
+      const { [column.id]: _removed, ...rest } = old;
+      return rest;
+    });
+  }
+
   // ── Scroll container ref for virtualizer ─────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -1301,15 +1327,57 @@ function DataTableInner<TData, TValue>(
                           ? resizeMax
                           : Math.max(header.getSize(), RESIZE_UNBOUNDED_ARIA_MAX)
                       }
+                      // #51: a bare number reads to AT as a dimensionless
+                      // ordinal ("150") rather than a size — aria-valuetext
+                      // supplies the unit while aria-valuenow (above) stays
+                      // the plain numeric value TanStack/AT expect. PR #81
+                      // review, "Format the announced resize value for the
+                      // active locale": `count` (the raw number) drives
+                      // PluralMessage category selection so a locale whose
+                      // plural rules pick something other than "other" is
+                      // reachable, and `size` goes through `formatNumber` so
+                      // an overriding locale renders its own digits/grouping
+                      // instead of a raw Latin-digit JS number.
+                      aria-valuetext={t("data.table.resizeColumnValue", {
+                        count: Math.round(header.getSize()),
+                        size: formatNumber(Math.round(header.getSize())),
+                      })}
                       aria-label={t("data.table.resizeColumn", { name: headerLabel })}
                       tabIndex={0}
                       data-slot="data-table-resize-handle"
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
                       onKeyDown={(event) => handleResizeKeyDown(event, header.column)}
+                      // #51: double-click resets the column to its declared
+                      // (or default) size — see `handleResizeDoubleClick`.
+                      // Pointer-only; it doesn't touch the keyboard path above.
+                      onDoubleClick={() => handleResizeDoubleClick(header.column)}
                       className={cn(
-                        "absolute inset-y-0 end-0 w-2 cursor-col-resize touch-none select-none",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                        // #51: the hit box is a literal 24px (clamped to half
+                        // the header cell so it can never overlap a neighbour,
+                        // even at `minSize=20`) rather than the `w-2` Tailwind
+                        // spacing-scale utility. `w-2` compiles to
+                        // `calc(var(--spacing) * 2)`, and `--spacing` is what
+                        // `data-density="compact"` rescales — so the old 8px
+                        // hit box shrank further under compact density
+                        // (~7.1px). A literal px value is density-independent
+                        // by construction, which is the actual defect the
+                        // maintainer's review corrected (NOT `--type-factor`,
+                        // which this handle never used). Do not widen via
+                        // overhang into the neighbouring cell instead — on the
+                        // last column that lands inside the `overflow-auto`
+                        // box (#330 false positive) and a pinned neighbour
+                        // paints over/hit-tests away the extra area.
+                        "absolute inset-y-0 end-0 w-[min(24px,50%)] cursor-col-resize touch-none select-none",
+                        // #51: the focus ring moves to the `after:` pseudo-
+                        // element (the drawn seam) rather than the box itself
+                        // — the box is now a 24px hit target, and a 24px focus
+                        // rectangle would replace the deliberately slim ring
+                        // already reviewed/approved as the #12 a11y fix
+                        // (da9b29e). `focus-visible:after:*` targets the
+                        // pseudo-element the same way `hover:after:w-2` /
+                        // `focus-visible:after:w-2` below already do.
+                        "focus-visible:outline-none",
                         // a11y fix (#12 review, blocking): this handle is the
                         // SOLE boundary between two adjacent header cells once
                         // resizing is on — no fill/elevation change separates
@@ -1329,16 +1397,18 @@ function DataTableInner<TData, TValue>(
                         // both themes, unaffected by density) and is already
                         // the header's own label color. A slim persistent
                         // `after:` seam (not just a hover reveal) gives the
-                        // real resting boundary; hover/focus widen it to the
-                        // full hit-zone using the same compliant color.
+                        // real resting boundary; hover/focus widen the drawn
+                        // seam to 8px (`after:w-2`) using the same compliant
+                        // color — a separate width from the 24px pointer hit
+                        // box below (#51), which the seam does not fill.
                         // Dragging keeps the pre-existing full-fill
                         // `bg-primary` treatment — a separate, already-
                         // accepted `--ring`/`--primary` light-theme exemption
                         // (see `.claude/rules/theming.md`), not something
                         // this fix changes.
                         header.column.getIsResizing()
-                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-['']"
-                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2",
+                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring",
                       )}
                     />
                   )}

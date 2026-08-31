@@ -10,6 +10,7 @@ import {
   SuccessIllustration,
   FirstRunIllustration,
   ILLUSTRATION_ACCENT_VAR,
+  illustrationAccent,
 } from "./index";
 
 // No literal hex anywhere in a rendered attribute — only `currentColor` or a
@@ -86,5 +87,12 @@ describe("state illustrations", () => {
     );
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.style.getPropertyValue(ILLUSTRATION_ACCENT_VAR)).toBe("var(--success-text)");
+  });
+
+  it("exports illustrationAccent — the public helper for building an illustration's fallback stroke/fill color", () => {
+    const fallback = "var(--success-text)";
+    const result = illustrationAccent(fallback);
+    // illustrationAccent(fallback) returns var(--illustration-accent, fallback)
+    expect(result).toBe(`var(${ILLUSTRATION_ACCENT_VAR}, ${fallback})`);
   });
 });

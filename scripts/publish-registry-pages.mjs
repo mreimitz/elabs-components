@@ -49,8 +49,6 @@ import { execFileSync } from "node:child_process";
 import { compareVersions } from "./lib/semver-lite.mjs";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const OUTPUT_DIR = join(REPO_ROOT, "registry", "__output");
-const WORKTREE_DIR = join(REPO_ROOT, ".gh-pages-worktree");
 const BRANCH = "gh-pages";
 
 /**
@@ -223,24 +221,47 @@ function listLockstepPackageNames(repoRoot) {
 }
 
 function run(cmd, args, opts = {}) {
-  return execFileSync(cmd, args, { cwd: REPO_ROOT, encoding: "utf8", ...opts });
+  const { cwd = REPO_ROOT, ...rest } = opts;
+  return execFileSync(cmd, args, { cwd, encoding: "utf8", ...rest });
 }
 
-function main(argv = process.argv.slice(2)) {
-  const dryRun = argv.includes("--dry-run");
-  const versionIdx = argv.indexOf("--version");
-  const version =
-    versionIdx >= 0 && argv[versionIdx + 1]
-      ? argv[versionIdx + 1]
-      : JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).version;
-
-  if (!existsSync(OUTPUT_DIR)) {
+/**
+ * The real I/O body: checks out (or creates) the `gh-pages` worktree, writes
+ * this version's files (and, unless an already-published version outranks
+ * it, the `latest` alias), commits, pushes, and cleans up the worktree.
+ *
+ * Parameterized on `repoRoot`/`outputDir`/`worktreeDir`/`branch` (rather than
+ * the module-level `REPO_ROOT`/`OUTPUT_DIR`/`WORKTREE_DIR`/`BRANCH`
+ * constants) so it is directly callable from a test against a disposable
+ * local git repo — no real network call, no real `gh-pages` branch. `main()`
+ * below is the thin CLI wrapper that resolves argv into this function's
+ * arguments.
+ *
+ * @param {{
+ *   repoRoot?: string,
+ *   outputDir?: string,
+ *   worktreeDir?: string,
+ *   branch?: string,
+ *   version: string,
+ *   dryRun?: boolean,
+ * }} args
+ * @returns {number} a process exit code (0 on success)
+ */
+export function publishRegistrySite({
+  repoRoot = REPO_ROOT,
+  outputDir = join(repoRoot, "registry", "__output"),
+  worktreeDir = join(repoRoot, ".gh-pages-worktree"),
+  branch = BRANCH,
+  version,
+  dryRun = false,
+} = {}) {
+  if (!existsSync(outputDir)) {
     console.error(
-      `✖ ${OUTPUT_DIR} does not exist — run \`pnpm registry:build\` before this script.`,
+      `✖ ${outputDir} does not exist — run \`pnpm registry:build\` before this script.`,
     );
     process.exit(1);
   }
-  const builtFiles = readdirSync(OUTPUT_DIR).filter((f) => f.endsWith(".json"));
+  const builtFiles = readdirSync(outputDir).filter((f) => f.endsWith(".json"));
   const plan = planRegistrySite({ builtFiles, version });
 
   console.log(`• Publishing ${plan.files.length} file(s) for version ${version}…`);
@@ -251,29 +272,29 @@ function main(argv = process.argv.slice(2)) {
   }
 
   // ── prepare the gh-pages worktree ────────────────────────────────────────
-  if (existsSync(WORKTREE_DIR)) {
-    rmSync(WORKTREE_DIR, { recursive: true, force: true });
+  if (existsSync(worktreeDir)) {
+    rmSync(worktreeDir, { recursive: true, force: true });
   }
-  const branchExists = remoteBranchExists(REPO_ROOT, BRANCH);
+  const branchExists = remoteBranchExists(repoRoot, branch);
 
   if (branchExists) {
-    run("git", ["worktree", "add", WORKTREE_DIR, BRANCH]);
+    run("git", ["worktree", "add", worktreeDir, branch], { cwd: repoRoot });
   } else {
-    console.log(`• ${BRANCH} does not exist yet — creating it (orphan, first publish).`);
-    run("git", ["worktree", "add", "--orphan", "-b", BRANCH, WORKTREE_DIR]);
+    console.log(`• ${branch} does not exist yet — creating it (orphan, first publish).`);
+    run("git", ["worktree", "add", "--orphan", "-b", branch, worktreeDir], { cwd: repoRoot });
   }
 
   // GitHub Pages runs content through Jekyll by default, which can mangle a
   // static JSON tree (e.g. ignoring anything under a leading-underscore dir).
   // `.nojekyll` turns that off; harmless to (re)write every run.
-  writeFileSync(join(WORKTREE_DIR, ".nojekyll"), "");
+  writeFileSync(join(worktreeDir, ".nojekyll"), "");
 
   // Never move `r/latest` BACKWARD: if an already-published version outranks
   // this run's `version` (an older release replayed after a newer one, or
   // two overlapping tag workflows finishing out of order), the alias must
   // keep pointing at the newer content. `r/<version>/` below is written
   // regardless — only the moving alias is guarded.
-  const publishedVersions = listPublishedVersions(WORKTREE_DIR);
+  const publishedVersions = listPublishedVersions(worktreeDir);
   const updateLatest = shouldUpdateLatest(version, publishedVersions);
   if (!updateLatest) {
     console.log(
@@ -284,24 +305,27 @@ function main(argv = process.argv.slice(2)) {
 
   // `r/latest/` is a moving alias: clear it, then repopulate from this run's
   // output, so a renamed/removed item doesn't linger there.
-  const latestPath = join(WORKTREE_DIR, plan.latestDir);
+  const latestPath = join(worktreeDir, plan.latestDir);
   if (updateLatest) {
     rmSync(latestPath, { recursive: true, force: true });
     mkdirSync(latestPath, { recursive: true });
   }
 
   // `r/<version>/` is immutable per release — recreated fresh so a RE-RUN of
-  // the same version is idempotent rather than layering stale files.
-  const versionPath = join(WORKTREE_DIR, plan.versionDir);
+  // the same version is idempotent rather than layering stale files. This
+  // `rmSync` MUST stay scoped to `versionPath` (this run's own version
+  // directory) — widening it to `join(worktreeDir, "r")` would wipe every
+  // other already-published version. See #61 and this file's tests.
+  const versionPath = join(worktreeDir, plan.versionDir);
   rmSync(versionPath, { recursive: true, force: true });
   mkdirSync(versionPath, { recursive: true });
 
   // Pin this repo's own lockstep `@elabs-ai/components-*` dependencies to the
   // published `version` in every file we write — see `pinLockstepDependencies`.
-  const lockstepNames = listLockstepPackageNames(REPO_ROOT);
+  const lockstepNames = listLockstepPackageNames(repoRoot);
 
   for (const file of plan.files) {
-    const src = join(OUTPUT_DIR, file);
+    const src = join(outputDir, file);
     const raw = readFileSync(src, "utf8");
     let out = raw;
     try {
@@ -315,10 +339,10 @@ function main(argv = process.argv.slice(2)) {
     writeFileSync(join(versionPath, file), out);
   }
 
-  run("git", ["-C", WORKTREE_DIR, "add", "-A"]);
+  run("git", ["-C", worktreeDir, "add", "-A"], { cwd: repoRoot });
   let hasChanges = true;
   try {
-    run("git", ["-C", WORKTREE_DIR, "diff", "--cached", "--quiet"]);
+    run("git", ["-C", worktreeDir, "diff", "--cached", "--quiet"], { cwd: repoRoot });
     hasChanges = false;
   } catch {
     hasChanges = true;
@@ -327,22 +351,24 @@ function main(argv = process.argv.slice(2)) {
   if (!hasChanges) {
     console.log("✔ gh-pages already matches this version's output — nothing to publish.");
   } else {
-    run("git", ["-C", WORKTREE_DIR, "config", "user.name", "github-actions[bot]"]);
-    run("git", [
-      "-C",
-      WORKTREE_DIR,
-      "config",
-      "user.email",
-      "github-actions[bot]@users.noreply.github.com",
-    ]);
-    run("git", ["-C", WORKTREE_DIR, "commit", "-m", `Publish registry v${version}`]);
-    run("git", ["-C", WORKTREE_DIR, "push", "origin", `HEAD:${BRANCH}`]);
+    run("git", ["-C", worktreeDir, "config", "user.name", "github-actions[bot]"], {
+      cwd: repoRoot,
+    });
+    run(
+      "git",
+      ["-C", worktreeDir, "config", "user.email", "github-actions[bot]@users.noreply.github.com"],
+      { cwd: repoRoot },
+    );
+    run("git", ["-C", worktreeDir, "commit", "-m", `Publish registry v${version}`], {
+      cwd: repoRoot,
+    });
+    run("git", ["-C", worktreeDir, "push", "origin", `HEAD:${branch}`], { cwd: repoRoot });
     console.log(
-      `✔ Pushed ${plan.versionDir}/${updateLatest ? ` and updated ${plan.latestDir}/` : ""} on ${BRANCH}.`,
+      `✔ Pushed ${plan.versionDir}/${updateLatest ? ` and updated ${plan.latestDir}/` : ""} on ${branch}.`,
     );
   }
 
-  run("git", ["worktree", "remove", "--force", WORKTREE_DIR]);
+  run("git", ["worktree", "remove", "--force", worktreeDir], { cwd: repoRoot });
 
   console.log("\nOnce GitHub Pages is enabled for this repo (Settings → Pages → Deploy from a");
   console.log("branch → gh-pages → /(root)), every item resolves at:");
@@ -352,6 +378,16 @@ function main(argv = process.argv.slice(2)) {
     );
   }
   return 0;
+}
+
+function main(argv = process.argv.slice(2)) {
+  const dryRun = argv.includes("--dry-run");
+  const versionIdx = argv.indexOf("--version");
+  const version =
+    versionIdx >= 0 && argv[versionIdx + 1]
+      ? argv[versionIdx + 1]
+      : JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).version;
+  return publishRegistrySite({ version, dryRun });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -83,5 +83,5 @@ satisfy `app-spec.schema.json`:
 Mirrors the `planScaffold` input in the `@elabs-ai/components-cli` scaffold engine. See
 `app-spec.example.md` for a filled-in block; validate any spec with
 `pnpm app-spec:check <path>` (in a consuming project: install
-`@elabs-ai/components-cli` — a private GitHub Packages dependency, see
-`docs/CONSUMING.md` §1 + §7a — then use its bundled schema).
+`@elabs-ai/components-cli` — a public npm package, see `docs/CONSUMING.md`
+§1 + §7a — then use its bundled schema).

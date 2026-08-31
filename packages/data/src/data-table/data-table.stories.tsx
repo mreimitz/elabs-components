@@ -830,7 +830,18 @@ export const WithColumnResizing: Story = {
     await expect(serviceHeader.style.width).toBe("150px");
 
     const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+
+    // #51 — the focus ring moved from the hit box itself onto the `after:`
+    // drawn-seam pseudo-element (`focus-visible:after:ring-2`), so the now-24px
+    // hit box doesn't draw a 24px focus rectangle over an 8px sliver's worth of
+    // approved contrast. Measure the REAL rendered ring via computed style on
+    // the pseudo-element — not a class-name string comparison — so a later
+    // refactor can't silently drop a visible focus indicator (WCAG 2.4.7)
+    // without failing this test.
+    await expect(getComputedStyle(handle, "::after").boxShadow).toBe("none");
     handle.focus();
+    await expect(getComputedStyle(handle, "::after").boxShadow).not.toBe("none");
+
     await expect(handle).toHaveAttribute("aria-valuenow", "150");
 
     await userEvent.keyboard("{ArrowRight}");
@@ -840,6 +851,45 @@ export const WithColumnResizing: Story = {
     await userEvent.keyboard("{ArrowLeft}");
     await expect(handle).toHaveAttribute("aria-valuenow", "150");
     await expect(serviceHeader.style.width).toBe("150px");
+  },
+};
+
+/**
+ * #51 — the resize handle's hit box used to be `w-2` (8px), which is on the
+ * Tailwind SPACING scale (`calc(var(--spacing) * 2)`), so it shrank further
+ * under `data-density="compact"` (`--spacing` itself is what the density dial
+ * rescales — a jsdom class assertion can't see this, only real layout can). The
+ * fix reads a literal `w-[min(24px,50%)]`, which this play function measures
+ * with `getBoundingClientRect()` UNDER compact density specifically, since
+ * that is where the old value was worst (~7.1px) and where a regression would
+ * hide from a comfortable-only check.
+ */
+export const WithColumnResizingCompactDensity: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The resize handle's interactive hit box stays ~24px wide even under " +
+          '`data-density="compact"`, which shrinks every Tailwind spacing-scale ' +
+          "utility (the old `w-2` hit box shrank right along with it).",
+      },
+    },
+  },
+  render: () => (
+    <div data-density="compact">
+      <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+    const rect = handle.getBoundingClientRect();
+    // A real layout pass must have happened before this means anything.
+    await expect(rect.width).toBeGreaterThan(0);
+    // `min(24px, 50%)` on a 150px column resolves to a literal 24px — assert a
+    // tight tolerance so a regression back toward the old ~7px is caught, but
+    // allow for sub-pixel rounding.
+    await expect(rect.width).toBeGreaterThan(20);
+    await expect(rect.width).toBeLessThanOrEqual(24.5);
   },
 };
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check-skills-currency.mjs — playbook/skill/plugin prose currency gate (#29).
+ * check-skills-currency.mjs — playbook/skill/plugin prose currency gate (#29, #34).
  *
  * check-docs-accuracy.mjs (`pnpm docs:check`) already guards the "authoritative"
  * doc set — README.md, AGENTS.md, CONTRIBUTING.md, PROJECT.md, `docs/**.md`,
@@ -16,14 +16,23 @@
  * drift reaches every consumer of the agent kit undetected.
  *
  * This gate closes that gap by scanning the files check-docs-accuracy.mjs does
- * NOT: every file under `docs/playbooks/`, every skill's `SKILL.md`, and the
- * plugin manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`).
+ * NOT: every file under `docs/playbooks/`, every skill's `SKILL.md` **and its
+ * `reference/**` subtree** (#29/#34 — a skill's `reference/*.md` files carry the
+ * SAME kind of hand-authored prose as its top-level `SKILL.md` and go stale the
+ * same way; `skills/brand-ui-new-app/reference/app-spec-template.md` and
+ * `reference/starter-claude-md.md` are where both #34's stale lines lived, and
+ * neither was reachable by a top-level-only scan), and the plugin manifests
+ * (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`).
  * The facts it checks are sourced from `brand-ui.manifest.json` — the generated
- * ground truth (`pnpm manifest`, freshness-gated by `pnpm manifest:check`):
+ * ground truth (`pnpm manifest`, freshness-gated by `pnpm manifest:check`) —
+ * except check 3, which needs no fact beyond "the packages are public":
  *
  *   1. THEME COUNT — no prose in scope may claim a theme count (word form "all
  *      three themes" or numeric "3 themes") that disagrees with
- *      `manifest.themes.length`.
+ *      `manifest.themes.length`. Delegated to the shared, hardened
+ *      `findThemeCountViolations` (scripts/lib/theme-count-prose.mjs) — it also
+ *      tolerates an adjective between the number and "themes" ("three shipped
+ *      themes") and a markdown line-wrap splitting the two.
  *   2. PACKAGE-NAME SCOPE — every `@<scope>/components-<slug>` mention must use
  *      the CURRENT scope (`@elabs-ai`, matching `manifest.packages`' keys) — this
  *      is the "old `@brand/*` scope" drift class the original #29 evidence named
@@ -31,6 +40,13 @@
  *      one of `manifest.packages`' component packages, or one of the small set of
  *      shipped INFRA packages the component manifest deliberately does not track
  *      (cli/docs/eslint-config/typescript-config — see INFRA_PACKAGE_SUFFIXES).
+ *   3. PRIVATE-REGISTRY CLAIMS (#34) — no `skills/**` prose may describe the
+ *      `@elabs-ai/components-*` packages as living on a private registry ("a
+ *      private GitHub Packages dependency", "the packages are private on GitHub
+ *      Packages") — they are public npm since the #16/#28 distribution change
+ *      (docs/CONSUMING.md §1). Scoped to `skills/**` ONLY (not `docs/**`) so it
+ *      never re-litigates docs/ADR/0016 or CHANGELOG.md's historical narrative
+ *      about the old private-registry era.
  *
  * Run via `pnpm skills:currency:check`; self-tested via
  * `pnpm skills:currency:check:test` (plants an in-memory stale fixture and
@@ -132,6 +148,77 @@ export function findPackageScopeViolations(text, manifestPackageNames, currentSc
   return violations;
 }
 
+/**
+ * Private-registry claims in `text` (#34) — prose asserting the
+ * `@elabs-ai/components-*` packages live on a PRIVATE registry ("a private
+ * GitHub Packages dependency", "the packages are private on GitHub Packages").
+ * They are public npm (docs/CONSUMING.md §1, docs/ADR/0016/0028) — any such
+ * claim is stale by construction, so this needs no external fact (unlike
+ * `findThemeCountViolations`/`findPackageScopeViolations`, which compare
+ * against `brand-ui.manifest.json`).
+ *
+ * Deliberately narrow (a bounded word-window, mirroring
+ * `findThemeCountViolations`'s `{0,2}` tolerance) so it does not fire on an
+ * UNRELATED, still-TRUE "private" claim a few words away — e.g.
+ * "the shared eslint-config is a private, unpublished package. It is not on
+ * the registry" (skills/brand-ui-new-app/reference/lint-and-taxonomy.md) is
+ * correct (that package really is private/unpublished) and must not be
+ * flagged just because the word "registry" appears later in the paragraph.
+ *
+ * ALSO requires a self-reference near the match (PR #81 review) — a private-
+ * registry phrase with no mention of `@elabs-ai/components-*`/"the packages"
+ * is generic CONSUMER-facing advice ("if your company uses a private npm
+ * registry, configure authentication here"), not a claim about brand-ui's own
+ * distribution model, and must not be flagged either.
+ *
+ * Callers are expected to scope this to `skills/**` prose only (see
+ * `checkCurrency`) — `docs/ADR/0016` and `CHANGELOG.md` legitimately narrate
+ * the old private-registry era in the past tense and must never be flagged;
+ * this function itself doesn't know its caller's file path, so the scoping
+ * lives in the caller, not here.
+ *
+ * Pure — exported for the self-test. Returns `{ line, match }[]` (1-based
+ * line numbers in the ORIGINAL text, same offset-preserving technique as
+ * `findThemeCountViolations`).
+ */
+export function findPrivateRegistryClaims(text) {
+  const patterns = [
+    // "a private GitHub Packages dependency", "private on GitHub Packages",
+    // "a private npm registry"
+    /\bprivate\b(?:\s+\S+){0,3}?\s+(?:npm registry|npm|github packages|registry)\b/gi,
+    // "GitHub Packages, so ... cannot install" / "GitHub Packages ... is private"
+    /\bgithub packages\b\S{0,2}(?:\s+\S+){0,4}?\s+(?:private|cannot install)\b/gi,
+  ];
+  // A "private registry" PHRASE is only a stale claim about THIS project's own
+  // distribution model when it's actually talking about the @elabs-ai/components-*
+  // packages — plenty of legitimate skill guidance tells a CONSUMER how to point
+  // their OWN private registry at brand-ui ("If your company uses a private npm
+  // registry, configure authentication here"), which names none of our packages
+  // and must not be flagged (PR #81 review). Require a self-reference — an
+  // explicit `@scope/components-*` mention, or a "the/these/our packages"/"this
+  // package" demonstrative — within a bounded window around the match. Checking
+  // for the bare substring "package" would NOT discriminate here: "GitHub
+  // Packages" (the hosting service's own proper noun) already contains it, so
+  // the regex instead requires a determiner immediately before "package(s)",
+  // which the service name never has.
+  const SELF_REF =
+    /@[a-z0-9][a-z0-9-]*\/components-[a-z0-9-]+|\b(?:the|these|our|this)\s+packages?\b|\bthis\s+(?:library|sdk)\b|\bbrand-ui\b/i;
+  const WINDOW = 80;
+  const joined = text.replace(/\n/g, " ");
+  const out = [];
+  for (const re of patterns) {
+    for (const m of joined.matchAll(re)) {
+      const start = Math.max(0, m.index - WINDOW);
+      const end = Math.min(joined.length, m.index + m[0].length + WINDOW);
+      if (!SELF_REF.test(joined.slice(start, end))) continue;
+      const line = text.slice(0, m.index).split("\n").length;
+      out.push({ line, match: m[0].replace(/\s+/g, " ").trim() });
+    }
+  }
+  out.sort((a, b) => a.line - b.line);
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // File discovery — the scope check-docs-accuracy.mjs's `.md`-only walk misses
 // ---------------------------------------------------------------------------
@@ -156,13 +243,17 @@ const existingFiles = (paths) => paths.filter((f) => existsSync(f) && statSync(f
 
 /** Every file this gate scans, repo-root relative paths returned as absolute. */
 export function currencyProseFiles(root = REPO_ROOT) {
+  const skillDirs = readdirSync(join(root, "skills"), { withFileTypes: true }).filter((e) =>
+    e.isDirectory(),
+  );
   const files = [
     ...walkAll(join(root, "docs", "playbooks"), []),
-    ...existingFiles(
-      readdirSync(join(root, "skills"), { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => join(root, "skills", e.name, "SKILL.md")),
-    ),
+    ...existingFiles(skillDirs.map((e) => join(root, "skills", e.name, "SKILL.md"))),
+    // Every skill's reference/** subtree (#29/#34) — applied uniformly to EVERY
+    // skill directory, not just the one(s) that happen to have one today, so
+    // the next skill that grows a reference/ subfolder is covered without
+    // touching this gate again. `walkAll` already no-ops on a missing dir.
+    ...skillDirs.flatMap((e) => walkAll(join(root, "skills", e.name, "reference"), [])),
     ...existingFiles([
       join(root, ".claude-plugin", "plugin.json"),
       join(root, ".claude-plugin", "marketplace.json"),
@@ -185,14 +276,21 @@ export function manifestFacts(root = REPO_ROOT) {
 }
 
 /**
- * Run both checks over `{ file, text }[]` and return `{ themeViolations,
- * scopeViolations }` (repo-relative-path-prefixed strings), given `facts` from
- * manifestFacts(). Exported so the self-test can drive it with in-memory
- * fixtures, mirroring check-agent-names.mjs's checkAgents().
+ * Run all three checks over `{ file, text }[]` and return `{ themeViolations,
+ * scopeViolations, privateRegistryViolations }` (repo-relative-path-prefixed
+ * strings), given `facts` from manifestFacts(). Exported so the self-test can
+ * drive it with in-memory fixtures, mirroring check-agent-names.mjs's
+ * checkAgents().
+ *
+ * The private-registry check is scoped to `file`s under `skills/` — see
+ * `findPrivateRegistryClaims`'s doc comment for why (docs/ADR/0016 +
+ * CHANGELOG.md's legitimate historical narrative must never be flagged, and
+ * neither lives under `skills/`).
  */
 export function checkCurrency(entries, facts) {
   const themeViolations = [];
   const scopeViolations = [];
+  const privateRegistryViolations = [];
   for (const { file, text } of entries) {
     for (const v of findThemeCountViolations(text, facts.themeCount)) {
       themeViolations.push(`${file}:${v.line}: claims "${v.match}"`);
@@ -200,8 +298,13 @@ export function checkCurrency(entries, facts) {
     for (const v of findPackageScopeViolations(text, facts.packageNames, facts.currentScope)) {
       scopeViolations.push(`${file}:${v.line}: "${v.match}" — ${v.reason}`);
     }
+    if (file.startsWith("skills/")) {
+      for (const v of findPrivateRegistryClaims(text)) {
+        privateRegistryViolations.push(`${file}:${v.line}: "${v.match}"`);
+      }
+    }
   }
-  return { themeViolations, scopeViolations };
+  return { themeViolations, scopeViolations, privateRegistryViolations };
 }
 
 // Only run the gate when executed directly (not when imported by the self-test).
@@ -219,7 +322,10 @@ if (invokedDirectly) {
     file: relative(REPO_ROOT, f),
     text: readFileSync(f, "utf8"),
   }));
-  const { themeViolations, scopeViolations } = checkCurrency(entries, facts);
+  const { themeViolations, scopeViolations, privateRegistryViolations } = checkCurrency(
+    entries,
+    facts,
+  );
 
   let failed = false;
   if (themeViolations.length) {
@@ -248,9 +354,23 @@ if (invokedDirectly) {
         "  suffix to INFRA_PACKAGE_SUFFIXES in this script).",
     );
   }
+  if (privateRegistryViolations.length) {
+    failed = true;
+    console.error(
+      `\n✖ stale private-registry claim in skill prose (${privateRegistryViolations.length}) — ` +
+        `the packages are public npm:`,
+    );
+    for (const v of privateRegistryViolations) console.error("  - " + v);
+    console.error(
+      `  Fix: describe the public npm install ("pnpm add @elabs-ai/components-<pkg>") instead —\n` +
+        "  see docs/CONSUMING.md §1. If the sentence's real point is something else (e.g. why a\n" +
+        "  standalone app still needs the install block), keep that point and drop the false\n" +
+        "  private-registry premise.",
+    );
+  }
   if (failed) process.exit(WARN ? 0 : 1);
   console.log(
-    `✔ skills-currency: theme count + package-name scope consistent with brand-ui.manifest.json ` +
-      `(${files.length} playbook/skill/plugin files scanned).`,
+    `✔ skills-currency: theme count + package-name scope + private-registry claims consistent ` +
+      `with brand-ui.manifest.json (${files.length} playbook/skill/plugin files scanned).`,
   );
 }

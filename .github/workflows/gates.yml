@@ -47,6 +47,15 @@ jobs:
     name: Quality gates (blocking)
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Minimal explicit grant (#60) — `registry:published:check`'s
+    # `isPagesConfigured()` calls `gh api repos/:owner/:repo/pages` (the
+    # authoritative Pages-Settings signal) and needs read access to that
+    # endpoint; `contents: read` is what `actions/checkout` needs. Declaring
+    # this narrows the job to exactly these two scopes instead of inheriting
+    # whatever broader default the repo/org has configured.
+    permissions:
+      contents: read # actions/checkout
+      pages: read # gh api repos/:owner/:repo/pages (registry:published:check)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -165,6 +174,18 @@ jobs:
 
       # ── derived artifacts: generated, never hand-kept ──────────────────────
       - name: Derived artifacts are fresh
+        # GH_TOKEN (#60): `registry:published:check`'s `isPagesConfigured()`
+        # shells out to `gh api repos/:owner/:repo/pages`; `gh` reads this env
+        # var automatically. Scoped to this ONE step, not the job or workflow
+        # — no other step here touches the GitHub API. `secrets.GITHUB_TOKEN`
+        # is always populated for a workflow run, no repo configuration
+        # needed; if it or the `pages` permission above were ever absent, the
+        # `gh api` call fails non-404 and `isPagesConfigured()` returns
+        # "unknown" (see its doc comment in check-registry-published.mjs),
+        # which falls back to the pre-existing `everPublished` behaviour
+        # rather than fabricating a new failure.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pnpm manifest:check
           pnpm inventory:check

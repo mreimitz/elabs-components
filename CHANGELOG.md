@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed: corrected stale skill-reference prose that described the
+  `@elabs-ai/components-*` packages as a private GitHub Packages dependency
+  (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded
+  "three themes" claims (only `light`/`dark` ship). `pnpm skills:currency:check`
+  now also scans every skill's `reference/**` subtree (previously only
+  top-level `SKILL.md` files) and gained a private-registry-claim check; its
+  shared theme-count detector now catches an adjective between the number and
+  "themes" ("three shipped themes") and a markdown line-wrap splitting the two.
+  (#29, #34)
 - Changed (breaking, narrow): `@elabs-ai/components-ai`'s `MarkdownView` and
   `MessageResponse` no longer accept `rehypePlugins` — passing it is now a
   TypeScript error, and the runtime silently drops the prop (with a dev-only
@@ -81,6 +90,15 @@
   they activate it; an explicit, caller-set `disabled` (the whole form is
   read-only) stays native, since that is a deliberate, durable state rather
   than a transient auto-flip. (#22)
+- Added: `@elabs-ai/components-ui`'s `SchemaForm` gains conditional visibility —
+  every field (including a `group` branch) accepts an optional
+  `visibleWhen: { field, equals }`, so a field renders (and participates in
+  validation/submission) only once another field's current value equals
+  `equals` — e.g. show a "client secret" field only once `authMethod` equals
+  `"oauth"`. A hidden field is excluded from the render tree, from
+  `collectValidatableFields`/`validateForm`, and from the first-invalid-focus
+  walk, so a hidden `required` field never blocks submit. New export:
+  `isFieldVisible(field, values)`. (#22)
 - Fixed: `@elabs-ai/components-ui`'s `FileUploadList` gave its `<ul>` an
   explicit `role="status"`, which overrides the element's implicit `list`
   role and strips `listitem` from every `FileUploadItem` (`<li>`) inside it —
@@ -188,6 +206,20 @@
   `initialView.columnSizing`) and composes with column pinning (#333) for
   free — a pinned column's sticky offset already reads `column.getSize()` —
   in `@elabs-ai/components-data`.
+- **Fixed:** three a11y fast-follows on `DataTable`'s column-resize handle
+  (#51), all in `@elabs-ai/components-data`: (1) the handle's accessible value
+  was a bare number — it now also exposes `aria-valuetext` ("150 pixels", via
+  a new `data.table.resizeColumnValue` locale key) alongside the unchanged
+  numeric `aria-valuenow`; (2) double-clicking the handle now resets that
+  column to its declared `ColumnDef.size` (or TanStack's own 150px default),
+  dispatched through the same `table.setColumnSizing` path as keyboard/pointer
+  resizing so a controlled `columnSizing` consumer observes it via
+  `onColumnSizingChange`; (3) the handle's interactive hit box grows from a
+  literal 8px (`w-2`, which — being on the Tailwind spacing scale — also
+  shrank further under `data-density="compact"`) to a density-independent
+  `w-[min(24px,50%)]`, with the focus ring moved from the hit box itself onto
+  the drawn seam (`focus-visible:after:ring-2`) so the visible ring stays the
+  original, reviewed 8px sliver rather than ballooning to the new 24px box.
 
 ### `@elabs-ai/components-ai`: the Vercel AI SDK peer widens to `ai@6 || ai@7` (#30)
 
@@ -309,6 +341,7 @@ work alongside `@elabs-ai/components-ai`.
     text is ~1.1:1 in `light`); `layout-app-shell-double-sided--default` → new #50
     (`sidebar-05`'s sub-item description uses `text-muted-foreground` on `bg-sidebar`
     instead of `text-sidebar-muted-foreground`, ~2.29:1 in `light`).
+- Added: `@elabs-ai/components-ui` exports `illustrationAccent()` helper — consumers authoring custom `*Illustration` components can now safely retint the illustration's stroke/fill accent outside `StatePanel` by using `illustrationAccent(fallbackColor)` to produce the correct CSS fallback syntax. (#46)
 
 ## v4.0.0 — 2026-08-17
 

@@ -24,4 +24,19 @@ concurrency:
 
 jobs:
   gates:
+    # A reusable workflow can only be granted a SUBSET of the caller's own
+    # permissions — GitHub's docs put it as "permissions can only be
+    # maintained or reduced, not elevated, throughout the chain." Without
+    # this block the job fell back to the repo's default workflow permission
+    # ("Read repository contents and packages permissions" — restrictive),
+    # which grants `contents: read` but NOT `pages: read`. `gates.yml`
+    # requests both (#60, `registry:published:check`'s `isPagesConfigured()`),
+    # so that request exceeded what this caller held and GitHub rejected the
+    # whole run before any job started ("workflow file issue", 0 jobs, no
+    # check runs) rather than merely denying the one step that needed it.
+    # Declaring the same two scopes here is what lets the grant reach the
+    # callee at all.
+    permissions:
+      contents: read # actions/checkout (gates.yml)
+      pages: read # gh api repos/:owner/:repo/pages (registry:published:check)
     uses: ./.github/workflows/gates.yml

@@ -81,6 +81,7 @@ import {
   fieldLabel,
   findFieldByName,
   initialFormValues,
+  isFieldVisible,
   normalizeFormSpec,
   optionLabel,
   optionValue,
@@ -100,6 +101,18 @@ import {
 interface SchemaFormContextValue {
   spec: NormalizedFormSpec;
   values: FormValues;
+  /**
+   * `values` with every field's default/empty fallback applied (via
+   * `effectiveValue`) and every currently-hidden field's subtree stripped —
+   * the SAME object `mergedValues`/submit/validation resolve against. Every
+   * `visibleWhen` check (the render loops AND `SchemaFormField` itself) must
+   * read THIS, never raw `values`: a controlled form can omit a controller
+   * field that carries a spec default, in which case the rendered control
+   * already shows the default (`effectiveValue`) while raw `values` is still
+   * `undefined` — checking raw `values` there hides a field validation then
+   * requires, with no visible control left to fix it.
+   */
+  effectiveValues: FormValues;
   /** Per-field error text, only populated after a submit attempt. */
   errors: Record<string, string | null>;
   setValue: (name: string, value: FormValue) => void;
@@ -257,6 +270,23 @@ export function SchemaFormProvider({
       const merged: FormValues = { ...base };
       const fill = (fields: FieldSpec[]) => {
         for (const field of fields) {
+          // A field (or, for a hidden `group`, its whole subtree) whose
+          // `visibleWhen` does not currently hold must not participate in
+          // submission — strip it rather than merely skip re-computing it,
+          // because `merged` starts as a spread of `base` and so already
+          // carries any stale value the field held from BEFORE its
+          // controller made it hidden (e.g. a secret typed in while an
+          // "oauth" branch was active, still present after switching to
+          // "apikey"). Mirrors `collectValidatableFields`'s own
+          // visibility check so what's validated/submitted never disagrees
+          // with what's shown.
+          if (!isFieldVisible(field, merged)) {
+            delete merged[field.name];
+            if (field.type === "group") {
+              for (const group of field.groups) stripFields(group.fields, merged);
+            }
+            continue;
+          }
           merged[field.name] = effectiveValue(field, merged);
           if (field.type !== "group") continue;
           if (field.variant === "tabs") {
@@ -333,10 +363,19 @@ export function SchemaFormProvider({
     return validateForm(spec.fields, mergedValues(resolvedValues));
   }, [attempted, resolvedValues, mergedValues, spec.fields]);
 
+  // Same object `submit`/`errors` already resolve visibility against (see
+  // `SchemaFormContextValue.effectiveValues`) — computed once per render so
+  // every render-time `isFieldVisible` check agrees with validation/submit.
+  const effectiveValues = useMemo(
+    () => mergedValues(resolvedValues),
+    [mergedValues, resolvedValues],
+  );
+
   const value = useMemo<SchemaFormContextValue>(
     () => ({
       spec,
       values: resolvedValues,
+      effectiveValues,
       errors,
       setValue,
       submit,
@@ -353,6 +392,7 @@ export function SchemaFormProvider({
     [
       spec,
       resolvedValues,
+      effectiveValues,
       errors,
       setValue,
       submit,
@@ -725,6 +765,7 @@ function GroupTabsControl({
   describedBy,
   setValue,
 }: FieldControlProps & { field: GroupFieldSpec }) {
+  const { effectiveValues } = useSchemaFormContext();
   const active =
     (typeof value === "string" ? value : undefined) ?? field.default ?? field.groups[0]?.key;
   return (
@@ -747,9 +788,11 @@ function GroupTabsControl({
           {group.description && (
             <p className="text-caption text-muted-foreground">{group.description}</p>
           )}
-          {group.fields.map((child) => (
-            <SchemaFormField key={child.name} name={child.name} />
-          ))}
+          {group.fields
+            .filter((child) => isFieldVisible(child, effectiveValues))
+            .map((child) => (
+              <SchemaFormField key={child.name} name={child.name} />
+            ))}
         </TabsContent>
       ))}
     </Tabs>
@@ -780,7 +823,7 @@ function branchHasError(fields: FieldSpec[], errors: Record<string, string | nul
  * disclosure never re-imposes itself over a deliberate user action).
  */
 function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
-  const { errors } = useSchemaFormContext();
+  const { errors, effectiveValues } = useSchemaFormContext();
   const [manualOpen, setManualOpen] = useState<boolean | undefined>(undefined);
   const open = manualOpen ?? branchHasError(group.fields, errors);
   return (
@@ -790,9 +833,11 @@ function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
       open={open}
       onOpenChange={setManualOpen}
     >
-      {group.fields.map((child) => (
-        <SchemaFormField key={child.name} name={child.name} />
-      ))}
+      {group.fields
+        .filter((child) => isFieldVisible(child, effectiveValues))
+        .map((child) => (
+          <SchemaFormField key={child.name} name={child.name} />
+        ))}
     </AdvancedGroup>
   );
 }
@@ -820,12 +865,22 @@ export interface SchemaFormFieldProps extends Omit<HTMLAttributes<HTMLDivElement
  * fields render their OWN label/description internally (a Tabs strip or a
  * stack of disclosures isn't a single labelled control), so the standalone
  * `<Label>` above is suppressed for both.
+ *
+ * Enforces its OWN `visibleWhen` (returns `null` when hidden) rather than
+ * trusting the caller to have filtered it out first: the documented custom-
+ * layout composition (`SchemaFormProvider` + the parts, see `SchemaForm`'s
+ * own doc comment) lets a consumer place `<SchemaFormField name="…" />`
+ * directly, bypassing `SchemaFormFields`'/`GroupTabsControl`'s/
+ * `AdvancedGroupBranch`'s own `isFieldVisible` filters — without this check
+ * the same spec would render a hidden field in a custom layout while
+ * validation/submission (which always excludes it) disagree.
  */
 export const SchemaFormField = forwardRef<HTMLDivElement, SchemaFormFieldProps>(
   function SchemaFormField({ name, className, ...props }, ref) {
     const ctx = useSchemaFormContext();
     const field = findFieldByName(ctx.spec.fields, name);
     if (!field) return null;
+    if (!isFieldVisible(field, ctx.effectiveValues)) return null;
 
     const id = controlId(ctx.formId, name);
     const labelId = `${ctx.formId}-label-${name}`;
@@ -927,7 +982,7 @@ export type SchemaFormFieldsProps = HTMLAttributes<HTMLDivElement>;
 /** Renders every top-level field in the spec, in order. A skeleton while `loading` with no fields. */
 export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps>(
   function SchemaFormFields({ className, ...props }, ref) {
-    const { spec, loading } = useSchemaFormContext();
+    const { spec, loading, effectiveValues } = useSchemaFormContext();
 
     if (spec.fields.length === 0 && loading) {
       return (
@@ -957,9 +1012,11 @@ export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps
         className={cn("flex flex-col gap-4", className)}
         {...props}
       >
-        {spec.fields.map((field) => (
-          <SchemaFormField key={field.name} name={field.name} />
-        ))}
+        {spec.fields
+          .filter((field) => isFieldVisible(field, effectiveValues))
+          .map((field) => (
+            <SchemaFormField key={field.name} name={field.name} />
+          ))}
       </div>
     );
   },

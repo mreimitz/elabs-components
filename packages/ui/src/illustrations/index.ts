@@ -6,7 +6,7 @@ export type { IllustrationProps } from "./illustration-base";
 // this seam without duplicating the private string (#12/#53 review, P2).
 // Relates to the wider "illustration customization" tracking issue #46 — this
 // change exports the existing constant, it does not itself resolve #46.
-export { ILLUSTRATION_ACCENT_VAR } from "./illustration-base";
+export { ILLUSTRATION_ACCENT_VAR, illustrationAccent } from "./illustration-base";
 export { EmptyListIllustration } from "./empty-list-illustration";
 export { NoResultsIllustration } from "./no-results-illustration";
 export { NoAccessIllustration } from "./no-access-illustration";

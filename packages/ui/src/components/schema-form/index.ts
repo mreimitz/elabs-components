@@ -46,6 +46,7 @@ export {
   validateForm,
   findFieldByName,
   collectValidatableFields,
+  isFieldVisible,
   fileMatchesAccept,
   checkFileIssue,
   type EnumOption,

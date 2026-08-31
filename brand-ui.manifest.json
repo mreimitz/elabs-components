@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T21:13:02.855Z",
+  "generatedAt": "2026-08-31T00:59:12.404Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18822,12 +18822,14 @@
         "groupItemSchema",
         "headingVariants",
         "hunkVariants",
+        "illustrationAccent",
         "initialFormValues",
         "inputGroupAddonVariants",
         "inputGroupVariants",
         "insertMention",
         "integerFieldSchema",
         "isCustomStatus",
+        "isFieldVisible",
         "keyValueFieldSchema",
         "keyValueRowSchema",
         "laneColor",
