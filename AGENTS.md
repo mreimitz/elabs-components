@@ -258,6 +258,8 @@ pnpm gen:registry:check         # if registry/ changed — the generated registr
 pnpm gen:registry:check:test    # self-test for the registry generator's stale gate
 pnpm templates:check            # if a scaffold template changed — every template still compiles against the current component API
 pnpm templates:check:test       # self-test for the template-freshness gate
+pnpm test-concurrency:check     # if the root package.json test script is touched — turbo's fan-out concurrency is bounded (either --concurrency=<int> or TURBO_CONCURRENCY env var) to prevent CPU oversubscription and intermittent test flakiness (#80)
+pnpm test-concurrency:check:test # self-test for the test-concurrency gate
 pnpm agent-output:check         # if an agent/skill's output contract changed — the shipped agents still declare the output shape their callers parse
 pnpm agent-output:check:test    # self-test for the agent-output-contract gate
 pnpm heavy-deps:check           # if @elabs-ai/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
