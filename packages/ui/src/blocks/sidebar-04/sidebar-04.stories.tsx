@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { SidebarInset, SidebarProvider } from "@elabs-ai/components-ui";
+import { Mail } from "lucide-react";
+import { SidebarInset, SidebarProvider, StatePanel } from "@elabs-ai/components-ui";
 import { AppSidebar } from "./app-sidebar";
 import { MailProvider, useMail } from "./mail-context";
 
@@ -46,9 +47,16 @@ function MailPreview() {
   const { selectedMail } = useMail();
   if (!selectedMail) {
     return (
-      <div className="flex h-full items-center justify-center text-body text-muted-foreground">
-        Select an email to preview
-      </div>
+      <StatePanel
+        // border-0/bg-transparent: this pane already sits inside a bordered,
+        // rounded-xl container (see Default story below) — a second dashed
+        // border here would double-edge the same rectangle. Mirrors the
+        // templates-object-detail-hub.stories.tsx convention.
+        className="h-full border-0 bg-transparent"
+        description="Select a message from the list to preview it here."
+        icon={<Mail aria-hidden="true" className="size-10" />}
+        title="No email selected"
+      />
     );
   }
   return (

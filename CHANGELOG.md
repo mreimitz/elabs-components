@@ -23,6 +23,20 @@
   `border-s-destructive` (the FILL rung, still ≥3:1 against `--card`/
   `--background` per WCAG 1.4.11). `kind="empty"`/`kind="loading"` are
   unchanged. (#71)
+- Fixed: three reference empty states did not follow the EmptyState anatomy
+  (icon/illustration + title + one sentence + one action). `@elabs-ai/components-ai`'s
+  `ConversationEmptyState` was pinned to the top of a tall canvas instead of
+  centred (`ConversationContent`'s content div had no definite height for the
+  empty state's `size-full` to resolve against — its `StickToBottom.Content`
+  scroll viewport is now a flex column via `scrollClassName`, and the content
+  div gets `flex-1 min-h-0`) and had no way to offer a next step; it now
+  accepts an `actions?: React.ReactNode` prop, rendered in the same slot
+  pattern as `StatePanel`'s `actions`. The `ai-assistant` template now passes
+  two suggested-prompt buttons through it. `@elabs-ai/components-ui`'s
+  `sidebar-04` mail block's hand-rolled empty-preview `<div>` is replaced with
+  `StatePanel kind="empty"` (bordered/backgroundless to avoid a double edge
+  inside its already-bordered container, mirroring the
+  `templates-object-detail-hub` convention). (#72)
 - Fixed: `StatePanel`'s `illustration` slot rendered its title at the same
   `text-sm` size as the plain `icon` slot, so a 112px+ illustration sat over
   a 14px caption with no visual grouping. The illustration path now renders

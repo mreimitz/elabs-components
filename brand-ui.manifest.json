@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T08:59:52.559Z",
+  "generatedAt": "2026-08-31T09:58:21.371Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -5017,6 +5017,12 @@
               "name": "icon",
               "optional": true,
               "type": "React.ReactNode"
+            },
+            {
+              "name": "actions",
+              "optional": true,
+              "type": "React.ReactNode",
+              "description": "Primary / secondary action(s) below the description (e.g. suggested prompts)."
             }
           ]
         },

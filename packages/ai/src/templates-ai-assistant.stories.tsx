@@ -9,6 +9,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
+  Button,
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -31,7 +32,7 @@ import {
   MessageContent,
   MessageResponse,
 } from "./index";
-import { Bot, History, Home, Settings } from "lucide-react";
+import { Bot, History, Home, MessageSquare, Settings } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -101,8 +102,27 @@ function AiAssistantTemplate() {
             <ConversationContent>
               {messages.length === 0 ? (
                 <ConversationEmptyState
+                  icon={<MessageSquare className="size-8" aria-hidden="true" />}
                   title="Start the conversation"
                   description="Ask anything to begin."
+                  actions={
+                    <>
+                      <Button
+                        onClick={() => send("What can you help me with?")}
+                        size="sm"
+                        variant="outline"
+                      >
+                        What can you help me with?
+                      </Button>
+                      <Button
+                        onClick={() => send("Summarize my recent activity")}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Summarize my recent activity
+                      </Button>
+                    </>
+                  }
                 />
               ) : (
                 messages.map((m) => (

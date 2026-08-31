@@ -93,6 +93,19 @@ describe("ConversationEmptyState", () => {
     expect(screen.getByText("custom")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "No messages yet" })).toBeNull();
   });
+
+  // API lock (#72): `actions` completes the EmptyState anatomy (illustration/icon
+  // + title + one sentence + one action, per .claude/rules/design-first.md) —
+  // without it, ConversationEmptyState could not offer a next step at all.
+  it("renders a passed actions node", () => {
+    render(<ConversationEmptyState actions={<button type="button">Ask something</button>} />);
+    expect(screen.getByRole("button", { name: "Ask something" })).toBeInTheDocument();
+  });
+
+  it("omits the actions wrapper entirely when no actions are passed", () => {
+    const { container } = render(<ConversationEmptyState />);
+    expect(container.querySelectorAll("button")).toHaveLength(0);
+  });
 });
 
 describe("messagesToMarkdown — the download serializer", () => {
