@@ -14,6 +14,7 @@ export * from "./column-picker";
 // Re-export the most common TanStack types so consumers don't need a direct dep.
 export type {
   ColumnDef,
+  ColumnMeta,
   ColumnPinningState,
   ColumnSizingState,
   RowSelectionState,

@@ -85,7 +85,7 @@ function readSubpathBarrels(pkgDir, exportsMap) {
 }
 
 /** Collect + de-dupe (prefer value kind) a barrel's exports, sorted by name. */
-function collectBarrelExports(barrel, repoRoot) {
+export function collectBarrelExports(barrel, repoRoot) {
   const byName = new Map();
   for (const e of collectExports(barrel, repoRoot)) {
     const prev = byName.get(e.name);
@@ -110,7 +110,7 @@ function bucketExports(all) {
  * Collect the exported identifiers of a TS module, resolving `export * from`
  * one or two levels deep. Returns [{ name, kind: "value"|"type", module }].
  */
-function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
+export function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
   if (!file || seen.has(file) || depth > 3) return [];
   seen.add(file);
   const src = read(file);
@@ -136,17 +136,47 @@ function collectExports(file, repoRoot, seen = new Set(), depth = 0) {
       const target = resolveModule(dir, m[3]);
       if (target) sourceRel = target.replace(repoRoot + "/", "");
     }
-    const names = m[2]
+    // Strip comments BEFORE splitting on comma. A barrel is free to interleave
+    // `//`/`/* */` comments between named exports (valid TS, and Prettier
+    // doesn't reformat them away) — a comma inside one of those comments used
+    // to survive into the split, corrupting the parse: a real named export
+    // (e.g. a `type X,` line) got silently swallowed into the same field as
+    // the comment text, while a comment fragment that happened to look like
+    // an identifier (e.g. the word "exported" inside a sentence) leaked out
+    // as a phantom export name — reproduced by `packages/data/src/data-table/index.ts`'s
+    // round-1 `#69`/`#82` doc comment (round-2 fix, #82 follow-up). This is a
+    // real crawler bug, not something the caller can be asked to work around
+    // by comment placement: any future barrel comment containing a comma
+    // would hit the same corruption.
+    const namesSource = m[2].replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    const names = namesSource
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean)
       .map((s) => {
-        const asMatch = s.match(/\bas\s+([A-Za-z0-9_$]+)/);
-        return (asMatch ? asMatch[1] : s).replace(/\s+/g, "");
+        // A PER-SPECIFIER `type` keyword (`export { A, type B, type C as D }`)
+        // marks just that one name as a type export — independent of `isType`
+        // above, which only fires for the OUTER `export type { ... }` form
+        // (every name in the block). This used to be left in place and then
+        // `.replace(/\s+/g, "")` joined it straight onto the name
+        // ("type DataTableProps" → "typeDataTableProps"): a real bug, not
+        // hypothetical — `brand-ui.manifest.json` already shipped
+        // `"typeDataTableProps"`/`"typeColumnPickerProps"`/etc. as literal
+        // `otherExports` strings for THIS SAME barrel, so every mixed-block
+        // type export in the file was already undiscoverable under its real
+        // name before the #69/#82 round-1 `DataTableColumnMeta` fix ever
+        // touched it — that fix's own `type DataTableColumnMeta` specifier
+        // would have hit the identical mis-parse even with the comment
+        // (fixed above) out of the way. Strip the keyword and mark the
+        // specifier as a type BEFORE resolving an `as` alias.
+        const specifierIsType = /^type\s+/.test(s);
+        const withoutTypeKeyword = specifierIsType ? s.replace(/^type\s+/, "") : s;
+        const asMatch = withoutTypeKeyword.match(/\bas\s+([A-Za-z0-9_$]+)/);
+        const name = (asMatch ? asMatch[1] : withoutTypeKeyword).replace(/\s+/g, "");
+        return { name, kind: isType || specifierIsType ? "type" : "value" };
       })
-      .filter((n) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(n) && n !== "type");
-    for (const name of names)
-      out.push({ name, kind: isType ? "type" : "value", module: sourceRel });
+      .filter(({ name }) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) && name !== "type");
+    for (const { name, kind } of names) out.push({ name, kind, module: sourceRel });
   }
   // export const/function/class X
   for (const m of src.matchAll(

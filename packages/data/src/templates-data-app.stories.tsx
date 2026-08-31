@@ -52,9 +52,11 @@ const columns: ColumnDef<DataRow>[] = [
   {
     accessorKey: "records",
     header: "Records",
-    cell: ({ row }) => (
-      <span className="tabular-nums">{row.original.records.toLocaleString()}</span>
-    ),
+    // #69: `meta.numeric` is the seam — DataTable applies `tabular-nums` +
+    // end-alignment on both `<th>` and `<td>`, so the exemplar no longer
+    // hand-rolls a wrapper span for it.
+    meta: { numeric: true },
+    cell: ({ row }) => row.original.records.toLocaleString(),
   },
   { accessorKey: "lastRun", header: "Last run" },
 ];
