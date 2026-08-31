@@ -16,13 +16,25 @@
   an ancestor with a different text color (e.g., inside a sidebar with
   `text-sidebar-foreground`). Previously the text inherited the ambient ink
   color and could become nearly invisible on the input's own `bg-background`.
-  Tested in both light and dark themes. (#49)
+  Locked by a Storybook browser-project regression test
+  (`Core/Input`'s `InAmbientTextContainer` story) that asserts the resolved
+  `getComputedStyle(...).color`, not just the class list, in both `light` and
+  `dark` themes via an in-place `data-theme` flip. The `layout-app-shell-mail`
+  stories' `color-contrast` axe exemption is unresolved — blocked by #66 (a
+  different element, same story). (#49)
 - Fixed: `@elabs-ai/components-ui`'s `NavigationMenu` story play function now
-  awaits the close transition after dispatching Escape, preventing a race where
-  Storybook's axe scan could catch the DOM mid-close and flag an
-  `aria-hidden-focus` violation. No change to the component itself — this is a
-  test-authoring fix that ensures the menu is fully dismissed before the a11y
-  scan runs. (#54)
+  cancels a stray Radix hover-intent timer (via `userEvent.unhover`) before
+  dispatching Escape. Root cause: `userEvent.click()` synthesizes real pointer
+  events that arm `@radix-ui/react-navigation-menu`'s `delayDuration`-based
+  open timer independently of the click's own open path; that timer is cleared
+  only by a pointer leave/enter — never by the click-open path or by Escape's
+  dismiss path — so it silently reopened the menu ~200ms after an explicit
+  Escape dismissal, intermittently exposing the trigger's `aria-hidden`
+  focus-proxy span to Storybook's `afterEach` axe scan
+  (`aria-hidden-focus`). No change to the component itself — this is a
+  test-authoring fix; the underlying spontaneous-reopen behavior is a residual
+  Radix-level finding, filed separately. Verified 20/20 consecutive idle runs
+  and 5/5 runs under 16-way CPU contention. (#54)
 - Changed (breaking, narrow): `@elabs-ai/components-ai`'s `MarkdownView` and
   `MessageResponse` no longer accept `rehypePlugins` — passing it is now a
   TypeScript error, and the runtime silently drops the prop (with a dev-only
