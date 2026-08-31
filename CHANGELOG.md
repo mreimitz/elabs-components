@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Changed: `brand-ui scaffold`'s `standalone` app-spec key now **auto-detects**
+  instead of defaulting to `false` everywhere. An app-spec with no `standalone`
+  key scaffolded from OUTSIDE the brand-ui monorepo now defaults to
+  `standalone: true` (real semver dependency ranges + the install handoff)
+  instead of the old unconditional default of `false` (`workspace:*` deps and
+  an eslint config importing the private, unpublished
+  `@elabs-ai/components-eslint-config`) — the previous default silently
+  produced an app that could not `pnpm install`. Root resolving to the
+  brand-ui monorepo itself (a `packages/ui` sibling) is unaffected and still
+  defaults to `standalone: false`. An explicit `"standalone": true|false` in
+  the app-spec always wins over the default, as before; an explicit
+  `standalone: false` outside the monorepo is honored but now flagged
+  "⚠ UNINSTALLABLE" in the scaffold's summary instead of failing silently.
+  (#52)
 - Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
   (`border-s-4`) was tinted with the neutral `border-border-strong` token
   instead of a destructive-family colour, reading as a 4px grey bar beside

@@ -11,9 +11,12 @@ release. You should never need anything else to get started.
 > `vite.config.ts` with the Tailwind plugin, `tsconfig.json`, the token stylesheet
 > and the `@source` lines already correct — _and_ prints this whole recipe tailored
 > to the packages it actually installed: `.npmrc`, `pnpm add`, the engine peers at
-> the ranges those packages declare, and the CSS `@import`/`@source` lines. Set
-> `"standalone": true` in the app-spec so it knows the target is outside this
-> monorepo. It needs **only the CLI** (`pnpm add -D
+> the ranges those packages declare, and the CSS `@import`/`@source` lines.
+> `standalone` auto-detects (#52) — leave it unset and the scaffolder gives you
+> this handoff by default, since it can tell it isn't running inside the
+> brand-ui monorepo; set `"standalone": true` explicitly only to force it (e.g.
+> testing the registry handoff from inside a checkout). It needs **only the
+> CLI** (`pnpm add -D
 @elabs-ai/components-cli`, §1) — the archetype templates and the
 > component manifest ship inside it, so no brand-ui checkout is required. The
 > sections below are the manual version, and the reference the generated block is

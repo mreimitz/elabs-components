@@ -79,9 +79,8 @@
       }
     },
     "standalone": {
-      "description": "True when the app lives OUTSIDE this monorepo. Standalone scaffolds get the full GitHub-Packages install handoff (.npmrc + `pnpm add` + peers + the CSS @import/@source lines — docs/CONSUMING.md §1-4) and real semver dependency ranges; in-monorepo scaffolds keep `workspace:*`.",
-      "type": "boolean",
-      "default": false
+      "description": "True when the app lives OUTSIDE this monorepo. Standalone scaffolds get the full GitHub-Packages install handoff (.npmrc + `pnpm add` + peers + the CSS @import/@source lines — docs/CONSUMING.md §1-4) and real semver dependency ranges; in-monorepo scaffolds keep `workspace:*` and the shared eslint config. Usually left unset: the scaffolder auto-detects whether it is running INSIDE the brand-ui monorepo (a `packages/ui` sibling) and defaults to `true` everywhere else, so an external consumer gets an installable app without setting this flag. Set it explicitly only to override that detection — e.g. force `true` from inside the monorepo to test the registry handoff, or `false` for an app that genuinely lives in this monorepo's own `packages`/`apps` tree (an explicit `false` outside the monorepo is honored but produces an app that cannot install — `brand-ui scaffold` flags this in its summary).",
+      "type": "boolean"
     },
     "release": {
       "description": "The @elabs-ai/components-* release a standalone app installs (e.g. \"2.0.0\"). Defaults to the version of the monorepo the scaffold runs in.",
