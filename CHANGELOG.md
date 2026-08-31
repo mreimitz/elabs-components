@@ -354,6 +354,15 @@ work alongside `@elabs-ai/components-ai`.
   SCALE BASE" `:root` block (parallel to `--type-size-*`/`--type-leading-*`),
   and `@theme` aliases them exactly as it already aliases size/leading. Values
   and role names are unchanged — only location and naming convention moved. (#56)
+- Fixed: documented, at their declaration site, that `--card`, `--popover` and
+  `--surface-elevated` render byte-identical pure white in `@elabs-ai/components-tokens`'s
+  `light` reference theme (`packages/tokens/src/themes/light.css`) — a real
+  design coincidence (all three hit OKLCH's lightness ceiling with no headroom
+  left), previously documented only once, several lines away, in `themes.css`'s
+  `:root` comment. `docs/TOKEN_GUIDELINES.md` and the `Foundations/Colors`
+  "Ordered neutral ramp" story now name `surface-3`/`surface-4` as a second
+  accepted "renders identically in light" pair, alongside the existing
+  `surface-1`/`surface-2` note. No token values changed. (#59)
 
 ## v4.0.0 — 2026-08-17
 
