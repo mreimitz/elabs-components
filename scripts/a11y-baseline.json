@@ -1,6 +1,6 @@
 {
   "$comment": "GENERATED — do not hand-edit. `pnpm a11y:baseline:run` measures, `pnpm a11y:baseline:check --update` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. `ratchet.maxStories` only ever goes DOWN (#316).",
-  "ratchet": { "maxStories": 106 },
+  "ratchet": { "maxStories": 105 },
   "stories": {
     "ai-changereview--all-approved": ["aria-prohibited-attr"],
     "ai-changereview--all-rejected": ["aria-prohibited-attr"],
@@ -89,7 +89,6 @@
     "forms-virtualselect--large-dataset": ["button-name"],
     "forms-virtualselect--multiple": ["button-name"],
     "forms-virtualselect--preselected": ["button-name"],
-    "layout-app-shell-double-sided--default": ["color-contrast"],
     "layout-app-shell-mail--default": ["color-contrast"],
     "layout-app-shell-mail--density-comparison": ["color-contrast"],
     "navigation-tree--reveal-selected-node": ["scrollable-region-focusable"],
@@ -125,7 +124,6 @@
       "landmark-unique"
     ],
     "patterns-templates-enterprise-admin-console--default": [
-      "color-contrast",
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",
       "landmark-unique"
