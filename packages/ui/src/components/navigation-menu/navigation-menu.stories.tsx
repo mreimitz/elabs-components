@@ -88,5 +88,7 @@ export const Default: Story = {
     await waitFor(() => expect(canvas.getByText("Data Integration")).toBeVisible());
     // Escape dismisses the open panel
     await userEvent.keyboard("{Escape}");
+    // Wait for close transition to complete
+    await waitFor(() => expect(canvas.queryByText("Analytics")).not.toBeInTheDocument());
   },
 };
