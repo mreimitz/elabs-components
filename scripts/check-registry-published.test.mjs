@@ -20,6 +20,7 @@ import {
   checkPublishedItems,
   checkVersionedSnapshots,
   selectVersionsToCheck,
+  isPagesConfigured,
 } from "./check-registry-published.mjs";
 
 const BASE = "https://mreimitz.github.io/elabs-components/r";
@@ -153,6 +154,134 @@ test("checkPublishedItems: a reachable canary with real item rot still fails reg
   const result = await checkPublishedItems({ baseUrl: BASE, fetchImpl, everPublished: false });
   assert.equal(result.status, "failed");
   assert.ok(result.unreachable);
+});
+
+// ── pagesConfigured: the authoritative GitHub Pages-Settings signal (#60) ──
+// `everPublished` (branch existence) only proves content was PUSHED, not that
+// Settings → Pages was ever toggled on — so it collapses "pushed once, Pages
+// never enabled" and "Pages live, canary genuinely broken" into the same
+// "failed" outcome. `pagesConfigured` is the authoritative override.
+
+test("checkPublishedItems: PLANTED REGRESSION — Pages not configured (404) wins over everPublished=true, still SKIPS", async () => {
+  // This is the exact case the pre-#60-fix decision tree gets wrong: a repo
+  // that pushed `gh-pages` at least once (everPublished=true) but whose
+  // maintainer never flipped Settings → Pages. Before this fix, everPublished
+  // alone drove the decision and this reported "failed" — a false positive.
+  // With the fix, the authoritative Pages-config signal must override it.
+  const fetchImpl = async () => {
+    throw new Error("getaddrinfo ENOTFOUND");
+  };
+  const result = await checkPublishedItems({
+    baseUrl: BASE,
+    fetchImpl,
+    everPublished: true,
+    pagesConfigured: "not-configured",
+  });
+  assert.equal(result.status, "skipped");
+});
+
+test("checkPublishedItems: Pages configured + canary unreachable → FAILS regardless of everPublished", async () => {
+  const fetchImpl = async () => jsonResponse(null, false, 404);
+  const result = await checkPublishedItems({
+    baseUrl: BASE,
+    fetchImpl,
+    everPublished: false,
+    pagesConfigured: "configured",
+  });
+  assert.equal(result.status, "failed");
+});
+
+test("checkPublishedItems: Pages-config unknown (API call failed) — falls back to everPublished=true → failed", async () => {
+  const fetchImpl = async () => {
+    throw new Error("getaddrinfo ENOTFOUND");
+  };
+  const result = await checkPublishedItems({
+    baseUrl: BASE,
+    fetchImpl,
+    everPublished: true,
+    pagesConfigured: "unknown",
+  });
+  assert.equal(result.status, "failed");
+});
+
+test("checkPublishedItems: Pages-config unknown (API call failed) — falls back to everPublished=false → skipped", async () => {
+  const fetchImpl = async () => {
+    throw new Error("getaddrinfo ENOTFOUND");
+  };
+  const result = await checkPublishedItems({
+    baseUrl: BASE,
+    fetchImpl,
+    everPublished: false,
+    pagesConfigured: "unknown",
+  });
+  assert.equal(result.status, "skipped");
+});
+
+test('checkPublishedItems: pagesConfigured defaults to "unknown" when omitted (backward compatible)', async () => {
+  const fetchImpl = async () => {
+    throw new Error("getaddrinfo ENOTFOUND");
+  };
+  const result = await checkPublishedItems({ baseUrl: BASE, fetchImpl, everPublished: true });
+  assert.equal(result.status, "failed");
+});
+
+// ── isPagesConfigured: injected execImpl, no real `gh`/network call ────────
+
+test("isPagesConfigured: gh api 404 (Not Found) → not-configured", async () => {
+  const execImpl = async () => {
+    const err = new Error("Command failed: gh api repos/:owner/:repo/pages");
+    err.stderr = "gh: Not Found (HTTP 404)";
+    err.status = 1;
+    throw err;
+  };
+  const result = await isPagesConfigured({ execImpl });
+  assert.equal(result, "not-configured");
+});
+
+test("isPagesConfigured: gh api returns a clean JSON response → configured", async () => {
+  const execImpl = async () =>
+    JSON.stringify({ html_url: "https://mreimitz.github.io/elabs-components/" });
+  const result = await isPagesConfigured({ execImpl });
+  assert.equal(result, "configured");
+});
+
+test("isPagesConfigured: no gh binary on PATH (ENOENT) → unknown", async () => {
+  const execImpl = async () => {
+    const err = new Error("spawnSync gh ENOENT");
+    err.code = "ENOENT";
+    throw err;
+  };
+  const result = await isPagesConfigured({ execImpl });
+  assert.equal(result, "unknown");
+});
+
+test("isPagesConfigured: gh installed but not authenticated → unknown", async () => {
+  const execImpl = async () => {
+    const err = new Error("Command failed: gh api repos/:owner/:repo/pages");
+    err.stderr =
+      "To use GitHub CLI in a GitHub Actions workflow, set the GH_TOKEN environment variable.";
+    err.status = 4;
+    throw err;
+  };
+  const result = await isPagesConfigured({ execImpl });
+  assert.equal(result, "unknown");
+});
+
+test("isPagesConfigured: rate-limited / other non-404 failure → unknown (never treated as not-configured)", async () => {
+  const execImpl = async () => {
+    const err = new Error("Command failed: gh api repos/:owner/:repo/pages");
+    err.stderr = "API rate limit exceeded";
+    err.status = 1;
+    throw err;
+  };
+  const result = await isPagesConfigured({ execImpl });
+  assert.equal(result, "unknown");
+});
+
+test("isPagesConfigured: malformed (non-JSON) success response → unknown, not configured", async () => {
+  const execImpl = async () => "not json";
+  const result = await isPagesConfigured({ execImpl });
+  assert.equal(result, "unknown");
 });
 
 // ── checkVersionedSnapshots: historical /r/<version>/ rot (PR #58) ─────────
