@@ -104,6 +104,20 @@ export function tarballName(pkgName, version) {
 }
 
 /**
+ * .npmrc written into the throwaway consumer app before `pnpm install` (#41).
+ * `node-linker=isolated`: no workspace, no root .npmrc hoisting.
+ * `strict-peer-dependencies=true`: turns an unmet peer into a hard install
+ * failure instead of a silent `auto-install-peers` resolution -- the fixture
+ * pins its own real @xyflow/react / monaco-editor / maplibre-gl versions
+ * specifically so a narrowed/wrong peer range on one of those packages (a
+ * #30-shaped regression) has something independent to conflict with, and can
+ * no longer be satisfied "from thin air". Exported so the regression test in
+ * check-consumer-install.test.mjs exercises the SAME npmrc this gate ships,
+ * not a hand-copied duplicate that could silently drift from it.
+ */
+export const APP_NPMRC = "node-linker=isolated\nstrict-peer-dependencies=true\n";
+
+/**
  * Rewrite each distributable dependency to its packed tarball. Everything else
  * (react, vite, tailwind…) resolves from the registry like a real consumer's.
  */
@@ -323,8 +337,7 @@ function main() {
     if (rootPkg.packageManager) pkgJson.packageManager = rootPkg.packageManager;
 
     writeFileSync(join(app, "package.json"), JSON.stringify(pkgJson, null, 2) + "\n");
-    // An isolated store-linked install: no workspace, no root .npmrc hoisting.
-    writeFileSync(join(app, ".npmrc"), "node-linker=isolated\n");
+    writeFileSync(join(app, ".npmrc"), APP_NPMRC);
     run("pnpm", ["install", "--ignore-workspace", "--no-frozen-lockfile"], app);
 
     log("• building it with Vite …");
