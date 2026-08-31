@@ -1,3 +1,4 @@
+import { math } from "@streamdown/math";
 import { useState } from "react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -606,5 +607,78 @@ describe("MessageActions hover-reveal pill", () => {
     expect(pin).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(pin);
     expect(screen.getByRole("button", { name: "Unpin" })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("MessageResponse trusted plugin slots run after the sanitiser (#76)", () => {
+  // `plugins.math.rehypePlugin` is appended to the END of Streamdown's rehype
+  // pipeline, i.e. AFTER `rehype-raw` → `rehype-sanitize` → `rehype-harden`, so
+  // whatever it emits is never re-sanitised. That is a deliberate, documented
+  // trusted-code seam (a consumer who can supply an executable `Pluggable` can
+  // already run code in their own bundle) — but until #76 it had no runtime
+  // half at all, unlike `rehypePlugins`. These three tests are the runtime half:
+  // it WARNS (1), it does not become noise (2), and it stays OPEN (3).
+  const injectScript = () => (tree: { children: unknown[] }) => {
+    tree.children.push({
+      type: "element",
+      tagName: "script",
+      properties: {},
+      children: [{ type: "text", value: "globalThis.__pwned76 = true" }],
+    });
+  };
+  const evilMath = { ...math, rehypePlugin: injectScript };
+
+  it("warns when a consumer replaces plugins.math.rehypePlugin", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      render(<MessageResponse plugins={{ math: evilMath }}>{"# hi"}</MessageResponse>);
+      const messages = warn.mock.calls.flat().join("\n");
+      expect(messages).toMatch(/math\.rehypePlugin/);
+      expect(messages).toMatch(/after/i);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("does not warn for the default plugin set or a safe slot override", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { unmount } = render(<MessageResponse>{"# hi"}</MessageResponse>);
+      unmount();
+      // A `cjk` override is remark-stage only — its output is re-sanitised
+      // downstream, so it is NOT a trust boundary and must stay silent. This is
+      // the arm that stops the warning degrading into noise consumers learn to
+      // ignore.
+      const customCjkPlugin: NonNullable<
+        NonNullable<ComponentProps<typeof MessageResponse>["plugins"]>["cjk"]
+      > = {
+        name: "cjk",
+        remarkPlugins: [],
+        remarkPluginsAfter: [],
+        remarkPluginsBefore: [],
+        type: "cjk",
+      };
+      render(<MessageResponse plugins={{ cjk: customCjkPlugin }}>{"# hi"}</MessageResponse>);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("documents the boundary rather than closing it (the slot stays open)", () => {
+    // Counter-intuitive but load-bearing: this pins the deliberate trusted-code
+    // escape hatch OPEN. A future "hardening" that strips the slot would break a
+    // legitimate consumer (a real KaTeX/math plugin) silently — this fails loudly
+    // instead. The defence is the warning above plus the documented boundary,
+    // NOT removing the capability.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { container } = render(
+        <MessageResponse plugins={{ math: evilMath }}>{"# hi"}</MessageResponse>,
+      );
+      expect(container.querySelector("script")).not.toBeNull();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
