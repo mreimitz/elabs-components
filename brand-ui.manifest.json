@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30T21:13:02.855Z",
+  "generatedAt": "2026-08-31T00:06:59.245Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18828,6 +18828,7 @@
         "insertMention",
         "integerFieldSchema",
         "isCustomStatus",
+        "isFieldVisible",
         "keyValueFieldSchema",
         "keyValueRowSchema",
         "laneColor",

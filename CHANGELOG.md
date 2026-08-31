@@ -81,6 +81,15 @@
   they activate it; an explicit, caller-set `disabled` (the whole form is
   read-only) stays native, since that is a deliberate, durable state rather
   than a transient auto-flip. (#22)
+- Added: `@elabs-ai/components-ui`'s `SchemaForm` gains conditional visibility —
+  every field (including a `group` branch) accepts an optional
+  `visibleWhen: { field, equals }`, so a field renders (and participates in
+  validation/submission) only once another field's current value equals
+  `equals` — e.g. show a "client secret" field only once `authMethod` equals
+  `"oauth"`. A hidden field is excluded from the render tree, from
+  `collectValidatableFields`/`validateForm`, and from the first-invalid-focus
+  walk, so a hidden `required` field never blocks submit. New export:
+  `isFieldVisible(field, values)`. (#22)
 - Fixed: `@elabs-ai/components-ui`'s `FileUploadList` gave its `<ul>` an
   explicit `role="status"`, which overrides the element's implicit `list`
   role and strips `listitem` from every `FileUploadItem` (`<li>`) inside it —
