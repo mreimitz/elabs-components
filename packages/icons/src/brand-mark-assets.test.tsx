@@ -68,11 +68,58 @@ describe("brand mark assets stay in sync with BrandLogo", () => {
     expect(component.length).toBeGreaterThan(10);
   });
 
-  it.skipIf(!inWorkspace)("matches the browser-tab favicon", () => {
-    // `?? ""` is unreachable while the skip holds, and fails loudly (empty vs the
-    // component's shapes) rather than passing if the skip ever stops holding.
-    expect(geometry(FAVICON ?? "")).toEqual(component);
-  });
+  it.skipIf(!inWorkspace)(
+    "keeps the favicon's circle+square coordinates in sync with BrandLogo — deliberately NOT full parity (issue #2)",
+    () => {
+      // Comment 3 (2026-08-30, the maintainer decision on issue #2) narrowed the
+      // favicon to a SIMPLIFIED small-size variant: the full mark's 45° hatch
+      // fuses into a textureless blob at the 16px a browser tab actually renders
+      // it at, so the favicon drops the hatch, the two stray strokes and the two
+      // register dots, keeping only the circle-over-square silhouette (plus a
+      // raised fill-opacity on the plane, asserted separately below). This test
+      // therefore does NOT assert full geometry parity — that would just
+      // re-encode the removed complexity as a false requirement — but it must
+      // still catch an ACCIDENTAL drift on the two shapes that ARE kept, and an
+      // accidental return of the shapes that were deliberately dropped.
+      const favicon = geometry(FAVICON ?? "");
+
+      // What MUST still match: the square's coordinates, straight off the
+      // component's own rendered geometry (not retyped), so a future re-tune of
+      // BrandLogo's SQUARE constant still fails this test if the favicon isn't
+      // updated to match.
+      const rectEntries = component.filter((entry) => entry.startsWith("rect:"));
+      expect(favicon.filter((entry) => entry.startsWith("rect:"))).toEqual(rectEntries);
+
+      // The circle outline's cx/cy/r appear TWICE in the component's own render
+      // (once as the clip-path definition that clips the now-dropped hatch, once
+      // as the drawn ring) — that recurring value is CIRCLE, the shape the
+      // simplified favicon must still match. The two register dots each appear
+      // only once and are excluded from this check on purpose: they're one of
+      // the deliberately-dropped shapes, verified absent below.
+      const circleCounts = new Map<string, number>();
+      for (const entry of component) {
+        if (!entry.startsWith("circle:")) continue;
+        circleCounts.set(entry, (circleCounts.get(entry) ?? 0) + 1);
+      }
+      const circleOutline = [...circleCounts.entries()].find(([, count]) => count >= 2)?.[0];
+      expect(circleOutline, "component's own circle-outline coordinates").toBeDefined();
+      expect(favicon.filter((entry) => entry.startsWith("circle:"))).toEqual([circleOutline]);
+
+      // What MUST be gone: the hatch + stray strokes (every <line>) and the two
+      // register dots (any circle OTHER than the outline above, already asserted
+      // by the exact-array check).
+      expect(favicon.filter((entry) => entry.startsWith("line:"))).toEqual([]);
+    },
+  );
+
+  it.skipIf(!inWorkspace)(
+    "raises the favicon plane's fill-opacity above the component's 0.22 (issue #2) so it still reads as a plane once the hatch that used to carry its texture is gone",
+    () => {
+      const opacity = Number((FAVICON ?? "").match(/<rect\b[^>]*\bfill-opacity="([^"]*)"/)?.[1]);
+      expect(opacity).toBeGreaterThan(0.22);
+      expect(opacity).toBeLessThanOrEqual(1);
+    },
+  );
 
   it.skipIf(!inWorkspace)("matches the Storybook manager logo", () => {
     // The manager file also carries the outlined wordmark, which is <path> data

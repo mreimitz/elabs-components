@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Fixed: `apps/docs/public/brand-favicon.svg` carried the full `BrandLogo` mark
+  byte-for-byte (45° hatch, two stray strokes, two register dots) at the 16px
+  a browser tab actually renders it at, where the hatch fuses into a
+  textureless blob and the mark stops reading as a circle-over-square. Per
+  the maintainer's decision on #2, the favicon is now a simplified small-size
+  variant — circle + square only, with the plane's `fill-opacity` raised
+  (0.22 → 0.6, this asset only) so it still reads as a plane once the hatch
+  that used to carry its texture is gone. `BrandLogo`/`AppIcon` themselves are
+  unchanged. `packages/icons/src/brand-mark-assets.test.tsx` now encodes the
+  deliberate exception instead of asserting byte-for-byte favicon parity.
+  (#2)
 - Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
   (`border-s-4`) was tinted with the neutral `border-border-strong` token
   instead of a destructive-family colour, reading as a 4px grey bar beside
