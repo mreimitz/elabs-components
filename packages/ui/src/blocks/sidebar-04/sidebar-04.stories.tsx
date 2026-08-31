@@ -103,7 +103,7 @@ export const Default: Story = {
 
     // #66 — "No results" (same ambient) must reach for
     // `text-sidebar-muted-foreground`, not `text-muted-foreground`.
-    const searchInput = canvas.getByPlaceholderText("Type to search...");
+    const searchInput = canvas.getByPlaceholderText("Type to search…");
     await userEvent.type(searchInput, "zzz-no-such-mail-zzz");
     const noResults = await canvas.findByText("No results");
     const noResultsRatio = wcagContrast(

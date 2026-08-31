@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Fixed: six micro-typography violations (straight `...`/`'` instead of
+  `…`/`'`) on two reference screens — `@elabs-ai/components-ui`'s
+  `sidebar-04` mail block (`app-sidebar.tsx`'s search placeholder and two
+  onboarding-tour strings) and `templates-screen-states.stories.tsx`'s
+  errored-state copy — plus a pre-existing `Thinking...` in
+  `@elabs-ai/components-ai`'s `Reasoning` trigger found by the new gate's
+  repo-wide scan. Added `pnpm microtypography:check`
+  (`scripts/check-microtypography.mjs`): the ellipsis rule is hard and
+  un-ratcheted, the straight-apostrophe rule ships as a per-file ratchet
+  (`scripts/microtypography-baseline.json`, 8 known instances across 5
+  files); scans `aria-label`/`placeholder`/`title`/`description` attributes
+  and JSX text across every `.tsx` including `.stories.tsx`. Wired into
+  `gates.yml`'s blocking job and `AGENTS.md`'s validate-before-you-finish
+  contract. (#70)
 - Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
   (`border-s-4`) was tinted with the neutral `border-border-strong` token
   instead of a destructive-family colour, reading as a 4px grey bar beside
