@@ -114,43 +114,81 @@ export const WithTextarea: Story = {
   },
 };
 
+// A small local email-shape check — deliberately NOT `event.target.checkValidity()`.
+// Verified against real `<input type="email">` constraint validation (#26
+// fix-round-1 finding 2): the native HTML5 email format does NOT require a
+// dot in the domain, so `checkValidity()` treats "jane@invalid" as VALID —
+// it would not reproduce the contradiction this demo exists to guard
+// against. A `local-part@domain.tld` regex is the smallest check that
+// actually agrees with "looks like a real email", so it can't clear the
+// error for "@", "jane@" or "jane@invalid" the way the old
+// `value.includes("@")` predicate did.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Stands a plain `useState`-controlled value in for "any runtime" (a bespoke
+ * reducer, Formik's `meta.error`, TanStack Form's `field.state.meta.errors`,
+ * …) — `FieldRow` only ever reads the `label`/`description`/`error` props it
+ * is handed, so the same shape works for all of them. No `FormProvider`/RHF
+ * context exists anywhere in this component's tree.
+ */
+function EmailField({ initialValue }: { initialValue: string }) {
+  const [value, setValue] = useState(initialValue);
+  const error = EMAIL_RE.test(value) ? undefined : "Enter a valid email address.";
+
+  return (
+    <div className="w-72">
+      <FieldRow label="Email" description="We'll only use this to send receipts." error={error}>
+        <Input type="email" value={value} onChange={(event) => setValue(event.target.value)} />
+      </FieldRow>
+    </div>
+  );
+}
+
 /**
  * Issue #26's fourth ask: a worked example of `FieldRow` driven by a form
- * runtime that is NOT react-hook-form. `EmailField` stands a plain
- * `useState`-controlled value in for "any runtime" (a bespoke reducer,
- * Formik's `meta.error`, TanStack Form's `field.state.meta.errors`, …) —
- * `FieldRow` only ever reads the `label`/`description`/`error` props it is
- * handed, so the same shape works for all of them. No `FormProvider`/RHF
- * context exists anywhere in this story's tree. It starts already invalid so
- * the `aria-invalid`/`role="alert"` wiring is visible immediately, not only
- * on the happy path, then the play function clears the error to show both
- * ends of the lifecycle.
+ * runtime that is NOT react-hook-form — this is the story the docs and PR
+ * point readers at as "starts already invalid so the `aria-invalid`/
+ * `role="alert"` wiring is visible without interaction". Its play function
+ * therefore only ASSERTS the error state; it never resolves it, so the
+ * canvas a reader inspects (both in the story view and on the autodocs page,
+ * where Storybook runs `play` on mount the same way) stays on the
+ * documented error state. See "Driven by external state — validity
+ * transitions" below for the invalid→valid interaction instead (#26
+ * fix-round-1 finding 1 — the previous version of this story cleared its own
+ * error inside `play`, so the state the docs claimed to show never actually
+ * survived a render).
  */
 export const RuntimeAgnostic: Story = {
   name: "Driven by external state (no react-hook-form)",
-  render: () => {
-    function EmailField() {
-      const [value, setValue] = useState("not-an-email");
-      const error = value.includes("@") ? undefined : "Enter a valid email address.";
-
-      return (
-        <FieldRow label="Email" description="We'll only use this to send receipts." error={error}>
-          <Input type="email" value={value} onChange={(event) => setValue(event.target.value)} />
-        </FieldRow>
-      );
-    }
-    return (
-      <div className="w-72">
-        <EmailField />
-      </div>
-    );
-  },
-  play: async ({ canvas, userEvent }) => {
+  render: () => <EmailField initialValue="not-an-email" />,
+  play: async ({ canvas }) => {
     const input = canvas.getByRole("textbox");
     expect(input).toHaveAttribute("aria-invalid", "true");
     const alert = canvas.getByRole("alert");
     expect(alert).toHaveTextContent("Enter a valid email address.");
     expect(input.getAttribute("aria-describedby")?.split(" ")).toContain(alert.id);
+  },
+};
+
+/**
+ * The invalid→valid half of the lifecycle, kept in its own story so the
+ * documented error example above (`RuntimeAgnostic`) never settles into the
+ * success state on render (#26 fix-round-1 finding 1). Also locks finding
+ * 2: "jane@invalid" has an `@` but no valid domain and must NOT clear the
+ * error — `value.includes("@")` used to accept it.
+ */
+export const RuntimeAgnosticValidation: Story = {
+  name: "Driven by external state — validity transitions",
+  render: () => <EmailField initialValue="not-an-email" />,
+  play: async ({ canvas, userEvent }) => {
+    const input = canvas.getByRole("textbox");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "jane@invalid");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(canvas.getByRole("alert")).toHaveTextContent("Enter a valid email address.");
 
     await userEvent.clear(input);
     await userEvent.type(input, "jane@example.com");
