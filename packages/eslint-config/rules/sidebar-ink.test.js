@@ -42,6 +42,28 @@ test("no-canvas-ink-in-sidebar", () => {
       {
         code: 'const a = <Sidebar><PopoverContent><div className="text-foreground" /></PopoverContent></Sidebar>;',
       },
+      // PR #87 review finding — slot-content blind spot. Chrome-tuned ink
+      // passed through AppSidebar's `header` slot via a same-file identifier
+      // is correct and must stay silent.
+      {
+        code: 'const header = <span className="text-sidebar-foreground" />;\nconst a = <AppSidebar header={header} />;',
+      },
+      // A slot prop NOT in CHROME_SLOT_PROPS (`children`) is not chrome —
+      // canvas ink there is unaffected, even on the same AppSidebar element.
+      {
+        code: 'const content = <span className="text-foreground" />;\nconst a = <AppSidebar children={content} />;',
+      },
+      // A same-named prop on a DIFFERENT component is not a chrome slot —
+      // CHROME_SLOT_PROPS is keyed by component tag name, not prop name alone.
+      {
+        code: 'const a = <OtherComponent header={<span className="text-foreground" />} />;',
+      },
+      // A portaled component passed as slot content: its OWN className would
+      // still be checked (none set here), but content inside it is exempt —
+      // matches the ancestor walk's PORTAL_BOUNDARY semantics.
+      {
+        code: 'const header = <DropdownMenuContent><span className="text-foreground" /></DropdownMenuContent>;\nconst a = <AppSidebar header={header} />;',
+      },
     ],
     invalid: [
       // The brief's own positive fixture.
@@ -81,6 +103,27 @@ test("no-canvas-ink-in-sidebar", () => {
       {
         code: 'const a = <Sidebar><span className="text-foreground text-card-foreground" /></Sidebar>;',
         errors: [{ messageId: "canvasInkInChrome" }, { messageId: "canvasInkInChrome" }],
+      },
+      // PR #87 review finding (the exact sidebar-02 app-sidebar.tsx:136 shape)
+      // — canvas ink inside a same-file `const header = (…)` passed as
+      // `<AppSidebar header={header}>` is real runtime chrome ink even though
+      // it is never a JSX ancestor of the `<span>` in the authored tree.
+      {
+        code: 'const header = (\n  <div>\n    <span className="font-semibold text-foreground">Acme</span>\n  </div>\n);\nconst a = <AppSidebar header={header} />;',
+        errors: [{ messageId: "canvasInkInChrome" }],
+      },
+      // Inline JSX (no intermediate identifier) passed directly to a chrome
+      // slot prop is caught the same way.
+      {
+        code: 'const a = <AppSidebar footer={<span className="text-muted-foreground" />} />;',
+        errors: [{ messageId: "canvasInkInChrome" }],
+      },
+      // A conditionally-rendered element inside the slot JSX (the real
+      // `{!isCollapsed && <span className="text-foreground">Acme</span>}`
+      // shape) is still walked.
+      {
+        code: 'const header = (\n  <div>\n    {isCollapsed || <span className="text-foreground">Acme</span>}\n  </div>\n);\nconst a = <AppSidebar header={header} />;',
+        errors: [{ messageId: "canvasInkInChrome" }],
       },
     ],
   });

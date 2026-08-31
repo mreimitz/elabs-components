@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T08:59:52.559Z",
+  "generatedAt": "2026-08-31T10:17:38.830Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7000,7 +7000,13 @@
           "extends": [
             "PropsWithChildren<{\n  initialInput?: string;\n}>"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "initialInput",
+              "optional": true,
+              "type": "string"
+            }
+          ]
         },
         "PromptInputSelect": {
           "extends": [

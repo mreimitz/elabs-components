@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Fixed: three automated-review findings on PR #87. (1) `scripts/check-manifest.mjs`'s
+  freshness check compared against `git show HEAD:brand-ui.manifest.json`, which
+  false-STALEd a legitimately fresh, already-regenerated-but-uncommitted manifest (the
+  ordinary single-commit workflow) — it now compares against the pre-check working-tree
+  content instead, independent of git state entirely. (2) `packages/cli/lib/core.mjs`'s
+  `extractTypeAliasPropTable` lost a type alias's own props when they were nested inside
+  a utility-type generic argument (`PropsWithChildren<{ initialInput?: string }>`), so
+  `PromptInputProvider`'s manifest entry regressed to `props: []`; a new Arm C recovers
+  them, scoped to identifier-led segments only so the disclosed `AudioPlayerElementProps`
+  discriminated-union limitation is unaffected. (3) the `sidebar-a11y/no-canvas-ink-in-sidebar`
+  ESLint rule's ancestor walk only saw the authored JSX tree, so canvas ink passed through
+  a chrome-slot prop (`<AppSidebar header={header}>`, where `header` is a same-file JSX
+  variable) was invisible to it — a real instance shipped in `sidebar-02`'s
+  `app-sidebar.tsx` (`text-foreground` inside `bg-sidebar` chrome, the exact #66/#50 bug
+  class) with a fully green `pnpm lint`. The rule now resolves and walks a documented
+  chrome slot's JSX (inline or via a same-file `const`), and the live instance is fixed.
 - Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
   (`border-s-4`) was tinted with the neutral `border-border-strong` token
   instead of a destructive-family colour, reading as a 4px grey bar beside

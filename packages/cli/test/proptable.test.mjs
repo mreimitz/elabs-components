@@ -284,6 +284,56 @@ test("extractPropTable records a base-only type alias (Arm B)", () => {
   assert.deepEqual(t, { extends: ["HTMLAttributes<HTMLSpanElement>"], props: [] });
 });
 
+test("extractPropTable recovers own props nested inside a utility-type generic argument (Arm C — PR #87 review finding)", () => {
+  // `PropsWithChildren<{ initialInput?: string }>` is neither a plain
+  // object-literal alias (Arm A/no-`&`-object) nor a base-only alias (Arm B) —
+  // it's a single non-`{`-led segment whose OWN generic argument is an object
+  // literal. Before this fix, `PromptInputProviderProps` (the real,
+  // pre-existing shape this reproduces verbatim) silently degraded from
+  // `props:[initialInput]` to `props:[]`, even though the public API is
+  // unchanged — a real regression caught in code review, confirmed against
+  // git history (`brand-ui.manifest.json` before/after the #77 commit).
+  const src = `
+    export type FooProps = PropsWithChildren<{
+      initialInput?: string;
+    }>;
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.extends, ["PropsWithChildren<{\n      initialInput?: string;\n    }>"]);
+  const initialInput = t.props.find((p) => p.name === "initialInput");
+  assert.ok(
+    initialInput,
+    "own prop `initialInput` nested inside the utility-type generic is recovered",
+  );
+  assert.equal(initialInput.optional, true);
+  assert.equal(initialInput.type, "string");
+});
+
+test("extractPropTable Arm C does not reach into a parenthesized union member (the disclosed AudioPlayerElementProps limitation stays as-is)", () => {
+  // `Omit<X, Y> & (A | B)` — a parenthesized discriminated union as one `&`
+  // member — is NOT a flat prop table (the props are mutually exclusive
+  // between arms), so Arm C's identifier-led-only guard must not reach into
+  // it: the segment starts with `(`, not an identifier. Reproduces the real,
+  // disclosed `AudioPlayerElementProps` shape (`packages/ai/src/audio-player.tsx`)
+  // verbatim, scoped down. Flattening the first arm's `data` into `props`
+  // would misrepresent the API (the `src` arm would be silently hidden) —
+  // strictly worse than the pre-existing, disclosed `props: []`.
+  const src = `
+    export type FooProps = Omit<Bar, "src"> &
+      (
+        | {
+            data: string;
+          }
+        | {
+            src: string;
+          }
+      );
+  `;
+  const t = extractPropTable(src, "Foo");
+  assert.deepEqual(t.props, []);
+  assert.ok(t.extends.includes('Omit<Bar, "src">'));
+});
+
 test("extractPropTable: the interface form is unchanged (no-regression pair)", () => {
   // Re-asserts the existing cases above explicitly, so a change to the type-alias
   // path that accidentally touches the interface path is caught here too.

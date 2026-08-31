@@ -1,17 +1,30 @@
 // check-manifest.test.mjs — self-test for the manifest stale-gate (#44)
 // -----------------------------------------------------------------------------
-// The gate's verdict must be a pure function of (HEAD, working tree) — NEVER of
-// the git INDEX/staging state. Before the fix, `check-manifest.mjs` compared the
-// regenerated file against the INDEX (`git diff -- <path>`, no ref), so it
-// reported a false STALE whenever the index legitimately differed from a
-// correct regeneration — exactly the documented Phase 4 merge-conflict-
-// resolution workflow (`.claude/commands/close-issues.md`): regenerate the
-// manifest after taking either side of a conflict, before `git add`.
+// The gate's verdict must be a pure function of the WORKING TREE alone — NEVER
+// of the git INDEX/staging state, and NEVER of HEAD. Before the #44 fix,
+// `check-manifest.mjs` compared the regenerated file against the INDEX
+// (`git diff -- <path>`, no ref), so it reported a false STALE whenever the
+// index legitimately differed from a correct regeneration — exactly the
+// documented Phase 4 merge-conflict-resolution workflow
+// (`.claude/commands/close-issues.md`): regenerate the manifest after taking
+// either side of a conflict, before `git add`.
 //
-// This plants two scratch git fixtures that reproduce the issue's Repro A/B
-// and asserts the gate reports FRESH (exit 0) regardless of index state, plus
-// one baseline (plain, untouched) and one genuine-staleness non-regression
-// check so the fix can't accidentally make the gate blind to real drift.
+// #44's own fix (compare against `git show HEAD:<path>` instead) introduced a
+// SECOND false-STALE, caught in PR #87 code review: the ordinary single-commit
+// workflow of legitimately changing package source, running `pnpm manifest`
+// yourself, and checking BEFORE committing. There the working tree already
+// holds a fresh, correct, freshly-regenerated manifest, but HEAD (the previous
+// commit) still holds the OLD one — a HEAD comparison reports STALE for a
+// manifest that is already fresh and about to be committed correctly. The
+// fix is to stop consulting git entirely for this check: compare the
+// regenerated content against whatever was on disk immediately before this
+// script ran (`before`), which is git-state-independent by construction.
+//
+// This plants scratch git fixtures reproducing: the issue's Repro A/B (INDEX-
+// state independence), the PR #87 review scenario (HEAD-state independence,
+// a legitimate uncommitted regeneration), a baseline (plain, untouched), and
+// a genuine-staleness non-regression check so neither fix can accidentally
+// make the gate blind to real drift.
 //
 // Run: node --test scripts/check-manifest.test.mjs   (pnpm manifest:check:test)
 import { test } from "node:test";
@@ -133,6 +146,59 @@ test("does not misreport STALE on a real two-way UNMERGED path whose working-tre
     // `git checkout -- <path>` error on an unmerged path (that call errors on
     // an unmerged path; the old code swallowed it in an empty `catch {}`).
     assert.doesNotMatch(result.stderr, /STALE/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("reports fresh for a legitimate package-source change already regenerated but not yet committed (PR #87 review finding — the HEAD-comparison regression lock)", () => {
+  const dir = makeFixtureRepo();
+  try {
+    // Add a new package whose barrel export changes what `generateManifest`
+    // produces — a stand-in for "I edited a component's public props".
+    const pkgDir = join(dir, "packages", "probe-pkg");
+    mkdirSync(join(pkgDir, "src"), { recursive: true });
+    writeFileSync(
+      join(pkgDir, "package.json"),
+      JSON.stringify({ name: "@elabs-ai/components-probe-pkg", version: "0.0.0" }, null, 2),
+    );
+    writeFileSync(
+      join(pkgDir, "src", "index.ts"),
+      "export function Probe() {\n  return null;\n}\n",
+    );
+
+    // Regenerate — mirrors running `pnpm manifest` yourself before committing.
+    writeManifest(dir, generateManifest(dir));
+
+    // Deliberately do NOT `git add`/commit either the new package or the
+    // regenerated manifest: this is the ordinary in-progress-commit state.
+    // HEAD (the prior commit) still holds the OLD manifest, predating this
+    // change, while the working tree already holds a fresh, correct one.
+    // `packages/` itself is untracked (git doesn't track the empty dir the
+    // fixture starts with), so a whole-tree porcelain status collapses the
+    // new subtree into one `?? packages/` line rather than naming the file —
+    // assert on the manifest diff instead, which unambiguously shows the
+    // change is present and uncommitted.
+    const status = git(dir, ["status", "--porcelain"]);
+    assert.match(status, /\?\? packages\//, "fixture setup: the new package must be uncommitted");
+    const manifestDiff = git(dir, ["diff", "--", MANIFEST]);
+    assert.ok(manifestDiff.trim(), "fixture setup: the manifest must be uncommitted too");
+
+    const result = runCheck(dir);
+    assert.equal(
+      result.status,
+      0,
+      "expected fresh (a legitimately-regenerated, uncommitted manifest must not be " +
+        `reported STALE just because HEAD predates it), got:\n${result.stdout}${result.stderr}`,
+    );
+
+    // Sanity: the fixture actually exercises a manifest CONTENT change, not a
+    // no-op, so this test can't pass vacuously.
+    const manifest = JSON.parse(readFileSync(join(dir, MANIFEST), "utf8"));
+    assert.ok(
+      manifest.packages["@elabs-ai/components-probe-pkg"],
+      "fixture setup: the new package must actually appear in the regenerated manifest",
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

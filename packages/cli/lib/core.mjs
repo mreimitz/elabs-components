@@ -924,7 +924,10 @@ function parseObjectLiteralMembers(body) {
  *     path); every other member, trimmed, is a base type → `extends`, in
  *     source order (Arm A). A single non-`{` member with no `&` at all is a
  *     base-only alias (`type XProps = Base;`) → `{ extends: [Base], props: [] }`
- *     (Arm B).
+ *     (Arm B). An identifier-led member additionally has its generic argument
+ *     probed for a NESTED object literal (Arm C, PR #87 review finding) —
+ *     `PropsWithChildren<{ initialInput?: string }>` still carries an
+ *     own-declared `initialInput` prop that Arm A alone would silently drop.
  */
 function extractTypeAliasPropTable(src, decl) {
   const nameEnd = decl.index + decl[0].length;
@@ -944,14 +947,73 @@ function extractTypeAliasPropTable(src, decl) {
     if (segment.slice(leadingWs).startsWith("{")) {
       const open = rhsStart + offset + leadingWs;
       const close = matchDelim(src, open);
-      if (close >= 0) props = parseObjectLiteralMembers(src.slice(open + 1, close));
+      if (close >= 0) props = props.concat(parseObjectLiteralMembers(src.slice(open + 1, close)));
     } else {
       const trimmed = segment.trim();
-      if (trimmed) extendsList.push(trimmed);
+      if (trimmed) {
+        extendsList.push(trimmed);
+        // Arm C: a utility type WRAPPING an object literal as a generic
+        // argument (`PropsWithChildren<{ initialInput?: string }>`,
+        // `Partial<{ x: string }>`) still carries own props inside that
+        // nested `{...}` — probe for one, scoped to identifier-led segments
+        // only (`/^[A-Za-z_$]/`). This deliberately EXCLUDES a parenthesized
+        // member like `Omit<X, Y> & (\n | { data: … }\n | { src: … }\n)`
+        // (starts with `(`, not an identifier) — that shape is a
+        // discriminated union, not a flat prop table, and flattening its
+        // first arm would misrepresent the API (see the disclosed
+        // `AudioPlayerElementProps` limitation, u6 validation report) rather
+        // than merely lose information the way the pre-fix `props: []` did.
+        if (/^[A-Za-z_$]/.test(trimmed)) {
+          const nestedRel = findFirstBrace(segment, leadingWs);
+          if (nestedRel >= 0) {
+            const open = rhsStart + offset + nestedRel;
+            const close = matchDelim(src, open);
+            if (close >= 0) {
+              const nested = parseObjectLiteralMembers(src.slice(open + 1, close));
+              if (nested.length) props = props.concat(nested);
+            }
+          }
+        }
+      }
     }
     offset += segment.length + 1; // +1 for the consumed `&`
   }
   return { extends: extendsList, props };
+}
+
+/**
+ * Index of the first UNQUOTED, non-comment `{` in `text` starting at `from`,
+ * or -1 — string/comment-aware but deliberately NOT depth-gated (unlike
+ * `findAliasTopLevel`), since the brace we're after is nested INSIDE a
+ * generic's `<...>` (depth 1+ relative to the segment), not at depth 0.
+ */
+function findFirstBrace(text, from = 0) {
+  let q = null;
+  for (let i = from; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+    if (q) {
+      if (c === "\\") i++;
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === "/" && n === "/") {
+      while (i < text.length && text[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && n === "*") {
+      i += 2;
+      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      q = c;
+      continue;
+    }
+    if (c === "{") return i;
+  }
+  return -1;
 }
 
 /**

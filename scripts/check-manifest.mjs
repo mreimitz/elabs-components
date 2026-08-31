@@ -8,19 +8,34 @@
  *
  *   1. DETERMINISM — two consecutive `generateManifest` runs must be byte-identical
  *      (the `generatedAt` timestamp is held idempotent by `writeManifest`).
- *   2. FRESHNESS  — regenerating must produce no change vs the file committed at
- *      HEAD; otherwise the manifest is stale (someone changed code without
- *      running `pnpm manifest`). Compared against `git show HEAD:<path>`,
- *      NEVER `git diff` (which — with no ref — compares against the git INDEX,
- *      not HEAD): the verdict is a pure function of (HEAD, working tree),
- *      independent of git staging state. See #44 — the old index-based compare
- *      false-STALEd during the documented Phase 4 merge-conflict-resolution
- *      workflow, where the manifest is legitimately unmerged/unstaged relative
- *      to a correct regeneration.
+ *   2. FRESHNESS  — regenerating must produce no change vs whatever was ALREADY on
+ *      disk before this check ran. Deliberately NOT compared against git at all
+ *      (no `git diff` against the INDEX, no `git show HEAD:<path>`) — freshness is
+ *      a property of (source tree, manifest file), not (source tree, some prior
+ *      commit), so the verdict is a pure function of the working tree and
+ *      independent of git state (INDEX, HEAD, merge status) entirely.
+ *
+ *      This resolves #44's original bug (comparing to the git INDEX via `git diff`
+ *      with no ref false-STALEd during the documented Phase 4 merge-conflict-
+ *      resolution workflow, where the manifest is legitimately unmerged/unstaged
+ *      relative to a correct regeneration) — the INDEX is never consulted.
+ *
+ *      It also fixes the false-STALE #44's own HEAD-based fix introduced: the
+ *      ordinary single-commit workflow of legitimately changing package source,
+ *      running `pnpm manifest` yourself, and checking BEFORE committing. There,
+ *      the working tree already holds a fresh, correct, freshly-regenerated
+ *      manifest — but HEAD (the previous commit) still holds the OLD manifest,
+ *      predating this change, so a HEAD comparison reported a false STALE for a
+ *      manifest that was already fresh and about to be committed correctly.
+ *      Comparing against the pre-check working tree instead reports fresh in
+ *      exactly this case, while still catching genuine staleness (source changed,
+ *      `pnpm manifest` never run — the working-tree manifest then differs from a
+ *      fresh regeneration) and the original #44 unmerged-INDEX case (the working
+ *      tree there already holds a correct regeneration, regardless of what the
+ *      INDEX/HEAD say).
  *
  * Run by `pnpm manifest:check` and in CI. Exits non-zero with an actionable message.
  */
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { findRepoRoot, generateManifest, writeManifest } from "../packages/cli/lib/core.mjs";
@@ -49,29 +64,16 @@ if (run1 !== run2) {
   process.exit(1);
 }
 
-// (2) freshness — does regenerating produce content different from the
-// COMMITTED HEAD? Compared against `git show HEAD:<path>`, never the git
-// INDEX/`git diff` (no ref) — the verdict must be a pure function of
-// (HEAD, working tree), independent of git staging state (plain,
-// staged-different, or mid-merge-conflict on this file). `git show HEAD:`
-// always resolves to HEAD's committed blob regardless of index state, which
-// sidesteps the unmerged-path edge case entirely (#44).
-let headContent = null;
-try {
-  headContent = execFileSync("git", ["show", "HEAD:brand-ui.manifest.json"], {
-    cwd: root,
-    encoding: "utf8",
-  });
-} catch {
-  /* not a git checkout (e.g. tarball), or the file doesn't exist at HEAD yet
-     (first commit) — skip the freshness half, same as before */
-}
+// (2) freshness — does regenerating produce content different from what was
+// ALREADY on disk before this check ran (`before`, captured at the top of this
+// file, prior to any regeneration)? See the module doc comment for why this is
+// deliberately git-state-independent rather than compared against HEAD or the
+// INDEX.
 const regenerated = read();
-if (headContent !== null && headContent !== regenerated) {
-  // Deliberately NOT restoring the committed version here (the old
-  // `git checkout -- <path>` recovery step is REMOVED, not made safer): a
-  // read-only CI check has no business mutating the working tree, and a human
-  // running `pnpm agent-docs` locally to eyeball the diff would have their
+if (before !== regenerated) {
+  // Deliberately NOT restoring the prior on-disk version here: a read-only CI
+  // check has no business mutating the working tree, and a human running
+  // `pnpm agent-docs` locally to eyeball the diff would have their
   // just-computed regeneration silently discarded right when they need it.
   // The freshly regenerated (correct) content is already on disk above.
   console.error(
@@ -82,13 +84,6 @@ if (headContent !== null && headContent !== regenerated) {
       "  (The manifest is generated; never hand-edit it. The regenerated content is already\n" +
       "  on disk — review it with `git diff` and commit it, don't discard it.)",
   );
-  process.exit(1);
-}
-
-if (before !== regenerated && headContent === null) {
-  // Non-git context: we can't compare to HEAD, so fall back to "did
-  // regenerating change what was already on disk" as the best available signal.
-  console.error("✖ brand-ui.manifest.json changed after regeneration; run `pnpm manifest`.");
   process.exit(1);
 }
 console.log("✔ manifest is deterministic and fresh.");

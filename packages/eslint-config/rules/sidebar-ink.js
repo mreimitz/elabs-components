@@ -27,6 +27,21 @@
  * new violation is discovered elsewhere in the repo. See
  * .claude/rules/quality-gates.md "Enforcement over reminders" and
  * .claude/rules/styling-and-tokens.md "Surface separation".
+ *
+ * SLOT-CONTENT BLIND SPOT (PR #87 review finding, sidebar-02's `app-sidebar.tsx`
+ * line 136): the ancestor walk above only sees the AUTHORED JSX tree, but a
+ * "chrome slot" component like `<AppSidebar header={…} footer={…}>`
+ * (`packages/ui/src/components/app-sidebar/app-sidebar.tsx`) renders its
+ * `header`/`footer` prop wrapped in `<SidebarHeader>`/`<SidebarFooter>` at
+ * RUNTIME — but the JSX passed to that prop is very often authored as a
+ * SEPARATE local variable (`const header = (<div>…</div>); return
+ * <AppSidebar header={header} />`) that is never a JSX ANCESTOR of the ink
+ * class living inside it, so the walk above never sees it. `CHROME_SLOT_PROPS`
+ * + `resolveSlotJsx`/`walkForChromeInk` below is the single-file, no-type-checker
+ * answer: for each documented (component, prop) chrome slot, resolve the prop
+ * value's JSX — either inline (`footer={<TeamSwitcher .../>}`) or via a
+ * same-file `const`-bound identifier (`header={header}`) — and walk that
+ * subtree exactly as if it were nested inside chrome, since at runtime it is.
  */
 
 /** Canvas ink classes that must not appear inside sidebar chrome. */
@@ -79,6 +94,15 @@ const PORTAL_BOUNDARY = new Set([
 
 /** Class-utility calls whose string arguments are class lists (mirrors brand-tokens.js). */
 const CLASS_FNS = new Set(["cn", "clsx", "cx", "classNames", "twMerge", "tw", "cva"]);
+
+/**
+ * Documented chrome-slot props: a (component, prop) pair whose value the
+ * component renders wrapped in `<SidebarHeader>`/`<SidebarFooter>` (verified
+ * against `packages/ui/src/components/app-sidebar/app-sidebar.tsx`'s own
+ * `header`/`footer` doc comment and render). Mirrors PORTAL_BOUNDARY's style
+ * of naming known components rather than inferring render behavior generically.
+ */
+const CHROME_SLOT_PROPS = { AppSidebar: new Set(["header", "footer"]) };
 
 /**
  * Yield { value, node } for every static class STRING reachable from `node`
@@ -157,6 +181,106 @@ function isChromeElement(openingElement) {
   return ownClassNames(openingElement).some((cls) => cls.split(/\s+/).includes("bg-sidebar"));
 }
 
+/** Report every FORBIDDEN_INK class reachable from a className/class JSXAttribute node. */
+function reportForbiddenInk(context, attrNode) {
+  const v = attrNode.value;
+  if (!v) return;
+  const valueNode = v.type === "JSXExpressionContainer" ? v.expression : v;
+  for (const { value, node: strNode } of eachString(valueNode)) {
+    for (const cls of value.split(/\s+/)) {
+      if (!FORBIDDEN_INK.has(cls)) continue;
+      context.report({
+        node: strNode,
+        messageId: "canvasInkInChrome",
+        data: { cls, replacement: REPLACEMENT[cls] },
+      });
+    }
+  }
+}
+
+/** The className/class JSXAttribute on an opening element, or null. */
+function classNameAttr(openingElement) {
+  return (
+    openingElement.attributes.find(
+      (a) =>
+        a.type === "JSXAttribute" && (a.name?.name === "className" || a.name?.name === "class"),
+    ) ?? null
+  );
+}
+
+/**
+ * Recursively walk a JSX subtree that is KNOWN to render inside sidebar
+ * chrome (the resolved value of a CHROME_SLOT_PROPS prop), reporting
+ * FORBIDDEN_INK on every element's own className — a portaled element's own
+ * surface is still real chrome, but its CHILDREN are exempt (see the
+ * PORTAL_BOUNDARY doc comment above; the ancestor walk's "stop climbing"
+ * becomes "stop descending" here).
+ */
+function walkForChromeInk(context, node) {
+  if (!node) return;
+  switch (node.type) {
+    case "JSXElement": {
+      const attr = classNameAttr(node.openingElement);
+      if (attr) reportForbiddenInk(context, attr);
+      const name = tagName(node.openingElement);
+      if (name && PORTAL_BOUNDARY.has(name)) return; // own surface checked; content is portaled away.
+      for (const child of node.children) walkForChromeInk(context, child);
+      return;
+    }
+    case "JSXFragment":
+      for (const child of node.children) walkForChromeInk(context, child);
+      return;
+    case "JSXExpressionContainer":
+      walkForChromeInk(context, node.expression);
+      return;
+    case "LogicalExpression":
+      walkForChromeInk(context, node.left);
+      walkForChromeInk(context, node.right);
+      return;
+    case "ConditionalExpression":
+      walkForChromeInk(context, node.consequent);
+      walkForChromeInk(context, node.alternate);
+      return;
+    default:
+      return;
+  }
+}
+
+/**
+ * Resolve the JSX a chrome-slot attribute's value ultimately renders, without
+ * a type checker: inline JSX is used as-is; a bare Identifier is traced to
+ * the nearest enclosing block/Program's own `const NAME = <JSX>` declarator
+ * (the shape `const header = (…); <AppSidebar header={header} />` authors
+ * almost always use). Anything else (a call, a member expression, a prop
+ * spread) is deliberately left unresolved — this stays a narrow, same-file
+ * heuristic, not general data-flow analysis.
+ */
+function resolveSlotJsx(context, attrValue) {
+  if (!attrValue || attrValue.type !== "JSXExpressionContainer") return null;
+  const expr = attrValue.expression;
+  if (expr.type === "JSXElement" || expr.type === "JSXFragment") return expr;
+  if (expr.type !== "Identifier") return null;
+  const ancestors = context.sourceCode?.getAncestors?.(expr) ?? context.getAncestors();
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const a = ancestors[i];
+    if (a.type !== "BlockStatement" && a.type !== "Program") continue;
+    for (const stmt of a.body) {
+      if (stmt.type !== "VariableDeclaration") continue;
+      for (const decl of stmt.declarations) {
+        if (
+          decl.id.type === "Identifier" &&
+          decl.id.name === expr.name &&
+          decl.init &&
+          (decl.init.type === "JSXElement" || decl.init.type === "JSXFragment")
+        ) {
+          return decl.init;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 const rule = {
   meta: {
     type: "problem",
@@ -175,9 +299,20 @@ const rule = {
     return {
       JSXAttribute(node) {
         const name = node.name && node.name.name;
-        if (name !== "className" && name !== "class") return;
         const opening = node.parent;
         if (!opening || opening.type !== "JSXOpeningElement") return;
+
+        // Chrome-slot prop (e.g. `<AppSidebar header={header}>`): the value
+        // renders inside chrome at runtime even though it is never a JSX
+        // ancestor of its own content in the authored tree — see the
+        // SLOT-CONTENT BLIND SPOT doc comment above `CHROME_SLOT_PROPS`.
+        const ownerTag = tagName(opening);
+        if (name && ownerTag && CHROME_SLOT_PROPS[ownerTag]?.has(name)) {
+          const slotJsx = resolveSlotJsx(context, node.value);
+          if (slotJsx) walkForChromeInk(context, slotJsx);
+        }
+
+        if (name !== "className" && name !== "class") return;
 
         // Chrome if THIS element is chrome, or any ancestor JSXElement is.
         // NOTE: a JSXOpeningElement is a PROPERTY of its JSXElement
@@ -203,19 +338,7 @@ const rule = {
         }
         if (!chromeAncestor && !isChromeElement(opening)) return;
 
-        const v = node.value;
-        if (!v) return;
-        const valueNode = v.type === "JSXExpressionContainer" ? v.expression : v;
-        for (const { value, node: strNode } of eachString(valueNode)) {
-          for (const cls of value.split(/\s+/)) {
-            if (!FORBIDDEN_INK.has(cls)) continue;
-            context.report({
-              node: strNode,
-              messageId: "canvasInkInChrome",
-              data: { cls, replacement: REPLACEMENT[cls] },
-            });
-          }
-        }
+        reportForbiddenInk(context, node);
       },
     };
   },
