@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-ui`'s `StatePanel` `kind="error"` rail
+  (`border-s-4`) was tinted with the neutral `border-border-strong` token
+  instead of a destructive-family colour, reading as a 4px grey bar beside
+  three red hairlines rather than a deliberate accent. Now uses
+  `border-s-destructive` (the FILL rung, still ≥3:1 against `--card`/
+  `--background` per WCAG 1.4.11). `kind="empty"`/`kind="loading"` are
+  unchanged. (#71)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded

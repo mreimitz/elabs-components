@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T00:59:12.404Z",
+  "generatedAt": "2026-08-31T07:27:17.202Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20219,7 +20219,7 @@
               "name": "icon",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional icon/illustration shown above the title."
+              "description": "Optional icon shown above the title, clamped to a fixed 40×40 (this wrapper only ever forwards `icon` to `StatePanel`, never `illustration` — for a larger, unclamped illustration use `StatePanel kind=\"empty\" illustration={...}` directly)."
             },
             {
               "name": "actions",

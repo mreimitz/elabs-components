@@ -15,11 +15,22 @@ export const statePanelVariants = cva(
     variants: {
       kind: {
         empty: "border border-dashed bg-surface",
-        // error: primary cue is color (destructive bg/border); structural cue
-        // (border-s-4 + border-border-strong top strip) survives monochrome /
-        // a monochrome palette so the panel is distinguishable from empty/loading even
-        // without hue. border-border-strong satisfies WCAG 1.4.11 non-text contrast.
-        error: "border border-destructive/30 bg-destructive/5 border-s-4 border-s-border-strong",
+        // error: the non-color, monochrome-survivable cue is the rail's WIDTH
+        // (border-s-4, 4px, vs the 1px hairline on the other three edges) —
+        // not its hue (per styling-and-tokens.md's border/border-strong
+        // decision test: "if I deleted this line, could a sighted user still
+        // tell the two regions apart?" here it's the thickness that answers
+        // yes). So the rail's COLOR should stay in the destructive family
+        // like the rest of the panel, not fall back to the neutral
+        // `border-strong` rung — a 4px grey rail beside three red hairlines
+        // read as a CSS-specificity bug, not a deliberate accent (#71).
+        // `border-s-destructive` is the FILL rung (styling-and-tokens.md
+        // "which status rung a graphical MARK reaches for") — guaranteed
+        // >=3:1 against --card/--background in every theme, so it still
+        // satisfies the WCAG 1.4.11 non-text-contrast guarantee the old
+        // `border-border-strong` comment claimed. The icon (:87-91) and the
+        // eyebrow (:148-152 below) are the third and fourth non-color cues.
+        error: "border border-destructive/30 bg-destructive/5 border-s-4 border-s-destructive",
         loading: "",
       },
     },

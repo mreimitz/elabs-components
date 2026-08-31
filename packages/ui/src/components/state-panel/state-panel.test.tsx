@@ -46,6 +46,27 @@ describe("StatePanel", () => {
     expect(iconWrapper?.className ?? "").not.toContain("text-destructive-text");
   });
 
+  it("error rail carries the width cue (border-s-4) AND a destructive-family colour, not the neutral border-strong grey (#71)", () => {
+    // The rail's WIDTH (4px vs 1px) is the monochrome-survivable structural
+    // cue (per styling-and-tokens.md's border/border-strong decision test);
+    // its HUE should match the rest of the destructive family, not fall back
+    // to the neutral `border-strong` rung — that reads as a CSS-specificity
+    // bug, a 4px grey rail beside three red hairlines, not a deliberate
+    // accent (#71).
+    const { container } = render(<StatePanel kind="error" />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/\bborder-s-4\b/);
+    expect(root.className).toMatch(/\bborder-s-destructive\b/);
+    expect(root.className).not.toMatch(/\bborder-s-border-strong\b/);
+  });
+
+  it("empty kind's rail carries neither the error width nor its destructive colour", () => {
+    const { container } = render(<StatePanel kind="empty" />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).not.toMatch(/\bborder-s-4\b/);
+    expect(root.className).not.toMatch(/\bborder-s-destructive\b/);
+  });
+
   it("renders error kind with custom title", () => {
     render(<StatePanel kind="error" title="Custom error" description="Custom description" />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
