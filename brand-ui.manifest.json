@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T07:26:50.368Z",
+  "generatedAt": "2026-08-31T07:48:47.970Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13720,6 +13720,7 @@
       "otherExports": [
         "createSelectionColumn",
         "downloadCsv",
+        "exported",
         "toCsv",
         "typeColumnPickerProps",
         "typeDataTableProps",

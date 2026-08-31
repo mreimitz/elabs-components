@@ -963,6 +963,17 @@ export const WithColumnResizingRealDoubleClick: Story = {
  * play function samples it right at the sort button's own trailing edge (the
  * side nearest the handle) and asserts it resolves inside the button, then
  * performs the click there and asserts the sort actually toggled.
+ *
+ * Sampled on TWO columns, not one, because the collision is alignment-
+ * dependent: a `start`-aligned header's button sits at the LEADING edge,
+ * nowhere near the handle, so it can't exercise the collision at all — round
+ * 1 review (independent real-Chromium validation) caught exactly this: the
+ * original version of this story sampled only "Service" (start-aligned,
+ * button ends 293px clear of the handle) and passed trivially, while
+ * "Latency (ms)" — numeric, so `meta.numeric` end-aligns it (#69) — pushes
+ * the SAME button's trailing edge 12px UNDER the handle's 24px hit box. The
+ * "Service" case is kept because a real regression here (e.g. the handle
+ * growing) should still be caught on the unproblematic column too.
  */
 export const WithColumnResizingSortToggleHitTest: Story = {
   parameters: {
@@ -971,30 +982,49 @@ export const WithColumnResizingSortToggleHitTest: Story = {
         story:
           "The header's sort-toggle button stays hit-testable at its own " +
           "coordinates when the column is ALSO resizable, i.e. when the " +
-          "24px resize handle is present on the same header cell.",
+          "24px resize handle is present on the same header cell — for both " +
+          "a start-aligned header and an end-aligned numeric one.",
       },
     },
   },
   render: () => <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />,
   play: async ({ canvas, userEvent }) => {
-    const sortButton = canvas.getByRole("button", { name: "Sort by Service, not sorted" });
-    const rect = sortButton.getBoundingClientRect();
-    // A real layout pass must have happened before this means anything.
-    await expect(rect.width).toBeGreaterThan(0);
+    async function assertSortButtonHitTestable(
+      accessibleName: string,
+      columnHeaderIndex: number,
+      // TanStack defaults a NUMBER-typed column to descending-first (largest
+      // first reads more useful than smallest-first for e.g. latency) — this
+      // is TanStack's own default heuristic, not something this story
+      // asserts against; the string-typed "Service" column defaults
+      // ascending-first as usual.
+      firstClickSortDirection: "ascending" | "descending",
+    ) {
+      const sortButton = canvas.getByRole("button", { name: accessibleName });
+      const rect = sortButton.getBoundingClientRect();
+      // A real layout pass must have happened before this means anything.
+      await expect(rect.width).toBeGreaterThan(0);
 
-    // The browser's REAL hit-test, sampled 2px inside the button's own
-    // trailing edge — the side nearest the resize handle — so the sample
-    // point can't land outside the button from sub-pixel rounding.
-    const x = rect.right - 2;
-    const y = rect.top + rect.height / 2;
-    const hit = document.elementFromPoint(x, y);
-    await expect(hit).not.toBeNull();
-    await expect(sortButton.contains(hit)).toBe(true);
+      // The browser's REAL hit-test, sampled 2px inside the button's own
+      // trailing edge — the side nearest the resize handle — so the sample
+      // point can't land outside the button from sub-pixel rounding.
+      const x = rect.right - 2;
+      const y = rect.top + rect.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      await expect(hit).not.toBeNull();
+      await expect(sortButton.contains(hit)).toBe(true);
 
-    const serviceHeader = canvas.getAllByRole("columnheader")[0]!;
-    await expect(serviceHeader).toHaveAttribute("aria-sort", "none");
-    await userEvent.click(hit!);
-    await expect(serviceHeader).toHaveAttribute("aria-sort", "ascending");
+      const columnHeader = canvas.getAllByRole("columnheader")[columnHeaderIndex]!;
+      await expect(columnHeader).toHaveAttribute("aria-sort", "none");
+      await userEvent.click(hit!);
+      await expect(columnHeader).toHaveAttribute("aria-sort", firstClickSortDirection);
+    }
+
+    // Start-aligned — the button sits far from the handle; kept as the
+    // "nothing regressed on the easy case" control.
+    await assertSortButtonHitTestable("Sort by Service, not sorted", 0, "ascending");
+    // End-aligned numeric — the actual collision surface (#69's `meta.numeric`
+    // pushes this button's trailing edge under the resize handle).
+    await assertSortButtonHitTestable("Sort by Latency (ms), not sorted", 2, "descending");
   },
 };
 

@@ -72,8 +72,27 @@ declare module "@tanstack/react-table" {
  * `DataTableColumnMeta` (structurally satisfied by TanStack's augmented
  * `ColumnMeta<TData, TValue>`) so the helper doesn't need the table's generic
  * row type.
+ *
+ * `reserveForResizeHandle` (header-only — round-1 fix, #82 follow-up): when a
+ * column is BOTH resizable and aligned away from `start`, its content shares
+ * the header cell's trailing edge with the resize handle's absolutely-
+ * positioned 24px hit box. An absolutely-positioned element ALWAYS paints
+ * above in-flow content in the same stacking context regardless of DOM order
+ * (CSS painting order — positioned descendants paint after non-positioned
+ * in-flow ones), so the handle wins every hit-test there no matter which
+ * element comes first in markup — real-Chromium `elementFromPoint` measured a
+ * 12px overlap on an end-aligned sortable+resizable column. Shrinking the
+ * handle is not the fix (`#51`'s 24px hit box is itself a locked a11y fix);
+ * instead this reserves a trailing gutter at least as wide as the handle so
+ * end/center-aligned content never renders under it. Literal px, not the
+ * `pe-*` spacing-scale utility — same reasoning as the handle's own
+ * `w-[min(24px,50%)]`: `--spacing` rescales under `data-density="compact"`,
+ * and a scaled gutter would reopen the exact gap it exists to close.
  */
-function numericColumnClasses(meta: DataTableColumnMeta | undefined) {
+function numericColumnClasses(
+  meta: DataTableColumnMeta | undefined,
+  opts?: { reserveForResizeHandle?: boolean },
+) {
   if (!meta?.numeric && !meta?.align) return undefined;
   const alignClass =
     meta?.align === "start"
@@ -85,7 +104,9 @@ function numericColumnClasses(meta: DataTableColumnMeta | undefined) {
           : meta?.numeric
             ? "text-end"
             : undefined;
-  return cn(alignClass, meta?.numeric && "tabular-nums");
+  const needsHandleClearance =
+    opts?.reserveForResizeHandle && (alignClass === "text-end" || alignClass === "text-center");
+  return cn(alignClass, meta?.numeric && "tabular-nums", needsHandleClearance && "pe-[36px]");
 }
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -1329,11 +1350,21 @@ function DataTableInner<TData, TValue>(
                   data-pinned={geometry?.pinned ?? undefined}
                   style={geometry?.style ?? resizeStyle}
                   className={cn(
-                    "h-10 px-3 text-start align-middle font-medium text-muted-foreground",
+                    // `ps-3`/`pe-3` (not the `px-3` shorthand): tailwind-merge
+                    // does not treat the physical `px-*` group as conflicting
+                    // with the logical `pe-*` group, so a later `pe-[36px]`
+                    // override below would NOT reliably win over a `px-3`
+                    // base — verified empirically (round-1 fix, #82
+                    // follow-up). Splitting into `ps-3 pe-3` up front (byte-
+                    // identical 12px each side) is what lets the resize-
+                    // handle clearance override cleanly.
+                    "h-10 ps-3 pe-3 text-start align-middle font-medium text-muted-foreground",
                     // #69: a numeric column's `meta` overrides the default
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
-                    numericColumnClasses(header.column.columnDef.meta),
+                    numericColumnClasses(header.column.columnDef.meta, {
+                      reserveForResizeHandle: canResize,
+                    }),
                     // `sticky`/pinned already establishes a positioning context
                     // for the resize handle's `absolute`; an unpinned resizable
                     // header needs its own.
