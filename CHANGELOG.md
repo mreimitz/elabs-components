@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-ui`'s `sidebar-04` (mail shell heading and
+  "No results" row) and `sidebar-05` (nav sub-item description) blocks used
+  canvas ink (`text-foreground` / `text-muted-foreground`) on the
+  `bg-sidebar` chrome ground instead of the chrome-tuned
+  `text-sidebar-foreground` / `text-sidebar-muted-foreground` — in the
+  `light` theme the mail heading measured 1.00:1 (`--foreground` and
+  `--sidebar` share the same literal there), effectively invisible. Both
+  swapped to the sidebar-tuned tokens, which clear 4.5:1 against
+  `--sidebar`. (#66, #50)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded
