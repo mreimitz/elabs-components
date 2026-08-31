@@ -185,4 +185,36 @@ describe("FieldRow", () => {
     for (const id of frDescribedBy) expect(document.getElementById(id)).not.toBeNull();
     expect(frInput).toHaveAttribute("aria-invalid", "true");
   });
+
+  // #26 — the runtime-agnostic contract: FieldRow must wire aria-invalid /
+  // aria-describedby / role="alert" from PLAIN external state (any form
+  // runtime — a bespoke reducer, Formik's `meta.error`, TanStack Form's
+  // `field.state.meta.errors`, …), with NO react-hook-form FormProvider
+  // mounted anywhere in the tree. This locks the story's documented example:
+  // if FieldRow ever grew an accidental RHF coupling (e.g. reading
+  // useFormContext internally), this render would throw before any
+  // assertion below ran.
+  it("wires aria-invalid + aria-describedby from a field driven entirely by external state, with no form-runtime provider mounted", () => {
+    function ExternallyControlledField({ error }: { error?: string }) {
+      // Stands in for "any form runtime": FieldRow only ever reads the
+      // label/description/error props it is handed, whatever produced them.
+      return (
+        <FieldRow label="Email" error={error}>
+          <Input value="" onChange={() => {}} />
+        </FieldRow>
+      );
+    }
+
+    const { rerender } = render(<ExternallyControlledField />);
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(input).not.toHaveAttribute("aria-describedby");
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    rerender(<ExternallyControlledField error="Enter a valid email address." />);
+    const errorNode = screen.getByRole("alert");
+    expect(errorNode).toHaveTextContent("Enter a valid email address.");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input.getAttribute("aria-describedby")).toBe(errorNode.id);
+  });
 });
