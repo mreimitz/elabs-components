@@ -38,7 +38,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-31 exported components — including `AppIcon`, `BookmarkIcon`, `BrandLogo`, `ChartAreaIcon`, `ChartBarIcon`.
+32 exported components — including `AppIcon`, `BookmarkIcon`, `BrandLogo`, `ChartAreaIcon`, `ChartBarIcon`.
 
 Don't guess the API — ask the CLI:
 

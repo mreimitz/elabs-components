@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Added: `ServiceLogo` (`@elabs-ai/components-icons`) — a consistently-sized slot for a
+  third-party service's own mark (an SSO provider, a chat platform, a customer's
+  brand), with an accessible monogram fallback for anything not yet registered.
+  brand-ui never vendors a trademark-bearing asset itself — the package ships
+  the machinery (`registerServiceLogos`, a themable `render`/`src` contract, a
+  `variant="mono"` seam) and the consuming app supplies the marks it is
+  licensed to display, mirroring `@elabs-ai/components-ai`'s `ModelSelectorLogo`
+  without any remote fetch (see `docs/CSP-AND-NETWORK.md`). A registered mark's
+  own raw brand colour is a documented, narrow exception to the semantic-tokens
+  rule (`docs/TOKEN_GUIDELINES.md`), carved out of `brand-ui audit`'s raw-color
+  rules by the `ServiceLogo` / `data-service-logo` line marker
+  (`packages/cli/lib/audit.mjs`). (#25)
 - Fixed: `apps/docs/public/brand-favicon.svg` carried the full `BrandLogo` mark
   byte-for-byte (45° hatch, two stray strokes, two register dots) at the 16px
   a browser tab actually renders it at, where the hatch fuses into a

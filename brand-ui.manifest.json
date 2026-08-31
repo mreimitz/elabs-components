@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T08:59:52.559Z",
+  "generatedAt": "2026-08-31T09:49:03.453Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17222,6 +17222,11 @@
           "module": "packages/icons/src/sample-icons/search.tsx"
         },
         {
+          "name": "ServiceLogo",
+          "kind": "value",
+          "module": "packages/icons/src/service-logo.tsx"
+        },
+        {
           "name": "SheetIcon",
           "kind": "value",
           "module": "packages/icons/src/sample-icons/sheet.tsx"
@@ -17258,10 +17263,16 @@
         "AppIconProps",
         "BrandLogoProps",
         "BrandLogoVariant",
-        "IconProps"
+        "IconProps",
+        "ServiceLogoDefinition",
+        "ServiceLogoProps",
+        "ServiceLogoRegistry",
+        "ServiceLogoRender"
       ],
       "otherExports": [
-        "createIcon"
+        "clearServiceLogos",
+        "createIcon",
+        "registerServiceLogos"
       ],
       "props": {
         "AppIcon": {
@@ -17342,6 +17353,49 @@
               "optional": true,
               "type": "string",
               "description": "Accessible name. When provided the icon is exposed to AT as an image; when omitted the icon is treated as decorative (aria-hidden)."
+            }
+          ]
+        },
+        "ServiceLogo": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLSpanElement>, \"color\">"
+          ],
+          "props": [
+            {
+              "name": "name",
+              "optional": false,
+              "type": "string",
+              "description": "The service's registry key, e.g. \"slack\", \"github\". An unregistered name renders a monogram fallback instead of broken/blank output."
+            },
+            {
+              "name": "size",
+              "optional": true,
+              "type": "number | string",
+              "description": "Pixel size for both width & height. Defaults to 24 (mirrors `Icon`)."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name override. Defaults to the registry entry's own `label`, else a title-cased `name`. Ignored when `decorative` is set."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "\"brand\" | \"mono\"",
+              "description": "\"brand\" (default) renders the mark's own colours. \"mono\" asks a registered `render` mark to draw via `currentColor` (best-effort — it's the mark author's choice) and desaturates a `src` image; the fallback tile is already mono regardless of this prop."
+            },
+            {
+              "name": "logos",
+              "optional": true,
+              "type": "ServiceLogoRegistry",
+              "description": "Scope marks to this instance only, merged over (and overriding) the global registry — for tests or a locally-scoped set."
+            },
+            {
+              "name": "decorative",
+              "optional": true,
+              "type": "boolean",
+              "description": "Set true when adjacent visible text already names the service, so the mark is hidden from assistive tech instead of announcing a duplicate name. Defaults to false — the mark carries its own accessible name."
             }
           ]
         }
