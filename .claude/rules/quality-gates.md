@@ -130,14 +130,20 @@ wrote. They apply to all work, not just components. Before reporting completion:
 
 - **Only call something "validated" if its primary path was executed.** If you
   built it but never ran it, say so — e.g. "extractor validated; reviewer + filing
-  path unexercised" — and put that in the **headline, not a footnote.**
-- **Never headline "done / verified" when the PRIMARY validation surface wasn't
+  path unexercised."
+- **Never claim "done / verified" when the PRIMARY validation surface wasn't
   exercised.** For a visual/theme change that surface is a real app screen (see
-  Theme-safe above), not a self-authored demo. Footers don't cancel a "verified"
-  headline — the honest headline is "candidate — not yet validated on a real
-  screen." The `Stop` hook `gate-completion-claims.sh` nudges on bare claims.
-- **Lead with what you did NOT verify.** The caveat is the most important
-  sentence; never bury it under "all green."
+  Theme-safe above), not a self-authored demo. Don't let a footnote cancel a
+  "verified" claim — if the surface wasn't exercised, the honest claim itself is
+  "candidate — not yet validated on a real screen." The `Stop` hook
+  `gate-completion-claims.sh` nudges on bare claims.
+- **State what you did NOT verify in the `Problems` section**, in one plain line
+  (the answer contract in `~/.claude/CLAUDE.md`). It is never omitted — the
+  disclosure is mandatory — but it is not the opening either: a report that
+  starts with an inventory of self-doubt buries the thing the reader actually
+  needs. Placement is the only part of this that changed (2026-08-31); the
+  duty to disclose is unchanged, and `gate-completion-claims.sh` accepts the
+  marker anywhere in the message, so a `Problems` line satisfies it.
 - **Verify every file path / link you cite resolves** before putting it in a
   summary. A broken self-link undercuts the whole report.
 - **A11y / visual claims must cite the REAL rendered surface — never a mock or a
