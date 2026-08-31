@@ -46,6 +46,28 @@ const groupSpec: FormSpec = {
   ],
 };
 
+// A controlling enum field plus a target field that's only visible (and only
+// validated) once the controlling field equals "oauth" — issue #22's
+// `visibleWhen: { field, equals }` conditional-visibility ask.
+const conditionalSpec: FormSpec = {
+  formName: "connector_auth",
+  fields: [
+    {
+      type: "enum",
+      name: "authMethod",
+      label: "Auth method",
+      options: ["oauth", "apikey"],
+    },
+    {
+      type: "string",
+      name: "clientSecret",
+      label: "Client secret",
+      required: true,
+      visibleWhen: { field: "authMethod", equals: "oauth" },
+    },
+  ],
+};
+
 describe("SchemaForm — rendering", () => {
   it("renders the title, fields, and a submit button", () => {
     render(<SchemaForm spec={simpleSpec} />);
@@ -211,6 +233,48 @@ describe("SchemaForm — validation (submit) + focus-first-invalid", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       formName: "connector",
       values: { auth: "oauth", clientId: "abc123" },
+    });
+  });
+
+  it("hides a `visibleWhen` field while its controlling value is unset, and never blocks submit on it while hidden", async () => {
+    const onSubmit = vi.fn();
+    render(<SchemaForm spec={conditionalSpec} values={{}} onSubmit={onSubmit} />);
+    // Unset controlling value → the target field isn't rendered at all.
+    expect(screen.queryByLabelText(/Client secret/)).not.toBeInTheDocument();
+
+    // Submitting must not report a validation error for the hidden required
+    // field — it must not even reach `validateForm`/the focus walk.
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      formName: "connector_auth",
+      values: expect.objectContaining({ authMethod: undefined }),
+    });
+  });
+
+  it("reveals a `visibleWhen` field once its controlling field matches, and blocks submit on it once visible+required", async () => {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <SchemaForm spec={conditionalSpec} values={{ authMethod: "apikey" }} onSubmit={onSubmit} />,
+    );
+    // Still hidden for the OTHER enum option ("apikey" ≠ "oauth").
+    expect(screen.queryByLabelText(/Client secret/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      formName: "connector_auth",
+      values: expect.objectContaining({ authMethod: "apikey" }),
+    });
+
+    // Switching the controlling field to "oauth" reveals it — and now it DOES
+    // block submit while empty (it's `required`).
+    onSubmit.mockClear();
+    rerender(
+      <SchemaForm spec={conditionalSpec} values={{ authMethod: "oauth" }} onSubmit={onSubmit} />,
+    );
+    expect(screen.getByLabelText(/Client secret/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Client secret/)).toHaveFocus();
     });
   });
 

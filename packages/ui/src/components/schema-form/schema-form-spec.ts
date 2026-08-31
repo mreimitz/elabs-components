@@ -75,6 +75,22 @@ const baseField = {
   description: z.string().optional(),
   /** Whether a value is required before the form can submit. */
   required: z.boolean().optional(),
+  /**
+   * Conditional visibility: render (and validate/submit) this field only
+   * when another field's current value equals `equals` — e.g. show a
+   * "client secret" field only once `authMethod` equals `"oauth"`. Evaluated
+   * by `isFieldVisible` against the form's current values; a hidden field is
+   * excluded from rendering, validation and the first-invalid-focus walk, so
+   * a hidden `required` field never blocks submit.
+   */
+  visibleWhen: z
+    .object({
+      /** Name of the controlling field. */
+      field: z.string(),
+      /** The controlling field's value that makes this field visible. */
+      equals: z.union([z.string(), z.number(), z.boolean()]),
+    })
+    .optional(),
 };
 
 /** A single-line or multi-line text field. */
@@ -221,6 +237,8 @@ export interface GroupFieldSpec {
   label?: string;
   description?: string;
   required?: boolean;
+  /** See `visibleWhen` on `baseField` — conditional visibility for the whole group (and its subtree). */
+  visibleWhen?: { field: string; equals: string | number | boolean };
   variant: "tabs" | "advanced";
   groups: GroupItemSpec[];
   /** Default active branch key. Only meaningful for `variant: "tabs"`. @default groups[0].key */
@@ -420,14 +438,29 @@ export function findFieldByName(fields: FieldSpec[], name: string): FieldSpec | 
 }
 
 /**
+ * Does `field` currently satisfy its own `visibleWhen` (if it has one)? A
+ * field with no `visibleWhen` is always visible. Shared by the render loops
+ * (schema-form.tsx) and `collectValidatableFields` below, so what's shown and
+ * what's validated/submitted never disagree.
+ */
+export function isFieldVisible(field: FieldSpec, values: FormValues): boolean {
+  if (!field.visibleWhen) return true;
+  return values[field.visibleWhen.field] === field.visibleWhen.equals;
+}
+
+/**
  * The fields that currently participate in validation/submission: every
  * scalar field, plus — for a `group` field — either the ACTIVE branch's
  * fields (`variant: "tabs"`, keyed by `values[field.name]`) or ALL branches'
- * fields (`variant: "advanced"`, nothing is mutually exclusive there).
+ * fields (`variant: "advanced"`, nothing is mutually exclusive there). A
+ * field (or, for a hidden `group`, its whole subtree) whose `visibleWhen`
+ * does not currently hold is excluded entirely — a hidden `required` field
+ * must never block submit.
  */
 export function collectValidatableFields(fields: FieldSpec[], values: FormValues): FieldSpec[] {
   const result: FieldSpec[] = [];
   for (const field of fields) {
+    if (!isFieldVisible(field, values)) continue;
     if (field.type !== "group") {
       result.push(field);
       continue;

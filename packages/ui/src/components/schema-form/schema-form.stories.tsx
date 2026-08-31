@@ -169,6 +169,62 @@ export const Controlled: Story = {
 };
 
 /**
+ * Conditional visibility (`visibleWhen: { field, equals }`, issue #22) — the
+ * "client secret" field only renders (and only participates in validation)
+ * once "Auth method" is switched to OAuth; while hidden it can never block
+ * submit, even though it's `required`.
+ */
+export const ConditionalField: Story = {
+  args: {
+    spec: {
+      formName: "connector_auth",
+      title: "Authentication",
+      fields: [
+        {
+          type: "enum",
+          name: "authMethod",
+          label: "Auth method",
+          default: "apikey",
+          options: [
+            { const: "apikey", title: "API key" },
+            { const: "oauth", title: "OAuth" },
+          ],
+        },
+        {
+          type: "string",
+          name: "clientSecret",
+          label: "Client secret",
+          required: true,
+          visibleWhen: { field: "authMethod", equals: "oauth" },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    // Hidden while the default "API key" method is active.
+    expect(canvas.queryByLabelText(/Client secret/)).not.toBeInTheDocument();
+
+    // Switch to OAuth through the real Select control.
+    await userEvent.click(canvas.getByRole("combobox", { name: /Auth method/ }));
+    await userEvent.click(await body.findByRole("option", { name: "OAuth" }));
+
+    // Now it renders...
+    await waitFor(() => {
+      expect(canvas.getByLabelText(/Client secret/)).toBeInTheDocument();
+    });
+
+    // ...and, being required, blocks submit while empty.
+    await userEvent.click(canvas.getByRole("button", { name: "Submit" }));
+    await waitFor(() => {
+      expect(canvas.getByLabelText(/Client secret/)).toHaveFocus();
+    });
+  },
+};
+
+/**
  * Validation — submitting with missing required fields and a bad email-shaped
  * URL surfaces inline errors and moves focus to the first invalid control.
  */

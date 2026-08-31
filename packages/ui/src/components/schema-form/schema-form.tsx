@@ -81,6 +81,7 @@ import {
   fieldLabel,
   findFieldByName,
   initialFormValues,
+  isFieldVisible,
   normalizeFormSpec,
   optionLabel,
   optionValue,
@@ -725,6 +726,7 @@ function GroupTabsControl({
   describedBy,
   setValue,
 }: FieldControlProps & { field: GroupFieldSpec }) {
+  const { values } = useSchemaFormContext();
   const active =
     (typeof value === "string" ? value : undefined) ?? field.default ?? field.groups[0]?.key;
   return (
@@ -747,9 +749,11 @@ function GroupTabsControl({
           {group.description && (
             <p className="text-caption text-muted-foreground">{group.description}</p>
           )}
-          {group.fields.map((child) => (
-            <SchemaFormField key={child.name} name={child.name} />
-          ))}
+          {group.fields
+            .filter((child) => isFieldVisible(child, values))
+            .map((child) => (
+              <SchemaFormField key={child.name} name={child.name} />
+            ))}
         </TabsContent>
       ))}
     </Tabs>
@@ -780,7 +784,7 @@ function branchHasError(fields: FieldSpec[], errors: Record<string, string | nul
  * disclosure never re-imposes itself over a deliberate user action).
  */
 function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
-  const { errors } = useSchemaFormContext();
+  const { errors, values } = useSchemaFormContext();
   const [manualOpen, setManualOpen] = useState<boolean | undefined>(undefined);
   const open = manualOpen ?? branchHasError(group.fields, errors);
   return (
@@ -790,9 +794,11 @@ function AdvancedGroupBranch({ group }: { group: GroupItemSpec }) {
       open={open}
       onOpenChange={setManualOpen}
     >
-      {group.fields.map((child) => (
-        <SchemaFormField key={child.name} name={child.name} />
-      ))}
+      {group.fields
+        .filter((child) => isFieldVisible(child, values))
+        .map((child) => (
+          <SchemaFormField key={child.name} name={child.name} />
+        ))}
     </AdvancedGroup>
   );
 }
@@ -927,7 +933,7 @@ export type SchemaFormFieldsProps = HTMLAttributes<HTMLDivElement>;
 /** Renders every top-level field in the spec, in order. A skeleton while `loading` with no fields. */
 export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps>(
   function SchemaFormFields({ className, ...props }, ref) {
-    const { spec, loading } = useSchemaFormContext();
+    const { spec, loading, values } = useSchemaFormContext();
 
     if (spec.fields.length === 0 && loading) {
       return (
@@ -957,9 +963,11 @@ export const SchemaFormFields = forwardRef<HTMLDivElement, SchemaFormFieldsProps
         className={cn("flex flex-col gap-4", className)}
         {...props}
       >
-        {spec.fields.map((field) => (
-          <SchemaFormField key={field.name} name={field.name} />
-        ))}
+        {spec.fields
+          .filter((field) => isFieldVisible(field, values))
+          .map((field) => (
+            <SchemaFormField key={field.name} name={field.name} />
+          ))}
       </div>
     );
   },
