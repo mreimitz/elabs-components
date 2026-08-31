@@ -108,6 +108,25 @@ if printf '%s\n' "$staged" | grep -Eq '^packages/[^/]+/src/|^packages/tokens/src
   fi
 fi
 
+# --- 2b) auto-run attributions:check when a staged package.json moves a dependency
+#         between fields (#42) ---
+# A dependency moving between `dependencies`/`devDependencies`/`peerDependencies`/
+# `optionalDependencies` changes whether it actually ships to consumers — exactly
+# the fact `scripts/attributions.sources.json`'s `usedBy` records. When that's
+# detected, `check-package-json-dep-moves.mjs --staged` doesn't just print a
+# reminder — it AUTOMATICALLY spawns `gen-attributions.mjs --check` itself and
+# surfaces its real result, so nobody has to remember to run it by hand. Wiring
+# is still best-effort, like step 2: `pnpm attributions:check` is already a
+# blocking CI gate, so a failure here never blocks the commit — it surfaces the
+# same failure CI would, just earlier and with more context (which dependency,
+# which fields). See scripts/check-package-json-dep-moves.mjs and
+# @.claude/rules/attribution.md.
+if printf '%s\n' "$staged" | grep -Eq '(^|/)package\.json$'; then
+  if command -v node >/dev/null 2>&1; then
+    node scripts/check-package-json-dep-moves.mjs --staged || true
+  fi
+fi
+
 # --- 3) keep the derived registry manifest fresh and installable -------------
 # `registry/registry.json` is GENERATED from `registry/registry.items.json` +
 # the block source (scripts/gen-registry.mjs) — it used to be hand-written, and

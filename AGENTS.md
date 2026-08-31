@@ -187,6 +187,8 @@ pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset ar
 pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
 pnpm attribution:provenance:check       # if you borrowed from another project — shipped source may not say "adapted/vendored/ported from X" unless X is credited in scripts/attributions.sources.json (see .claude/rules/attribution.md)
 pnpm attribution:provenance:check:test  # self-test for the attribution-provenance gate
+pnpm dep-field-move:check       # if a staged package.json moves a dependency between dependencies/devDependencies/peerDependencies/optionalDependencies — automatically runs attributions:check itself (best-effort wiring in .githooks/pre-commit; `pnpm attributions:check` in CI is still the blocking backstop) (#42)
+pnpm dep-field-move:check:test  # self-test for the dependency-field-move detector
 pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerouslySetInnerHTML) in our source or a direct dep, and the Radix scroll-area/select patches still applied — a dropped patch renders a BLANK WINDOW for strict-CSP consumers with a green test suite
 pnpm csp-sinks:check:test       # self-test for the Trusted-Types sink gate
 pnpm sanitizer-passthrough:check       # no @elabs-ai/components-* wrapper re-exposes a safe renderer's sanitiser-override prop (Streamdown's rehypePlugins) without closing both the type-level Omit and the runtime strip (#36)
@@ -198,6 +200,7 @@ pnpm issue-citations:check:test # self-test for the issue-citations gate
 pnpm playbooks:check            # if docs/playbooks/ touched — every playbook has front matter and reached the manifest, the agent-context file and `brand-ui search` (run `pnpm agent-docs`) (#66/#84)
 pnpm playbooks:check:test       # self-test for the playbook-registration gate
 pnpm cadence:check:test         # self-test for the Stop session-cadence nudge (.claude/hooks/session-cadence-nudge.sh, #67)
+pnpm consultation-claims:check:test  # self-test for the Stop consultation-claims nudge (.claude/hooks/gate-consultation-claims.sh) — a Write/Edit claiming a named-agent consultation with no matching prior Task dispatch in the transcript is caught (#42)
 pnpm format:check               # or fix with `pnpm format`
 pnpm ai:types-only              # if @elabs-ai/components-ai touched — the AI SDK (`ai`/`@ai-sdk/*`) is types-only, never runtime (D6 / ADR-0008)
 pnpm lucide:check               # if any `lucide-react` import touched — one Lucide version across the workspace
