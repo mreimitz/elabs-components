@@ -118,6 +118,56 @@ export function tarballName(pkgName, version) {
 export const APP_NPMRC = "node-linker=isolated\nstrict-peer-dependencies=true\n";
 
 /**
+ * A real peer conflict prints one of these; the pnpm/pnpm#9449 false failure
+ * (see installApp below) never does.
+ */
+const PEER_CONFLICT_SIGNAL = /ERR_PNPM_PEER_DEP_ISSUES|unmet peer|ERESOLVE/i;
+
+/**
+ * `pnpm install --ignore-workspace --no-frozen-lockfile` for the throwaway app,
+ * worked around for a real, confirmed upstream bug (pnpm/pnpm#9449, "area:
+ * peers", fixed in pnpm 10.11.0 -- this repo pins 9.15.4 via `packageManager`,
+ * so upgrading isn't a fix available here): on a COLD resolve (no lockfile yet),
+ * `strict-peer-dependencies=true` combined with a `pnpm.peerDependencyRules`
+ * block that successfully ignores every peer issue can still make pnpm exit 1
+ * -- with NO diagnostic text on stdout or stderr, because there is no error to
+ * report -- while a second install against the lockfile the first attempt just
+ * wrote (which skips re-resolution entirely) exits 0. Confirmed by hand against
+ * this exact fixture (repeatable, `err.stdout`/`err.stderr` both empty on the
+ * false failure) and against pnpm's own bug report/fix PR (#9449 / #9505).
+ *
+ * The retry below is gated STRICTLY on "the first attempt printed no
+ * peer-conflict signal" -- a genuine #30-shaped regression (a real, unresolved
+ * peer conflict) always prints an ERR_PNPM_PEER_DEP_ISSUES/"unmet peer" tree on
+ * the very FIRST attempt (verified: check-consumer-install.test.mjs's `FAILS:`
+ * case, and a live regression planted against this exact fixture, both fail
+ * loudly on try 1 -- no retry ever masks it) and is re-thrown immediately,
+ * un-retried.
+ */
+function installApp(app) {
+  const args = ["install", "--ignore-workspace", "--no-frozen-lockfile"];
+  const opts = {
+    cwd: app,
+    stdio: [QUIET ? "ignore" : "inherit", "pipe", "pipe"],
+    encoding: "utf8",
+  };
+  try {
+    const out = execFileSync("pnpm", args, opts);
+    if (!QUIET) process.stdout.write(out);
+    return;
+  } catch (err) {
+    const captured = `${err.stdout ?? ""}${err.stderr ?? ""}`;
+    if (!QUIET) process.stdout.write(captured);
+    if (PEER_CONFLICT_SIGNAL.test(captured)) throw err; // a real conflict -- never retried
+    log(
+      "  (pnpm/pnpm#9449 workaround: first install exited with no diagnostic output; retrying once against the lockfile it just wrote)",
+    );
+    const retryOut = execFileSync("pnpm", args, opts);
+    if (!QUIET) process.stdout.write(retryOut);
+  }
+}
+
+/**
  * Rewrite each distributable dependency to its packed tarball. Everything else
  * (react, vite, tailwind…) resolves from the registry like a real consumer's.
  */
@@ -338,7 +388,7 @@ function main() {
 
     writeFileSync(join(app, "package.json"), JSON.stringify(pkgJson, null, 2) + "\n");
     writeFileSync(join(app, ".npmrc"), APP_NPMRC);
-    run("pnpm", ["install", "--ignore-workspace", "--no-frozen-lockfile"], app);
+    installApp(app);
 
     log("• building it with Vite …");
     run("pnpm", ["build"], app, BUILD_ENV);
