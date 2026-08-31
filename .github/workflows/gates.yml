@@ -195,6 +195,7 @@ jobs:
           pnpm gen:readmes:check
           pnpm gen:registry:check
           pnpm templates:check
+          pnpm test-concurrency:check
           pnpm playbooks:check
           pnpm agent-output:check
           pnpm audit-artifact:check
@@ -315,6 +316,7 @@ jobs:
           pnpm surface-elevation:check:test
           pnpm surface:preview:test
           pnpm templates:check:test
+          pnpm test-concurrency:check:test
           pnpm text-scale:check:test
           pnpm theme-parity:check:test
           pnpm timeline-fork:check:test
