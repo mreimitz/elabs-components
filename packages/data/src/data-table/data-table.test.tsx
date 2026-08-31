@@ -1589,6 +1589,23 @@ describe("DataTable — #12 column resizing", () => {
     expect(handle).toHaveAttribute("aria-valuenow", "140");
   });
 
+  // #51 — the resize handle's accessible VALUE lacked a unit: a screen reader
+  // announced a bare number ("150"), which reads as a dimensionless ordinal
+  // rather than a size. `aria-valuetext` supplies the unit while
+  // `aria-valuenow` stays the plain numeric value TanStack/AT expect.
+  it("exposes aria-valuetext with an explicit unit, kept in sync with aria-valuenow across a keyboard resize", () => {
+    const { container } = render(
+      <DataTable columns={resizableColumns} data={data} enableColumnResizing />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(handle).toHaveAttribute("aria-valuenow", "150");
+    expect(handle).toHaveAttribute("aria-valuetext", "150 pixels");
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(handle).toHaveAttribute("aria-valuenow", "160");
+    expect(handle).toHaveAttribute("aria-valuetext", "160 pixels");
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("160px");
+  });
+
   it("is a controlled/uncontrolled slice: a keyboard resize notifies the caller but the DOM only moves once the prop does", () => {
     const onColumnSizingChange = vi.fn();
     const { container, rerender } = render(
@@ -1615,6 +1632,73 @@ describe("DataTable — #12 column resizing", () => {
       />,
     );
     expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("220px");
+  });
+
+  // #51 — a resize handle can only be dragged wider/narrower; there was no way
+  // to snap a column back to its authored width short of reloading the table.
+  // Double-click is the platform convention (spreadsheets, file managers) for
+  // "reset this to its intrinsic size".
+  it("double-clicking the handle resets a resized column back to its declared size", () => {
+    const { container } = render(
+      <DataTable columns={resizableColumns} data={data} enableColumnResizing />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(handle).toHaveAttribute("aria-valuenow", "170");
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("170px");
+
+    fireEvent.doubleClick(handle);
+    expect(handle).toHaveAttribute("aria-valuenow", "150");
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("150px");
+  });
+
+  it("double-clicking the handle resets an undeclared-size column to TanStack's own default (150)", () => {
+    const undeclaredSizeColumns: ColumnDef<Row>[] = [
+      { accessorKey: "name", header: "Name" },
+      { accessorKey: "value", header: "Value" },
+    ];
+    const { container } = render(
+      <DataTable columns={undeclaredSizeColumns} data={data} enableColumnResizing />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("160px");
+
+    fireEvent.doubleClick(handle);
+    expect(handle).toHaveAttribute("aria-valuenow", "150");
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("150px");
+  });
+
+  it("double-click reset goes through table.setColumnSizing: a controlled caller observes it via onColumnSizingChange and the DOM only moves once the prop does", () => {
+    const onColumnSizingChange = vi.fn();
+    const { container, rerender } = render(
+      <DataTable
+        columns={resizableColumns}
+        data={data}
+        enableColumnResizing
+        columnSizing={{ name: 220 }}
+        onColumnSizingChange={onColumnSizingChange}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: /Resize column, Name/i });
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("220px");
+
+    fireEvent.doubleClick(handle);
+    expect(onColumnSizingChange).toHaveBeenCalledTimes(1);
+    // Controlled: the prop still says 220, so the DOM must not have moved yet.
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("220px");
+
+    rerender(
+      <DataTable
+        columns={resizableColumns}
+        data={data}
+        enableColumnResizing
+        columnSizing={{ name: 150 }}
+        onColumnSizingChange={onColumnSizingChange}
+      />,
+    );
+    expect(container.querySelector<HTMLElement>("thead th")!.style.width).toBe("150px");
   });
 
   it("seeds an uncontrolled slice once from initialView.columnSizing", () => {
@@ -1654,6 +1738,27 @@ describe("DataTable — #12 column resizing", () => {
     // proving pinning already composes with resizing via `column.getSize()`,
     // with no changes needed on the pinning side.
     expect(pinnedHeaders[1]!.style.left).toBe("210px");
+  });
+
+  // #51 — the handle's hit box was `w-2` (8px), well under any recognized
+  // touch-target minimum, and it SHRANK further under `data-density="compact"`
+  // because `w-2` compiles to `calc(var(--spacing) * 2)` and density rescales
+  // `--spacing`. `w-[min(24px,50%)]` is a literal pixel value clamped to half
+  // the header cell, so it is density-independent by construction. jsdom can
+  // only assert the class is present — the actual rendered geometry (and the
+  // compact-density case specifically) is measured in a real browser by the
+  // `WithColumnResizingCompactDensity` story's play function.
+  it("gives the resize handle a density-independent, wider-than-8px hit box class", () => {
+    const { container } = render(
+      <DataTable columns={resizableColumns} data={data} enableColumnResizing />,
+    );
+    const handle = container.querySelector('[data-slot="data-table-resize-handle"]')!;
+    // Split into literal Tailwind class tokens so a variant-prefixed sibling
+    // (`hover:after:w-2` / `focus-visible:after:w-2`, the DRAWN seam width —
+    // deliberately unchanged) can't masquerade as the base hit-box class.
+    const classes = handle.className.split(/\s+/);
+    expect(classes).toContain("w-[min(24px,50%)]");
+    expect(classes).not.toContain("w-2");
   });
 });
 

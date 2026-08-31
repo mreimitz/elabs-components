@@ -1113,6 +1113,18 @@ function DataTableInner<TData, TValue>(
     table.setColumnSizing((old) => ({ ...old, [column.id]: nextSize }));
   }
 
+  // #51 — double-click resets a resize handle's column back to its declared
+  // `ColumnDef.size`, falling back to TanStack's own default (150, the same
+  // fallback idiom as `minSize ?? 20`/`maxSize ?? MAX_SAFE_INTEGER` above) when
+  // the author left it unset. Goes through the SAME `table.setColumnSizing`
+  // dispatch path as `handleResizeKeyDown` — never `column.resetSize()` — so a
+  // controlled `columnSizing` consumer observes the reset via
+  // `onColumnSizingChange` exactly like every other resize.
+  function handleResizeDoubleClick(column: Column<TData, unknown>) {
+    const declaredSize = column.columnDef.size ?? 150;
+    table.setColumnSizing((old) => ({ ...old, [column.id]: declaredSize }));
+  }
+
   // ── Scroll container ref for virtualizer ─────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -1301,15 +1313,49 @@ function DataTableInner<TData, TValue>(
                           ? resizeMax
                           : Math.max(header.getSize(), RESIZE_UNBOUNDED_ARIA_MAX)
                       }
+                      // #51: a bare number reads to AT as a dimensionless
+                      // ordinal ("150") rather than a size — aria-valuetext
+                      // supplies the unit while aria-valuenow (above) stays
+                      // the plain numeric value TanStack/AT expect.
+                      aria-valuetext={t("data.table.resizeColumnValue", {
+                        size: Math.round(header.getSize()),
+                      })}
                       aria-label={t("data.table.resizeColumn", { name: headerLabel })}
                       tabIndex={0}
                       data-slot="data-table-resize-handle"
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
                       onKeyDown={(event) => handleResizeKeyDown(event, header.column)}
+                      // #51: double-click resets the column to its declared
+                      // (or default) size — see `handleResizeDoubleClick`.
+                      // Pointer-only; it doesn't touch the keyboard path above.
+                      onDoubleClick={() => handleResizeDoubleClick(header.column)}
                       className={cn(
-                        "absolute inset-y-0 end-0 w-2 cursor-col-resize touch-none select-none",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                        // #51: the hit box is a literal 24px (clamped to half
+                        // the header cell so it can never overlap a neighbour,
+                        // even at `minSize=20`) rather than the `w-2` Tailwind
+                        // spacing-scale utility. `w-2` compiles to
+                        // `calc(var(--spacing) * 2)`, and `--spacing` is what
+                        // `data-density="compact"` rescales — so the old 8px
+                        // hit box shrank further under compact density
+                        // (~7.1px). A literal px value is density-independent
+                        // by construction, which is the actual defect the
+                        // maintainer's review corrected (NOT `--type-factor`,
+                        // which this handle never used). Do not widen via
+                        // overhang into the neighbouring cell instead — on the
+                        // last column that lands inside the `overflow-auto`
+                        // box (#330 false positive) and a pinned neighbour
+                        // paints over/hit-tests away the extra area.
+                        "absolute inset-y-0 end-0 w-[min(24px,50%)] cursor-col-resize touch-none select-none",
+                        // #51: the focus ring moves to the `after:` pseudo-
+                        // element (the drawn seam) rather than the box itself
+                        // — the box is now a 24px hit target, and a 24px focus
+                        // rectangle would replace the deliberately slim ring
+                        // already reviewed/approved as the #12 a11y fix
+                        // (da9b29e). `focus-visible:after:*` targets the
+                        // pseudo-element the same way `hover:after:w-2` /
+                        // `focus-visible:after:w-2` below already do.
+                        "focus-visible:outline-none",
                         // a11y fix (#12 review, blocking): this handle is the
                         // SOLE boundary between two adjacent header cells once
                         // resizing is on — no fill/elevation change separates
@@ -1337,8 +1383,8 @@ function DataTableInner<TData, TValue>(
                         // (see `.claude/rules/theming.md`), not something
                         // this fix changes.
                         header.column.getIsResizing()
-                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-['']"
-                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2",
+                          ? "after:absolute after:inset-y-0 after:end-0 after:w-2 after:bg-primary after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+                          : "after:absolute after:inset-y-0 after:end-0 after:w-px after:bg-muted-foreground after:content-[''] hover:after:w-2 focus-visible:after:w-2 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring",
                       )}
                     />
                   )}

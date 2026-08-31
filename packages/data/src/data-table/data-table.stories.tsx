@@ -843,6 +843,45 @@ export const WithColumnResizing: Story = {
   },
 };
 
+/**
+ * #51 — the resize handle's hit box used to be `w-2` (8px), which is on the
+ * Tailwind SPACING scale (`calc(var(--spacing) * 2)`), so it shrank further
+ * under `data-density="compact"` (`--spacing` itself is what the density dial
+ * rescales — a jsdom class assertion can't see this, only real layout can). The
+ * fix reads a literal `w-[min(24px,50%)]`, which this play function measures
+ * with `getBoundingClientRect()` UNDER compact density specifically, since
+ * that is where the old value was worst (~7.1px) and where a regression would
+ * hide from a comfortable-only check.
+ */
+export const WithColumnResizingCompactDensity: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The resize handle's interactive hit box stays ~24px wide even under " +
+          '`data-density="compact"`, which shrinks every Tailwind spacing-scale ' +
+          "utility (the old `w-2` hit box shrank right along with it).",
+      },
+    },
+  },
+  render: () => (
+    <div data-density="compact">
+      <DataTable columns={columnsNoBadge} data={rows} enableColumnResizing />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    const handle = canvas.getByRole("separator", { name: /Resize column, Service/i });
+    const rect = handle.getBoundingClientRect();
+    // A real layout pass must have happened before this means anything.
+    await expect(rect.width).toBeGreaterThan(0);
+    // `min(24px, 50%)` on a 150px column resolves to a literal 24px — assert a
+    // tight tolerance so a regression back toward the old ~7px is caught, but
+    // allow for sub-pixel rounding.
+    await expect(rect.width).toBeGreaterThan(20);
+    await expect(rect.width).toBeLessThanOrEqual(24.5);
+  },
+};
+
 // ─── Row selection (#11) ───────────────────────────────────────────────────────
 
 const selectableColumns: ColumnDef<Deployment>[] = [

@@ -153,6 +153,10 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Column resizing (#12) — the accessible name for the WAI-ARIA
   // separator-as-slider resize handle at the end of a resizable header cell.
   "data.table.resizeColumn": "Resize column, {name}",
+  // #51 — the handle's accessible VALUE, paired with aria-valuenow (which
+  // stays a plain number for AT/TanStack). A bare number reads as a
+  // dimensionless ordinal; the unit makes it a size.
+  "data.table.resizeColumnValue": "{size} pixels",
   "data.facetFilter.clearFilters": "Clear filters",
   "data.columnPicker.toggleColumns": "Toggle columns",
 
