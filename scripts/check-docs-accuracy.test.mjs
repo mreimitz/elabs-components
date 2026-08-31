@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import {
@@ -22,6 +22,7 @@ import {
   findThemeCountViolations,
   findScriptPathViolations,
   SCRIPT_PATH_REMOVED_EXEMPT,
+  findGithubMdCitationViolations,
   isSkippedWalkDir,
   stripEmphasis,
   themeCountFromSource,
@@ -514,6 +515,94 @@ test("PASSES: a correct dotdir-prefixed path (.claude/scripts/arch-evidence-pack
     },
   ];
   const violations = findScriptPathViolations(files);
+  assert.equal(violations.length, 0);
+});
+
+// ── .github/**.md CITATIONS (#37) — generalizes the workflow-ref rule from
+// `.github/workflows/*.yml` to any `.github/**.md` path ─────────────────────────
+//
+// Before #37, `.claude/rules/issue-workflow.md` told every finder agent to
+// structure issues per `.github/ISSUE_TEMPLATE/agent-finding.md` and label them
+// per `.github/labels.md` — neither file existed. This locks the generalized
+// gate so that class of drift can't ship silently again: plant a rule citing a
+// `.github/ISSUE_TEMPLATE/does-not-exist.md` that isn't there, assert the gate
+// fails naming the missing path — mirroring the brief's "Test to add".
+
+test("FLAGS: a rule citing a non-existent .github/ISSUE_TEMPLATE/*.md path", () => {
+  const files = [
+    {
+      file: ".claude/rules/issue-workflow.md",
+      content: "Structure the body per `.github/ISSUE_TEMPLATE/does-not-exist.md`.",
+    },
+  ];
+  const violations = findGithubMdCitationViolations(files);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /\.github\/ISSUE_TEMPLATE\/does-not-exist\.md which does not exist/);
+});
+
+test("FLAGS: a citation of .github/labels.md when it does not exist (fixture, mirrors the real pre-#37 defect)", () => {
+  const files = [
+    {
+      file: ".claude/rules/issue-workflow.md",
+      content: "Labels follow `.github/does-not-exist-labels.md` (type / severity / area).",
+    },
+  ];
+  const violations = findGithubMdCitationViolations(files);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /does-not-exist-labels\.md which does not exist/);
+});
+
+test("PASSES: a citation of a .github/**.md path that DOES exist", () => {
+  const files = [
+    {
+      file: ".claude/rules/issue-workflow.md",
+      content: "Labels follow `.github/labels.md` (type / severity / area).",
+    },
+  ];
+  const violations = findGithubMdCitationViolations(files);
+  assert.equal(violations.length, 0);
+});
+
+test("PASSES: a .github/workflows/*.yml reference is not matched by the .md-only citation rule", () => {
+  const files = [
+    {
+      file: "README.md",
+      content: "CI runs via `.github/workflows/does-not-exist.yml`.",
+    },
+  ];
+  // Deliberately out of scope for this rule (rule 2, workflowRe, owns .yml) —
+  // the .md-only regex must not match a .yml path.
+  const violations = findGithubMdCitationViolations(files);
+  assert.equal(violations.length, 0);
+});
+
+test("FLAGS: multiple missing .github/**.md citations in one file", () => {
+  const files = [
+    {
+      file: ".claude/commands/file-issue.md",
+      content:
+        "See `.github/ISSUE_TEMPLATE/does-not-exist-a.md` and `.github/does-not-exist-b.md` for the taxonomy.",
+    },
+  ];
+  const violations = findGithubMdCitationViolations(files);
+  assert.equal(violations.length, 2);
+});
+
+test("the REAL repo's .claude/commands/*.md citations resolve (docFiles() alone does not walk .claude/commands)", () => {
+  // .claude/commands/session-retro.md and .claude/commands/file-issue.md both cite
+  // .github/**.md paths; the gate script scans them via an explicit extra walk,
+  // separate from docFiles(). This locks that both real files are covered and
+  // clean, so the extra scan can't silently stop being wired into the CLI run.
+  const files = [
+    {
+      file: ".claude/commands/session-retro.md",
+      content: readFileSync(
+        path.join(REPO_ROOT, ".claude", "commands", "session-retro.md"),
+        "utf8",
+      ),
+    },
+  ];
+  const violations = findGithubMdCitationViolations(files);
   assert.equal(violations.length, 0);
 });
 
