@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed: corrected stale skill-reference prose that described the
+  `@elabs-ai/components-*` packages as a private GitHub Packages dependency
+  (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded
+  "three themes" claims (only `light`/`dark` ship). `pnpm skills:currency:check`
+  now also scans every skill's `reference/**` subtree (previously only
+  top-level `SKILL.md` files) and gained a private-registry-claim check; its
+  shared theme-count detector now catches an adjective between the number and
+  "themes" ("three shipped themes") and a markdown line-wrap splitting the two.
+  (#29, #34)
 - Changed (breaking, narrow): `@elabs-ai/components-ai`'s `MarkdownView` and
   `MessageResponse` no longer accept `rehypePlugins` — passing it is now a
   TypeScript error, and the runtime silently drops the prop (with a dev-only

@@ -106,8 +106,8 @@ what's left. Wire them; don't delete the guidance until each is wired.
 
 ## Themes
 
-Three shipped themes: `light`, `dark`. Anything you build
-must read correctly in **all three** — that is an observed result (render it),
+Shipped themes: `light`, `dark`. Anything you build
+must read correctly in **every one** — that is an observed result (render it),
 never inferred from "it uses tokens".
 
 ## Composition reference
@@ -118,8 +118,9 @@ common mistakes). Follow it before inventing new structure.
 
 ### `{install-block}` — standalone
 
-The packages are private on GitHub Packages, so a standalone app cannot install
-without this. The scaffold fills it from the same package array that generated
+The packages need real dependency ranges and the CSS import/@source wiring for
+a standalone app to install and build, so a standalone scaffold cannot skip
+this. The scaffold fills it from the same package array that generated
 `src/styles.css`, so the dependency set and the `@source` lines can never diverge.
 
 ````markdown

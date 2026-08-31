@@ -250,8 +250,8 @@ Stories live in `packages/charts/src/chart-frame/chart-frame.stories.tsx` and
 should exercise: Default (toolbar visible), Expanded (dialog opened), TableFlipped
 (table visible), NoData (degraded toolbar), FeaturesSubset, DownloadCallback.
 
-When the Storybook dev server is running, verify interaction + a11y across all three
-themes (`light`, `dark`) via `mcp__storybook__run-story-tests` + `mcp__storybook__preview-stories`
+When the Storybook dev server is running, verify interaction + a11y across every
+theme (`light`, `dark`) via `mcp__storybook__run-story-tests` + `mcp__storybook__preview-stories`
 (`globals=theme:<slug>`). Otherwise run `pnpm --filter @elabs-ai/components-docs test-storybook`.
 See @.claude/rules/storybook-mcp.md.
 
