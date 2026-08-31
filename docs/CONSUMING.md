@@ -381,8 +381,9 @@ value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
   second message catalogue — see [`docs/I18N.md`](I18N.md).
 
   **`FieldRow` has no react-hook-form import**, so it works with Formik, Final
-  Form, TanStack Form, or a bare `useState`, unlike `Form`/`FormField` below,
-  which are RHF-bound. It renders label/description/error/`aria-describedby`
+  Form, TanStack Form, or a bare `useState`, unlike `Form`/`FormField` (see
+  `Forms/Form` in Storybook), which are RHF-bound. It renders
+  label/description/error/`aria-describedby`
   from plain props — hand it whatever your runtime calls its field error. A
   worked Formik example:
 
@@ -402,8 +403,9 @@ value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
 
   The same shape works with a bare `useState` (no form runtime at all) — see
   the "Driven by external state" story on `Forms/FieldRow` in Storybook for a
-  runnable version. Reach for `Form`/`FormField` (below) once the field
-  already lives inside a `react-hook-form` `<FormProvider>`.
+  runnable version. Reach for `Form`/`FormField` (see `Forms/Form` in
+  Storybook) once the field already lives inside a `react-hook-form`
+  `<FormProvider>`.
 
 - **`@elabs-ai/components-ai`** — `MarkdownPreview` math needs
   `import "katex/dist/katex.min.css"` once, only if you enable it.
