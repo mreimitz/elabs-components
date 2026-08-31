@@ -1320,48 +1320,83 @@
 
   --type-size-code: 0.8125rem;
   --type-leading-code: 1.375rem;
+
+  /* Weight + tracking companions (#56) — declared HERE, in the plain `:root`
+     base layer, not only inside `@theme`. `@theme` is a Tailwind-only at-rule:
+     a browser that never compiles Tailwind (a standalone HTML export, an
+     exported report, a design artboard, an artifact iframe) drops it as an
+     unknown at-rule, so a consumer reading these custom properties directly
+     got the correct size/leading but every rung fell back to inherited
+     weight/tracking — the hierarchy silently flattened. Moving them here
+     (parallel to `--type-size-*`/`--type-leading-*` above) makes the complete
+     type contract resolvable in any browser, Tailwind or not; `@theme` below
+     aliases these values exactly as it already aliases size/leading. Values
+     are unchanged — only the location and naming convention moved. */
+  --type-weight-display: 600;
+  --type-tracking-display: -0.02em;
+
+  --type-weight-title: 600;
+  --type-tracking-title: -0.014em;
+
+  --type-weight-subtitle: 600;
+  --type-tracking-subtitle: -0.006em;
+
+  --type-weight-body: 400;
+  --type-tracking-body: 0em;
+
+  --type-weight-caption: 400;
+  --type-tracking-caption: 0em;
+
+  --type-weight-meta: 500;
+  --type-tracking-meta: 0.01em;
+
+  --type-weight-kpi: 600;
+  --type-tracking-kpi: -0.02em;
+
+  --type-weight-code: 400;
+  --type-tracking-code: 0em;
 }
 
 @theme {
   --text-display: var(--type-size-display);
   --text-display--line-height: var(--type-leading-display);
-  --text-display--font-weight: 600;
-  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: var(--type-weight-display);
+  --text-display--letter-spacing: var(--type-tracking-display);
 
   --text-title: var(--type-size-title);
   --text-title--line-height: var(--type-leading-title);
-  --text-title--font-weight: 600;
-  --text-title--letter-spacing: -0.014em;
+  --text-title--font-weight: var(--type-weight-title);
+  --text-title--letter-spacing: var(--type-tracking-title);
 
   --text-subtitle: var(--type-size-subtitle);
   --text-subtitle--line-height: var(--type-leading-subtitle);
-  --text-subtitle--font-weight: 600;
-  --text-subtitle--letter-spacing: -0.006em;
+  --text-subtitle--font-weight: var(--type-weight-subtitle);
+  --text-subtitle--letter-spacing: var(--type-tracking-subtitle);
 
   --text-body: var(--type-size-body);
   --text-body--line-height: var(--type-leading-body);
-  --text-body--font-weight: 400;
-  --text-body--letter-spacing: 0em;
+  --text-body--font-weight: var(--type-weight-body);
+  --text-body--letter-spacing: var(--type-tracking-body);
 
   --text-caption: var(--type-size-caption);
   --text-caption--line-height: var(--type-leading-caption);
-  --text-caption--font-weight: 400;
-  --text-caption--letter-spacing: 0em;
+  --text-caption--font-weight: var(--type-weight-caption);
+  --text-caption--letter-spacing: var(--type-tracking-caption);
 
   --text-meta: var(--type-size-meta);
   --text-meta--line-height: var(--type-leading-meta);
-  --text-meta--font-weight: 500;
-  --text-meta--letter-spacing: 0.01em;
+  --text-meta--font-weight: var(--type-weight-meta);
+  --text-meta--letter-spacing: var(--type-tracking-meta);
 
   --text-kpi: var(--type-size-kpi);
   --text-kpi--line-height: var(--type-leading-kpi);
-  --text-kpi--font-weight: 600;
-  --text-kpi--letter-spacing: -0.02em;
+  --text-kpi--font-weight: var(--type-weight-kpi);
+  --text-kpi--letter-spacing: var(--type-tracking-kpi);
 
   --text-code: var(--type-size-code);
   --text-code--line-height: var(--type-leading-code);
-  --text-code--font-weight: 400;
-  --text-code--letter-spacing: 0em;
+  --text-code--font-weight: var(--type-weight-code);
+  --text-code--letter-spacing: var(--type-tracking-code);
 
   /* `font-display` utility for the display seam — references the :root var so
      a [data-theme] override re-skins headlines live. */
