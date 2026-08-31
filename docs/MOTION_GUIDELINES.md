@@ -103,8 +103,8 @@ Reach for these instead of hand-rolling — they're gated and reduced-motion-saf
 A theme enables/disables motion by overriding **only** `--motion-factor` in its
 `[data-theme="…"]` block — a deliberate, documented exception to "every token in
 every block" (it's a single global knob, not a per-theme visual value). The
-`--duration-*`/`--ease-*` primitives stay `:root`-only. All six shipped themes
-inherit `--motion-factor: 1`.
+`--duration-*`/`--ease-*` primitives stay `:root`-only. Every shipped theme
+inherits `--motion-factor: 1`.
 
 ```css
 [data-theme="calm"] {

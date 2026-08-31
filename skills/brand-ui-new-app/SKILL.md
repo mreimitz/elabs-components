@@ -214,8 +214,8 @@ hand-roll the files it emits (step 3) — the CLI is what makes the flow repeata
   optional — without it the app cannot be installed at all.
 - Open the playbook checklist for the archetype; confirm each block the spec
   ordered is present.
-- If Storybook/browser rendering is available, render the scaffold in **all three
-  shipped themes** — `light`, `dark` — and name the surface
+- If Storybook/browser rendering is available, render the scaffold in **every
+  shipped theme** — `light`, `dark` — and name the surface
   you looked at; otherwise **say plainly that the scaffold compiled and audited
   clean but was not visually verified**. Never claim a visual result you didn't see.
 - Report remaining `// TODO(spec):` placeholders as the user's explicit next
