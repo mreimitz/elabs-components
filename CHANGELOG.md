@@ -25,7 +25,47 @@
   stage runs upstream of the rehype chain, which Streamdown derives without
   reading it, so a remark plugin's output is still sanitised; note only that
   your array replaces Streamdown's own `remark-gfm`/`codeMeta` defaults, which
-  you can spread back in from its exported `defaultRemarkPlugins`. (#36)
+  you can spread back in from its exported `defaultRemarkPlugins`. **Scope of
+  the guarantee, stated exactly:** the sanitiser chain can no longer be
+  _replaced_. It is not a claim that no consumer-supplied code can reach the DOM
+  unsanitised — `plugins.math.rehypePlugin` (appended to the END of the rehype
+  pipeline, so it runs after the chain) and `plugins.mermaid` (written with
+  `dangerouslySetInnerHTML`, outside the pipeline entirely) remain reachable,
+  by design, as documented trusted-code seams. See the `plugins`-slot entry
+  below and `docs/CSP-AND-NETWORK.md`. (#36)
+- Fixed: `@elabs-ai/components-ai`'s `MarkdownView`/`MessageResponse` now emit a
+  dev-only `console.warn` when a consumer's `plugins` override replaces
+  `math.rehypePlugin` or `mermaid` — the two plugin slots that reach the DOM
+  after, or outside, Streamdown's sanitiser chain. The plugin still runs
+  (unchanged behaviour, non-breaking): these are deliberate trusted-code seams,
+  and the tests pin them open. What was missing was the runtime half of a
+  boundary that existed only in prose — the practical hazard is
+  misconfiguration, most sharply KaTeX's `trust` option, which silently
+  disables KaTeX's own sanitisation for model-authored content. No warning
+  fires for the default plugin set, for a `cjk`/`code`/`renderers` override, or
+  in production. `MessageResponse`'s `plugins` TSDoc is now self-contained
+  about the boundary instead of pointing at `MarkdownView`, and
+  `docs/CSP-AND-NETWORK.md` names both residual slots. (#76)
+- Fixed (tooling, no runtime change): the blocking `sanitizer-passthrough` gate
+  that makes the #36 XSS-passthrough class un-shippable could be evaded five
+  ways and silently disabled. Reproduced live before the fix, each returning
+  zero findings: re-exporting Streamdown's own `StreamdownProps` alias instead
+  of `ComponentProps<typeof Streamdown>`; naming the rest element anything but
+  `props`; reaching the component through a namespace or dynamic `import()`
+  (which is what a real shipped file,
+  `packages/viewer/src/adapters/markdown/markdown-adapter.tsx`, does — it was
+  never opened by the gate); importing it under an alias; and putting a
+  non-compliant wrapper AFTER a compliant one in the same module. The gate now
+  resolves renderer bindings across every import form and **fails closed** on a
+  module it cannot follow, checks the props-alias and namespace-indexed type
+  shapes, keys the runtime arm on whatever identifier is actually spread with
+  the search window bounded to the enclosing scope, adds a literal
+  `rehypePlugins={…}` attribute channel with a reasoned two-site allowlist for
+  `@elabs-ai/components-editor`'s `MarkdownPreview`, asserts its key list equals
+  `SANITIZER_OVERRIDE_KEYS` in both directions, and asserts `StreamdownProps` is
+  still exported upstream. `main()` takes a root, so the self-test now drives
+  the CLI's failure path: deleting `process.exit(1)` reds it. The header comment
+  no longer claims coverage the gate does not have. (#75)
 - Added: `@elabs-ai/components-tokens` ships an ordered neutral ramp —
   `--foreground-1..4`, `--border-1..2`, `--surface-1..4` (`text-foreground-*`,
   `border-border-*`, `bg-surface-*` utilities) — additive alongside the

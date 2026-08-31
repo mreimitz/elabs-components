@@ -26,7 +26,7 @@ import {
   type ProseHeadingLevel,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { stripSanitizerOverrides } from "./_streamdown-safety";
+import { stripSanitizerOverrides, warnOnTrustedPluginSlots } from "./_streamdown-safety";
 import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
@@ -205,10 +205,14 @@ export const MarkdownView = ({
   // default (#315 follow-up) — re-derives when the active theme changes.
   const internalPlugins = useStreamdownPlugins();
   // Same per-key merge as `components` — see the `plugins` prop doc above.
-  const plugins = useMemo(
-    () => ({ ...internalPlugins, ...pluginOverrides }),
-    [internalPlugins, pluginOverrides],
-  );
+  // `math.rehypePlugin`/`mermaid` are the two slots that land in the DOM after
+  // (or outside) the sanitiser chain, so replacing one is a TRUSTED-CODE
+  // decision. The runtime half of that documented boundary is a dev warning —
+  // the plugin still runs; stripping it would break the legitimate use (#76).
+  const plugins = useMemo(() => {
+    warnOnTrustedPluginSlots(pluginOverrides, internalPlugins);
+    return { ...internalPlugins, ...pluginOverrides };
+  }, [internalPlugins, pluginOverrides]);
   return (
     <Streamdown
       data-slot="markdown-view"

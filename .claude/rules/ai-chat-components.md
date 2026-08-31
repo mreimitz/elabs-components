@@ -151,6 +151,35 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
     (remark-directive, footnotes, custom syntax) and closed nothing. Before
     adding a key to `dangerousProps`, prove by experiment that supplying it can
     land executable content in the DOM.
+  - **The converse: a wrapper MAY expose a trust-bearing prop — but then it owes
+    a runtime warn and a named boundary (#76).** "Never re-export the sanitiser
+    prop" is not "never expose anything a consumer can execute". Some seams are
+    legitimately trusted code: `plugins.math.rehypePlugin` is APPENDED to the end
+    of Streamdown's rehype pipeline (it runs AFTER `rehype-sanitize`/
+    `rehype-harden`, so its output is never re-sanitised) and `plugins.mermaid`
+    never enters the pipeline at all (`dangerouslySetInnerHTML`). Both stay
+    reachable on purpose — stripping them removes real capability, which is the
+    same mistake `remarkPlugins` was. The price of keeping one open is three
+    things, all in the same change:
+    1. **A runtime half.** A dev-only `console.warn` on the slot
+       (`warnOnTrustedPluginSlots` in `packages/ai/src/_streamdown-safety.ts` is
+       the shared helper — reuse it). **Compare by reference against the
+       INTERNAL default**, not by truthiness: `useStreamdownPlugins()` hands back
+       a fresh `code` object per theme change, so a truthiness check fires on
+       every theme flip and a deep compare goes silent on a consumer who
+       rebuilds an equivalent object each render. Warn — never strip.
+    2. **A named boundary in `docs/CSP-AND-NETWORK.md`**, stating the #36-style
+       guarantee in its exact scope (the chain cannot be _replaced_) and listing
+       every residual trust-bearing slot. A guarantee whose scope is left
+       implicit reads as a stronger claim than it is.
+    3. **A test that pins the slot OPEN** — assert the injected node really does
+       reach the DOM, alongside the warn assertion and a negative arm proving the
+       warn stays silent for the default set and the non-trust-bearing slots. The
+       open-slot assertion is what makes a future "hardening" fail loudly instead
+       of silently breaking a legitimate consumer; the negative arm is what stops
+       the warning degrading into noise.
+       A prose-only trust boundary is an incomplete change — see
+       @.claude/rules/quality-gates.md § "Enforcement over reminders".
 
 ## Microcopy (ADR 0017)
 
