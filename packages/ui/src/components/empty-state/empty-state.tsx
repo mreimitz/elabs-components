@@ -8,7 +8,12 @@ import { StatePanel } from "../state-panel/state-panel";
 export interface EmptyStateProps {
   title: ReactNode;
   description?: ReactNode;
-  /** Optional icon/illustration shown above the title. */
+  /**
+   * Optional icon shown above the title, clamped to a fixed 40×40 (this
+   * wrapper only ever forwards `icon` to `StatePanel`, never `illustration`
+   * — for a larger, unclamped illustration use
+   * `StatePanel kind="empty" illustration={...}` directly).
+   */
   icon?: ReactNode;
   /** Primary/secondary actions. */
   actions?: ReactNode;

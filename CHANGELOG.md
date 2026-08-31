@@ -9,6 +9,15 @@
   `border-s-destructive` (the FILL rung, still ≥3:1 against `--card`/
   `--background` per WCAG 1.4.11). `kind="empty"`/`kind="loading"` are
   unchanged. (#71)
+- Fixed: `StatePanel`'s `illustration` slot rendered its title at the same
+  `text-sm` size as the plain `icon` slot, so a 112px+ illustration sat over
+  a 14px caption with no visual grouping. The illustration path now renders
+  the title at the `subtitle` role and gives the illustration→copy gap more
+  room than the title→description gap; the plain `icon` path is unchanged.
+  Also corrected `EmptyState`'s JSDoc, which claimed it forwards an
+  `icon/illustration` when it has only ever forwarded (and clamped to 40×40)
+  `icon` — and fixed a straight apostrophe in `StatePanel`'s "no access"
+  story copy. (#47)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded

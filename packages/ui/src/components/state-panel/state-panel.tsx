@@ -194,9 +194,25 @@ export function StatePanel({
       ) : null}
 
       {(resolvedTitle || resolvedDescription) && (
-        <div className="space-y-1">
+        // A 112px+ illustration (default `size="7rem"`) needs a heavier title
+        // to group with, and more air between the artwork and the copy than
+        // between the title and its own description — otherwise the caption
+        // reads as an afterthought under the artwork instead of one grouped
+        // unit (#47). `mt-2` (on top of the root's `gap-3`) only fires on the
+        // illustration path; the plain `icon` path (a fixed 40x40 glyph) is
+        // untouched. The title/description gap stays the tight `space-y-1`
+        // either way — that's the "one visually distinct unit" the two lines
+        // read as.
+        <div className={cn("space-y-1", illustration && "mt-2")}>
           {resolvedTitle && (
-            <h3 className="text-sm font-semibold text-foreground">{resolvedTitle}</h3>
+            <h3
+              className={cn(
+                "font-semibold text-foreground",
+                illustration ? "text-subtitle" : "text-sm",
+              )}
+            >
+              {resolvedTitle}
+            </h3>
           )}
           {resolvedDescription && (
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">{resolvedDescription}</p>
