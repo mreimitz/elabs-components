@@ -16,8 +16,15 @@
   `mousedown`/`mouseup` ×2 + `dblclick` sequence a browser fires, not jsdom's
   synthetic `dblclick`-only event) still resets a resized column to its
   declared size, and the sort-toggle button stays hit-testable at its own
-  on-screen coordinates alongside the resize handle's 24px hit box. No
-  behaviour change — test coverage only. (#82)
+  on-screen coordinates alongside the resize handle's 24px hit box, on both a
+  start-aligned header and an end-aligned numeric one. The button wins the
+  overlap by being promoted into its own stacking context (`relative z-10` on
+  the button, so it paints above the handle's `position: absolute` layer per
+  normal CSS painting order) rather than by reserving header padding for the
+  handle — an earlier padding-based approach was replaced after review because
+  it pushed the numeric header's trailing edge 24px further in than its own
+  body cells, misaligning the column it was meant to fix. Header and body now
+  share byte-identical `px-3` padding in every column, resizable or not. (#82)
 - Fixed: corrected stale skill-reference prose that described the
   `@elabs-ai/components-*` packages as a private GitHub Packages dependency
   (they are public npm — `docs/CONSUMING.md` §1) and stale hardcoded

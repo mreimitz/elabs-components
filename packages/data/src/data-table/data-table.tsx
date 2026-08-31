@@ -73,26 +73,20 @@ declare module "@tanstack/react-table" {
  * `ColumnMeta<TData, TValue>`) so the helper doesn't need the table's generic
  * row type.
  *
- * `reserveForResizeHandle` (header-only — round-1 fix, #82 follow-up): when a
- * column is BOTH resizable and aligned away from `start`, its content shares
- * the header cell's trailing edge with the resize handle's absolutely-
- * positioned 24px hit box. An absolutely-positioned element ALWAYS paints
- * above in-flow content in the same stacking context regardless of DOM order
- * (CSS painting order — positioned descendants paint after non-positioned
- * in-flow ones), so the handle wins every hit-test there no matter which
- * element comes first in markup — real-Chromium `elementFromPoint` measured a
- * 12px overlap on an end-aligned sortable+resizable column. Shrinking the
- * handle is not the fix (`#51`'s 24px hit box is itself a locked a11y fix);
- * instead this reserves a trailing gutter at least as wide as the handle so
- * end/center-aligned content never renders under it. Literal px, not the
- * `pe-*` spacing-scale utility — same reasoning as the handle's own
- * `w-[min(24px,50%)]`: `--spacing` rescales under `data-density="compact"`,
- * and a scaled gutter would reopen the exact gap it exists to close.
+ * Deliberately takes NO options and NO padding branch: round-1 (#82
+ * follow-up) briefly reserved an extra 36px of trailing `<th>` padding here
+ * to clear the resize handle, but that moved the header's alignment
+ * reference point 24px away from the body `<td>`'s (which keeps the plain
+ * 12px `px-3`) — an end-aligned numeric column's own header no longer lined
+ * up with the values it labels, defeating the whole point of #69. Reserving
+ * space via padding necessarily desyncs header from body, because only the
+ * header has a handle to clear. The round-2 fix instead resolves the
+ * hit-test collision at the CONTROL that needs to win it — see the sort
+ * button's `relative z-10` below — so header and body padding stay
+ * byte-identical and this helper only ever contributes alignment +
+ * tabular-nums classes.
  */
-function numericColumnClasses(
-  meta: DataTableColumnMeta | undefined,
-  opts?: { reserveForResizeHandle?: boolean },
-) {
+function numericColumnClasses(meta: DataTableColumnMeta | undefined) {
   if (!meta?.numeric && !meta?.align) return undefined;
   const alignClass =
     meta?.align === "start"
@@ -104,9 +98,7 @@ function numericColumnClasses(
           : meta?.numeric
             ? "text-end"
             : undefined;
-  const needsHandleClearance =
-    opts?.reserveForResizeHandle && (alignClass === "text-end" || alignClass === "text-center");
-  return cn(alignClass, meta?.numeric && "tabular-nums", needsHandleClearance && "pe-[36px]");
+  return cn(alignClass, meta?.numeric && "tabular-nums");
 }
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -1350,21 +1342,18 @@ function DataTableInner<TData, TValue>(
                   data-pinned={geometry?.pinned ?? undefined}
                   style={geometry?.style ?? resizeStyle}
                   className={cn(
-                    // `ps-3`/`pe-3` (not the `px-3` shorthand): tailwind-merge
-                    // does not treat the physical `px-*` group as conflicting
-                    // with the logical `pe-*` group, so a later `pe-[36px]`
-                    // override below would NOT reliably win over a `px-3`
-                    // base — verified empirically (round-1 fix, #82
-                    // follow-up). Splitting into `ps-3 pe-3` up front (byte-
-                    // identical 12px each side) is what lets the resize-
-                    // handle clearance override cleanly.
-                    "h-10 ps-3 pe-3 text-start align-middle font-medium text-muted-foreground",
+                    // Same `px-3` the body `<td>` uses (below) — deliberately
+                    // NOT split into `ps-3`/`pe-3` for a resize-handle
+                    // override (round-1 briefly did this, see the round-2
+                    // note on `numericColumnClasses`): the header's padding
+                    // must stay byte-identical to the body's so an
+                    // end-aligned numeric column's header lines up with its
+                    // own values.
+                    "h-10 px-3 text-start align-middle font-medium text-muted-foreground",
                     // #69: a numeric column's `meta` overrides the default
                     // `text-start` — placed right after the base string so
                     // tailwind-merge lets it win over that default.
-                    numericColumnClasses(header.column.columnDef.meta, {
-                      reserveForResizeHandle: canResize,
-                    }),
+                    numericColumnClasses(header.column.columnDef.meta),
                     // `sticky`/pinned already establishes a positioning context
                     // for the resize handle's `absolute`; an unpinned resizable
                     // header needs its own.
@@ -1402,7 +1391,31 @@ function DataTableInner<TData, TValue>(
                       type="button"
                       onClick={header.column.getToggleSortingHandler()}
                       aria-label={`Sort by ${headerLabel}, ${sortStateLabel}`}
-                      className="inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      // `relative z-10` (round-2 fix, #82 follow-up — replaces
+                      // round-1's padding-based clearance, see the note on
+                      // `numericColumnClasses`): on a resizable column the
+                      // resize handle below is `absolute`, and CSS painting
+                      // order always puts a positioned descendant above
+                      // non-positioned in-flow content in the SAME stacking
+                      // context, regardless of DOM order — so without this,
+                      // the handle's 24px hit box would win every hit-test
+                      // where it overlaps this button's own trailing edge
+                      // (measured: a 12px overlap on an end-aligned
+                      // sortable+resizable column) no matter which element
+                      // renders first in markup. Giving the button its own
+                      // explicit positive z-index (not just `relative`, which
+                      // alone would still lose — see the code comment on
+                      // `numericColumnClasses` above) promotes it into a
+                      // later, higher-stacked paint step than the handle's
+                      // implicit `z-index: auto`, so the button wins the
+                      // overlap purely at the hit-test/paint layer — the
+                      // header's padding, and therefore its alignment with
+                      // the body `<td>`, never has to move. The handle's own
+                      // visible drag affordance (the `after:` seam, 0-8px
+                      // from the cell's trailing edge) sits entirely outside
+                      // this button's box (which ends at the same 12px inset
+                      // as the body), so dragging is unaffected.
+                      className="relative z-10 inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       <SortIcon
