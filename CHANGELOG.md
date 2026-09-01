@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Added: a compound `Field*` anatomy (`FieldRoot`/`FieldLabel`/`FieldControl`/
+  `FieldDescription`/`FieldError`, `@elabs-ai/components-ui`) so callers can
+  compose custom field layouts — two controls in one row, or a description
+  placed before the control — that `FieldRow`'s single prop-configured shape
+  couldn't express. Reuses `FieldRow`'s existing id/`aria-describedby`/
+  `aria-invalid`/`role="alert"` wiring via a shared lifted-state context;
+  `FieldRow` itself is unchanged (#43).
 - Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
   against the bare `--background` token, but Monaco actually paints a translucent
   `editor.lineHighlightBackground` overlay UNDER token text on the cursor's line —

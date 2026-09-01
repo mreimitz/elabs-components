@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T11:00:54.715Z",
+  "generatedAt": "2026-09-01T10:06:29.062Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -19561,6 +19561,31 @@
           "module": "packages/ui/src/components/expand-dialog/expand-dialog.tsx"
         },
         {
+          "name": "FieldControl",
+          "kind": "value",
+          "module": "packages/ui/src/components/field/field.tsx"
+        },
+        {
+          "name": "FieldDescription",
+          "kind": "value",
+          "module": "packages/ui/src/components/field/field.tsx"
+        },
+        {
+          "name": "FieldError",
+          "kind": "value",
+          "module": "packages/ui/src/components/field/field.tsx"
+        },
+        {
+          "name": "FieldLabel",
+          "kind": "value",
+          "module": "packages/ui/src/components/field/field.tsx"
+        },
+        {
+          "name": "FieldRoot",
+          "kind": "value",
+          "module": "packages/ui/src/components/field/field.tsx"
+        },
+        {
           "name": "FieldRow",
           "kind": "value",
           "module": "packages/ui/src/components/field-row/field-row.tsx"
@@ -20838,7 +20863,9 @@
         "ExpandDialogHeaderProps",
         "ExpandDialogPanesProps",
         "ExpandDialogProps",
+        "FieldControlProps",
         "FieldKeyValueRow",
+        "FieldRootProps",
         "FieldRowProps",
         "FieldSpec",
         "FileCategory",
@@ -22407,6 +22434,36 @@
               "optional": true,
               "type": "number",
               "description": "Tab index for the detail pane. Pass `-1` when it owns focusable content."
+            }
+          ]
+        },
+        "FieldControl": {
+          "extends": [],
+          "props": [
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactElement<{ id?: string; \"aria-describedby\"?: string; }>",
+              "description": "The single field control (`Input`, `Textarea`, `Select`, …). Receives `id`/`aria-describedby`/`aria-invalid`/`aria-required` via a Radix `Slot` — must be a single element that forwards those props to a real form control. Compose more than one `FieldControl` inside one `FieldRoot` for a multi-control row (each gets its own independent id; give every control but the first its own explicit `id`, the same way you would for any two form controls that must not collide). `FieldLabel` can only associate with ONE control (the first to mount), so give every OTHER control in the row its own `aria-label` — a shared visual label plus a placeholder is not a real accessible name for the rest."
+            }
+          ]
+        },
+        "FieldRoot": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "invalid",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the field is currently invalid. Drives `aria-invalid` on every `FieldControl` and error styling on `FieldLabel` — independent of whether a `FieldError` with content is actually mounted, so a caller can mark the control invalid before its message has settled."
+            },
+            {
+              "name": "required",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the field is required. Drives `aria-required` on every `FieldControl`."
             }
           ]
         },
