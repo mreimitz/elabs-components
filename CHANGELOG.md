@@ -5,9 +5,20 @@
 - Fixed: `@elabs-ai/components-ui`'s `NavigationMenuTrigger` could spontaneously
   reopen a few hundred milliseconds after an explicit dismissal (Escape,
   outside click, focus-out) that landed inside Radix's hover-intent
-  `delayDuration` window (residual of #54) — a stray `openTimerRef` armed by
-  the pointer move preceding the click was never cancelled. `onClick` now
-  dispatches a synthetic pointer-leave so Radix's own cancellation path runs.
+  `delayDuration` window (residual of #54, issue #85) — a stray `openTimerRef`
+  armed by the pointer move preceding the click was never cancelled by any
+  dismiss path. An earlier fix dispatched a synthetic pointer-leave to run
+  Radix's own cancellation path, but that path also unconditionally arms
+  Radix's close timer, so every click/keyboard/touch-opened menu then closed
+  itself ~150ms later with no further interaction — regressing exactly the
+  input modes it didn't touch. `NavigationMenu` now proxies `value`/
+  `onValueChange` (transparent to a consumer's own controlled/uncontrolled
+  usage) and swallows, once, a reopen request for an item whose dismissal
+  coincided with a real mouse pointer still resting on its trigger — the only
+  scenario that was ever broken. The guard is cleared by any subsequent click
+  or genuine pointer-leave on that trigger, and a pure keyboard sequence never
+  touches it, so it cannot affect keyboard or touch entry. No synthetic DOM
+  events are dispatched.
 - Fixed: three automated-review findings on PR #87. (1) `scripts/check-manifest.mjs`'s
   freshness check compared against `git show HEAD:brand-ui.manifest.json`, which
   false-STALEd a legitimately fresh, already-regenerated-but-uncommitted manifest (the
