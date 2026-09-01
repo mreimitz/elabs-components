@@ -63,8 +63,9 @@ const EXTRAS = {
     'Import `"@xyflow/react/dist/style.css"` once.',
   ],
   [`${SCOPE}/components-ai`]: [
-    "`ai` (Vercel AI SDK) is a **types-only, optional** peer (see the `pnpm add ai@…` line above) — your app owns the model calls.",
-    "`@xyflow/react` is a peer too, if you render the agent canvas.",
+    "`ai` (Vercel AI SDK) is a **types-only, optional** peer — your app owns the model calls.",
+    "`@xyflow/react` is a peer too (required), if you render the agent canvas.",
+    '`mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit` and `media-chrome` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.',
   ],
   [`${SCOPE}/components-charts`]: [
     '`@visx/*`-backed charts do not render meaningfully under jsdom. `.../test` is the official jsdom-safe test double — `vi.mock("@elabs-ai/components-charts", () => import("@elabs-ai/components-charts/test"))` — and still THROWS on a missing/invalid required prop, so a mocked test doesn\'t silently pass a broken chart.',
@@ -86,11 +87,25 @@ const EXTRAS = {
  * shiki, streamdown) precisely so an app that only opens CSVs never downloads
  * a PDF or spreadsheet parser — blanket-installing all seven in the base
  * Install block would contradict that design and the README's own "Only
- * install what you open" table. Keep this list to genuine per-feature-adapter
- * packages; a package with one broadly-relevant optional peer (e.g. `ai` on
- * `@elabs-ai/components-ai`) belongs in the base Install block, not here.
+ * install what you open" table.
+ *
+ * `@elabs-ai/components-ai` joined this set once issue #33 moved its four
+ * lazy engines (mermaid, `@rive-app/react-webgl2`, `@xterm/xterm` +
+ * `@xterm/addon-fit`, `media-chrome`) to optional peers alongside the
+ * pre-existing `ai` SDK peer — the SAME per-feature-adapter shape as the
+ * viewer, not the single-broadly-relevant-peer shape this comment used to
+ * cite `ai` as an example of. `@elabs-ai/components-ai`'s hand-written
+ * prose below the markers carries its own "Only install what you render"
+ * table covering all six.
+ *
+ * Keep this list to genuine per-feature-adapter packages — a package with
+ * ONE broadly-relevant optional peer and nothing else belongs in the base
+ * Install block, not here.
  */
-const SKIP_OPTIONAL_PEER_INSTALL = new Set([`${SCOPE}/components-viewer`]);
+const SKIP_OPTIONAL_PEER_INSTALL = new Set([
+  `${SCOPE}/components-viewer`,
+  `${SCOPE}/components-ai`,
+]);
 
 /** The generated region for one package. */
 export function renderReadmeRegion(

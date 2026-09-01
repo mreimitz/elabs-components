@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 119 entries (data: 2, source: 16, font: 2, dependency: 99).
+// 115 entries (data: 2, source: 16, font: 2, dependency: 95).
 
 import type { Attribution } from "./attribution-types";
 
@@ -693,18 +693,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     note: null,
   },
   {
-    id: "@rive-app/react-webgl2",
-    category: "dependency",
-    name: "@rive-app/react-webgl2",
-    version: "4.28.6",
-    license: "MIT",
-    copyright: null,
-    url: "https://www.npmjs.com/package/@rive-app/react-webgl2",
-    usedBy: ["@elabs-ai/components-ai"],
-    required: false,
-    note: null,
-  },
-  {
     id: "@streamdown/cjk",
     category: "dependency",
     name: "@streamdown/cjk",
@@ -938,30 +926,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     note: null,
   },
   {
-    id: "@xterm/addon-fit",
-    category: "dependency",
-    name: "@xterm/addon-fit",
-    version: "0.11.0",
-    license: "MIT",
-    copyright: "The xterm.js authors",
-    url: "https://www.npmjs.com/package/@xterm/addon-fit",
-    usedBy: ["@elabs-ai/components-ai"],
-    required: false,
-    note: null,
-  },
-  {
-    id: "@xterm/xterm",
-    category: "dependency",
-    name: "@xterm/xterm",
-    version: "6.0.0",
-    license: "MIT",
-    copyright: null,
-    url: "https://www.npmjs.com/package/@xterm/xterm",
-    usedBy: ["@elabs-ai/components-ai"],
-    required: false,
-    note: null,
-  },
-  {
     id: "ansi-to-react",
     category: "dependency",
     name: "ansi-to-react",
@@ -1156,18 +1120,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     note: null,
   },
   {
-    id: "media-chrome",
-    category: "dependency",
-    name: "media-chrome",
-    version: "4.19.1",
-    license: "MIT",
-    copyright: "@muxinc",
-    url: "https://www.npmjs.com/package/media-chrome",
-    usedBy: ["@elabs-ai/components-ai"],
-    required: false,
-    note: null,
-  },
-  {
     id: "mermaid",
     category: "dependency",
     name: "mermaid",
@@ -1175,7 +1127,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "MIT",
     copyright: "Knut Sveidqvist",
     url: "https://www.npmjs.com/package/mermaid",
-    usedBy: ["@elabs-ai/components-ai", "@elabs-ai/components-editor"],
+    usedBy: ["@elabs-ai/components-editor"],
     required: false,
     note: null,
   },

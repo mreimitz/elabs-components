@@ -14,7 +14,6 @@ no token required. See `docs/CONSUMING.md`.
 
 ```bash
 pnpm add @elabs-ai/components-tokens @elabs-ai/components-ai
-pnpm add ai@"^6.0.0 || ^7.0.0"  # optional peer
 ```
 
 ## Set up styling (do not skip)
@@ -39,8 +38,9 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## This package specifically
 
-- `ai` (Vercel AI SDK) is a **types-only, optional** peer (see the `pnpm add ai@…` line above) — your app owns the model calls.
-- `@xyflow/react` is a peer too, if you render the agent canvas.
+- `ai` (Vercel AI SDK) is a **types-only, optional** peer — your app owns the model calls.
+- `@xyflow/react` is a peer too (required), if you render the agent canvas.
+- `mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit` and `media-chrome` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.
 
 ## What's in it
 
@@ -79,6 +79,43 @@ MIT
 <!-- brand-ui:gen:readme:end -->
 
 ---
+
+## Only install what you render
+
+Six peers are optional. The package installs and builds with none of them —
+each is reached only through a lazy `import()` (ADR 0019), and a feature whose
+peer is absent renders an actionable message naming the package to install,
+never a blank component or an unhandled rejection (ADR
+[0032](../../docs/ADR/0032-optional-peer-dependency-policy.md)).
+
+| Peer                                | Unlocks                                                     |
+| ----------------------------------- | ----------------------------------------------------------- |
+| `mermaid`                           | Mermaid diagrams in streamed markdown                       |
+| `@rive-app/react-webgl2`            | `Persona`'s animated avatar                                 |
+| `@xterm/xterm` + `@xterm/addon-fit` | `InteractiveTerminal`                                       |
+| `media-chrome`                      | `AudioPlayer`'s native-feeling controls                     |
+| `ai`                                | Types for the Vercel AI SDK's `UIMessage` — no runtime cost |
+
+```bash
+pnpm add mermaid
+pnpm add @rive-app/react-webgl2
+pnpm add @xterm/xterm @xterm/addon-fit
+pnpm add media-chrome
+pnpm add ai
+```
+
+`@xyflow/react` (the agent-canvas set) stays a **required** peer — install it
+whenever you import from this package.
+
+**Known limitation:** `mermaid` may still resolve on disk even when you skip
+it — `@streamdown/mermaid` (a dependency of this package, not of your app)
+currently declares `mermaid` as its own plain, non-optional dependency, so a
+hoisting package manager can still install it transitively. Skipping the peer
+still means you never have to declare it yourself, and a genuinely absent
+engine still fails actionably rather than crashing.
+
+Full detail (exact peer version ranges, per-feature notes):
+[`docs/CONSUMING.md`](../../docs/CONSUMING.md) §6.
 
 ## Package detail
 

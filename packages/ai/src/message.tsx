@@ -7,7 +7,11 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useLocale } from "@elabs-ai/components-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { stripSanitizerOverrides, warnOnTrustedPluginSlots } from "./_streamdown-safety";
-import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
+import {
+  useStreamdownMermaidOptions,
+  useStreamdownPlugins,
+  useStreamdownTranslations,
+} from "./_streamdown-i18n";
 import type { UIMessage } from "ai";
 import { BotIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
@@ -638,6 +642,9 @@ export const MessageResponse = memo(
       warnOnTrustedPluginSlots(pluginOverrides, internalPlugins);
       return { ...internalPlugins, ...pluginOverrides };
     }, [internalPlugins, pluginOverrides]);
+    // The TOP-LEVEL Streamdown `mermaid` prop — catches a failed diagram
+    // render, including a missing `mermaid` optional peer (issue #33).
+    const mermaidOptions = useStreamdownMermaidOptions();
 
     if (loading) {
       return (
@@ -672,6 +679,7 @@ export const MessageResponse = memo(
         data-slot="message-response"
         plugins={plugins}
         translations={translations}
+        mermaid={mermaidOptions}
         {...props}
       />
     );

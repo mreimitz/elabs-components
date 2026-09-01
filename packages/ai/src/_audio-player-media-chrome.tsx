@@ -21,18 +21,20 @@
  */
 import { Button, ButtonGroup, ButtonGroupText } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import {
-  MediaControlBar,
-  MediaController,
-  MediaDurationDisplay,
-  MediaMuteButton,
-  MediaPlayButton,
-  MediaSeekBackwardButton,
-  MediaSeekForwardButton,
-  MediaTimeDisplay,
-  MediaTimeRange,
-  MediaVolumeRange,
-} from "media-chrome/react";
+// A NAMED import (`import { MediaController } from "media-chrome/react"`) is a
+// static ESM binding a bundler must resolve at build time. Now that
+// `media-chrome` is a genuinely optional peer (issue #33), a consumer who has
+// not installed it hits that resolution at the worst possible time: Vite's own
+// optional-peer-dependency handling swaps in a build-time stub with no
+// exports, and Rollup's static named-export check then fails the WHOLE APP
+// BUILD — not a runtime error any `.catch()`/error boundary could ever see
+// (confirmed against `fixtures/consumer-smoke`'s real Vite build). A namespace
+// import defers every one of these to a plain property lookup, which Rollup
+// does not statically validate, so the build always succeeds; a genuinely
+// missing peer instead resolves the destructured names below to `undefined`,
+// and the guard turns that into a render-phase throw `LazyEngineBoundary`
+// already catches (see `persona.tsx`'s identical pattern).
+import * as MediaChromeReactModule from "media-chrome/react";
 import type { CSSProperties } from "react";
 
 import type {
@@ -47,6 +49,28 @@ import type {
   AudioPlayerTimeRangeProps,
   AudioPlayerVolumeRangeProps,
 } from "./audio-player";
+
+const {
+  MediaControlBar,
+  MediaController,
+  MediaDurationDisplay,
+  MediaMuteButton,
+  MediaPlayButton,
+  MediaSeekBackwardButton,
+  MediaSeekForwardButton,
+  MediaTimeDisplay,
+  MediaTimeRange,
+  MediaVolumeRange,
+} = MediaChromeReactModule;
+
+// The peer is genuinely absent (Vite's build-time stub, or any other bundler
+// that resolves an optional peer to an empty module) — surface a message
+// `isModuleNotFoundMessage` recognizes, so the caller's `renderMissing` still
+// gets the actionable "install media-chrome" copy rather than a raw
+// "MediaController is not a valid JSX element" crash.
+if (!MediaController) {
+  throw new Error("Cannot find module 'media-chrome'");
+}
 
 export const AudioPlayer = ({ children, style, ...props }: AudioPlayerProps) => (
   <MediaController

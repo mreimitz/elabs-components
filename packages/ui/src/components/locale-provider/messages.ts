@@ -250,6 +250,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.persona.thinking": "Assistant thinking…",
   "ai.persona.speaking": "Assistant speaking",
   "ai.persona.asleep": "Assistant asleep",
+  // Optional-peer lazy engines (issue #33) — one shared pair every lazy
+  // boundary's missing-dependency panel resolves through, plus one
+  // `feature`-name key per boundary that renders it (mermaid, the terminal).
+  "ai.error.engineMissing": "{feature} unavailable",
+  "ai.error.engineMissingBody": "{feature} needs {packages} to be installed.",
+  "ai.error.retry": "Try again",
+  "ai.mermaid.feature": "Mermaid diagrams",
+  "ai.mermaid.renderError": "Diagram couldn't be drawn",
+  "ai.terminal.feature": "Interactive terminal",
+  "ai.terminal.renderError": "Terminal couldn't start",
+  "ai.audioPlayer.feature": "Audio player",
+  "ai.audioPlayer.renderError": "Audio player couldn't load",
   // AudioVisualizer. Announced through a throttled `role="status"` region —
   // the canvas itself is decorative (see .claude/rules/loading-states.md and
   // issue #21's accessibility guidance).

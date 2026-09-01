@@ -22,6 +22,40 @@
   `role="alert"` wiring `FieldRow` already validated, adapted to a shared
   lifted-state context so it holds across independently-composed parts;
   `FieldRow` itself is unchanged (#43).
+- Changed: `@elabs-ai/components-ai` no longer forces every consumer to install
+  `mermaid`, `@rive-app/react-webgl2`, `@xterm/addon-fit`, `@xterm/xterm` and
+  `media-chrome` — all five already sit behind lazy `import()` boundaries (ADR 0019) and are now declared as **optional peer dependencies**
+  (`peerDependenciesMeta.<name>.optional: true`), the same pattern
+  `@elabs-ai/components-viewer` already uses. An app that never renders
+  `MarkdownView`'s Mermaid diagrams, `Persona`, `InteractiveTerminal` or
+  `AudioPlayer` can skip all four+one packages entirely; reaching one of those
+  surfaces without the matching peer installed now renders an actionable
+  `StatePanel`/error message naming the exact package to install, instead of a
+  crash or a blank component (issue #33). Fixing this for real also closed a
+  latent Vite/Rollup build-time bug: a STATIC or namespace import of an
+  optional peer resolves, at build time, to an empty stub once the peer is
+  genuinely absent, and Rollup's strict ESM named-export validation then fails
+  the **whole consumer app build** — not a runtime error any `.catch()` could
+  see. `_persona-rive.tsx` and `_audio-player-media-chrome.tsx` now import
+  their peer as a namespace + destructure + explicit-`undefined` guard;
+  `_interactive-terminal-xterm.ts` goes further and defers the actual
+  `@xterm/xterm`/`@xterm/addon-fit` import to a genuinely dynamic,
+  function-scoped `import()` (mirroring `_lazy-mermaid.ts`'s `loadEngine`),
+  since Rollup's `resolveNamespaceVariables` optimization re-derives even a
+  namespace-import binding when it is re-exported. Verified end-to-end via
+  `pnpm consumer:check` with **four of the five** peers genuinely absent from
+  `fixtures/consumer-smoke`'s installed tree (Rive, xterm, `@xterm/addon-fit`,
+  media-chrome). `mermaid` could not be verified the same way: `@streamdown/mermaid`
+  (a dependency of `@elabs-ai/components-ai` itself, not of the fixture) declares
+  `mermaid` as its own plain, non-optional dependency, and the fixture's pnpm
+  configuration still resolves it through the virtual store even with the peer
+  declared optional and never installed directly — so the gate has never actually
+  exercised mermaid's absence, only the other four. `_lazy-mermaid.ts`'s
+  `loadEngine()` still guards against the shape a genuinely-absent peer takes in a
+  real Vite production build (an empty stub module, not a rejection), and a
+  fixture-level unit test reproduces that stub shape directly — but this is a
+  narrower guarantee than "verified end-to-end," and is disclosed as such rather
+  than folded into the same claim as the other four engines.
 - Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
   against the bare `--background` token, but Monaco actually paints a translucent
   `editor.lineHighlightBackground` overlay UNDER token text on the cursor's line —
