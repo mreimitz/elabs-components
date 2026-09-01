@@ -382,13 +382,24 @@ export function parseShellCommands(text, depth = 0) {
 //     round. Its own `-c cipher_spec` and `-S ctl_path` are not script flags,
 //     which is why ssh is its own row rather than a member of the shell one.
 //
-// WHAT THE TABLE CANNOT KNOW is handled by a superset, not by more rows: the
-// whole operand list after an interpreter name is ALSO offered to the
-// re-parser as one script. That covers a `<<<` herestring (`bash <<< "gh …"`),
-// a positional argument a script would `eval`, and any option spelling this
-// table has missed. Re-parsing words that are not a script is free — they
-// yield commands whose argv[0] is not `gh` — so the over-approximation only
-// ever ADDS candidates, which is the fail-closed direction.
+// WHAT A ROW CANNOT KNOW — an option spelling — is handled by a superset, not
+// by more rows: the whole operand list after an interpreter name is ALSO
+// offered to the re-parser as one script. That covers a `<<<` herestring
+// (`bash <<< "gh …"`), a positional argument a script would `eval`, and any
+// option spelling this table has missed. Re-parsing words that are not a
+// script is free — they yield commands whose argv[0] is not `gh` — so the
+// over-approximation only ever ADDS candidates, which is the fail-closed
+// direction.
+//
+// WHAT THE TABLE ITSELF CANNOT KNOW — *which tools are interpreters* — is NOT
+// covered here, and saying otherwise is what let `csh -c "gh issue comment …"`
+// through fix round 6: the superset above is keyed on a name already being in
+// this table, so an interpreter with no row is simply not an interpreter. That
+// half is answered one layer up, by an INVERTED DEFAULT rather than a longer
+// table: check-comment-attribution.mjs re-reads any operand of an
+// UNRECOGNISED command word as a script (see `TEXT_ONLY_COMMANDS` /
+// `nestedOperandCandidates` there). This table stays because a row buys
+// PRECISION — the exact operand a known interpreter executes — not safety.
 //
 // A PIPELINE is the same question asked without a flag, so it gets the same
 // answer: `echo "gh …" | bash` has the script's bytes right there as a word and
@@ -547,4 +558,19 @@ export function leadingAssignments(words) {
     env[m[1]] = m[2];
   }
   return env;
+}
+
+/**
+ * Index of the COMMAND WORD — the first word that is not a leading
+ * `VAR=value` assignment. `GH_HOST=x gh issue …` has its command word at 1.
+ * Used by the fix-round-7 inversion in check-comment-attribution.mjs, which
+ * has to tell "this word IS the command" from "this word is an operand of it".
+ * @param {ShellWord[]} words
+ * @returns {number} `words.length` when the command is assignments only
+ */
+export function commandWordIndex(words) {
+  const list = words || [];
+  let i = 0;
+  while (i < list.length && ASSIGNMENT_RE.test(list[i].value)) i++;
+  return i;
 }

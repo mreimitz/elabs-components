@@ -102,11 +102,29 @@ authority loop where automation authorizes itself.
   `ssh`'s flag-less operand list, which ssh(1) runs on the remote host as a
   shell command. The lookup is **position-independent**, so a wrapper in front
   of the interpreter (`nohup`, `timeout`, `xargs`, `command`, `env`, `nice`)
-  hides nothing; and whatever the table has not seen is covered by a
-  fail-closed superset — the whole operand list after an interpreter name is
-  re-parsed as one script, which is what also catches a `<<<` herestring. A
-  literal producer piped into an interpreter (`echo "gh …" | bash`) is read the
-  same way: the bytes are on the line, so a pipe is not a hiding place either.
+  hides nothing; and every option spelling **of a tool that has a row** is
+  covered by a fail-closed superset — the whole operand list after that tool's
+  name is re-parsed as one script, which is what also catches a `<<<`
+  herestring. A literal producer piped into an interpreter
+  (`echo "gh …" | bash`) is read the same way: the bytes are on the line, so a
+  pipe is not a hiding place either.
+- **Which tools are interpreters is NOT a list — the default is inverted.** The
+  bullet above is about option spellings; it cannot answer _"which tools are
+  there?"_, and that gap is what let `csh -c "gh issue comment …"` — a shell in
+  `/bin` with no row — walk all 18 gated shapes through fix round 6. So an
+  operand of an **unrecognised command word** is re-read as a script whatever
+  the command word is (`nestedOperandCandidates` in
+  `scripts/check-comment-attribution.mjs`); `csh`, `tcsh`, `pwsh`, `fish` and a
+  name invented next year are all the same case, because none of them has to be
+  known. The recognised half is instead a short, arguable set of commands that
+  can only PRINT their operand (`echo`, `printf`, `grep`, `rg`) — a name missing
+  from THAT costs a false refusal, which is loud and overridable, where a name
+  missing from an interpreter list cost a silent bypass. **Residual, stated
+  plainly:** a nested call must reach for a **body** to be refused, so a
+  body-less `gh issue comment 26` hidden in an operand is not caught — with no
+  body flag `gh` prompts interactively and, with no TTY, answers `flags
+required when not running interactively` without reaching the API. At a
+  command position a body-less call is still refused.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved
@@ -120,7 +138,9 @@ authority loop where automation authorizes itself.
   (a) it publishes into a **conversation** about the work (issue, pull request,
   review, release), and (b) the flag carries **free-form prose the marker can
   live in** (`--body`/`--body-file`/`--comment`/`--notes`/`--notes-file`) —
-  then read that subcommand's FLAGS block for the exact pflag grammar. Both
+  then read that subcommand's FLAGS block for the exact pflag grammar — **and
+  its ALIASES block**, since `new` is a real Cobra alias of `create` in three
+  gated groups, so `gh issue new --body …` is `gh issue create --body …`. Both
   criteria are load-bearing: (a) alone would gate `gh secret set --body`, where
   `--body` is the secret's VALUE; (b) alone would gate a repo description. The
   same two criteria pick the `gh api` routes: drop trailing id segments from
@@ -128,7 +148,11 @@ authority loop where automation authorizes itself.
   resource, which is why `PATCH …/issues/26` and `PATCH …/issues/comments/999`
   are gated while `PUT …/issues/26/lock` and `POST …/issues/26/labels` are not.
   The rung-2 doc scan's regex is **generated from that same table**, so the doc
-  scan and the runtime gate cannot describe different surfaces.
+  scan and the runtime gate cannot describe different surfaces. Reading the
+  aliases is precision; what makes the group **decidable** is the same inverted
+  default one level down — an unrecognised subcommand of a gated group
+  (`gh issue frobnicate --body …`) is assumed to post, so a subcommand `gh`
+  grows later is gated the day it ships rather than the day someone notices.
 - **A `gh api` call is gated only when all THREE hold**: it is a **write**
   (POST/PATCH/PUT, or fields with no method), to a **conversation route**, and
   it **carries prose** (a `body=`/`message=`/`commit_message=` field). A read

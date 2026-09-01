@@ -804,6 +804,22 @@ test("#78 class: shell grammar beyond the reported cases still BLOCKS", () => {
       `gh issue comment 26 --body-file ${marked} --body '${UNMARKED}'`,
       "mixed marked file + unmarked inline",
     ],
+    // ── The CATALOGUE's own membership (fix round 7) ─────────────────────────
+    // `new` is a real Cobra ALIAS of `create`, declared in the ALIASES block of
+    // `gh <group> create --help` (gh 2.93.0) and read from there in the same
+    // pass that reads FLAGS. Round 6 matched the canonical name only, so
+    // `gh issue new --body …` — an ordinary thing to type, an accident path
+    // rather than an evasion path — posted unmarked.
+    [`gh issue new --title T --body '${UNMARKED}'`, "gh issue new (alias of create)"],
+    [`gh pr new --title T --body '${UNMARKED}'`, "gh pr new (alias of create)"],
+    [`gh release new v9 --notes '${UNMARKED}'`, "gh release new (alias of create)"],
+    [`bash -lc "gh issue new --title T --body '${UNMARKED}'"`, "an alias behind a shell"],
+    [`csh -c "gh pr new --title T --body '${UNMARKED}'"`, "an alias behind an unknown shell"],
+    // Reading the aliases is PRECISION. What makes the group decidable is the
+    // inversion one level down: an unrecognised subcommand of a gated group is
+    // assumed to post, so a name `gh` grows next year needs no code change.
+    [`gh issue frobnicate 26 --body '${UNMARKED}'`, "an unknown subcommand of a gated group"],
+    [`gh pr publish-draft 12 --body '${UNMARKED}'`, "another unknown subcommand"],
   ];
   for (const [command, label] of cases) {
     assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
@@ -894,6 +910,38 @@ test("#78 class: every script-introducing option spelling still BLOCKS", () => {
     [`bash -lc "bash -ec \\"${inner}\\""`, "clustered inside clustered"],
     [`sh -c "env -S \\"${inner}\\""`, "env -S inside sh -c"],
     [`env -S "bash -lc \\"${inner}\\""`, "sh -c inside env -S"],
+    // ── An interpreter the TABLE has never heard of (fix round 7) ────────────
+    //
+    // Every case above is a spelling of an option belonging to a tool that has
+    // a row. Round 6 derived those grammars correctly and still let
+    // `csh -c "gh issue comment …"` walk all 18 gated shapes through, because
+    // `csh` — a shell in /bin on this machine — simply had no row. A per-tool
+    // grammar cannot answer "which tools are there?", so the DEFAULT is
+    // inverted instead: an operand of an unrecognised command word is re-read
+    // as a script. None of the names below is in any list in this repo.
+    [`csh -c "${inner}"`, "csh -c (the round-6 finding)"],
+    [`tcsh -c "${inner}"`, "tcsh -c"],
+    [`csh -fc "${inner}"`, "csh -fc"],
+    [`csh -bc "${inner}"`, "csh -bc"],
+    [`tcsh -fc "${inner}"`, "tcsh -fc"],
+    [`/bin/tcsh -c "${inner}"`, "tcsh by absolute path"],
+    [`pwsh -c "${inner}"`, "pwsh -c"],
+    [`pwsh -Command "${inner}"`, "pwsh -Command (not a POSIX option spelling at all)"],
+    [`fish -c "${inner}"`, "fish -c"],
+    [`nohup csh -c "${inner}"`, "csh behind nohup"],
+    [`timeout 30 tcsh -c "${inner}"`, "tcsh behind timeout"],
+    [`xargs -I{} csh -c "${inner}"`, "csh behind xargs"],
+    [`echo "${inner}" | csh`, "piped into csh"],
+    [`echo "${inner}" | tcsh`, "piped into tcsh"],
+    [`bash -lc "csh -c \\"${inner}\\""`, "csh nested inside a known shell"],
+    // The inversion stated AS a test. These three command words exist on no
+    // machine and in no list anywhere in this repo, and one of them takes no
+    // option at all. If they still block, the fix is by construction — not a
+    // better enumeration of interpreters, which is what rounds 1-6 kept
+    // shipping.
+    [`zqx-notashell-9f21a -c "${inner}"`, "an interpreter that exists nowhere"],
+    [`frobnicate --run-script "${inner}"`, "an invented tool with an invented option"],
+    [`hypothetical-shell-2031 "${inner}"`, "an invented tool with no option at all"],
   ];
   for (const [command, label] of cases) {
     assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
@@ -926,6 +974,16 @@ test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
   for (const shape of shapes) {
     assert.equal(bash(`bash -lc "${shape}"`).verdict, "block", `bash -lc: ${shape}`);
     assert.equal(bash(`env -S "${shape}"`).verdict, "block", `env -S: ${shape}`);
+    // Round 6's finding was the same "all 18 at once" shape as round 5's, one
+    // layer up: an interpreter with no row. Sweeping every gated shape behind
+    // `csh` and behind a name that exists nowhere is what proves the inverted
+    // default covers the SURFACE, not just the reported spelling.
+    assert.equal(bash(`csh -c "${shape}"`).verdict, "block", `csh -c: ${shape}`);
+    assert.equal(
+      bash(`zqx-notashell-9f21a -c "${shape}"`).verdict,
+      "block",
+      `nonexistent interpreter: ${shape}`,
+    );
   }
 });
 
@@ -966,6 +1024,19 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     "pnpm attribution:comments:check && pnpm attribution:comments:check:test",
     "gh issue close 26",
     "gh pr review 12 --approve",
+    // The precision guards on the fix-round-7 inversion. Widening the net to
+    // "any operand of an unrecognised command word" is only affordable because
+    // a `gh` word that is not the operand's own command word counts only when
+    // it actually carries a body, and because a command that can merely PRINT
+    // its argument is skipped unless it pipes into something that runs it.
+    `git commit -m "harden the gh issue comment attribution gate"`,
+    `git log --grep "gh issue comment" --oneline`,
+    `echo "run gh issue comment by hand" >> NOTES.md`,
+    `node -e 'console.log(1 + 1)'`,
+    `python3 -c 'print(2 ** 10)'`,
+    `csh -c 'gh issue view 26'`,
+    `csh -c 'pnpm test'`,
+    `zqx-notashell-9f21a -c 'gh pr checks 12'`,
   ];
   for (const command of cases) {
     assert.equal(bash(command).verdict, "allow", command);

@@ -49,15 +49,27 @@
 //      recorded above SCRIPT_INTRODUCERS in shell-command-parse.mjs): `-c`
 //      anywhere in a short-flag cluster for every POSIX shell, env's `-S` /
 //      `-S"…"` / `-iS` / `--split-string=`, ssh's flag-less operand list, and
-//      — as a fail-closed superset for whatever the table has not seen — the
-//      whole operand list after any interpreter name. The lookup is
-//      position-independent, so a wrapper in front of the shell
+//      — as a fail-closed superset over the OPTION SPELLINGS OF A TOOL THAT
+//      HAS A ROW — the whole operand list after that tool's name. The lookup
+//      is position-independent, so a wrapper in front of the shell
 //      (`nohup`/`timeout`/`xargs`/`env`/`command`) hides nothing either.
+//      That superset is precision, not safety: round 6 shipped it and still
+//      let `csh -c "gh issue comment …"` through all 18 gated shapes, because
+//      a per-tool grammar cannot answer WHICH TOOLS EXIST and `csh` had no
+//      row. So the row set is no longer what decides. See the inverted default
+//      at nestedOperandCandidates below: an operand of an unrecognised command
+//      word is re-read as a script, whatever the command word is. The table
+//      still earns its keep — it resolves `bash -lc` precisely instead of by
+//      re-reading every operand — but nothing depends on its membership.
 //   2. `findGhCandidates()` treats EVERY command whose argv[0] basename is `gh`
 //      as a candidate, wherever it sits — after leading `VAR=…` assignments,
 //      behind a wrapper (`xargs gh`, `then gh`), or spelled as an absolute path.
 //   3. `analyzeGhCandidate()` skips `gh`'s pre-subcommand global flags, matches
-//      the subcommand against POSTING_SHAPES (or `gh api`, below), and resolves
+//      the subcommand through `postingShapeFor()` — the canonical name, each
+//      Cobra ALIAS declared in `gh <group> <sub> --help`'s ALIASES block
+//      (`gh issue new` IS `gh issue create`), and, for anything else inside a
+//      gated group, a fail-closed generic shape, so a subcommand `gh` grows
+//      later is gated the day it ships — or `gh api`, below, and resolves
 //      EVERY body-carrying flag occurrence — `gh` (pflag) uses the LAST
 //      occurrence of a repeated string flag, so checking only the first let a
 //      marked body be followed by an unmarked one.
@@ -103,6 +115,15 @@
 //     posting call at all, and refusing every shell script the line does not
 //     spell out would refuse most ordinary work — a guard that does that is
 //     disabled within a day and protects nobody.
+//   - A posting call re-read out of an unrecognised command word's operand
+//     must REACH FOR A BODY to be refused, so a body-less `gh issue comment 26`
+//     hidden inside one is not caught. It is also not a posting call from a
+//     hook's vantage point: with no body flag `gh` prompts interactively, and
+//     with no TTY it answers `flags required when not running interactively`
+//     and never reaches the API (verified, gh 2.93.0). At a command position
+//     the body-less call is still refused — that path is unchanged. Requiring
+//     a body here is what keeps `git log --grep "gh issue comment"` and
+//     `git commit -m "…the gh issue comment gate…"` out of the net.
 //   - `gh api` gating takes THREE conditions together, and the declaration
 //     below is the behaviour, checked against it (fix-round-3 verdict,
 //     Finding 2 was a mismatch between the two):
@@ -154,7 +175,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { BLOCKQUOTE_PHRASE, MARKER, hasMarker, render } from "./lib/comment-attribution.mjs";
-import { basename, leadingAssignments, parseShellCommands } from "./lib/shell-command-parse.mjs";
+import {
+  basename,
+  commandWordIndex,
+  leadingAssignments,
+  parseShellCommands,
+} from "./lib/shell-command-parse.mjs";
 
 // ── Rung 1 — Bash command parsing ────────────────────────────────────────────
 
@@ -328,6 +354,18 @@ export function findFlagWords(tokens, flagSpecs, boolShorthands = []) {
 //            `--comment`, `--notes`, `--notes-file`). A one-line metadata flag
 //            cannot hold a 4-line banner, so gating it would only ever produce
 //            a refusal nobody can satisfy except by overriding.
+//   2.5 Read that subcommand's ALIASES block in the SAME pass — Cobra prints
+//      one for every command that declares aliases, and an alias is a real,
+//      typeable spelling of the same call. Against gh 2.93.0 exactly three of
+//      the gated subcommands declare one (`gh issue new`, `gh pr new`,
+//      `gh release new` — the `create` trio; nothing else in the gated set has
+//      an ALIASES block at all, and neither do the four gated groups). Fix
+//      round 6 shipped without this step and `gh issue new --body "…"` — three
+//      characters, no shell, an ordinary thing to type — posted unmarked.
+//      Re-run it with:
+//        for p in "issue create" "pr create" "release create" …; do
+//          eval gh $p --help 2>&1 | awk '/^ALIASES/{f=1;next} f&&/^$/{exit} f'
+//        done
 //   3. Read that subcommand's FLAGS block for the exact pflag grammar — which
 //      short flags are BOOLEAN (so a cluster like `-sb "text"` parses) and
 //      which take a value. Those are the `boolShorthands` below. They differ
@@ -382,6 +420,8 @@ const POSTING_SHAPES = [
   },
   {
     path: ["gh", "issue", "create"],
+    // Cobra ALIASES block of `gh issue create --help` (gh 2.93.0).
+    aliases: ["new"],
     name: "gh issue create",
     // -e/--editor and -w/--web are the OTHER short BOOLEAN flags. -a/-l/-m/-p
     // are OTHER VALUE flags (assignee/label/milestone/project) — an earlier one
@@ -424,6 +464,8 @@ const POSTING_SHAPES = [
   },
   {
     path: ["gh", "pr", "create"],
+    // Cobra ALIASES block of `gh pr create --help` (gh 2.93.0).
+    aliases: ["new"],
     name: "gh pr create --body",
     // -d/--draft, -e/--editor, -f/--fill, -w/--web are the short booleans.
     // requireBody is TRUE here where `gh issue create`'s is FALSE, and the
@@ -520,6 +562,8 @@ const POSTING_SHAPES = [
   },
   {
     path: ["gh", "release", "create"],
+    // Cobra ALIASES block of `gh release create --help` (gh 2.93.0).
+    aliases: ["new"],
     name: "gh release create --notes",
     // -d/--draft, -p/--prerelease and the long-only --generate-notes/--latest/
     // --notes-from-tag/--verify-tag/--fail-on-no-commits are booleans.
@@ -712,6 +756,61 @@ function shapeConsumesNext(entry) {
 /** The `gh` command groups that own at least one gated posting subcommand. */
 const GATED_GROUPS = new Set(POSTING_SHAPES.map((s) => s.path[1]));
 
+// The LONG prose flags, as a set independent of any one subcommand's row.
+// Long-only on purpose: `--body`/`--comment`/`--notes` mean the same thing
+// everywhere in `gh`, while a SHORT letter does not (`-c` is a value-taking
+// `--comment` on `gh issue close` and a boolean review selector on
+// `gh pr review`; `-b` is `--base` on `gh issue develop`). Guessing a short
+// letter's meaning on a subcommand this gate has never read would refuse
+// ordinary work; the long spelling cannot be mistaken.
+const PROSE_LONG_BODY_FLAGS = [{ long: "--body" }, { long: "--comment" }, { long: "--notes" }];
+const PROSE_LONG_FILE_FLAGS = [{ long: "--body-file" }, { long: "--notes-file" }];
+
+/**
+ * The posting shape a `gh <group> <sub>` names — by canonical name, by Cobra
+ * ALIAS, or, for a subcommand this gate has never read, by the INVERTED
+ * DEFAULT (fix round 7).
+ *
+ * Fix round 6 matched `path[2]` literally, so `gh issue new` — a real Cobra
+ * alias of `create`, three characters, no shell — posted unmarked. Two things
+ * changed, and only the second one closes the class:
+ *   · the derivation now reads each subcommand's ALIASES block (step 2.5 of
+ *     the recipe above), which is PRECISION: an alias resolves to the real
+ *     row, so `gh issue new -b "…"` is read with `issue create`'s full short-
+ *     flag grammar;
+ *   · and an UNKNOWN subcommand inside a GATED GROUP that carries a long
+ *     prose flag is treated as posting anyway. That is what makes the alias
+ *     question decidable rather than enumerable: `gh issue <anything>
+ *     --body "…"` is gated whether or not this table has heard of
+ *     `<anything>`, today or after the next `gh` release.
+ * A missing name therefore costs PRECISION (a shape reported by its literal
+ * spelling, short flags unread), never a bypass.
+ *
+ * @param {string|null} group
+ * @param {string|null} sub
+ * @returns {object|null}
+ */
+export function postingShapeFor(group, sub) {
+  if (!group || !sub) return null;
+  const exact = POSTING_SHAPES.find((s) => s.path[1] === group && s.path[2] === sub);
+  if (exact) return exact;
+  const alias = POSTING_SHAPES.find((s) => s.path[1] === group && (s.aliases || []).includes(sub));
+  if (alias) return { ...alias, name: `${alias.name} (as \`gh ${group} ${sub}\`)` };
+  if (!GATED_GROUPS.has(group) || sub.startsWith("-")) return null;
+  return {
+    path: ["gh", group, sub],
+    name: `gh ${group} ${sub}`,
+    boolShorthands: [],
+    boolLongs: [],
+    bodyFlags: PROSE_LONG_BODY_FLAGS,
+    fileFlags: PROSE_LONG_FILE_FLAGS,
+    // Only a long prose flag makes an unread subcommand a posting call — with
+    // none, `gh issue view 26 --json comments` and every other ordinary read
+    // in a gated group stays untouched.
+    requireBody: true,
+  };
+}
+
 /**
  * The verdict for a `gh` call whose subcommand the gate cannot read. Reported
  * as a posting candidate with an uninspectable body, so it refuses.
@@ -763,7 +862,7 @@ function looksLikeGhSubcommand(argv) {
   const first = argv[start] ? argv[start].value : null;
   if (first === "api") return true;
   const second = argv[start + 1] ? argv[start + 1].value : null;
-  return POSTING_SHAPES.some((s) => s.path[1] === first && s.path[2] === second);
+  return Boolean(postingShapeFor(first, second));
 }
 
 /**
@@ -845,7 +944,7 @@ export function analyzeGhCandidate(candidate, ctx = {}) {
     return expandedSubcommandCandidate(env);
   }
   const sub2 = sub2Word ? sub2Word.value : null;
-  const entry = POSTING_SHAPES.find((s) => s.path[1] === sub1 && s.path[2] === sub2);
+  const entry = postingShapeFor(sub1, sub2);
   if (!entry) return null;
 
   // `--help`/`-h` in a real FLAG position makes gh print help and exit without
@@ -977,6 +1076,117 @@ function analyzeGhApi(argv, env, read) {
   return result;
 }
 
+// ── The inverted default for an UNRECOGNISED command word (fix round 7) ──────
+//
+// Rounds 1-6 all died the same death: a real posting command spelled so the
+// gate read it as harmless. Round 6 fixed the last instance of that (`bash
+// -lc`) by deriving each interpreter's option GRAMMAR from its own usage
+// output — correctly, and it holds. But it left the other half of the
+// membership question answered from memory: WHICH TOOLS ARE INTERPRETERS. A
+// name absent from `SCRIPT_INTRODUCERS` was not an interpreter, so `csh -c "gh
+// issue comment 26 --body …"` — a shell in `/bin` on this very machine — walked
+// through all 18 gated shapes with one word. A per-tool grammar cannot answer
+// "which tools are there?", and a longer table would only postpone the next
+// `tcsh`/`fish`/`pwsh`/whatever-ships-next.
+//
+// So the DEFAULT is inverted instead of the table extended: an operand of a
+// command word this gate does not recognise is re-read as a script, and any
+// `gh` posting call inside it is a candidate — no matter what the command word
+// is. `csh`, `tcsh`, `pwsh`, `fish`, `busybox`, or a name invented next year
+// are all the same case, because none of them has to be known.
+//
+// The recognised half is now the small, closed, ARGUABLE set below: commands
+// that cannot execute an operand at all, they only print or match text. That
+// is the inversion in one sentence — a name missing from THIS list costs a
+// false refusal (loud, overridable, one retry), where a name missing from an
+// interpreter list cost a silent bypass. `TEXT_ONLY_COMMANDS` is deliberately
+// short: add a name only if it genuinely cannot run its argument (which is why
+// `awk` and `sed` are absent — GNU `sed`'s `e` and awk's `system()` both can,
+// and `xargs`/`nohup`/`env` obviously do).
+const TEXT_ONLY_COMMANDS = ["echo", "printf", "grep", "egrep", "fgrep", "rg"];
+
+// A word worth re-reading as a script: it must contain a `gh` COMMAND WORD
+// (`gh …`, `/usr/bin/gh …`), which also means it must contain whitespace. The
+// same test the parser applies to an assignment's value.
+const NESTED_GH_RE = /(?:^|[\s/])gh\s/;
+
+// A script arriving on stdin is executed by a sink that takes no operand of its
+// own (`… | csh`, `… | bash -s`, `… | ./run.sh`). One WITH an operand is doing
+// something to that operand instead (`… | grep body`, `… | tee /tmp/x`), which
+// is why the pipeline arm of the inversion is narrower than the operand arm.
+const NESTED_OPERAND_MAX_DEPTH = 3;
+
+/** @param {import("./lib/shell-command-parse.mjs").ShellWord[]} words */
+function isTextOnlyCommand(words) {
+  const idx = commandWordIndex(words);
+  return idx < words.length && TEXT_ONLY_COMMANDS.includes(basename(words[idx].value));
+}
+
+/** @param {{words: import("./lib/shell-command-parse.mjs").ShellWord[]}} [next] */
+function sinkExecutesStdin(next) {
+  const words = (next && next.words) || [];
+  const idx = commandWordIndex(words);
+  if (idx >= words.length) return false;
+  if (TEXT_ONLY_COMMANDS.includes(basename(words[idx].value))) return false;
+  for (let i = idx + 1; i < words.length; i++) {
+    if (!words[i].value.startsWith("-")) return false;
+  }
+  return true;
+}
+
+/**
+ * Posting calls hidden inside an operand of a command word this gate does not
+ * recognise — the fix-round-7 inversion described above.
+ *
+ * Two guards keep the widening honest, and both are about PRECISION, not
+ * safety:
+ *  - a text-only command word (`echo "gh issue comment …"`) is skipped, unless
+ *    it pipes into a sink that would execute what it prints;
+ *  - a nested candidate counts only when it actually REACHES FOR A BODY (a
+ *    resolvable one, or one this gate refuses to read). Prose that merely
+ *    contains the phrase — `git commit -m "harden the gh issue comment gate"`,
+ *    `git log --grep "gh issue comment"` — names a posting shape with no body
+ *    and is not a posting call. This is the one place the inversion is not
+ *    fully closed, and the residual is narrow BY GH'S OWN BEHAVIOUR rather
+ *    than by assumption: a body-less posting call prompts interactively, and
+ *    with no TTY `gh` refuses it outright — verified on gh 2.93.0, which
+ *    answers `flags required when not running interactively` and never reaches
+ *    the API. A top-level body-less call is still refused (that path is
+ *    unchanged); only the nested re-read requires a body.
+ *
+ * @param {import("./lib/shell-command-parse.mjs").SimpleCommand[]} commands
+ * @param {{readFileSync?: typeof readFileSync}} ctx
+ * @param {number} depth
+ * @returns {PostingCandidate[]}
+ */
+function nestedOperandCandidates(commands, ctx, depth) {
+  /** @type {PostingCandidate[]} */
+  const found = [];
+  if (depth >= NESTED_OPERAND_MAX_DEPTH) return found;
+  const list = commands || [];
+  for (let ci = 0; ci < list.length; ci++) {
+    const command = list[ci];
+    const words = (command && command.words) || [];
+    if (!words.length) continue;
+    const pipedIntoExecutor = Boolean(command.pipedNext) && sinkExecutesStdin(list[ci + 1]);
+    if (isTextOnlyCommand(words) && !pipedIntoExecutor) continue;
+    const env = leadingAssignments(words);
+    for (let i = commandWordIndex(words) + 1; i < words.length; i++) {
+      const word = words[i];
+      if (word.expanded || !NESTED_GH_RE.test(word.value)) continue;
+      const inner = parseShellCommands(word.value);
+      for (const candidate of findGhCandidates(inner.commands)) {
+        const analyzed = analyzeGhCandidate(candidate, ctx);
+        if (!analyzed) continue;
+        if (!analyzed.bodies.length && !analyzed.uninspectable) continue;
+        found.push({ ...analyzed, env: { ...env, ...analyzed.env } });
+      }
+      found.push(...nestedOperandCandidates(inner.commands, ctx, depth + 1));
+    }
+  }
+  return found;
+}
+
 /**
  * Every posting call a Bash command line would make.
  * @param {string} command
@@ -993,10 +1203,21 @@ export function analyzeBashCommand(command, deps = {}) {
   // be exactly the kind of false refusal that gets a gate routed around.
   const ctx = { readFileSync: deps.readFileSync };
   const posting = [];
+  // Deduped on the WHOLE candidate, env included: a recognised interpreter's
+  // script is parsed by both routes and would otherwise be reported twice,
+  // while two calls that differ only in an inline override must stay two.
+  const seen = new Set();
+  const add = (candidate) => {
+    const key = JSON.stringify(candidate);
+    if (seen.has(key)) return;
+    seen.add(key);
+    posting.push(candidate);
+  };
   for (const candidate of findGhCandidates(commands)) {
     const analyzed = analyzeGhCandidate(candidate, ctx);
-    if (analyzed) posting.push(analyzed);
+    if (analyzed) add(analyzed);
   }
+  for (const candidate of nestedOperandCandidates(commands, ctx, 0)) add(candidate);
   return posting;
 }
 
@@ -1094,7 +1315,11 @@ export function candidateProblem(candidate) {
 // not just by inspection, before relying on it here.
 function postingShapeDocPattern(shape) {
   const [, group, sub] = shape.path;
-  const base = String.raw`\bgh\s+${group}\s+${sub}\b`;
+  // Cobra ALIASES are part of the surface, so the doc scan names them too —
+  // an instruction that says `gh issue new --body …` is exactly as unguarded
+  // as one that says `gh issue create --body …`.
+  const subs = [sub, ...(shape.aliases || [])].join("|");
+  const base = String.raw`\bgh\s+${group}\s+(?:${subs})\b`;
   if (!shape.requireBody) return base;
   const flags = [...shape.bodyFlags, ...shape.fileFlags]
     .flatMap((flag) => [flag.long, flag.short])
