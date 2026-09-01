@@ -94,15 +94,24 @@ export function collectBarrelExports(barrel, repoRoot) {
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Shape a de-duped export list into the manifest's component/hook/type buckets. */
+/**
+ * Shape a de-duped export list into the manifest's component/hook/type buckets.
+ *
+ * `types` and `otherExports` keep `{name, module}` objects — same shape as
+ * `components`/`hooks` — so a reader can locate the export's source file. They
+ * used to be flattened to bare name strings (`.map((e) => e.name)`), which is
+ * exactly what made `flat()` unable to surface them (#86): with no `module` to
+ * attribute a row to, there was nothing to push. This IS a manifest-shape
+ * change; `pnpm manifest` regenerates `brand-ui.manifest.json` to match.
+ */
 function bucketExports(all) {
   return {
     components: all.filter((e) => e.kind === "value" && /^[A-Z]/.test(e.name)),
     hooks: all.filter((e) => e.kind === "value" && /^use[A-Z]/.test(e.name)),
-    types: all.filter((e) => e.kind === "type").map((e) => e.name),
+    types: all.filter((e) => e.kind === "type").map((e) => ({ name: e.name, module: e.module })),
     otherExports: all
       .filter((e) => e.kind === "value" && /^[a-z]/.test(e.name) && !/^use[A-Z]/.test(e.name))
-      .map((e) => e.name),
+      .map((e) => ({ name: e.name, module: e.module })),
   };
 }
 
@@ -632,6 +641,41 @@ export function matchPlaybooks(manifest, query) {
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score || a.i - b.i)
     .map((s) => s.p);
+}
+
+/**
+ * Match a free-text query against the manifest's whole-screen templates (name,
+ * title, description). Modeled on `matchPlaybooks()` above, but a SEPARATE arm:
+ * not every template has a `docs/playbooks/<name>.md` counterpart (`screen-states`,
+ * `object-detail-hub` are patterns/anatomies, not scaffoldable whole-app
+ * archetypes — see `ARCHETYPES` in engine.mjs), so `matchPlaybooks()` never sees
+ * them and they were completely unreachable from `search` (#89). This is what
+ * makes `brand-ui search screen-states` find the template by its own exact name
+ * even with no playbook front matter to read.
+ *
+ * Ranked strongest-first — an exact name, then a whole-query phrase hit, then a
+ * single-token hit against name+title+description; ties keep manifest order.
+ * @returns {object[]}
+ */
+export function matchTemplates(manifest, query) {
+  const q = String(query || "")
+    .toLowerCase()
+    .trim();
+  if (!q) return [];
+  const templates = manifest?.templates || [];
+  const tokens = q.split(/[^a-z0-9-]+/).filter((t) => t.length >= 3 && !INTENT_STOPWORDS.has(t));
+  const scored = templates.map((tmpl, i) => {
+    const hay = [tmpl.name, tmpl.title, tmpl.description].join(" ").toLowerCase();
+    let score = 0;
+    if (tmpl.name.toLowerCase() === q) score = 3;
+    else if (hay.includes(q)) score = 2;
+    else if (tokens.some((t) => hay.includes(t))) score = 1;
+    return { tmpl, score, i };
+  });
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .map((s) => s.tmpl);
 }
 
 // ---- cva variant expansion (WP-03 #79) -------------------------------------
@@ -1412,6 +1456,13 @@ export function flat(manifest) {
         ...(info.intent?.[c.name] ? { intent: info.intent[c.name] } : {}),
       });
     for (const h of info.hooks) rows.push({ name: h.name, kind: "hook", pkg, module: h.module });
+    // Type-only exports (interfaces/types, e.g. `DataTableColumnMeta`) and plain
+    // value exports that are neither components nor hooks (`otherExports`, e.g.
+    // `createSelectionColumn`) — #86. Both buckets carry `{name, module}` (see
+    // `bucketExports()`), so they surface here exactly like components/hooks.
+    for (const t of info.types) rows.push({ name: t.name, kind: "type", pkg, module: t.module });
+    for (const o of info.otherExports)
+      rows.push({ name: o.name, kind: "export", pkg, module: o.module });
     // Subpath exports import from `pkg/<subpath>`, not the root barrel — surface
     // them too so `search`/`docs` find them (importPath records the real import).
     for (const [importPath, sub] of Object.entries(info.subpaths || {})) {
@@ -1419,6 +1470,10 @@ export function flat(manifest) {
         rows.push({ name: c.name, kind: "component", pkg, importPath, module: c.module });
       for (const h of sub.hooks)
         rows.push({ name: h.name, kind: "hook", pkg, importPath, module: h.module });
+      for (const t of sub.types)
+        rows.push({ name: t.name, kind: "type", pkg, importPath, module: t.module });
+      for (const o of sub.otherExports)
+        rows.push({ name: o.name, kind: "export", pkg, importPath, module: o.module });
     }
   }
   return rows;

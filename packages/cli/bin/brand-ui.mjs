@@ -29,6 +29,7 @@ import {
   tasteSearchDirs,
   flat,
   matchPlaybooks,
+  matchTemplates,
 } from "../lib/core.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
@@ -268,7 +269,12 @@ function cmdSearch() {
   // the archetype recipe, not just a same-named icon. Matched on archetype/intent/
   // keywords so "kpi", "chatbot" or "landing page" all land on the right playbook.
   const books = matchPlaybooks(manifest, q);
-  if (json) return out({ components: rows, registry: reg, playbooks: books });
+  // Whole-screen templates (WP-09 #89): a SEPARATE arm from playbooks — not
+  // every template has a docs/playbooks/<name>.md counterpart (screen-states,
+  // object-detail-hub are patterns/anatomies, not scaffoldable archetypes), so
+  // matchPlaybooks() alone leaves them unreachable even by their own exact name.
+  const templates = matchTemplates(manifest, q);
+  if (json) return out({ components: rows, registry: reg, playbooks: books, templates });
   console.log(`Components/hooks matching "${q}":`);
   for (const r of rows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
   if (!rows.length) console.log("  (none)");
@@ -283,6 +289,22 @@ function cmdSearch() {
       console.log(`    ${p.file}${p.template ? `  · template ${p.template}` : ""}`);
     }
   }
+  if (templates.length) {
+    console.log(`\nTemplates matching "${q}":`);
+    for (const t of templates) {
+      console.log(`  ${t.name}  — ${firstSentence(t.description)}`);
+      console.log(`    ${t.file}`);
+    }
+  }
+}
+
+/** The first sentence of a description (up to the first `.`/`!`/`?`), for a
+ * terse one-line summary in `search` output. Falls back to the full string
+ * when no sentence terminator is found. */
+function firstSentence(text) {
+  const s = String(text || "").trim();
+  const m = s.match(/^[^.!?]*[.!?]/);
+  return m ? m[0].trim() : s;
 }
 
 /**
