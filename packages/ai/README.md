@@ -80,6 +80,43 @@ MIT
 
 ---
 
+## Only install what you render
+
+Six peers are optional. The package installs and builds with none of them —
+each is reached only through a lazy `import()` (ADR 0019), and a feature whose
+peer is absent renders an actionable message naming the package to install,
+never a blank component or an unhandled rejection (ADR
+[0032](../../docs/ADR/0032-optional-peer-dependency-policy.md)).
+
+| Peer                                | Unlocks                                                     |
+| ----------------------------------- | ----------------------------------------------------------- |
+| `mermaid`                           | Mermaid diagrams in streamed markdown                       |
+| `@rive-app/react-webgl2`            | `Persona`'s animated avatar                                 |
+| `@xterm/xterm` + `@xterm/addon-fit` | `InteractiveTerminal`                                       |
+| `media-chrome`                      | `AudioPlayer`'s native-feeling controls                     |
+| `ai`                                | Types for the Vercel AI SDK's `UIMessage` — no runtime cost |
+
+```bash
+pnpm add mermaid
+pnpm add @rive-app/react-webgl2
+pnpm add @xterm/xterm @xterm/addon-fit
+pnpm add media-chrome
+pnpm add ai
+```
+
+`@xyflow/react` (the agent-canvas set) stays a **required** peer — install it
+whenever you import from this package.
+
+**Known limitation:** `mermaid` may still resolve on disk even when you skip
+it — `@streamdown/mermaid` (a dependency of this package, not of your app)
+currently declares `mermaid` as its own plain, non-optional dependency, so a
+hoisting package manager can still install it transitively. Skipping the peer
+still means you never have to declare it yourself, and a genuinely absent
+engine still fails actionably rather than crashing.
+
+Full detail (exact peer version ranges, per-feature notes):
+[`docs/CONSUMING.md`](../../docs/CONSUMING.md) §6.
+
 ## Package detail
 
 Presentational AI/chat components — `ChatShell`, `Conversation`, `Message`,
