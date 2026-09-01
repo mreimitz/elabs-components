@@ -728,4 +728,79 @@ describe("SchemaFormTestAction", () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByLabelText(/API key/)).toHaveFocus();
   });
+
+  // The two tests above prove a SUCCESSFUL test-action doesn't bypass field
+  // validation. The maintainer ruling's actual direction is the opposite one
+  // — a FAILING or PENDING test-action must never BLOCK an otherwise-valid
+  // submit — and that direction was unlocked: a future change wiring
+  // `submitting` to the test-action's status would leave every test above
+  // green while breaking this. These two lock it, with `apiKey` seeded VALID
+  // so submit's own field validation can never be the reason it succeeds or
+  // fails.
+  function renderWithTestActionAndValidValues(onTest: () => void | Promise<void>) {
+    const result = normalizeFormSpec(connectorSpec);
+    if (!result.ok) throw new Error("expected connectorSpec to normalize");
+    const onSubmit = vi.fn();
+    render(
+      <SchemaFormProvider spec={result.spec} values={{ apiKey: "sk-test" }} onSubmit={onSubmit}>
+        <SchemaFormRoot>
+          <SchemaFormFields />
+          <SchemaFormTestAction onTest={onTest} />
+          <SchemaFormSubmit />
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+    return { onSubmit };
+  }
+
+  it("a FAILING test-action does not block an otherwise-valid submit", async () => {
+    const user = userEvent.setup();
+    const onTest = vi.fn().mockRejectedValue(new Error("connection refused"));
+    const { onSubmit } = renderWithTestActionAndValidValues(onTest);
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("connection refused");
+    });
+
+    // The test action is in its terminal FAILURE state — submit is wired
+    // only to field validity, so a valid form still submits.
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      formName: "connector",
+      values: expect.objectContaining({ apiKey: "sk-test" }),
+    });
+  });
+
+  it("a PENDING test-action does not block an otherwise-valid submit", async () => {
+    const user = userEvent.setup();
+    let resolveTest: () => void = () => {};
+    const onTest = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTest = resolve;
+        }),
+    );
+    const { onSubmit } = renderWithTestActionAndValidValues(onTest);
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+    expect(screen.getByRole("button", { name: "Testing…" })).toBeInTheDocument();
+
+    // Still pending — Submit is a wholly separate control: not disabled, not
+    // aria-disabled, and not gated by the test action's in-flight state.
+    const submitButton = screen.getByRole("button", { name: "Submit" });
+    expect(submitButton).not.toHaveAttribute("aria-disabled");
+    await user.click(submitButton);
+    expect(onSubmit).toHaveBeenCalledWith({
+      formName: "connector",
+      values: expect.objectContaining({ apiKey: "sk-test" }),
+    });
+
+    // Let the still-in-flight test action settle so it doesn't leak a
+    // pending `act()` warning into a later test.
+    resolveTest();
+    await waitFor(() => {
+      expect(screen.getByText("Connected")).toBeInTheDocument();
+    });
+  });
 });

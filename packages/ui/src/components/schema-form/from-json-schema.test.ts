@@ -6,6 +6,7 @@ import type {
   GroupFieldSpec,
   IntegerFieldSpec,
   ListFieldSpec,
+  MultiEnumFieldSpec,
   NumberFieldSpec,
   StringFieldSpec,
 } from "./schema-form-spec";
@@ -121,6 +122,54 @@ describe("fromJsonSchema — documented subset", () => {
     expect(form.fields).toHaveLength(1);
     const tags = form.fields[0] as ListFieldSpec;
     expect(tags).toMatchObject({ type: "list", minItems: 1, maxItems: 5 });
+  });
+
+  // fix-round-1 (issue #22): a validator probe found that a CONSTRAINED array
+  // item schema (`items.enum`) was silently widening into a free-text
+  // `ListFieldSpec` — the source schema only allows two values, but the
+  // rendered form accepted anything. `items.enum` must map onto the
+  // FieldSpec that actually enforces the constraint (`multi-enum`), not the
+  // one that drops it.
+  it("maps an array-of-CONSTRAINED-string property (items.enum) to a MultiEnumFieldSpec, not a free-text list", () => {
+    const form = fromJsonSchema(
+      {
+        type: "object",
+        properties: {
+          scopes: {
+            type: "array",
+            items: { type: "string", enum: ["read", "write", "admin"] },
+            default: ["read"],
+          },
+        },
+      },
+      { formName: "f" },
+    );
+    expect(form.fields).toHaveLength(1);
+    const scopes = form.fields[0] as MultiEnumFieldSpec;
+    expect(scopes).toMatchObject({
+      type: "multi-enum",
+      options: ["read", "write", "admin"],
+      default: ["read"],
+    });
+  });
+
+  it("drops an out-of-range default rather than passing it through when mapping items.enum", () => {
+    const form = fromJsonSchema(
+      {
+        type: "object",
+        properties: {
+          scopes: {
+            type: "array",
+            items: { type: "string", enum: ["read", "write"] },
+            default: ["read", "not-an-option"],
+          },
+        },
+      },
+      { formName: "f" },
+    );
+    const scopes = form.fields[0] as MultiEnumFieldSpec;
+    expect(scopes.type).toBe("multi-enum");
+    expect(scopes.default).toBeUndefined();
   });
 
   it("maps a nested object property to a single-branch advanced GroupFieldSpec", () => {

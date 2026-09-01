@@ -11,7 +11,17 @@
  *   { type: "string", enum: [...] }              → EnumFieldSpec
  *   { type: "number" | "integer" }                → NumberFieldSpec / IntegerFieldSpec
  *   { type: "boolean" }                            → BooleanFieldSpec
- *   { type: "array", items: { type: "string" } }    → ListFieldSpec
+ *   { type: "array", items: { type: "string" } }    → ListFieldSpec (free text)
+ *   { type: "array",
+ *     items: { type: "string", enum: [...] } }       → MultiEnumFieldSpec
+ *                                                        (a CONSTRAINED array
+ *                                                        item schema maps onto
+ *                                                        the field type that
+ *                                                        actually enforces the
+ *                                                        constraint — see
+ *                                                        "Constraint keywords"
+ *                                                        below for why this
+ *                                                        one keyword IS read)
  *   { type: "object", properties: {...} }            → GroupFieldSpec
  *                                                        (variant: "advanced",
  *                                                        one always-open branch)
@@ -46,9 +56,28 @@
  * `normalizeFormSpec` already uses for the render path, because omitting one
  * field is recoverable in a way a mis-mapped `$ref`/combinator is not.
  *
- * Widening this subset later (more `format`s, multi-select array items,
- * `$ref` resolution) is an additive, non-breaking change to this one
- * function — see issue #22's "worth having alongside" list.
+ * CONSTRAINT KEYWORDS this subset does not read: `const`, `if`/`then`/`else`,
+ * `dependentSchemas`, `dependentRequired`, `additionalProperties`,
+ * `patternProperties`, `propertyNames`, `contains`, `multipleOf`,
+ * `exclusiveMinimum`/`exclusiveMaximum`, `uniqueItems`. These are
+ * READ-IGNORED, not refused — unlike `$ref`/`allOf`/`oneOf`/`anyOf`/`not`,
+ * none of them changes what TYPE a property maps to, so ignoring one never
+ * produces a wrongly-shaped field. But ignoring one DOES widen what the
+ * rendered form accepts relative to the source schema (a `const`-pinned
+ * property renders as an ordinary editable field, not a fixed one; a
+ * `multipleOf`-constrained number accepts any value in range). This is the
+ * one place `fromJsonSchema()` is honestly silently-permissive rather than
+ * silently-wrong or refusing — call it out in review when a schema leans on
+ * one of these keywords for validation the mapped form will not enforce.
+ * `items.enum` is the one exception among these: a constrained array-item
+ * schema is common enough (and cheap enough to map faithfully) that it reads
+ * `items.enum` and maps onto `MultiEnumFieldSpec` — see the table above —
+ * rather than joining this ignore list and widening into a free-text
+ * `ListFieldSpec`.
+ *
+ * Widening this subset later (more `format`s, `$ref` resolution) is an
+ * additive, non-breaking change to this one function — see issue #22's
+ * "worth having alongside" list.
  */
 
 import type { FieldSpec, FormSpec } from "./schema-form-spec";
@@ -186,6 +215,29 @@ function mapProperty(name: string, schema: unknown, required: boolean): FieldSpe
       // one with no `items` schema at all, is dropped predictably rather than
       // guessed at.
       if (!isPlainObject(schema.items) || schema.items.type !== "string") return null;
+
+      // A CONSTRAINED item schema (`items.enum`) is a multi-select from a
+      // fixed option list, not free text — map it onto the FieldSpec that
+      // actually enforces that constraint (`multi-enum`) rather than
+      // relaxing it into an unconstrained `list` (fix-round-1, issue #22: a
+      // validator probe found `{type:'array', items:{type:'string',
+      // enum:[...]}}` was silently widening to free text). `minItems`/
+      // `maxItems` have no `multi-enum` equivalent and are dropped here —
+      // documented in this module's doc comment alongside the other
+      // constraint keywords this subset does not enforce.
+      const itemEnum = stringArray(schema.items.enum);
+      if (itemEnum) {
+        const enumDefault = stringArray(schema.default);
+        return {
+          type: "multi-enum",
+          ...base,
+          options: itemEnum,
+          ...(enumDefault && enumDefault.every((v) => itemEnum.includes(v))
+            ? { default: enumDefault }
+            : {}),
+        };
+      }
+
       return {
         type: "list",
         ...base,
