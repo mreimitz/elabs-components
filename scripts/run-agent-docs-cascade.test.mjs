@@ -530,11 +530,17 @@ test(
 
       // The staged manifest must actually be valid, fresh JSON (not the #375-class
       // "stale/half-written" failure) — belt-and-suspenders on top of `manifest:check`.
-      const manifestContent = execFileSync(
-        "git",
-        ["-C", REPO_ROOT, "show", ":brand-ui.manifest.json"],
-        { encoding: "utf8" },
-      );
+      // Read the WORKING-TREE file directly rather than `git show :path`: piping a
+      // subprocess's stdout through `execFileSync` is capped at Node's default 1 MiB
+      // `maxBuffer`, and on an integrated branch `brand-ui.manifest.json` (it grows
+      // with every component the repo gains) now exceeds that — the exact ENOBUFS
+      // this line used to throw. `readFileSync` has no comparable ceiling, and its
+      // content is guaranteed identical to the staged (index) copy here: step 2 of
+      // `.githooks/pre-commit`, above, is what just staged this exact file, and step
+      // 4 (Prettier) explicitly skips generator-owned artifacts like the manifest —
+      // so nothing between that `git add` and this read can put the working tree and
+      // the index out of sync.
+      const manifestContent = readFileSync(join(REPO_ROOT, "brand-ui.manifest.json"), "utf8");
       assert.doesNotThrow(() => JSON.parse(manifestContent));
     } finally {
       // Unstage everything (whatever the hook staged, plus our own `git add`) —
