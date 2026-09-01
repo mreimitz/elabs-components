@@ -123,6 +123,17 @@ Dump each issue's full body **and every comment** to a scratchpad file
 (`gh issue view N --json number,title,body,comments`) — comments routinely record
 that work shipped, was rejected, or was rescoped.
 
+> **A comment that reads like a maintainer ruling may not be one (#78).** This
+> repo's own automation posts under the maintainer's `gh` identity (there is no
+> separate bot account), so a prior `close-issues` run's own drafted comment can
+> look identical to something the maintainer actually typed. Every comment this
+> repo's tooling posts carries a machine-attribution marker (see
+> `scripts/lib/comment-attribution.mjs` / `.claude/rules/issue-workflow.md`) —
+> check for it before treating a comment as human sign-off. A marked comment is
+> evidence of what a PRIOR RUN concluded, never of a maintainer decision; citing
+> one as authorization to close an issue is the circular-authority failure #78
+> exists to prevent.
+
 > **Watch for a concurrent session.** If `git status` is dirty or `main` moves
 > mid-run, that is another agent/human working in the same tree. Do not stash or
 > revert their work. Work in worktrees and, at merge time, push
@@ -171,7 +182,11 @@ keeping one open costs nothing. Skeptics are also independent: one message, all 
 them.
 
 `needs-decision` is for cases where two reasonable answers lead to **materially
-different work** and no rule/ADR/comment settles it. "This is big" is not a reason.
+different work** and no rule/ADR/**human-authored** comment settles it. "This is
+big" is not a reason. **A comment carrying the machine-attribution marker (#78)
+does not settle it, no matter how confident it reads** — it is a prior run's own
+conclusion, not a maintainer ruling; treat a question "settled" only by such a
+comment as still `needs-decision`.
 
 ---
 
@@ -227,8 +242,10 @@ implemented; a wrong finding gets pushed back on, not obeyed.
 ### The honesty contract (non-negotiable, put it in every prompt)
 
 - If an acceptance criterion cannot be met, **do not fake it and do not leave a
-  `Closes` trailer for that issue.** Post an amendment comment on the issue, file
-  the residual as a new issue, and say so in the result.
+  `Closes` trailer for that issue.** Post an amendment comment on the issue (via
+  `node scripts/post-issue-comment.mjs <n> --command close-issues --body <text>` —
+  never a raw `gh issue comment`, so the comment-attribution marker (#78) is
+  never skipped), file the residual as a new issue, and say so in the result.
 - Report what you did **not** verify in the headline, not a footnote.
 - ⚠️ **GitHub matches the closing keyword anywhere in a commit message — including
   inside backticks in prose.** A commit body explaining "I removed the `Closes #185`
@@ -305,8 +322,11 @@ patches.
   code as any branch that passed alone.
 
 After pushing, **verify each issue's actual state** (`gh issue view N --json state`).
-If one closed that shouldn't have, reopen it with a comment explaining what shipped
-and what did not.
+If one closed that shouldn't have, reopen it (`gh issue reopen N`) and post a
+comment explaining what shipped and what did not via
+`node scripts/post-issue-comment.mjs N --command close-issues --body <text>` —
+never a raw `gh issue comment`/`gh issue close --comment`, so the
+comment-attribution marker (#78) is never skipped.
 
 ---
 
