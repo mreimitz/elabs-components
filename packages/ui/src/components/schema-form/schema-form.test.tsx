@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SchemaForm, SchemaFormField, SchemaFormProvider } from "./schema-form";
+import {
+  SchemaForm,
+  SchemaFormField,
+  SchemaFormFields,
+  SchemaFormProvider,
+  SchemaFormRoot,
+  SchemaFormSubmit,
+  SchemaFormTestAction,
+} from "./schema-form";
 import {
   fieldSpecSchema,
   fileMatchesAccept,
@@ -608,5 +616,116 @@ describe("schema-form-spec", () => {
     expect(fileMatchesAccept(exeFile, ".json")).toBe(false);
     expect(fileMatchesAccept(pngFile, "image/*")).toBe(true);
     expect(fileMatchesAccept(jsonFile, undefined)).toBe(true);
+  });
+});
+
+describe("SchemaFormTestAction", () => {
+  // A required field left empty on purpose — every test in this block proves
+  // the test action neither reads nor is blocked by field validity.
+  const connectorSpec: FormSpec = {
+    formName: "connector",
+    fields: [{ type: "string", name: "apiKey", label: "API key", required: true }],
+  };
+
+  function renderWithTestAction(onTest: () => void | Promise<void>) {
+    const result = normalizeFormSpec(connectorSpec);
+    if (!result.ok) throw new Error("expected connectorSpec to normalize");
+    const onSubmit = vi.fn();
+    render(
+      <SchemaFormProvider spec={result.spec} onSubmit={onSubmit}>
+        <SchemaFormRoot>
+          <SchemaFormFields />
+          <SchemaFormTestAction onTest={onTest} />
+          <SchemaFormSubmit />
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+    return { onSubmit };
+  }
+
+  it("renders idle with the default label", () => {
+    renderWithTestAction(() => {});
+    expect(screen.getByRole("button", { name: "Test connection" })).toBeInTheDocument();
+  });
+
+  it("goes pending then success when onTest resolves, without touching field validity", async () => {
+    const user = userEvent.setup();
+    let resolveTest: () => void = () => {};
+    const onTest = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTest = resolve;
+        }),
+    );
+    renderWithTestAction(onTest);
+
+    const button = screen.getByRole("button", { name: "Test connection" });
+    await user.click(button);
+
+    expect(onTest).toHaveBeenCalledTimes(1);
+    // Pending: still focusable/in the tab order (aria-disabled, never native disabled).
+    expect(screen.getByRole("button", { name: "Testing…" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Testing…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    // The empty required field is untouched — no validation error appeared just
+    // from running the test action.
+    expect(screen.queryByText(/required/i)).not.toBeInTheDocument();
+
+    resolveTest();
+    await waitFor(() => {
+      expect(screen.getByText("Connected")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Test connection" })).not.toHaveAttribute(
+      "aria-disabled",
+    );
+  });
+
+  it("goes pending then failure when onTest rejects, and shows the rejection's message", async () => {
+    const user = userEvent.setup();
+    const onTest = vi.fn().mockRejectedValue(new Error("connection refused"));
+    renderWithTestAction(onTest);
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("connection refused");
+    });
+  });
+
+  it("passes the form's current effective values to onTest", async () => {
+    const user = userEvent.setup();
+    const onTest = vi.fn().mockResolvedValue(undefined);
+    const result = normalizeFormSpec(connectorSpec);
+    if (!result.ok) throw new Error("expected connectorSpec to normalize");
+    render(
+      <SchemaFormProvider spec={result.spec} values={{ apiKey: "sk-test" }}>
+        <SchemaFormRoot>
+          <SchemaFormFields />
+          <SchemaFormTestAction onTest={onTest} />
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+    expect(onTest).toHaveBeenCalledWith({ apiKey: "sk-test" });
+  });
+
+  it("does not block or get blocked by SchemaFormSubmit's own validation", async () => {
+    const user = userEvent.setup();
+    const onTest = vi.fn().mockResolvedValue(undefined);
+    const { onSubmit } = renderWithTestAction(onTest);
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+    await waitFor(() => {
+      expect(screen.getByText("Connected")).toBeInTheDocument();
+    });
+
+    // Submit still enforces the required field independently of the test
+    // action having "succeeded" — the two are not wired together.
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/API key/)).toHaveFocus();
   });
 });

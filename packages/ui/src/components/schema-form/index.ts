@@ -5,6 +5,7 @@ export {
   SchemaFormFields,
   SchemaFormField,
   SchemaFormSubmit,
+  SchemaFormTestAction,
   SchemaFormError,
   SchemaFormTitle,
   SchemaFormDescription,
@@ -15,11 +16,19 @@ export {
   type SchemaFormFieldsProps,
   type SchemaFormFieldProps,
   type SchemaFormSubmitProps,
+  type SchemaFormTestActionProps,
+  type SchemaFormTestActionStatus,
   type SchemaFormErrorProps,
   type SchemaFormTitleProps,
   type SchemaFormDescriptionProps,
   type SchemaFormFallbackProps,
 } from "./schema-form";
+
+export {
+  fromJsonSchema,
+  UnsupportedJsonSchemaError,
+  type FromJsonSchemaOptions,
+} from "./from-json-schema";
 
 export {
   fieldSpecSchema,
