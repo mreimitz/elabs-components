@@ -299,6 +299,56 @@ value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
   not restrict (that directive governs parsing a `style` attribute string or a
   `<style>` element, not a script's direct CSSOM manipulation — see ADR 0031).
 
+### 5.3 Deriving a palette from one brand colour (`deriveTheme`)
+
+`tokenOverrides` (above) still expects you to already know the value for every
+token you want to patch. A tenant/white-label picker usually has only ONE
+colour — the brand's own — with no idea what a coherent, AA-safe
+`--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` would be.
+`deriveTheme` (issue #39) computes those from the seed, ready to hand straight
+to `tokenOverrides`:
+
+```tsx
+import { deriveTheme } from "@elabs-ai/components-tokens";
+
+const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.55 0.18 250)"
+// => {
+//   "--primary": "oklch(0.55 0.18 250)",
+//   "--primary-foreground": "oklch(1 0 0)",
+//   "--accent": "oklch(0.811 0.05 250)",
+//   "--accent-foreground": "oklch(0 0 0)",
+//   "--ring": "oklch(0.55 0.18 250)",
+// }
+
+<ThemeProvider tokenOverrides={overrides}>
+```
+
+- **A patch, not a theme — by design.** `deriveTheme` returns exactly the five
+  tokens above, not full `THEME_TOKEN_NAMES` coverage. That mirrors
+  `tokenOverrides` itself (ADR 0031 explicitly rejected requiring full coverage
+  for a partial patch as "defeats the point"): every key it returns is a real,
+  valid `ThemeTokenName` — checked by `derive-theme.test.ts` — but it isn't
+  trying to replace a theme, only to patch the handful of tokens that actually
+  depend on a brand colour.
+- **AA-safety is proven, not assumed.** Every `-foreground` value is chosen
+  from true black/true white, whichever contrasts better against its plate —
+  provably ≥4.5:1 (WCAG AA text) for ANY fill colour (see the module doc
+  comment in `packages/tokens/src/derive-theme.ts` for the proof, and the
+  "proof-check" test that verifies it numerically). `--ring` is searched at
+  `--primary`'s own hue for the lightness closest to `--primary`'s that clears
+  ≥3:1 (WCAG 1.4.11) against `background`. If an AA-safe value genuinely
+  cannot be found, `deriveTheme` **throws** rather than returning a
+  non-compliant token — it never fails silently.
+- **Pass `background`** (e.g. read `--background` off the active theme via
+  `getComputedStyle`) when deriving for `dark` or a custom theme; omitted, it
+  assumes the `light` reference theme's own background.
+- **Input is `oklch(...)` only** (the same literal format every token in
+  `themes.css` uses) — convert a hex/`rgb()` brand colour before calling it.
+- **Compose it with `tokenOverrides`, don't hand-roll the object it returns.**
+  `deriveTheme`'s whole point is that you stop hand-deriving these values
+  yourself; see `Foundations/Theming` → `DeriveTheme` in Storybook for a live
+  "tenant picks a brand colour" demo.
+
 ## 6. Per-package extras
 
 - **`@elabs-ai/components-flow`** — `import "@xyflow/react/dist/style.css"` once.

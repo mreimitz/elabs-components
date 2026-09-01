@@ -4,6 +4,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import {
   BUILT_IN_THEME_DEFINITIONS,
   defineTheme,
+  deriveTheme,
   ThemeProvider,
 } from "@elabs-ai/components-tokens";
 import { Button, ThemeSwitcher } from "@elabs-ai/components-ui";
@@ -723,6 +724,161 @@ export const RuntimeTokenOverrides: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Open tenant preview" }));
     await waitFor(() => expect(primaryColor()).not.toBe(referenceColor()));
     await expect(docRoot.style.getPropertyValue("--primary")).toBe("");
+  },
+};
+
+/**
+ * `deriveTheme` (issue #39) turns ONE brand colour into a coherent, AA-safe
+ * `tokenOverrides` patch — for a tenant/white-label picker that only has a
+ * brand colour, not a full set of hand-picked hover/active/focus values the
+ * way `RuntimeTokenOverridesDemo` above hard-codes just `--primary`. Picking a
+ * tenant recomputes `--primary-foreground`/`--accent`/`--accent-foreground`/
+ * `--ring` from that one seed and hands the result straight to the same
+ * `tokenOverrides` prop.
+ */
+function DeriveThemeDemo() {
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+  const [tenant, setTenant] = useState<TenantId>("acme");
+
+  const overrides = deriveTheme({ primary: TENANT_COLORS[tenant] });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={tenant === "acme" ? "default" : "outline"}
+          onClick={() => setTenant("acme")}
+        >
+          Acme (blue)
+        </Button>
+        <Button
+          size="sm"
+          variant={tenant === "globex" ? "default" : "outline"}
+          onClick={() => setTenant("globex")}
+        >
+          Globex (red)
+        </Button>
+      </div>
+
+      <div ref={setTarget} className="rounded-lg border border-border p-4">
+        {target ? (
+          <ThemeProvider
+            attributeTarget={target}
+            tokenOverrides={overrides}
+            storageKey={null}
+            motionStorageKey={null}
+            decorationStorageKey={null}
+            densityStorageKey={null}
+            registerStorageKey={null}
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <span className="block text-meta text-muted-foreground">
+                  <code className="text-code">--primary</code>
+                </span>
+                <div
+                  data-testid="derived-primary-swatch"
+                  className="flex h-12 w-full items-center justify-center rounded-md bg-primary text-caption text-primary-foreground"
+                >
+                  Primary
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <span className="block text-meta text-muted-foreground">
+                  <code className="text-code">--accent</code>
+                </span>
+                <div
+                  data-testid="derived-accent-swatch"
+                  className="flex h-12 w-full items-center justify-center rounded-md bg-accent text-caption text-accent-foreground"
+                >
+                  Accent
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <span className="block text-meta text-muted-foreground">
+                  <code className="text-code">--ring</code>
+                </span>
+                <div
+                  data-testid="derived-ring-swatch"
+                  className="h-12 w-full rounded-md bg-card ring-2 ring-ring ring-offset-2 ring-offset-background"
+                />
+              </div>
+            </div>
+          </ThemeProvider>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export const DeriveTheme: Story = {
+  name: "Derive theme from one colour",
+  render: () => (
+    <div className="space-y-5">
+      <div className="max-w-prose space-y-2">
+        <p className="m-0 text-body text-foreground">
+          <code className="text-code">deriveTheme({"{ primary, background }"})</code> derives a
+          complete, AA-safe hover/active/focus patch from ONE seed colour — for a tenant who has
+          only a brand colour, not a full palette (issue #39).
+        </p>
+        <p className="m-0 text-caption text-muted-foreground">
+          Pick a tenant below: every swatch recomputes from that single{" "}
+          <code className="text-code">primary</code> value, and every foreground/ring value shown is
+          provably AA-compliant (see <code className="text-code">derive-theme.test.ts</code>), never
+          merely assumed so.
+        </p>
+      </div>
+
+      <pre className="m-0 overflow-x-auto rounded-lg border border-border bg-card p-4 text-code text-card-foreground">
+        {`const overrides = deriveTheme({ primary: tenant.brandColor });
+<ThemeProvider tokenOverrides={overrides}>
+  <App />
+</ThemeProvider>`}
+      </pre>
+
+      <DeriveThemeDemo />
+
+      <ul className="m-0 max-w-prose space-y-1.5 ps-5 text-caption text-muted-foreground">
+        <li>
+          <strong>A patch, not a theme.</strong> Returns exactly five tokens (
+          <code className="text-code">--primary</code>,{" "}
+          <code className="text-code">--primary-foreground</code>,{" "}
+          <code className="text-code">--accent</code>,{" "}
+          <code className="text-code">--accent-foreground</code>,{" "}
+          <code className="text-code">--ring</code>) — the same partial-patch shape{" "}
+          <code className="text-code">tokenOverrides</code> itself uses (ADR 0031), not full{" "}
+          <code className="text-code">THEME_TOKEN_NAMES</code> coverage.
+        </li>
+        <li>
+          <strong>Fails loudly, never silently non-compliant.</strong> If an AA-safe value genuinely
+          cannot be found for a given seed, it throws instead of returning a token that quietly
+          fails contrast.
+        </li>
+      </ul>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const primaryColor = () =>
+      getComputedStyle(canvas.getByTestId("derived-primary-swatch")).backgroundColor;
+    const accentColor = () =>
+      getComputedStyle(canvas.getByTestId("derived-accent-swatch")).backgroundColor;
+
+    // The derived --primary and --accent read as visually distinct fills —
+    // not the same colour twice.
+    const initialPrimary = primaryColor();
+    await expect(accentColor()).not.toBe(initialPrimary);
+
+    // Picking a different tenant recomputes the WHOLE derived set from its
+    // seed colour — the primary swatch actually changes.
+    await userEvent.click(canvas.getByRole("button", { name: "Globex (red)" }));
+    await waitFor(() => expect(primaryColor()).not.toBe(initialPrimary));
+
+    // Switching back re-derives the original tenant's palette.
+    await userEvent.click(canvas.getByRole("button", { name: "Acme (blue)" }));
+    await waitFor(() => expect(primaryColor()).toBe(initialPrimary));
   },
 };
 

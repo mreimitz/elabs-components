@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T11:00:54.715Z",
+  "generatedAt": "2026-09-01T10:10:00.531Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18662,6 +18662,8 @@
         "DecorationProviderProps",
         "DensityMeta",
         "DensityMode",
+        "DerivedThemeTokens",
+        "DeriveThemeOptions",
         "MotionPreference",
         "MotionPreferenceMeta",
         "ResolveTokenColorOptions",
@@ -18675,6 +18677,7 @@
       ],
       "otherExports": [
         "defineTheme",
+        "deriveTheme",
         "isBuiltInThemeName",
         "isDecorationLevel",
         "isDensity",
