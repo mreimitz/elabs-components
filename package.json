@@ -24,6 +24,8 @@
     "app-spec:check:test": "node --test scripts/check-app-spec.test.mjs",
     "arch:evidence": "node .claude/scripts/arch-evidence-pack.mjs",
     "arch:garden": "node .claude/scripts/arch-evidence-pack.mjs --depth quick",
+    "attribution:comments:check": "node scripts/check-comment-attribution.mjs",
+    "attribution:comments:check:test": "node --test scripts/check-comment-attribution.test.mjs",
     "attribution:provenance:check": "node scripts/check-attribution-provenance.mjs",
     "attribution:provenance:check:test": "node --test scripts/check-attribution-provenance.test.mjs",
     "attributions:check": "node scripts/gen-attributions.mjs --check",

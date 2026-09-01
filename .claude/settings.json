@@ -112,6 +112,15 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/warn-unbounded-output.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash|mcp__github__add_issue_comment|mcp__github__create_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gate-comment-attribution.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [

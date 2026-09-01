@@ -189,6 +189,8 @@ pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset ar
 pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
 pnpm attribution:provenance:check       # if you borrowed from another project — shipped source may not say "adapted/vendored/ported from X" unless X is credited in scripts/attributions.sources.json (see .claude/rules/attribution.md)
 pnpm attribution:provenance:check:test  # self-test for the attribution-provenance gate
+pnpm attribution:comments:check         # every gh/MCP GitHub-posting instruction in .claude/commands, .claude/agents, .claude/hooks, skills/** must reference the comment-attribution helper/marker (#78) — this repo has no separate bot identity, so an unmarked comment is indistinguishable from a maintainer ruling (see .claude/rules/issue-workflow.md)
+pnpm attribution:comments:check:test    # self-test for the comment-attribution gate + hook
 pnpm dep-field-move:check       # if a staged package.json moves a dependency between dependencies/devDependencies/peerDependencies/optionalDependencies — automatically runs attributions:check itself (best-effort wiring in .githooks/pre-commit; `pnpm attributions:check` in CI is still the blocking backstop) (#42)
 pnpm dep-field-move:check:test  # self-test for the dependency-field-move detector
 pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerouslySetInnerHTML) in our source or a direct dep, and the Radix scroll-area/select patches still applied — a dropped patch renders a BLANK WINDOW for strict-CSP consumers with a green test suite
