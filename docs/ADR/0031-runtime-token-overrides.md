@@ -1,6 +1,6 @@
 # ADR 0031 — Runtime token-VALUE overrides on `ThemeProvider`
 
-- **Status:** Accepted, **amended 2026-08-30** (see Amendment)
+- **Status:** Accepted, **amended 2026-08-30 and 2026-09-01** (see Amendments)
 - **Date:** 2026-08-30
 - **Extends:** ADR [0029](./0029-open-theme-registry.md) (open theme registry) —
   that ADR decides WHICH named theme applies; this one decides how to patch
@@ -66,6 +66,58 @@ None of the above changes the DECISION this ADR records (the shape of
 they close a gap between that decision and the first cut of its
 implementation. The sections below are otherwise unchanged and remain
 accurate to what ships today.
+
+## Amendment (2026-09-01) — `deriveTheme`'s 3:1 proof is scoped to one background, not a theme-switching guarantee (issue #91)
+
+An independent validator's sweep found that a `--ring` `deriveTheme` derives
+and proves ≥3:1 against one background (the caller's `background` argument,
+or the `light` reference theme's own background when omitted) can measure as
+low as **1.00:1** (fully invisible) when the SAME returned `tokenOverrides`
+object is instead applied while a DIFFERENT theme/background is active — 466
+of 960 sampled seeds fell below 3:1. `deriveTheme` had already disclosed this
+in prose (its own JSDoc and `docs/CONSUMING.md` §5.3 both said "pass
+`background` explicitly for `dark`"), but disclosure alone left the
+repository's own reference usage (`DeriveThemeDemo` in
+`apps/docs/stories/foundations/theming.stories.tsx`) calling `deriveTheme`
+with no `background` at all — evidence that a documented caveat is not a
+shape that stops the mistake.
+
+Filed as issue #91, triaged `needs-decision` (three directions were on the
+table: a per-theme-keyed return, a `Record<themeName, background>` input, or
+a `ThemeProvider` integration that re-derives live on theme change). **The
+maintainer ruled: narrow the promise, then close — do not build the
+multi-background guarantee.** All three directions would have made
+`deriveTheme` couple to a theme registry (ADR 0029) or move color math into
+the render/theme-switch path, either of which is a materially larger,
+behaviour-changing surface than this fix warrants; the existing single-call,
+single-background shape (this ADR's `tokenOverrides`, patched by one
+synchronous derivation) stays exactly as designed.
+
+What changed instead, so no caller can read a stronger promise than the
+function delivers:
+
+- **Docs narrowed.** The module doc comment and the `background` option's own
+  doc comment in `packages/tokens/src/derive-theme.ts`, and `docs/CONSUMING.md`
+  §5.3, now state plainly that the 3:1 proof covers ONLY the one `background`
+  a call used — never a second theme/background the app might also render on.
+- **A runtime diagnostic, not just prose.** `deriveTheme` now emits a
+  dev-only `console.warn` (compiled out of production, the same `warnDev`
+  shape `theme-provider.tsx` uses) on every call, restating the scope limit
+  and pointing the caller at the "derive again per background, swap the
+  result" workaround. This is the "warn for the case it cannot prove" half of
+  the ruling — `deriveTheme` cannot know whether the consuming app switches
+  themes, so it warns unconditionally rather than guessing.
+- **The flagship demo left honest, not fixed by inventing an API.**
+  `DeriveThemeDemo` never switches its own inner theme (it has no
+  `defaultTheme`, so it always renders `light`, matching `deriveTheme`'s
+  default background) — a doc comment on the demo now says so explicitly and
+  points at `docs/CONSUMING.md` §5.3 for the cross-theme pattern, instead of
+  silently implying the demo covers a case it does not.
+
+This is the SAME kind of gap the 2026-08-30 Amendment above closed for
+`tokenOverrides` itself (a claim stronger than the shipped guarantee) — the
+fix is again to make the documented text and the runtime behavior agree,
+not to grow the mechanism.
 
 ## Context
 
@@ -253,14 +305,15 @@ since no component source changed, and it passes unchanged.
 
 ## Alternatives considered
 
-| Option                                                                                                                 | Why not                                                                                                                                                                                                                                                                                                                                                                   |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`deriveTheme({ primary, background })`** — a color-theory helper deriving hover/active/`--ring` from 1-2 seed colors | Separable, materially larger (color math, AA-safety guarantees across every derived role). The issue itself lists it as a follow-up, not this fix. Tracked as issue #39 (see Amendment) — **implemented**, see `packages/tokens/src/derive-theme.ts` and `docs/CONSUMING.md` §5.3.                                                                                        |
-| **Shipped presets (`accessibleFocusRing` for light/dark)**                                                             | Once `tokenOverrides` exists, a preset is just a canned value for it — a small follow-up, not part of the mechanism itself.                                                                                                                                                                                                                                               |
-| **Require full `THEME_TOKEN_NAMES` coverage (mirror the theme-authoring rule exactly)**                                | Defeats the point — a tenant who wants to patch one color would still have to enumerate 130 tokens. Rejected; see "Partial patch" above.                                                                                                                                                                                                                                  |
-| **Silently apply an unknown key**                                                                                      | Reproduces the exact silent-no-op failure mode `warnDev` exists to catch elsewhere in this file (`setTheme` on a disallowed name already warns rather than silently applying). Rejected.                                                                                                                                                                                  |
-| **Expose `tokenOverrides` via `useTheme()`/a `setTokenOverrides` setter, mirroring theme/decoration/density**          | Adds internal state and a persistence question (should a tenant override survive a reload via localStorage — almost never, since it is re-derived from tenant config on every app boot) for no benefit: the consumer already holds the value it would be echoing back. Rejected in favor of a plain controlled prop.                                                      |
-| **A CSS class per override (`data-token-primary="…"`) instead of inline style**                                        | CSS cannot read an arbitrary attribute VALUE into a property value (no `attr()` support for color-typed custom properties in any shipping engine at the time of writing) — this would require a `<style>` block per unique value combination, reintroducing the exact style-attribute CSP surface this design avoids, for no benefit over inline `setProperty`. Rejected. |
+| Option                                                                                                                                                                                                     | Why not                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`deriveTheme({ primary, background })`** — a color-theory helper deriving hover/active/`--ring` from 1-2 seed colors                                                                                     | Separable, materially larger (color math, AA-safety guarantees across every derived role). The issue itself lists it as a follow-up, not this fix. Tracked as issue #39 (see Amendment) — **implemented**, see `packages/tokens/src/derive-theme.ts` and `docs/CONSUMING.md` §5.3. Its 3:1 proof is scoped to ONE background per call, not a theme-switching guarantee — see the 2026-09-01 Amendment (issue #91). |
+| **`deriveTheme` resolving `--ring` against every theme a `ThemeProvider` registry knows about** (per-theme-keyed return, a `Record<themeName, background>` input, or a live re-derivation on theme change) | Couples a pure color-theory helper to the theme registry (ADR 0029) or moves color math into the render/theme-switch path — a materially larger, behaviour-changing surface than the gap (issue #91) warranted. Rejected by the maintainer 2026-09-01 in favor of narrowing the documented promise and adding a dev-only warning; see the Amendment above.                                                         |
+| **Shipped presets (`accessibleFocusRing` for light/dark)**                                                                                                                                                 | Once `tokenOverrides` exists, a preset is just a canned value for it — a small follow-up, not part of the mechanism itself.                                                                                                                                                                                                                                                                                        |
+| **Require full `THEME_TOKEN_NAMES` coverage (mirror the theme-authoring rule exactly)**                                                                                                                    | Defeats the point — a tenant who wants to patch one color would still have to enumerate 130 tokens. Rejected; see "Partial patch" above.                                                                                                                                                                                                                                                                           |
+| **Silently apply an unknown key**                                                                                                                                                                          | Reproduces the exact silent-no-op failure mode `warnDev` exists to catch elsewhere in this file (`setTheme` on a disallowed name already warns rather than silently applying). Rejected.                                                                                                                                                                                                                           |
+| **Expose `tokenOverrides` via `useTheme()`/a `setTokenOverrides` setter, mirroring theme/decoration/density**                                                                                              | Adds internal state and a persistence question (should a tenant override survive a reload via localStorage — almost never, since it is re-derived from tenant config on every app boot) for no benefit: the consumer already holds the value it would be echoing back. Rejected in favor of a plain controlled prop.                                                                                               |
+| **A CSS class per override (`data-token-primary="…"`) instead of inline style**                                                                                                                            | CSS cannot read an arbitrary attribute VALUE into a property value (no `attr()` support for color-typed custom properties in any shipping engine at the time of writing) — this would require a `<style>` block per unique value combination, reintroducing the exact style-attribute CSP surface this design avoids, for no benefit over inline `setProperty`. Rejected.                                          |
 
 ## Consequences
 
@@ -306,3 +359,7 @@ tokenOverrides (#17)", …)`.
   `packages/tokens/src/derive-theme.ts` / `packages/tokens/src/derive-theme.test.ts`,
   exported from the package barrel, documented in `docs/CONSUMING.md` §5.3, and
   demonstrated in `Foundations/Theming` → "Derive theme from one colour".
+- Issue #91 — `deriveTheme` resolves `--ring` against one background; a
+  theme-switching app can render it below 3:1. Closed by the 2026-09-01
+  Amendment above (narrow the promise + a dev-only warning), not by building
+  the multi-background guarantee.

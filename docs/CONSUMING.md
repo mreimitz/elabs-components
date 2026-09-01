@@ -330,20 +330,37 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   valid `ThemeTokenName` — checked by `derive-theme.test.ts` — but it isn't
   trying to replace a theme, only to patch the handful of tokens that actually
   depend on a brand colour.
-- **AA-safety is proven, not assumed.** Every `-foreground` value is chosen
-  from true black/true white, whichever contrasts better against its plate —
-  provably ≥4.5:1 (WCAG AA text) for ANY fill colour (see the module doc
-  comment in `packages/tokens/src/derive-theme.ts` for the proof, and the
-  "proof-check" test that verifies it numerically). `--ring` is searched at
-  `--primary`'s own hue for the lightness closest to `--primary`'s that clears
-  ≥3:1 (WCAG 1.4.11) against `background`. If an AA-safe value genuinely
-  cannot be found, `deriveTheme` **throws** rather than returning a
-  non-compliant token. Input is validated up front (L ∈ [0,1], C ≥ 0, all
-  components finite, alpha ∈ [0,1]); invalid coordinates are rejected
-  immediately — it never fails silently.
+- **AA-safety is proven, not assumed — but only against the ONE `background`
+  this call used (issue #91).** Every `-foreground` value is chosen from true
+  black/true white, whichever contrasts better against its plate — provably
+  ≥4.5:1 (WCAG AA text) for ANY fill colour, on ANY background (see the
+  module doc comment in `packages/tokens/src/derive-theme.ts` for the proof,
+  and the "proof-check" test that verifies it numerically). `--ring`, though,
+  is searched at `--primary`'s own hue for the lightness closest to
+  `--primary`'s that clears ≥3:1 (WCAG 1.4.11) against `background` — and that
+  proof is valid **only against that one `background`**, not against every
+  background your app might render on. If an AA-safe value genuinely cannot
+  be found, `deriveTheme` **throws** rather than returning a non-compliant
+  token. Input is validated up front (L ∈ [0,1], C ≥ 0, all components
+  finite, alpha ∈ [0,1]); invalid coordinates are rejected immediately — it
+  never fails silently.
+- **Not a theme-switching guarantee.** Applying the SAME `deriveTheme(...)`
+  result across a theme switch is out of scope: an independent sweep found a
+  `--ring` proven ≥3:1 against `light`'s `--background` falling as low as
+  **1.00:1** (fully invisible) when measured against `dark`'s. If your app
+  ships more than one theme/background, call `deriveTheme` again for EACH
+  background and swap which result you pass to `tokenOverrides` when the
+  active theme changes — `deriveTheme` does not do this for you, and a
+  dev-only console warning fires on every call as a reminder. This was a
+  deliberate, ruled-on decision (not an oversight): a per-theme-aware API
+  shape (a keyed return, a keyed `background` input, or a `ThemeProvider`
+  integration that re-derives live) was considered and rejected as too large
+  a behaviour change for this function; see `docs/ADR/0031-runtime-token-overrides.md`.
 - **Pass `background`** (e.g. read `--background` off the active theme via
-  `getComputedStyle`) when deriving for `dark` or a custom theme; omitted, it
-  assumes the `light` reference theme's own background.
+  `getComputedStyle`) to pick WHICH theme this call's proof covers when
+  deriving for `dark` or a custom theme; omitted, it assumes the `light`
+  reference theme's own background. Either way, the proof it produces still
+  covers only that one background — see the two bullets above.
 - **Input is `oklch(...)` only** (the same literal format every token in
   `themes.css` uses) — convert a hex/`rgb()` brand colour before calling it.
 - **Must be fully opaque.** Both `primary` and `background` are rejected

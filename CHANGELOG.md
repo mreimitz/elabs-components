@@ -54,9 +54,11 @@
   responsible edges and state plainly that the bytes are always installed
   (#94).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
-  provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
-  one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
-  tenant/white-label picker that only has a single brand colour (#39).
+  `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from one seed brand
+  colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a tenant/white-label
+  picker that only has a single brand colour. The `-foreground` values are provably AA-safe
+  against ANY background; `--ring` is provably ≥3:1 too, but only against the ONE background
+  the call used — see the #91 entry below (#39).
 - Added: `@elabs-ai/components-data`'s `DataTable` gains opt-in row drag-reorder
   (`enableRowReorder` / `onRowReorder` / `rowReorderHandle`, `"cell"` grip column or
   `"row"` whole-row activator), built on `@dnd-kit/core`/`@dnd-kit/sortable` — the same
@@ -73,6 +75,14 @@
   `role="alert"` wiring `FieldRow` already validated, adapted to a shared
   lifted-state context so it holds across independently-composed parts;
   `FieldRow` itself is unchanged (#43).
+- Fixed: `deriveTheme` (`@elabs-ai/components-tokens`) no longer implies its `--ring`/`--accent`
+  3:1 proof covers every theme an app renders — the module doc comment, the `background`
+  option's own doc comment, and `docs/CONSUMING.md` §5.3 now state plainly that the proof is
+  valid only against the ONE background a call used, and a new dev-only `console.warn` (compiled
+  out of production) restates that on every call. Reusing one `deriveTheme(...)` result across a
+  theme switch was measured rendering a `--ring` as low as 1.00:1 (fully invisible) against a
+  second theme's `--background`; the maintainer ruled to narrow the promise rather than build a
+  multi-background derivation (#91).
 - Fixed: `parseOklch` in `@elabs-ai/components-tokens` now validates the OKLCH coordinate domain
   before any math runs: L must be 0..1, C must be ≥0, all components must be finite, alpha
   must be 0..1. Previously it accepted out-of-range/non-finite coordinates and passed them
