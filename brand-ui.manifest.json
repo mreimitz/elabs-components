@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T13:17:26.213Z",
+  "generatedAt": "2026-09-01T19:11:51.656Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -26837,13 +26837,13 @@
               "name": "description",
               "optional": true,
               "type": "ReactNode",
-              "description": "Optional help/description text, always visible (not gated by an error)."
+              "description": "Optional help/description text, always visible (not gated by an error). Renders nothing — and contributes no id to `aria-describedby` — when `description` is falsy (`false`/`0`/`\"\"`/`null`/`undefined`), an empty array, or an array containing only falsy values (`{list.map(...)}` on an empty list; `[a && \"x\", b && \"y\"]` with both false). **Known limit:** a value that is itself a COMPONENT that renders nothing (returns `null`/an empty fragment) is not knowable before render, so it still produces an empty paragraph that `aria-describedby` points at. `FieldDescription` and the wider React ecosystem share this limit — pass a falsy value instead of a component that may render nothing, e.g. `description={hasHint ? hintText : undefined}`, never `description={<MaybeRendersNull />}`."
             },
             {
               "name": "error",
               "optional": true,
               "type": "ReactNode",
-              "description": "Validation error text. When present: sets `aria-invalid` on the control, is appended to `aria-describedby`, and is announced via `role=\"alert\"`."
+              "description": "Validation error text. When present: sets `aria-invalid` on the control, is appended to `aria-describedby`, and is announced via `role=\"alert\"`. Renders nothing — and leaves `aria-invalid=\"false\"` — when `error` is falsy (`false`/`0`/`\"\"`/`null`/`undefined`), an empty array, or an array containing only falsy values (`{errors.map(...)}` on an empty list — the idiomatic \"no errors\" shape). **Known limit:** a value that is itself a COMPONENT that renders nothing (returns `null`/an empty fragment) is not knowable before render, so it still produces an empty `role=\"alert\"` element that `aria-describedby` points at. `FieldError` and the wider React ecosystem share this limit — pass a falsy value instead of a component that may render nothing, e.g. `error={hasError ? message : undefined}`, never `error={<MaybeRendersNull />}`."
             },
             {
               "name": "children",

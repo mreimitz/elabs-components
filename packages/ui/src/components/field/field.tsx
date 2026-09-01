@@ -1,5 +1,4 @@
 import {
-  Children,
   cloneElement,
   forwardRef,
   useCallback,
@@ -14,6 +13,7 @@ import {
 } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../lib/cn";
+import { hasRenderableContent } from "../../lib/has-renderable-content";
 import { Label } from "../label";
 import { FieldContext, useFieldContext, type FieldContextValue } from "./field-context";
 
@@ -257,19 +257,10 @@ export const FieldDescription = forwardRef<
   // registered into `aria-describedby` and the value actually rendered on the
   // `<p>` can never diverge (PR #97 review finding 3).
   const descriptionId = id ?? generatedId;
-  // Same falsy-content convention `FieldRow` uses (`description ? … : null`):
-  // `{condition && "message"}` is the ordinary React idiom for optional
-  // content, and `condition === false` must render nothing — a `false`/`0`/
-  // `""`/`null`/`undefined` child is "no content", not an empty paragraph.
-  // `Boolean(children)` alone is not enough: an array is always truthy, so
-  // `{errors.map(...)}` on an empty list (or `[a && "x", b && "y"]` with both
-  // false) would still count as content. `Children.toArray` drops `null`/
-  // `undefined`/booleans from an array but KEEPS `""` (and `0`), so an array
-  // like `["", ""]` would still slip through as "content" without the
-  // trailing `.filter(Boolean)` — filtering after `toArray` is what makes
-  // this match the scalar check above for every array shape, not just the
-  // ones `toArray` already prunes.
-  const hasContent = Boolean(children) && Children.toArray(children).filter(Boolean).length > 0;
+  // Same falsy-content convention `FieldRow` uses (`description ? … : null`)
+  // — see `hasRenderableContent` (`../../lib/has-renderable-content`) for
+  // the full rationale, shared with `FieldError` below and `FieldRow`.
+  const hasContent = hasRenderableContent(children);
 
   useLayoutEffect(() => {
     if (!hasContent) return undefined;
@@ -321,13 +312,9 @@ export const FieldError = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLPa
     // ordering bug as `FieldDescription`).
     const errorId = id ?? generatedId;
     // Same falsy-content convention as `FieldDescription`/`FieldRow`'s
-    // `error ? … : null` — `{condition && "message"}` with `condition` false
-    // must render no alert at all, not an empty one a screen reader announces.
-    // `Boolean(children)` alone can't see an empty/all-falsy ARRAY (arrays are
-    // always truthy), and `Children.toArray` alone still keeps `""`/`0` inside
-    // one — see `FieldDescription` for the full rationale on the trailing
-    // `.filter(Boolean)`.
-    const hasContent = Boolean(children) && Children.toArray(children).filter(Boolean).length > 0;
+    // `error ? … : null` — see `hasRenderableContent`
+    // (`../../lib/has-renderable-content`) for the full rationale.
+    const hasContent = hasRenderableContent(children);
 
     useLayoutEffect(() => {
       if (!hasContent) return undefined;

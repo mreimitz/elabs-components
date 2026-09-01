@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Fixed: `FieldRow` (`@elabs-ai/components-ui`) no longer renders an empty,
+  `aria-describedby`-referenced `role="alert"`/description `<p>` (and no longer
+  sets `aria-invalid="true"`) for an empty or all-falsy-array `error`/
+  `description` — e.g. `error={errors.map(...)}` on an empty list, or
+  `error={["", ""]}`. `FieldDescription`/`FieldError` already handled this
+  shape correctly; `FieldRow` used bare truthiness (every array is truthy in
+  JS), so it announced an empty alert and marked the control invalid with
+  nothing to explain why. The content-emptiness predicate is now shared via a
+  new internal `hasRenderableContent` helper
+  (`@elabs-ai/components-ui`'s `src/lib/has-renderable-content.ts`, not
+  barrel-exported) adopted by `FieldDescription`, `FieldError` and `FieldRow`
+  alike, so the fix can't drift between hand-duplicated copies again.
+  `FieldRowProps.description`/`.error` gain the same "Known limit" JSDoc note
+  already on `FieldDescription`/`FieldError`: a child that is itself a
+  component rendering `null` is not knowable before render and still
+  produces an empty, referenced element — an accepted React-ecosystem limit,
+  not fixed here (#93).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
   provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
   one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a

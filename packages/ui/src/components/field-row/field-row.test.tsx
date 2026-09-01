@@ -217,4 +217,117 @@ describe("FieldRow", () => {
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input.getAttribute("aria-describedby")).toBe(errorNode.id);
   });
+
+  // #93 (B) — FieldRow used bare truthiness (`error ? … : null`) to gate the
+  // alert, the id contribution and aria-invalid, so an empty/all-falsy ARRAY
+  // (every array is truthy in JS) still produced a referenced, empty
+  // role="alert" and marked the control invalid with nothing to explain why.
+  // `Field*` already handles this shape correctly (field.test.tsx) — this
+  // locks the same behavior on FieldRow.
+  it("renders no error element, no aria-invalid, and no aria-describedby reference for an empty array or an array of only falsy children", () => {
+    const { rerender } = render(
+      <FieldRow label="Email" error={[]}>
+        <Input />
+      </FieldRow>,
+    );
+    let input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(input).not.toHaveAttribute("aria-describedby");
+
+    rerender(
+      <FieldRow label="Email" error={[false, null]}>
+        <Input />
+      </FieldRow>,
+    );
+    input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  // Mirrors field.test.tsx's round-4 fix: `Children.toArray` drops
+  // null/undefined/booleans but KEEPS "" (and 0), so ["", ""] survives
+  // toArray with length 2 and must still be treated as no content.
+  it("renders no error element for an array of only empty strings", () => {
+    render(
+      <FieldRow label="Email" error={["", ""]}>
+        <Input />
+      </FieldRow>,
+    );
+    const input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("renders no description element and no aria-describedby reference for an empty array or an array of only falsy children", () => {
+    const { container, rerender } = render(
+      <FieldRow label="Bio" description={[]}>
+        <Input />
+      </FieldRow>,
+    );
+    let input = screen.getByRole("textbox");
+    expect(container.querySelector('[data-slot="field-row-description"]')).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+
+    rerender(
+      <FieldRow label="Bio" description={[false, null]}>
+        <Input />
+      </FieldRow>,
+    );
+    input = screen.getByRole("textbox");
+    expect(container.querySelector('[data-slot="field-row-description"]')).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("renders no description element for an array of only empty strings", () => {
+    const { container } = render(
+      <FieldRow label="Bio" description={["", ""]}>
+        <Input />
+      </FieldRow>,
+    );
+    const input = screen.getByRole("textbox");
+    expect(container.querySelector('[data-slot="field-row-description"]')).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  // Positive control — the fix above must not suppress a real error: a
+  // non-empty `error` still renders the alert, the aria-describedby
+  // reference and aria-invalid="true".
+  it("still renders the alert, the aria-describedby reference and aria-invalid=true for a non-empty error", () => {
+    render(
+      <FieldRow label="Email" error="Required.">
+        <Input />
+      </FieldRow>,
+    );
+    const input = screen.getByRole("textbox");
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Required.");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id);
+  });
+
+  // #93 (A) — KNOWN LIMIT, not desired behavior — mirrors field.test.tsx's
+  // FieldError pin: a value that is itself a component returning `null` is
+  // not knowable from the element before render (a React ecosystem-wide
+  // limit), so it still produces an empty `role="alert"` referenced by
+  // aria-describedby. This test PINS the current, documented-limit behavior
+  // so a future change to it is a deliberate decision, not a silent
+  // regression — it is not an endorsement. See the "Known limit" note on
+  // `FieldRowProps.error`.
+  it("[KNOWN LIMIT] still renders an empty, referenced alert when error is a component that renders null", () => {
+    function RendersNull() {
+      return null;
+    }
+    render(
+      <FieldRow label="Email" error={<RendersNull />}>
+        <Input />
+      </FieldRow>,
+    );
+    const input = screen.getByRole("textbox");
+    const alert = screen.getByRole("alert");
+    expect(alert).toBeEmptyDOMElement();
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id);
+  });
 });
