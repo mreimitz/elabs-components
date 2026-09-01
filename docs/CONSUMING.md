@@ -344,6 +344,14 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   assumes the `light` reference theme's own background.
 - **Input is `oklch(...)` only** (the same literal format every token in
   `themes.css` uses) — convert a hex/`rgb()` brand colour before calling it.
+- **Must be fully opaque.** Both `primary` and `background` are rejected
+  (`deriveTheme` throws) if they carry an alpha other than 1 —
+  `oklch(0.55 0.18 250 / 0.9)` throws even though `oklch()` itself allows
+  alpha. Every token in `themes.css` is a solid color; alpha is applied via
+  Tailwind's `/` modifier at use time, never baked into the token. If your
+  brand colour is translucent, composite it against its real backdrop
+  yourself first and pass the resulting opaque `oklch()` (fix round 2, issue
+  #39, finding F).
 - **Compose it with `tokenOverrides`, don't hand-roll the object it returns.**
   `deriveTheme`'s whole point is that you stop hand-deriving these values
   yourself; see `Foundations/Theming` → `DeriveTheme` in Storybook for a live

@@ -32,13 +32,24 @@
  *   plate (the pairing `INK_TONES` gates in `themes-contrast.test.ts`).
  * - `--accent` / `--accent-foreground` — this codebase's actual hover/active
  *   surface for controls that aren't the primary's own opacity step. `Button`
- *   outline/ghost variants and `Sidebar`'s menu buttons both reach for
- *   `hover:bg-accent`/`active:bg-accent` (see `sidebar.tsx`) — the SAME token
- *   for both states, because this repo has no separate hover/active custom
- *   properties. A `bg-primary/90` hover step on the primary control itself
- *   needs no token at all (it falls out of overriding `--primary`), so
- *   `--accent` is the one pairing that genuinely needs deriving to read as a
- *   tint of the new brand colour instead of the old theme's blue.
+ *   outline/ghost variants reach for `hover:bg-accent`/`active:bg-accent` —
+ *   the SAME token for both states, because this repo has no separate
+ *   hover/active custom properties. A `bg-primary/90` hover step on the
+ *   primary control itself needs no token at all (it falls out of overriding
+ *   `--primary`), so `--accent` is the one pairing that genuinely needs
+ *   deriving to read as a tint of the new brand colour instead of the old
+ *   theme's blue.
+ *   **Scope limit, corrected (fix round 2, issue #39, finding D):** this used
+ *   to also claim `Sidebar`'s menu buttons reach for `bg-accent`. They do
+ *   not — `sidebar.tsx` uses `bg-sidebar-accent` at every hover/active site,
+ *   and `--sidebar-accent` is declared as its OWN literal in `themes.css`,
+ *   not a `var(--accent)` mirror (unlike `--sidebar-primary`/`--sidebar-ring`
+ *   below, which genuinely are mirrors). So a `deriveTheme` patch reaches
+ *   `Button`'s hover/active state but NOT `Sidebar`'s menu hover/active
+ *   state, which stays on the old theme's colour — a tenant who also wants
+ *   the sidebar to follow must separately set `--sidebar-accent`/
+ *   `--sidebar-accent-foreground` themselves; `deriveTheme` does not derive
+ *   them.
  * - `--ring` — the focus indicator (ADR 0027). Derived to clear WCAG 1.4.11
  *   (>=3:1) against the given/assumed background, in `--primary`'s own hue
  *   family, rather than defaulting to the reference themes' `var(--primary)`
@@ -86,6 +97,13 @@
  * primary: "oklch(0 0 0)" })`) since the ring's anchor is `--primary`'s own
  * lightness and the ink pick is also achromatic (fix round 1, finding 3). See
  * `findAALightness`'s `avoid` parameter.
+ *
+ * `--accent` is similarly guarded against colliding with `background` itself
+ * (fix round 2, issue #39, finding C): the lightness escape that keeps
+ * `--accent` off of `--primary` could land it exactly ON `background` instead
+ * (measured: `primary: "oklch(0.42 0 0)"`, `background: "oklch(0.56 0 0)"` →
+ * `--accent` byte-identical to `background`, an invisible hover state). See
+ * `deriveAccent`'s second escape branch.
  *
  * Malformed input (anything `parseOklch` cannot parse) throws immediately for
  * the same reason: this function never returns a value it has not checked.
@@ -201,8 +219,13 @@ function formatOklch(o: Oklch): string {
 /**
  * OKLab ΔE (Euclidean distance in L/a/b) between two {@link Oklch} colors —
  * mirrors the ΔE definition `scripts/check-role-distinctness.mjs` and
- * `derive-theme.test.ts` already use. Used to keep derived tokens that must
- * stay visually distinct (`--accent-foreground` vs `--ring`) from colliding.
+ * `themes-contrast.test.ts` already use, INCLUDING the `Math.hypot` call
+ * (fix round 2, issue #39, finding E): a plain `Math.sqrt(dL**2+da**2+db**2)`
+ * disagrees with `Math.hypot(dL,da,db)` by exactly one ulp at the 0.05 floor
+ * (`oklch(0 0.05 116.5)` vs `oklch(0 0 0)`: `sqrt` → 0.05, `hypot` →
+ * 0.049999999999999996), and the searches in this file deliberately prefer
+ * the candidate CLOSEST to the floor — i.e. the one point where the two
+ * functions can disagree about whether the floor is cleared.
  */
 function oklabDistance(a: Oklch, b: Oklch): number {
   const toLab = (o: Oklch) => {
@@ -211,7 +234,7 @@ function oklabDistance(a: Oklch, b: Oklch): number {
   };
   const la = toLab(a);
   const lb = toLab(b);
-  return Math.sqrt((la.L - lb.L) ** 2 + (la.a - lb.a) ** 2 + (la.b - lb.b) ** 2);
+  return Math.hypot(la.L - lb.L, la.a - lb.a, la.b - lb.b);
 }
 
 /**
@@ -320,12 +343,19 @@ function findAALightness(
 }
 
 /**
- * Minimum OKLab lightness delta between `--primary` and `--accent`, chosen
- * comfortably above the 0.05 ΔE distinctness floor `pnpm roles:check` applies
- * to co-occurring roles elsewhere in this codebase (`.claude/rules/theming.md`,
- * "Roles that co-occur must stay PERCEPTIBLY apart"). A plain lightness delta
- * of this size alone clears 0.05 total OKLab ΔE regardless of the hue/chroma
- * term, so it is a sufficient (not merely necessary) guard.
+ * Minimum OKLab lightness delta {@link deriveAccent} keeps `--accent` away
+ * from EITHER `--primary` or `background`, chosen comfortably above the 0.05
+ * ΔE distinctness floor `pnpm roles:check` applies to co-occurring roles
+ * elsewhere in this codebase (`.claude/rules/theming.md`, "Roles that
+ * co-occur must stay PERCEPTIBLY apart"). A plain lightness delta of this
+ * size alone clears 0.05 total OKLab ΔE regardless of the hue/chroma term, so
+ * it is a sufficient (not merely necessary) guard against each anchor
+ * individually. Originally guarded `--primary` only; extended to guard
+ * `background` too after fix round 2, issue #39, finding C, found `--accent`
+ * landing byte-identical to `background` (an invisible hover state) —
+ * `deriveAccent` escaped a collision with `--primary` without checking
+ * whether the escape route landed on the surface `--accent` is a hover state
+ * FOR.
  */
 const MIN_ACCENT_DELTA_L = 0.14;
 
@@ -357,6 +387,23 @@ function deriveAccent(primary: Oklch, background: Oklch): Oklch {
         ? clamp01(primary.l - MIN_ACCENT_DELTA_L)
         : clamp01(primary.l + MIN_ACCENT_DELTA_L);
   }
+
+  // Fix round 2, finding C: the escape above only guards against colliding
+  // with --primary — nothing stopped the result from landing on `background`
+  // itself (an invisible hover state; the reproduction:
+  // primary=oklch(0.42 0 0), background=oklch(0.56 0 0) escapes toward
+  // primary.l + MIN_ACCENT_DELTA_L = 0.56, which IS background.l exactly).
+  // Escaping a second time by simply re-running the same "push away from
+  // background.l" step would ping-pong `l` straight onto `--primary` when
+  // the two anchors sit less than 2 * MIN_ACCENT_DELTA_L apart (exactly the
+  // reproduction above), so push clear of BOTH anchors at once instead: below
+  // the lower of the two if that stays in range, else above the higher.
+  if (Math.abs(l - background.l) < MIN_ACCENT_DELTA_L) {
+    const lo = Math.min(primary.l, background.l);
+    const hi = Math.max(primary.l, background.l);
+    l = lo - MIN_ACCENT_DELTA_L >= 0 ? lo - MIN_ACCENT_DELTA_L : clamp01(hi + MIN_ACCENT_DELTA_L);
+  }
+
   const c = Math.min(primary.c, 0.05);
   return { l, c, h: primary.h, alpha: 1 };
 }
@@ -400,6 +447,22 @@ export function deriveTheme(options: DeriveThemeOptions): DerivedThemeTokens {
   const primaryForeground = deriveForeground(primary, AA_TEXT, "--primary-foreground");
 
   const accent = deriveAccent(primary, background);
+
+  // Defensive backstop (fix round 2, finding C): re-measure the EXACT
+  // emitted --accent string against the resolved background, in case
+  // deriveAccent's two escapes ever both miss (see its own comment for why
+  // that should not happen) — fail loudly rather than silently ship an
+  // invisible hover state.
+  const emittedAccent = parseOklch(formatOklch(accent));
+  const accentBackgroundDeltaE = oklabDistance(emittedAccent, background);
+  if (accentBackgroundDeltaE < ROLE_SEPARATION_DELTA_E) {
+    throw new Error(
+      `deriveTheme: internal invariant violated — emitted --accent collapses onto "background" ` +
+        `at ΔE ${accentBackgroundDeltaE.toFixed(4)} OKLab (floor ${ROLE_SEPARATION_DELTA_E}). ` +
+        `This indicates a bug in deriveAccent, not a bad input.`,
+    );
+  }
+
   const accentForeground = deriveForeground(accent, AA_TEXT, "--accent-foreground");
 
   // --ring actively steers away from colliding with --accent-foreground

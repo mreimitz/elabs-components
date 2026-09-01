@@ -17,6 +17,15 @@
  * over many more seeds than any hand-picked list would think to try — the
  * validator's own stated lesson: hand-picked cases miss whatever seed shape
  * nobody thought to name.
+ *
+ * Fix round 2 (the same validator, re-reviewing round 1's fix) found one more
+ * correctness hole in NEW code this branch shipped — `--accent` could land
+ * byte-identical to `background` (finding C) — plus a ΔE implementation that
+ * disagreed with the gate it claims to mirror by exactly one ulp at the floor
+ * (finding D was a docstring-only correction, no test needed; finding E is
+ * fixed by aligning this file's own `oklabDistance` to `Math.hypot`, see
+ * below). Finding C got the same treatment as round 1: a named reproduction
+ * case, a per-case assertion, and the invariant added to the property sweep.
  */
 import { describe, expect, it } from "vitest";
 import { contrastRatio, parseOklch, type Oklch } from "./color-contrast";
@@ -27,7 +36,13 @@ const AA_TEXT = 4.5;
 const AA_NONTEXT = 3;
 const ROLE_SEPARATION_DELTA_E = 0.05;
 
-/** OKLab ΔE (simple Euclidean distance in L/a/b — matches themes-contrast.test.ts's own helper). */
+/**
+ * OKLab ΔE — matches themes-contrast.test.ts's own helper, INCLUDING its
+ * `Math.hypot` call (fix round 2, issue #39, finding E: a plain
+ * `Math.sqrt(dL**2+da**2+db**2)` disagrees with `Math.hypot` by exactly one
+ * ulp at the 0.05 floor, and this file's property sweep deliberately
+ * exercises seeds that land near that floor).
+ */
 function oklabDistance(a: Oklch, b: Oklch): number {
   const toLab = (o: Oklch) => {
     const hr = (o.h * Math.PI) / 180;
@@ -35,7 +50,7 @@ function oklabDistance(a: Oklch, b: Oklch): number {
   };
   const la = toLab(a);
   const lb = toLab(b);
-  return Math.sqrt((la.L - lb.L) ** 2 + (la.a - lb.a) ** 2 + (la.b - lb.b) ** 2);
+  return Math.hypot(la.L - lb.L, la.a - lb.a, la.b - lb.b);
 }
 
 /** `light` reference theme's own `--background` (packages/tokens/src/themes/light.css). */
@@ -90,6 +105,17 @@ const CASES: Case[] = [
     // to be enforced here instead (see the "ring/accent-fg ΔE" case below).
     name: "FIX ROUND 1 finding 3: zero-chroma primary must not collapse --ring onto --accent-foreground",
     options: { primary: "oklch(0 0 0)" },
+  },
+  // --- Fix round 2 (#39) regression case — the validator's finding C reproduction ---
+  {
+    // Finding C: pre-fix, deriveAccent's escape from colliding with --primary
+    // could land --accent exactly ON `background` (an invisible hover state).
+    // This seed is the validator's own reproduction: the primary/background
+    // lightness gap (0.14) happens to equal MIN_ACCENT_DELTA_L exactly, so the
+    // "push primary.l by +MIN_ACCENT_DELTA_L" escape lands precisely on
+    // background.l.
+    name: "FIX ROUND 2 finding C: --accent must not collapse onto background",
+    options: { primary: "oklch(0.42 0 0)", background: "oklch(0.56 0 0)" },
   },
 ];
 
@@ -159,6 +185,16 @@ describe("deriveTheme", () => {
       const ring = parseOklch(result["--ring"]!);
       const accentForeground = parseOklch(result["--accent-foreground"]!);
       expect(oklabDistance(ring, accentForeground)).toBeGreaterThanOrEqual(ROLE_SEPARATION_DELTA_E);
+    });
+
+    it("--accent stays perceptibly distinct from the resolved background (ΔE >= 0.05 OKLab)", () => {
+      // FIX ROUND 2 finding C: --accent is a hover/active surface FOR
+      // `background` — nothing previously stopped it from landing byte-identical
+      // to that surface (an invisible hover state). This is the exact assertion
+      // the round-1 suite was missing, which is why the collision shipped
+      // undetected.
+      const accent = parseOklch(result["--accent"]!);
+      expect(oklabDistance(accent, background)).toBeGreaterThanOrEqual(ROLE_SEPARATION_DELTA_E);
     });
   });
 
@@ -234,7 +270,7 @@ describe("deriveTheme", () => {
  * sweep used to verify the fix (same grid shape, fewer chroma/hue steps) to
  * keep the suite fast while still covering hundreds of seeds per run.
  */
-describe("deriveTheme property sweep (fix round 1)", () => {
+describe("deriveTheme property sweep (fix rounds 1-2)", () => {
   const Ls = Array.from({ length: 11 }, (_, i) => i / 10); // 0, 0.1, ..., 1
   const Cs = [0, 0.02, 0.1, 0.3];
   const Hs = [0, 60, 120, 180, 240, 300];
@@ -300,6 +336,16 @@ describe("deriveTheme property sweep (fix round 1)", () => {
             if (ringAccentFgDeltaE < ROLE_SEPARATION_DELTA_E) {
               violations.push(
                 `${seed}: --ring/--accent-foreground deltaE ${ringAccentFgDeltaE} < ${ROLE_SEPARATION_DELTA_E}`,
+              );
+            }
+
+            // FIX ROUND 2 finding C: --accent must not collapse onto the
+            // resolved background (an invisible hover state) — the exact
+            // invariant the round-1 grid was missing.
+            const accentBackgroundDeltaE = oklabDistance(accent, background);
+            if (accentBackgroundDeltaE < ROLE_SEPARATION_DELTA_E) {
+              violations.push(
+                `${seed}: --accent/background deltaE ${accentBackgroundDeltaE} < ${ROLE_SEPARATION_DELTA_E}`,
               );
             }
           }
