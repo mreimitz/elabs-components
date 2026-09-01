@@ -2794,4 +2794,65 @@ describe("DataTable — #13 row drag-reorder", () => {
       rectSpy.mockRestore();
     }
   });
+
+  // ── Issue #98: dnd-kit's own AT strings (keyboard instructions,
+  // aria-roledescription) were never localized — the six sibling `reorder*`
+  // strings all go through `t()`, but these two are produced INSIDE dnd-kit
+  // and injected into our DOM, so they shipped hardcoded English regardless
+  // of locale. The German wrapper below supplies all three reorder keys that
+  // touch AT-visible reorder text (`reorderHandle` for the grip's accessible
+  // name, plus the two new `reorder*` keys this fix adds).
+  const germanReorderMessages = {
+    "data.table.reorderHandle": "Sortieren {name}",
+    "data.table.reorderInstructions":
+      "Um eine Zeile aufzunehmen, drücken Sie die Leertaste oder die Eingabetaste. Verwenden Sie beim Ziehen die Pfeiltasten, um die Zeile zu verschieben. Drücken Sie erneut die Leertaste oder die Eingabetaste, um die Zeile an ihrer neuen Position abzulegen, oder drücken Sie die Escape-Taste, um abzubrechen.",
+    "data.table.reorderRoleDescription": "sortierbar",
+  };
+
+  it("localizes dnd-kit's keyboard instructions and role description (cell mode) — #98", () => {
+    render(
+      <LocaleProvider locale="de-DE" messages={germanReorderMessages}>
+        <DataTable columns={columns} data={data} enableRowReorder />
+      </LocaleProvider>,
+    );
+    const handle = screen.getByRole("button", { name: "Sortieren Alpha" });
+    expect(handle).toHaveAttribute("aria-roledescription", "sortierbar");
+
+    const describedById = handle.getAttribute("aria-describedby");
+    expect(describedById).toBeTruthy();
+    const describedByText = document.getElementById(describedById!)?.textContent ?? "";
+    expect(describedByText).toContain("Leertaste");
+    // Load-bearing negative assertion: dnd-kit's verbatim English default
+    // instructions must NOT be present alongside (or instead of) the
+    // localized text.
+    expect(describedByText).not.toMatch(/To pick up|space bar/i);
+  });
+
+  it('keeps role="row" while localizing the role description in row-handle mode — #98', () => {
+    const { container } = render(
+      <LocaleProvider locale="de-DE" messages={germanReorderMessages}>
+        <DataTable columns={columns} data={data} enableRowReorder rowReorderHandle="row" />
+      </LocaleProvider>,
+    );
+    const [firstRow] = bodyRows(container);
+    expect(firstRow!.getAttribute("role")).toBe("row");
+    expect(firstRow!.getAttribute("aria-roledescription")).toBe("sortierbar");
+
+    const describedById = firstRow!.getAttribute("aria-describedby");
+    expect(describedById).toBeTruthy();
+    const describedByText = document.getElementById(describedById!)?.textContent ?? "";
+    expect(describedByText).toContain("Leertaste");
+    expect(describedByText).not.toMatch(/To pick up|space bar/i);
+  });
+
+  it("falls back to the English defaults with no LocaleProvider override — #98", () => {
+    render(<DataTable columns={columns} data={data} enableRowReorder />);
+    const handle = screen.getByRole("button", { name: "Reorder Alpha" });
+    expect(handle).toHaveAttribute("aria-roledescription", "sortable");
+
+    const describedById = handle.getAttribute("aria-describedby");
+    expect(describedById).toBeTruthy();
+    const describedByText = document.getElementById(describedById!)?.textContent ?? "";
+    expect(describedByText).toMatch(/To pick up|space bar/i);
+  });
 });

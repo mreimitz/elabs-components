@@ -700,6 +700,18 @@ work alongside `@elabs-ai/components-ai`.
   React key and one dnd-kit registration for two rows); each occurrence is now
   separately addressable, while a table with no repeated record keeps exactly
   the ids it had.
+- Fixed: `@elabs-ai/components-data`'s `DataTable` row drag-reorder now localizes
+  the two AT-visible strings `@dnd-kit` renders itself — the keyboard usage
+  instructions wired to a grip handle's `aria-describedby`, and the drag
+  activator's `aria-roledescription`. Both previously shipped dnd-kit's
+  hardcoded English defaults regardless of `LocaleProvider` locale, unlike
+  every other reorder string on this same feature. Wired via
+  `DndContext`'s `accessibility.screenReaderInstructions` and `useSortable`'s
+  `attributesOverride.roleDescription` (now supplied in both `"cell"` and
+  `"row"` handle modes), backed by two new `data.table.reorder*` message
+  keys whose English defaults reproduce dnd-kit's own default text
+  byte-for-byte, so an English consumer with no `LocaleProvider` override
+  sees unchanged output (#98).
 
 ## v4.0.0 — 2026-08-17
 
