@@ -245,12 +245,18 @@ export const FieldControl = forwardRef<ElementRef<typeof Slot>, FieldControlProp
 export const FieldDescription = forwardRef<
   HTMLParagraphElement,
   HTMLAttributes<HTMLParagraphElement>
->(function FieldDescription({ className, children, ...props }, ref) {
+>(function FieldDescription({ className, children, id, ...props }, ref) {
   const { registerDescription, unregisterDescription } = useFieldContext("FieldDescription");
   // Own id per INSTANCE — two `FieldDescription`s under one `FieldRoot` (a hint
   // above the control and a hint below it) must not collide on one shared id.
   const instanceId = useId();
-  const descriptionId = `${instanceId}-description`;
+  const generatedId = `${instanceId}-description`;
+  // Caller-supplied `id` wins — same "child wins" resolution `FieldControl`
+  // already uses (`childProps.id ?? generatedId`). Resolving ONE effective id
+  // up front, and destructuring `id` out of `...props` above, means the value
+  // registered into `aria-describedby` and the value actually rendered on the
+  // `<p>` can never diverge (PR #97 review finding 3).
+  const descriptionId = id ?? generatedId;
   // Same falsy-content convention `FieldRow` uses (`description ? … : null`):
   // `{condition && "message"}` is the ordinary React idiom for optional
   // content, and `condition === false` must render nothing — a `false`/`0`/
@@ -305,11 +311,15 @@ export const FieldDescription = forwardRef<
  * child instead of a component that may render nothing.
  */
 export const FieldError = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
-  function FieldError({ className, children, ...props }, ref) {
+  function FieldError({ className, children, id, ...props }, ref) {
     const { registerError, unregisterError } = useFieldContext("FieldError");
     // Own id per INSTANCE — same reasoning as `FieldDescription`.
     const instanceId = useId();
-    const errorId = `${instanceId}-error`;
+    const generatedId = `${instanceId}-error`;
+    // Caller-supplied `id` wins — same resolution as `FieldDescription`/
+    // `FieldControl` (PR #97 review finding 3: this had the identical
+    // ordering bug as `FieldDescription`).
+    const errorId = id ?? generatedId;
     // Same falsy-content convention as `FieldDescription`/`FieldRow`'s
     // `error ? … : null` — `{condition && "message"}` with `condition` false
     // must render no alert at all, not an empty one a screen reader announces.

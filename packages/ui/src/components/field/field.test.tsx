@@ -149,6 +149,49 @@ describe("Field compound anatomy", () => {
     expect(input).toHaveFocus();
   });
 
+  // PR #97 review finding 3: a caller-supplied `id` on FieldDescription must
+  // be the SAME id the layout effect registers — before this fix, the
+  // rendered element took the caller's id while the generated id was what
+  // got registered, so aria-describedby pointed at an id nothing rendered.
+  it("registers the caller-supplied id on FieldDescription so aria-describedby resolves to a real element", () => {
+    render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldDescription id="my-custom-description-id">
+          We only use this for receipts.
+        </FieldDescription>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    const description = screen.getByText("We only use this for receipts.");
+    expect(description.id).toBe("my-custom-description-id");
+    const describedBy = input.getAttribute("aria-describedby");
+    expect(describedBy).toBe("my-custom-description-id");
+    expect(document.getElementById(describedBy!)).toBe(description);
+  });
+
+  // Same defect, FieldError side (identical ordering bug per the finding).
+  it("registers the caller-supplied id on FieldError so aria-describedby resolves to a real element", () => {
+    render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldError id="my-custom-error-id">Enter a valid email address.</FieldError>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    const alert = screen.getByRole("alert");
+    expect(alert.id).toBe("my-custom-error-id");
+    const describedBy = input.getAttribute("aria-describedby");
+    expect(describedBy).toBe("my-custom-error-id");
+    expect(document.getElementById(describedBy!)).toBe(alert);
+  });
+
   // Fix round 1 (validator FAIL on cadac6e): `{condition && "message"}` is the
   // ordinary React idiom for optional content — when `condition` is false,
   // `children` is the boolean `false`, not `undefined`/`null`/`""`. FieldError
