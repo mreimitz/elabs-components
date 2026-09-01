@@ -214,12 +214,14 @@ jobs:
           pnpm docs:check
           pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
+          pnpm source-theme-count:check
           pnpm agents:check
           pnpm rules:scoping:check
           pnpm slop:check
           pnpm app-spec:check
           pnpm attributions:check
           pnpm attribution:provenance:check
+          pnpm attribution:comments:check
           pnpm issue-citations:check
           pnpm ai:types-only
           pnpm a11y:baseline:check
@@ -249,6 +251,7 @@ jobs:
           pnpm agents:check:test
           pnpm ai:types-only:test
           pnpm app-spec:check:test
+          pnpm attribution:comments:check:test
           pnpm attribution:provenance:check:test
           pnpm attributions:check:test
           pnpm audit-artifact:check:test
@@ -319,6 +322,7 @@ jobs:
           pnpm sidebar-drift:check:test
           pnpm skills:currency:check:test
           pnpm slop:check:test
+          pnpm source-theme-count:check:test
           pnpm states:check:test
           pnpm surface-elevation:check:test
           pnpm surface:preview:test

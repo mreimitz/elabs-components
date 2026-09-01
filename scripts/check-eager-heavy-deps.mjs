@@ -89,8 +89,9 @@ const isHeavy = (specifier) => matchesDep(specifier, HEAVY_DEPS);
  * weight: an optional peer reached by a static import makes the module
  * UNRESOLVABLE for every consumer who chose not to install it — a build error,
  * not a slow page. Deriving it means a newly-declared optional peer is policed
- * the moment it is declared, with nothing to remember. `@elabs-ai/components-ai`
- * declares none, so this rule is presently about `viewer`'s parser engines.
+ * the moment it is declared, with nothing to remember. Both `viewer`'s parser
+ * engines and `@elabs-ai/components-ai`'s mermaid/Rive/xterm/media-chrome
+ * peers (ADR 0032) are covered by this derivation, not by name.
  *
  * @param {string} root
  * @param {string} pkg

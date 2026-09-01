@@ -33,6 +33,14 @@ import { LineChart as LineChartDouble } from "@elabs-ai/components-charts/test";
 // bundles, including the heavy engines (Monaco, MapLibre, React Flow, visx).
 import { DataTable } from "@elabs-ai/components-data";
 import { ChatShell } from "@elabs-ai/components-ai";
+// `mermaid` / `@rive-app/react-webgl2` / `@xterm/xterm` + `@xterm/addon-fit` /
+// `media-chrome` are OPTIONAL peers of `@elabs-ai/components-ai` (issue #33) —
+// deliberately NOT installed here — this import must still resolve and
+// bundle, which is the proof that a consumer who skips them gets the actual
+// AudioPlayer/Persona/InteractiveTerminal/MarkdownView surfaces to build at
+// all (the runtime "capability gap" panel each renders when its engine
+// import rejects is locked separately, in each package's own test suite).
+import { AudioPlayer, MarkdownView, Persona, InteractiveTerminal } from "@elabs-ai/components-ai";
 import { CanvasShell } from "@elabs-ai/components-flow";
 import { MapCanvas } from "@elabs-ai/components-maps";
 import { MetricCard } from "@elabs-ai/components-charts";
@@ -53,6 +61,10 @@ const surfaces = [
   BrandLogo,
   DataTable,
   ChatShell,
+  AudioPlayer,
+  MarkdownView,
+  Persona,
+  InteractiveTerminal,
   CanvasShell,
   MapCanvas,
   MetricCard,

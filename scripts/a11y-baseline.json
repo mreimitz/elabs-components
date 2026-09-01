@@ -1,6 +1,6 @@
 {
   "$comment": "GENERATED — do not hand-edit. `pnpm a11y:baseline:run` measures, `pnpm a11y:baseline:check --update` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. `ratchet.maxStories` only ever goes DOWN (#316).",
-  "ratchet": { "maxStories": 105 },
+  "ratchet": { "maxStories": 98 },
   "stories": {
     "ai-changereview--all-approved": ["aria-prohibited-attr"],
     "ai-changereview--all-rejected": ["aria-prohibited-attr"],
@@ -47,8 +47,6 @@
     "editor-diffeditor--inline": ["aria-input-field-name"],
     "editor-diffeditor--side-by-side": ["aria-input-field-name"],
     "editor-iteration-builderdialog--bento-builder": ["scrollable-region-focusable"],
-    "editor-iteration-builderdialog--pivot-builder": ["color-contrast"],
-    "editor-iteration-templatedialog--default": ["color-contrast"],
     "editor-markdowneditor--default": ["color-contrast"],
     "editor-markdowneditor--read-only": ["color-contrast"],
     "editor-markdowneditor-slash-menu--default": ["scrollable-region-focusable"],
@@ -67,10 +65,8 @@
     "forms-combobox--default": ["button-name"],
     "forms-datepicker--default": ["aria-dialog-name"],
     "forms-daterangepicker--default": ["aria-dialog-name"],
-    "forms-fileupload--controlled": ["aria-allowed-role"],
-    "forms-fileupload--default": ["aria-allowed-role", "aria-progressbar-name", "listitem"],
-    "forms-fileupload--with-error": ["aria-allowed-role", "listitem"],
-    "forms-fileupload--with-progress": ["aria-allowed-role", "aria-progressbar-name", "listitem"],
+    "forms-fileupload--default": ["aria-progressbar-name"],
+    "forms-fileupload--with-progress": ["aria-progressbar-name"],
     "forms-inputotp--default": ["label"],
     "forms-numberinput--controlled": ["label"],
     "forms-numberinput--default": ["label"],
@@ -89,8 +85,6 @@
     "forms-virtualselect--large-dataset": ["button-name"],
     "forms-virtualselect--multiple": ["button-name"],
     "forms-virtualselect--preselected": ["button-name"],
-    "layout-app-shell-mail--default": ["color-contrast"],
-    "layout-app-shell-mail--density-comparison": ["color-contrast"],
     "navigation-tree--reveal-selected-node": ["scrollable-region-focusable"],
     "navigation-wizard--default": ["button-name"],
     "overlays-command--groups": ["aria-required-children"],
@@ -107,7 +101,6 @@
     "patterns-scenarios-agentic-ai-workspace--default": [
       "aria-allowed-attr",
       "button-name",
-      "color-contrast",
       "heading-order",
       "list",
       "listitem"
@@ -129,7 +122,6 @@
       "landmark-unique"
     ],
     "patterns-templates-marketing--default": ["color-contrast", "heading-order"],
-    "patterns-templates-screen-states--errored": ["color-contrast"],
     "patterns-templates-settings--default": [
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",

@@ -16,7 +16,7 @@ const meta = {
         component:
           "A token-themed Monaco editor. The editing surface + widgets are Monaco; " +
           "brand-ui supplies the chrome (toolbar/Select/Button). Colors track the " +
-          "active `data-theme` across all three themes via the theming bridge.",
+          "active `data-theme` across every theme via the theming bridge.",
       },
     },
   },

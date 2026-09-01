@@ -27,7 +27,11 @@ import {
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { stripSanitizerOverrides, warnOnTrustedPluginSlots } from "./_streamdown-safety";
-import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
+import {
+  useStreamdownMermaidOptions,
+  useStreamdownPlugins,
+  useStreamdownTranslations,
+} from "./_streamdown-i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { Streamdown } from "streamdown";
@@ -213,6 +217,10 @@ export const MarkdownView = ({
     warnOnTrustedPluginSlots(pluginOverrides, internalPlugins);
     return { ...internalPlugins, ...pluginOverrides };
   }, [internalPlugins, pluginOverrides]);
+  // The TOP-LEVEL Streamdown `mermaid` prop (distinct from `plugins.mermaid`
+  // above) — catches a failed diagram render, including a missing `mermaid`
+  // optional peer (issue #33). See `_streamdown-i18n.ts`.
+  const mermaidOptions = useStreamdownMermaidOptions();
   return (
     <Streamdown
       data-slot="markdown-view"
@@ -220,6 +228,7 @@ export const MarkdownView = ({
       components={components}
       plugins={plugins}
       translations={translations}
+      mermaid={mermaidOptions}
       {...props}
     >
       {children}

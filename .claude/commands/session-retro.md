@@ -118,8 +118,11 @@ If `gh` is available, authed, and a remote exists:
    gh label create "area:governance" -c "#1d76db" -d "CLAUDE.md / rules / commands / hooks" 2>/dev/null || true
    ```
 2. **Dedupe** — `gh issue list --search "<keywords> label:meta" --state all`. If a
-   strong match is open, comment on it (`gh issue comment`) with the new evidence
-   instead of opening a duplicate.
+   strong match is open, comment on it with the new evidence instead of opening a
+   duplicate — via
+   `node scripts/post-issue-comment.mjs <n> --command session-retro --body <text>`,
+   never a raw `gh issue comment` (the helper adds the machine-attribution marker,
+   #78, so this run's own comment can't later be mistaken for a maintainer ruling).
 3. **Create**, using the retro template's structure
    (`.github/ISSUE_TEMPLATE/session-retro.md`):
    ```bash
@@ -127,6 +130,10 @@ If `gh` is available, authed, and a remote exists:
      --label "meta,type:process,severity:P1,area:governance" \
      --body "<filled template: Summary / Evidence (#anchors) / Root cause (gap) / Prevention (docs+hook) / Affected files / Acceptance / Test-or-check to add>"
    ```
+   `gh issue create` takes labels the posting helper doesn't model, so it stays a
+   raw call — but the `--body` text itself must be built with `render()` from
+   `scripts/lib/comment-attribution.mjs` prepended (the machine-attribution
+   marker, #78), the same as every other comment this command posts.
    Cite digest anchors and quotes for evidence — **never paste raw transcript or
    secrets**. Capture each issue number + URL.
 
@@ -155,10 +162,12 @@ Keep each fix scoped to its issue so it's traceable. Do **not** touch product co
 ## Phase 6 — Close the issues
 
 When a fix is implemented and validated, close its issue with a comment naming
-the change:
+the change — via the shared posting helper, never `gh issue close --comment`
+(which would fold an unmarked body into the close call, #78):
 
 ```bash
-gh issue close <n> --comment "Fixed: <one line>. Files: <paths>. Acceptance: <check>."
+node scripts/post-issue-comment.mjs <n> --command session-retro --close \
+  --body "Fixed: <one line>. Files: <paths>. Acceptance: <check>."
 ```
 
 Leave an issue **open** only if the user dropped it or its fix is genuinely

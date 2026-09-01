@@ -8,7 +8,11 @@ import {
   useLocale,
 } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
-import { useStreamdownPlugins, useStreamdownTranslations } from "./_streamdown-i18n";
+import {
+  useStreamdownMermaidOptions,
+  useStreamdownPlugins,
+  useStreamdownTranslations,
+} from "./_streamdown-i18n";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import {
@@ -210,6 +214,9 @@ export const ReasoningContent = memo(({ className, children, ...props }: Reasoni
   // Brand-token-derived `code` plugin, not the package's static github-*
   // default (#315 follow-up) — re-derives when the active theme changes.
   const plugins = useStreamdownPlugins();
+  // The TOP-LEVEL Streamdown `mermaid` prop — catches a failed diagram
+  // render, including a missing `mermaid` optional peer (issue #33).
+  const mermaidOptions = useStreamdownMermaidOptions();
 
   return (
     <CollapsibleContent
@@ -221,7 +228,7 @@ export const ReasoningContent = memo(({ className, children, ...props }: Reasoni
       {...props}
     >
       {typeof children === "string" ? (
-        <Streamdown plugins={plugins} translations={translations}>
+        <Streamdown plugins={plugins} translations={translations} mermaid={mermaidOptions}>
           {children}
         </Streamdown>
       ) : (

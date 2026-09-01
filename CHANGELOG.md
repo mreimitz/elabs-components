@@ -2,6 +2,104 @@
 
 ## Unreleased
 
+- Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
+  provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
+  one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
+  tenant/white-label picker that only has a single brand colour (#39).
+- Added: `@elabs-ai/components-data`'s `DataTable` gains opt-in row drag-reorder
+  (`enableRowReorder` / `onRowReorder` / `rowReorderHandle`, `"cell"` grip column or
+  `"row"` whole-row activator), built on `@dnd-kit/core`/`@dnd-kit/sortable` — the same
+  controlled-slice pattern as sorting/pagination/pinning, so the caller reorders `data`
+  itself. Fully keyboard-operable (Space/Enter to pick up, arrows to move, Space/Enter
+  to drop, Escape to cancel) with a localized aria-live announcement on every lift/move/
+  drop/cancel, and mutually exclusive with `enableRowVirtualization` (a dev warning
+  fires) (#13).
+- Added: a compound `Field*` anatomy (`FieldRoot`/`FieldLabel`/`FieldControl`/
+  `FieldDescription`/`FieldError`, `@elabs-ai/components-ui`) so callers can
+  compose custom field layouts — two controls in one row, or a description
+  placed before the control — that `FieldRow`'s single prop-configured shape
+  couldn't express. Mirrors the same id/`aria-describedby`/`aria-invalid`/
+  `role="alert"` wiring `FieldRow` already validated, adapted to a shared
+  lifted-state context so it holds across independently-composed parts;
+  `FieldRow` itself is unchanged (#43).
+- Fixed: `FieldDescription`/`FieldError` (`@elabs-ai/components-ui`) now resolve
+  a caller-supplied `id` the same way `FieldControl` already did
+  (`props.id ?? generatedId`) and register that same value into
+  `aria-describedby`. Previously a caller-supplied `id` was only applied to the
+  rendered element while the layout effect kept registering the internally
+  generated id, so `FieldControl`'s `aria-describedby` pointed at an element
+  that did not exist and screen readers never announced the description/error.
+- Changed: `@elabs-ai/components-ai` no longer forces every consumer to install
+  `mermaid`, `@rive-app/react-webgl2`, `@xterm/addon-fit`, `@xterm/xterm` and
+  `media-chrome` — all five already sit behind lazy `import()` boundaries (ADR 0019) and are now declared as **optional peer dependencies**
+  (`peerDependenciesMeta.<name>.optional: true`), the same pattern
+  `@elabs-ai/components-viewer` already uses. An app that never renders
+  `MarkdownView`'s Mermaid diagrams, `Persona`, `InteractiveTerminal` or
+  `AudioPlayer` can skip all four+one packages entirely; reaching one of those
+  surfaces without the matching peer installed now renders an actionable
+  `StatePanel`/error message naming the exact package to install, instead of a
+  crash or a blank component (issue #33). Fixing this for real also closed a
+  latent Vite/Rollup build-time bug: a STATIC or namespace import of an
+  optional peer resolves, at build time, to an empty stub once the peer is
+  genuinely absent, and Rollup's strict ESM named-export validation then fails
+  the **whole consumer app build** — not a runtime error any `.catch()` could
+  see. `_persona-rive.tsx` and `_audio-player-media-chrome.tsx` now import
+  their peer as a namespace + destructure + explicit-`undefined` guard;
+  `_interactive-terminal-xterm.ts` goes further and defers the actual
+  `@xterm/xterm`/`@xterm/addon-fit` import to a genuinely dynamic,
+  function-scoped `import()` (mirroring `_lazy-mermaid.ts`'s `loadEngine`),
+  since Rollup's `resolveNamespaceVariables` optimization re-derives even a
+  namespace-import binding when it is re-exported. Verified end-to-end via
+  `pnpm consumer:check` with **four of the five** peers genuinely absent from
+  `fixtures/consumer-smoke`'s installed tree (Rive, xterm, `@xterm/addon-fit`,
+  media-chrome). `mermaid` could not be verified the same way: `@streamdown/mermaid`
+  (a dependency of `@elabs-ai/components-ai` itself, not of the fixture) declares
+  `mermaid` as its own plain, non-optional dependency, and the fixture's pnpm
+  configuration still resolves it through the virtual store even with the peer
+  declared optional and never installed directly — so the gate has never actually
+  exercised mermaid's absence, only the other four. `_lazy-mermaid.ts`'s
+  `loadEngine()` still guards against the shape a genuinely-absent peer takes in a
+  real Vite production build (an empty stub module, not a rejection), and a
+  fixture-level unit test reproduces that stub shape directly — but this is a
+  narrower guarantee than "verified end-to-end," and is disclosed as such rather
+  than folded into the same claim as the other four engines.
+- Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
+  against the bare `--background` token, but Monaco actually paints a translucent
+  `editor.lineHighlightBackground` overlay UNDER token text on the cursor's line —
+  several syntax tokens (e.g. `string`, measured 4.16:1 in the `light` theme) fell
+  short of real WCAG AA (4.5:1) once that overlay composited in, even though the
+  bridge's own math reported success. The clamp now targets the composited ground
+  (`flattenOver(lineHighlight, background)`), with a small headroom margin so the
+  first-clearing 10%-mix step in `ensureReadable` can't land a hair under the bar
+  (#88).
+- Fixed: `@elabs-ai/components-ui`'s `NavigationMenuTrigger` could spontaneously
+  reopen a few hundred milliseconds after an explicit dismissal (Escape,
+  outside click, focus-out) that landed inside Radix's hover-intent
+  `delayDuration` window (residual of #54, issue #85) — a stray `openTimerRef`
+  armed by the pointer move preceding the click was never cancelled by any
+  dismiss path. An earlier fix dispatched a synthetic pointer-leave to run
+  Radix's own cancellation path, but that path also unconditionally arms
+  Radix's close timer, so every click/keyboard/touch-opened menu then closed
+  itself ~150ms later with no further interaction — regressing exactly the
+  input modes it didn't touch. `NavigationMenu` now proxies `value`/
+  `onValueChange` (transparent to a consumer's own controlled/uncontrolled
+  usage) and swallows, once, a reopen request for an item whose dismissal
+  coincided with a real mouse pointer still resting on its trigger — the only
+  scenario that was ever broken. The guard is cleared by any subsequent click
+  or genuine pointer-leave on that trigger, and a pure keyboard sequence never
+  touches it, so it cannot affect keyboard or touch entry. No synthetic DOM
+  events are dispatched.
+- Fixed: ~20 live "all three themes"/"THREE themes (light/dark)" claims survived a
+  deleted third theme across component/story comments, rendered Storybook copy
+  (`apps/docs/stories/foundations/theming.stories.tsx`), CLI docs and a hook message
+  (#29 residual) — reworded to "every theme" (or removed the count) so the wording
+  cannot go stale again, and added a third currency gate,
+  `pnpm source-theme-count:check` (self-tested, wired into CI), that scans actual
+  product source (`packages/*/src/**` including `.css`, and
+  `apps/docs/stories/**`) for a stale theme-count claim — the two existing prose
+  gates (`docs:check`, `skills:currency:check`) only ever reached documentation
+  files, not source comments or rendered story text, which is exactly where this
+  drift hid in plain sight.
 - Fixed: three automated-review findings on PR #87. (1) `scripts/check-manifest.mjs`'s
   freshness check compared against `git show HEAD:brand-ui.manifest.json`, which
   false-STALEd a legitimately fresh, already-regenerated-but-uncommitted manifest (the
@@ -580,6 +678,28 @@ work alongside `@elabs-ai/components-ai`.
   "Ordered neutral ramp" story now name `surface-3`/`surface-4` as a second
   accepted "renders identically in light" pair, alongside the existing
   `surface-1`/`surface-2` note. No token values changed. (#59)
+- Fixed: `@elabs-ai/components-cli`'s `flat()` (`packages/cli/lib/core.mjs`) crashed
+  `brand-ui search`/`docs`/`map` (and the equivalent MCP tools) with
+  `TypeError: Cannot read properties of undefined (reading 'toLowerCase')` when run
+  against a `brand-ui.manifest.json` written by the previous release, whose
+  `types`/`otherExports` buckets were bare name-string arrays rather than the current
+  `{name, module}` objects — `loadManifest()` reads a checkout-local manifest verbatim
+  and prioritizes it, so any checkout (or consumer monorepo) that upgrades the CLI
+  without regenerating its committed manifest hit this. `flat()` now normalizes both
+  the historical string shape and the current object shape (PR #97 automated review
+  finding 5).
+- Fixed: `@elabs-ai/components-data`'s `DataTable` row drag-reorder reported the
+  wrong `from`/`to` indices when the `data` array repeats a record. Both indices
+  were resolved through a map keyed by the row's own value, which can hold only
+  one position per record, so dropping the second occurrence of a repeated
+  object (or a repeated primitive) reported the first occurrence — and the
+  documented `arrayMove(data, from, to)` idiom then moved a row the user never
+  dragged, silently. Indices now come from the position TanStack already
+  assigned each row when it built its row model from `data`. Repeated records
+  also used to share one drag identity when no `getRowId` was supplied (one
+  React key and one dnd-kit registration for two rows); each occurrence is now
+  separately addressable, while a table with no repeated record keeps exactly
+  the ids it had.
 
 ## v4.0.0 — 2026-08-17
 

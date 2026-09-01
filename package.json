@@ -24,6 +24,8 @@
     "app-spec:check:test": "node --test scripts/check-app-spec.test.mjs",
     "arch:evidence": "node .claude/scripts/arch-evidence-pack.mjs",
     "arch:garden": "node .claude/scripts/arch-evidence-pack.mjs --depth quick",
+    "attribution:comments:check": "node scripts/check-comment-attribution.mjs",
+    "attribution:comments:check:test": "node --test scripts/check-comment-attribution.test.mjs",
     "attribution:provenance:check": "node scripts/check-attribution-provenance.mjs",
     "attribution:provenance:check:test": "node --test scripts/check-attribution-provenance.test.mjs",
     "attributions:check": "node scripts/gen-attributions.mjs --check",
@@ -190,6 +192,8 @@
     "skills:currency:check:test": "node --test scripts/check-skills-currency.test.mjs",
     "slop:check": "node scripts/check-anti-slop.mjs",
     "slop:check:test": "node --test scripts/check-anti-slop.test.mjs",
+    "source-theme-count:check": "node scripts/check-source-theme-count.mjs",
+    "source-theme-count:check:test": "node --test scripts/check-source-theme-count.test.mjs",
     "states:check": "node scripts/check-state-coverage.mjs",
     "states:check:test": "node --test scripts/check-state-coverage.test.mjs",
     "storybook": "pnpm --filter @elabs-ai/components-docs dev",
@@ -238,7 +242,8 @@
   "pnpm": {
     "patchedDependencies": {
       "@radix-ui/react-scroll-area@1.2.10": "patches/@radix-ui__react-scroll-area@1.2.10.patch",
-      "@radix-ui/react-select@2.2.6": "patches/@radix-ui__react-select@2.2.6.patch"
+      "@radix-ui/react-select@2.2.6": "patches/@radix-ui__react-select@2.2.6.patch",
+      "@milkdown/ctx@7.21.2": "patches/@milkdown__ctx@7.21.2.patch"
     }
   }
 }

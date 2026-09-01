@@ -20,3 +20,9 @@ apps/docs/public/llms/
 # (`pnpm audit-artifact:check`) diffs the generator's exact output byte-for-byte,
 # so Prettier's table padding must not touch it.
 apps/e2e/reports/theme-aa-audit.md
+# Regression-lock fixture (comment-attribution #78) — the exact, historical
+# machine-drafted comment body that motivated the gate, copied verbatim from
+# `.claude/scratch/close-issues/20260830-195822/comments/adj-26.md`. Prettier
+# reformatting it is harmless to the test but breaks the "verbatim artifact"
+# claim, so it stays byte-for-byte.
+scripts/fixtures/comment-attribution/adj-26-unmarked.md

@@ -1142,3 +1142,134 @@ export const RowSelectionWithToolbarDark: Story = {
     await RowSelectionWithToolbar.play!(context);
   },
 };
+
+// ─── RowReorder (#13) ───────────────────────────────────────────────────────
+
+/**
+ * Opt-in row drag-reorder. Fully controlled, like every other DataTable slice:
+ * `onRowReorder` reports the move as `(from, to, row)` and this story
+ * re-orders its own `data` in response — the component never mutates `data`
+ * itself.
+ *
+ * Try both ways to move a row: drag the grip handle with a mouse, or Tab to
+ * it and use the keyboard — Space/Enter picks a row up, Arrow Up/Down moves
+ * it, Space/Enter drops it, Escape cancels. Every position change is
+ * announced through a live region (WCAG 4.1.3).
+ */
+export const RowReorder: Story = {
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [items, setItems] = useState(rows);
+    return (
+      <DataTable
+        columns={columnsNoBadge}
+        data={items}
+        enableRowReorder
+        onRowReorder={(from, to) => {
+          setItems((current) => {
+            const next = current.slice();
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved!);
+            return next;
+          });
+        }}
+      />
+    );
+  },
+  play: async ({ canvas, userEvent }) => {
+    // Keyboard flow — the mandatory path (issue #13 carries the
+    // `accessibility` label): pick up the first row ("api-gateway"), move it
+    // down one position, and drop.
+    const handle = canvas.getByRole("button", { name: "Reorder api-gateway" });
+    handle.focus();
+    await expect(handle).toHaveFocus();
+
+    await userEvent.keyboard(" ");
+    await expect(handle).toHaveAttribute("aria-pressed", "true");
+
+    // `KeyboardSensor.attach()` (`@dnd-kit/core`) defers attaching the
+    // listener for the subsequent move/drop keys by one real macrotask
+    // (`setTimeout(fn, 0)`) — the same tick the unit tests in
+    // `data-table.test.tsx` wait out.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await userEvent.keyboard("{ArrowDown}");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await userEvent.keyboard(" ");
+
+    await waitFor(() => {
+      const gripButtons = canvas.getAllByRole("button", { name: /^Reorder /i });
+      expect(gripButtons[0]).toHaveAccessibleName("Reorder billing");
+      expect(gripButtons[1]).toHaveAccessibleName("Reorder api-gateway");
+    });
+  },
+};
+
+/**
+ * `rowReorderHandle="row"` makes the whole row the drag activator — no extra
+ * grip column. Reach for this only when the row has no other primary
+ * interaction (no `onRowClick`), since the row itself and a click target
+ * would otherwise compete for the same surface.
+ */
+export const RowReorderWholeRow: Story = {
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [items, setItems] = useState(rows);
+    return (
+      <DataTable
+        columns={columnsNoBadge}
+        data={items}
+        enableRowReorder
+        rowReorderHandle="row"
+        onRowReorder={(from, to) => {
+          setItems((current) => {
+            const next = current.slice();
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved!);
+            return next;
+          });
+        }}
+      />
+    );
+  },
+  play: async ({ canvas, userEvent }) => {
+    // Pointer drag — the other half of acceptance criterion "Pointer drag
+    // works (via @dnd-kit/sortable sensor)". This can only be verified in a
+    // REAL browser: `data-table.test.tsx` documents that jsdom has no
+    // `PointerEvent` constructor at all, so `PointerSensor`'s own activator
+    // gate rejects every synthetic pointerdown there regardless of test
+    // code. Storybook's interaction-test runner drives real Chromium, which
+    // has a genuine `PointerEvent`.
+    // Drags the whole first row ("api-gateway") past the second row
+    // ("billing") and drops.
+    const firstRow = canvas.getByText("api-gateway").closest("tr") as HTMLElement;
+    const secondRow = canvas.getByText("billing").closest("tr") as HTMLElement;
+    const from = firstRow.getBoundingClientRect();
+    const to = secondRow.getBoundingClientRect();
+    const startX = from.left + 20;
+    const startY = from.top + from.height / 2;
+
+    // `reorderSensors`'s `PointerSensor` uses `activationConstraint: { distance: 4 }`
+    // (data-table.tsx): dnd-kit's own `handleMove` treats the FIRST move past that
+    // threshold as arming the drag only — it calls `handleStart()` (recording the
+    // *initial* pointer-down position) and returns WITHOUT ever calling `onMove`, so
+    // that event never updates the tracked drag position. A single big pointer jump
+    // straight from the row to the drop target therefore "activates" the drag but
+    // reports no movement at all, and the row lands back where it started. A SECOND
+    // move — after activation — is required to actually report the target position,
+    // so the sequence below moves twice: once just past the 4px threshold, then once
+    // more to the real drop point.
+    await userEvent.pointer([
+      { keys: "[MouseLeft>]", target: firstRow, coords: { clientX: startX, clientY: startY } },
+      { coords: { clientX: startX, clientY: startY + 10 } },
+      { coords: { clientX: to.left + 20, clientY: to.bottom - 4 } },
+      { keys: "[/MouseLeft]" },
+    ]);
+
+    await waitFor(() => {
+      const cells = canvas.getAllByRole("cell");
+      expect(cells[0]).toHaveTextContent("billing");
+    });
+  },
+};

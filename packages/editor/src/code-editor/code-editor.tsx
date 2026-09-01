@@ -89,7 +89,7 @@ const BASE_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
  * A token-themed Monaco editor wrapped as a brand-ui React component. Monaco
  * renders its own editing surface + widgets; this wrapper owns lifecycle,
  * controlled/uncontrolled value, and applies the brand theme bridge so the
- * editor matches the active `data-theme` (all three themes).
+ * editor matches the active `data-theme` (every theme).
  *
  * Workers (for completions/diagnostics) are wired by importing
  * `@elabs-ai/components-editor/monaco-environment` once at the app entry.

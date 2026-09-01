@@ -6,6 +6,7 @@ import type { RiveParameters } from "@rive-app/react-webgl2";
 import type { FC, ReactNode } from "react";
 import { lazy, memo, Suspense, useCallback, useState } from "react";
 
+import { LazyEngineBoundary } from "./_lazy-engine-boundary";
 import { PERSONA_SOURCES, type PersonaState, type PersonaVariant } from "./persona-sources";
 
 export { PERSONA_SOURCES };
@@ -116,20 +117,30 @@ export const Persona: FC<PersonaProps> = memo(
     const visual = failed ? (
       placeholder
     ) : (
-      <Suspense fallback={placeholder}>
-        <PersonaRive
-          className={className}
-          onLoad={onLoad}
-          onLoadError={handleLoadError}
-          onPause={onPause}
-          onPlay={onPlay}
-          onReady={onReady}
-          onStop={onStop}
-          source={source}
-          src={src ?? source.source}
-          state={state}
-        />
-      </Suspense>
+      // The Rive runtime is an optional peer (`@rive-app/react-webgl2`, issue
+      // #33) reached via `lazy()` — a REJECTED import throws during render,
+      // which `Suspense` alone cannot catch (it only covers the pending
+      // state). `LazyEngineBoundary` catches that throw and falls back to the
+      // same placeholder a load-time `onLoadError` already renders.
+      // `renderMissing` stays pure — `LazyEngineBoundary.componentDidCatch`
+      // already logs the error once, correctly; logging it again here would
+      // double-report on every render this fallback re-mounts under.
+      <LazyEngineBoundary renderMissing={() => placeholder}>
+        <Suspense fallback={placeholder}>
+          <PersonaRive
+            className={className}
+            onLoad={onLoad}
+            onLoadError={handleLoadError}
+            onPause={onPause}
+            onPlay={onPlay}
+            onReady={onReady}
+            onStop={onStop}
+            source={source}
+            src={src ?? source.source}
+            state={state}
+          />
+        </Suspense>
+      </LazyEngineBoundary>
     );
 
     return (

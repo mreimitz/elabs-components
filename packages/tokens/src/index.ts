@@ -71,3 +71,11 @@ export {
  * falling back to `:root` and rendering wrong.
  */
 export { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.generated";
+
+/**
+ * Derive a coherent, AA-safe `tokenOverrides` patch (`--primary`,
+ * `--primary-foreground`, `--accent`, `--accent-foreground`, `--ring`) from
+ * one or two seed colours — for a tenant/brand picker that only has a single
+ * brand colour, not a full theme. See `docs/CONSUMING.md` §5.3.
+ */
+export { deriveTheme, type DeriveThemeOptions, type DerivedThemeTokens } from "./derive-theme";

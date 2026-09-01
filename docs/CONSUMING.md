@@ -94,14 +94,14 @@ pnpm add @xyflow/react      # only if you use …-flow or the …-ai canvas
 
 Per-package peers worth knowing:
 
-| Package                       | Extra peer you must provide                                                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
-| `@elabs-ai/components-ai`     | `ai` (Vercel AI SDK) `^6` — your app owns the model calls; `@xyflow/react` if you render the agent canvas                                                                             |
-| `@elabs-ai/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
-| `@elabs-ai/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                            |
-| `@elabs-ai/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
-| everything else               | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                      |
+| Package                       | Extra peer you must provide                                                                                                                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@elabs-ai/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                                                                      |
+| `@elabs-ai/components-ai`     | `@xyflow/react` if you render the agent canvas (required); **five more peers are optional** — `ai`, `mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit`, `media-chrome` — install only what you render (see §6) |
+| `@elabs-ai/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                                                                         |
+| `@elabs-ai/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                                                                           |
+| `@elabs-ai/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package                                                |
+| everything else               | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                                                                     |
 
 All packages are **ESM-only** (`"type": "module"`) — use a bundler that handles
 ESM (Vite, Next, webpack 5, esbuild).
@@ -299,6 +299,64 @@ value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
   not restrict (that directive governs parsing a `style` attribute string or a
   `<style>` element, not a script's direct CSSOM manipulation — see ADR 0031).
 
+### 5.3 Deriving a palette from one brand colour (`deriveTheme`)
+
+`tokenOverrides` (above) still expects you to already know the value for every
+token you want to patch. A tenant/white-label picker usually has only ONE
+colour — the brand's own — with no idea what a coherent, AA-safe
+`--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` would be.
+`deriveTheme` (issue #39) computes those from the seed, ready to hand straight
+to `tokenOverrides`:
+
+```tsx
+import { deriveTheme } from "@elabs-ai/components-tokens";
+
+const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.55 0.18 250)"
+// => {
+//   "--primary": "oklch(0.55 0.18 250)",
+//   "--primary-foreground": "oklch(1 0 0)",
+//   "--accent": "oklch(0.811 0.05 250)",
+//   "--accent-foreground": "oklch(0 0 0)",
+//   "--ring": "oklch(0.55 0.18 250)",
+// }
+
+<ThemeProvider tokenOverrides={overrides}>
+```
+
+- **A patch, not a theme — by design.** `deriveTheme` returns exactly the five
+  tokens above, not full `THEME_TOKEN_NAMES` coverage. That mirrors
+  `tokenOverrides` itself (ADR 0031 explicitly rejected requiring full coverage
+  for a partial patch as "defeats the point"): every key it returns is a real,
+  valid `ThemeTokenName` — checked by `derive-theme.test.ts` — but it isn't
+  trying to replace a theme, only to patch the handful of tokens that actually
+  depend on a brand colour.
+- **AA-safety is proven, not assumed.** Every `-foreground` value is chosen
+  from true black/true white, whichever contrasts better against its plate —
+  provably ≥4.5:1 (WCAG AA text) for ANY fill colour (see the module doc
+  comment in `packages/tokens/src/derive-theme.ts` for the proof, and the
+  "proof-check" test that verifies it numerically). `--ring` is searched at
+  `--primary`'s own hue for the lightness closest to `--primary`'s that clears
+  ≥3:1 (WCAG 1.4.11) against `background`. If an AA-safe value genuinely
+  cannot be found, `deriveTheme` **throws** rather than returning a
+  non-compliant token — it never fails silently.
+- **Pass `background`** (e.g. read `--background` off the active theme via
+  `getComputedStyle`) when deriving for `dark` or a custom theme; omitted, it
+  assumes the `light` reference theme's own background.
+- **Input is `oklch(...)` only** (the same literal format every token in
+  `themes.css` uses) — convert a hex/`rgb()` brand colour before calling it.
+- **Must be fully opaque.** Both `primary` and `background` are rejected
+  (`deriveTheme` throws) if they carry an alpha other than 1 —
+  `oklch(0.55 0.18 250 / 0.9)` throws even though `oklch()` itself allows
+  alpha. Every token in `themes.css` is a solid color; alpha is applied via
+  Tailwind's `/` modifier at use time, never baked into the token. If your
+  brand colour is translucent, composite it against its real backdrop
+  yourself first and pass the resulting opaque `oklch()` (fix round 2, issue
+  #39, finding F).
+- **Compose it with `tokenOverrides`, don't hand-roll the object it returns.**
+  `deriveTheme`'s whole point is that you stop hand-deriving these values
+  yourself; see `Foundations/Theming` → `DeriveTheme` in Storybook for a live
+  "tenant picks a brand colour" demo.
+
 ## 6. Per-package extras
 
 - **`@elabs-ai/components-flow`** — `import "@xyflow/react/dist/style.css"` once.
@@ -411,7 +469,31 @@ value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
   `<FormProvider>`.
 
 - **`@elabs-ai/components-ai`** — `MarkdownPreview` math needs
-  `import "katex/dist/katex.min.css"` once, only if you enable it.
+  `import "katex/dist/katex.min.css"` once, only if you enable it. Five more
+  peers are **optional** (issue #33, `docs/ADR/0032-optional-peer-dependency-policy.md`) —
+  each is a dependency of ONE feature, reached only through a lazy `import()`
+  (ADR 0019), so the package installs and builds with none of them; reaching a
+  feature whose peer is absent renders an actionable message naming the
+  package to install, never a blank component or an unhandled rejection.
+
+  ```bash
+  pnpm add mermaid                    # Mermaid diagrams in streamed markdown
+  pnpm add @rive-app/react-webgl2     # Persona
+  pnpm add @xterm/xterm @xterm/addon-fit  # InteractiveTerminal
+  pnpm add media-chrome               # AudioPlayer
+  pnpm add ai                         # types only, no runtime cost
+  ```
+
+  `@xyflow/react` (the agent-canvas set) stays a **required** peer, not
+  optional — install it whenever you import from this package.
+
+  **Known limitation:** `mermaid` may still resolve on disk even when you skip
+  it — `@streamdown/mermaid` (a dependency of `@elabs-ai/components-ai`, not of
+  your app) currently declares `mermaid` as its own plain, non-optional
+  dependency, so a hoisting package manager can still install it transitively.
+  The optional-peer declaration still means you never have to declare it
+  yourself, and a genuinely absent engine still fails actionably rather than
+  crashing.
 
 ## 7. Make your coding agent brand-ui-aware
 

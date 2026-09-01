@@ -26,9 +26,11 @@
  */
 
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
+import { Button, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { ITheme, Terminal as XTerm } from "@xterm/xterm";
+import { EyeOffIcon } from "lucide-react";
 import {
   forwardRef,
   useEffect,
@@ -37,6 +39,7 @@ import {
   useState,
   type HTMLAttributes,
 } from "react";
+import { isOptionalPeerMissing } from "./_optional-peer";
 
 export interface InteractiveTerminalHandle {
   /** Process → screen. ANSI passthrough (colors, cursor movement, clears, …). */
@@ -275,6 +278,16 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
     const fitAddonRef = useRef<FitAddon | null>(null);
     const [term, setTerm] = useState<XTerm | null>(null);
     const [themeRevision, setThemeRevision] = useState(0);
+    // Set when the `@xterm/xterm` / `@xterm/addon-fit` optional peers
+    // (issue #33) fail to load — an uninstalled peer, or any other engine
+    // load failure. `null` = not (yet) failed.
+    const [loadError, setLoadError] = useState<unknown>(null);
+    // Bumped by `retryLoad` to re-run the mount effect below (the only way to
+    // ask it to try the dynamic `import()` again — the effect's own deps stay
+    // otherwise static, so this is a deliberate re-mount signal, not a value
+    // the effect reads).
+    const [reloadKey, setReloadKey] = useState(0);
+    const { t } = useLocale();
 
     const onDataRef = useRef(onData);
     onDataRef.current = onData;
@@ -295,6 +308,12 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
             term.write(data);
             return;
           }
+          // The engine failed to load (issue #33 — a missing optional peer, or
+          // any other load-time failure): nothing will ever drain this buffer,
+          // so buffering here would grow it unboundedly for the lifetime of a
+          // consumer that keeps calling `write()` against a terminal that can
+          // never open. Drop instead of queueing once that's known.
+          if (loadError) return;
           pendingWritesRef.current.push(data);
         },
         clear: () => {
@@ -304,7 +323,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
         fit: () => fitAddonRef.current?.fit(),
         focus: () => term?.focus(),
       }),
-      [term],
+      [term, loadError],
     );
 
     // Mount once: fetch the engine chunk, create the xterm instance + FitAddon,
@@ -315,56 +334,64 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
       const container = containerRef.current;
       if (!container) return;
 
+      setLoadError(null);
       let disposed = false;
       let instance: XTerm | undefined;
       let fitAddon: FitAddon | undefined;
       let resizeObserver: ResizeObserver | undefined;
 
-      void import("./_interactive-terminal-xterm").then((engine) => {
-        if (disposed) return;
+      void import("./_interactive-terminal-xterm")
+        .then((module) => module.loadXTermEngine())
+        .then((engine) => {
+          if (disposed) return;
 
-        instance = new engine.XTerm({
-          fontSize,
-          fontFamily: readTerminalFontFamily(),
-          convertEol: true,
-          cursorBlink: true,
-          scrollback: 2000,
-          disableStdin: readOnly,
-          theme: buildInteractiveTerminalTheme(),
-        });
-        fitAddon = new engine.FitAddon();
-        instance.loadAddon(fitAddon);
-        instance.open(container);
-        if (ariaLabel && instance.textarea) {
-          instance.textarea.setAttribute("aria-label", ariaLabel);
-        }
-
-        // Replay anything the consumer wrote while the chunk was in flight.
-        for (const chunk of pendingWritesRef.current) instance.write(chunk);
-        pendingWritesRef.current = [];
-
-        // No keyboard trap (#285 acceptance criterion): let Tab/Shift-Tab and
-        // Escape bubble to the browser's normal focus handling instead of being
-        // consumed as terminal input, so focus can always leave the terminal.
-        instance.attachCustomKeyEventHandler((event) => {
-          if (event.key === "Tab" || event.key === "Escape") return false;
-          return true;
-        });
-
-        fitAddonRef.current = fitAddon;
-        setTerm(instance);
-
-        const observer = new ResizeObserver(() => {
-          try {
-            fitAddon?.fit();
-          } catch {
-            // Container not laid out yet (e.g. display:none) — ignore, the next
-            // resize observation will retry.
+          instance = new engine.XTerm({
+            fontSize,
+            fontFamily: readTerminalFontFamily(),
+            convertEol: true,
+            cursorBlink: true,
+            scrollback: 2000,
+            disableStdin: readOnly,
+            theme: buildInteractiveTerminalTheme(),
+          });
+          fitAddon = new engine.FitAddon();
+          instance.loadAddon(fitAddon);
+          instance.open(container);
+          if (ariaLabel && instance.textarea) {
+            instance.textarea.setAttribute("aria-label", ariaLabel);
           }
+
+          // Replay anything the consumer wrote while the chunk was in flight.
+          for (const chunk of pendingWritesRef.current) instance.write(chunk);
+          pendingWritesRef.current = [];
+
+          // No keyboard trap (#285 acceptance criterion): let Tab/Shift-Tab and
+          // Escape bubble to the browser's normal focus handling instead of being
+          // consumed as terminal input, so focus can always leave the terminal.
+          instance.attachCustomKeyEventHandler((event) => {
+            if (event.key === "Tab" || event.key === "Escape") return false;
+            return true;
+          });
+
+          fitAddonRef.current = fitAddon;
+          setTerm(instance);
+
+          const observer = new ResizeObserver(() => {
+            try {
+              fitAddon?.fit();
+            } catch {
+              // Container not laid out yet (e.g. display:none) — ignore, the next
+              // resize observation will retry.
+            }
+          });
+          observer.observe(container);
+          resizeObserver = observer;
+        })
+        .catch((error: unknown) => {
+          if (disposed) return;
+          console.error("[InteractiveTerminal] the terminal engine failed to load:", error);
+          setLoadError(error);
         });
-        observer.observe(container);
-        resizeObserver = observer;
-      });
 
       return () => {
         disposed = true;
@@ -375,7 +402,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
         setTerm(null);
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [reloadKey]);
 
     // Keystrokes + paste → consumer, only while interactive.
     useEffect(() => {
@@ -428,6 +455,45 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
       fitAddonRef.current?.fit();
       // `themeRevision` is the trigger; the values themselves are re-read live.
     }, [term, themeRevision]);
+
+    if (loadError) {
+      const feature = t("ai.terminal.feature");
+      const isPeerMissing = isOptionalPeerMissing(loadError);
+      return (
+        <div
+          className={cn("rounded-lg border bg-card p-2", className)}
+          role={isPeerMissing ? "status" : undefined}
+          aria-live={isPeerMissing ? "polite" : undefined}
+          {...props}
+        >
+          {isPeerMissing ? (
+            <StatePanel
+              kind="empty"
+              // A dashed edge invites a drop; this panel accepts nothing.
+              // Solid — mirrors `@elabs-ai/components-viewer`'s `FileViewerError`.
+              className="border-solid"
+              icon={<EyeOffIcon aria-hidden="true" />}
+              title={t("ai.error.engineMissing", { feature })}
+              description={t("ai.error.engineMissingBody", {
+                feature,
+                packages: "@xterm/xterm, @xterm/addon-fit",
+              })}
+            />
+          ) : (
+            <StatePanel
+              kind="error"
+              title={t("ai.terminal.renderError")}
+              description={loadError instanceof Error ? loadError.message : String(loadError)}
+              actions={
+                <Button size="sm" variant="outline" onClick={() => setReloadKey((key) => key + 1)}>
+                  {t("ai.error.retry")}
+                </Button>
+              }
+            />
+          )}
+        </div>
+      );
+    }
 
     return (
       <div

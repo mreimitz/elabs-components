@@ -36,6 +36,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { StreamdownTranslations } from "streamdown";
 import { buildCodeBlockTheme } from "./_code-block-theme";
 import { lazyMermaid } from "./_lazy-mermaid";
+import { MermaidErrorPanel } from "./_mermaid-error-panel";
 
 /**
  * Reactive replacement for `@streamdown/code`'s pre-configured `code` export
@@ -47,7 +48,7 @@ import { lazyMermaid } from "./_lazy-mermaid";
  *
  * Streamdown's dual-theme mechanism (`createCodePlugin({ themes: [light, dark] })`)
  * expects exactly TWO themes and picks between them purely via the `.dark` CSS
- * selector — but brand-ui ships THREE themes (light/dark),
+ * selector — but brand-ui ships EVERY theme, not just Shiki's light/dark,
  * and any dark-declaring theme matches `.dark` too (see `_code-block-theme.ts`). Passing a real
  * light/dark PAIR would still force such a theme into the dark slot. Instead
  * this pins BOTH slots to `buildCodeBlockTheme()` — the SAME brand-token-derived
@@ -93,6 +94,25 @@ function useReactiveCodePlugin() {
 export function useStreamdownPlugins() {
   const code = useReactiveCodePlugin();
   return useMemo(() => ({ cjk, code, math, mermaid: lazyMermaid }), [code]);
+}
+
+/**
+ * The top-level Streamdown `mermaid` prop (distinct from `plugins.mermaid`,
+ * the LAZY `DiagramPlugin` `useStreamdownPlugins()` wires above) — this is
+ * where a FAILED render is caught (issue #33). Streamdown hands its
+ * `errorComponent` a plain STRING describing what went wrong;
+ * `MermaidErrorPanel` decides whether that string names a missing optional
+ * peer (`mermaid` not installed — a capability gap, `StatePanel kind="empty"`)
+ * or a genuine diagram render failure (`StatePanel kind="error"`, with retry).
+ *
+ * A stable module-level object, not a fresh one per render: Streamdown only
+ * re-reads `mermaid.errorComponent` when this reference changes, and
+ * `MermaidErrorPanel` never varies at runtime. Exported as a hook to match
+ * `useStreamdownPlugins()`'s call-site shape.
+ */
+const MERMAID_OPTIONS = { errorComponent: MermaidErrorPanel };
+export function useStreamdownMermaidOptions() {
+  return MERMAID_OPTIONS;
 }
 
 /*

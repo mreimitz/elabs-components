@@ -14,7 +14,7 @@ import { SlashMenu } from "./slash-menu";
  * `MarkdownWorkspace` (default `true`).
  *
  * The popup itself is rendered here standalone (the `SlashMenu` stories) so its
- * branding + a11y can be verified directly across all three themes; the in-editor
+ * branding + a11y can be verified directly across every theme; the in-editor
  * stories exercise the integration (mount + the `slashMenu={false}` no-op). The
  * live keyboard/insert UX is best verified in a real browser — ProseMirror
  * keystroke dispatch can't be fully simulated in jsdom.

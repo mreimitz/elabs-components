@@ -15,8 +15,8 @@ type ViewTransitionDocument = Document & {
  * Transitions API (the chanhdai.com "theme toggle effect", adapted to brand-ui).
  *
  * - Direction-aware: sets `data-vt="to-dark|to-light"` on `<html>` from the
- *   target theme's `dark` flag, so the clip-path wipes the right way for ANY of
- *   the three themes (not just light/dark).
+ *   target theme's `dark` flag, so the clip-path wipes the right way for ANY
+ *   theme (not just light/dark).
  * - `data-vt-effect` selects the reveal shape (default "polygon").
  * - Motion-aware: under `useReducedMotion()` (OS or in-app preference) — or when
  *   the browser lacks `startViewTransition` — it falls back to an instant,

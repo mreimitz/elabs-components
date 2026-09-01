@@ -163,6 +163,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // override renders locale-appropriate digits/grouping instead of a raw
   // Latin-digit JS number).
   "data.table.resizeColumnValue": { one: "{size} pixel", other: "{size} pixels" },
+  // Row drag-reorder (#13). `reorderHandle`/`reorderColumnHeader` name the
+  // grip control and its column; the four `reorder*` announcement keys back
+  // the aria-live region dnd-kit's `accessibility.announcements` renders on
+  // pickup/move/drop/cancel (WCAG 4.1.3) — `position`/`total` are 1-based so
+  // the announcement reads like "3 of 8", not a 0-based index.
+  "data.table.reorderColumnHeader": "Reorder",
+  "data.table.reorderHandle": "Reorder {name}",
+  "data.table.reorderPickedUp": "Picked up {name}.",
+  "data.table.reorderMoved": "{name} moved to position {position} of {total}.",
+  "data.table.reorderDropped": "{name} dropped at position {position} of {total}.",
+  "data.table.reorderCancelled":
+    "Reordering cancelled. {name} returned to position {position} of {total}.",
   "data.facetFilter.clearFilters": "Clear filters",
   "data.columnPicker.toggleColumns": "Toggle columns",
 
@@ -238,6 +250,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.persona.thinking": "Assistant thinking…",
   "ai.persona.speaking": "Assistant speaking",
   "ai.persona.asleep": "Assistant asleep",
+  // Optional-peer lazy engines (issue #33) — one shared pair every lazy
+  // boundary's missing-dependency panel resolves through, plus one
+  // `feature`-name key per boundary that renders it (mermaid, the terminal).
+  "ai.error.engineMissing": "{feature} unavailable",
+  "ai.error.engineMissingBody": "{feature} needs {packages} to be installed.",
+  "ai.error.retry": "Try again",
+  "ai.mermaid.feature": "Mermaid diagrams",
+  "ai.mermaid.renderError": "Diagram couldn't be drawn",
+  "ai.terminal.feature": "Interactive terminal",
+  "ai.terminal.renderError": "Terminal couldn't start",
+  "ai.audioPlayer.feature": "Audio player",
+  "ai.audioPlayer.renderError": "Audio player couldn't load",
   // AudioVisualizer. Announced through a throttled `role="status"` region —
   // the canvas itself is decorative (see .claude/rules/loading-states.md and
   // issue #21's accessibility guidance).

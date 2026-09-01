@@ -87,6 +87,13 @@ For each **approved, actionable** finding, route per its `Routes to`:
   (→ `brand-ui-root-cause-analyst` deep RCA → dedupe → GitHub issue). Architecture-scale findings
   become **epics + child issues** (the enterprise-gap WP shape). If `gh`/the GitHub
   connector is unavailable, `/file-issue` falls back to `docs/issues/<severity>-<slug>.md`.
+  `/file-issue` is the poster of record — it is the one that attaches the
+  machine-attribution marker (#78) to every `mcp__github__create_issue`/
+  `mcp__github__add_issue_comment` body. This command's own `allowed-tools` lists
+  those two tools only as a fallback for a direct `mcp__github__add_issue_comment`
+  dedupe-comment on an existing issue; any such direct call must carry the same
+  marker (`render()` in `scripts/lib/comment-attribution.mjs`) rather than bypass
+  `/file-issue`'s posting path.
 - component/a11y tier → recommend `/review-component` / `brand-ui-accessibility-reviewer` instead of
   filing an architecture issue.
 - governance(session-retro) → route to the `/session-retro` MISSING/WEAK/UNENFORCED/IGNORED

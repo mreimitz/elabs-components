@@ -178,6 +178,8 @@ pnpm paused-surfaces-drift:check # the deleted "paused surfaces" theme-pause con
 pnpm paused-surfaces-drift:check:test # self-test for the paused-surfaces drift-lock gate
 pnpm skills:currency:check      # playbook/skill/plugin prose (docs/playbooks/**, skills/*/SKILL.md, .claude-plugin/*.json) agrees with brand-ui.manifest.json on theme count + package-name scope — the .md-only docs:check walk never reaches these files (#29)
 pnpm skills:currency:check:test # self-test for the skills-currency gate
+pnpm source-theme-count:check      # product SOURCE (packages/*/src/**, incl. .css, and apps/docs/stories/**) agrees with BUILT_IN_THEMES on theme count — the two prose-only gates above never reach component/story comments or rendered Storybook copy (#29)
+pnpm source-theme-count:check:test # self-test for the source-theme-count gate
 pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)
@@ -187,6 +189,8 @@ pnpm attributions:check         # ATTRIBUTION.md + AttributionPanel's dataset ar
 pnpm attributions:check:test    # self-test for the attribution generator + stale-gate
 pnpm attribution:provenance:check       # if you borrowed from another project — shipped source may not say "adapted/vendored/ported from X" unless X is credited in scripts/attributions.sources.json (see .claude/rules/attribution.md)
 pnpm attribution:provenance:check:test  # self-test for the attribution-provenance gate
+pnpm attribution:comments:check         # every gh/MCP GitHub-posting instruction in .claude/commands, .claude/agents, .claude/hooks, skills/** must reference the comment-attribution helper/marker (#78) — this repo has no separate bot identity, so an unmarked comment is indistinguishable from a maintainer ruling (see .claude/rules/issue-workflow.md)
+pnpm attribution:comments:check:test    # self-test for the comment-attribution gate + hook
 pnpm dep-field-move:check       # if a staged package.json moves a dependency between dependencies/devDependencies/peerDependencies/optionalDependencies — automatically runs attributions:check itself (best-effort wiring in .githooks/pre-commit; `pnpm attributions:check` in CI is still the blocking backstop) (#42)
 pnpm dep-field-move:check:test  # self-test for the dependency-field-move detector
 pnpm csp-sinks:check            # no NEW Trusted-Types sink (innerHTML/dangerouslySetInnerHTML) in our source or a direct dep, and the Radix scroll-area/select patches still applied — a dropped patch renders a BLANK WINDOW for strict-CSP consumers with a green test suite

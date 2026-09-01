@@ -7,7 +7,7 @@
  *
  * - Engine dep: only `@milkdown/kit` (headless). React glue is vendored under
  *   ./milkdown-react so we never pull `@milkdown/react` → `@milkdown/crepe` → Vue.
- * - Theming: token-driven via markdown-editor.css (all three themes, no raw color).
+ * - Theming: token-driven via markdown-editor.css (every theme, no raw color).
  * - Controlled (`value` + `onChange`) or uncontrolled (`defaultValue`). Mirrors the
  *   platform: `isControlled = value !== undefined`; never flips between modes.
  * - StrictMode-safe (see markdown-editor.strictmode.test.tsx).

@@ -50,7 +50,28 @@ type MermaidModule = {
 let enginePromise: Promise<MermaidModule> | undefined;
 
 const loadEngine = (): Promise<MermaidModule> => {
-  enginePromise ??= import("mermaid").then((m) => m.default as unknown as MermaidModule);
+  enginePromise ??= import("mermaid").then((m) => {
+    const engine = m.default as unknown as MermaidModule;
+    // `mermaid` is an optional peer (issue #33). `@streamdown/mermaid` — a
+    // dependency of THIS package, not of the consumer — currently declares
+    // `mermaid` as its own plain, non-optional dependency, so a hoisting
+    // package manager (pnpm's default `node-linker=isolated` included, via
+    // phantom resolution through the virtual store) may still make the real
+    // bytes resolve even when a consumer never installed `mermaid`
+    // themselves — this guard does not cover that case, only a bundler
+    // whose optional-peer handling substitutes an EMPTY module (Vite's
+    // production stub is `export default {}`) once the peer is genuinely
+    // absent from the resolved tree. Without this guard that empty object
+    // resolves successfully and the crash lands one call later, on
+    // `engine.initialize is not a function` — a message
+    // `isModuleNotFoundMessage` does not recognize, so it reaches the user
+    // as "Diagram couldn't be drawn" with a Retry button that can never
+    // succeed, instead of the actionable capability-gap panel.
+    if (typeof engine?.initialize !== "function" || typeof engine?.render !== "function") {
+      throw new Error("Cannot find module 'mermaid'");
+    }
+    return engine;
+  });
   return enginePromise;
 };
 

@@ -45,7 +45,11 @@ design.
 Use `mcp__github__search_issues` (repo-scoped, keywords from the root cause) and
 honor the analyst's `DUPLICATE_OF`. If a strong match exists and is open, add a
 comment (`mcp__github__add_issue_comment`) linking the new evidence INSTEAD of
-opening a duplicate, and report that issue's URL.
+opening a duplicate, and report that issue's URL. **The `body` passed to
+`mcp__github__add_issue_comment` must carry the machine-attribution marker
+(#78)** — prepend the banner from `render()` in
+`scripts/lib/comment-attribution.mjs` (a `PreToolUse` hook enforces this; see
+`.claude/rules/issue-workflow.md`).
 
 ## 5. Create the issue
 
@@ -53,7 +57,10 @@ Call `mcp__github__create_issue` with:
 
 - `owner`, `repo` (from step 1)
 - `title` = the analyst's TITLE
-- `body` = the analyst's full structured spec (Summary → References). Append a
+- `body` = the analyst's full structured spec (Summary → References), with the
+  machine-attribution marker (#78) appended — `render()` in
+  `scripts/lib/comment-attribution.mjs` — so the issue body itself is legible as
+  machine-drafted, never mistaken later for a maintainer's own report. Append a
   trailing line: `Filed by /file-issue · source: <agent/test/feedback>`.
 - `labels` = the analyst's LABELS. If the connector rejects unknown labels,
   retry creation WITHOUT labels and keep the `LABELS:` line inside the body.

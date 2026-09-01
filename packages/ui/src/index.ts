@@ -107,6 +107,7 @@ export * from "./components/dropdown-menu";
 export * from "./components/empty-state";
 export * from "./components/error-state";
 export * from "./components/expand-dialog";
+export * from "./components/field";
 export * from "./components/field-row";
 export * from "./components/file-upload";
 export * from "./components/form";

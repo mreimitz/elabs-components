@@ -1758,7 +1758,7 @@
    Reduced motion: the hook SKIPS startViewTransition entirely under
    useReducedMotion() (OS or in-app), so no animation runs; the backstop at the
    end also disables it for any direct startViewTransition use. Hue-independent —
-   works for any of the three themes, not just light/dark.
+   works for any theme, not just light/dark.
    ======================================================================== */
 
 :root {
