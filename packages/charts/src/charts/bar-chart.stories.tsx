@@ -338,7 +338,7 @@ export const KeyboardDrilldown: Story = {
 };
 
 /**
- * Three-theme sweep for the drill-down layer. The stories above run under
+ * Cross-theme sweep for the drill-down layer. The stories above run under
  * Storybook's DEFAULT theme (`light`) only, and a hand-toggled sweep
  * leaves no durable evidence — so these wrap the SAME render/play pair in an
  * explicit `<ThemeProvider>` (the `markdown-editor.stories.tsx` #223 idiom).

@@ -147,7 +147,7 @@ export const SubmenuRadioAndCheckbox: Story = {
 };
 
 /**
- * Three-theme sweep (a durable, `test-storybook`-run artifact rather than a
+ * Cross-theme sweep (a durable, `test-storybook`-run artifact rather than a
  * one-off manual `preview.tsx` toggle). `<ThemeProvider>` (not a plain
  * `data-theme` wrapper `<div>`) because it writes the attribute onto the
  * DOCUMENT ROOT — this menu's Radix `Portal` mounts its content on

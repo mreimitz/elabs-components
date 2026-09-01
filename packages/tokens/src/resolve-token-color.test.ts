@@ -28,7 +28,7 @@ describe("oklchToHex", () => {
   it("parses Chromium's computed-style serialization (percent L, leading-dot decimals)", () => {
     // getComputedStyle re-serializes `oklch(0.92 0.008 264)` as
     // `oklch(92% .008 264)` — the exact form MapLibre rejected when the strict
-    // parser fell through to raw passthrough (maps three-theme sweep finding).
+    // parser fell through to raw passthrough (maps cross-theme sweep finding).
     expect(oklchToHex("oklch(92% .008 264)")).toMatch(/^#[0-9a-f]{6}$/);
     expect(oklchToHex("oklch(20.5% .012 254)")).toMatch(/^#[0-9a-f]{6}$/);
   });

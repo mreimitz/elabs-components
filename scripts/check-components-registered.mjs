@@ -207,7 +207,7 @@ function runGate({ update = false } = {}) {
   for (const name of regressions) {
     blocking.push(
       `@elabs-ai/components-ui: components/${name}/ has no *.stories.tsx — it is invisible to the\n` +
-        "    Storybook-MCP agent path and to the three-theme/a11y run. Add <name>.stories.tsx\n" +
+        "    Storybook-MCP agent path and to the cross-theme/a11y run. Add <name>.stories.tsx\n" +
         '    (tags: ["autodocs"]) beside the component, or scaffold via /new-component.',
     );
   }

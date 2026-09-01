@@ -19,7 +19,7 @@ brand-ui exposes **two** MCP servers; they are complementary, not alternatives:
   gate keep it fresh automatically). See `docs/CONCEPT-ai-skills.md` and the Storybook
   doc page "Docs/brand-ui MCP Server". This is the WP-03 #81 server.
 - **`storybook` (ephemeral, dev-server-bound)** — the rest of this rule. Reach for it for
-  the **rendered** view: real previews, interaction + axe a11y tests, three-theme checks.
+  the **rendered** view: real previews, interaction + axe a11y tests, cross-theme checks.
   Only exists while `pnpm storybook` runs.
 
 > Rule of thumb: **brand-ui MCP** to know _what exists and how to use it_; **Storybook
@@ -32,7 +32,7 @@ brand-ui exposes **two** MCP servers; they are complementary, not alternatives:
 --exact-port` → `http://localhost:6006/mcp`). When it is down, the `mcp__storybook__*`
   tools simply do not exist.
 - **Start the dev server when you need it.** Storybook is the primary way to verify
-  components (render, interaction + a11y tests, three-theme checks) and the only way to
+  components (render, interaction + a11y tests, cross-theme checks) and the only way to
   reach the `mcp__storybook__*` tools. If you're testing/reviewing UI or need those
   tools and the server is down, **start it** — `pnpm storybook` (or
   `pnpm --filter @elabs-ai/components-docs dev`) in the background — then drive it, and **stop it

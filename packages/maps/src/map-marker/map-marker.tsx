@@ -347,7 +347,7 @@ export interface MapMarkerLabelProps {
 /**
  * A small always-visible text label above or below the marker. Portaled into
  * the marker element so it anchors to the marker whether composed as a sibling
- * of `MapMarkerContent` or nested inside it (the three-theme sweep caught the
+ * of `MapMarkerContent` or nested inside it (a cross-theme sweep caught the
  * sibling composition rendering the label against the map container instead).
  */
 export function MapMarkerLabel({ children, className, position = "top" }: MapMarkerLabelProps) {
