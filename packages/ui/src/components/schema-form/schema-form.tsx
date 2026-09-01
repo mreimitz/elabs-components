@@ -1226,14 +1226,23 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
 
     const pending = status === "pending";
     // Transient (pending) block uses aria-disabled + a handler guard, never
-    // native `disabled` — same reasoning as SchemaFormSubmit: a keyboard user
-    // who just activated this button must not be dropped from the tab order
-    // right after they used it. The caller's durable form-level `disabled`
-    // (the whole form read-only) stays native, matching every other control.
-    // `submitting` joins the transient guard (an in-flight submit shouldn't
-    // race a new test), while `submitted` — a durable, terminal state, same
-    // as `SchemaFormField`'s `controlDisabled` — goes native below.
-    const transientlyBlocked = loading || pending || submitting;
+    // native `disabled` — same reasoning as SchemaFormSubmit's OWN pending
+    // state: a keyboard user who just activated THIS button must not be
+    // dropped from the tab order right after they used it. `pending` (this
+    // button's own in-flight test) and `loading` (the spec itself still
+    // loading — pre-existing, matches SchemaFormSubmit's `blocked`) are both
+    // "I am mid-task" states, so they stay transient.
+    //
+    // `submitting`/`submitted` are a DIFFERENT kind of state: they describe
+    // the FORM's submit action, not this button's own. This button is a
+    // bystander to that action the same way a `SchemaFormField` is — never
+    // the control the user just activated — so both go native `disabled`
+    // below, exactly like `SchemaFormField`'s `controlDisabled = ctx.disabled
+    // || ctx.submitted || ctx.submitting`. (Contrast `SchemaFormSubmit`,
+    // where `submitting` IS the button's own state and stays transient — the
+    // two controls are not interchangeable here.)
+    const transientlyBlocked = loading || pending;
+    const nativelyBlocked = formDisabled || submitted || submitting;
 
     // PR #119 review thread 0 (chatgpt-codex-connector): once the tested
     // values go stale — the user edited a field after this status settled —
@@ -1250,7 +1259,7 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
     }, [effectiveValues, status]);
 
     const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
-      if (formDisabled || submitted || transientlyBlocked) {
+      if (nativelyBlocked || transientlyBlocked) {
         e.preventDefault();
         return;
       }
@@ -1293,7 +1302,7 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
         <Button
           type="button"
           variant="outline"
-          disabled={formDisabled || submitted}
+          disabled={nativelyBlocked}
           aria-disabled={transientlyBlocked || undefined}
           aria-busy={pending || undefined}
           onClick={handleClick}

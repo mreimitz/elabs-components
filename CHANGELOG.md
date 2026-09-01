@@ -8,10 +8,13 @@
   an in-flight `onTest` result if the form was edited before it settled, and
   resets an already-settled success/failure back to idle the moment the
   tested values change again. It also now honors the provider's `submitted`
-  (native `disabled`, durable) and `submitting` (transient `aria-disabled` +
-  handler guard) states like every other form control, instead of staying
-  fully actionable on a terminal or in-flight form (PR #119 review, threads 0
-  and 4).
+  and `submitting` states like every other form control, instead of staying
+  fully actionable on a terminal or in-flight form: both go native
+  `disabled` (matching `SchemaFormField`'s `controlDisabled`, since this
+  button is a bystander to the form's submit action, not the control the
+  user just activated), while the button's OWN `pending` state stays
+  `aria-disabled` + handler-guarded so a keyboard user who just clicked it
+  isn't dropped from the tab order (PR #119 review, threads 0 and 4).
 - Fixed: `fromJsonSchema()` (`@elabs-ai/components-ui`'s schema-form) no
   longer drops a valid `string[]` `default` when mapping a free-text
   `{ type: "array", items: { type: "string" } }` property to a

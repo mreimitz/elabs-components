@@ -870,7 +870,7 @@ describe("SchemaFormTestAction", () => {
     expect(screen.getByRole("button", { name: "Test connection" })).toBeDisabled();
   });
 
-  it("blocks launching a new test while the form is submitting (transient, guarded)", async () => {
+  it("is natively disabled while the form is submitting (a bystander to the SUBMIT button's own action, like every field)", async () => {
     const user = userEvent.setup();
     const onTest = vi.fn().mockResolvedValue(undefined);
     const result = normalizeFormSpec(connectorSpec);
@@ -883,10 +883,17 @@ describe("SchemaFormTestAction", () => {
       </SchemaFormProvider>,
     );
     const button = screen.getByRole("button", { name: "Test connection" });
-    // Transient block: still a real, focusable tab stop (never native
-    // `disabled`), guarded by aria-disabled + the click handler.
-    expect(button).not.toBeDisabled();
-    expect(button).toHaveAttribute("aria-disabled", "true");
+    // `submitting` describes the FORM's submit — an action this button
+    // didn't initiate and isn't mid-way through. It is a bystander here the
+    // same way a `SchemaFormField` is (`controlDisabled` includes
+    // `ctx.submitting`), not the button that was just activated (that's
+    // `SchemaFormSubmit`'s own `submitting`, which stays transient). Native
+    // `disabled` is correct: nothing keyboard-focused gets stranded, because
+    // this button can only reach a focused, un-clicked state via Tab, and a
+    // submit can only start from a click/Enter on Submit itself (which takes
+    // focus) or from Enter inside a text field (which never touches this
+    // button's focus state).
+    expect(button).toBeDisabled();
     await user.click(button);
     expect(onTest).not.toHaveBeenCalled();
   });
