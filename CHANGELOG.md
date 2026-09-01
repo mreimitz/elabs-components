@@ -6,6 +6,14 @@
   provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
   one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
   tenant/white-label picker that only has a single brand colour (#39).
+- Added: `@elabs-ai/components-data`'s `DataTable` gains opt-in row drag-reorder
+  (`enableRowReorder` / `onRowReorder` / `rowReorderHandle`, `"cell"` grip column or
+  `"row"` whole-row activator), built on `@dnd-kit/core`/`@dnd-kit/sortable` — the same
+  controlled-slice pattern as sorting/pagination/pinning, so the caller reorders `data`
+  itself. Fully keyboard-operable (Space/Enter to pick up, arrows to move, Space/Enter
+  to drop, Escape to cancel) with a localized aria-live announcement on every lift/move/
+  drop/cancel, and mutually exclusive with `enableRowVirtualization` (a dev warning
+  fires) (#13).
 - Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
   against the bare `--background` token, but Monaco actually paints a translucent
   `editor.lineHighlightBackground` overlay UNDER token text on the cursor's line —

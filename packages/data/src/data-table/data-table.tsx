@@ -23,7 +23,36 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+// Row drag-reorder (#13). @dnd-kit is the only DnD primitive in the repo (reuse
+// audit found none) — MIT-licensed, attributed in scripts/attributions.sources.json.
+// KeyboardSensor + sortableKeyboardCoordinates already implement the exact key
+// model the issue asks for (Space/Enter lift, arrows move, Space/Enter drop,
+// Escape cancel) and DndContext's built-in `Accessibility` component renders the
+// aria-live announcer — this file only supplies the localized announcement text
+// and the token-driven visuals.
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type DragCancelEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ArrowDown, ArrowUp, ArrowUpDown, GripVertical } from "lucide-react";
 import { Button, Checkbox, Skeleton, Spinner, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
@@ -375,6 +404,48 @@ export interface DataTableProps<TData, TValue> extends Omit<
    */
   zebra?: boolean;
 
+  // ── Row drag-reorder (#13) ───────────────────────────────────────────────
+  /**
+   * Opt-in row drag-reorder. Off by default — an existing table renders
+   * byte-identical markup with no extra DOM per row until this is set.
+   * Fully controlled like every other slice: the component never mutates
+   * `data` itself, it only reports the move via `onRowReorder`; the caller
+   * re-orders `data` in response.
+   *
+   * Keyboard-operable out of the box (`@dnd-kit`'s default keyboard sensor):
+   * Space/Enter picks a row up, Arrow Up/Down moves it, Space/Enter drops it,
+   * Escape cancels. Every position change is announced through a live region
+   * (WCAG 4.1.3).
+   *
+   * Mutually exclusive with `enableRowVirtualization` — a windowed table
+   * can't keep dnd-kit's sortable list and a virtualizer in sync, so reorder
+   * is silently disabled (a dev warning fires) when both are set. Combining
+   * it with active `sorting` also fires a dev warning (both still work, but
+   * a sort re-orders the very rows a drag just moved, which reads as broken).
+   */
+  enableRowReorder?: boolean;
+  /**
+   * Fires when a row is dropped in a new position. `from`/`to` are indices
+   * into the **`data` array you passed in** — never into the sorted, filtered
+   * or paginated view the table renders — so they are safe to use directly
+   * with `arrayMove`/`slice`+`splice`/immer against your own `data`, unchanged
+   * by an active sort or by client-side pagination (the dragged row's true
+   * index in the full array, not its index on the current page). Under
+   * `manualPagination`, `data` IS the current page, so `from`/`to` are
+   * page-relative — reorder that page's own array with them. `row` is the
+   * moved record (`data[from]`).
+   */
+  onRowReorder?: (from: number, to: number, row: TData) => void;
+  /**
+   * Where the drag activator lives. `"cell"` (default) renders a dedicated
+   * grip-handle column so the rest of the row keeps its ordinary click/
+   * keyboard behavior untouched. `"row"` makes the whole row itself the drag
+   * activator (no extra column) — reach for this only when the row has no
+   * other primary interaction (e.g. no `onRowClick`), since a whole-row
+   * activator and a row click target the same surface.
+   */
+  rowReorderHandle?: "cell" | "row";
+
   /**
    * Fires when a row is activated (#337). Setting it adds ONE activation
    * target per row: a visually-hidden `<button>` rendered inside the row's
@@ -611,6 +682,73 @@ export function createSelectionColumn<TData>(): ColumnDef<TData> {
   };
 }
 
+// ─── Row drag-reorder (#13) ─────────────────────────────────────────────────
+
+/** Render-prop payload `SortableDataRow` hands its child — the live dnd-kit
+ * registration for one row. */
+interface SortableRowRenderArgs {
+  setNodeRef: (node: HTMLElement | null) => void;
+  setActivatorNodeRef: (node: HTMLElement | null) => void;
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
+  isDragging: boolean;
+  style: React.CSSProperties;
+}
+
+/**
+ * Per-row `@dnd-kit` registration, defined ONCE at module level.
+ *
+ * This must be a real component, not a hook call inlined into `rows.map()`
+ * (that would call `useSortable` a variable number of times across renders —
+ * the classic "hook in a loop" Rules-of-Hooks violation the moment the row
+ * count changes) and not a component DEFINED inside `DataTableInner`'s body
+ * either (a function created fresh every render gets a new `type` identity,
+ * so React would tear down and remount the whole row subtree, including
+ * dnd-kit's own internal drag state, on every re-render). A stable top-level
+ * component keyed by `id` gives every row its own persistent `useSortable`
+ * state via ordinary type+key reconciliation.
+ *
+ * `transition: null` is deliberate — dnd-kit's own transition is a raw
+ * inline `ms` duration, which would bypass the gated `duration-*`/`ease-*`
+ * utilities (quality-gates.md "Motion-tokened"). The moving row instead gets
+ * `transition-transform duration-base ease-standard motion-reduce:transition-none`
+ * as a class at the call site; only the live `transform` stays inline.
+ */
+function SortableDataRow({
+  id,
+  disabled,
+  attributesOverride,
+  children,
+}: {
+  id: string;
+  disabled?: boolean;
+  /**
+   * `rowReorderHandle: "row"` applies `attributes`/`listeners` straight to
+   * the `<tr>` (no separate activator element), so dnd-kit's DEFAULT
+   * `role="button"` would replace the table's own `role="row"` on that
+   * element — destroying its row semantics. Override just the role (and
+   * nothing else) in that mode; `"cell"` mode leaves this unset because the
+   * grip `<button>` — not the `<tr>` — receives `attributes`/`listeners`.
+   */
+  attributesOverride?: { role?: string; roleDescription?: string; tabIndex?: number };
+  children: (args: SortableRowRenderArgs) => ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
+    useSortable({ id, disabled, transition: null, attributes: attributesOverride });
+  return (
+    <>
+      {children({
+        setNodeRef,
+        setActivatorNodeRef,
+        attributes,
+        listeners,
+        isDragging,
+        style: { transform: CSS.Transform.toString(transform) },
+      })}
+    </>
+  );
+}
+
 // ─── Component (inner, generic) ───────────────────────────────────────────────
 
 /**
@@ -683,6 +821,12 @@ function DataTableInner<TData, TValue>(
     maxBodyHeight = "32rem",
 
     zebra = true,
+
+    // Row drag-reorder (#13)
+    enableRowReorder = false,
+    onRowReorder,
+    rowReorderHandle = "cell",
+
     onRowClick,
     rowActionLabel,
     rowClassName,
@@ -826,6 +970,69 @@ function DataTableInner<TData, TValue>(
       );
     }
   }, [manualPagination, getRowId, isRowSelectionControlled, onRowSelectionChangeProp]);
+
+  // ── Dev-only guard: enableRowReorder + active sorting (#13) ───────────────
+  // Both keep working — this doesn't disable anything — but a sort re-orders
+  // the very rows a drag just moved, which reads as broken rather than merely
+  // confusing. Warn once per mount, same idiom as the two guards above.
+  const warnedReorderSortingRef = useRef(false);
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "production" &&
+      enableRowReorder &&
+      sorting.length > 0 &&
+      !warnedReorderSortingRef.current
+    ) {
+      warnedReorderSortingRef.current = true;
+      console.warn(
+        "[DataTable] `enableRowReorder` is set while a column is sorted — the sort will " +
+          "keep re-ordering rows out from under a manual drag. Clear `sorting` (or avoid " +
+          "enabling both at once) so a drag's new order stays stable.",
+      );
+    }
+  }, [enableRowReorder, sorting.length]);
+
+  // ── Dev-only guard: enableRowReorder + enableRowVirtualization (#13) ──────
+  // A windowed table can't keep dnd-kit's sortable list in sync with a
+  // virtualizer that only mounts a subset of rows, so the two are mutually
+  // exclusive — virtualization wins (same precedent as enablePagination vs.
+  // enableRowVirtualization) and reorder is silently disabled below
+  // (`rowReorderActive`). This warning is the diagnostic for why.
+  const warnedReorderVirtualizedRef = useRef(false);
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "production" &&
+      enableRowReorder &&
+      enableRowVirtualization &&
+      !warnedReorderVirtualizedRef.current
+    ) {
+      warnedReorderVirtualizedRef.current = true;
+      console.warn(
+        "[DataTable] `enableRowReorder` has no effect while `enableRowVirtualization` is " +
+          "set — the two are mutually exclusive. Virtualization wins; row reorder is disabled.",
+      );
+    }
+  }, [enableRowReorder, enableRowVirtualization]);
+
+  // Only wired up in the non-virtualized body — see the warning above.
+  const rowReorderActive = enableRowReorder && !enableRowVirtualization;
+  const hasGripColumn = rowReorderActive && rowReorderHandle === "cell";
+
+  const reorderSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  // Backing store for `getReorderRowId` (defined below, once `rows` is in
+  // scope) — see its own doc comment for why a WeakMap keyed by row object
+  // reference is the round-1 fix for findings 1 & 3.
+  const reorderIdentityMapRef = useRef<WeakMap<object, string>>(new WeakMap());
+  const reorderIdentityCounterRef = useRef(0);
+  // The component's OWN `aria-live="polite"` announcer state — round-1
+  // finding 4 (dnd-kit's built-in region is hardcoded `assertive` with no
+  // override). `reorderLastAnnouncedPositionRef` de-dupes a same-position
+  // re-fire (the pickup self-collision, a no-op arrow press at a boundary).
+  const [reorderLiveMessage, setReorderLiveMessage] = useState("");
+  const reorderLastAnnouncedPositionRef = useRef<number | null>(null);
 
   /** Fire onServerChange with the LATEST slice values (post-update). */
   function fireServerChange(overrides: Partial<DataTableServerArgs> = {}) {
@@ -1028,6 +1235,172 @@ function DataTableInner<TData, TValue>(
   // client path; uses the server `rowCount` total when provided.
   const headerRowCount = table.getHeaderGroups().length;
   const ariaRowCount = (rowCount ?? rows.length) + headerRowCount;
+
+  // ── Row drag-reorder (#13) ────────────────────────────────────────────────
+  // `rowActionName` (defined below, but hoisted as a function declaration) is
+  // the SAME row-naming lookup `onRowClick`'s hidden button uses (#337) —
+  // reusing it means a reorder announcement names a row exactly the way its
+  // click target already does, rather than inventing a second convention.
+  function reorderRowName(id: string): string {
+    const row = rows.find((r) => getReorderRowId(r) === id);
+    return row ? rowActionName(row) : id;
+  }
+  function reorderPosition(id: string): number {
+    return rows.findIndex((r) => getReorderRowId(r) === id) + 1;
+  }
+
+  // ── Stable identity for drag reconciliation (round-1 fix, findings 1 & 3) ──
+  // `getRowId`'s own doc comment above states TanStack's fallback: default row
+  // ids are assigned ONCE per row object when the core row model is built from
+  // the current `data` ARRAY REFERENCE, then carried by reference through
+  // sort/filter — but a `data` array REPLACEMENT (exactly what every
+  // `onRowReorder` consumer does: `arrayMove`/`slice`+`splice`/immer all
+  // return a new array) rebuilds the core row model and reassigns ids by
+  // POSITION IN THE NEW ARRAY. So the id that used to denote "the row now at
+  // index 1" keeps denoting index 1 even though a different record moved
+  // there — which is what let a keyboard drop leave focus on the wrong row
+  // (a different record now sits at the id the focus restore targets).
+  // Requiring every consumer to hand-roll `getRowId` would leave the DEFAULT
+  // configuration broken, so when the caller hasn't supplied one, mint an id
+  // keyed by the row's own OBJECT REFERENCE (`row.original`) in a `WeakMap` —
+  // unlike TanStack's default, this id follows the object wherever it lands
+  // in a new array, because every reorder idiom MOVES the element reference,
+  // it never clones it. When `getRowId` IS supplied it is already exactly
+  // this kind of identity, so it's reused as-is instead of minting a second,
+  // divergent id namespace.
+  function getReorderRowId(row: Row<TData>): string {
+    if (getRowId) return row.id;
+    const original: unknown = row.original;
+    if (original !== null && typeof original === "object") {
+      const map = reorderIdentityMapRef.current;
+      let id = map.get(original);
+      if (id === undefined) {
+        id = `__reorder-${reorderIdentityCounterRef.current++}`;
+        map.set(original, id);
+      }
+      return id;
+    }
+    // Primitive `TData` (rare) has no object reference to key off — same
+    // documented limitation `getRowId`'s own comment already carries for
+    // TanStack's own default identity.
+    return row.id;
+  }
+
+  // dnd-kit's own `Accessibility` component's `LiveRegion` hardcodes
+  // `aria-live="assertive"` with no way to override it from `DndContext`
+  // (`@dnd-kit/accessibility` 3.1.1 accepts an `ariaLiveType` prop on
+  // `LiveRegion` itself, but nothing forwards one through `accessibility`) —
+  // round-1 finding 4. `.claude/rules/accessibility.md` reserves assertive
+  // for terminal errors (`role="alert"`); a sortable list's own position
+  // updates are `polite` status. So dnd-kit's built-in announcer is silenced
+  // below (every callback returns `undefined`, which `useAnnouncement`
+  // treats as "no update" — the region stays permanently empty and never
+  // fires) and DataTable renders its OWN `aria-live="polite"` region
+  // (`reorderLiveMessage`, wired to the `data-table-reorder-live-region`
+  // node near the bottom of this function) from the `onDragStart`/
+  // `onDragOver`/`onDragEnd`/`onDragCancel` handlers below.
+  const silentDragAnnouncements: Announcements = {
+    onDragStart: () => undefined,
+    onDragOver: () => undefined,
+    onDragEnd: () => undefined,
+    onDragCancel: () => undefined,
+  };
+
+  /**
+   * Pickup always announces — it's the start of a new, meaningful gesture.
+   * Seeding `reorderLastAnnouncedPositionRef` with the row's OWN starting
+   * position (not `null`) is what suppresses dnd-kit's immediate self-
+   * collision `onDragOver` (over === active, at the same position) that
+   * otherwise fires in the same tick and would stomp this message before it
+   * is ever observable (WCAG 4.1.3 needs it heard, not just rendered).
+   */
+  function handleRowDragStart(event: DragStartEvent) {
+    const activeRowId = String(event.active.id);
+    reorderLastAnnouncedPositionRef.current = reorderPosition(activeRowId);
+    setReorderLiveMessage(t("data.table.reorderPickedUp", { name: reorderRowName(activeRowId) }));
+  }
+
+  /**
+   * Announces a real position change only — round-1 finding 4 measured 4
+   * announcements for a 2-step move, one of them a same-position self-
+   * collision that buried the "picked up" message. De-duping on the actual
+   * computed position (not on the raw event) means a screen reader hears one
+   * `polite` (queued, non-interrupting) announcement per genuine move, not
+   * one per keystroke.
+   */
+  function handleRowDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const position = reorderPosition(String(over.id));
+    if (position === reorderLastAnnouncedPositionRef.current) return;
+    reorderLastAnnouncedPositionRef.current = position;
+    setReorderLiveMessage(
+      t("data.table.reorderMoved", {
+        name: reorderRowName(String(active.id)),
+        position,
+        total: rows.length,
+      }),
+    );
+  }
+
+  function handleRowDragCancel(event: DragCancelEvent) {
+    const activeRowId = String(event.active.id);
+    setReorderLiveMessage(
+      t("data.table.reorderCancelled", {
+        name: reorderRowName(activeRowId),
+        position: reorderPosition(activeRowId),
+        total: rows.length,
+      }),
+    );
+    reorderLastAnnouncedPositionRef.current = null;
+  }
+
+  /**
+   * The component never mutates `data` itself (D5 — presentation layer, not
+   * an SDK): it only reports the move, the same "controlled slice" contract
+   * every other DataTable feature follows. A no-op drop (dropped on itself,
+   * or outside any droppable) fires nothing on the data callback, but still
+   * announces (matching the "dropped back where it started" reality).
+   *
+   * `from`/`to` resolve against the ORIGINAL `data` array the caller passed
+   * in, never against the sorted/paginated VIEW (`rows`) — round-1 finding 1.
+   * Reporting `rows.findIndex(...)` positions meant a caller doing
+   * `arrayMove(data, from, to)` (the idiom both shipped stories use) silently
+   * moved the WRONG records whenever an active sort or a client-side page
+   * had changed which record sat at which view position — measured: a
+   * paginated drag on page 2 reported `(0, 1, …)`, corrupting `data[0]`/
+   * `data[1]` on page 1. Resolving against `data` itself makes the contract
+   * "indices into the `data` you gave me" — correct under any sort/filter,
+   * correct under client-side pagination (the dragged record's true index in
+   * the full array), and correct under `manualPagination` too (there `data`
+   * IS the current page, so `from`/`to` are page-relative, which is exactly
+   * what a caller reordering that page's own array needs).
+   */
+  function handleRowDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    const activeRowId = String(active.id);
+    setReorderLiveMessage(
+      t("data.table.reorderDropped", {
+        name: reorderRowName(activeRowId),
+        position: reorderPosition(String(over ? over.id : active.id)),
+        total: rows.length,
+      }),
+    );
+    reorderLastAnnouncedPositionRef.current = null;
+
+    if (!over || active.id === over.id) return;
+    const movedRow = rows.find((r) => getReorderRowId(r) === activeRowId);
+    const targetRow = rows.find((r) => getReorderRowId(r) === String(over.id));
+    if (!movedRow || !targetRow) return;
+    const dataIndexOfRow = new Map<TData, number>();
+    data.forEach((record, index) => {
+      if (!dataIndexOfRow.has(record)) dataIndexOfRow.set(record, index);
+    });
+    const from = dataIndexOfRow.get(movedRow.original) ?? -1;
+    const to = dataIndexOfRow.get(targetRow.original) ?? -1;
+    if (from === -1 || to === -1) return;
+    onRowReorder?.(from, to, movedRow.original);
+  }
 
   // ── Pinning (#333) ────────────────────────────────────────────────────────
   // Are there any pinned columns at all? Everything pinning-related is gated on
@@ -1303,6 +1676,11 @@ function DataTableInner<TData, TValue>(
       >
         {table.getHeaderGroups().map((headerGroup, groupIndex) => (
           <tr key={headerGroup.id} aria-rowindex={withRowIndex ? groupIndex + 1 : undefined}>
+            {hasGripColumn && (
+              <th key="__reorder" scope="col" className="h-10 w-10 px-3 align-middle">
+                <span className="sr-only">{t("data.table.reorderColumnHeader")}</span>
+              </th>
+            )}
             {headerGroup.headers.map((header) => {
               const geometry = pinnedCellGeometry(header.column);
               const canSort = header.column.getCanSort();
@@ -1610,6 +1988,18 @@ function DataTableInner<TData, TValue>(
     row: (typeof rows)[number],
     rowIndex: number,
     extras?: React.HTMLAttributes<HTMLTableRowElement>,
+    // Reorder metadata for THIS row, present in either handle mode whenever
+    // reorder is active — `activator` is set only in `"cell"` mode, where the
+    // grip button (not the row) is the drag activator (dnd-kit's
+    // `setActivatorNodeRef` pattern).
+    dragHandle?: {
+      isDragging: boolean;
+      activator?: {
+        setActivatorNodeRef: (node: HTMLElement | null) => void;
+        attributes: DraggableAttributes;
+        listeners: DraggableSyntheticListeners;
+      };
+    },
   ) {
     // #337: `onRowClick` adds exactly ONE activation target per row — a
     // visually-hidden <button> in the first cell. The <tr> stays a plain `row`
@@ -1642,6 +2032,16 @@ function DataTableInner<TData, TValue>(
           // pair already collapses toward ~0ms via --motion-factor when the user
           // or OS asks for reduced motion, matching the header sort button.
           "transition-colors duration-fast ease-standard hover:bg-foreground/10 data-[state=selected]:bg-accent",
+          // #13: the dragged row's live `transform` (set inline via `extras.style`,
+          // see `SortableDataRow`) is what actually MOVES it — this class only
+          // makes that movement glide instead of snapping, through the gated
+          // duration/ease utilities (never a raw ms/ease value —
+          // quality-gates.md "Motion-tokened") with a reduced-motion
+          // neutralizer. Raising the dragged row's stacking + opacity is a
+          // colour/composite-only cue, so it isn't gated by the same rule.
+          dragHandle &&
+            "relative transition-transform duration-base ease-standard motion-reduce:transition-none",
+          dragHandle?.isDragging && "z-20 opacity-90 shadow-md",
           // Named group (#333) so a PINNED cell can re-apply the row's hover /
           // selected wash on top of its own opaque fill — only CSS knows the
           // pointer is over a sibling cell. Purely a selector hook: `group/row`
@@ -1660,6 +2060,24 @@ function DataTableInner<TData, TValue>(
         )}
         {...extras}
       >
+        {dragHandle?.activator && (
+          <td className="w-10 px-3 py-2 align-middle">
+            <button
+              type="button"
+              ref={dragHandle.activator.setActivatorNodeRef}
+              data-slot="data-table-row-drag-handle"
+              aria-label={t("data.table.reorderHandle", { name: rowActionName(row) })}
+              className={cn(
+                "inline-flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground transition-colors duration-fast ease-standard hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+                dragHandle.isDragging && "text-foreground",
+              )}
+              {...dragHandle.activator.attributes}
+              {...dragHandle.activator.listeners}
+            >
+              <GripVertical aria-hidden="true" className="size-4" />
+            </button>
+          </td>
+        )}
         {row.getVisibleCells().map((cell, cellIndex) => {
           const geometry = pinnedCellGeometry(cell.column);
           // #12: same width triad as the header cell — see `resizeWidthStyle`.
@@ -1715,6 +2133,11 @@ function DataTableInner<TData, TValue>(
     const visibleColumns = table.getVisibleLeafColumns();
     return Array.from({ length: count }).map((_, i) => (
       <tr key={`skeleton-${i}`} aria-hidden="true" className={rowSeparationClass(i)}>
+        {hasGripColumn && (
+          <td className="w-10 px-3 py-2 align-middle">
+            <Skeleton className="size-4" />
+          </td>
+        )}
         {visibleColumns.map((column) => (
           <td
             key={column.id}
@@ -1734,7 +2157,10 @@ function DataTableInner<TData, TValue>(
   function renderEmptyBody() {
     return (
       <tr>
-        <td colSpan={colCount} className="h-24 px-3 text-center text-muted-foreground">
+        <td
+          colSpan={colCount + (hasGripColumn ? 1 : 0)}
+          className="h-24 px-3 text-center text-muted-foreground"
+        >
           {emptyMessage}
         </td>
       </tr>
@@ -1746,8 +2172,61 @@ function DataTableInner<TData, TValue>(
     if (showSkeletons) {
       return <tbody>{renderSkeletonBody(skeletonRowCount)}</tbody>;
     }
+    if (showEmpty) {
+      return <tbody>{renderEmptyBody()}</tbody>;
+    }
+    if (!rowReorderActive) {
+      return <tbody>{rows.map((row, i) => renderRow(row, i))}</tbody>;
+    }
 
-    return <tbody>{showEmpty ? renderEmptyBody() : rows.map((row, i) => renderRow(row, i))}</tbody>;
+    // #13: `SortableContext` renders no DOM element of its own (a plain
+    // context Provider), so nesting it around `<tbody>` here does not insert
+    // anything between `<table>` and `<tbody>` — the real DOM stays valid.
+    return (
+      <SortableContext
+        items={rows.map((r) => getReorderRowId(r))}
+        strategy={verticalListSortingStrategy}
+      >
+        <tbody>
+          {rows.map((row, i) => (
+            <SortableDataRow
+              key={getReorderRowId(row)}
+              id={getReorderRowId(row)}
+              attributesOverride={rowReorderHandle === "row" ? { role: "row" } : undefined}
+            >
+              {({ setNodeRef, setActivatorNodeRef, attributes, listeners, isDragging, style }) =>
+                renderRow(
+                  row,
+                  i,
+                  {
+                    ref: setNodeRef,
+                    style,
+                    // `aria-pressed` is a `DraggableAttributes` field meant for a
+                    // real `<button>` activator; spread onto a `<tr role="row">`
+                    // (row-handle mode) it fails axe's `aria-allowed-attr` (that
+                    // ARIA state is not permitted on the `row` role), so strip it
+                    // here rather than exempt it downstream.
+                    ...(rowReorderHandle === "row"
+                      ? (() => {
+                          const { "aria-pressed": _ariaPressed, ...rowAttributes } = attributes;
+                          return { ...rowAttributes, ...listeners };
+                        })()
+                      : {}),
+                  } as React.HTMLAttributes<HTMLTableRowElement>,
+                  {
+                    isDragging,
+                    activator:
+                      rowReorderHandle === "cell"
+                        ? { setActivatorNodeRef, attributes, listeners }
+                        : undefined,
+                  },
+                )
+              }
+            </SortableDataRow>
+          ))}
+        </tbody>
+      </SortableContext>
+    );
   }
 
   // ─── Virtualized tbody ────────────────────────────────────────────────────
@@ -1904,7 +2383,7 @@ function DataTableInner<TData, TValue>(
   // fades) and an INNER scrolling div (the focusable, `overflow-auto` scroll
   // region) so the edge-fade affordance can stay pinned to the visible edges
   // instead of scrolling away with the table content.
-  return (
+  const nonVirtualizedContent = (
     <div ref={ref} className={cn("space-y-3", className)} {...rest}>
       {toolbar ? toolbar(table) : null}
       {/* Outer border is redundant (surface change) → plain border per #173 spec */}
@@ -1978,6 +2457,40 @@ function DataTableInner<TData, TValue>(
 
       {renderPagination()}
     </div>
+  );
+
+  // #13: `DndContext` renders no wrapping DOM element around `children` either
+  // — it composes `children` alongside its own hidden a11y nodes (the
+  // screen-reader instructions, plus a `role="status"` `LiveRegion` that is
+  // permanently silent — see `silentDragAnnouncements` above) as SIBLINGS.
+  // Wrapping the whole component root here (rather than reaching inside the
+  // `<table>`) is what keeps those hidden nodes out of the table's own DOM —
+  // they land beside the table's outer `<div>`, never inside a
+  // `<thead>`/`<tbody>`, which is the only place in HTML that would reject
+  // them. DataTable's OWN `aria-live="polite"` region (`reorderLiveMessage`)
+  // is a further sibling here for the same reason.
+  if (!rowReorderActive) return nonVirtualizedContent;
+  return (
+    <DndContext
+      sensors={reorderSensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleRowDragStart}
+      onDragOver={handleRowDragOver}
+      onDragEnd={handleRowDragEnd}
+      onDragCancel={handleRowDragCancel}
+      accessibility={{ announcements: silentDragAnnouncements }}
+    >
+      {nonVirtualizedContent}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-slot="data-table-reorder-live-region"
+        className="sr-only"
+      >
+        {reorderLiveMessage}
+      </div>
+    </DndContext>
   );
 }
 

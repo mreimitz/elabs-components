@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T11:46:30.420Z",
+  "generatedAt": "2026-09-01T12:19:00.792Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18369,6 +18369,24 @@
               "optional": true,
               "type": "boolean",
               "description": "Gentle alternating row stripes (\"zebra\") as the row-separation cue, instead of a hairline divider between every row. Default `true` — the stripe is the single separation gesture, so rows carry no divider (a divider on a striped row would be a redundant boundary). Set `false` for the classic line model (a `border-border-strong` divider between rows, no stripes)."
+            },
+            {
+              "name": "enableRowReorder",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opt-in row drag-reorder. Off by default — an existing table renders byte-identical markup with no extra DOM per row until this is set. Fully controlled like every other slice: the component never mutates `data` itself, it only reports the move via `onRowReorder`; the caller re-orders `data` in response. Keyboard-operable out of the box (`@dnd-kit`'s default keyboard sensor): Space/Enter picks a row up, Arrow Up/Down moves it, Space/Enter drops it, Escape cancels. Every position change is announced through a live region (WCAG 4.1.3). Mutually exclusive with `enableRowVirtualization` — a windowed table can't keep dnd-kit's sortable list and a virtualizer in sync, so reorder is silently disabled (a dev warning fires) when both are set. Combining it with active `sorting` also fires a dev warning (both still work, but a sort re-orders the very rows a drag just moved, which reads as broken)."
+            },
+            {
+              "name": "onRowReorder",
+              "optional": true,
+              "type": "(from: number, to: number, row: TData) => void",
+              "description": "Fires when a row is dropped in a new position. `from`/`to` are indices into the **`data` array you passed in** — never into the sorted, filtered or paginated view the table renders — so they are safe to use directly with `arrayMove`/`slice`+`splice`/immer against your own `data`, unchanged by an active sort or by client-side pagination (the dragged row's true index in the full array, not its index on the current page). Under `manualPagination`, `data` IS the current page, so `from`/`to` are page-relative — reorder that page's own array with them. `row` is the moved record (`data[from]`)."
+            },
+            {
+              "name": "rowReorderHandle",
+              "optional": true,
+              "type": "\"cell\" | \"row\"",
+              "description": "Where the drag activator lives. `\"cell\"` (default) renders a dedicated grip-handle column so the rest of the row keeps its ordinary click/ keyboard behavior untouched. `\"row\"` makes the whole row itself the drag activator (no extra column) — reach for this only when the row has no other primary interaction (e.g. no `onRowClick`), since a whole-row activator and a row click target the same surface."
             },
             {
               "name": "onRowClick",

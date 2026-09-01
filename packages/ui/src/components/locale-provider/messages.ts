@@ -163,6 +163,18 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // override renders locale-appropriate digits/grouping instead of a raw
   // Latin-digit JS number).
   "data.table.resizeColumnValue": { one: "{size} pixel", other: "{size} pixels" },
+  // Row drag-reorder (#13). `reorderHandle`/`reorderColumnHeader` name the
+  // grip control and its column; the four `reorder*` announcement keys back
+  // the aria-live region dnd-kit's `accessibility.announcements` renders on
+  // pickup/move/drop/cancel (WCAG 4.1.3) — `position`/`total` are 1-based so
+  // the announcement reads like "3 of 8", not a 0-based index.
+  "data.table.reorderColumnHeader": "Reorder",
+  "data.table.reorderHandle": "Reorder {name}",
+  "data.table.reorderPickedUp": "Picked up {name}.",
+  "data.table.reorderMoved": "{name} moved to position {position} of {total}.",
+  "data.table.reorderDropped": "{name} dropped at position {position} of {total}.",
+  "data.table.reorderCancelled":
+    "Reordering cancelled. {name} returned to position {position} of {total}.",
   "data.facetFilter.clearFilters": "Clear filters",
   "data.columnPicker.toggleColumns": "Toggle columns",
 
