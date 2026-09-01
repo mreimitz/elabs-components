@@ -6,8 +6,9 @@
   `FieldDescription`/`FieldError`, `@elabs-ai/components-ui`) so callers can
   compose custom field layouts — two controls in one row, or a description
   placed before the control — that `FieldRow`'s single prop-configured shape
-  couldn't express. Reuses `FieldRow`'s existing id/`aria-describedby`/
-  `aria-invalid`/`role="alert"` wiring via a shared lifted-state context;
+  couldn't express. Mirrors the same id/`aria-describedby`/`aria-invalid`/
+  `role="alert"` wiring `FieldRow` already validated, adapted to a shared
+  lifted-state context so it holds across independently-composed parts;
   `FieldRow` itself is unchanged (#43).
 - Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
   against the bare `--background` token, but Monaco actually paints a translucent

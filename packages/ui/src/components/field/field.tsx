@@ -35,17 +35,19 @@ export interface FieldRootProps extends HTMLAttributes<HTMLDivElement> {
  * composition; `FieldLabel`/`FieldControl`/`FieldDescription`/`FieldError` read
  * that state from context and can be composed in ANY order/layout — including
  * more than one `FieldControl` in one row (e.g. first/last name) or a
- * `FieldDescription` placed before the control. Reuses the same accessibility
+ * `FieldDescription` placed before the control. Mirrors the same accessibility
  * wiring `FieldRow` (`../field-row`) already validated (id/`aria-describedby`/
- * `aria-invalid`/`role="alert"`); `FieldRow` remains the convenience wrapper
- * for the common single-control case and is unaffected by this addition (#43).
+ * `aria-invalid`/`role="alert"`), adapted to a shared lifted-state context so
+ * it holds across independently-composed parts; `FieldRow` remains the
+ * convenience wrapper for the common single-control case and is unaffected by
+ * this addition (#43).
  *
  * @example
  * ```tsx
  * <FieldRoot invalid={!!error} required>
- *   <FieldLabel>API key</FieldLabel>
+ *   <FieldLabel>{label}</FieldLabel>
  *   <FieldControl><Input /></FieldControl>
- *   <FieldDescription>Found in your account settings.</FieldDescription>
+ *   <FieldDescription>{helpText}</FieldDescription>
  *   <FieldError>{error}</FieldError>
  * </FieldRoot>
  * ```
@@ -54,31 +56,36 @@ export const FieldRoot = forwardRef<HTMLDivElement, FieldRootProps>(function Fie
   { invalid = false, required = false, className, children, ...props },
   ref,
 ) {
-  const id = useId();
-  const descriptionId = `${id}-description`;
-  const errorId = `${id}-error`;
-
-  const [mounted, setMounted] = useState<ReadonlySet<string>>(() => new Set());
-
-  const registerDescribedBy = useCallback((descId: string) => {
-    setMounted((prev) => (prev.has(descId) ? prev : new Set(prev).add(descId)));
+  // Each `FieldDescription`/`FieldError` INSTANCE generates and registers its
+  // own id (see below) — two lists, not one shared slot per part type, so
+  // more than one of either part under one `FieldRoot` gets distinct ids
+  // instead of colliding, and unmounting one instance only ever removes that
+  // instance's own id from its own list (never a sibling's).
+  const [descriptionIds, setDescriptionIds] = useState<readonly string[]>([]);
+  const registerDescription = useCallback((descId: string) => {
+    setDescriptionIds((prev) => (prev.includes(descId) ? prev : [...prev, descId]));
   }, []);
-  const unregisterDescribedBy = useCallback((descId: string) => {
-    setMounted((prev) => {
-      if (!prev.has(descId)) return prev;
-      const next = new Set(prev);
-      next.delete(descId);
-      return next;
-    });
+  const unregisterDescription = useCallback((descId: string) => {
+    setDescriptionIds((prev) => (prev.includes(descId) ? prev.filter((x) => x !== descId) : prev));
   }, []);
 
-  // Fixed [description, error] order regardless of DOM order or registration
-  // order, so "description placed before the control" reorders the VISIBLE
-  // layout without reordering the announced description.
+  const [errorIds, setErrorIds] = useState<readonly string[]>([]);
+  const registerError = useCallback((errId: string) => {
+    setErrorIds((prev) => (prev.includes(errId) ? prev : [...prev, errId]));
+  }, []);
+  const unregisterError = useCallback((errId: string) => {
+    setErrorIds((prev) => (prev.includes(errId) ? prev.filter((x) => x !== errId) : prev));
+  }, []);
+
+  // Fixed semantic order — every description before every error — regardless
+  // of DOM order or registration order, so "description placed before the
+  // control" reorders the VISIBLE layout without reordering the announced
+  // description, and a second description/error is appended rather than
+  // replacing the first.
   const describedBy = useMemo(() => {
-    const ids = [descriptionId, errorId].filter((candidate) => mounted.has(candidate));
+    const ids = [...descriptionIds, ...errorIds];
     return ids.length > 0 ? ids.join(" ") : undefined;
-  }, [mounted, descriptionId, errorId]);
+  }, [descriptionIds, errorIds]);
 
   // `FieldLabel`'s `htmlFor` can only point to ONE control, so it binds to
   // whichever `FieldControl` registers FIRST (JSX/mount order) — the common
@@ -102,25 +109,25 @@ export const FieldRoot = forwardRef<HTMLDivElement, FieldRootProps>(function Fie
       labelFor,
       registerControl,
       unregisterControl,
-      descriptionId,
-      errorId,
       invalid,
       required,
       describedBy,
-      registerDescribedBy,
-      unregisterDescribedBy,
+      registerDescription,
+      unregisterDescription,
+      registerError,
+      unregisterError,
     }),
     [
       labelFor,
       registerControl,
       unregisterControl,
-      descriptionId,
-      errorId,
       invalid,
       required,
       describedBy,
-      registerDescribedBy,
-      unregisterDescribedBy,
+      registerDescription,
+      unregisterDescription,
+      registerError,
+      unregisterError,
     ],
   );
 
@@ -222,15 +229,22 @@ export const FieldDescription = forwardRef<
   HTMLParagraphElement,
   HTMLAttributes<HTMLParagraphElement>
 >(function FieldDescription({ className, children, ...props }, ref) {
-  const { descriptionId, registerDescribedBy, unregisterDescribedBy } =
-    useFieldContext("FieldDescription");
-  const hasContent = children !== undefined && children !== null && children !== "";
+  const { registerDescription, unregisterDescription } = useFieldContext("FieldDescription");
+  // Own id per INSTANCE — two `FieldDescription`s under one `FieldRoot` (a hint
+  // above the control and a hint below it) must not collide on one shared id.
+  const instanceId = useId();
+  const descriptionId = `${instanceId}-description`;
+  // Same falsy-content convention `FieldRow` uses (`description ? … : null`):
+  // `{condition && "message"}` is the ordinary React idiom for optional
+  // content, and `condition === false` must render nothing — a `false`/`0`/
+  // `""`/`null`/`undefined` child is "no content", not an empty paragraph.
+  const hasContent = Boolean(children);
 
   useLayoutEffect(() => {
     if (!hasContent) return undefined;
-    registerDescribedBy(descriptionId);
-    return () => unregisterDescribedBy(descriptionId);
-  }, [hasContent, descriptionId, registerDescribedBy, unregisterDescribedBy]);
+    registerDescription(descriptionId);
+    return () => unregisterDescription(descriptionId);
+  }, [hasContent, descriptionId, registerDescription, unregisterDescription]);
 
   if (!hasContent) return null;
 
@@ -251,14 +265,20 @@ export const FieldDescription = forwardRef<
 
 export const FieldError = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
   function FieldError({ className, children, ...props }, ref) {
-    const { errorId, registerDescribedBy, unregisterDescribedBy } = useFieldContext("FieldError");
-    const hasContent = children !== undefined && children !== null && children !== "";
+    const { registerError, unregisterError } = useFieldContext("FieldError");
+    // Own id per INSTANCE — same reasoning as `FieldDescription`.
+    const instanceId = useId();
+    const errorId = `${instanceId}-error`;
+    // Same falsy-content convention as `FieldDescription`/`FieldRow`'s
+    // `error ? … : null` — `{condition && "message"}` with `condition` false
+    // must render no alert at all, not an empty one a screen reader announces.
+    const hasContent = Boolean(children);
 
     useLayoutEffect(() => {
       if (!hasContent) return undefined;
-      registerDescribedBy(errorId);
-      return () => unregisterDescribedBy(errorId);
-    }, [hasContent, errorId, registerDescribedBy, unregisterDescribedBy]);
+      registerError(errorId);
+      return () => unregisterError(errorId);
+    }, [hasContent, errorId, registerError, unregisterError]);
 
     if (!hasContent) return null;
 

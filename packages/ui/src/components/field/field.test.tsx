@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -146,5 +147,85 @@ describe("Field compound anatomy", () => {
     expect(screen.getByText("Email")).toHaveAttribute("for", "consumer-owned-id");
     await userEvent.click(screen.getByText("Email"));
     expect(input).toHaveFocus();
+  });
+
+  // Fix round 1 (validator FAIL on cadac6e): `{condition && "message"}` is the
+  // ordinary React idiom for optional content — when `condition` is false,
+  // `children` is the boolean `false`, not `undefined`/`null`/`""`. FieldError
+  // must render nothing (and register nothing) in that case, exactly like
+  // FieldRow's `error ? … : null`, or a screen reader gets an alert with
+  // nothing in it and `aria-describedby` points at a dangling target.
+  it("renders no alert element (and no aria-describedby reference) when FieldError's children is false", () => {
+    render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldError>{false}</FieldError>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  // Fix round 1: two `FieldDescription`s under one `FieldRoot` (e.g. a hint
+  // above the control and a hint below it) must not collide on one shared id —
+  // each needs its own DOM id, and both must be referenced.
+  it("gives two FieldDescriptions under one FieldRoot distinct ids, both referenced by aria-describedby", () => {
+    render(
+      <FieldRoot>
+        <FieldLabel>Password</FieldLabel>
+        <FieldDescription>Use at least 12 characters.</FieldDescription>
+        <FieldControl>
+          <Input type="password" />
+        </FieldControl>
+        <FieldDescription>You can change this later in settings.</FieldDescription>
+      </FieldRoot>,
+    );
+    const input = screen.getByLabelText("Password");
+    const first = screen.getByText("Use at least 12 characters.");
+    const second = screen.getByText("You can change this later in settings.");
+    expect(first.id).toBeTruthy();
+    expect(second.id).toBeTruthy();
+    expect(first.id).not.toBe(second.id);
+    const describedBy = input.getAttribute("aria-describedby")?.split(" ") ?? [];
+    expect(describedBy).toEqual(expect.arrayContaining([first.id, second.id]));
+    expect(describedBy).toHaveLength(2);
+  });
+
+  // Fix round 1: unmounting one of two same-type parts must not strip the
+  // still-mounted sibling's own reference — the registration has to be
+  // tracked per INSTANCE, not per part type.
+  it("keeps the remaining FieldDescription's reference intact after unmounting a sibling FieldDescription", async () => {
+    function Harness() {
+      const [showSecond, setShowSecond] = useState(true);
+      return (
+        <FieldRoot>
+          <FieldLabel>Password</FieldLabel>
+          <FieldDescription>Use at least 12 characters.</FieldDescription>
+          <FieldControl>
+            <Input type="password" />
+          </FieldControl>
+          {showSecond ? (
+            <FieldDescription>You can change this later in settings.</FieldDescription>
+          ) : null}
+          <button type="button" onClick={() => setShowSecond(false)}>
+            Hide second hint
+          </button>
+        </FieldRoot>
+      );
+    }
+    render(<Harness />);
+    const input = screen.getByLabelText("Password");
+    const first = screen.getByText("Use at least 12 characters.");
+    const firstId = first.id;
+    expect(input.getAttribute("aria-describedby")?.split(" ")).toHaveLength(2);
+
+    await userEvent.click(screen.getByRole("button", { name: "Hide second hint" }));
+
+    expect(screen.getByText("Use at least 12 characters.")).toBe(first);
+    expect(input.getAttribute("aria-describedby")).toBe(firstId);
   });
 });

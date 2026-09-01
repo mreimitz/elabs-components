@@ -19,24 +19,32 @@ export interface FieldContextValue {
   registerControl: (id: string) => void;
   /** Unregisters a `FieldControl`'s id (called on unmount / when its id changes). */
   unregisterControl: (id: string) => void;
-  /** Fixed id `FieldDescription` renders at. */
-  descriptionId: string;
-  /** Fixed id `FieldError` renders at. */
-  errorId: string;
   /** `FieldRoot`'s `invalid` prop — drives `aria-invalid` on every `FieldControl` and error styling on `FieldLabel`. */
   invalid: boolean;
   /** `FieldRoot`'s `required` prop — drives `aria-required` on every `FieldControl`. */
   required: boolean;
   /**
-   * The composed `aria-describedby` value from whichever of `FieldDescription`/
-   * `FieldError` are actually mounted WITH content, in that fixed order.
-   * `undefined` when neither is present.
+   * The composed `aria-describedby` value from every mounted `FieldDescription`/
+   * `FieldError` instance WITH content, descriptions first (in mount order),
+   * then errors (in mount order) — a fixed semantic order regardless of DOM
+   * position, so more than one of either part (or reordering them relative to
+   * `FieldControl`) never scrambles the announced order. `undefined` when
+   * nothing is registered.
    */
   describedBy: string | undefined;
-  /** Registers a descriptive part's id (called by `FieldDescription`/`FieldError` while they have content). Idempotent. */
-  registerDescribedBy: (id: string) => void;
-  /** Unregisters a descriptive part's id (called on unmount / when content is cleared). */
-  unregisterDescribedBy: (id: string) => void;
+  /**
+   * Registers one `FieldDescription` INSTANCE's own id (called while it has
+   * content). Each instance generates and registers its own id — this is not
+   * a single shared slot, so more than one `FieldDescription` under one
+   * `FieldRoot` is supported without id collisions.
+   */
+  registerDescription: (id: string) => void;
+  /** Unregisters one `FieldDescription` instance's id (on unmount / when content is cleared). Removes only that instance's id. */
+  unregisterDescription: (id: string) => void;
+  /** Registers one `FieldError` instance's own id (called while it has content). Same per-instance contract as `registerDescription`. */
+  registerError: (id: string) => void;
+  /** Unregisters one `FieldError` instance's id (on unmount / when content is cleared). Removes only that instance's id. */
+  unregisterError: (id: string) => void;
 }
 
 export const FieldContext = createContext<FieldContextValue | null>(null);
