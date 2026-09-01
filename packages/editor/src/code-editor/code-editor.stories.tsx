@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import * as monaco from "monaco-editor";
 import { CodeEditor } from "./code-editor";
 import { EditorToolbar } from "../editor-toolbar";
+import { buildBrandThemeData } from "../lib/monaco-theme-bridge";
 
 const meta = {
   title: "Editor/CodeEditor",
@@ -93,9 +94,15 @@ export const JsonReadOnly: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    // Monaco mounts asynchronously — wait for the editor surface, then for its
-    // tokenized `.view-line` spans (Monaco assigns each syntax scope a `.mtk<n>`
-    // class resolved to a color via the active TokenTheme).
+    // Monaco mounts asynchronously, and syntax tokenization is a SEPARATE,
+    // later pass: the editor first paints one un-highlighted `.mtk*` span per
+    // line, then re-renders with per-scope spans once the JSON monarch
+    // tokenizer finishes (observed to take ~1-3s in a headless test browser).
+    // Waiting for "any `.mtk*` span" resolves on that FIRST, un-highlighted
+    // paint — a false green that passes identically whether the fix is
+    // present or not (#90 fix-round-1 finding). Wait for the actual `"name"`
+    // key to have tokenized into its own span instead — that only exists once
+    // real per-scope highlighting has landed.
     const surface = await within(canvasElement).findByTestId("code-editor", {}, { timeout: 10000 });
     let spans: HTMLSpanElement[] = [];
     await waitFor(
@@ -103,9 +110,14 @@ export const JsonReadOnly: Story = {
         spans = Array.from(
           surface.querySelectorAll<HTMLSpanElement>('.view-line span[class*="mtk"]'),
         );
-        if (spans.length === 0) throw new Error("Monaco has not tokenized the JSON sample yet");
+        const keySpan = spans.some((span) => span.textContent?.trim() === '"name"');
+        if (!keySpan) {
+          throw new Error(
+            `Monaco has not tokenized the "name" key into its own span yet (spans=${spans.length})`,
+          );
+        }
       },
-      { timeout: 10000 },
+      { timeout: 20000, interval: 100 },
     );
 
     // Stock `vs`/`vs-dark` colors for string.key.json / string.value.json /
@@ -124,6 +136,24 @@ export const JsonReadOnly: Story = {
       .map((span) => getComputedStyle(span).color)
       .filter((color) => stockColors.has(color));
     await expect(offenders).toEqual([]);
+
+    // Positive check, not just an absence check: the "name" key span must be
+    // colored with the bridge's OWN live `string.key.json` brand ink (read
+    // straight off the currently-applied CSS custom properties), not merely
+    // "some color that isn't stock" — a fix that mapped the scope to the
+    // wrong token would pass the negative check above but fail this one.
+    const hexToRgb = (hex: string) => {
+      const n = Number.parseInt(hex.replace("#", ""), 16);
+      return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+    };
+    const liveRules = buildBrandThemeData().rules ?? [];
+    const expectedKeyForeground = liveRules.find(
+      (rule) => rule.token === "string.key.json",
+    )?.foreground;
+    await expect(expectedKeyForeground).toBeDefined();
+    const keySpan = spans.find((span) => span.textContent?.trim() === '"name"');
+    await expect(keySpan).toBeDefined();
+    await expect(getComputedStyle(keySpan!).color).toEqual(hexToRgb(expectedKeyForeground!));
   },
 };
 
