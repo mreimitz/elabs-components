@@ -1,0 +1,27 @@
+diff --git a/lib/index.js b/lib/index.js
+index 554648a4f7717a66ced38ac30c92b0a73bf2f014..98c1665de784107c2b87dd2bf999d1f74819f34a 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -249,6 +249,7 @@ var Timer = class {
+ 	#listener;
+ 	#eventUniqId;
+ 	#status;
++	#timeoutHandle;
+ 	constructor(clock, type) {
+ 		this.#promise = null;
+ 		this.#listener = null;
+@@ -280,9 +281,13 @@ var Timer = class {
+ 		};
+ 		this.#removeListener = () => {
+ 			if (this.#listener) removeEventListener(this.type.name, this.#listener);
++			if (this.#timeoutHandle != null) {
++				clearTimeout(this.#timeoutHandle);
++				this.#timeoutHandle = null;
++			}
+ 		};
+ 		this.#waitTimeout = (ifTimeout) => {
+-			setTimeout(() => {
++			this.#timeoutHandle = setTimeout(() => {
+ 				ifTimeout();
+ 			}, this.type.timeout);
+ 		};
