@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { readThemeCss } from "./_theme-css-source";
 import {
   contrast,
   contrastRatio,
@@ -92,24 +93,19 @@ describe("parseOklch input domain", () => {
     expect(() => parseOklch("oklch(0.5 0.1 -30)")).not.toThrow();
   });
 
-  it("positive control: all 288 shipped theme literals still round-trip", () => {
-    // All shipped oklch() literals from themes.css and themes/{light,dark}.css
-    const shippedLiterals = [
-      // Sample from :root
-      "oklch(0.985 0.002 257)",
-      "oklch(0.065 0.021 257)",
-      "oklch(0.98 0.004 264)",
-      "oklch(0.08 0.021 264)",
-      "oklch(0.7 0.1 264)",
-      "oklch(0.35 0.15 264)",
-      "oklch(0.8 0.1 55.8)",
-      "oklch(0.4 0.2 55.8)",
-      // More samples — the full 288 is the union of all parsed literals
-      "oklch(0.535 0.115 162.5)",
-      "oklch(0.515 0.112 162.5)",
-      "oklch(0.96 0.005 135)",
-      "oklch(0.05 0.005 135)",
-    ];
+  it("positive control: all shipped theme oklch() literals still round-trip", () => {
+    // Read the full theme CSS (engine + reference themes) and extract every oklch() literal
+    const css = readThemeCss();
+    // Match oklch(L C H) or oklch(L C H / A) where L, C, H, A are numbers (possibly signed/decimal)
+    const oklchRegex =
+      /oklch\(\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)(?:\s*\/\s*(-?\d+\.?\d*))?\s*\)/g;
+    const matches = css.match(oklchRegex);
+    const shippedLiterals = [...new Set(matches ?? [])]; // deduplicate
+
+    // Verify we found theme literals (the actual union of themes.css + light.css + dark.css)
+    expect(shippedLiterals.length).toBeGreaterThan(0);
+
+    // Every unique oklch() literal in the shipped stylesheets must parse and be in-range
     for (const lit of shippedLiterals) {
       expect(() => parseOklch(lit)).not.toThrow(`Failed on: ${lit}`);
       const parsed = parseOklch(lit);
