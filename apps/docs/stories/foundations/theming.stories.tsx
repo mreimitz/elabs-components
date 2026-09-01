@@ -830,14 +830,17 @@ export const DeriveTheme: Story = {
       <div className="max-w-prose space-y-2">
         <p className="m-0 text-body text-foreground">
           <code className="text-code">deriveTheme({"{ primary, background }"})</code> derives a
-          complete, AA-safe hover/active/focus patch from ONE seed colour — for a tenant who has
-          only a brand colour, not a full palette (issue #39).
+          complete hover/active/focus patch from ONE seed colour — for a tenant who has only a brand
+          colour, not a full palette (issue #39).
         </p>
         <p className="m-0 text-caption text-muted-foreground">
           Pick a tenant below: every swatch recomputes from that single{" "}
-          <code className="text-code">primary</code> value, and every foreground/ring value shown is
-          provably AA-compliant (see <code className="text-code">derive-theme.test.ts</code>), never
-          merely assumed so.
+          <code className="text-code">primary</code> value. Every foreground value shown is provably
+          AA-compliant against ANY background (see{" "}
+          <code className="text-code">derive-theme.test.ts</code>), never merely assumed so —{" "}
+          <code className="text-code">--ring</code> is provably ≥3:1 too, but only against the ONE{" "}
+          <code className="text-code">background</code> this call used, not against every theme your
+          app might switch to at runtime (issue #91; see below).
         </p>
       </div>
 
@@ -862,9 +865,23 @@ export const DeriveTheme: Story = {
           <code className="text-code">THEME_TOKEN_NAMES</code> coverage.
         </li>
         <li>
-          <strong>Fails loudly, never silently non-compliant.</strong> If an AA-safe value genuinely
-          cannot be found for a given seed, it throws instead of returning a token that quietly
-          fails contrast.
+          <strong>
+            Fails loudly, never silently non-compliant — for the background this call used.
+          </strong>{" "}
+          If an AA-safe value genuinely cannot be found against that background, it throws instead
+          of returning a token that quietly fails contrast.
+        </li>
+        <li>
+          <strong>Not a theme-switching guarantee (issue #91).</strong> The{" "}
+          <code className="text-code">--ring</code> proof above holds only against the background
+          this call used — reusing the same result while a DIFFERENT theme is active is unproven: an
+          independent sweep measured a <code className="text-code">--ring</code> proven ≥3:1 against
+          one background fall as low as <strong>1.00:1</strong> (fully invisible) against another.
+          If your app ships more than one theme, call <code className="text-code">deriveTheme</code>{" "}
+          again for EACH background and swap which result you pass to{" "}
+          <code className="text-code">tokenOverrides</code> when the active theme changes — a
+          dev-only console warning restates this on every call. See{" "}
+          <code className="text-code">docs/CONSUMING.md</code> §5.3.
         </li>
       </ul>
     </div>

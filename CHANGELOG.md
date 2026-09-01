@@ -3,9 +3,11 @@
 ## Unreleased
 
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
-  provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
-  one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
-  tenant/white-label picker that only has a single brand colour (#39).
+  `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from one seed brand
+  colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a tenant/white-label
+  picker that only has a single brand colour. The `-foreground` values are provably AA-safe
+  against ANY background; `--ring` is provably ≥3:1 too, but only against the ONE background
+  the call used — see the #91 entry below (#39).
 - Added: `@elabs-ai/components-data`'s `DataTable` gains opt-in row drag-reorder
   (`enableRowReorder` / `onRowReorder` / `rowReorderHandle`, `"cell"` grip column or
   `"row"` whole-row activator), built on `@dnd-kit/core`/`@dnd-kit/sortable` — the same
