@@ -1030,6 +1030,41 @@ test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
         `nonexistent interpreter, ${mutationLabel}: ${mutated}`,
       );
     }
+
+    // #96 fix round 9 — the coordinator's fix-round-8 regression finding.
+    // Part C's command-position restriction (`atCommandPositionOnly`) read
+    // the WRAPPED call's own leading word as the command word, not the `gh`
+    // it wraps: `nohup gh issue comment 26 --body …` behind an unknown
+    // interpreter silently ALLOWED every one of the 18 gated shapes, a
+    // bypass `main` (before Part C existed) did NOT have — the top-level
+    // search has always been position-independent, so a wrapper there was
+    // already transparent. `realCommandWordIndex` (shell-command-parse.mjs)
+    // closes it for the nested arm too. Every wrapper it recognises, plus a
+    // `{ … ; }` brace group (this parser doesn't strip braces as grouping
+    // syntax, so an unrecognised leading `{` word is the same shape of gap),
+    // gets its own case here — a wrapper missing from this list is a wrapper
+    // the next round rediscovers.
+    const wrappers = ["nohup", "sudo", "timeout 30", "xargs", "command", "exec", "time"];
+    for (const wrapper of wrappers) {
+      const wrapped = `${wrapper} ${shape}`;
+      assert.equal(
+        bash(`csh -c "${wrapped}"`).verdict,
+        "block",
+        `csh -c, wrapper ${wrapper}: ${wrapped}`,
+      );
+      assert.equal(
+        bash(`zqx-notashell-9f21a -c "${wrapped}"`).verdict,
+        "block",
+        `nonexistent interpreter, wrapper ${wrapper}: ${wrapped}`,
+      );
+    }
+    const braced = `{ ${shape} ; }`;
+    assert.equal(bash(`csh -c "${braced}"`).verdict, "block", `csh -c, brace group: ${braced}`);
+    assert.equal(
+      bash(`zqx-notashell-9f21a -c "${braced}"`).verdict,
+      "block",
+      `nonexistent interpreter, brace group: ${braced}`,
+    );
   }
 });
 
@@ -1099,6 +1134,19 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `pnpm --filter $PKG test -- --grep "$NAME"`,
     `csh -c "echo $HOME && ls -la"`,
     `node -e "console.log(1 + '$X')"`,
+    // #96 fix round 9 — the wrapper-transparency fix must not become a
+    // blanket refusal of these words in ordinary prose: a wrapper name is
+    // only special when it sits at a re-parsed simple command's OWN command
+    // position, immediately in front of `gh`.
+    `git commit -m "docs: explain the exec wrapper bypass in the gate rule"`,
+    `git commit -m "chore: bump the sudo timeout for the deploy script"`,
+    // A wrapped call whose body carries the marker must still ALLOW — the
+    // wrapper fix widens what counts as a candidate, not a refusal of every
+    // candidate regardless of its body. `--body-file` (not an inline `shq()`
+    // string) sidesteps nesting the marker banner's own apostrophe inside
+    // TWO layers of shell quoting (the outer `csh -c "…"` and whatever quote
+    // style would wrap the literal body).
+    `csh -c "nohup gh issue comment 26 --body-file ${marked}"`,
   ];
   for (const command of cases) {
     assert.equal(bash(command).verdict, "allow", command);
@@ -1127,6 +1175,35 @@ test("#96 fix round 8: the nested-operand widening, through the REAL shell hook"
   const allowed = runHook({
     tool_name: "Bash",
     tool_input: { command: `make deploy MSG="gh issue comment --body ready"` },
+  });
+  assert.equal(allowed.status, 0, allowed.stderr);
+});
+
+test("#96 fix round 9: the wrapper/brace-group transparency fix, through the REAL shell hook", () => {
+  // The regression itself, end to end: a leading wrapper in front of a
+  // nested `gh` call used to slip past `atCommandPositionOnly` entirely and
+  // exit 0 unmarked. Each must now exit 2, same as the round-8 cases above.
+  for (const wrapped of [
+    `csh -c "nohup gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "sudo gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "timeout 30 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "{ gh issue comment 26 --body '${UNMARKED}' ; }"`,
+  ]) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command: wrapped } });
+    assert.equal(r.status, 2, `${wrapped}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, wrapped);
+  }
+
+  // The same wrapped shape with a marked body must still exit 0 — the fix
+  // widens detection, it does not turn every wrapped `gh` call into a
+  // refusal regardless of the body.
+  const marked = path.join(TMP, "round9-wrapped-marked.md");
+  writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  const allowed = runHook({
+    tool_name: "Bash",
+    tool_input: {
+      command: `csh -c "nohup gh issue comment 26 --body-file ${marked}"`,
+    },
   });
   assert.equal(allowed.status, 0, allowed.stderr);
 });

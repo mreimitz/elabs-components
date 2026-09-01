@@ -171,13 +171,45 @@
 //     shell assignment. That scan is now scoped to the leading assignment run
 //     (plus the operands of a leading `export`/`declare`/`typeset`/`local`/
 //     `readonly` builtin, which really are assignments).
-//   - What is STILL a declared limit after this round, unchanged: a
+//   - FIXED, fix round 9 (#96): fix round 8's `atCommandPositionOnly` restriction
+//     (immediately above) computed "the command position" with plain
+//     `commandWordIndex` — which only steps past a leading `VAR=…` assignment
+//     run, nothing else. That made the restriction ITSELF a new, silent bypass
+//     `main` did not have before Part C existed: `nohup gh issue comment 26
+//     --body '…'` behind an unknown interpreter re-parsed as a simple command
+//     whose "command position" was `nohup`, not `gh`, so the `i !== cmdIdx`
+//     guard skipped the real `gh` word and the call posted unmarked — for
+//     every wrapper (`nohup`, `sudo`, `timeout`, `xargs`, `command`, `exec`,
+//     `time`) and for a leading `{ … ; }` brace group (this parser does not
+//     strip `{`/`}` as shell grouping syntax, so an unrecognised leading `{`
+//     word is the same shape of gap). The top-level, position-independent
+//     search was never affected — a wrapper there was always transparent
+//     (see the top-of-file account above, "a wrapper in front of the shell
+//     … hides nothing either") — this was specific to the NESTED arm Part C
+//     added. Fixed by `realCommandWordIndex()` (shell-command-parse.mjs): the
+//     same notion of "command position", widened to also step past a leading
+//     run of those wrapper commands (consuming each wrapper's own `-flag`
+//     words, and `timeout`'s mandatory DURATION positional) and a leading
+//     `{`. It is a SEPARATE function from `commandWordIndex`, not a change to
+//     it, so `parseShellCommands`'s own assignment-scan and
+//     `isTextOnlyCommand`/`sinkExecutesStdin` (which rely on the narrower
+//     meaning) are untouched; `findGhCandidates`'s `atCommandPositionOnly`
+//     branch is the only caller. The false-refusal property Part C exists for
+//     is preserved exactly as before — a wrapper NAME appearing in ordinary
+//     prose (`git commit -m "docs: explain the exec wrapper bypass"`) still
+//     ALLOWS, because the walk only recognises a wrapper that is structurally
+//     the command being invoked, never a text match on the word.
+//   - What is STILL a declared limit after fix round 9, unchanged: a
 //     `… | tee f | sh` pipeline (the sink-detection only recognises a sink
 //     that takes no non-flag operand, and `tee`'s filename argument defeats
 //     that), `gh api graphql`'s `addComment` mutation, and a body-less nested
 //     call (a hidden `gh issue comment 26` with no body flag is still not
 //     caught — see the body-reach bullet above). All three are pre-existing,
-//     not reopened or newly closed by this round.
+//     not reopened or newly closed by this round. A wrapper's own flag
+//     grammar is also not fully modelled beyond a `-`-prefixed word and
+//     `timeout`'s single DURATION operand (e.g. `sudo -u user gh …`) — the
+//     cost of that gap is a false refusal (the safe direction), never a
+//     missed invocation, because a flag's VALUE word is never itself `gh`.
 //   - A PRODUCER PIPED THROUGH AN INTERMEDIATE STAGE INTO A SHELL escapes the
 //     pipeline arm of this same inversion: `sinkExecutesStdin` (below)
 //     requires the FINAL sink to take no non-flag operand, so
@@ -242,6 +274,7 @@ import {
   commandWordIndex,
   leadingAssignments,
   parseShellCommands,
+  realCommandWordIndex,
 } from "./lib/shell-command-parse.mjs";
 
 // ── Rung 1 — Bash command parsing ────────────────────────────────────────────
@@ -948,7 +981,13 @@ function looksLikeGhSubcommand(argv) {
  * command's own command position is what keeps such prose from becoming a
  * false posting candidate while still catching a real nested invocation
  * (`gh issue comment …`, `/usr/bin/gh issue comment …`), which always IS at
- * that position.
+ * that position — and, since fix round 9 (#96 regression), one that sits
+ * behind a leading `nohup`/`sudo`/`timeout`/`xargs`/`command`/`exec`/`time`
+ * wrapper or a `{ … ; }` brace group too: `realCommandWordIndex`
+ * (shell-command-parse.mjs) walks past those the same way the top-level,
+ * position-independent search already tolerates them by not caring about
+ * position at all — see its doc comment for why a plain `commandWordIndex`
+ * silently missed `nohup gh issue comment 26 --body …`.
  *
  * @param {SimpleCommand[]} commands
  * @param {{atCommandPositionOnly?: boolean}} [opts]
@@ -961,7 +1000,7 @@ export function findGhCandidates(commands, opts = {}) {
     const words = (command && command.words) || [];
     const env = leadingAssignments(words);
     const heredoc = Boolean(command && command.heredoc);
-    const cmdIdx = atCommandPositionOnly ? commandWordIndex(words) : -1;
+    const cmdIdx = atCommandPositionOnly ? realCommandWordIndex(words) : -1;
     for (let i = 0; i < words.length; i++) {
       if (atCommandPositionOnly && i !== cmdIdx) continue;
       const isGh = basename(words[i].value) === "gh";
@@ -1206,6 +1245,20 @@ function analyzeGhApi(argv, env, read) {
 // does. The top-level search stays position-independent (`xargs gh …`,
 // `then gh …` are legitimate there and unaffected).
 //
+// FIX ROUND 9 (#96): "command position" is computed by
+// `realCommandWordIndex()` (shell-command-parse.mjs), not by the narrower
+// `commandWordIndex()` Part C shipped with — that first version only stepped
+// past a leading `VAR=…` assignment run, so a leading `nohup`/`sudo`/
+// `timeout`/`xargs`/`command`/`exec`/`time` wrapper, or a `{ … ; }` brace
+// group, made the WRAPPER read as the command word instead of the `gh` it
+// wraps, and the position check then silently rejected the real invocation —
+// a bypass `main` never had, since the top-level search was always
+// position-independent. `realCommandWordIndex()` walks past that same run of
+// wrappers/braces before landing on the command position, closing the gap
+// without reopening the false-refusal case above (it is still a STRUCTURAL
+// check — a wrapper's NAME in prose, not actually invoked, does not satisfy
+// it).
+//
 // What is now closed that fix round 7 left open, restated against the same
 // reproductions: `csh -c "gh issue comment $N --body '…'"` REFUSES (the body
 // is uninspectable, not skipped); `csh -c "(gh issue comment 26 --body …)"`
@@ -1272,7 +1325,12 @@ function sinkExecutesStdin(next) {
  *    (`findGhCandidates(…, { atCommandPositionOnly: true })`, Part C) — this
  *    is what stops ordinary prose that merely MENTIONS `gh issue comment
  *    --body` (a commit message, a doc line) from becoming a false candidate
- *    now that the text-match prefilter no longer screens operands first;
+ *    now that the text-match prefilter no longer screens operands first.
+ *    "Command position" is computed by `realCommandWordIndex()` (fix round 9,
+ *    #96), which sees through a leading `nohup`/`sudo`/`timeout`/`xargs`/
+ *    `command`/`exec`/`time` wrapper or a `{ … ; }` brace group to the `gh`
+ *    it wraps — the plain `commandWordIndex()` Part C shipped with did not,
+ *    which is exactly the regression fix round 9 closed;
  *  - a nested candidate counts only when it actually REACHES FOR A BODY (a
  *    resolvable one, or one this gate refuses to read). Prose that merely
  *    contains the phrase with no body-shaped flag — `git log --grep "gh issue

@@ -648,3 +648,83 @@ export function commandWordIndex(words) {
   while (i < list.length && ASSIGNMENT_RE.test(list[i].value)) i++;
   return i;
 }
+
+/**
+ * Command words that PASS a real invocation THROUGH to a following word
+ * without becoming the thing invoked — `nohup gh …` runs `gh`, not `nohup`.
+ * Each name is drawn from that tool's own manual page, the same evidentiary
+ * standard `SCRIPT_INTRODUCERS` above uses: GNU coreutils `nohup(1)`,
+ * `timeout(1)`, `command(1)`; `sudo(8)`; the bash reserved words/builtins
+ * `exec`/`time` (also external `time(1)` on some systems); GNU findutils
+ * `xargs(1)`. `env` and `nice` are deliberately absent here — `env` is
+ * already a SCRIPT_INTRODUCER when it precedes an interpreter it hands a
+ * script to, and adding a name to either list takes a verified manual page,
+ * not a hunch (see the derivation note above `SCRIPT_INTRODUCERS`).
+ *
+ * Fix round 9 (#96 regression): `findGhCandidates`'s `atCommandPositionOnly`
+ * search (Part C, fix round 8) restricts a NESTED re-read to a simple
+ * command's own COMMAND WORD so ordinary prose mentioning "gh issue comment"
+ * doesn't false-refuse. Taken alone, that restriction made `nohup gh issue
+ * comment 26 --body …` (and every wrapper here) read as a command whose word
+ * is `nohup`, not `gh` — silently missing the real invocation `main` used to
+ * catch, because the top-level search that still runs today doesn't care
+ * about position at all. `realCommandWordIndex` closes that gap for the
+ * nested arm specifically: it walks PAST a leading run of these wrappers
+ * (and a leading `{` brace-group opener — this parser does not strip `{ … }`
+ * as grouping syntax, so it is a wrapper of the same shape) to the word
+ * actually being invoked.
+ */
+export const WRAPPER_COMMANDS = new Set([
+  "nohup",
+  "sudo",
+  "timeout",
+  "xargs",
+  "command",
+  "exec",
+  "time",
+]);
+
+/**
+ * `commandWordIndex`, widened to also step over a leading run of
+ * `WRAPPER_COMMANDS` (each consuming its own `-flag` words, and `timeout`'s
+ * mandatory DURATION positional) and a leading `{` brace-group opener.
+ *
+ * Deliberately a SEPARATE function from `commandWordIndex`, not a change to
+ * it: `commandWordIndex` stays "the word right after leading assignments"
+ * because `parseShellCommands`'s own "assignment carries a whole command"
+ * scan and check-comment-attribution.mjs's text-only-command checks rely on
+ * that narrower meaning and are already exercised by their own tests. This
+ * widened notion exists for exactly one caller —
+ * `findGhCandidates(…, {atCommandPositionOnly:true})` (Part C) — which must
+ * see through a wrapper to find the `gh` it wraps.
+ *
+ * A wrapper's own flag grammar is not fully modelled (e.g. `sudo -u user` or
+ * `timeout -s SIGNAL` — a flag whose VALUE is a separate word that doesn't
+ * start with `-`): this walk skips `-`-prefixed words and, for `timeout`,
+ * exactly one more word for the mandatory DURATION, which is enough for
+ * every gated shape's own reproduction (`wrapper gh issue comment … --body
+ * …`, no flags between the wrapper and `gh`). A more elaborate flag
+ * combination is a declared limit, not a silent bypass — worst case it costs
+ * a false refusal (the safe direction), never a missed invocation, because a
+ * flag's VALUE word is never itself `gh`.
+ * @param {ShellWord[]} words
+ * @returns {number}
+ */
+export function realCommandWordIndex(words) {
+  const list = words || [];
+  let i = 0;
+  for (;;) {
+    const before = i;
+    while (i < list.length && ASSIGNMENT_RE.test(list[i].value)) i++;
+    if (i < list.length && list[i].value === "{") {
+      i++;
+    } else if (i < list.length && WRAPPER_COMMANDS.has(basename(list[i].value))) {
+      const base = basename(list[i].value);
+      i++;
+      while (i < list.length && list[i].value.startsWith("-")) i++;
+      if (base === "timeout" && i < list.length) i++; // the mandatory DURATION operand
+    }
+    if (i === before) break;
+  }
+  return i;
+}

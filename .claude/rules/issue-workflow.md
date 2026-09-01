@@ -185,6 +185,38 @@ when not running interactively` without reaching the API. At a command
   retry (a `$VAR`, an ordinary commit message); against one that is trying,
   the remaining gaps are the pipeline relay and the GraphQL mutation, both of
   which need a deliberate extra stage to reach, not a stray character.
+- **Fix round 9 (#96) closed a regression fix round 8 itself introduced.** The
+  COMMAND POSITION restriction two bullets up
+  (`findGhCandidates(…, { atCommandPositionOnly: true })`) computed "command
+  position" with the plain `commandWordIndex()` helper, which only steps past
+  a leading `VAR=…` assignment run. That is narrower than a real shell's
+  notion of what is being invoked: a leading wrapper — `nohup`, `sudo`,
+  `timeout`, `xargs`, `command`, `exec`, `time` — or a `{ … ; }` brace group
+  in front of the gated call made the WRAPPER read as the command word
+  instead of the `gh` it wraps, so the position check silently rejected the
+  real invocation and the call posted unmarked. `nohup gh issue comment 26
+--body '…'` behind an unknown interpreter (`csh -c "nohup gh issue comment
+26 --body '…'"`) is the reproduction; it, and the same shape behind every
+  wrapper above and a brace group, ALLOWED before this round despite being
+  one of the 18 gated shapes. **This was a NEW bypass, not a pre-existing
+  one** — the top-level search this file already describes as
+  position-independent ("a wrapper in front of the interpreter … hides
+  nothing") was never affected, because it never restricted by position at
+  all; the gap was specific to the NESTED arm's command-position check that
+  fix round 8 (Part C) introduced. Fixed by `realCommandWordIndex()`
+  (`scripts/lib/shell-command-parse.mjs`), a function kept SEPARATE from
+  `commandWordIndex()` (so `parseShellCommands`'s assignment-scan and the
+  text-only-command checks, which rely on the narrower meaning, are
+  untouched) that walks past that same leading run of wrappers/braces before
+  landing on the command position — used only by
+  `findGhCandidates`'s `atCommandPositionOnly` branch. The false-refusal
+  property Part C exists for is unaffected: a wrapper NAME appearing in
+  ordinary prose (`git commit -m "docs: explain the exec wrapper bypass"`)
+  still ALLOWS, because the walk is structural (a real leading command word),
+  never a text match. Locked by 18 gated shapes × 7 wrappers × 2
+  unknown-interpreter rows, plus a brace-group row, in
+  `scripts/check-comment-attribution.test.mjs`'s clustered-grammar sweep, and
+  by a dedicated end-to-end test through the real shell hook.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved
