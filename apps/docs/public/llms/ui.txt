@@ -170,6 +170,11 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - ExpandDialogContent
 - ExpandDialogHeader
 - ExpandDialogPanes (detailPlacement=side*|bottom · stackBelow=never*|sm|md|lg)
+- FieldControl
+- FieldDescription
+- FieldError
+- FieldLabel
+- FieldRoot
 - FieldRow
 - FILE_CATEGORY_ICONS
 - FileUpload

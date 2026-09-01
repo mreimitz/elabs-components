@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 372 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 377 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -246,6 +246,11 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ExpandDialogContent | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialogHeader | component |  | `@elabs-ai/components-ui` |  |
 | ExpandDialogPanes | component | detailPlacement=side*\|bottom · stackBelow=never*\|sm\|md\|lg | `@elabs-ai/components-ui` |  |
+| FieldControl | component |  | `@elabs-ai/components-ui` |  |
+| FieldDescription | component |  | `@elabs-ai/components-ui` |  |
+| FieldError | component |  | `@elabs-ai/components-ui` |  |
+| FieldLabel | component |  | `@elabs-ai/components-ui` |  |
+| FieldRoot | component |  | `@elabs-ai/components-ui` |  |
 | FieldRow | component |  | `@elabs-ai/components-ui` |  |
 | FILE_CATEGORY_ICONS | component |  | `@elabs-ai/components-ui` |  |
 | FileUpload | component |  | `@elabs-ai/components-ui` |  |
