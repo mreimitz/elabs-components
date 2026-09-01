@@ -101,5 +101,10 @@ authority loop where automation authorizes itself.
   `gh api graphql` `addComment` mutation, a third-party client — is not seen.
   (3) The gate reads the bytes the command line contains; a body a script
   computes at runtime cannot be read, so it is refused rather than inspected.
-  All three are intentional boundaries of "inspect the tool call", not gaps to
-  close by widening the regex.
+  (4) A user-defined `gh` alias (`gh cmt 26 --body …`) is expanded inside `gh`
+  from a config file this gate does not read, so the subcommand match cannot see
+  it. (5) A relative `--body-file` path is resolved against the hook's working
+  directory, not a `cd` earlier in the line; when that fails the call is
+  **refused**, so it costs a false refusal rather than a bypass — pass an
+  absolute path. These are intentional boundaries of "inspect the tool call",
+  not gaps to close by widening a regex.

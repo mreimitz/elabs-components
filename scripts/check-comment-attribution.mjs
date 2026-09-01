@@ -75,6 +75,16 @@
 //     `comments`/`issues`/`reviews`/`pulls`. Read-only `gh api` calls and
 //     non-text writes (`…/issues/26/lock`) stay untouched, per this gate's
 //     acceptance criteria.
+//   - A USER-DEFINED `gh` alias (`gh alias set cmt 'issue comment'`, then
+//     `gh cmt 26 --body …`) resolves inside `gh`, from a config file this gate
+//     does not read, so the subcommand match cannot see it. Reading
+//     `gh alias list` would mean shelling out on every Bash call; the honest
+//     answer is that aliases are out of scope.
+//   - A RELATIVE `--body-file` path is resolved against the hook's working
+//     directory, not against a `cd` earlier in the same line. When that lookup
+//     fails the call is REFUSED (uninspectable), never allowed — so this costs
+//     a false refusal, not a bypass. Pass an absolute path, or post through
+//     scripts/post-issue-comment.mjs, which always does.
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
