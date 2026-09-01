@@ -61,17 +61,48 @@ let enginePromise: Promise<XTermEngine> | undefined;
  * that throws a message `isModuleNotFoundMessage` recognizes) — landing on
  * this file's own `.catch()`/`.then()` chain in `interactive-terminal.tsx`
  * exactly as intended.
+ *
+ * **A REJECTED attempt is evicted from the cache; a SUCCESSFUL one is not**
+ * (issue #99). `InteractiveTerminal`'s "Try again" button re-calls this
+ * function after bumping `reloadKey` — if a first, failed attempt stayed
+ * cached forever (the old `enginePromise ??= …` shape did exactly that, since
+ * a rejected promise is neither `null` nor `undefined`), the retry would just
+ * be handed back the same settled rejection with no new `import()` ever
+ * attempted. The `.catch()` below is part of the SAME returned chain and
+ * rethrows — it must never be a detached `pending.catch(...)` side-effect,
+ * which would leave the caller's rejection unhandled on one branch while
+ * creating a second, truly unhandled rejection on the other. The identity
+ * guard (`enginePromise === pending`) makes the eviction safe if a newer
+ * attempt (from a second, concurrent Retry) is already in flight.
+ *
+ * **Out of scope: a module-EVALUATION throw.** If this module itself fails to
+ * evaluate (its top-level `import "@xterm/xterm/css/xterm.css"`, or an xterm
+ * side-effect during evaluation), the dynamic `import("./_interactive-terminal-xterm")`
+ * in `interactive-terminal.tsx` rejects before `loadXTermEngine` is ever
+ * called — `enginePromise` stays `undefined`, and the permanence comes from
+ * the ESM spec's own module-record evaluation-error cache, which userland
+ * cannot clear. No eviction here can fix that variant; only a full page
+ * reload can.
  */
 export const loadXTermEngine = (): Promise<XTermEngine> => {
-  enginePromise ??= Promise.all([import("@xterm/xterm"), import("@xterm/addon-fit")]).then(
-    ([core, addon]) => {
-      const XTerm = core.Terminal;
-      const FitAddon = addon.FitAddon;
-      if (!XTerm || !FitAddon) {
-        throw new Error("Cannot find module '@xterm/xterm'");
-      }
-      return { FitAddon, XTerm };
-    },
-  );
+  if (!enginePromise) {
+    const pending: Promise<XTermEngine> = Promise.all([
+      import("@xterm/xterm"),
+      import("@xterm/addon-fit"),
+    ])
+      .then(([core, addon]) => {
+        const XTerm = core.Terminal;
+        const FitAddon = addon.FitAddon;
+        if (!XTerm || !FitAddon) {
+          throw new Error("Cannot find module '@xterm/xterm'");
+        }
+        return { FitAddon, XTerm };
+      })
+      .catch((error: unknown) => {
+        if (enginePromise === pending) enginePromise = undefined;
+        throw error;
+      });
+    enginePromise = pending;
+  }
   return enginePromise;
 };

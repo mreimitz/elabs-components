@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-ai`'s `InteractiveTerminal` "Try again" button could
+  never actually recover from a failed xterm.js engine load. Root cause was two
+  compounding bugs: (1) `loadXTermEngine()` (`_interactive-terminal-xterm.ts`)
+  memoized its dynamic `import()` with `enginePromise ??= …` — a REJECTED promise
+  is neither `null` nor `undefined`, so a first failed load poisoned the cache
+  forever and every retry got back the same settled rejection with zero new
+  `import()` attempts; (2) even once that cache is fixed, clicking Retry still did
+  nothing, because the error `StatePanel` replaces the terminal's
+  `<div ref={containerRef}>` in the tree, so React nulls `containerRef.current` the
+  moment it unmounts — and the mount effect's `if (!container) return;` guard
+  silently no-ops the retry before ever calling `loadXTermEngine()` again. Fixed by
+  (1) evicting only a REJECTED load via an identity-guarded `.catch()` on the SAME
+  promise chain (`if (enginePromise === pending) enginePromise = undefined;`),
+  keeping a successful load cached per ADR 0019 ("once per app"), and (2) clearing
+  `loadError` in the same synchronous click handler as the `reloadKey` bump, so
+  React's automatic batching re-mounts the container div (re-attaching the ref)
+  before the deferred mount effect runs (issue #99).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
   provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
   one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a

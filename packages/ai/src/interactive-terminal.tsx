@@ -485,7 +485,29 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
               title={t("ai.terminal.renderError")}
               description={loadError instanceof Error ? loadError.message : String(loadError)}
               actions={
-                <Button size="sm" variant="outline" onClick={() => setReloadKey((key) => key + 1)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    // This error branch renders instead of the terminal's
+                    // `<div ref={containerRef}>` (see the final `return`
+                    // below), so React has already detached `containerRef`
+                    // (a ref goes `null` the moment its DOM node unmounts).
+                    // Bumping `reloadKey` alone would re-run the mount
+                    // effect with `containerRef.current` still `null` on
+                    // THIS render — the tree still shows this error branch,
+                    // since `loadError` hasn't cleared yet, and the effect's
+                    // own `if (!container) return;` guard (issue #99) would
+                    // silently no-op the retry before ever calling
+                    // `loadXTermEngine()` again. Clearing `loadError` here,
+                    // batched into the same handler as the `reloadKey`
+                    // bump, makes React commit the terminal's container div
+                    // in that same render pass, so the ref is re-attached
+                    // before the effect's (deferred) body runs.
+                    setLoadError(null);
+                    setReloadKey((key) => key + 1);
+                  }}
+                >
                   {t("ai.error.retry")}
                 </Button>
               }
