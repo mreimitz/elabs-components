@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { MARKER, BLOCKQUOTE_PHRASE, hasMarker, render } from "./lib/comment-attribution.mjs";
+import { MARKER, BLOCKQUOTE_PHRASE, DEFAULT_ISSUE, hasMarker, render } from "./lib/comment-attribution.mjs";
 import {
   shellSplit,
   isUninspectableBashCommand,
@@ -1581,6 +1581,23 @@ test("post-issue-comment: buildBody always produces a body the gate accepts", ()
   const empty = buildBody({ draft: "   ", command: "file-issue", issueNumber: 78 });
   assert.ok(hasMarker(empty), "even an empty draft yields a marked body");
   assert.equal(bash(`gh issue comment 26 --body ${shq(withDraft)}`).verdict, "allow");
+});
+
+test("post-issue-comment: buildBody's rationale issue stays fixed regardless of the target issue (PR #97 finding 4)", () => {
+  // The banner's "See #N for why this banner exists" must always cite the
+  // marker's own fixed rationale issue (DEFAULT_ISSUE), never the issue the
+  // comment is being POSTED to — otherwise a comment on issue 43 says
+  // "See #43 for why this banner exists", a self-referential, meaningless
+  // pointer instead of a pointer at the policy issue.
+  const body = buildBody({ draft: "Closing per policy.", command: "close-issues", issueNumber: 43 });
+  assert.ok(
+    body.includes(`See #${DEFAULT_ISSUE} for why this banner exists.`),
+    `banner must cite the fixed rationale issue #${DEFAULT_ISSUE}, got: ${body}`,
+  );
+  assert.ok(
+    !body.includes("See #43 for why this banner exists."),
+    "banner must not cite the target issue as its own rationale",
+  );
 });
 
 test("post-issue-comment: refuses to run without an issue number or a body", () => {
