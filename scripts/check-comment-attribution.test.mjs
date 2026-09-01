@@ -22,6 +22,7 @@ import { MARKER, BLOCKQUOTE_PHRASE, hasMarker, render } from "./lib/comment-attr
 import {
   shellSplit,
   isUninspectableBashCommand,
+  findFlagValues,
   matchBashPostingShape,
   resolveBashBody,
   resolveMcpBody,
@@ -135,6 +136,156 @@ test("matchBashPostingShape: recognizes every posting shape and ignores read-onl
   assert.equal(matchBashPostingShape(shellSplit("gh issue view 26 --json comments")), null);
   assert.equal(matchBashPostingShape(shellSplit("gh issue list --state open")), null);
   assert.equal(matchBashPostingShape(shellSplit("gh api repos/:owner/:repo")), null);
+});
+
+// ── Fix round 1 (#78) — the `=`-form / short-flag / cluster bypass ──────────
+// An independent validator found the original matcher only recognized
+// `--flag value` (space-separated), so `gh issue close --comment="…"` and
+// `gh pr review --body="…"` sailed through with exit 0 — a live, trivially
+// reachable bypass, not a hypothetical. These lock every shape the fixed
+// `findFlagValues()` now claims to handle (see the module header comment's
+// HANDLED/NOT HANDLED enumeration) so this exact regression cannot return.
+
+test("findFlagValues: long flag, `--flag value` and `--flag=value`", () => {
+  const specs = [{ long: "--comment", short: "-c" }];
+  assert.deepEqual(findFlagValues(["--comment", "hi"], specs), [{ value: "hi" }]);
+  assert.deepEqual(findFlagValues(["--comment=hi"], specs), [{ value: "hi" }]);
+});
+
+test("findFlagValues: short flag, space / equals / attached (no separator)", () => {
+  const specs = [{ long: "--comment", short: "-c" }];
+  assert.deepEqual(findFlagValues(["-c", "hi"], specs), [{ value: "hi" }]);
+  assert.deepEqual(findFlagValues(["-c=hi"], specs), [{ value: "hi" }]);
+  assert.deepEqual(findFlagValues(["-chi"], specs), [{ value: "hi" }]);
+});
+
+test("findFlagValues: short-flag CLUSTER — boolean shorthands ahead of a value shorthand", () => {
+  // gh pr review: -c is a BOOLEAN (review type) on this subcommand, -b takes
+  // the body value. `-cb"text"` == `-c -b "text"` per real pflag semantics.
+  const bodySpecs = [{ long: "--body", short: "-b" }];
+  const boolShorthands = ["a", "c", "r"];
+  assert.deepEqual(findFlagValues(["-cbhi"], bodySpecs, boolShorthands), [{ value: "hi" }]);
+  assert.deepEqual(findFlagValues(["-cb=hi"], bodySpecs, boolShorthands), [{ value: "hi" }]);
+  assert.deepEqual(findFlagValues(["-cb", "hi"], bodySpecs, boolShorthands), [{ value: "hi" }]);
+  assert.deepEqual(findFlagValues(["-acrb", "hi"], bodySpecs, boolShorthands), [{ value: "hi" }]);
+});
+
+test("findFlagValues: does NOT guess past a character it doesn't recognize", () => {
+  // `-x` is neither a declared bool shorthand nor a declared value shorthand
+  // here — the walk must stop, not fall through to a later char.
+  const bodySpecs = [{ long: "--body", short: "-b" }];
+  assert.deepEqual(findFlagValues(["-xb", "hi"], bodySpecs, ["a", "c", "r"]), []);
+});
+
+test("matchBashPostingShape: recognizes the `=`-form bypass shapes from the #78 fix-round-1 verdict", () => {
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh issue close 26 --comment="unmarked text"`)),
+    "gh issue close --comment",
+  );
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh pr review 12 --body="unmarked text"`)),
+    "gh pr review --body",
+  );
+});
+
+test("matchBashPostingShape: recognizes gh pr review's short/file forms the original matcher missed entirely", () => {
+  // -b (short, space) was never in review's old requireAnyFlag list at all —
+  // an omission bug independent of the `=`-form finding.
+  assert.equal(matchBashPostingShape(shellSplit(`gh pr review 12 -b "hi"`)), "gh pr review --body");
+  // --body-file / -F were never recognized as review posting flags at all.
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh pr review 12 --body-file x.md`)),
+    "gh pr review --body",
+  );
+  assert.equal(matchBashPostingShape(shellSplit(`gh pr review 12 -F x.md`)), "gh pr review --body");
+});
+
+test("matchBashPostingShape: recognizes attached short flags and short-flag clusters", () => {
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh issue close 26 -c"unmarked text"`)),
+    "gh issue close --comment",
+    'attached short form -c"text"',
+  );
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh pr review 12 -cb"unmarked text"`)),
+    "gh pr review --body",
+    "cluster: -c (bool, review-type) + -b (value) in one token",
+  );
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh issue comment 26 -eb"unmarked text"`)),
+    "gh issue comment",
+    "cluster: -e (bool, editor) + -b (value) in one token",
+  );
+});
+
+test("matchBashPostingShape: flags in ANY position relative to the issue/PR number", () => {
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh issue close --comment "hi" 26`)),
+    "gh issue close --comment",
+  );
+  assert.equal(
+    matchBashPostingShape(shellSplit(`gh pr review --body "hi" 12`)),
+    "gh pr review --body",
+  );
+});
+
+test("resolveBashBody: reads the value from every equals/attached/cluster form", () => {
+  assert.equal(resolveBashBody(`gh issue close 26 --comment="no marker"`).body, "no marker");
+  assert.equal(resolveBashBody(`gh issue close 26 -c="no marker"`).body, "no marker");
+  assert.equal(resolveBashBody(`gh issue close 26 -c"no marker"`).body, "no marker");
+  assert.equal(resolveBashBody(`gh pr review 12 --body="no marker"`).body, "no marker");
+  assert.equal(resolveBashBody(`gh pr review 12 -b "no marker"`).body, "no marker");
+  assert.equal(resolveBashBody(`gh pr review 12 -cb"no marker"`).body, "no marker");
+});
+
+test("resolveBashBody: reads a --body-file/-F path given in `=`-form (previously wrongly blocked, not bypassed)", () => {
+  const file = path.join(TMP, "eq-marked.md");
+  writeFileSync(file, render("close-issues", 78), "utf8");
+  const r = resolveBashBody(`gh issue comment 26 --body-file=${file}`);
+  assert.equal(r.uninspectable, false);
+  assert.ok(hasMarker(r.body));
+});
+
+test("resolveBashBody: -F=- (equals-form stdin) is still refused as uninspectable", () => {
+  const r = resolveBashBody(`gh issue comment 26 -F=-`);
+  assert.equal(r.uninspectable, true);
+});
+
+test("evaluateHookPayload: BLOCKS every #78 fix-round-1 verdict PoC, reproduced exactly", () => {
+  for (const command of [
+    `gh issue close 26 --comment="This is my unmarked ruling as maintainer, closing for good."`,
+    `gh pr review 12 --body="unmarked review text"`,
+  ]) {
+    const v = evaluateHookPayload({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(v.verdict, "block", command);
+  }
+});
+
+test("evaluateHookPayload: BLOCKS gh pr review's -b/--body-file/-F shapes the original matcher never even recognized", () => {
+  for (const command of [
+    `gh pr review 12 -b "no marker"`,
+    `gh pr review 12 --body-file /tmp/does-not-need-to-exist-for-this-shape-check.md`,
+  ]) {
+    const v = evaluateHookPayload({ tool_name: "Bash", tool_input: { command } });
+    // The first is checked for shape-recognition + block; the second may
+    // resolve as uninspectable-safe-block OR content-block depending on file
+    // existence, but must never silently ALLOW.
+    assert.notEqual(v.verdict, "allow", command);
+  }
+});
+
+test("evaluateHookPayload: ALLOWS the same equals-form calls once marked", () => {
+  const body = render("close-issues", 78);
+  const v1 = evaluateHookPayload({
+    tool_name: "Bash",
+    tool_input: { command: `gh issue close 26 --comment=${JSON.stringify(body)}` },
+  });
+  assert.equal(v1.verdict, "allow");
+  const v2 = evaluateHookPayload({
+    tool_name: "Bash",
+    tool_input: { command: `gh pr review 12 --body=${JSON.stringify(body)}` },
+  });
+  assert.equal(v2.verdict, "allow");
 });
 
 test("resolveBashBody: reads an inline --body/-b/--comment/-c value", () => {
@@ -261,6 +412,19 @@ test("rung 2: POSTING_RE recognizes every named posting shape", () => {
     "gh pr review 12 --body y",
     "mcp__github__add_issue_comment",
     "mcp__github__create_issue",
+  ]) {
+    assert.ok(POSTING_RE.test(line), `should match: ${line}`);
+  }
+});
+
+test("rung 2: POSTING_RE also recognizes the `=`-form and gh pr review's -b/-F/--body-file (#78 fix round 1)", () => {
+  for (const line of [
+    `gh issue close 26 --comment="done"`,
+    `gh issue close 26 -c="done"`,
+    `gh pr review 12 --body="done"`,
+    "gh pr review 12 -b done",
+    "gh pr review 12 --body-file x.md",
+    "gh pr review 12 -F x.md",
   ]) {
     assert.ok(POSTING_RE.test(line), `should match: ${line}`);
   }
@@ -429,6 +593,17 @@ test("hook: any blocked case with ALLOW_UNATTRIBUTED_COMMENT=1 -> exit 0 + loud 
   );
   assert.equal(r.status, 0);
   assert.match(r.stderr, /OVERRIDDEN by ALLOW_UNATTRIBUTED_COMMENT=1/);
+});
+
+test("hook: #78 fix-round-1 verdict PoCs, run through the REAL shell hook end to end -> exit 2", () => {
+  for (const command of [
+    `gh issue close 26 --comment="This is my unmarked ruling as maintainer, closing for good."`,
+    `gh pr review 12 --body="unmarked review text"`,
+  ]) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, command);
+    assert.match(r.stderr, /comment-attribution gate/);
+  }
 });
 
 test("hook: a non-tool-name it does not recognize is left alone", () => {
