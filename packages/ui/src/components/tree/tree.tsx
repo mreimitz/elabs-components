@@ -321,7 +321,9 @@ function VirtualFlatRow<T>({
 
       {/* label */}
       {isError ? (
-        <span id={labelId} className="min-w-0 flex items-center gap-1 text-destructive">
+        // #124: running text ("Failed to load…"), not a mark — the ink rung
+        // clears >=4.5:1 and the wrapped icon inherits it fine (>=3:1 trivially).
+        <span id={labelId} className="min-w-0 flex items-center gap-1 text-destructive-text">
           <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{t("ui.tree.failedToLoad")}</span>
           <button
@@ -402,7 +404,7 @@ function ErrorRow({ level, onRetry }: { level: number; onRetry: () => void }) {
       aria-label={t("ui.tree.failedToLoad")}
       aria-disabled="true"
       tabIndex={-1}
-      className="flex min-w-0 items-center gap-1.5 px-2 py-1.5 text-body text-destructive"
+      className="flex min-w-0 items-center gap-1.5 px-2 py-1.5 text-body text-destructive-text"
       style={indentStyle}
     >
       <span aria-hidden="true" className="size-4 shrink-0" />

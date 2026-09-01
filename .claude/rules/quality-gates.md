@@ -25,6 +25,12 @@ A component is "done" only when ALL of these hold:
       before merge** — the contrast tests (`themes-contrast` / `charts-contrast`)
       and `test-storybook` are necessary but NOT sufficient: they prove ratios and
       render, not that the recolored surfaces still read well. (Meta #161.)
+      **How to actually run the non-default theme headlessly** — a bare
+      `vitest --project storybook` run has no toolbar and no URL globals, so it
+      measures `light` and only `light`:
+      `cd apps/docs && STORYBOOK_THEME=dark pnpm exec vitest --project storybook run <name>`.
+      Cite the theme slug you ran, not just "both themes". See
+      @.claude/rules/storybook-mcp.md § Themes.
 - [ ] **Accessible** — keyboard operable, visible focus ring, correct
       roles/labels, no div-as-button (see `accessibility.md`).
 - [ ] **Variants via `cva`** when it has more than one visual axis.

@@ -64,6 +64,59 @@ export {
   type StreamdownTranslationKey,
   type StreamdownTranslationMap,
 } from "./lib/streamdown-translations";
+// A verification verdict (linter/type-check/test run/policy hook) — shared
+// vocabulary between `ChangeReview` (this package) and `ai`'s `AgentEvent`
+// (docs/decisions/2026-09-01-brainless-adoption-architecture.md § 6). `ai`
+// imports this rather than declaring its own.
+export { type CheckResult, type CheckSummary } from "./lib/check-result";
+// One elapsed-time formatter for every "how long did this take" surface —
+// `TurnStatus` (ai), `ChangeReview`'s check rows, `AgentEvent`'s hook
+// durations (§ 6 / § 6.1 of the doc above).
+export { formatElapsed } from "./lib/format-duration";
+// Optional-peer detection, promoted from `@elabs-ai/components-ai` (§ 2 of the
+// doc above) — `ui` is upstream of every layer-2 package, so this is the one
+// legal home for a helper shared by DAG siblings.
+export { isModuleNotFoundMessage, isOptionalPeerMissing } from "./lib/optional-peer";
+// The generic trigger-driven-query algorithm behind `MentionInput`'s popup,
+// generalised (§ 5 of the doc above) so a second trigger surface (a
+// slash-command palette) reuses it instead of re-implementing it.
+export {
+  findTriggerQuery,
+  replaceTriggerRun,
+  type FindTriggerQueryOptions,
+  type TriggerBoundary,
+  type TriggerQuery,
+} from "./lib/trigger-query";
+// The T0 promotion wave (issue #117 — see
+// docs/decisions/2026-09-01-brainless-adoption-architecture.md § 4/§ 10(b)):
+// headless models/helpers behind several `@elabs-ai/components-ai` composer
+// and transcript surfaces, promoted here (never duplicated) because
+// `@elabs-ai/components-ai` and `@elabs-ai/components-terminal` are layer-2
+// DAG siblings that may not import each other — `ui` is upstream of both.
+export { defaultSlashCommandFilter, stepIndex, type SlashCommand } from "./lib/slash-command";
+export {
+  APPROVAL_SCOPE_DESCRIPTION_KEYS,
+  type ApprovalOption,
+  type ApprovalScope,
+} from "./lib/approval-option";
+export {
+  diffLineAccessibleLabel,
+  diffLineMarker,
+  type DiffLine,
+  type DiffLineType,
+} from "./lib/diff-line";
+export { collapseDiffRows, useDiffRows, type DiffRow } from "./lib/diff-rows";
+export { effortRungForIndex, type EffortLevel, type OperatingMode } from "./lib/operating-mode";
+export {
+  agentEventOutcomeStatus,
+  type AgentEventOutcome,
+  type AgentEventPhase,
+} from "./lib/agent-event-model";
+export {
+  type SessionCapability,
+  type SessionQuickAction,
+  type SessionWhatsNewItem,
+} from "./lib/session-launch";
 // Empty/error/success/etc. state illustrations for StatePanel's `illustration`
 // slot (#24) — token-driven line art, kept alongside the utilities above
 // because it lives outside the folder-per-component `./components/` tree.
@@ -117,6 +170,7 @@ export * from "./components/input";
 export * from "./components/input-group";
 export * from "./components/input-otp";
 export * from "./components/kbd";
+export * from "./components/keyboard-shortcuts";
 export * from "./components/key-value-editor";
 export * from "./components/label";
 export * from "./components/link-preview";
@@ -177,4 +231,5 @@ export * from "./components/tree-select";
 export * from "./components/typography";
 export * from "./components/view-toolbar";
 export * from "./components/virtual-select";
+export * from "./components/workspace-picker";
 export * from "./components/wizard";

@@ -42,7 +42,6 @@
     "@streamdown/code": "^1.1.0",
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
-    "ansi-to-react": "^6.2.6",
     "class-variance-authority": "^0.7.1",
     "lucide-react": "^0.577.0",
     "motion": "^12.26.2",
@@ -55,11 +54,10 @@
     "zod": "^3.24.1"
   },
   "peerDependencies": {
+    "@elabs-ai/components-icons": "workspace:*",
     "@elabs-ai/components-tokens": "workspace:*",
     "@elabs-ai/components-ui": "workspace:*",
     "@rive-app/react-webgl2": "^4.26.1",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
     "@xyflow/react": "^12.11.1",
     "ai": "^6.0.0 || ^7.0.0",
     "media-chrome": "^4.17.2",
@@ -69,12 +67,6 @@
   },
   "peerDependenciesMeta": {
     "@rive-app/react-webgl2": {
-      "optional": true
-    },
-    "@xterm/addon-fit": {
-      "optional": true
-    },
-    "@xterm/xterm": {
       "optional": true
     },
     "ai": {
@@ -101,8 +93,6 @@
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
     "@xyflow/react": "^12.11.1",
     "ai": "^7.0.0",
     "eslint": "^9.17.0",

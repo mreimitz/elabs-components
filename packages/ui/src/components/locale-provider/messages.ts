@@ -69,6 +69,24 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.modelPicker.loadFailed": "Couldn't load the list",
   "ui.modelPicker.nothingYet": "Nothing to show yet",
   "ui.modelPicker.retry": "Retry",
+  // KeyboardShortcuts (#113). `emptyFiltered` keeps the user's own query in the
+  // sentence so the empty state says WHY it is empty, not merely that it is.
+  "ui.keyboardShortcuts.searchPlaceholder": "Search shortcuts…",
+  "ui.keyboardShortcuts.emptyTitle": "No shortcuts found",
+  "ui.keyboardShortcuts.emptyFiltered": "No shortcuts match “{query}”.",
+  "ui.keyboardShortcuts.empty": "No shortcuts to show.",
+  // WorkspacePicker (#111). It composes ModelPicker, so it carries its OWN
+  // label/search strings rather than inheriting the generic "Choose a target".
+  // `current` is appended into the row's meta so the in-force workspace reaches
+  // the option's accessible name as a WORD, not only a check glyph (1.4.1).
+  "ui.workspacePicker.label": "Choose a workspace",
+  "ui.workspacePicker.placeholder": "No workspace selected",
+  "ui.workspacePicker.recent": "Recent workspaces",
+  "ui.workspacePicker.searchPlaceholder": "Search workspaces…",
+  "ui.workspacePicker.current": "Current",
+  "ui.workspacePicker.pathLabel": "Workspace path",
+  "ui.workspacePicker.pathPlaceholder": "/path/to/project…",
+  "ui.workspacePicker.openPath": "Open",
   // ViewToolbar (#331). `removeFilter` deliberately WRAPS the visible chip text
   // so the accessible name contains it (WCAG 2.5.3 Label in Name).
   "ui.viewToolbar.about": "About this view",
@@ -290,6 +308,60 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.messageTable.label": "Data table",
   "ai.voiceSelector.playPreview": "Play preview",
   "ai.voiceSelector.pausePreview": "Pause preview",
+
+  // TurnStatus / SessionStatusBar (#105). `label` itself is caller-supplied
+  // ("Working…", "Editing files…") and rendered verbatim, so it needs no key
+  // here — only the component-owned completed-turn sentence and controls do.
+  "ai.turnStatus.completedIn": "Turn completed in {elapsed}",
+  "ai.turnStatus.completed": "Turn completed",
+  "ai.turnStatus.scrollToBottom": "Scroll to bottom",
+  "ai.sessionStatusBar.connections": "{connected} of {total} connections",
+  "ai.sessionStatusBar.connecting": "Connecting…",
+  // SessionHeader (#110). The section headings and the quick-action group name
+  // are component-owned chrome; the capability/what's-new item text itself is
+  // caller-supplied and rendered verbatim.
+  "ai.sessionHeader.capabilities": "Capabilities",
+  "ai.sessionHeader.whatsNew": "What’s new",
+  "ai.sessionHeader.quickActions": "Quick actions",
+  // PermissionModeSelect (#104). The in-force marker is a WORD inside the mode
+  // label, so the current mode survives greyscale and reaches the accessible name.
+  "ai.permissionModeSelect.current": "Current",
+  // AgentEvent (#109). The pass/fail WORD is the non-colour channel — the tone
+  // is redundant with it, so a check outcome survives greyscale (WCAG 1.4.1).
+  "ai.agentEvent.checkPassed": "Passed",
+  "ai.agentEvent.checkFailed": "Failed",
+  "ai.agentEvent.checksSummary": "{passed}/{ran} checks passed",
+  "ai.agentEvent.phaseBefore": "Before",
+  "ai.agentEvent.phaseAfter": "After",
+  "ai.agentEvent.phaseLifecycle": "Lifecycle",
+  // DiffView (#102). `addedLine` / `removedLine` are the sr-only polarity
+  // prefixes — the +/− glyph is aria-hidden, so these WORDS are the channel a
+  // greyscale or screen-reader user recovers the polarity from (WCAG 1.4.1).
+  // They intentionally end in a space so they read as a prefix to the code line.
+  "ai.diffView.addedLine": "Added: ",
+  "ai.diffView.removedLine": "Removed: ",
+  "ai.diffView.statsSummary": "{additions} additions, {deletions} deletions",
+  "ai.diffView.showMore": { one: "Show {count} more line", other: "Show {count} more lines" },
+  "ai.diffView.pagerLegend": "Arrow keys scroll, Page Up/Down page, Home/End jump",
+  "ai.diffView.regionLabel": "Code diff",
+  "ai.diffView.loading": "Loading diff…",
+  // ApprovalCard (#103). The SCOPE sentence is what makes an N-option
+  // permission prompt safe to answer: "Yes" and "Yes, and don't ask again" look
+  // alike and mean very different things. Each option links its scope sentence
+  // through aria-describedby, so the blast radius of a choice reaches assistive
+  // tech as words — never as a colour or a data-* attribute.
+  "ai.approvalCard.scopeOnceDescription": "Applies to this action only.",
+  "ai.approvalCard.scopeSessionDescription":
+    "Applies to actions like this for the rest of this session.",
+  "ai.approvalCard.scopeAlwaysDescription": "Applies to actions like this from now on.",
+  "ai.approvalCard.scopeDenyDescription": "Rejects this action.",
+  "ai.approvalCard.reasonLabel": "Reason",
+  "ai.approvalCard.reasonPlaceholder": "Add a reason (optional)…",
+  // PromptInputSlash (#106). `listLabel` goes to cmdk's own `label` prop, not
+  // `aria-label` — cmdk overwrites a consumer `aria-label` on CommandList and
+  // reads its accessible name off `label` instead.
+  "ai.promptInputSlash.listLabel": "Commands",
+  "ai.promptInputSlash.empty": "No matching commands.",
 
   // ── Streamdown chrome (third-party rendering surface) ──────────────────────
   // `streamdown` renders its OWN controls inside every streamed-markdown block

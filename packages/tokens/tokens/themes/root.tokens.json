@@ -571,5 +571,125 @@
   "chart-12": {
     "$type": "color",
     "$value": "oklch(0.609 0.004 247.4)"
+  },
+  "terminal-background": {
+    "$type": "color",
+    "$value": "oklch(0.15 0.018 264)",
+    "$description": "Console/terminal ground — a dark machine surface in every theme."
+  },
+  "terminal-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.9 0.008 264)",
+    "$description": "Full ink on the console ground (ANSI bright-white aliases it)."
+  },
+  "terminal-accent": {
+    "$type": "color",
+    "$value": "oklch(0.72 0.15 264)",
+    "$description": "The agent's accent inside the console (prompt sigil, spinner, active affordance)."
+  },
+  "terminal-accent-foreground": {
+    "$type": "color",
+    "$value": "var(--terminal-background)",
+    "$description": "Ink on a --terminal-accent plate; the console ground punched out."
+  },
+  "terminal-cursor": {
+    "$type": "color",
+    "$value": "var(--terminal-accent)",
+    "$description": "Caret/block cursor in the console."
+  },
+  "terminal-selection": {
+    "$type": "color",
+    "$value": "oklch(0.31 0.052 264)",
+    "$description": "Opaque selection band; sized so console ink over it stays AA."
+  },
+  "terminal-border": {
+    "$type": "color",
+    "$value": "oklch(0.484 0.016 264)",
+    "$description": "Console edge and box-drawing rules; ≥3:1 (WCAG 1.4.11 sole cue)."
+  },
+  "terminal-muted": {
+    "$type": "color",
+    "$value": "oklch(0.65 0.012 264)",
+    "$description": "Console CHROME's dim ink (timestamps, hints) — one rung above ANSI bright-black."
+  },
+  "terminal-ansi-black": {
+    "$type": "color",
+    "$value": "oklch(0.205 0.014 264)",
+    "$description": "ANSI 0 — the recessive ground rung; not ink, exempt from the AA floor."
+  },
+  "terminal-ansi-red": {
+    "$type": "color",
+    "$value": "oklch(0.67 0.185 25.3)",
+    "$description": "ANSI 1 — hue from this theme's --destructive."
+  },
+  "terminal-ansi-green": {
+    "$type": "color",
+    "$value": "oklch(0.67 0.124 162.5)",
+    "$description": "ANSI 2 — hue from this theme's --success."
+  },
+  "terminal-ansi-yellow": {
+    "$type": "color",
+    "$value": "oklch(0.67 0.116 90)",
+    "$description": "ANSI 3 — hue from this theme's --highlight (the marker yellow)."
+  },
+  "terminal-ansi-blue": {
+    "$type": "color",
+    "$value": "oklch(0.67 0.125 237.3)",
+    "$description": "ANSI 4 — hue from this theme's --info."
+  },
+  "terminal-ansi-magenta": {
+    "$type": "color",
+    "$value": "oklch(0.67 0.19 336)",
+    "$description": "ANSI 5 — hue from this theme's --code-tag."
+  },
+  "terminal-ansi-cyan": {
+    "$type": "color",
+    "$value": "oklch(0.67 0.097 200)",
+    "$description": "ANSI 6 — hue from this theme's --code-constant."
+  },
+  "terminal-ansi-white": {
+    "$type": "color",
+    "$value": "oklch(0.757 0.01 264)",
+    "$description": "ANSI 7 — normal ink (~9:1 on the console ground)."
+  },
+  "terminal-ansi-bright-black": {
+    "$type": "color",
+    "$value": "oklch(0.578 0.014 264)",
+    "$description": "ANSI 8 — the dimmest LEGIBLE ink (comments); still AA."
+  },
+  "terminal-ansi-bright-red": {
+    "$type": "color",
+    "$value": "oklch(0.79 0.103 25.3)",
+    "$description": "ANSI 9 — the bright band of ANSI red."
+  },
+  "terminal-ansi-bright-green": {
+    "$type": "color",
+    "$value": "oklch(0.79 0.146 162.5)",
+    "$description": "ANSI 10 — the bright band of ANSI green."
+  },
+  "terminal-ansi-bright-yellow": {
+    "$type": "color",
+    "$value": "oklch(0.79 0.137 90)",
+    "$description": "ANSI 11 — the bright band of ANSI yellow."
+  },
+  "terminal-ansi-bright-blue": {
+    "$type": "color",
+    "$value": "oklch(0.79 0.104 237.3)",
+    "$description": "ANSI 12 — the bright band of ANSI blue."
+  },
+  "terminal-ansi-bright-magenta": {
+    "$type": "color",
+    "$value": "oklch(0.79 0.15 336)",
+    "$description": "ANSI 13 — the bright band of ANSI magenta."
+  },
+  "terminal-ansi-bright-cyan": {
+    "$type": "color",
+    "$value": "oklch(0.79 0.114 200)",
+    "$description": "ANSI 14 — the bright band of ANSI cyan."
+  },
+  "terminal-ansi-bright-white": {
+    "$type": "color",
+    "$value": "var(--terminal-foreground)",
+    "$description": "ANSI 15 — the console's full ink (mirrors --terminal-foreground)."
   }
 }

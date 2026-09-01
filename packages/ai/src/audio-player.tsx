@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton, useLocale } from "@elabs-ai/components-ui";
+import { Skeleton, isOptionalPeerMissing, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Experimental_SpeechResult as SpeechResult } from "ai";
 import { VolumeOffIcon } from "lucide-react";
@@ -20,7 +20,6 @@ import type { ComponentProps, ComponentType } from "react";
 import { lazy, Suspense } from "react";
 
 import { LazyEngineBoundary } from "./_lazy-engine-boundary";
-import { isOptionalPeerMissing } from "./_optional-peer";
 
 /**
  * media-chrome lives behind a dynamic import — it declares no `sideEffects`, so

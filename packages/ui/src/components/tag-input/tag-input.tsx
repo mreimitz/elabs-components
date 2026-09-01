@@ -240,7 +240,8 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
         />
       </InputGroup>
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        // #124: running text (the validation message) — ink rung.
+        <p role="alert" className="text-xs text-destructive-text">
           {error}
         </p>
       )}

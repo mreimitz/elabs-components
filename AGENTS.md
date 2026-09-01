@@ -29,6 +29,7 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 | `@elabs-ai/components-marketing`         | `packages/marketing`         | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
 | `@elabs-ai/components-editor`            | `packages/editor`            | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
 | `@elabs-ai/components-viewer`            | `packages/viewer`            | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| `@elabs-ai/components-terminal`          | `packages/terminal`          | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
 | `@elabs-ai/components-eslint-config`     | `packages/eslint-config`     | Shared ESLint flat config                                                                |
 | `@elabs-ai/components-typescript-config` | `packages/typescript-config` | Shared tsconfigs                                                                         |
 | `@elabs-ai/components-docs`              | `apps/docs`                  | Storybook                                                                                |
@@ -54,6 +55,7 @@ component system. See `PROJECT.md` for vision and `docs/` for details.
 | `@elabs-ai/components-marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
 | `@elabs-ai/components-editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
 | `@elabs-ai/components-viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| `@elabs-ai/components-terminal`  | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
 
 <!-- brand-ui:gen:selection:end -->
 
@@ -272,8 +274,10 @@ pnpm test-concurrency:check     # if the root package.json test script is touche
 pnpm test-concurrency:check:test # self-test for the test-concurrency gate
 pnpm agent-output:check         # if an agent/skill's output contract changed — the shipped agents still declare the output shape their callers parse
 pnpm agent-output:check:test    # self-test for the agent-output-contract gate
-pnpm heavy-deps:check           # if @elabs-ai/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
+pnpm heavy-deps:check           # if @elabs-ai/components-ai, -terminal or -viewer touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
 pnpm heavy-deps:check:test      # self-test for the eager-heavy-dependency ratchet
+pnpm optional-peers:check       # if a packages/*/package.json optional peer changed — an optional peer a plain transitive dependency drags in anyway is DEFEATED: it installs for every consumer, so the capability-gap panel never renders and the "install only what you use" promise is false. Baselined per package; a new defeat fails (#94)
+pnpm optional-peers:check:test  # self-test for the defeated-optional-peer gate
 pnpm origins:check              # if a packages/*/src file gained a URL — every remote origin is allowlisted (scripts/remote-origins-allowlist.json) AND documented in docs/CSP-AND-NETWORK.md
 pnpm origins:check:test         # self-test for the remote-origin inventory gate
 pnpm tt-aliases:check           # if apps/*/vite config or the CSP doc changed — the published Trusted-Types aliases stay dogfooded and resolve to DOM-free builds
@@ -288,6 +292,8 @@ pnpm text-scale:check           # type is a role, not a size — raw font-size u
 pnpm text-scale:check:test      # self-test for the type-scale ratchet
 pnpm separation:check           # one focal separation gesture — bare `border` + non-default fill co-occurrence is ratcheted (#187)
 pnpm separation:check:test      # self-test for the surface-separation ratchet
+pnpm rung:check                 # a bare status-fill utility (text-destructive, …) used as running text vs a mark — ratcheted (#124; ~39% completeness, see script header)
+pnpm rung:check:test            # self-test for the status-fill-as-text ratchet
 pnpm elevation:check            # one stacked shadow ramp (ADR 0020) — ring rung ≡ plain rung + hairline, layer ink stays tokened, the shadowless dial keeps its unlayered cascade, and no raw / arbitrary / `border`+floating-`shadow-*` double edge in source
 pnpm elevation:check:test       # self-test for the elevation-ramp gate
 pnpm palette:check              # semantic tokens only — raw Tailwind palette utilities (text-yellow-600, …) are ratcheted (#189/#182)

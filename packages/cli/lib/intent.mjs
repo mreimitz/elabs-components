@@ -23,7 +23,8 @@
  *   {
  *     purpose:       string            // one-line "what it is for"
  *     category:      string            // action | input | overlay | layout | data |
- *                                      //   feedback | navigation | display | ai | chart | flow
+ *                                      //   feedback | navigation | display | ai | chart | flow |
+ *                                      //   terminal
  *     relationships: {
  *       usedInside?: string[]          // components this typically renders inside
  *       contains?:   string[]          // child parts/components it composes
@@ -725,7 +726,7 @@ export const INTENT = {
 
   InteractiveTerminal: {
     purpose: "Streaming terminal surface for agent shell output, with an optional input line.",
-    category: "ai",
+    category: "terminal",
     relationships: { pairsWith: ["Terminal", "Tool", "Sandbox"] },
     stateTokens: {
       streaming: "imperative — ref.current.write(chunk) as output arrives (no isStreaming prop)",
@@ -797,7 +798,7 @@ export const INTENT = {
 
   ApprovalCard: {
     purpose:
-      "The named human-in-the-loop variant of Confirmation — a titled, described approve/deny card.",
+      "The named human-in-the-loop variant of Confirmation — a titled, described approval card, binary or N-option with scope.",
     category: "ai",
     relationships: {
       contains: [
@@ -807,27 +808,57 @@ export const INTENT = {
         "ApprovalCardActions",
         "ApprovalCardApprove",
         "ApprovalCardDeny",
+        "ApprovalCardOptions",
+        "ApprovalCardTarget",
+        "ApprovalCardReason",
       ],
-      pairsWith: ["Confirmation", "Tool"],
+      pairsWith: ["Confirmation", "Tool", "DiffView", "PermissionModeSelect"],
+    },
+    stateTokens: {
+      scope:
+        "each option's blast radius (once / session / always / deny) is a SENTENCE linked by aria-describedby, never a colour",
+      pending:
+        "role=group + aria-labelledby while the human decides — the card holds focusable controls, so it is not a live region",
     },
     antiPatterns: [
       "Building a second approve/deny widget — ApprovalCard and Confirmation ship from the same module; extend, don't fork.",
       "Running the action the card describes on render — the card emits a decision; the app performs it (D5).",
       "Leaving the request mounted after the human answers — swap to ApprovalCardAccepted/ApprovalCardRejected so the outcome stays legible.",
+      "Hand-rolling roving focus across the options — the option list is a real Radix RadioGroup; arrow-key wrap is the primitive's job.",
+      "Offering 'always' and 'once' with the same words — the scope sentence is what stops a session-wide grant from reading like a single yes.",
+      "Making the deny reason a separate step — the reason field writes into the card's own state and rides along with whichever choice is committed.",
     ],
   },
 
   Plan: {
-    purpose: "A Card-shaped, collapsible plan the agent proposes before it starts executing.",
+    purpose:
+      "A Card-shaped, collapsible plan the agent proposes before it starts executing — and the decision the human returns.",
     category: "ai",
     relationships: {
-      contains: ["PlanHeader", "PlanTitle", "PlanTrigger", "PlanContent", "PlanFooter"],
-      pairsWith: ["Task", "ChainOfThought", "Shimmer"],
+      contains: [
+        "PlanHeader",
+        "PlanTitle",
+        "PlanTrigger",
+        "PlanContent",
+        "PlanFooter",
+        "PlanStatusLine",
+        "PlanApprove",
+        "PlanRequestChanges",
+        "PlanComment",
+      ],
+      pairsWith: ["Task", "ChainOfThought", "Shimmer", "ApprovalCard"],
+    },
+    stateTokens: {
+      approved: "border-s-4 border-s-success rail on the card",
+      "changes-requested": "border-s-4 border-s-warning rail on the card",
+      awaiting: "border-s-4 border-s-border-strong rail on the card",
     },
     antiPatterns: [
       "Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (loading-states.md).",
       "Using Plan for a finished run — a settled trace is a Task; Plan is the intent, not the record.",
       "Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it.",
+      "Wrapping a pending decision in an assertive live region — it contains focusable controls, so it is a labelled group; only the settled outcome announces.",
+      "Encoding the decision by rail colour alone — the status line states it in text as well.",
     ],
   },
 
@@ -896,7 +927,7 @@ export const INTENT = {
 
   Terminal: {
     purpose: "Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.",
-    category: "ai",
+    category: "terminal",
     relationships: {
       contains: ["TerminalHeader", "TerminalContent", "TerminalCopyButton", "TerminalClearButton"],
       pairsWith: ["InteractiveTerminal", "Sandbox"],
@@ -2072,6 +2103,237 @@ export const INTENT = {
       "Listing voices with no preview — a name tells the user nothing about how the voice sounds.",
       "Auto-playing a preview on hover — playback is a click, not a pointer side effect.",
       "Describing a voice by gender/age alone — the attributes are supplementary; the label is the identity.",
+    ],
+  },
+
+  PermissionModeSelect: {
+    purpose:
+      "Standing permission-policy chooser — how far the agent may act on its own, not whether one call proceeds.",
+    category: "ai",
+    relationships: {
+      pairsWith: ["ApprovalCard", "Confirmation", "PromptInputMode"],
+      usedInside: ["Dialog", "Sheet", "Form"],
+    },
+    stateTokens: {
+      selected: "border-primary on the chosen mode's card",
+      surface: "bg-card per mode row, border-border at rest",
+      consequence: "text-meta text-muted-foreground — the sentence saying what the mode permits",
+    },
+    antiPatterns: [
+      "Shipping a CLI's mode vocabulary as a type union — the modes are app-defined data, not a library enum.",
+      "Rendering a mode without its consequence sentence — an unstated effect is the failure this component exists to prevent.",
+      "Marking the in-force mode by colour alone — the current marker must reach the accessible name.",
+      "Using it for a single tool call — that is ApprovalCard; this is the policy that decides how often ApprovalCard appears.",
+    ],
+  },
+
+  TurnStatus: {
+    purpose:
+      "In-turn footer reporting the three facts a running turn owes the user: elapsed time, cost, and how to stop it.",
+    category: "ai",
+    relationships: {
+      usedInside: ["Conversation", "ChatShell"],
+      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "Context"],
+    },
+    stateTokens: {
+      working: "bg-primary on the activity dot; text-muted-foreground for the metrics",
+      settled: "bg-success on the dot; the completed-turn sentence in text-body text-foreground",
+    },
+    antiPatterns: [
+      "Announcing every elapsed tick to a live region — announce the label and the settled sentence only, or assistive tech floods.",
+      "Rendering more than one live region per turn — one region carries the whole status, never one per field.",
+      "Hiding the stop affordance behind a hover — it must be a focusable button reachable while the turn runs.",
+      "Fabricating a token count from elapsed time — report what the runtime reports, or omit the field.",
+    ],
+  },
+
+  SessionStatusBar: {
+    purpose:
+      "Ambient session row — workspace, branch, model and integration-connection progress, docked above or below the transcript.",
+    category: "ai",
+    relationships: {
+      usedInside: ["ChatShell"],
+      pairsWith: ["TurnStatus", "Context", "SessionHeader"],
+      contains: ["Context"],
+    },
+    stateTokens: {
+      surface: "bg-surface-muted with a border-t hairline — recessed chrome, not a raised card",
+      segment: "text-meta text-muted-foreground",
+    },
+    antiPatterns: [
+      "Re-implementing token or cost maths — dock the shipped Context component as a child instead; two answers to one question is worse than none.",
+      "Rendering an empty shell when every segment is absent — the bar renders nothing at all.",
+      "Putting the stop affordance here — stopping belongs to the running turn, not to ambient chrome.",
+    ],
+  },
+
+  SessionHeader: {
+    purpose:
+      "Session launch card — model, workspace, capabilities, what's new and quick actions, shown above the greeting in an empty session.",
+    category: "ai",
+    relationships: {
+      usedInside: ["ChatShell", "Conversation"],
+      pairsWith: ["ChatGreeting", "SessionStatusBar", "Suggestion"],
+    },
+    stateTokens: {
+      surface: "bg-card text-card-foreground — a raised card above the canvas",
+      link: "text-primary-text for what's-new links, underlined on hover",
+      focus: "ring-2 ring-ring ring-offset-2 ring-offset-background on quick actions",
+    },
+    antiPatterns: [
+      "Leaving it mounted once the conversation starts — it is the empty-session surface, not persistent chrome.",
+      "Using it as the app header — ChatShell's header slot is a fixed-height bar; this is a block in the transcript.",
+      "Listing a capability the app cannot actually perform — the list is a promise the session has to keep.",
+    ],
+  },
+
+  PromptInputMode: {
+    purpose:
+      "Composer control for the agent's operating mode — an app-defined enum of how autonomously it may act.",
+    category: "ai",
+    relationships: {
+      usedInside: ["PromptInputTools", "PromptInput", "Composer"],
+      pairsWith: ["PromptInputEffort", "ModelSelector", "PermissionModeSelect"],
+    },
+    stateTokens: {
+      label: "text-body for the active mode name",
+      hint: "text-meta text-muted-foreground for the key hint and description",
+    },
+    antiPatterns: [
+      "Shipping a CLI's mode names as a type union — the vocabulary is data the app supplies.",
+      "Hand-rolling roving focus over the mode list — the menu's radio group already owns arrow keys and announcement.",
+      "Using it to express a standing policy — that is PermissionModeSelect, a settings surface, not a composer chip.",
+    ],
+  },
+
+  PromptInputEffort: {
+    purpose:
+      "Composer control for an ordered reasoning-budget scale whose indicator fills as the level rises.",
+    category: "ai",
+    relationships: {
+      usedInside: ["PromptInputTools", "PromptInput", "Composer"],
+      pairsWith: ["PromptInputMode", "ModelSelector"],
+    },
+    stateTokens: {
+      filled: "bg-primary border-primary — every step at or before the selected level",
+      unfilled: "bg-transparent border-border-strong — a hollow outline for the rest",
+      label: "text-body for the current level's name, always rendered as visible text",
+    },
+    antiPatterns: [
+      "Encoding the level by hue alone — the ordinal fill and the step size are the channels that survive greyscale.",
+      "Shipping a fixed effort vocabulary — the levels are app-defined data.",
+      "Omitting the accessible name for the scale — the group needs one; the component ships no default because the name is app vocabulary.",
+    ],
+  },
+
+  AgentEvent: {
+    purpose:
+      "One lifecycle or hook event on the agent timeline — what fired around a tool call, and whether its checks passed.",
+    category: "ai",
+    relationships: {
+      usedInside: ["AgentTimeline"],
+      pairsWith: ["AgentStep", "Tool", "TurnStatus", "ChangeReview"],
+    },
+    stateTokens: {
+      outcome:
+        "mapped onto AgentStep's closed Status — ok reads complete, blocked reads denied, failed reads failed",
+      check: "a visible pass/fail WORD beside the glyph, so the verdict survives greyscale",
+    },
+    antiPatterns: [
+      "Adding an eighth status for an event outcome — map onto AgentStep's closed Status instead; the rail owns the vocabulary.",
+      "Building a second timeline spine — an event is a step on the existing AgentTimeline rail, not a parallel structure.",
+      "Writing a second duration formatter — durations come from formatElapsed in @elabs-ai/components-ui.",
+      "Declaring a local check-result type — CheckResult and CheckSummary are shared with ChangeReview and imported, never redeclared.",
+      "Carrying pass/fail by tone alone — the status word is the channel that survives greyscale (1.4.1).",
+    ],
+  },
+  KeyboardShortcuts: {
+    purpose:
+      "Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.",
+    category: "display",
+    relationships: {
+      usedInside: ["Dialog", "Sheet", "Popover"],
+      contains: ["Kbd", "Collapsible", "StatePanel"],
+      pairsWith: ["Toolbar", "AppShell"],
+    },
+    stateTokens: {
+      action: "text-body text-foreground for the action, text-muted-foreground for supporting text",
+      focus: "ring-2 ring-ring on the group triggers and the search field",
+    },
+    antiPatterns: [
+      "Rendering a raw key string instead of Kbd — the atom carries the platform glyphs and the translate opt-out.",
+      "Showing a group's count without its items — a count with nothing behind it is a claim the sheet cannot keep.",
+      "Leaving an empty filter result blank — an empty search renders a real empty state, not a blank region.",
+    ],
+  },
+  DiffView: {
+    purpose:
+      "A line-level unified diff inside an agent transcript — what the agent changed, with correct old/new line numbers.",
+    category: "ai",
+    relationships: {
+      usedInside: ["Message", "Tool", "ChangeReview", "Conversation"],
+      pairsWith: ["CodeBlock", "ChangeReview", "Confirmation", "AgentEvent"],
+    },
+    stateTokens: {
+      add: "bg-success/10 row tint plus a text-success-text marker glyph and an sr-only polarity word",
+      del: "bg-destructive/10 row tint plus a text-destructive-text marker glyph and an sr-only polarity word",
+      loading: "layout-shaped skeleton rows at the real row height, announced once at the region",
+    },
+    antiPatterns: [
+      "Carrying add/del by row tint alone — the +/− glyph and the sr-only polarity word are the channels that survive greyscale (1.4.1).",
+      "Rendering a parse error while isStreaming — a half-arrived line is incomplete, not invalid; errors fire only on settled input.",
+      "Forking highlightCode — intra-line colour comes from CodeBlock's Shiki helper, imported, never copied.",
+      "Building a separate full-screen diff component — the pager prop IS the reading surface; one component, two modes.",
+      "Importing ChangeReview's ChangeHunk (or the reverse) — the two are joined by the renderHunk seam, never by a package edge.",
+    ],
+  },
+  WorkspacePicker: {
+    purpose:
+      "Choose the workspace or project directory a session runs against, from recents or a typed path.",
+    category: "input",
+    relationships: {
+      usedInside: ["AppShell", "SessionHeader", "Toolbar"],
+      contains: ["ModelPicker", "Input", "Button"],
+      pairsWith: ["TeamSwitcher", "ModelPicker", "SessionStatusBar"],
+    },
+    stateTokens: {
+      current:
+        "the in-force workspace appends a WORD into the row meta, so it reaches the option's accessible name",
+      empty:
+        "the free-text path submit is aria-disabled, never natively disabled, so it stays a focusable tab stop",
+    },
+    antiPatterns: [
+      "Re-implementing the picker list — WorkspacePicker composes ModelPicker; a second searchable-popover list is the duplication this component exists to avoid.",
+      "Marking the current workspace with a glyph alone — the marker is a word in the accessible name (1.4.1).",
+      "Reading the filesystem — the component takes a workspace list as a prop and never enumerates directories itself.",
+      "Natively disabling the path submit — an empty field uses aria-disabled plus a handler guard, so focus is never stranded.",
+    ],
+  },
+  PromptInputSlash: {
+    purpose:
+      "The slash-command palette over a composer — type `/`, filter by prefix, pick a command with the keyboard.",
+    category: "ai",
+    relationships: {
+      usedInside: ["PromptInput", "Composer"],
+      contains: [
+        "PromptInputSlashTextarea",
+        "PromptInputCommand",
+        "PromptInputCommandList",
+        "PromptInputCommandItem",
+      ],
+      pairsWith: ["PromptInputMode", "PromptInputEffort", "MentionInput"],
+    },
+    stateTokens: {
+      active:
+        "the highlighted command is reported to the textarea via aria-activedescendant — focus never leaves the input",
+      empty: "a real empty state with a sentence, never a blank popover",
+    },
+    antiPatterns: [
+      "Moving DOM focus into the list — the textarea keeps focus and points at the active option with aria-activedescendant; a palette that steals focus loses the caret.",
+      "Passing aria-label or id to the command list — cmdk overwrites both; use its own `label` prop and read the rendered id back off the node.",
+      "Leaving aria-activedescendant set after the palette closes — a stale id points at a node that no longer exists.",
+      "Hand-rolling the trigger scan — the caret/trigger machinery is shared with MentionInput (findTriggerQuery in @elabs-ai/components-ui), not re-derived here.",
+      "Submitting the composer on Enter while the palette is open — Enter selects the command; the textarea's own onKeyDown-before-submit order is what makes that possible.",
     ],
   },
 };

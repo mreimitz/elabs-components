@@ -301,6 +301,57 @@
   --code-tag: oklch(0.78 0.14 336);
   --code-property: oklch(0.88 0.006 257);
 
+  /* TERMINAL / CONSOLE (#115) — see the long derivation note in themes.css
+     :root, which states the rule this block re-measures against its OWN ground.
+     Nothing here is transcribed from a published terminal scheme.
+
+     The console grounds one rung below this theme's darkest existing surface
+     (--sidebar 0.18 → 0.145), so it reads as the void the rest of the theme sits
+     above: recessed, never a raised --card. That is a full 0.105 L below --card,
+     which is what lets the ink ladder run all the way to a 14.69:1 full ink
+     without any slot crowding another.
+
+     Hues come from THIS theme's own roles — red 25.3 (--destructive), green
+     162.5 (--success), yellow 88 (--highlight, the theme's marker amber, NOT
+     --warning's 70.1, which is deliberately kept off pure yellow to stay clear of
+     the lime brand), blue 237.3 (--info), magenta 336 (--code-tag), cyan 200
+     (--code-constant). This theme's status FILLS happen to sit near the console's
+     normal band (0.637-0.769), but they are ≥3:1 MARK rungs, so they are not
+     reused as ink — the rungs below are measured against this console's ground.
+
+     Measured (ground `oklch(0.145 0.012 257)`): every slot except `ansi-black` is
+     ≥4.53:1 (worst: `ansi-bright-black`); foreground 14.69:1; accent 13.92:1;
+     border 3.06:1; the 16 ANSI slots pairwise ≥0.0703 OKLab ΔE. */
+  --terminal-background: oklch(0.145 0.012 257);
+  --terminal-foreground: oklch(0.9 0.005 257);
+  /* The brand plate itself — see themes/light.css for why the reference themes
+     may alias it and :root may not. */
+  --terminal-accent: var(--primary);
+  --terminal-accent-foreground: var(--terminal-background);
+  --terminal-cursor: var(--terminal-accent);
+  /* Brand-hued (116.5) selection band, quiet at 1.52:1 off the ground so the ink
+     over it stays AA: --terminal-foreground 9.68:1, --terminal-ansi-white 5.97:1. */
+  --terminal-selection: oklch(0.31 0.042 116.5);
+  --terminal-border: oklch(0.482 0.012 257);
+  --terminal-muted: oklch(0.648 0.008 257);
+
+  --terminal-ansi-black: oklch(0.2 0.011 257);
+  --terminal-ansi-red: oklch(0.665 0.189 25.3);
+  --terminal-ansi-green: oklch(0.665 0.123 162.5);
+  --terminal-ansi-yellow: oklch(0.665 0.116 88);
+  --terminal-ansi-blue: oklch(0.665 0.124 237.3);
+  --terminal-ansi-magenta: oklch(0.665 0.19 336);
+  --terminal-ansi-cyan: oklch(0.665 0.096 200);
+  --terminal-ansi-white: oklch(0.755 0.006 257);
+  --terminal-ansi-bright-black: oklch(0.575 0.01 257);
+  --terminal-ansi-bright-red: oklch(0.785 0.106 25.3);
+  --terminal-ansi-bright-green: oklch(0.785 0.145 162.5);
+  --terminal-ansi-bright-yellow: oklch(0.785 0.136 88);
+  --terminal-ansi-bright-blue: oklch(0.785 0.106 237.3);
+  --terminal-ansi-bright-magenta: oklch(0.785 0.155 336);
+  --terminal-ansi-bright-cyan: oklch(0.785 0.113 200);
+  --terminal-ansi-bright-white: var(--terminal-foreground);
+
   /* Brand mark — the drawn linework follows the surface's own ink (see the light
      theme for why it is `currentColor`), the construction square carries the
      bright brand plate (see the light theme for why `--primary` and not the muted

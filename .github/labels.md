@@ -32,6 +32,7 @@ gh label create "area:charts"     -c "#1d76db" -d "@elabs-ai/components-charts" 
 gh label create "area:marketing"  -c "#1d76db" -d "@elabs-ai/components-marketing" 2>/dev/null || true
 gh label create "area:editor"     -c "#1d76db" -d "@elabs-ai/components-editor" 2>/dev/null || true
 gh label create "area:viewer"     -c "#1d76db" -d "@elabs-ai/components-viewer" 2>/dev/null || true
+gh label create "area:terminal"   -c "#1d76db" -d "@elabs-ai/components-terminal" 2>/dev/null || true
 gh label create "area:tokens"     -c "#1d76db" -d "@elabs-ai/components-tokens (themes, ThemeProvider)" 2>/dev/null || true
 gh label create "area:icons"      -c "#1d76db" -d "@elabs-ai/components-icons" 2>/dev/null || true
 gh label create "area:registry"   -c "#1d76db" -d "registry/ — shadcn-compatible copy-own blocks/templates" 2>/dev/null || true

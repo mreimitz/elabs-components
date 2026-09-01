@@ -265,8 +265,12 @@ export const WebPreviewConsole = ({
               <div
                 className={cn(
                   "text-xs",
-                  log.level === "error" && "text-destructive",
-                  log.level === "warn" && "text-yellow-600",
+                  // #124: console log lines are running text — ink rung, not
+                  // the mark rung. `text-yellow-600` was also a raw, untokened
+                  // Tailwind palette colour (styling-and-tokens.md); replaced
+                  // with the warning tone's own ink rung.
+                  log.level === "error" && "text-destructive-text",
+                  log.level === "warn" && "text-warning-text",
                   log.level === "log" && "text-foreground",
                 )}
                 key={`${log.timestamp.getTime()}-${log.level}-${log.message}`}

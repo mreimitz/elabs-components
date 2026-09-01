@@ -68,6 +68,7 @@ reasoning behind each major choice.
 | `@elabs-ai/components-marketing` | `packages/marketing` | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
 | `@elabs-ai/components-editor`    | `packages/editor`    | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
 | `@elabs-ai/components-viewer`    | `packages/viewer`    | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
+| `@elabs-ai/components-terminal`  | `packages/terminal`  | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
 
 <!-- brand-ui:gen:packages:end -->
 

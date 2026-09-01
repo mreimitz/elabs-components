@@ -228,7 +228,9 @@ export const ToolOutput = ({
         <div
           className={cn(
             "overflow-x-auto rounded-md text-caption [&_table]:w-full",
-            showError ? "bg-destructive/10 text-destructive" : "bg-muted/50 text-foreground",
+            // #124: this colours the ambient text of the error/result body —
+            // running text, so the error branch takes the ink rung.
+            showError ? "bg-destructive/10 text-destructive-text" : "bg-muted/50 text-foreground",
           )}
         >
           {showError && <div>{errorText}</div>}

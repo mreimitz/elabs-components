@@ -1,5 +1,1 @@
-[
-  "@elabs-ai/components-ai::Plan",
-  "@elabs-ai/components-ai::Terminal",
-  "@elabs-ai/components-ai::VoiceSelectorPreview"
-]
+["@elabs-ai/components-ai::VoiceSelectorPreview"]

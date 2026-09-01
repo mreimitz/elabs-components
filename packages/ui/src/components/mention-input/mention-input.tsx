@@ -20,6 +20,7 @@ import {
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../lib/cn";
 import { mergeRefs } from "../../lib/merge-refs";
+import { findTriggerQuery } from "../../lib/trigger-query";
 import { useLocale } from "../locale-provider";
 import { Popover, PopoverAnchor, PopoverContent } from "../popover";
 import { Textarea } from "../textarea";
@@ -87,43 +88,6 @@ export function useMentionInput(): MentionInputContextValue {
 // ---------------------------------------------------------------------------
 // Query detection
 // ---------------------------------------------------------------------------
-
-/** A trigger only starts a query at the start of a word — never inside one. */
-function isWordBoundary(text: string, index: number): boolean {
-  if (index === 0) return true;
-  const previous = text[index - 1] ?? "";
-  return /\s/.test(previous) || previous === "(" || previous === "[";
-}
-
-/**
- * Is the caret currently sitting in a `trigger + query` run?
- *
- * Derived from the committed text + caret rather than intercepted at keydown,
- * on purpose: a keydown-driven trigger would have to `preventDefault()` every
- * printable character and re-insert it by hand, which is exactly what destroys
- * IME composition, native undo, spellcheck and paste — the things a real
- * `<textarea>` gives us for free. Deriving instead means the popup opens
- * identically whether the trigger arrived by typing, pasting, an IME commit or
- * a mouse click that moved the caret back into a half-typed query.
- */
-function findQuery(
-  value: MentionValue,
-  caret: number,
-  trigger: string,
-): { start: number; query: string } | null {
-  const { text } = value;
-  if (caret < trigger.length) return null;
-  const start = text.lastIndexOf(trigger, caret - trigger.length);
-  if (start < 0) return null;
-
-  const query = text.slice(start + trigger.length, caret);
-  if (/\s/.test(query)) return null;
-  if (!isWordBoundary(text, start)) return null;
-  // The trigger char of an ALREADY-inserted mention must not re-open the popup.
-  if (mentionAt(value, start, trigger)) return null;
-
-  return { start, query };
-}
 
 /** Next enabled index in `list`, wrapping; `-1` when none is selectable. */
 function step(list: MentionOption[], from: number, direction: 1 | -1): number {
@@ -354,7 +318,13 @@ export const MentionInput = forwardRef<HTMLDivElement, MentionInputProps>(functi
   // ------------------------------------------------------------------
   // Query / open state
   // ------------------------------------------------------------------
-  const queryInfo = useMemo(() => findQuery(value, caret, trigger), [value, caret, trigger]);
+  const queryInfo = useMemo(
+    () =>
+      findTriggerQuery(value.text, caret, trigger, {
+        isTriggerConsumed: (start) => mentionAt(value, start, trigger) !== undefined,
+      }),
+    [value, caret, trigger],
+  );
 
   // Escape (and an outside dismissal) suppress the popup for the run it was
   // dismissed on, without touching the text — the query is still there, the

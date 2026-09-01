@@ -80,7 +80,8 @@ export const FormLabel = forwardRef<
       htmlFor={formItemId}
       className={cn(
         "transition-colors duration-fast ease-standard",
-        error && "text-destructive",
+        // #124: the label's own error-state text, not a mark — ink rung.
+        error && "text-destructive-text",
         className,
       )}
       {...props}
@@ -129,7 +130,9 @@ export const FormMessage = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLP
         ref={ref}
         id={formMessageId}
         className={cn(
-          "text-sm font-medium text-destructive animate-in fade-in slide-in-from-top-1 ease-entrance",
+          // #124: the error message body is running text — ink rung, not the
+          // 3:1 mark rung `text-destructive` guarantees.
+          "text-sm font-medium text-destructive-text animate-in fade-in slide-in-from-top-1 ease-entrance",
           className,
         )}
         {...props}

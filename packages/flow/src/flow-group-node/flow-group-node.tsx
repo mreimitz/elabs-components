@@ -29,15 +29,28 @@ export interface FlowGroupNodeData extends Record<string, unknown> {
 
 export type BrandFlowGroupNode = Node<FlowGroupNodeData, "group">;
 
-const toneAccent: Record<FlowGroupTone, string> = {
+// #124 split this map in two: it used to serve both the icon slot (a MARK,
+// >=3:1) and the child-count text badge (running text, >=4.5:1) from one set
+// of values, which is exactly the fill-rung-as-text shape #124 fixes
+// elsewhere. `accent` is unchanged (`#399` already put it on the ink rung for
+// both slots — legal, since the ink rung clears the 3:1 mark bar trivially).
+
+/** Icon-slot tone (the leading glyph next to the title) — the 3:1 mark rung. */
+const toneMark: Record<FlowGroupTone, string> = {
   default: "text-muted-foreground",
-  // #399 — the group LABEL is text on the canvas, so it takes the on-surface
-  // `-text` rung. (The status rows below stay on their fill rungs; those are a
-  // separate, still-open question, not part of #399's enumerated call sites.)
   accent: "text-primary-text",
   success: "text-success",
   warning: "text-warning",
   destructive: "text-destructive",
+};
+
+/** Child-count badge tone — running text, so it takes the >=4.5:1 ink rung. */
+const toneInk: Record<FlowGroupTone, string> = {
+  default: "text-muted-foreground",
+  accent: "text-primary-text",
+  success: "text-success-text",
+  warning: "text-warning-text",
+  destructive: "text-destructive-text",
 };
 
 const handleClassName = "!size-2 !border-2 !border-flow-group-border !bg-flow-group";
@@ -114,7 +127,7 @@ export function FlowGroupNode({ id, data, selected }: NodeProps<BrandFlowGroupNo
         </button>
 
         {data.icon ? (
-          <span className={cn("[&_svg]:size-4", toneAccent[tone])}>{data.icon}</span>
+          <span className={cn("[&_svg]:size-4", toneMark[tone])}>{data.icon}</span>
         ) : null}
 
         <span className="min-w-0 flex-1 truncate text-body font-medium">{data.title}</span>
@@ -122,7 +135,7 @@ export function FlowGroupNode({ id, data, selected }: NodeProps<BrandFlowGroupNo
         <span
           className={cn(
             "shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-meta font-medium tabular-nums",
-            toneAccent[tone],
+            toneInk[tone],
           )}
           aria-label={`${childCount} ${childCount === 1 ? "node" : "nodes"}`}
         >

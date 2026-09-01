@@ -1,0 +1,84 @@
+{
+  "name": "@elabs-ai/components-terminal",
+  "version": "4.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreimitz/elabs-components.git",
+    "directory": "packages/terminal"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup && node ../../scripts/link-dist-css.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo coverage"
+  },
+  "dependencies": {
+    "ansi-to-react": "^6.2.6",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.577.0"
+  },
+  "peerDependencies": {
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@xterm/addon-fit": {
+      "optional": true
+    },
+    "@xterm/xterm": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@elabs-ai/components-eslint-config": "workspace:*",
+    "@elabs-ai/components-tokens": "workspace:*",
+    "@elabs-ai/components-typescript-config": "workspace:*",
+    "@elabs-ai/components-ui": "workspace:*",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "eslint": "^9.17.0",
+    "jsdom": "^25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.2"
+  }
+}

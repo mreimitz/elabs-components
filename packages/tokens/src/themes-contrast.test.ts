@@ -302,6 +302,69 @@ const ROLE_PAIRS = [
  */
 const ROLE_SEPARATION_DELTA_E = 0.05;
 
+/**
+ * TERMINAL / CONSOLE (#115) — the sixteen ANSI slots, in escape-code order.
+ *
+ * An ANSI palette with two slots on one colour is SILENTLY broken: the program
+ * writing the escape codes has no way to know, the user just sees two different
+ * meanings render identically. So the slots get the same treatment `ROLE_PAIRS`
+ * gives semantic roles — byte inequality AND a perceptual floor — but across the
+ * whole set, not a hand-picked pair list, because every pair of ANSI slots is a
+ * pair a program can put side by side.
+ */
+const TERMINAL_ANSI_SLOTS = [
+  "--terminal-ansi-black",
+  "--terminal-ansi-red",
+  "--terminal-ansi-green",
+  "--terminal-ansi-yellow",
+  "--terminal-ansi-blue",
+  "--terminal-ansi-magenta",
+  "--terminal-ansi-cyan",
+  "--terminal-ansi-white",
+  "--terminal-ansi-bright-black",
+  "--terminal-ansi-bright-red",
+  "--terminal-ansi-bright-green",
+  "--terminal-ansi-bright-yellow",
+  "--terminal-ansi-bright-blue",
+  "--terminal-ansi-bright-magenta",
+  "--terminal-ansi-bright-cyan",
+  "--terminal-ansi-bright-white",
+] as const;
+
+/**
+ * The ONE ANSI slot exempt from the ink floor. By ANSI convention slot 0 is a
+ * GROUND rung — "invisible ink", used for shading and for text that is meant to
+ * disappear into the background — not a colour chosen to be read. Every other
+ * slot is painted as real text by the terminal, so every other slot owes AA.
+ * This mirrors the exemption `buildInteractiveTerminalTheme` already applies at
+ * runtime (`packages/ai/src/interactive-terminal.tsx`, #386).
+ */
+const TERMINAL_ANSI_GROUND_SLOT = "--terminal-ansi-black";
+
+/** ANSI slots that must be legible as TEXT on `--terminal-background`. */
+const TERMINAL_INK_SLOTS = TERMINAL_ANSI_SLOTS.filter((s) => s !== TERMINAL_ANSI_GROUND_SLOT);
+
+/**
+ * The console's own (non-ANSI) ink roles, and the floor each owes on
+ * `--terminal-background`. `--terminal-border` is a 1.4.11 MARK, not text: the
+ * console's box-drawing rules are the sole structural cue between two regions of
+ * the same ground, which is the `border-strong` case in
+ * `.claude/rules/styling-and-tokens.md`.
+ */
+const TERMINAL_CHROME_INK = [
+  ["--terminal-foreground", AA],
+  ["--terminal-muted", AA],
+  ["--terminal-accent", AA],
+  ["--terminal-border", AA_NONTEXT],
+] as const;
+
+/**
+ * A selection band changes the GROUND under console text, so the AA obligation
+ * travels with it. These are the two inks a selection realistically lands on:
+ * the console's full ink and the normal ANSI ink rung.
+ */
+const TERMINAL_SELECTION_INK = ["--terminal-foreground", "--terminal-ansi-white"] as const;
+
 /** Euclidean distance in OKLab between two `oklch()` literals. */
 function oklabDistance(a: string, b: string): number {
   const toLab = (raw: string) => {
@@ -714,6 +777,104 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
         `${role} vs ${other} in ${theme} ΔE(OKLab) = ${distance.toFixed(4)}`,
       ).toBeGreaterThanOrEqual(ROLE_SEPARATION_DELTA_E);
     });
+
+    // ── TERMINAL / CONSOLE (#115) ─────────────────────────────────────────
+    // The console is a DARK machine surface in every theme (including `light`),
+    // so one ink ladder runs upward from `--terminal-background` in all of them.
+    // These rows are what make the group a contract rather than 24 nice colours.
+
+    it("--terminal-foreground meets AA on --terminal-background", () => {
+      const ratio = contrast(
+        token(theme, "--terminal-foreground"),
+        token(theme, "--terminal-background"),
+      );
+      expect(ratio, `${theme}: console ink is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA);
+    });
+
+    // Every ANSI slot except the ground rung is painted as real TEXT by the
+    // terminal, so every one owes AA — the exact class of bug #386 had to repair
+    // at runtime when the slots were derived from MARK-rung (≥3:1) semantic
+    // tokens. Authoring the rungs against the console's own ground is what lets
+    // the declared group clear this without a runtime clamp.
+    it.each(TERMINAL_INK_SLOTS)("%s is legible ink on --terminal-background", (slot) => {
+      const ratio = contrast(token(theme, slot), token(theme, "--terminal-background"));
+      expect(ratio, `${theme}: ${slot} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA);
+    });
+
+    it.each(TERMINAL_CHROME_INK)("%s clears its floor on --terminal-background", (role, floor) => {
+      const ratio = contrast(token(theme, role), token(theme, "--terminal-background"));
+      expect(ratio, `${theme}: ${role} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(floor);
+    });
+
+    // The accent plate carries an agent badge; its ink is the console ground
+    // punched out, so this row also proves that mirror is still a legal pairing.
+    it("--terminal-accent-foreground is legible on --terminal-accent", () => {
+      const ratio = contrast(
+        token(theme, "--terminal-accent-foreground"),
+        token(theme, "--terminal-accent"),
+      );
+      expect(ratio, `${theme}: accent ink is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA);
+    });
+
+    // A selection band re-grounds the text under it. Assert the ink, not the
+    // band: a band loud enough to be a 3:1 mark would put its own text below AA,
+    // which is the trade every terminal makes the same way.
+    it.each(TERMINAL_SELECTION_INK)("%s stays AA over --terminal-selection", (ink) => {
+      const ratio = contrast(token(theme, ink), token(theme, "--terminal-selection"));
+      expect(
+        ratio,
+        `${theme}: ${ink} on selection is ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(AA);
+    });
+
+    // No two ANSI slots may share a literal — an ANSI palette with a duplicate
+    // slot is broken in a way nothing else in the system can detect. Byte
+    // inequality first…
+    it("every ANSI slot carries its own literal", () => {
+      const seen = new Map<string, string>();
+      for (const slot of TERMINAL_ANSI_SLOTS) {
+        const value = token(theme, slot);
+        const previous = seen.get(value);
+        expect(previous, `${theme}: ${slot} and ${previous} are both ${value}`).toBeUndefined();
+        seen.set(value, slot);
+      }
+    });
+
+    // …and, as with ROLE_PAIRS, inequality alone is too weak: a 0.001 nudge
+    // would satisfy it while still rendering as the same colour. The tightest
+    // shipped pair is bright-blue vs bright-cyan (ΔE 0.0703 in `dark`), which is
+    // the sRGB gamut talking — blue and cyan are 37° apart and both lose chroma
+    // fast above L 0.78.
+    it("every pair of ANSI slots is perceptibly separated", () => {
+      for (let i = 0; i < TERMINAL_ANSI_SLOTS.length; i += 1) {
+        for (let j = i + 1; j < TERMINAL_ANSI_SLOTS.length; j += 1) {
+          const a = TERMINAL_ANSI_SLOTS[i] as string;
+          const b = TERMINAL_ANSI_SLOTS[j] as string;
+          const distance = oklabDistance(token(theme, a), token(theme, b));
+          expect(
+            distance,
+            `${theme}: ${a} vs ${b} ΔE(OKLab) = ${distance.toFixed(4)}`,
+          ).toBeGreaterThanOrEqual(ROLE_SEPARATION_DELTA_E);
+        }
+      }
+    });
+
+    // The console is the DEEPEST surface in every theme — the decision that lets
+    // one ink ladder serve all three blocks and keeps "bright" meaning LIGHTER
+    // everywhere (on a light ground it would have to mean darker, inverting every
+    // ANSI author's intent — #386). A maintainer who "fixes" the light theme by
+    // grounding its console on `--card` fails here, loudly, instead of shipping a
+    // palette whose bright rungs are its least legible colours.
+    it.each(["--background", "--card", "--sidebar"] as const)(
+      "--terminal-background is darker than %s",
+      (surface) => {
+        const console_ = parseOklch(token(theme, "--terminal-background")).l;
+        const other = parseOklch(token(theme, surface)).l;
+        expect(console_, `${theme}: console L ${console_} vs ${surface} L ${other}`).toBeLessThan(
+          other,
+        );
+      },
+    );
   });
 });
 

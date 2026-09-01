@@ -52,6 +52,13 @@ export interface ModelPickerProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   open?: boolean;
   /** Fires whenever the popover would open/close — a trigger click, or a row select. */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Rendered inside the popover BELOW the list — a persistent action row that is
+   * not one of the options (a free-text entry, a "browse…" affordance).
+   * Outside `CommandList` on purpose: it must not be filtered by the search query
+   * and must not participate in cmdk's roving selection.
+   */
+  footer?: ReactNode;
 }
 
 function Row({
@@ -127,6 +134,7 @@ export const ModelPicker = forwardRef<HTMLDivElement, ModelPickerProps>(function
     className,
     open: openProp,
     onOpenChange,
+    footer,
     ...props
   },
   ref,
@@ -253,6 +261,8 @@ export const ModelPicker = forwardRef<HTMLDivElement, ModelPickerProps>(function
                 </>
               ) : null}
             </CommandList>
+
+            {footer}
           </Command>
         </PopoverContent>
       </Popover>

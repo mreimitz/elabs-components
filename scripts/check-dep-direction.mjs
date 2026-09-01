@@ -107,6 +107,11 @@ export const ALLOWED = {
     "@elabs-ai/components-icons",
     "@elabs-ai/components-ui",
   ], // NOT -ai (ADR 0024 §6: AssetPreview reaches new formats by injection, not import)
+  "@elabs-ai/components-terminal": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
+  ], // layer-2 leaf: NOTHING may depend on it, and it must never list -ai (sideways edge)
 };
 
 /**

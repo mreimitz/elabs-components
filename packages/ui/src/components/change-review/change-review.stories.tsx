@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { useState } from "react";
+import { type CheckResult } from "../../lib/check-result";
 import {
   ChangeReview,
   ChangeReviewHeader,
@@ -41,6 +42,41 @@ const PROVENANCE = {
   timestamp: "2026-06-15 14:02",
   note: "run-abc123",
 };
+
+// ─── Sample hunks with verification checks (#112) ─────────────────────────────
+
+const HUNKS_WITH_CHECKS: ChangeHunk[] = [
+  {
+    id: "checked-1",
+    title: "src/api/handler.ts",
+    status: "modified",
+    before: `function handle(req) { return req.body; }`,
+    after: `function handle(req: Request) { return req.body; }`,
+    checks: [
+      { label: "eslint", ok: true, durationMs: 214 },
+      {
+        label: "tsc",
+        ok: false,
+        durationMs: 890,
+        detail:
+          "src/api/handler.ts:1:31 — Parameter 'req' implicitly has an 'any' type, and the " +
+          "surrounding function type annotation does not resolve it. This is a deliberately " +
+          "long detail line so it renders behind a collapsed disclosure by default.",
+      },
+    ],
+  },
+  {
+    id: "checked-2",
+    title: "src/api/handler.test.ts",
+    status: "added",
+    after: `it("handles a request", () => { ... });`,
+    checks: [
+      { label: "pre_tool_use", ok: true, phase: "before" },
+      { label: "eslint", ok: true, phase: "after", durationMs: 120 },
+      { label: "vitest", ok: true, phase: "after", detail: "3 passed", durationMs: 1420 },
+    ] satisfies CheckResult[],
+  },
+];
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -284,5 +320,44 @@ rewritten with improved clarity and fewer side effects. The new version handles
 edge cases properly and includes proper error boundaries.`,
       },
     ],
+  },
+};
+
+// ─── With verification checks (#112) ──────────────────────────────────────────
+// Evidence a reviewer needs (lint / types / tests / policy hooks) rendered
+// alongside the diff. A failing check informs the decision — it never blocks
+// approval, so `checked-1` (which carries a failing `tsc` check) can still be
+// approved below.
+
+export const WithChecks: Story = {
+  args: {
+    hunks: HUNKS_WITH_CHECKS,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getByText("src/api/handler.ts")).toBeVisible());
+
+    // Passing and failing checks are distinguishable by accessible text —
+    // never by colour alone.
+    await waitFor(() => expect(canvas.getAllByText("Passed").length).toBeGreaterThan(0));
+    await waitFor(() => expect(canvas.getAllByText("Failed").length).toBeGreaterThan(0));
+
+    // The long `tsc` detail is collapsed by default…
+    const showDetail = canvas.getByRole("button", { name: /show detail/i });
+    expect(canvas.queryByText(/implicitly has an 'any' type/)).not.toBeInTheDocument();
+    // …and expands on click.
+    await userEvent.click(showDetail);
+    await waitFor(() => expect(canvas.getByText(/implicitly has an 'any' type/)).toBeVisible());
+
+    // Both phases present on the second hunk → grouped "Before" / "After".
+    await waitFor(() => expect(canvas.getByText("Before")).toBeVisible());
+    await waitFor(() => expect(canvas.getByText("After")).toBeVisible());
+
+    // A failing check does not block approval — it only informs it.
+    const approveFirstHunk = canvas.getByRole("button", {
+      name: /approve hunk: src\/api\/handler\.ts/i,
+    });
+    await userEvent.click(approveFirstHunk);
+    await waitFor(() => expect(canvas.getByText("1 of 2 approved")).toBeVisible());
   },
 };

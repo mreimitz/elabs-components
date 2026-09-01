@@ -29,9 +29,16 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Exercises all 8 base ANSI colors + their bright variants, so a cross-theme
-// audit can confirm every swatch stays legible in light/dark.
+// audit can confirm every swatch stays legible in light/dark. Normal
+// (non-bright) black is deliberately OMITTED from the first row: by ANSI
+// convention it is the console's own "invisible ink" ground rung, not text
+// meant to be read (see the TERMINAL/CONSOLE token group's doc comment in
+// themes.css, and `interactive-terminal.test.tsx`'s `ANSI_INK_SLOTS`, which
+// excludes it from the readable-ink floor for the same reason) — rendering it
+// as a literal, readable word would always fail colour-contrast by design,
+// not by bug. Bright black (row 2) IS legible ink (~4.5:1) and stays.
 const ANSI_PALETTE =
-  "\x1b[30mblack\x1b[0m \x1b[31mred\x1b[0m \x1b[32mgreen\x1b[0m \x1b[33myellow\x1b[0m " +
+  "\x1b[31mred\x1b[0m \x1b[32mgreen\x1b[0m \x1b[33myellow\x1b[0m " +
   "\x1b[34mblue\x1b[0m \x1b[35mmagenta\x1b[0m \x1b[36mcyan\x1b[0m \x1b[37mwhite\x1b[0m\r\n" +
   "\x1b[1;30mblack\x1b[0m \x1b[1;31mred\x1b[0m \x1b[1;32mgreen\x1b[0m \x1b[1;33myellow\x1b[0m " +
   "\x1b[1;34mblue\x1b[0m \x1b[1;35mmagenta\x1b[0m \x1b[1;36mcyan\x1b[0m \x1b[1;37mwhite\x1b[0m " +

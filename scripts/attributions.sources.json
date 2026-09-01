@@ -75,6 +75,21 @@
       "note": "The message-part grouping design behind part-groups.ts, re-expressed in this library's idiom."
     },
     {
+      "id": "brainless",
+      "category": "source",
+      "name": "brainless",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Ben Swerdlow",
+      "url": "https://github.com/theswerd/brainless",
+      "usedBy": [
+        "@elabs-ai/components-ai",
+        "@elabs-ai/components-ui",
+        "@elabs-ai/components-terminal"
+      ],
+      "required": false,
+      "note": "Agent-session UI logic re-expressed on our tokens: the line-level diff model and its screen-reader polarity prefixes, the scoped N-option permission anatomy, the slash-palette prefix-filter/clamp behaviour, the turn-status elapsed formatter, the hook/lifecycle event line, and the grouped keyboard-shortcuts sheet. No upstream code, styling or terminal palette is shipped."
+    },
+    {
       "id": "milkdown",
       "category": "source",
       "name": "Milkdown",

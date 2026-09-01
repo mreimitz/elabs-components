@@ -297,7 +297,8 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
             <div className="mt-3 border-t border-border pt-3">
               {/* Custom hex is NOT theme-aware — it will not adapt to theme changes. */}
               <p className="mb-1.5 text-xs text-muted-foreground">
-                Custom hex <span className="text-warning">(not theme-aware)</span>
+                {/* #124: inline running text — ink rung, not the 3:1 mark rung. */}
+                Custom hex <span className="text-warning-text">(not theme-aware)</span>
               </p>
               <div className="flex gap-2">
                 <input

@@ -1,6 +1,6 @@
 ---
 name: brand-ui-component
-description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs-ai/components-ui, @elabs-ai/components-data, @elabs-ai/components-ai, @elabs-ai/components-flow, @elabs-ai/components-maps, @elabs-ai/components-charts, @elabs-ai/components-marketing, @elabs-ai/components-editor, or @elabs-ai/components-viewer, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
+description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs-ai/components-ui, @elabs-ai/components-data, @elabs-ai/components-ai, @elabs-ai/components-flow, @elabs-ai/components-maps, @elabs-ai/components-charts, @elabs-ai/components-marketing, @elabs-ai/components-editor, @elabs-ai/components-viewer, or @elabs-ai/components-terminal, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
 user-invocable: true
 argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
@@ -31,8 +31,10 @@ editor (Monaco) → `@elabs-ai/components-editor` (markdown authoring/preview + 
 on the `@elabs-ai/components-editor/markdown` + `@elabs-ai/components-editor/markdown/frontmatter` subpaths);
 displaying a file the app did not write (upload, signed URL, agent output) → `@elabs-ai/components-viewer`
 (a new FORMAT is an adapter registration, not a new component);
+shell/agent terminal output or a coding-agent CLI look-alike → `@elabs-ai/components-terminal`
+(a leaf — nothing may depend on it, and `@elabs-ai/components-ai` must never import it).
 One direction of dependency:
-`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer`.
+`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/terminal`.
 Import across packages via `@elabs-ai/components-*`, never relative paths.
 
 ## 3. Build to the rules

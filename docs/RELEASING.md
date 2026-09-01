@@ -19,7 +19,7 @@ reference for what that command does and why each step exists.
 > fine-grained PAT (or deploy key) with `Contents: Read and write` on this repo,
 > used only to push the built shadcn registry to `gh-pages` (§5 below covers why
 > the default `GITHUB_TOKEN` cannot do this) — both as repository secrets. The
-> release set is **12 packages**.
+> release set is **13 packages**.
 
 ## The division of labour
 
@@ -32,7 +32,7 @@ by hand.**
 
 ```bash
 pnpm publish-ready:check   # can these packages reach the registry at all?
-pnpm version:check         # do all 16 lockstep sites agree?
+pnpm version:check         # do all 17 lockstep sites agree?
 ```
 
 `publish-ready:check` exists because a registry rejects a publish for reasons that
@@ -59,7 +59,7 @@ first package had already published irreversibly.
 pnpm version:set 2.1.0
 ```
 
-One command writes all **16** lockstep sites: the 11 component packages, the CLI,
+One command writes all **17** lockstep sites: the 12 component packages, the CLI,
 the root, both `.claude-plugin` manifests, and `SERVER_INFO.version` in
 `packages/cli/lib/mcp.mjs` (the version the MCP server reports to agents, which
 used to drift silently). The sites are **derived**, not a hard-coded list, so a

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { replaceTriggerRun } from "../../lib/trigger-query";
 
 /**
  * The pure offset algebra behind `MentionInput`.
@@ -138,7 +139,12 @@ export function insertMention(
   caret: number,
 ): InsertMentionResult {
   const inserted = `${trigger}${option.label} `;
-  const nextText = value.text.slice(0, queryStart) + inserted + value.text.slice(caret);
+  const { text: nextText, caret: nextCaret } = replaceTriggerRun(
+    value.text,
+    queryStart,
+    caret,
+    inserted,
+  );
   const delta = inserted.length - (caret - queryStart);
 
   const mentions: Mention[] = [];
@@ -160,7 +166,7 @@ export function insertMention(
         (m) => nextText.slice(m.start, mentionEnd(m, trigger)) === trigger + m.label,
       ),
     },
-    caret: queryStart + inserted.length,
+    caret: nextCaret,
   };
 }
 

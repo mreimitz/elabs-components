@@ -96,6 +96,7 @@ export const CATEGORIES = new Set([
   "ai",
   "chart",
   "flow",
+  "terminal",
 ]);
 
 /** Categories whose surfaces are complex enough to require the 3-anti-pattern bar. */

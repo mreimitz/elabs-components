@@ -438,7 +438,10 @@ export const FileUploadItem = forwardRef<HTMLLIElement, FileUploadItemProps>(
           <Progress value={resolvedProgress} className="h-1" />
         )}
         {isError && resolvedError && (
-          <p role="alert" className="text-xs text-destructive">
+          // #124: this is running text (the rejection reason), so it takes the
+          // >=4.5:1 ink rung `text-destructive-text` — not the 3:1 mark rung the
+          // `statusIcon.error` glyph above correctly keeps.
+          <p role="alert" className="text-xs text-destructive-text">
             {resolvedError}
           </p>
         )}

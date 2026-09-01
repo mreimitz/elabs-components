@@ -140,14 +140,39 @@ function ThemeBoundary({ theme, children }: { theme: string; children: ReactNode
   return <>{children}</>;
 }
 
+/**
+ * `STORYBOOK_THEME=<slug>` pins the theme for a whole run.
+ *
+ * The quality gates require a component to be OBSERVED in every theme, but the
+ * only ways to reach a non-default theme were the dev-server toolbar and a
+ * `globals=theme:<slug>` URL — both of which need a human driving a browser.
+ * `@storybook/addon-vitest` (`pnpm exec vitest --project storybook`) composes
+ * stories with no toolbar and no URL, so every headless run — local and CI —
+ * silently measured `light` only, and a cross-theme claim cannot honestly be
+ * made from one.
+ *
+ * This is the same env-var seam `STORYBOOK_A11Y_MODE` already uses, and for the
+ * same reason: a sweep has to be reproducible by a command, not by a gesture.
+ * Storybook exposes `STORYBOOK_`-prefixed variables to the preview bundle.
+ *
+ *   STORYBOOK_THEME=dark pnpm exec vitest --project storybook run <name>
+ *
+ * It sits BELOW a per-story `parameters.themes.themeOverride` and the toolbar
+ * global on purpose: a story that pins its own theme is demonstrating that
+ * theme, and a sweep must not silently repaint it.
+ */
+const THEME_FROM_ENV = (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+  ?.STORYBOOK_THEME;
+
 const withTheme: Decorator = (Story, context) => {
   // Mirrors `withThemeByDataAttribute`'s own resolution order: a per-story
   // `parameters.themes.themeOverride` wins, then the toolbar/URL `theme`
-  // global (`globals=theme:<slug>`), then the shipped default.
+  // global (`globals=theme:<slug>`), then `STORYBOOK_THEME`, then the shipped
+  // default.
   const themeOverride = (context.parameters.themes as { themeOverride?: string } | undefined)
     ?.themeOverride;
   const selected = DecoratorHelpers.pluckThemeFromContext(context);
-  const theme = themeOverride || selected || DEFAULT_THEME;
+  const theme = themeOverride || selected || THEME_FROM_ENV || DEFAULT_THEME;
   return (
     <ThemeBoundary theme={theme}>
       <Story />
@@ -293,6 +318,7 @@ const preview: Preview = {
           "Charts",
           "AI",
           "Editor",
+          "Terminal",
           "Viewer",
           "Flow",
           "Maps",
