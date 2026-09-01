@@ -11,7 +11,7 @@ afterEach(cleanup);
  * nested mount is perturbed by prior Streamdown renders (an env-only gremlin — the
  * feature renders correctly in the browser and in isolation). So transclusion gets
  * its OWN file with the resolved (nested-render) case asserted FIRST in a clean
- * module context. Six-theme pixel sweep still owed.
+ * module context. Cross-theme pixel sweep still owed.
  */
 describe("MarkdownPreview — transclusion (resolveTransclusion)", () => {
   it("embeds resolved markdown in a labelled figure", async () => {

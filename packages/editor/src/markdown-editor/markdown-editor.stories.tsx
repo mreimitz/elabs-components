@@ -275,7 +275,7 @@ Prose continues normally after the table.
  * - Tab moves to the next cell; Shift+Tab to the previous.
  * - The serialized markdown (shown below the editor) stays lossless GFM.
  *
- * Three-theme sweep: switch the Storybook theme toolbar to verify the table
+ * Cross-theme sweep: switch the Storybook theme toolbar to verify the table
  * borders (`border-border-strong`), header tint (`bg-surface-muted`), and
  * toolbar chrome use only semantic tokens across every theme.
  */
@@ -504,7 +504,7 @@ export const IterationContextMenu: Story = {
 };
 
 /**
- * Three-theme sweep for the node menu (#223 round-2): both `NodeMenu` (⋯) and
+ * Cross-theme sweep for the node menu (#223 round-2): both `NodeMenu` (⋯) and
  * `IterationContextMenu` (right-click) above run only under the toolbar's
  * DEFAULT theme (`light`) — Storybook's `defaultTheme` isn't overridable
  * per-story from the global decorator alone, and toggling `preview.tsx` by hand

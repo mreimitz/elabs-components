@@ -100,7 +100,7 @@ are settled:
 A screen is not done at green typecheck (@.claude/rules/quality-gates.md). Before
 calling it done:
 
-- Run `/visual-review` (three-theme screenshot + design critique) on the new
+- Run `/visual-review` (cross-theme screenshot + design critique) on the new
   screen.
 - Run the `brand-ui-accessibility-reviewer` agent against the real rendered
   surface — never a mock standing in for it.

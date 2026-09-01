@@ -21,7 +21,7 @@ A component is "done" only when ALL of these hold:
       (e.g. a `scenarios-*` story) — never only on demo stories you authored to
       show the change off; a self-authored demo confirms nothing. See
       @.claude/rules/conceptual-framing.md. **A `themes.css` / token-VALUE edit
-      (not just a new component) requires a `brand-ui-visual-ux-reviewer` three-theme sweep
+      (not just a new component) requires a `brand-ui-visual-ux-reviewer` cross-theme sweep
       before merge** — the contrast tests (`themes-contrast` / `charts-contrast`)
       and `test-storybook` are necessary but NOT sufficient: they prove ratios and
       render, not that the recolored surfaces still read well. (Meta #161.)
@@ -153,7 +153,7 @@ wrote. They apply to all work, not just components. Before reporting completion:
   `vi.mock`s a `@elabs-ai/components-*` component and then asserts a11y attributes on the
   stand-in proves nothing about the real surface — the mock (e.g. a `<textarea>`
   that happens to honor `aria-label`) can **mask** a P0 a11y bug in the real
-  component (the upstream#34/upstream#46 lesson). Likewise a three-theme pass scoped to one
+  component (the upstream#34/upstream#46 lesson). Likewise a cross-theme pass scoped to one
   self-authored story does not cover the surfaces a feature actually adds. State
   the exact surface (story ID + theme slug, or the real screen) you observed.
 
@@ -492,7 +492,7 @@ optional extra:
     every transcript and silently disabled the hook — as do a `Read` of this very rule
     (`tool_result`), a `<system-reminder>`, and a `Write` that quotes the battery. And
     **assistant prose**: in the real transcripts the sentences that name a reviewer are
-    overwhelmingly the ones _declining_ it ("a `brand-ui-visual-ux-reviewer` three-theme
+    overwhelmingly the ones _declining_ it ("a `brand-ui-visual-ux-reviewer` cross-theme
     sweep is still owed"), so counting them inverted the hook — it went silent on exactly
     the sessions it exists to catch.
   - **Verified against real bytes, not only fixtures.** Replayed over the transcripts in

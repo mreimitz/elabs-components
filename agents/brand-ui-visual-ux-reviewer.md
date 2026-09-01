@@ -88,4 +88,4 @@ edit components, and do not hand off to other tools.
   adding it as a token (the brand-ui-theme skill covers this).
 - Be specific and actionable; avoid vague praise.
 - Cite the real rendered surface for any visual/contrast claim; if you could only
-  read source, say so rather than claiming a three-theme render you didn't run.
+  read source, say so rather than claiming a cross-theme render you didn't run.

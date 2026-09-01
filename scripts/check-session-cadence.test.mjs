@@ -158,7 +158,7 @@ test("assistant prose saying the sweep is still OWED still nudges (exit 2)", () 
   const r = run([
     assistantEdits(EIGHT_FILES),
     assistantText(
-      "Not verified on a real screen: a brand-ui-visual-ux-reviewer three-theme sweep " +
+      "Not verified on a real screen: a brand-ui-visual-ux-reviewer cross-theme sweep " +
         "on a real screen is still owed. If you want the belt-and-suspenders render " +
         "check, run /visual-review.",
     ),
