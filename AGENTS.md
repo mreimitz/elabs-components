@@ -274,6 +274,8 @@ pnpm agent-output:check         # if an agent/skill's output contract changed �
 pnpm agent-output:check:test    # self-test for the agent-output-contract gate
 pnpm heavy-deps:check           # if @elabs-ai/components-ai touched — heavy engines (mermaid, Rive, xterm, React Flow, media-chrome) must be reached by dynamic import(), not a static edge that lands them in every consumer's entry chunk (ratchet; baseline only goes down)
 pnpm heavy-deps:check:test      # self-test for the eager-heavy-dependency ratchet
+pnpm optional-peers:check       # optional peer dependencies must not be transitively installed (mermaid in @elabs-ai/components-ai is declared optional but bytes are installed; ratchet)
+pnpm optional-peers:check:test  # self-test for the optional-peers gate
 pnpm origins:check              # if a packages/*/src file gained a URL — every remote origin is allowlisted (scripts/remote-origins-allowlist.json) AND documented in docs/CSP-AND-NETWORK.md
 pnpm origins:check:test         # self-test for the remote-origin inventory gate
 pnpm tt-aliases:check           # if apps/*/vite config or the CSP doc changed — the published Trusted-Types aliases stay dogfooded and resolve to DOM-free builds

@@ -18,10 +18,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { TokenTheme } from "monaco-editor/esm/vs/editor/common/languages/supports/tokenization.js";
+import { vs, vs_dark } from "monaco-editor/esm/vs/editor/standalone/common/themes.js";
+
 import {
   buildBrandThemeData,
   contrast,
   flattenOver,
+  IGNORED_BASE_SCOPES,
   LINE_HIGHLIGHT_ALPHA,
   withAlpha,
 } from "./monaco-theme-bridge";
@@ -171,4 +175,122 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
     const calcResult = colors["editorInlayHint.foreground"]!;
     expect(contrast(calcResult, tokenGround)).toBeGreaterThanOrEqual(4.5);
   });
+});
+
+/**
+ * Locks #90: Monaco's `vs`/`vs-dark` base themes (inherited at
+ * `buildBrandThemeData`'s `inherit: true`) ship LANGUAGE-SUFFIXED rules —
+ * `string.key.json`, `string.value.json`, `keyword.json`, … — that the
+ * bridge's shorter, unsuffixed rules (`string.key`, `string.value`,
+ * `keyword`) can never beat: Monaco's token-theme trie resolves the DEEPEST
+ * matching scope, and rules are sorted lexicographically before insertion, so
+ * `string.key` is always inserted before `string.key.json` regardless of
+ * which array it came from — the base's `.json` child then overwrites the
+ * clone it inherited from our shorter rule.
+ *
+ * This asserts against Monaco's REAL resolution — `TokenTheme` built from
+ * `base.rules.concat(data.rules)`, exactly mirroring
+ * `standaloneThemeService.js`'s `tokenTheme` getter — rather than against the
+ * bridge's returned `rules` array, since the array has ALWAYS looked correct
+ * (the `// JSON keys` comment on `key`/`string.key` records exactly that
+ * mistaken belief). Before the fix this fails on `string.key.json`,
+ * `string.value.json` and `keyword.json` in BOTH bases (`number.json` and
+ * `delimiter.bracket.json` were already branded — `vs`/`vs-dark` don't
+ * specialise those two scopes, so they fall through to the bridge's
+ * unsuffixed `number`/`delimiter` rules even pre-fix); after the fix every
+ * scope below resolves to a brand colour in both bases.
+ */
+describe.each<[ThemeSlug, typeof vs]>([
+  ["light", vs],
+  ["dark", vs_dark],
+])("Monaco real trie resolution (%s base) — #90", (theme, base) => {
+  const data = buildThemeDataFor(theme);
+  // Mirror `standaloneThemeService.js`: `rules = baseData.rules.concat(this.themeData.rules)`.
+  const merged = [...base.rules, ...(data.rules ?? [])];
+  const tokenTheme = TokenTheme.createFromRawTokenTheme(merged, []);
+  const colorMap = tokenTheme.getColorMap();
+
+  const toHexByte = (n: number) => Math.round(n).toString(16).padStart(2, "0").toUpperCase();
+  const resolvedForegroundHex = (scope: string): string | undefined => {
+    const rule = tokenTheme._match(scope);
+    const color = colorMap[rule._foreground];
+    if (!color) return undefined;
+    return `${toHexByte(color.rgba.r)}${toHexByte(color.rgba.g)}${toHexByte(color.rgba.b)}`;
+  };
+
+  // Every foreground the bridge itself declares (uppercased 6-hex, no `#`) —
+  // a scope resolving to one of these IS branded, whatever its numeric colour id.
+  const brandForegrounds = new Set(
+    (data.rules ?? [])
+      .map((rule) => rule.foreground)
+      .filter((fg): fg is string => typeof fg === "string" && fg.length > 0)
+      .map((fg) => fg.toUpperCase()),
+  );
+
+  it.each([
+    "string.key.json",
+    "string.value.json",
+    "keyword.json",
+    "number.json",
+    "delimiter.bracket.json",
+  ])(
+    "scope %s resolves through the real trie to a brand colour, not a stock base colour",
+    (scope) => {
+      const hex = resolvedForegroundHex(scope);
+      expect(hex).toBeDefined();
+      expect(brandForegrounds.has(hex!)).toBe(true);
+    },
+  );
+
+  // PR #119 review thread 2 (chatgpt-codex-connector): `CodeEditorProps.language`
+  // is a plain, unrestricted `string` passed straight to
+  // `monaco.editor.setModelLanguage` (`code-editor.tsx`) — it is NOT limited
+  // to `EDITOR_LANGUAGES`, so a consumer passing `language="pug"` (or
+  // `"handlebars"`) really does reach these scopes. `IGNORED_BASE_SCOPES`'s
+  // old "nothing in this package can ever render them" premise was false for
+  // these three; only `metatag.php` (no `foreground` in the base themes —
+  // nothing to un-brand) is legitimately left out.
+  it.each(["tag.id.pug", "tag.class.pug", "variable.parameter"])(
+    "scope %s (reachable via an unrestricted CodeEditor `language` prop) resolves to a brand colour",
+    (scope) => {
+      const hex = resolvedForegroundHex(scope);
+      expect(hex).toBeDefined();
+      expect(brandForegrounds.has(hex!)).toBe(true);
+    },
+  );
+});
+
+/**
+ * Drift guard (#90): every DOTTED scope Monaco's `vs`/`vs-dark` base themes
+ * specialise must be either (a) re-declared by the bridge's own `rules`, or
+ * (b) named in `IGNORED_BASE_SCOPES` with a reason it can never reach this
+ * package's editors. This is what survives a `monaco-editor` UPGRADE: today's
+ * fix hand-lists the scopes evidenced against 0.55.1 — if a future version
+ * specialises a new one (or changes what `EDITOR_LANGUAGES` can reach), this
+ * test reds instead of silently shipping another un-branded scope.
+ */
+describe("drift guard against monaco-editor's base themes — #90", () => {
+  const light = buildThemeDataFor("light");
+  const dark = buildThemeDataFor("dark");
+  const bridgeTokens = new Set(
+    [...(light.rules ?? []), ...(dark.rules ?? [])].map((rule) => rule.token),
+  );
+
+  const dottedBaseTokens = new Set(
+    [...vs.rules, ...vs_dark.rules]
+      .map((rule) => rule.token)
+      .filter((token) => token.includes(".")),
+  );
+
+  it("has at least one dotted scope to guard (sanity — a stale extraction would vacuously pass)", () => {
+    expect(dottedBaseTokens.size).toBeGreaterThan(0);
+  });
+
+  it.each([...dottedBaseTokens].sort())(
+    "base scope %s is either overridden by the bridge or explicitly ignored",
+    (token) => {
+      const covered = bridgeTokens.has(token) || IGNORED_BASE_SCOPES.has(token);
+      expect(covered).toBe(true);
+    },
+  );
 });

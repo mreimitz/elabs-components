@@ -29,7 +29,7 @@ This is **computation over tokens, not observation of a rendered screen.**
   size, and whether a screen simply *reads* well. Those come from the Storybook axe pass
   (`pnpm --filter @elabs-ai/components-docs test-storybook`, blocking in CI since #280 —
   though axe's own `test` mode is still advisory, ratcheting in #316) and from a
-  `brand-ui-visual-ux-reviewer` three-theme sweep.
+  `brand-ui-visual-ux-reviewer` cross-theme sweep.
 
 ## Thresholds
 

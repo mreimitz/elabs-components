@@ -10,7 +10,7 @@
  *   - Search filtering while open
  *   - Keyboard navigation (ArrowDown/Up/Enter/Escape) driving aria-activedescendant
  *   - Virtualizer scroll behavior with 10,000 options
- *   - Six-theme visual correctness
+ *   - Cross-theme visual correctness
  */
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";

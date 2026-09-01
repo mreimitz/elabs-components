@@ -38,7 +38,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +49,7 @@ import {
   resolveArtifactPaths,
   stageChangedArtifacts,
   dirtyPaths,
+  hasPreexistingDirt,
   runCascade,
 } from "./run-agent-docs-cascade.mjs";
 
@@ -430,6 +431,262 @@ test("runCascade reports no staged files when the trigger matches but nothing ac
   }
 });
 
+// ── Precondition + narrowed-cleanup helpers for the REAL test (#95) ───────────
+//
+// #95: the REAL test below used to compute its safety precondition from a
+// hand-written 2-path subset (the two probe files) while its `finally` block
+// reverted the FULL `resolveArtifactPaths` set (~24 paths) unconditionally —
+// so an uncommitted hand edit anywhere in that 24-path set (e.g.
+// `packages/ai/README.md`) was silently, irrecoverably destroyed by a normal
+// test run. These two pure, exported helpers close that gap and are
+// independently testable (extracted from the inline `test()` callback per the
+// issue's "Test to add" ask), rather than living only as inline logic nobody
+// but the live-repo test can exercise.
+
+/**
+ * Part A (required) — does it stay SAFE to run the REAL test right now?
+ * Refuses when anything is currently STAGED, or when any of `targetPaths`
+ * (the two probe files PLUS every path `resolveArtifactPaths` returns) already
+ * carries a pre-existing UNSTAGED edit — using `hasPreexistingDirt`, which is
+ * directory-aware, so a dirty file inside `apps/docs/public/llms` is caught
+ * even though `git diff --name-only` never lists the directory itself.
+ *
+ * Deliberately NOT "the whole repo must be clean": unrelated unstaged work
+ * OUTSIDE `targetPaths` must still be allowed to run the test — that intent
+ * predates this fix (see the original comment this replaces) and stays.
+ */
+export function evaluateRealTestPrecondition(root, { targetPaths, dirtyBefore, stagedBefore }) {
+  if (stagedBefore.length > 0) {
+    return {
+      run: false,
+      reason: `repo has staged content right now (normal mid-development; always clean in CI) — staged: ${JSON.stringify(stagedBefore)}`,
+    };
+  }
+  const dirtyTargets = targetPaths.filter((p) => hasPreexistingDirt(root, p, dirtyBefore));
+  if (dirtyTargets.length > 0) {
+    return {
+      run: false,
+      reason:
+        "cleanup targets are dirty right now (normal mid-development; always clean in CI) — " +
+        "this test hard-reverts its targets to HEAD, so it refuses to run while any of them " +
+        `carries uncommitted work: ${dirtyTargets.join(", ")}`,
+    };
+  }
+  return { run: true };
+}
+
+/**
+ * Part B (recommended, defence-in-depth) — narrow the `finally` cleanup to
+ * this run's OBSERVED footprint instead of the full static target list.
+ * `touchedNow` is a post-run dirty/staged snapshot (paths this run itself
+ * left dirty or staged); `dirtyBefore` is the pre-run dirty snapshot. A path
+ * enters the revert set only if it's both currently touched AND was NOT
+ * already dirty before the run started — so a pre-existing dirty path can
+ * never be swept in, even in the compound case where the run's own
+ * regeneration ALSO touched it (mirrors the guard `stageChangedArtifacts`
+ * already enforces on the production side). Directory-aware via the same
+ * `hasPreexistingDirt` predicate on both sides.
+ */
+export function computeRevertSet(root, targetPaths, { dirtyBefore, touchedNow }) {
+  return targetPaths.filter(
+    (p) => hasPreexistingDirt(root, p, touchedNow) && !hasPreexistingDirt(root, p, dirtyBefore),
+  );
+}
+
+test("hasPreexistingDirt is exported and directory-aware (#95)", () => {
+  const { root, g } = gitRepo();
+  try {
+    mkdirSync(join(root, "a"), { recursive: true });
+    mkdirSync(join(root, "clean-sibling"), { recursive: true });
+    writeFileSync(join(root, "a", "b.txt"), "committed\n");
+    writeFileSync(join(root, "clean-sibling", "c.txt"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+
+    writeFileSync(join(root, "a", "b.txt"), "dirty\n");
+    const dirtyBefore = dirtyPaths(root);
+
+    assert.equal(
+      hasPreexistingDirt(root, "a", dirtyBefore),
+      true,
+      "a directory is dirty if any file inside it is (the apps/docs/public/llms case)",
+    );
+    assert.equal(
+      hasPreexistingDirt(root, "clean-sibling", dirtyBefore),
+      false,
+      "a clean sibling directory must not be reported dirty",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("evaluateRealTestPrecondition refuses to run when a cleanup target (not just a probe file) is dirty, and names it", () => {
+  const { root, g } = gitRepo();
+  try {
+    writeFileSync(join(root, "fixed-artifact.txt"), "committed\n");
+    writeFileSync(join(root, "probe-source.txt"), "committed\n");
+    writeFileSync(join(root, "probe-barrel.txt"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+
+    const targetPaths = ["probe-source.txt", "probe-barrel.txt", "fixed-artifact.txt"];
+
+    // Clean tree → precondition says run.
+    assert.deepEqual(
+      evaluateRealTestPrecondition(root, {
+        targetPaths,
+        dirtyBefore: dirtyPaths(root),
+        stagedBefore: cachedNames(root),
+      }),
+      { run: true },
+    );
+
+    // Dirty a cleanup target that is NOT one of the two probe files.
+    writeFileSync(join(root, "fixed-artifact.txt"), "an in-flight hand edit\n");
+
+    const verdict = evaluateRealTestPrecondition(root, {
+      targetPaths,
+      dirtyBefore: dirtyPaths(root),
+      stagedBefore: cachedNames(root),
+    });
+    assert.equal(verdict.run, false);
+    assert.ok(
+      verdict.reason.includes("fixed-artifact.txt"),
+      `skip reason must name the offending path, got: ${verdict.reason}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("evaluateRealTestPrecondition catches a dirty file INSIDE a directory artifact (the apps/docs/public/llms case)", () => {
+  const { root, g } = gitRepo();
+  try {
+    mkdirSync(join(root, "llms-dir"), { recursive: true });
+    writeFileSync(join(root, "llms-dir", "spoke.md"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+
+    const targetPaths = ["llms-dir"];
+    assert.deepEqual(
+      evaluateRealTestPrecondition(root, {
+        targetPaths,
+        dirtyBefore: dirtyPaths(root),
+        stagedBefore: cachedNames(root),
+      }),
+      { run: true },
+    );
+
+    writeFileSync(join(root, "llms-dir", "spoke.md"), "hand edit inside the directory\n");
+    const verdict = evaluateRealTestPrecondition(root, {
+      targetPaths,
+      dirtyBefore: dirtyPaths(root),
+      stagedBefore: cachedNames(root),
+    });
+    assert.equal(verdict.run, false);
+    assert.ok(
+      verdict.reason.includes("llms-dir"),
+      `expected llms-dir in reason, got: ${verdict.reason}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("evaluateRealTestPrecondition still refuses on pre-existing STAGED content, even with a fully clean target set", () => {
+  const { root, g } = gitRepo();
+  try {
+    writeFileSync(join(root, "other.txt"), "committed\n");
+    writeFileSync(join(root, "target.txt"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+    writeFileSync(join(root, "other.txt"), "staged edit, unrelated to any target\n");
+    g("add", "other.txt");
+
+    const verdict = evaluateRealTestPrecondition(root, {
+      targetPaths: ["target.txt"],
+      dirtyBefore: dirtyPaths(root),
+      stagedBefore: cachedNames(root),
+    });
+    assert.equal(verdict.run, false);
+    assert.ok(verdict.reason.includes("staged"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("evaluateRealTestPrecondition does NOT block on unrelated unstaged work OUTSIDE the target set", () => {
+  const { root, g } = gitRepo();
+  try {
+    writeFileSync(join(root, "unrelated.txt"), "committed\n");
+    writeFileSync(join(root, "target.txt"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+    writeFileSync(join(root, "unrelated.txt"), "an unrelated in-flight hand edit\n");
+
+    assert.deepEqual(
+      evaluateRealTestPrecondition(root, {
+        targetPaths: ["target.txt"],
+        dirtyBefore: dirtyPaths(root),
+        stagedBefore: cachedNames(root),
+      }),
+      { run: true },
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("computeRevertSet excludes a pre-existing dirty path even when the run's own regeneration also touched it (compound case)", () => {
+  const { root, g } = gitRepo();
+  try {
+    writeFileSync(join(root, "packages-foo-readme.txt"), "committed\n");
+    writeFileSync(join(root, "generated-artifact.txt"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+
+    // Pre-existing, unrelated hand edit — present BEFORE the run starts.
+    writeFileSync(join(root, "packages-foo-readme.txt"), "pre-existing hand edit\n");
+    const dirtyBefore = dirtyPaths(root); // { packages-foo-readme.txt }
+
+    // The "run" (simulated) regenerates the real artifact AND, in the compound
+    // case, also happens to touch the already-dirty file.
+    writeFileSync(join(root, "generated-artifact.txt"), "freshly regenerated\n");
+    writeFileSync(join(root, "packages-foo-readme.txt"), "pre-existing hand edit, still here\n");
+    const touchedNow = dirtyPaths(root); // both files dirty now
+
+    const revertSet = computeRevertSet(
+      root,
+      ["packages-foo-readme.txt", "generated-artifact.txt"],
+      { dirtyBefore, touchedNow },
+    );
+    assert.deepEqual(revertSet, ["generated-artifact.txt"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("computeRevertSet is directory-aware on both sides", () => {
+  const { root, g } = gitRepo();
+  try {
+    mkdirSync(join(root, "dir-artifact"), { recursive: true });
+    writeFileSync(join(root, "dir-artifact", "spoke.md"), "committed\n");
+    g("add", "-A");
+    g("commit", "-qm", "base");
+
+    const dirtyBefore = dirtyPaths(root); // empty
+    writeFileSync(join(root, "dir-artifact", "spoke.md"), "regenerated content\n");
+    const touchedNow = dirtyPaths(root); // { dir-artifact/spoke.md }
+
+    assert.deepEqual(computeRevertSet(root, ["dir-artifact"], { dirtyBefore, touchedNow }), [
+      "dir-artifact",
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── REAL, self-reverting, live test against the ACTUAL repo (not a fixture) ───
 //
 // Everything above is fast and mocked by design (matching the
@@ -461,25 +718,29 @@ test(
     // Scoped precondition (not "the whole repo must be clean"): the hook only
     // ever acts on STAGED content (conflict-marker scan, cascade trigger,
     // Prettier step all read `git diff --cached`), so unrelated UNSTAGED work
-    // elsewhere in this worktree is harmless and must not block this test.
-    // What DOES matter: (a) nothing is currently STAGED — otherwise the hook
-    // run below would fold in and then unstage someone else's in-progress
-    // staging, and (b) the two probe files themselves aren't already dirty —
-    // otherwise this test's unconditional `git checkout HEAD --` in `finally`
-    // would discard real, unrelated work on those exact two files.
-    const preexistingStaged = cachedNames(REPO_ROOT);
-    const dirtyNow = dirtyPaths(REPO_ROOT);
+    // OUTSIDE the cleanup's target set is harmless and must not block this
+    // test. What DOES matter: (a) nothing is currently STAGED — otherwise the
+    // hook run below would fold in and then unstage someone else's
+    // in-progress staging, and (b) NONE of this test's cleanup targets — the
+    // two probe files PLUS every path `resolveArtifactPaths` returns, ~24 in
+    // total — are already dirty (#95). This test's `finally` block hard-
+    // reverts those targets to HEAD; checking only the two probe files (as an
+    // earlier version of this test did) left the other ~22 unguarded and
+    // silently destroyed real uncommitted work sitting in one of them (a real
+    // incident: a hand-authored `packages/ai/README.md` edit). See
+    // `evaluateRealTestPrecondition` above, which is what this delegates to.
     const probeSourceRel = relative(REPO_ROOT, PROBE_SOURCE).split(sep).join("/");
     const probeBarrelRel = relative(REPO_ROOT, PROBE_BARREL).split(sep).join("/");
-    if (
-      preexistingStaged.length > 0 ||
-      dirtyNow.has(probeSourceRel) ||
-      dirtyNow.has(probeBarrelRel)
-    ) {
-      t.skip(
-        "repo has staged content or a dirty probe file right now (normal mid-development; " +
-          `always clean in CI) — staged: ${JSON.stringify(preexistingStaged)}`,
-      );
+    const targetPaths = [probeSourceRel, probeBarrelRel, ...resolveArtifactPaths(REPO_ROOT)];
+    const preexistingStaged = cachedNames(REPO_ROOT);
+    const dirtyNow = dirtyPaths(REPO_ROOT);
+    const verdict = evaluateRealTestPrecondition(REPO_ROOT, {
+      targetPaths,
+      dirtyBefore: dirtyNow,
+      stagedBefore: preexistingStaged,
+    });
+    if (!verdict.run) {
+      t.skip(verdict.reason);
       return;
     }
     const sourceBefore = readFileSync(PROBE_SOURCE, "utf8");
@@ -552,23 +813,27 @@ test(
       } catch {
         /* nothing was staged — fine */
       }
-      // Hard-restore every file this probe could plausibly have touched to its
-      // committed HEAD content.
-      const allArtifacts = resolveArtifactPaths(REPO_ROOT);
-      execFileSync(
-        "git",
-        [
-          "-C",
-          REPO_ROOT,
-          "checkout",
-          "HEAD",
-          "--",
-          "packages/ui/src/components/command/command.tsx",
-          "packages/ui/src/components/command/index.ts",
-          ...allArtifacts.filter((p) => existsSync(join(REPO_ROOT, p))),
-        ],
-        { stdio: "ignore" },
-      );
+      // Part B (#95, defence-in-depth): revert only paths THIS RUN actually
+      // left dirty — not the full static target list. `touchedNow` is taken
+      // AFTER the `reset` above (so staged-but-unmodified artifacts show up as
+      // a working-tree/index diff), `dirtyNow` is the pre-run snapshot the
+      // precondition already proved excludes every target. Recomputing
+      // `resolveArtifactPaths` here (rather than reusing `targetPaths`) also
+      // covers a package README that only came into existence as a result of
+      // this very run. This narrows the blast radius even further than the
+      // precondition alone — correct even if the precondition is ever
+      // loosened, or a file becomes dirty mid-run, or the artifact list grows.
+      const touchedNow = dirtyPaths(REPO_ROOT);
+      const revertSet = computeRevertSet(
+        REPO_ROOT,
+        [probeSourceRel, probeBarrelRel, ...resolveArtifactPaths(REPO_ROOT)],
+        { dirtyBefore: dirtyNow, touchedNow },
+      ).filter((p) => existsSync(join(REPO_ROOT, p)));
+      if (revertSet.length > 0) {
+        execFileSync("git", ["-C", REPO_ROOT, "checkout", "HEAD", "--", ...revertSet], {
+          stdio: "ignore",
+        });
+      }
       // Verify OUR OWN footprint is gone — NOT a repo-wide dirty scan, which
       // would false-positive on any unrelated work-in-progress elsewhere in
       // this worktree that has nothing to do with this test (a real prior

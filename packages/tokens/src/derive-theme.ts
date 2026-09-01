@@ -105,10 +105,39 @@
  * `--accent` byte-identical to `background`, an invisible hover state). See
  * `deriveAccent`'s second escape branch.
  *
- * Malformed input (anything `parseOklch` cannot parse) throws immediately for
- * the same reason: this function never returns a value it has not checked.
- * So does a `primary`/`background` that parses but carries alpha < 1 — see
+ * Input validation happens in `parseOklch`, which enforces the OKLCH domain
+ * (L ∈ [0,1], C ≥ 0, all components finite, alpha ∈ [0,1]) before any math
+ * runs. Invalid coordinates are rejected immediately for the same reason: this
+ * function never returns a value it has not checked. Additionally, a
+ * `primary`/`background` with alpha < 1 is rejected — see
  * `DeriveThemeOptions.primary`'s doc comment (fix round 1, finding 2).
+ *
+ * ## Scope limit — proven for ONE background per call, not a theme-switching
+ * guarantee (issue #91, narrowed 2026-09-01)
+ *
+ * The 3:1 proof above (and the defensive re-measure in {@link deriveTheme}
+ * itself) is valid **only against the single `background` this call used** —
+ * the value passed in `options.background`, or {@link DEFAULT_BACKGROUND}
+ * when omitted. It is NOT a promise that the returned tokens are safe on any
+ * OTHER background a consuming app might also render on. An app that ships
+ * more than one theme (e.g. both reference themes, `light` and `dark`) and
+ * applies the SAME `deriveTheme(...)` result across a theme switch is outside
+ * what this function proves: an independent sweep measured a `--ring` proven
+ * ≥3:1 against `light`'s `--background` falling to as low as **1.00:1**
+ * (fully invisible) against `dark`'s — in 466 of 960 sampled seeds.
+ *
+ * This was deliberately NOT fixed by making `deriveTheme` resolve against
+ * every theme a `ThemeProvider` registry knows about — three such directions
+ * (a per-theme-keyed return, a `Record<themeName, background>` input, or a
+ * live re-derivation on theme change inside `ThemeProvider`) were considered
+ * and rejected as too large a behaviour change for this fix. Concretely: **if
+ * your app renders more than one background, call `deriveTheme` once per
+ * background/theme and swap which result you pass to `tokenOverrides` when
+ * the active theme changes** — this function does not do that for you, and
+ * cannot: it has no visibility into what other themes/backgrounds the app
+ * might also use. A dev-only `console.warn` fires on every call as a runtime
+ * reminder of this scope limit (compiled out of production bundles, the same
+ * `warnDev` shape `theme-provider.tsx` uses). See `docs/CONSUMING.md` §5.3.
  */
 import type { ThemeTokenName } from "./theme-token-names.generated";
 import { contrastRatio, parseOklch, type Oklch } from "./color-contrast";
@@ -147,6 +176,14 @@ export interface DeriveThemeOptions {
    * case. Pass the real value explicitly when deriving for `dark` or a
    * custom theme, or `--ring`'s search will optimize against the wrong
    * surface.
+   *
+   * **The resulting proof covers ONLY this one background — passing the
+   * right value here does not make the result safe on a DIFFERENT
+   * background too** (issue #91; see the module doc comment's "Scope limit"
+   * section). If your app renders on more than one background/theme, this
+   * option chooses which ONE the returned tokens are proven for on this
+   * call — call `deriveTheme` again with each other background and swap
+   * which result you apply when the active theme changes.
    *
    * **Must be fully opaque (alpha 1, or omitted)** — the same reasoning as
    * `primary` above: a translucent "surface" has no defined resolved colour
@@ -204,6 +241,24 @@ const LIGHT_INK: Oklch = { l: 1, c: 0, h: 0, alpha: 1 };
 
 function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
+}
+
+/**
+ * `process` is deliberately NOT in this package's type surface — it is a
+ * browser package and its tsconfig lists only the React types, so the `dist`
+ * type build has no `@types/node`. Declaring the one shape used here keeps
+ * the expression `process.env.NODE_ENV` intact, which is what every bundler
+ * replaces at build time (so the diagnostic below compiles out of production
+ * bundles). Mirrors the identical guard in `theme-provider.tsx`'s `warnDev`
+ * and `@elabs-ai/components-data`'s DataTable — deliberately re-declared
+ * locally rather than imported, since `theme-provider.tsx`'s `warnDev` is not
+ * part of this package's public surface.
+ */
+declare const process: { env: { NODE_ENV?: string } };
+
+/** Dev-only diagnostic; compiled out of production bundles. */
+function warnDev(message: string) {
+  if (process.env.NODE_ENV !== "production") console.warn(`[brand-ui] ${message}`);
 }
 
 /** Round `n` to `digits` decimal places — the SAME rounding `formatOklch` applies. */
@@ -421,6 +476,12 @@ function deriveAccent(primary: Oklch, background: Oklch): Oklch {
  * those and not the full `THEME_TOKEN_NAMES` set, and the AA-safety
  * guarantee every returned `-foreground`/`--ring` value carries.
  *
+ * **The `--ring`/`--accent` 3:1 proof is scoped to the ONE `background` this
+ * call used — it is not a theme-switching guarantee** (issue #91; see the
+ * module doc comment's "Scope limit" section). Reusing this same return value
+ * while a DIFFERENT background/theme is active is unproven. A dev-only
+ * console warning restates this on every call.
+ *
  * @throws if `primary`/`background` don't parse as `oklch(...)` colors, if
  *   either carries alpha other than 1 (see `DeriveThemeOptions.primary`), or —
  *   only reachable as a defensive backstop, see the module doc comment — if
@@ -516,6 +577,23 @@ export function deriveTheme(options: DeriveThemeOptions): DerivedThemeTokens {
         `findAALightness's collision avoidance, not a bad input.`,
     );
   }
+
+  // Issue #91 — the maintainer's ruling was to narrow the promise rather
+  // than build a multi-background/theme-switching guarantee: this proof
+  // (like the whole function) is valid against ONLY the "background" this
+  // call resolved, never against any other background/theme the consuming
+  // app might also render on. A single reused deriveTheme() result applied
+  // across a theme switch measured a --ring as low as 1.00:1 (fully
+  // invisible) against the un-derived-for theme in an independent sweep. See
+  // the module doc comment's "Scope limit" section and docs/CONSUMING.md §5.3.
+  warnDev(
+    `deriveTheme: the returned --ring/--accent are proven >=3:1 only against the "background" ` +
+      `this call used (${formatOklch(background)}) — not against any OTHER background your app ` +
+      `may also render on (e.g. a second theme). Applying this same result while a different ` +
+      `background is active is unproven; call deriveTheme again with THAT background and swap ` +
+      `which result you pass to tokenOverrides when the active theme changes. See ` +
+      `docs/CONSUMING.md §5.3 and issue #91.`,
+  );
 
   return {
     "--primary": options.primary.trim(),

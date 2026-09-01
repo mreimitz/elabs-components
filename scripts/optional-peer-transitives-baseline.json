@@ -1,0 +1,8 @@
+[
+  {
+    "package": "@elabs-ai/components-ai",
+    "peer": "mermaid",
+    "via": ["@streamdown/mermaid", "streamdown"],
+    "justification": "issue #94 — @elabs-ai/components-ai declares mermaid an optional peer (issue #33), but two of its own plain dependencies (streamdown, @streamdown/mermaid) each declare mermaid as their own plain, non-optional dependency, so mermaid's bytes are always installed regardless of what a consumer's manifest says. Disclosed in docs/CONSUMING.md §6, packages/ai/README.md, docs/ADR/0032-optional-peer-dependency-policy.md, and packages/ai/src/_lazy-mermaid.ts. The lazy-load boundary in _lazy-mermaid.ts still keeps mermaid out of the entry chunk (ADR 0019) — this residual is about install-time presence, not bundle-time cost. Will go clean, and must be removed from this baseline, the day streamdown/@streamdown/mermaid declare mermaid as their own optional peer instead."
+  }
+]

@@ -36,8 +36,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 // KeyboardSensor + sortableKeyboardCoordinates already implement the exact key
 // model the issue asks for (Space/Enter lift, arrows move, Space/Enter drop,
 // Escape cancel) and DndContext's built-in `Accessibility` component renders the
-// aria-live announcer — this file only supplies the localized announcement text
-// and the token-driven visuals.
+// aria-live announcer — this file supplies the localized announcement text, the
+// localized screen-reader instructions + role description (#98 — dnd-kit ships
+// its own hardcoded-English defaults for both, which need an explicit override
+// same as everything else this feature says out loud), and the token-driven
+// visuals.
 import {
   DndContext,
   KeyboardSensor,
@@ -734,9 +737,12 @@ function SortableDataRow({
    * `rowReorderHandle: "row"` applies `attributes`/`listeners` straight to
    * the `<tr>` (no separate activator element), so dnd-kit's DEFAULT
    * `role="button"` would replace the table's own `role="row"` on that
-   * element — destroying its row semantics. Override just the role (and
-   * nothing else) in that mode; `"cell"` mode leaves this unset because the
-   * grip `<button>` — not the `<tr>` — receives `attributes`/`listeners`.
+   * element — destroying its row semantics. Override the role in that mode
+   * only; `"cell"` mode leaves `role` unset because the grip `<button>` —
+   * not the `<tr>` — receives `attributes`/`listeners`. `roleDescription` is
+   * overridden in BOTH modes (#98) — it carries dnd-kit's localized
+   * `aria-roledescription`, which the activator needs regardless of which
+   * element is the activator.
    */
   attributesOverride?: { role?: string; roleDescription?: string; tabIndex?: number };
   children: (args: SortableRowRenderArgs) => ReactNode;
@@ -2235,7 +2241,14 @@ function DataTableInner<TData, TValue>(
             <SortableDataRow
               key={getReorderRowId(row)}
               id={getReorderRowId(row)}
-              attributesOverride={rowReorderHandle === "row" ? { role: "row" } : undefined}
+              attributesOverride={{
+                // #98: dnd-kit's own `roleDescription: 'sortable'` default is
+                // hardcoded English; override it with the localized value in
+                // BOTH handle modes — `role` stays row-mode-only (see the
+                // `attributesOverride` prop doc above).
+                roleDescription: t("data.table.reorderRoleDescription"),
+                ...(rowReorderHandle === "row" ? { role: "row" } : null),
+              }}
             >
               {({ setNodeRef, setActivatorNodeRef, attributes, listeners, isDragging, style }) =>
                 renderRow(
@@ -2521,7 +2534,12 @@ function DataTableInner<TData, TValue>(
       onDragOver={handleRowDragOver}
       onDragEnd={handleRowDragEnd}
       onDragCancel={handleRowDragCancel}
-      accessibility={{ announcements: silentDragAnnouncements }}
+      accessibility={{
+        announcements: silentDragAnnouncements,
+        // #98: dnd-kit's own hidden keyboard-instructions node is hardcoded
+        // English (`defaultScreenReaderInstructions`) unless overridden here.
+        screenReaderInstructions: { draggable: t("data.table.reorderInstructions") },
+      }}
     >
       {nonVirtualizedContent}
       <div

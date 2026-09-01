@@ -315,11 +315,92 @@ export function buildBrandThemeData(
     { token: "string.value", foreground: ink(chart2) },
     { token: "invalid", foreground: ink(destructive) },
     { token: "namespace", foreground: ink(success) },
+    // Monaco's built-in `vs`/`vs-dark` bases (inherited at `inherit: true`,
+    // below) ship LANGUAGE-SUFFIXED rules — `string.key.json`,
+    // `string.value.json`, `keyword.json`, `string.yaml`, `delimiter.html`, …
+    // — and Monaco's token-theme trie resolves the DEEPEST matching scope
+    // (`ThemeTrieElement.match`), with rules sorted lexicographically before
+    // insertion. A shorter brand scope (e.g. `string.key`, above) can
+    // therefore NEVER override a longer base scope: every scope a base theme
+    // specialises must be re-declared here, or that language renders in
+    // stock VS colours (#90). Keep this list in sync with the base themes —
+    // `IGNORED_BASE_SCOPES` + the drift guard in `monaco-theme-bridge.test.ts`
+    // fail CI if a future `monaco-editor` upgrade adds a new one.
+    { token: "string.key.json", foreground: ink(chart1) }, // pairs with `key`
+    { token: "string.value.json", foreground: ink(chart2) }, // pairs with `string`
+    { token: "keyword.json", foreground: ink(primary) }, // pairs with `keyword`
+    // Closes the class, not just JSON — the same base-specialisation gap
+    // reaches YAML/HTML/SQL/XML/CSS/SCSS (#90 evidence #7).
+    { token: "string.html", foreground: ink(chart2) },
+    { token: "string.sql", foreground: ink(chart2) },
+    { token: "string.yaml", foreground: ink(chart2) },
+    { token: "delimiter.html", foreground: ink(mutedFg, 3.2) },
+    { token: "delimiter.xml", foreground: ink(mutedFg, 3.2) },
+    { token: "attribute.value.html", foreground: ink(chart2) },
+    { token: "attribute.value.xml", foreground: ink(chart2) },
+    { token: "attribute.value.number", foreground: ink(chart4) },
+    { token: "attribute.value.unit", foreground: ink(chart4) },
+    { token: "attribute.value.number.css", foreground: ink(chart4) },
+    { token: "attribute.value.unit.css", foreground: ink(chart4) },
+    { token: "attribute.value.hex.css", foreground: ink(chart4) },
+    { token: "number.hex", foreground: ink(chart4) },
+    { token: "keyword.flow", foreground: ink(primary) },
+    { token: "keyword.flow.scss", foreground: ink(primary) },
+    { token: "operator.scss", foreground: ink(primary) },
+    { token: "operator.sql", foreground: ink(primary) },
+    { token: "operator.swift", foreground: ink(primary) },
+    { token: "predefined.sql", foreground: ink(chart3) },
+    { token: "metatag", foreground: ink(chart3) },
+    { token: "metatag.html", foreground: ink(chart3) },
+    { token: "metatag.xml", foreground: ink(chart3) },
+    { token: "metatag.content.html", foreground: ink(chart3) },
+    { token: "meta.scss", foreground: ink(chart1) },
+    { token: "meta.tag", foreground: ink(chart1) },
+    // `CodeEditorProps.language` is a plain, unrestricted `string` passed
+    // straight to `monaco.editor.setModelLanguage` (`code-editor.tsx`) — NOT
+    // limited to `EDITOR_LANGUAGES` — so a consumer really can reach these
+    // pug/handlebars scopes (PR #119 review thread 2). See
+    // `IGNORED_BASE_SCOPES` below for the one scope that stays un-overridden.
+    { token: "tag.id.pug", foreground: ink(primary) }, // pairs with `tag`
+    { token: "tag.class.pug", foreground: ink(primary) },
+    { token: "variable.parameter", foreground: bare(foreground) }, // pairs with `variable`
   ];
 
   // `base` is a placeholder; `applyBrandTheme` overrides it per theme.
   return { base: "vs", inherit: true, colors, rules };
 }
+
+/**
+ * Base-specialised dotted scopes (`vs`/`vs_dark`,
+ * `monaco-editor/esm/vs/editor/standalone/common/themes.js`) deliberately left
+ * un-overridden by `buildBrandThemeData`'s `rules`. Read by the drift-guard
+ * test (`monaco-theme-bridge.test.ts`, #90) so a future `monaco-editor`
+ * upgrade that adds a genuinely new specialised scope fails CI instead of
+ * silently un-branding it.
+ *
+ * PR #119 review thread 2 (fix-round-2): this set used to also carry
+ * `tag.id.pug` / `tag.class.pug` / `variable.parameter` on the premise that
+ * "the language that emits them is NOT in `EDITOR_LANGUAGES`, so nothing in
+ * this package can ever render them" — that premise is FALSE.
+ * `CodeEditorProps.language` (`code-editor.tsx`) is a plain, unrestricted
+ * `string` forwarded straight to `monaco.editor.setModelLanguage`; the
+ * toolbar's `EDITOR_LANGUAGES` list is a curated picker UI, not an
+ * enforcement boundary. A consumer passing `language="pug"` or
+ * `language="handlebars"` genuinely reaches those scopes and would have
+ * inherited stock Monaco colours instead of the token-derived brand theme.
+ * They are now branded in `rules` above instead of ignored here.
+ *
+ * - `metatag.php` — the one scope legitimately still ignored: verified
+ *   against `monaco-editor/esm/vs/editor/standalone/common/themes.js`, the
+ *   base themes give it only a `fontStyle` (`bold`), no `foreground` at all
+ *   — there is no colour to override, so branding it would be a no-op rule
+ *   with nothing to test.
+ *
+ * If a future scope needs the same "unreachable" reasoning, verify it
+ * against `CodeEditorProps.language`'s actual (unrestricted) type before
+ * adding it here — not against `EDITOR_LANGUAGES`.
+ */
+export const IGNORED_BASE_SCOPES = new Set(["metatag.php"]);
 
 /** The Monaco theme id used for a given brand theme. */
 export function brandThemeId(theme: ThemeName): string {

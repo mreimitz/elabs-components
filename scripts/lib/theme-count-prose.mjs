@@ -46,13 +46,19 @@ const COUNT_ADJECTIVES = [
 
 /**
  * Lines in `text` claiming a theme COUNT that disagrees with `themeCount`. Handles
- * both the word form ("all six themes") and the numeric form ("6 themes") —
- * INCLUDING when an adjective sits between the number and "themes" ("three
- * shipped themes", "3 reference themes") or a markdown soft line-wrap splits the
- * number word from "themes" across two lines ("all three\nshipped themes").
- * Returns `{ line, match, claimed }[]` (1-based line numbers in the ORIGINAL text).
+ * the word form ("all six themes"), the numeric form ("6 themes") — INCLUDING when
+ * an adjective sits between the number and "themes" ("three shipped themes", "3
+ * reference themes") or a markdown soft line-wrap splits the number word from
+ * "themes" across two lines ("all three\nshipped themes") — AND the hyphenated
+ * compound-adjective form ("three-theme sweep", "3-theme checks", #92): when the
+ * third theme was deleted, a bulk search-replace caught the noun form ("all three
+ * themes" → "every theme") but missed this one, because the hyphen breaks the word
+ * boundary the noun-form regex was built around and "theme" (singular) follows
+ * instead of "themes" (plural) — so ~15 occurrences survived in always-loaded
+ * governance/command/hook files and source comments. Returns `{ line, match,
+ * claimed }[]` (1-based line numbers in the ORIGINAL text).
  *
- * Four techniques make this robust to both gaps (#29, #81 review):
+ * Four techniques make this robust to all three gaps (#29, #81 review, #92):
  *  1. The regex tolerates 0-2 intervening words between the number and "themes",
  *     but (PR #81 review) each intervening word must be one of `COUNT_ADJECTIVES`
  *     — NOT an arbitrary token. The original `(?:\s+\S+){0,2}?` accepted any
@@ -76,13 +82,25 @@ const COUNT_ADJECTIVES = [
  *     themes go further"), or a contrast ratio ("4.5:1 in all themes").
  *     Widening the intervening-word window (point 1) made all three collide
  *     with an unrelated "themes" mention later in the same sentence; this
- *     closes that hole without narrowing the window back down.
+ *     closes that hole without narrowing the window back down. It guards the
+ *     hyphenated branch (point 4) equally, since it sits before the shared
+ *     number capture group both branches read from.
+ *  4. A second, alternate branch — `-theme\b` — sits alongside the noun-form
+ *     branch inside one non-capturing group, so the SAME leading `\b(NUM)\b`
+ *     capture feeds both: "three-theme" matches the hyphenated branch directly
+ *     (the `\b` after "three" already falls on the word→hyphen transition, no
+ *     `\s+` needed), while "three themes" still matches the noun branch. This
+ *     is deliberately narrower than the noun form — no adjective gap, no
+ *     "sweep"/"checks" tail in the match — because the compound is a fixed
+ *     two-word unit ("N-theme"), not a phrase with room for a modifier between
+ *     the count and "theme".
  */
 export function findThemeCountViolations(text, themeCount) {
   if (!themeCount) return [];
   const adj = COUNT_ADJECTIVES.join("|");
   const re = new RegExp(
-    `(?<![\\d.:-])\\b(${Object.keys(NUMBER_WORDS).join("|")}|\\d+)\\b(?:\\s+(?:${adj})){0,2}?\\s+themes\\b`,
+    `(?<![\\d.:-])\\b(${Object.keys(NUMBER_WORDS).join("|")}|\\d+)\\b` +
+      `(?:(?:\\s+(?:${adj})){0,2}?\\s+themes\\b|-theme\\b)`,
     "gi",
   );
   const joined = text.replace(/\n/g, " ");

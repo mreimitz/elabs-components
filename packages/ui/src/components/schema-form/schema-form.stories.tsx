@@ -6,9 +6,12 @@ import {
   SchemaFormFields,
   SchemaFormProvider,
   SchemaFormRoot,
+  SchemaFormSubmit,
+  SchemaFormTestAction,
   SchemaFormTitle,
 } from "./schema-form";
 import type { FormSpec, FormValues } from "./schema-form-spec";
+import { fromJsonSchema } from "./from-json-schema";
 
 const meta = {
   title: "Forms/SchemaForm",
@@ -448,4 +451,116 @@ export const DarkTheme: Story = {
       </div>
     ),
   ],
+};
+
+const testActionSpec: FormSpec = {
+  formName: "connector_test",
+  title: "Connect a data source",
+  fields: [
+    { type: "string", name: "host", label: "Host", required: true, default: "api.example.com" },
+    { type: "string", name: "apiKey", label: "API key", required: true },
+  ],
+};
+
+/**
+ * `SchemaFormTestAction` (issue #22 maintainer ruling, 2026-09-01) — a
+ * form-level "Test connection" affordance, composed alongside
+ * `SchemaFormSubmit` but entirely independent of it: it never reads or
+ * blocks field validity, and its own pending/success/failure state never
+ * gates `submit()`. Placed directly under `SchemaFormRoot`, not inside the
+ * default `SchemaForm` composition — it's an opt-in part a consumer places.
+ */
+export const TestConnectionAction: Story = {
+  render: function TestConnectionAction() {
+    return (
+      <SchemaFormProvider spec={testActionSpec} onSubmit={(state) => console.info("submit", state)}>
+        <SchemaFormRoot className="flex flex-col gap-6">
+          <SchemaFormTitle />
+          <SchemaFormFields />
+          <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
+            <SchemaFormTestAction
+              onTest={async (values) => {
+                await new Promise((resolve) => setTimeout(resolve, 600));
+                if (!values.apiKey) throw new Error("API key is required to test the connection");
+              }}
+            />
+            <SchemaFormSubmit />
+          </div>
+        </SchemaFormRoot>
+      </SchemaFormProvider>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Fill only the field the test action itself checks — the OTHER
+    // required field ("Host") is left with its default and never
+    // validated by this click, proving the test action doesn't run
+    // (or depend on) SchemaForm's own validation.
+    await userEvent.type(canvas.getByLabelText(/API key/), "sk-live-demo");
+    await userEvent.click(canvas.getByRole("button", { name: "Test connection" }));
+
+    await waitFor(() => {
+      expect(canvas.getByRole("button", { name: "Testing…" })).toBeInTheDocument();
+    });
+    await waitFor(
+      () => {
+        expect(canvas.getByText("Connected")).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
+  },
+};
+
+// A connector manifest expressed as JSON Schema — the shape `fromJsonSchema()`
+// (issue #22 maintainer ruling, 2026-09-01) targets: an OpenAPI-style request
+// body using only the documented subset (string/enum/number/integer/boolean/
+// array-of-string/object).
+const connectorJsonSchema = {
+  type: "object",
+  title: "Connector settings",
+  description: "Configure how this connector syncs data into your workspace.",
+  properties: {
+    name: { type: "string", title: "Connector name", minLength: 1 },
+    environment: {
+      type: "string",
+      title: "Environment",
+      enum: ["production", "staging", "development"],
+      default: "staging",
+    },
+    syncIntervalMinutes: {
+      type: "integer",
+      title: "Sync interval (minutes)",
+      minimum: 5,
+      maximum: 1440,
+      default: 60,
+    },
+    enabled: { type: "boolean", title: "Enabled", default: true },
+    tags: { type: "array", title: "Tags", items: { type: "string" } },
+    advanced: {
+      type: "object",
+      title: "Advanced",
+      properties: {
+        timeoutSeconds: { type: "number", title: "Timeout (seconds)", minimum: 1, default: 30 },
+        retries: { type: "integer", title: "Retries", minimum: 0, maximum: 10, default: 3 },
+      },
+    },
+  },
+  required: ["name"],
+} as const;
+
+/**
+ * `fromJsonSchema()` (issue #22 maintainer ruling, 2026-09-01) — maps a
+ * documented JSON Schema subset (an OpenAPI request body or connector
+ * manifest already described that way) onto `FormSpec`, so `SchemaForm`
+ * renders it without hand-authoring the field list.
+ */
+export const FromJsonSchema: Story = {
+  render: function FromJsonSchema() {
+    const spec = fromJsonSchema(connectorJsonSchema, {
+      formName: "connector_from_json_schema",
+      submitLabel: "Save connector",
+    });
+    return <SchemaForm spec={spec} onSubmit={(state) => console.info("submit", state)} />;
+  },
 };

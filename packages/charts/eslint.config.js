@@ -20,7 +20,7 @@ import { reactConfig } from "@elabs-ai/components-eslint-config/react";
  * That residual is a DIFFERENT debt class that post-dates #185 (the `brand/*` rules
  * arrived with #187 / #182), so it was split out as **#319** rather than swept in
  * here — clearing it needs a design decision (two arbitrary sizes, 10px and 11px,
- * have no matching type role) and a three-theme observed render, neither of which
+ * have no matching type role) and an observed render across both themes, neither of which
  * belongs in a lint-suppression cleanup. #319's last step is to flip
  * `--max-warnings=0` and retire this override. #185's AC#1 was amended on the issue
  * to match.

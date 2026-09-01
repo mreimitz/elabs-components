@@ -2,10 +2,112 @@
 
 ## Unreleased
 
+- Fixed: `SchemaFormTestAction` (`@elabs-ai/components-ui`) no longer keeps
+  showing a stale "Connected"/failure result once the tested field values
+  change — a fresh `latestEffectiveValuesRef`/`testedValuesRef` pair discards
+  an in-flight `onTest` result if the form was edited before it settled, and
+  resets an already-settled success/failure back to idle the moment the
+  tested values change again. It also now honors the provider's `submitted`
+  and `submitting` states like every other form control, instead of staying
+  fully actionable on a terminal or in-flight form: both go native
+  `disabled` (matching `SchemaFormField`'s `controlDisabled`, since this
+  button is a bystander to the form's submit action, not the control the
+  user just activated), while the button's OWN `pending` state stays
+  `aria-disabled` + handler-guarded so a keyboard user who just clicked it
+  isn't dropped from the tab order (PR #119 review, threads 0 and 4).
+- Fixed: `fromJsonSchema()` (`@elabs-ai/components-ui`'s schema-form) no
+  longer drops a valid `string[]` `default` when mapping a free-text
+  `{ type: "array", items: { type: "string" } }` property to a
+  `ListFieldSpec` — it now carries the default through the same way its
+  `multi-enum` sibling already did (PR #119 review, thread 1). Added
+  `jsonSchemaRequestBody(spec, values)`, a helper (not yet re-exported from
+  the package barrel — see the schema-form README/PR notes) that reconstructs
+  the nested JSON object shape a mapped nested-object property loses in
+  `SchemaForm`'s flat `FormValues` map, for callers building the request body
+  a nested schema originally described (PR #119 review, thread 3 — partial;
+  the nested group's own `required` flag is still not validated).
+- Fixed: the brand Monaco theme (`@elabs-ai/components-editor`) now overrides
+  the `tag.id.pug`, `tag.class.pug` and `variable.parameter` base-theme
+  scopes, which are reachable through `CodeEditorProps.language`'s
+  unrestricted `string` type (not limited to the toolbar's curated
+  `EDITOR_LANGUAGES` list) and previously fell back to stock Monaco colours
+  instead of the token-derived brand theme (PR #119 review, thread 2).
+
+- Fixed: `FieldRow` (`@elabs-ai/components-ui`) no longer renders an empty,
+  `aria-describedby`-referenced `role="alert"`/description `<p>` (and no longer
+  sets `aria-invalid="true"`) for an empty or all-falsy-array `error`/
+  `description` — e.g. `error={errors.map(...)}` on an empty list, or
+  `error={["", ""]}`. `FieldDescription`/`FieldError` already handled this
+  shape correctly; `FieldRow` used bare truthiness (every array is truthy in
+  JS), so it announced an empty alert and marked the control invalid with
+  nothing to explain why. The content-emptiness predicate is now shared via a
+  new internal `hasRenderableContent` helper
+  (`@elabs-ai/components-ui`'s `src/lib/has-renderable-content.ts`, not
+  barrel-exported) adopted by `FieldDescription`, `FieldError` and `FieldRow`
+  alike, so the fix can't drift between hand-duplicated copies again.
+  `FieldRowProps.description`/`.error` gain the same "Known limit" JSDoc note
+  already on `FieldDescription`/`FieldError`: a child that is itself a
+  component rendering `null` is not knowable before render and still
+  produces an empty, referenced element — an accepted React-ecosystem limit,
+  not fixed here (#93).
+- Fixed: `@elabs-ai/components-ai`'s `InteractiveTerminal` "Try again" button could
+  never actually recover from a failed xterm.js engine load. Root cause was two
+  compounding bugs: (1) `loadXTermEngine()` (`_interactive-terminal-xterm.ts`)
+  memoized its dynamic `import()` with `enginePromise ??= …` — a REJECTED promise
+  is neither `null` nor `undefined`, so a first failed load poisoned the cache
+  forever and every retry got back the same settled rejection with zero new
+  `import()` attempts; (2) even once that cache is fixed, clicking Retry still did
+  nothing, because the error `StatePanel` replaces the terminal's
+  `<div ref={containerRef}>` in the tree, so React nulls `containerRef.current` the
+  moment it unmounts — and the mount effect's `if (!container) return;` guard
+  silently no-ops the retry before ever calling `loadXTermEngine()` again. Fixed by
+  (1) evicting only a REJECTED load via an identity-guarded `.catch()` on the SAME
+  promise chain (`if (enginePromise === pending) enginePromise = undefined;`),
+  keeping a successful load cached per ADR 0019 ("once per app"), and (2) clearing
+  `loadError` in the same synchronous click handler as the `reloadKey` bump, so
+  React's automatic batching re-mounts the container div (re-attaching the ref)
+  before the deferred mount effect runs (issue #99).
+- Added: `scripts/check-optional-peer-transitives.mjs` (`pnpm optional-peers:check`,
+  self-tested via `pnpm optional-peers:check:test`, wired into CI's blocking job) —
+  for every `@elabs-ai/components-*` package, cross-references each name declared
+  `peerDependenciesMeta.<name>.optional: true` against the resolved transitive
+  closure of that package's own `dependencies` (read from `pnpm-lock.yaml`, no
+  install needed), reporting a **defeated optional peer** — one whose bytes
+  install anyway through a plain dependency edge — together with which direct
+  dependencies are responsible. Backed by a ratchet baseline
+  (`scripts/optional-peer-transitives-baseline.json`) that today records exactly
+  one entry: `mermaid`, defeated for `@elabs-ai/components-ai` via `streamdown`
+  and `@streamdown/mermaid` (issue #94). The ratchet is two-directional — it
+  fails on a newly-defeated peer AND on a baselined entry that has gone clean
+  — so the residual cannot silently outlive the third-party fix that would
+  close it. All four documentation sites that previously understated this as
+  "`@streamdown/mermaid` … can still install it transitively" now name both
+  responsible edges and state plainly that the bytes are always installed
+  (#94).
+- Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge
+  (`monaco-theme-bridge.ts`) now overrides the language-suffixed syntax scopes
+  (`string.key.json`, `string.value.json`, `keyword.json` and the equivalent
+  YAML/HTML/SQL/XML/CSS/SCSS scopes) that Monaco's inherited `vs`/`vs-dark` base
+  themes specialise. Monaco's token-theme trie always resolves the deepest
+  matching scope, so the bridge's previous unsuffixed rules (`string.key`,
+  `keyword`, …) could never beat the base theme's suffixed ones — JSON (and the
+  other affected languages) rendered in stock VS Code colors instead of brand
+  colors. A new drift guard (`IGNORED_BASE_SCOPES` +
+  `monaco-theme-bridge.test.ts`'s "drift guard" suite) fails CI if a future
+  `monaco-editor` upgrade specialises another scope the bridge doesn't cover (#90).
+- Added: `@elabs-ai/components-ui`'s `SchemaForm` gains `SchemaFormTestAction` — an
+  opt-in, form/group-level "Test connection" affordance with its own idle/pending/
+  success/failure state, kept entirely independent of field validity and never gating
+  `submit()` — and `fromJsonSchema()`, a narrow adapter that maps the common OpenAPI/
+  connector-manifest JSON Schema subset (string/number/integer/boolean/enum/
+  array-of-string/object-group) onto `FieldSpec`, refusing (`UnsupportedJsonSchemaError`)
+  rather than approximating `$ref`/`allOf`/`oneOf`/`anyOf`/`not` (#22).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
-  provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
-  one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
-  tenant/white-label picker that only has a single brand colour (#39).
+  `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from one seed brand
+  colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a tenant/white-label
+  picker that only has a single brand colour. The `-foreground` values are provably AA-safe
+  against ANY background; `--ring` is provably ≥3:1 too, but only against the ONE background
+  the call used — see the #91 entry below (#39).
 - Added: `@elabs-ai/components-data`'s `DataTable` gains opt-in row drag-reorder
   (`enableRowReorder` / `onRowReorder` / `rowReorderHandle`, `"cell"` grip column or
   `"row"` whole-row activator), built on `@dnd-kit/core`/`@dnd-kit/sortable` — the same
@@ -22,6 +124,19 @@
   `role="alert"` wiring `FieldRow` already validated, adapted to a shared
   lifted-state context so it holds across independently-composed parts;
   `FieldRow` itself is unchanged (#43).
+- Fixed: `deriveTheme` (`@elabs-ai/components-tokens`) no longer implies its `--ring`/`--accent`
+  3:1 proof covers every theme an app renders — the module doc comment, the `background`
+  option's own doc comment, and `docs/CONSUMING.md` §5.3 now state plainly that the proof is
+  valid only against the ONE background a call used, and a new dev-only `console.warn` (compiled
+  out of production) restates that on every call. Reusing one `deriveTheme(...)` result across a
+  theme switch was measured rendering a `--ring` as low as 1.00:1 (fully invisible) against a
+  second theme's `--background`; the maintainer ruled to narrow the promise rather than build a
+  multi-background derivation (#91).
+- Fixed: `parseOklch` in `@elabs-ai/components-tokens` now validates the OKLCH coordinate domain
+  before any math runs: L must be 0..1, C must be ≥0, all components must be finite, alpha
+  must be 0..1. Previously it accepted out-of-range/non-finite coordinates and passed them
+  to the contrast math, producing "proved AA-safe" token pairs that rendered at ~1:1 (invisible)
+  while the proof was taken against a different colour (#100).
 - Fixed: `FieldDescription`/`FieldError` (`@elabs-ai/components-ui`) now resolve
   a caller-supplied `id` the same way `FieldControl` already did
   (`props.id ?? generatedId`) and register that same value into
@@ -52,12 +167,14 @@
   namespace-import binding when it is re-exported. Verified end-to-end via
   `pnpm consumer:check` with **four of the five** peers genuinely absent from
   `fixtures/consumer-smoke`'s installed tree (Rive, xterm, `@xterm/addon-fit`,
-  media-chrome). `mermaid` could not be verified the same way: `@streamdown/mermaid`
-  (a dependency of `@elabs-ai/components-ai` itself, not of the fixture) declares
-  `mermaid` as its own plain, non-optional dependency, and the fixture's pnpm
-  configuration still resolves it through the virtual store even with the peer
-  declared optional and never installed directly — so the gate has never actually
-  exercised mermaid's absence, only the other four. `_lazy-mermaid.ts`'s
+  media-chrome). `mermaid` could not be verified the same way: **two**
+  dependencies of `@elabs-ai/components-ai` itself, not of the fixture —
+  `streamdown` and `@streamdown/mermaid` — each declare `mermaid` as their own
+  plain, non-optional dependency, and the fixture's pnpm configuration still
+  resolves it through the virtual store even with the peer declared optional
+  and never installed directly — so the gate has never actually exercised
+  mermaid's absence, only the other four (see #94 for the follow-up that makes
+  this residual provable via `pnpm optional-peers:check`). `_lazy-mermaid.ts`'s
   `loadEngine()` still guards against the shape a genuinely-absent peer takes in a
   real Vite production build (an empty stub module, not a rejection), and a
   fixture-level unit test reproduces that stub shape directly — but this is a
@@ -700,6 +817,18 @@ work alongside `@elabs-ai/components-ai`.
   React key and one dnd-kit registration for two rows); each occurrence is now
   separately addressable, while a table with no repeated record keeps exactly
   the ids it had.
+- Fixed: `@elabs-ai/components-data`'s `DataTable` row drag-reorder now localizes
+  the two AT-visible strings `@dnd-kit` renders itself — the keyboard usage
+  instructions wired to a grip handle's `aria-describedby`, and the drag
+  activator's `aria-roledescription`. Both previously shipped dnd-kit's
+  hardcoded English defaults regardless of `LocaleProvider` locale, unlike
+  every other reorder string on this same feature. Wired via
+  `DndContext`'s `accessibility.screenReaderInstructions` and `useSortable`'s
+  `attributesOverride.roleDescription` (now supplied in both `"cell"` and
+  `"row"` handle modes), backed by two new `data.table.reorder*` message
+  keys whose English defaults reproduce dnd-kit's own default text
+  byte-for-byte, so an English consumer with no `LocaleProvider` override
+  sees unchanged output (#98).
 
 ## v4.0.0 — 2026-08-17
 

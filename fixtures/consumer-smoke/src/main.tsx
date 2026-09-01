@@ -33,13 +33,19 @@ import { LineChart as LineChartDouble } from "@elabs-ai/components-charts/test";
 // bundles, including the heavy engines (Monaco, MapLibre, React Flow, visx).
 import { DataTable } from "@elabs-ai/components-data";
 import { ChatShell } from "@elabs-ai/components-ai";
-// `mermaid` / `@rive-app/react-webgl2` / `@xterm/xterm` + `@xterm/addon-fit` /
+// `@rive-app/react-webgl2` / `@xterm/xterm` + `@xterm/addon-fit` /
 // `media-chrome` are OPTIONAL peers of `@elabs-ai/components-ai` (issue #33) —
 // deliberately NOT installed here — this import must still resolve and
 // bundle, which is the proof that a consumer who skips them gets the actual
-// AudioPlayer/Persona/InteractiveTerminal/MarkdownView surfaces to build at
-// all (the runtime "capability gap" panel each renders when its engine
-// import rejects is locked separately, in each package's own test suite).
+// AudioPlayer/Persona/InteractiveTerminal surfaces to build at all (the
+// runtime "capability gap" panel each renders when its engine import rejects
+// is locked separately, in each package's own test suite). `mermaid` is ALSO
+// declared as an optional peer, but it is NOT "deliberately not installed
+// here" the way the other four are — it is always installed regardless: two
+// of `@elabs-ai/components-ai`'s own plain dependencies, `streamdown` and
+// `@streamdown/mermaid`, each declare `mermaid` as their own plain,
+// non-optional dependency, so this fixture cannot prove mermaid's absence
+// the way it proves the other four (issue #94, `pnpm optional-peers:check`).
 import { AudioPlayer, MarkdownView, Persona, InteractiveTerminal } from "@elabs-ai/components-ai";
 import { CanvasShell } from "@elabs-ai/components-flow";
 import { MapCanvas } from "@elabs-ai/components-maps";

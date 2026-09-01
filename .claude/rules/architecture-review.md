@@ -134,7 +134,7 @@ The built `dist/`: exports/types resolve in a consumer; tree-shaking; no dev lea
 - ●○○○ build fails, or `dist` exports/types broken, or a theme renders wrong on a real screen.
 - ●●○○ builds but a subpath/types gap, dev leakage, or a theme glitch on a real `scenarios-*` screen.
 - ●●●○ build clean; exports/types resolve in a scratch consumer; both themes render correctly on a real screen.
-- ●●●● + tree-shaking/bundle-size sane; three-theme render verified on real scenario screens; RSC-safe.
+- ●●●● + tree-shaking/bundle-size sane; cross-theme render verified on real scenario screens; RSC-safe.
 
 ### D9 — Agentic-repo hygiene (`.claude` / `CLAUDE.md` / `PROJECT.md` / `AGENTS.md`)
 

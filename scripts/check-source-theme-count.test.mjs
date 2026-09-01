@@ -128,6 +128,21 @@ test("findThemeCountViolations (shared lib) flags a stale word-form count", () =
   assert.equal(violations.length, 1);
 });
 
+// ── #92: the hyphenated compound-adjective form ("three-theme sweep") is the
+//    SAME stale claim as "three themes" — a bulk search-replace when the third
+//    theme was deleted caught the noun form but missed this one, so it survived
+//    in ~15 always-loaded governance/command/hook files and source comments. ──
+
+test("catches hyphenated 'N-theme' compounds", () => {
+  const text = `
+    Run a three-theme sweep before merge.
+    The visual reviewer does a three-theme render check.
+    Storybook provides three-theme checks for interactive tests.
+  `;
+  const violations = findThemeCountViolations(text, 2);
+  assert(violations.length >= 3, "should find all three-theme compounds");
+});
+
 // ── the REAL repo, once fixed, passes the CLI gate ───────────────────────────
 
 test("the REAL repo currently passes source-theme-count:check (CLI run)", () => {

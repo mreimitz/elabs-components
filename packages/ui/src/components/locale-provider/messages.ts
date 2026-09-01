@@ -113,6 +113,13 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.schemaForm.submit": "Submit",
   "ui.schemaForm.submitting": "Submitting…",
   "ui.schemaForm.submitted": "Submitted",
+  // SchemaFormTestAction — a form/group-level "Test connection" affordance
+  // (issue #22 maintainer ruling, 2026-09-01), independent of field validity
+  // and never gating submit.
+  "ui.schemaForm.testAction.label": "Test connection",
+  "ui.schemaForm.testAction.pending": "Testing…",
+  "ui.schemaForm.testAction.success": "Connected",
+  "ui.schemaForm.testAction.failure": "Test failed",
   // Pagination's ellipsis (sr-only — the visible glyph is decorative).
   "ui.pagination.morePages": "More pages",
   // Pagination's prev/next links — the ACCESSIBLE NAME (`aria-label`), distinct
@@ -175,6 +182,20 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "data.table.reorderDropped": "{name} dropped at position {position} of {total}.",
   "data.table.reorderCancelled":
     "Reordering cancelled. {name} returned to position {position} of {total}.",
+  // #98: `@dnd-kit` renders two more AT-visible strings for this same
+  // feature that this repo's source never writes — the hidden keyboard
+  // usage instructions (wired to the grip via `aria-describedby`) and the
+  // activator's `aria-roledescription`. Both ship a hardcoded English
+  // default deep inside the library; localizing them means overriding them
+  // explicitly with these two keys. The English DEFAULT below is dnd-kit's
+  // own default text verbatim (`defaultScreenReaderInstructions.draggable`
+  // in `@dnd-kit/core`, and `useSortable`'s `roleDescription: 'sortable'` in
+  // `@dnd-kit/sortable`) — not a rewrite — so an English consumer with no
+  // `LocaleProvider` override sees byte-identical output to before this
+  // fix; only a `messages` override changes it.
+  "data.table.reorderInstructions":
+    "\n    To pick up a draggable item, press the space bar.\n    While dragging, use the arrow keys to move the item.\n    Press space again to drop the item in its new position, or press escape to cancel.\n  ",
+  "data.table.reorderRoleDescription": "sortable",
   "data.facetFilter.clearFilters": "Clear filters",
   "data.columnPicker.toggleColumns": "Toggle columns",
 

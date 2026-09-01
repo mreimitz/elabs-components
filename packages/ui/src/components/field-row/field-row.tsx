@@ -8,16 +8,43 @@ import {
 } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../lib/cn";
+import { hasRenderableContent } from "../../lib/has-renderable-content";
 import { Label } from "../label";
 
 export interface FieldRowProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
   /** Field label — rendered as a real `<label>`, click-to-focus associated with the control. */
   label: ReactNode;
-  /** Optional help/description text, always visible (not gated by an error). */
+  /**
+   * Optional help/description text, always visible (not gated by an error).
+   * Renders nothing — and contributes no id to `aria-describedby` — when
+   * `description` is falsy (`false`/`0`/`""`/`null`/`undefined`), an empty
+   * array, or an array containing only falsy values (`{list.map(...)}` on an
+   * empty list; `[a && "x", b && "y"]` with both false).
+   *
+   * **Known limit:** a value that is itself a COMPONENT that renders nothing
+   * (returns `null`/an empty fragment) is not knowable before render, so it
+   * still produces an empty paragraph that `aria-describedby` points at.
+   * `FieldDescription` and the wider React ecosystem share this limit — pass
+   * a falsy value instead of a component that may render nothing, e.g.
+   * `description={hasHint ? hintText : undefined}`, never
+   * `description={<MaybeRendersNull />}`.
+   */
   description?: ReactNode;
   /**
    * Validation error text. When present: sets `aria-invalid` on the control,
    * is appended to `aria-describedby`, and is announced via `role="alert"`.
+   * Renders nothing — and leaves `aria-invalid="false"` — when `error` is
+   * falsy (`false`/`0`/`""`/`null`/`undefined`), an empty array, or an array
+   * containing only falsy values (`{errors.map(...)}` on an empty list — the
+   * idiomatic "no errors" shape).
+   *
+   * **Known limit:** a value that is itself a COMPONENT that renders nothing
+   * (returns `null`/an empty fragment) is not knowable before render, so it
+   * still produces an empty `role="alert"` element that `aria-describedby`
+   * points at. `FieldError` and the wider React ecosystem share this limit —
+   * pass a falsy value instead of a component that may render nothing, e.g.
+   * `error={hasError ? message : undefined}`, never
+   * `error={<MaybeRendersNull />}`.
    */
   error?: ReactNode;
   /**
@@ -62,11 +89,19 @@ export const FieldRow = forwardRef<HTMLDivElement, FieldRowProps>(function Field
   const childProps = control.props;
   const controlId = childProps.id ?? `${id}-control`;
 
+  // Same predicate `FieldDescription`/`FieldError` use (`../field/field.tsx`)
+  // — bare truthiness (`description ? … : null`) treats an empty/all-falsy
+  // ARRAY as content, since every array is truthy in JS. `errors.map(...)`
+  // on an empty list is the idiomatic "no errors" shape, so that gap is a
+  // real defect here, not a hypothetical (#93).
+  const hasDescription = hasRenderableContent(description);
+  const hasError = hasRenderableContent(error);
+
   const describedBy =
     [
       childProps["aria-describedby"] ?? null,
-      description ? descriptionId : null,
-      error ? errorId : null,
+      hasDescription ? descriptionId : null,
+      hasError ? errorId : null,
     ]
       .filter(Boolean)
       .join(" ") || undefined;
@@ -86,12 +121,19 @@ export const FieldRow = forwardRef<HTMLDivElement, FieldRowProps>(function Field
       <Slot
         id={controlId}
         aria-describedby={describedBy}
-        aria-invalid={!!error}
+        // `FieldRoot.invalid` (`../field/field.tsx`) is intentionally
+        // INDEPENDENT of whether a `FieldError` with content is mounted — a
+        // caller can mark the control invalid before its message settles.
+        // `FieldRow` has no such prop: `error` is its only invalidity
+        // signal, so "no error content" must mean "not invalid" — deriving
+        // this from raw `!!error` marked `error={[]}` invalid with nothing
+        // to explain why (#93).
+        aria-invalid={hasError}
         data-slot="field-row-control"
       >
         {cloneElement(control, { id: controlId, "aria-describedby": describedBy })}
       </Slot>
-      {description ? (
+      {hasDescription ? (
         <p
           id={descriptionId}
           data-slot="field-row-description"
@@ -100,7 +142,7 @@ export const FieldRow = forwardRef<HTMLDivElement, FieldRowProps>(function Field
           {description}
         </p>
       ) : null}
-      {error ? (
+      {hasError ? (
         <p
           id={errorId}
           role="alert"

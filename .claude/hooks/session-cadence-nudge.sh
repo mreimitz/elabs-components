@@ -65,7 +65,7 @@ edited="$(jq -rs '
 #      same grep — reading or writing ABOUT a review is not running one.
 #   2. Assistant TEXT — prose is not an action, and the prose that talks about the
 #      battery is overwhelmingly the prose that DECLINES it: "a
-#      brand-ui-visual-ux-reviewer three-theme sweep on a real screen is still
+#      brand-ui-visual-ux-reviewer cross-theme sweep on a real screen is still
 #      owed", "if you want the belt-and-suspenders render check, run
 #      /visual-review". Counting it inverted the hook, silencing it on exactly the
 #      sessions it exists to catch (two 18/19-product-file sessions with ZERO
