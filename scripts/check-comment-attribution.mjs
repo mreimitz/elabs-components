@@ -59,11 +59,19 @@
 //      row. So the row set is no longer what decides. See the inverted default
 //      at nestedOperandCandidates below: an operand of an unrecognised command
 //      word IS a candidate to be re-read as a script, whatever that command
-//      word is — no interpreter name has to be known. That inversion does NOT
-//      reach every `gh` call inside such an operand, though: two operand-TEXT
+//      word is — no interpreter name has to be known. UPDATED (#96, fix round
+//      8): round 7's re-read was itself gated behind two operand-TEXT
 //      prefilters (an expansion anywhere in the word; a regex match on the
-//      literal `gh `) decide whether the re-read happens at all, and both are
-//      declared limits, not safety properties — see DECLARED LIMITS below.
+//      literal `gh `), which reopened the very failure mode this section
+//      exists to remove — a bare `$VAR` or a subshell/`&&` in the operand
+//      skipped the re-read entirely. Both prefilters are gone: every
+//      non-empty operand is re-parsed structurally (via `word.raw`, which
+//      keeps an expansion's own syntax instead of dropping it), and, in that
+//      NESTED arm only, the re-parsed `gh` must sit at its own command's
+//      COMMAND POSITION — which is what stops the wider re-parse from
+//      false-refusing ordinary prose that merely mentions the words. See the
+//      block comment above `nestedOperandCandidates` for the full account and
+//      DECLARED LIMITS below for what remains open.
 //      The table still earns its keep — it resolves `bash -lc` precisely
 //      instead of by re-reading every operand — but nothing depends on its
 //      membership.
@@ -133,35 +141,43 @@
 //     out a message that also carries a body-shaped phrase (see the false
 //     refusal below); the two earlier verdicts stated this claim more broadly
 //     than the code supports.
-//   - THE SAME RE-READ IS ITSELF GATED BY TWO OPERAND-TEXT PREFILTERS
-//     (`nestedOperandCandidates`'s `word.expanded` check and `NESTED_GH_RE`,
-//     both below), and each is a new enumeration of spelling in the exact
-//     place this section exists to remove one:
-//       · A SHELL EXPANSION anywhere in the operand (`word.expanded`) SKIPS
-//         the whole operand instead of marking it uninspectable — a bare
-//         `$VAR` is enough: `csh -c "gh issue comment $N --body '…'"` is
-//         ALLOWED across 17 of the 18 gated shapes. Nobody has to be trying
-//         to defeat the gate to write a `$VAR`. This is an ACCIDENT path, and
-//         it is the gate's most consequential residual gap.
-//       · `NESTED_GH_RE = /(?:^|[\s/])gh\s/` is a literal text match, so a
-//         `gh` it cannot see — quoted (`'gh'`, `"gh"`), escaped (`\gh`),
-//         inside a subshell (`(gh …)`), joined with no space (`true&&gh …`),
-//         or itself hidden inside a KNOWN interpreter nested one level inside
-//         the unknown one (`csh -c "sh -c 'gh …'"`) — is invisible across all
-//         18 gated shapes. `(gh …)` and `a&&b` are ordinary shell punctuation
-//         and cost little to hit by accident; the quoted/escaped/nested forms
-//         need someone TRYING. These are EVASION paths.
-//     Neither prefilter was stated anywhere a reader would find it without
-//     reading this source; `.claude/rules/issue-workflow.md` now says so.
-//   - A FALSE REFUSAL, new in fix round 7: `git commit -m "fix(hooks): the gh
-//     issue comment gate now blocks --body=text"` is REFUSED, because the
-//     unrecognised command word `git`'s operand, once re-parsed as a script,
-//     contains both a gated `gh` phrase and a `--body`-shaped flag — 3 of 82
-//     legitimate commands in the fix-round-7 verdict's corpus. It costs a
-//     retry, not a bypass. The override
-//     (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed by
-//     `.claude/hooks/gate-comment-attribution.sh` at the moment of refusal,
-//     so it clears without reading this file.
+//   - FIXED, fix round 8 (#96): the re-read used to be gated by TWO
+//     operand-TEXT prefilters — `word.expanded` (skipped any operand
+//     containing a shell expansion, so a bare `$VAR` turned the re-read off
+//     entirely) and `NESTED_GH_RE = /(?:^|[\s/])gh\s/` (a literal text match a
+//     subshell, a space-free `&&`, a quoted/escaped `gh`, or a known shell
+//     nested one level inside the unknown one all slipped past unseen). Both
+//     are GONE. Every non-empty operand of an unrecognised command word is now
+//     unconditionally re-parsed — via `ShellWord.raw` (shell-command-parse.mjs),
+//     which keeps an expansion's own syntax (`$VAR`, `$(…)`) visible at the
+//     position it occupies instead of erasing it — and the STRUCTURAL result
+//     (does the re-parse contain a `gh` word at a command position, carrying a
+//     body-shaped flag or an inspectable body) decides, not a regex over the
+//     original text. This closes both the accident path (a bare `$VAR`) and
+//     the evasion paths (subshell, space-free `&&`, quoting/escaping `gh`,
+//     nesting a known shell inside the unknown one) that fix round 7 declared
+//     as open. The widening is safe only alongside a THIRD change landing in
+//     the same round: the re-parsed operand's own `gh` search is restricted to
+//     a COMMAND POSITION (`findGhCandidates(..., { atCommandPositionOnly:
+//     true })`) — unlike the position-independent search this module still
+//     runs at the top level (where `xargs gh` / `then gh` are real), a `gh`
+//     word merely MENTIONED inside re-parsed prose (not actually invoked) no
+//     longer counts. Together these also fixed a same-shaped, pre-existing
+//     false refusal one layer OUTSIDE this widening — in
+//     `parseShellCommands`'s own "assignment carries a whole command" pass
+//     (shell-command-parse.mjs) — which used to scan every `VAR=value`-shaped
+//     WORD in a line regardless of position, so `make deploy MSG="gh issue
+//     comment --body ready"` re-parsed make's own operand as if it were a
+//     shell assignment. That scan is now scoped to the leading assignment run
+//     (plus the operands of a leading `export`/`declare`/`typeset`/`local`/
+//     `readonly` builtin, which really are assignments).
+//   - What is STILL a declared limit after this round, unchanged: a
+//     `… | tee f | sh` pipeline (the sink-detection only recognises a sink
+//     that takes no non-flag operand, and `tee`'s filename argument defeats
+//     that), `gh api graphql`'s `addComment` mutation, and a body-less nested
+//     call (a hidden `gh issue comment 26` with no body flag is still not
+//     caught — see the body-reach bullet above). All three are pre-existing,
+//     not reopened or newly closed by this round.
 //   - A PRODUCER PIPED THROUGH AN INTERMEDIATE STAGE INTO A SHELL escapes the
 //     pipeline arm of this same inversion: `sinkExecutesStdin` (below)
 //     requires the FINAL sink to take no non-flag operand, so
@@ -920,16 +936,34 @@ function looksLikeGhSubcommand(argv) {
  * required `gh` at token[0], so `cd /tmp && gh issue comment …` was simply not
  * a posting call as far as the gate was concerned.
  *
+ * `opts.atCommandPositionOnly` (#96, fix round 8, Part C) restricts the search
+ * to the COMMAND WORD of each simple command instead of ANY position in it.
+ * The top level never sets this — `xargs gh …`/`then gh …` are legitimate
+ * position-independent hits there. It exists for `nestedOperandCandidates`
+ * below: once Part A stopped pre-filtering an operand's TEXT before
+ * re-parsing it, an ordinary prose word like `git commit -m "docs: mention gh
+ * issue comment --body in the guide"` re-parses into a simple command that
+ * legitimately CONTAINS the words `gh`, `issue`, `comment`, `--body` — just
+ * not at the front. Requiring the nested `gh` to sit at that re-parsed
+ * command's own command position is what keeps such prose from becoming a
+ * false posting candidate while still catching a real nested invocation
+ * (`gh issue comment …`, `/usr/bin/gh issue comment …`), which always IS at
+ * that position.
+ *
  * @param {SimpleCommand[]} commands
+ * @param {{atCommandPositionOnly?: boolean}} [opts]
  * @returns {{argv: ShellWord[], env: Record<string, string>}[]}
  */
-export function findGhCandidates(commands) {
+export function findGhCandidates(commands, opts = {}) {
+  const atCommandPositionOnly = Boolean(opts.atCommandPositionOnly);
   const candidates = [];
   for (const command of commands || []) {
     const words = (command && command.words) || [];
     const env = leadingAssignments(words);
     const heredoc = Boolean(command && command.heredoc);
+    const cmdIdx = atCommandPositionOnly ? commandWordIndex(words) : -1;
     for (let i = 0; i < words.length; i++) {
+      if (atCommandPositionOnly && i !== cmdIdx) continue;
       const isGh = basename(words[i].value) === "gh";
       // A command word the shell would expand (`$(echo gh)`, `$GH_BIN`) has no
       // readable name, so fall back to the SHAPE of what follows it: an
@@ -1141,38 +1175,64 @@ function analyzeGhApi(argv, env, read) {
 // invented next year are all the same case, because none of them has to be
 // known.
 //
-// That inversion does NOT reach every `gh` call inside such an operand,
-// though — two operand-TEXT prefilters below decide whether the re-read
-// happens at all, and each is itself an enumeration of spelling, the same
-// failure mode this section exists to remove (see DECLARED LIMITS above for
-// the full statement and the reproductions):
-//   - `word.expanded` (any shell expansion in the operand — a bare `$VAR` is
-//     the ordinary case) SKIPS the whole operand rather than marking it
-//     uninspectable, so `csh -c "gh issue comment $N --body '…'"` is ALLOWED
-//     across 17 of the 18 gated shapes. Nobody has to be trying to defeat the
-//     gate to write a `$VAR` — this is an ACCIDENT path.
-//   - `NESTED_GH_RE` (below) is a text match, so a `gh` it cannot see —
-//     quoted (`'gh'`, `"gh"`), escaped (`\gh`), inside a subshell (`(gh …)`),
-//     joined with no space (`true&&gh …`), or itself hidden inside a KNOWN
-//     interpreter nested one level in (`csh -c "sh -c 'gh …'"`) — is
-//     invisible across all 18 gated shapes. `(gh …)` and `a&&b` are ordinary
-//     shell punctuation; the quoted/escaped/nested forms need someone
-//     TRYING. These are EVASION paths.
+// UPDATED (#96, fix round 8). Round 7 shipped that inversion gated behind two
+// operand-TEXT prefilters — `word.expanded` and a `NESTED_GH_RE` literal-text
+// match on `gh ` — and both were themselves enumerations of spelling, the
+// exact failure mode this section exists to remove: `csh -c "gh issue comment
+// $N --body '…'"` skipped the whole operand the moment it contained a `$VAR`
+// (17 of 18 gated shapes), and `csh -c "(gh issue comment …)"` /
+// `csh -c "true&&gh issue comment …"` slipped past the regex on ordinary shell
+// punctuation. Both prefilters are now GONE. Every non-empty operand of an
+// unrecognised command word is re-parsed — via `word.raw` (see
+// `ShellWord.raw` in shell-command-parse.mjs), which is built exactly like
+// `word.value` EXCEPT an expansion contributes its own verbatim syntax
+// (`$VAR`, `${VAR}`, `$(…)`, a backtick command) instead of nothing — and the
+// STRUCTURAL parse (`findGhCandidates`/`analyzeGhCandidate`) decides whether
+// it posts, the same way the top-level parse always has. A `$VAR` in the body
+// is no longer invisible: it re-parses as an expanded word, which
+// `analyzeGhCandidate` already treats as uninspectable and refuses — the same
+// verdict the top level has always reached for `--body "$MSG"`.
 //
-// The recognised half is now the small, closed, ARGUABLE set below: commands
-// that cannot execute an operand at all, they only print or match text. That
-// is the inversion in one sentence — a name missing from THIS list costs a
-// false refusal (loud, overridable, one retry), where a name missing from an
-// interpreter list cost a silent bypass. `TEXT_ONLY_COMMANDS` is deliberately
-// short: add a name only if it genuinely cannot run its argument (which is why
-// `awk` and `sed` are absent — GNU `sed`'s `e` and awk's `system()` both can,
-// and `xargs`/`nohup`/`env` obviously do).
+// Widening the re-parse to EVERY operand (not just ones that already look
+// like they contain `gh `) reopened the false-refusal case fix round 7 itself
+// introduced — an ordinary line like `git commit -m "docs: mention gh issue
+// comment --body in the guide"` now also re-parses into a simple command that
+// legitimately contains the words `gh`, `issue`, `comment`, `--body`, just
+// not adjacent as an invocation. That is what `findGhCandidates`'s new
+// `atCommandPositionOnly` option (Part C, required to land WITH this widening,
+// never alone) closes: in the NESTED arm only, the re-parsed `gh` must sit at
+// its own simple command's COMMAND POSITION — prose that merely mentions the
+// words in passing never reparses with `gh` there, only a real invocation
+// does. The top-level search stays position-independent (`xargs gh …`,
+// `then gh …` are legitimate there and unaffected).
+//
+// What is now closed that fix round 7 left open, restated against the same
+// reproductions: `csh -c "gh issue comment $N --body '…'"` REFUSES (the body
+// is uninspectable, not skipped); `csh -c "(gh issue comment 26 --body …)"`
+// and `csh -c "true&&gh issue comment 26 --body …"` REFUSE (no text-match
+// prefilter to slip past); quoting/escaping the `gh` word (`'gh'`, `"gh"`,
+// `\gh`) no longer helps, because there is no text match to defeat — the
+// re-parse reads the real token; and a KNOWN shell nested inside the unknown
+// one (`csh -c "sh -c 'gh issue comment …'"`) is caught because the re-parse
+// recurses through `parseShellCommands`' own SCRIPT_INTRODUCERS handling the
+// same way the top level does.
+//
+// What is still a DECLARED LIMIT, not closed by this round: a nested call
+// still needs a resolvable or uninspectable BODY to be counted (a bare mention
+// with no body-shaped flag stays out of the net, unchanged from round 7); the
+// pipeline-through-an-intermediate-stage evasion (`… | tee /tmp/p.sh | sh`);
+// and `gh api graphql`'s `addComment` mutation. See DECLARED LIMITS above and
+// `.claude/rules/issue-workflow.md`.
+//
+// The recognised text-only set below is unchanged by this round: commands
+// that cannot execute an operand at all, they only print or match text. A
+// name missing from THIS list costs a false refusal (loud, overridable, one
+// retry), where a name missing from an interpreter list cost a silent bypass.
+// `TEXT_ONLY_COMMANDS` is deliberately short: add a name only if it genuinely
+// cannot run its argument (which is why `awk` and `sed` are absent — GNU
+// `sed`'s `e` and awk's `system()` both can, and `xargs`/`nohup`/`env`
+// obviously do).
 const TEXT_ONLY_COMMANDS = ["echo", "printf", "grep", "egrep", "fgrep", "rg"];
-
-// A word worth re-reading as a script: it must contain a `gh` COMMAND WORD
-// (`gh …`, `/usr/bin/gh …`), which also means it must contain whitespace. The
-// same test the parser applies to an assignment's value.
-const NESTED_GH_RE = /(?:^|[\s/])gh\s/;
 
 // A script arriving on stdin is executed by a sink that takes no operand of its
 // own (`… | csh`, `… | bash -s`, `… | ./run.sh`). One WITH an operand is doing
@@ -1200,23 +1260,30 @@ function sinkExecutesStdin(next) {
 
 /**
  * Posting calls hidden inside an operand of a command word this gate does not
- * recognise — the fix-round-7 inversion described above.
+ * recognise — the fix-round-7 inversion described above, WIDENED in fix round
+ * 8 (#96): every non-empty operand is now re-parsed structurally (via
+ * `word.raw`), not just ones that first pass a text-match prefilter.
  *
- * Two guards keep the widening honest, and both are about PRECISION, not
- * safety:
+ * Three guards keep the widening honest — precision, not a blanket refusal of
+ * any expansion:
  *  - a text-only command word (`echo "gh issue comment …"`) is skipped, unless
  *    it pipes into a sink that would execute what it prints;
+ *  - the re-parsed `gh` must sit at its own simple command's COMMAND POSITION
+ *    (`findGhCandidates(…, { atCommandPositionOnly: true })`, Part C) — this
+ *    is what stops ordinary prose that merely MENTIONS `gh issue comment
+ *    --body` (a commit message, a doc line) from becoming a false candidate
+ *    now that the text-match prefilter no longer screens operands first;
  *  - a nested candidate counts only when it actually REACHES FOR A BODY (a
  *    resolvable one, or one this gate refuses to read). Prose that merely
- *    contains the phrase — `git commit -m "harden the gh issue comment gate"`,
- *    `git log --grep "gh issue comment"` — names a posting shape with no body
- *    and is not a posting call. This is the one place the inversion is not
- *    fully closed, and the residual is narrow BY GH'S OWN BEHAVIOUR rather
- *    than by assumption: a body-less posting call prompts interactively, and
- *    with no TTY `gh` refuses it outright — verified on gh 2.93.0, which
- *    answers `flags required when not running interactively` and never reaches
- *    the API. A top-level body-less call is still refused (that path is
- *    unchanged); only the nested re-read requires a body.
+ *    contains the phrase with no body-shaped flag — `git log --grep "gh issue
+ *    comment"` — names a posting shape with no body and is not a posting
+ *    call. This is the one place the inversion is not fully closed, and the
+ *    residual is narrow BY GH'S OWN BEHAVIOUR rather than by assumption: a
+ *    body-less posting call prompts interactively, and with no TTY `gh`
+ *    refuses it outright — verified on gh 2.93.0, which answers `flags
+ *    required when not running interactively` and never reaches the API. A
+ *    top-level body-less call is still refused (that path is unchanged); only
+ *    the nested re-read requires a body.
  *
  * @param {import("./lib/shell-command-parse.mjs").SimpleCommand[]} commands
  * @param {{readFileSync?: typeof readFileSync}} ctx
@@ -1237,9 +1304,16 @@ function nestedOperandCandidates(commands, ctx, depth) {
     const env = leadingAssignments(words);
     for (let i = commandWordIndex(words) + 1; i < words.length; i++) {
       const word = words[i];
-      if (word.expanded || !NESTED_GH_RE.test(word.value)) continue;
-      const inner = parseShellCommands(word.value);
-      for (const candidate of findGhCandidates(inner.commands)) {
+      // No operand-TEXT prefilter (#96, Part A) — every non-empty operand is
+      // re-parsed and left to the structural match below to decide. `raw`
+      // (not `value`) so an expansion inside the operand (`$MSG`) survives
+      // into the re-parse as an expanded word instead of vanishing — see
+      // `ShellWord.raw` in shell-command-parse.mjs.
+      if (!word.raw || !word.raw.trim()) continue;
+      const inner = parseShellCommands(word.raw);
+      // atCommandPositionOnly (Part C): required alongside Part A's widening,
+      // never applied without it — see the block comment above this section.
+      for (const candidate of findGhCandidates(inner.commands, { atCommandPositionOnly: true })) {
         const analyzed = analyzeGhCandidate(candidate, ctx);
         if (!analyzed) continue;
         if (!analyzed.bodies.length && !analyzed.uninspectable) continue;

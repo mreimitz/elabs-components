@@ -22,13 +22,34 @@
 
 const MAX_DEPTH = 5;
 const ASSIGNMENT_RE = /^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/;
+// Shell builtins whose OWN operands are themselves assignments, not
+// positional arguments — `export CMD=…`/`declare CMD=…`/etc. assign CMD
+// exactly as bare `CMD=…` would. Used only to widen the leading-assignment
+// scan in `parseShellCommands`'s "assignment carries a whole command" pass
+// (#96, fix round 8) so a builtin keyword in front doesn't hide a real
+// assignment from it.
+const ASSIGNMENT_BUILTINS = new Set(["export", "declare", "typeset", "local", "readonly"]);
 const EXPANSION_NAME_RE = /^\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-])/;
 
 /**
- * @typedef {{value: string, expanded: boolean}} ShellWord
- *   `value` is the literal text with one level of quoting removed;
+ * @typedef {{value: string, expanded: boolean, raw: string}} ShellWord
+ *   `value` is the literal text with one level of quoting removed and every
+ *   expansion's SOURCE TEXT dropped (an expansion contributes nothing to it —
+ *   only the `expanded` flag).
  *   `expanded` is true when the word contained an expansion this parser
  *   deliberately refuses to guess at.
+ *   `raw` (#96, fix for the fix-round-7 verdict) is built the same way as
+ *   `value` — quoting removed, escapes resolved — EXCEPT an expansion
+ *   contributes its own verbatim syntax (`$VAR`, `${VAR}`, `$(…)`, a backtick
+ *   command) instead of nothing. Re-parsing `raw` with `parseShellCommands()`
+ *   therefore reproduces the word as an ordinary, unquoted command line, with
+ *   every expansion visible at the position it actually occupies — which is
+ *   what lets a NESTED re-read (an operand of a command word this gate does
+ *   not recognise, see `nestedOperandCandidates` in
+ *   check-comment-attribution.mjs) tell a `$MSG`-shaped body from a literal
+ *   one instead of losing it the way re-parsing `value` would. Re-parsing
+ *   `value` instead is still correct wherever the caller does not need that
+ *   (nothing here does that today).
  * @typedef {{words: ShellWord[], heredoc: boolean, pipedNext?: boolean}} SimpleCommand
  *   `pipedNext` is true when THIS command's stdout is piped into the next one
  *   — `echo "gh …" | bash` hands a shell a script whose bytes are right there
@@ -101,12 +122,14 @@ export function parseShellCommands(text, depth = 0) {
   let cur = [];
   let curHeredoc = false;
   let chars = "";
+  let raw = "";
   let started = false;
   let expanded = false;
 
   const endWord = () => {
-    if (started) cur.push({ value: chars, expanded });
+    if (started) cur.push({ value: chars, expanded, raw });
     chars = "";
+    raw = "";
     started = false;
     expanded = false;
   };
@@ -127,6 +150,7 @@ export function parseShellCommands(text, depth = 0) {
       }
       if (i + 1 < src.length) {
         chars += src[i + 1];
+        raw += src[i + 1];
         started = true;
         i += 2;
         continue;
@@ -137,7 +161,9 @@ export function parseShellCommands(text, depth = 0) {
 
     if (ch === "'") {
       const end = src.indexOf("'", i + 1);
-      chars += src.slice(i + 1, end === -1 ? src.length : end);
+      const body = src.slice(i + 1, end === -1 ? src.length : end);
+      chars += body;
+      raw += body;
       started = true;
       i = end === -1 ? src.length : end + 1;
       continue;
@@ -153,42 +179,51 @@ export function parseShellCommands(text, depth = 0) {
             j += 2;
             continue;
           }
-          chars += src[j + 1] ?? "";
+          const esc = src[j + 1] ?? "";
+          chars += esc;
+          raw += esc;
           j += 2;
           continue;
         }
         if (c === "`") {
           const k = src.indexOf("`", j + 1);
+          const end = k === -1 ? src.length : k + 1;
           nested.push(src.slice(j + 1, k === -1 ? src.length : k));
+          raw += src.slice(j, end); // verbatim, backticks included — see ShellWord.raw
           expanded = true;
-          j = k === -1 ? src.length : k + 1;
+          j = end;
           continue;
         }
         if (c === "$") {
           if (src[j + 1] === "(") {
             const b = scanBalanced(src, j + 1, "(", ")");
             nested.push(b.inner);
+            raw += src.slice(j, b.next); // verbatim `$(...)`
             expanded = true;
             j = b.next;
             continue;
           }
           if (src[j + 1] === "{") {
             const b = scanBalanced(src, j + 1, "{", "}");
+            raw += src.slice(j, b.next); // verbatim `${...}`
             expanded = true;
             j = b.next;
             continue;
           }
           const m = EXPANSION_NAME_RE.exec(src.slice(j));
           if (m) {
+            raw += m[0]; // verbatim `$name`
             expanded = true;
             j += m[0].length;
             continue;
           }
           chars += "$";
+          raw += "$";
           j++;
           continue;
         }
         chars += c;
+        raw += c;
         j++;
       }
       i = j < src.length ? j + 1 : src.length;
@@ -197,10 +232,12 @@ export function parseShellCommands(text, depth = 0) {
 
     if (ch === "`") {
       const k = src.indexOf("`", i + 1);
+      const end = k === -1 ? src.length : k + 1;
       nested.push(src.slice(i + 1, k === -1 ? src.length : k));
+      raw += src.slice(i, end); // verbatim, backticks included — see ShellWord.raw
       expanded = true;
       started = true;
-      i = k === -1 ? src.length : k + 1;
+      i = end;
       continue;
     }
 
@@ -208,6 +245,7 @@ export function parseShellCommands(text, depth = 0) {
       if (src[i + 1] === "(") {
         const b = scanBalanced(src, i + 1, "(", ")");
         nested.push(b.inner);
+        raw += src.slice(i, b.next); // verbatim `$(...)`
         expanded = true;
         started = true;
         i = b.next;
@@ -215,6 +253,7 @@ export function parseShellCommands(text, depth = 0) {
       }
       if (src[i + 1] === "{") {
         const b = scanBalanced(src, i + 1, "{", "}");
+        raw += src.slice(i, b.next); // verbatim `${...}`
         expanded = true;
         started = true;
         i = b.next;
@@ -222,12 +261,14 @@ export function parseShellCommands(text, depth = 0) {
       }
       const m = EXPANSION_NAME_RE.exec(src.slice(i));
       if (m) {
+        raw += m[0]; // verbatim `$name`
         expanded = true;
         started = true;
         i += m[0].length;
         continue;
       }
       chars += "$";
+      raw += "$";
       started = true;
       i++;
       continue;
@@ -281,6 +322,7 @@ export function parseShellCommands(text, depth = 0) {
     }
 
     chars += ch;
+    raw += ch;
     started = true;
     i++;
   }
@@ -308,10 +350,42 @@ export function parseShellCommands(text, depth = 0) {
       if (!words.length) continue;
       // An assignment can carry a whole command as its value
       // (`CMD="gh issue comment 26 --body …"` then `$CMD`). The value is one
-      // word, so nothing in it is a token until it is re-parsed.
-      for (const word of words) {
-        const m = ASSIGNMENT_RE.exec(word.value);
+      // word, so nothing in it is a token until it is re-parsed. Scoped to the
+      // LEADING assignment run only (#96, fix round 8) — a `VAR=value` word
+      // that is a POSITIONAL ARGUMENT to some other command, not a shell
+      // assignment at all, used to be scanned the same way:
+      // `make deploy MSG="gh issue comment --body ready"` re-parsed `MSG=`'s
+      // value into its own simple command and posted a false positive, even
+      // though `MSG=` is never assigned or executed by this shell — it is
+      // just an argument make(1) happens to receive. `commandWordIndex` is the
+      // same "assignment run before the real command word" boundary the rest
+      // of this gate already uses to find argv[0].
+      //
+      // A leading `export`/`declare`/`typeset`/`local`/`readonly` builtin is a
+      // SECOND way a word after it is still a real shell assignment, not a
+      // positional argument — `export CMD='gh pr comment 12 --body …'` assigns
+      // CMD exactly as `CMD=…` alone would. `commandWordIndex(["export",
+      // "CMD=…"])` returns 0 (`export` itself isn't `VAR=value`-shaped), so
+      // without this the operand at index 1 would fall outside the leading
+      // run and go unscanned — the same false-refusal fix above would have
+      // silently reopened this bypass. Scan the run's own command word too
+      // when it is one of these builtins; its operands (index run+1 and up
+      // while they still look like `VAR=value`) get the same treatment as a
+      // leading assignment.
+      const assignmentRun = commandWordIndex(words);
+      for (let ai = 0; ai < assignmentRun; ai++) {
+        const m = ASSIGNMENT_RE.exec(words[ai].value);
         if (m && /(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
+      }
+      if (
+        assignmentRun < words.length &&
+        ASSIGNMENT_BUILTINS.has(basename(words[assignmentRun].value))
+      ) {
+        for (let ai = assignmentRun + 1; ai < words.length; ai++) {
+          const m = ASSIGNMENT_RE.exec(words[ai].value);
+          if (!m) break;
+          if (/(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
+        }
       }
       // Position-independent, because a wrapper can precede the interpreter:
       // `nohup bash -lc …`, `timeout 30 bash -lc …`, `xargs -I{} sh -c …`,

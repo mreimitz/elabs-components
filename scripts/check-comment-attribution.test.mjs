@@ -948,6 +948,20 @@ test("#78 class: every script-introducing option spelling still BLOCKS", () => {
     [`zqx-notashell-9f21a -c "${inner}"`, "an interpreter that exists nowhere"],
     [`frobnicate --run-script "${inner}"`, "an invented tool with an invented option"],
     [`hypothetical-shell-2031 "${inner}"`, "an invented tool with no option at all"],
+    // #96 fix round 8 — a matrix of operand spellings behind both
+    // unknown-interpreter rows, plus the residual named explicitly in the
+    // issue: `csh -c "gh issue comment 26 --body $MSG"` (the WHOLE body is one
+    // expansion, not just a mutation of a quoted one).
+    [`csh -c "gh issue comment 26 --body $MSG"`, "csh -c, whole-body expansion (#96)"],
+    [`csh -c "(${inner})"`, "csh -c, subshell-wrapped (#96)"],
+    [`csh -c "true&&${inner}"`, "csh -c, space-free && (#96)"],
+    [`csh -c "gh issue comment 26 --body '${UNMARKED} $USER'"`, "csh -c, $USER in body (#96)"],
+    [
+      `zqx-notashell-9f21a -c "gh issue comment 26 --body $MSG"`,
+      "unknown interpreter, whole-body expansion (#96)",
+    ],
+    [`zqx-notashell-9f21a -c "(${inner})"`, "unknown interpreter, subshell-wrapped (#96)"],
+    [`zqx-notashell-9f21a -c "true&&${inner}"`, "unknown interpreter, space-free && (#96)"],
   ];
   for (const [command, label] of cases) {
     assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
@@ -990,6 +1004,32 @@ test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
       "block",
       `nonexistent interpreter: ${shape}`,
     );
+
+    // #96 fix round 8 — the bypass this issue closes. Round 7's nested re-read
+    // was gated by TEXT prefilters: an operand containing a shell expansion
+    // skipped the re-read entirely, and the `gh`-detection was a regex a
+    // subshell or a space-free `&&` slipped past unseen. Three mutations of
+    // EVERY gated shape, behind BOTH unknown-interpreter rows, so none of the
+    // 18 shapes can walk through any of the three routes the bypass took.
+    const withVar = shape.replace(`'${UNMARKED}'`, `'${UNMARKED} $USER'`);
+    const subshelled = `(${shape})`;
+    const spaceFreeAnd = `true&&${shape}`;
+    for (const [mutated, mutationLabel] of [
+      [withVar, "$USER in body"],
+      [subshelled, "subshell-wrapped"],
+      [spaceFreeAnd, "space-free &&"],
+    ]) {
+      assert.equal(
+        bash(`csh -c "${mutated}"`).verdict,
+        "block",
+        `csh -c, ${mutationLabel}: ${mutated}`,
+      );
+      assert.equal(
+        bash(`zqx-notashell-9f21a -c "${mutated}"`).verdict,
+        "block",
+        `nonexistent interpreter, ${mutationLabel}: ${mutated}`,
+      );
+    }
   }
 });
 
@@ -1043,10 +1083,52 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `csh -c 'gh issue view 26'`,
     `csh -c 'pnpm test'`,
     `zqx-notashell-9f21a -c 'gh pr checks 12'`,
+    // #96 fix round 8 — the fix-round-7 verdict's own false refusals, now
+    // fixed: prose that contains BOTH a `gh … comment` phrase and a
+    // `--body`-shaped flag, but is not a nested command at all.
+    `git commit -m "fix(hooks): the gh issue comment gate now blocks --body=text"`,
+    `git commit -m "docs: quote 'gh' issue comment --body in the guide"`,
+    // A `VAR=value` word that is a POSITIONAL ARGUMENT to an unrelated
+    // command (make's MSG=…), not a shell assignment this line ever
+    // executes — the make(1) target never runs `gh`.
+    `make deploy MSG="gh issue comment --body ready"`,
+    // #96 acceptance criteria — ordinary expansions must not be blanket
+    // refused just because Part A stopped skipping every operand that
+    // contains one.
+    `git commit -m "feat(ui): add $THING to the toolbar"`,
+    `pnpm --filter $PKG test -- --grep "$NAME"`,
+    `csh -c "echo $HOME && ls -la"`,
+    `node -e "console.log(1 + '$X')"`,
   ];
   for (const command of cases) {
     assert.equal(bash(command).verdict, "allow", command);
   }
+});
+
+test("#96 fix round 8: the nested-operand widening, through the REAL shell hook", () => {
+  // Same three cases as the pure-function locks above, each driven through
+  // the actual bash hook end to end — the pattern `check-merge-readiness.test.mjs`
+  // and the rest of this file already use for the named findings.
+  const blocked = runHook({
+    tool_name: "Bash",
+    tool_input: {
+      command: `csh -c "gh issue comment 26 --body '${UNMARKED} $USER'"`,
+    },
+  });
+  assert.equal(blocked.status, 2, blocked.stderr);
+  assert.match(blocked.stderr, /comment-attribution gate/);
+
+  const stillBlocked = runHook({
+    tool_name: "Bash",
+    tool_input: { command: `export CMD='gh pr comment 12 --body ${UNMARKED}'` },
+  });
+  assert.equal(stillBlocked.status, 2, stillBlocked.stderr);
+
+  const allowed = runHook({
+    tool_name: "Bash",
+    tool_input: { command: `make deploy MSG="gh issue comment --body ready"` },
+  });
+  assert.equal(allowed.status, 0, allowed.stderr);
 });
 
 test("#78 class: a marked body behind a cd-prefix passes the REAL hook (exit 0)", () => {
