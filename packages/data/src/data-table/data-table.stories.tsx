@@ -1142,3 +1142,95 @@ export const RowSelectionWithToolbarDark: Story = {
     await RowSelectionWithToolbar.play!(context);
   },
 };
+
+// ─── RowReorder (#13) ───────────────────────────────────────────────────────
+
+/**
+ * Opt-in row drag-reorder. Fully controlled, like every other DataTable slice:
+ * `onRowReorder` reports the move as `(from, to, row)` and this story
+ * re-orders its own `data` in response — the component never mutates `data`
+ * itself.
+ *
+ * Try both ways to move a row: drag the grip handle with a mouse, or Tab to
+ * it and use the keyboard — Space/Enter picks a row up, Arrow Up/Down moves
+ * it, Space/Enter drops it, Escape cancels. Every position change is
+ * announced through a live region (WCAG 4.1.3).
+ */
+export const RowReorder: Story = {
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [items, setItems] = useState(rows);
+    return (
+      <DataTable
+        columns={columnsNoBadge}
+        data={items}
+        enableRowReorder
+        onRowReorder={(from, to) => {
+          setItems((current) => {
+            const next = current.slice();
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved!);
+            return next;
+          });
+        }}
+      />
+    );
+  },
+  play: async ({ canvas, userEvent }) => {
+    // Keyboard flow — the mandatory path (issue #13 carries the
+    // `accessibility` label): pick up the first row ("api-gateway"), move it
+    // down one position, and drop.
+    const handle = canvas.getByRole("button", { name: "Reorder api-gateway" });
+    handle.focus();
+    await expect(handle).toHaveFocus();
+
+    await userEvent.keyboard(" ");
+    await expect(handle).toHaveAttribute("aria-pressed", "true");
+
+    // `KeyboardSensor.attach()` (`@dnd-kit/core`) defers attaching the
+    // listener for the subsequent move/drop keys by one real macrotask
+    // (`setTimeout(fn, 0)`) — the same tick the unit tests in
+    // `data-table.test.tsx` wait out.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await userEvent.keyboard("{ArrowDown}");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await userEvent.keyboard(" ");
+
+    await waitFor(() => {
+      const gripButtons = canvas.getAllByRole("button", { name: /^Reorder /i });
+      expect(gripButtons[0]).toHaveAccessibleName("Reorder billing");
+      expect(gripButtons[1]).toHaveAccessibleName("Reorder api-gateway");
+    });
+  },
+};
+
+/**
+ * `rowReorderHandle="row"` makes the whole row the drag activator — no extra
+ * grip column. Reach for this only when the row has no other primary
+ * interaction (no `onRowClick`), since the row itself and a click target
+ * would otherwise compete for the same surface.
+ */
+export const RowReorderWholeRow: Story = {
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [items, setItems] = useState(rows);
+    return (
+      <DataTable
+        columns={columnsNoBadge}
+        data={items}
+        enableRowReorder
+        rowReorderHandle="row"
+        onRowReorder={(from, to) => {
+          setItems((current) => {
+            const next = current.slice();
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved!);
+            return next;
+          });
+        }}
+      />
+    );
+  },
+};

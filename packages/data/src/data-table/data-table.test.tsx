@@ -2329,3 +2329,209 @@ describe("DataTable — #69 columnDef.meta numeric column seam", () => {
     expect(nameHeader!.className).not.toContain("tabular-nums");
   });
 });
+
+// ─── #13: row drag-reorder ───────────────────────────────────────────────────
+
+describe("DataTable — #13 row drag-reorder", () => {
+  /** Every mounted data `<tr>`, in DOM order. */
+  function bodyRows(container: HTMLElement): HTMLTableRowElement[] {
+    return Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr"));
+  }
+
+  /**
+   * `sortableKeyboardCoordinates` resolves an arrow-key move by comparing
+   * `getBoundingClientRect()` of the sortable `<tr>`s — jsdom's default rect
+   * is all-zero, so every row would collide at the same point. Stub distinct,
+   * vertically-stacked rects keyed by each row's position in the DOM; any
+   * other element (headers, buttons) falls back to the real implementation.
+   */
+  function mockRowRects() {
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    return vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const table = this.closest("table");
+      const rows = table ? Array.from(table.querySelectorAll("tbody tr")) : [];
+      const index = rows.indexOf(this as HTMLTableRowElement);
+      if (this.tagName !== "TR" || index === -1) {
+        return original.call(this);
+      }
+      const top = index * 40;
+      return {
+        top,
+        bottom: top + 40,
+        left: 0,
+        right: 200,
+        width: 200,
+        height: 40,
+        x: 0,
+        y: top,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    });
+  }
+
+  /**
+   * `KeyboardSensor.attach()` picks up the row SYNCHRONOUSLY, then defers
+   * attaching its own document-level keydown listener (for the subsequent
+   * move/drop/cancel keys) by one macrotask (`setTimeout(fn, 0)`). A move
+   * key fired before that tick is silently dropped.
+   */
+  async function tick() {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
+
+  it("is opt-in — an existing table renders no grip column and no live region by default", () => {
+    const { container } = render(<DataTable columns={columns} data={data} />);
+    expect(screen.queryByRole("button", { name: /reorder/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(bodyRows(container)).toHaveLength(3);
+  });
+
+  it("renders a focusable grip handle per row with an accessible name (cell mode, the default)", () => {
+    render(<DataTable columns={columns} data={data} enableRowReorder />);
+    expect(screen.getByRole("button", { name: "Reorder Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reorder Beta" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reorder Gamma" })).toBeInTheDocument();
+  });
+
+  it("warns once (dev) when enableRowReorder is combined with active sorting", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const sorting: SortingState = [{ id: "name", desc: false }];
+      const { rerender } = render(
+        <DataTable columns={columns} data={data} enableRowReorder sorting={sorting} />,
+      );
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/enableRowReorder.*sort/is);
+
+      rerender(<DataTable columns={columns} data={data} enableRowReorder sorting={sorting} />);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("does NOT warn about sorting when sorting is empty", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      render(<DataTable columns={columns} data={data} enableRowReorder sorting={[]} />);
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("warns (dev) and disables reorder when combined with enableRowVirtualization", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      render(<DataTable columns={columns} data={data} enableRowReorder enableRowVirtualization />);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/enableRowReorder.*enableRowVirtualization/is);
+      // Virtualization wins — no grip column, no live region.
+      expect(screen.queryByRole("button", { name: /reorder/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("supports the full keyboard flow — Space picks up, ArrowDown moves, Space drops, and onRowReorder fires with the new indices", async () => {
+    const rectSpy = mockRowRects();
+    const onRowReorder = vi.fn();
+    try {
+      render(
+        <DataTable columns={columns} data={data} enableRowReorder onRowReorder={onRowReorder} />,
+      );
+      const live = screen.getByRole("status");
+      const handle = screen.getByRole("button", { name: "Reorder Alpha" });
+
+      fireEvent.keyDown(handle, { code: "Space" });
+      // The pickup announcement is real (`onDragStart` fires it), but dnd-kit
+      // immediately resolves an initial collision too (`onDragOver`, against
+      // the row's own starting slot) in the SAME synchronous batch, so the
+      // "picked up" text is superseded before this assertion can observe it
+      // — the DOM commits only the LAST state update in a batch. `aria-pressed`
+      // is a distinct signal (dnd-kit's own `active.id === id` state) that is
+      // NOT part of that announcement race, so it is what proves the pickup.
+      expect(handle).toHaveAttribute("aria-pressed", "true");
+      expect(live).not.toHaveTextContent("");
+
+      await tick();
+
+      fireEvent.keyDown(document, { code: "ArrowDown" });
+      await tick();
+
+      fireEvent.keyDown(document, { code: "Space" });
+
+      expect(onRowReorder).toHaveBeenCalledTimes(1);
+      expect(onRowReorder).toHaveBeenCalledWith(0, 1, data[0]);
+      // Nothing fires after `onDragEnd`, so this final state is stable —
+      // unlike the pickup text above, it is safe to assert on the exact
+      // localized wording.
+      expect(live).toHaveTextContent(/alpha dropped at position 2 of 3/i);
+      expect(handle).not.toHaveAttribute("aria-pressed");
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  it("Escape cancels the drag — onRowReorder does not fire and the live region announces the cancellation", async () => {
+    const rectSpy = mockRowRects();
+    const onRowReorder = vi.fn();
+    try {
+      render(
+        <DataTable columns={columns} data={data} enableRowReorder onRowReorder={onRowReorder} />,
+      );
+      const live = screen.getByRole("status");
+      const handle = screen.getByRole("button", { name: "Reorder Beta" });
+
+      fireEvent.keyDown(handle, { code: "Space" });
+      // See the sibling keyboard-flow test for why pickup is asserted via
+      // `aria-pressed` rather than the transient "picked up" announcement.
+      expect(handle).toHaveAttribute("aria-pressed", "true");
+
+      await tick();
+
+      fireEvent.keyDown(document, { code: "Escape" });
+
+      expect(onRowReorder).not.toHaveBeenCalled();
+      // Nothing else fires after a cancel, so the exact wording is stable.
+      expect(live).toHaveTextContent(/reordering cancelled\. beta returned to position 2 of 3/i);
+      expect(handle).not.toHaveAttribute("aria-pressed");
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  // A jsdom pointer-drag unit test was attempted here and dropped: this
+  // environment has no global `PointerEvent` constructor at all (verified
+  // directly — `typeof PointerEvent === "undefined"`), so `PointerSensor`'s
+  // own activator gate (`!event.isPrimary || event.button !== 0` in
+  // `@dnd-kit/core`) rejects every synthetic pointerdown before dnd-kit does
+  // anything else; no test-authoring fix changes that. Pointer drag is
+  // dnd-kit's own well-tested mechanism (not new code this issue adds) and is
+  // exercised for real in `data-table.stories.tsx`'s `RowReorder` story,
+  // which runs in an actual browser via Storybook's interaction test runner.
+  // The keyboard path above is the one this issue's `accessibility` label
+  // makes mandatory, and it is covered without this gap.
+
+  it('rowReorderHandle="row" makes the whole row the activator instead of a grip column', () => {
+    const { container } = render(
+      <DataTable columns={columns} data={data} enableRowReorder rowReorderHandle="row" />,
+    );
+    // No dedicated grip button anywhere.
+    expect(screen.queryByRole("button", { name: /reorder/i })).not.toBeInTheDocument();
+
+    const [firstRow] = bodyRows(container);
+    // dnd-kit's default activator role is overridden back to the table's own
+    // `row`, and `aria-pressed` (meaningless off a button) is stripped.
+    expect(firstRow!.getAttribute("role")).toBe("row");
+    expect(firstRow!.hasAttribute("aria-pressed")).toBe(false);
+    expect(firstRow!.getAttribute("tabindex")).toBe("0");
+  });
+});

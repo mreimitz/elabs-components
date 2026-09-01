@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 116 entries (data: 2, source: 16, font: 2, dependency: 96).
+// 119 entries (data: 2, source: 16, font: 2, dependency: 99).
 
 import type { Attribution } from "./attribution-types";
 
@@ -257,6 +257,42 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Chris Pettitt",
     url: "https://www.npmjs.com/package/@dagrejs/dagre",
     usedBy: ["@elabs-ai/components-flow"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "@dnd-kit/core",
+    category: "dependency",
+    name: "@dnd-kit/core",
+    version: "6.3.1",
+    license: "MIT",
+    copyright: "Claudéric Demers",
+    url: "https://www.npmjs.com/package/@dnd-kit/core",
+    usedBy: ["@elabs-ai/components-data"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "@dnd-kit/sortable",
+    category: "dependency",
+    name: "@dnd-kit/sortable",
+    version: "10.0.0",
+    license: "MIT",
+    copyright: "Claudéric Demers",
+    url: "https://www.npmjs.com/package/@dnd-kit/sortable",
+    usedBy: ["@elabs-ai/components-data"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "@dnd-kit/utilities",
+    category: "dependency",
+    name: "@dnd-kit/utilities",
+    version: "3.2.2",
+    license: "MIT",
+    copyright: "Claudéric Demers",
+    url: "https://www.npmjs.com/package/@dnd-kit/utilities",
+    usedBy: ["@elabs-ai/components-data"],
     required: false,
     note: null,
   },
