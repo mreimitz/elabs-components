@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T11:00:54.715Z",
+  "generatedAt": "2026-09-01T12:34:28.109Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -708,8 +708,13 @@
       "peerDependencies": {
         "@elabs-ai/components-tokens": "workspace:*",
         "@elabs-ai/components-ui": "workspace:*",
+        "@rive-app/react-webgl2": "^4.26.1",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/xterm": "^6.0.0",
         "@xyflow/react": "^12.11.1",
         "ai": "^6.0.0 || ^7.0.0",
+        "media-chrome": "^4.17.2",
+        "mermaid": "^11.12.2",
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },

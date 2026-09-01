@@ -19,17 +19,36 @@
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import type { RiveParameters } from "@rive-app/react-webgl2";
-import {
+// A NAMED import (`import { useRive } from "@rive-app/react-webgl2"`) is a
+// static ESM binding a bundler must resolve at build time. Now that
+// `@rive-app/react-webgl2` is a genuinely optional peer (issue #33), a
+// consumer who has not installed it hits that resolution at the worst
+// possible time: Vite's own optional-peer-dependency handling swaps in a
+// build-time stub with no exports, and Rollup's static named-export check
+// then fails the WHOLE APP BUILD — not a runtime error `LazyEngineBoundary`
+// could ever see (confirmed against `fixtures/consumer-smoke`'s real Vite
+// build). A namespace import defers every one of these to a plain property
+// lookup, which Rollup does not statically validate, so the build always
+// succeeds; a genuinely missing peer instead resolves the destructured hooks
+// below to `undefined`, and the guard turns that into the render-phase throw
+// `LazyEngineBoundary` (see `persona.tsx`) already catches.
+import * as RiveModule from "@rive-app/react-webgl2";
+import type { ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+
+import type { PersonaSource, PersonaState } from "./persona-sources";
+
+const {
   useRive,
   useStateMachineInput,
   useViewModel,
   useViewModelInstance,
   useViewModelInstanceColor,
-} from "@rive-app/react-webgl2";
-import type { ReactNode } from "react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+} = RiveModule;
 
-import type { PersonaSource, PersonaState } from "./persona-sources";
+if (!useRive) {
+  throw new Error("Cannot find module '@rive-app/react-webgl2'");
+}
 
 // Delays Rive initialization by one frame so that React Strict Mode's
 // immediate unmount cycle never creates a WebGL2 context. Only the

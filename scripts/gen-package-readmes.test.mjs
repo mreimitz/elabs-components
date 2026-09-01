@@ -216,16 +216,38 @@ test("renderReadmeRegion: no optionalPeers means no extra install line (default 
 // adapter peers by hand, below the generated markers) is NOT force-fed a
 // blanket install of all of them ────────────────────────────────────────
 
-test("REAL repo: packages/ai/README.md's generated Install block names the real ai peer range", () => {
+test("REAL repo: packages/ai/README.md's generated block stays free of a redundant per-peer ai install line, but still says ai is optional (issue #33)", () => {
+  // Before issue #33, `ai` was this package's ONE optional peer, so its own
+  // `pnpm add ai@…` line belonged in the generated Install block (the
+  // original #12/#53 regression this test locked: a peer going optional with
+  // no mention in the guide at all). Issue #33 gave `@elabs-ai/components-ai`
+  // FOUR more optional peers (mermaid, Rive, xterm + its fit addon,
+  // media-chrome) — the same per-feature-adapter shape as
+  // `@elabs-ai/components-viewer` — so `@elabs-ai/components-ai` joined
+  // `SKIP_OPTIONAL_PEER_INSTALL` and the six peers are now documented
+  // together in the hand-authored "Only install what you render" table below
+  // the markers (see the sibling viewer assertion just above). This test now
+  // guards BOTH halves of that move: the generated block must not duplicate
+  // the per-peer install line, and it must still say, in prose, that `ai` is
+  // optional — so the original regression (silently never mentioning it)
+  // still can't reoccur.
   const pkgJson = JSON.parse(
     readFileSync(path.join(REPO_ROOT, "packages", "ai", "package.json"), "utf8"),
   );
   const aiPeer = optionalPeersOf(pkgJson).find((p) => p.name === "ai");
   assert.ok(aiPeer, "packages/ai/package.json must declare ai as an optional peer");
   const readme = readFileSync(path.join(REPO_ROOT, "packages", "ai", "README.md"), "utf8");
+  const generatedRegion = readme.slice(
+    readme.indexOf("<!-- brand-ui:gen:readme:start -->"),
+    readme.indexOf("<!-- brand-ui:gen:readme:end -->"),
+  );
   assert.ok(
-    readme.includes(`pnpm add ai@"${aiPeer.range}"`),
-    "README's Install block must spell out the exact peer range from package.json",
+    !generatedRegion.includes(`pnpm add ai@"${aiPeer.range}"`),
+    "ai now shares the per-feature-adapter shape with its four sibling optional peers — its install command belongs once, in the hand-authored table below the markers, not duplicated here",
+  );
+  assert.ok(
+    /`ai`[^\n]*optional/i.test(generatedRegion),
+    "the generated region must still say, in prose, that `ai` is an optional peer",
   );
 });
 

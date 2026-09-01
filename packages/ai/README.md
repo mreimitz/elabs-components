@@ -14,7 +14,6 @@ no token required. See `docs/CONSUMING.md`.
 
 ```bash
 pnpm add @elabs-ai/components-tokens @elabs-ai/components-ai
-pnpm add ai@"^6.0.0 || ^7.0.0"  # optional peer
 ```
 
 ## Set up styling (do not skip)
@@ -39,8 +38,9 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## This package specifically
 
-- `ai` (Vercel AI SDK) is a **types-only, optional** peer (see the `pnpm add ai@…` line above) — your app owns the model calls.
-- `@xyflow/react` is a peer too, if you render the agent canvas.
+- `ai` (Vercel AI SDK) is a **types-only, optional** peer — your app owns the model calls.
+- `@xyflow/react` is a peer too (required), if you render the agent canvas.
+- `mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit` and `media-chrome` are optional peers reached only through a lazy `import()` (ADR 0019) — see "Only install what you render" below.
 
 ## What's in it
 

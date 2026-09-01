@@ -28,5 +28,50 @@
  */
 import "@xterm/xterm/css/xterm.css";
 
-export { FitAddon } from "@xterm/addon-fit";
-export { Terminal as XTerm } from "@xterm/xterm";
+export interface XTermEngine {
+  FitAddon: typeof import("@xterm/addon-fit").FitAddon;
+  XTerm: typeof import("@xterm/xterm").Terminal;
+}
+
+let enginePromise: Promise<XTermEngine> | undefined;
+
+/**
+ * Load the xterm.js engine, once per app.
+ *
+ * A NAMED static import/re-export here (`export { Terminal as XTerm } from
+ * "@xterm/xterm"`) — and even a namespace import destructured at module scope
+ * (`import * as X from "@xterm/xterm"; export const XTerm = X.Terminal`) — is
+ * an ESM binding Rollup resolves and re-derives ("resolveNamespaceVariables")
+ * at BUILD time. Now that `@xterm/xterm`/`@xterm/addon-fit` are genuinely
+ * optional peers (issue #33), a consumer who has not installed them hits that
+ * resolution at the worst possible time: Vite's own optional-peer-dependency
+ * handling substitutes a build-time stub with no exports, Rollup traces the
+ * namespace destructure straight back to that missing named export anyway,
+ * and the WHOLE APP BUILD fails — not a runtime rejection
+ * `interactive-terminal.tsx`'s `.catch()` could ever see (confirmed against
+ * `fixtures/consumer-smoke`'s real Vite build, both before and after trying
+ * the namespace-import workaround).
+ *
+ * A genuinely DYNAMIC `import()` called from inside a function — mirroring
+ * `_lazy-mermaid.ts`'s `loadEngine`, the one lazy boundary that never hit this
+ * bug — is opaque to that optimization: its resolved shape isn't knowable
+ * ahead of time, so Rollup cannot re-derive a named binding through it. A
+ * missing peer then surfaces the way it always should have: a promise that
+ * rejects (or, since the stub resolves rather than rejects, an explicit guard
+ * that throws a message `isModuleNotFoundMessage` recognizes) — landing on
+ * this file's own `.catch()`/`.then()` chain in `interactive-terminal.tsx`
+ * exactly as intended.
+ */
+export const loadXTermEngine = (): Promise<XTermEngine> => {
+  enginePromise ??= Promise.all([import("@xterm/xterm"), import("@xterm/addon-fit")]).then(
+    ([core, addon]) => {
+      const XTerm = core.Terminal;
+      const FitAddon = addon.FitAddon;
+      if (!XTerm || !FitAddon) {
+        throw new Error("Cannot find module '@xterm/xterm'");
+      }
+      return { FitAddon, XTerm };
+    },
+  );
+  return enginePromise;
+};

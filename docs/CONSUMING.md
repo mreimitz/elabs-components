@@ -94,14 +94,14 @@ pnpm add @xyflow/react      # only if you use …-flow or the …-ai canvas
 
 Per-package peers worth knowing:
 
-| Package                       | Extra peer you must provide                                                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                       |
-| `@elabs-ai/components-ai`     | `ai` (Vercel AI SDK) `^6` — your app owns the model calls; `@xyflow/react` if you render the agent canvas                                                                             |
-| `@elabs-ai/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                          |
-| `@elabs-ai/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                            |
-| `@elabs-ai/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package |
-| everything else               | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                      |
+| Package                       | Extra peer you must provide                                                                                                                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@elabs-ai/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                                                                      |
+| `@elabs-ai/components-ai`     | `@xyflow/react` if you render the agent canvas (required); **five more peers are optional** — `ai`, `mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit`, `media-chrome` — install only what you render (see §6) |
+| `@elabs-ai/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                                                                         |
+| `@elabs-ai/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                                                                           |
+| `@elabs-ai/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package                                                |
+| everything else               | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                                                                     |
 
 All packages are **ESM-only** (`"type": "module"`) — use a bundler that handles
 ESM (Vite, Next, webpack 5, esbuild).
@@ -411,7 +411,31 @@ value)`; an invalid value (`"not-a-color"`, a typo'd `oklch()`) is rejected
   `<FormProvider>`.
 
 - **`@elabs-ai/components-ai`** — `MarkdownPreview` math needs
-  `import "katex/dist/katex.min.css"` once, only if you enable it.
+  `import "katex/dist/katex.min.css"` once, only if you enable it. Five more
+  peers are **optional** (issue #33, `docs/ADR/0032-optional-peer-dependency-policy.md`) —
+  each is a dependency of ONE feature, reached only through a lazy `import()`
+  (ADR 0019), so the package installs and builds with none of them; reaching a
+  feature whose peer is absent renders an actionable message naming the
+  package to install, never a blank component or an unhandled rejection.
+
+  ```bash
+  pnpm add mermaid                    # Mermaid diagrams in streamed markdown
+  pnpm add @rive-app/react-webgl2     # Persona
+  pnpm add @xterm/xterm @xterm/addon-fit  # InteractiveTerminal
+  pnpm add media-chrome               # AudioPlayer
+  pnpm add ai                         # types only, no runtime cost
+  ```
+
+  `@xyflow/react` (the agent-canvas set) stays a **required** peer, not
+  optional — install it whenever you import from this package.
+
+  **Known limitation:** `mermaid` may still resolve on disk even when you skip
+  it — `@streamdown/mermaid` (a dependency of `@elabs-ai/components-ai`, not of
+  your app) currently declares `mermaid` as its own plain, non-optional
+  dependency, so a hoisting package manager can still install it transitively.
+  The optional-peer declaration still means you never have to declare it
+  yourself, and a genuinely absent engine still fails actionably rather than
+  crashing.
 
 ## 7. Make your coding agent brand-ui-aware
 

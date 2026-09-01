@@ -1,8 +1,9 @@
 "use client";
 
-import { Skeleton } from "@elabs-ai/components-ui";
+import { Skeleton, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Experimental_SpeechResult as SpeechResult } from "ai";
+import { VolumeOffIcon } from "lucide-react";
 import type {
   MediaControlBar,
   MediaController,
@@ -17,6 +18,9 @@ import type {
 } from "media-chrome/react";
 import type { ComponentProps, ComponentType } from "react";
 import { lazy, Suspense } from "react";
+
+import { LazyEngineBoundary } from "./_lazy-engine-boundary";
+import { isOptionalPeerMissing } from "./_optional-peer";
 
 /**
  * media-chrome lives behind a dynamic import — it declares no `sideEffects`, so
@@ -37,10 +41,47 @@ export type AudioPlayerProps = Omit<ComponentProps<typeof MediaController>, "aud
 
 const AudioPlayerImpl = lazyPart<AudioPlayerProps>((m) => m.AudioPlayer);
 
+/**
+ * The settled-failure stand-in for the `LazyEngineBoundary` above — rendered
+ * once the `media-chrome` load has genuinely failed, never while it is still
+ * pending (that stays `Skeleton`, via the `Suspense fallback` below). A
+ * loading skeleton left in place after a settled failure reads as "still
+ * loading, forever" (loading-states.md) — this is a terminal state, so it
+ * gets a real (if compact) notice instead, sized to the same `h-10` slot so
+ * nothing shifts when the boundary trips.
+ */
+const AudioPlayerMissing = ({ className, error }: { className?: string; error: unknown }) => {
+  const { t } = useLocale();
+  const isPeerMissing = isOptionalPeerMissing(error);
+  return (
+    <div
+      className={cn(
+        "flex h-10 w-full items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 text-caption text-muted-foreground",
+        className,
+      )}
+      role={isPeerMissing ? "status" : "alert"}
+    >
+      <VolumeOffIcon aria-hidden="true" className="size-4 shrink-0" />
+      <span className="truncate">
+        {isPeerMissing
+          ? t("ai.error.engineMissingBody", {
+              feature: t("ai.audioPlayer.feature"),
+              packages: "media-chrome",
+            })
+          : t("ai.audioPlayer.renderError")}
+      </span>
+    </div>
+  );
+};
+
 export const AudioPlayer = ({ className, ...props }: AudioPlayerProps) => (
-  <Suspense fallback={<Skeleton className={cn("h-10 w-full rounded-md", className)} />}>
-    <AudioPlayerImpl className={className} data-slot="audio-player" {...props} />
-  </Suspense>
+  <LazyEngineBoundary
+    renderMissing={(error) => <AudioPlayerMissing className={className} error={error} />}
+  >
+    <Suspense fallback={<Skeleton className={cn("h-10 w-full rounded-md", className)} />}>
+      <AudioPlayerImpl className={className} data-slot="audio-player" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerElementProps = Omit<ComponentProps<"audio">, "src"> &
@@ -70,9 +111,11 @@ const AudioPlayerControlBarImpl = lazyPart<AudioPlayerControlBarProps>(
 );
 
 export const AudioPlayerControlBar = (props: AudioPlayerControlBarProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerControlBarImpl data-slot="audio-player-control-bar" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerControlBarImpl data-slot="audio-player-control-bar" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerPlayButtonProps = ComponentProps<typeof MediaPlayButton>;
@@ -82,9 +125,11 @@ const AudioPlayerPlayButtonImpl = lazyPart<AudioPlayerPlayButtonProps>(
 );
 
 export const AudioPlayerPlayButton = (props: AudioPlayerPlayButtonProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerPlayButtonImpl data-slot="audio-player-play-button" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerPlayButtonImpl data-slot="audio-player-play-button" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerSeekBackwardButtonProps = ComponentProps<typeof MediaSeekBackwardButton>;
@@ -94,9 +139,11 @@ const AudioPlayerSeekBackwardButtonImpl = lazyPart<AudioPlayerSeekBackwardButton
 );
 
 export const AudioPlayerSeekBackwardButton = (props: AudioPlayerSeekBackwardButtonProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerSeekBackwardButtonImpl data-slot="audio-player-seek-backward-button" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerSeekBackwardButtonImpl data-slot="audio-player-seek-backward-button" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerSeekForwardButtonProps = ComponentProps<typeof MediaSeekForwardButton>;
@@ -106,9 +153,11 @@ const AudioPlayerSeekForwardButtonImpl = lazyPart<AudioPlayerSeekForwardButtonPr
 );
 
 export const AudioPlayerSeekForwardButton = (props: AudioPlayerSeekForwardButtonProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerSeekForwardButtonImpl data-slot="audio-player-seek-forward-button" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerSeekForwardButtonImpl data-slot="audio-player-seek-forward-button" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerTimeDisplayProps = ComponentProps<typeof MediaTimeDisplay>;
@@ -118,9 +167,11 @@ const AudioPlayerTimeDisplayImpl = lazyPart<AudioPlayerTimeDisplayProps>(
 );
 
 export const AudioPlayerTimeDisplay = (props: AudioPlayerTimeDisplayProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerTimeDisplayImpl data-slot="audio-player-time-display" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerTimeDisplayImpl data-slot="audio-player-time-display" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
@@ -128,9 +179,11 @@ export type AudioPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
 const AudioPlayerTimeRangeImpl = lazyPart<AudioPlayerTimeRangeProps>((m) => m.AudioPlayerTimeRange);
 
 export const AudioPlayerTimeRange = (props: AudioPlayerTimeRangeProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerTimeRangeImpl data-slot="audio-player-time-range" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerTimeRangeImpl data-slot="audio-player-time-range" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerDurationDisplayProps = ComponentProps<typeof MediaDurationDisplay>;
@@ -140,9 +193,11 @@ const AudioPlayerDurationDisplayImpl = lazyPart<AudioPlayerDurationDisplayProps>
 );
 
 export const AudioPlayerDurationDisplay = (props: AudioPlayerDurationDisplayProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerDurationDisplayImpl data-slot="audio-player-duration-display" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerDurationDisplayImpl data-slot="audio-player-duration-display" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerMuteButtonProps = ComponentProps<typeof MediaMuteButton>;
@@ -152,9 +207,11 @@ const AudioPlayerMuteButtonImpl = lazyPart<AudioPlayerMuteButtonProps>(
 );
 
 export const AudioPlayerMuteButton = (props: AudioPlayerMuteButtonProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerMuteButtonImpl data-slot="audio-player-mute-button" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerMuteButtonImpl data-slot="audio-player-mute-button" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );
 
 export type AudioPlayerVolumeRangeProps = ComponentProps<typeof MediaVolumeRange>;
@@ -164,7 +221,9 @@ const AudioPlayerVolumeRangeImpl = lazyPart<AudioPlayerVolumeRangeProps>(
 );
 
 export const AudioPlayerVolumeRange = (props: AudioPlayerVolumeRangeProps) => (
-  <Suspense fallback={null}>
-    <AudioPlayerVolumeRangeImpl data-slot="audio-player-volume-range" {...props} />
-  </Suspense>
+  <LazyEngineBoundary renderMissing={() => null}>
+    <Suspense fallback={null}>
+      <AudioPlayerVolumeRangeImpl data-slot="audio-player-volume-range" {...props} />
+    </Suspense>
+  </LazyEngineBoundary>
 );

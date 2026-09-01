@@ -98,4 +98,19 @@ describe("lazy mermaid plugin", () => {
     expect(() => preloadMermaid()).not.toThrow();
     expect(render).not.toHaveBeenCalled();
   });
+
+  it("surfaces a module-not-found-shaped message when the engine call itself fails — the missing optional `mermaid` peer, #33", async () => {
+    // The engine module resolved fine (it is mocked at the top of this file);
+    // this simulates the shape a missing peer actually takes downstream — the
+    // dynamic `import("mermaid")` rejecting — by rejecting the mocked call the
+    // plugin awaits. Streamdown reduces whatever this rejects with to a plain
+    // string and hands it to `MermaidErrorPanel`
+    // (`_mermaid-error-panel.tsx`), which classifies a message in this exact
+    // shape as a capability gap, not a render failure.
+    render.mockRejectedValueOnce(new Error("Cannot find module 'mermaid'"));
+
+    await expect(
+      createLazyMermaidPlugin().getMermaid().render("d1", "graph TD; A-->B;"),
+    ).rejects.toThrow(/cannot find module/i);
+  });
 });
