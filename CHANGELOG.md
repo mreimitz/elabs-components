@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
+  provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
+  one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
+  tenant/white-label picker that only has a single brand colour (#39).
 - Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
   against the bare `--background` token, but Monaco actually paints a translucent
   `editor.lineHighlightBackground` overlay UNDER token text on the cursor's line —

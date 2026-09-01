@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T07:07:47.204Z",
+  "generatedAt": "2026-09-01T11:46:30.420Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21996,6 +21996,14 @@
           "module": "packages/tokens/src/theme-types.ts"
         },
         {
+          "name": "DerivedThemeTokens",
+          "module": "packages/tokens/src/derive-theme.ts"
+        },
+        {
+          "name": "DeriveThemeOptions",
+          "module": "packages/tokens/src/derive-theme.ts"
+        },
+        {
           "name": "MotionPreference",
           "module": "packages/tokens/src/theme-types.ts"
         },
@@ -22040,6 +22048,10 @@
         {
           "name": "defineTheme",
           "module": "packages/tokens/src/theme-types.ts"
+        },
+        {
+          "name": "deriveTheme",
+          "module": "packages/tokens/src/derive-theme.ts"
         },
         {
           "name": "isBuiltInThemeName",
