@@ -6,6 +6,17 @@
  * seeds plus four named HOSTILE cases (very light primary, very dark primary,
  * low-chroma primary, primary close to background) that are the ones most
  * likely to break a naive derivation.
+ *
+ * Fix round 1 (an independent validator's review of the first commit, de9307a)
+ * found three correctness holes this file's original 10 hand-picked seeds
+ * didn't cover — a rounding-boundary `--ring` (finding 1), an alpha-carrying
+ * seed (finding 2), and a `--ring`/`--accent-foreground` collapse for
+ * zero-chroma seeds (finding 3). Each got its OWN reproduction case below
+ * (not just a fix to the implementation) so the exact regression can't come
+ * back silently, PLUS a wide property sweep (`describe("property sweep")`)
+ * over many more seeds than any hand-picked list would think to try — the
+ * validator's own stated lesson: hand-picked cases miss whatever seed shape
+ * nobody thought to name.
  */
 import { describe, expect, it } from "vitest";
 import { contrastRatio, parseOklch, type Oklch } from "./color-contrast";
@@ -14,6 +25,7 @@ import { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.gene
 
 const AA_TEXT = 4.5;
 const AA_NONTEXT = 3;
+const ROLE_SEPARATION_DELTA_E = 0.05;
 
 /** OKLab ΔE (simple Euclidean distance in L/a/b — matches themes-contrast.test.ts's own helper). */
 function oklabDistance(a: Oklch, b: Oklch): number {
@@ -59,6 +71,25 @@ const CASES: Case[] = [
   {
     name: "HOSTILE: very dark primary on dark background",
     options: { primary: "oklch(0.12 0.05 250)", background: DARK_BACKGROUND },
+  },
+  // --- Fix round 1 (#39) regression cases — the validator's exact reproductions ---
+  {
+    // Finding 1: pre-fix, findAALightness validated the UNROUNDED candidate
+    // (3.0000:1) then formatOklch rounded L/C to 3 decimals without
+    // re-measuring, shipping a --ring that actually measured 2.9936:1 — below
+    // the 3:1 floor. This exact seed is the validator's reproduction.
+    name: "FIX ROUND 1 finding 1: rounding must not push --ring below 3:1",
+    options: { primary: "oklch(0.1 0.03 340)", background: DARK_BACKGROUND },
+  },
+  {
+    // Finding 3: pre-fix, a zero-chroma primary derived a --ring identical to
+    // --accent-foreground (both oklch(0 0 0), ΔE 0.0000) — a direct collision
+    // with the MUST_DIFFER pair ["--accent-foreground", "--ring"] enforced on
+    // committed theme CSS by scripts/check-role-distinctness.mjs. A
+    // runtime-derived patch can't be seen by that gate, so the invariant has
+    // to be enforced here instead (see the "ring/accent-fg ΔE" case below).
+    name: "FIX ROUND 1 finding 3: zero-chroma primary must not collapse --ring onto --accent-foreground",
+    options: { primary: "oklch(0 0 0)" },
   },
 ];
 
@@ -117,6 +148,18 @@ describe("deriveTheme", () => {
       const accent = parseOklch(result["--accent"]!);
       expect(oklabDistance(primary, accent)).toBeGreaterThanOrEqual(0.05);
     });
+
+    it("--ring and --accent-foreground stay perceptibly distinct (ΔE >= 0.05 OKLab)", () => {
+      // FIX ROUND 1 finding 3: scripts/check-role-distinctness.mjs's MUST_DIFFER
+      // includes ["--accent-foreground", "--ring"] for committed theme CSS. That
+      // gate cannot see a runtime-derived patch, so deriveTheme must enforce the
+      // same pair on its OWN emitted output — this is the exact assertion the
+      // original 10-case suite was missing, which is why the zero-chroma
+      // collision (both oklch(0 0 0)) shipped without any test failing.
+      const ring = parseOklch(result["--ring"]!);
+      const accentForeground = parseOklch(result["--accent-foreground"]!);
+      expect(oklabDistance(ring, accentForeground)).toBeGreaterThanOrEqual(ROLE_SEPARATION_DELTA_E);
+    });
   });
 
   it("throws on malformed primary input", () => {
@@ -128,6 +171,27 @@ describe("deriveTheme", () => {
   it("throws on malformed background input", () => {
     expect(() =>
       deriveTheme({ primary: "oklch(0.55 0.18 250)", background: "rgb(0,0,0)" }),
+    ).toThrow();
+  });
+
+  it("FIX ROUND 1 finding 2: throws on an alpha-carrying primary instead of silently treating it as opaque", () => {
+    // Pre-fix, an alpha-carrying `primary` was accepted and returned verbatim
+    // (JSDoc even claimed `oklch(L C H / A)` support), but every contrast
+    // check measured the OPAQUE value — deriveTheme believed 17.97:1 while
+    // the real value, composited over the default background with the
+    // repo's own mixOverSrgb, measured 1.16:1. Chose "reject" over
+    // "composite" (the validator offered both): every token in themes.css is
+    // stored fully opaque by convention, and --primary can legitimately
+    // render over surfaces OTHER than the caller-supplied background (a
+    // card, a popover), so compositing against just one ground would still
+    // misrepresent the others.
+    expect(() => deriveTheme({ primary: "oklch(0.2 0.1 250 / 0.05)" })).toThrow();
+    expect(() => deriveTheme({ primary: "oklch(0.55 0.18 250 / 0.999)" })).toThrow();
+  });
+
+  it("FIX ROUND 1 finding 2: throws on an alpha-carrying background for the same reason", () => {
+    expect(() =>
+      deriveTheme({ primary: "oklch(0.55 0.18 250)", background: "oklch(0.5 0.1 250 / 0.5)" }),
     ).toThrow();
   });
 
@@ -157,5 +221,92 @@ describe("deriveTheme", () => {
         expect(best).toBeGreaterThanOrEqual(4.5);
       }
     }
+  });
+});
+
+/**
+ * Fix round 1's stated lesson: "Add a property-style sweep over many seeds
+ * asserting every invariant on the formatted output — that is what would
+ * have caught all three [findings]." A hand-picked CASES list only tests the
+ * seed shapes someone thought to name; this sweep tests a broad L x C x H x
+ * background grid so a future regression in ANY corner of the search space
+ * fails here instead of shipping. Scaled down from the exploratory ~3024-seed
+ * sweep used to verify the fix (same grid shape, fewer chroma/hue steps) to
+ * keep the suite fast while still covering hundreds of seeds per run.
+ */
+describe("deriveTheme property sweep (fix round 1)", () => {
+  const Ls = Array.from({ length: 11 }, (_, i) => i / 10); // 0, 0.1, ..., 1
+  const Cs = [0, 0.02, 0.1, 0.3];
+  const Hs = [0, 60, 120, 180, 240, 300];
+  const BGs = [LIGHT_BACKGROUND, DARK_BACKGROUND];
+
+  it(`holds every invariant on the formatted output across ${Ls.length * Cs.length * Hs.length * BGs.length} seeds`, () => {
+    const violations: string[] = [];
+
+    for (const bgStr of BGs) {
+      const background = parseOklch(bgStr);
+      for (const l of Ls) {
+        for (const c of Cs) {
+          for (const h of Hs) {
+            const primaryStr = `oklch(${l} ${c} ${h})`;
+            const seed = `primary=${primaryStr} background=${bgStr}`;
+            let result: ReturnType<typeof deriveTheme>;
+            try {
+              result = deriveTheme({ primary: primaryStr, background: bgStr });
+            } catch (e) {
+              violations.push(`${seed}: threw unexpectedly — ${(e as Error).message}`);
+              continue;
+            }
+
+            const primary = parseOklch(result["--primary"]!);
+            const primaryForeground = parseOklch(result["--primary-foreground"]!);
+            const accent = parseOklch(result["--accent"]!);
+            const accentForeground = parseOklch(result["--accent-foreground"]!);
+            const ring = parseOklch(result["--ring"]!);
+
+            const primaryFgRatio = contrastRatio(primaryForeground, primary);
+            if (primaryFgRatio < AA_TEXT) {
+              violations.push(`${seed}: --primary-foreground ratio ${primaryFgRatio} < ${AA_TEXT}`);
+            }
+
+            const accentFgRatio = contrastRatio(accentForeground, accent);
+            if (accentFgRatio < AA_TEXT) {
+              violations.push(`${seed}: --accent-foreground ratio ${accentFgRatio} < ${AA_TEXT}`);
+            }
+
+            // FIX ROUND 1 finding 1: measure the ACTUAL emitted string, not an
+            // internal pre-rounding value — this is what the validate-then-round
+            // bug would have failed.
+            const ringRatio = contrastRatio(ring, background);
+            if (ringRatio < AA_NONTEXT) {
+              violations.push(`${seed}: --ring ratio ${ringRatio} < ${AA_NONTEXT}`);
+            }
+
+            const rawHueGap = Math.abs(ring.h - primary.h);
+            const hueGap = Math.min(rawHueGap, 360 - rawHueGap);
+            if (hueGap > 20) {
+              violations.push(`${seed}: --ring hue gap ${hueGap} > 20`);
+            }
+
+            const primaryAccentDeltaE = oklabDistance(primary, accent);
+            if (primaryAccentDeltaE < ROLE_SEPARATION_DELTA_E) {
+              violations.push(
+                `${seed}: --primary/--accent deltaE ${primaryAccentDeltaE} < ${ROLE_SEPARATION_DELTA_E}`,
+              );
+            }
+
+            // FIX ROUND 1 finding 3: the MUST_DIFFER pair, on formatted output.
+            const ringAccentFgDeltaE = oklabDistance(ring, accentForeground);
+            if (ringAccentFgDeltaE < ROLE_SEPARATION_DELTA_E) {
+              violations.push(
+                `${seed}: --ring/--accent-foreground deltaE ${ringAccentFgDeltaE} < ${ROLE_SEPARATION_DELTA_E}`,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
   });
 });

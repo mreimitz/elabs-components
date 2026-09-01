@@ -65,12 +65,32 @@
  * `--primary`'s hue family, so it can't jump to pure grey the way an ink can)
  * — so it is found by an explicit search over lightness (and, only if the
  * seed's own chroma leaves no room, a reduced chroma) that keeps the same hue
- * and stops at the first value that clears 3:1. If that search still cannot
- * produce a compliant value (it cannot for any real input — full achromatic
- * black/white inherits the same >=4.58:1 floor above, which is >3), the
- * function THROWS rather than returning a value that quietly fails 1.4.11.
+ * and stops at the closest-to-primary value that clears 3:1. If that search
+ * still cannot produce a compliant value (it cannot for any real input — full
+ * achromatic black/white inherits the same >=4.58:1 floor above, which is >3),
+ * the function THROWS rather than returning a value that quietly fails 1.4.11.
+ *
+ * The search validates candidates AT THE SAME 3-decimal precision `formatOklch`
+ * emits — not a finer internal value that gets rounded afterward. An earlier
+ * version validated an unrounded candidate and rounded it only when formatting
+ * the return value; rounding can move a boundary-sitting candidate (the search
+ * always prefers the value CLOSEST to compliant, i.e. sitting exactly on the
+ * boundary) back below the floor — measured shipping a 2.9936:1 `--ring` where
+ * the search had picked 3.0000:1 before rounding (issue #39 fix round 1,
+ * finding 1). Round first, then validate, so the value that is checked is
+ * byte-for-byte the value that is returned.
+ *
+ * `--ring` also actively steers away from colliding with `--accent-foreground`
+ * (`MUST_DIFFER` in `scripts/check-role-distinctness.mjs`) — both can land on
+ * the same achromatic point (e.g. primary black on both, `deriveTheme({
+ * primary: "oklch(0 0 0)" })`) since the ring's anchor is `--primary`'s own
+ * lightness and the ink pick is also achromatic (fix round 1, finding 3). See
+ * `findAALightness`'s `avoid` parameter.
+ *
  * Malformed input (anything `parseOklch` cannot parse) throws immediately for
  * the same reason: this function never returns a value it has not checked.
+ * So does a `primary`/`background` that parses but carries alpha < 1 — see
+ * `DeriveThemeOptions.primary`'s doc comment (fix round 1, finding 2).
  */
 import type { ThemeTokenName } from "./theme-token-names.generated";
 import { contrastRatio, parseOklch, type Oklch } from "./color-contrast";
@@ -78,11 +98,25 @@ import { contrastRatio, parseOklch, type Oklch } from "./color-contrast";
 /** Input to {@link deriveTheme}. */
 export interface DeriveThemeOptions {
   /**
-   * The seed brand colour, as a raw `oklch(L C H)` (or `oklch(L C H / A)`)
-   * string — the same literal format every token in `themes.css` uses. Other
-   * color formats (hex, `rgb()`) are not accepted; convert to `oklch()`
-   * first (e.g. via the browser's own `getComputedStyle`/Color 4 support, or
-   * a conversion library) — see the CONSUMING.md note on this scope limit.
+   * The seed brand colour, as a raw `oklch(L C H)` string — the same literal
+   * format every token in `themes.css` uses. Other color formats (hex,
+   * `rgb()`) are not accepted; convert to `oklch()` first (e.g. via the
+   * browser's own `getComputedStyle`/Color 4 support, or a conversion
+   * library) — see the CONSUMING.md note on this scope limit.
+   *
+   * **Must be fully opaque (alpha 1, or omitted).** `parseOklch` accepts the
+   * `oklch(L C H / A)` form, but `deriveTheme` REJECTS an `A` other than 1
+   * (fix round 1, issue #39, finding 2): every token in `themes.css` is a
+   * solid, fully-opaque colour — alpha is applied via Tailwind's `/` modifier
+   * at USE time (`bg-primary/10`), never baked into the token — and a
+   * translucent seed has no well-defined derived value without knowing what
+   * is painted behind it. `deriveTheme` only ever composites `--primary`
+   * against `background`, but `--primary` legitimately renders over OTHER
+   * surfaces too (a card, a popover); accepting a translucent seed and
+   * measuring its `-foreground` ink against the un-composited colour
+   * silently produced a 1.16:1 white-on-near-white pairing while the
+   * function believed 17.97:1. Composite the seed against its real, intended
+   * backdrop yourself first, and pass the resulting OPAQUE `oklch()`.
    */
   primary: string;
   /**
@@ -95,6 +129,10 @@ export interface DeriveThemeOptions {
    * case. Pass the real value explicitly when deriving for `dark` or a
    * custom theme, or `--ring`'s search will optimize against the wrong
    * surface.
+   *
+   * **Must be fully opaque (alpha 1, or omitted)** — the same reasoning as
+   * `primary` above: a translucent "surface" has no defined resolved colour
+   * without knowing what is behind IT either.
    */
   background?: string;
 }
@@ -113,6 +151,17 @@ const AA_TEXT = 4.5;
 const AA_NONTEXT = 3;
 /** ADR 0027 clause 1 — `--ring` stays within this many degrees of `--primary`'s hue. */
 const RING_HUE_TOLERANCE_DEG = 20;
+
+/**
+ * Perceptual distinctness floor, as an OKLab ΔE — the SAME constant
+ * `scripts/check-role-distinctness.mjs` (`ROLE_SEPARATION_DELTA_E`) and
+ * `themes-contrast.test.ts` apply to committed theme tokens. `deriveTheme`
+ * emits a runtime patch those gates never see (they only read committed
+ * theme CSS), so the same invariant — `(--accent-foreground, --ring)` is a
+ * `MUST_DIFFER` pair — has to be enforced here instead (fix round 1, issue
+ * #39, finding 3).
+ */
+const ROLE_SEPARATION_DELTA_E = 0.05;
 
 /**
  * `light` reference theme's own `--background` literal
@@ -139,10 +188,30 @@ function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
 }
 
+/** Round `n` to `digits` decimal places — the SAME rounding `formatOklch` applies. */
+function roundTo(n: number, digits: number): number {
+  return Number(n.toFixed(digits));
+}
+
 /** Serialize an {@link Oklch} back to the `oklch(L C H)` literal format themes.css uses. */
 function formatOklch(o: Oklch): string {
-  const round = (n: number, digits: number) => Number(n.toFixed(digits));
-  return `oklch(${round(o.l, 3)} ${round(o.c, 3)} ${round(o.h, 1)})`;
+  return `oklch(${roundTo(o.l, 3)} ${roundTo(o.c, 3)} ${roundTo(o.h, 1)})`;
+}
+
+/**
+ * OKLab ΔE (Euclidean distance in L/a/b) between two {@link Oklch} colors —
+ * mirrors the ΔE definition `scripts/check-role-distinctness.mjs` and
+ * `derive-theme.test.ts` already use. Used to keep derived tokens that must
+ * stay visually distinct (`--accent-foreground` vs `--ring`) from colliding.
+ */
+function oklabDistance(a: Oklch, b: Oklch): number {
+  const toLab = (o: Oklch) => {
+    const hr = (o.h * Math.PI) / 180;
+    return { L: o.l, a: o.c * Math.cos(hr), b: o.c * Math.sin(hr) };
+  };
+  const la = toLab(a);
+  const lb = toLab(b);
+  return Math.sqrt((la.L - lb.L) ** 2 + (la.a - lb.a) ** 2 + (la.b - lb.b) ** 2);
 }
 
 /**
@@ -170,17 +239,32 @@ function deriveForeground(fill: Oklch, minRatio: number, label: string): Oklch {
 
 /**
  * Search lightness (and, if needed, chroma) at a fixed hue for the value
- * closest to `anchorL` that clears `targetContrast` against `background`.
- * Used for `--ring`: keeps `--primary`'s hue (ADR 0027 clause 1) and prefers
- * staying close to `--primary`'s own lightness, only moving as far as the
- * contrast floor actually requires.
+ * closest to `anchorL` that clears `targetContrast` against `background`,
+ * while also staying >= {@link ROLE_SEPARATION_DELTA_E} OKLab ΔE from every
+ * color in `avoid`. Used for `--ring`: keeps `--primary`'s hue (ADR 0027
+ * clause 1), prefers staying close to `--primary`'s own lightness (only
+ * moving as far as the contrast floor requires), and steers clear of
+ * `--accent-foreground` (`MUST_DIFFER`, fix round 1 finding 3).
+ *
+ * Every candidate is rounded to the SAME precision `formatOklch` emits
+ * (3 decimals for L/C) BEFORE it is measured, not after — validating an
+ * unrounded value and rounding only at format time can silently move a
+ * boundary-sitting candidate below the floor (fix round 1 finding 1; see the
+ * module doc comment for the measured worst case).
  *
  * Chroma is reduced (not hue) when lightness alone can't reach the target at
  * the seed's chroma, because reducing chroma never leaves the ~20 degree hue
  * band this exists to respect, whereas hue-shifting would. The final rung
  * (chroma 0, fully achromatic) inherits the same >=4.58:1 floor proven in the
- * module doc comment, so this loop is guaranteed to find a value — the throw
- * below exists as a backstop, not because it is expected to fire.
+ * module doc comment, so SOME contrast-compliant value always exists — the
+ * throw below is a backstop, not expected to fire. A value that also clears
+ * `avoid` might not exist at every rung (two achromatic points can only be
+ * pushed apart along the lightness axis); when that happens this walks every
+ * chroma rung looking for one, and only if NONE has one falls back to the
+ * plain contrast-compliant answer (matching the pre-fix-round-1 behavior —
+ * the AA-safety promise still holds, only the separate distinctness goal is
+ * missed in that vanishingly unlikely case, and `deriveTheme` re-validates
+ * distinctness on the actual return value as a backstop regardless).
  */
 function findAALightness(
   hue: number,
@@ -188,25 +272,46 @@ function findAALightness(
   background: Oklch,
   targetContrast: number,
   anchorL: number,
+  avoid: Oklch[] = [],
 ): { l: number; c: number } {
-  const CHROMA_STEPS = [chroma, chroma * 0.5, chroma * 0.25, chroma * 0.125, 0];
-  const STEPS = 400;
+  const hueR = roundTo(hue, 1);
+  const CHROMA_STEPS = [chroma, chroma * 0.5, chroma * 0.25, chroma * 0.125, 0].map((c) =>
+    roundTo(c, 3),
+  );
+  const STEPS = 1000;
+
+  let fallback: { l: number; c: number } | null = null;
+
   for (const c of CHROMA_STEPS) {
     let best: number | null = null;
     let bestDistance = Number.POSITIVE_INFINITY;
+    let plainBest: number | null = null;
+    let plainBestDistance = Number.POSITIVE_INFINITY;
+
     for (let i = 0; i <= STEPS; i++) {
-      const l = i / STEPS;
-      const ratio = contrastRatio({ l, c, h: hue, alpha: 1 }, background);
-      if (ratio >= targetContrast) {
-        const distance = Math.abs(l - anchorL);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          best = l;
-        }
+      const l = roundTo(i / STEPS, 3);
+      const candidate: Oklch = { l, c, h: hueR, alpha: 1 };
+      if (contrastRatio(candidate, background) < targetContrast) continue;
+
+      const distance = Math.abs(l - anchorL);
+      if (distance < plainBestDistance) {
+        plainBestDistance = distance;
+        plainBest = l;
+      }
+      if (
+        distance < bestDistance &&
+        avoid.every((a) => oklabDistance(candidate, a) >= ROLE_SEPARATION_DELTA_E)
+      ) {
+        bestDistance = distance;
+        best = l;
       }
     }
+
     if (best != null) return { l: best, c };
+    if (fallback == null && plainBest != null) fallback = { l: plainBest, c };
   }
+
+  if (fallback != null) return fallback;
   throw new Error(
     `deriveTheme: could not derive an AA-safe (>=${targetContrast}:1) --ring at hue ${hue.toFixed(1)}° ` +
       `against the given background. This should be mathematically unreachable for a valid background ` +
@@ -269,20 +374,40 @@ function deriveAccent(primary: Oklch, background: Oklch): Oklch {
  * those and not the full `THEME_TOKEN_NAMES` set, and the AA-safety
  * guarantee every returned `-foreground`/`--ring` value carries.
  *
- * @throws if `primary`/`background` don't parse as `oklch(...)` colors, or —
+ * @throws if `primary`/`background` don't parse as `oklch(...)` colors, if
+ *   either carries alpha other than 1 (see `DeriveThemeOptions.primary`), or —
  *   only reachable as a defensive backstop, see the module doc comment — if
- *   an AA-safe value genuinely cannot be found.
+ *   an AA-safe or distinct value genuinely cannot be found.
  */
 export function deriveTheme(options: DeriveThemeOptions): DerivedThemeTokens {
   const primary = parseOklch(options.primary);
   const background = parseOklch(options.background ?? DEFAULT_BACKGROUND);
+
+  if (primary.alpha !== 1) {
+    throw new Error(
+      `deriveTheme: "primary" must be fully opaque (alpha 1) — got alpha=${primary.alpha}. ` +
+        `See DeriveThemeOptions.primary's doc comment: composite a translucent seed against its ` +
+        `real backdrop yourself first, and pass the resulting opaque oklch() color.`,
+    );
+  }
+  if (background.alpha !== 1) {
+    throw new Error(
+      `deriveTheme: "background" must be fully opaque (alpha 1) — got alpha=${background.alpha}. ` +
+        `A translucent background has no defined resolved color without knowing what is behind it.`,
+    );
+  }
 
   const primaryForeground = deriveForeground(primary, AA_TEXT, "--primary-foreground");
 
   const accent = deriveAccent(primary, background);
   const accentForeground = deriveForeground(accent, AA_TEXT, "--accent-foreground");
 
-  const ringLC = findAALightness(primary.h, primary.c, background, AA_NONTEXT, primary.l);
+  // --ring actively steers away from colliding with --accent-foreground
+  // (fix round 1, finding 3) — both are achromatic-capable outputs of this
+  // same call, so the collision is entirely within deriveTheme's own output.
+  const ringLC = findAALightness(primary.h, primary.c, background, AA_NONTEXT, primary.l, [
+    accentForeground,
+  ]);
   const ring: Oklch = { l: ringLC.l, c: ringLC.c, h: primary.h, alpha: 1 };
 
   // ADR 0027 clause 1 is satisfied by construction (ring.h === primary.h
@@ -294,6 +419,38 @@ export function deriveTheme(options: DeriveThemeOptions): DerivedThemeTokens {
       `deriveTheme: derived --ring drifted ${hueGap.toFixed(1)}° from --primary's hue ` +
         `(limit ${RING_HUE_TOLERANCE_DEG}°, ADR 0027 clause 1) — this indicates a bug in ` +
         `findAALightness, not a bad input.`,
+    );
+  }
+
+  // Defensive backstop (fix round 1, finding 1): re-measure the EXACT,
+  // already-rounded value about to be emitted, not the pre-rounding
+  // candidate findAALightness validated internally. Round-tripping through
+  // formatOklch -> parseOklch here is what makes this check byte-for-byte
+  // the same computation a caller re-checking the returned string would
+  // perform — this is the check that would have caught finding 1 at the
+  // point of return instead of downstream.
+  const emittedRing = parseOklch(formatOklch(ring));
+  const emittedRingRatio = contrastRatio(emittedRing, background);
+  if (emittedRingRatio < AA_NONTEXT) {
+    throw new Error(
+      `deriveTheme: internal invariant violated — the emitted --ring value measures ` +
+        `${emittedRingRatio.toFixed(4)}:1 against "background", below the ${AA_NONTEXT}:1 floor ` +
+        `this function promises. This indicates a bug in findAALightness, not a bad input.`,
+    );
+  }
+
+  // Defensive backstop (fix round 1, finding 3): re-measure distinctness on
+  // the EXACT emitted strings, in case findAALightness ever falls back to a
+  // plain (avoid-ignoring) answer — fail loudly rather than silently ship a
+  // MUST_DIFFER collision.
+  const emittedAccentForeground = parseOklch(formatOklch(accentForeground));
+  const ringAccentForegroundDeltaE = oklabDistance(emittedRing, emittedAccentForeground);
+  if (ringAccentForegroundDeltaE < ROLE_SEPARATION_DELTA_E) {
+    throw new Error(
+      `deriveTheme: internal invariant violated — emitted --ring and --accent-foreground collapse ` +
+        `to ΔE ${ringAccentForegroundDeltaE.toFixed(4)} OKLab (floor ${ROLE_SEPARATION_DELTA_E}, ` +
+        `MUST_DIFFER in scripts/check-role-distinctness.mjs). This indicates a bug in ` +
+        `findAALightness's collision avoidance, not a bad input.`,
     );
   }
 
