@@ -39,6 +39,11 @@
   `role="alert"` wiring `FieldRow` already validated, adapted to a shared
   lifted-state context so it holds across independently-composed parts;
   `FieldRow` itself is unchanged (#43).
+- Fixed: `parseOklch` in `@elabs-ai/components-tokens` now validates the OKLCH coordinate domain
+  before any math runs: L must be 0..1, C must be ≥0, all components must be finite, alpha
+  must be 0..1. Previously it accepted out-of-range/non-finite coordinates and passed them
+  to the contrast math, producing "proved AA-safe" token pairs that rendered at ~1:1 (invisible)
+  while the proof was taken against a different colour (#100).
 - Fixed: `FieldDescription`/`FieldError` (`@elabs-ai/components-ui`) now resolve
   a caller-supplied `id` the same way `FieldControl` already did
   (`props.id ?? generatedId`) and register that same value into
