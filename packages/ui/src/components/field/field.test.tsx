@@ -383,4 +383,33 @@ describe("Field compound anatomy", () => {
     expect(alert).toBeEmptyDOMElement();
     expect(input.getAttribute("aria-describedby")).toBe(alert.id);
   });
+
+  // #93 (A) — the same KNOWN LIMIT, mirrored on FieldDescription: a child
+  // that is itself a component returning `null` is not knowable from the
+  // element before render, so it still produces an empty paragraph that
+  // `aria-describedby` points at. This test PINS the current,
+  // documented-limit behavior so a future change to it is a deliberate
+  // decision, not a silent regression — it is not an endorsement, see the
+  // "Known limit" JSDoc on `FieldDescription`.
+  it("[KNOWN LIMIT] still renders an empty, referenced paragraph when the child is a component that renders null", () => {
+    function RendersNull() {
+      return null;
+    }
+    render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldDescription>
+          <RendersNull />
+        </FieldDescription>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    const description = document.querySelector('[data-slot="field-description"]');
+    expect(description).not.toBeNull();
+    expect(description).toBeEmptyDOMElement();
+    expect(input.getAttribute("aria-describedby")).toBe(description!.id);
+  });
 });
