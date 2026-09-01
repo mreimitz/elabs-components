@@ -152,8 +152,14 @@ export function dirtyPaths(root) {
  * per the `dirtyBefore` snapshot? A directory (e.g. the `llms/` spoke folder)
  * counts as dirty if ANY path inside it does — `git diff --name-only` only ever
  * lists files, never the directory itself.
+ *
+ * Exported (#95): the REAL, live-repo self-test in
+ * `run-agent-docs-cascade.test.mjs` needs this same directory-aware predicate
+ * to widen its own precondition to the full `resolveArtifactPaths` set — a
+ * plain `Set.has` on `git diff --name-only` output can't see a dirty file
+ * inside a directory artifact like `apps/docs/public/llms`.
  */
-function hasPreexistingDirt(root, relPath, dirtyBefore) {
+export function hasPreexistingDirt(root, relPath, dirtyBefore) {
   if (dirtyBefore.has(relPath)) return true;
   if (dirtyBefore.size === 0) return false;
   const abs = join(root, relPath);
