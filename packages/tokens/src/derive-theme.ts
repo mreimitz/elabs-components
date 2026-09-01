@@ -105,9 +105,11 @@
  * `--accent` byte-identical to `background`, an invisible hover state). See
  * `deriveAccent`'s second escape branch.
  *
- * Malformed input (anything `parseOklch` cannot parse) throws immediately for
- * the same reason: this function never returns a value it has not checked.
- * So does a `primary`/`background` that parses but carries alpha < 1 — see
+ * Input validation happens in `parseOklch`, which enforces the OKLCH domain
+ * (L ∈ [0,1], C ≥ 0, all components finite, alpha ∈ [0,1]) before any math
+ * runs. Invalid coordinates are rejected immediately for the same reason: this
+ * function never returns a value it has not checked. Additionally, a
+ * `primary`/`background` with alpha < 1 is rejected — see
  * `DeriveThemeOptions.primary`'s doc comment (fix round 1, finding 2).
  */
 import type { ThemeTokenName } from "./theme-token-names.generated";

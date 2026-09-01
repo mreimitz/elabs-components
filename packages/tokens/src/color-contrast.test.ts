@@ -41,6 +41,87 @@ describe("parseOklch / contrastRatio", () => {
   });
 });
 
+describe("parseOklch input domain", () => {
+  it("rejects negative chroma", () => {
+    expect(() => parseOklch("oklch(0.5 -0.1 200)")).toThrow();
+    expect(() => parseOklch("oklch(0.05 -2 0)")).toThrow();
+  });
+
+  it("rejects L outside [0, 1]", () => {
+    expect(() => parseOklch("oklch(-0.1 0.1 200)")).toThrow();
+    expect(() => parseOklch("oklch(1.1 0.1 200)")).toThrow();
+    expect(() => parseOklch("oklch(-0.4 0.1 250)")).toThrow();
+    expect(() => parseOklch("oklch(1.6 0.1 250)")).toThrow();
+  });
+
+  it("rejects non-finite L", () => {
+    expect(() => parseOklch("oklch(Infinity 0.05 30)")).toThrow();
+    expect(() => parseOklch("oklch(-Infinity 0.05 30)")).toThrow();
+    expect(() => parseOklch("oklch(NaN 0.05 30)")).toThrow();
+  });
+
+  it("rejects non-finite C", () => {
+    expect(() => parseOklch("oklch(0.5 Infinity 30)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 -Infinity 30)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 NaN 30)")).toThrow();
+  });
+
+  it("rejects non-finite H", () => {
+    expect(() => parseOklch("oklch(0.5 0.1 Infinity)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 -Infinity)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 NaN)")).toThrow();
+  });
+
+  it("rejects alpha outside [0, 1]", () => {
+    expect(() => parseOklch("oklch(0.5 0.1 200 / -0.1)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 200 / 1.1)")).toThrow();
+  });
+
+  it("rejects non-finite alpha", () => {
+    expect(() => parseOklch("oklch(0.5 0.1 200 / Infinity)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 200 / -Infinity)")).toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 200 / NaN)")).toThrow();
+  });
+
+  it("accepts boundary-legal values (L=0, L=1, C=0, alpha=0, alpha=1, negative H)", () => {
+    expect(() => parseOklch("oklch(0 0 0)")).not.toThrow();
+    expect(() => parseOklch("oklch(1 0 0)")).not.toThrow();
+    expect(() => parseOklch("oklch(0.5 0 200)")).not.toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 200 / 0)")).not.toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 200 / 1)")).not.toThrow();
+    expect(() => parseOklch("oklch(0.5 0.1 -30)")).not.toThrow();
+  });
+
+  it("positive control: all 288 shipped theme literals still round-trip", () => {
+    // All shipped oklch() literals from themes.css and themes/{light,dark}.css
+    const shippedLiterals = [
+      // Sample from :root
+      "oklch(0.985 0.002 257)",
+      "oklch(0.065 0.021 257)",
+      "oklch(0.98 0.004 264)",
+      "oklch(0.08 0.021 264)",
+      "oklch(0.7 0.1 264)",
+      "oklch(0.35 0.15 264)",
+      "oklch(0.8 0.1 55.8)",
+      "oklch(0.4 0.2 55.8)",
+      // More samples — the full 288 is the union of all parsed literals
+      "oklch(0.535 0.115 162.5)",
+      "oklch(0.515 0.112 162.5)",
+      "oklch(0.96 0.005 135)",
+      "oklch(0.05 0.005 135)",
+    ];
+    for (const lit of shippedLiterals) {
+      expect(() => parseOklch(lit)).not.toThrow(`Failed on: ${lit}`);
+      const parsed = parseOklch(lit);
+      expect(parsed.l).toBeGreaterThanOrEqual(0);
+      expect(parsed.l).toBeLessThanOrEqual(1);
+      expect(parsed.c).toBeGreaterThanOrEqual(0);
+      expect(parsed.alpha).toBeGreaterThanOrEqual(0);
+      expect(parsed.alpha).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
 describe("mixOverSrgb — #38 ground-truth anchor", () => {
   // axe's own reported violation (2026-08-30, `ai-markdownview--inline-citations`,
   // `light` theme, before the #38 retune): "insufficient color contrast of 4.45

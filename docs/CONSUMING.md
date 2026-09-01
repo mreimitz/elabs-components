@@ -338,7 +338,9 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   `--primary`'s own hue for the lightness closest to `--primary`'s that clears
   ≥3:1 (WCAG 1.4.11) against `background`. If an AA-safe value genuinely
   cannot be found, `deriveTheme` **throws** rather than returning a
-  non-compliant token — it never fails silently.
+  non-compliant token. Input is validated up front (L ∈ [0,1], C ≥ 0, all
+  components finite, alpha ∈ [0,1]); invalid coordinates are rejected
+  immediately — it never fails silently.
 - **Pass `background`** (e.g. read `--background` off the active theme via
   `getComputedStyle`) when deriving for `dark` or a custom theme; omitted, it
   assumes the `light` reference theme's own background.

@@ -240,6 +240,100 @@ describe("deriveTheme", () => {
     expect(withDefault).toEqual(withExplicit);
   });
 
+  it("throws on negative chroma in primary (Issue #100)", () => {
+    expect(() => deriveTheme({ primary: "oklch(0.05 -2 0)" })).toThrow();
+    expect(() => deriveTheme({ primary: "oklch(0.5 -0.1 200)" })).toThrow();
+  });
+
+  it("throws on negative chroma in background (Issue #100)", () => {
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(0.5 -0.1 200)",
+      }),
+    ).toThrow();
+  });
+
+  it("throws on L outside [0, 1] in primary (Issue #100)", () => {
+    expect(() => deriveTheme({ primary: "oklch(1.6 0.1 250)" })).toThrow();
+    expect(() => deriveTheme({ primary: "oklch(-0.4 0.1 250)" })).toThrow();
+  });
+
+  it("throws on L outside [0, 1] in background (Issue #100)", () => {
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(1.6 0.1 250)",
+      }),
+    ).toThrow();
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(-0.4 0.1 250)",
+      }),
+    ).toThrow();
+  });
+
+  it("throws on non-finite L in primary (Issue #100)", () => {
+    expect(() => deriveTheme({ primary: "oklch(Infinity 0.05 30)" })).toThrow();
+    expect(() => deriveTheme({ primary: "oklch(-Infinity 0.05 30)" })).toThrow();
+  });
+
+  it("throws on non-finite L in background (Issue #100)", () => {
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(Infinity 0.05 30)",
+      }),
+    ).toThrow();
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(-Infinity 0.05 30)",
+      }),
+    ).toThrow();
+  });
+
+  it("throws on non-finite C in primary (Issue #100)", () => {
+    expect(() => deriveTheme({ primary: "oklch(0.5 Infinity 30)" })).toThrow();
+    expect(() => deriveTheme({ primary: "oklch(0.5 -Infinity 30)" })).toThrow();
+  });
+
+  it("throws on non-finite C in background (Issue #100)", () => {
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(0.5 Infinity 30)",
+      }),
+    ).toThrow();
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(0.5 -Infinity 30)",
+      }),
+    ).toThrow();
+  });
+
+  it("throws on non-finite H in primary (Issue #100)", () => {
+    expect(() => deriveTheme({ primary: "oklch(0.5 0.1 Infinity)" })).toThrow();
+    expect(() => deriveTheme({ primary: "oklch(0.5 0.1 -Infinity)" })).toThrow();
+  });
+
+  it("throws on non-finite H in background (Issue #100)", () => {
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(0.5 0.1 Infinity)",
+      }),
+    ).toThrow();
+    expect(() =>
+      deriveTheme({
+        primary: "oklch(0.55 0.18 250)",
+        background: "oklch(0.5 0.1 -Infinity)",
+      }),
+    ).toThrow();
+  });
+
   it("proof-check: the true-black/true-white ink pair clears >=4.5:1 against ANY fill lightness", () => {
     // Underpins deriveTheme's AA-safety guarantee: for any background
     // luminance, the worse of {black, white} ink still clears the AA text

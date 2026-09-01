@@ -10,7 +10,7 @@
  * gamma-encoded sRGB, then the WCAG 2.x relative-luminance + contrast formulas.
  */
 
-/** Parsed `oklch(L C H [/ A])` components. L is 0..1, C ≥ 0, H in degrees. */
+/** Parsed `oklch(L C H [/ A])` components. L must be 0..1, C must be ≥ 0, all components must be finite, alpha must be 0..1. */
 export interface Oklch {
   l: number;
   c: number;
@@ -20,8 +20,8 @@ export interface Oklch {
 
 /**
  * Parse an `oklch(...)` color string. Supports `oklch(L C H)` and
- * `oklch(L C H / A)`. Throws on anything else (we only ever feed it raw token
- * literals from themes.css, which are all plain oklch()).
+ * `oklch(L C H / A)`. Enforces input domain: L ∈ [0,1], C ≥ 0, all components
+ * finite, alpha ∈ [0,1]. Throws on parse errors or invalid coordinates.
  */
 export function parseOklch(input: string): Oklch {
   const m = input.trim().match(/^oklch\(\s*([^)]+)\)$/i);
@@ -34,9 +34,32 @@ export function parseOklch(input: string): Oklch {
   const c = Number(parts[1]);
   const h = Number(parts[2]);
   const alpha = alphaRaw != null ? Number(alphaRaw) : 1;
-  if ([l, c, h, alpha].some((n) => Number.isNaN(n))) {
-    throw new Error(`Non-numeric oklch component: ${input}`);
+
+  // Reject any non-finite component
+  if (
+    !Number.isFinite(l) ||
+    !Number.isFinite(c) ||
+    !Number.isFinite(h) ||
+    !Number.isFinite(alpha)
+  ) {
+    throw new Error(`Non-finite oklch component: ${input}`);
   }
+
+  // Reject L outside [0, 1]
+  if (l < 0 || l > 1) {
+    throw new Error(`L out of range [0,1]: ${input}`);
+  }
+
+  // Reject negative chroma
+  if (c < 0) {
+    throw new Error(`Negative chroma: ${input}`);
+  }
+
+  // Reject alpha outside [0, 1]
+  if (alpha < 0 || alpha > 1) {
+    throw new Error(`Alpha out of range [0,1]: ${input}`);
+  }
+
   return { l, c, h, alpha };
 }
 
