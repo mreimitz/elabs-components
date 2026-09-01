@@ -34,6 +34,7 @@ import {
   findWiringViolations,
   findGhCandidates,
   apiEndpointPostsProse,
+  helpFlagIsFree,
 } from "./check-comment-attribution.mjs";
 import { parseShellCommands } from "./lib/shell-command-parse.mjs";
 import { buildBody, main as postMain, parseArgs } from "./post-issue-comment.mjs";
@@ -1103,6 +1104,155 @@ test("#78 fix-round-3 DECLARED LIMIT: a gh-computed body (--fill / --generate-no
     "gh release create v9.9.9 --generate-notes",
   ]) {
     assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+// Fix round 4 (#78) — help-ness is a POSITION, and the api declaration.
+//
+// Round 3's false-positive fix for `gh issue comment --help` asked whether
+// `--help`/`-h` appeared ANYWHERE in argv. That is not a question about the
+// command's grammar: pflag consumes the word after a value-taking flag even
+// when it starts with `-`, so `gh issue create --title -h --body "…"` really
+// does post while a "contains -h" test read the whole call as "posts nothing".
+// Fourth round of the same failure class — an odd spelling read as "not a
+// posting call" — this time introduced by the previous round's own fix.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The seven rows the validator confirmed against real gh 2.93.0. Each reached
+// repository resolution, i.e. flag parsing accepted it and it would post.
+const ROUND_4_HELP_VALUE_BYPASSES = [
+  [`gh issue create --title -h --body "${UNMARKED}"`, "--title consumes -h"],
+  [`gh issue create -t -h --body "${UNMARKED}"`, "-t consumes -h"],
+  [`gh issue edit 26 --title -h --body "${UNMARKED}"`, "issue edit, --title consumes -h"],
+  [`gh pr create --title -h --body "${UNMARKED}"`, "pr create, --title consumes -h"],
+  [`gh pr edit 12 --title -h --body "${UNMARKED}"`, "pr edit, --title consumes -h"],
+  [`gh release create v9 --title -h --notes "${UNMARKED}"`, "release create, --title consumes -h"],
+  [`gh issue comment 26 --body -h`, "--body consumes -h: gh posts a body of `-h`"],
+];
+
+test("#78 fix-round-4 verdict Finding 1: a help word in a VALUE position does not disable the gate (pure)", () => {
+  for (const [command, label] of ROUND_4_HELP_VALUE_BYPASSES) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#78 fix-round-4 verdict Finding 1: the same seven, through the REAL shell hook -> exit 2", () => {
+  for (const [command, label] of ROUND_4_HELP_VALUE_BYPASSES) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+test("#78 fix-round-4: a help word in a real FLAG position is still ALLOWED (gh posts nothing)", () => {
+  const cases = [
+    "gh issue comment --help",
+    "gh issue comment -h",
+    "gh issue comment 26 --help",
+    "gh issue create --help",
+    "gh pr create --help",
+    "gh release create --help",
+    // a BOOLEAN flag consumes nothing, so the help word after it is free
+    "gh issue comment --editor --help",
+    "gh issue comment -e --help",
+    "gh pr create --draft --help",
+    // `--body` took its value, so a trailing -h is free: gh prints help
+    `gh issue comment 26 --body "${UNMARKED}" -h`,
+    // an `=`-form flag carries its value inline and swallows nothing
+    `gh issue create --title=T --help`,
+    // gh api: help before any endpoint, and on a read
+    "gh api --help",
+    "gh api repos/o/r/issues/26 --help",
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "allow", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 0, command);
+  }
+});
+
+test("#78 fix-round-4: helpFlagIsFree walks flags the way pflag does", () => {
+  const words = (line) => line.split(" ").map((value) => ({ value, expanded: false }));
+  // A shape-style predicate: `--editor` is boolean, `-e` is a boolean
+  // shorthand, everything else is assumed to take a value.
+  const shape = (token) =>
+    token.startsWith("--")
+      ? token !== "--editor"
+      : !token
+          .slice(1)
+          .split("")
+          .every((char) => char === "e");
+  assert.equal(helpFlagIsFree(words("--help"), shape), true);
+  assert.equal(helpFlagIsFree(words("26 --help"), shape), true);
+  assert.equal(helpFlagIsFree(words("--editor --help"), shape), true, "boolean consumes nothing");
+  assert.equal(helpFlagIsFree(words("-e --help"), shape), true, "boolean shorthand");
+  assert.equal(helpFlagIsFree(words("--title=T --help"), shape), true, "=-form consumes nothing");
+  assert.equal(helpFlagIsFree(words("--title -h"), shape), false, "consumed as --title's value");
+  assert.equal(helpFlagIsFree(words("-t --help"), shape), false, "consumed as -t's value");
+  assert.equal(helpFlagIsFree(words("-- --help"), shape), false, "-- ends flag parsing");
+  // The `gh api` predicate enumerates its value flags in full, so an unlisted
+  // flag really is boolean — the opposite default, and deliberately so.
+  const api = (token) => ["-X", "--method", "-f", "-H"].includes(token);
+  assert.equal(helpFlagIsFree(words("-H --help"), api), false, "header consumes the help word");
+  assert.equal(helpFlagIsFree(words("--paginate --help"), api), true, "unlisted api flag is bool");
+});
+
+test("#78 fix-round-4: shapes gh itself rejects now BLOCK — a side effect, and harmless", () => {
+  // The validator explicitly did NOT report these as bypasses, because `gh`
+  // rejects them (`accepts 1 arg(s), received 2`; a header needs a `:`). They
+  // are not special-cased in either direction: the general rule says a help
+  // word after `--` is a positional and one after `-H` is a header value, so
+  // the gate falls through to the unmarked body and refuses. Nothing posts
+  // either way, so this locks the behaviour rather than claiming a fix.
+  for (const command of [
+    `gh issue comment 26 --body "${UNMARKED}" -- --help`,
+    `gh issue comment 26 --body "${UNMARKED}" -- -h`,
+    `gh api -X PATCH repos/o/r/issues/26 -H -h -f body=${UNMARKED.replace(/ /g, "-")}`,
+  ]) {
+    assert.equal(bash(command).verdict, "block", command);
+  }
+});
+
+// ── Finding 2 — the declaration and the behaviour now agree ─────────────────
+//
+// A `gh api` call is gated only when it is a WRITE, to a CONVERSATION ROUTE,
+// CARRYING PROSE. The 11 rows below are the ones the validator ran: ordinary
+// prose-free writes that were refused with a message about `gh` opening an
+// editor, which `gh api` never does.
+
+test("#78 fix-round-4 verdict Finding 2: a prose-free `gh api` write is ALLOWED", () => {
+  const cases = [
+    "gh api -X PATCH repos/o/r/issues/26 -f state=closed",
+    "gh api -X PATCH repos/o/r/issues/26 -f title=new-title",
+    "gh api -X PATCH repos/o/r/issues/26 -f milestone=1",
+    "gh api -X PATCH repos/o/r/issues/26 -f assignees[]=me",
+    "gh api -X PATCH repos/o/r/pulls/12 -f base=main",
+    "gh api -X PATCH repos/o/r/pulls/12 -f state=closed",
+    "gh api -X POST repos/o/r/pulls -f title=T -f head=x -f base=main",
+    "gh api -X POST repos/o/r/issues -f title=T",
+    "gh api -X PATCH repos/o/r/releases/123 -f draft=false",
+    `gh api -X PUT repos/o/r/pulls/12/${MERGE_SUB} -f ${MERGE_SUB}_method=squash`,
+    "gh api -X POST repos/o/r/pulls/12/reviews -f event=APPROVE",
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "allow", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 0, command);
+  }
+});
+
+test("#78 fix-round-4 Finding 2: narrowing did NOT weaken the prose or unreadable cases", () => {
+  const unmarked = UNMARKED.replace(/ /g, "-");
+  const blocked = [
+    // carries prose -> still gated
+    `gh api -X PATCH repos/o/r/issues/26 -f body=${unmarked}`,
+    `gh api -X POST repos/o/r/issues/26/comments -f body=${unmarked}`,
+    `gh api -X PUT repos/o/r/pulls/12/reviews/5/dismissals -f message=${unmarked}`,
+    // payload the gate cannot READ -> still refused
+    "gh api -X PATCH repos/o/r/issues/26 --input /tmp/does-not-exist.json",
+    `gh api -X PATCH repos/o/r/issues/26 -f body=$MSG`,
+    `gh api -X PATCH "$EP" -f body=${unmarked}`,
+  ];
+  for (const command of blocked) {
+    assert.equal(bash(command).verdict, "block", command);
   }
 });
 // ── The parser itself ───────────────────────────────────────────────────────

@@ -78,14 +78,25 @@
 //   - A body computed at runtime (`--body "$MSG"`, a heredoc, stdin, a device)
 //     cannot be read from the command line, so it is REFUSED rather than
 //     inspected — never passed through.
-//   - `gh api` gating is scoped to a POST/PATCH/PUT whose endpoint addresses
-//     a conversation resource (see apiEndpointPostsProse) and whose payload
-//     field is `body`/`message`/`commit_message`. Read-only `gh api` calls and
-//     non-text writes (`…/issues/26/lock`, `…/issues/26/labels`) stay
-//     untouched, per this gate's acceptance criteria. A prose field under some
-//     other name on a route this list does not know is not seen; the fix is to
-//     add the route/field here, and `gh api graphql` remains out of scope
-//     (below).
+//   - `gh api` gating takes THREE conditions together, and the declaration
+//     below is the behaviour, checked against it (fix-round-3 verdict,
+//     Finding 2 was a mismatch between the two):
+//       · a WRITE — a POST/PATCH/PUT method, or field/input flags with no
+//         method. A read is untouched whatever its route.
+//       · to a CONVERSATION ROUTE — see apiEndpointPostsProse. A write to
+//         `…/lock`, `…/labels`, `…/reactions`, `…/assignees` is untouched.
+//       · CARRYING PROSE — a `body=`/`message=`/`commit_message=` field. A
+//         write with none of those posts no prose and is untouched:
+//         `-X PATCH …/issues/26 -f state=closed`,
+//         `-X POST …/pulls -f title=T -f head=x -f base=main`. This mirrors
+//         the CLI side, where a `requireBody` shape with no body flag is
+//         likewise not a posting call. The field names are enumerated against
+//         GitHub's schema for these routes, the same way the routes are; a
+//         field outside that schema does nothing when the API receives it.
+//     A payload the gate cannot READ is a different matter and still refuses:
+//     `--input`, a `body=@file` it cannot read, a field the shell would
+//     expand, or a write whose endpoint is hidden by an expansion.
+//     `gh api graphql` remains out of scope (below).
 //   - A USER-DEFINED `gh` alias (`gh alias set cmt 'issue comment'`, then
 //     `gh cmt 26 --body …`) resolves inside `gh`, from a config file this gate
 //     does not read, so the subcommand match cannot see it. Reading
@@ -328,6 +339,7 @@ const POSTING_SHAPES = [
     name: "gh issue comment",
     // -e/--editor, -w/--web are the only OTHER short boolean flags.
     boolShorthands: ["e", "w"],
+    boolLongs: ["--create-if-none", "--delete-last", "--edit-last", "--editor", "--web", "--yes"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
   },
@@ -338,6 +350,7 @@ const POSTING_SHAPES = [
     // --duplicate-of take values but are not prose; this subcommand has no
     // short BOOLEAN flags at all.
     boolShorthands: [],
+    boolLongs: [],
     bodyFlags: [{ long: "--comment", short: "-c" }],
     fileFlags: [],
     requireBody: true,
@@ -351,6 +364,7 @@ const POSTING_SHAPES = [
     // NOT listed as bools; hitting one stops our walk with no match, which is
     // the safe outcome (see findFlagValues doc).
     boolShorthands: ["e", "w"],
+    boolLongs: ["--editor", "--web"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
   },
@@ -361,6 +375,7 @@ const POSTING_SHAPES = [
     // REPLACING an issue body is an ordinary way to publish agent prose — and
     // it can also strip a marker a previous run put there.
     boolShorthands: [],
+    boolLongs: ["--remove-milestone"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
     requireBody: true,
@@ -369,6 +384,7 @@ const POSTING_SHAPES = [
     path: ["gh", "issue", "reopen"],
     name: "gh issue reopen --comment",
     boolShorthands: [],
+    boolLongs: [],
     bodyFlags: [{ long: "--comment", short: "-c" }],
     fileFlags: [],
     requireBody: true,
@@ -377,6 +393,7 @@ const POSTING_SHAPES = [
     path: ["gh", "pr", "comment"],
     name: "gh pr comment",
     boolShorthands: ["e", "w"],
+    boolLongs: ["--create-if-none", "--delete-last", "--edit-last", "--editor", "--web", "--yes"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
   },
@@ -392,6 +409,16 @@ const POSTING_SHAPES = [
     // § 3), and a guard that blocks the release gets routed around. The cost
     // is a declared limit, recorded in the header.
     boolShorthands: ["d", "e", "f", "w"],
+    boolLongs: [
+      "--draft",
+      "--dry-run",
+      "--editor",
+      "--fill",
+      "--fill-first",
+      "--fill-verbose",
+      "--no-maintainer-edit",
+      "--web",
+    ],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
     requireBody: true,
@@ -401,6 +428,7 @@ const POSTING_SHAPES = [
     name: "gh pr close --comment",
     // -d/--delete-branch is the only short boolean.
     boolShorthands: ["d"],
+    boolLongs: ["--delete-branch"],
     bodyFlags: [{ long: "--comment", short: "-c" }],
     fileFlags: [],
     requireBody: true,
@@ -409,6 +437,7 @@ const POSTING_SHAPES = [
     path: ["gh", "pr", "edit"],
     name: "gh pr edit --body",
     boolShorthands: [],
+    boolLongs: ["--remove-milestone"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
     requireBody: true,
@@ -420,6 +449,15 @@ const POSTING_SHAPES = [
     // short booleans. -t is --subject here (a one-line commit subject), NOT a
     // body.
     boolShorthands: ["d", "m", "r", "s"],
+    boolLongs: [
+      "--admin",
+      "--auto",
+      "--delete-branch",
+      "--disable-auto",
+      "--merge",
+      "--rebase",
+      "--squash",
+    ],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
     requireBody: true,
@@ -428,6 +466,7 @@ const POSTING_SHAPES = [
     path: ["gh", "pr", "reopen"],
     name: "gh pr reopen --comment",
     boolShorthands: [],
+    boolLongs: [],
     bodyFlags: [{ long: "--comment", short: "-c" }],
     fileFlags: [],
     requireBody: true,
@@ -437,6 +476,7 @@ const POSTING_SHAPES = [
     name: "gh pr revert --body",
     // -d/--draft is the only short boolean.
     boolShorthands: ["d"],
+    boolLongs: ["--draft"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
     requireBody: true,
@@ -448,6 +488,7 @@ const POSTING_SHAPES = [
     // subcommand only — distinct from issue close's value-taking -c), and
     // -r/--request-changes are the OTHER short boolean flags.
     boolShorthands: ["a", "c", "r"],
+    boolLongs: ["--approve", "--comment", "--request-changes"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
     requireBody: true,
@@ -460,6 +501,15 @@ const POSTING_SHAPES = [
     // --generate-notes asks GitHub to write the notes, so nothing of ours is
     // posted and nothing is gated — the same reasoning as `pr create --fill`.
     boolShorthands: ["d", "p"],
+    boolLongs: [
+      "--draft",
+      "--fail-on-no-commits",
+      "--generate-notes",
+      "--latest",
+      "--notes-from-tag",
+      "--prerelease",
+      "--verify-tag",
+    ],
     bodyFlags: [{ long: "--notes", short: "-n" }],
     fileFlags: [{ long: "--notes-file", short: "-F" }],
     requireBody: true,
@@ -468,6 +518,7 @@ const POSTING_SHAPES = [
     path: ["gh", "release", "edit"],
     name: "gh release edit --notes",
     boolShorthands: [],
+    boolLongs: ["--draft", "--latest", "--prerelease", "--verify-tag"],
     bodyFlags: [{ long: "--notes", short: "-n" }],
     fileFlags: [{ long: "--notes-file", short: "-F" }],
     requireBody: true,
@@ -478,6 +529,7 @@ const POSTING_SHAPES = [
     // Creates a DRAFT ISSUE inside a project — issue prose by another route.
     // --body has no shorthand here.
     boolShorthands: [],
+    boolLongs: [],
     bodyFlags: [{ long: "--body" }],
     fileFlags: [],
     requireBody: true,
@@ -488,6 +540,7 @@ const POSTING_SHAPES = [
     // --text is a project FIELD value, not the draft issue's prose, so only
     // --body is gated.
     boolShorthands: [],
+    boolLongs: ["--clear"],
     bodyFlags: [{ long: "--body" }],
     fileFlags: [],
     requireBody: true,
@@ -571,6 +624,64 @@ export function apiEndpointPostsProse(endpoint) {
   let i = segments.length - 1;
   while (i >= 0 && API_ID_SEGMENT_RE.test(segments[i])) i -= 1;
   return i >= 0 && API_PROSE_SEGMENTS.has(segments[i].toLowerCase());
+}
+
+/**
+ * Walk `argv` the way pflag does and report whether a `--help`/`-h` word is
+ * reached in a FLAG position — that is, was NOT consumed as some other flag's
+ * VALUE.
+ *
+ * This is the fix for the fix-round-3 verdict's Finding 1. The previous check
+ * asked whether `--help` appeared ANYWHERE in argv, which is not a question
+ * about the command's grammar at all: pflag consumes the word after a
+ * value-taking flag even when that word starts with `-`, so
+ * `gh issue create --title -h --body "…"` really does post, while a
+ * "contains -h" test read it as `gh` printing help and posting nothing. Same
+ * failure class as rounds 1-3 — an odd spelling read as "not a posting call" —
+ * and unlike the expansion case this is not even an unknown: the gate can see
+ * exactly which flag consumed the token.
+ *
+ * `consumesNext` decides, per flag token, whether it swallows the following
+ * word. Its DEFAULT differs by call site on purpose. For a posting shape the
+ * catalog lists only the flags this gate tracks, so an unrecognized long flag
+ * is ASSUMED to take a value: guessing "consumes" costs a refusal on a
+ * contrived line, guessing "boolean" costs a bypass. For `gh api` the value
+ * flags are enumerated in full, so anything outside that set really is a
+ * boolean.
+ *
+ * @param {ShellWord[]} argv
+ * @param {(token: string) => boolean} consumesNext
+ * @returns {boolean}
+ */
+export function helpFlagIsFree(argv, consumesNext) {
+  for (let i = 0; i < (argv || []).length; i += 1) {
+    const value = argv[i].value;
+    if (value === "--help" || value === "-h") return true;
+    // `--` ends flag parsing; everything after it is a positional, so a
+    // `--help` there is an argument, not a request for help.
+    if (value === "--") return false;
+    if (value === "-" || !value.startsWith("-")) continue;
+    // `--flag=value` / `-f=value` carry their value inline and swallow nothing.
+    if (value.includes("=")) continue;
+    if (consumesNext(value)) i += 1;
+  }
+  return false;
+}
+
+/**
+ * `consumesNext` for a POSTING_SHAPES entry: a flag swallows the next word
+ * unless this gate knows it is boolean. Short flags are clustered
+ * (`-ew`), and a cluster is boolean only if EVERY character is.
+ * @param {{boolShorthands?: string[], boolLongs?: string[]}} entry
+ */
+function shapeConsumesNext(entry) {
+  const shorts = new Set(entry.boolShorthands || []);
+  const longs = new Set(entry.boolLongs || []);
+  return (token) => {
+    if (token.startsWith("--")) return !longs.has(token);
+    const chars = token.slice(1).split("");
+    return !chars.every((char) => shorts.has(char));
+  };
 }
 
 /** The `gh` command groups that own at least one gated posting subcommand. */
@@ -688,12 +799,6 @@ export function analyzeGhCandidate(candidate, ctx = {}) {
   const argv = (candidate && candidate.argv) || [];
   const env = (candidate && candidate.env) || {};
   const start = skipGhGlobalFlags(argv);
-
-  // `--help`/`-h` makes gh print help and exit without contacting GitHub, so
-  // `gh issue comment --help` posts nothing. Blocking it was a pure false
-  // positive, and a guard that blocks reading the docs gets routed around.
-  if (argv.some((w) => w.value === "--help" || w.value === "-h")) return null;
-
   const sub1Word = argv[start] || null;
   // FAIL CLOSED on a subcommand this gate cannot read. `gh issue $SUB 26
   // --body …` used to fall through to "posts nothing", which made the cheapest
@@ -717,6 +822,11 @@ export function analyzeGhCandidate(candidate, ctx = {}) {
   const sub2 = sub2Word ? sub2Word.value : null;
   const entry = POSTING_SHAPES.find((s) => s.path[1] === sub1 && s.path[2] === sub2);
   if (!entry) return null;
+
+  // `--help`/`-h` in a real FLAG position makes gh print help and exit without
+  // contacting GitHub, so the call posts nothing. In a VALUE position it is
+  // just this flag's value and the call posts normally — see helpFlagIsFree.
+  if (helpFlagIsFree(argv, shapeConsumesNext(entry))) return null;
 
   const fileHits = findFlagWords(argv, entry.fileFlags, entry.boolShorthands);
   const bodyHits = findFlagWords(argv, entry.bodyFlags, entry.boolShorthands);
@@ -790,6 +900,10 @@ function analyzeGhApi(argv, env, read) {
   }
   const endpoint = endpointWord ? endpointWord.value : null;
   if (!endpoint || !apiEndpointPostsProse(endpoint)) return null;
+  // A FREE `--help` prints help and posts nothing. One consumed as a value
+  // (`-H --help`, a header whose value happens to spell it) does not, which is
+  // why this is the same positional walk and not a `.some()`.
+  if (helpFlagIsFree(argv, (token) => API_VALUE_FLAGS.has(token))) return null;
 
   const result = {
     shape: `gh api ${method || "POST"} ${endpoint}`,
@@ -820,6 +934,21 @@ function analyzeGhApi(argv, env, read) {
     }
     result.bodies.push(value);
   }
+  // A write to a conversation route that carries NO prose — every field was
+  // readable and none of them is a prose field — posts no prose, so there is
+  // nothing to mark: `-X PATCH …/issues/26 -f state=closed`,
+  // `-X POST …/pulls -f title=T -f head=x -f base=main`. Refusing those was
+  // the fix-round-3 verdict's Finding 2: 11 ordinary calls blocked, with a
+  // refusal message about `gh` opening an editor that `gh api` never does, and
+  // an internal inconsistency with the CLI side, where a `requireBody` shape
+  // with no body flag (`gh issue edit 26 --add-label x`) is likewise allowed.
+  // This is NOT the fail-open case the header forbids: the field list is
+  // enumerated against GitHub's own schema for these routes exactly as the
+  // route list is, and a field name outside that schema does nothing when the
+  // API receives it. The genuinely unknown payloads — `--input`, `body=@file`
+  // that cannot be read, a field the shell would expand — set `uninspectable`
+  // above and still refuse.
+  if (result.bodies.length === 0 && !result.uninspectable) return null;
   return result;
 }
 

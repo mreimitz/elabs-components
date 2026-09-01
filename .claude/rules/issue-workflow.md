@@ -111,6 +111,23 @@ authority loop where automation authorizes itself.
   are gated while `PUT …/issues/26/lock` and `POST …/issues/26/labels` are not.
   The rung-2 doc scan's regex is **generated from that same table**, so the doc
   scan and the runtime gate cannot describe different surfaces.
+- **A `gh api` call is gated only when all THREE hold**: it is a **write**
+  (POST/PATCH/PUT, or fields with no method), to a **conversation route**, and
+  it **carries prose** (a `body=`/`message=`/`commit_message=` field). A read
+  is untouched whatever its route; a write to `…/lock`/`…/labels`/`…/reactions`
+  is untouched; and a prose-free write such as
+  `gh api -X PATCH repos/o/r/issues/26 -f state=closed` is untouched too — it
+  posts nothing to mark, exactly as `gh issue edit 26 --add-label x` does not.
+  A payload the gate cannot **read** is a different matter and still refuses:
+  `--input`, an unreadable `body=@file`, a field the shell would expand, or a
+  write whose endpoint is hidden by an expansion.
+- **`--help`/`-h` is judged by POSITION, not by presence.** pflag consumes the
+  word after a value-taking flag even when it starts with `-`, so
+  `gh issue create --title -h --body "…"` really does post — `-h` is the
+  title. The gate walks the flags the way pflag does and honours a help word
+  only where it is genuinely a flag; `gh issue comment --help` still passes.
+  Where the walk cannot tell whether a flag takes a value it assumes it does,
+  which costs a refusal on a contrived line rather than a bypass.
 - **Overriding it — both forms work, and both are loud.** A human typing their
   own ruling through the CLI may use either
   `ALLOW_UNATTRIBUTED_COMMENT=1 gh issue comment …` (an inline prefix, which the
