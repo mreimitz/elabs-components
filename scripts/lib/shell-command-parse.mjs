@@ -30,6 +30,14 @@ const ASSIGNMENT_RE = /^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/;
 // assignment from it.
 const ASSIGNMENT_BUILTINS = new Set(["export", "declare", "typeset", "local", "readonly"]);
 const EXPANSION_NAME_RE = /^\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-])/;
+// Every `$VAR` / `${VAR}` NAME mentioned anywhere in the raw line (#96, fix
+// round 11). Deliberately naive and deliberately run over the SOURCE TEXT, not
+// over parsed words: it matches inside single quotes, after a backslash, and
+// inside a nested quoting level, because none of those tell us the shell will
+// not expand the name one level down (`sh -c '$CMD'` is the whole point). The
+// safe direction for a guard is to see MORE references than really expand, not
+// fewer — a spurious match costs a refusal, a missed one costs a bypass.
+const VAR_REFERENCE_RE = /\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g;
 
 /**
  * @typedef {{value: string, expanded: boolean, raw: string}} ShellWord
@@ -333,6 +341,13 @@ export function parseShellCommands(text, depth = 0) {
   // `gh` token in it at all — the same "it's a language, not a string" hole.
   if (depth < MAX_DEPTH) {
     const original = commands.slice();
+    // Every variable NAME this line expands, read off the source text (see
+    // VAR_REFERENCE_RE). Used by the position-independent assignment re-read
+    // below, which is why it is computed once per level rather than per
+    // command: `env CMD=… sh -c '$CMD'` assigns in one simple command and
+    // expands in another's operand.
+    const referencedVars = new Set();
+    for (const m of src.matchAll(VAR_REFERENCE_RE)) referencedVars.add(m[1]);
     // `echo 'gh …' | bash` — a literal producer piped into an interpreter. The
     // script's bytes are words on this line, so it is read, not declared away:
     // only a producer whose output the line does NOT contain (a file, another
@@ -384,6 +399,49 @@ export function parseShellCommands(text, depth = 0) {
         for (let ai = assignmentRun + 1; ai < words.length; ai++) {
           const m = ASSIGNMENT_RE.exec(words[ai].value);
           if (!m) break;
+          if (/(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
+        }
+      }
+      // The two scans above are POSITIONAL: they read the leading assignment
+      // run, and an assignment builtin's operands until the first word that is
+      // not `VAR=value`-shaped. Both windows have an edge, and two ordinary
+      // shapes sit just outside it (#96, fix round 11):
+      //
+      //   env CMD="gh issue comment 26 --body …" sh -c '$CMD'
+      //   declare -x CMD="gh issue comment 26 --body …"; $CMD
+      //
+      // In the first the assignment sits AFTER a command word, so
+      // `commandWordIndex` returns 0 and the leading-run loop never executes;
+      // in the second the builtin's `-x` operand is not `VAR=value`-shaped, so
+      // the operand loop breaks before it reaches `CMD=`. Both really run the
+      // post. Merge-base `main` caught them only because it scanned every word
+      // of every command unconditionally — which is also why it refused
+      // `make deploy MSG="gh issue comment --body ready"`, a positional
+      // argument make(1) never assigns or executes (the false refusal fix
+      // round 8 removed, locked in the suite).
+      //
+      // Widening the window by NAMING the commands that consume a following
+      // assignment (env/sudo/nohup/…) is the repair this gate must not make:
+      // every previous round that reached for a name list closed one hole and
+      // opened another, and the missing name is silent. So the rule keys on
+      // shell VARIABLE SYNTAX alone and mentions no command at all — re-read a
+      // `VAR=value` word wherever it sits, but only when the same line also
+      // EXPANDS `$VAR`. An assignment nothing on the line expands cannot make
+      // this line post, whoever the command word is; `make deploy MSG=…`,
+      // `docker run -e CMD=… alpine true` and `declare -x CMD=…` alone all
+      // stay allowed for that reason, not because make/docker are on a list.
+      //
+      // This is an over-approximation in the safe direction: a line that
+      // mentions `$MSG` for an unrelated reason and separately carries a
+      // `MSG=` word whose value looks like a `gh` post is refused. It costs
+      // one retry and prints its own override. What it still cannot see is an
+      // assignment made in an EARLIER Bash call and expanded in a later one —
+      // the bytes are not on this line, and merge-base `main` could not see
+      // that either.
+      if (referencedVars.size) {
+        for (const word of words) {
+          const m = ASSIGNMENT_RE.exec(word.value);
+          if (!m || !referencedVars.has(m[1])) continue;
           if (/(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
         }
       }

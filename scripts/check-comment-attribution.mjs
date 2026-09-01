@@ -212,7 +212,40 @@
 //     alternative was a silent post. `pnpm attribution:comments:check:test`
 //     locks both directions — the never-listed wrappers as REFUSALS and these
 //     two lines as the declared cost.
-//   - What is STILL a declared limit after fix round 10, unchanged: a
+//   - Fix round 11 (#96): the SAME anti-pattern, in the other mechanism —
+//     round 8's assignment-run scoping (the clause above) was a POSITIONAL
+//     window, and two ordinary shapes sit outside it. An assignment placed
+//     AFTER a command word (`env CMD="gh issue comment 26 --body …" sh -c
+//     '$CMD'`) is never reached, because the leading run ends at index 0; and
+//     an assignment builtin carrying an OPTION (`declare -x CMD="…"; $CMD`)
+//     stops the operand walk on `-x`, before the assignment. Both really run
+//     the post — verified by execution, not by reading — and merge-base
+//     `main` refuses both, so the branch that removed the `make deploy MSG=…`
+//     false refusal had traded it for a family of real bypasses. Three rounds
+//     of review missed it because every test in the suite pinned the
+//     assignment to the LEADING position.
+//
+//     The repair does NOT name the commands that consume a following
+//     assignment (`env`/`sudo`/`nohup`/…). That list is the round-9/round-10
+//     mistake one mechanism over, and the missing name is silent. It keys on
+//     shell VARIABLE SYNTAX alone: a `VAR=value` word is re-read wherever it
+//     sits, but only when the same line also EXPANDS `$VAR` / `${VAR}`. An
+//     assignment nothing on the line expands cannot make that line post,
+//     whoever the command word is — which is why `make deploy MSG=…`,
+//     `docker run -e CMD=… alpine true`, `terraform apply -var …` and a bare
+//     `declare -x CMD=…` all stay ALLOWED without any command appearing in
+//     the rule.
+//
+//     WHAT THAT COSTS: it is a NAME match, so a line that carries a
+//     `gh`-shaped `MSG=` word and separately expands `$MSG` for an unrelated
+//     reason is refused — `make deploy MSG="gh issue comment --body ready" &&
+//     echo "$MSG"` REFUSES (as `main` does), while the same line expanding
+//     `$OTHER` is allowed. Measured over a 20-command ordinary-work corpus:
+//     zero new false refusals vs merge-base `main` and zero vs the pre-round
+//     branch tip. WHAT IT STILL CANNOT SEE, unchanged from `main`: an
+//     assignment made in an EARLIER Bash tool call and expanded in a later
+//     one — those bytes are not on this line at all.
+//   - What is STILL a declared limit after fix rounds 10 and 11, unchanged: a
 //     `… | tee f | sh` pipeline (the sink-detection only recognises a sink
 //     that takes no non-flag operand, and `tee`'s filename argument defeats
 //     that), `gh api graphql`'s `addComment` mutation, and a body-less nested

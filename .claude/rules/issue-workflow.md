@@ -241,6 +241,58 @@ MSG="gh issue comment --body ready"` stays FIXED — that was a different
   deliberately **the names no allowlist ever contained**, and by an end-to-end
   test through the real shell hook; the two prose refusals are asserted there
   too, so the cost is recorded in the suite rather than only in prose.
+  **That "zero" was corpus-limited and is corrected by the round-11 bullet
+  below.** It varied the interpreter/wrapper axis while pinning every
+  assignment-carrying case to the LEADING position, so the 26 assignment-position
+  bypasses round 11 closes were outside what it measured. A differential zero is
+  a statement about the axes the corpus varied, never about the gate.
+- **Fix round 11 (#96) closes the ASSIGNMENT-POSITION bypasses round 8's
+  scoping opened — list-free, keyed on `$VAR` syntax.** Round 8 fixed the
+  `make deploy MSG="gh issue comment --body ready"` false refusal by scoping
+  the "assignment carries a whole command" re-read (`parseShellCommands` in
+  `scripts/lib/shell-command-parse.mjs`) to the LEADING assignment run plus an
+  assignment builtin's `VAR=value`-shaped operands. That window is positional,
+  and two ordinary shapes sit outside it — both of which merge-base `main`
+  refuses, and both of which really execute the post:
+  `env CMD="gh issue comment 26 --body …" sh -c '$CMD'` (the assignment is
+  AFTER a command word, so the leading run ends at index 0 and the scan never
+  runs) and `declare -x CMD="…"; $CMD` (the builtin's `-x` operand is not
+  `VAR=value`-shaped, so the operand walk breaks before the assignment).
+  **Three rounds of review missed this because every test in the suite pinned
+  the assignment to the leading position** — the suite was green with the
+  bypass present.
+  **The repair names no command.** Deciding that `env`'s post-command
+  assignment is executable while `make`'s is inert requires knowing which
+  commands consume assignments — the round-9/round-10 anti-pattern one
+  mechanism over, where the missing name is silent. Round 11 keys on shell
+  VARIABLE SYNTAX instead: a `VAR=value` word is re-read wherever it sits, but
+  only when the same line also EXPANDS `$VAR` / `${VAR}`. An assignment nothing
+  on the line expands cannot make that line post, whoever the command word is,
+  so `make deploy MSG=…`, `docker run -e CMD=… alpine true`,
+  `terraform apply -var …`, `kubectl set env …` and a bare `declare -x CMD=…`
+  stay ALLOWED — round 8's false-refusal fix is kept, without a list.
+  **What it COSTS:** the match is on the variable NAME, so a line that carries
+  a `gh`-shaped `MSG=` word and separately expands `$MSG` for an unrelated
+  reason is refused —
+  `make deploy MSG="gh issue comment --body ready" && echo "$MSG"` REFUSES
+  (exactly as `main` refuses it), while the same line expanding `$OTHER` is
+  allowed. Over a 20-command ordinary-work corpus that is **zero new false
+  refusals** against merge-base `main` and zero against the pre-round branch
+  tip. **What it still cannot see, unchanged from `main`:** an assignment made
+  in an EARLIER Bash tool call and expanded in a later one — those bytes are
+  not on this line at all.
+  **Evidence:** a 35-case attack corpus that varies the ASSIGNMENT-POSITION
+  axis explicitly (leading · after a command word · after a wrapped command
+  word · assignment builtin with an option · assignment builtin without one ·
+  one nesting level down) plus 8 inert and 20 ordinary-work cases, each driven
+  through the real `PreToolUse` hook AND the pure decision path on both trees:
+  **26 shapes that `main` refuses and the pre-round tip allowed now refuse, 0
+  remain**, hook and function agree on every cell. Locked in
+  `scripts/check-comment-attribution.test.mjs` by four tests — the bypass sweep
+  (pure), the same sweep through the real shell hook, an INERT sweep asserting
+  a later round cannot "fix" this by refusing every `VAR=value` again, and a
+  name-keying test pinning the over-approximation above. Reverting the source
+  change with the tests kept reds three of the four.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved

@@ -1852,3 +1852,108 @@ test("post-issue-comment: refuses to run without an issue number or a body", () 
   assert.equal(postMain(["not-a-number", "--body", "hi"]), 1, "non-numeric issue");
   assert.equal(postMain(["26", "--command", "close-issues"]), 1, "no --body/--body-file");
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #96 fix round 11 — the ASSIGNMENT POSITION axis.
+//
+// Fix round 8 stopped scanning every `VAR=value` word for a command it could
+// re-read, and scanned only the LEADING assignment run plus an assignment
+// builtin's `VAR=value`-shaped operands. That removed a real false refusal
+// (`make deploy MSG=…`, locked above) and, unnoticed through three rounds of
+// review, opened two bypasses that merge-base `main` refused — because every
+// test in this file pinned the assignment to the leading position:
+//
+//   env CMD="gh issue comment 26 --body …" sh -c '$CMD'     (after a command word)
+//   declare -x CMD="gh issue comment 26 --body …"; $CMD     (option-bearing builtin)
+//
+// Both were verified to really run the post (`env CMD="printf PROOF\n" sh -c
+// '$CMD'` prints PROOF). The repair keys on shell VARIABLE SYNTAX and names no
+// command: a `VAR=value` word is re-read wherever it sits, but only when the
+// same line also expands `$VAR`. The ALLOW block below is the other half of the
+// lock — it is what stops a later round from "fixing" this by refusing every
+// `VAR=value` word again, which is exactly what round 8 had to undo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const POST_AFTER_ASSIGNMENT = `gh issue comment 26 --body "${UNMARKED}"`;
+
+const ROUND_11_ASSIGNMENT_POSITION_BYPASSES = [
+  // ── the assignment sits AFTER a command word ──────────────────────────────
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "env, single-quoted expansion"],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' sh -c "$CMD"`, "env, double-quoted expansion"],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' bash -c '\${CMD}'`, "env, ${VAR} brace form"],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' sh -c 'eval $CMD'`, "env, expanded through eval"],
+  [`env -i CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "env with an option"],
+  [`sudo CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "sudo"],
+  [`sudo -E CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "sudo with an option"],
+  [`env CMD='gh pr comment 12 --body "${UNMARKED}"' sh -c '$CMD'`, "env, gh pr comment"],
+  [`env CMD='gh issue create -t T --body "${UNMARKED}"' sh -c '$CMD'`, "env, gh issue create"],
+  [`env CMD='gh release create v1 --notes "${UNMARKED}"' sh -c '$CMD'`, "env, gh release create"],
+  // ── the wrapper is itself wrapped ─────────────────────────────────────────
+  [`nohup env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "nohup env"],
+  [`timeout 30 env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "timeout env"],
+  [`nice -n 10 env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "nice env"],
+  [`command env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "command env"],
+  [`nohup sudo -E CMD='${POST_AFTER_ASSIGNMENT}' bash -c '$CMD'`, "nohup sudo -E"],
+  // ── an assignment builtin carrying an OPTION before the assignment ────────
+  [`declare -x CMD='${POST_AFTER_ASSIGNMENT}'; $CMD`, "declare -x"],
+  [`typeset -r CMD='${POST_AFTER_ASSIGNMENT}'; $CMD`, "typeset -r"],
+  [`export -p CMD='${POST_AFTER_ASSIGNMENT}'; $CMD`, "export -p"],
+  [`declare -gx CMD='${POST_AFTER_ASSIGNMENT}' && eval "$CMD"`, "declare -gx, via eval"],
+  // ── the same shapes one nesting level down, or behind ordinary punctuation ─
+  [`sh -c 'declare -x CMD="gh issue comment 26 --body ${UNMARKED}"; $CMD'`, "nested declare -x"],
+  [`(env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD')`, "subshell"],
+  [`true && env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "after &&"],
+  [`cd /tmp && env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "after a cd prefix"],
+];
+
+test("#96 fix round 11: an assignment AFTER the command word / behind a builtin option BLOCKS (pure)", () => {
+  for (const [command, label] of ROUND_11_ASSIGNMENT_POSITION_BYPASSES) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#96 fix round 11: the same assignment-position shapes, through the REAL shell hook -> exit 2", () => {
+  for (const [command, label] of ROUND_11_ASSIGNMENT_POSITION_BYPASSES) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+test("#96 fix round 11: an assignment NOTHING on the line expands stays ALLOWED", () => {
+  // The other half of the lock. Refusing every `VAR=value` word whose value
+  // looks like a `gh` call is what merge-base `main` did, and it is what made
+  // `make deploy MSG=…` a false refusal. These lines carry such a word and
+  // never expand it, so they cannot post, whatever the command word is — and
+  // no command name appears in the rule that lets them through.
+  const inert = [
+    `declare -x CMD='${POST_AFTER_ASSIGNMENT}'`,
+    `env CMD='${POST_AFTER_ASSIGNMENT}' true`,
+    `make deploy MSG="gh issue comment --body ready"`,
+    `docker run -e CMD='${POST_AFTER_ASSIGNMENT}' alpine true`,
+    `kubectl set env deploy/api CMD='${POST_AFTER_ASSIGNMENT}'`,
+    `terraform apply -var MSG='${POST_AFTER_ASSIGNMENT}'`,
+    `ansible-playbook site.yml -e MSG='${POST_AFTER_ASSIGNMENT}'`,
+  ];
+  for (const command of inert) {
+    assert.equal(bash(command).verdict, "allow", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 0, command);
+  }
+});
+
+test("#96 fix round 11: the re-read is keyed on the variable NAME, not on the presence of any expansion", () => {
+  // A line that carries `MSG=<a gh post>` and separately expands a DIFFERENT
+  // variable stays allowed; expanding `$MSG` itself is what makes the same
+  // line a candidate. This is the whole over-approximation, stated as a test:
+  // it is a name match, so a line that references `$MSG` for an unrelated
+  // reason IS refused — one retry, and the refusal prints its own override.
+  assert.equal(
+    bash(`make deploy MSG="gh issue comment --body ready" && echo "$OTHER"`).verdict,
+    "allow",
+  );
+  assert.equal(
+    bash(`make deploy MSG="gh issue comment --body ready" && echo "$MSG"`).verdict,
+    "block",
+  );
+  assert.equal(bash(`make deploy MSG="deploy now" && echo "$MSG"`).verdict, "allow");
+});
