@@ -134,6 +134,8 @@
     "microtypography:check:test": "node --test scripts/check-microtypography.test.mjs",
     "motion:check": "node scripts/check-motion-tokens.mjs",
     "motion:check:test": "node --test scripts/check-motion-tokens.test.mjs",
+    "optional-peers:check": "node scripts/check-optional-peer-transitives.mjs",
+    "optional-peers:check:test": "node --test scripts/check-optional-peer-transitives.test.mjs",
     "origins:check": "node scripts/check-remote-origins.mjs",
     "origins:check:test": "node --test scripts/check-remote-origins.test.mjs",
     "palette:check": "node scripts/check-raw-palette.mjs",

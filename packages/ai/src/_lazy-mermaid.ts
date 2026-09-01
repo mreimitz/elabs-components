@@ -52,9 +52,11 @@ let enginePromise: Promise<MermaidModule> | undefined;
 const loadEngine = (): Promise<MermaidModule> => {
   enginePromise ??= import("mermaid").then((m) => {
     const engine = m.default as unknown as MermaidModule;
-    // `mermaid` is an optional peer (issue #33). `@streamdown/mermaid` — a
-    // dependency of THIS package, not of the consumer — currently declares
-    // `mermaid` as its own plain, non-optional dependency, so a hoisting
+    // `mermaid` is an optional peer (issue #33), but its bytes are always
+    // installed anyway: TWO of this package's own plain dependencies —
+    // `streamdown` and `@streamdown/mermaid` — each declare `mermaid` as
+    // their own plain, non-optional dependency (issue #94,
+    // `pnpm optional-peers:check` proves and tracks this). So a hoisting
     // package manager (pnpm's default `node-linker=isolated` included, via
     // phantom resolution through the virtual store) may still make the real
     // bytes resolve even when a consumer never installed `mermaid`

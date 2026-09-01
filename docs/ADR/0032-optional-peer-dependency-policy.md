@@ -203,12 +203,21 @@ tracked separately, and must land in the same major version as this change per t
 maintainer's decision above; it is not silently satisfied by this ADR existing.
 
 **A residual specific to this implementation, disclosed rather than hidden:**
-`@streamdown/mermaid` (a transitive dependency `@elabs-ai/components-ai` itself
-depends on) declares `mermaid` as its own plain, non-optional `dependency`. A
-package manager that hoists transitive dependencies into a flat `node_modules` may
-therefore still install `mermaid`'s bytes even when a consumer skips it directly —
-this ADR's guarantee is "you are not required to declare it yourself and a missing
+**two** of `@elabs-ai/components-ai`'s own plain `dependencies` — `streamdown`
+and `@streamdown/mermaid` — each declare `mermaid` as their own plain,
+non-optional `dependency`. Every package manager therefore installs
+`mermaid`'s bytes regardless of what a consumer's own manifest says; a
+hoisting layout additionally makes `import("mermaid")` resolve, in which case
+the capability-gap panel never renders for that consumer — this ADR's
+guarantee is "you are not required to declare it yourself and an unresolved
 engine fails actionably," not "the bytes are provably absent from disk."
+`scripts/check-optional-peer-transitives.mjs` (`pnpm optional-peers:check`,
+issue #94) makes this residual provable rather than merely disclosed: it
+cross-references every optional peer against the resolved transitive closure
+of its package's own dependencies (read from `pnpm-lock.yaml`, no install)
+and fails CI both if a NEW optional peer becomes defeated this way and if this
+baselined one becomes clean — so a future upstream fix is caught by the gate,
+not left to a human noticing.
 
 ## Consequences
 

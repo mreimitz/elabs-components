@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Added: `scripts/check-optional-peer-transitives.mjs` (`pnpm optional-peers:check`,
+  self-tested via `pnpm optional-peers:check:test`, wired into CI's blocking job) —
+  for every `@elabs-ai/components-*` package, cross-references each name declared
+  `peerDependenciesMeta.<name>.optional: true` against the resolved transitive
+  closure of that package's own `dependencies` (read from `pnpm-lock.yaml`, no
+  install needed), reporting a **defeated optional peer** — one whose bytes
+  install anyway through a plain dependency edge — together with which direct
+  dependencies are responsible. Backed by a ratchet baseline
+  (`scripts/optional-peer-transitives-baseline.json`) that today records exactly
+  one entry: `mermaid`, defeated for `@elabs-ai/components-ai` via `streamdown`
+  and `@streamdown/mermaid` (issue #94). The ratchet is two-directional — it
+  fails on a newly-defeated peer AND on a baselined entry that has gone clean
+  — so the residual cannot silently outlive the third-party fix that would
+  close it. All four documentation sites that previously understated this as
+  "`@streamdown/mermaid` … can still install it transitively" now name both
+  responsible edges and state plainly that the bytes are always installed
+  (#94).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
   provably AA-safe `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from
   one seed brand colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a
@@ -52,12 +69,14 @@
   namespace-import binding when it is re-exported. Verified end-to-end via
   `pnpm consumer:check` with **four of the five** peers genuinely absent from
   `fixtures/consumer-smoke`'s installed tree (Rive, xterm, `@xterm/addon-fit`,
-  media-chrome). `mermaid` could not be verified the same way: `@streamdown/mermaid`
-  (a dependency of `@elabs-ai/components-ai` itself, not of the fixture) declares
-  `mermaid` as its own plain, non-optional dependency, and the fixture's pnpm
-  configuration still resolves it through the virtual store even with the peer
-  declared optional and never installed directly — so the gate has never actually
-  exercised mermaid's absence, only the other four. `_lazy-mermaid.ts`'s
+  media-chrome). `mermaid` could not be verified the same way: **two**
+  dependencies of `@elabs-ai/components-ai` itself, not of the fixture —
+  `streamdown` and `@streamdown/mermaid` — each declare `mermaid` as their own
+  plain, non-optional dependency, and the fixture's pnpm configuration still
+  resolves it through the virtual store even with the peer declared optional
+  and never installed directly — so the gate has never actually exercised
+  mermaid's absence, only the other four (see #94 for the follow-up that makes
+  this residual provable via `pnpm optional-peers:check`). `_lazy-mermaid.ts`'s
   `loadEngine()` still guards against the shape a genuinely-absent peer takes in a
   real Vite production build (an empty stub module, not a rejection), and a
   fixture-level unit test reproduces that stub shape directly — but this is a

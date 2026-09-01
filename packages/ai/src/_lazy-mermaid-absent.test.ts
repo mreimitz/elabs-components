@@ -23,6 +23,22 @@ import { describe, expect, it, vi } from "vitest";
  * shape wrong, the way an empty stub actually is, and checks `loadEngine`'s
  * guard converts that into the module-not-found-shaped message
  * `isModuleNotFoundMessage` recognizes.
+ *
+ * **Explicit scope statement (issue #94):** this test proves the LOAD-TIME
+ * ERROR PATH — what happens when `import("mermaid")` resolves to an empty
+ * stub — and nothing more. It does NOT prove mermaid is absent from an
+ * installed consumer tree, and must never be read as though it did. For the
+ * other four lazy-loaded optional peers (Rive, xterm, `@xterm/addon-fit`,
+ * media-chrome), `fixtures/consumer-smoke` + `pnpm consumer:check` give an
+ * end-to-end proof of genuine absence from the installed tarball. That proof
+ * is currently UNWRITABLE for mermaid: two of `@elabs-ai/components-ai`'s own
+ * plain dependencies (`streamdown`, `@streamdown/mermaid`) each depend on
+ * mermaid directly, so mermaid is never actually absent from the installed
+ * tree for this fixture to observe (see `scripts/check-optional-peer-transitives.mjs`
+ * / `pnpm optional-peers:check`, which proves and tracks that residual
+ * instead). Do not "fix" this gap by trying to make this file assert
+ * absence — it can't, until upstream `streamdown` declares mermaid an
+ * optional peer of its own.
  */
 vi.mock("mermaid", () => ({ default: {} }));
 
