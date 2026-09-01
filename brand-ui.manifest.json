@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T20:16:17.807Z",
+  "generatedAt": "2026-09-01T20:20:45.681Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -2065,16 +2065,6 @@
           "module": "packages/ai/src/plan.tsx"
         },
         {
-          "name": "PlanApprove",
-          "kind": "value",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanComment",
-          "kind": "value",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
           "name": "PlanContent",
           "kind": "value",
           "module": "packages/ai/src/plan.tsx"
@@ -2091,16 +2081,6 @@
         },
         {
           "name": "PlanHeader",
-          "kind": "value",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanRequestChanges",
-          "kind": "value",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanStatusLine",
           "kind": "value",
           "module": "packages/ai/src/plan.tsx"
         },
@@ -4276,19 +4256,7 @@
           "module": "packages/ai/src/plan.tsx"
         },
         {
-          "name": "PlanApproveProps",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanCommentProps",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
           "name": "PlanContentProps",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanDecisionActionProps",
           "module": "packages/ai/src/plan.tsx"
         },
         {
@@ -4305,18 +4273,6 @@
         },
         {
           "name": "PlanProps",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanRequestChangesProps",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanStatus",
-          "module": "packages/ai/src/plan.tsx"
-        },
-        {
-          "name": "PlanStatusLineProps",
           "module": "packages/ai/src/plan.tsx"
         },
         {
@@ -8423,30 +8379,12 @@
               "name": "isStreaming",
               "optional": true,
               "type": "boolean"
-            },
-            {
-              "name": "status",
-              "optional": true,
-              "type": "PlanStatus",
-              "description": "The plan's decision status. Omit it to keep today's display-only behaviour. When both `status` and `isStreaming` are given, `status` wins (a `status=\"approved\"` plan never shimmers, even if `isStreaming` is still `true`)."
             }
           ]
         },
         "PlanAction": {
           "extends": [
             "ComponentProps<typeof CardAction>"
-          ],
-          "props": []
-        },
-        "PlanApprove": {
-          "extends": [
-            "PlanDecisionActionProps"
-          ],
-          "props": []
-        },
-        "PlanComment": {
-          "extends": [
-            "PlanDecisionActionProps"
           ],
           "props": []
         },
@@ -8479,24 +8417,6 @@
             "ComponentProps<typeof CardHeader>"
           ],
           "props": []
-        },
-        "PlanRequestChanges": {
-          "extends": [
-            "PlanDecisionActionProps"
-          ],
-          "props": []
-        },
-        "PlanStatusLine": {
-          "extends": [
-            "Omit<ComponentProps<typeof StatusBadge>, \"status\">"
-          ],
-          "props": [
-            {
-              "name": "children",
-              "optional": true,
-              "type": "ReactNode"
-            }
-          ]
         },
         "PlanTitle": {
           "extends": [
@@ -23691,6 +23611,11 @@
           "module": "packages/ui/src/components/schema-form/schema-form.tsx"
         },
         {
+          "name": "SchemaFormTestAction",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
           "name": "SchemaFormTitle",
           "kind": "value",
           "module": "packages/ui/src/components/schema-form/schema-form.tsx"
@@ -24196,6 +24121,11 @@
           "module": "packages/ui/src/components/tree-select/tree-select.tsx"
         },
         {
+          "name": "UnsupportedJsonSchemaError",
+          "kind": "value",
+          "module": "packages/ui/src/components/schema-form/from-json-schema.ts"
+        },
+        {
           "name": "ViewToolbar",
           "kind": "value",
           "module": "packages/ui/src/components/view-toolbar/view-toolbar.tsx"
@@ -24387,10 +24317,6 @@
         {
           "name": "CarouselApi",
           "module": "packages/ui/src/components/carousel/carousel.tsx"
-        },
-        {
-          "name": "ChangeCheck",
-          "module": "packages/ui/src/components/change-review/change-review.tsx"
         },
         {
           "name": "ChangeHunk",
@@ -24643,6 +24569,10 @@
         {
           "name": "FormValues",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "FromJsonSchemaOptions",
+          "module": "packages/ui/src/components/schema-form/from-json-schema.ts"
         },
         {
           "name": "GroupFieldSpec",
@@ -24982,6 +24912,14 @@
         },
         {
           "name": "SchemaFormSubmitProps",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormTestActionProps",
+          "module": "packages/ui/src/components/schema-form/schema-form.tsx"
+        },
+        {
+          "name": "SchemaFormTestActionStatus",
           "module": "packages/ui/src/components/schema-form/schema-form.tsx"
         },
         {
@@ -25353,6 +25291,10 @@
         {
           "name": "formSpecSchema",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "fromJsonSchema",
+          "module": "packages/ui/src/components/schema-form/from-json-schema.ts"
         },
         {
           "name": "fromTimelineStatus",
@@ -28258,6 +28200,43 @@
               "optional": true,
               "type": "string",
               "description": "Submit button label (overrides `spec.submitLabel`). @default \"Submit\""
+            }
+          ]
+        },
+        "SchemaFormTestAction": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onError\">"
+          ],
+          "props": [
+            {
+              "name": "onTest",
+              "optional": false,
+              "type": "(values: FormValues) => void | Promise<void>",
+              "description": "Runs the test (e.g. calls an API with the fields typed so far). Receives the form's CURRENT effective values — the same object `validateForm` would resolve against — but this call is entirely independent of validation: a field that is currently invalid, or an unrelated required field left empty, never blocks a test run. Resolve to signal success; reject (an `Error`, or throw) to signal failure — a rejected `Error`'s `message` becomes the shown failure reason."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Button label. @default \"Test connection\""
+            },
+            {
+              "name": "pendingLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Label shown while pending. @default \"Testing…\""
+            },
+            {
+              "name": "successLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Label shown on success. @default \"Connected\""
+            },
+            {
+              "name": "failureLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Fallback failure label when the rejection carries no message. @default \"Test failed\""
             }
           ]
         },

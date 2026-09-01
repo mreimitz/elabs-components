@@ -113,6 +113,13 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.schemaForm.submit": "Submit",
   "ui.schemaForm.submitting": "Submitting…",
   "ui.schemaForm.submitted": "Submitted",
+  // SchemaFormTestAction — a form/group-level "Test connection" affordance
+  // (issue #22 maintainer ruling, 2026-09-01), independent of field validity
+  // and never gating submit.
+  "ui.schemaForm.testAction.label": "Test connection",
+  "ui.schemaForm.testAction.pending": "Testing…",
+  "ui.schemaForm.testAction.success": "Connected",
+  "ui.schemaForm.testAction.failure": "Test failed",
   // Pagination's ellipsis (sr-only — the visible glyph is decorative).
   "ui.pagination.morePages": "More pages",
   // Pagination's prev/next links — the ACCESSIBLE NAME (`aria-label`), distinct

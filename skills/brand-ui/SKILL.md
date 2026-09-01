@@ -39,15 +39,15 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 180 · **Registry blocks:** 21
 
-**Exported surface:** 1081 components · 77 hooks across 11 packages.
+**Exported surface:** 1079 components · 77 hooks across 11 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                               |
 | -------------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
 | `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
 | `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@elabs-ai/components-ui`        |        377 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
+| `@elabs-ai/components-ui`        |        379 |    14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
 | `@elabs-ai/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@elabs-ai/components-ai`        |        450 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
+| `@elabs-ai/components-ai`        |        446 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
 | `@elabs-ai/components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
 | `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts`    |        130 |    32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |

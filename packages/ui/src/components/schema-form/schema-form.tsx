@@ -32,7 +32,15 @@
  *   <SchemaFormProvider>   — lifted state (values + errors + actions)
  *     <SchemaFormRoot>     — the <form> element (never nest inside another form)
  *       <SchemaFormFields> — every field, or place <SchemaFormField> yourself
+ *       <SchemaFormTestAction> — OPT-IN: a form/group-level "Test connection"
+ *                                 affordance, independent of field validity,
+ *                                 never gating submit (not in the default
+ *                                 `SchemaForm` composition — place it yourself)
  *       <SchemaFormSubmit> — submit button / submitting spinner / submitted note
+ *
+ * `fromJsonSchema()` (`from-json-schema.ts`) is a separate, narrow adapter
+ * that maps a documented JSON Schema subset onto this module's `FieldSpec`
+ * vocabulary — see that file's doc comment for exactly what it supports.
  */
 
 import {
@@ -62,6 +70,7 @@ import { NumberInput } from "../number-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../select";
 import { Skeleton } from "../skeleton";
 import { Spinner } from "../spinner";
+import { StatusBadge } from "../status-badge";
 import { Textarea } from "../textarea";
 import { ListEditor } from "../list-editor";
 import { KeyValueEditor, type KeyValueRow } from "../key-value-editor";
@@ -1134,6 +1143,126 @@ export const SchemaFormSubmit = forwardRef<HTMLButtonElement, SchemaFormSubmitPr
         {submitting && <Spinner aria-hidden="true" className="text-current" />}
         {submitting ? t("ui.schemaForm.submitting") : text}
       </Button>
+    );
+  },
+);
+
+// ─── Test action (a form/group-level async action, e.g. "Test connection") ────
+
+/**
+ * `SchemaFormTestAction`'s lifecycle: `idle` → `pending` while `onTest` is in
+ * flight → `success`/`failure` once it settles. Deliberately local component
+ * state, NOT part of `SchemaFormContextValue` — so it can never affect field
+ * validity or gate `submit()` (issue #22 maintainer ruling, 2026-09-01: a
+ * form/group-level test-action slot, kept separate from field validity and
+ * never gating submit — not per-field `validateAsync` in the validation
+ * engine).
+ */
+export type SchemaFormTestActionStatus = "idle" | "pending" | "success" | "failure";
+
+export interface SchemaFormTestActionProps extends Omit<HTMLAttributes<HTMLDivElement>, "onError"> {
+  /**
+   * Runs the test (e.g. calls an API with the fields typed so far). Receives
+   * the form's CURRENT effective values — the same object `validateForm`
+   * would resolve against — but this call is entirely independent of
+   * validation: a field that is currently invalid, or an unrelated required
+   * field left empty, never blocks a test run. Resolve to signal success;
+   * reject (an `Error`, or throw) to signal failure — a rejected `Error`'s
+   * `message` becomes the shown failure reason.
+   */
+  onTest: (values: FormValues) => void | Promise<void>;
+  /** Button label. @default "Test connection" */
+  label?: string;
+  /** Label shown while pending. @default "Testing…" */
+  pendingLabel?: string;
+  /** Label shown on success. @default "Connected" */
+  successLabel?: string;
+  /** Fallback failure label when the rejection carries no message. @default "Test failed" */
+  failureLabel?: string;
+}
+
+/**
+ * A form- or group-level "Test connection" affordance: an async action the
+ * user can run to verify the values typed so far (e.g. hit a connector's
+ * `/ping` endpoint) BEFORE submitting. Place it anywhere inside a
+ * `SchemaFormProvider` tree — directly under `SchemaFormRoot` for a
+ * form-level test, or beside a `SchemaFormField` inside a `group` branch (a
+ * `TabsContent`/`AdvancedGroup`) for a per-credential-set test. Not part of
+ * `SchemaForm`'s default composition — an opt-in part a consumer places, the
+ * same way a custom layout composes `SchemaFormField` directly.
+ *
+ * Deliberately NOT wired into `errors`/`validateForm`/`submit()` — its
+ * pending/success/failure state is entirely local, so it can never block or
+ * silently gate the form's own submit control.
+ */
+export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestActionProps>(
+  function SchemaFormTestAction(
+    { onTest, label, pendingLabel, successLabel, failureLabel, className, ...props },
+    ref,
+  ) {
+    const { t } = useLocale();
+    const { effectiveValues, disabled: formDisabled, loading } = useSchemaFormContext();
+    const [status, setStatus] = useState<SchemaFormTestActionStatus>("idle");
+    const [failureMessage, setFailureMessage] = useState<string | null>(null);
+
+    const pending = status === "pending";
+    // Transient (pending) block uses aria-disabled + a handler guard, never
+    // native `disabled` — same reasoning as SchemaFormSubmit: a keyboard user
+    // who just activated this button must not be dropped from the tab order
+    // right after they used it. The caller's durable form-level `disabled`
+    // (the whole form read-only) stays native, matching every other control.
+    const transientlyBlocked = loading || pending;
+
+    const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
+      if (formDisabled || transientlyBlocked) {
+        e.preventDefault();
+        return;
+      }
+      setStatus("pending");
+      setFailureMessage(null);
+      void (async () => {
+        try {
+          await onTest(effectiveValues);
+          setStatus("success");
+        } catch (err) {
+          setStatus("failure");
+          setFailureMessage(err instanceof Error ? err.message : null);
+        }
+      })();
+    };
+
+    return (
+      <div
+        ref={ref}
+        data-slot="schema-form-test-action"
+        className={cn("flex flex-wrap items-center gap-2", className)}
+        {...props}
+      >
+        <Button
+          type="button"
+          variant="outline"
+          disabled={formDisabled}
+          aria-disabled={transientlyBlocked || undefined}
+          aria-busy={pending || undefined}
+          onClick={handleClick}
+          className={cn(transientlyBlocked && "cursor-not-allowed")}
+        >
+          {pending && <Spinner aria-hidden="true" className="text-current" />}
+          {pending
+            ? (pendingLabel ?? t("ui.schemaForm.testAction.pending"))
+            : (label ?? t("ui.schemaForm.testAction.label"))}
+        </Button>
+        {status === "success" && (
+          <StatusBadge status="complete" aria-live="polite">
+            {successLabel ?? t("ui.schemaForm.testAction.success")}
+          </StatusBadge>
+        )}
+        {status === "failure" && (
+          <StatusBadge status="failed" role="alert">
+            {failureMessage ?? failureLabel ?? t("ui.schemaForm.testAction.failure")}
+          </StatusBadge>
+        )}
+      </div>
     );
   },
 );

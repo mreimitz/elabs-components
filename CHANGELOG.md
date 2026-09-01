@@ -64,6 +64,13 @@
   colors. A new drift guard (`IGNORED_BASE_SCOPES` +
   `monaco-theme-bridge.test.ts`'s "drift guard" suite) fails CI if a future
   `monaco-editor` upgrade specialises another scope the bridge doesn't cover (#90).
+- Added: `@elabs-ai/components-ui`'s `SchemaForm` gains `SchemaFormTestAction` — an
+  opt-in, form/group-level "Test connection" affordance with its own idle/pending/
+  success/failure state, kept entirely independent of field validity and never gating
+  `submit()` — and `fromJsonSchema()`, a narrow adapter that maps the common OpenAPI/
+  connector-manifest JSON Schema subset (string/number/integer/boolean/enum/
+  array-of-string/object-group) onto `FieldSpec`, refusing (`UnsupportedJsonSchemaError`)
+  rather than approximating `$ref`/`allOf`/`oneOf`/`anyOf`/`not` (#22).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
   `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from one seed brand
   colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a tenant/white-label
