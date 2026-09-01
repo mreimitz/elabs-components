@@ -22,6 +22,13 @@
   `role="alert"` wiring `FieldRow` already validated, adapted to a shared
   lifted-state context so it holds across independently-composed parts;
   `FieldRow` itself is unchanged (#43).
+- Fixed: `FieldDescription`/`FieldError` (`@elabs-ai/components-ui`) now resolve
+  a caller-supplied `id` the same way `FieldControl` already did
+  (`props.id ?? generatedId`) and register that same value into
+  `aria-describedby`. Previously a caller-supplied `id` was only applied to the
+  rendered element while the layout effect kept registering the internally
+  generated id, so `FieldControl`'s `aria-describedby` pointed at an element
+  that did not exist and screen readers never announced the description/error.
 - Changed: `@elabs-ai/components-ai` no longer forces every consumer to install
   `mermaid`, `@rive-app/react-webgl2`, `@xterm/addon-fit`, `@xterm/xterm` and
   `media-chrome` — all five already sit behind lazy `import()` boundaries (ADR 0019) and are now declared as **optional peer dependencies**
