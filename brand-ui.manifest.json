@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T20:02:13.414Z",
+  "generatedAt": "2026-09-01T20:16:17.807Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -2065,6 +2065,16 @@
           "module": "packages/ai/src/plan.tsx"
         },
         {
+          "name": "PlanApprove",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanComment",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
           "name": "PlanContent",
           "kind": "value",
           "module": "packages/ai/src/plan.tsx"
@@ -2081,6 +2091,16 @@
         },
         {
           "name": "PlanHeader",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanRequestChanges",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanStatusLine",
           "kind": "value",
           "module": "packages/ai/src/plan.tsx"
         },
@@ -4256,7 +4276,19 @@
           "module": "packages/ai/src/plan.tsx"
         },
         {
+          "name": "PlanApproveProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanCommentProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
           "name": "PlanContentProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanDecisionActionProps",
           "module": "packages/ai/src/plan.tsx"
         },
         {
@@ -4273,6 +4305,18 @@
         },
         {
           "name": "PlanProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanRequestChangesProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanStatus",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanStatusLineProps",
           "module": "packages/ai/src/plan.tsx"
         },
         {
@@ -8379,12 +8423,30 @@
               "name": "isStreaming",
               "optional": true,
               "type": "boolean"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "PlanStatus",
+              "description": "The plan's decision status. Omit it to keep today's display-only behaviour. When both `status` and `isStreaming` are given, `status` wins (a `status=\"approved\"` plan never shimmers, even if `isStreaming` is still `true`)."
             }
           ]
         },
         "PlanAction": {
           "extends": [
             "ComponentProps<typeof CardAction>"
+          ],
+          "props": []
+        },
+        "PlanApprove": {
+          "extends": [
+            "PlanDecisionActionProps"
+          ],
+          "props": []
+        },
+        "PlanComment": {
+          "extends": [
+            "PlanDecisionActionProps"
           ],
           "props": []
         },
@@ -8417,6 +8479,24 @@
             "ComponentProps<typeof CardHeader>"
           ],
           "props": []
+        },
+        "PlanRequestChanges": {
+          "extends": [
+            "PlanDecisionActionProps"
+          ],
+          "props": []
+        },
+        "PlanStatusLine": {
+          "extends": [
+            "Omit<ComponentProps<typeof StatusBadge>, \"status\">"
+          ],
+          "props": [
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode"
+            }
+          ]
         },
         "PlanTitle": {
           "extends": [

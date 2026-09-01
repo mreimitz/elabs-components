@@ -53,6 +53,17 @@
   "`@streamdown/mermaid` … can still install it transitively" now name both
   responsible edges and state plainly that the bytes are always installed
   (#94).
+- Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge
+  (`monaco-theme-bridge.ts`) now overrides the language-suffixed syntax scopes
+  (`string.key.json`, `string.value.json`, `keyword.json` and the equivalent
+  YAML/HTML/SQL/XML/CSS/SCSS scopes) that Monaco's inherited `vs`/`vs-dark` base
+  themes specialise. Monaco's token-theme trie always resolves the deepest
+  matching scope, so the bridge's previous unsuffixed rules (`string.key`,
+  `keyword`, …) could never beat the base theme's suffixed ones — JSON (and the
+  other affected languages) rendered in stock VS Code colors instead of brand
+  colors. A new drift guard (`IGNORED_BASE_SCOPES` +
+  `monaco-theme-bridge.test.ts`'s "drift guard" suite) fails CI if a future
+  `monaco-editor` upgrade specialises another scope the bridge doesn't cover (#90).
 - Added: `deriveTheme({ primary, background })` to `@elabs-ai/components-tokens` — derives a
   `--primary-foreground`/`--accent`/`--accent-foreground`/`--ring` patch from one seed brand
   colour, ready to hand to `ThemeProvider`'s `tokenOverrides` prop for a tenant/white-label

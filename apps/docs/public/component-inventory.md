@@ -17,7 +17,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 377 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 450 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 130 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -781,10 +781,14 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PERSONA_SOURCES | component |  | `@elabs-ai/components-ai` |  |
 | Plan | component |  | `@elabs-ai/components-ai` | A Card-shaped, collapsible plan the agent proposes before it starts executing. |
 | PlanAction | component |  | `@elabs-ai/components-ai` |  |
+| PlanApprove | component |  | `@elabs-ai/components-ai` |  |
+| PlanComment | component |  | `@elabs-ai/components-ai` |  |
 | PlanContent | component |  | `@elabs-ai/components-ai` |  |
 | PlanDescription | component |  | `@elabs-ai/components-ai` |  |
 | PlanFooter | component |  | `@elabs-ai/components-ai` |  |
 | PlanHeader | component |  | `@elabs-ai/components-ai` |  |
+| PlanRequestChanges | component |  | `@elabs-ai/components-ai` |  |
+| PlanStatusLine | component |  | `@elabs-ai/components-ai` |  |
 | PlanTitle | component |  | `@elabs-ai/components-ai` |  |
 | PlanTrigger | component |  | `@elabs-ai/components-ai` |  |
 | PRODUCED_ASSET_ICONS | component |  | `@elabs-ai/components-ai` |  |

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import * as monaco from "monaco-editor";
 import { CodeEditor } from "./code-editor";
 import { EditorToolbar } from "../editor-toolbar";
+import { buildBrandThemeData } from "../lib/monaco-theme-bridge";
 
 const meta = {
   title: "Editor/CodeEditor",
@@ -76,6 +77,15 @@ export const WithToolbar: Story = {
   },
 };
 
+/**
+ * Locks #90: Monaco's `vs`/`vs-dark` base themes ship LANGUAGE-SUFFIXED JSON
+ * scopes (`string.key.json`, `string.value.json`, `keyword.json`) that beat the
+ * bridge's shorter, unsuffixed rules in Monaco's token-theme trie (deepest scope
+ * wins) — so JSON rendered in stock VS Code colors instead of brand colors. The
+ * play function reads REAL computed colors off the rendered `.mtk*` token spans
+ * and asserts none of them is a stock JSON color, in whichever theme this story
+ * is rendered under (`globals=theme:light|dark`).
+ */
 export const JsonReadOnly: Story = {
   name: "JSON (read-only)",
   render: () => (
@@ -83,6 +93,68 @@ export const JsonReadOnly: Story = {
       <CodeEditor language="json" defaultValue={JSON_SAMPLE} readOnly />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // Monaco mounts asynchronously, and syntax tokenization is a SEPARATE,
+    // later pass: the editor first paints one un-highlighted `.mtk*` span per
+    // line, then re-renders with per-scope spans once the JSON monarch
+    // tokenizer finishes (observed to take ~1-3s in a headless test browser).
+    // Waiting for "any `.mtk*` span" resolves on that FIRST, un-highlighted
+    // paint — a false green that passes identically whether the fix is
+    // present or not (#90 fix-round-1 finding). Wait for the actual `"name"`
+    // key to have tokenized into its own span instead — that only exists once
+    // real per-scope highlighting has landed.
+    const surface = await within(canvasElement).findByTestId("code-editor", {}, { timeout: 10000 });
+    let spans: HTMLSpanElement[] = [];
+    await waitFor(
+      () => {
+        spans = Array.from(
+          surface.querySelectorAll<HTMLSpanElement>('.view-line span[class*="mtk"]'),
+        );
+        const keySpan = spans.some((span) => span.textContent?.trim() === '"name"');
+        if (!keySpan) {
+          throw new Error(
+            `Monaco has not tokenized the "name" key into its own span yet (spans=${spans.length})`,
+          );
+        }
+      },
+      { timeout: 20000, interval: 100 },
+    );
+
+    // Stock `vs`/`vs-dark` colors for string.key.json / string.value.json /
+    // keyword.json (extracted straight from monaco-editor's own base themes —
+    // see monaco-theme-bridge.test.ts's "Monaco real trie resolution" block for
+    // the same values as raw hex). If the bridge's brand rules ever stop beating
+    // the base theme's suffixed scopes, a token renders one of these again.
+    const stockColors = new Set([
+      "rgb(163, 21, 21)", // vs: string.key.json / string (maroon)
+      "rgb(4, 81, 165)", // vs: string.value.json / keyword.json (navy)
+      "rgb(156, 220, 254)", // vs-dark: string.key.json (cyan)
+      "rgb(206, 145, 120)", // vs-dark: string.value.json / keyword.json / string (orange)
+    ]);
+
+    const offenders = spans
+      .map((span) => getComputedStyle(span).color)
+      .filter((color) => stockColors.has(color));
+    await expect(offenders).toEqual([]);
+
+    // Positive check, not just an absence check: the "name" key span must be
+    // colored with the bridge's OWN live `string.key.json` brand ink (read
+    // straight off the currently-applied CSS custom properties), not merely
+    // "some color that isn't stock" — a fix that mapped the scope to the
+    // wrong token would pass the negative check above but fail this one.
+    const hexToRgb = (hex: string) => {
+      const n = Number.parseInt(hex.replace("#", ""), 16);
+      return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+    };
+    const liveRules = buildBrandThemeData().rules ?? [];
+    const expectedKeyForeground = liveRules.find(
+      (rule) => rule.token === "string.key.json",
+    )?.foreground;
+    await expect(expectedKeyForeground).toBeDefined();
+    const keySpan = spans.find((span) => span.textContent?.trim() === '"name"');
+    await expect(keySpan).toBeDefined();
+    await expect(getComputedStyle(keySpan!).color).toEqual(hexToRgb(expectedKeyForeground!));
+  },
 };
 
 /**
