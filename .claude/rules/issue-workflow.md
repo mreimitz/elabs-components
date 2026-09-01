@@ -64,11 +64,14 @@ authority loop where automation authorizes itself.
   `needs-decision`; see `.claude/commands/close-issues.md`.
 - **Enforced, not just documented.** A `PreToolUse` hook
   (`.claude/hooks/gate-comment-attribution.sh` +
-  `scripts/check-comment-attribution.mjs`) blocks a `gh issue comment` /
-  `gh issue close --comment` / `gh issue create` / `gh pr comment` /
-  `gh pr review --body` Bash call, a `gh api` POST/PATCH/PUT to a
-  comment/issue/review endpoint, or `mcp__github__add_issue_comment` /
-  `mcp__github__create_issue`, whose body is missing the marker. A body the hook
+  `scripts/check-comment-attribution.mjs`) blocks any Bash call that publishes
+  prose into a GitHub conversation with no marker: `gh issue`
+  `comment`/`create`/`edit --body`/`close --comment`/`reopen --comment`,
+  `gh pr` `comment`/`create`/`edit`/`close`/`reopen`/`revert`/`review`/
+  `merge` with a body flag, `gh release create|edit --notes`,
+  `gh project item-create|item-edit --body`, a `gh api` POST/PATCH/PUT to a
+  conversation route (see below), or `mcp__github__add_issue_comment` /
+  `mcp__github__create_issue`. A body the hook
   cannot statically inspect (stdin redirect, heredoc, piped input, a device, or
   a `$VAR`/`$(…)` the shell would expand) is **refused outright**, not passed
   through. `pnpm attribution:comments:check` separately scans
@@ -86,6 +89,28 @@ authority loop where automation authorizes itself.
   assignments, skips `gh`'s own `--repo`/`-R` global flags, and checks **every**
   body-carrying flag in **every** candidate — not the first one it finds.
   Extending it means extending the parse, never adding another regex.
+- **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
+  call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
+…`), or a write's `gh api` endpoint is — the call is **refused**, not waved
+  through. A guard whose unknown case is "allow" is defeated by making the
+  command harder to read, which is the cheapest possible attack. Pass the
+  subcommand literally, or override deliberately.
+- **The gated list is DERIVED from `gh`'s own help, not hand-kept.** The recipe
+  is written above `POSTING_SHAPES` in `scripts/check-comment-attribution.mjs`
+  so you can re-run it rather than trust it: walk every `gh` group and
+  subcommand from `gh --help`, keep the ones that satisfy BOTH criteria —
+  (a) it publishes into a **conversation** about the work (issue, pull request,
+  review, release), and (b) the flag carries **free-form prose the marker can
+  live in** (`--body`/`--body-file`/`--comment`/`--notes`/`--notes-file`) —
+  then read that subcommand's FLAGS block for the exact pflag grammar. Both
+  criteria are load-bearing: (a) alone would gate `gh secret set --body`, where
+  `--body` is the secret's VALUE; (b) alone would gate a repo description. The
+  same two criteria pick the `gh api` routes: drop trailing id segments from
+  the endpoint and gate it when the remaining tail names a conversation
+  resource, which is why `PATCH …/issues/26` and `PATCH …/issues/comments/999`
+  are gated while `PUT …/issues/26/lock` and `POST …/issues/26/labels` are not.
+  The rung-2 doc scan's regex is **generated from that same table**, so the doc
+  scan and the runtime gate cannot describe different surfaces.
 - **Overriding it — both forms work, and both are loud.** A human typing their
   own ruling through the CLI may use either
   `ALLOW_UNATTRIBUTED_COMMENT=1 gh issue comment …` (an inline prefix, which the
@@ -106,5 +131,16 @@ authority loop where automation authorizes itself.
   it. (5) A relative `--body-file` path is resolved against the hook's working
   directory, not a `cd` earlier in the line; when that fails the call is
   **refused**, so it costs a false refusal rather than a bypass — pass an
-  absolute path. These are intentional boundaries of "inspect the tool call",
-  not gaps to close by widening a regex.
+  absolute path. (6) A `--body-file`/`--notes-file` is read **as it stands when
+  the hook runs**, which is before the command executes: if the same command
+  line writes that file first (`printf … > body.md && gh issue comment 26
+--body-file body.md`), the gate judges the OLD bytes, so a file that was
+  marked a moment ago passes even though the text actually posted is the new,
+  unmarked content. Nothing at this layer can fix it — the final content does
+  not exist yet. **What to do:** write the body in a SEPARATE Bash call from
+  the one that posts it, so the hook sees the real bytes on the posting call,
+  or post through `scripts/post-issue-comment.mjs`, which renders the marker
+  itself. (7) `gh pr create --fill` and `gh release create --generate-notes`
+  build the body inside `gh` or on GitHub's side, so there is no body on the
+  command line to read or mark; they are not gated. These are intentional
+  boundaries of "inspect the tool call", not gaps to close by widening a regex.

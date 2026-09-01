@@ -56,10 +56,17 @@
 // `findFlagValues()` still covers every shape `gh` (Cobra/pflag) accepts for a
 // value-taking flag — `--flag value` · `--flag=value` · `-f value` · `-f=value` ·
 // `-fvalue` (attached) · `-xyfvalue` (boolean shorthands clustered ahead of the
-// value shorthand) — verified against `gh 2.93.0 <subcommand> --help` for all
-// five gated subcommands. A cluster whose EARLIER character is a value-taking
-// flag this catalog does not track stops the walk rather than guessing: no
-// match, which is the safe direction.
+// value shorthand) — verified against `gh 2.93.0 <subcommand> --help` for every
+// gated subcommand. A cluster whose EARLIER character is a value-taking flag
+// this catalog does not track stops the walk rather than guessing: no match,
+// which is the safe direction.
+//
+// UNKNOWN MEANS POSTING. When the parser cannot statically determine what a
+// `gh` call does — the subcommand is behind an expansion (`gh issue $SUB …`),
+// or a WRITE's `gh api` endpoint is — the call is treated as posting and
+// refused, not waved through. A guard whose unknown case is "allow" is
+// defeated by making the command harder to read, which is the cheapest
+// possible attack.
 //
 // DECLARED LIMITS (state these plainly; do not treat them as defects):
 //   - Nothing in this repo can stop a HUMAN pasting an unmarked comment into
@@ -71,15 +78,35 @@
 //   - A body computed at runtime (`--body "$MSG"`, a heredoc, stdin, a device)
 //     cannot be read from the command line, so it is REFUSED rather than
 //     inspected — never passed through.
-//   - `gh api` gating is scoped to a POST/PATCH/PUT whose endpoint ends in
-//     `comments`/`issues`/`reviews`/`pulls`. Read-only `gh api` calls and
-//     non-text writes (`…/issues/26/lock`) stay untouched, per this gate's
-//     acceptance criteria.
+//   - `gh api` gating is scoped to a POST/PATCH/PUT whose endpoint addresses
+//     a conversation resource (see apiEndpointPostsProse) and whose payload
+//     field is `body`/`message`/`commit_message`. Read-only `gh api` calls and
+//     non-text writes (`…/issues/26/lock`, `…/issues/26/labels`) stay
+//     untouched, per this gate's acceptance criteria. A prose field under some
+//     other name on a route this list does not know is not seen; the fix is to
+//     add the route/field here, and `gh api graphql` remains out of scope
+//     (below).
 //   - A USER-DEFINED `gh` alias (`gh alias set cmt 'issue comment'`, then
 //     `gh cmt 26 --body …`) resolves inside `gh`, from a config file this gate
 //     does not read, so the subcommand match cannot see it. Reading
 //     `gh alias list` would mean shelling out on every Bash call; the honest
 //     answer is that aliases are out of scope.
+//   - A `--body-file` (or `--notes-file`) is read AS IT STANDS WHEN THE HOOK
+//     RUNS, which is BEFORE the command executes. If the same command line
+//     writes that file first — `printf … > body.md && gh issue comment 26
+//     --body-file body.md` — the gate judges the OLD bytes, so a file that
+//     was marked a moment ago passes even though the text actually posted is
+//     the new, unmarked content. Nothing at this layer can fix it: the final
+//     content does not exist yet. What to do about it: write the body in a
+//     SEPARATE Bash call from the one that posts it (then the hook sees the
+//     real bytes on the posting call), or post through
+//     scripts/post-issue-comment.mjs, which renders the marker itself.
+//   - `gh pr create --fill` / `--fill-first` / `--fill-verbose` and
+//     `gh release create --generate-notes` compute the body inside `gh` or on
+//     GitHub's side, so there is no body on the command line to read or mark.
+//     They are not gated. Blocking them would block this repo's own release
+//     flow (docs/RELEASING.md), and a guard that blocks the release is a guard
+//     that gets routed around.
 //   - A RELATIVE `--body-file` path is resolved against the hook's working
 //     directory, not against a `cd` earlier in the same line. When that lookup
 //     fails the call is REFUSED (uninspectable), never allowed — so this costs
@@ -245,11 +272,56 @@ export function findFlagWords(tokens, flagSpecs, boolShorthands = []) {
   return hits;
 }
 
-// Every shape below is a GitHub-posting call, sourced verbatim from
-// `gh <subcommand> --help` (gh 2.93.0). `requireBody: true` means the bare
-// subcommand is NOT itself a posting call (`gh issue close 26` closes
-// silently, `gh pr review 12 --approve` carries no text) — only when it also
-// carries a body/comment/body-file flag does it post text.
+// ── The gated `gh` posting surface ───────────────────────────────────────────
+//
+// HOW THIS LIST WAS DERIVED (check it, don't trust it — re-run the recipe):
+//   1. Enumerate every `gh` command group and subcommand from `gh`'s own help,
+//      not from memory: parse the `COMMANDS` blocks of `gh --help`, then of
+//      `gh <group> --help`, then read `gh <group> <sub> --help`. Against
+//      gh 2.93.0 that is 33 groups; 32 subcommands declare a flag whose name
+//      suggests free text (`--body|--body-file|--comment|--notes|--notes-file|
+//      --desc|--description|--message|--title|--subject|--text|--note|--reason`).
+//   2. Keep a subcommand when BOTH criteria hold. They are conjunctive on
+//      purpose — either one alone gives an obviously wrong answer:
+//        (a) SURFACE — it publishes into a GitHub *conversation* about the
+//            work: an issue, a pull request, a review, or a release. This is
+//            what #78 is about: text a later automated run can read back and
+//            cite as a maintainer's own words.
+//        (b) BODY FLAG — the flag carries free-form, multi-line prose that the
+//            attribution banner can actually live in (`--body`, `--body-file`,
+//            `--comment`, `--notes`, `--notes-file`). A one-line metadata flag
+//            cannot hold a 4-line banner, so gating it would only ever produce
+//            a refusal nobody can satisfy except by overriding.
+//   3. Read that subcommand's FLAGS block for the exact pflag grammar — which
+//      short flags are BOOLEAN (so a cluster like `-sb "text"` parses) and
+//      which take a value. Those are the `boolShorthands` below. They differ
+//      per subcommand and cannot be shared: `-c` is a value-taking
+//      `--comment` on `gh issue close`, and a BOOLEAN review-type selector on
+//      `gh pr review`.
+//
+// DELIBERATELY EXCLUDED, with the criterion each one fails:
+//   - `gh secret set --body`, `gh variable set --body` — fail (a). `--body`
+//     here is the secret/variable VALUE, not prose. Gating them would block
+//     ordinary configuration and demand an attribution banner inside a secret.
+//     This pair is why criterion (a) exists: a flag-name-only rule gates them.
+//   - `gh repo create|edit --description`, `gh label create|edit --description`,
+//     `gh project create|copy|edit --title|--description`,
+//     `gh gpg-key add --title`, `gh ssh-key add --title` — fail (a) and (b):
+//     one-line metadata on an object, not commentary in a conversation.
+//   - `gh gist create|edit --desc` — fails (a) and (b). A gist's substance is
+//     its FILE content, which this gate cannot mark without corrupting the
+//     file; its `--desc` is a one-line label. Gating only the label would be
+//     incoherent. Named here because a reviewer flagged it: the exclusion is a
+//     judgment call, and this is where to argue with it.
+//   - `gh issue lock --reason`, `gh pr lock --reason`, `gh issue close --reason`
+//     — fail (b): a fixed enum (`off-topic`/`spam`/`completed`/…), not prose.
+//   - `--title` / `--subject` / `--text` on otherwise-gated subcommands — fail
+//     (b). The banner is multi-line; a title is not a place it can go. Where a
+//     subcommand has both, the BODY is what is gated.
+//
+// `requireBody: true` means the subcommand is not itself a posting call
+// (`gh issue close 26` closes silently, `gh pr review 12 --approve` carries no
+// text) — only when it also carries a body flag does it post prose.
 const POSTING_SHAPES = [
   {
     path: ["gh", "issue", "comment"],
@@ -262,8 +334,9 @@ const POSTING_SHAPES = [
   {
     path: ["gh", "issue", "close"],
     name: "gh issue close --comment",
-    // -c/--comment is the only body-carrying flag; this subcommand has no
-    // --body-file and no other short boolean flags.
+    // -c/--comment is the only body-carrying flag. -r/--reason and
+    // --duplicate-of take values but are not prose; this subcommand has no
+    // short BOOLEAN flags at all.
     boolShorthands: [],
     bodyFlags: [{ long: "--comment", short: "-c" }],
     fileFlags: [],
@@ -272,14 +345,33 @@ const POSTING_SHAPES = [
   {
     path: ["gh", "issue", "create"],
     name: "gh issue create",
-    // -e/--editor is the only OTHER short BOOLEAN flag. -a/-l/-m/-p are
-    // OTHER VALUE flags (assignee/label/milestone/project) — an earlier one
-    // in a cluster swallows the rest per real pflag, so they are
-    // deliberately NOT listed as bools; hitting one stops our walk with no
-    // match, which is the safe outcome (see findFlagValues doc).
-    boolShorthands: ["e"],
+    // -e/--editor and -w/--web are the OTHER short BOOLEAN flags. -a/-l/-m/-p
+    // are OTHER VALUE flags (assignee/label/milestone/project) — an earlier one
+    // in a cluster swallows the rest per real pflag, so they are deliberately
+    // NOT listed as bools; hitting one stops our walk with no match, which is
+    // the safe outcome (see findFlagValues doc).
+    boolShorthands: ["e", "w"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
+  },
+  {
+    path: ["gh", "issue", "edit"],
+    name: "gh issue edit --body",
+    // --remove-milestone is the only boolean and it has no shorthand.
+    // REPLACING an issue body is an ordinary way to publish agent prose — and
+    // it can also strip a marker a previous run put there.
+    boolShorthands: [],
+    bodyFlags: [{ long: "--body", short: "-b" }],
+    fileFlags: [{ long: "--body-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "issue", "reopen"],
+    name: "gh issue reopen --comment",
+    boolShorthands: [],
+    bodyFlags: [{ long: "--comment", short: "-c" }],
+    fileFlags: [],
+    requireBody: true,
   },
   {
     path: ["gh", "pr", "comment"],
@@ -287,6 +379,67 @@ const POSTING_SHAPES = [
     boolShorthands: ["e", "w"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
+  },
+  {
+    path: ["gh", "pr", "create"],
+    name: "gh pr create --body",
+    // -d/--draft, -e/--editor, -f/--fill, -w/--web are the short booleans.
+    // requireBody is TRUE here where `gh issue create`'s is FALSE, and the
+    // asymmetry is deliberate: `gh pr create --fill` computes the body from
+    // commit messages INSIDE gh, so there is no body on the command line to
+    // read or mark. Gating unconditionally would block `gh pr create --fill`,
+    // a documented step of this repo's own release flow (docs/RELEASING.md
+    // § 3), and a guard that blocks the release gets routed around. The cost
+    // is a declared limit, recorded in the header.
+    boolShorthands: ["d", "e", "f", "w"],
+    bodyFlags: [{ long: "--body", short: "-b" }],
+    fileFlags: [{ long: "--body-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "pr", "close"],
+    name: "gh pr close --comment",
+    // -d/--delete-branch is the only short boolean.
+    boolShorthands: ["d"],
+    bodyFlags: [{ long: "--comment", short: "-c" }],
+    fileFlags: [],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "pr", "edit"],
+    name: "gh pr edit --body",
+    boolShorthands: [],
+    bodyFlags: [{ long: "--body", short: "-b" }],
+    fileFlags: [{ long: "--body-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "pr", "merge"],
+    name: "gh pr merge --body",
+    // -d/--delete-branch, -m/--merge, -r/--rebase, -s/--squash are the
+    // short booleans. -t is --subject here (a one-line commit subject), NOT a
+    // body.
+    boolShorthands: ["d", "m", "r", "s"],
+    bodyFlags: [{ long: "--body", short: "-b" }],
+    fileFlags: [{ long: "--body-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "pr", "reopen"],
+    name: "gh pr reopen --comment",
+    boolShorthands: [],
+    bodyFlags: [{ long: "--comment", short: "-c" }],
+    fileFlags: [],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "pr", "revert"],
+    name: "gh pr revert --body",
+    // -d/--draft is the only short boolean.
+    boolShorthands: ["d"],
+    bodyFlags: [{ long: "--body", short: "-b" }],
+    fileFlags: [{ long: "--body-file", short: "-F" }],
+    requireBody: true,
   },
   {
     path: ["gh", "pr", "review"],
@@ -297,6 +450,46 @@ const POSTING_SHAPES = [
     boolShorthands: ["a", "c", "r"],
     bodyFlags: [{ long: "--body", short: "-b" }],
     fileFlags: [{ long: "--body-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "release", "create"],
+    name: "gh release create --notes",
+    // -d/--draft, -p/--prerelease and the long-only --generate-notes/--latest/
+    // --notes-from-tag/--verify-tag/--fail-on-no-commits are booleans.
+    // --generate-notes asks GitHub to write the notes, so nothing of ours is
+    // posted and nothing is gated — the same reasoning as `pr create --fill`.
+    boolShorthands: ["d", "p"],
+    bodyFlags: [{ long: "--notes", short: "-n" }],
+    fileFlags: [{ long: "--notes-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "release", "edit"],
+    name: "gh release edit --notes",
+    boolShorthands: [],
+    bodyFlags: [{ long: "--notes", short: "-n" }],
+    fileFlags: [{ long: "--notes-file", short: "-F" }],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "project", "item-create"],
+    name: "gh project item-create --body",
+    // Creates a DRAFT ISSUE inside a project — issue prose by another route.
+    // --body has no shorthand here.
+    boolShorthands: [],
+    bodyFlags: [{ long: "--body" }],
+    fileFlags: [],
+    requireBody: true,
+  },
+  {
+    path: ["gh", "project", "item-edit"],
+    name: "gh project item-edit --body",
+    // --text is a project FIELD value, not the draft issue's prose, so only
+    // --body is gated.
+    boolShorthands: [],
+    bodyFlags: [{ long: "--body" }],
+    fileFlags: [],
     requireBody: true,
   },
 ];
@@ -330,10 +523,73 @@ const API_FIELD_FLAGS = [
   { long: "--field", short: "-F" },
 ];
 const API_INPUT_FLAGS = [{ long: "--input" }];
-// Endpoints whose POST/PATCH/PUT body is PROSE published under our identity.
-// `…/issues/26/lock` or `…/issues/26/labels` are writes but not text, so they
-// are deliberately not gated.
-const API_TEXT_ENDPOINT_RE = /(?:^|\/)(comments|issues|reviews|pulls)\/?(?:\?.*)?$/;
+// Which `gh api` routes publish PROSE. DERIVED from GitHub's REST surface,
+// not from the routes a reviewer happened to demonstrate. Every route below
+// takes an authored-prose field on a write:
+//   …/issues · …/issues/{n} · …/issues/comments/{id}
+//   …/pulls · …/pulls/{n} · …/pulls/comments/{id}
+//   …/comments · …/comments/{id} · …/comments/{id}/replies
+//   …/reviews · …/reviews/{id} · …/reviews/{id}/events
+//   …/reviews/{id}/dismissals · …/pulls/{n}/merge
+//   …/releases · …/releases/{id}
+//   …/discussions[/{n}[/comments[/{id}]]]
+// One rule generates all of them: drop trailing ID-shaped segments, then ask
+// whether the segment that remains NAMES a conversation resource. That is why
+// `…/issues/26/lock` and `…/issues/26/labels` stay UNGATED — their tail is
+// `lock`/`labels`, not a conversation resource — while `PATCH …/issues/26` is
+// gated (drop `26`, the tail is `issues`). The previous end-anchored regex
+// only ever matched COLLECTION routes, so every item-level edit
+// (`PATCH …/issues/comments/999`) fell outside it.
+const API_PROSE_SEGMENTS = new Set([
+  "issues",
+  "pulls",
+  "comments",
+  "reviews",
+  "releases",
+  "discussions",
+  "replies",
+  "events",
+  "dismissals",
+  "merge",
+]);
+const API_ID_SEGMENT_RE = /^(?:\d+|\{[^}]*\}|:[A-Za-z_][\w-]*|[0-9a-f]{7,40})$/;
+// The payload fields those routes carry prose in. `body` covers issue/PR/
+// comment/review/release text; `message` is a review dismissal; the merge
+// commit message is `commit_message` (the same text `gh pr merge --body`
+// posts, so gating one channel and not the other would be incoherent).
+const API_PROSE_FIELD_RE = /^(?:body|message|commit_message)=/;
+
+/**
+ * Does this `gh api` endpoint address a surface where a write publishes prose?
+ * @param {string} endpoint
+ */
+export function apiEndpointPostsProse(endpoint) {
+  const route = String(endpoint || "")
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .split(/[?#]/)[0];
+  const segments = route.split("/").filter(Boolean);
+  let i = segments.length - 1;
+  while (i >= 0 && API_ID_SEGMENT_RE.test(segments[i])) i -= 1;
+  return i >= 0 && API_PROSE_SEGMENTS.has(segments[i].toLowerCase());
+}
+
+/** The `gh` command groups that own at least one gated posting subcommand. */
+const GATED_GROUPS = new Set(POSTING_SHAPES.map((s) => s.path[1]));
+
+/**
+ * The verdict for a `gh` call whose subcommand the gate cannot read. Reported
+ * as a posting candidate with an uninspectable body, so it refuses.
+ * @param {Record<string, string>} env
+ * @returns {PostingCandidate}
+ */
+function expandedSubcommandCandidate(env) {
+  return {
+    shape: "gh <subcommand hidden by expansion>",
+    uninspectable: true,
+    bodies: [],
+    env,
+  };
+}
 
 /** `gh`'s own flags that may legally precede the subcommand. */
 const GH_GLOBAL_VALUE_FLAGS = new Set(["--repo", "-R"]);
@@ -432,12 +688,33 @@ export function analyzeGhCandidate(candidate, ctx = {}) {
   const argv = (candidate && candidate.argv) || [];
   const env = (candidate && candidate.env) || {};
   const start = skipGhGlobalFlags(argv);
-  const sub1 = argv[start] ? argv[start].value : null;
+
+  // `--help`/`-h` makes gh print help and exit without contacting GitHub, so
+  // `gh issue comment --help` posts nothing. Blocking it was a pure false
+  // positive, and a guard that blocks reading the docs gets routed around.
+  if (argv.some((w) => w.value === "--help" || w.value === "-h")) return null;
+
+  const sub1Word = argv[start] || null;
+  // FAIL CLOSED on a subcommand this gate cannot read. `gh issue $SUB 26
+  // --body …` used to fall through to "posts nothing", which made the cheapest
+  // possible attack — hiding the subcommand behind an expansion — also the
+  // most effective one. Unknown now means POSTING: the candidate is reported
+  // as uninspectable, which refuses with the same message as an unreadable
+  // body. Pass the subcommand literally, or override deliberately.
+  if (sub1Word && sub1Word.expanded) return expandedSubcommandCandidate(env);
+  const sub1 = sub1Word ? sub1Word.value : null;
   if (!sub1) return null;
 
   if (sub1 === "api") return analyzeGhApi(argv.slice(start + 1), env, read);
 
-  const sub2 = argv[start + 1] ? argv[start + 1].value : null;
+  const sub2Word = argv[start + 1] || null;
+  // Only an expansion sitting where a GATED group's subcommand belongs is
+  // unknowable in the way that matters: no value of `$X` in `gh browse $X`
+  // can turn it into a posting call, so blocking that would be noise.
+  if (GATED_GROUPS.has(sub1) && sub2Word && sub2Word.expanded) {
+    return expandedSubcommandCandidate(env);
+  }
+  const sub2 = sub2Word ? sub2Word.value : null;
   const entry = POSTING_SHAPES.find((s) => s.path[1] === sub1 && s.path[2] === sub2);
   if (!entry) return null;
 
@@ -480,18 +757,21 @@ export function analyzeGhCandidate(candidate, ctx = {}) {
  * @returns {PostingCandidate|null}
  */
 function analyzeGhApi(argv, env, read) {
-  let endpoint = null;
+  let endpointWord = null;
   for (let k = 0; k < argv.length; ) {
     const token = argv[k].value;
     if (token.startsWith("-")) {
       k += API_VALUE_FLAGS.has(token) ? 2 : 1;
       continue;
     }
-    endpoint = token;
+    endpointWord = argv[k];
     break;
   }
-  if (!endpoint || !API_TEXT_ENDPOINT_RE.test(endpoint)) return null;
 
+  // Decide WRITE first, route second. A read posts nothing whatever its route,
+  // so an unreadable endpoint on a GET (`gh api "$EP"`) must not be refused —
+  // that would be noise. An unreadable endpoint on a WRITE is the fail-open
+  // case and is refused, the same inversion applied to a hidden subcommand.
   const methods = findFlagWords(argv, API_METHOD_FLAGS, []);
   const fields = findFlagWords(argv, API_FIELD_FLAGS, []);
   const inputs = findFlagWords(argv, API_INPUT_FLAGS, []);
@@ -500,6 +780,16 @@ function analyzeGhApi(argv, env, read) {
     ? ["POST", "PATCH", "PUT"].includes(method)
     : fields.length > 0 || inputs.length > 0;
   if (!isWrite) return null;
+  if (endpointWord && endpointWord.expanded) {
+    return {
+      shape: "gh api <endpoint hidden by expansion>",
+      uninspectable: true,
+      bodies: [],
+      env,
+    };
+  }
+  const endpoint = endpointWord ? endpointWord.value : null;
+  if (!endpoint || !apiEndpointPostsProse(endpoint)) return null;
 
   const result = {
     shape: `gh api ${method || "POST"} ${endpoint}`,
@@ -509,12 +799,12 @@ function analyzeGhApi(argv, env, read) {
   };
   if (inputs.length > 0) result.uninspectable = true;
   for (const field of fields) {
-    if (!/^body=/.test(field.value)) continue;
+    if (!API_PROSE_FIELD_RE.test(field.value)) continue;
     if (field.expanded) {
       result.uninspectable = true;
       continue;
     }
-    const value = field.value.slice("body=".length);
+    const value = field.value.slice(field.value.indexOf("=") + 1);
     if (value.startsWith("@")) {
       const file = value.slice(1);
       if (isUnreadablePath(file)) {
@@ -638,20 +928,29 @@ export function candidateProblem(candidate) {
   return null;
 }
 
-// Rung-2 doc-scan regex — deliberately requires the QUALIFYING flag for the
-// two shapes that have one (close/review), so a doc merely mentioning
-// `gh issue close <n>` (which does not post a body) isn't flagged. `\b`
-// after a bare flag name (e.g. `-c\b`) already matches an immediately
-// following `=` or `-` (both non-word chars), so this also catches the
-// `=`-form and `--body-file` (which contains `--body` as a prefix) — verified
-// empirically, not just by inspection, before relying on it here.
+// Rung-2 doc-scan regex — GENERATED FROM POSTING_SHAPES so the doc scan and
+// the runtime gate cannot describe different posting surfaces. (They used to
+// be two hand-kept lists; widening one and forgetting the other is exactly the
+// drift that let `gh issue edit --body` sit ungated.) A `requireBody` shape
+// also requires its QUALIFYING flag, so a doc merely mentioning
+// `gh issue close <n>` — which posts no body — isn't flagged. `\b` after a
+// bare flag name (e.g. `-c\b`) already matches an immediately following `=`
+// or `-` (both non-word chars), so this also catches the `=`-form and
+// `--body-file` (which contains `--body` as a prefix) — verified empirically,
+// not just by inspection, before relying on it here.
+function postingShapeDocPattern(shape) {
+  const [, group, sub] = shape.path;
+  const base = String.raw`\bgh\s+${group}\s+${sub}\b`;
+  if (!shape.requireBody) return base;
+  const flags = [...shape.bodyFlags, ...shape.fileFlags]
+    .flatMap((flag) => [flag.long, flag.short])
+    .filter(Boolean);
+  return String.raw`${base}[^\n]*(?:${flags.join("|")})\b`;
+}
+
 export const POSTING_RE = new RegExp(
   [
-    String.raw`\bgh\s+issue\s+comment\b`,
-    String.raw`\bgh\s+issue\s+close\b[^\n]*(?:--comment|-c)\b`,
-    String.raw`\bgh\s+issue\s+create\b`,
-    String.raw`\bgh\s+pr\s+comment\b`,
-    String.raw`\bgh\s+pr\s+review\b[^\n]*(?:--body|-b|--body-file|-F)\b`,
+    ...POSTING_SHAPES.map(postingShapeDocPattern),
     String.raw`\bmcp__github__add_issue_comment\b`,
     String.raw`\bmcp__github__create_issue\b`,
   ].join("|"),

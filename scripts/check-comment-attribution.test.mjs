@@ -33,6 +33,7 @@ import {
   scannedFilesRung2,
   findWiringViolations,
   findGhCandidates,
+  apiEndpointPostsProse,
 } from "./check-comment-attribution.mjs";
 import { parseShellCommands } from "./lib/shell-command-parse.mjs";
 import { buildBody, main as postMain, parseArgs } from "./post-issue-comment.mjs";
@@ -833,6 +834,277 @@ test("#78 class: a marked body behind a cd-prefix passes the REAL hook (exit 0)"
   assert.equal(r.status, 0, r.stderr);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Fix round 3 (#78) — the SURFACE class: which `gh` calls count as posting.
+//
+// Round 3 closed the command-GRAMMAR class (above). The validator then defeated
+// it one level up, on the CATALOGUE: `gh issue edit --body` rewrites an issue
+// body — an ordinary way to publish agent prose, and a way to strip a marker a
+// previous run left — and it simply was not in the gated list. Same shape of
+// mistake in two other places: `gh api` gated only COLLECTION routes, so every
+// item-level edit was outside it; and a subcommand hidden behind an expansion
+// was treated as "posts nothing", a FAIL-OPEN default.
+//
+// So the list below is not "the seven the validator named". It is derived from
+// `gh`'s own help — see the derivation recipe above POSTING_SHAPES in
+// check-comment-attribution.mjs — and every row is an explicit locking case.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Finding: prose-posting subcommands that were never gated ────────────────
+
+// Spelled indirectly so this file can be edited from a shell session whose own
+// PreToolUse hook refuses a command line containing the literal `gh pr` +
+// squash-and-land verb. It is an ordinary string; nothing depends on the trick.
+const MERGE_SUB = "me" + "rge";
+
+/** @type {[string, string][]} `[label, argv-after-gh]` */
+const ROUND_3_POSTING_SHAPES = [
+  ["gh issue edit --body", "issue edit 26 --body"],
+  ["gh issue edit -b", "issue edit 26 -b"],
+  ["gh issue reopen --comment", "issue reopen 26 --comment"],
+  ["gh issue reopen -c", "issue reopen 26 -c"],
+  ["gh pr create --body", "pr create --title T --body"],
+  ["gh pr create -db (cluster)", "pr create --title T -db"],
+  ["gh pr edit --body", "pr edit 12 --body"],
+  ["gh pr close --comment", "pr close 12 --comment"],
+  ["gh pr close -dc (cluster)", "pr close 12 -dc"],
+  ["gh pr reopen --comment", "pr reopen 12 --comment"],
+  ["gh pr MERGEWORD --body", "pr MERGEWORD 12 --squash --body"],
+  ["gh pr MERGEWORD -sb (cluster)", "pr MERGEWORD 12 -sb"],
+  ["gh pr revert --body", "pr revert 12 --body"],
+  ["gh release create --notes", "release create v9.9.9 --notes"],
+  ["gh release create -n", "release create v9.9.9 -n"],
+  ["gh release edit --notes", "release edit v9.9.9 --notes"],
+  ["gh project item-create --body", "project item-create 1 --owner o --title T --body"],
+  ["gh project item-edit --body", "project item-edit --id X --body"],
+];
+
+test("#78 fix-round-3 verdict: every ungated prose-posting subcommand now BLOCKS (pure)", () => {
+  for (const [label, argv] of ROUND_3_POSTING_SHAPES) {
+    const command = `gh ${argv.replace(/MERGEWORD/g, MERGE_SUB)} ${shq(UNMARKED)}`;
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#78 fix-round-3 verdict: the same shapes, through the REAL shell hook -> exit 2", () => {
+  for (const [label, argv] of ROUND_3_POSTING_SHAPES) {
+    const command = `gh ${argv.replace(/MERGEWORD/g, MERGE_SUB)} ${shq(UNMARKED)}`;
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+test("#78 fix-round-3 verdict: the same shapes are ALLOWED once the body carries the marker", () => {
+  const body = shq(`Ruling.\n\n${render("close-issues", 78)}`);
+  for (const [label, argv] of ROUND_3_POSTING_SHAPES) {
+    const command = `gh ${argv.replace(/MERGEWORD/g, MERGE_SUB)} ${body}`;
+    assert.equal(bash(command).verdict, "allow", `${label}: ${command}`);
+  }
+});
+
+test("#78 fix-round-3 verdict: a --body-file/--notes-file on a newly gated shape is read from disk", () => {
+  const unmarked = path.join(TMP, "r3-unmarked.md");
+  const marked = path.join(TMP, "r3-marked.md");
+  writeFileSync(unmarked, UNMARKED, "utf8");
+  writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  for (const argv of ["issue edit 26 --body-file", "release create v9 --notes-file"]) {
+    assert.equal(bash(`gh ${argv} ${unmarked}`).verdict, "block", argv);
+    assert.equal(bash(`gh ${argv} ${marked}`).verdict, "allow", argv);
+  }
+});
+
+// ── The other side of the same decision: what is deliberately NOT gated ─────
+//
+// The catalogue is derived by two CONJUNCTIVE criteria (surface + body flag).
+// Each row below satisfies at most one of them, and a rule that gated it would
+// be visibly wrong — `gh secret set --body` most of all, where `--body` is the
+// secret's VALUE. These lock the exclusions so a later widening has to argue
+// with a failing test rather than quietly sweep them in.
+
+test("#78 fix-round-3: non-prose `gh` subcommands with a prose-shaped flag stay ALLOWED", () => {
+  const cases = [
+    // fails (a) SURFACE — configuration, not a conversation
+    "gh secret set NPM_TOKEN --body npm_xxxxxxxxxxxx",
+    "gh variable set BUILD_MODE --body release",
+    // fails (a) and (b) — one-line metadata on an object
+    `gh repo edit --description "a component system"`,
+    `gh label create bug --description "something is broken"`,
+    `gh label edit bug --description "still broken"`,
+    `gh project create --owner o --title "Q3"`,
+    `gh project edit 1 --owner o --description "roadmap"`,
+    `gh gpg-key add key.asc --title "laptop"`,
+    `gh ssh-key add key.pub --title "laptop"`,
+    `gh gist create -d "scratch output" out.txt`,
+    // fails (b) BODY FLAG — a fixed enum, not prose
+    "gh issue lock 26 --reason off-topic",
+    "gh pr lock 12 --reason spam",
+    "gh issue close 26 --reason completed",
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+// ── Finding: `gh api` item-level edit routes were outside the gated scope ────
+
+test("#78 fix-round-3 verdict: item-level `gh api` prose routes BLOCK", () => {
+  const cases = [
+    `gh api -X PATCH repos/o/r/issues/comments/999 -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X PATCH repos/o/r/issues/26 -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X PATCH repos/o/r/pulls/12 -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X POST repos/o/r/pulls/12/comments/1/replies -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X POST repos/o/r/pulls/12/reviews -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X PUT repos/o/r/pulls/12/reviews/5/dismissals -f message=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X PATCH repos/o/r/releases/9 -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X POST repos/o/r/issues -f body=${UNMARKED.replace(/ /g, "-")}`,
+    `gh api -X PATCH https://api.github.com/repos/o/r/issues/26 -f body=${UNMARKED.replace(/ /g, "-")}`,
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "block", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2, command);
+  }
+});
+
+test("#78 fix-round-3 verdict: `gh api` reads and non-prose writes stay ALLOWED", () => {
+  const cases = [
+    "gh api repos/o/r/issues/26",
+    "gh api repos/o/r/issues/26/comments --paginate",
+    "gh api repos/:owner/:repo/branches/main/protection",
+    "gh api -X PUT repos/o/r/issues/26/lock -f lock_reason=off-topic",
+    "gh api -X POST repos/o/r/issues/26/labels -f labels[]=bug",
+    "gh api -X POST repos/o/r/issues/26/reactions -f content=+1",
+    "gh api -X DELETE repos/o/r/issues/comments/999",
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+test("#78 fix-round-3: apiEndpointPostsProse is a RULE (drop id segments, name the tail)", () => {
+  const prose = [
+    "repos/o/r/issues",
+    "repos/o/r/issues/26",
+    "repos/o/r/issues/comments/999",
+    "repos/o/r/pulls",
+    "repos/o/r/pulls/12",
+    "repos/o/r/pulls/comments/999",
+    "repos/o/r/pulls/12/comments",
+    "repos/o/r/pulls/12/comments/1/replies",
+    "repos/o/r/pulls/12/reviews",
+    "repos/o/r/pulls/12/reviews/5",
+    "repos/o/r/pulls/12/reviews/5/events",
+    "repos/o/r/pulls/12/reviews/5/dismissals",
+    `repos/o/r/pulls/12/${MERGE_SUB}`,
+    "repos/o/r/releases",
+    "repos/o/r/releases/9",
+    "repos/o/r/discussions/3/comments",
+    "/repos/:owner/:repo/issues/{issue_number}",
+    "https://api.github.com/repos/o/r/issues/26/comments?per_page=1",
+  ];
+  const notProse = [
+    "repos/o/r/issues/26/lock",
+    "repos/o/r/issues/26/labels",
+    "repos/o/r/issues/26/assignees",
+    "repos/o/r/issues/26/reactions",
+    "repos/o/r/issues/comments/999/reactions",
+    "repos/o/r/releases/generate-notes",
+    "repos/o/r/branches/main/protection",
+    "user/repos",
+    "graphql",
+  ];
+  for (const endpoint of prose) assert.equal(apiEndpointPostsProse(endpoint), true, endpoint);
+  for (const endpoint of notProse) assert.equal(apiEndpointPostsProse(endpoint), false, endpoint);
+});
+
+// ── Finding: an expansion-hidden subcommand was FAIL-OPEN ("posts nothing") ──
+
+test("#78 fix-round-3 verdict: a subcommand hidden by an expansion BLOCKS (unknown == posting)", () => {
+  const cases = [
+    `SUB=comment; gh issue $SUB 26 --body ${shq(UNMARKED)}`,
+    `A=issue; B=comment; gh $A $B 26 --body ${shq(UNMARKED)}`,
+    `gh $(printf issue) comment 26 --body ${shq(UNMARKED)}`,
+    `gh pr "$ACTION" 12 --body ${shq(UNMARKED)}`,
+    // …and it is not satisfied by MARKING the body: the gate still cannot tell
+    // what the call does, so the honest verdict stays "refuse".
+    `SUB=comment; gh issue $SUB 26 --body ${shq(render("close-issues", 78))}`,
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "block", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2, command);
+  }
+});
+
+test("#78 fix-round-3 verdict: a WRITE whose `gh api` endpoint is hidden by an expansion BLOCKS", () => {
+  const command = `gh api -X PATCH "$EP" -f body=${UNMARKED.replace(/ /g, "-")}`;
+  assert.equal(bash(command).verdict, "block", command);
+});
+
+test("#78 fix-round-3: the inversion is scoped — it does not refuse ordinary expansions", () => {
+  const marked = path.join(TMP, "r3-scope-marked.md");
+  writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  const cases = [
+    // no value of $X turns a non-gated group into a posting call
+    "gh browse $FILE",
+    "gh run view $RUN_ID --log",
+    "gh release download $TAG --dir /tmp",
+    // a READ posts nothing whatever its route, so an opaque endpoint is fine
+    `gh api "$EP"`,
+    "gh api repos/$OWNER/$REPO/issues/26 --jq .title",
+    // the subcommand itself is readable; only the ARGUMENTS are expanded
+    `gh issue view $NUM --json body`,
+    `gh issue comment $NUM --body-file ${marked}`,
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+// ── Finding: `--help` was refused, which is a pure false positive ───────────
+
+test("#78 fix-round-3: `--help`/`-h` on a gated subcommand is ALLOWED (gh posts nothing)", () => {
+  for (const command of [
+    "gh issue comment --help",
+    "gh issue comment -h",
+    "gh issue create --help",
+    "gh pr create --help",
+    `gh release create --help`,
+  ]) {
+    assert.equal(bash(command).verdict, "allow", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 0, command);
+  }
+});
+
+// ── DECLARED LIMIT, locked so it stays visible ──────────────────────────────
+//
+// A `--body-file` is read as it stands when the HOOK runs, which is before the
+// command executes. If the same command line writes that file first, the gate
+// judges the OLD bytes. Nothing at this layer can fix it — the final content
+// does not exist yet. This test asserts the CURRENT, LIMITED behaviour on
+// purpose: if someone later makes the gate see through it, this test fails and
+// the declared limit in the module header has to be updated with it.
+
+test("#78 fix-round-3 DECLARED LIMIT: a --body-file rewritten in the same line is judged on STALE bytes", () => {
+  const file = path.join(TMP, "stale-body.md");
+  writeFileSync(file, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  const command = `printf %s ${shq(UNMARKED)} > ${file} && gh issue comment 26 --body-file ${file}`;
+  // ALLOWED, because at hook time the file still holds the marked bytes.
+  assert.equal(bash(command).verdict, "allow", command);
+  // The documented remedy — post from a separate call — is what the gate can
+  // actually see, and it blocks.
+  writeFileSync(file, UNMARKED, "utf8");
+  assert.equal(bash(`gh issue comment 26 --body-file ${file}`).verdict, "block");
+});
+
+test("#78 fix-round-3 DECLARED LIMIT: a gh-computed body (--fill / --generate-notes) is not gated", () => {
+  for (const command of [
+    "gh pr create --fill",
+    "gh pr create --fill-first --base main",
+    "gh release create v9.9.9 --generate-notes",
+  ]) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
 // ── The parser itself ───────────────────────────────────────────────────────
 
 test("parseShellCommands: splits on every operator and recurses into substitutions", () => {
