@@ -32,7 +32,21 @@ import {
   findUnguardedPostingSites,
   scannedFilesRung2,
   findWiringViolations,
+  findGhCandidates,
 } from "./check-comment-attribution.mjs";
+import { parseShellCommands } from "./lib/shell-command-parse.mjs";
+import { buildBody, main as postMain, parseArgs } from "./post-issue-comment.mjs";
+
+/**
+ * Quote a string for a real double-quoted shell word. `JSON.stringify` is NOT
+ * a shell quoter: the marker banner contains backticks (`` `close-issues` ``),
+ * which bash would run as command substitution — the gate is right to refuse
+ * that, so the tests must spell the safe form.
+ * @param {string} text
+ */
+function shq(text) {
+  return `"${text.replace(/(["\\`$])/g, "\\$1")}"`;
+}
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..");
@@ -278,12 +292,12 @@ test("evaluateHookPayload: ALLOWS the same equals-form calls once marked", () =>
   const body = render("close-issues", 78);
   const v1 = evaluateHookPayload({
     tool_name: "Bash",
-    tool_input: { command: `gh issue close 26 --comment=${JSON.stringify(body)}` },
+    tool_input: { command: `gh issue close 26 --comment=${shq(body)}` },
   });
   assert.equal(v1.verdict, "allow");
   const v2 = evaluateHookPayload({
     tool_name: "Bash",
-    tool_input: { command: `gh pr review 12 --body=${JSON.stringify(body)}` },
+    tool_input: { command: `gh pr review 12 --body=${shq(body)}` },
   });
   assert.equal(v2.verdict, "allow");
 });
@@ -396,7 +410,7 @@ test("regression lock (#78): the exact machine-drafted body that triggered this 
   assert.equal(hasMarker(body), false);
   const v = evaluateHookPayload({
     tool_name: "Bash",
-    tool_input: { command: `gh issue comment 26 --body ${JSON.stringify(body)}` },
+    tool_input: { command: `gh issue comment 26 --body ${shq(body)}` },
   });
   assert.equal(v.verdict, "block");
 });
@@ -610,4 +624,327 @@ test("hook: a non-tool-name it does not recognize is left alone", () => {
   const r = runHook({ tool_name: "Read", tool_input: { file_path: "/tmp/x" } });
   assert.equal(r.status, 0);
   assert.equal(r.stderr.trim(), "");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fix round 2 (#78) — the COMMAND-GRAMMAR bypass class.
+//
+// Rounds 1 and 2 both patched the symptom a validator named and left the class
+// intact: round 1 recognized only `--flag value`, round 2 fixed the flag
+// grammar but still required `gh` to be token[0], so every posting shape walked
+// through behind an ordinary `cd X && ` prefix. The root cause is that a shell
+// command line is a small LANGUAGE, not a string to pattern-match. Every case
+// below is a command an independent validator actually RAN against the real
+// hook and observed exit 0 (silently allowed); each is now an explicit,
+// named locking case. See `.claude/rules/quality-gates.md` ▸ "Self-tested gates".
+// ─────────────────────────────────────────────────────────────────────────────
+
+const UNMARKED = "unmarked ruling text";
+
+function bash(command) {
+  return evaluateHookPayload({ tool_name: "Bash", tool_input: { command } });
+}
+
+// ── Finding 1 — the 13 commands the validator reproduced as ALLOW(0) ────────
+
+const FINDING_1_BYPASSES = [
+  [`cd /tmp && gh issue comment 26 --body "${UNMARKED}"`, "cd-prefix, gh issue comment"],
+  [`cd /tmp && gh issue close 26 --comment "${UNMARKED}"`, "cd-prefix, gh issue close"],
+  [`cd /tmp && gh issue create -t T --body "${UNMARKED}"`, "cd-prefix, gh issue create"],
+  [`cd /tmp && gh pr comment 12 --body "${UNMARKED}"`, "cd-prefix, gh pr comment"],
+  [`cd /tmp && gh pr review 12 --body "${UNMARKED}"`, "cd-prefix, gh pr review"],
+  [`git status --short\ngh issue comment 26 --body "${UNMARKED}"`, "multi-line Bash script"],
+  [`true; gh issue comment 26 --body "${UNMARKED}"`, "semicolon-chained"],
+  [`(gh issue comment 26 --body "${UNMARKED}")`, "subshell"],
+  [`GH_HOST=github.com gh issue comment 26 --body "${UNMARKED}"`, "env-var prefix"],
+  [`/opt/homebrew/bin/gh issue comment 26 --body "${UNMARKED}"`, "absolute path to gh"],
+  [`gh issue view 26 && gh issue comment 26 --body "${UNMARKED}"`, "chained after a read call"],
+  [`gh --repo mreimitz/brand-ui issue comment 26 --body "${UNMARKED}"`, "gh global --repo"],
+  [`gh -R mreimitz/brand-ui issue comment 26 --body "${UNMARKED}"`, "gh global -R"],
+];
+
+test("#78 fix-round-2 verdict Finding 1: every prefixed/positional bypass BLOCKS (pure)", () => {
+  for (const [command, label] of FINDING_1_BYPASSES) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#78 fix-round-2 verdict Finding 1: the same 13, through the REAL shell hook -> exit 2", () => {
+  for (const [command, label] of FINDING_1_BYPASSES) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+// ── Finding 2 — repeated flags: the checker read the FIRST, gh uses the LAST ─
+
+test("#78 fix-round-2 verdict Finding 2: a repeated --body-file (marked then unmarked) BLOCKS", () => {
+  const marked = path.join(TMP, "dup-marked.md");
+  const unmarked = path.join(TMP, "dup-unmarked.md");
+  writeFileSync(marked, render("close-issues", 78), "utf8");
+  writeFileSync(unmarked, UNMARKED, "utf8");
+  const command = `gh issue comment 26 --body-file ${marked} --body-file ${unmarked}`;
+  assert.equal(bash(command).verdict, "block", command);
+  assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2);
+});
+
+test("#78 fix-round-2 verdict Finding 2: a repeated --body (marked then unmarked) BLOCKS", () => {
+  const command = `gh issue comment 26 --body ${shq(render("close-issues", 78))} --body ${shq(UNMARKED)}`;
+  assert.equal(bash(command).verdict, "block", command);
+  assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2);
+});
+
+// ── Finding 3 — only the FIRST posting call in a command line was inspected ──
+
+test("#78 fix-round-2 verdict Finding 3: a SECOND posting call after a marked one BLOCKS", () => {
+  const banner = shq(render("close-issues", 78));
+  const command = `gh issue comment 26 --body ${banner} ; gh issue comment 26 --body ${shq(UNMARKED)}`;
+  assert.equal(bash(command).verdict, "block", command);
+  assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2);
+});
+
+test("#78 fix-round-2 verdict Finding 3: `-F <marked> && … --body <unmarked>` BLOCKS", () => {
+  const marked = path.join(TMP, "chain-marked.md");
+  writeFileSync(marked, render("close-issues", 78), "utf8");
+  const command = `gh issue comment 26 -F ${marked} && gh issue comment 26 --body ${shq(UNMARKED)}`;
+  assert.equal(bash(command).verdict, "block", command);
+  assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2);
+});
+
+// ── Finding 4 — the override in the form the docs imply (an inline prefix) ───
+
+test("#78 fix-round-2 verdict Finding 4: an INLINE ALLOW_UNATTRIBUTED_COMMENT=1 prefix overrides LOUDLY", () => {
+  const command = `ALLOW_UNATTRIBUTED_COMMENT=1 gh issue comment 26 --body "${UNMARKED}"`;
+  const r = runHook({ tool_name: "Bash", tool_input: { command } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, /OVERRIDDEN by ALLOW_UNATTRIBUTED_COMMENT=1/);
+});
+
+test("#78 fix-round-2 verdict Finding 4: an inline ALLOW_UNATTRIBUTED_COMMENT=0 does NOT override", () => {
+  const command = `ALLOW_UNATTRIBUTED_COMMENT=0 gh issue comment 26 --body "${UNMARKED}"`;
+  assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2);
+});
+
+// ── Finding 5 — `gh api` POST is a real posting channel ─────────────────────
+
+test("#78 fix-round-2 verdict Finding 5: `gh api -X POST …/comments -f body=<unmarked>` BLOCKS", () => {
+  const command = `gh api -X POST repos/o/r/issues/26/comments -f body='${UNMARKED}'`;
+  assert.equal(bash(command).verdict, "block", command);
+  assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2);
+});
+
+test("#78 fix-round-2 verdict Finding 5: the same `gh api` POST with a marked body is ALLOWED", () => {
+  const command = `gh api -X POST repos/o/r/issues/26/comments -f body=${shq(render("close-issues", 78))}`;
+  assert.equal(bash(command).verdict, "allow", command);
+});
+
+test("#78 fix-round-2 verdict Finding 5: read-only `gh api` calls stay untouched", () => {
+  for (const command of [
+    "gh api repos/:owner/:repo/issues",
+    "gh api repos/:owner/:repo/branches/main/protection",
+    "gh api repos/o/r/issues/26/comments --jq '.[].body'",
+    "gh api -X POST repos/o/r/issues/26/lock",
+  ]) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+// ── Finding 7 — the refusal must SHOW the marker text ───────────────────────
+
+test("#78 fix-round-2 verdict Finding 7: the refusal message contains the literal marker bytes", () => {
+  const v = bash(`gh issue comment 26 --body "${UNMARKED}"`);
+  assert.equal(v.verdict, "block");
+  assert.ok(v.reason.includes(MARKER), "HTML-comment half must be quoted verbatim");
+  assert.ok(v.reason.includes(BLOCKQUOTE_PHRASE), "blockquote half must be quoted verbatim");
+});
+
+// ── The class, not just the named instances: further shell grammar ───────────
+
+test("#78 class: shell grammar beyond the reported cases still BLOCKS", () => {
+  const marked = path.join(TMP, "class-marked.md");
+  writeFileSync(marked, render("close-issues", 78), "utf8");
+  const cases = [
+    [`bash -c 'gh issue comment 26 --body "${UNMARKED}"'`, "bash -c"],
+    [`eval "gh issue comment 26 --body '${UNMARKED}'"`, "eval"],
+    [`OUT=$(gh issue comment 26 --body '${UNMARKED}')`, "command substitution"],
+    [`echo $(gh pr comment 12 --body '${UNMARKED}')`, "bare command substitution"],
+    [`cd /tmp \\\n  && gh issue comment 26 --body '${UNMARKED}'`, "line continuation"],
+    [`if true; then gh issue comment 26 --body '${UNMARKED}'; fi`, "if/then"],
+    [`for i in 1; do gh issue comment 26 --body '${UNMARKED}'; done`, "for/do"],
+    [`gh issue comment 26 --body '${UNMARKED}' | tee /tmp/log`, "piped out"],
+    [`xargs gh issue comment 26 --body '${UNMARKED}'`, "xargs wrapper"],
+    [`env GH_HOST=x gh issue comment 26 --body '${UNMARKED}'`, "env wrapper"],
+    [`gh issue comment 26 --body '${UNMARKED}' > /tmp/out.log`, "redirected stdout"],
+    [`gh issue comment 26 --body '${UNMARKED}' &`, "backgrounded"],
+    [
+      `gh issue comment 26 --body '${UNMARKED}' # ${MARKER} ${BLOCKQUOTE_PHRASE}`,
+      "marker in a trailing comment",
+    ],
+    [`gh issue comment 26 --body "$MSG"`, "body from a variable (uninspectable)"],
+    [`gh issue comment 26 --body-file "$TMPDIR/body.md"`, "body-file from a variable"],
+    [`gh issue comment 26 --body-file /dev/stdin`, "body-file /dev/stdin"],
+    [`cd /tmp && gh issue comment 26 -F -`, "uninspectable behind a prefix"],
+    [
+      `gh issue comment 26 --body-file ${marked} --body '${UNMARKED}'`,
+      "mixed marked file + unmarked inline",
+    ],
+  ];
+  for (const [command, label] of cases) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+// ── A guard that blocks ordinary work gets routed around: these MUST pass ────
+
+test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
+  const marked = path.join(TMP, "legit-marked.md");
+  writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  const cases = [
+    "cd /tmp && gh issue view 26 --json comments",
+    "gh issue list --state open --limit 50",
+    "cd /repo && git status --short && pnpm test",
+    `grep -rn "gh issue comment" .claude/commands`,
+    `rg --no-heading 'gh issue close --comment' .claude`,
+    "gh pr view 12 --json statusCheckRollup",
+    "gh pr checks 12 && gh run list --limit 3",
+    "which gh && gh --version",
+    `echo "gh issue comment 26 --body x"`,
+    "node scripts/post-issue-comment.mjs 26 --command close-issues --body-file /tmp/x.md",
+    `cd /tmp && gh issue comment 26 --body-file ${marked}`,
+    `gh issue comment 26 --body-file ${marked} && gh issue view 26`,
+    `bash -c 'gh issue view 26'`,
+    "pnpm attribution:comments:check && pnpm attribution:comments:check:test",
+    "gh issue close 26",
+    "gh pr review 12 --approve",
+  ];
+  for (const command of cases) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+test("#78 class: a marked body behind a cd-prefix passes the REAL hook (exit 0)", () => {
+  const marked = path.join(TMP, "legit-hook-marked.md");
+  writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  const r = runHook({
+    tool_name: "Bash",
+    tool_input: { command: `cd /tmp && gh issue comment 26 --body-file ${marked}` },
+  });
+  assert.equal(r.status, 0, r.stderr);
+});
+
+// ── The parser itself ───────────────────────────────────────────────────────
+
+test("parseShellCommands: splits on every operator and recurses into substitutions", () => {
+  const { commands } = parseShellCommands(`cd /tmp && gh issue comment 26 --body "hi there"`);
+  const argvs = commands.map((c) => c.words.map((w) => w.value));
+  assert.deepEqual(argvs[0], ["cd", "/tmp"]);
+  assert.deepEqual(argvs[1], ["gh", "issue", "comment", "26", "--body", "hi there"]);
+});
+
+test("parseShellCommands: marks a word carrying an unresolvable expansion", () => {
+  const { commands } = parseShellCommands(`gh issue comment 26 --body "$MSG"`);
+  const last = commands[0].words.at(-1);
+  assert.equal(last.expanded, true);
+});
+
+test("parseShellCommands: a quoted posting command is ONE word, not a command", () => {
+  const { commands } = parseShellCommands(`echo "gh issue comment 26 --body x"`);
+  assert.deepEqual(
+    commands.map((c) => c.words.map((w) => w.value)),
+    [["echo", "gh issue comment 26 --body x"]],
+  );
+});
+
+test("findGhCandidates: finds gh at ANY position, through paths and assignments", () => {
+  for (const command of [
+    "gh issue comment 26 --body x",
+    "cd /tmp && gh issue comment 26 --body x",
+    "FOO=1 BAR=2 /usr/local/bin/gh issue comment 26 --body x",
+    "xargs gh issue comment 26 --body x",
+  ]) {
+    const { commands } = parseShellCommands(command);
+    assert.equal(findGhCandidates(commands).length, 1, command);
+  }
+});
+
+test("#78 class: an UNESCAPED backtick in a double-quoted body is refused, not trusted", () => {
+  // `JSON.stringify(render())` looks like a marked body but bash would run
+  // `close-issues` as a command substitution, so the bytes that reach GitHub
+  // are NOT the ones the gate can see. Refusing is the only honest answer.
+  const command = `gh issue comment 26 --body ${JSON.stringify(render("close-issues", 78))}`;
+  const v = bash(command);
+  assert.equal(v.verdict, "block");
+  assert.match(v.reason, /cannot be inspected/i);
+});
+
+test("#78 class: an opaque command word and a command hidden in a variable still BLOCK", () => {
+  const cases = [
+    [`$(echo gh) issue comment 26 --body '${UNMARKED}'`, "command word from a substitution"],
+    [`$GH_BIN issue comment 26 --body '${UNMARKED}'`, "command word from a variable"],
+    [`CMD="gh issue comment 26 --body ${UNMARKED}"; $CMD`, "whole command in a variable"],
+    [`export CMD='gh pr comment 12 --body ${UNMARKED}'`, "exported assignment"],
+  ];
+  for (const [command, label] of cases) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#78 class: an opaque command word with a NON-posting subcommand is left alone", () => {
+  for (const command of [
+    "$(which gh) --version",
+    "$GH_BIN issue view 26",
+    'MSG="hello there"; echo $MSG',
+    'PNPM_CMD="pnpm test"; $PNPM_CMD',
+  ]) {
+    assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+test("#78 class: a heredoc is scoped to the command that USES it, not the whole line", () => {
+  // A script that writes a body with `cat > body.md <<EOF` and then posts
+  // `--body-file body.md` is perfectly inspectable. Refusing it (because the
+  // LINE contains a heredoc) is the kind of false block that gets a gate routed
+  // around — the opposite of what #78 is for.
+  const file = path.join(TMP, "heredoc-marked.md");
+  writeFileSync(file, `Done.\n\n${render("close-issues", 78)}`, "utf8");
+  assert.equal(
+    bash(`cat > ${file} <<EOF\nhello\nEOF\ngh issue comment 26 --body-file ${file}`).verdict,
+    "allow",
+  );
+  // …but a heredoc feeding the posting call itself is still refused.
+  assert.equal(bash(`gh issue comment 26 -F - <<EOF\nhello\nEOF`).verdict, "block");
+});
+
+// ── post-issue-comment.mjs — the one sanctioned posting path ────────────────
+// It is the script every updated rule tells agents to route through, so its
+// argv parsing and body assembly get a regression lock of their own. The `gh`
+// exec itself is deliberately not exercised (it would really post).
+
+test("post-issue-comment: parseArgs reads the issue, command, body forms and --close", () => {
+  assert.deepEqual(parseArgs(["26", "--command", "close-issues", "--body", "hi"]), {
+    _: ["26"],
+    command: "close-issues",
+    body: "hi",
+  });
+  assert.deepEqual(parseArgs(["26", "--body-file", "/tmp/x.md", "--close"]), {
+    _: ["26"],
+    bodyFile: "/tmp/x.md",
+    close: true,
+  });
+});
+
+test("post-issue-comment: buildBody always produces a body the gate accepts", () => {
+  const withDraft = buildBody({ draft: "Fixed in #99.", command: "close-issues", issueNumber: 78 });
+  assert.ok(hasMarker(withDraft), "a drafted body carries both marker halves");
+  assert.ok(withDraft.startsWith("Fixed in #99."), "the draft stays first, the banner trails");
+  const empty = buildBody({ draft: "   ", command: "file-issue", issueNumber: 78 });
+  assert.ok(hasMarker(empty), "even an empty draft yields a marked body");
+  assert.equal(bash(`gh issue comment 26 --body ${shq(withDraft)}`).verdict, "allow");
+});
+
+test("post-issue-comment: refuses to run without an issue number or a body", () => {
+  assert.equal(postMain([]), 1, "no issue number");
+  assert.equal(postMain(["not-a-number", "--body", "hi"]), 1, "non-numeric issue");
+  assert.equal(postMain(["26", "--command", "close-issues"]), 1, "no --body/--body-file");
 });

@@ -10,16 +10,18 @@
 # automation output and had to escalate to a human before it could act.
 #
 # This hook refuses (exit 2) a `gh issue comment` / `gh issue close --comment`
-# / `gh issue create` / `gh pr comment` / `gh pr review --body` Bash call, or a
-# call to mcp__github__add_issue_comment / mcp__github__create_issue, whose
-# body does not carry the machine-attribution marker (see
+# / `gh issue create` / `gh pr comment` / `gh pr review --body` Bash call, a
+# `gh api` POST/PATCH/PUT to a comment/issue/review endpoint, or a call to
+# mcp__github__add_issue_comment / mcp__github__create_issue, whose body does
+# not carry the machine-attribution marker (see
 # scripts/lib/comment-attribution.mjs). A body the hook cannot statically
-# inspect (stdin redirect, heredoc, piped input) is refused outright, not
-# passed through.
+# inspect (stdin redirect, heredoc, piped input, a device, or a `\$VAR`/`\$( … )`
+# the shell would expand) is refused outright, not passed through.
 #
-# Known, accepted limit: nothing here can stop a human from pasting an
-# unmarked comment straight into the GitHub web UI — this binds the
-# agent/CLI/MCP tool path inside a Claude Code session only.
+# The decision is made by PARSING the command line, not by matching it — the
+# guard walks every simple command in the line and treats any `gh` invocation
+# as a candidate wherever it sits. `scripts/check-comment-attribution.mjs`'s
+# header explains why, and names the declared limits.
 set -u
 
 input="$(cat 2>/dev/null || true)"
@@ -36,7 +38,14 @@ if [ ! -f "$guard" ]; then
   exit 0
 fi
 
-if out="$(printf '%s' "$input" | node "$guard" --hook 2>&1)"; then
+# The guard may ALLOW and still have something to say — the documented
+# ALLOW_UNATTRIBUTED_COMMENT=1 override is "loud, logged", so its warning has to
+# reach stderr instead of being swallowed with the success status (#78 fix
+# round 2, verdict Finding 4).
+out="$(printf '%s' "$input" | node "$guard" --hook 2>&1)"
+rc=$?
+if [ "$rc" -eq 0 ]; then
+  [ -n "$out" ] && printf '%s\n' "$out" >&2
   exit 0
 fi
 
@@ -44,6 +53,8 @@ cat >&2 <<MSG
 ⛔ comment-attribution gate: refusing to post (#78).
 $out
 
-Override (a human typing their own ruling through the CLI only): ALLOW_UNATTRIBUTED_COMMENT=1
+Override (a human typing their own ruling through the CLI only) — either form:
+  ALLOW_UNATTRIBUTED_COMMENT=1 gh issue comment …   (inline prefix)
+  export ALLOW_UNATTRIBUTED_COMMENT=1               (session environment)
 MSG
 exit 2

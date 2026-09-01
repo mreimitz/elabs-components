@@ -66,15 +66,40 @@ authority loop where automation authorizes itself.
   (`.claude/hooks/gate-comment-attribution.sh` +
   `scripts/check-comment-attribution.mjs`) blocks a `gh issue comment` /
   `gh issue close --comment` / `gh issue create` / `gh pr comment` /
-  `gh pr review --body` Bash call, or `mcp__github__add_issue_comment` /
+  `gh pr review --body` Bash call, a `gh api` POST/PATCH/PUT to a
+  comment/issue/review endpoint, or `mcp__github__add_issue_comment` /
   `mcp__github__create_issue`, whose body is missing the marker. A body the hook
-  cannot statically inspect (stdin redirect, heredoc, piped input) is **refused
-  outright**, not passed through. `pnpm attribution:comments:check` separately
-  scans `.claude/commands/*.md`, `.claude/agents/*.md`, `.claude/hooks/*.sh` and
+  cannot statically inspect (stdin redirect, heredoc, piped input, a device, or
+  a `$VAR`/`$(…)` the shell would expand) is **refused outright**, not passed
+  through. `pnpm attribution:comments:check` separately scans
+  `.claude/commands/*.md`, `.claude/agents/*.md`, `.claude/hooks/*.sh` and
   `skills/**` so a doc that tells an agent to post a comment must also point it
-  at the helper/marker. A human typing their own ruling through the CLI may
-  override the hook with `ALLOW_UNATTRIBUTED_COMMENT=1`.
-- **Known, accepted limit.** Nothing here can stop a human from pasting an
-  unmarked comment straight into the GitHub web UI — this gate binds the
-  agent/CLI/MCP tool path inside a Claude Code session, not GitHub itself. That
-  is intentional, not a gap to close.
+  at the helper/marker.
+- **The hook PARSES the command line; it does not pattern-match it.** Two
+  earlier rounds of this gate were defeated by ordinary shell grammar — first by
+  `--body=value` (only `--body value` was recognized), then by `cd X && gh …`
+  (only `gh` at token 0 was recognized). The guard now tokenises the command
+  respecting quotes, escapes and line continuations, walks **every** simple
+  command in it (across `&&`, `||`, `;`, `|`, newlines, subshells, command
+  substitutions, `eval` and `sh -c`), treats any command whose argv[0] basename
+  is `gh` as a candidate regardless of position, path or leading `VAR=…`
+  assignments, skips `gh`'s own `--repo`/`-R` global flags, and checks **every**
+  body-carrying flag in **every** candidate — not the first one it finds.
+  Extending it means extending the parse, never adding another regex.
+- **Overriding it — both forms work, and both are loud.** A human typing their
+  own ruling through the CLI may use either
+  `ALLOW_UNATTRIBUTED_COMMENT=1 gh issue comment …` (an inline prefix, which the
+  hook reads out of the parsed command) or `export ALLOW_UNATTRIBUTED_COMMENT=1`
+  (the session environment). Either way the hook prints a warning naming the
+  override to stderr; a silent escape hatch would not be the "loud, logged" one
+  this rule promises.
+- **Known, accepted limits — these are declared, not undiscovered.** (1) Nothing
+  here can stop a human from pasting an unmarked comment straight into the
+  GitHub web UI; this gate binds the agent/CLI/MCP tool path inside a Claude
+  Code session, not GitHub itself. (2) A posting channel that is not `gh` and
+  not one of the two gated MCP tools — a raw `curl` against `api.github.com`, a
+  `gh api graphql` `addComment` mutation, a third-party client — is not seen.
+  (3) The gate reads the bytes the command line contains; a body a script
+  computes at runtime cannot be read, so it is refused rather than inspected.
+  All three are intentional boundaries of "inspect the tool call", not gaps to
+  close by widening the regex.
