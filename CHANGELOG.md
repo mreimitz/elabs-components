@@ -671,6 +671,16 @@ work alongside `@elabs-ai/components-ai`.
   "Ordered neutral ramp" story now name `surface-3`/`surface-4` as a second
   accepted "renders identically in light" pair, alongside the existing
   `surface-1`/`surface-2` note. No token values changed. (#59)
+- Fixed: `@elabs-ai/components-cli`'s `flat()` (`packages/cli/lib/core.mjs`) crashed
+  `brand-ui search`/`docs`/`map` (and the equivalent MCP tools) with
+  `TypeError: Cannot read properties of undefined (reading 'toLowerCase')` when run
+  against a `brand-ui.manifest.json` written by the previous release, whose
+  `types`/`otherExports` buckets were bare name-string arrays rather than the current
+  `{name, module}` objects — `loadManifest()` reads a checkout-local manifest verbatim
+  and prioritizes it, so any checkout (or consumer monorepo) that upgrades the CLI
+  without regenerating its committed manifest hit this. `flat()` now normalizes both
+  the historical string shape and the current object shape (PR #97 automated review
+  finding 5).
 
 ## v4.0.0 — 2026-08-17
 

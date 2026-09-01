@@ -1442,6 +1442,22 @@ export function consumerContext(cwd = process.cwd()) {
   return { installed: brand, name: json.name };
 }
 
+/**
+ * Normalize one `types`/`otherExports` bucket entry. `bucketExports()` has
+ * shipped `{name, module}` objects since commit 05b6040 (#86); before that it
+ * flattened both buckets to bare name strings. `loadManifest()` reads a
+ * checkout-local `brand-ui.manifest.json` off disk verbatim, with no version
+ * tag and no migration step, and prioritizes it over the bundled/generated
+ * manifest — so a checkout (or a consumer's own monorepo) whose committed
+ * manifest predates #86 still hands `flat()` the old string shape. Accepting
+ * both here is what keeps every reader built on `flat()` (`bin/brand-ui.mjs`
+ * search/docs, `lib/mcp.mjs` search/docs, `lib/engine.mjs` map) from crashing
+ * on `row.name.toLowerCase()` against a `name: undefined` row (PR #97 finding 5).
+ */
+function normalizeExportEntry(entry) {
+  return typeof entry === "string" ? { name: entry, module: undefined } : entry;
+}
+
 export function flat(manifest) {
   const rows = [];
   for (const [pkg, info] of Object.entries(manifest.packages || {})) {
@@ -1459,10 +1475,16 @@ export function flat(manifest) {
     // Type-only exports (interfaces/types, e.g. `DataTableColumnMeta`) and plain
     // value exports that are neither components nor hooks (`otherExports`, e.g.
     // `createSelectionColumn`) — #86. Both buckets carry `{name, module}` (see
-    // `bucketExports()`), so they surface here exactly like components/hooks.
-    for (const t of info.types) rows.push({ name: t.name, kind: "type", pkg, module: t.module });
-    for (const o of info.otherExports)
-      rows.push({ name: o.name, kind: "export", pkg, module: o.module });
+    // `bucketExports()`) in a current manifest, or bare name strings in one
+    // written by the previous release — `normalizeExportEntry()` accepts both.
+    for (const t of info.types) {
+      const { name, module } = normalizeExportEntry(t);
+      rows.push({ name, kind: "type", pkg, module });
+    }
+    for (const o of info.otherExports) {
+      const { name, module } = normalizeExportEntry(o);
+      rows.push({ name, kind: "export", pkg, module });
+    }
     // Subpath exports import from `pkg/<subpath>`, not the root barrel — surface
     // them too so `search`/`docs` find them (importPath records the real import).
     for (const [importPath, sub] of Object.entries(info.subpaths || {})) {
@@ -1470,10 +1492,14 @@ export function flat(manifest) {
         rows.push({ name: c.name, kind: "component", pkg, importPath, module: c.module });
       for (const h of sub.hooks)
         rows.push({ name: h.name, kind: "hook", pkg, importPath, module: h.module });
-      for (const t of sub.types)
-        rows.push({ name: t.name, kind: "type", pkg, importPath, module: t.module });
-      for (const o of sub.otherExports)
-        rows.push({ name: o.name, kind: "export", pkg, importPath, module: o.module });
+      for (const t of sub.types) {
+        const { name, module } = normalizeExportEntry(t);
+        rows.push({ name, kind: "type", pkg, importPath, module });
+      }
+      for (const o of sub.otherExports) {
+        const { name, module } = normalizeExportEntry(o);
+        rows.push({ name, kind: "export", pkg, importPath, module });
+      }
     }
   }
   return rows;
