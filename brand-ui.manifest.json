@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T10:40:05.245Z",
+  "generatedAt": "2026-09-01T12:09:39.044Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15950,7 +15950,7 @@
               "name": "onRowReorder",
               "optional": true,
               "type": "(from: number, to: number, row: TData) => void",
-              "description": "Fires when a row is dropped in a new position. `from`/`to` are indices into the current row model; `row` is the moved record."
+              "description": "Fires when a row is dropped in a new position. `from`/`to` are indices into the **`data` array you passed in** — never into the sorted, filtered or paginated view the table renders — so they are safe to use directly with `arrayMove`/`slice`+`splice`/immer against your own `data`, unchanged by an active sort or by client-side pagination (the dragged row's true index in the full array, not its index on the current page). Under `manualPagination`, `data` IS the current page, so `from`/`to` are page-relative — reorder that page's own array with them. `row` is the moved record (`data[from]`)."
             },
             {
               "name": "rowReorderHandle",

@@ -424,7 +424,17 @@ export interface DataTableProps<TData, TValue> extends Omit<
    * a sort re-orders the very rows a drag just moved, which reads as broken).
    */
   enableRowReorder?: boolean;
-  /** Fires when a row is dropped in a new position. `from`/`to` are indices into the current row model; `row` is the moved record. */
+  /**
+   * Fires when a row is dropped in a new position. `from`/`to` are indices
+   * into the **`data` array you passed in** — never into the sorted, filtered
+   * or paginated view the table renders — so they are safe to use directly
+   * with `arrayMove`/`slice`+`splice`/immer against your own `data`, unchanged
+   * by an active sort or by client-side pagination (the dragged row's true
+   * index in the full array, not its index on the current page). Under
+   * `manualPagination`, `data` IS the current page, so `from`/`to` are
+   * page-relative — reorder that page's own array with them. `row` is the
+   * moved record (`data[from]`).
+   */
   onRowReorder?: (from: number, to: number, row: TData) => void;
   /**
    * Where the drag activator lives. `"cell"` (default) renders a dedicated
