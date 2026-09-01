@@ -97,3 +97,26 @@ export function findThemeCountViolations(text, themeCount) {
   }
   return out;
 }
+
+/**
+ * The ground-truth theme NAMES, read straight from `packages/tokens/src/
+ * theme-types.ts`'s `export const BUILT_IN_THEMES = [...]` — never hand-kept,
+ * so a theme added/removed there changes what every currency gate allows
+ * prose to claim (#29/#64). Originally lived in check-docs-accuracy.mjs;
+ * moved here so check-source-theme-count.mjs (#29) can share the same
+ * derivation instead of re-parsing theme-types.ts with its own regex — two
+ * independent parsers of the same source is exactly the kind of drift this
+ * gate family exists to prevent. Returns `null` when the file's shape
+ * doesn't match (caller decides how to treat "unknown").
+ */
+export function themeNamesFromSource(text) {
+  const m = text.match(/export const BUILT_IN_THEMES\s*=\s*\[([^\]]*)\]/);
+  if (!m) return null;
+  const names = [...m[1].matchAll(/"([^"]+)"|'([^']+)'/g)].map((x) => x[1] ?? x[2]);
+  return names.length ? names : null;
+}
+
+/** `themeNamesFromSource(text)?.length ?? null` — the count alone. */
+export function themeCountFromSource(text) {
+  return themeNamesFromSource(text)?.length ?? null;
+}

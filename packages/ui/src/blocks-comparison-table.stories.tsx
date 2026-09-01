@@ -7,7 +7,7 @@
  * cells, a price row, and a per-plan CTA row. Reuses brand-ui's strongest
  * assets — Table + Badge + Button — and stays token-only.
  *
- * Reads in all three themes. Verify with globals=theme:<slug>.
+ * Reads in every theme. Verify with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Check, Minus } from "lucide-react";
@@ -152,7 +152,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The canonical plan/feature comparison matrix (brand-ui's Compare gap): a header with one featured column (badge + recessed wash), feature rows with check / dash / value cells, a price row, and a per-plan CTA row. Composes Table + Badge + Button; semantic tokens only; reads in all three themes.",
+          "The canonical plan/feature comparison matrix (brand-ui's Compare gap): a header with one featured column (badge + recessed wash), feature rows with check / dash / value cells, a price row, and a per-plan CTA row. Composes Table + Badge + Button; semantic tokens only; reads in every theme.",
       },
     },
   },

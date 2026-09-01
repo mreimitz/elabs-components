@@ -11,7 +11,7 @@
  * series so the AreaChart container lifecycle can be tested in isolation.
  *
  * Real render, animation, interaction, and a11y are covered by the Storybook
- * tests (area-chart story, all three themes).
+ * tests (area-chart story, every theme).
  */
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";

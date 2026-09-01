@@ -5,7 +5,7 @@ import { cn } from "../../lib/cn";
 /**
  * Per-pane surface tone — the ground-offset tiering axis (research 08 §H, #193).
  * `plain` keeps the ambient ground (default; non-breaking). `card` RAISES the pane as
- * a white `bg-card` + `shadow-sm` and is robust across all three themes — a card is
+ * a white `bg-card` + `shadow-sm` and is robust across every theme — a card is
  * lighter than the page ground in BOTH light and dark, so it always reads as raised.
  * `muted` (`bg-surface-muted`) reads as a recessed well ONLY in light themes; in dark
  * themes `--surface-muted` is lighter than `--card`, so a `muted` pane reads as a faint

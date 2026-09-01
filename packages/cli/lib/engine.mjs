@@ -1124,7 +1124,7 @@ The short version:
 - Type is a **role** (\`text-title\`/\`text-body\`/…), colour is a **token**
   (\`bg-primary\`, \`text-muted-foreground\`) — never a raw size or hex.
 - The theme is \`${spec.theme}\`, applied by \`<ThemeProvider>\` in \`src/main.tsx\`;
-  change tokens, not component styles. Everything must read in all three themes.
+  change tokens, not component styles. Everything must read in every theme.
 - The spec is \`./app-spec.md\`; \`grep -rn "TODO(spec):" src\` is the to-do list.
 - \`./brand-ui-context.md\` lists every component in every package — read it instead
   of inventing one; \`brand-ui docs <Name>\` gives the real props.

@@ -16,7 +16,7 @@ const meta = {
         component:
           "A headless Milkdown (ProseMirror) WYSIWYG markdown surface vendored onto " +
           "brand-ui. Companion to the Monaco `CodeEditor` (source) in the same package. " +
-          "Theming is 100% semantic tokens, so it tracks all three themes via `data-theme`. " +
+          "Theming is 100% semantic tokens, so it tracks every theme via `data-theme`. " +
           "Depends on only `@milkdown/kit` — no Vue/Crepe.",
       },
     },
@@ -138,7 +138,7 @@ Two upstream data sources are still un-mapped.
  * The brand `:::` directives render as the REAL @brand components inside the editor
  * (a live `Card`, `Alert`, `MetricBlock`), with the card/callout title and the metric
  * label/value editable inline — not the old token-styled `toDOM` chrome. Switch the
- * Storybook theme to confirm they track all three themes.
+ * Storybook theme to confirm they track every theme.
  */
 export const LiveDirectives: Story = {
   name: "Live directives (inline-editable)",
@@ -277,7 +277,7 @@ Prose continues normally after the table.
  *
  * Three-theme sweep: switch the Storybook theme toolbar to verify the table
  * borders (`border-border-strong`), header tint (`bg-surface-muted`), and
- * toolbar chrome use only semantic tokens across all three themes.
+ * toolbar chrome use only semantic tokens across every theme.
  */
 export const EditableTable: Story = {
   name: "Editable table (wysiwyg-tables)",

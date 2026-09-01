@@ -454,7 +454,7 @@ export interface ChangeReviewHunkProps
  * Approval state is signalled with TWO non-color cues:
  * - icon: Check (approved) vs plain toggle (pending)
  * - label: "Approved" badge vs "Approve" button text
- * This ensures the state is clear in all three themes including the low-chroma
+ * This ensures the state is clear in every theme including the low-chroma
  * monochrome surfaces (colorblind-safe).
  */
 export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>(

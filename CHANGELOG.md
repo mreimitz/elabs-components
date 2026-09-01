@@ -32,6 +32,17 @@
   or genuine pointer-leave on that trigger, and a pure keyboard sequence never
   touches it, so it cannot affect keyboard or touch entry. No synthetic DOM
   events are dispatched.
+- Fixed: ~20 live "all three themes"/"THREE themes (light/dark)" claims survived a
+  deleted third theme across component/story comments, rendered Storybook copy
+  (`apps/docs/stories/foundations/theming.stories.tsx`), CLI docs and a hook message
+  (#29 residual) — reworded to "every theme" (or removed the count) so the wording
+  cannot go stale again, and added a third currency gate,
+  `pnpm source-theme-count:check` (self-tested, wired into CI), that scans actual
+  product source (`packages/*/src/**` including `.css`, and
+  `apps/docs/stories/**`) for a stale theme-count claim — the two existing prose
+  gates (`docs:check`, `skills:currency:check`) only ever reached documentation
+  files, not source comments or rendered story text, which is exactly where this
+  drift hid in plain sight.
 - Fixed: three automated-review findings on PR #87. (1) `scripts/check-manifest.mjs`'s
   freshness check compared against `git show HEAD:brand-ui.manifest.json`, which
   false-STALEd a legitimately fresh, already-regenerated-but-uncommitted manifest (the

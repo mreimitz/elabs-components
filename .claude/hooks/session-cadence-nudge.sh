@@ -108,7 +108,7 @@ fi
 cat >&2 <<MSG
 ⚠ session-cadence nudge: this session edited ${edited} product files and never ran a self-review.
 Per .claude/rules/quality-gates.md ("Session cadence — review your own work"), a larger building session ends with its own review battery:
-  • /visual-review        — brand-ui-visual-ux-reviewer over the surfaces you touched (all three themes)
+  • /visual-review        — brand-ui-visual-ux-reviewer over the surfaces you touched (every theme)
   • brand-ui-accessibility-reviewer — real-surface a11y on those same surfaces
   • /review-component <path>  — for every new/changed component
   • /session-retro        — at session completion, so the process gaps get filed
