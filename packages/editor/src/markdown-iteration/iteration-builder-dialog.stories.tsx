@@ -1,7 +1,7 @@
 import { Button } from "@elabs-ai/components-ui";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { IterationBuilderDialog } from "./iteration-builder-dialog";
 import type { IterationBuilderValue } from "./iteration-builder";
@@ -149,6 +149,15 @@ export const IterateBuilder: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: /Edit iteration/i }));
     const dialog = await within(document.body).findByRole("dialog", {}, { timeout: 12000 });
+    // The per-cell template field is a Monaco editor (`MarkdownWorkspace`
+    // defaultMode="source"). axe scans whatever is in the DOM the instant it
+    // runs, so a scan that races Monaco's first paint can measure a token span
+    // before its (AA-clamped) syntax color has actually been applied — wait for
+    // a real rendered token span first (#88).
+    await waitFor(
+      () => expect(dialog.querySelector('.view-line span[class*="mtk"]')).toBeTruthy(),
+      { timeout: 8000 },
+    );
     // "Alice" renders TWICE — as a TagInput chip AND in the live preview — so
     // scope to the preview region (mirrors the PivotBuilder fix above).
     const preview = within(
