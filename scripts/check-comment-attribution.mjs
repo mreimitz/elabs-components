@@ -272,6 +272,27 @@
 //     fails the call is REFUSED (uninspectable), never allowed — so this costs
 //     a false refusal, not a bypass. Pass an absolute path, or post through
 //     scripts/post-issue-comment.mjs, which always does.
+//   - A NESTING-DEPTH CEILING. `NESTED_OPERAND_MAX_DEPTH = 3` (below) stops the
+//     nested re-read after three unknown-interpreter levels, so a gated `gh`
+//     call sitting behind FOUR STACKED unrecognised shells (`csh -c "csh -c
+//     '…'"` nested one level deeper again) is ALLOWED — the fourth level is
+//     never re-parsed. This constant is IDENTICAL on merge-base `main` — it is
+//     not a regression, and `main` is strictly worse (it already fails at
+//     depth 2 for an unknown shell). Declared here so this block does not read
+//     as more complete than it is.
+//   - THE OVERRIDE IS HONOURED IN ONE NESTED POSITION AND NOT ANOTHER. A
+//     correctly-spelled `ALLOW_UNATTRIBUTED_COMMENT=1` prefix on the `gh` call,
+//     placed inside an UNRECOGNISED interpreter's operand (`csh -c
+//     "ALLOW_UNATTRIBUTED_COMMENT=1 gh issue comment 26 --body '…'"`), now
+//     ALLOWS — where `main` REFUSES, because `main`'s nested re-read never
+//     reaches that operand at all. This is a CONSISTENCY gap, not a safety
+//     one: the allow is `override: true`, so the hook still prints its loud
+//     OVERRIDDEN warning; the same override at the TOP level already allows on
+//     both trees, so nothing is granted here that `main` withholds; and the
+//     identical override placed behind a RECOGNISED shell (`bash -lc
+//     "ALLOW_UNATTRIBUTED_COMMENT=1 gh …"`) still BLOCKS on this tree. The
+//     honest statement is that the override reaches one nested position and
+//     not its sibling — not that it grants a new capability.
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";

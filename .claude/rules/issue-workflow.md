@@ -224,7 +224,11 @@ issue comment 26 --body '…'"` re-parsed as a command whose position was
   guide"` (the second is `main`'s behaviour plus round 8's widening). A false
   refusal is loud, costs one retry, and prints its own override
   (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`); the alternative on the table was a
-  silent post, so the ambiguous position stays a candidate. `make deploy
+  silent post, so the ambiguous position stays a candidate. This refusal lands
+  **hardest on the people maintaining this gate itself**, since a commit
+  message describing a change to the gate is the likeliest text anyone will
+  write that carries both a posting phrase and a body-shaped flag — the two
+  named examples above are exactly that shape. `make deploy
 MSG="gh issue comment --body ready"` stays FIXED — that was a different
   mechanism (the assignment-run scoping), untouched here.
   **Evidence, not reasoning:** a differential probe ran the same corpus against
