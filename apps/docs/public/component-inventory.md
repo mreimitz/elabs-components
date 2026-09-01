@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 377 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -371,6 +371,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SchemaFormProvider | component |  | `@elabs-ai/components-ui` |  |
 | SchemaFormRoot | component |  | `@elabs-ai/components-ui` |  |
 | SchemaFormSubmit | component |  | `@elabs-ai/components-ui` |  |
+| SchemaFormTestAction | component |  | `@elabs-ai/components-ui` |  |
 | SchemaFormTitle | component |  | `@elabs-ai/components-ui` |  |
 | ScrollArea | component |  | `@elabs-ai/components-ui` |  |
 | ScrollBar | component |  | `@elabs-ai/components-ui` |  |
@@ -472,6 +473,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Transfer | component |  | `@elabs-ai/components-ui` |  |
 | Tree | component |  | `@elabs-ai/components-ui` |  |
 | TreeSelect | component |  | `@elabs-ai/components-ui` |  |
+| UnsupportedJsonSchemaError | component |  | `@elabs-ai/components-ui` |  |
 | useCollapsiblePanel | hook |  | `@elabs-ai/components-ui` |  |
 | useCommandActiveItemId | hook |  | `@elabs-ai/components-ui` |  |
 | useCopyToClipboard | hook |  | `@elabs-ai/components-ui` |  |
