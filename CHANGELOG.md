@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-editor`'s Monaco theme bridge AA-clamped syntax token colors
+  against the bare `--background` token, but Monaco actually paints a translucent
+  `editor.lineHighlightBackground` overlay UNDER token text on the cursor's line —
+  several syntax tokens (e.g. `string`, measured 4.16:1 in the `light` theme) fell
+  short of real WCAG AA (4.5:1) once that overlay composited in, even though the
+  bridge's own math reported success. The clamp now targets the composited ground
+  (`flattenOver(lineHighlight, background)`), with a small headroom margin so the
+  first-clearing 10%-mix step in `ensureReadable` can't land a hair under the bar
+  (#88).
 - Fixed: three automated-review findings on PR #87. (1) `scripts/check-manifest.mjs`'s
   freshness check compared against `git show HEAD:brand-ui.manifest.json`, which
   false-STALEd a legitimately fresh, already-regenerated-but-uncommitted manifest (the

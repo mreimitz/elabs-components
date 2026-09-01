@@ -61,10 +61,18 @@ const clamp01 = (n: number) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n))
 const byte = (n: number) => n.toString(16).padStart(2, "0");
 
 /** Mix `alpha` (0..1) into a `#rrggbb` color, returning `#rrggbbaa`. */
-function withAlpha(hex: string, alpha: number): string {
+export function withAlpha(hex: string, alpha: number): string {
   const base = hex.slice(0, 7);
   return `${base}${byte(Math.round(clamp01(alpha) * 255))}`;
 }
+
+/**
+ * Alpha of the translucent cursor-line highlight Monaco paints UNDER every
+ * token's text on the active line (`editor.lineHighlightBackground`). Named
+ * and shared so the visual overlay and the AA-contrast ground it composites
+ * into (`flattenOver`, below) can never drift apart (#88).
+ */
+export const LINE_HIGHLIGHT_ALPHA = 0.05;
 
 /** Strip `#` and any alpha — Monaco token rules want a bare 6-char hex. */
 function bare(hex: string): string {
@@ -84,10 +92,30 @@ function luminance(hex: string): number {
     0.0722 * toLinear(channel(hex, 2))
   );
 }
-function contrast(a: string, b: string): number {
+export function contrast(a: string, b: string): number {
   const la = luminance(a);
   const lb = luminance(b);
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/**
+ * Composite a translucent `#rrggbbaa` overlay (an alpha-suffixed hex, as
+ * `withAlpha` produces) over an opaque `#rrggbb` ground — the same straight,
+ * source-over blend a browser/Monaco applies when it paints a translucent
+ * decoration on top of the editor surface. Returns the resulting opaque
+ * `#rrggbb`.
+ *
+ * Exists so contrast clamps (and tests) can target the REAL, on-screen ground
+ * a syntax color renders against, not the bare, uncomposited surface color —
+ * see #88.
+ */
+export function flattenOver(overlayHexWithAlpha: string, groundHex: string): string {
+  const overlayBase = overlayHexWithAlpha.slice(0, 7);
+  const alphaHex = overlayHexWithAlpha.length >= 9 ? overlayHexWithAlpha.slice(7, 9) : "ff";
+  const alpha = clamp01((parseInt(alphaHex, 16) || 0) / 255);
+  const blend = (i: number) =>
+    Math.round(channel(overlayBase, i) * alpha + channel(groundHex, i) * (1 - alpha));
+  return `#${byte(blend(0))}${byte(blend(1))}${byte(blend(2))}`;
 }
 function mixHex(hex: string, target: string, t: number): string {
   const lerp = (i: number) =>
@@ -152,10 +180,21 @@ export function buildBrandThemeData(
   const chart4 = read("--chart-4", primary);
   const success = read("--success", chart2);
   const destructive = read("--destructive", "#ff0000");
+
+  // Monaco paints `editor.lineHighlightBackground` — a translucent overlay —
+  // UNDER every token's text on the CURSOR'S line, so the real, on-screen
+  // ground a syntax color renders against there is this COMPOSITE, not the
+  // bare `background` alone (#88). Computed once and reused for both the
+  // `colors` entry below and the AA-clamp ground, so the two can't drift apart.
+  const lineHighlight = withAlpha(foreground, LINE_HIGHLIGHT_ALPHA);
+  const tokenGround = flattenOver(lineHighlight, background);
+
   // Calc result-inlay color (#220): the computed answer shown after each ```calc
   // line. Themed here (not hardcoded) so it re-applies on theme change with the
-  // rest of the editor; AA-clamped against the editor background like syntax tokens.
-  const calcResult = ensureReadable(read("--calc-result", primary), background, 4.5);
+  // rest of the editor; AA-clamped against the composited line-highlight ground
+  // like syntax tokens (#88) — an inlay on the cursor's line is painted over the
+  // same overlay.
+  const calcResult = ensureReadable(read("--calc-result", primary), tokenGround, 4.5);
 
   const colors: Monaco.editor.IColors = {
     "editor.background": background,
@@ -167,7 +206,7 @@ export function buildBrandThemeData(
     "editor.selectionBackground": withAlpha(primary, 0.28),
     "editor.inactiveSelectionBackground": withAlpha(primary, 0.14),
     "editor.selectionHighlightBackground": withAlpha(primary, 0.14),
-    "editor.lineHighlightBackground": withAlpha(foreground, 0.05),
+    "editor.lineHighlightBackground": lineHighlight,
     "editor.lineHighlightBorder": "#00000000",
     "editorIndentGuide.background1": withAlpha(border, 0.6),
     "editorIndentGuide.activeBackground1": mutedFg,
@@ -235,10 +274,23 @@ export function buildBrandThemeData(
     "diffEditor.border": border,
   };
 
-  // Syntax tokens: enforce AA (4.5:1) against the editor background; comments
-  // get a softer 3.2:1 so they stay intentionally muted but legible. Keyword/
-  // operator/tag stay on the brand primary (identity), readability-clamped too.
-  const ink = (hex: string, ratio = 4.5) => bare(ensureReadable(hex, background, ratio));
+  // Syntax tokens: enforce AA (4.5:1) against the composited line-highlight
+  // ground (#88 — Monaco paints that translucent overlay UNDER every token on
+  // the cursor's line, so clamping against the bare `background` targets a
+  // ground that is never actually rendered); comments get a softer 3.2:1 so
+  // they stay intentionally muted but legible. Keyword/operator/tag stay on
+  // the brand primary (identity), readability-clamped too.
+  //
+  // `AA_MARGIN` adds headroom on top of the nominal ratio: `ensureReadable`
+  // stops at the FIRST 10% mix step that clears the bar, so a zero-margin
+  // clamp can land a hair below it once axe's own rounding is applied — #88
+  // measured `string` short by 0.34:1 for exactly this reason. Modeling the
+  // OTHER transient overlays (selection, bracket-match, diff bands) is
+  // explicitly out of scope for #88; the margin is the accepted headroom for
+  // those too, not a claim they're individually composited in.
+  const AA_MARGIN = 0.15;
+  const ink = (hex: string, ratio = 4.5) =>
+    bare(ensureReadable(hex, tokenGround, ratio + AA_MARGIN));
   const rules: Monaco.editor.ITokenThemeRule[] = [
     { token: "", foreground: bare(foreground), background: bare(background) },
     { token: "comment", foreground: ink(mutedFg, 3.2), fontStyle: "italic" },
