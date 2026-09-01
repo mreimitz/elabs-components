@@ -67,7 +67,24 @@ test('`brand-ui search DataTableColumnMeta` returns a match, not "(none)"', (t) 
   const res = run(["search", "DataTableColumnMeta"]);
   assert.equal(res.status, 0, `search exited cleanly:\n${res.stderr}`);
   assert.match(res.stdout, /DataTableColumnMeta/, "the type is found by search");
-  assert.doesNotMatch(res.stdout, /\(none\)/, "search no longer reports no match");
+  // Fix round 1 split the components/hooks and types/otherExports arms into
+  // independently-truncated sections (see search-truncation.test.mjs) so a
+  // type/otherExport match can never crowd a component/hook match out. A
+  // type-only name like this one legitimately reports "(none)" under
+  // Components/hooks (there is no component by this name) — the honest
+  // assertion is that its OWN section is not empty, not that the string
+  // "(none)" never appears anywhere in the output.
+  assert.match(
+    res.stdout,
+    /Types\/other exports matching "datatablecolumnmeta":/,
+    "the types/otherExports section header is printed",
+  );
+  const typesSection = res.stdout.split(/Types\/other exports matching[^\n]*\n/)[1] ?? "";
+  assert.doesNotMatch(
+    typesSection,
+    /^\s*\(none\)/,
+    "the types section itself reports a real match",
+  );
 });
 
 test('`brand-ui docs DataTableColumnMeta` prints real content, not "not found"', (t) => {

@@ -98,3 +98,28 @@ test("end-to-end stdio: newline-delimited JSON-RPC round-trips over the transpor
   assert.equal(responses[1].id, 2);
   assert.ok(Array.isArray(responses[1].result.tools), "tools/list returns a tools array");
 });
+
+// Fix round 1 (#89 finding 2, flagged by an independent validator): the
+// original #89 fix wired whole-screen templates into the CLI's `cmdSearch()`
+// but never into `toolSearch()` here, so `mcp__brand-ui__search` — the
+// persistent, recommended MCP path (see storybook-mcp.md) — still returned
+// "(none)" for `screen-states`/`object-detail-hub` with no Templates section
+// at all. Locks that `toolSearch()` now calls the same `matchTemplates()` the
+// CLI uses, against the REAL committed manifest.
+test("tools/call search reaches whole-screen templates (screen-states, object-detail-hub)", (t) => {
+  if (!root) return t.skip("not inside the brand-ui monorepo");
+  for (const name of ["screen-states", "object-detail-hub"]) {
+    const res = call("tools/call", { name: "search", arguments: { query: name } });
+    const text = res.result.content[0].text;
+    assert.match(
+      text,
+      new RegExp(`Templates matching "${name}":`),
+      `${name} has a Templates section`,
+    );
+    assert.match(
+      text,
+      new RegExp(`templates/${name}\\.tsx`),
+      `${name} lists its template file path`,
+    );
+  }
+});
