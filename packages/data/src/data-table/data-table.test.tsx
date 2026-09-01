@@ -2703,4 +2703,95 @@ describe("DataTable — #13 row drag-reorder", () => {
     expect(firstRow!.hasAttribute("aria-pressed")).toBe(false);
     expect(firstRow!.getAttribute("tabindex")).toBe("0");
   });
+
+  // ── Round-2 finding 6: a `data` array that repeats a record ───────────────
+  // The SAME object reference at two positions (a record shown twice by
+  // design, a list that only LOOKS de-duplicated) used to collapse onto its
+  // FIRST index on drop: the drag-end handler resolved `from`/`to` through a
+  // `Map` keyed by `row.original`, which can only hold one index per value.
+  // A caller running this component's own documented `arrayMove(data, from,
+  // to)` idiom then moved a row the user never touched, silently — no error,
+  // no warning, no visual sign. Both identity paths are locked, because they
+  // fail for different reasons: without `getRowId` the drag IDs themselves
+  // collide, with it only the index lookup does.
+  const repeatedRecord: Row = { name: "Alpha", value: 3 };
+  const dataWithRepeat: Row[] = [repeatedRecord, { name: "Beta", value: 1 }, repeatedRecord];
+
+  it("gives each occurrence of a repeated record its own drag identity — round-2 finding 6", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      render(<DataTable columns={columns} data={dataWithRepeat} enableRowReorder />);
+      // Both occurrences mount as real, separately addressable rows...
+      expect(screen.getAllByRole("button", { name: "Reorder Alpha" })).toHaveLength(2);
+      // ...and React sees two distinct keys, not one repeated one. A shared
+      // key is the visible symptom of a shared dnd-kit id: one `<tr>`
+      // registration for two rows, so the drop cannot tell them apart.
+      const duplicateKeyWarnings = errorSpy.mock.calls.filter((call) =>
+        String(call[0]).includes("same key"),
+      );
+      expect(duplicateKeyWarnings).toEqual([]);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it("reports the dragged occurrence's OWN index when `data` repeats a record — round-2 finding 6 (data corruption)", async () => {
+    const rectSpy = mockRowRects();
+    const onRowReorder = vi.fn();
+    try {
+      render(
+        <DataTable
+          columns={columns}
+          data={dataWithRepeat}
+          enableRowReorder
+          onRowReorder={onRowReorder}
+        />,
+      );
+      // The SECOND "Alpha" grip — the row rendered from `data[2]`.
+      const handles = screen.getAllByRole("button", { name: "Reorder Alpha" });
+      fireEvent.keyDown(handles[1]!, { code: "Space" });
+      await tick();
+      fireEvent.keyDown(document, { code: "ArrowUp" });
+      await tick();
+      fireEvent.keyDown(document, { code: "Space" });
+
+      // Value-keyed indices reported (0, 1, Alpha): `arrayMove(data, 0, 1)`
+      // would swap `data[0]`/`data[1]`, leaving `data[2]` — the row actually
+      // dragged — where it was. The dragged occupant is `data[2]`; the row it
+      // landed on (Beta) is `data[1]`.
+      expect(onRowReorder).toHaveBeenCalledTimes(1);
+      expect(onRowReorder).toHaveBeenCalledWith(2, 1, repeatedRecord);
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  it("reports the dragged occurrence's OWN index when `data` repeats a record and the caller supplies `getRowId` — round-2 finding 6", async () => {
+    const rectSpy = mockRowRects();
+    const onRowReorder = vi.fn();
+    try {
+      render(
+        <DataTable
+          columns={columns}
+          data={dataWithRepeat}
+          enableRowReorder
+          onRowReorder={onRowReorder}
+          getRowId={(_row, index) => `row-${index}`}
+        />,
+      );
+      // Caller-supplied ids already disambiguate the two occurrences, so this
+      // isolates the index lookup itself.
+      const handles = screen.getAllByRole("button", { name: "Reorder Alpha" });
+      fireEvent.keyDown(handles[1]!, { code: "Space" });
+      await tick();
+      fireEvent.keyDown(document, { code: "ArrowUp" });
+      await tick();
+      fireEvent.keyDown(document, { code: "Space" });
+
+      expect(onRowReorder).toHaveBeenCalledTimes(1);
+      expect(onRowReorder).toHaveBeenCalledWith(2, 1, repeatedRecord);
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
 });

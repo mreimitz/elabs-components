@@ -688,6 +688,18 @@ work alongside `@elabs-ai/components-ai`.
   without regenerating its committed manifest hit this. `flat()` now normalizes both
   the historical string shape and the current object shape (PR #97 automated review
   finding 5).
+- Fixed: `@elabs-ai/components-data`'s `DataTable` row drag-reorder reported the
+  wrong `from`/`to` indices when the `data` array repeats a record. Both indices
+  were resolved through a map keyed by the row's own value, which can hold only
+  one position per record, so dropping the second occurrence of a repeated
+  object (or a repeated primitive) reported the first occurrence — and the
+  documented `arrayMove(data, from, to)` idiom then moved a row the user never
+  dragged, silently. Indices now come from the position TanStack already
+  assigned each row when it built its row model from `data`. Repeated records
+  also used to share one drag identity when no `getRowId` was supplied (one
+  React key and one dnd-kit registration for two rows); each occurrence is now
+  separately addressable, while a table with no repeated record keeps exactly
+  the ids it had.
 
 ## v4.0.0 — 2026-08-17
 

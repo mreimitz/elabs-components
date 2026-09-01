@@ -1,6 +1,14 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -1027,6 +1035,28 @@ function DataTableInner<TData, TValue>(
   // reference is the round-1 fix for findings 1 & 3.
   const reorderIdentityMapRef = useRef<WeakMap<object, string>>(new WeakMap());
   const reorderIdentityCounterRef = useRef(0);
+  // Positions in `data` whose record REPEATS an object reference that already
+  // appeared earlier in the array — 2nd and later occurrences only (round-2
+  // finding 6). `getReorderRowId` below keys its identity on the record's own
+  // object reference, which is exactly what makes an id survive the array
+  // REPLACEMENT every reorder idiom performs; the cost is that a record the
+  // caller listed twice IS one reference, so both rows would be handed one id
+  // — one React key, one dnd-kit registration, and a drop that can only ever
+  // name the first occurrence. The positions listed here get their own data
+  // index folded into the id so the occurrences stay separately addressable.
+  // Only the repeats are suffixed, so a table with no repeated record keeps
+  // byte-identical ids (and with them the round-1 focus restore).
+  const reorderRepeatedPositions = useMemo(() => {
+    const repeats = new Set<number>();
+    if (!rowReorderActive) return repeats;
+    const seen = new Set<unknown>();
+    data.forEach((record, index) => {
+      if (record === null || typeof record !== "object") return;
+      if (seen.has(record)) repeats.add(index);
+      else seen.add(record);
+    });
+    return repeats;
+  }, [data, rowReorderActive]);
   // The component's OWN `aria-live="polite"` announcer state — round-1
   // finding 4 (dnd-kit's built-in region is hardcoded `assertive` with no
   // override). `reorderLastAnnouncedPositionRef` de-dupes a same-position
@@ -1278,7 +1308,13 @@ function DataTableInner<TData, TValue>(
         id = `__reorder-${reorderIdentityCounterRef.current++}`;
         map.set(original, id);
       }
-      return id;
+      // A repeated record shares ONE object reference, so the id minted above
+      // is by construction identical for both of its rows — round-2 finding
+      // 6. Fold the data position into the repeats so each occupant is its
+      // own draggable. Two identical records are interchangeable to the user,
+      // so the weaker cross-replacement stability of a suffixed id costs
+      // nothing the first-occurrence rule doesn't already give back.
+      return reorderRepeatedPositions.has(row.index) ? `${id}__${row.index}` : id;
     }
     // Primitive `TData` (rare) has no object reference to key off — same
     // documented limitation `getRowId`'s own comment already carries for
@@ -1392,13 +1428,20 @@ function DataTableInner<TData, TValue>(
     const movedRow = rows.find((r) => getReorderRowId(r) === activeRowId);
     const targetRow = rows.find((r) => getReorderRowId(r) === String(over.id));
     if (!movedRow || !targetRow) return;
-    const dataIndexOfRow = new Map<TData, number>();
-    data.forEach((record, index) => {
-      if (!dataIndexOfRow.has(record)) dataIndexOfRow.set(record, index);
-    });
-    const from = dataIndexOfRow.get(movedRow.original) ?? -1;
-    const to = dataIndexOfRow.get(targetRow.original) ?? -1;
-    if (from === -1 || to === -1) return;
+    // Round-2 finding 6: this used to build a `Map` keyed by `row.original`
+    // and read `from`/`to` out of it. A `data` array that repeats a record —
+    // the same object reference, or the same primitive, at two positions —
+    // can only occupy ONE slot in such a map, so the later occurrence was
+    // reported as the earlier one and the documented `arrayMove(data, from,
+    // to)` idiom moved a row the user never dragged, silently. `Row.index` is
+    // the position TanStack already assigned this row when it built the core
+    // row model FROM `data`, carried by reference through sort/filter/
+    // pagination (the same property the round-1 fix above relies on) — so it
+    // keeps the "indices into the `data` you gave me" contract without the
+    // value-equality lookup that collapsed the repeats.
+    const from = movedRow.index;
+    const to = targetRow.index;
+    if (from < 0 || from >= data.length || to < 0 || to >= data.length) return;
     onRowReorder?.(from, to, movedRow.original);
   }
 
