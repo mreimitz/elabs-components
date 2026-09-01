@@ -1,4 +1,4 @@
-import { createRef } from "react";
+import { createRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { act, render, screen, fireEvent } from "@testing-library/react";
 import type {
@@ -2440,39 +2440,54 @@ describe("DataTable — #13 row drag-reorder", () => {
     }
   });
 
+  /**
+   * dnd-kit's own live region (`role="status" aria-live="assertive"`) is
+   * still rendered — `DndContext`'s `accessibility` prop has no way to
+   * remove it — but round-1 finding 4 silences its TEXT permanently, so
+   * `getByRole("status")` would now match it AND DataTable's own region
+   * ambiguously. Scope to the one this feature actually drives.
+   */
+  function getReorderLiveRegion(container: HTMLElement): HTMLElement {
+    const region = container.querySelector('[data-slot="data-table-reorder-live-region"]');
+    if (!region) throw new Error("reorder live region not found");
+    return region as HTMLElement;
+  }
+
   it("supports the full keyboard flow — Space picks up, ArrowDown moves, Space drops, and onRowReorder fires with the new indices", async () => {
     const rectSpy = mockRowRects();
     const onRowReorder = vi.fn();
     try {
-      render(
+      const { container } = render(
         <DataTable columns={columns} data={data} enableRowReorder onRowReorder={onRowReorder} />,
       );
-      const live = screen.getByRole("status");
+      const live = getReorderLiveRegion(container);
+      // Round-1 finding 4 fix: the live region is `polite`, never `assertive`.
+      expect(live).toHaveAttribute("aria-live", "polite");
       const handle = screen.getByRole("button", { name: "Reorder Alpha" });
 
       fireEvent.keyDown(handle, { code: "Space" });
-      // The pickup announcement is real (`onDragStart` fires it), but dnd-kit
-      // immediately resolves an initial collision too (`onDragOver`, against
-      // the row's own starting slot) in the SAME synchronous batch, so the
-      // "picked up" text is superseded before this assertion can observe it
-      // — the DOM commits only the LAST state update in a batch. `aria-pressed`
-      // is a distinct signal (dnd-kit's own `active.id === id` state) that is
-      // NOT part of that announcement race, so it is what proves the pickup.
+      // Round-1 finding 4 also fixed the race that used to make this
+      // untestable: dnd-kit fires an immediate self-collision `onDragOver`
+      // (over === active, same position) in the same synchronous batch as
+      // `onDragStart`, which used to stomp this message before it was ever
+      // observable. `handleRowDragOver` now seeds
+      // `reorderLastAnnouncedPositionRef` from the pickup position and skips
+      // a same-position re-fire, so "Picked up" is the actually-committed text.
+      expect(live).toHaveTextContent("Picked up Alpha.");
       expect(handle).toHaveAttribute("aria-pressed", "true");
-      expect(live).not.toHaveTextContent("");
 
       await tick();
 
       fireEvent.keyDown(document, { code: "ArrowDown" });
       await tick();
+      // A real, single-position move announces exactly once (not once per
+      // keystroke merged with a no-op self-collision).
+      expect(live).toHaveTextContent("Alpha moved to position 2 of 3.");
 
       fireEvent.keyDown(document, { code: "Space" });
 
       expect(onRowReorder).toHaveBeenCalledTimes(1);
       expect(onRowReorder).toHaveBeenCalledWith(0, 1, data[0]);
-      // Nothing fires after `onDragEnd`, so this final state is stable —
-      // unlike the pickup text above, it is safe to assert on the exact
-      // localized wording.
       expect(live).toHaveTextContent(/alpha dropped at position 2 of 3/i);
       expect(handle).not.toHaveAttribute("aria-pressed");
     } finally {
@@ -2484,15 +2499,14 @@ describe("DataTable — #13 row drag-reorder", () => {
     const rectSpy = mockRowRects();
     const onRowReorder = vi.fn();
     try {
-      render(
+      const { container } = render(
         <DataTable columns={columns} data={data} enableRowReorder onRowReorder={onRowReorder} />,
       );
-      const live = screen.getByRole("status");
+      const live = getReorderLiveRegion(container);
       const handle = screen.getByRole("button", { name: "Reorder Beta" });
 
       fireEvent.keyDown(handle, { code: "Space" });
-      // See the sibling keyboard-flow test for why pickup is asserted via
-      // `aria-pressed` rather than the transient "picked up" announcement.
+      expect(live).toHaveTextContent("Picked up Beta.");
       expect(handle).toHaveAttribute("aria-pressed", "true");
 
       await tick();
@@ -2500,9 +2514,164 @@ describe("DataTable — #13 row drag-reorder", () => {
       fireEvent.keyDown(document, { code: "Escape" });
 
       expect(onRowReorder).not.toHaveBeenCalled();
-      // Nothing else fires after a cancel, so the exact wording is stable.
       expect(live).toHaveTextContent(/reordering cancelled\. beta returned to position 2 of 3/i);
       expect(handle).not.toHaveAttribute("aria-pressed");
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  it("does not re-announce when an arrow key hits the list boundary (no real position change) — round-1 finding 4", async () => {
+    const rectSpy = mockRowRects();
+    try {
+      const { container } = render(
+        <DataTable columns={columns} data={data} enableRowReorder onRowReorder={vi.fn()} />,
+      );
+      const live = getReorderLiveRegion(container);
+      const handle = screen.getByRole("button", { name: "Reorder Alpha" });
+
+      fireEvent.keyDown(handle, { code: "Space" });
+      expect(live).toHaveTextContent("Picked up Alpha.");
+      await tick();
+
+      // Alpha is already first — ArrowUp has nowhere to go, so dnd-kit
+      // reports the SAME position again. That must not overwrite the
+      // "Picked up" message with a redundant "moved to position 1" — a
+      // screen-reader user gets one meaningful announcement, not a repeat.
+      fireEvent.keyDown(document, { code: "ArrowUp" });
+      await tick();
+      expect(live).toHaveTextContent("Picked up Alpha.");
+
+      fireEvent.keyDown(document, { code: "Escape" });
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  it("resolves onRowReorder indices against the full `data` array, not the sorted VIEW — round-1 finding 1 (data corruption)", async () => {
+    const rectSpy = mockRowRects();
+    const onRowReorder = vi.fn();
+    try {
+      // Sorted desc by name: view order is Gamma, Beta, Alpha — i.e. the
+      // FIRST rendered row is `data[2]`, not `data[0]`.
+      const sorting: SortingState = [{ id: "name", desc: true }];
+      render(
+        <DataTable
+          columns={columns}
+          data={data}
+          enableRowReorder
+          onRowReorder={onRowReorder}
+          sorting={sorting}
+          onSortingChange={vi.fn()}
+        />,
+      );
+      const handle = screen.getByRole("button", { name: "Reorder Gamma" });
+      fireEvent.keyDown(handle, { code: "Space" });
+      await tick();
+      fireEvent.keyDown(document, { code: "ArrowDown" });
+      await tick();
+      fireEvent.keyDown(document, { code: "Space" });
+
+      // View-relative positions would report (0, 1, Gamma) — a caller doing
+      // `arrayMove(data, 0, 1)` (the idiom both shipped stories use) would
+      // then swap `data[0]`/`data[1]` (Alpha/Beta), touching neither row the
+      // user actually dragged. Resolved against `data`, Gamma is `data[2]`
+      // and the row it was dropped onto (Beta) is `data[1]`.
+      expect(onRowReorder).toHaveBeenCalledTimes(1);
+      expect(onRowReorder).toHaveBeenCalledWith(2, 1, data[2]);
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  it("resolves onRowReorder indices against the full `data` array under client-side pagination — round-1 finding 1 (data corruption)", async () => {
+    const rectSpy = mockRowRects();
+    const manyRows: Row[] = Array.from({ length: 10 }, (_, i) => ({
+      name: `svc-${i}`,
+      value: i,
+    }));
+    const onRowReorder = vi.fn();
+    try {
+      render(
+        <DataTable
+          columns={columns}
+          data={manyRows}
+          enableRowReorder
+          onRowReorder={onRowReorder}
+          enablePagination
+          pageSize={5}
+          pagination={{ pageIndex: 1, pageSize: 5 }}
+          onPaginationChange={vi.fn()}
+        />,
+      );
+      // Page 2 renders svc-5..svc-9 at VIEW positions 0..4.
+      const handle = screen.getByRole("button", { name: "Reorder svc-5" });
+      fireEvent.keyDown(handle, { code: "Space" });
+      await tick();
+      fireEvent.keyDown(document, { code: "ArrowDown" });
+      await tick();
+      fireEvent.keyDown(document, { code: "Space" });
+
+      // View-relative positions would report (0, 1, svc-5) — a caller doing
+      // `arrayMove(data, 0, 1)` would corrupt svc-0/svc-1 on page 1, which
+      // the user never touched. svc-5 is `data[5]`; the row it landed on
+      // (svc-6) is `data[6]`.
+      expect(onRowReorder).toHaveBeenCalledTimes(1);
+      expect(onRowReorder).toHaveBeenCalledWith(5, 6, manyRows[5]);
+    } finally {
+      rectSpy.mockRestore();
+    }
+  });
+
+  it("keeps keyboard focus on the SAME row that moved after a drop, across a `data` array replacement — round-1 finding 3 (focus loss)", async () => {
+    const rectSpy = mockRowRects();
+    // Mirrors the exact "controlled slice" harness the `RowReorder` story
+    // uses: `onRowReorder` re-orders the caller's OWN `data`, which means a
+    // NEW array is passed back down on every drop — TanStack's default,
+    // index-based row id gets reassigned by POSITION when that happens, so
+    // this only fails without the round-1 stable-identity fix.
+    function Harness() {
+      const [items, setItems] = useState(data);
+      return (
+        <DataTable
+          columns={columns}
+          data={items}
+          enableRowReorder
+          onRowReorder={(from, to) => {
+            setItems((current) => {
+              const next = current.slice();
+              const [moved] = next.splice(from, 1);
+              next.splice(to, 0, moved!);
+              return next;
+            });
+          }}
+        />
+      );
+    }
+    try {
+      render(<Harness />);
+      const handle = screen.getByRole("button", { name: "Reorder Alpha" });
+      handle.focus();
+      fireEvent.keyDown(handle, { code: "Space" });
+      await tick();
+      fireEvent.keyDown(document, { code: "ArrowDown" });
+      await tick();
+      fireEvent.keyDown(document, { code: "Space" });
+      // dnd-kit's own focus-restore effect (`accessibility.restoreFocus`,
+      // on by default) re-focuses the activator node via
+      // `requestAnimationFrame` after the drop commits — give it a tick.
+      await act(async () => {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      });
+
+      // Alpha moved from view position 0 to 1. A POSITIONAL row id (reissued
+      // when `data` is replaced by the splice above) would leave the grip
+      // DOM NODE — and the focus it carries — at index 0, which now renders
+      // Beta. This asserts focus followed the RECORD, not the slot.
+      expect(document.activeElement).toHaveAccessibleName("Reorder Alpha");
+      expect(screen.getAllByRole("button", { name: /^Reorder /i })[0]).toHaveAccessibleName(
+        "Reorder Beta",
+      );
     } finally {
       rectSpy.mockRestore();
     }

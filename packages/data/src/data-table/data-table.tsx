@@ -38,7 +38,10 @@ import {
   useSensor,
   useSensors,
   type Announcements,
+  type DragCancelEvent,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
   type DraggableAttributes,
   type DraggableSyntheticListeners,
 } from "@dnd-kit/core";
@@ -1009,6 +1012,17 @@ function DataTableInner<TData, TValue>(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  // Backing store for `getReorderRowId` (defined below, once `rows` is in
+  // scope) — see its own doc comment for why a WeakMap keyed by row object
+  // reference is the round-1 fix for findings 1 & 3.
+  const reorderIdentityMapRef = useRef<WeakMap<object, string>>(new WeakMap());
+  const reorderIdentityCounterRef = useRef(0);
+  // The component's OWN `aria-live="polite"` announcer state — round-1
+  // finding 4 (dnd-kit's built-in region is hardcoded `assertive` with no
+  // override). `reorderLastAnnouncedPositionRef` de-dupes a same-position
+  // re-fire (the pickup self-collision, a no-op arrow press at a boundary).
+  const [reorderLiveMessage, setReorderLiveMessage] = useState("");
+  const reorderLastAnnouncedPositionRef = useRef<number | null>(null);
 
   /** Fire onServerChange with the LATEST slice values (post-update). */
   function fireServerChange(overrides: Partial<DataTableServerArgs> = {}) {
@@ -1218,56 +1232,163 @@ function DataTableInner<TData, TValue>(
   // reusing it means a reorder announcement names a row exactly the way its
   // click target already does, rather than inventing a second convention.
   function reorderRowName(id: string): string {
-    const row = rows.find((r) => r.id === id);
+    const row = rows.find((r) => getReorderRowId(r) === id);
     return row ? rowActionName(row) : id;
   }
   function reorderPosition(id: string): number {
-    return rows.findIndex((r) => r.id === id) + 1;
+    return rows.findIndex((r) => getReorderRowId(r) === id) + 1;
   }
 
-  // dnd-kit's own `Accessibility` component renders the hidden live region;
-  // this only supplies the localized text (ADR 0017) for each lifecycle
-  // moment — WCAG 4.1.3, and the acceptance criterion "aria-live
-  // announcements fire on lift/drop".
-  const dragAnnouncements: Announcements = {
-    onDragStart({ active }) {
-      return t("data.table.reorderPickedUp", { name: reorderRowName(String(active.id)) });
-    },
-    onDragOver({ active, over }) {
-      if (!over) return undefined;
-      return t("data.table.reorderMoved", {
-        name: reorderRowName(String(active.id)),
-        position: reorderPosition(String(over.id)),
-        total: rows.length,
-      });
-    },
-    onDragEnd({ active, over }) {
-      const name = reorderRowName(String(active.id));
-      const position = reorderPosition(String(over ? over.id : active.id));
-      return t("data.table.reorderDropped", { name, position, total: rows.length });
-    },
-    onDragCancel({ active }) {
-      return t("data.table.reorderCancelled", {
-        name: reorderRowName(String(active.id)),
-        position: reorderPosition(String(active.id)),
-        total: rows.length,
-      });
-    },
+  // ── Stable identity for drag reconciliation (round-1 fix, findings 1 & 3) ──
+  // `getRowId`'s own doc comment above states TanStack's fallback: default row
+  // ids are assigned ONCE per row object when the core row model is built from
+  // the current `data` ARRAY REFERENCE, then carried by reference through
+  // sort/filter — but a `data` array REPLACEMENT (exactly what every
+  // `onRowReorder` consumer does: `arrayMove`/`slice`+`splice`/immer all
+  // return a new array) rebuilds the core row model and reassigns ids by
+  // POSITION IN THE NEW ARRAY. So the id that used to denote "the row now at
+  // index 1" keeps denoting index 1 even though a different record moved
+  // there — which is what let a keyboard drop leave focus on the wrong row
+  // (a different record now sits at the id the focus restore targets).
+  // Requiring every consumer to hand-roll `getRowId` would leave the DEFAULT
+  // configuration broken, so when the caller hasn't supplied one, mint an id
+  // keyed by the row's own OBJECT REFERENCE (`row.original`) in a `WeakMap` —
+  // unlike TanStack's default, this id follows the object wherever it lands
+  // in a new array, because every reorder idiom MOVES the element reference,
+  // it never clones it. When `getRowId` IS supplied it is already exactly
+  // this kind of identity, so it's reused as-is instead of minting a second,
+  // divergent id namespace.
+  function getReorderRowId(row: Row<TData>): string {
+    if (getRowId) return row.id;
+    const original: unknown = row.original;
+    if (original !== null && typeof original === "object") {
+      const map = reorderIdentityMapRef.current;
+      let id = map.get(original);
+      if (id === undefined) {
+        id = `__reorder-${reorderIdentityCounterRef.current++}`;
+        map.set(original, id);
+      }
+      return id;
+    }
+    // Primitive `TData` (rare) has no object reference to key off — same
+    // documented limitation `getRowId`'s own comment already carries for
+    // TanStack's own default identity.
+    return row.id;
+  }
+
+  // dnd-kit's own `Accessibility` component's `LiveRegion` hardcodes
+  // `aria-live="assertive"` with no way to override it from `DndContext`
+  // (`@dnd-kit/accessibility` 3.1.1 accepts an `ariaLiveType` prop on
+  // `LiveRegion` itself, but nothing forwards one through `accessibility`) —
+  // round-1 finding 4. `.claude/rules/accessibility.md` reserves assertive
+  // for terminal errors (`role="alert"`); a sortable list's own position
+  // updates are `polite` status. So dnd-kit's built-in announcer is silenced
+  // below (every callback returns `undefined`, which `useAnnouncement`
+  // treats as "no update" — the region stays permanently empty and never
+  // fires) and DataTable renders its OWN `aria-live="polite"` region
+  // (`reorderLiveMessage`, wired to the `data-table-reorder-live-region`
+  // node near the bottom of this function) from the `onDragStart`/
+  // `onDragOver`/`onDragEnd`/`onDragCancel` handlers below.
+  const silentDragAnnouncements: Announcements = {
+    onDragStart: () => undefined,
+    onDragOver: () => undefined,
+    onDragEnd: () => undefined,
+    onDragCancel: () => undefined,
   };
+
+  /**
+   * Pickup always announces — it's the start of a new, meaningful gesture.
+   * Seeding `reorderLastAnnouncedPositionRef` with the row's OWN starting
+   * position (not `null`) is what suppresses dnd-kit's immediate self-
+   * collision `onDragOver` (over === active, at the same position) that
+   * otherwise fires in the same tick and would stomp this message before it
+   * is ever observable (WCAG 4.1.3 needs it heard, not just rendered).
+   */
+  function handleRowDragStart(event: DragStartEvent) {
+    const activeRowId = String(event.active.id);
+    reorderLastAnnouncedPositionRef.current = reorderPosition(activeRowId);
+    setReorderLiveMessage(t("data.table.reorderPickedUp", { name: reorderRowName(activeRowId) }));
+  }
+
+  /**
+   * Announces a real position change only — round-1 finding 4 measured 4
+   * announcements for a 2-step move, one of them a same-position self-
+   * collision that buried the "picked up" message. De-duping on the actual
+   * computed position (not on the raw event) means a screen reader hears one
+   * `polite` (queued, non-interrupting) announcement per genuine move, not
+   * one per keystroke.
+   */
+  function handleRowDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const position = reorderPosition(String(over.id));
+    if (position === reorderLastAnnouncedPositionRef.current) return;
+    reorderLastAnnouncedPositionRef.current = position;
+    setReorderLiveMessage(
+      t("data.table.reorderMoved", {
+        name: reorderRowName(String(active.id)),
+        position,
+        total: rows.length,
+      }),
+    );
+  }
+
+  function handleRowDragCancel(event: DragCancelEvent) {
+    const activeRowId = String(event.active.id);
+    setReorderLiveMessage(
+      t("data.table.reorderCancelled", {
+        name: reorderRowName(activeRowId),
+        position: reorderPosition(activeRowId),
+        total: rows.length,
+      }),
+    );
+    reorderLastAnnouncedPositionRef.current = null;
+  }
 
   /**
    * The component never mutates `data` itself (D5 — presentation layer, not
    * an SDK): it only reports the move, the same "controlled slice" contract
    * every other DataTable feature follows. A no-op drop (dropped on itself,
-   * or outside any droppable) fires nothing.
+   * or outside any droppable) fires nothing on the data callback, but still
+   * announces (matching the "dropped back where it started" reality).
+   *
+   * `from`/`to` resolve against the ORIGINAL `data` array the caller passed
+   * in, never against the sorted/paginated VIEW (`rows`) — round-1 finding 1.
+   * Reporting `rows.findIndex(...)` positions meant a caller doing
+   * `arrayMove(data, from, to)` (the idiom both shipped stories use) silently
+   * moved the WRONG records whenever an active sort or a client-side page
+   * had changed which record sat at which view position — measured: a
+   * paginated drag on page 2 reported `(0, 1, …)`, corrupting `data[0]`/
+   * `data[1]` on page 1. Resolving against `data` itself makes the contract
+   * "indices into the `data` you gave me" — correct under any sort/filter,
+   * correct under client-side pagination (the dragged record's true index in
+   * the full array), and correct under `manualPagination` too (there `data`
+   * IS the current page, so `from`/`to` are page-relative, which is exactly
+   * what a caller reordering that page's own array needs).
    */
   function handleRowDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    const activeRowId = String(active.id);
+    setReorderLiveMessage(
+      t("data.table.reorderDropped", {
+        name: reorderRowName(activeRowId),
+        position: reorderPosition(String(over ? over.id : active.id)),
+        total: rows.length,
+      }),
+    );
+    reorderLastAnnouncedPositionRef.current = null;
+
     if (!over || active.id === over.id) return;
-    const from = rows.findIndex((r) => r.id === active.id);
-    const to = rows.findIndex((r) => r.id === over.id);
-    const movedRow = rows[from];
-    if (from === -1 || to === -1 || !movedRow) return;
+    const movedRow = rows.find((r) => getReorderRowId(r) === activeRowId);
+    const targetRow = rows.find((r) => getReorderRowId(r) === String(over.id));
+    if (!movedRow || !targetRow) return;
+    const dataIndexOfRow = new Map<TData, number>();
+    data.forEach((record, index) => {
+      if (!dataIndexOfRow.has(record)) dataIndexOfRow.set(record, index);
+    });
+    const from = dataIndexOfRow.get(movedRow.original) ?? -1;
+    const to = dataIndexOfRow.get(targetRow.original) ?? -1;
+    if (from === -1 || to === -1) return;
     onRowReorder?.(from, to, movedRow.original);
   }
 
@@ -2052,12 +2173,15 @@ function DataTableInner<TData, TValue>(
     // context Provider), so nesting it around `<tbody>` here does not insert
     // anything between `<table>` and `<tbody>` — the real DOM stays valid.
     return (
-      <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={rows.map((r) => getReorderRowId(r))}
+        strategy={verticalListSortingStrategy}
+      >
         <tbody>
           {rows.map((row, i) => (
             <SortableDataRow
-              key={row.id}
-              id={row.id}
+              key={getReorderRowId(row)}
+              id={getReorderRowId(row)}
               attributesOverride={rowReorderHandle === "row" ? { role: "row" } : undefined}
             >
               {({ setNodeRef, setActivatorNodeRef, attributes, listeners, isDragging, style }) =>
@@ -2327,21 +2451,35 @@ function DataTableInner<TData, TValue>(
 
   // #13: `DndContext` renders no wrapping DOM element around `children` either
   // — it composes `children` alongside its own hidden a11y nodes (the
-  // screen-reader instructions + the `role="status" aria-live="assertive"`
-  // announcer `dragAnnouncements` feeds) as SIBLINGS. Wrapping the whole
-  // component root here (rather than reaching inside the `<table>`) is what
-  // keeps those hidden nodes out of the table's own DOM — they land beside
-  // the table's outer `<div>`, never inside a `<thead>`/`<tbody>`, which is
-  // the only place in HTML that would reject them.
+  // screen-reader instructions, plus a `role="status"` `LiveRegion` that is
+  // permanently silent — see `silentDragAnnouncements` above) as SIBLINGS.
+  // Wrapping the whole component root here (rather than reaching inside the
+  // `<table>`) is what keeps those hidden nodes out of the table's own DOM —
+  // they land beside the table's outer `<div>`, never inside a
+  // `<thead>`/`<tbody>`, which is the only place in HTML that would reject
+  // them. DataTable's OWN `aria-live="polite"` region (`reorderLiveMessage`)
+  // is a further sibling here for the same reason.
   if (!rowReorderActive) return nonVirtualizedContent;
   return (
     <DndContext
       sensors={reorderSensors}
       collisionDetection={closestCenter}
+      onDragStart={handleRowDragStart}
+      onDragOver={handleRowDragOver}
       onDragEnd={handleRowDragEnd}
-      accessibility={{ announcements: dragAnnouncements }}
+      onDragCancel={handleRowDragCancel}
+      accessibility={{ announcements: silentDragAnnouncements }}
     >
       {nonVirtualizedContent}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-slot="data-table-reorder-live-region"
+        className="sr-only"
+      >
+        {reorderLiveMessage}
+      </div>
     </DndContext>
   );
 }

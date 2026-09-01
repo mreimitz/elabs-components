@@ -1233,4 +1233,43 @@ export const RowReorderWholeRow: Story = {
       />
     );
   },
+  play: async ({ canvas, userEvent }) => {
+    // Pointer drag — the other half of acceptance criterion "Pointer drag
+    // works (via @dnd-kit/sortable sensor)". This can only be verified in a
+    // REAL browser: `data-table.test.tsx` documents that jsdom has no
+    // `PointerEvent` constructor at all, so `PointerSensor`'s own activator
+    // gate rejects every synthetic pointerdown there regardless of test
+    // code. Storybook's interaction-test runner drives real Chromium, which
+    // has a genuine `PointerEvent`.
+    // Drags the whole first row ("api-gateway") past the second row
+    // ("billing") and drops.
+    const firstRow = canvas.getByText("api-gateway").closest("tr") as HTMLElement;
+    const secondRow = canvas.getByText("billing").closest("tr") as HTMLElement;
+    const from = firstRow.getBoundingClientRect();
+    const to = secondRow.getBoundingClientRect();
+    const startX = from.left + 20;
+    const startY = from.top + from.height / 2;
+
+    // `reorderSensors`'s `PointerSensor` uses `activationConstraint: { distance: 4 }`
+    // (data-table.tsx): dnd-kit's own `handleMove` treats the FIRST move past that
+    // threshold as arming the drag only — it calls `handleStart()` (recording the
+    // *initial* pointer-down position) and returns WITHOUT ever calling `onMove`, so
+    // that event never updates the tracked drag position. A single big pointer jump
+    // straight from the row to the drop target therefore "activates" the drag but
+    // reports no movement at all, and the row lands back where it started. A SECOND
+    // move — after activation — is required to actually report the target position,
+    // so the sequence below moves twice: once just past the 4px threshold, then once
+    // more to the real drop point.
+    await userEvent.pointer([
+      { keys: "[MouseLeft>]", target: firstRow, coords: { clientX: startX, clientY: startY } },
+      { coords: { clientX: startX, clientY: startY + 10 } },
+      { coords: { clientX: to.left + 20, clientY: to.bottom - 4 } },
+      { keys: "[/MouseLeft]" },
+    ]);
+
+    await waitFor(() => {
+      const cells = canvas.getAllByRole("cell");
+      expect(cells[0]).toHaveTextContent("billing");
+    });
+  },
 };
