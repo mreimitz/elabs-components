@@ -489,13 +489,17 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   `@xyflow/react` (the agent-canvas set) stays a **required** peer, not
   optional — install it whenever you import from this package.
 
-  **Known limitation:** `mermaid` may still resolve on disk even when you skip
-  it — `@streamdown/mermaid` (a dependency of `@elabs-ai/components-ai`, not of
-  your app) currently declares `mermaid` as its own plain, non-optional
-  dependency, so a hoisting package manager can still install it transitively.
-  The optional-peer declaration still means you never have to declare it
-  yourself, and a genuinely absent engine still fails actionably rather than
-  crashing.
+  **Known limitation:** `mermaid`'s bytes are always installed, even when you
+  skip the peer — **two** of `@elabs-ai/components-ai`'s own plain
+  `dependencies` (not of your app), `streamdown` and `@streamdown/mermaid`,
+  each declare `mermaid` as their own plain, non-optional dependency, so every
+  package manager resolves it regardless of what your app's manifest says. A
+  hoisting layout additionally makes `import("mermaid")` resolve, so the
+  runtime capability-gap panel never renders for you; the optional-peer
+  declaration still means you never have to declare `mermaid` yourself, and a
+  genuinely unresolved engine still fails actionably rather than crashing.
+  `pnpm optional-peers:check` (issue #94) tracks this as a defeated optional
+  peer and will fail the day it is fixed upstream.
 
 ## 7. Make your coding agent brand-ui-aware
 

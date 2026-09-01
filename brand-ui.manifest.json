@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T19:11:51.656Z",
+  "generatedAt": "2026-09-01T20:02:13.414Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -24307,6 +24307,10 @@
         {
           "name": "CarouselApi",
           "module": "packages/ui/src/components/carousel/carousel.tsx"
+        },
+        {
+          "name": "ChangeCheck",
+          "module": "packages/ui/src/components/change-review/change-review.tsx"
         },
         {
           "name": "ChangeHunk",
