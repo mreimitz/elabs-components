@@ -112,19 +112,71 @@ authority loop where automation authorizes itself.
   bullet above is about option spellings; it cannot answer _"which tools are
   there?"_, and that gap is what let `csh -c "gh issue comment …"` — a shell in
   `/bin` with no row — walk all 18 gated shapes through fix round 6. So an
-  operand of an **unrecognised command word** is re-read as a script whatever
-  the command word is (`nestedOperandCandidates` in
+  operand of an **unrecognised command word** is a CANDIDATE to be re-read as a
+  script, whatever the command word is (`nestedOperandCandidates` in
   `scripts/check-comment-attribution.mjs`); `csh`, `tcsh`, `pwsh`, `fish` and a
   name invented next year are all the same case, because none of them has to be
   known. The recognised half is instead a short, arguable set of commands that
   can only PRINT their operand (`echo`, `printf`, `grep`, `rg`) — a name missing
   from THAT costs a false refusal, which is loud and overridable, where a name
-  missing from an interpreter list cost a silent bypass. **Residual, stated
-  plainly:** a nested call must reach for a **body** to be refused, so a
-  body-less `gh issue comment 26` hidden in an operand is not caught — with no
-  body flag `gh` prompts interactively and, with no TTY, answers `flags
-required when not running interactively` without reaching the API. At a
-  command position a body-less call is still refused.
+  missing from an interpreter list cost a silent bypass. **This does NOT mean
+  every `gh` call inside such an operand is caught** — the next bullet states
+  the two operand-text prefilters that decide whether the re-read happens at
+  all. **Residual, stated plainly:** a nested call must also reach for a
+  **body** to be refused, so a body-less `gh issue comment 26` hidden in an
+  operand is not caught — with no body flag `gh` prompts interactively and,
+  with no TTY, answers `flags required when not running interactively`
+  without reaching the API. At a command position a body-less call is still
+  refused.
+- **Residual risk of the fix-round-7 inversion — accident paths vs evasion
+  paths, declared plainly rather than left implicit.** The command-word
+  inversion above is real and closes the class it targets, but the operand it
+  re-reads is gated by mechanisms that are their own, previously undeclared
+  limits (fix-round-7 verdict, "Residual risk I am accepting" — reproductions
+  and self-test suggestions there). Split by whether someone has to be TRYING
+  to hit them. **Accident paths — hit by writing an ordinary command, no
+  intent to evade; the ones worth fixing first if this gate is ever
+  revisited:** (1) a **shell expansion** anywhere in a non-table
+  interpreter's operand turns the re-read off entirely —
+  `csh -c "gh issue comment $N --body 'text by $USER'"` is ALLOWED across 17
+  of the 18 gated shapes, because the operand is skipped rather than treated
+  as uninspectable the moment it contains something the shell would expand. A
+  `$VAR` is the most ordinary thing to write in a shell command — this is the
+  largest residual gap, and the reason this round ships as a documented
+  partial rather than a closed class. (2) The same mechanism's
+  `gh`-detection is a **text regex**, so a **subshell or a space-free `&&`**
+  in such an operand also passes unseen: `csh -c "(gh issue comment 26
+--body '…')"` and `csh -c "true&&gh issue comment 26 --body '…'"` are
+  ordinary shell punctuation, not tricks, and both ALLOW across all 18 gated
+  shapes. (3) A **false refusal**: `git commit -m "fix(hooks): the gh issue
+comment gate now blocks --body=text"` is REFUSED, because `git`'s operand,
+  once re-parsed as a script, contains both a gated `gh` phrase and a
+  body-shaped flag (3 of 82 legitimate commands in the fix-round-7 verdict's
+  corpus, all new in that round — this lands squarely on the people
+  maintaining this gate). It costs a retry, not a bypass: the override
+  (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed by
+  `.claude/hooks/gate-comment-attribution.sh` **at the moment of refusal**,
+  so clearing it needs no trip back to this file. **Evasion paths — someone
+  has to be trying; accepted as documented limits, the same way the seven
+  below are:** (4) **quoting or escaping the `gh` word** inside such an
+  operand (`'gh'`, `"gh"`, `\gh`) defeats the same text regex. (5) **nesting a
+  KNOWN shell inside the unknown one**
+  (`csh -c "sh -c 'gh issue comment 26 --body …'"`) — cheap, but nobody types
+  it by accident. (6) **a producer piped through an intermediate stage into a
+  shell** (`printf '%s' "gh issue comment 26 --body '…'" | tee /tmp/p.sh |
+sh`) escapes the pipeline arm of this same inversion — the sink-detection
+  only recognises a sink that takes NO non-flag operand, and `tee`'s filename
+  argument defeats that; pre-existing (not new in fix round 7) and, until
+  now, undeclared. (7) **`gh api graphql`'s `addComment` mutation** — already
+  declared below as an unseen posting channel, and confirmed (fix-round-7
+  verdict) to really reach GitHub's mutation resolver; parsing GraphQL
+  documents is not a reasonable ask of a command-line gate. **The seven
+  declared limits below this bullet are unaffected** — they still hold and
+  still match behaviour. **The honest summary:** against an agent that is not
+  trying to evade this gate, it stops every ordinary spelling of an unmarked
+  post; against one that is, it is one `$VAR` or one pair of quotes from
+  being off. Read this gate as a strong deterrent against ordinary mistakes,
+  never as airtight.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved

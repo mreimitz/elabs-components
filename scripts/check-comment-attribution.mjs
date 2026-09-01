@@ -58,9 +58,15 @@
 //      a per-tool grammar cannot answer WHICH TOOLS EXIST and `csh` had no
 //      row. So the row set is no longer what decides. See the inverted default
 //      at nestedOperandCandidates below: an operand of an unrecognised command
-//      word is re-read as a script, whatever the command word is. The table
-//      still earns its keep — it resolves `bash -lc` precisely instead of by
-//      re-reading every operand — but nothing depends on its membership.
+//      word IS a candidate to be re-read as a script, whatever that command
+//      word is — no interpreter name has to be known. That inversion does NOT
+//      reach every `gh` call inside such an operand, though: two operand-TEXT
+//      prefilters (an expansion anywhere in the word; a regex match on the
+//      literal `gh `) decide whether the re-read happens at all, and both are
+//      declared limits, not safety properties — see DECLARED LIMITS below.
+//      The table still earns its keep — it resolves `bash -lc` precisely
+//      instead of by re-reading every operand — but nothing depends on its
+//      membership.
 //   2. `findGhCandidates()` treats EVERY command whose argv[0] basename is `gh`
 //      as a candidate, wherever it sits — after leading `VAR=…` assignments,
 //      behind a wrapper (`xargs gh`, `then gh`), or spelled as an absolute path.
@@ -122,8 +128,48 @@
 //     with no TTY it answers `flags required when not running interactively`
 //     and never reaches the API (verified, gh 2.93.0). At a command position
 //     the body-less call is still refused — that path is unchanged. Requiring
-//     a body here is what keeps `git log --grep "gh issue comment"` and
-//     `git commit -m "…the gh issue comment gate…"` out of the net.
+//     a body here is what keeps a BARE mention with no body-shaped flag —
+//     `git log --grep "gh issue comment"` — out of the net. It does NOT keep
+//     out a message that also carries a body-shaped phrase (see the false
+//     refusal below); the two earlier verdicts stated this claim more broadly
+//     than the code supports.
+//   - THE SAME RE-READ IS ITSELF GATED BY TWO OPERAND-TEXT PREFILTERS
+//     (`nestedOperandCandidates`'s `word.expanded` check and `NESTED_GH_RE`,
+//     both below), and each is a new enumeration of spelling in the exact
+//     place this section exists to remove one:
+//       · A SHELL EXPANSION anywhere in the operand (`word.expanded`) SKIPS
+//         the whole operand instead of marking it uninspectable — a bare
+//         `$VAR` is enough: `csh -c "gh issue comment $N --body '…'"` is
+//         ALLOWED across 17 of the 18 gated shapes. Nobody has to be trying
+//         to defeat the gate to write a `$VAR`. This is an ACCIDENT path, and
+//         it is the gate's most consequential residual gap.
+//       · `NESTED_GH_RE = /(?:^|[\s/])gh\s/` is a literal text match, so a
+//         `gh` it cannot see — quoted (`'gh'`, `"gh"`), escaped (`\gh`),
+//         inside a subshell (`(gh …)`), joined with no space (`true&&gh …`),
+//         or itself hidden inside a KNOWN interpreter nested one level inside
+//         the unknown one (`csh -c "sh -c 'gh …'"`) — is invisible across all
+//         18 gated shapes. `(gh …)` and `a&&b` are ordinary shell punctuation
+//         and cost little to hit by accident; the quoted/escaped/nested forms
+//         need someone TRYING. These are EVASION paths.
+//     Neither prefilter was stated anywhere a reader would find it without
+//     reading this source; `.claude/rules/issue-workflow.md` now says so.
+//   - A FALSE REFUSAL, new in fix round 7: `git commit -m "fix(hooks): the gh
+//     issue comment gate now blocks --body=text"` is REFUSED, because the
+//     unrecognised command word `git`'s operand, once re-parsed as a script,
+//     contains both a gated `gh` phrase and a `--body`-shaped flag — 3 of 82
+//     legitimate commands in the fix-round-7 verdict's corpus. It costs a
+//     retry, not a bypass. The override
+//     (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed by
+//     `.claude/hooks/gate-comment-attribution.sh` at the moment of refusal,
+//     so it clears without reading this file.
+//   - A PRODUCER PIPED THROUGH AN INTERMEDIATE STAGE INTO A SHELL escapes the
+//     pipeline arm of this same inversion: `sinkExecutesStdin` (below)
+//     requires the FINAL sink to take no non-flag operand, so
+//     `printf '%s' "gh issue comment 26 --body '…'" | tee /tmp/p.sh | sh` is
+//     ALLOWED (18/18 gated shapes) even though `echo "gh …" | bash` — one
+//     stage shorter — is refused. Pre-existing (not a round-7 regression) and
+//     previously undeclared; someone has to be constructing the extra stage
+//     on purpose — an EVASION path.
 //   - `gh api` gating takes THREE conditions together, and the declaration
 //     below is the behaviour, checked against it (fix-round-3 verdict,
 //     Finding 2 was a mismatch between the two):
@@ -1089,11 +1135,29 @@ function analyzeGhApi(argv, env, read) {
 // "which tools are there?", and a longer table would only postpone the next
 // `tcsh`/`fish`/`pwsh`/whatever-ships-next.
 //
-// So the DEFAULT is inverted instead of the table extended: an operand of a
-// command word this gate does not recognise is re-read as a script, and any
-// `gh` posting call inside it is a candidate — no matter what the command word
-// is. `csh`, `tcsh`, `pwsh`, `fish`, `busybox`, or a name invented next year
-// are all the same case, because none of them has to be known.
+// So the DEFAULT is inverted on the COMMAND WORD: an operand of a command
+// word this gate does not recognise is a candidate for re-reading, whatever
+// that command word is. `csh`, `tcsh`, `pwsh`, `fish`, `busybox`, or a name
+// invented next year are all the same case, because none of them has to be
+// known.
+//
+// That inversion does NOT reach every `gh` call inside such an operand,
+// though — two operand-TEXT prefilters below decide whether the re-read
+// happens at all, and each is itself an enumeration of spelling, the same
+// failure mode this section exists to remove (see DECLARED LIMITS above for
+// the full statement and the reproductions):
+//   - `word.expanded` (any shell expansion in the operand — a bare `$VAR` is
+//     the ordinary case) SKIPS the whole operand rather than marking it
+//     uninspectable, so `csh -c "gh issue comment $N --body '…'"` is ALLOWED
+//     across 17 of the 18 gated shapes. Nobody has to be trying to defeat the
+//     gate to write a `$VAR` — this is an ACCIDENT path.
+//   - `NESTED_GH_RE` (below) is a text match, so a `gh` it cannot see —
+//     quoted (`'gh'`, `"gh"`), escaped (`\gh`), inside a subshell (`(gh …)`),
+//     joined with no space (`true&&gh …`), or itself hidden inside a KNOWN
+//     interpreter nested one level in (`csh -c "sh -c 'gh …'"`) — is
+//     invisible across all 18 gated shapes. `(gh …)` and `a&&b` are ordinary
+//     shell punctuation; the quoted/escaped/nested forms need someone
+//     TRYING. These are EVASION paths.
 //
 // The recognised half is now the small, closed, ARGUABLE set below: commands
 // that cannot execute an operand at all, they only print or match text. That
