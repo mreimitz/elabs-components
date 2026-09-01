@@ -78,17 +78,35 @@ authority loop where automation authorizes itself.
   `.claude/commands/*.md`, `.claude/agents/*.md`, `.claude/hooks/*.sh` and
   `skills/**` so a doc that tells an agent to post a comment must also point it
   at the helper/marker.
-- **The hook PARSES the command line; it does not pattern-match it.** Two
+- **The hook PARSES the command line; it does not pattern-match it.** Three
   earlier rounds of this gate were defeated by ordinary shell grammar — first by
   `--body=value` (only `--body value` was recognized), then by `cd X && gh …`
-  (only `gh` at token 0 was recognized). The guard now tokenises the command
-  respecting quotes, escapes and line continuations, walks **every** simple
-  command in it (across `&&`, `||`, `;`, `|`, newlines, subshells, command
-  substitutions, `eval` and `sh -c`), treats any command whose argv[0] basename
+  (only `gh` at token 0 was recognized), then by `bash -lc "gh …"` (only the
+  exact token `-c` was recognized, so one extra letter in the flag cluster hid
+  the whole script — and with it all 18 gated shapes). The guard now tokenises
+  the command respecting quotes, escapes and line continuations, walks **every**
+  simple command in it (across `&&`, `||`, `;`, `|`, newlines, subshells,
+  command substitutions and `eval`), treats any command whose argv[0] basename
   is `gh` as a candidate regardless of position, path or leading `VAR=…`
   assignments, skips `gh`'s own `--repo`/`-R` global flags, and checks **every**
   body-carrying flag in **every** candidate — not the first one it finds.
   Extending it means extending the parse, never adding another regex.
+- **A nested script is found by the interpreter's own OPTION GRAMMAR, not by a
+  list of spellings.** The table lives above `SCRIPT_INTRODUCERS` in
+  `scripts/lib/shell-command-parse.mjs` together with the usage output each row
+  was derived from, so it can be re-derived rather than trusted: `-c` **anywhere
+  in a short-flag cluster** for every POSIX shell (`bash -lc`, `-ec`, `-xc`,
+  `-cx`, `-euxc`, `dash -ce`, `zsh -ic` … — POSIX Utility Syntax Guideline 5
+  grouping, each verified to execute here), `env -S str` in all four spellings
+  (`-S str`, attached `-S"str"`, clustered `-iS`, GNU `--split-string=`), and
+  `ssh`'s flag-less operand list, which ssh(1) runs on the remote host as a
+  shell command. The lookup is **position-independent**, so a wrapper in front
+  of the interpreter (`nohup`, `timeout`, `xargs`, `command`, `env`, `nice`)
+  hides nothing; and whatever the table has not seen is covered by a
+  fail-closed superset — the whole operand list after an interpreter name is
+  re-parsed as one script, which is what also catches a `<<<` herestring. A
+  literal producer piped into an interpreter (`echo "gh …" | bash`) is read the
+  same way: the bytes are on the line, so a pipe is not a hiding place either.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved
@@ -143,6 +161,17 @@ authority loop where automation authorizes itself.
   `gh api graphql` `addComment` mutation, a third-party client — is not seen.
   (3) The gate reads the bytes the command line contains; a body a script
   computes at runtime cannot be read, so it is refused rather than inspected.
+  (3b) By the same token it cannot see a SCRIPT the command line does not
+  contain as text: `bash deploy.sh` or `cat s.sh | sh` (the bytes are in a
+  file), `bash -c "$SCRIPT"` (the bytes are in the environment), or an
+  interpreter for another **language** (`node -e`, `python -c`, `perl -e`),
+  whose argument is not shell source and cannot be parsed as any. Where the
+  bytes ARE on the line the gate reads them, flag or no flag — `echo "gh …" |
+bash` and `bash <<< "gh …"` are both parsed. Unlike (3) this is declared rather than refused, and the
+  difference is deliberate: in (3) the call is already known to be a posting
+  call and only its text is unreadable, so a refusal costs one retry; here
+  nothing marks the command as posting at all, and refusing every script the
+  line does not spell out would refuse most ordinary work.
   (4) A user-defined `gh` alias (`gh cmt 26 --body …`) is expanded inside `gh`
   from a config file this gate does not read, so the subcommand match cannot see
   it. (5) A relative `--body-file` path is resolved against the hook's working

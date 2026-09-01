@@ -40,8 +40,19 @@
 //      continuations and `#` comments, and splits it into simple commands
 //      across `&&`, `||`, `;`, `|`, `&`, newlines, subshells, command
 //      substitutions and process substitutions — recursing into `$( … )`,
-//      backticks, `eval "…"` and `sh -c "…"`, which each hide a whole script
-//      inside one word.
+//      backticks, `eval "…"`, and every INTERPRETER INVOCATION that hides a
+//      whole script inside one word. Round 5 was defeated here: the nested
+//      re-parse asked `word.value === "-c"`, so `bash -lc "gh issue comment
+//      …"` — `-c` clustered with one ordinary flag — hid the script and with
+//      it all 18 gated shapes. Membership is now decided by each tool's own
+//      OPTION GRAMMAR, read out of that tool's usage output (the derivation is
+//      recorded above SCRIPT_INTRODUCERS in shell-command-parse.mjs): `-c`
+//      anywhere in a short-flag cluster for every POSIX shell, env's `-S` /
+//      `-S"…"` / `-iS` / `--split-string=`, ssh's flag-less operand list, and
+//      — as a fail-closed superset for whatever the table has not seen — the
+//      whole operand list after any interpreter name. The lookup is
+//      position-independent, so a wrapper in front of the shell
+//      (`nohup`/`timeout`/`xargs`/`env`/`command`) hides nothing either.
 //   2. `findGhCandidates()` treats EVERY command whose argv[0] basename is `gh`
 //      as a candidate, wherever it sits — after leading `VAR=…` assignments,
 //      behind a wrapper (`xargs gh`, `then gh`), or spelled as an absolute path.
@@ -78,6 +89,20 @@
 //   - A body computed at runtime (`--body "$MSG"`, a heredoc, stdin, a device)
 //     cannot be read from the command line, so it is REFUSED rather than
 //     inspected — never passed through.
+//   - A SCRIPT THE COMMAND LINE DOES NOT CONTAIN AS TEXT is not seen. The
+//     parser reads bytes that are present as words: `bash -lc "gh …"` is
+//     readable, and so is `echo "gh …" | bash`, whose producer emits its own
+//     operands; `bash deploy.sh` and `cat s.sh | sh` (the bytes are in a file)
+//     and `bash -c "$SCRIPT"` (the bytes are in the environment) are not. Nor is an interpreter for another
+//     LANGUAGE — `node -e '…execSync("gh …")…'`, `python -c`, `perl -e` —
+//     whose argument is not shell source and cannot be parsed as any.
+//     This is deliberately a DECLARED limit and not a refusal, and the
+//     asymmetry with the body rule above is the point: there, the call is
+//     already known to be a posting call and only its text is unreadable, so
+//     refusing costs one retry; here nothing identifies the command as a
+//     posting call at all, and refusing every shell script the line does not
+//     spell out would refuse most ordinary work — a guard that does that is
+//     disabled within a day and protects nobody.
 //   - `gh api` gating takes THREE conditions together, and the declaration
 //     below is the behaviour, checked against it (fix-round-3 verdict,
 //     Finding 2 was a mismatch between the two):

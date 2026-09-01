@@ -29,7 +29,10 @@ const EXPANSION_NAME_RE = /^\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-])/;
  *   `value` is the literal text with one level of quoting removed;
  *   `expanded` is true when the word contained an expansion this parser
  *   deliberately refuses to guess at.
- * @typedef {{words: ShellWord[], heredoc: boolean}} SimpleCommand
+ * @typedef {{words: ShellWord[], heredoc: boolean, pipedNext?: boolean}} SimpleCommand
+ *   `pipedNext` is true when THIS command's stdout is piped into the next one
+ *   — `echo "gh …" | bash` hands a shell a script whose bytes are right there
+ *   on the line, so the pipeline itself is a script-introducing route.
  *   `heredoc` is true when THIS command feeds a heredoc — its body is not in
  *   argv, so the gate cannot inspect it. Tracked per command, not per line, so
  *   an unrelated `cat > body.md <<EOF` earlier in a script does not make a
@@ -107,9 +110,9 @@ export function parseShellCommands(text, depth = 0) {
     started = false;
     expanded = false;
   };
-  const endCommand = () => {
+  const endCommand = (pipedNext = false) => {
     endWord();
-    if (cur.length) commands.push({ words: cur, heredoc: curHeredoc });
+    if (cur.length) commands.push({ words: cur, heredoc: curHeredoc, pipedNext });
     cur = [];
     curHeredoc = false;
   };
@@ -266,7 +269,8 @@ export function parseShellCommands(text, depth = 0) {
       continue;
     }
     if (ch === "&" || ch === "|") {
-      endCommand();
+      // `||` is a logical operator; a single `|` (or `|&`) is a real pipe.
+      endCommand(ch === "|" && src[i + 1] !== "|");
       i += src[i + 1] === ch ? 2 : 1;
       continue;
     }
@@ -283,13 +287,25 @@ export function parseShellCommands(text, depth = 0) {
   endCommand();
 
   // A command line can carry a whole SCRIPT inside one word. Re-parse those,
-  // or `eval "gh …"` / `bash -c 'gh …'` would be a one-word command with no
+  // or `eval "gh …"` / `bash -lc 'gh …'` would be a one-word command with no
   // `gh` token in it at all — the same "it's a language, not a string" hole.
   if (depth < MAX_DEPTH) {
-    for (const cmd of commands.slice()) {
+    const original = commands.slice();
+    // `echo 'gh …' | bash` — a literal producer piped into an interpreter. The
+    // script's bytes are words on this line, so it is read, not declared away:
+    // only a producer whose output the line does NOT contain (a file, another
+    // program's output, a `$VAR`) stays outside what this parser can see.
+    for (let ci = 1; ci < original.length; ci++) {
+      const prev = original[ci - 1];
+      const into = original[ci];
+      if (!prev.pipedNext || !prev.words.length || !into.words.length) continue;
+      if (!LITERAL_PRODUCERS.includes(basename(prev.words[0].value))) continue;
+      if (!introducerFor(basename(into.words[0].value))) continue;
+      nested.push(joinWords(prev.words, 1));
+    }
+    for (const cmd of original) {
       const words = cmd.words;
       if (!words.length) continue;
-      const base = basename(words[0].value);
       // An assignment can carry a whole command as its value
       // (`CMD="gh issue comment 26 --body …"` then `$CMD`). The value is one
       // word, so nothing in it is a token until it is re-parsed.
@@ -297,19 +313,24 @@ export function parseShellCommands(text, depth = 0) {
         const m = ASSIGNMENT_RE.exec(word.value);
         if (m && /(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
       }
-      if (base === "eval" && words.length > 1) {
-        nested.push(
-          words
-            .slice(1)
-            .map((w) => w.value)
-            .join(" "),
-        );
-      } else if (["sh", "bash", "zsh", "dash", "ksh"].includes(base)) {
-        const ci = words.findIndex((w) => w.value === "-c");
-        if (ci !== -1 && words[ci + 1]) nested.push(words[ci + 1].value);
+      // Position-independent, because a wrapper can precede the interpreter:
+      // `nohup bash -lc …`, `timeout 30 bash -lc …`, `xargs -I{} sh -c …`,
+      // `env FOO=1 bash -lc …`, `command bash -lc …`. Testing only words[0]
+      // hid every one of those, `-c` or not.
+      for (let i = 0; i < words.length; i++) {
+        const base = basename(words[i].value);
+        if (base === "eval") {
+          nested.push(joinWords(words, i + 1));
+          continue;
+        }
+        const spec = introducerFor(base);
+        if (spec) nested.push(...scriptOperands(words, i + 1, spec));
       }
     }
+    const seen = new Set();
     for (const script of nested) {
+      if (!script || seen.has(script)) continue;
+      seen.add(script);
       const inner = parseShellCommands(script, depth + 1);
       commands.push(...inner.commands);
       heredoc = heredoc || inner.heredoc;
@@ -317,6 +338,188 @@ export function parseShellCommands(text, depth = 0) {
   }
 
   return { commands, heredoc };
+}
+
+// ── Script-introducing option grammar (#78, fix round 6) ────────────────────
+//
+// Round 5 was defeated by `bash -lc "gh issue comment …"`. The cause was not a
+// missing spelling, it was the wrong KIND of test: the nested-script lookup
+// asked `word.value === "-c"`, so any short-flag CLUSTER carrying `c` hid the
+// whole script from the parser — and with it all 18 gated posting shapes.
+//
+// So membership is decided by each tool's own option GRAMMAR, read out of that
+// tool's own usage output rather than recalled:
+//
+//   · POSIX sh(1) mandates `-c command_string`, and POSIX Utility Syntax
+//     Guideline 5 permits grouping options behind one `-`. Every shell here
+//     accepts `c` ANYWHERE in the cluster, not only last — verified on this
+//     machine (bash 3.2.57, zsh 5.9, dash, ksh, and `/bin/sh`, which is bash):
+//     `-lc` `-ec` `-xc` `-cx` `-cl` `-euxc` `-ce` all execute the next word.
+//   · The script is never ATTACHED for a shell: `bash -c'echo x'`,
+//     `zsh -c'…'`, `dash -c'…'` and `ksh -c'…'` are all rejected by the real
+//     shells, so the script is the operand that FOLLOWS the cluster.
+//   · No shell present spells `-c` as a long option: `bash --help`'s GNU long
+//     option list, `zsh --help`, `ksh`'s usage line and dash (which has no long
+//     options at all) contain no `--command`.
+//   · `bash -o opt`, `bash -O shopt`, `zsh -o opt` and `ksh -R file` consume an
+//     argument, so a cluster is walked left to right and stops at the first
+//     argument-taking letter instead of guessing past it.
+//   · env(1) is the other verified script introducer. BSD/macOS usage is
+//     `env [-0iv] [-C workdir] [-P utilpath] [-S string] [-u name]`; `-S str`,
+//     the ATTACHED `-S"str"` and the clustered `-iS "str"` all run the string
+//     (verified here). GNU coreutils additionally spells it
+//     `--split-string=STRING`; that build is not installed on this machine
+//     (`env --split-string=…` → `env: illegal option -- s`), so its grammar is
+//     taken from the GNU env(1) documentation, not observed.
+//   · util-linux `su -c COMMAND` has the same shape. macOS `su` does NOT
+//     (`su [-] [-flm] [login [args]]`), so that row is documented grammar, not
+//     behaviour observed here. Listing it costs nothing.
+//   · ssh(1) needs no flag at all: its synopsis is
+//     `ssh [options] destination [command [argument ...]]` and a command given
+//     there "is executed on the remote host instead of a login shell", joined
+//     with spaces — so the OPERAND LIST is the script. `ssh localhost "gh
+//     issue comment …"` really does post, and did pass this gate until this
+//     round. Its own `-c cipher_spec` and `-S ctl_path` are not script flags,
+//     which is why ssh is its own row rather than a member of the shell one.
+//
+// WHAT THE TABLE CANNOT KNOW is handled by a superset, not by more rows: the
+// whole operand list after an interpreter name is ALSO offered to the
+// re-parser as one script. That covers a `<<<` herestring (`bash <<< "gh …"`),
+// a positional argument a script would `eval`, and any option spelling this
+// table has missed. Re-parsing words that are not a script is free — they
+// yield commands whose argv[0] is not `gh` — so the over-approximation only
+// ever ADDS candidates, which is the fail-closed direction.
+//
+// A PIPELINE is the same question asked without a flag, so it gets the same
+// answer: `echo "gh …" | bash` has the script's bytes right there as a word and
+// is parsed (LITERAL_PRODUCERS below), while `cat body.sh | bash` does not and
+// is not.
+//
+// STILL NOT SEEN, and declared rather than half-closed: a script the command
+// line does not CONTAIN as text — `bash deploy.sh` and `cat s.sh | sh` (the
+// bytes are in a file), `bash -c "$SCRIPT"` (the bytes are in the
+// environment), and an interpreter for another language (`node -e`,
+// `python -c`, `perl -e`), whose argument is not shell source and cannot be
+// parsed as any. See the declared limits in
+// `.claude/rules/issue-workflow.md`.
+
+/** Tools whose option grammar can hand a following word to a shell. */
+const SCRIPT_INTRODUCERS = [
+  {
+    names: [
+      "sh",
+      "bash",
+      "rbash",
+      "zsh",
+      "dash",
+      "ksh",
+      "ksh88",
+      "ksh93",
+      "mksh",
+      "pdksh",
+      "ash",
+      "busybox",
+      "yash",
+      "su",
+    ],
+    flag: "c",
+    longs: [],
+    attachable: false,
+    argTaking: "oOR",
+  },
+  {
+    names: ["env"],
+    flag: "S",
+    longs: ["--split-string"],
+    attachable: true,
+    argTaking: "uCPL",
+  },
+  {
+    // `ssh [options] destination [command [argument ...]]` — ssh(1) joins the
+    // operands with spaces and runs them "on the remote host instead of a
+    // login shell", so the operand list IS a shell script and needs no flag of
+    // its own. Its own `-c cipher_spec` / `-S ctl_path` are NOT script flags,
+    // which is exactly why ssh gets its own row instead of joining the shells.
+    names: ["ssh", "slogin", "rsh", "remsh"],
+    flag: null,
+    longs: [],
+    attachable: false,
+    argTaking: "",
+  },
+];
+
+// The leading short-flag cluster of a word. Deliberately not anchored at the
+// end: an ATTACHED value (`-S"gh issue comment …"`) is part of the same word
+// and may contain anything, spaces included.
+// Commands whose stdout is their own operands, verbatim. `cat`/`curl` are
+// deliberately absent: their bytes come from a file or a socket, so a shell fed
+// by one of those is genuinely outside what a command line can be read to say.
+const LITERAL_PRODUCERS = ["echo", "printf"];
+
+const SHORT_CLUSTER_RE = /^-([A-Za-z0-9]+)/;
+
+/**
+ * The option grammar for a command word, by basename — `/bin/bash` and `bash`
+ * are the same tool.
+ * @param {string} base
+ */
+function introducerFor(base) {
+  return SCRIPT_INTRODUCERS.find((spec) => spec.names.includes(base));
+}
+
+/**
+ * @param {ShellWord[]} words
+ * @param {number} from
+ */
+function joinWords(words, from) {
+  return words
+    .slice(from)
+    .map((w) => w.value)
+    .join(" ");
+}
+
+/**
+ * Every word an interpreter invocation could execute as a script: the operand
+ * its own option grammar names (including the attached and long-option
+ * spellings), plus the whole remaining operand list as one script — the
+ * fail-closed superset described above.
+ *
+ * @param {ShellWord[]} words all words of the simple command
+ * @param {number} start index just past the interpreter's own name
+ * @param {{flag: string|null, longs: string[], attachable: boolean,
+ *          argTaking: string}} spec `flag: null` = no script FLAG exists; the
+ *          operand list alone carries the script (ssh).
+ * @returns {string[]}
+ */
+function scriptOperands(words, start, spec) {
+  /** @type {string[]} */
+  const scripts = [];
+  for (let j = start; j < words.length; j++) {
+    const word = words[j].value;
+    const long = spec.longs.find((l) => word === l || word.startsWith(`${l}=`));
+    if (long) {
+      if (word.length > long.length) scripts.push(word.slice(long.length + 1));
+      else if (words[j + 1]) scripts.push(words[j + 1].value);
+      continue;
+    }
+    const shorts = SHORT_CLUSTER_RE.exec(word);
+    if (!shorts) continue;
+    const cluster = shorts[1];
+    for (let k = 0; k < cluster.length; k++) {
+      const ch = cluster[k];
+      if (ch === spec.flag) {
+        const rest = word.slice(k + 2);
+        if (spec.attachable && rest) scripts.push(rest);
+        else if (words[j + 1]) scripts.push(words[j + 1].value);
+        break;
+      }
+      // An argument-taking letter eats the rest of the cluster or the next
+      // word, so nothing after it in this token is a flag any more.
+      if (spec.argTaking.includes(ch)) break;
+    }
+  }
+  if (words.length > start) scripts.push(joinWords(words, start));
+  return scripts;
 }
 
 /**

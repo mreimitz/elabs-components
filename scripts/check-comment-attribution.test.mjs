@@ -768,6 +768,19 @@ test("#78 class: shell grammar beyond the reported cases still BLOCKS", () => {
   writeFileSync(marked, render("close-issues", 78), "utf8");
   const cases = [
     [`bash -c 'gh issue comment 26 --body "${UNMARKED}"'`, "bash -c"],
+    // The round-5 finding lived exactly here: `-c` clustered with any other
+    // short flag hid the whole script, and this is the test that goes red when
+    // the nested re-parse stops seeing it. The full grammar is exercised by
+    // "every script-introducing option spelling still BLOCKS" below.
+    [`bash -lc 'gh issue comment 26 --body "${UNMARKED}"'`, "bash -lc"],
+    [`bash -euxc 'gh issue comment 26 --body "${UNMARKED}"'`, "bash -euxc"],
+    [`sh -ec 'gh issue comment 26 --body "${UNMARKED}"'`, "sh -ec"],
+    [`zsh -ic 'gh issue comment 26 --body "${UNMARKED}"'`, "zsh -ic"],
+    [`nohup bash -lc 'gh issue comment 26 --body "${UNMARKED}"'`, "wrapped -lc"],
+    [`env -S 'gh issue comment 26 --body "${UNMARKED}"'`, "env -S"],
+    [`env -S'gh issue comment 26 --body "${UNMARKED}"'`, "env -S attached"],
+    [`ssh localhost 'gh issue comment 26 --body "${UNMARKED}"'`, "ssh operand"],
+    [`bash <<< 'gh issue comment 26 --body "${UNMARKED}"'`, "herestring"],
     [`eval "gh issue comment 26 --body '${UNMARKED}'"`, "eval"],
     [`OUT=$(gh issue comment 26 --body '${UNMARKED}')`, "command substitution"],
     [`echo $(gh pr comment 12 --body '${UNMARKED}')`, "bare command substitution"],
@@ -797,6 +810,125 @@ test("#78 class: shell grammar beyond the reported cases still BLOCKS", () => {
   }
 });
 
+// ── The script-introducing option grammar (fix round 6) ───────────────────
+//
+// Round 5 fell to `bash -lc "gh issue comment …"`: the nested-script lookup
+// tested `word.value === "-c"`, so one extra letter in the short-flag cluster
+// hid the script — and with it ALL 18 gated shapes. The cases below are the
+// grammar, not the three spellings that were reported: `-c` anywhere in a
+// cluster for every shell on PATH, the wrappers that can stand in front of the
+// shell, env's `-S` in each of its spellings, ssh's flag-less operand list,
+// and the routes that hand a shell a script with no flag at all.
+
+test("#78 class: every script-introducing option spelling still BLOCKS", () => {
+  const inner = `gh issue comment 26 --body '${UNMARKED}'`;
+  const cases = [
+    // `-c` clustered — POSIX guideline 5 grouping; each verified to execute on
+    // this machine (bash 3.2.57, zsh 5.9, dash, ksh, /bin/sh).
+    [`bash -lc "${inner}"`, "bash -lc (the round-5 finding)"],
+    [`bash -ec "${inner}"`, "bash -ec"],
+    [`bash -xc "${inner}"`, "bash -xc"],
+    [`bash -vc "${inner}"`, "bash -vc"],
+    [`bash -uc "${inner}"`, "bash -uc"],
+    [`bash -pc "${inner}"`, "bash -pc"],
+    [`bash -euxc "${inner}"`, "bash -euxc"],
+    [`bash -cx "${inner}"`, "bash -cx (c first in the cluster)"],
+    [`bash -cl "${inner}"`, "bash -cl"],
+    [`sh -lc "${inner}"`, "sh -lc"],
+    [`sh -ec "${inner}"`, "sh -ec"],
+    [`zsh -lc "${inner}"`, "zsh -lc"],
+    [`zsh -ic "${inner}"`, "zsh -ic"],
+    [`dash -ec "${inner}"`, "dash -ec"],
+    [`dash -ce "${inner}"`, "dash -ce"],
+    [`ksh -ec "${inner}"`, "ksh -ec"],
+    [`ksh -ce "${inner}"`, "ksh -ce"],
+    [`ash -c "${inner}"`, "ash -c"],
+    [`mksh -ec "${inner}"`, "mksh -ec"],
+    [`busybox sh -c "${inner}"`, "busybox sh -c"],
+    [`rbash -lc "${inner}"`, "rbash -lc"],
+    [`su -c "${inner}"`, "su -c (util-linux grammar)"],
+    // argument-taking letters must not hide the `-c` that follows them
+    [`bash -o errexit -c "${inner}"`, "bash -o opt -c"],
+    [`bash -O extglob -c "${inner}"`, "bash -O shopt -c"],
+    [`zsh -o interactive -c "${inner}"`, "zsh -o opt -c"],
+    [`ksh -R /dev/null -c "${inner}"`, "ksh -R file -c"],
+    [`bash -c -x "${inner}"`, "bash -c then more flags"],
+    [`bash --rcfile /dev/null -lc "${inner}"`, "long option then -lc"],
+    // the interpreter is not word 0: a wrapper stands in front of it
+    [`nohup bash -lc "${inner}"`, "nohup wrapper"],
+    [`nohup bash -c "${inner}"`, "nohup + plain -c"],
+    [`timeout 30 bash -lc "${inner}"`, "timeout wrapper"],
+    [`command bash -lc "${inner}"`, "command wrapper"],
+    [`env bash -lc "${inner}"`, "env wrapper"],
+    [`env FOO=1 bash -lc "${inner}"`, "env + assignment wrapper"],
+    [`nice -n 5 bash -lc "${inner}"`, "nice wrapper"],
+    [`stdbuf -o0 bash -lc "${inner}"`, "stdbuf wrapper"],
+    [`xargs -I{} bash -c "${inner}"`, "xargs wrapper"],
+    [`script -q /dev/null bash -lc "${inner}"`, "script wrapper"],
+    [`/bin/bash -lc "${inner}"`, "absolute path"],
+    [`cd /tmp && nohup bash -lc "${inner}"`, "wrapper behind a prefix"],
+    [`time eval "${inner}"`, "eval behind a keyword"],
+    // env(1) `-S`, in every spelling env accepts
+    [`env -S "${inner}"`, "env -S"],
+    [`env -S"${inner}"`, "env -S attached"],
+    [`env -iS "${inner}"`, "env -iS clustered"],
+    [`env -0S "${inner}"`, "env -0S clustered"],
+    [`env -i -S "${inner}"`, "env -i -S"],
+    [`env -u FOO -S "${inner}"`, "env -u name -S"],
+    [`env -C /tmp -S "${inner}"`, "env -C workdir -S"],
+    [`env --split-string="${inner}"`, "env --split-string= (GNU)"],
+    [`env --split-string "${inner}"`, "env --split-string (GNU, detached)"],
+    // ssh(1): no flag — the operand list is the remote script
+    [`ssh localhost "${inner}"`, "ssh operand list"],
+    [`ssh -T localhost "${inner}"`, "ssh with flags"],
+    // a script handed to a shell with no flag at all
+    [`bash <<< "${inner}"`, "herestring into a shell"],
+    [`bash -s <<< "${inner}"`, "herestring into bash -s"],
+    [`echo "${inner}" | bash`, "literal producer piped into a shell"],
+    [`echo "${inner}" | sh`, "piped into sh"],
+    [`echo "${inner}" | zsh -s`, "piped into zsh -s"],
+    [`printf '%s' "${inner}" | bash`, "printf piped into a shell"],
+    [`echo -e "${inner}" | bash -s`, "echo flags before the script"],
+    [`cd /tmp && echo "${inner}" | bash`, "piped shell behind a prefix"],
+    // nesting: one wrapper inside another
+    [`bash -lc "bash -ec \\"${inner}\\""`, "clustered inside clustered"],
+    [`sh -c "env -S \\"${inner}\\""`, "env -S inside sh -c"],
+    [`env -S "bash -lc \\"${inner}\\""`, "sh -c inside env -S"],
+  ];
+  for (const [command, label] of cases) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
+  // The round-5 finding was not one shape's problem: `bash -lc` walked all 18
+  // of them through. Every gated shape is re-checked behind the cluster.
+  const shapes = [
+    `gh issue comment 26 --body '${UNMARKED}'`,
+    `gh issue close 26 --comment '${UNMARKED}'`,
+    `gh issue create --title T --body '${UNMARKED}'`,
+    `gh issue edit 26 --body '${UNMARKED}'`,
+    `gh issue reopen 26 --comment '${UNMARKED}'`,
+    `gh pr comment 12 --body '${UNMARKED}'`,
+    `gh pr create --title T --body '${UNMARKED}'`,
+    `gh pr close 12 --comment '${UNMARKED}'`,
+    `gh pr edit 12 --body '${UNMARKED}'`,
+    `gh pr ${"merge"} 12 --body '${UNMARKED}'`,
+    `gh pr reopen 12 --comment '${UNMARKED}'`,
+    `gh pr revert 12 --body '${UNMARKED}'`,
+    `gh pr review 12 --body '${UNMARKED}'`,
+    `gh release create v9 --notes '${UNMARKED}'`,
+    `gh release edit v9 --notes '${UNMARKED}'`,
+    `gh project item-create 1 --body '${UNMARKED}'`,
+    `gh project item-edit --id x --body '${UNMARKED}'`,
+    `gh api -X POST repos/o/r/issues/26/comments -f body='${UNMARKED}'`,
+  ];
+  for (const shape of shapes) {
+    assert.equal(bash(`bash -lc "${shape}"`).verdict, "block", `bash -lc: ${shape}`);
+    assert.equal(bash(`env -S "${shape}"`).verdict, "block", `env -S: ${shape}`);
+  }
+});
+
 // ── A guard that blocks ordinary work gets routed around: these MUST pass ────
 
 test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
@@ -816,6 +948,21 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `cd /tmp && gh issue comment 26 --body-file ${marked}`,
     `gh issue comment 26 --body-file ${marked} && gh issue view 26`,
     `bash -c 'gh issue view 26'`,
+    `bash -lc 'gh issue view 26'`,
+    `bash -lc 'pnpm test && pnpm lint'`,
+    `bash -euxc 'pnpm build'`,
+    `sh -c 'echo hello'`,
+    `zsh -lc 'git status --short'`,
+    "bash scripts/run.sh --body ignored",
+    `env -S 'gh pr checks 12'`,
+    `env -u FOO bash -lc 'gh issue list'`,
+    `ssh localhost 'gh issue view 26'`,
+    "ssh -T git@github.com",
+    `nohup bash -lc 'pnpm storybook' &`,
+    `echo "gh issue view 26" | bash`,
+    `echo "gh issue comment 26 --body x" | grep body`,
+    "cat /tmp/deploy.sh | bash",
+    `printf 'pnpm test\n' | sh`,
     "pnpm attribution:comments:check && pnpm attribution:comments:check:test",
     "gh issue close 26",
     "gh pr review 12 --approve",
