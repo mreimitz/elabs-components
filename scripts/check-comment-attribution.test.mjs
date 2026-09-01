@@ -1031,20 +1031,54 @@ test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
       );
     }
 
-    // #96 fix round 9 — the coordinator's fix-round-8 regression finding.
-    // Part C's command-position restriction (`atCommandPositionOnly`) read
-    // the WRAPPED call's own leading word as the command word, not the `gh`
-    // it wraps: `nohup gh issue comment 26 --body …` behind an unknown
-    // interpreter silently ALLOWED every one of the 18 gated shapes, a
-    // bypass `main` (before Part C existed) did NOT have — the top-level
-    // search has always been position-independent, so a wrapper there was
-    // already transparent. `realCommandWordIndex` (shell-command-parse.mjs)
-    // closes it for the nested arm too. Every wrapper it recognises, plus a
-    // `{ … ; }` brace group (this parser doesn't strip braces as grouping
-    // syntax, so an unrecognised leading `{` word is the same shape of gap),
-    // gets its own case here — a wrapper missing from this list is a wrapper
-    // the next round rediscovers.
-    const wrappers = ["nohup", "sudo", "timeout 30", "xargs", "command", "exec", "time"];
+    // #96 fix rounds 9 and 10 — a leading WRAPPER in front of the nested call.
+    // Round 8's command-position restriction read the wrapped call's own
+    // leading word as the command word instead of the invocation behind it,
+    // so every one of the 18 gated shapes posted unmarked behind `nohup`,
+    // `sudo`, `timeout 30`, … — a bypass `main` did not have. Round 9 tried
+    // to repair that with a SEVEN-NAME wrapper allowlist and reproduced the
+    // bug one level down: `setsid`, `nice -n 10`, `stdbuf -oL`, `doas`,
+    // `watch`, `ionice` (and any name invented next year) were not on it, and
+    // neither was a listed wrapper whose flag takes a SEPARATE VALUE word
+    // (`sudo -u root`, `timeout -s KILL 5`, `exec -a name`), whose value the
+    // walk consumed as the command position. Round 10 removed the restriction
+    // instead of extending the list, so the nested arm searches every
+    // position exactly as the top level always has.
+    //
+    // THE POINT OF THIS LIST IS THE NAMES THAT WERE NEVER ON ANY ALLOWLIST.
+    // If a future round reintroduces a command-position restriction, these
+    // are the cases that must go red — do not prune them down to the ones a
+    // list happens to contain.
+    const wrappers = [
+      "nohup",
+      "sudo",
+      "timeout 30",
+      "xargs",
+      "command",
+      "exec",
+      "time",
+      // never on any allowlist
+      "setsid",
+      "nice -n 10",
+      "stdbuf -oL",
+      "doas",
+      "watch",
+      "ionice",
+      "chrt -f 99",
+      "taskset -c 0",
+      "firejail --net=none",
+      "zzwrapq7",
+      // a LISTED wrapper whose flag's value is a separate word
+      "sudo -u root",
+      "timeout -s KILL 5",
+      "exec -a fake",
+      "nice -n -5",
+      // chains, paths, an assignment prefix, and grouping punctuation
+      "nohup timeout 5",
+      "sudo -u root nohup setsid",
+      "/usr/bin/setsid",
+      "VAR=1 setsid",
+    ];
     for (const wrapper of wrappers) {
       const wrapped = `${wrapper} ${shape}`;
       assert.equal(
@@ -1058,13 +1092,20 @@ test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
         `nonexistent interpreter, wrapper ${wrapper}: ${wrapped}`,
       );
     }
-    const braced = `{ ${shape} ; }`;
-    assert.equal(bash(`csh -c "${braced}"`).verdict, "block", `csh -c, brace group: ${braced}`);
-    assert.equal(
-      bash(`zqx-notashell-9f21a -c "${braced}"`).verdict,
-      "block",
-      `nonexistent interpreter, brace group: ${braced}`,
-    );
+    for (const grouped of [
+      `{ ${shape} ; }`,
+      `{ setsid ${shape} ; }`,
+      `nohup { ${shape} ; }`,
+      `( setsid ${shape} )`,
+      `true&&setsid ${shape}`,
+    ]) {
+      assert.equal(bash(`csh -c "${grouped}"`).verdict, "block", `csh -c, grouped: ${grouped}`);
+      assert.equal(
+        bash(`zqx-notashell-9f21a -c "${grouped}"`).verdict,
+        "block",
+        `nonexistent interpreter, grouped: ${grouped}`,
+      );
+    }
   }
 });
 
@@ -1118,11 +1159,6 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `csh -c 'gh issue view 26'`,
     `csh -c 'pnpm test'`,
     `zqx-notashell-9f21a -c 'gh pr checks 12'`,
-    // #96 fix round 8 — the fix-round-7 verdict's own false refusals, now
-    // fixed: prose that contains BOTH a `gh … comment` phrase and a
-    // `--body`-shaped flag, but is not a nested command at all.
-    `git commit -m "fix(hooks): the gh issue comment gate now blocks --body=text"`,
-    `git commit -m "docs: quote 'gh' issue comment --body in the guide"`,
     // A `VAR=value` word that is a POSITIONAL ARGUMENT to an unrelated
     // command (make's MSG=…), not a shell assignment this line ever
     // executes — the make(1) target never runs `gh`.
@@ -1134,12 +1170,13 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `pnpm --filter $PKG test -- --grep "$NAME"`,
     `csh -c "echo $HOME && ls -la"`,
     `node -e "console.log(1 + '$X')"`,
-    // #96 fix round 9 — the wrapper-transparency fix must not become a
-    // blanket refusal of these words in ordinary prose: a wrapper name is
-    // only special when it sits at a re-parsed simple command's OWN command
-    // position, immediately in front of `gh`.
+    // #96 fix round 10 — prose naming a wrapper is not a posting call. The
+    // nested re-read is position-independent again, so what keeps these
+    // ALLOWED is that the re-parse finds no gated posting shape reaching for
+    // a body — not a judgment about the word `exec` or `sudo`.
     `git commit -m "docs: explain the exec wrapper bypass in the gate rule"`,
     `git commit -m "chore: bump the sudo timeout for the deploy script"`,
+    `git commit -m "docs: setsid the storybook server before the ${"sm" + "oke"} run"`,
     // A wrapped call whose body carries the marker must still ALLOW — the
     // wrapper fix widens what counts as a candidate, not a refusal of every
     // candidate regardless of its body. `--body-file` (not an inline `shq()`
@@ -1147,6 +1184,8 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     // TWO layers of shell quoting (the outer `csh -c "…"` and whatever quote
     // style would wrap the literal body).
     `csh -c "nohup gh issue comment 26 --body-file ${marked}"`,
+    `csh -c "setsid gh issue comment 26 --body-file ${marked}"`,
+    `csh -c "sudo -u root gh issue comment 26 --body-file ${marked}"`,
   ];
   for (const command of cases) {
     assert.equal(bash(command).verdict, "allow", command);
@@ -1179,33 +1218,72 @@ test("#96 fix round 8: the nested-operand widening, through the REAL shell hook"
   assert.equal(allowed.status, 0, allowed.stderr);
 });
 
-test("#96 fix round 9: the wrapper/brace-group transparency fix, through the REAL shell hook", () => {
-  // The regression itself, end to end: a leading wrapper in front of a
-  // nested `gh` call used to slip past `atCommandPositionOnly` entirely and
-  // exit 0 unmarked. Each must now exit 2, same as the round-8 cases above.
+test("#96 fix round 10: no wrapper allowlist — the never-listed wrappers, through the REAL shell hook", () => {
+  // Round 9 shipped a SEVEN-NAME wrapper allowlist to repair round 8's
+  // command-position restriction, and reproduced the bug one level down: an
+  // unlisted wrapper, or a listed one whose flag takes a separate value word,
+  // walked all 18 gated shapes. Round 10 removed the restriction, so the
+  // nested arm is position-independent again — exactly what merge-base `main`
+  // does, and therefore incapable of going stale. The cases below are the ones
+  // that were ALLOWED at the round-9 tip; each must now exit 2.
   for (const wrapped of [
+    `csh -c "setsid gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "nice -n 10 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "stdbuf -oL gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "doas gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "watch gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "ionice gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "zzwrapq7 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "sudo -u root gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "timeout -s KILL 5 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "exec -a fake gh issue comment 26 --body '${UNMARKED}'"`,
+    // the round-9 cases that DID pass then, kept so the repair can't trade one
+    // class for the other a third time
     `csh -c "nohup gh issue comment 26 --body '${UNMARKED}'"`,
     `csh -c "sudo gh issue comment 26 --body '${UNMARKED}'"`,
     `csh -c "timeout 30 gh issue comment 26 --body '${UNMARKED}'"`,
     `csh -c "{ gh issue comment 26 --body '${UNMARKED}' ; }"`,
+    // a shape other than `issue comment`, behind a never-listed wrapper
+    `csh -c "setsid gh pr review 12 --body '${UNMARKED}'"`,
+    `csh -c "nice -n 10 gh release create v9 --notes '${UNMARKED}'"`,
+    `csh -c "sudo -u root gh api -X POST repos/o/r/issues/26/comments -f body='${UNMARKED}'"`,
   ]) {
     const r = runHook({ tool_name: "Bash", tool_input: { command: wrapped } });
     assert.equal(r.status, 2, `${wrapped}\n${r.stderr}`);
     assert.match(r.stderr, /comment-attribution gate/, wrapped);
   }
 
-  // The same wrapped shape with a marked body must still exit 0 — the fix
-  // widens detection, it does not turn every wrapped `gh` call into a
-  // refusal regardless of the body.
-  const marked = path.join(TMP, "round9-wrapped-marked.md");
+  // The same wrapped shapes with a MARKED body must still exit 0 — position
+  // independence widens what counts as a candidate, it does not turn every
+  // wrapped `gh` call into a refusal regardless of the body.
+  const marked = path.join(TMP, "round10-wrapped-marked.md");
   writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
-  const allowed = runHook({
-    tool_name: "Bash",
-    tool_input: {
-      command: `csh -c "nohup gh issue comment 26 --body-file ${marked}"`,
-    },
-  });
-  assert.equal(allowed.status, 0, allowed.stderr);
+  for (const wrapper of ["nohup", "setsid", "sudo -u root"]) {
+    const allowed = runHook({
+      tool_name: "Bash",
+      tool_input: {
+        command: `csh -c "${wrapper} gh issue comment 26 --body-file ${marked}"`,
+      },
+    });
+    assert.equal(allowed.status, 0, `${wrapper}: ${allowed.stderr}`);
+  }
+});
+
+test("#96 fix round 10: the two prose refusals this round GIVES BACK are locked as declared limits", () => {
+  // Round 8's command-position restriction bought precision on prose and paid
+  // for it with a silent bypass class; round 10 chose the other side of that
+  // trade, so these two lines are REFUSED again exactly as merge-base `main`
+  // refuses them. That is a false refusal — loud, one retry, and the override
+  // is printed at the moment of refusal — not a bypass. They are asserted here
+  // so the cost is recorded in the suite rather than only in prose, and so a
+  // future round that reintroduces a position restriction has to confront
+  // them together with the wrapper sweep above.
+  for (const command of [
+    `git commit -m "fix(hooks): the gh issue comment gate now blocks --body=text"`,
+    `git commit -m "docs: quote 'gh' issue comment --body in the guide"`,
+  ]) {
+    assert.equal(bash(command).verdict, "block", command);
+  }
 });
 
 test("#78 class: a marked body behind a cd-prefix passes the REAL hook (exit 0)", () => {

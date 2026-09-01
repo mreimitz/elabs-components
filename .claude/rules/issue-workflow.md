@@ -140,11 +140,7 @@ when not running interactively` without reaching the API. At a command
   (`scripts/lib/shell-command-parse.mjs`) — which keeps an expansion's own
   syntax (`$VAR`, `$(…)`) visible at the position it occupies instead of
   erasing it — and the STRUCTURAL result decides, not a regex over the
-  original text. That widening only holds safely together with a second
-  change landing in the same round: in the NESTED arm only, the re-parsed
-  `gh` must sit at its own simple command's COMMAND POSITION
-  (`findGhCandidates(…, { atCommandPositionOnly: true })`) — the top-level
-  search stays position-independent, where `xargs gh` / `then gh` are real.
+  original text.
   **What this closes, restated against the exact fix-round-7 reproductions:**
   `csh -c "gh issue comment $N --body 'text by $USER'"` now REFUSES (the body
   re-parses as an expanded word, uninspectable — the accident path round 7
@@ -155,12 +151,17 @@ when not running interactively` without reaching the API. At a command
   defeat; and a known shell nested inside the unknown one
   (`csh -c "sh -c 'gh issue comment …'"`) is caught, because the re-parse
   recurses through the same `SCRIPT_INTRODUCERS` handling the top level uses.
-  The fix-round-7 **false refusal** itself is also fixed —
-  `git commit -m "fix(hooks): the gh issue comment gate now blocks
---body=text"` now ALLOWS again — because the command-position restriction is
-  exactly what tells a real invocation from prose that merely mentions the
-  words. A same-shaped, pre-existing false refusal ONE LAYER OUTSIDE this
-  widening closed in the same round:
+  **What it COSTS, in the same breath:** reading through the quotes also means
+  reading through them in prose, so
+  `git commit -m "docs: quote 'gh' issue comment --body in the guide"` — ALLOWED
+  before this round — is now REFUSED. Measured against merge-base `main` over a
+  52-command corpus of ordinary work, that is the ONLY new false refusal, and
+  the same round removes one. The fix-round-7 false refusal
+  (`git commit -m "fix(hooks): the gh issue comment gate now blocks
+--body=text"`) is **NOT** fixed — round 8 did fix it, with a command-position
+  restriction fix round 10 had to revert; see the round-10 bullet below for why
+  and for what that costs. A same-shaped, pre-existing false refusal ONE LAYER
+  OUTSIDE this widening closed in the same round:
   `make deploy MSG="gh issue comment --body ready"` used to re-parse make's
   own positional argument as if it were a shell assignment (a SEPARATE
   mechanism — `parseShellCommands`'s own "assignment carries a whole command"
@@ -180,43 +181,62 @@ when not running interactively` without reaching the API. At a command
   `gh issue comment 26` with no body flag) is still not caught, unchanged from
   round 7 — see the body-reach bullet above. **The seven declared limits below
   this bullet are unaffected.** **The honest summary, updated:** against an
-  agent that is not trying to evade this gate, it now stops every ordinary
-  spelling of an unmarked post AND the ordinary mistakes that used to cost a
-  retry (a `$VAR`, an ordinary commit message); against one that is trying,
-  the remaining gaps are the pipeline relay and the GraphQL mutation, both of
-  which need a deliberate extra stage to reach, not a stray character.
-- **Fix round 9 (#96) closed a regression fix round 8 itself introduced.** The
-  COMMAND POSITION restriction two bullets up
-  (`findGhCandidates(…, { atCommandPositionOnly: true })`) computed "command
-  position" with the plain `commandWordIndex()` helper, which only steps past
-  a leading `VAR=…` assignment run. That is narrower than a real shell's
-  notion of what is being invoked: a leading wrapper — `nohup`, `sudo`,
-  `timeout`, `xargs`, `command`, `exec`, `time` — or a `{ … ; }` brace group
-  in front of the gated call made the WRAPPER read as the command word
-  instead of the `gh` it wraps, so the position check silently rejected the
-  real invocation and the call posted unmarked. `nohup gh issue comment 26
---body '…'` behind an unknown interpreter (`csh -c "nohup gh issue comment
-26 --body '…'"`) is the reproduction; it, and the same shape behind every
-  wrapper above and a brace group, ALLOWED before this round despite being
-  one of the 18 gated shapes. **This was a NEW bypass, not a pre-existing
-  one** — the top-level search this file already describes as
-  position-independent ("a wrapper in front of the interpreter … hides
-  nothing") was never affected, because it never restricted by position at
-  all; the gap was specific to the NESTED arm's command-position check that
-  fix round 8 (Part C) introduced. Fixed by `realCommandWordIndex()`
-  (`scripts/lib/shell-command-parse.mjs`), a function kept SEPARATE from
-  `commandWordIndex()` (so `parseShellCommands`'s assignment-scan and the
-  text-only-command checks, which rely on the narrower meaning, are
-  untouched) that walks past that same leading run of wrappers/braces before
-  landing on the command position — used only by
-  `findGhCandidates`'s `atCommandPositionOnly` branch. The false-refusal
-  property Part C exists for is unaffected: a wrapper NAME appearing in
-  ordinary prose (`git commit -m "docs: explain the exec wrapper bypass"`)
-  still ALLOWS, because the walk is structural (a real leading command word),
-  never a text match. Locked by 18 gated shapes × 7 wrappers × 2
-  unknown-interpreter rows, plus a brace-group row, in
-  `scripts/check-comment-attribution.test.mjs`'s clustered-grammar sweep, and
-  by a dedicated end-to-end test through the real shell hook.
+  agent that is not trying to evade this gate, it stops every ordinary spelling
+  of an unmarked post, including the `$VAR` that used to walk straight through;
+  against one that is trying, the remaining gaps are the pipeline relay and the
+  GraphQL mutation, both of which need a deliberate extra stage to reach, not a
+  stray character. The gate is **more likely to false-refuse** a commit message
+  about itself than it was before round 7 — that is a deliberate trade, not an
+  oversight, and the override is printed at the moment of refusal.
+- **Fix round 10 (#96) REVERTED the command-position restriction rounds 8 and 9
+  shipped — the wrapper allowlist was the same anti-pattern one level down.**
+  Round 8's Part C restricted the nested re-read to argv[0] of each re-parsed
+  simple command, to spare prose that merely mentions a posting phrase. Read
+  literally, that made a leading wrapper the command word: `csh -c "nohup gh
+issue comment 26 --body '…'"` re-parsed as a command whose position was
+  `nohup`, the real invocation was skipped, and all 18 gated shapes posted
+  unmarked behind `nohup`/`sudo`/`timeout`/`xargs`/`command`/`exec`/`time` and
+  behind a `{ … ; }` brace group — **a bypass merge-base `main` does not have**,
+  since `main`'s nested search never restricted by position. Round 9 repaired
+  that by teaching the position walk a **seven-name wrapper allowlist**
+  (`realCommandWordIndex`) and **reproduced the bug one level down**: `setsid`,
+  `nice -n 10`, `stdbuf -oL`, `doas`, `watch`, `ionice` and any name invented
+  next year were not on the list, and a LISTED wrapper whose flag takes a
+  separate value word (`sudo -u root`, `timeout -s KILL 5`, `exec -a name`) had
+  that value consumed as the command position — nine attack shapes ALLOWED that
+  `main` REFUSES, found by an independent differential probe, with the code's
+  own doc comment asserting the case was "never a missed invocation".
+  **The rule both rounds broke is the one stated two bullets up:** which tools
+  pass execution through is NOT a list, the default is inverted, and extending
+  it means extending the parse — never adding another name. Applied honestly to
+  "does this word pass execution through to the next one?", the recognised half
+  is **empty** — nothing can be proved not to be a wrapper — so every leading
+  word is a possible wrapper, every index is a possible command position, and
+  the restriction dissolves into the position-independent search the top level
+  has always run. Round 10 therefore deletes `WRAPPER_COMMANDS`,
+  `realCommandWordIndex()` and the `atCommandPositionOnly` option outright: the
+  nested arm is position-independent again, identical to `main`, and there is no
+  list left to go stale.
+  **What that costs, stated plainly:** the precision round 8 bought is given
+  back. Two prose lines are REFUSED again exactly as `main` refuses them —
+  `git commit -m "fix(hooks): the gh issue comment gate now blocks
+--body=text"` and `git commit -m "docs: quote 'gh' issue comment --body in the
+  guide"` (the second is `main`'s behaviour plus round 8's widening). A false
+  refusal is loud, costs one retry, and prints its own override
+  (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`); the alternative on the table was a
+  silent post, so the ambiguous position stays a candidate. `make deploy
+MSG="gh issue comment --body ready"` stays FIXED — that was a different
+  mechanism (the assignment-run scoping), untouched here.
+  **Evidence, not reasoning:** a differential probe ran the same corpus against
+  merge-base `main` and this tree — **2,394 attack cases** (18 gated shapes ×
+  31 wrapper/grouping spellings × literal and `$VAR` bodies × two
+  unknown-interpreter rows, plus top-level, `bash -lc`, `env -S`, `ssh`,
+  pipe-into-shell and shell-in-shell rows) with **zero** cases ALLOWED here that
+  `main` REFUSES, and 1,080 that `main` ALLOWS now refused. Locked in
+  `scripts/check-comment-attribution.test.mjs` by a wrapper sweep whose list is
+  deliberately **the names no allowlist ever contained**, and by an end-to-end
+  test through the real shell hook; the two prose refusals are asserted there
+  too, so the cost is recorded in the suite rather than only in prose.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved
