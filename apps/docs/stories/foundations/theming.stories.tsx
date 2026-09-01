@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import {
@@ -735,12 +735,23 @@ export const RuntimeTokenOverrides: Story = {
  * tenant recomputes `--primary-foreground`/`--accent`/`--accent-foreground`/
  * `--ring` from that one seed and hands the result straight to the same
  * `tokenOverrides` prop.
+ *
+ * **Scope note (issue #91):** this demo's own `ThemeProvider` below never sets
+ * a `defaultTheme`, so it always renders on the `light` reference theme's own
+ * background — the SAME background `deriveTheme` assumes when `background`
+ * is omitted, which is why the two agree here. This demo intentionally does
+ * NOT show the cross-theme case (deriving once and reusing the result while a
+ * DIFFERENT theme is active) — `deriveTheme`'s 3:1 proof does not cover that;
+ * see `docs/CONSUMING.md` §5.3 for the "derive again per background, swap the
+ * result" pattern a theme-switching consumer needs. The derivation is wrapped
+ * in `useMemo` below so it recomputes (and re-warns) only when `tenant`
+ * actually changes, not on every render.
  */
 function DeriveThemeDemo() {
   const [target, setTarget] = useState<HTMLDivElement | null>(null);
   const [tenant, setTenant] = useState<TenantId>("acme");
 
-  const overrides = deriveTheme({ primary: TENANT_COLORS[tenant] });
+  const overrides = useMemo(() => deriveTheme({ primary: TENANT_COLORS[tenant] }), [tenant]);
 
   return (
     <div className="space-y-4">

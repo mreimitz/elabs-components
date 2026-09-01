@@ -27,7 +27,7 @@
  * below). Finding C got the same treatment as round 1: a named reproduction
  * case, a per-case assertion, and the invariant added to the property sweep.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { contrastRatio, parseOklch, type Oklch } from "./color-contrast";
 import { deriveTheme, type DeriveThemeOptions } from "./derive-theme";
 import { THEME_TOKEN_NAMES, type ThemeTokenName } from "./theme-token-names.generated";
@@ -57,6 +57,21 @@ function oklabDistance(a: Oklch, b: Oklch): number {
 const LIGHT_BACKGROUND = "oklch(0.985 0.002 257)";
 /** `dark` reference theme's own `--background` (packages/tokens/src/themes/dark.css). */
 const DARK_BACKGROUND = "oklch(0.21 0.012 257)";
+
+// Issue #91: deriveTheme now emits a dev-only console.warn on EVERY call (see
+// "ISSUE #91" cases below) — this file calls deriveTheme hundreds of times
+// (the property sweep alone is 528 seeds), so a file-wide no-op stub keeps
+// the rest of the suite's output readable. The two ISSUE #91 tests install
+// their OWN spy locally (and restore it in `finally`), which simply layers on
+// top of this one for the duration of that test — vi.spyOn always intercepts
+// at the most-recently-installed mock, so their assertions still see every
+// call made while their local spy is active.
+beforeEach(() => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 interface Case {
   name: string;
@@ -238,6 +253,32 @@ describe("deriveTheme", () => {
       background: LIGHT_BACKGROUND,
     });
     expect(withDefault).toEqual(withExplicit);
+  });
+
+  // --- Issue #91: the maintainer ruled "narrow the promise, then close" —
+  // deriveTheme's 3:1 proof is only ever valid against the ONE background a
+  // call used, never against a second theme/background the same overrides
+  // object might later be applied under. These lock the dev-only diagnostic
+  // that tells a theme-switching consumer their proof does not cover that.
+  it("ISSUE #91: warns (dev-only) that the emitted --ring/--accent are proven only against the background THIS call used", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      deriveTheme({ primary: "oklch(0.55 0.18 250)" });
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("proven >=3:1 only against"));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("issue #91"));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("ISSUE #91: still warns when background is passed explicitly — the scope limit is per-call, not only for the omitted default", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      deriveTheme({ primary: "oklch(0.55 0.18 250)", background: DARK_BACKGROUND });
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("proven >=3:1 only against"));
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("throws on negative chroma in primary (Issue #100)", () => {
