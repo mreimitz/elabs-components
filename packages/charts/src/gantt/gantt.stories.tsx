@@ -576,7 +576,7 @@ export const CustomTaskTypes: Story = {
 /**
  * Inside-label contrast target (#259) — bars on the lowest-contrast fills
  * (destructive, warning, chart-3) plus a consumer-supplied `taskTypes` color,
- * so the on-bar label pill can be checked across all three themes
+ * so the on-bar label pill can be checked across every theme
  * (light/dark) on the fills most likely to fail.
  */
 export const InsideLabelContrast: Story = {

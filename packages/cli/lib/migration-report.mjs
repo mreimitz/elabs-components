@@ -56,7 +56,7 @@ export const MIGRATION_PHASES = [
     name: "Theming cutover",
     goal: "Replace the remaining raw colour, spacing and font values with semantic tokens, then verify every migrated screen in light and dark.",
     classes: [],
-    exit: "No raw hex outside a theme file, and every screen reads correctly in all three themes.",
+    exit: "No raw hex outside a theme file, and every screen reads correctly in every theme.",
   },
   {
     name: "Remove the old library",

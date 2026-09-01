@@ -5,7 +5,7 @@
  *
  * Colors come from the `--calc-*` syntax tokens — the SAME tokens `CalcBlock`
  * paints with (#221), already AA-verified against `--background` (the editor
- * surface) and `--card` in all three themes — so highlighting tracks the theme via
+ * surface) and `--card` in every theme — so highlighting tracks the theme via
  * the cascade with no hardcoded hex. The compound `.brand-calc-tok.brand-calc-tok--x`
  * selector raises specificity above Monaco's own token color class (`.mtkN`) so
  * the calc color wins regardless of stylesheet load order (no `!important`).

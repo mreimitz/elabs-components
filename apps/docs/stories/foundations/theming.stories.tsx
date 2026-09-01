@@ -184,9 +184,9 @@ export const Overview: Story = {
           switching the theme re-colors everything below at once.
         </p>
         <p className="m-0 text-caption text-muted-foreground">
-          Use the <strong>theme</strong> control in the toolbar to flip between the three themes,
-          and the <strong>Decoration</strong> / <strong>Density</strong> / <strong>Motion</strong>{" "}
-          dials to exercise the orthogonal axes.
+          Use the <strong>theme</strong> control in the toolbar to flip between themes, and the{" "}
+          <strong>Decoration</strong> / <strong>Density</strong> / <strong>Motion</strong> dials to
+          exercise the orthogonal axes.
         </p>
       </div>
       <SampleComposition />
@@ -397,7 +397,7 @@ function BringYourOwnThemeDemo() {
           >
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="m-0 text-caption text-muted-foreground">
-                This region is themed by its own provider — three themes, one of them authored here.
+                This region is themed by its own provider — one of its themes is authored here.
               </p>
               <ThemeSwitcher mode="dropdown" showSystem={false} />
             </div>

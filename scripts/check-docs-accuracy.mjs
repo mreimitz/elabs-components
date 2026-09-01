@@ -8,7 +8,7 @@
  *
  *   1. THEME COUNT — no prose may say "four/five/six themes" (all stale counts); the
  *      system ships whatever BUILT_IN_THEMES (theme-types.ts) currently lists.
- *      Also: the PR template must enumerate all three themes, not a stale subset (#158).
+ *      Also: the PR template must enumerate every theme, not a stale subset (#158).
  *   2. WORKFLOW REFS — every `.github/workflows/<x>.yml` a doc references must exist,
  *      so docs can't claim a CI that isn't there (the original C1/C5 gap).
  *   3. PACKAGE-DESCRIPTION COMPONENT NAMES (#154) — every component named in a
@@ -52,7 +52,12 @@ import { findRepoRoot } from "../packages/cli/lib/core.mjs";
 import { collectGates } from "./lib/workflow-gates.mjs";
 import { distributablePackages } from "./lib/distributables.mjs";
 import { versionSites } from "./set-version.mjs";
-import { NUMBER_WORDS, findThemeCountViolations } from "./lib/theme-count-prose.mjs";
+import {
+  NUMBER_WORDS,
+  findThemeCountViolations,
+  themeNamesFromSource,
+  themeCountFromSource,
+} from "./lib/theme-count-prose.mjs";
 
 // Re-exported for check-docs-accuracy.test.mjs and check-skills-currency.mjs — the
 // regex now lives once in ./lib/theme-count-prose.mjs (#29).
@@ -183,17 +188,13 @@ const workflowsPresent = existsSync(join(root, ".github", "workflows"));
 
 // The count is DERIVED from packages/tokens/src/theme-types.ts, not hard-coded, so
 // adding or removing a theme changes what the docs are allowed to claim (#64).
+// themeNamesFromSource/themeCountFromSource now live in ./lib/theme-count-prose.mjs
+// (#29) so check-source-theme-count.mjs can share the exact same derivation
+// instead of re-parsing theme-types.ts with a second, independent regex —
+// re-exported here for backward compatibility (check-docs-accuracy.test.mjs
+// imports themeCountFromSource from this module).
 const themeTypesPath = join(root, "packages", "tokens", "src", "theme-types.ts");
-export function themeNamesFromSource(text) {
-  const m = text.match(/export const BUILT_IN_THEMES\s*=\s*\[([^\]]*)\]/);
-  if (!m) return null;
-  const names = [...m[1].matchAll(/"([^"]+)"|'([^']+)'/g)].map((x) => x[1] ?? x[2]);
-  return names.length ? names : null;
-}
-
-export function themeCountFromSource(text) {
-  return themeNamesFromSource(text)?.length ?? null;
-}
+export { themeNamesFromSource, themeCountFromSource };
 // The NAMES are derived too, not hard-coded: if a theme is ever retired it
 // leaves BUILT_IN_THEMES, and the docs must stop naming it in the same move —
 // otherwise this gate would demand the docs enumerate a theme nothing tests

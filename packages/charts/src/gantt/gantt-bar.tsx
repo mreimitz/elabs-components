@@ -954,7 +954,7 @@ export function GanttBar({
                   >
                     {/* Opaque foreground/background pill (#259) keeps the label
                         past AA on any bar fill, including consumer `taskTypes`
-                        colors, in all three themes. */}
+                        colors, in every theme. */}
                     <span data-gantt-label-scrim className={GANTT_INSIDE_LABEL_SCRIM}>
                       {task.name}
                     </span>

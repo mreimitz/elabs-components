@@ -47,7 +47,7 @@ import { lazyMermaid } from "./_lazy-mermaid";
  *
  * Streamdown's dual-theme mechanism (`createCodePlugin({ themes: [light, dark] })`)
  * expects exactly TWO themes and picks between them purely via the `.dark` CSS
- * selector — but brand-ui ships THREE themes (light/dark),
+ * selector — but brand-ui ships EVERY theme, not just Shiki's light/dark,
  * and any dark-declaring theme matches `.dark` too (see `_code-block-theme.ts`). Passing a real
  * light/dark PAIR would still force such a theme into the dark slot. Instead
  * this pins BOTH slots to `buildCodeBlockTheme()` — the SAME brand-token-derived

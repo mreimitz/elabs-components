@@ -129,7 +129,7 @@ describe("Streamdown code-block theme (#315 follow-up)", () => {
     // (github-light's keyword is #d73a49, github-dark's is #ff7b72).
     expect(span.getAttribute("style")).toContain("--sdm-c: #133796");
     // Both dual-theme slots are pinned to the SAME active-theme color (#315
-    // follow-up design: brand-ui has three themes, not the two Shiki's
+    // follow-up design: brand-ui has more themes than the two Shiki's
     // light/dark mechanism expects), so `.dark` never resolves a different palette.
     expect(span.getAttribute("style")).toContain("--shiki-dark: #133796");
   });

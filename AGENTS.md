@@ -178,6 +178,8 @@ pnpm paused-surfaces-drift:check # the deleted "paused surfaces" theme-pause con
 pnpm paused-surfaces-drift:check:test # self-test for the paused-surfaces drift-lock gate
 pnpm skills:currency:check      # playbook/skill/plugin prose (docs/playbooks/**, skills/*/SKILL.md, .claude-plugin/*.json) agrees with brand-ui.manifest.json on theme count + package-name scope — the .md-only docs:check walk never reaches these files (#29)
 pnpm skills:currency:check:test # self-test for the skills-currency gate
+pnpm source-theme-count:check      # product SOURCE (packages/*/src/**, incl. .css, and apps/docs/stories/**) agrees with BUILT_IN_THEMES on theme count — the two prose-only gates above never reach component/story comments or rendered Storybook copy (#29)
+pnpm source-theme-count:check:test # self-test for the source-theme-count gate
 pnpm inventory:check            # component-inventory.md is generated from the manifest, not hand-edited (run `pnpm inventory`)
 pnpm llms:check                 # llms.txt hub + per-package spokes are fresh vs. the manifest (run `pnpm llms`)
 pnpm context:check              # generated agent-context blocks (CLAUDE.md/AGENTS.md/Cursor) are fresh (run `pnpm context`)

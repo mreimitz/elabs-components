@@ -1130,7 +1130,7 @@ function DataTableInner<TData, TValue>(
       // in Chromium on `Data/DataTable → PinnedColumns`: with `border-e` the
       // seam pixel read `143,143,143` (light `--border-strong`) at
       // scrollLeft 0 and `245,245,245` (the plain cell fill — i.e. GONE) once
-      // scrolled, in all three themes and on both edges. So the one cue vanished
+      // scrolled, in every theme and on both edges. So the one cue vanished
       // exactly when the freeze was doing something. The `::after` lives in the
       // sticky cell's own stacking context, so it moves with it.
       edgeClass:

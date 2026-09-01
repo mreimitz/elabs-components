@@ -214,6 +214,7 @@ jobs:
           pnpm docs:check
           pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
+          pnpm source-theme-count:check
           pnpm agents:check
           pnpm rules:scoping:check
           pnpm slop:check
@@ -319,6 +320,7 @@ jobs:
           pnpm sidebar-drift:check:test
           pnpm skills:currency:check:test
           pnpm slop:check:test
+          pnpm source-theme-count:check:test
           pnpm states:check:test
           pnpm surface-elevation:check:test
           pnpm surface:preview:test

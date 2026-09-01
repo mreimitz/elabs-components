@@ -28,7 +28,7 @@ export const MasterDetail: Story = {
  * the page itself is recessed below white; see research/structural-design 08 §H). A
  * `muted` list well is a light-theme-only enhancement (in dark, `--surface-muted` reads
  * lighter than `--card`), so this demo keeps the list `plain` to read correctly across
- * all three themes.
+ * every theme.
  */
 export const Tiered: Story = {
   render: () => (
