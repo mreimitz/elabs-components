@@ -1,4 +1,5 @@
 import {
+  Children,
   cloneElement,
   forwardRef,
   useCallback,
@@ -225,6 +226,22 @@ export const FieldControl = forwardRef<ElementRef<typeof Slot>, FieldControlProp
 
 // ── FieldDescription ──────────────────────────────────────────────────────
 
+/**
+ * Optional field help text. Renders nothing — and registers no
+ * `aria-describedby` reference — when `children` is falsy (`false`/`0`/`""`/
+ * `null`/`undefined`), an empty array, or an array containing only falsy
+ * values (`{list.map(...)}` on an empty list; `[a && "x", b && "y"]` with
+ * both false) — matching `FieldRow`'s `description ? … : null` convention:
+ * `{hint && <FieldDescription>{hint}</FieldDescription>}` is the supported
+ * way to express "no description".
+ *
+ * **Known limit:** a child that is itself a COMPONENT that renders nothing
+ * (returns `null`/an empty fragment) is not knowable from the element
+ * before render, so it still produces an empty paragraph that
+ * `aria-describedby` points at. `FieldRow` and the wider React ecosystem
+ * share this limit — pass a falsy child instead of a component that may
+ * render nothing.
+ */
 export const FieldDescription = forwardRef<
   HTMLParagraphElement,
   HTMLAttributes<HTMLParagraphElement>
@@ -238,7 +255,12 @@ export const FieldDescription = forwardRef<
   // `{condition && "message"}` is the ordinary React idiom for optional
   // content, and `condition === false` must render nothing — a `false`/`0`/
   // `""`/`null`/`undefined` child is "no content", not an empty paragraph.
-  const hasContent = Boolean(children);
+  // `Boolean(children)` alone is not enough: an array is always truthy, so
+  // `{errors.map(...)}` on an empty list (or `[a && "x", b && "y"]` with both
+  // false) would still count as content. `Children.toArray` drops `null`/
+  // `undefined`/booleans, so its length answers "is there really something
+  // here" for every array shape, on top of the scalar check above.
+  const hasContent = Boolean(children) && Children.toArray(children).length > 0;
 
   useLayoutEffect(() => {
     if (!hasContent) return undefined;
@@ -263,6 +285,22 @@ export const FieldDescription = forwardRef<
 
 // ── FieldError ────────────────────────────────────────────────────────────
 
+/**
+ * Validation error text, announced via `role="alert"`. Renders nothing —
+ * and registers no `aria-describedby` reference — when `children` is falsy
+ * (`false`/`0`/`""`/`null`/`undefined`), an empty array, or an array
+ * containing only falsy values (`{errors.map(...)}` on an empty array is
+ * exactly how a real form renders "no errors") — matching `FieldRow`'s
+ * `error ? … : null` convention: `{error && <FieldError>{error}</FieldError>}`
+ * is the supported way to express "no error".
+ *
+ * **Known limit:** a child that is itself a COMPONENT that renders nothing
+ * (returns `null`/an empty fragment) is not knowable from the element
+ * before render, so it still produces an empty `role="alert"` element that
+ * `aria-describedby` points at (a screen reader announces an empty alert).
+ * `FieldRow` and the wider React ecosystem share this limit — pass a falsy
+ * child instead of a component that may render nothing.
+ */
 export const FieldError = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
   function FieldError({ className, children, ...props }, ref) {
     const { registerError, unregisterError } = useFieldContext("FieldError");
@@ -272,7 +310,9 @@ export const FieldError = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLPa
     // Same falsy-content convention as `FieldDescription`/`FieldRow`'s
     // `error ? … : null` — `{condition && "message"}` with `condition` false
     // must render no alert at all, not an empty one a screen reader announces.
-    const hasContent = Boolean(children);
+    // `Boolean(children)` alone can't see an empty/all-falsy ARRAY (arrays are
+    // always truthy) — see `FieldDescription` for the full rationale.
+    const hasContent = Boolean(children) && Children.toArray(children).length > 0;
 
     useLayoutEffect(() => {
       if (!hasContent) return undefined;

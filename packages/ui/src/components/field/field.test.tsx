@@ -228,4 +228,80 @@ describe("Field compound anatomy", () => {
     expect(screen.getByText("Use at least 12 characters.")).toBe(first);
     expect(input.getAttribute("aria-describedby")).toBe(firstId);
   });
+
+  // Fix round 3 (validator FAIL on the round-2 commit, then narrowed by the
+  // coordinator): `Boolean(children)` cannot see an empty/all-falsy ARRAY,
+  // because an array is always truthy — `{errors.map(...)}` on an empty list
+  // is exactly how a real form renders "no errors", so this must render
+  // nothing, same as the scalar falsy cases already covered above.
+  it("renders no error element for an empty array or an array of only falsy children", () => {
+    const { rerender } = render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldError>{[]}</FieldError>
+      </FieldRoot>,
+    );
+    let input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+
+    rerender(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldError>{[false, null]}</FieldError>
+      </FieldRoot>,
+    );
+    input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("renders no description element for an empty array or an array of only falsy children", () => {
+    const { container } = render(
+      <FieldRoot>
+        <FieldLabel>Bio</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldDescription>{[false, null]}</FieldDescription>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    expect(container.querySelector('[data-slot="field-description"]')).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
+  // KNOWN LIMIT, not desired behavior: a child that is itself a component
+  // returning `null` is not knowable from the element before render (React
+  // ecosystem-wide limit, shared by FieldRow), so it still produces an empty
+  // `role="alert"` referenced by `aria-describedby`. This test PINS the
+  // current, documented-limit behavior so a future change to it is a
+  // deliberate decision, not a silent regression — it is not an endorsement,
+  // see the "Known limit" JSDoc on `FieldError`.
+  it("[KNOWN LIMIT] still renders an empty, referenced alert when the child is a component that renders null", () => {
+    function RendersNull() {
+      return null;
+    }
+    render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldError>
+          <RendersNull />
+        </FieldError>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    const alert = screen.getByRole("alert");
+    expect(alert).toBeEmptyDOMElement();
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id);
+  });
 });
