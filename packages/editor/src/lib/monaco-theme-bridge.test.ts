@@ -241,6 +241,23 @@ describe.each<[ThemeSlug, typeof vs]>([
       expect(brandForegrounds.has(hex!)).toBe(true);
     },
   );
+
+  // PR #119 review thread 2 (chatgpt-codex-connector): `CodeEditorProps.language`
+  // is a plain, unrestricted `string` passed straight to
+  // `monaco.editor.setModelLanguage` (`code-editor.tsx`) — it is NOT limited
+  // to `EDITOR_LANGUAGES`, so a consumer passing `language="pug"` (or
+  // `"handlebars"`) really does reach these scopes. `IGNORED_BASE_SCOPES`'s
+  // old "nothing in this package can ever render them" premise was false for
+  // these three; only `metatag.php` (no `foreground` in the base themes —
+  // nothing to un-brand) is legitimately left out.
+  it.each(["tag.id.pug", "tag.class.pug", "variable.parameter"])(
+    "scope %s (reachable via an unrestricted CodeEditor `language` prop) resolves to a brand colour",
+    (scope) => {
+      const hex = resolvedForegroundHex(scope);
+      expect(hex).toBeDefined();
+      expect(brandForegrounds.has(hex!)).toBe(true);
+    },
+  );
 });
 
 /**

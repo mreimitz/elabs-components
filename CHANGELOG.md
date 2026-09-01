@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+- Fixed: `SchemaFormTestAction` (`@elabs-ai/components-ui`) no longer keeps
+  showing a stale "Connected"/failure result once the tested field values
+  change — a fresh `latestEffectiveValuesRef`/`testedValuesRef` pair discards
+  an in-flight `onTest` result if the form was edited before it settled, and
+  resets an already-settled success/failure back to idle the moment the
+  tested values change again. It also now honors the provider's `submitted`
+  (native `disabled`, durable) and `submitting` (transient `aria-disabled` +
+  handler guard) states like every other form control, instead of staying
+  fully actionable on a terminal or in-flight form (PR #119 review, threads 0
+  and 4).
+- Fixed: `fromJsonSchema()` (`@elabs-ai/components-ui`'s schema-form) no
+  longer drops a valid `string[]` `default` when mapping a free-text
+  `{ type: "array", items: { type: "string" } }` property to a
+  `ListFieldSpec` — it now carries the default through the same way its
+  `multi-enum` sibling already did (PR #119 review, thread 1). Added
+  `jsonSchemaRequestBody(spec, values)`, a helper (not yet re-exported from
+  the package barrel — see the schema-form README/PR notes) that reconstructs
+  the nested JSON object shape a mapped nested-object property loses in
+  `SchemaForm`'s flat `FormValues` map, for callers building the request body
+  a nested schema originally described (PR #119 review, thread 3 — partial;
+  the nested group's own `required` flag is still not validated).
+- Fixed: the brand Monaco theme (`@elabs-ai/components-editor`) now overrides
+  the `tag.id.pug`, `tag.class.pug` and `variable.parameter` base-theme
+  scopes, which are reachable through `CodeEditorProps.language`'s
+  unrestricted `string` type (not limited to the toolbar's curated
+  `EDITOR_LANGUAGES` list) and previously fell back to stock Monaco colours
+  instead of the token-derived brand theme (PR #119 review, thread 2).
+
 - Fixed: `FieldRow` (`@elabs-ai/components-ui`) no longer renders an empty,
   `aria-describedby`-referenced `role="alert"`/description `<p>` (and no longer
   sets `aria-invalid="true"`) for an empty or all-falsy-array `error`/

@@ -80,7 +80,7 @@
  * "worth having alongside" list.
  */
 
-import type { FieldSpec, FormSpec } from "./schema-form-spec";
+import type { FieldSpec, FormSpec, FormValues } from "./schema-form-spec";
 
 /**
  * The JSON Schema keywords this adapter refuses to approximate. Each changes
@@ -238,6 +238,7 @@ function mapProperty(name: string, schema: unknown, required: boolean): FieldSpe
         };
       }
 
+      const listDefault = stringArray(schema.default);
       return {
         type: "list",
         ...base,
@@ -247,6 +248,7 @@ function mapProperty(name: string, schema: unknown, required: boolean): FieldSpe
         ...(Number.isInteger(schema.maxItems) && (schema.maxItems as number) >= 0
           ? { maxItems: schema.maxItems as number }
           : {}),
+        ...(listDefault ? { default: listDefault } : {}),
       };
     }
 
@@ -317,4 +319,57 @@ export function fromJsonSchema(schema: unknown, options: FromJsonSchemaOptions):
     submitLabel: options.submitLabel,
     fields: mapProperties(schema),
   };
+}
+
+/**
+ * Reconstructs the NESTED JSON object shape that `fromJsonSchema()`'s
+ * `{ type: "object", properties: {...} }` mapping flattens away (PR #119
+ * review thread 3, P1). `SchemaForm` stores every field's value in one flat
+ * `FormValues` map keyed by BARE property name (`GroupFieldSpec` — see the
+ * "no notion of an active branch" comment on `schema-form-spec.ts`'s
+ * `GroupFieldSpec` — has no value slot of its own), so a form built from a
+ * nested schema like `{ address: { properties: { city, zip } } }` submits
+ * `{ city, zip }` instead of the advertised `{ address: { city, zip } }`.
+ *
+ * Call this (instead of reading `effectiveValues`/`onSubmit`'s payload
+ * directly) when the schema passed to `fromJsonSchema()` had nested
+ * `"object"` properties and the caller needs the request body back in its
+ * original shape — e.g. `SchemaFormTestAction`'s `onTest` or a submit
+ * handler that forwards the payload to the API the schema describes.
+ *
+ * Walks `spec.fields` and, for each `group` field this adapter produced
+ * (always `variant: "advanced"`, always exactly one branch — see
+ * `mapProperty`'s `"object"` case), recurses into `groups[0].fields` and
+ * nests the result under that group's own `name` instead of splicing its
+ * children into the top level.
+ *
+ * Two known, out-of-scope limits (see the reply on review thread 3):
+ *  1. Two properties at DIFFERENT nesting depths that happen to share a bare
+ *     name (`{ name }` at the top level and `{ address: { name } }`) collide
+ *     in the flat `FormValues` map itself, upstream of this function — this
+ *     function cannot recover data `SchemaForm` never kept separate.
+ *  2. A nested object's own `required` flag (`GroupFieldSpec.required`) is
+ *     mapped but never validated anywhere in `schema-form-spec.ts`'s
+ *     `collectValidatableFields` — fixing that touches a file outside this
+ *     unit's scope fence and is called out, unfixed, in the PR review reply.
+ */
+export function jsonSchemaRequestBody(spec: FormSpec, values: FormValues): Record<string, unknown> {
+  return collectRequestBody(spec.fields, values);
+}
+
+function collectRequestBody(fields: FieldSpec[], values: FormValues): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (field.type === "group") {
+      // `fromJsonSchema()` only ever emits a single-branch `"advanced"`
+      // group per nested object (`mapProperty`'s `"object"` case) — nest
+      // the branch's reconstructed values under the group's own name.
+      const branch = field.groups[0];
+      if (branch) body[field.name] = collectRequestBody(branch.fields, values);
+      continue;
+    }
+    const value = values[field.name];
+    if (value !== undefined) body[field.name] = value;
+  }
+  return body;
 }

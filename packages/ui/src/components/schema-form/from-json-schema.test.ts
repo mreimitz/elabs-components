@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { fromJsonSchema, UnsupportedJsonSchemaError } from "./from-json-schema";
+import {
+  fromJsonSchema,
+  jsonSchemaRequestBody,
+  UnsupportedJsonSchemaError,
+} from "./from-json-schema";
 import type {
   BooleanFieldSpec,
   EnumFieldSpec,
@@ -124,6 +128,48 @@ describe("fromJsonSchema — documented subset", () => {
     expect(tags).toMatchObject({ type: "list", minItems: 1, maxItems: 5 });
   });
 
+  // PR #119 review thread 1 (chatgpt-codex-connector): a free-text array
+  // property's `default` was silently dropped when mapped to a
+  // `ListFieldSpec`, unlike its `multi-enum` sibling three lines up —
+  // `initialFormValues` would then seed the field to `[]` even though the
+  // source schema declared existing values.
+  it("preserves a valid string[] default on a free-text ListFieldSpec", () => {
+    const form = fromJsonSchema(
+      {
+        type: "object",
+        properties: {
+          tags: {
+            type: "array",
+            items: { type: "string" },
+            default: ["existing", "values"],
+          },
+        },
+      },
+      { formName: "f" },
+    );
+    const tags = form.fields[0] as ListFieldSpec;
+    expect(tags).toMatchObject({ type: "list", default: ["existing", "values"] });
+  });
+
+  it("drops a non-string-array default on a free-text ListFieldSpec", () => {
+    const form = fromJsonSchema(
+      {
+        type: "object",
+        properties: {
+          tags: {
+            type: "array",
+            items: { type: "string" },
+            default: ["ok", 42],
+          },
+        },
+      },
+      { formName: "f" },
+    );
+    const tags = form.fields[0] as ListFieldSpec;
+    expect(tags.type).toBe("list");
+    expect(tags.default).toBeUndefined();
+  });
+
   // fix-round-1 (issue #22): a validator probe found that a CONSTRAINED array
   // item schema (`items.enum`) was silently widening into a free-text
   // `ListFieldSpec` — the source schema only allows two values, but the
@@ -196,6 +242,60 @@ describe("fromJsonSchema — documented subset", () => {
     expect(address.groups).toHaveLength(1);
     expect(address.groups[0]?.fields.map((f) => f.name)).toEqual(["city", "zip"]);
     expect(address.groups[0]?.fields[0]).toMatchObject({ name: "city", required: true });
+  });
+
+  // PR #119 review thread 3 (chatgpt-codex-connector, P1): SchemaForm keeps
+  // every field's value in one FLAT map, so a naively-collected payload for
+  // this same nested schema is `{ city: "...", zip: "..." }`, not the
+  // advertised `{ address: { city: "...", zip: "..." } }`.
+  // `jsonSchemaRequestBody` reconstructs the nested shape from the mapped
+  // `FormSpec` plus the flat values.
+  it("jsonSchemaRequestBody reconstructs the nested object shape a flat FormValues map loses", () => {
+    const form = fromJsonSchema(
+      {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          address: {
+            type: "object",
+            title: "Address",
+            properties: {
+              city: { type: "string" },
+              zip: { type: "string" },
+            },
+            required: ["city"],
+          },
+        },
+      },
+      { formName: "f" },
+    );
+    // The flat values a `SchemaFormProvider` actually stores — one entry per
+    // BARE field name, exactly as `initialFormValues`/`onChange` populate it.
+    const flatValues = { name: "Ada", city: "Springfield", zip: "00000" };
+    expect(jsonSchemaRequestBody(form, flatValues)).toEqual({
+      name: "Ada",
+      address: { city: "Springfield", zip: "00000" },
+    });
+  });
+
+  it("jsonSchemaRequestBody omits a field with no value rather than inventing undefined/null", () => {
+    const form = fromJsonSchema(
+      {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          address: {
+            type: "object",
+            properties: { city: { type: "string" } },
+          },
+        },
+      },
+      { formName: "f" },
+    );
+    expect(jsonSchemaRequestBody(form, { name: "Ada" })).toEqual({
+      name: "Ada",
+      address: {},
+    });
   });
 
   it("drops a property whose type/shape falls outside the subset instead of throwing", () => {

@@ -1201,9 +1201,28 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
     ref,
   ) {
     const { t } = useLocale();
-    const { effectiveValues, disabled: formDisabled, loading } = useSchemaFormContext();
+    const {
+      effectiveValues,
+      disabled: formDisabled,
+      loading,
+      submitted,
+      submitting,
+    } = useSchemaFormContext();
     const [status, setStatus] = useState<SchemaFormTestActionStatus>("idle");
     const [failureMessage, setFailureMessage] = useState<string | null>(null);
+
+    // Always mirrors the LATEST `effectiveValues` (updated every render) so
+    // an in-flight `onTest` can tell, once it settles, whether the values it
+    // was called with are still current — a plain closure over
+    // `effectiveValues` would only ever see the snapshot from the render
+    // that started the request.
+    const latestEffectiveValuesRef = useRef(effectiveValues);
+    latestEffectiveValuesRef.current = effectiveValues;
+    // The specific values snapshot the CURRENT `status` describes — set at
+    // the moment a test starts, read both by the async completion (to
+    // detect "edited while pending") and by the effect below (to detect
+    // "edited after success/failure").
+    const testedValuesRef = useRef<FormValues | null>(null);
 
     const pending = status === "pending";
     // Transient (pending) block uses aria-disabled + a handler guard, never
@@ -1211,20 +1230,53 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
     // who just activated this button must not be dropped from the tab order
     // right after they used it. The caller's durable form-level `disabled`
     // (the whole form read-only) stays native, matching every other control.
-    const transientlyBlocked = loading || pending;
+    // `submitting` joins the transient guard (an in-flight submit shouldn't
+    // race a new test), while `submitted` — a durable, terminal state, same
+    // as `SchemaFormField`'s `controlDisabled` — goes native below.
+    const transientlyBlocked = loading || pending || submitting;
+
+    // PR #119 review thread 0 (chatgpt-codex-connector): once the tested
+    // values go stale — the user edited a field after this status settled —
+    // discard the now-inaccurate success/failure and return to idle rather
+    // than keep describing values that no longer exist.
+    useEffect(() => {
+      if (
+        (status === "success" || status === "failure") &&
+        testedValuesRef.current !== effectiveValues
+      ) {
+        setStatus("idle");
+        setFailureMessage(null);
+      }
+    }, [effectiveValues, status]);
 
     const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
-      if (formDisabled || transientlyBlocked) {
+      if (formDisabled || submitted || transientlyBlocked) {
         e.preventDefault();
         return;
       }
+      const testedValues = effectiveValues;
+      testedValuesRef.current = testedValues;
       setStatus("pending");
       setFailureMessage(null);
       void (async () => {
         try {
-          await onTest(effectiveValues);
+          await onTest(testedValues);
+          // The values changed WHILE the request was in flight — discard
+          // this now-stale result and go back to idle rather than report
+          // success/failure for a snapshot the user has already moved on
+          // from (also covers the "resolved after a NEWER click" case,
+          // since that click's own `testedValuesRef.current` write already
+          // moved this promise's `testedValues` out of date).
+          if (latestEffectiveValuesRef.current !== testedValues) {
+            setStatus("idle");
+            return;
+          }
           setStatus("success");
         } catch (err) {
+          if (latestEffectiveValuesRef.current !== testedValues) {
+            setStatus("idle");
+            return;
+          }
           setStatus("failure");
           setFailureMessage(err instanceof Error ? err.message : null);
         }
@@ -1241,7 +1293,7 @@ export const SchemaFormTestAction = forwardRef<HTMLDivElement, SchemaFormTestAct
         <Button
           type="button"
           variant="outline"
-          disabled={formDisabled}
+          disabled={formDisabled || submitted}
           aria-disabled={transientlyBlocked || undefined}
           aria-busy={pending || undefined}
           onClick={handleClick}

@@ -803,4 +803,91 @@ describe("SchemaFormTestAction", () => {
       expect(screen.getByText("Connected")).toBeInTheDocument();
     });
   });
+
+  // PR #119 review thread 0 (chatgpt-codex-connector, P2): nothing reset the
+  // test result when `effectiveValues` changed after the test STARTED, so a
+  // "Connected" badge kept describing values the user had since edited away.
+  it("discards a stale success if the field changes while the test is still pending", async () => {
+    const user = userEvent.setup();
+    let resolveTest: () => void = () => {};
+    const onTest = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTest = resolve;
+        }),
+    );
+    renderWithTestAction(onTest);
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+    expect(screen.getByRole("button", { name: "Testing…" })).toBeInTheDocument();
+
+    // Edit the field WHILE the test is still in flight, then let it resolve.
+    await user.type(screen.getByLabelText(/API key/), "sk-edited");
+    resolveTest();
+
+    // The button returns to idle rather than showing "Connected" for a
+    // snapshot of values that is no longer current.
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Test connection" })).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Connected")).not.toBeInTheDocument();
+  });
+
+  it("resets a settled success back to idle once the tested field changes", async () => {
+    const user = userEvent.setup();
+    const onTest = vi.fn().mockResolvedValue(undefined);
+    renderWithTestAction(onTest);
+
+    await user.click(screen.getByRole("button", { name: "Test connection" }));
+    await waitFor(() => {
+      expect(screen.getByText("Connected")).toBeInTheDocument();
+    });
+
+    // Edit AFTER the test already settled successfully.
+    await user.type(screen.getByLabelText(/API key/), "sk-edited");
+
+    await waitFor(() => {
+      expect(screen.queryByText("Connected")).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Test connection" })).toBeInTheDocument();
+  });
+
+  // PR #119 review thread 4 (chatgpt-codex-connector, P2): the test action
+  // read neither `submitted` nor `submitting` from context, so it stayed
+  // fully actionable on a terminal submitted form or during an in-flight
+  // submit — unlike every other control in this file.
+  it("is natively disabled once the form has been submitted (durable state)", () => {
+    const result = normalizeFormSpec(connectorSpec);
+    if (!result.ok) throw new Error("expected connectorSpec to normalize");
+    const onTest = vi.fn();
+    render(
+      <SchemaFormProvider spec={result.spec} values={{ apiKey: "sk-test" }} submitted>
+        <SchemaFormRoot>
+          <SchemaFormTestAction onTest={onTest} />
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Test connection" })).toBeDisabled();
+  });
+
+  it("blocks launching a new test while the form is submitting (transient, guarded)", async () => {
+    const user = userEvent.setup();
+    const onTest = vi.fn().mockResolvedValue(undefined);
+    const result = normalizeFormSpec(connectorSpec);
+    if (!result.ok) throw new Error("expected connectorSpec to normalize");
+    render(
+      <SchemaFormProvider spec={result.spec} values={{ apiKey: "sk-test" }} submitting>
+        <SchemaFormRoot>
+          <SchemaFormTestAction onTest={onTest} />
+        </SchemaFormRoot>
+      </SchemaFormProvider>,
+    );
+    const button = screen.getByRole("button", { name: "Test connection" });
+    // Transient block: still a real, focusable tab stop (never native
+    // `disabled`), guarded by aria-disabled + the click handler.
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    await user.click(button);
+    expect(onTest).not.toHaveBeenCalled();
+  });
 });
