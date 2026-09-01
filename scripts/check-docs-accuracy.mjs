@@ -321,10 +321,11 @@ function manifestExportNames() {
   }
   const names = new Set();
   for (const pkg of Object.values(manifest.packages ?? {})) {
-    for (const group of ["components", "hooks", "types"]) {
+    // `types`/`otherExports` carry `{name, module}` objects, same shape as
+    // `components`/`hooks` — see `bucketExports()` in packages/cli/lib/core.mjs (#86).
+    for (const group of ["components", "hooks", "types", "otherExports"]) {
       for (const e of pkg[group] ?? []) if (e?.name) names.add(e.name);
     }
-    for (const n of pkg.otherExports ?? []) names.add(n);
   }
   return names;
 }

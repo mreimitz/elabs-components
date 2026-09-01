@@ -22,6 +22,7 @@ import {
   loadManifest,
   flat,
   matchPlaybooks,
+  matchTemplates,
   resolveTasteProfile,
   tasteSearchDirs,
 } from "./core.mjs";
@@ -131,16 +132,29 @@ function toolSearch(root, q) {
   if (!query) return { ...textContent("usage: search { query }"), isError: true };
   const manifest = root ? loadManifest(root) : null;
   if (!manifest) return { ...textContent("No manifest."), isError: true };
-  const rows = flat(manifest).filter(
+  const matches = flat(manifest).filter(
     (r) => r.name.toLowerCase().includes(query) || r.pkg.toLowerCase().includes(query),
   );
+  // Same fix as the CLI's cmdSearch() (fix round 1 for #86/#89): keep
+  // component/hook rows in their own independently-truncated bucket so a
+  // type/otherExport match can never crowd a real component out of the list.
+  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
+  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
   const reg = (manifest.registry || []).filter((r) =>
     `${r.name} ${r.title} ${r.description}`.toLowerCase().includes(query),
   );
   const books = matchPlaybooks(manifest, query);
+  // Whole-screen templates (#89) — wired here too so mcp__brand-ui__search,
+  // the persistent/recommended MCP path, can reach screen-states/object-detail-hub
+  // exactly like the CLI's `brand-ui search` can.
+  const templates = matchTemplates(manifest, query);
   const lines = [`Components/hooks matching "${query}":`];
   for (const r of rows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
   if (!rows.length) lines.push("  (none)");
+  if (typeRows.length) {
+    lines.push("", `Types/other exports matching "${query}":`);
+    for (const r of typeRows.slice(0, 40)) lines.push(`  ${r.name}  (${r.pkg} · ${r.kind})`);
+  }
   if (reg.length) {
     lines.push("", `Registry items matching "${query}":`);
     for (const r of reg) lines.push(`  ${r.name}  [${r.type}] — ${r.title}`);
@@ -151,6 +165,13 @@ function toolSearch(root, q) {
     for (const p of books) {
       lines.push(`  ${p.archetype}  — ${p.intent}`);
       lines.push(`    ${p.file}${p.template ? `  · template ${p.template}` : ""}`);
+    }
+  }
+  if (templates.length) {
+    lines.push("", `Templates matching "${query}":`);
+    for (const t of templates) {
+      lines.push(`  ${t.name}  (template)`);
+      lines.push(`    ${t.file}`);
     }
   }
   return textContent(lines.join("\n"));

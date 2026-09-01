@@ -29,6 +29,7 @@ import {
   tasteSearchDirs,
   flat,
   matchPlaybooks,
+  matchTemplates,
 } from "../lib/core.mjs";
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
@@ -258,9 +259,19 @@ function cmdSearch() {
       "search: no manifest (run inside the monorepo or install @elabs-ai/components-cli).",
     );
   if (!q) return console.error("usage: brand-ui search <query>");
-  const rows = flat(manifest).filter(
+  const matches = flat(manifest).filter(
     (r) => r.name.toLowerCase().includes(q) || r.pkg.toLowerCase().includes(q),
   );
+  // #86 added `type`/`export` rows to flat() alongside `component`/`hook` rows.
+  // Keeping them in ONE list meant a type-heavy package (e.g. @elabs-ai/components-ai's
+  // many `*Props` types) could fill the truncation cap below and crowd real
+  // components out of the output entirely (a real regression: `search Button`
+  // stopped returning `Button` itself). Split into two independently-truncated
+  // buckets so a type/otherExport match can never displace a component/hook
+  // match — this keeps the component/hook arm byte-for-byte what it was before
+  // #86 (the brief's "purely additive" acceptance criterion).
+  const rows = matches.filter((r) => r.kind === "component" || r.kind === "hook");
+  const typeRows = matches.filter((r) => r.kind === "type" || r.kind === "export");
   const reg = manifest.registry.filter((r) =>
     (r.name + " " + r.title + " " + r.description).toLowerCase().includes(q),
   );
@@ -268,10 +279,26 @@ function cmdSearch() {
   // the archetype recipe, not just a same-named icon. Matched on archetype/intent/
   // keywords so "kpi", "chatbot" or "landing page" all land on the right playbook.
   const books = matchPlaybooks(manifest, q);
-  if (json) return out({ components: rows, registry: reg, playbooks: books });
+  // Whole-screen templates (WP-09 #89): a SEPARATE arm from playbooks — not
+  // every template has a docs/playbooks/<name>.md counterpart (screen-states,
+  // object-detail-hub are patterns/anatomies, not scaffoldable archetypes), so
+  // matchPlaybooks() alone leaves them unreachable even by their own exact name.
+  const templates = matchTemplates(manifest, q);
+  if (json)
+    return out({
+      components: rows,
+      types: typeRows,
+      registry: reg,
+      playbooks: books,
+      templates,
+    });
   console.log(`Components/hooks matching "${q}":`);
   for (const r of rows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
   if (!rows.length) console.log("  (none)");
+  if (typeRows.length) {
+    console.log(`\nTypes/other exports matching "${q}":`);
+    for (const r of typeRows.slice(0, 30)) console.log(`  ${r.name}  (${r.pkg} · ${r.kind})`);
+  }
   if (reg.length) {
     console.log(`\nRegistry items matching "${q}":`);
     for (const r of reg) console.log(`  ${r.name}  [${r.type}] — ${r.title}`);
@@ -283,6 +310,22 @@ function cmdSearch() {
       console.log(`    ${p.file}${p.template ? `  · template ${p.template}` : ""}`);
     }
   }
+  if (templates.length) {
+    console.log(`\nTemplates matching "${q}":`);
+    for (const t of templates) {
+      console.log(`  ${t.name}  — ${firstSentence(t.description)}`);
+      console.log(`    ${t.file}`);
+    }
+  }
+}
+
+/** The first sentence of a description (up to the first `.`/`!`/`?`), for a
+ * terse one-line summary in `search` output. Falls back to the full string
+ * when no sentence terminator is found. */
+function firstSentence(text) {
+  const s = String(text || "").trim();
+  const m = s.match(/^[^.!?]*[.!?]/);
+  return m ? m[0].trim() : s;
 }
 
 /**
