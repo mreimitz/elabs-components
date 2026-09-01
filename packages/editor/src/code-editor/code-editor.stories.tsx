@@ -76,6 +76,15 @@ export const WithToolbar: Story = {
   },
 };
 
+/**
+ * Locks #90: Monaco's `vs`/`vs-dark` base themes ship LANGUAGE-SUFFIXED JSON
+ * scopes (`string.key.json`, `string.value.json`, `keyword.json`) that beat the
+ * bridge's shorter, unsuffixed rules in Monaco's token-theme trie (deepest scope
+ * wins) — so JSON rendered in stock VS Code colors instead of brand colors. The
+ * play function reads REAL computed colors off the rendered `.mtk*` token spans
+ * and asserts none of them is a stock JSON color, in whichever theme this story
+ * is rendered under (`globals=theme:light|dark`).
+ */
 export const JsonReadOnly: Story = {
   name: "JSON (read-only)",
   render: () => (
@@ -83,6 +92,39 @@ export const JsonReadOnly: Story = {
       <CodeEditor language="json" defaultValue={JSON_SAMPLE} readOnly />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // Monaco mounts asynchronously — wait for the editor surface, then for its
+    // tokenized `.view-line` spans (Monaco assigns each syntax scope a `.mtk<n>`
+    // class resolved to a color via the active TokenTheme).
+    const surface = await within(canvasElement).findByTestId("code-editor", {}, { timeout: 10000 });
+    let spans: HTMLSpanElement[] = [];
+    await waitFor(
+      () => {
+        spans = Array.from(
+          surface.querySelectorAll<HTMLSpanElement>('.view-line span[class*="mtk"]'),
+        );
+        if (spans.length === 0) throw new Error("Monaco has not tokenized the JSON sample yet");
+      },
+      { timeout: 10000 },
+    );
+
+    // Stock `vs`/`vs-dark` colors for string.key.json / string.value.json /
+    // keyword.json (extracted straight from monaco-editor's own base themes —
+    // see monaco-theme-bridge.test.ts's "Monaco real trie resolution" block for
+    // the same values as raw hex). If the bridge's brand rules ever stop beating
+    // the base theme's suffixed scopes, a token renders one of these again.
+    const stockColors = new Set([
+      "rgb(163, 21, 21)", // vs: string.key.json / string (maroon)
+      "rgb(4, 81, 165)", // vs: string.value.json / keyword.json (navy)
+      "rgb(156, 220, 254)", // vs-dark: string.key.json (cyan)
+      "rgb(206, 145, 120)", // vs-dark: string.value.json / keyword.json / string (orange)
+    ]);
+
+    const offenders = spans
+      .map((span) => getComputedStyle(span).color)
+      .filter((color) => stockColors.has(color));
+    await expect(offenders).toEqual([]);
+  },
 };
 
 /**
