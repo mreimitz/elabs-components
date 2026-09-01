@@ -238,7 +238,8 @@
   "pnpm": {
     "patchedDependencies": {
       "@radix-ui/react-scroll-area@1.2.10": "patches/@radix-ui__react-scroll-area@1.2.10.patch",
-      "@radix-ui/react-select@2.2.6": "patches/@radix-ui__react-select@2.2.6.patch"
+      "@radix-ui/react-select@2.2.6": "patches/@radix-ui__react-select@2.2.6.patch",
+      "@milkdown/ctx@7.21.2": "patches/@milkdown__ctx@7.21.2.patch"
     }
   }
 }
