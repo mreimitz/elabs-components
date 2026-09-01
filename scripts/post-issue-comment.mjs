@@ -41,11 +41,16 @@ export function parseArgs(argv) {
 }
 
 /**
- * @param {{draft: string, command?: string, issueNumber: number|string}} input
+ * @param {{draft: string, command?: string}} input
  * @returns {string}
  */
-export function buildBody({ draft, command, issueNumber }) {
-  const banner = render(command, issueNumber);
+export function buildBody({ draft, command }) {
+  // The banner's rationale issue (`render()`'s 2nd arg) is a FIXED marker
+  // default (`DEFAULT_ISSUE`, #78 — where the provenance policy lives), not
+  // the issue this comment is being posted TO. Never thread `issueNumber`
+  // through here: posting to issue 43 must still say "See #78", not
+  // "See #43" (#97 finding 4).
+  const banner = render(command);
   const text = typeof draft === "string" ? draft.trim() : "";
   return text ? `${text}\n\n${banner}` : banner;
 }
@@ -65,7 +70,7 @@ export function main(argv) {
   }
 
   const draft = args.bodyFile !== undefined ? readFileSync(args.bodyFile, "utf8") : args.body;
-  const body = buildBody({ draft, command: args.command, issueNumber });
+  const body = buildBody({ draft, command: args.command });
 
   const tmpDir = mkdtempSync(path.join(tmpdir(), "post-issue-comment-"));
   const tmpFile = path.join(tmpDir, "body.md");
