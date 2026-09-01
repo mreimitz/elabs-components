@@ -18,7 +18,13 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { MARKER, BLOCKQUOTE_PHRASE, DEFAULT_ISSUE, hasMarker, render } from "./lib/comment-attribution.mjs";
+import {
+  MARKER,
+  BLOCKQUOTE_PHRASE,
+  DEFAULT_ISSUE,
+  hasMarker,
+  render,
+} from "./lib/comment-attribution.mjs";
 import {
   shellSplit,
   isUninspectableBashCommand,
@@ -1589,7 +1595,11 @@ test("post-issue-comment: buildBody's rationale issue stays fixed regardless of 
   // comment is being POSTED to — otherwise a comment on issue 43 says
   // "See #43 for why this banner exists", a self-referential, meaningless
   // pointer instead of a pointer at the policy issue.
-  const body = buildBody({ draft: "Closing per policy.", command: "close-issues", issueNumber: 43 });
+  const body = buildBody({
+    draft: "Closing per policy.",
+    command: "close-issues",
+    issueNumber: 43,
+  });
   assert.ok(
     body.includes(`See #${DEFAULT_ISSUE} for why this banner exists.`),
     `banner must cite the fixed rationale issue #${DEFAULT_ISSUE}, got: ${body}`,
