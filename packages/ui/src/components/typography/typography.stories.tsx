@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
+import { cn } from "../../lib/cn";
 import { Heading, Text } from "./typography";
 import {
   ProseBlockquote,
@@ -275,6 +276,7 @@ type CjkSample = {
   label: string;
   rule: string;
   text: string;
+  width?: string; // Optional custom width, defaults to w-56
 };
 
 const CJK_SAMPLES: readonly CjkSample[] = [
@@ -300,15 +302,16 @@ const CJK_SAMPLES: readonly CjkSample[] = [
     label: "Korean (ko)",
     rule: "word-break: keep-all",
     text:
-      "이 문장은 충분히 길어서 컨테이너 너비를 넘으면 자동으로 줄바꿈이 일어납니다. " +
-      "word-break: keep-all 속성은 한글 단어 중간에서 줄이 바뀌지 않도록 보장하여 " +
+      "소프트웨어개발환경구축및정보통신기술표준화를위한국제협력과연구개발사업이진행되고있습니다. " +
+      "word-break: keep-all 속성은 긴 복합어 중간에서 줄이 바뀌지 않도록 보장하여 " +
       "가독성을 지켜 줍니다.",
+    width: "w-36",
   },
 ];
 
 /** One locale panel: the seam ON (real `lang`) next to the seam forced OFF, for comparison. */
 function CjkPanel({ sample }: { sample: CjkSample }) {
-  const { lang, label, rule, text } = sample;
+  const { lang, label, rule, text, width = "w-56" } = sample;
   const withSeamRef = useRef<HTMLParagraphElement>(null);
   const [measured, setMeasured] = useState("");
   useLayoutEffect(() => {
@@ -334,7 +337,7 @@ function CjkPanel({ sample }: { sample: CjkSample }) {
           <p
             lang={lang}
             style={{ fontFamily: "var(--font-sans)", lineBreak: "auto", wordBreak: "normal" }}
-            className="m-0 w-56 rounded-md border border-border bg-card p-3 text-body"
+            className={cn("m-0 rounded-md border border-border bg-card p-3 text-body", width)}
           >
             {text}
           </p>
@@ -359,7 +362,7 @@ function CjkPanel({ sample }: { sample: CjkSample }) {
               fontFamily:
                 'Inter, var(--font-cjk-sans), "Helvetica Neue", Helvetica, Arial, sans-serif',
             }}
-            className="m-0 w-56 rounded-md border border-border bg-card p-3 text-body"
+            className={cn("m-0 rounded-md border border-border bg-card p-3 text-body", width)}
           >
             {text}
           </p>
@@ -367,7 +370,13 @@ function CjkPanel({ sample }: { sample: CjkSample }) {
       </div>
       {/* The declared (not rendered) values — a real, un-bundled system CJK
           face never looks identical across two machines, so THIS is what a
-          reviewer can actually verify: the correct stack is being asked for. */}
+          reviewer can actually verify: the correct stack is being asked for.
+
+          NOTE: document.fonts.check() is NOT used to verify font resolution
+          (issue #62). That API reports load status, not face existence — it
+          returns true even for nonexistent font names. The measured values
+          instead read the browser's own getComputedStyle output, which is
+          verifiable. */}
       <p className="m-0 text-meta text-muted-foreground" data-testid={`cjk-measured-${lang}`}>
         {measured || "measuring…"}
       </p>
@@ -383,9 +392,16 @@ export const CJKFontAndLineBreaking: Story = {
         story:
           "Japanese, Chinese and Korean samples, each wrapped in a narrow (14rem) column so " +
           "the text wraps across multiple lines — the line-breaking rules need a real wrap " +
-          "point to have anything to do. The measured line under each pair reads the browser's " +
-          "OWN computed `line-break` / `word-break` / `font-family`, live, so this cannot claim " +
-          "a difference it does not render. Rendered glyph shape depends on which CJK system " +
+          "point to have anything to do.\n\n" +
+          "**Verification by locale:**\n" +
+          "* **Japanese (`ja`) and Chinese (`zh`):** `line-break: strict` is verified via " +
+          "computed style only; no empirically-validated visual wrap difference has been found at " +
+          "this column width for any practical sample text in chromium or webkit, so the rendered " +
+          "layout is NOT asserted to differ. The rule is confirmed present via `getComputedStyle`.\n" +
+          "* **Korean (`ko`):** `word-break: keep-all` is verified both via computed style AND " +
+          "an actual rendered wrap-position difference assertion in the play function.\n\n" +
+          "The measured line under each pair reads the browser's OWN computed `line-break` / " +
+          "`word-break` / `font-family`, live. Rendered glyph shape depends on which CJK system " +
           "fonts are installed on the machine viewing this story (none are bundled, by design " +
           "— #15); the declared font STACK is what is verifiable everywhere.",
       },
@@ -423,5 +439,34 @@ export const CJKFontAndLineBreaking: Story = {
     expect(getComputedStyle(ja).fontFamily).toContain("Hiragino Sans");
     expect(getComputedStyle(zh).fontFamily).toContain("PingFang SC");
     expect(getComputedStyle(ko).fontFamily).toContain("Apple SD Gothic Neo");
+
+    // Korean's word-break: keep-all must produce a RENDERED wrap-position
+    // difference. Measure bounding height via getClientRects — if the seam
+    // (word-break: keep-all) doesn't change the wrap, the height stays the
+    // same. Find the corresponding "without the seam" panel by the section's
+    // sibling figure.
+    const koSection = canvas.getByTestId("cjk-with-seam-ko").closest("section");
+    if (!koSection) throw new Error("Korean section not found");
+    const koFigures = Array.from(koSection.querySelectorAll("figure"));
+    if (koFigures.length < 2) throw new Error("Korean figures not found");
+
+    const withSeamFigure = koFigures[1]; // "With the seam" is the second figure
+    const withoutSeamFigure = koFigures[0]; // "Without the seam" is the first figure
+
+    const withSeamP = withSeamFigure.querySelector("p");
+    const withoutSeamP = withoutSeamFigure.querySelector("p");
+
+    if (!withSeamP || !withoutSeamP) {
+      throw new Error("Korean paragraph elements not found");
+    }
+
+    // Measure bounding height: the word-break property should change how the
+    // text wraps, resulting in a different total height.
+    const withSeamHeight = withSeamP.getBoundingClientRect().height;
+    const withoutSeamHeight = withoutSeamP.getBoundingClientRect().height;
+
+    // Assert they differ — word-break: keep-all should prevent word breaks
+    // that would otherwise occur, changing the layout.
+    expect(withSeamHeight).not.toBe(withoutSeamHeight);
   },
 };
