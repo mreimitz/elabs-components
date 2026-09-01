@@ -258,9 +258,12 @@ export const FieldDescription = forwardRef<
   // `Boolean(children)` alone is not enough: an array is always truthy, so
   // `{errors.map(...)}` on an empty list (or `[a && "x", b && "y"]` with both
   // false) would still count as content. `Children.toArray` drops `null`/
-  // `undefined`/booleans, so its length answers "is there really something
-  // here" for every array shape, on top of the scalar check above.
-  const hasContent = Boolean(children) && Children.toArray(children).length > 0;
+  // `undefined`/booleans from an array but KEEPS `""` (and `0`), so an array
+  // like `["", ""]` would still slip through as "content" without the
+  // trailing `.filter(Boolean)` — filtering after `toArray` is what makes
+  // this match the scalar check above for every array shape, not just the
+  // ones `toArray` already prunes.
+  const hasContent = Boolean(children) && Children.toArray(children).filter(Boolean).length > 0;
 
   useLayoutEffect(() => {
     if (!hasContent) return undefined;
@@ -311,8 +314,10 @@ export const FieldError = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLPa
     // `error ? … : null` — `{condition && "message"}` with `condition` false
     // must render no alert at all, not an empty one a screen reader announces.
     // `Boolean(children)` alone can't see an empty/all-falsy ARRAY (arrays are
-    // always truthy) — see `FieldDescription` for the full rationale.
-    const hasContent = Boolean(children) && Children.toArray(children).length > 0;
+    // always truthy), and `Children.toArray` alone still keeps `""`/`0` inside
+    // one — see `FieldDescription` for the full rationale on the trailing
+    // `.filter(Boolean)`.
+    const hasContent = Boolean(children) && Children.toArray(children).filter(Boolean).length > 0;
 
     useLayoutEffect(() => {
       if (!hasContent) return undefined;

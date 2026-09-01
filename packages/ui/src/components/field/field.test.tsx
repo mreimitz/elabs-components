@@ -262,8 +262,29 @@ describe("Field compound anatomy", () => {
     expect(input).not.toHaveAttribute("aria-describedby");
   });
 
+  // Fix round 4 (validator FAIL on the round-3 commit): `Children.toArray`
+  // drops `null`/`undefined`/booleans from an array but KEEPS `""` (and `0`),
+  // so `["", ""]` survived `toArray` with length 2 and still rendered an
+  // empty, `aria-describedby`-referenced alert even though the JSDoc already
+  // named `""` as falsy content. This must render nothing, same as every
+  // other all-falsy array shape.
+  it("renders no error element for an array of only empty strings", () => {
+    render(
+      <FieldRoot>
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldError>{["", ""]}</FieldError>
+      </FieldRoot>,
+    );
+    const input = screen.getByRole("textbox");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+  });
+
   it("renders no description element for an empty array or an array of only falsy children", () => {
-    const { container } = render(
+    const { container, rerender } = render(
       <FieldRoot>
         <FieldLabel>Bio</FieldLabel>
         <FieldControl>
@@ -272,7 +293,22 @@ describe("Field compound anatomy", () => {
         <FieldDescription>{[false, null]}</FieldDescription>
       </FieldRoot>,
     );
-    const input = screen.getByRole("textbox");
+    let input = screen.getByRole("textbox");
+    expect(container.querySelector('[data-slot="field-description"]')).toBeNull();
+    expect(input).not.toHaveAttribute("aria-describedby");
+
+    // Same round-4 gap as FieldError: `["", ""]` survives `Children.toArray`
+    // (which keeps `""`) and must still be treated as no content.
+    rerender(
+      <FieldRoot>
+        <FieldLabel>Bio</FieldLabel>
+        <FieldControl>
+          <Input />
+        </FieldControl>
+        <FieldDescription>{["", ""]}</FieldDescription>
+      </FieldRoot>,
+    );
+    input = screen.getByRole("textbox");
     expect(container.querySelector('[data-slot="field-description"]')).toBeNull();
     expect(input).not.toHaveAttribute("aria-describedby");
   });
