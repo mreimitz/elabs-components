@@ -1,0 +1,23 @@
+# @elabs-ai/components-terminal
+
+> Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.
+
+Import from `@elabs-ai/components-terminal`. Part of brand-ui — see the root `llms.txt` for routing.
+
+## Components
+
+- InteractiveTerminal — Streaming terminal surface for agent shell output, with an optional input line.
+  - avoid: Spawning a shell or process from the component — it renders a stream; the app owns the runtime (D5).
+  - avoid: Looking for an isStreaming/output prop — this surface is imperative: hold the InteractiveTerminalHandle ref and call write() per chunk (the declarative sibling is Terminal).
+  - avoid: Reaching the terminal engine through a static import — heavy engines must be reached by a dynamic import() (the heavy-deps ratchet).
+- Terminal — Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.
+  - avoid: Reaching for it when the user must TYPE — that is InteractiveTerminal; Terminal is output-only.
+  - avoid: Stripping the ANSI codes before passing them — the component renders them; pre-stripping throws away the colour.
+  - avoid: Re-implementing auto-scroll in the consumer — `autoScroll` is owned by the component and must yield when the user scrolls up.
+- TerminalActions
+- TerminalClearButton
+- TerminalContent
+- TerminalCopyButton
+- TerminalHeader
+- TerminalStatus
+- TerminalTitle
