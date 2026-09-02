@@ -204,6 +204,19 @@ example and the default registry, not the menu.
   - **Ordering with #416** (`--success-text` retune): whichever of #416 and
     #427 lands second re-runs `pnpm roles:check` and re-measures
     `(--ring, --success-text)`.
+- **A region that scopes its own tokens must paint its own ground (measured,
+  2026-09-02).** `ThemeProvider`'s `attributeTarget` writes `data-theme` onto an
+  element you choose, so every token inside that element resolves in the inner
+  scope — while the element itself keeps showing whatever ground its OUTER
+  context painted, because a ground is a declaration, not a token lookup. A
+  tenant-preview panel with no `bg-*` therefore rendered light-theme caption ink
+  on a dark page and axe measured **2.95:1**, a real 1.4.3 failure. Give any
+  element you hand to `attributeTarget` (or any subtree you scope by hand) an
+  explicit `bg-background`/`bg-card`. This is the same failure as the terminal
+  package's inverse-ink hazard from the other direction: there an opaque app
+  surface inherited console ink; here a scoped ink sat on an unscoped ground.
+  Reference: `apps/docs/stories/foundations/theming.stories.tsx`'s two runtime
+  override demos.
 - **Font smoothing** ships in the token stylesheet's `@layer base` `body` rule
   (`-webkit-font-smoothing: antialiased` / `-moz-osx-font-smoothing: grayscale`,
   #345) — consumers must not re-add it locally.

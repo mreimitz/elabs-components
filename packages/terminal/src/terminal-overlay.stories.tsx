@@ -93,7 +93,14 @@ export const Default: Story = {
     const doc = within(canvasElement.ownerDocument.body);
     const dialog = await doc.findByRole("dialog");
     await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
-    await expect(within(dialog).getByText("Keyboard shortcuts")).toBeVisible();
+    // Focus lands on mount, but the enter transition (`animate-in`/`fade-in-0`)
+    // is still running at that point — so the focus wait above does NOT imply
+    // the panel is painted. A bare `toBeVisible()` here caught the title at
+    // `opacity: 0` under a loaded full-suite run while passing in isolation.
+    // Wait the transition out on the first assertion; once it holds, the
+    // animation has ended and the rest can assert directly (same reasoning as
+    // `WithDescription` and `WithKeyboardShortcuts` below).
+    await waitFor(() => expect(within(dialog).getByText("Keyboard shortcuts")).toBeVisible());
     await expect(within(dialog).getByText("Close overlay")).toBeVisible();
     await expect(within(dialog).getByText("Open shortcuts")).toBeVisible();
 
