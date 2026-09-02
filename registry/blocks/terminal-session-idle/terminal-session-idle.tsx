@@ -71,8 +71,14 @@ export function TerminalSessionIdle({
     if (el) el.scrollTop = el.scrollHeight;
   }, [transcript]);
 
+  // A `<main>`, not a bare `<div>`: this block is a standalone full-bleed page
+  // — the same reason its heading is a top-level one — so it owns the page's
+  // main landmark rather than leaving a screen-reader user with no landmark to
+  // jump to. If you paste this into an app shell that already renders a
+  // `<main>`, demote this one to a `<div>`: nested landmarks are worse than
+  // none.
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-4xl flex-col bg-background p-4">
+    <main className="mx-auto flex h-dvh w-full max-w-4xl flex-col bg-background p-4">
       {/*
        * ADR 0033: the console is ONE frame. `TerminalConsole` draws the edge,
        * radius, ground and lift once; the banner, transcript, composer and
@@ -150,6 +156,6 @@ export function TerminalSessionIdle({
           context={{ used: "4K", limit: "200K" }}
         />
       </TerminalConsole>
-    </div>
+    </main>
   );
 }

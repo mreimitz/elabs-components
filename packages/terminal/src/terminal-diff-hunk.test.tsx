@@ -70,6 +70,25 @@ describe("TerminalDiffHunk", () => {
     expect(contextGutter?.textContent).not.toContain("Removed");
   });
 
+  // The header's `⏺` and the summary's `⎿` are the SAME glyphs
+  // `TerminalTranscriptRow` and `TerminalToolCall` announce as "Agent" and
+  // "Result". They shipped here with no `gutterLabel` at all, so a screen
+  // reader heard the file name with no cue that this was an agent-authored
+  // change, and heard the summary with no cue that it was a result line.
+  it("announces the header and summary gutter glyphs with the family's own words", () => {
+    render(<TerminalDiffHunk file="src/greet.ts" summary="2 additions, 1 removal" lines={LINES} />);
+
+    const headerGutter = document
+      .querySelector("[data-slot='terminal-diff-hunk-header']")
+      ?.querySelector("[data-slot='terminal-row-gutter']");
+    expect(headerGutter?.textContent).toContain("Agent");
+
+    const summaryGutter = document
+      .querySelector("[data-slot='terminal-diff-hunk-summary']")
+      ?.querySelector("[data-slot='terminal-row-gutter']");
+    expect(summaryGutter?.textContent).toContain("Result");
+  });
+
   it("hides the polarity marker glyph from assistive tech but keeps it visible", () => {
     const { container } = render(<TerminalDiffHunk file="src/greet.ts" lines={LINES} />);
     const gutters = [

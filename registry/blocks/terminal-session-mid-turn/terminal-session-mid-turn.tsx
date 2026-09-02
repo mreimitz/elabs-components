@@ -68,8 +68,23 @@ export function TerminalSessionMidTurn({ outcome = "working" }: TerminalSessionM
     if (el) el.scrollTop = el.scrollHeight;
   }, [failed]);
 
+  // A `<main>`, not a bare `<div>`: this block is a standalone full-bleed page
+  // — the same reason its heading is a top-level one — so it owns the page's
+  // main landmark rather than leaving a screen-reader user with no landmark to
+  // jump to. If you paste this into an app shell that already renders a
+  // `<main>`, demote this one to a `<div>`: nested landmarks are worse than
+  // none.
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-4xl flex-col bg-background p-4">
+    <main className="mx-auto flex h-dvh w-full max-w-4xl flex-col bg-background p-4">
+      {/*
+       * The idle sibling block gets its top-level heading for free by promoting
+       * its `TerminalBanner` title (`level={1}`). A mid-turn console has no
+       * banner — the session is already under way — so without this the page
+       * has no heading at all and heading navigation lands on nothing. Visually
+       * hidden, because the console's own chrome already tells a sighted reader
+       * where they are.
+       */}
+      <h1 className="sr-only">Console Agent session</h1>
       {/*
        * ADR 0033: the console is ONE frame. `TerminalConsole` draws the edge,
        * radius, ground and lift once; the transcript, working line, permission
@@ -145,6 +160,6 @@ export function TerminalSessionMidTurn({ outcome = "working" }: TerminalSessionM
           turn={{ current: 2, total: 4 }}
         />
       </TerminalConsole>
-    </div>
+    </main>
   );
 }

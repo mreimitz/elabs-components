@@ -121,16 +121,19 @@ describe("TerminalOverlay", () => {
     expect(document.querySelector("[data-slot='terminal-overlay-legend']")).toBeNull();
   });
 
-  // Each hint's ACTION is the accessible/greyscale-survivable channel; the key
-  // glyphs are decorative (`aria-hidden`) — same convention as `TerminalRow`'s
-  // gutter glyph vs. `gutterLabel`.
-  it("renders the footer legend with the action as real text and the keys as decorative", () => {
+  // Both halves of a hint row reach assistive tech. This test used to assert
+  // the opposite — that the keys were `aria-hidden` "like `TerminalRow`'s
+  // gutter glyph" — and that analogy was wrong: a gutter glyph is hidden
+  // because `gutterLabel` restates it in words, whereas here nothing restates
+  // the key. Hiding it left a non-visual user of a KEYBOARD-SHORTCUT legend
+  // with the actions and none of the shortcuts.
+  it("renders the footer legend with both the action and the keys reaching assistive tech", () => {
     render(<Overlay hints={[{ action: "Close overlay", keys: ["Esc"] }]} />);
 
     expect(screen.getByText("Close overlay")).toBeInTheDocument();
     const hint = document.querySelector("[data-slot='terminal-overlay-hint']");
-    const decorative = hint?.querySelector("[aria-hidden='true']");
-    expect(decorative).toHaveTextContent("Esc");
+    expect(hint).toHaveTextContent("Esc");
+    expect(hint?.querySelector("[aria-hidden='true']")).toBeNull();
   });
 
   it("forwards a ref to the panel element", () => {

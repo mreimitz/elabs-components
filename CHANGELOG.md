@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Fixed: three accessibility gaps found by a pre-merge review of the new
+  `@elabs-ai/components-terminal` console family. (1) `TerminalOverlay`'s
+  footer key legend no longer hides its `Kbd` glyphs from assistive tech — in
+  a keyboard-shortcut legend the key IS the information and the action text
+  does not restate it, so a non-visual user was getting the actions and none
+  of the shortcuts. It now matches `KeyboardShortcuts`
+  (`@elabs-ai/components-ui`), the component this frame exists to host.
+  (2) `TerminalDiffHunk`'s header (`⏺`) and summary (`⎿`) rows now pass a
+  `gutterLabel`, announcing "Agent" and "Result" — the same words
+  `TerminalTranscriptRow` and `TerminalToolCall` already announce for those
+  exact glyphs; they were the only place in the family where a meaningful
+  gutter glyph reached a screen reader as nothing at all. (3) The two
+  terminal-session registry blocks now root on `<main>` rather than a bare
+  `<div>`, and the mid-turn block gains an `sr-only` top-level heading (its
+  idle sibling already had one, promoted from its banner title), so heading
+  and landmark navigation land on something.
+
 - Fixed: `SchemaFormTestAction` (`@elabs-ai/components-ui`) no longer keeps
   showing a stale "Connected"/failure result once the tested field values
   change — a fresh `latestEffectiveValuesRef`/`testedValuesRef` pair discards

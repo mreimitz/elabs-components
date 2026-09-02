@@ -222,7 +222,22 @@ export const TerminalDiffHunk = forwardRef<HTMLDivElement, TerminalDiffHunkProps
         className={cn("flex flex-col gap-1", className)}
         {...props}
       >
-        <TerminalRow variant={variant} data-slot="terminal-diff-hunk-header" gutter="⏺">
+        {/*
+         * Both gutter glyphs carry meaning, so both take a `gutterLabel` — the
+         * `⏺` marks this as an agent-authored change and the `⎿` marks a
+         * result/continuation line. They are the SAME two glyphs
+         * `TerminalTranscriptRow` (`agent`/`output`) and `TerminalToolCall`
+         * (header/result) label, so they reuse those words rather than minting
+         * near-synonyms: a screen reader must hear the same cue for the same
+         * glyph wherever it appears in the family. The `rail` variant
+         * suppresses the glyph but never the meaning.
+         */}
+        <TerminalRow
+          variant={variant}
+          data-slot="terminal-diff-hunk-header"
+          gutter="⏺"
+          gutterLabel={t("terminal.transcriptRow.agent")}
+        >
           {t("terminal.diffHunk.header", { file })}
         </TerminalRow>
         {summary ? (
@@ -230,6 +245,7 @@ export const TerminalDiffHunk = forwardRef<HTMLDivElement, TerminalDiffHunkProps
             variant={variant}
             data-slot="terminal-diff-hunk-summary"
             gutter="⎿"
+            gutterLabel={t("terminal.toolCall.result")}
             className="text-terminal-muted"
           >
             {summary}

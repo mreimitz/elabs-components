@@ -201,12 +201,19 @@ export const TerminalOverlay = forwardRef<HTMLDivElement, TerminalOverlayProps>(
                   className="inline-flex items-center gap-1.5"
                 >
                   {/*
-                   * The key glyphs are decorative — the row's meaning is
-                   * `hint.action`, real visible text that reaches assistive
-                   * tech on its own, same convention as `TerminalRow`'s
-                   * gutter glyph vs. `gutterLabel`.
+                   * The keys are NOT decorative and are NOT hidden from
+                   * assistive tech. `TerminalRow`'s gutter glyph is hidden
+                   * because `gutterLabel` says the same thing in words — the
+                   * glyph is redundant. Here the key IS the answer to "which
+                   * key does this?", and `hint.action` does not restate it, so
+                   * hiding it would leave a non-visual user with the action and
+                   * no shortcut. `KeyboardShortcuts` (`@elabs-ai/components-ui`),
+                   * which this frame exists to host, announces its own `Kbd`s
+                   * for the same reason. No accessible-name hazard here: this
+                   * is a legend row, not a control, so there is no name for the
+                   * key text to pollute.
                    */}
-                  <span aria-hidden="true" className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1">
                     {hint.keys.map((key, keyIndex) => (
                       <Kbd
                         key={keyIndex}
