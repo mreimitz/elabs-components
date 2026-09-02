@@ -171,9 +171,14 @@
 //     (shell-command-parse.mjs) — which used to scan every `VAR=value`-shaped
 //     WORD in a line regardless of position, so `make deploy MSG="gh issue
 //     comment --body ready"` re-parsed make's own operand as if it were a
-//     shell assignment. That scan is now scoped to the leading assignment run
+//     shell assignment. That scan was scoped to the leading assignment run
 //     (plus the operands of a leading `export`/`declare`/`typeset`/`local`/
-//     `readonly` builtin, which really are assignments).
+//     `readonly` builtin, which really are assignments) — SUPERSEDED by fix
+//     round 12 below: two further rounds (11, then the `${!NAME}` bypass that
+//     defeated it) established no version of "is this assignment actually
+//     used?" holds up, so round 12 reverts this scan to unconditional again,
+//     reopening `make deploy MSG=…` as a deliberate, named, accepted false
+//     refusal.
 //   - REVERTED, fix round 10 (#96): fix round 8 shipped a THIRD part beside
 //     the two above — an `atCommandPositionOnly` option restricting the NESTED
 //     re-read to argv[0] of each re-parsed simple command, to keep prose that
@@ -212,7 +217,9 @@
 //     alternative was a silent post. `pnpm attribution:comments:check:test`
 //     locks both directions — the never-listed wrappers as REFUSALS and these
 //     two lines as the declared cost.
-//   - Fix round 11 (#96): the SAME anti-pattern, in the other mechanism —
+//   - Fix round 11 (#96) — SUPERSEDED by fix round 12 below; kept verbatim as
+//     the historical record of why it failed. It fixed the SAME anti-pattern,
+//     in the other mechanism —
 //     round 8's assignment-run scoping (the clause above) was a POSITIONAL
 //     window, and two ordinary shapes sit outside it. An assignment placed
 //     AFTER a command word (`env CMD="gh issue comment 26 --body …" sh -c
@@ -245,7 +252,106 @@
 //     branch tip. WHAT IT STILL CANNOT SEE, unchanged from `main`: an
 //     assignment made in an EARLIER Bash tool call and expanded in a later
 //     one — those bytes are not on this line at all.
-//   - What is STILL a declared limit after fix rounds 10 and 11, unchanged: a
+//
+//     THIS ROUND'S OWN "0 remain" CLAIM WAS ITSELF CORPUS-LIMITED, in exactly
+//     the way it accused round 10's claim of being: it varied assignment
+//     POSITION and did not vary DEREFERENCE FORM. Bash's `${!NAME}` indirect
+//     expansion defeats the NAME-keying repair above — the variable that
+//     actually gets posted is never named literally anywhere on the line
+//     (`NAME=CMD bash -c 'eval ${!NAME}'` expands to `eval $CMD`, and the
+//     literal text `$CMD` never appears), so `referencedVars` sees nothing to
+//     match and allows it. Confirmed EXECUTING on real bash, not just
+//     parse-classified. See fix round 12 below, which supersedes this round
+//     entirely rather than patching it a third time.
+//   - Fix round 12 (#96) — the maintainer decision: stop trading breadth for
+//     precision, restore `main`'s unconditional assignment scan. Round 11
+//     above is SUPERSEDED. Four measured rounds now form a pattern, not a
+//     string of bad luck: round 9/10 closed the wrapper-name axis and
+//     reopened the assignment-POSITION axis; round 11 closed the
+//     assignment-position axis and reopened the DEREFERENCE-FORM axis (the
+//     `${!NAME}` bypass above). Each fix bought precision on the axis it
+//     targeted and gave up safety on an axis nobody had varied yet — "is this
+//     assignment actually used?" is undecidable at a text-parsing layer
+//     without a real shell behind it, and three rounds proved that
+//     empirically rather than by argument. THE DECISION IS TO STOP ASKING
+//     THAT QUESTION. The assignment scan reverts to exactly `main`'s rule:
+//     unconditional, position-independent, with NO expansion-gating condition
+//     of any kind — a `VAR=value` word is re-read as a nested command
+//     whenever its value carries a gated posting phrase, wherever it sits,
+//     whoever consumes it, whatever dereferences it.
+//
+//     A fourth, bash-nameref shape (`declare -n ref=CMD; eval "$ref"`) is the
+//     same two-hop dereference pattern as `${!NAME}` but needs bash ≥ 4.3;
+//     this repo's own dev machine ships bash 3.2, so it is locked at the
+//     PARSE layer only and labelled parse-verified — never claimed as an
+//     execution proof this repo does not have. Round 12 does not need this
+//     shape to motivate reverting the scan (the three EXECUTING `${!NAME}`
+//     shapes already do), but locks it anyway since the parser sees it either
+//     way.
+//
+//     WHAT THIS DELIBERATELY REINTRODUCES, named and accepted:
+//     `declare -x CMD="<posting phrase>"` with nothing on the line ever
+//     executing it, `env CMD="<posting phrase>" true`,
+//     `make deploy MSG="gh issue comment --body ready"`, a
+//     container/orchestration `-e`/`--set-string`/`-var`/`-e` value carrying a
+//     posting-shaped string (`docker run`/`helm`/`terraform`/
+//     `ansible-playbook` and siblings), and an ordinary commit message ABOUT
+//     the gate that happens to quote a gated phrase — all REFUSE now, even
+//     though nothing on those lines can ever post. Each is loud (exit 2,
+//     printed reason, printed override), costs one retry, and the override
+//     (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed at the moment of
+//     refusal. THESE ARE NOT BUGS FOR A FUTURE ROUND TO FIX — narrowing this
+//     scan again reopens exactly the bypass class four rounds have now closed
+//     and reopened in turn. Precision here needs a REAL shell behind the
+//     check (execute the line in a sandboxed subshell and observe what
+//     actually runs), not a sharper text-parsing condition — that is the
+//     lesson four rounds paid for.
+//
+//     WHAT THIS KEEPS from rounds 9/10 (unaffected — a different mechanism):
+//     the nested-operand re-read (an operand of an unrecognised command word
+//     is a candidate to be re-parsed as a script) and its position
+//     independence — the round-8/round-10 clauses above stand as written;
+//     only the assignment-carries-a-command scan changed.
+//
+//     THE HONEST RESIDUAL, unchanged from `main` and unclosed by any round: an
+//     assignment made in an EARLIER Bash tool call and expanded in a LATER one
+//     is still unseen — those bytes are not on the later line at all, and no
+//     amount of tightening this file reaches across two tool calls.
+//
+//     EVIDENCE: an independent 80-case differential corpus (assignment
+//     position × variable naming × dereference form, including `${!NAME}` and
+//     a bash-nameref shape × interpreter nesting × every gated posting shape,
+//     plus 8 inert cells and 28 ordinary-work commands — deliberately NOT the
+//     round-9/10 or round-11 corpora reused) driven through both the real
+//     `PreToolUse` hook and the pure decision path on `main` and this tree: 0
+//     regressions vs `main`, including every inert cell (round 11's
+//     "harmless" inert cases now refuse, matching `main`), 5 tightenings (the
+//     nested-operand widening rounds 8-10 still hold that `main` never had: a
+//     bare `$VAR`, a subshell, a space-free `&&`, a quoted `gh` word, and a
+//     known shell nested inside an unrecognised one, each inside a
+//     `csh`/`tcsh` operand), hook and pure function agree on every one of the
+//     80 cells on both trees. 2 refusals surfaced on the ordinary-work slice:
+//     an unmarked `--body-file` pointing at a file that genuinely lacks the
+//     marker (correct, not a false refusal) and the fix-round-7
+//     commit-message false refusal, reproduced fresh (accepted, named above).
+//
+//     Locked in `scripts/check-comment-attribution.test.mjs`: the round-8
+//     false-refusal-fix test and its real-hook counterpart are INVERTED (not
+//     deleted) to assert the refusal is back, named as a deliberate
+//     maintainer-approved reintroduction; the round-11 name-keying test and
+//     its "nothing expands it stays allowed" companion are likewise inverted;
+//     new tests lock the three executing `${!NAME}` shapes (pure and
+//     real-hook), the bash-nameref shape at the parse layer only, and
+//     position-independence explicitly (the same assignment leading, after a
+//     command word, and after a wrapped command word all refuse alike).
+//     Reverting only the source change (shell-command-parse.mjs) with the
+//     tests kept every one of the new/inverted tests red; restoring it
+//     returned the suite to green.
+//
+//     THE NEW STATE, stated honestly: at least as strong as `main` everywhere
+//     measured, plus the nested-operand class `main` never had — NOT
+//     "complete".
+//   - What is STILL a declared limit after fix round 12, unchanged: a
 //     `… | tee f | sh` pipeline (the sink-detection only recognises a sink
 //     that takes no non-flag operand, and `tee`'s filename argument defeats
 //     that), `gh api graphql`'s `addComment` mutation, and a body-less nested

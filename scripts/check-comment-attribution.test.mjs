@@ -1159,10 +1159,11 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `csh -c 'gh issue view 26'`,
     `csh -c 'pnpm test'`,
     `zqx-notashell-9f21a -c 'gh pr checks 12'`,
-    // A `VAR=value` word that is a POSITIONAL ARGUMENT to an unrelated
-    // command (make's MSG=…), not a shell assignment this line ever
-    // executes — the make(1) target never runs `gh`.
-    `make deploy MSG="gh issue comment --body ready"`,
+    // #96 fix round 12 REMOVED `make deploy MSG="gh issue comment --body
+    // ready"` from this list — it is now a deliberate, accepted false
+    // refusal again (merge-base `main`'s behaviour). See the inverted lock
+    // "#96 fix round 12: main's own false refusals are BACK, by decision"
+    // below, which asserts it BLOCKS.
     // #96 acceptance criteria — ordinary expansions must not be blanket
     // refused just because Part A stopped skipping every operand that
     // contains one.
@@ -1211,11 +1212,18 @@ test("#96 fix round 8: the nested-operand widening, through the REAL shell hook"
   });
   assert.equal(stillBlocked.status, 2, stillBlocked.stderr);
 
-  const allowed = runHook({
+  // #96 fix round 12 INVERTS this third case. It used to assert ALLOW — the
+  // round-8 false-refusal fix this test's own name refers to. That fix is
+  // gone by maintainer decision (see the round-12 block comment in
+  // shell-command-parse.mjs and the inverted lock below); `make deploy
+  // MSG=…` is a `VAR=value` word whose value looks gh-shaped, and the
+  // restored unconditional scan refuses it exactly as merge-base `main`
+  // does, regardless of the hook or the pure path.
+  const nowBlocked = runHook({
     tool_name: "Bash",
     tool_input: { command: `make deploy MSG="gh issue comment --body ready"` },
   });
-  assert.equal(allowed.status, 0, allowed.stderr);
+  assert.equal(nowBlocked.status, 2, nowBlocked.stderr);
 });
 
 test("#96 fix round 10: no wrapper allowlist — the never-listed wrappers, through the REAL shell hook", () => {
@@ -1854,24 +1862,33 @@ test("post-issue-comment: refuses to run without an issue number or a body", () 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// #96 fix round 11 — the ASSIGNMENT POSITION axis.
+// #96 fix round 11 — the ASSIGNMENT POSITION axis. SUPERSEDED by fix round 12
+// (below, and see the block comment at the assignment re-read itself in
+// `shell-command-parse.mjs`) — kept here, not deleted, because the bypass
+// sweep this round built (`ROUND_11_ASSIGNMENT_POSITION_BYPASSES`) is still a
+// valid, still-passing lock: a strict superset of `main` cannot allow what
+// this narrower rule already refused. Only the two tests that pinned round
+// 11's now-removed "only when the line also expands `$VAR`" precision are
+// inverted, immediately below this block.
 //
 // Fix round 8 stopped scanning every `VAR=value` word for a command it could
 // re-read, and scanned only the LEADING assignment run plus an assignment
 // builtin's `VAR=value`-shaped operands. That removed a real false refusal
-// (`make deploy MSG=…`, locked above) and, unnoticed through three rounds of
-// review, opened two bypasses that merge-base `main` refused — because every
-// test in this file pinned the assignment to the leading position:
+// (`make deploy MSG=…`, then locked as an ALLOW; now locked as a BLOCK again,
+// see round 12 below) and, unnoticed through three rounds of review, opened
+// two bypasses that merge-base `main` refused — because every test in this
+// file pinned the assignment to the leading position:
 //
 //   env CMD="gh issue comment 26 --body …" sh -c '$CMD'     (after a command word)
 //   declare -x CMD="gh issue comment 26 --body …"; $CMD     (option-bearing builtin)
 //
 // Both were verified to really run the post (`env CMD="printf PROOF\n" sh -c
-// '$CMD'` prints PROOF). The repair keys on shell VARIABLE SYNTAX and names no
-// command: a `VAR=value` word is re-read wherever it sits, but only when the
-// same line also expands `$VAR`. The ALLOW block below is the other half of the
-// lock — it is what stops a later round from "fixing" this by refusing every
-// `VAR=value` word again, which is exactly what round 8 had to undo.
+// '$CMD'` prints PROOF). Round 11's repair keyed on shell VARIABLE SYNTAX and
+// named no command: a `VAR=value` word was re-read wherever it sat, but only
+// when the same line also expanded `$VAR`. THAT half — the "only when
+// expanded" gate — is what round 12 removes: it was defeated by indirect
+// expansion (`${!NAME}`), a fourth axis on the same failure. See the round-12
+// tests below.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const POST_AFTER_ASSIGNMENT = `gh issue comment 26 --body "${UNMARKED}"`;
@@ -1920,13 +1937,34 @@ test("#96 fix round 11: the same assignment-position shapes, through the REAL sh
   }
 });
 
-test("#96 fix round 11: an assignment NOTHING on the line expands stays ALLOWED", () => {
-  // The other half of the lock. Refusing every `VAR=value` word whose value
-  // looks like a `gh` call is what merge-base `main` did, and it is what made
-  // `make deploy MSG=…` a false refusal. These lines carry such a word and
-  // never expand it, so they cannot post, whatever the command word is — and
-  // no command name appears in the rule that lets them through.
-  const inert = [
+// ─────────────────────────────────────────────────────────────────────────────
+// #96 fix round 12 — the maintainer decision to stop trading breadth for
+// precision. Four measured rounds (8, 9/10, 11) each closed one bypass and
+// opened another on an axis the previous round did not consider: command
+// position (9/10), then dereference form (11's `${!NAME}` indirect
+// expansion — see `validate-u17.json`, "critical" finding). The decision is
+// to restore merge-base `main`'s UNCONDITIONAL, POSITION-INDEPENDENT
+// assignment scan verbatim — asking nothing about whether an assignment is
+// ever used — and accept `main`'s own false refusals as the cost. See the
+// block comment at the assignment re-read itself
+// (`shell-command-parse.mjs`, "fix round 12") for the full account.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("#96 fix round 12: main's own false refusals are BACK, by decision (INVERTS the round-11 ALLOW lock)", () => {
+  // This is the direct inversion of the round-11 test that used to occupy
+  // this name ("an assignment NOTHING on the line expands stays ALLOWED").
+  // Every one of these lines carries a `VAR=value` word whose value looks
+  // gh-shaped and NOTHING on the line ever expands the name — under round
+  // 11's precision they were ALLOWED; under the restored unconditional scan
+  // they are REFUSED, exactly as merge-base `main` refuses them. This is a
+  // DELIBERATE, MAINTAINER-APPROVED false refusal, not a bug: do not "fix"
+  // this back by reintroducing an expansion/usage condition — that whole
+  // class of repair is what round 11 tried, and it was defeated by indirect
+  // expansion (see the round-12 tests below). `make deploy MSG=…` is the
+  // named example from the issue-workflow rule and the round-12 prose; the
+  // rest are its siblings (a container run, an infra tool, `declare`/`env`
+  // with nothing expanding the name).
+  const nowRefused = [
     `declare -x CMD='${POST_AFTER_ASSIGNMENT}'`,
     `env CMD='${POST_AFTER_ASSIGNMENT}' true`,
     `make deploy MSG="gh issue comment --body ready"`,
@@ -1935,25 +1973,97 @@ test("#96 fix round 11: an assignment NOTHING on the line expands stays ALLOWED"
     `terraform apply -var MSG='${POST_AFTER_ASSIGNMENT}'`,
     `ansible-playbook site.yml -e MSG='${POST_AFTER_ASSIGNMENT}'`,
   ];
-  for (const command of inert) {
-    assert.equal(bash(command).verdict, "allow", command);
-    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 0, command);
+  for (const command of nowRefused) {
+    assert.equal(bash(command).verdict, "block", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2, command);
   }
 });
 
-test("#96 fix round 11: the re-read is keyed on the variable NAME, not on the presence of any expansion", () => {
-  // A line that carries `MSG=<a gh post>` and separately expands a DIFFERENT
-  // variable stays allowed; expanding `$MSG` itself is what makes the same
-  // line a candidate. This is the whole over-approximation, stated as a test:
-  // it is a name match, so a line that references `$MSG` for an unrelated
-  // reason IS refused — one retry, and the refusal prints its own override.
+test("#96 fix round 12: the scan no longer keys on the variable NAME — expansion is irrelevant (INVERTS the round-11 name-keying lock)", () => {
+  // Direct inversion of the round-11 "keyed on the variable NAME" test. Under
+  // round 11, `$OTHER` (not `$MSG`) meant the MSG= assignment was never
+  // re-read, so this line ALLOWED. Under the restored unconditional scan,
+  // whether anything expands `$MSG` — or `$OTHER`, or nothing at all — makes
+  // no difference: every word is scanned regardless. All three now BLOCK.
   assert.equal(
     bash(`make deploy MSG="gh issue comment --body ready" && echo "$OTHER"`).verdict,
-    "allow",
+    "block",
   );
   assert.equal(
     bash(`make deploy MSG="gh issue comment --body ready" && echo "$MSG"`).verdict,
     "block",
   );
+  assert.equal(bash(`make deploy MSG="gh issue comment --body ready"`).verdict, "block");
+  // A VALUE that is not gh-shaped is still untouched — the scan matches on
+  // the VALUE looking like a `gh` post, not on the mere presence of a
+  // `VAR=value` word. This is the one axis round 12 does NOT give up.
   assert.equal(bash(`make deploy MSG="deploy now" && echo "$MSG"`).verdict, "allow");
+  assert.equal(bash(`make deploy MSG="deploy now"`).verdict, "allow");
+});
+
+// The three executing indirect-expansion shapes from the round-11 validation
+// (validate-u17.json, "critical" finding) — the bypass that motivated this
+// round. The assigned variable (CMD) is never mentioned as literal `$CMD` /
+// `${CMD}` text anywhere on the line; it is reached through a SECOND
+// variable (NAME) whose runtime VALUE happens to equal the string "CMD".
+// Round 11's `referencedVars` gate matched literal `$VAR`/`${VAR}` text only,
+// so it saw nothing to key on and ALLOWED all three — confirmed to genuinely
+// execute (`env CMD="printf FINAL-PROOF-EXECUTED\n" NAME=CMD bash -c 'eval
+// ${!NAME}'` prints the proof). The restored unconditional scan does not
+// care what expands the assignment, or whether anything textually
+// references its name at all — it refuses the `VAR=value` word itself — so
+// all three BLOCK regardless of the dereference form.
+const INDIRECT_EXPANSION_BYPASSES = [
+  [
+    `env CMD='${POST_AFTER_ASSIGNMENT}' NAME=CMD bash -c 'eval \${!NAME}'`,
+    "${!NAME} indirect expansion, via eval",
+  ],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' NAME=CMD bash -c '\${!NAME}'`, "bare ${!NAME} indirect"],
+  [
+    `env CMD='${POST_AFTER_ASSIGNMENT}' NAME=CMD bash -c 'x="\${!NAME}"; eval "$x"'`,
+    "two-step ${!NAME} then eval",
+  ],
+];
+
+test("#96 fix round 12: the three executing ${!NAME} indirect-expansion bypasses from the round-11 validation BLOCK (pure)", () => {
+  for (const [command, label] of INDIRECT_EXPANSION_BYPASSES) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#96 fix round 12: the same ${!NAME} indirect-expansion shapes, through the REAL shell hook -> exit 2", () => {
+  for (const [command, label] of INDIRECT_EXPANSION_BYPASSES) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+test("#96 fix round 12: the assignment scan is POSITION-INDEPENDENT — leading, after a command word, and after a wrapped command word all BLOCK the same way", () => {
+  // States position-independence explicitly, as its own lock (the brief's
+  // item 3), rather than leaving it implied by the round-11 sweep above.
+  const leading = `CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`;
+  const afterCommandWord = `env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`;
+  const afterWrappedCommandWord = `nohup env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`;
+  for (const [command, label] of [
+    [leading, "leading"],
+    [afterCommandWord, "after a command word"],
+    [afterWrappedCommandWord, "after a wrapped command word"],
+  ]) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+  }
+});
+
+test("#96 fix round 12: bash-4-only indirect-expansion shapes are parse-verified only, not execution-verified on this machine's bash 3.2", () => {
+  // `declare -n` namerefs are real on bash 4.3+ (the same caveat class the
+  // round-11 validator already applied to `declare -gx`/`local -a`); macOS's
+  // shipped /bin/bash is 3.2.57 and errors on `-n` before the shell can even
+  // run the assignment, so this asserts the PARSE-LAYER classification only —
+  // do not read this as execution proof.
+  const command = `env CMD='${POST_AFTER_ASSIGNMENT}' bash -c 'declare -n ref=CMD; eval "$ref"'`;
+  assert.equal(bash(command).verdict, "block", command);
+  const r = runHook({ tool_name: "Bash", tool_input: { command } });
+  assert.equal(r.status, 2, r.stderr);
 });

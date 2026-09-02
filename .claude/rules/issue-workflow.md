@@ -166,9 +166,14 @@ when not running interactively` without reaching the API. At a command
   own positional argument as if it were a shell assignment (a SEPARATE
   mechanism — `parseShellCommands`'s own "assignment carries a whole command"
   pass used to scan every `VAR=value`-shaped word in a line regardless of
-  position); that scan is now scoped to the leading assignment run, plus the
+  position); that scan was scoped to the leading assignment run, plus the
   operands of a leading `export`/`declare`/`typeset`/`local`/`readonly`
-  builtin, which really are assignments. **What is still open, unchanged by
+  builtin, which really are assignments. **This scoping is SUPERSEDED by fix
+  round 12 below** — two further rounds (11, then the `${!NAME}` bypass that
+  defeated it) established that no version of "is this assignment actually
+  used?" holds up, and round 12 reverts this scan to unconditional again,
+  reopening `make deploy MSG=…` as a deliberate, named, accepted false
+  refusal. **What is still open, unchanged by
   this round** — narrower now that the text-match evasions are gone: (1) a
   producer piped through an intermediate stage into a shell
   (`printf '%s' "gh issue comment 26 --body '…'" | tee /tmp/p.sh | sh`) still
@@ -245,9 +250,14 @@ MSG="gh issue comment --body ready"` stays FIXED — that was a different
   below.** It varied the interpreter/wrapper axis while pinning every
   assignment-carrying case to the LEADING position, so the 26 assignment-position
   bypasses round 11 closes were outside what it measured. A differential zero is
-  a statement about the axes the corpus varied, never about the gate.
-- **Fix round 11 (#96) closes the ASSIGNMENT-POSITION bypasses round 8's
-  scoping opened — list-free, keyed on `$VAR` syntax.** Round 8 fixed the
+  a statement about the axes the corpus varied, never about the gate. **Round
+  11's own "0 remain" claim went on to suffer the identical fate** — see the
+  round-12 bullet below, which is the same lesson landing a second time on an
+  axis (dereference form) neither this corpus nor round 11's varied.
+- **Fix round 11 (#96) — SUPERSEDED by fix round 12 below. Kept verbatim as
+  the historical record of why it failed.** It closed the ASSIGNMENT-POSITION
+  bypasses round 8's scoping opened — list-free, keyed on `$VAR` syntax.
+  Round 8 fixed the
   `make deploy MSG="gh issue comment --body ready"` false refusal by scoping
   the "assignment carries a whole command" re-read (`parseShellCommands` in
   `scripts/lib/shell-command-parse.mjs`) to the LEADING assignment run plus an
@@ -293,6 +303,103 @@ MSG="gh issue comment --body ready"` stays FIXED — that was a different
   a later round cannot "fix" this by refusing every `VAR=value` again, and a
   name-keying test pinning the over-approximation above. Reverting the source
   change with the tests kept reds three of the four.
+- **Fix round 12 (#96) — the maintainer decision: stop trading breadth for
+  precision, restore `main`'s unconditional scan.** Round 11 above is
+  SUPERSEDED. It closed the assignment-POSITION axis by keying the re-read on
+  whether the SAME variable NAME is literally referenced elsewhere on the line
+  (`$VAR`/`${VAR}`) — and was defeated by bash's `${!NAME}` INDIRECT
+  EXPANSION, where the variable that actually gets posted is never named
+  literally anywhere on the line
+  (`NAME=CMD bash -c 'eval ${!NAME}'` expands to `eval $CMD`, and the literal
+  text `$CMD` never appears). Confirmed EXECUTING on this machine's real bash
+  (not just parse-classified) for three shapes: `${!NAME}` with `eval`, a bare
+  `${!NAME}`, and the two-step `x="${!NAME}"; eval "$x"`. A fourth, bash-nameref
+  shape (`declare -n ref=CMD; eval "$ref"`) is the same two-hop dereference
+  pattern but needs bash ≥ 4.3; this machine's own dev bash is 3.2, so it is
+  locked at the PARSE layer only and labelled parse-verified — never claimed as
+  an execution proof this repo does not have.
+
+  Four measured rounds now form a pattern, not a string of bad luck: round
+  9/10 closed the wrapper-name axis and reopened the assignment-POSITION axis;
+  round 11 closed the assignment-position axis and reopened the
+  DEREFERENCE-FORM axis. Each fix bought precision on the axis it targeted and
+  gave up safety on an axis nobody had varied yet — "is this assignment
+  actually used?" is undecidable at a text-parsing layer without a real shell
+  behind it, and three rounds proved that empirically rather than by argument.
+  **The decision is to stop asking that question.** The assignment scan
+  reverts to exactly `main`'s rule: unconditional, position-independent, with
+  **no expansion-gating condition of any kind** — a `VAR=value` word is
+  re-read as a nested command whenever its value carries a gated posting
+  phrase, wherever it sits, whoever consumes it, whatever dereferences it.
+
+  **What this deliberately reintroduces, named and accepted:**
+  `declare -x CMD="<posting phrase>"` with nothing on the line ever executing
+  it, `env CMD="<posting phrase>" true`,
+  `make deploy MSG="gh issue comment --body ready"`, a container/orchestration
+  `-e`/`--set-string`/`-var`/`-e` value carrying a posting-shaped string
+  (`docker run`/`helm`/`terraform`/`ansible-playbook` and siblings), and an
+  ordinary commit message ABOUT the gate that happens to quote a gated phrase
+  — all REFUSE now, even though nothing on those lines can ever post. Each is
+  loud (exit 2, printed reason, printed override), costs one retry, and the
+  override (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed at the moment
+  of refusal. These are not bugs for a future round to "fix" — narrowing this
+  scan again reopens exactly the bypass class four rounds have now closed and
+  reopened in turn. Precision here needs a REAL shell behind the check
+  (execute the line in a sandboxed subshell and observe what actually runs),
+  not a sharper text-parsing condition — that is the lesson four rounds paid
+  for.
+
+  **What this KEEPS from rounds 9/10 (unaffected — a different mechanism):**
+  the nested-operand re-read (an operand of an unrecognised command word is a
+  candidate to be re-parsed as a script) and its position independence — the
+  round-8/round-10 bullets above stand as written; only the
+  assignment-carries-a-command scan changed.
+
+  **The honest residual, unchanged from `main` and unclosed by any round:** an
+  assignment made in an EARLIER Bash tool call and expanded in a LATER one is
+  still unseen — those bytes are not on the later line at all, and no amount
+  of tightening this file reaches across two tool calls.
+
+  **Evidence:** an independent 80-case differential corpus (assignment
+  position × variable naming × dereference form, including `${!NAME}` and a
+  bash-nameref shape × interpreter nesting × every gated posting shape, plus 8
+  inert cells and 28 ordinary-work commands — deliberately NOT the round-9/10
+  or round-11 corpora reused) driven through both the real `PreToolUse` hook
+  and the pure decision path on `main` and this tree: **0 regressions vs
+  `main`, including every inert cell** (round 11's "harmless" inert cases now
+  refuse, matching `main`), **5 tightenings** (the nested-operand widening
+  rounds 8-10 still hold that `main` never had: a bare `$VAR`, a subshell, a
+  space-free `&&`, a quoted `gh` word, and a known shell nested inside an
+  unrecognised one, each inside a `csh`/`tcsh` operand), hook and pure function
+  agree on every one of the 80 cells on both trees. 2 refusals surfaced on the
+  ordinary-work slice: an unmarked `--body-file` pointing at a file that
+  genuinely lacks the marker (correct, not a false refusal) and the
+  fix-round-7 commit-message false refusal, reproduced fresh (accepted, named
+  above).
+
+  **Correcting the record, again:** round 10's "zero regressions over 2,394
+  cases" line was already flagged corpus-limited by round 11 for not varying
+  assignment position; round 11's own "26 shapes closed, 0 remain" claim was
+  itself corpus-limited in exactly the same way — it did not vary DEREFERENCE
+  FORM, the axis that defeated it. **A differential zero is a statement about
+  the axes a corpus varied, never about the gate** — restated here because it
+  has now been true, and then falsified by an unvaried axis, three times
+  running.
+
+  Locked in `scripts/check-comment-attribution.test.mjs`: the round-8
+  false-refusal-fix test and its real-hook counterpart are INVERTED (not
+  deleted) to assert the refusal is back, named as a deliberate
+  maintainer-approved reintroduction; the round-11 name-keying test and its
+  "nothing expands it stays allowed" companion are likewise inverted; new
+  tests lock the three executing `${!NAME}` shapes (pure and real-hook), the
+  bash-nameref shape at the parse layer only, and position-independence
+  explicitly (the same assignment leading, after a command word, and after a
+  wrapped command word all refuse alike). Reverting only the source change
+  (`scripts/lib/shell-command-parse.mjs`) with the tests kept every one of the
+  new/inverted tests red; restoring it returned the suite to green. **The new
+  state, stated honestly: at least as strong as `main` everywhere measured,
+  plus the nested-operand class `main` never had — not "complete".**
+
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved

@@ -22,22 +22,15 @@
 
 const MAX_DEPTH = 5;
 const ASSIGNMENT_RE = /^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/;
-// Shell builtins whose OWN operands are themselves assignments, not
-// positional arguments — `export CMD=…`/`declare CMD=…`/etc. assign CMD
-// exactly as bare `CMD=…` would. Used only to widen the leading-assignment
-// scan in `parseShellCommands`'s "assignment carries a whole command" pass
-// (#96, fix round 8) so a builtin keyword in front doesn't hide a real
-// assignment from it.
-const ASSIGNMENT_BUILTINS = new Set(["export", "declare", "typeset", "local", "readonly"]);
 const EXPANSION_NAME_RE = /^\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-])/;
-// Every `$VAR` / `${VAR}` NAME mentioned anywhere in the raw line (#96, fix
-// round 11). Deliberately naive and deliberately run over the SOURCE TEXT, not
-// over parsed words: it matches inside single quotes, after a backslash, and
-// inside a nested quoting level, because none of those tell us the shell will
-// not expand the name one level down (`sh -c '$CMD'` is the whole point). The
-// safe direction for a guard is to see MORE references than really expand, not
-// fewer — a spurious match costs a refusal, a missed one costs a bypass.
-const VAR_REFERENCE_RE = /\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g;
+// #96, fix round 12: two mechanisms that used to live here —
+// `ASSIGNMENT_BUILTINS` (fix round 8's leading-assignment-builtin widening)
+// and `VAR_REFERENCE_RE`/`referencedVars` (fix round 11's "only when the
+// line also expands this name" gate) — are GONE. Both were attempts to scope
+// the assignment re-read below more precisely than merge-base `main`'s
+// unconditional scan, and both were reopened by a fresh axis (see the block
+// comment at the re-read itself, in `parseShellCommands`). The maintainer's
+// decision was to stop scoping it at all; nothing replaces these two.
 
 /**
  * @typedef {{value: string, expanded: boolean, raw: string}} ShellWord
@@ -341,13 +334,6 @@ export function parseShellCommands(text, depth = 0) {
   // `gh` token in it at all — the same "it's a language, not a string" hole.
   if (depth < MAX_DEPTH) {
     const original = commands.slice();
-    // Every variable NAME this line expands, read off the source text (see
-    // VAR_REFERENCE_RE). Used by the position-independent assignment re-read
-    // below, which is why it is computed once per level rather than per
-    // command: `env CMD=… sh -c '$CMD'` assigns in one simple command and
-    // expands in another's operand.
-    const referencedVars = new Set();
-    for (const m of src.matchAll(VAR_REFERENCE_RE)) referencedVars.add(m[1]);
     // `echo 'gh …' | bash` — a literal producer piped into an interpreter. The
     // script's bytes are words on this line, so it is read, not declared away:
     // only a producer whose output the line does NOT contain (a file, another
@@ -365,85 +351,63 @@ export function parseShellCommands(text, depth = 0) {
       if (!words.length) continue;
       // An assignment can carry a whole command as its value
       // (`CMD="gh issue comment 26 --body …"` then `$CMD`). The value is one
-      // word, so nothing in it is a token until it is re-parsed. Scoped to the
-      // LEADING assignment run only (#96, fix round 8) — a `VAR=value` word
-      // that is a POSITIONAL ARGUMENT to some other command, not a shell
-      // assignment at all, used to be scanned the same way:
-      // `make deploy MSG="gh issue comment --body ready"` re-parsed `MSG=`'s
-      // value into its own simple command and posted a false positive, even
-      // though `MSG=` is never assigned or executed by this shell — it is
-      // just an argument make(1) happens to receive. `commandWordIndex` is the
-      // same "assignment run before the real command word" boundary the rest
-      // of this gate already uses to find argv[0].
+      // word, so nothing in it is a token until it is re-parsed.
       //
-      // A leading `export`/`declare`/`typeset`/`local`/`readonly` builtin is a
-      // SECOND way a word after it is still a real shell assignment, not a
-      // positional argument — `export CMD='gh pr comment 12 --body …'` assigns
-      // CMD exactly as `CMD=…` alone would. `commandWordIndex(["export",
-      // "CMD=…"])` returns 0 (`export` itself isn't `VAR=value`-shaped), so
-      // without this the operand at index 1 would fall outside the leading
-      // run and go unscanned — the same false-refusal fix above would have
-      // silently reopened this bypass. Scan the run's own command word too
-      // when it is one of these builtins; its operands (index run+1 and up
-      // while they still look like `VAR=value`) get the same treatment as a
-      // leading assignment.
-      const assignmentRun = commandWordIndex(words);
-      for (let ai = 0; ai < assignmentRun; ai++) {
-        const m = ASSIGNMENT_RE.exec(words[ai].value);
+      // #96, fix round 12 (maintainer decision, after four measured rounds):
+      // this scan is UNCONDITIONAL and POSITION-INDEPENDENT — every word of
+      // every simple command, wherever it sits, whatever precedes it,
+      // regardless of whether anything on the line ever expands the name.
+      // This is merge-base `main`'s original rule, restored verbatim (`for
+      // (const word of words)`, no position, no name-reference gate). Three
+      // narrower rules were tried in between, in this order, and each closed
+      // one bypass while reopening another on an axis the previous round did
+      // not consider — the axis, not the rule, is what kept moving:
+      //
+      //   - fix round 8 scoped the scan to the LEADING assignment run (plus a
+      //     leading assignment builtin's operands: `export`/`declare`/
+      //     `typeset`/`local`/`readonly`), to stop `make deploy MSG="gh issue
+      //     comment --body ready"` — a POSITIONAL ARGUMENT make(1) never
+      //     assigns or executes — from being misread as a shell assignment.
+      //     That removed a real false refusal and opened a real bypass on the
+      //     POSITION axis: an assignment sitting AFTER a command word (`env
+      //     CMD="…" sh -c '$CMD'`) or behind an option-bearing builtin
+      //     (`declare -x CMD="…"; $CMD`) fell outside the scoped window —
+      //     verified to genuinely execute, 26 shapes, closed in fix round 11.
+      //   - fix round 11 tried to recover round 8's false-refusal fix WITHOUT
+      //     reopening the position hole: re-read a `VAR=value` word wherever
+      //     it sits, but only when the SAME line also expands `$VAR`/`${VAR}`
+      //     by LITERAL text elsewhere on the line. That closed the position
+      //     axis and opened a bypass on the DEREFERENCE-FORM axis: indirect
+      //     expansion (`${!NAME}`) and bash namerefs point at the assigned
+      //     variable through a SECOND name, so the assigned name never
+      //     appears as literal `$CMD`/`${CMD}` text anywhere on the line and
+      //     the reference-gate saw nothing to key on — verified to genuinely
+      //     execute (`env CMD="…" NAME=CMD bash -c 'eval ${!NAME}'`).
+      //   - The decision this round implements: stop trying to answer "is
+      //     this assignment actually used, and by what?" at this layer. That
+      //     whole class of question is what failed, on three different axes,
+      //     across four rounds — position, then dereference form, and the
+      //     next one would be a fourth axis nobody has found yet. The rule
+      //     that cannot go stale this way is the one that asks nothing about
+      //     usage: refuse every `VAR=value` word whose value looks gh-shaped,
+      //     unconditionally, exactly as `main` always has.
+      //
+      // What this KNOWINGLY reintroduces: `main`'s own false refusals, which
+      // fix round 8 had removed — `make deploy MSG="gh issue comment --body
+      // ready"`, `docker run -e CMD="…" alpine true`, `declare -x CMD="…"`
+      // with nothing expanding it, and every sibling shape where a
+      // `VAR=value` word is a positional argument or an inert assignment,
+      // not a shell command this line will ever run. These are ACCEPTED,
+      // maintainer-approved false refusals, not a regression — see DECLARED
+      // LIMITS below and the locked, inverted tests in
+      // check-comment-attribution.test.mjs. `commandWordIndex` and
+      // `leadingAssignments` (below) are unrelated to this scan — they still
+      // do the separate job of finding the real command word behind a
+      // leading assignment run for the rest of this gate — and are
+      // deliberately untouched.
+      for (const word of words) {
+        const m = ASSIGNMENT_RE.exec(word.value);
         if (m && /(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
-      }
-      if (
-        assignmentRun < words.length &&
-        ASSIGNMENT_BUILTINS.has(basename(words[assignmentRun].value))
-      ) {
-        for (let ai = assignmentRun + 1; ai < words.length; ai++) {
-          const m = ASSIGNMENT_RE.exec(words[ai].value);
-          if (!m) break;
-          if (/(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
-        }
-      }
-      // The two scans above are POSITIONAL: they read the leading assignment
-      // run, and an assignment builtin's operands until the first word that is
-      // not `VAR=value`-shaped. Both windows have an edge, and two ordinary
-      // shapes sit just outside it (#96, fix round 11):
-      //
-      //   env CMD="gh issue comment 26 --body …" sh -c '$CMD'
-      //   declare -x CMD="gh issue comment 26 --body …"; $CMD
-      //
-      // In the first the assignment sits AFTER a command word, so
-      // `commandWordIndex` returns 0 and the leading-run loop never executes;
-      // in the second the builtin's `-x` operand is not `VAR=value`-shaped, so
-      // the operand loop breaks before it reaches `CMD=`. Both really run the
-      // post. Merge-base `main` caught them only because it scanned every word
-      // of every command unconditionally — which is also why it refused
-      // `make deploy MSG="gh issue comment --body ready"`, a positional
-      // argument make(1) never assigns or executes (the false refusal fix
-      // round 8 removed, locked in the suite).
-      //
-      // Widening the window by NAMING the commands that consume a following
-      // assignment (env/sudo/nohup/…) is the repair this gate must not make:
-      // every previous round that reached for a name list closed one hole and
-      // opened another, and the missing name is silent. So the rule keys on
-      // shell VARIABLE SYNTAX alone and mentions no command at all — re-read a
-      // `VAR=value` word wherever it sits, but only when the same line also
-      // EXPANDS `$VAR`. An assignment nothing on the line expands cannot make
-      // this line post, whoever the command word is; `make deploy MSG=…`,
-      // `docker run -e CMD=… alpine true` and `declare -x CMD=…` alone all
-      // stay allowed for that reason, not because make/docker are on a list.
-      //
-      // This is an over-approximation in the safe direction: a line that
-      // mentions `$MSG` for an unrelated reason and separately carries a
-      // `MSG=` word whose value looks like a `gh` post is refused. It costs
-      // one retry and prints its own override. What it still cannot see is an
-      // assignment made in an EARLIER Bash call and expanded in a later one —
-      // the bytes are not on this line, and merge-base `main` could not see
-      // that either.
-      if (referencedVars.size) {
-        for (const word of words) {
-          const m = ASSIGNMENT_RE.exec(word.value);
-          if (!m || !referencedVars.has(m[1])) continue;
-          if (/(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
-        }
       }
       // Position-independent, because a wrapper can precede the interpreter:
       // `nohup bash -lc …`, `timeout 30 bash -lc …`, `xargs -I{} sh -c …`,
