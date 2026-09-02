@@ -98,8 +98,7 @@ describe("TerminalBanner", () => {
   });
 
   it("wraps a long workspace path instead of truncating it — the full value stays reachable", () => {
-    const longPath =
-      "/Users/example/Documents/very/long/nested/workspace/path/that/keeps/going/on/purpose";
+    const longPath = "~/Documents/very/long/nested/workspace/path/that/keeps/going/on/purpose";
     render(<TerminalBanner workspace={longPath} />);
     const workspace = screen.getByText(longPath);
     expect(workspace.className).toContain("break-words");

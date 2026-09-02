@@ -72,7 +72,7 @@ export const LongWorkspacePath: Story = {
   args: {
     title: "brand-ui Agent",
     workspace:
-      "/Users/example/Documents/DEV/a-rather-long-monorepo-name/packages/terminal/src/very/nested/workspace/path",
+      "~/Documents/DEV/a-rather-long-monorepo-name/packages/terminal/src/very/nested/workspace/path",
   },
 };
 

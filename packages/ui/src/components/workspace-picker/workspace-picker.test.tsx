@@ -33,13 +33,13 @@ const workspaces: Workspace[] = [
   {
     id: "ws-1",
     name: "elabs-components",
-    path: "/Users/ada/dev/elabs-components",
+    path: "~/dev/elabs-components",
     lastOpenedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
   },
   {
     id: "ws-2",
     name: "brainless",
-    path: "/Users/ada/dev/brainless",
+    path: "~/dev/brainless",
   },
 ];
 
@@ -73,7 +73,7 @@ describe("WorkspacePicker", () => {
   it("renders each workspace's path as truncating secondary text", async () => {
     renderPicker(<WorkspacePicker workspaces={workspaces} />);
     await open();
-    const description = screen.getByText("/Users/ada/dev/elabs-components");
+    const description = screen.getByText("~/dev/elabs-components");
     expect(description).toBeInTheDocument();
     expect(description).toHaveClass("truncate");
   });
@@ -166,7 +166,7 @@ describe("WorkspacePicker", () => {
   });
 
   it("truncates a very long path without overflow", async () => {
-    const longPath = "/Users/ada/dev/" + "very-long-segment/".repeat(20) + "elabs-components";
+    const longPath = "~/dev/" + "very-long-segment/".repeat(20) + "elabs-components";
     renderPicker(
       <WorkspacePicker workspaces={[{ id: "ws-long", name: "long-one", path: longPath }]} />,
     );

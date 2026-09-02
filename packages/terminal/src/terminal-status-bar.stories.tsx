@@ -98,7 +98,7 @@ export const DisconnectedIntegration: Story = {
 export const LongWorkingDirectory: Story = {
   args: {
     branch: "main",
-    workspace: "/Users/example/projects/very/deeply/nested/console-application/src",
+    workspace: "~/projects/very/deeply/nested/console-application/src",
   },
 };
 

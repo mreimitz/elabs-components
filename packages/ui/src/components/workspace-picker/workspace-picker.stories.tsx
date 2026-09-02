@@ -7,20 +7,20 @@ const workspaces: Workspace[] = [
   {
     id: "ws-brand-ui",
     name: "elabs-components",
-    path: "/Users/ada/dev/elabs-components",
+    path: "~/dev/elabs-components",
     lastOpenedAt: new Date(Date.now() - 15 * 60 * 1000),
   },
   {
     id: "ws-brainless",
     name: "brainless",
-    path: "/Users/ada/dev/oss/brainless",
+    path: "~/dev/oss/brainless",
     lastOpenedAt: new Date(Date.now() - 26 * 60 * 60 * 1000),
   },
   {
     id: "ws-monorepo",
     name: "platform-monorepo",
     // Long, user-supplied content — truncates instead of overflowing.
-    path: "/Users/ada/workspaces/clients/northwind/services/platform-monorepo/packages/api-gateway",
+    path: "~/workspaces/clients/northwind/services/platform-monorepo/packages/api-gateway",
     lastOpenedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
   },
 ];
@@ -96,7 +96,7 @@ export const LongPath: Story = {
       {
         id: "ws-deep",
         name: "api-gateway",
-        path: "/Users/ada/workspaces/clients/northwind/services/platform-monorepo/packages/api-gateway/src/routes/internal",
+        path: "~/workspaces/clients/northwind/services/platform-monorepo/packages/api-gateway/src/routes/internal",
       },
     ],
     currentId: "ws-deep",
@@ -122,8 +122,8 @@ export const SubmitFreeTextPath: Story = {
     await userEvent.click(submit);
     await expect(args.onSubmitPath).not.toHaveBeenCalled();
 
-    await userEvent.type(input, "/Users/ada/dev/new-project{Enter}");
-    await expect(args.onSubmitPath).toHaveBeenCalledWith("/Users/ada/dev/new-project");
+    await userEvent.type(input, "~/dev/new-project{Enter}");
+    await expect(args.onSubmitPath).toHaveBeenCalledWith("~/dev/new-project");
     // Enter submitted the path — it did not move cmdk's list highlight/select.
     await expect(args.onSelect).not.toHaveBeenCalled();
   },
