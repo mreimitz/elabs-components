@@ -314,6 +314,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SchemaFormProvider
 - SchemaFormRoot
 - SchemaFormSubmit
+- SchemaFormTestAction
 - SchemaFormTitle
 - ScrollArea
 - ScrollBar
@@ -428,6 +429,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Transfer
 - Tree
 - TreeSelect
+- UnsupportedJsonSchemaError
 - ViewToolbar
 - ViewToolbarFilters
 - VirtualSelect

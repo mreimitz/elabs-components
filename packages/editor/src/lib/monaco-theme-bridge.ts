@@ -356,6 +356,14 @@ export function buildBrandThemeData(
     { token: "metatag.content.html", foreground: ink(chart3) },
     { token: "meta.scss", foreground: ink(chart1) },
     { token: "meta.tag", foreground: ink(chart1) },
+    // `CodeEditorProps.language` is a plain, unrestricted `string` passed
+    // straight to `monaco.editor.setModelLanguage` (`code-editor.tsx`) — NOT
+    // limited to `EDITOR_LANGUAGES` — so a consumer really can reach these
+    // pug/handlebars scopes (PR #119 review thread 2). See
+    // `IGNORED_BASE_SCOPES` below for the one scope that stays un-overridden.
+    { token: "tag.id.pug", foreground: ink(primary) }, // pairs with `tag`
+    { token: "tag.class.pug", foreground: ink(primary) },
+    { token: "variable.parameter", foreground: bare(foreground) }, // pairs with `variable`
   ];
 
   // `base` is a placeholder; `applyBrandTheme` overrides it per theme.
@@ -365,29 +373,34 @@ export function buildBrandThemeData(
 /**
  * Base-specialised dotted scopes (`vs`/`vs_dark`,
  * `monaco-editor/esm/vs/editor/standalone/common/themes.js`) deliberately left
- * un-overridden by `buildBrandThemeData`'s `rules`, because the language that
- * emits them is NOT in `EDITOR_LANGUAGES` (`languages.ts`) — nothing in this
- * package can ever render them, so branding them would be dead code. Read by
- * the drift-guard test (`monaco-theme-bridge.test.ts`, #90) so a future
- * `monaco-editor` upgrade that adds a genuinely new specialised scope fails
- * CI instead of silently un-branding it.
+ * un-overridden by `buildBrandThemeData`'s `rules`. Read by the drift-guard
+ * test (`monaco-theme-bridge.test.ts`, #90) so a future `monaco-editor`
+ * upgrade that adds a genuinely new specialised scope fails CI instead of
+ * silently un-branding it.
  *
- * - `tag.id.pug` / `tag.class.pug` — pug only.
- * - `metatag.php` — php only (also carries no `foreground`, only `fontStyle`).
- * - `variable.parameter` — handlebars only (verified against every
- *   `esm/vs/basic-languages/**` tokenizer; TS/JS parameter-name colouring is a
- *   semantic-tokens feature this package doesn't enable, so Monaco's built-in
- *   tokenizer never emits this scope for TS/JS either).
+ * PR #119 review thread 2 (fix-round-2): this set used to also carry
+ * `tag.id.pug` / `tag.class.pug` / `variable.parameter` on the premise that
+ * "the language that emits them is NOT in `EDITOR_LANGUAGES`, so nothing in
+ * this package can ever render them" — that premise is FALSE.
+ * `CodeEditorProps.language` (`code-editor.tsx`) is a plain, unrestricted
+ * `string` forwarded straight to `monaco.editor.setModelLanguage`; the
+ * toolbar's `EDITOR_LANGUAGES` list is a curated picker UI, not an
+ * enforcement boundary. A consumer passing `language="pug"` or
+ * `language="handlebars"` genuinely reaches those scopes and would have
+ * inherited stock Monaco colours instead of the token-derived brand theme.
+ * They are now branded in `rules` above instead of ignored here.
  *
- * If `EDITOR_LANGUAGES` ever grows pug/php/handlebars, add the matching
- * override to `rules` in `buildBrandThemeData` instead of extending this list.
+ * - `metatag.php` — the one scope legitimately still ignored: verified
+ *   against `monaco-editor/esm/vs/editor/standalone/common/themes.js`, the
+ *   base themes give it only a `fontStyle` (`bold`), no `foreground` at all
+ *   — there is no colour to override, so branding it would be a no-op rule
+ *   with nothing to test.
+ *
+ * If a future scope needs the same "unreachable" reasoning, verify it
+ * against `CodeEditorProps.language`'s actual (unrestricted) type before
+ * adding it here — not against `EDITOR_LANGUAGES`.
  */
-export const IGNORED_BASE_SCOPES = new Set([
-  "tag.id.pug",
-  "tag.class.pug",
-  "metatag.php",
-  "variable.parameter",
-]);
+export const IGNORED_BASE_SCOPES = new Set(["metatag.php"]);
 
 /** The Monaco theme id used for a given brand theme. */
 export function brandThemeId(theme: ThemeName): string {
