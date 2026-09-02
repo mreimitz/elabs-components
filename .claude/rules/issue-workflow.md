@@ -119,64 +119,305 @@ authority loop where automation authorizes itself.
   known. The recognised half is instead a short, arguable set of commands that
   can only PRINT their operand (`echo`, `printf`, `grep`, `rg`) — a name missing
   from THAT costs a false refusal, which is loud and overridable, where a name
-  missing from an interpreter list cost a silent bypass. **This does NOT mean
-  every `gh` call inside such an operand is caught** — the next bullet states
-  the two operand-text prefilters that decide whether the re-read happens at
-  all. **Residual, stated plainly:** a nested call must also reach for a
-  **body** to be refused, so a body-less `gh issue comment 26` hidden in an
-  operand is not caught — with no body flag `gh` prompts interactively and,
-  with no TTY, answers `flags required when not running interactively`
-  without reaching the API. At a command position a body-less call is still
-  refused.
-- **Residual risk of the fix-round-7 inversion — accident paths vs evasion
-  paths, declared plainly rather than left implicit.** The command-word
-  inversion above is real and closes the class it targets, but the operand it
-  re-reads is gated by mechanisms that are their own, previously undeclared
-  limits (fix-round-7 verdict, "Residual risk I am accepting" — reproductions
-  and self-test suggestions there). Split by whether someone has to be TRYING
-  to hit them. **Accident paths — hit by writing an ordinary command, no
-  intent to evade; the ones worth fixing first if this gate is ever
-  revisited:** (1) a **shell expansion** anywhere in a non-table
-  interpreter's operand turns the re-read off entirely —
-  `csh -c "gh issue comment $N --body 'text by $USER'"` is ALLOWED across 17
-  of the 18 gated shapes, because the operand is skipped rather than treated
-  as uninspectable the moment it contains something the shell would expand. A
-  `$VAR` is the most ordinary thing to write in a shell command — this is the
-  largest residual gap, and the reason this round ships as a documented
-  partial rather than a closed class. (2) The same mechanism's
-  `gh`-detection is a **text regex**, so a **subshell or a space-free `&&`**
-  in such an operand also passes unseen: `csh -c "(gh issue comment 26
---body '…')"` and `csh -c "true&&gh issue comment 26 --body '…'"` are
-  ordinary shell punctuation, not tricks, and both ALLOW across all 18 gated
-  shapes. (3) A **false refusal**: `git commit -m "fix(hooks): the gh issue
-comment gate now blocks --body=text"` is REFUSED, because `git`'s operand,
-  once re-parsed as a script, contains both a gated `gh` phrase and a
-  body-shaped flag (3 of 82 legitimate commands in the fix-round-7 verdict's
-  corpus, all new in that round — this lands squarely on the people
-  maintaining this gate). It costs a retry, not a bypass: the override
-  (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed by
-  `.claude/hooks/gate-comment-attribution.sh` **at the moment of refusal**,
-  so clearing it needs no trip back to this file. **Evasion paths — someone
-  has to be trying; accepted as documented limits, the same way the seven
-  below are:** (4) **quoting or escaping the `gh` word** inside such an
-  operand (`'gh'`, `"gh"`, `\gh`) defeats the same text regex. (5) **nesting a
-  KNOWN shell inside the unknown one**
-  (`csh -c "sh -c 'gh issue comment 26 --body …'"`) — cheap, but nobody types
-  it by accident. (6) **a producer piped through an intermediate stage into a
-  shell** (`printf '%s' "gh issue comment 26 --body '…'" | tee /tmp/p.sh |
-sh`) escapes the pipeline arm of this same inversion — the sink-detection
-  only recognises a sink that takes NO non-flag operand, and `tee`'s filename
-  argument defeats that; pre-existing (not new in fix round 7) and, until
-  now, undeclared. (7) **`gh api graphql`'s `addComment` mutation** — already
-  declared below as an unseen posting channel, and confirmed (fix-round-7
-  verdict) to really reach GitHub's mutation resolver; parsing GraphQL
-  documents is not a reasonable ask of a command-line gate. **The seven
-  declared limits below this bullet are unaffected** — they still hold and
-  still match behaviour. **The honest summary:** against an agent that is not
-  trying to evade this gate, it stops every ordinary spelling of an unmarked
-  post; against one that is, it is one `$VAR` or one pair of quotes from
-  being off. Read this gate as a strong deterrent against ordinary mistakes,
-  never as airtight.
+  missing from an interpreter list cost a silent bypass. **Every non-empty
+  operand is now unconditionally re-read (#96, fix round 8) — there is no
+  operand-text prefilter left to skip one; the next bullet states what
+  changed and what is still not caught.** **Residual, stated plainly:** a
+  nested call must also reach for a **body** to be refused, so a body-less
+  `gh issue comment 26` hidden in an operand is not caught — with no body
+  flag `gh` prompts interactively and, with no TTY, answers `flags required
+when not running interactively` without reaching the API. At a command
+  position a body-less call is still refused.
+- **Fix round 8 (#96) closed most of the fix-round-7 residual — declared here,
+  not just fixed in the code.** Round 7's inversion (the bullet above) was
+  itself gated behind two operand-TEXT prefilters in `nestedOperandCandidates`
+  (`scripts/check-comment-attribution.mjs`): `word.expanded` skipped any
+  operand containing a shell expansion outright, and
+  `NESTED_GH_RE = /(?:^|[\s/])gh\s/` was a literal-text match that a subshell,
+  a space-free `&&`, a quoted/escaped `gh`, or a known shell nested one level
+  inside the unknown one all slipped past unseen. **Both prefilters are gone.**
+  Every non-empty operand is now re-parsed via `ShellWord.raw`
+  (`scripts/lib/shell-command-parse.mjs`) — which keeps an expansion's own
+  syntax (`$VAR`, `$(…)`) visible at the position it occupies instead of
+  erasing it — and the STRUCTURAL result decides, not a regex over the
+  original text.
+  **What this closes, restated against the exact fix-round-7 reproductions:**
+  `csh -c "gh issue comment $N --body 'text by $USER'"` now REFUSES (the body
+  re-parses as an expanded word, uninspectable — the accident path round 7
+  called its largest residual gap); `csh -c "(gh issue comment 26 --body
+'…')"` and `csh -c "true&&gh issue comment 26 --body '…'"` now REFUSE (no
+  text-match prefilter left to slip past); quoting or escaping the `gh` word
+  (`'gh'`, `"gh"`, `\gh`) no longer helps, because there is no text match to
+  defeat; and a known shell nested inside the unknown one
+  (`csh -c "sh -c 'gh issue comment …'"`) is caught, because the re-parse
+  recurses through the same `SCRIPT_INTRODUCERS` handling the top level uses.
+  **What it COSTS, in the same breath:** reading through the quotes also means
+  reading through them in prose, so
+  `git commit -m "docs: quote 'gh' issue comment --body in the guide"` — ALLOWED
+  before this round — is now REFUSED. Measured against merge-base `main` over a
+  52-command corpus of ordinary work, that is the ONLY new false refusal, and
+  the same round removes one. The fix-round-7 false refusal
+  (`git commit -m "fix(hooks): the gh issue comment gate now blocks
+--body=text"`) is **NOT** fixed — round 8 did fix it, with a command-position
+  restriction fix round 10 had to revert; see the round-10 bullet below for why
+  and for what that costs. A same-shaped, pre-existing false refusal ONE LAYER
+  OUTSIDE this widening closed in the same round:
+  `make deploy MSG="gh issue comment --body ready"` used to re-parse make's
+  own positional argument as if it were a shell assignment (a SEPARATE
+  mechanism — `parseShellCommands`'s own "assignment carries a whole command"
+  pass used to scan every `VAR=value`-shaped word in a line regardless of
+  position); that scan was scoped to the leading assignment run, plus the
+  operands of a leading `export`/`declare`/`typeset`/`local`/`readonly`
+  builtin, which really are assignments. **This scoping is SUPERSEDED by fix
+  round 12 below** — two further rounds (11, then the `${!NAME}` bypass that
+  defeated it) established that no version of "is this assignment actually
+  used?" holds up, and round 12 reverts this scan to unconditional again,
+  reopening `make deploy MSG=…` as a deliberate, named, accepted false
+  refusal. **What is still open, unchanged by
+  this round** — narrower now that the text-match evasions are gone: (1) a
+  producer piped through an intermediate stage into a shell
+  (`printf '%s' "gh issue comment 26 --body '…'" | tee /tmp/p.sh | sh`) still
+  escapes the pipeline arm of this inversion — the sink-detection only
+  recognises a sink with no non-flag operand, and `tee`'s filename argument
+  defeats that; pre-existing, not newly opened or closed. (2)
+  `gh api graphql`'s `addComment` mutation — already declared below as an
+  unseen posting channel; parsing GraphQL documents is not a reasonable ask of
+  a command-line gate. (3) a body-less nested call (a hidden
+  `gh issue comment 26` with no body flag) is still not caught, unchanged from
+  round 7 — see the body-reach bullet above. **The seven declared limits below
+  this bullet are unaffected.** **The honest summary, updated:** against an
+  agent that is not trying to evade this gate, it stops every ordinary spelling
+  of an unmarked post, including the `$VAR` that used to walk straight through;
+  against one that is trying, the remaining gaps are the pipeline relay and the
+  GraphQL mutation, both of which need a deliberate extra stage to reach, not a
+  stray character. The gate is **more likely to false-refuse** a commit message
+  about itself than it was before round 7 — that is a deliberate trade, not an
+  oversight, and the override is printed at the moment of refusal.
+- **Fix round 10 (#96) REVERTED the command-position restriction rounds 8 and 9
+  shipped — the wrapper allowlist was the same anti-pattern one level down.**
+  Round 8's Part C restricted the nested re-read to argv[0] of each re-parsed
+  simple command, to spare prose that merely mentions a posting phrase. Read
+  literally, that made a leading wrapper the command word: `csh -c "nohup gh
+issue comment 26 --body '…'"` re-parsed as a command whose position was
+  `nohup`, the real invocation was skipped, and all 18 gated shapes posted
+  unmarked behind `nohup`/`sudo`/`timeout`/`xargs`/`command`/`exec`/`time` and
+  behind a `{ … ; }` brace group — **a bypass merge-base `main` does not have**,
+  since `main`'s nested search never restricted by position. Round 9 repaired
+  that by teaching the position walk a **seven-name wrapper allowlist**
+  (`realCommandWordIndex`) and **reproduced the bug one level down**: `setsid`,
+  `nice -n 10`, `stdbuf -oL`, `doas`, `watch`, `ionice` and any name invented
+  next year were not on the list, and a LISTED wrapper whose flag takes a
+  separate value word (`sudo -u root`, `timeout -s KILL 5`, `exec -a name`) had
+  that value consumed as the command position — nine attack shapes ALLOWED that
+  `main` REFUSES, found by an independent differential probe, with the code's
+  own doc comment asserting the case was "never a missed invocation".
+  **The rule both rounds broke is the one stated two bullets up:** which tools
+  pass execution through is NOT a list, the default is inverted, and extending
+  it means extending the parse — never adding another name. Applied honestly to
+  "does this word pass execution through to the next one?", the recognised half
+  is **empty** — nothing can be proved not to be a wrapper — so every leading
+  word is a possible wrapper, every index is a possible command position, and
+  the restriction dissolves into the position-independent search the top level
+  has always run. Round 10 therefore deletes `WRAPPER_COMMANDS`,
+  `realCommandWordIndex()` and the `atCommandPositionOnly` option outright: the
+  nested arm is position-independent again, identical to `main`, and there is no
+  list left to go stale.
+  **What that costs, stated plainly:** the precision round 8 bought is given
+  back. Two prose lines are REFUSED again exactly as `main` refuses them —
+  `git commit -m "fix(hooks): the gh issue comment gate now blocks
+--body=text"` and `git commit -m "docs: quote 'gh' issue comment --body in the
+  guide"` (the second is `main`'s behaviour plus round 8's widening). A false
+  refusal is loud, costs one retry, and prints its own override
+  (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`); the alternative on the table was a
+  silent post, so the ambiguous position stays a candidate. This refusal lands
+  **hardest on the people maintaining this gate itself**, since a commit
+  message describing a change to the gate is the likeliest text anyone will
+  write that carries both a posting phrase and a body-shaped flag — the two
+  named examples above are exactly that shape. `make deploy
+MSG="gh issue comment --body ready"` stays FIXED — that was a different
+  mechanism (the assignment-run scoping), untouched here.
+  **Evidence, not reasoning:** a differential probe ran the same corpus against
+  merge-base `main` and this tree — **2,394 attack cases** (18 gated shapes ×
+  31 wrapper/grouping spellings × literal and `$VAR` bodies × two
+  unknown-interpreter rows, plus top-level, `bash -lc`, `env -S`, `ssh`,
+  pipe-into-shell and shell-in-shell rows) with **zero** cases ALLOWED here that
+  `main` REFUSES, and 1,080 that `main` ALLOWS now refused. Locked in
+  `scripts/check-comment-attribution.test.mjs` by a wrapper sweep whose list is
+  deliberately **the names no allowlist ever contained**, and by an end-to-end
+  test through the real shell hook; the two prose refusals are asserted there
+  too, so the cost is recorded in the suite rather than only in prose.
+  **That "zero" was corpus-limited and is corrected by the round-11 bullet
+  below.** It varied the interpreter/wrapper axis while pinning every
+  assignment-carrying case to the LEADING position, so the 26 assignment-position
+  bypasses round 11 closed were outside what it measured. A differential zero is
+  a statement about the axes the corpus varied, never about the gate. **Round
+  11's own "0 remain" claim went on to suffer the identical fate** — see the
+  round-12 bullet below, which is the same lesson landing a second time on an
+  axis (dereference form) neither this corpus nor round 11's varied.
+- **Fix round 11 (#96) — SUPERSEDED BY FIX ROUND 12 BELOW.** This bullet is
+  **history** — what round 11 did and why it failed, not a description of what
+  the gate does today; the round-12 bullet below is what runs now. Round 11
+  closed the ASSIGNMENT-POSITION bypasses round 8's scoping opened — list-free,
+  keyed on `$VAR` syntax. Round 8 had fixed the
+  `make deploy MSG="gh issue comment --body ready"` false refusal by scoping
+  the "assignment carries a whole command" re-read (`parseShellCommands` in
+  `scripts/lib/shell-command-parse.mjs`) to the LEADING assignment run plus an
+  assignment builtin's `VAR=value`-shaped operands. That window was positional,
+  and two ordinary shapes sat outside it — both of which merge-base `main`
+  refused, and both of which really executed the post:
+  `env CMD="gh issue comment 26 --body …" sh -c '$CMD'` (the assignment was
+  AFTER a command word, so the leading run ended at index 0 and the scan never
+  ran) and `declare -x CMD="…"; $CMD` (the builtin's `-x` operand was not
+  `VAR=value`-shaped, so the operand walk broke before the assignment).
+  **Three rounds of review missed this because every test in the suite pinned
+  the assignment to the leading position** — the suite was green with the
+  bypass present.
+  **The repair named no command.** Deciding that `env`'s post-command
+  assignment is executable while `make`'s is inert requires knowing which
+  commands consume assignments — the round-9/round-10 anti-pattern one
+  mechanism over, where the missing name would have been silent. Round 11
+  keyed on shell VARIABLE SYNTAX instead: a `VAR=value` word was re-read
+  wherever it sat, but only when the same line also EXPANDED `$VAR` / `${VAR}`.
+  An assignment nothing on the line expands could not make that line post,
+  whoever the command word was, so `make deploy MSG=…`,
+  `docker run -e CMD=… alpine true`, `terraform apply -var …`,
+  `kubectl set env …` and a bare `declare -x CMD=…` all stayed ALLOWED —
+  round 8's false-refusal fix was kept, without a list.
+  **What it COST:** the match was on the variable NAME, so a line that
+  carried a `gh`-shaped `MSG=` word and separately expanded `$MSG` for an
+  unrelated reason was refused —
+  `make deploy MSG="gh issue comment --body ready" && echo "$MSG"` REFUSED
+  (exactly as `main` refuses it), while the same line expanding `$OTHER` was
+  allowed. Over a 20-command ordinary-work corpus that was **zero new false
+  refusals** against merge-base `main` and zero against the pre-round branch
+  tip. **What it still could not see, unchanged from `main`:** an assignment
+  made in an EARLIER Bash tool call and expanded in a later one — those bytes
+  were not on this line at all.
+  **Evidence:** a 35-case attack corpus that varied the ASSIGNMENT-POSITION
+  axis explicitly (leading · after a command word · after a wrapped command
+  word · assignment builtin with an option · assignment builtin without one ·
+  one nesting level down) plus 8 inert and 20 ordinary-work cases, each driven
+  through the real `PreToolUse` hook AND the pure decision path on both trees:
+  **26 shapes that `main` refuses and the pre-round tip allowed then refused, 0
+  remained**, hook and function agreed on every cell. Locked in
+  `scripts/check-comment-attribution.test.mjs` by four tests — the bypass sweep
+  (pure), the same sweep through the real shell hook, an INERT sweep asserting
+  a later round cannot "fix" this by refusing every `VAR=value` again, and a
+  name-keying test pinning the over-approximation above. **That "0 remain"
+  claim did not survive** — it had not varied DEREFERENCE FORM, and round 12
+  below found the axis that defeats name-keying. Reverting the source change
+  with the tests kept reds three of the four.
+- **Fix round 12 (#96) — the maintainer decision: stop trading breadth for
+  precision, restore `main`'s unconditional scan.** Round 11 above is
+  SUPERSEDED. It closed the assignment-POSITION axis by keying the re-read on
+  whether the SAME variable NAME is literally referenced elsewhere on the line
+  (`$VAR`/`${VAR}`) — and was defeated by bash's `${!NAME}` INDIRECT
+  EXPANSION, where the variable that actually gets posted is never named
+  literally anywhere on the line
+  (`NAME=CMD bash -c 'eval ${!NAME}'` expands to `eval $CMD`, and the literal
+  text `$CMD` never appears). Confirmed EXECUTING on this machine's real bash
+  (not just parse-classified) for three shapes: `${!NAME}` with `eval`, a bare
+  `${!NAME}`, and the two-step `x="${!NAME}"; eval "$x"`. A fourth, bash-nameref
+  shape (`declare -n ref=CMD; eval "$ref"`) is the same two-hop dereference
+  pattern but needs bash ≥ 4.3; this machine's own dev bash is 3.2, so it is
+  locked at the PARSE layer only and labelled parse-verified — never claimed as
+  an execution proof this repo does not have.
+
+  Four measured rounds now form a pattern, not a string of bad luck: round
+  9/10 closed the wrapper-name axis and reopened the assignment-POSITION axis;
+  round 11 closed the assignment-position axis and reopened the
+  DEREFERENCE-FORM axis. Each fix bought precision on the axis it targeted and
+  gave up safety on an axis nobody had varied yet — "is this assignment
+  actually used?" is undecidable at a text-parsing layer without a real shell
+  behind it, and three rounds proved that empirically rather than by argument.
+  **The decision is to stop asking that question.** The assignment scan
+  reverts to exactly `main`'s rule: unconditional, position-independent, with
+  **no expansion-gating condition of any kind** — a `VAR=value` word is
+  re-read as a nested command whenever its value carries a gated posting
+  phrase, wherever it sits, whoever consumes it, whatever dereferences it.
+
+  **What this deliberately reintroduces, named and accepted:**
+  `declare -x CMD="<posting phrase>"` with nothing on the line ever executing
+  it, `env CMD="<posting phrase>" true`,
+  `make deploy MSG="gh issue comment --body ready"`, a container/orchestration
+  `-e`/`--set-string`/`-var`/`-e` value carrying a posting-shaped string
+  (`docker run`/`helm`/`terraform`/`ansible-playbook` and siblings), and an
+  ordinary commit message ABOUT the gate that happens to quote a gated phrase
+  — all REFUSE now, even though nothing on those lines can ever post. Each is
+  loud (exit 2, printed reason, printed override), costs one retry, and the
+  override (`ALLOW_UNATTRIBUTED_COMMENT=1 <command>`) is printed at the moment
+  of refusal. These are not bugs for a future round to "fix" — narrowing this
+  scan again reopens exactly the bypass class four rounds have now closed and
+  reopened in turn. Precision here needs a REAL shell behind the check
+  (execute the line in a sandboxed subshell and observe what actually runs),
+  not a sharper text-parsing condition — that is the lesson four rounds paid
+  for.
+
+  **What this KEEPS from rounds 9/10 (unaffected — a different mechanism):**
+  the nested-operand re-read (an operand of an unrecognised command word is a
+  candidate to be re-parsed as a script) and its position independence — the
+  round-8/round-10 bullets above stand as written; only the
+  assignment-carries-a-command scan changed.
+
+  **The honest residual, unchanged from `main` and unclosed by any round:** an
+  assignment made in an EARLIER Bash tool call and expanded in a LATER one is
+  still unseen — those bytes are not on the later line at all, and no amount
+  of tightening this file reaches across two tool calls.
+
+  **Evidence:** an independent 80-case differential corpus (assignment
+  position × variable naming × dereference form, including `${!NAME}` and a
+  bash-nameref shape × interpreter nesting × every gated posting shape, plus 8
+  inert cells and 28 ordinary-work commands — deliberately NOT the round-9/10
+  or round-11 corpora reused) driven through both the real `PreToolUse` hook
+  and the pure decision path on `main` and this tree: **0 regressions vs
+  `main`, including every inert cell** (round 11's "harmless" inert cases now
+  refuse, matching `main`), **5 tightenings** (the nested-operand widening
+  rounds 8-10 still hold that `main` never had: a bare `$VAR`, a subshell, a
+  space-free `&&`, a quoted `gh` word, and a known shell nested inside an
+  unrecognised one, each inside a `csh`/`tcsh` operand), hook and pure function
+  agree on every one of the 80 cells on both trees. 2 refusals surfaced on the
+  ordinary-work slice: an unmarked `--body-file` pointing at a file that
+  genuinely lacks the marker (correct, not a false refusal) and the
+  fix-round-7 commit-message false refusal, reproduced fresh (accepted, named
+  above).
+
+  **Correcting the record, again:** round 10's "zero regressions over 2,394
+  cases" line was already flagged corpus-limited by round 11 for not varying
+  assignment position; round 11's own "26 shapes closed, 0 remain" claim was
+  itself corpus-limited in exactly the same way — it did not vary DEREFERENCE
+  FORM, the axis that defeated it. **A differential zero is a statement about
+  the axes a corpus varied, never about the gate** — restated here because it
+  has now been true, and then falsified by an unvaried axis, three times
+  running.
+
+  Locked in `scripts/check-comment-attribution.test.mjs`: the round-8
+  false-refusal-fix test and its real-hook counterpart are INVERTED (not
+  deleted) to assert the refusal is back, named as a deliberate
+  maintainer-approved reintroduction; the round-11 name-keying test and its
+  "nothing expands it stays allowed" companion are likewise inverted; new
+  tests lock the three executing `${!NAME}` shapes (pure and real-hook), the
+  bash-nameref shape at the parse layer only, and position-independence
+  explicitly (the same assignment leading, after a command word, and after a
+  wrapped command word all refuse alike). Reverting only the source change
+  (`scripts/lib/shell-command-parse.mjs`) with the tests kept every one of the
+  new/inverted tests red; restoring it returned the suite to green. **The new
+  state, stated honestly: at least as strong as `main` everywhere measured,
+  plus the nested-operand class `main` never had — not "complete".**
+
+- **A fifth bypass axis, undeclared until now: ASSIGNMENT SYNTAX the scan's
+  `ASSIGNMENT_RE` does not recognise.** Only `NAME=value` is re-read; other
+  shell assignment syntax carrying the identical payload can bypass — each
+  paired with a matching dereference really executes the post. Known shapes
+  (examples, not exhaustive — see #126): append (`CMD+="…"`), indexed element
+  (`CMD[0]="…"`), array literal (`A=("…")`), associative array
+  (`declare -A M; M[k]="…"`), ANSI-C quoting (`CMD=$'gh …'`, confirmed on
+  bash and zsh), and `printf -v` (`printf -v CMD '%s' "gh …"`, confirmed on
+  bash and zsh). PRE-EXISTING on merge-base `main` — round 12 neither opened
+  nor closed it, since the assignment scan it restored is the same
+  unconditional regex `main` has always run. Issue #126 tracks the open
+  class; new forms may surface. Needs a matching dereference on the same line
+  to actually execute — the payload alone in an unread variable does nothing.
+  Not yet closed by any round.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved

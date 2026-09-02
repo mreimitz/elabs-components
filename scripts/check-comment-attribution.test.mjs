@@ -948,6 +948,20 @@ test("#78 class: every script-introducing option spelling still BLOCKS", () => {
     [`zqx-notashell-9f21a -c "${inner}"`, "an interpreter that exists nowhere"],
     [`frobnicate --run-script "${inner}"`, "an invented tool with an invented option"],
     [`hypothetical-shell-2031 "${inner}"`, "an invented tool with no option at all"],
+    // #96 fix round 8 — a matrix of operand spellings behind both
+    // unknown-interpreter rows, plus the residual named explicitly in the
+    // issue: `csh -c "gh issue comment 26 --body $MSG"` (the WHOLE body is one
+    // expansion, not just a mutation of a quoted one).
+    [`csh -c "gh issue comment 26 --body $MSG"`, "csh -c, whole-body expansion (#96)"],
+    [`csh -c "(${inner})"`, "csh -c, subshell-wrapped (#96)"],
+    [`csh -c "true&&${inner}"`, "csh -c, space-free && (#96)"],
+    [`csh -c "gh issue comment 26 --body '${UNMARKED} $USER'"`, "csh -c, $USER in body (#96)"],
+    [
+      `zqx-notashell-9f21a -c "gh issue comment 26 --body $MSG"`,
+      "unknown interpreter, whole-body expansion (#96)",
+    ],
+    [`zqx-notashell-9f21a -c "(${inner})"`, "unknown interpreter, subshell-wrapped (#96)"],
+    [`zqx-notashell-9f21a -c "true&&${inner}"`, "unknown interpreter, space-free && (#96)"],
   ];
   for (const [command, label] of cases) {
     assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
@@ -990,6 +1004,108 @@ test("#78 class: the clustered grammar defeats no gated SHAPE either", () => {
       "block",
       `nonexistent interpreter: ${shape}`,
     );
+
+    // #96 fix round 8 — the bypass this issue closes. Round 7's nested re-read
+    // was gated by TEXT prefilters: an operand containing a shell expansion
+    // skipped the re-read entirely, and the `gh`-detection was a regex a
+    // subshell or a space-free `&&` slipped past unseen. Three mutations of
+    // EVERY gated shape, behind BOTH unknown-interpreter rows, so none of the
+    // 18 shapes can walk through any of the three routes the bypass took.
+    const withVar = shape.replace(`'${UNMARKED}'`, `'${UNMARKED} $USER'`);
+    const subshelled = `(${shape})`;
+    const spaceFreeAnd = `true&&${shape}`;
+    for (const [mutated, mutationLabel] of [
+      [withVar, "$USER in body"],
+      [subshelled, "subshell-wrapped"],
+      [spaceFreeAnd, "space-free &&"],
+    ]) {
+      assert.equal(
+        bash(`csh -c "${mutated}"`).verdict,
+        "block",
+        `csh -c, ${mutationLabel}: ${mutated}`,
+      );
+      assert.equal(
+        bash(`zqx-notashell-9f21a -c "${mutated}"`).verdict,
+        "block",
+        `nonexistent interpreter, ${mutationLabel}: ${mutated}`,
+      );
+    }
+
+    // #96 fix rounds 9 and 10 — a leading WRAPPER in front of the nested call.
+    // Round 8's command-position restriction read the wrapped call's own
+    // leading word as the command word instead of the invocation behind it,
+    // so every one of the 18 gated shapes posted unmarked behind `nohup`,
+    // `sudo`, `timeout 30`, … — a bypass `main` did not have. Round 9 tried
+    // to repair that with a SEVEN-NAME wrapper allowlist and reproduced the
+    // bug one level down: `setsid`, `nice -n 10`, `stdbuf -oL`, `doas`,
+    // `watch`, `ionice` (and any name invented next year) were not on it, and
+    // neither was a listed wrapper whose flag takes a SEPARATE VALUE word
+    // (`sudo -u root`, `timeout -s KILL 5`, `exec -a name`), whose value the
+    // walk consumed as the command position. Round 10 removed the restriction
+    // instead of extending the list, so the nested arm searches every
+    // position exactly as the top level always has.
+    //
+    // THE POINT OF THIS LIST IS THE NAMES THAT WERE NEVER ON ANY ALLOWLIST.
+    // If a future round reintroduces a command-position restriction, these
+    // are the cases that must go red — do not prune them down to the ones a
+    // list happens to contain.
+    const wrappers = [
+      "nohup",
+      "sudo",
+      "timeout 30",
+      "xargs",
+      "command",
+      "exec",
+      "time",
+      // never on any allowlist
+      "setsid",
+      "nice -n 10",
+      "stdbuf -oL",
+      "doas",
+      "watch",
+      "ionice",
+      "chrt -f 99",
+      "taskset -c 0",
+      "firejail --net=none",
+      "zzwrapq7",
+      // a LISTED wrapper whose flag's value is a separate word
+      "sudo -u root",
+      "timeout -s KILL 5",
+      "exec -a fake",
+      "nice -n -5",
+      // chains, paths, an assignment prefix, and grouping punctuation
+      "nohup timeout 5",
+      "sudo -u root nohup setsid",
+      "/usr/bin/setsid",
+      "VAR=1 setsid",
+    ];
+    for (const wrapper of wrappers) {
+      const wrapped = `${wrapper} ${shape}`;
+      assert.equal(
+        bash(`csh -c "${wrapped}"`).verdict,
+        "block",
+        `csh -c, wrapper ${wrapper}: ${wrapped}`,
+      );
+      assert.equal(
+        bash(`zqx-notashell-9f21a -c "${wrapped}"`).verdict,
+        "block",
+        `nonexistent interpreter, wrapper ${wrapper}: ${wrapped}`,
+      );
+    }
+    for (const grouped of [
+      `{ ${shape} ; }`,
+      `{ setsid ${shape} ; }`,
+      `nohup { ${shape} ; }`,
+      `( setsid ${shape} )`,
+      `true&&setsid ${shape}`,
+    ]) {
+      assert.equal(bash(`csh -c "${grouped}"`).verdict, "block", `csh -c, grouped: ${grouped}`);
+      assert.equal(
+        bash(`zqx-notashell-9f21a -c "${grouped}"`).verdict,
+        "block",
+        `nonexistent interpreter, grouped: ${grouped}`,
+      );
+    }
   }
 });
 
@@ -1043,9 +1159,138 @@ test("#78 class: ordinary, legitimate commands are still ALLOWED", () => {
     `csh -c 'gh issue view 26'`,
     `csh -c 'pnpm test'`,
     `zqx-notashell-9f21a -c 'gh pr checks 12'`,
+    // #96 fix round 12 REMOVED `make deploy MSG="gh issue comment --body
+    // ready"` from this list — it is now a deliberate, accepted false
+    // refusal again (merge-base `main`'s behaviour). See the inverted lock
+    // "#96 fix round 12: main's own false refusals are BACK, by decision"
+    // below, which asserts it BLOCKS.
+    // #96 acceptance criteria — ordinary expansions must not be blanket
+    // refused just because Part A stopped skipping every operand that
+    // contains one.
+    `git commit -m "feat(ui): add $THING to the toolbar"`,
+    `pnpm --filter $PKG test -- --grep "$NAME"`,
+    `csh -c "echo $HOME && ls -la"`,
+    `node -e "console.log(1 + '$X')"`,
+    // #96 fix round 10 — prose naming a wrapper is not a posting call. The
+    // nested re-read is position-independent again, so what keeps these
+    // ALLOWED is that the re-parse finds no gated posting shape reaching for
+    // a body — not a judgment about the word `exec` or `sudo`.
+    `git commit -m "docs: explain the exec wrapper bypass in the gate rule"`,
+    `git commit -m "chore: bump the sudo timeout for the deploy script"`,
+    `git commit -m "docs: setsid the storybook server before the ${"sm" + "oke"} run"`,
+    // A wrapped call whose body carries the marker must still ALLOW — the
+    // wrapper fix widens what counts as a candidate, not a refusal of every
+    // candidate regardless of its body. `--body-file` (not an inline `shq()`
+    // string) sidesteps nesting the marker banner's own apostrophe inside
+    // TWO layers of shell quoting (the outer `csh -c "…"` and whatever quote
+    // style would wrap the literal body).
+    `csh -c "nohup gh issue comment 26 --body-file ${marked}"`,
+    `csh -c "setsid gh issue comment 26 --body-file ${marked}"`,
+    `csh -c "sudo -u root gh issue comment 26 --body-file ${marked}"`,
   ];
   for (const command of cases) {
     assert.equal(bash(command).verdict, "allow", command);
+  }
+});
+
+test("#96 fix round 8: the nested-operand widening, through the REAL shell hook", () => {
+  // Same three cases as the pure-function locks above, each driven through
+  // the actual bash hook end to end — the pattern `check-merge-readiness.test.mjs`
+  // and the rest of this file already use for the named findings.
+  const blocked = runHook({
+    tool_name: "Bash",
+    tool_input: {
+      command: `csh -c "gh issue comment 26 --body '${UNMARKED} $USER'"`,
+    },
+  });
+  assert.equal(blocked.status, 2, blocked.stderr);
+  assert.match(blocked.stderr, /comment-attribution gate/);
+
+  const stillBlocked = runHook({
+    tool_name: "Bash",
+    tool_input: { command: `export CMD='gh pr comment 12 --body ${UNMARKED}'` },
+  });
+  assert.equal(stillBlocked.status, 2, stillBlocked.stderr);
+
+  // #96 fix round 12 INVERTS this third case. It used to assert ALLOW — the
+  // round-8 false-refusal fix this test's own name refers to. That fix is
+  // gone by maintainer decision (see the round-12 block comment in
+  // shell-command-parse.mjs and the inverted lock below); `make deploy
+  // MSG=…` is a `VAR=value` word whose value looks gh-shaped, and the
+  // restored unconditional scan refuses it exactly as merge-base `main`
+  // does, regardless of the hook or the pure path.
+  const nowBlocked = runHook({
+    tool_name: "Bash",
+    tool_input: { command: `make deploy MSG="gh issue comment --body ready"` },
+  });
+  assert.equal(nowBlocked.status, 2, nowBlocked.stderr);
+});
+
+test("#96 fix round 10: no wrapper allowlist — the never-listed wrappers, through the REAL shell hook", () => {
+  // Round 9 shipped a SEVEN-NAME wrapper allowlist to repair round 8's
+  // command-position restriction, and reproduced the bug one level down: an
+  // unlisted wrapper, or a listed one whose flag takes a separate value word,
+  // walked all 18 gated shapes. Round 10 removed the restriction, so the
+  // nested arm is position-independent again — exactly what merge-base `main`
+  // does, and therefore incapable of going stale. The cases below are the ones
+  // that were ALLOWED at the round-9 tip; each must now exit 2.
+  for (const wrapped of [
+    `csh -c "setsid gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "nice -n 10 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "stdbuf -oL gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "doas gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "watch gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "ionice gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "zzwrapq7 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "sudo -u root gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "timeout -s KILL 5 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "exec -a fake gh issue comment 26 --body '${UNMARKED}'"`,
+    // the round-9 cases that DID pass then, kept so the repair can't trade one
+    // class for the other a third time
+    `csh -c "nohup gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "sudo gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "timeout 30 gh issue comment 26 --body '${UNMARKED}'"`,
+    `csh -c "{ gh issue comment 26 --body '${UNMARKED}' ; }"`,
+    // a shape other than `issue comment`, behind a never-listed wrapper
+    `csh -c "setsid gh pr review 12 --body '${UNMARKED}'"`,
+    `csh -c "nice -n 10 gh release create v9 --notes '${UNMARKED}'"`,
+    `csh -c "sudo -u root gh api -X POST repos/o/r/issues/26/comments -f body='${UNMARKED}'"`,
+  ]) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command: wrapped } });
+    assert.equal(r.status, 2, `${wrapped}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, wrapped);
+  }
+
+  // The same wrapped shapes with a MARKED body must still exit 0 — position
+  // independence widens what counts as a candidate, it does not turn every
+  // wrapped `gh` call into a refusal regardless of the body.
+  const marked = path.join(TMP, "round10-wrapped-marked.md");
+  writeFileSync(marked, `Ruling.\n\n${render("close-issues", 78)}`, "utf8");
+  for (const wrapper of ["nohup", "setsid", "sudo -u root"]) {
+    const allowed = runHook({
+      tool_name: "Bash",
+      tool_input: {
+        command: `csh -c "${wrapper} gh issue comment 26 --body-file ${marked}"`,
+      },
+    });
+    assert.equal(allowed.status, 0, `${wrapper}: ${allowed.stderr}`);
+  }
+});
+
+test("#96 fix round 10: the two prose refusals this round GIVES BACK are locked as declared limits", () => {
+  // Round 8's command-position restriction bought precision on prose and paid
+  // for it with a silent bypass class; round 10 chose the other side of that
+  // trade, so these two lines are REFUSED again exactly as merge-base `main`
+  // refuses them. That is a false refusal — loud, one retry, and the override
+  // is printed at the moment of refusal — not a bypass. They are asserted here
+  // so the cost is recorded in the suite rather than only in prose, and so a
+  // future round that reintroduces a position restriction has to confront
+  // them together with the wrapper sweep above.
+  for (const command of [
+    `git commit -m "fix(hooks): the gh issue comment gate now blocks --body=text"`,
+    `git commit -m "docs: quote 'gh' issue comment --body in the guide"`,
+  ]) {
+    assert.equal(bash(command).verdict, "block", command);
   }
 });
 
@@ -1614,4 +1859,211 @@ test("post-issue-comment: refuses to run without an issue number or a body", () 
   assert.equal(postMain([]), 1, "no issue number");
   assert.equal(postMain(["not-a-number", "--body", "hi"]), 1, "non-numeric issue");
   assert.equal(postMain(["26", "--command", "close-issues"]), 1, "no --body/--body-file");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #96 fix round 11 — the ASSIGNMENT POSITION axis. SUPERSEDED by fix round 12
+// (below, and see the block comment at the assignment re-read itself in
+// `shell-command-parse.mjs`) — kept here, not deleted, because the bypass
+// sweep this round built (`ROUND_11_ASSIGNMENT_POSITION_BYPASSES`) is still a
+// valid, still-passing lock: a strict superset of `main` cannot allow what
+// this narrower rule already refused. Only the two tests that pinned round
+// 11's now-removed "only when the line also expands `$VAR`" precision are
+// inverted, immediately below this block.
+//
+// Fix round 8 stopped scanning every `VAR=value` word for a command it could
+// re-read, and scanned only the LEADING assignment run plus an assignment
+// builtin's `VAR=value`-shaped operands. That removed a real false refusal
+// (`make deploy MSG=…`, then locked as an ALLOW; now locked as a BLOCK again,
+// see round 12 below) and, unnoticed through three rounds of review, opened
+// two bypasses that merge-base `main` refused — because every test in this
+// file pinned the assignment to the leading position:
+//
+//   env CMD="gh issue comment 26 --body …" sh -c '$CMD'     (after a command word)
+//   declare -x CMD="gh issue comment 26 --body …"; $CMD     (option-bearing builtin)
+//
+// Both were verified to really run the post (`env CMD="printf PROOF\n" sh -c
+// '$CMD'` prints PROOF). Round 11's repair keyed on shell VARIABLE SYNTAX and
+// named no command: a `VAR=value` word was re-read wherever it sat, but only
+// when the same line also expanded `$VAR`. THAT half — the "only when
+// expanded" gate — is what round 12 removes: it was defeated by indirect
+// expansion (`${!NAME}`), a fourth axis on the same failure. See the round-12
+// tests below.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const POST_AFTER_ASSIGNMENT = `gh issue comment 26 --body "${UNMARKED}"`;
+
+const ROUND_11_ASSIGNMENT_POSITION_BYPASSES = [
+  // ── the assignment sits AFTER a command word ──────────────────────────────
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "env, single-quoted expansion"],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' sh -c "$CMD"`, "env, double-quoted expansion"],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' bash -c '\${CMD}'`, "env, ${VAR} brace form"],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' sh -c 'eval $CMD'`, "env, expanded through eval"],
+  [`env -i CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "env with an option"],
+  [`sudo CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "sudo"],
+  [`sudo -E CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "sudo with an option"],
+  [`env CMD='gh pr comment 12 --body "${UNMARKED}"' sh -c '$CMD'`, "env, gh pr comment"],
+  [`env CMD='gh issue create -t T --body "${UNMARKED}"' sh -c '$CMD'`, "env, gh issue create"],
+  [`env CMD='gh release create v1 --notes "${UNMARKED}"' sh -c '$CMD'`, "env, gh release create"],
+  // ── the wrapper is itself wrapped ─────────────────────────────────────────
+  [`nohup env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "nohup env"],
+  [`timeout 30 env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "timeout env"],
+  [`nice -n 10 env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "nice env"],
+  [`command env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "command env"],
+  [`nohup sudo -E CMD='${POST_AFTER_ASSIGNMENT}' bash -c '$CMD'`, "nohup sudo -E"],
+  // ── an assignment builtin carrying an OPTION before the assignment ────────
+  [`declare -x CMD='${POST_AFTER_ASSIGNMENT}'; $CMD`, "declare -x"],
+  [`typeset -r CMD='${POST_AFTER_ASSIGNMENT}'; $CMD`, "typeset -r"],
+  [`export -p CMD='${POST_AFTER_ASSIGNMENT}'; $CMD`, "export -p"],
+  [`declare -gx CMD='${POST_AFTER_ASSIGNMENT}' && eval "$CMD"`, "declare -gx, via eval"],
+  // ── the same shapes one nesting level down, or behind ordinary punctuation ─
+  [`sh -c 'declare -x CMD="gh issue comment 26 --body ${UNMARKED}"; $CMD'`, "nested declare -x"],
+  [`(env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD')`, "subshell"],
+  [`true && env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "after &&"],
+  [`cd /tmp && env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`, "after a cd prefix"],
+];
+
+test("#96 fix round 11: an assignment AFTER the command word / behind a builtin option BLOCKS (pure)", () => {
+  for (const [command, label] of ROUND_11_ASSIGNMENT_POSITION_BYPASSES) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#96 fix round 11: the same assignment-position shapes, through the REAL shell hook -> exit 2", () => {
+  for (const [command, label] of ROUND_11_ASSIGNMENT_POSITION_BYPASSES) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #96 fix round 12 — the maintainer decision to stop trading breadth for
+// precision. Four measured rounds (8, 9/10, 11) each closed one bypass and
+// opened another on an axis the previous round did not consider: command
+// position (9/10), then dereference form (11's `${!NAME}` indirect
+// expansion — see `validate-u17.json`, "critical" finding). The decision is
+// to restore merge-base `main`'s UNCONDITIONAL, POSITION-INDEPENDENT
+// assignment scan verbatim — asking nothing about whether an assignment is
+// ever used — and accept `main`'s own false refusals as the cost. See the
+// block comment at the assignment re-read itself
+// (`shell-command-parse.mjs`, "fix round 12") for the full account.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("#96 fix round 12: main's own false refusals are BACK, by decision (INVERTS the round-11 ALLOW lock)", () => {
+  // This is the direct inversion of the round-11 test that used to occupy
+  // this name ("an assignment NOTHING on the line expands stays ALLOWED").
+  // Every one of these lines carries a `VAR=value` word whose value looks
+  // gh-shaped and NOTHING on the line ever expands the name — under round
+  // 11's precision they were ALLOWED; under the restored unconditional scan
+  // they are REFUSED, exactly as merge-base `main` refuses them. This is a
+  // DELIBERATE, MAINTAINER-APPROVED false refusal, not a bug: do not "fix"
+  // this back by reintroducing an expansion/usage condition — that whole
+  // class of repair is what round 11 tried, and it was defeated by indirect
+  // expansion (see the round-12 tests below). `make deploy MSG=…` is the
+  // named example from the issue-workflow rule and the round-12 prose; the
+  // rest are its siblings (a container run, an infra tool, `declare`/`env`
+  // with nothing expanding the name).
+  const nowRefused = [
+    `declare -x CMD='${POST_AFTER_ASSIGNMENT}'`,
+    `env CMD='${POST_AFTER_ASSIGNMENT}' true`,
+    `make deploy MSG="gh issue comment --body ready"`,
+    `docker run -e CMD='${POST_AFTER_ASSIGNMENT}' alpine true`,
+    `kubectl set env deploy/api CMD='${POST_AFTER_ASSIGNMENT}'`,
+    `terraform apply -var MSG='${POST_AFTER_ASSIGNMENT}'`,
+    `ansible-playbook site.yml -e MSG='${POST_AFTER_ASSIGNMENT}'`,
+  ];
+  for (const command of nowRefused) {
+    assert.equal(bash(command).verdict, "block", command);
+    assert.equal(runHook({ tool_name: "Bash", tool_input: { command } }).status, 2, command);
+  }
+});
+
+test("#96 fix round 12: the scan no longer keys on the variable NAME — expansion is irrelevant (INVERTS the round-11 name-keying lock)", () => {
+  // Direct inversion of the round-11 "keyed on the variable NAME" test. Under
+  // round 11, `$OTHER` (not `$MSG`) meant the MSG= assignment was never
+  // re-read, so this line ALLOWED. Under the restored unconditional scan,
+  // whether anything expands `$MSG` — or `$OTHER`, or nothing at all — makes
+  // no difference: every word is scanned regardless. All three now BLOCK.
+  assert.equal(
+    bash(`make deploy MSG="gh issue comment --body ready" && echo "$OTHER"`).verdict,
+    "block",
+  );
+  assert.equal(
+    bash(`make deploy MSG="gh issue comment --body ready" && echo "$MSG"`).verdict,
+    "block",
+  );
+  assert.equal(bash(`make deploy MSG="gh issue comment --body ready"`).verdict, "block");
+  // A VALUE that is not gh-shaped is still untouched — the scan matches on
+  // the VALUE looking like a `gh` post, not on the mere presence of a
+  // `VAR=value` word. This is the one axis round 12 does NOT give up.
+  assert.equal(bash(`make deploy MSG="deploy now" && echo "$MSG"`).verdict, "allow");
+  assert.equal(bash(`make deploy MSG="deploy now"`).verdict, "allow");
+});
+
+// The three executing indirect-expansion shapes from the round-11 validation
+// (validate-u17.json, "critical" finding) — the bypass that motivated this
+// round. The assigned variable (CMD) is never mentioned as literal `$CMD` /
+// `${CMD}` text anywhere on the line; it is reached through a SECOND
+// variable (NAME) whose runtime VALUE happens to equal the string "CMD".
+// Round 11's `referencedVars` gate matched literal `$VAR`/`${VAR}` text only,
+// so it saw nothing to key on and ALLOWED all three — confirmed to genuinely
+// execute (`env CMD="printf FINAL-PROOF-EXECUTED\n" NAME=CMD bash -c 'eval
+// ${!NAME}'` prints the proof). The restored unconditional scan does not
+// care what expands the assignment, or whether anything textually
+// references its name at all — it refuses the `VAR=value` word itself — so
+// all three BLOCK regardless of the dereference form.
+const INDIRECT_EXPANSION_BYPASSES = [
+  [
+    `env CMD='${POST_AFTER_ASSIGNMENT}' NAME=CMD bash -c 'eval \${!NAME}'`,
+    "${!NAME} indirect expansion, via eval",
+  ],
+  [`env CMD='${POST_AFTER_ASSIGNMENT}' NAME=CMD bash -c '\${!NAME}'`, "bare ${!NAME} indirect"],
+  [
+    `env CMD='${POST_AFTER_ASSIGNMENT}' NAME=CMD bash -c 'x="\${!NAME}"; eval "$x"'`,
+    "two-step ${!NAME} then eval",
+  ],
+];
+
+test("#96 fix round 12: the three executing ${!NAME} indirect-expansion bypasses from the round-11 validation BLOCK (pure)", () => {
+  for (const [command, label] of INDIRECT_EXPANSION_BYPASSES) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+  }
+});
+
+test("#96 fix round 12: the same ${!NAME} indirect-expansion shapes, through the REAL shell hook -> exit 2", () => {
+  for (const [command, label] of INDIRECT_EXPANSION_BYPASSES) {
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+    assert.match(r.stderr, /comment-attribution gate/, label);
+  }
+});
+
+test("#96 fix round 12: the assignment scan is POSITION-INDEPENDENT — leading, after a command word, and after a wrapped command word all BLOCK the same way", () => {
+  // States position-independence explicitly, as its own lock (the brief's
+  // item 3), rather than leaving it implied by the round-11 sweep above.
+  const leading = `CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`;
+  const afterCommandWord = `env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`;
+  const afterWrappedCommandWord = `nohup env CMD='${POST_AFTER_ASSIGNMENT}' sh -c '$CMD'`;
+  for (const [command, label] of [
+    [leading, "leading"],
+    [afterCommandWord, "after a command word"],
+    [afterWrappedCommandWord, "after a wrapped command word"],
+  ]) {
+    assert.equal(bash(command).verdict, "block", `${label}: ${command}`);
+    const r = runHook({ tool_name: "Bash", tool_input: { command } });
+    assert.equal(r.status, 2, `${label}: ${command}\n${r.stderr}`);
+  }
+});
+
+test("#96 fix round 12: bash-4-only indirect-expansion shapes are parse-verified only, not execution-verified on this machine's bash 3.2", () => {
+  // `declare -n` namerefs are real on bash 4.3+ (the same caveat class the
+  // round-11 validator already applied to `declare -gx`/`local -a`); macOS's
+  // shipped /bin/bash is 3.2.57 and errors on `-n` before the shell can even
+  // run the assignment, so this asserts the PARSE-LAYER classification only —
+  // do not read this as execution proof.
+  const command = `env CMD='${POST_AFTER_ASSIGNMENT}' bash -c 'declare -n ref=CMD; eval "$ref"'`;
+  assert.equal(bash(command).verdict, "block", command);
+  const r = runHook({ tool_name: "Bash", tool_input: { command } });
+  assert.equal(r.status, 2, r.stderr);
 });

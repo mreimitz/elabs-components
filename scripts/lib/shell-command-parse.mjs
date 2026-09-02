@@ -23,12 +23,34 @@
 const MAX_DEPTH = 5;
 const ASSIGNMENT_RE = /^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/;
 const EXPANSION_NAME_RE = /^\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-])/;
+// #96, fix round 12: two mechanisms that used to live here —
+// `ASSIGNMENT_BUILTINS` (fix round 8's leading-assignment-builtin widening)
+// and `VAR_REFERENCE_RE`/`referencedVars` (fix round 11's "only when the
+// line also expands this name" gate) — are GONE. Both were attempts to scope
+// the assignment re-read below more precisely than merge-base `main`'s
+// unconditional scan, and both were reopened by a fresh axis (see the block
+// comment at the re-read itself, in `parseShellCommands`). The maintainer's
+// decision was to stop scoping it at all; nothing replaces these two.
 
 /**
- * @typedef {{value: string, expanded: boolean}} ShellWord
- *   `value` is the literal text with one level of quoting removed;
+ * @typedef {{value: string, expanded: boolean, raw: string}} ShellWord
+ *   `value` is the literal text with one level of quoting removed and every
+ *   expansion's SOURCE TEXT dropped (an expansion contributes nothing to it —
+ *   only the `expanded` flag).
  *   `expanded` is true when the word contained an expansion this parser
  *   deliberately refuses to guess at.
+ *   `raw` (#96, fix for the fix-round-7 verdict) is built the same way as
+ *   `value` — quoting removed, escapes resolved — EXCEPT an expansion
+ *   contributes its own verbatim syntax (`$VAR`, `${VAR}`, `$(…)`, a backtick
+ *   command) instead of nothing. Re-parsing `raw` with `parseShellCommands()`
+ *   therefore reproduces the word as an ordinary, unquoted command line, with
+ *   every expansion visible at the position it actually occupies — which is
+ *   what lets a NESTED re-read (an operand of a command word this gate does
+ *   not recognise, see `nestedOperandCandidates` in
+ *   check-comment-attribution.mjs) tell a `$MSG`-shaped body from a literal
+ *   one instead of losing it the way re-parsing `value` would. Re-parsing
+ *   `value` instead is still correct wherever the caller does not need that
+ *   (nothing here does that today).
  * @typedef {{words: ShellWord[], heredoc: boolean, pipedNext?: boolean}} SimpleCommand
  *   `pipedNext` is true when THIS command's stdout is piped into the next one
  *   — `echo "gh …" | bash` hands a shell a script whose bytes are right there
@@ -101,12 +123,14 @@ export function parseShellCommands(text, depth = 0) {
   let cur = [];
   let curHeredoc = false;
   let chars = "";
+  let raw = "";
   let started = false;
   let expanded = false;
 
   const endWord = () => {
-    if (started) cur.push({ value: chars, expanded });
+    if (started) cur.push({ value: chars, expanded, raw });
     chars = "";
+    raw = "";
     started = false;
     expanded = false;
   };
@@ -127,6 +151,7 @@ export function parseShellCommands(text, depth = 0) {
       }
       if (i + 1 < src.length) {
         chars += src[i + 1];
+        raw += src[i + 1];
         started = true;
         i += 2;
         continue;
@@ -137,7 +162,9 @@ export function parseShellCommands(text, depth = 0) {
 
     if (ch === "'") {
       const end = src.indexOf("'", i + 1);
-      chars += src.slice(i + 1, end === -1 ? src.length : end);
+      const body = src.slice(i + 1, end === -1 ? src.length : end);
+      chars += body;
+      raw += body;
       started = true;
       i = end === -1 ? src.length : end + 1;
       continue;
@@ -153,42 +180,51 @@ export function parseShellCommands(text, depth = 0) {
             j += 2;
             continue;
           }
-          chars += src[j + 1] ?? "";
+          const esc = src[j + 1] ?? "";
+          chars += esc;
+          raw += esc;
           j += 2;
           continue;
         }
         if (c === "`") {
           const k = src.indexOf("`", j + 1);
+          const end = k === -1 ? src.length : k + 1;
           nested.push(src.slice(j + 1, k === -1 ? src.length : k));
+          raw += src.slice(j, end); // verbatim, backticks included — see ShellWord.raw
           expanded = true;
-          j = k === -1 ? src.length : k + 1;
+          j = end;
           continue;
         }
         if (c === "$") {
           if (src[j + 1] === "(") {
             const b = scanBalanced(src, j + 1, "(", ")");
             nested.push(b.inner);
+            raw += src.slice(j, b.next); // verbatim `$(...)`
             expanded = true;
             j = b.next;
             continue;
           }
           if (src[j + 1] === "{") {
             const b = scanBalanced(src, j + 1, "{", "}");
+            raw += src.slice(j, b.next); // verbatim `${...}`
             expanded = true;
             j = b.next;
             continue;
           }
           const m = EXPANSION_NAME_RE.exec(src.slice(j));
           if (m) {
+            raw += m[0]; // verbatim `$name`
             expanded = true;
             j += m[0].length;
             continue;
           }
           chars += "$";
+          raw += "$";
           j++;
           continue;
         }
         chars += c;
+        raw += c;
         j++;
       }
       i = j < src.length ? j + 1 : src.length;
@@ -197,10 +233,12 @@ export function parseShellCommands(text, depth = 0) {
 
     if (ch === "`") {
       const k = src.indexOf("`", i + 1);
+      const end = k === -1 ? src.length : k + 1;
       nested.push(src.slice(i + 1, k === -1 ? src.length : k));
+      raw += src.slice(i, end); // verbatim, backticks included — see ShellWord.raw
       expanded = true;
       started = true;
-      i = k === -1 ? src.length : k + 1;
+      i = end;
       continue;
     }
 
@@ -208,6 +246,7 @@ export function parseShellCommands(text, depth = 0) {
       if (src[i + 1] === "(") {
         const b = scanBalanced(src, i + 1, "(", ")");
         nested.push(b.inner);
+        raw += src.slice(i, b.next); // verbatim `$(...)`
         expanded = true;
         started = true;
         i = b.next;
@@ -215,6 +254,7 @@ export function parseShellCommands(text, depth = 0) {
       }
       if (src[i + 1] === "{") {
         const b = scanBalanced(src, i + 1, "{", "}");
+        raw += src.slice(i, b.next); // verbatim `${...}`
         expanded = true;
         started = true;
         i = b.next;
@@ -222,12 +262,14 @@ export function parseShellCommands(text, depth = 0) {
       }
       const m = EXPANSION_NAME_RE.exec(src.slice(i));
       if (m) {
+        raw += m[0]; // verbatim `$name`
         expanded = true;
         started = true;
         i += m[0].length;
         continue;
       }
       chars += "$";
+      raw += "$";
       started = true;
       i++;
       continue;
@@ -281,6 +323,7 @@ export function parseShellCommands(text, depth = 0) {
     }
 
     chars += ch;
+    raw += ch;
     started = true;
     i++;
   }
@@ -309,6 +352,59 @@ export function parseShellCommands(text, depth = 0) {
       // An assignment can carry a whole command as its value
       // (`CMD="gh issue comment 26 --body …"` then `$CMD`). The value is one
       // word, so nothing in it is a token until it is re-parsed.
+      //
+      // #96, fix round 12 (maintainer decision, after four measured rounds):
+      // this scan is UNCONDITIONAL and POSITION-INDEPENDENT — every word of
+      // every simple command, wherever it sits, whatever precedes it,
+      // regardless of whether anything on the line ever expands the name.
+      // This is merge-base `main`'s original rule, restored verbatim (`for
+      // (const word of words)`, no position, no name-reference gate). Three
+      // narrower rules were tried in between, in this order, and each closed
+      // one bypass while reopening another on an axis the previous round did
+      // not consider — the axis, not the rule, is what kept moving:
+      //
+      //   - fix round 8 scoped the scan to the LEADING assignment run (plus a
+      //     leading assignment builtin's operands: `export`/`declare`/
+      //     `typeset`/`local`/`readonly`), to stop `make deploy MSG="gh issue
+      //     comment --body ready"` — a POSITIONAL ARGUMENT make(1) never
+      //     assigns or executes — from being misread as a shell assignment.
+      //     That removed a real false refusal and opened a real bypass on the
+      //     POSITION axis: an assignment sitting AFTER a command word (`env
+      //     CMD="…" sh -c '$CMD'`) or behind an option-bearing builtin
+      //     (`declare -x CMD="…"; $CMD`) fell outside the scoped window —
+      //     verified to genuinely execute, 26 shapes, closed in fix round 11.
+      //   - fix round 11 tried to recover round 8's false-refusal fix WITHOUT
+      //     reopening the position hole: re-read a `VAR=value` word wherever
+      //     it sits, but only when the SAME line also expands `$VAR`/`${VAR}`
+      //     by LITERAL text elsewhere on the line. That closed the position
+      //     axis and opened a bypass on the DEREFERENCE-FORM axis: indirect
+      //     expansion (`${!NAME}`) and bash namerefs point at the assigned
+      //     variable through a SECOND name, so the assigned name never
+      //     appears as literal `$CMD`/`${CMD}` text anywhere on the line and
+      //     the reference-gate saw nothing to key on — verified to genuinely
+      //     execute (`env CMD="…" NAME=CMD bash -c 'eval ${!NAME}'`).
+      //   - The decision this round implements: stop trying to answer "is
+      //     this assignment actually used, and by what?" at this layer. That
+      //     whole class of question is what failed, on three different axes,
+      //     across four rounds — position, then dereference form, and the
+      //     next one would be a fourth axis nobody has found yet. The rule
+      //     that cannot go stale this way is the one that asks nothing about
+      //     usage: refuse every `VAR=value` word whose value looks gh-shaped,
+      //     unconditionally, exactly as `main` always has.
+      //
+      // What this KNOWINGLY reintroduces: `main`'s own false refusals, which
+      // fix round 8 had removed — `make deploy MSG="gh issue comment --body
+      // ready"`, `docker run -e CMD="…" alpine true`, `declare -x CMD="…"`
+      // with nothing expanding it, and every sibling shape where a
+      // `VAR=value` word is a positional argument or an inert assignment,
+      // not a shell command this line will ever run. These are ACCEPTED,
+      // maintainer-approved false refusals, not a regression — see DECLARED
+      // LIMITS below and the locked, inverted tests in
+      // check-comment-attribution.test.mjs. `commandWordIndex` and
+      // `leadingAssignments` (below) are unrelated to this scan — they still
+      // do the separate job of finding the real command word behind a
+      // leading assignment run for the rest of this gate — and are
+      // deliberately untouched.
       for (const word of words) {
         const m = ASSIGNMENT_RE.exec(word.value);
         if (m && /(?:^|[\s/])gh\s/.test(m[2])) nested.push(m[2]);
