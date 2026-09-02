@@ -249,60 +249,64 @@ MSG="gh issue comment --body ready"` stays FIXED — that was a different
   **That "zero" was corpus-limited and is corrected by the round-11 bullet
   below.** It varied the interpreter/wrapper axis while pinning every
   assignment-carrying case to the LEADING position, so the 26 assignment-position
-  bypasses round 11 closes were outside what it measured. A differential zero is
+  bypasses round 11 closed were outside what it measured. A differential zero is
   a statement about the axes the corpus varied, never about the gate. **Round
   11's own "0 remain" claim went on to suffer the identical fate** — see the
   round-12 bullet below, which is the same lesson landing a second time on an
   axis (dereference form) neither this corpus nor round 11's varied.
-- **Fix round 11 (#96) — SUPERSEDED by fix round 12 below. Kept verbatim as
-  the historical record of why it failed.** It closed the ASSIGNMENT-POSITION
-  bypasses round 8's scoping opened — list-free, keyed on `$VAR` syntax.
-  Round 8 fixed the
+- **Fix round 11 (#96) — SUPERSEDED BY FIX ROUND 12 BELOW.** This bullet is
+  **history** — what round 11 did and why it failed, not a description of what
+  the gate does today; the round-12 bullet below is what runs now. Round 11
+  closed the ASSIGNMENT-POSITION bypasses round 8's scoping opened — list-free,
+  keyed on `$VAR` syntax. Round 8 had fixed the
   `make deploy MSG="gh issue comment --body ready"` false refusal by scoping
   the "assignment carries a whole command" re-read (`parseShellCommands` in
   `scripts/lib/shell-command-parse.mjs`) to the LEADING assignment run plus an
-  assignment builtin's `VAR=value`-shaped operands. That window is positional,
-  and two ordinary shapes sit outside it — both of which merge-base `main`
-  refuses, and both of which really execute the post:
-  `env CMD="gh issue comment 26 --body …" sh -c '$CMD'` (the assignment is
-  AFTER a command word, so the leading run ends at index 0 and the scan never
-  runs) and `declare -x CMD="…"; $CMD` (the builtin's `-x` operand is not
-  `VAR=value`-shaped, so the operand walk breaks before the assignment).
+  assignment builtin's `VAR=value`-shaped operands. That window was positional,
+  and two ordinary shapes sat outside it — both of which merge-base `main`
+  refused, and both of which really executed the post:
+  `env CMD="gh issue comment 26 --body …" sh -c '$CMD'` (the assignment was
+  AFTER a command word, so the leading run ended at index 0 and the scan never
+  ran) and `declare -x CMD="…"; $CMD` (the builtin's `-x` operand was not
+  `VAR=value`-shaped, so the operand walk broke before the assignment).
   **Three rounds of review missed this because every test in the suite pinned
   the assignment to the leading position** — the suite was green with the
   bypass present.
-  **The repair names no command.** Deciding that `env`'s post-command
+  **The repair named no command.** Deciding that `env`'s post-command
   assignment is executable while `make`'s is inert requires knowing which
   commands consume assignments — the round-9/round-10 anti-pattern one
-  mechanism over, where the missing name is silent. Round 11 keys on shell
-  VARIABLE SYNTAX instead: a `VAR=value` word is re-read wherever it sits, but
-  only when the same line also EXPANDS `$VAR` / `${VAR}`. An assignment nothing
-  on the line expands cannot make that line post, whoever the command word is,
-  so `make deploy MSG=…`, `docker run -e CMD=… alpine true`,
-  `terraform apply -var …`, `kubectl set env …` and a bare `declare -x CMD=…`
-  stay ALLOWED — round 8's false-refusal fix is kept, without a list.
-  **What it COSTS:** the match is on the variable NAME, so a line that carries
-  a `gh`-shaped `MSG=` word and separately expands `$MSG` for an unrelated
-  reason is refused —
-  `make deploy MSG="gh issue comment --body ready" && echo "$MSG"` REFUSES
-  (exactly as `main` refuses it), while the same line expanding `$OTHER` is
-  allowed. Over a 20-command ordinary-work corpus that is **zero new false
+  mechanism over, where the missing name would have been silent. Round 11
+  keyed on shell VARIABLE SYNTAX instead: a `VAR=value` word was re-read
+  wherever it sat, but only when the same line also EXPANDED `$VAR` / `${VAR}`.
+  An assignment nothing on the line expands could not make that line post,
+  whoever the command word was, so `make deploy MSG=…`,
+  `docker run -e CMD=… alpine true`, `terraform apply -var …`,
+  `kubectl set env …` and a bare `declare -x CMD=…` all stayed ALLOWED —
+  round 8's false-refusal fix was kept, without a list.
+  **What it COST:** the match was on the variable NAME, so a line that
+  carried a `gh`-shaped `MSG=` word and separately expanded `$MSG` for an
+  unrelated reason was refused —
+  `make deploy MSG="gh issue comment --body ready" && echo "$MSG"` REFUSED
+  (exactly as `main` refuses it), while the same line expanding `$OTHER` was
+  allowed. Over a 20-command ordinary-work corpus that was **zero new false
   refusals** against merge-base `main` and zero against the pre-round branch
-  tip. **What it still cannot see, unchanged from `main`:** an assignment made
-  in an EARLIER Bash tool call and expanded in a later one — those bytes are
-  not on this line at all.
-  **Evidence:** a 35-case attack corpus that varies the ASSIGNMENT-POSITION
+  tip. **What it still could not see, unchanged from `main`:** an assignment
+  made in an EARLIER Bash tool call and expanded in a later one — those bytes
+  were not on this line at all.
+  **Evidence:** a 35-case attack corpus that varied the ASSIGNMENT-POSITION
   axis explicitly (leading · after a command word · after a wrapped command
   word · assignment builtin with an option · assignment builtin without one ·
   one nesting level down) plus 8 inert and 20 ordinary-work cases, each driven
   through the real `PreToolUse` hook AND the pure decision path on both trees:
-  **26 shapes that `main` refuses and the pre-round tip allowed now refuse, 0
-  remain**, hook and function agree on every cell. Locked in
+  **26 shapes that `main` refuses and the pre-round tip allowed then refused, 0
+  remained**, hook and function agreed on every cell. Locked in
   `scripts/check-comment-attribution.test.mjs` by four tests — the bypass sweep
   (pure), the same sweep through the real shell hook, an INERT sweep asserting
   a later round cannot "fix" this by refusing every `VAR=value` again, and a
-  name-keying test pinning the over-approximation above. Reverting the source
-  change with the tests kept reds three of the four.
+  name-keying test pinning the over-approximation above. **That "0 remain"
+  claim did not survive** — it had not varied DEREFERENCE FORM, and round 12
+  below found the axis that defeats name-keying. Reverting the source change
+  with the tests kept reds three of the four.
 - **Fix round 12 (#96) — the maintainer decision: stop trading breadth for
   precision, restore `main`'s unconditional scan.** Round 11 above is
   SUPERSEDED. It closed the assignment-POSITION axis by keying the re-read on
@@ -400,6 +404,22 @@ MSG="gh issue comment --body ready"` stays FIXED — that was a different
   state, stated honestly: at least as strong as `main` everywhere measured,
   plus the nested-operand class `main` never had — not "complete".**
 
+- **A fifth bypass axis, undeclared until now: ASSIGNMENT SYNTAX the scan's
+  `ASSIGNMENT_RE` (`/^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/`) does not
+  recognise.** Only a plain `NAME=value` word is re-read; four other shell
+  assignment shapes carrying the identical payload are not: append
+  (`CMD+="gh issue comment 26 --body …"`), an indexed element
+  (`CMD[0]="…"`), an array literal (`A=("…")`) and an associative array
+  (`declare -A M; M[k]="…"`) — each paired with a matching dereference
+  (`eval "$CMD"`, `eval "${CMD[0]}"`, `eval "${A[@]}"`, `eval "${M[k]}"`)
+  really executes the post, confirmed on this repo's dev bash and zsh.
+  PRE-EXISTING on merge-base `main`, byte-for-byte — round 12 neither opened
+  nor closed it, since the assignment scan it restored is the same
+  unconditional regex `main` has always run. It sits alongside the
+  wrapper-name, assignment-position and dereference-form axes rounds 8-11
+  chased, and it needs a matching dereference on the same line to actually
+  execute — the payload alone in an unread variable does nothing. Not yet
+  closed by any round.
 - **Unknown means POSTING.** When the parser cannot statically tell what a `gh`
   call does — the subcommand is behind an expansion (`gh issue $SUB 26 --body
 …`), or a write's `gh api` endpoint is — the call is **refused**, not waved

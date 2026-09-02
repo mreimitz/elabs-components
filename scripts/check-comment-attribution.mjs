@@ -217,52 +217,53 @@
 //     alternative was a silent post. `pnpm attribution:comments:check:test`
 //     locks both directions — the never-listed wrappers as REFUSALS and these
 //     two lines as the declared cost.
-//   - Fix round 11 (#96) — SUPERSEDED by fix round 12 below; kept verbatim as
-//     the historical record of why it failed. It fixed the SAME anti-pattern,
-//     in the other mechanism —
+//   - Fix round 11 (#96) — SUPERSEDED BY FIX ROUND 12 BELOW. This bullet is
+//     HISTORY — what round 11 did and why it failed — NOT a description of
+//     what the code does today; the round-12 block below is what runs now.
+//     Round 11 fixed the SAME anti-pattern, in the other mechanism —
 //     round 8's assignment-run scoping (the clause above) was a POSITIONAL
-//     window, and two ordinary shapes sit outside it. An assignment placed
+//     window, and two ordinary shapes sat outside it. An assignment placed
 //     AFTER a command word (`env CMD="gh issue comment 26 --body …" sh -c
-//     '$CMD'`) is never reached, because the leading run ends at index 0; and
-//     an assignment builtin carrying an OPTION (`declare -x CMD="…"; $CMD`)
-//     stops the operand walk on `-x`, before the assignment. Both really run
-//     the post — verified by execution, not by reading — and merge-base
-//     `main` refuses both, so the branch that removed the `make deploy MSG=…`
-//     false refusal had traded it for a family of real bypasses. Three rounds
-//     of review missed it because every test in the suite pinned the
-//     assignment to the LEADING position.
+//     '$CMD'`) was never reached, because the leading run ended at index 0;
+//     and an assignment builtin carrying an OPTION (`declare -x CMD="…";
+//     $CMD`) stopped the operand walk on `-x`, before the assignment. Both
+//     really ran the post — verified by execution, not by reading — and
+//     merge-base `main` refused both, so the branch that removed the
+//     `make deploy MSG=…` false refusal had traded it for a family of real
+//     bypasses. Three rounds of review missed it because every test in the
+//     suite pinned the assignment to the LEADING position.
 //
-//     The repair does NOT name the commands that consume a following
-//     assignment (`env`/`sudo`/`nohup`/…). That list is the round-9/round-10
-//     mistake one mechanism over, and the missing name is silent. It keys on
-//     shell VARIABLE SYNTAX alone: a `VAR=value` word is re-read wherever it
-//     sits, but only when the same line also EXPANDS `$VAR` / `${VAR}`. An
-//     assignment nothing on the line expands cannot make that line post,
-//     whoever the command word is — which is why `make deploy MSG=…`,
-//     `docker run -e CMD=… alpine true`, `terraform apply -var …` and a bare
-//     `declare -x CMD=…` all stay ALLOWED without any command appearing in
-//     the rule.
+//     The round-11 repair did NOT name the commands that consume a following
+//     assignment (`env`/`sudo`/`nohup`/…) — that list was the round-9/round-10
+//     mistake one mechanism over, and the missing name would have been
+//     silent. Instead it keyed on shell VARIABLE SYNTAX alone: a `VAR=value`
+//     word was re-read wherever it sat, but only when the same line also
+//     EXPANDED `$VAR` / `${VAR}`. An assignment nothing on the line expands
+//     could not make that line post, whoever the command word was — which is
+//     why `make deploy MSG=…`, `docker run -e CMD=… alpine true`,
+//     `terraform apply -var …` and a bare `declare -x CMD=…` all stayed
+//     ALLOWED without any command appearing in the rule.
 //
-//     WHAT THAT COSTS: it is a NAME match, so a line that carries a
-//     `gh`-shaped `MSG=` word and separately expands `$MSG` for an unrelated
-//     reason is refused — `make deploy MSG="gh issue comment --body ready" &&
-//     echo "$MSG"` REFUSES (as `main` does), while the same line expanding
-//     `$OTHER` is allowed. Measured over a 20-command ordinary-work corpus:
+//     WHAT THAT COST: it was a NAME match, so a line that carried a
+//     `gh`-shaped `MSG=` word and separately expanded `$MSG` for an unrelated
+//     reason was refused — `make deploy MSG="gh issue comment --body ready"
+//     && echo "$MSG"` REFUSED (as `main` does), while the same line expanding
+//     `$OTHER` was allowed. Measured over a 20-command ordinary-work corpus:
 //     zero new false refusals vs merge-base `main` and zero vs the pre-round
-//     branch tip. WHAT IT STILL CANNOT SEE, unchanged from `main`: an
+//     branch tip. WHAT IT STILL COULD NOT SEE, unchanged from `main`: an
 //     assignment made in an EARLIER Bash tool call and expanded in a later
-//     one — those bytes are not on this line at all.
+//     one — those bytes were not on this line at all.
 //
 //     THIS ROUND'S OWN "0 remain" CLAIM WAS ITSELF CORPUS-LIMITED, in exactly
 //     the way it accused round 10's claim of being: it varied assignment
 //     POSITION and did not vary DEREFERENCE FORM. Bash's `${!NAME}` indirect
-//     expansion defeats the NAME-keying repair above — the variable that
-//     actually gets posted is never named literally anywhere on the line
+//     expansion defeated the NAME-keying repair above — the variable that
+//     actually got posted was never named literally anywhere on the line
 //     (`NAME=CMD bash -c 'eval ${!NAME}'` expands to `eval $CMD`, and the
-//     literal text `$CMD` never appears), so `referencedVars` sees nothing to
-//     match and allows it. Confirmed EXECUTING on real bash, not just
-//     parse-classified. See fix round 12 below, which supersedes this round
-//     entirely rather than patching it a third time.
+//     literal text `$CMD` never appears), so `referencedVars` saw nothing to
+//     match and allowed it. Confirmed EXECUTING on real bash, not just
+//     parse-classified — which is why fix round 12 below supersedes this
+//     round entirely rather than patching it a third time.
 //   - Fix round 12 (#96) — the maintainer decision: stop trading breadth for
 //     precision, restore `main`'s unconditional assignment scan. Round 11
 //     above is SUPERSEDED. Four measured rounds now form a pattern, not a
@@ -358,6 +359,22 @@
 //     call (a hidden `gh issue comment 26` with no body flag is still not
 //     caught — see the body-reach bullet above). All three are pre-existing,
 //     not reopened or newly closed by this round.
+//   - A fifth bypass axis, undeclared until now: ASSIGNMENT SYNTAX the scan's
+//     `ASSIGNMENT_RE` (`/^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/`) does not
+//     recognise. Only a plain `NAME=value` word is re-read; four other shell
+//     assignment shapes carrying the identical payload are not: append
+//     (`CMD+="gh issue comment 26 --body …"`), an indexed element
+//     (`CMD[0]="…"`), an array literal (`A=("…")`) and an associative array
+//     (`declare -A M; M[k]="…"`) — each paired with a matching dereference
+//     (`eval "$CMD"`, `eval "${CMD[0]}"`, `eval "${A[@]}"`, `eval "${M[k]}"`)
+//     really executes the post, confirmed on this repo's dev bash and zsh.
+//     PRE-EXISTING on merge-base `main`, byte-for-byte — round 12 neither
+//     opened nor closed it, since the assignment scan it restored is the
+//     same unconditional regex `main` has always run. It sits alongside the
+//     wrapper-name, assignment-position and dereference-form axes rounds
+//     8-11 chased, and it needs a matching dereference on the same line to
+//     actually execute — the payload alone in an unread variable does
+//     nothing. Not yet closed by any round.
 //   - A PRODUCER PIPED THROUGH AN INTERMEDIATE STAGE INTO A SHELL escapes the
 //     pipeline arm of this same inversion: `sinkExecutesStdin` (below)
 //     requires the FINAL sink to take no non-flag operand, so
