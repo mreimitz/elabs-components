@@ -39,6 +39,25 @@ describe("Terminal", () => {
     expect(container.querySelector(".bg-terminal-cursor")).toBeNull();
   });
 
+  // The cursor block above is the only VISUAL streaming signal, and it is
+  // purely decorative — so this is the assertion that the state also reaches
+  // assistive tech. The live region stays mounted across the transition on
+  // purpose: a region created at the same moment its text appears is not
+  // reliably announced.
+  it("announces the streaming state in one live region, and stops announcing when it settles", () => {
+    const { container, rerender } = render(<Terminal output="building" isStreaming />);
+
+    const regions = container.querySelectorAll("[role='status']");
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toHaveAttribute("aria-live", "polite");
+    expect(regions[0]).toHaveTextContent("Streaming output…");
+
+    rerender(<Terminal output="building" isStreaming={false} />);
+    const settled = container.querySelectorAll("[role='status']");
+    expect(settled).toHaveLength(1);
+    expect(settled[0]?.textContent).toBe("");
+  });
+
   it("omits the clear action when no onClear is supplied", () => {
     render(<Terminal output="log" />);
     expect(screen.queryByRole("button", { name: /clear/i })).not.toBeInTheDocument();

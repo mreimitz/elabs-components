@@ -9,11 +9,7 @@
       "type": "registry:block",
       "title": "App shell",
       "description": "Sidebar + top nav + page layout scaffold for an internal app.",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui",
-        "lucide-react"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
           "path": "registry/blocks/app-shell/app-shell-page.tsx",
@@ -200,11 +196,7 @@
       "type": "registry:block",
       "title": "App shell — dashboard inset",
       "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so.",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui",
-        "lucide-react"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
           "path": "packages/ui/src/blocks/sidebar-02/app-sidebar.tsx",
@@ -232,10 +224,7 @@
           "target": "components/sidebar-02/team-switcher.tsx"
         }
       ],
-      "categories": [
-        "sidebar",
-        "app-shell"
-      ]
+      "categories": ["sidebar", "app-shell"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -243,11 +232,7 @@
       "type": "registry:block",
       "title": "App shell — mail (double-sided)",
       "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so.",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui",
-        "lucide-react"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
           "path": "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx",
@@ -265,10 +250,7 @@
           "target": "components/sidebar-04/nav-user.tsx"
         }
       ],
-      "categories": [
-        "sidebar",
-        "app-shell"
-      ]
+      "categories": ["sidebar", "app-shell"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -276,11 +258,7 @@
       "type": "registry:block",
       "title": "App shell — double-sided nav",
       "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui",
-        "lucide-react"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
           "path": "packages/ui/src/blocks/sidebar-05/app-sidebar.tsx",
@@ -293,10 +271,7 @@
           "target": "components/sidebar-05/team-switcher.tsx"
         }
       ],
-      "categories": [
-        "sidebar",
-        "app-shell"
-      ]
+      "categories": ["sidebar", "app-shell"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -327,9 +302,7 @@
           "target": "components/stat-card-parts/trend-badge.tsx"
         }
       ],
-      "categories": [
-        "stat-card"
-      ]
+      "categories": ["stat-card"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -337,9 +310,7 @@
       "type": "registry:block",
       "title": "Stat Card — Area",
       "description": "KPI stat card with a live area chart sparkline, hover-driven value/label updates, and a tokenized trend badge.",
-      "registryDependencies": [
-        "stat-card-parts"
-      ],
+      "registryDependencies": ["stat-card-parts"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
@@ -358,9 +329,7 @@
           "target": "components/stat-card-area-01/stat-card-area.tsx"
         }
       ],
-      "categories": [
-        "stat-card"
-      ]
+      "categories": ["stat-card"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -368,9 +337,7 @@
       "type": "registry:block",
       "title": "Stat Card — Line",
       "description": "KPI stat card with an inline line chart, hover-driven value/label updates, and a tokenized trend badge.",
-      "registryDependencies": [
-        "stat-card-parts"
-      ],
+      "registryDependencies": ["stat-card-parts"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
@@ -389,9 +356,7 @@
           "target": "components/stat-card-line-01/stat-card-line.tsx"
         }
       ],
-      "categories": [
-        "stat-card"
-      ]
+      "categories": ["stat-card"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -399,9 +364,7 @@
       "type": "registry:block",
       "title": "Stat Card — Choropleth Map",
       "description": "KPI stat card with a choropleth world-map chart, hover-driven country value/label updates, and a tokenized trend badge.",
-      "registryDependencies": [
-        "stat-card-parts"
-      ],
+      "registryDependencies": ["stat-card-parts"],
       "dependencies": [
         "@elabs-ai/components-charts",
         "@elabs-ai/components-tokens",
@@ -431,9 +394,7 @@
           "target": "components/stat-card-choropleth-01/stat-card-choropleth.tsx"
         }
       ],
-      "categories": [
-        "stat-card"
-      ]
+      "categories": ["stat-card"]
     },
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
@@ -505,11 +466,7 @@
       "type": "registry:block",
       "title": "Stat List — ranked list, leaderboard, activity feed",
       "description": "Compact summary widgets: a ranked list with share bars + delta (Sales by country), a leaderboard (Top performers), and a transaction/activity feed with signed amounts.",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui",
-        "lucide-react"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
           "path": "registry/blocks/stat-list-01/data/countries.ts",
@@ -554,11 +511,7 @@
       "type": "registry:block",
       "title": "Integration Grid",
       "description": "A responsive grid of integration cards (icon + name + description + connect/manage action + connection status) under a page header with an Add action — the canonical ‘connect your tools’ surface. Logos are consumer-supplied (Lucide placeholders here).",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui",
-        "lucide-react"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
           "path": "registry/blocks/integration-grid-01/data/integrations.ts",
@@ -583,10 +536,7 @@
       "type": "registry:block",
       "title": "Form Wizard — checkout flow",
       "description": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step.",
-      "dependencies": [
-        "@elabs-ai/components-tokens",
-        "@elabs-ai/components-ui"
-      ],
+      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui"],
       "files": [
         {
           "path": "registry/blocks/form-wizard-01/checkout-wizard.tsx",

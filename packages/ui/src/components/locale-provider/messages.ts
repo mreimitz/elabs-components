@@ -521,6 +521,12 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "viewer.highlight.count": "Passage {index} of {total}",
 
   // ── @elabs-ai/components-terminal ─────────────────────────────────────────
+  // Terminal (the read-only ANSI log): the ONE live-region announcement for
+  // its `isStreaming` rung. The blinking cursor block is the only other
+  // streaming signal and it is purely visual, so without this a screen-reader
+  // user attached to a running build or deploy log gets no indication that
+  // anything is still arriving.
+  "terminal.output.streaming": "Streaming output…",
   // TerminalTranscriptRow (#117 T2): the gutter's meaning as words, so the
   // "who spoke / what it printed / did it fail" grammar survives greyscale
   // and reaches assistive tech, not only the glyph + colour.

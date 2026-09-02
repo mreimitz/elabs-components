@@ -187,6 +187,7 @@ export type TerminalContentProps = HTMLAttributes<HTMLDivElement>;
 
 export const TerminalContent = ({ className, children, ...props }: TerminalContentProps) => {
   const { output, isStreaming, autoScroll } = useContext(TerminalContext);
+  const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -202,6 +203,21 @@ export const TerminalContent = ({ className, children, ...props }: TerminalConte
       ref={containerRef}
       {...props}
     >
+      {/*
+       * The ONE live region for this component's `isStreaming` rung
+       * (`loading-states.md`: exactly one per not-ready region, never one per
+       * box). It is mounted unconditionally and its TEXT is what changes,
+       * because a live region has to exist before its content changes for the
+       * change to be announced reliably. It sits outside `children` so a
+       * caller who replaces the default `<pre>` still gets it.
+       *
+       * Without it the only streaming signal is the blinking cursor block
+       * below, which is purely visual — a screen-reader user attached to a
+       * running build or deploy log had no indication anything was arriving.
+       */}
+      <span role="status" aria-live="polite" className="sr-only">
+        {isStreaming ? t("terminal.output.streaming") : ""}
+      </span>
       {children ?? (
         <pre className="whitespace-pre-wrap break-words">
           {/* `useClasses` swaps ansi-to-react's default inline `rgb(...)` styles

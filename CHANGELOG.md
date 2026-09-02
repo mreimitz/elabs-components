@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
+  now announces its `isStreaming` state. Its only streaming signal was the
+  blinking cursor block, which is purely visual, so a screen-reader user
+  attached to a running build or deploy log had no indication that anything
+  was still arriving. `TerminalContent` now carries exactly one
+  `role="status" aria-live="polite"` region — mounted unconditionally, with
+  its TEXT switching, because a live region has to exist before its content
+  changes to be announced reliably — matching what `TerminalWorking` already
+  did elsewhere in the same package. Adds the `terminal.output.streaming`
+  message key.
+
 - Fixed: three accessibility gaps found by a pre-merge review of the new
   `@elabs-ai/components-terminal` console family. (1) `TerminalOverlay`'s
   footer key legend no longer hides its `Kbd` glyphs from assistive tech — in
