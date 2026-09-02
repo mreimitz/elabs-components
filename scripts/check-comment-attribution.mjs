@@ -360,20 +360,18 @@
 //     caught — see the body-reach bullet above). All three are pre-existing,
 //     not reopened or newly closed by this round.
 //   - A fifth bypass axis, undeclared until now: ASSIGNMENT SYNTAX the scan's
-//     `ASSIGNMENT_RE` (`/^([A-Za-z_][A-Za-z0-9_]*)=([\s\S]*)$/`) does not
-//     recognise. Only a plain `NAME=value` word is re-read; four other shell
-//     assignment shapes carrying the identical payload are not: append
-//     (`CMD+="gh issue comment 26 --body …"`), an indexed element
-//     (`CMD[0]="…"`), an array literal (`A=("…")`) and an associative array
-//     (`declare -A M; M[k]="…"`) — each paired with a matching dereference
-//     (`eval "$CMD"`, `eval "${CMD[0]}"`, `eval "${A[@]}"`, `eval "${M[k]}"`)
-//     really executes the post, confirmed on this repo's dev bash and zsh.
-//     PRE-EXISTING on merge-base `main`, byte-for-byte — round 12 neither
-//     opened nor closed it, since the assignment scan it restored is the
-//     same unconditional regex `main` has always run. It sits alongside the
-//     wrapper-name, assignment-position and dereference-form axes rounds
-//     8-11 chased, and it needs a matching dereference on the same line to
-//     actually execute — the payload alone in an unread variable does
+//     `ASSIGNMENT_RE` does not recognise. Only `NAME=value` is re-read; other
+//     shell assignment syntax carrying the identical payload can bypass — each
+//     paired with a matching dereference really executes the post. Known shapes
+//     (examples, not exhaustive — see #126): append (`CMD+="…"`), indexed
+//     element (`CMD[0]="…"`), array literal (`A=("…")`), associative array
+//     (`declare -A M; M[k]="…"`), ANSI-C quoting (`CMD=$'gh …'`, confirmed on
+//     bash and zsh), and `printf -v` (`printf -v CMD '%s' "gh …"`, confirmed
+//     on bash and zsh). PRE-EXISTING on merge-base `main` — round 12 neither
+//     opened nor closed it, since the assignment scan it restored is the same
+//     unconditional regex `main` has always run. Issue #126 tracks the open
+//     class; new forms may surface. Needs a matching dereference on the same
+//     line to actually execute — the payload alone in an unread variable does
 //     nothing. Not yet closed by any round.
 //   - A PRODUCER PIPED THROUGH AN INTERMEDIATE STAGE INTO A SHELL escapes the
 //     pipeline arm of this same inversion: `sinkExecutesStdin` (below)
