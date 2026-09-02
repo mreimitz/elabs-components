@@ -1,6 +1,6 @@
 /**
  * Issue #33 — `@xterm/xterm`/`@xterm/addon-fit` are OPTIONAL peers of
- * `@elabs-ai/components-ai`, reached only through the dynamic
+ * `@elabs-ai/components-terminal`, reached only through the dynamic
  * `import("./_interactive-terminal-xterm")` inside `InteractiveTerminal`'s
  * mount effect (ADR 0019). A consumer who skips those peers must get a
  * graceful, actionable panel — never a crash or an unhandled rejection.

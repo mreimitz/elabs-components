@@ -11,8 +11,11 @@ export const alertVariants = cva(
         info: "border-info/40 bg-info/10 text-foreground",
         success: "border-success/40 bg-success/10 text-foreground",
         warning: "border-warning/50 bg-warning/10 text-foreground",
+        // #124: the bare `text-destructive` set the ambient colour for the
+        // Title/Description running text — ink rung. `[&>svg]:text-destructive`
+        // (the icon mark) is unchanged.
         destructive:
-          "border-destructive/40 bg-destructive/10 text-destructive [&>svg]:text-destructive",
+          "border-destructive/40 bg-destructive/10 text-destructive-text [&>svg]:text-destructive",
       },
     },
     defaultVariants: { variant: "default" },

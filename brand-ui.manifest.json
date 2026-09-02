@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T20:20:45.681Z",
+  "generatedAt": "2026-09-02T11:27:54.154Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 180,
+  "tokenCount": 204,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -151,6 +151,30 @@
     "--code-type",
     "--code-tag",
     "--code-property",
+    "--terminal-background",
+    "--terminal-foreground",
+    "--terminal-accent",
+    "--terminal-accent-foreground",
+    "--terminal-cursor",
+    "--terminal-selection",
+    "--terminal-border",
+    "--terminal-muted",
+    "--terminal-ansi-black",
+    "--terminal-ansi-red",
+    "--terminal-ansi-green",
+    "--terminal-ansi-yellow",
+    "--terminal-ansi-blue",
+    "--terminal-ansi-magenta",
+    "--terminal-ansi-cyan",
+    "--terminal-ansi-white",
+    "--terminal-ansi-bright-black",
+    "--terminal-ansi-bright-red",
+    "--terminal-ansi-bright-green",
+    "--terminal-ansi-bright-yellow",
+    "--terminal-ansi-bright-blue",
+    "--terminal-ansi-bright-magenta",
+    "--terminal-ansi-bright-cyan",
+    "--terminal-ansi-bright-white",
     "--radius-base",
     "--decoration",
     "--decoration-factor",
@@ -346,6 +370,18 @@
       "type": "registry:block",
       "title": "Form Wizard — checkout flow",
       "description": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step."
+    },
+    {
+      "name": "terminal-session-idle",
+      "type": "registry:block",
+      "title": "Terminal session (idle)",
+      "description": "A settled coding-agent console: launch banner, transcript, composer with mode/effort indicator, status bar. Nothing is running."
+    },
+    {
+      "name": "terminal-session-mid-turn",
+      "type": "registry:block",
+      "title": "Terminal session (mid-turn)",
+      "description": "A coding-agent console under way: tool calls, a diff hunk, a working line with a stop affordance, a pending permission prompt, status bar."
     }
   ],
   "templates": [
@@ -706,11 +742,10 @@
     "@elabs-ai/components-ai": {
       "path": "packages/ai",
       "peerDependencies": {
+        "@elabs-ai/components-icons": "workspace:*",
         "@elabs-ai/components-tokens": "workspace:*",
         "@elabs-ai/components-ui": "workspace:*",
         "@rive-app/react-webgl2": "^4.26.1",
-        "@xterm/addon-fit": "^0.11.0",
-        "@xterm/xterm": "^6.0.0",
         "@xyflow/react": "^12.11.1",
         "ai": "^6.0.0 || ^7.0.0",
         "media-chrome": "^4.17.2",
@@ -728,6 +763,11 @@
           "name": "AgentContent",
           "kind": "value",
           "module": "packages/ai/src/agent.tsx"
+        },
+        {
+          "name": "AgentEvent",
+          "kind": "value",
+          "module": "packages/ai/src/agent-event.tsx"
         },
         {
           "name": "AgentHeader",
@@ -805,12 +845,27 @@
           "module": "packages/ai/src/confirmation.tsx"
         },
         {
+          "name": "ApprovalCardOptions",
+          "kind": "value",
+          "module": "packages/ai/src/confirmation.tsx"
+        },
+        {
+          "name": "ApprovalCardReason",
+          "kind": "value",
+          "module": "packages/ai/src/confirmation.tsx"
+        },
+        {
           "name": "ApprovalCardRejected",
           "kind": "value",
           "module": "packages/ai/src/confirmation.tsx"
         },
         {
           "name": "ApprovalCardRequest",
+          "kind": "value",
+          "module": "packages/ai/src/confirmation.tsx"
+        },
+        {
+          "name": "ApprovalCardTarget",
           "kind": "value",
           "module": "packages/ai/src/confirmation.tsx"
         },
@@ -1390,6 +1445,11 @@
           "module": "packages/ai/src/conversation.tsx"
         },
         {
+          "name": "DiffView",
+          "kind": "value",
+          "module": "packages/ai/src/diff-view.tsx"
+        },
+        {
           "name": "Edge",
           "kind": "value",
           "module": "packages/ai/src/edge.tsx"
@@ -1573,11 +1633,6 @@
           "name": "InlineCitationText",
           "kind": "value",
           "module": "packages/ai/src/inline-citation.tsx"
-        },
-        {
-          "name": "InteractiveTerminal",
-          "kind": "value",
-          "module": "packages/ai/src/interactive-terminal.tsx"
         },
         {
           "name": "JSXPreview",
@@ -2045,6 +2100,11 @@
           "module": "packages/ai/src/panel.tsx"
         },
         {
+          "name": "PermissionModeSelect",
+          "kind": "value",
+          "module": "packages/ai/src/permission-mode-select.tsx"
+        },
+        {
           "name": "Persona",
           "kind": "value",
           "module": "packages/ai/src/persona.tsx"
@@ -2065,6 +2125,16 @@
           "module": "packages/ai/src/plan.tsx"
         },
         {
+          "name": "PlanApprove",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanComment",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
           "name": "PlanContent",
           "kind": "value",
           "module": "packages/ai/src/plan.tsx"
@@ -2081,6 +2151,16 @@
         },
         {
           "name": "PlanHeader",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanRequestChanges",
+          "kind": "value",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanStatusLine",
           "kind": "value",
           "module": "packages/ai/src/plan.tsx"
         },
@@ -2185,6 +2265,11 @@
           "module": "packages/ai/src/prompt-input.tsx"
         },
         {
+          "name": "PromptInputEffort",
+          "kind": "value",
+          "module": "packages/ai/src/prompt-input-effort.tsx"
+        },
+        {
           "name": "PromptInputFooter",
           "kind": "value",
           "module": "packages/ai/src/prompt-input.tsx"
@@ -2208,6 +2293,11 @@
           "name": "PromptInputHoverCardTrigger",
           "kind": "value",
           "module": "packages/ai/src/prompt-input.tsx"
+        },
+        {
+          "name": "PromptInputMode",
+          "kind": "value",
+          "module": "packages/ai/src/prompt-input-mode.tsx"
         },
         {
           "name": "PromptInputProvider",
@@ -2238,6 +2328,16 @@
           "name": "PromptInputSelectValue",
           "kind": "value",
           "module": "packages/ai/src/prompt-input.tsx"
+        },
+        {
+          "name": "PromptInputSlash",
+          "kind": "value",
+          "module": "packages/ai/src/prompt-input-slash.tsx"
+        },
+        {
+          "name": "PromptInputSlashTextarea",
+          "kind": "value",
+          "module": "packages/ai/src/prompt-input-slash.tsx"
         },
         {
           "name": "PromptInputStop",
@@ -2485,6 +2585,16 @@
           "module": "packages/ai/src/selection-toolbar.tsx"
         },
         {
+          "name": "SessionHeader",
+          "kind": "value",
+          "module": "packages/ai/src/session-header.tsx"
+        },
+        {
+          "name": "SessionStatusBar",
+          "kind": "value",
+          "module": "packages/ai/src/session-status-bar.tsx"
+        },
+        {
           "name": "Shimmer",
           "kind": "value",
           "module": "packages/ai/src/shimmer.tsx"
@@ -2640,46 +2750,6 @@
           "module": "packages/ai/src/task.tsx"
         },
         {
-          "name": "Terminal",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalActions",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalClearButton",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalContent",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalCopyButton",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalHeader",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalStatus",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalTitle",
-          "kind": "value",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
           "name": "Test",
           "kind": "value",
           "module": "packages/ai/src/test-results.tsx"
@@ -2818,6 +2888,11 @@
           "name": "TranscriptionSegment",
           "kind": "value",
           "module": "packages/ai/src/transcription.tsx"
+        },
+        {
+          "name": "TurnStatus",
+          "kind": "value",
+          "module": "packages/ai/src/turn-status.tsx"
         },
         {
           "name": "UserMessage",
@@ -3028,6 +3103,10 @@
           "module": "packages/ai/src/agent.tsx"
         },
         {
+          "name": "AgentEventProps",
+          "module": "packages/ai/src/agent-event.tsx"
+        },
+        {
           "name": "AgentHeaderProps",
           "module": "packages/ai/src/agent.tsx"
         },
@@ -3092,7 +3171,15 @@
           "module": "packages/ai/src/confirmation.tsx"
         },
         {
+          "name": "ApprovalCardOptionsProps",
+          "module": "packages/ai/src/confirmation.tsx"
+        },
+        {
           "name": "ApprovalCardProps",
+          "module": "packages/ai/src/confirmation.tsx"
+        },
+        {
+          "name": "ApprovalCardReasonProps",
           "module": "packages/ai/src/confirmation.tsx"
         },
         {
@@ -3101,6 +3188,10 @@
         },
         {
           "name": "ApprovalCardRequestProps",
+          "module": "packages/ai/src/confirmation.tsx"
+        },
+        {
+          "name": "ApprovalCardTargetProps",
           "module": "packages/ai/src/confirmation.tsx"
         },
         {
@@ -3600,6 +3691,10 @@
           "module": "packages/ai/src/conversation.tsx"
         },
         {
+          "name": "DiffViewProps",
+          "module": "packages/ai/src/diff-view.tsx"
+        },
+        {
           "name": "EnumFieldSpec",
           "module": "packages/ai/src/message-form-spec.ts"
         },
@@ -3830,14 +3925,6 @@
         {
           "name": "IntegerFieldSpec",
           "module": "packages/ai/src/message-form-spec.ts"
-        },
-        {
-          "name": "InteractiveTerminalHandle",
-          "module": "packages/ai/src/interactive-terminal.tsx"
-        },
-        {
-          "name": "InteractiveTerminalProps",
-          "module": "packages/ai/src/interactive-terminal.tsx"
         },
         {
           "name": "JSXPreviewContentProps",
@@ -4240,6 +4327,14 @@
           "module": "packages/ai/src/part-groups.ts"
         },
         {
+          "name": "PermissionMode",
+          "module": "packages/ai/src/permission-mode-select.tsx"
+        },
+        {
+          "name": "PermissionModeSelectProps",
+          "module": "packages/ai/src/permission-mode-select.tsx"
+        },
+        {
           "name": "PersonaProps",
           "module": "packages/ai/src/persona.tsx"
         },
@@ -4256,7 +4351,19 @@
           "module": "packages/ai/src/plan.tsx"
         },
         {
+          "name": "PlanApproveProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanCommentProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
           "name": "PlanContentProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanDecisionActionProps",
           "module": "packages/ai/src/plan.tsx"
         },
         {
@@ -4273,6 +4380,18 @@
         },
         {
           "name": "PlanProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanRequestChangesProps",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanStatus",
+          "module": "packages/ai/src/plan.tsx"
+        },
+        {
+          "name": "PlanStatusLineProps",
           "module": "packages/ai/src/plan.tsx"
         },
         {
@@ -4356,6 +4475,10 @@
           "module": "packages/ai/src/prompt-input.tsx"
         },
         {
+          "name": "PromptInputEffortProps",
+          "module": "packages/ai/src/prompt-input-effort.tsx"
+        },
+        {
           "name": "PromptInputFooterProps",
           "module": "packages/ai/src/prompt-input.tsx"
         },
@@ -4378,6 +4501,10 @@
         {
           "name": "PromptInputMessage",
           "module": "packages/ai/src/prompt-input.tsx"
+        },
+        {
+          "name": "PromptInputModeProps",
+          "module": "packages/ai/src/prompt-input-mode.tsx"
         },
         {
           "name": "PromptInputProps",
@@ -4406,6 +4533,14 @@
         {
           "name": "PromptInputSelectValueProps",
           "module": "packages/ai/src/prompt-input.tsx"
+        },
+        {
+          "name": "PromptInputSlashProps",
+          "module": "packages/ai/src/prompt-input-slash.tsx"
+        },
+        {
+          "name": "PromptInputSlashTextareaProps",
+          "module": "packages/ai/src/prompt-input-slash.tsx"
         },
         {
           "name": "PromptInputStopProps",
@@ -4636,6 +4771,18 @@
           "module": "packages/ai/src/selection-toolbar.tsx"
         },
         {
+          "name": "SessionHeaderProps",
+          "module": "packages/ai/src/session-header.tsx"
+        },
+        {
+          "name": "SessionStatusBarConnections",
+          "module": "packages/ai/src/session-status-bar.tsx"
+        },
+        {
+          "name": "SessionStatusBarProps",
+          "module": "packages/ai/src/session-status-bar.tsx"
+        },
+        {
           "name": "SnippetAddonProps",
           "module": "packages/ai/src/snippet.tsx"
         },
@@ -4776,38 +4923,6 @@
           "module": "packages/ai/src/task.tsx"
         },
         {
-          "name": "TerminalActionsProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalClearButtonProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalContentProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalCopyButtonProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalHeaderProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalStatusProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
-          "name": "TerminalTitleProps",
-          "module": "packages/ai/src/terminal.tsx"
-        },
-        {
           "name": "TestDurationProps",
           "module": "packages/ai/src/test-results.tsx"
         },
@@ -4930,6 +5045,14 @@
         {
           "name": "TranscriptionSegmentProps",
           "module": "packages/ai/src/transcription.tsx"
+        },
+        {
+          "name": "TurnStatusProps",
+          "module": "packages/ai/src/turn-status.tsx"
+        },
+        {
+          "name": "TurnStatusTokens",
+          "module": "packages/ai/src/turn-status.tsx"
         },
         {
           "name": "UseAudioLevelOptions",
@@ -5062,10 +5185,6 @@
           "module": "packages/ai/src/message-form-spec.ts"
         },
         {
-          "name": "buildInteractiveTerminalTheme",
-          "module": "packages/ai/src/interactive-terminal.tsx"
-        },
-        {
           "name": "buildPartGroups",
           "module": "packages/ai/src/part-groups.ts"
         },
@@ -5088,6 +5207,10 @@
         {
           "name": "defaultPartStatus",
           "module": "packages/ai/src/part-groups.ts"
+        },
+        {
+          "name": "diffRowVariants",
+          "module": "packages/ai/src/diff-view.tsx"
         },
         {
           "name": "enumFieldSchema",
@@ -5264,6 +5387,21 @@
           },
           "source": "messageActionsVariants"
         },
+        "DiffRow": {
+          "variants": {
+            "type": [
+              "add",
+              "del",
+              "context",
+              "hunk",
+              "meta"
+            ]
+          },
+          "defaultVariants": {
+            "type": "context"
+          },
+          "source": "diffRowVariants"
+        },
         "MessageFeedback": {
           "variants": {
             "compact": [
@@ -5289,6 +5427,49 @@
             "ComponentProps<\"div\">"
           ],
           "props": []
+        },
+        "AgentEvent": {
+          "extends": [
+            "Omit<\n  AgentStepProps,\n  \"name\" | \"status\" | \"children\" | \"icon\" | \"timestamp\"\n>"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "The runtime event name, verbatim as the runtime emits it — e.g. `\"user_prompt_submit\"`, `\"pre_tool_use\"`, `\"stop\"`."
+            },
+            {
+              "name": "phase",
+              "optional": true,
+              "type": "AgentEventPhase",
+              "description": "When this event fired relative to the action it gates. See `AgentEventPhase`."
+            },
+            {
+              "name": "outcome",
+              "optional": true,
+              "type": "AgentEventOutcome",
+              "description": "The event's verdict. @default \"ok\""
+            },
+            {
+              "name": "durationMs",
+              "optional": true,
+              "type": "number",
+              "description": "Wall-clock duration of the event, in milliseconds. Rendered with the shared `formatElapsed`."
+            },
+            {
+              "name": "checks",
+              "optional": true,
+              "type": "CheckSummary | CheckResult[]",
+              "description": "Gate checks the event ran: individual verdicts, or a count summary."
+            },
+            {
+              "name": "icon",
+              "optional": true,
+              "type": "LucideIcon",
+              "description": "Optional leading glyph on the title row (Lucide). @default Webhook"
+            }
+          ]
         },
         "AgentHeader": {
           "extends": [
@@ -5447,6 +5628,45 @@
           ],
           "props": []
         },
+        "ApprovalCardOptions": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "options",
+              "optional": false,
+              "type": "ApprovalOption[]"
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "onConfirm",
+              "optional": true,
+              "type": "(option: ApprovalOption, reason?: string) => void",
+              "description": "Fires when an option is selected — by click, or by ANY keyboard move within the radio group (Home/End/arrow keys select immediately, per the native/ARIA radiogroup pattern Radix implements; there is no separate \"highlight vs commit\" step). Reports the full resolved `ApprovalOption` plus whatever reason text is currently held by a sibling `ApprovalCardReason` — type a reason BEFORE choosing an option to have it included in this call."
+            }
+          ]
+        },
+        "ApprovalCardReason": {
+          "extends": [
+            "Omit<\n  ComponentProps<typeof Textarea>,\n  \"value\" | \"defaultValue\" | \"onChange\"\n>"
+          ],
+          "props": []
+        },
         "ApprovalCardRejected": {
           "extends": [
             "ConfirmationRejectedProps"
@@ -5456,6 +5676,12 @@
         "ApprovalCardRequest": {
           "extends": [
             "ConfirmationRequestProps"
+          ],
+          "props": []
+        },
+        "ApprovalCardTarget": {
+          "extends": [
+            "ComponentProps<\"div\">"
           ],
           "props": []
         },
@@ -6693,6 +6919,79 @@
           ],
           "props": []
         },
+        "DiffView": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "lines",
+              "optional": false,
+              "type": "DiffLine[]",
+              "description": "The diff, as a flat, ordered line list."
+            },
+            {
+              "name": "file",
+              "optional": true,
+              "type": "string",
+              "description": "File path shown in the header."
+            },
+            {
+              "name": "summary",
+              "optional": true,
+              "type": "string",
+              "description": "One-line summary shown beside the file name."
+            },
+            {
+              "name": "stats",
+              "optional": true,
+              "type": "{ additions: number; deletions: number }",
+              "description": "Added / removed line counts shown in the header."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "\"inline\" | \"split\"",
+              "description": "`inline` = unified single column; `split` = side-by-side. @default \"inline\""
+            },
+            {
+              "name": "pager",
+              "optional": true,
+              "type": "boolean",
+              "description": "Full-screen reading surface: a scrollable region with a scroll-position indicator, a key legend (↑/↓, Page Up/Down, Home/End), and a named `role=\"region\"`. Absorbs the upstream `CodexDiff` pager shape — this prop, not a second component."
+            },
+            {
+              "name": "language",
+              "optional": true,
+              "type": "BundledLanguage",
+              "description": "Shiki language id for intra-line syntax colour. Omit to render plain text."
+            },
+            {
+              "name": "contextLines",
+              "optional": true,
+              "type": "number",
+              "description": "Collapse a run of consecutive `context` lines longer than this behind a \"show more\" control."
+            },
+            {
+              "name": "maxLines",
+              "optional": true,
+              "type": "number",
+              "description": "Hard cap on rendered lines. Extra lines are simply not rendered."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No renderable diff yet (loading-states.md) — layout-shaped skeleton rows at the real row height."
+            },
+            {
+              "name": "isStreaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "Lines are still arriving (loading-states.md) — render what exists; never an error surface."
+            }
+          ]
+        },
         "EnvironmentVariable": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -7103,37 +7402,6 @@
             "ComponentProps<\"span\">"
           ],
           "props": []
-        },
-        "InteractiveTerminal": {
-          "extends": [
-            "Omit<HTMLAttributes<HTMLDivElement>, \"onResize\">"
-          ],
-          "props": [
-            {
-              "name": "onData",
-              "optional": true,
-              "type": "(data: string) => void",
-              "description": "Keystrokes + paste → process. The PTY/process stays consumer-owned."
-            },
-            {
-              "name": "onResize",
-              "optional": true,
-              "type": "(size: { cols: number; rows: number }) => void",
-              "description": "Fires whenever the container resizes and cols/rows are refit."
-            },
-            {
-              "name": "readOnly",
-              "optional": true,
-              "type": "boolean",
-              "description": "Degrades to a read-only log: writes still render, stdin is disabled."
-            },
-            {
-              "name": "fontSize",
-              "optional": true,
-              "type": "number",
-              "description": "Terminal font size in px. Defaults to `13` (matches `CodeEditor`)."
-            }
-          ]
         },
         "JSXPreview": {
           "extends": [
@@ -8302,6 +8570,39 @@
           ],
           "props": []
         },
+        "PermissionModeSelect": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "modes",
+              "optional": false,
+              "type": "PermissionMode[]"
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "currentId",
+              "optional": true,
+              "type": "string",
+              "description": "The mode currently in force, marked distinctly from the highlighted one."
+            }
+          ]
+        },
         "Persona": {
           "extends": [],
           "props": [
@@ -8379,12 +8680,30 @@
               "name": "isStreaming",
               "optional": true,
               "type": "boolean"
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "PlanStatus",
+              "description": "The plan's decision status. Omit it to keep today's display-only behaviour. When both `status` and `isStreaming` are given, `status` wins (a `status=\"approved\"` plan never shimmers, even if `isStreaming` is still `true`)."
             }
           ]
         },
         "PlanAction": {
           "extends": [
             "ComponentProps<typeof CardAction>"
+          ],
+          "props": []
+        },
+        "PlanApprove": {
+          "extends": [
+            "PlanDecisionActionProps"
+          ],
+          "props": []
+        },
+        "PlanComment": {
+          "extends": [
+            "PlanDecisionActionProps"
           ],
           "props": []
         },
@@ -8417,6 +8736,24 @@
             "ComponentProps<typeof CardHeader>"
           ],
           "props": []
+        },
+        "PlanRequestChanges": {
+          "extends": [
+            "PlanDecisionActionProps"
+          ],
+          "props": []
+        },
+        "PlanStatusLine": {
+          "extends": [
+            "Omit<ComponentProps<typeof StatusBadge>, \"status\">"
+          ],
+          "props": [
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode"
+            }
+          ]
         },
         "PlanTitle": {
           "extends": [
@@ -8633,6 +8970,31 @@
           ],
           "props": []
         },
+        "PromptInputEffort": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "levels",
+              "optional": false,
+              "type": "EffortLevel[]",
+              "description": "Ordered low → high. The order IS the semantics — render in this order."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled selected level id. Omit for the uncontrolled default (`levels[0]`)."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires with the chosen level's id."
+            }
+          ]
+        },
         "PromptInputFooter": {
           "extends": [
             "Omit<ComponentProps<typeof InputGroupAddon>, \"align\">"
@@ -8662,6 +9024,31 @@
             "ComponentProps<typeof HoverCardTrigger>"
           ],
           "props": []
+        },
+        "PromptInputMode": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "modes",
+              "optional": false,
+              "type": "OperatingMode[]",
+              "description": "The app's own operating modes, low to high ceremony or however it orders them."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled selected mode id. Omit for the uncontrolled default (`modes[0]`)."
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void",
+              "description": "Fires with the chosen mode's id."
+            }
+          ]
         },
         "PromptInputProvider": {
           "extends": [
@@ -8702,6 +9089,72 @@
         "PromptInputSelectValue": {
           "extends": [
             "ComponentProps<typeof SelectValue>"
+          ],
+          "props": []
+        },
+        "PromptInputSlash": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"children\"\n>"
+          ],
+          "props": [
+            {
+              "name": "commands",
+              "optional": false,
+              "type": "SlashCommand[]",
+              "description": "The registered commands the palette offers."
+            },
+            {
+              "name": "value",
+              "optional": false,
+              "type": "string",
+              "description": "The composer's current text — must match what the wrapped textarea renders."
+            },
+            {
+              "name": "textareaRef",
+              "optional": false,
+              "type": "RefObject<HTMLTextAreaElement | null>",
+              "description": "Ref to the composer's `<textarea>` (usually the one `PromptInputSlashTextarea` renders)."
+            },
+            {
+              "name": "lineStartOnly",
+              "optional": true,
+              "type": "boolean",
+              "description": "Only trigger at the start of a line (index 0, or right after `\"\\n\"`). `false` falls back to `MentionInput`'s word-boundary rule. @default true"
+            },
+            {
+              "name": "filter",
+              "optional": true,
+              "type": "(command: SlashCommand, query: string) => boolean",
+              "description": "Which commands survive the current query. @default defaultSlashCommandFilter"
+            },
+            {
+              "name": "onValueChange",
+              "optional": false,
+              "type": "(next: { text: string; caret: number }) => void",
+              "description": "A command was chosen — apply the spliced `{ text, caret }` to your own controlled value (the same shape `replaceTriggerRun` returns). The splice inserts `\"/\" + command.name + \" \"` in place of the typed query."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(command: SlashCommand) => void",
+              "description": "A command was chosen (fires alongside, not instead of, `onValueChange`)."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void",
+              "description": "The popup opened or closed."
+            },
+            {
+              "name": "children",
+              "optional": false,
+              "type": "ReactNode"
+            }
+          ]
+        },
+        "PromptInputSlashTextarea": {
+          "extends": [
+            "PromptInputTextareaProps"
           ],
           "props": []
         },
@@ -9203,6 +9656,98 @@
             }
           ]
         },
+        "SessionHeader": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "title",
+              "optional": true,
+              "type": "string",
+              "description": "Session/agent name, e.g. \"Codex\". Anchors the card — every other section is independently optional and renders nothing when omitted."
+            },
+            {
+              "name": "model",
+              "optional": true,
+              "type": "string",
+              "description": "Active model, e.g. \"gpt-5.1-codex\"."
+            },
+            {
+              "name": "workspace",
+              "optional": true,
+              "type": "string",
+              "description": "Working directory / project path. Truncates instead of overflowing."
+            },
+            {
+              "name": "version",
+              "optional": true,
+              "type": "string",
+              "description": "Build/version string, e.g. \"v2.4.0\"."
+            },
+            {
+              "name": "capabilities",
+              "optional": true,
+              "type": "SessionCapability[]",
+              "description": "What this session can reach."
+            },
+            {
+              "name": "whatsNew",
+              "optional": true,
+              "type": "SessionWhatsNewItem[]",
+              "description": "Recent changes, shown as a short list."
+            },
+            {
+              "name": "quickActions",
+              "optional": true,
+              "type": "SessionQuickAction[]",
+              "description": "Shortcut actions, rendered as real buttons with optional shortcut hints."
+            },
+            {
+              "name": "level",
+              "optional": true,
+              "type": "HeadingLevel",
+              "description": "Semantic heading level for `title`. Default `2` (a session header typically sits above a `ChatGreeting`'s level-1 headline, or inside a page that already owns its own `<h1>`)."
+            }
+          ]
+        },
+        "SessionStatusBar": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "workspace",
+              "optional": true,
+              "type": "string",
+              "description": "Current workspace/project name."
+            },
+            {
+              "name": "branch",
+              "optional": true,
+              "type": "string",
+              "description": "Current git branch."
+            },
+            {
+              "name": "model",
+              "optional": true,
+              "type": "string",
+              "description": "Active model id/label."
+            },
+            {
+              "name": "connections",
+              "optional": true,
+              "type": "SessionStatusBarConnections",
+              "description": "Integration/MCP connection progress; renders a spinner while connecting."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Docks another component alongside the ambient segments — most often `<Context />` (`@elabs-ai/components-ai`), so token usage/cost keeps its one owner (`context.tsx`, tokenlens) instead of being re-implemented here. Rendered flush to the end of the bar."
+            }
+          ]
+        },
         "Snippet": {
           "extends": [
             "ComponentProps<typeof InputGroup>"
@@ -9550,91 +10095,6 @@
             }
           ]
         },
-        "Terminal": {
-          "extends": [
-            "HTMLAttributes<HTMLDivElement>"
-          ],
-          "props": [
-            {
-              "name": "output",
-              "optional": false,
-              "type": "string"
-            },
-            {
-              "name": "isStreaming",
-              "optional": true,
-              "type": "boolean"
-            },
-            {
-              "name": "autoScroll",
-              "optional": true,
-              "type": "boolean"
-            },
-            {
-              "name": "onClear",
-              "optional": true,
-              "type": "() => void"
-            }
-          ]
-        },
-        "TerminalActions": {
-          "extends": [
-            "HTMLAttributes<HTMLDivElement>"
-          ],
-          "props": []
-        },
-        "TerminalClearButton": {
-          "extends": [
-            "ComponentProps<typeof Button>"
-          ],
-          "props": []
-        },
-        "TerminalContent": {
-          "extends": [
-            "HTMLAttributes<HTMLDivElement>"
-          ],
-          "props": []
-        },
-        "TerminalCopyButton": {
-          "extends": [
-            "ComponentProps<typeof Button>"
-          ],
-          "props": [
-            {
-              "name": "onCopy",
-              "optional": true,
-              "type": "() => void"
-            },
-            {
-              "name": "onError",
-              "optional": true,
-              "type": "(error: Error) => void"
-            },
-            {
-              "name": "timeout",
-              "optional": true,
-              "type": "number"
-            }
-          ]
-        },
-        "TerminalHeader": {
-          "extends": [
-            "HTMLAttributes<HTMLDivElement>"
-          ],
-          "props": []
-        },
-        "TerminalStatus": {
-          "extends": [
-            "HTMLAttributes<HTMLDivElement>"
-          ],
-          "props": []
-        },
-        "TerminalTitle": {
-          "extends": [
-            "HTMLAttributes<HTMLDivElement>"
-          ],
-          "props": []
-        },
         "Test": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
@@ -9963,6 +10423,66 @@
             }
           ]
         },
+        "TurnStatus": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "What the turn is doing right now, e.g. `\"Working…\"`, `\"Editing files…\"`. Caller-supplied and rendered verbatim — `TurnStatus` never invents this text, so it carries no default and needs no translation key of its own."
+            },
+            {
+              "name": "elapsedMs",
+              "optional": true,
+              "type": "number",
+              "description": "Elapsed time in the current turn, in milliseconds. Rendered via `formatElapsed`."
+            },
+            {
+              "name": "tokens",
+              "optional": true,
+              "type": "TurnStatusTokens",
+              "description": "Token counts for the turn so far."
+            },
+            {
+              "name": "turn",
+              "optional": true,
+              "type": "number",
+              "description": "1-based index of the current turn."
+            },
+            {
+              "name": "turnTotal",
+              "optional": true,
+              "type": "number",
+              "description": "Total number of turns, when known."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "\"working\" | \"settled\"",
+              "description": "`\"working\"` (default) renders the live stats + stop control and keeps announcing `label` changes. `\"settled\"` renders the completed-turn line instead and stops announcing (the elapsed/tokens/turn stats and the stop control are hidden — the turn is over)."
+            },
+            {
+              "name": "onStop",
+              "optional": true,
+              "type": "() => void",
+              "description": "Renders a focusable stop button, reachable by keyboard, while `status=\"working\"`."
+            },
+            {
+              "name": "showScrollToBottom",
+              "optional": true,
+              "type": "boolean",
+              "description": "Renders a \"scroll to bottom\" affordance."
+            },
+            {
+              "name": "onScrollToBottom",
+              "optional": true,
+              "type": "() => void"
+            }
+          ]
+        },
         "UserMessage": {
           "extends": [
             "Omit<MessageProps, \"from\">"
@@ -10218,6 +10738,32 @@
             "Leaving every sub-agent expanded — the accordion exists so a multi-agent transcript stays readable."
           ]
         },
+        "AgentEvent": {
+          "purpose": "One lifecycle or hook event on the agent timeline — what fired around a tool call, and whether its checks passed.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "AgentTimeline"
+            ],
+            "pairsWith": [
+              "AgentStep",
+              "Tool",
+              "TurnStatus",
+              "ChangeReview"
+            ]
+          },
+          "stateTokens": {
+            "outcome": "mapped onto AgentStep's closed Status — ok reads complete, blocked reads denied, failed reads failed",
+            "check": "a visible pass/fail WORD beside the glyph, so the verdict survives greyscale"
+          },
+          "antiPatterns": [
+            "Adding an eighth status for an event outcome — map onto AgentStep's closed Status instead; the rail owns the vocabulary.",
+            "Building a second timeline spine — an event is a step on the existing AgentTimeline rail, not a parallel structure.",
+            "Writing a second duration formatter — durations come from formatElapsed in @elabs-ai/components-ui.",
+            "Declaring a local check-result type — CheckResult and CheckSummary are shared with ChangeReview and imported, never redeclared.",
+            "Carrying pass/fail by tone alone — the status word is the channel that survives greyscale (1.4.1)."
+          ]
+        },
         "AgentTimeline": {
           "purpose": "Chronological rail of agent steps and checkpoints — what the agent did, in order.",
           "category": "ai",
@@ -10243,7 +10789,7 @@
           ]
         },
         "ApprovalCard": {
-          "purpose": "The named human-in-the-loop variant of Confirmation — a titled, described approve/deny card.",
+          "purpose": "The named human-in-the-loop variant of Confirmation — a titled, described approval card, binary or N-option with scope.",
           "category": "ai",
           "relationships": {
             "contains": [
@@ -10252,17 +10798,29 @@
               "ApprovalCardDescription",
               "ApprovalCardActions",
               "ApprovalCardApprove",
-              "ApprovalCardDeny"
+              "ApprovalCardDeny",
+              "ApprovalCardOptions",
+              "ApprovalCardTarget",
+              "ApprovalCardReason"
             ],
             "pairsWith": [
               "Confirmation",
-              "Tool"
+              "Tool",
+              "DiffView",
+              "PermissionModeSelect"
             ]
+          },
+          "stateTokens": {
+            "scope": "each option's blast radius (once / session / always / deny) is a SENTENCE linked by aria-describedby, never a colour",
+            "pending": "role=group + aria-labelledby while the human decides — the card holds focusable controls, so it is not a live region"
           },
           "antiPatterns": [
             "Building a second approve/deny widget — ApprovalCard and Confirmation ship from the same module; extend, don't fork.",
             "Running the action the card describes on render — the card emits a decision; the app performs it (D5).",
-            "Leaving the request mounted after the human answers — swap to ApprovalCardAccepted/ApprovalCardRejected so the outcome stays legible."
+            "Leaving the request mounted after the human answers — swap to ApprovalCardAccepted/ApprovalCardRejected so the outcome stays legible.",
+            "Hand-rolling roving focus across the options — the option list is a real Radix RadioGroup; arrow-key wrap is the primitive's job.",
+            "Offering 'always' and 'once' with the same words — the scope sentence is what stops a session-wide grant from reading like a single yes.",
+            "Making the deny reason a separate step — the reason field writes into the card's own state and rides along with whichever choice is committed."
           ]
         },
         "Artifact": {
@@ -10716,6 +11274,36 @@
             "Driving scroll position by hand — Conversation owns stick-to-bottom; ConversationScrollButton is the escape hatch."
           ]
         },
+        "DiffView": {
+          "purpose": "A line-level unified diff inside an agent transcript — what the agent changed, with correct old/new line numbers.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Message",
+              "Tool",
+              "ChangeReview",
+              "Conversation"
+            ],
+            "pairsWith": [
+              "CodeBlock",
+              "ChangeReview",
+              "Confirmation",
+              "AgentEvent"
+            ]
+          },
+          "stateTokens": {
+            "add": "bg-success/10 row tint plus a text-success-text marker glyph and an sr-only polarity word",
+            "del": "bg-destructive/10 row tint plus a text-destructive-text marker glyph and an sr-only polarity word",
+            "loading": "layout-shaped skeleton rows at the real row height, announced once at the region"
+          },
+          "antiPatterns": [
+            "Carrying add/del by row tint alone — the +/− glyph and the sr-only polarity word are the channels that survive greyscale (1.4.1).",
+            "Rendering a parse error while isStreaming — a half-arrived line is incomplete, not invalid; errors fire only on settled input.",
+            "Forking highlightCode — intra-line colour comes from CodeBlock's Shiki helper, imported, never copied.",
+            "Building a separate full-screen diff component — the pager prop IS the reading surface; one component, two modes.",
+            "Importing ChangeReview's ChangeHunk (or the reverse) — the two are joined by the renderHunk seam, never by a package edge."
+          ]
+        },
         "Edge": {
           "purpose": "A connection between two workspace-graph nodes — animated/temporary or committed.",
           "category": "ai",
@@ -10860,26 +11448,6 @@
             "Assuming a citation is a URL — an opaque id or a label is legitimate and renders verbatim; don't `new URL()` it.",
             "Putting essential information only in the hover card — hover content is supplementary and unreachable on touch.",
             "Opening an external source without `rel=\"noopener noreferrer\"` on the `target=\"_blank\"` link."
-          ]
-        },
-        "InteractiveTerminal": {
-          "purpose": "Streaming terminal surface for agent shell output, with an optional input line.",
-          "category": "ai",
-          "relationships": {
-            "pairsWith": [
-              "Terminal",
-              "Tool",
-              "Sandbox"
-            ]
-          },
-          "stateTokens": {
-            "streaming": "imperative — ref.current.write(chunk) as output arrives (no isStreaming prop)",
-            "readOnly": "readOnly → stdin disabled, writes still render (read-only log)"
-          },
-          "antiPatterns": [
-            "Spawning a shell or process from the component — it renders a stream; the app owns the runtime (D5).",
-            "Looking for an isStreaming/output prop — this surface is imperative: hold the InteractiveTerminalHandle ref and call write() per chunk (the declarative sibling is Terminal).",
-            "Reaching the terminal engine through a static import — heavy engines must be reached by a dynamic import() (the heavy-deps ratchet)."
           ]
         },
         "JSXPreview": {
@@ -11241,6 +11809,33 @@
             "Stacking several panels in one corner — they occlude each other; give each corner one job."
           ]
         },
+        "PermissionModeSelect": {
+          "purpose": "Standing permission-policy chooser — how far the agent may act on its own, not whether one call proceeds.",
+          "category": "ai",
+          "relationships": {
+            "pairsWith": [
+              "ApprovalCard",
+              "Confirmation",
+              "PromptInputMode"
+            ],
+            "usedInside": [
+              "Dialog",
+              "Sheet",
+              "Form"
+            ]
+          },
+          "stateTokens": {
+            "selected": "border-primary on the chosen mode's card",
+            "surface": "bg-card per mode row, border-border at rest",
+            "consequence": "text-meta text-muted-foreground — the sentence saying what the mode permits"
+          },
+          "antiPatterns": [
+            "Shipping a CLI's mode vocabulary as a type union — the modes are app-defined data, not a library enum.",
+            "Rendering a mode without its consequence sentence — an unstated effect is the failure this component exists to prevent.",
+            "Marking the in-force mode by colour alone — the current marker must reach the accessible name.",
+            "Using it for a single tool call — that is ApprovalCard; this is the policy that decides how often ApprovalCard appears."
+          ]
+        },
         "Persona": {
           "purpose": "The animated agent avatar/presence mark (Rive), used as the assistant's identity.",
           "category": "ai",
@@ -11261,7 +11856,7 @@
           ]
         },
         "Plan": {
-          "purpose": "A Card-shaped, collapsible plan the agent proposes before it starts executing.",
+          "purpose": "A Card-shaped, collapsible plan the agent proposes before it starts executing — and the decision the human returns.",
           "category": "ai",
           "relationships": {
             "contains": [
@@ -11269,18 +11864,30 @@
               "PlanTitle",
               "PlanTrigger",
               "PlanContent",
-              "PlanFooter"
+              "PlanFooter",
+              "PlanStatusLine",
+              "PlanApprove",
+              "PlanRequestChanges",
+              "PlanComment"
             ],
             "pairsWith": [
               "Task",
               "ChainOfThought",
-              "Shimmer"
+              "Shimmer",
+              "ApprovalCard"
             ]
+          },
+          "stateTokens": {
+            "approved": "border-s-4 border-s-success rail on the card",
+            "changes-requested": "border-s-4 border-s-warning rail on the card",
+            "awaiting": "border-s-4 border-s-border-strong rail on the card"
           },
           "antiPatterns": [
             "Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (loading-states.md).",
             "Using Plan for a finished run — a settled trace is a Task; Plan is the intent, not the record.",
-            "Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it."
+            "Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it.",
+            "Wrapping a pending decision in an assertive live region — it contains focusable controls, so it is a labelled group; only the settled outcome announces.",
+            "Encoding the decision by rail colour alone — the status line states it in text as well."
           ]
         },
         "ProducedAssetTree": {
@@ -11320,6 +11927,88 @@
             "Submitting model calls from the component — emit the message; the app owns transport.",
             "Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.",
             "Expecting className to land on the visible well — className styles the outer <form>; use surfaceClassName to reach the well."
+          ]
+        },
+        "PromptInputEffort": {
+          "purpose": "Composer control for an ordered reasoning-budget scale whose indicator fills as the level rises.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "PromptInputTools",
+              "PromptInput",
+              "Composer"
+            ],
+            "pairsWith": [
+              "PromptInputMode",
+              "ModelSelector"
+            ]
+          },
+          "stateTokens": {
+            "filled": "bg-primary border-primary — every step at or before the selected level",
+            "unfilled": "bg-transparent border-border-strong — a hollow outline for the rest",
+            "label": "text-body for the current level's name, always rendered as visible text"
+          },
+          "antiPatterns": [
+            "Encoding the level by hue alone — the ordinal fill and the step size are the channels that survive greyscale.",
+            "Shipping a fixed effort vocabulary — the levels are app-defined data.",
+            "Omitting the accessible name for the scale — the group needs one; the component ships no default because the name is app vocabulary."
+          ]
+        },
+        "PromptInputMode": {
+          "purpose": "Composer control for the agent's operating mode — an app-defined enum of how autonomously it may act.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "PromptInputTools",
+              "PromptInput",
+              "Composer"
+            ],
+            "pairsWith": [
+              "PromptInputEffort",
+              "ModelSelector",
+              "PermissionModeSelect"
+            ]
+          },
+          "stateTokens": {
+            "label": "text-body for the active mode name",
+            "hint": "text-meta text-muted-foreground for the key hint and description"
+          },
+          "antiPatterns": [
+            "Shipping a CLI's mode names as a type union — the vocabulary is data the app supplies.",
+            "Hand-rolling roving focus over the mode list — the menu's radio group already owns arrow keys and announcement.",
+            "Using it to express a standing policy — that is PermissionModeSelect, a settings surface, not a composer chip."
+          ]
+        },
+        "PromptInputSlash": {
+          "purpose": "The slash-command palette over a composer — type `/`, filter by prefix, pick a command with the keyboard.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "PromptInput",
+              "Composer"
+            ],
+            "contains": [
+              "PromptInputSlashTextarea",
+              "PromptInputCommand",
+              "PromptInputCommandList",
+              "PromptInputCommandItem"
+            ],
+            "pairsWith": [
+              "PromptInputMode",
+              "PromptInputEffort",
+              "MentionInput"
+            ]
+          },
+          "stateTokens": {
+            "active": "the highlighted command is reported to the textarea via aria-activedescendant — focus never leaves the input",
+            "empty": "a real empty state with a sentence, never a blank popover"
+          },
+          "antiPatterns": [
+            "Moving DOM focus into the list — the textarea keeps focus and points at the active option with aria-activedescendant; a palette that steals focus loses the caret.",
+            "Passing aria-label or id to the command list — cmdk overwrites both; use its own `label` prop and read the rendered id back off the node.",
+            "Leaving aria-activedescendant set after the palette closes — a stale id points at a node that no longer exists.",
+            "Hand-rolling the trigger scan — the caret/trigger machinery is shared with MentionInput (findTriggerQuery in @elabs-ai/components-ui), not re-derived here.",
+            "Submitting the composer on Enter while the palette is open — Enter selects the command; the textarea's own onKeyDown-before-submit order is what makes that possible."
           ]
         },
         "Queue": {
@@ -11435,6 +12124,57 @@
             "Keeping it visible after the selection collapses — it is anchored to the selection rect and dismisses with it.",
             "Writing into the composer from the toolbar — it emits `onQuote(selectedText)`; the consumer decides what to insert.",
             "Wrapping the whole app in it — wrap the transcript region, or every selection in the UI sprouts a toolbar."
+          ]
+        },
+        "SessionHeader": {
+          "purpose": "Session launch card — model, workspace, capabilities, what's new and quick actions, shown above the greeting in an empty session.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "ChatShell",
+              "Conversation"
+            ],
+            "pairsWith": [
+              "ChatGreeting",
+              "SessionStatusBar",
+              "Suggestion"
+            ]
+          },
+          "stateTokens": {
+            "surface": "bg-card text-card-foreground — a raised card above the canvas",
+            "link": "text-primary-text for what's-new links, underlined on hover",
+            "focus": "ring-2 ring-ring ring-offset-2 ring-offset-background on quick actions"
+          },
+          "antiPatterns": [
+            "Leaving it mounted once the conversation starts — it is the empty-session surface, not persistent chrome.",
+            "Using it as the app header — ChatShell's header slot is a fixed-height bar; this is a block in the transcript.",
+            "Listing a capability the app cannot actually perform — the list is a promise the session has to keep."
+          ]
+        },
+        "SessionStatusBar": {
+          "purpose": "Ambient session row — workspace, branch, model and integration-connection progress, docked above or below the transcript.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "ChatShell"
+            ],
+            "pairsWith": [
+              "TurnStatus",
+              "Context",
+              "SessionHeader"
+            ],
+            "contains": [
+              "Context"
+            ]
+          },
+          "stateTokens": {
+            "surface": "bg-surface-muted with a border-t hairline — recessed chrome, not a raised card",
+            "segment": "text-meta text-muted-foreground"
+          },
+          "antiPatterns": [
+            "Re-implementing token or cost maths — dock the shipped Context component as a child instead; two answers to one question is worse than none.",
+            "Rendering an empty shell when every segment is absent — the bar renders nothing at all.",
+            "Putting the stop affordance here — stopping belongs to the running turn, not to ambient chrome."
           ]
         },
         "Shimmer": {
@@ -11602,27 +12342,6 @@
             "Bordering the inline file chip — the fill is the gesture; a border on a filled chip is the redundant-border anti-pattern."
           ]
         },
-        "Terminal": {
-          "purpose": "Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.",
-          "category": "ai",
-          "relationships": {
-            "contains": [
-              "TerminalHeader",
-              "TerminalContent",
-              "TerminalCopyButton",
-              "TerminalClearButton"
-            ],
-            "pairsWith": [
-              "InteractiveTerminal",
-              "Sandbox"
-            ]
-          },
-          "antiPatterns": [
-            "Reaching for it when the user must TYPE — that is InteractiveTerminal; Terminal is output-only.",
-            "Stripping the ANSI codes before passing them — the component renders them; pre-stripping throws away the colour.",
-            "Re-implementing auto-scroll in the consumer — `autoScroll` is owned by the component and must yield when the user scrolls up."
-          ]
-        },
         "Test": {
           "purpose": "One test-case row inside a test-results block — name, status and duration.",
           "category": "ai",
@@ -11741,6 +12460,32 @@
             "Rendering the transcript as one paragraph — the segments carry the timings that make it seekable.",
             "Driving playback from the transcript's own state — it emits seeks; the player owns the clock.",
             "Marking the active segment with colour alone — the current segment must be identifiable without hue."
+          ]
+        },
+        "TurnStatus": {
+          "purpose": "In-turn footer reporting the three facts a running turn owes the user: elapsed time, cost, and how to stop it.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Conversation",
+              "ChatShell"
+            ],
+            "pairsWith": [
+              "SessionStatusBar",
+              "Shimmer",
+              "PromptInputStop",
+              "Context"
+            ]
+          },
+          "stateTokens": {
+            "working": "bg-primary on the activity dot; text-muted-foreground for the metrics",
+            "settled": "bg-success on the dot; the completed-turn sentence in text-body text-foreground"
+          },
+          "antiPatterns": [
+            "Announcing every elapsed tick to a live region — announce the label and the settled sentence only, or assistive tech floods.",
+            "Rendering more than one live region per turn — one region carries the whole status, never one per field.",
+            "Hiding the stop affordance behind a hover — it must be a focusable button reachable while the turn runs.",
+            "Fabricating a token count from elapsed time — report what the runtime reports, or omit the field."
           ]
         },
         "VoiceSelector": {
@@ -21861,6 +22606,1595 @@
         }
       }
     },
+    "@elabs-ai/components-terminal": {
+      "path": "packages/terminal",
+      "peerDependencies": {
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/xterm": "^6.0.0",
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0"
+      },
+      "components": [
+        {
+          "name": "DEFAULT_TERMINAL_GUTTER",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-surface.tsx"
+        },
+        {
+          "name": "InteractiveTerminal",
+          "kind": "value",
+          "module": "packages/terminal/src/interactive-terminal.tsx"
+        },
+        {
+          "name": "Terminal",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TERMINAL_TOOL_CALL_STATUSES",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-tool-call.tsx"
+        },
+        {
+          "name": "TERMINAL_TRANSCRIPT_ROW_KINDS",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-transcript-row.tsx"
+        },
+        {
+          "name": "TERMINAL_VARIANTS",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-surface.tsx"
+        },
+        {
+          "name": "TERMINAL_WORKING_ACTIVE_GLYPH",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-working.tsx"
+        },
+        {
+          "name": "TERMINAL_WORKING_SPINNER_FRAMES",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-working.tsx"
+        },
+        {
+          "name": "TerminalActions",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalBanner",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-banner.tsx"
+        },
+        {
+          "name": "TerminalClearButton",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalComposer",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-composer.tsx"
+        },
+        {
+          "name": "TerminalConsole",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-console.tsx"
+        },
+        {
+          "name": "TerminalContent",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalCopyButton",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalDiffHunk",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-diff-hunk.tsx"
+        },
+        {
+          "name": "TerminalEventLine",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-event-line.tsx"
+        },
+        {
+          "name": "TerminalFrameContext",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-console.tsx"
+        },
+        {
+          "name": "TerminalHeader",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalOverlay",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-overlay.tsx"
+        },
+        {
+          "name": "TerminalPermission",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-permission.tsx"
+        },
+        {
+          "name": "TerminalRow",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-row.tsx"
+        },
+        {
+          "name": "TerminalSlashMenu",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-slash-menu.tsx"
+        },
+        {
+          "name": "TerminalStatus",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalStatusBar",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-status-bar.tsx"
+        },
+        {
+          "name": "TerminalSurface",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-surface.tsx"
+        },
+        {
+          "name": "TerminalTitle",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalTodoList",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-todo-list.tsx"
+        },
+        {
+          "name": "TerminalToolCall",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-tool-call.tsx"
+        },
+        {
+          "name": "TerminalTranscriptRow",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-transcript-row.tsx"
+        },
+        {
+          "name": "TerminalWorking",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-working.tsx"
+        }
+      ],
+      "hooks": [
+        {
+          "name": "useTerminalVariant",
+          "kind": "value",
+          "module": "packages/terminal/src/terminal-surface.tsx"
+        }
+      ],
+      "types": [
+        {
+          "name": "InteractiveTerminalHandle",
+          "module": "packages/terminal/src/interactive-terminal.tsx"
+        },
+        {
+          "name": "InteractiveTerminalProps",
+          "module": "packages/terminal/src/interactive-terminal.tsx"
+        },
+        {
+          "name": "TerminalActionsProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalBannerProps",
+          "module": "packages/terminal/src/terminal-banner.tsx"
+        },
+        {
+          "name": "TerminalClearButtonProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalColorTheme",
+          "module": "packages/terminal/src/interactive-terminal.tsx"
+        },
+        {
+          "name": "TerminalComposerProps",
+          "module": "packages/terminal/src/terminal-composer.tsx"
+        },
+        {
+          "name": "TerminalComposerShortcut",
+          "module": "packages/terminal/src/terminal-composer.tsx"
+        },
+        {
+          "name": "TerminalConsoleProps",
+          "module": "packages/terminal/src/terminal-console.tsx"
+        },
+        {
+          "name": "TerminalContentProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalCopyButtonProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalDiffHunkProps",
+          "module": "packages/terminal/src/terminal-diff-hunk.tsx"
+        },
+        {
+          "name": "TerminalEventLineProps",
+          "module": "packages/terminal/src/terminal-event-line.tsx"
+        },
+        {
+          "name": "TerminalHeaderProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalOverlayHint",
+          "module": "packages/terminal/src/terminal-overlay.tsx"
+        },
+        {
+          "name": "TerminalOverlayProps",
+          "module": "packages/terminal/src/terminal-overlay.tsx"
+        },
+        {
+          "name": "TerminalPermissionProps",
+          "module": "packages/terminal/src/terminal-permission.tsx"
+        },
+        {
+          "name": "TerminalProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalRowProps",
+          "module": "packages/terminal/src/terminal-row.tsx"
+        },
+        {
+          "name": "TerminalSlashMenuProps",
+          "module": "packages/terminal/src/terminal-slash-menu.tsx"
+        },
+        {
+          "name": "TerminalStatusBarConnections",
+          "module": "packages/terminal/src/terminal-status-bar.tsx"
+        },
+        {
+          "name": "TerminalStatusBarContext",
+          "module": "packages/terminal/src/terminal-status-bar.tsx"
+        },
+        {
+          "name": "TerminalStatusBarProps",
+          "module": "packages/terminal/src/terminal-status-bar.tsx"
+        },
+        {
+          "name": "TerminalStatusBarTurn",
+          "module": "packages/terminal/src/terminal-status-bar.tsx"
+        },
+        {
+          "name": "TerminalStatusProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalSurfaceProps",
+          "module": "packages/terminal/src/terminal-surface.tsx"
+        },
+        {
+          "name": "TerminalTitleProps",
+          "module": "packages/terminal/src/terminal.tsx"
+        },
+        {
+          "name": "TerminalTodoItem",
+          "module": "packages/terminal/src/terminal-todo-list.tsx"
+        },
+        {
+          "name": "TerminalTodoListProps",
+          "module": "packages/terminal/src/terminal-todo-list.tsx"
+        },
+        {
+          "name": "TerminalToolCallProps",
+          "module": "packages/terminal/src/terminal-tool-call.tsx"
+        },
+        {
+          "name": "TerminalToolCallStatus",
+          "module": "packages/terminal/src/terminal-tool-call.tsx"
+        },
+        {
+          "name": "TerminalTranscriptRowKind",
+          "module": "packages/terminal/src/terminal-transcript-row.tsx"
+        },
+        {
+          "name": "TerminalTranscriptRowProps",
+          "module": "packages/terminal/src/terminal-transcript-row.tsx"
+        },
+        {
+          "name": "TerminalVariant",
+          "module": "packages/terminal/src/terminal-surface.tsx"
+        },
+        {
+          "name": "TerminalWorkingProps",
+          "module": "packages/terminal/src/terminal-working.tsx"
+        }
+      ],
+      "otherExports": [
+        {
+          "name": "buildInteractiveTerminalTheme",
+          "module": "packages/terminal/src/interactive-terminal.tsx"
+        },
+        {
+          "name": "terminalDiffHunkLineVariants",
+          "module": "packages/terminal/src/terminal-diff-hunk.tsx"
+        },
+        {
+          "name": "terminalRowVariants",
+          "module": "packages/terminal/src/terminal-row.tsx"
+        },
+        {
+          "name": "terminalTodoItemVariants",
+          "module": "packages/terminal/src/terminal-todo-list.tsx"
+        },
+        {
+          "name": "terminalToolCallGlyphVariants",
+          "module": "packages/terminal/src/terminal-tool-call.tsx"
+        },
+        {
+          "name": "terminalTranscriptRowVariants",
+          "module": "packages/terminal/src/terminal-transcript-row.tsx"
+        }
+      ],
+      "variants": {
+        "TerminalToolCallGlyph": {
+          "variants": {
+            "status": [
+              "success",
+              "error",
+              "pending"
+            ]
+          },
+          "defaultVariants": {
+            "status": "pending"
+          },
+          "source": "terminalToolCallGlyphVariants"
+        },
+        "TerminalTranscriptRow": {
+          "variants": {
+            "kind": [
+              "user",
+              "agent",
+              "output",
+              "error"
+            ]
+          },
+          "defaultVariants": {
+            "kind": "user"
+          },
+          "source": "terminalTranscriptRowVariants"
+        },
+        "TerminalDiffHunkLine": {
+          "variants": {
+            "type": [
+              "add",
+              "del",
+              "context",
+              "hunk",
+              "meta"
+            ]
+          },
+          "defaultVariants": {
+            "type": "context"
+          },
+          "source": "terminalDiffHunkLineVariants"
+        },
+        "TerminalRow": {
+          "variants": {
+            "variant": [
+              "marker",
+              "rail",
+              "boxed"
+            ]
+          },
+          "defaultVariants": {
+            "variant": "marker"
+          },
+          "source": "terminalRowVariants"
+        },
+        "TerminalTodoItem": {
+          "variants": {
+            "status": [
+              "done",
+              "active",
+              "pending"
+            ]
+          },
+          "defaultVariants": {
+            "status": "pending"
+          },
+          "source": "terminalTodoItemVariants"
+        }
+      },
+      "props": {
+        "InteractiveTerminal": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onResize\">"
+          ],
+          "props": [
+            {
+              "name": "onData",
+              "optional": true,
+              "type": "(data: string) => void",
+              "description": "Keystrokes + paste → process. The PTY/process stays consumer-owned."
+            },
+            {
+              "name": "onResize",
+              "optional": true,
+              "type": "(size: { cols: number; rows: number }) => void",
+              "description": "Fires whenever the container resizes and cols/rows are refit."
+            },
+            {
+              "name": "readOnly",
+              "optional": true,
+              "type": "boolean",
+              "description": "Degrades to a read-only log: writes still render, stdin is disabled."
+            },
+            {
+              "name": "fontSize",
+              "optional": true,
+              "type": "number",
+              "description": "Terminal font size in px. Defaults to `13` (matches `CodeEditor`)."
+            }
+          ]
+        },
+        "Terminal": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "output",
+              "optional": false,
+              "type": "string"
+            },
+            {
+              "name": "isStreaming",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "autoScroll",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "onClear",
+              "optional": true,
+              "type": "() => void"
+            }
+          ]
+        },
+        "TerminalActions": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalBanner": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": [
+            {
+              "name": "title",
+              "optional": true,
+              "type": "string",
+              "description": "Session/agent name. Anchors the card — every other section is independently optional and renders nothing when omitted."
+            },
+            {
+              "name": "model",
+              "optional": true,
+              "type": "string",
+              "description": "Active model, e.g. \"gpt-5.1-codex\"."
+            },
+            {
+              "name": "workspace",
+              "optional": true,
+              "type": "string",
+              "description": "Working directory / project path. Wraps instead of truncating (see above)."
+            },
+            {
+              "name": "version",
+              "optional": true,
+              "type": "string",
+              "description": "Build/version string, e.g. \"v2.4.0\"."
+            },
+            {
+              "name": "capabilities",
+              "optional": true,
+              "type": "SessionCapability[]",
+              "description": "What this session can reach."
+            },
+            {
+              "name": "whatsNew",
+              "optional": true,
+              "type": "SessionWhatsNewItem[]",
+              "description": "Recent changes, shown as a short list."
+            },
+            {
+              "name": "quickActions",
+              "optional": true,
+              "type": "SessionQuickAction[]",
+              "description": "Shortcut actions, rendered as real menu-row buttons with optional key hints."
+            },
+            {
+              "name": "logo",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "A caller-supplied mark, rendered beside `title`. This package ships no vendor logo of its own — bring your own `ReactNode`, or omit it."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar for the banner's internal rows. Omitted, they inherit the surrounding `TerminalSurface`; passed, it overrides it for this banner — the same override contract `TerminalRow` itself exposes."
+            },
+            {
+              "name": "level",
+              "optional": true,
+              "type": "HeadingLevel",
+              "description": "Semantic heading level for `title`. Default `2` (a banner typically sits above a transcript inside a page that already owns its own `<h1>`)."
+            }
+          ]
+        },
+        "TerminalClearButton": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
+        },
+        "TerminalComposer": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onChange\" | \"onSubmit\"\n>"
+          ],
+          "props": [
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string",
+              "description": "Composer text. Mirrors the native platform (`value`/`defaultValue`/ `onChange`) rather than a custom `onValueChange` — this IS a text input. Omit `value` for the uncontrolled default (`defaultValue ?? \"\"`)."
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onChange",
+              "optional": true,
+              "type": "ChangeEventHandler<HTMLTextAreaElement>"
+            },
+            {
+              "name": "onSubmit",
+              "optional": true,
+              "type": "(value: string) => void",
+              "description": "Fires on Enter (no Shift, not composing) or the submit affordance, with the current text. Fires whenever there is non-whitespace text — INCLUDING while `busy` (ADR 0022 case 3, #128): a mid-turn follow-up can always be composed and submitted, exactly like `PromptInputTextarea`'s own contract. brand-ui asserts nothing about what a mid-turn submit MEANS (queued, interleaved, or something else) — that is the app's own `onSubmit`/runtime (D5). The caller decides whether/how to clear `value`; uncontrolled, the composer clears itself."
+            },
+            {
+              "name": "placeholder",
+              "optional": true,
+              "type": "string",
+              "description": "@default the localized \"Type your next instruction…\""
+            },
+            {
+              "name": "busy",
+              "optional": true,
+              "type": "boolean",
+              "description": "True while the agent is actively working on a previous turn. The submit affordance becomes Stop ONLY when the well is also empty AND `onStop` is given — i.e. this composer is the one meant to own cancellation (ADR 0022's four-case contract, #128). A non-empty well always shows Send, so a mid-turn follow-up can still be typed and submitted; `busy` with no `onStop` never shows Stop at all (some other control, e.g. `TerminalWorking`, owns cancellation instead). Enter-to-submit is never disabled by `busy` alone."
+            },
+            {
+              "name": "onStop",
+              "optional": true,
+              "type": "() => void",
+              "description": "Fires when the person activates the Stop affordance, or presses Escape, while `busy`. Passing this prop is also what tells the composer it OWNS cancellation — omit it when another control (e.g. `TerminalWorking`) is the dedicated Stop, so the two don't both render a control named \"Stop\" for the same action (#128)."
+            },
+            {
+              "name": "modes",
+              "optional": true,
+              "type": "OperatingMode[]",
+              "description": "App-defined operating modes (#117 — no vendor union here). Omitted, no mode indicator renders."
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "defaultMode",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onModeChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "effortLevels",
+              "optional": true,
+              "type": "EffortLevel[]",
+              "description": "App-defined reasoning-effort scale, ordered low to high. Omitted, no effort indicator renders."
+            },
+            {
+              "name": "effort",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "defaultEffort",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onEffortChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "effortLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the effort scale. @default the localized \"Effort\""
+            },
+            {
+              "name": "shortcuts",
+              "optional": true,
+              "type": "TerminalComposerShortcut[]",
+              "description": "The hints shown at rest, e.g. `[{ keys: \"Enter\", label: \"send\" }]`. @default a localized Enter-to-send / Shift+Enter-for-newline pair. The cancel hint is added automatically while this composer can actually cancel the turn (`busy` AND `onStop` — see `busy`) — do not include it here; override it with `cancelShortcut` instead."
+            },
+            {
+              "name": "cancelShortcut",
+              "optional": true,
+              "type": "TerminalComposerShortcut",
+              "description": "Overrides the cancel hint shown while this composer owns cancellation (`busy` AND `onStop`, see `busy`). @default the localized \"Esc\" / \"cancel\" pair."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar forwarded to the internal `TerminalSurface`."
+            },
+            {
+              "name": "textareaRef",
+              "optional": true,
+              "type": "Ref<HTMLTextAreaElement>",
+              "description": "Ref to the underlying `<textarea>` DOM node. The `ref` this component already forwards reaches the root `TerminalSurface` div, not the field itself — a caller that needs caret math on every keystroke (a slash-command palette, an `@`-mention overlay) reaches for this instead. Additive and optional: every existing caller is unaffected. See `TerminalSlashMenu` (#117 T12) for the reference consumer."
+            }
+          ]
+        },
+        "TerminalConsole": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalContent": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalCopyButton": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": [
+            {
+              "name": "onCopy",
+              "optional": true,
+              "type": "() => void"
+            },
+            {
+              "name": "onError",
+              "optional": true,
+              "type": "(error: Error) => void"
+            },
+            {
+              "name": "timeout",
+              "optional": true,
+              "type": "number"
+            }
+          ]
+        },
+        "TerminalDiffHunk": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "file",
+              "optional": false,
+              "type": "string",
+              "description": "File path named in the header, after \"Update\"."
+            },
+            {
+              "name": "summary",
+              "optional": true,
+              "type": "string",
+              "description": "Optional second header line, prefixed with the `⎿` continuation glyph."
+            },
+            {
+              "name": "lines",
+              "optional": false,
+              "type": "DiffLine[]",
+              "description": "The diff, as a flat ordered line list — the shared `@elabs-ai/components-ui` model."
+            },
+            {
+              "name": "contextLines",
+              "optional": true,
+              "type": "number",
+              "description": "Collapse a run of consecutive `context` lines longer than this behind a \"show more\" disclosure. Omitted, every line renders."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar for every row. Omitted, each row inherits the surrounding `TerminalSurface` — passed, it overrides it for the whole hunk."
+            }
+          ]
+        },
+        "TerminalEventLine": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "The runtime event name, verbatim as the runtime emits it — e.g. `\"user_prompt_submit\"`, `\"pre_tool_use\"`, `\"stop\"`."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar. Omitted, the row inherits the surrounding `TerminalSurface`."
+            },
+            {
+              "name": "phase",
+              "optional": true,
+              "type": "AgentEventPhase",
+              "description": "When this event fired relative to the action it gates."
+            },
+            {
+              "name": "outcome",
+              "optional": true,
+              "type": "AgentEventOutcome",
+              "description": "The event's verdict. @default \"ok\""
+            },
+            {
+              "name": "durationMs",
+              "optional": true,
+              "type": "number",
+              "description": "Wall-clock duration of the event, in milliseconds. Rendered with the shared `formatElapsed`."
+            },
+            {
+              "name": "hooks",
+              "optional": true,
+              "type": "number | CheckSummary",
+              "description": "Hook/gate-check count for this event: a bare total when per-check verdicts are not known, or a `{ran, passed}` summary once they are. Renders as the terminal's own `[hooks: …]` bracket vocabulary. A `passed < ran` summary is independently flagged as a failure — see the module doc."
+            }
+          ]
+        },
+        "TerminalHeader": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalOverlay": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"title\">"
+          ],
+          "props": [
+            {
+              "name": "open",
+              "optional": false,
+              "type": "boolean",
+              "description": "Controlled open state — the app owns it."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": false,
+              "type": "(open: boolean) => void",
+              "description": "Fires on the close control, Escape, an outside click, and any other Radix dismissal."
+            },
+            {
+              "name": "title",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "The panel's heading, read by assistive tech as the dialog's accessible name."
+            },
+            {
+              "name": "description",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "One line of supporting context under the title. Omitted, the panel carries no description."
+            },
+            {
+              "name": "hints",
+              "optional": true,
+              "type": "TerminalOverlayHint[]",
+              "description": "The footer key-hint legend, in order. Omitted or empty, no footer renders at all — never an empty bar."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The panel's own content. The caller's — see the module doc."
+            }
+          ]
+        },
+        "TerminalPermission": {
+          "extends": [
+            "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"children\" | \"title\"\n>"
+          ],
+          "props": [
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "@default the localized \"Bash command\""
+            },
+            {
+              "name": "preview",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "What will actually run — a command string today, a diff hunk tomorrow. Arbitrary content: never typed as a string. Omitted, no preview row renders."
+            },
+            {
+              "name": "question",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "@default the localized \"Do you want to proceed?\""
+            },
+            {
+              "name": "options",
+              "optional": true,
+              "type": "ApprovalOption[]",
+              "description": "The scoped choices. Defaults to the three verbatim upstream options — \"Yes\" (`once`), \"Yes, and don't ask again this session\" (`session`), and the vendor-free decline-and-redirect option (`deny`)."
+            },
+            {
+              "name": "value",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "defaultValue",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onValueChange",
+              "optional": true,
+              "type": "(id: string) => void"
+            },
+            {
+              "name": "onConfirm",
+              "optional": true,
+              "type": "(option: ApprovalOption, reason?: string) => void",
+              "description": "Fires when an option is chosen — by click or by ANY keyboard move within the radio group (arrow keys/Home/End select immediately, per the native/ARIA radiogroup pattern Radix implements, matching `ApprovalCardOptions` — there is no separate highlight-vs-commit step) — and again on every edit of the reason field while a `deny`-scoped option is selected, so the caller always has the latest pair."
+            },
+            {
+              "name": "reason",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled text for the deny scope's optional \"what to do instead\" explanation."
+            },
+            {
+              "name": "defaultReason",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "onReasonChange",
+              "optional": true,
+              "type": "(reason: string) => void"
+            },
+            {
+              "name": "reasonPlaceholder",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar for every row this prompt renders. Omitted, it inherits the surrounding `TerminalSurface`; passed, it overrides it — the same override contract `TerminalRow` itself exposes."
+            }
+          ]
+        },
+        "TerminalRow": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"children\">",
+            "Omit<VariantProps<typeof terminalRowVariants>, \"variant\">"
+          ],
+          "props": [
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar. Omitted, the row inherits the surrounding `TerminalSurface`; passed, it overrides it, so a row still renders correctly outside any surface."
+            },
+            {
+              "name": "gutter",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "What sits in the gutter cell — usually one glyph. Decorative by default."
+            },
+            {
+              "name": "gutterLabel",
+              "optional": true,
+              "type": "string",
+              "description": "The meaning the gutter glyph carries, as words. Set it whenever the glyph is not purely ornamental; it is announced and it survives greyscale."
+            },
+            {
+              "name": "children",
+              "optional": true,
+              "type": "ReactNode"
+            }
+          ]
+        },
+        "TerminalSlashMenu": {
+          "extends": [
+            "Omit<\n  TerminalComposerProps,\n  \"value\" | \"defaultValue\" | \"onChange\"\n>"
+          ],
+          "props": [
+            {
+              "name": "commands",
+              "optional": false,
+              "type": "SlashCommand[]",
+              "description": "The registered commands the palette offers. No vendor command set is shipped."
+            },
+            {
+              "name": "value",
+              "optional": false,
+              "type": "string",
+              "description": "The composer's current text. Always controlled — see the module doc for why."
+            },
+            {
+              "name": "onValueChange",
+              "optional": false,
+              "type": "(next: { text: string; caret: number }) => void",
+              "description": "The text changed — by typing, or by selecting a command (which splices `\"/\" + command.name + \" \"` over the typed query and reports the caret that follows it, the same `{ text, caret }` shape `replaceTriggerRun` returns)."
+            },
+            {
+              "name": "filter",
+              "optional": true,
+              "type": "(command: SlashCommand, query: string) => boolean",
+              "description": "Which commands survive the current query. @default defaultSlashCommandFilter"
+            },
+            {
+              "name": "onSelectCommand",
+              "optional": true,
+              "type": "(command: SlashCommand) => void",
+              "description": "A command was chosen (fires alongside, not instead of, `onValueChange`)."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void",
+              "description": "The popup opened or closed."
+            }
+          ]
+        },
+        "TerminalStatus": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalStatusBar": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "branch",
+              "optional": true,
+              "type": "string",
+              "description": "Current git branch."
+            },
+            {
+              "name": "workspace",
+              "optional": true,
+              "type": "string",
+              "description": "Current working directory. A long path truncates in place; the full value is still reachable via its native `title`."
+            },
+            {
+              "name": "connections",
+              "optional": true,
+              "type": "TerminalStatusBarConnections",
+              "description": "Integration/MCP connection progress."
+            },
+            {
+              "name": "context",
+              "optional": true,
+              "type": "TerminalStatusBarContext",
+              "description": "Context-window usage, already formatted by the caller."
+            },
+            {
+              "name": "turn",
+              "optional": true,
+              "type": "TerminalStatusBarTurn",
+              "description": "Progress through the current turn's steps."
+            }
+          ]
+        },
+        "TerminalSurface": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar for every row inside. A row may override it per-row."
+            },
+            {
+              "name": "gutter",
+              "optional": true,
+              "type": "string",
+              "description": "Width of the gutter track, as any CSS length. Written to the local `--terminal-gutter` custom property — deliberately NOT a theme token: it does not vary by theme and no other package needs it. A caller's own `style` still wins over this."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "`true` while the transcript has no renderable content yet (restoring a past session). Renders layout-shaped skeleton rows through the REAL `TerminalRow`, so the placeholder cannot drift from the grid it stands in for. Never a spinner."
+            },
+            {
+              "name": "loadingRows",
+              "optional": true,
+              "type": "number",
+              "description": "How many skeleton rows to reserve while `loading`."
+            },
+            {
+              "name": "loadingLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Overrides the announced loading label. Defaults to the shared \"Loading…\"."
+            }
+          ]
+        },
+        "TerminalTitle": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": []
+        },
+        "TerminalTodoList": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLOListElement>, \"children\">"
+          ],
+          "props": [
+            {
+              "name": "items",
+              "optional": false,
+              "type": "TerminalTodoItem[]",
+              "description": "The checklist, in display order."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar for every row. Omitted, each row inherits the surrounding `TerminalSurface`; passed, it overrides it for the whole list — the same override contract `TerminalRow` itself exposes."
+            }
+          ]
+        },
+        "TerminalToolCall": {
+          "extends": [
+            "Omit<ComponentProps<typeof Collapsible>, \"children\">",
+            "VariantProps<typeof terminalToolCallGlyphVariants>"
+          ],
+          "props": [
+            {
+              "name": "toolName",
+              "optional": false,
+              "type": "string",
+              "description": "The tool being invoked, verbatim as the runtime names it — e.g. `\"Bash\"`, `\"Read\"`."
+            },
+            {
+              "name": "argument",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The call's argument, rendered after the name in parentheses — e.g. `Bash(rm -rf tmp)`. Omitted, no parentheses render at all."
+            },
+            {
+              "name": "summary",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The one-line result, on its own `⎿` continuation row. Same fact as `Tool`'s (`@elabs-ai/components-ai`) `summary` prop — the business headline, not the raw payload. Omitted, no result row renders (a call that is still `pending` usually has none yet)."
+            },
+            {
+              "name": "detail",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The technical payload, behind the disclosure this component owns. Omitted, no disclosure renders at all — there is nothing to expand."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "TerminalVariant",
+              "description": "Gutter grammar for every row this component renders. Omitted, each row inherits the surrounding `TerminalSurface`; passed, it overrides it for the whole call — the same override contract every row in this family exposes."
+            }
+          ]
+        },
+        "TerminalTranscriptRow": {
+          "extends": [
+            "Omit<TerminalRowProps, \"gutter\" | \"gutterLabel\">",
+            "VariantProps<typeof terminalTranscriptRowVariants>"
+          ],
+          "props": [
+            {
+              "name": "exitCode",
+              "optional": true,
+              "type": "number",
+              "description": "The process exit code for a settled `output`/`error` line. Modelled as data — the component formats the affordance (\"exit 1\") — never a caller-formatted string. Ignored on `user`/`agent` kinds, which have no exit status of their own."
+            }
+          ]
+        },
+        "TerminalWorking": {
+          "extends": [
+            "Omit<\n  TerminalRowProps,\n  \"gutter\" | \"gutterLabel\" | \"children\"\n>"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "What the turn is doing right now. Defaults to the shared \"Waiting for response…\" copy."
+            },
+            {
+              "name": "elapsedMs",
+              "optional": true,
+              "type": "number",
+              "description": "Elapsed time in the current turn, in milliseconds. Rendered via `formatElapsed`."
+            },
+            {
+              "name": "tokens",
+              "optional": true,
+              "type": "number",
+              "description": "Token count for the turn so far, rendered with the download-token marker (⇣)."
+            },
+            {
+              "name": "isStreaming",
+              "optional": true,
+              "type": "boolean",
+              "description": "`true` once content is actively arriving — swaps the spinner for the solid diamond."
+            },
+            {
+              "name": "onStop",
+              "optional": true,
+              "type": "() => void",
+              "description": "Renders a focusable stop control, reachable by keyboard, while the turn runs."
+            },
+            {
+              "name": "stopShortcut",
+              "optional": true,
+              "type": "string",
+              "description": "Keyboard-shortcut hint shown beside the stop control, e.g. `\"Esc\"`. Caller-supplied — the real binding is the host app's, so it is never invented here (mirrors `SessionHeader`'s/`PermissionModeSelect`'s `keyHint`). Omit it and the stop control renders with no hint."
+            },
+            {
+              "name": "showScrollToBottom",
+              "optional": true,
+              "type": "boolean",
+              "description": "Renders a \"scroll to bottom\" affordance."
+            },
+            {
+              "name": "onScrollToBottom",
+              "optional": true,
+              "type": "() => void"
+            }
+          ]
+        }
+      },
+      "intent": {
+        "InteractiveTerminal": {
+          "purpose": "Streaming terminal surface for agent shell output, with an optional input line.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "Terminal",
+              "Tool",
+              "Sandbox"
+            ]
+          },
+          "stateTokens": {
+            "streaming": "imperative — ref.current.write(chunk) as output arrives (no isStreaming prop)",
+            "readOnly": "readOnly → stdin disabled, writes still render (read-only log)"
+          },
+          "antiPatterns": [
+            "Spawning a shell or process from the component — it renders a stream; the app owns the runtime (D5).",
+            "Looking for an isStreaming/output prop — this surface is imperative: hold the InteractiveTerminalHandle ref and call write() per chunk (the declarative sibling is Terminal).",
+            "Reaching the terminal engine through a static import — heavy engines must be reached by a dynamic import() (the heavy-deps ratchet)."
+          ]
+        },
+        "Terminal": {
+          "purpose": "Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalHeader",
+              "TerminalContent",
+              "TerminalCopyButton",
+              "TerminalClearButton"
+            ],
+            "pairsWith": [
+              "InteractiveTerminal",
+              "Sandbox"
+            ]
+          },
+          "antiPatterns": [
+            "Reaching for it when the user must TYPE — that is InteractiveTerminal; Terminal is output-only.",
+            "Stripping the ANSI codes before passing them — the component renders them; pre-stripping throws away the colour.",
+            "Re-implementing auto-scroll in the consumer — `autoScroll` is owned by the component and must yield when the user scrolls up."
+          ]
+        },
+        "TerminalBanner": {
+          "purpose": "The console-dress launch card above an empty transcript: identity (name, model, version, workspace), capabilities, what's new and quick actions with key hints — every section independently optional.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalRow"
+            ],
+            "pairsWith": [
+              "TerminalSurface",
+              "TerminalTranscriptRow",
+              "TerminalWorking"
+            ]
+          },
+          "stateTokens": {
+            "quickAction": "hover:bg-terminal-selection hover:text-terminal-foreground",
+            "whatsNewLink": "text-terminal-ansi-bright-cyan"
+          },
+          "antiPatterns": [
+            "Using `<fieldset>`/`<legend>` to sit the title in the border — that misreports a decorative heading as a form-control group to assistive tech; it renders a real Heading beside a real border instead.",
+            "Rendering a vendor bitmap logo — the component ships no mark of its own; `logo` is a caller-supplied `ReactNode` slot, never a baked-in wordmark (#117 acceptance criterion).",
+            "Truncating `workspace` to one line — long paths WRAP so the full value stays reachable, matching the family's wrap-over-truncate fidelity axis rather than SessionHeader's single-line truncation.",
+            "Importing `SessionHeader` or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared vocabulary (`SessionCapability`/`SessionWhatsNewItem`/`SessionQuickAction`) lives in `@elabs-ai/components-ui` instead."
+          ]
+        },
+        "TerminalComposer": {
+          "purpose": "The prompt composer for the agent-session family: a text input well, an optional mode indicator, an optional ordered effort scale, a shortcut-hint row, and a submit affordance that becomes a stop affordance while busy.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalSurface"
+            ],
+            "pairsWith": [
+              "TerminalSurface"
+            ],
+            "avoidNextTo": [
+              "PromptInput (that is the chat skin of the same composer concept, not a console-transcript sibling)"
+            ]
+          },
+          "stateTokens": {
+            "effortFilled": "border-terminal-accent! bg-terminal-accent",
+            "effortHollow": "border-terminal-border! bg-transparent",
+            "modeTrigger": "hover:bg-terminal-selection hover:text-terminal-foreground",
+            "submit": "bg-terminal-accent text-terminal-accent-foreground",
+            "caret": "caret-terminal-cursor"
+          },
+          "antiPatterns": [
+            "Shipping a vendor mode/effort union such as `\"auto\" | \"accept-edits\" | \"plan\"` in a public type — `modes`/`effortLevels` are entirely app-supplied `OperatingMode[]`/`EffortLevel[]` (#117 acceptance criterion).",
+            "Using the native `disabled` attribute for the resting empty-composer state — it drops a focused control from the tab order after every keyboard submit; the affordance is `aria-disabled`, matching `PromptInputSubmit`'s contract.",
+            "Adding an `onPaste` handler that calls `preventDefault()` — paste is never blocked, and the caret is the browser's own, tinted via `caret-terminal-cursor`, never a hand-drawn glyph.",
+            "Relying on the effort scale's fill/size ramp alone — each rung also carries `aria-label={level.label}` and the current level's name renders as real visible text, so the level reaches assistive tech as words, not only as a filled shape.",
+            "Importing `PromptInputMode`/`PromptInputEffort` or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared vocabulary (`OperatingMode`/`EffortLevel`/`effortRungForIndex`) lives in `@elabs-ai/components-ui` instead."
+          ]
+        },
+        "TerminalConsole": {
+          "purpose": "The console FRAME (ADR 0033): the one resting surface a coding-agent console draws — edge, radius, ground and elevation — so a transcript, banner, permission prompt, composer and status bar sit inside it as flush regions separated by a single seam instead of as separately framed cards.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalSurface",
+              "TerminalBanner",
+              "TerminalComposer",
+              "TerminalPermission",
+              "TerminalStatusBar"
+            ]
+          },
+          "stateTokens": {
+            "frame": "rounded-lg border-terminal-border bg-terminal-background shadow-sm",
+            "seam": "border-t border-terminal-border"
+          },
+          "antiPatterns": [
+            "Stacking a second framed piece inside it — a region never draws its own radius, border, shadow or ground; ADR 0033's whole point is exactly one edge per console.",
+            "Adding a `variant`, transcript state, expansion state or a clock to its context — it publishes one static boolean, forever, the same prohibition `TerminalSurface`'s `variant` context carries.",
+            "Negating a region's frame with `rounded-none border-0 shadow-none` instead of omitting it — `TerminalSurface`'s frame-aware branch OMITS those classes; a caller who wants a framed region back adds them through `className`.",
+            "Nesting a console inside another console — a split view of two sessions is two consoles side by side in a layout, never a frame inside a frame."
+          ]
+        },
+        "TerminalDiffHunk": {
+          "purpose": "An inline unified diff hunk in console dress: a header naming the file, then one row per line — a line-number column, a polarity marker, and the line text — with a collapsed run of context lines behind a real disclosure.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalRow"
+            ],
+            "pairsWith": [
+              "TerminalSurface",
+              "TerminalRow"
+            ],
+            "avoidNextTo": [
+              "DiffView (that is the chat skin of the same shared diff model, not a row sibling)"
+            ]
+          },
+          "stateTokens": {
+            "add": "bg-terminal-ansi-green/10",
+            "del": "bg-terminal-ansi-red/10"
+          },
+          "antiPatterns": [
+            "Re-deriving the `\"added: \"`/`\"removed: \"` polarity words locally — they ride the promoted `diffLineAccessibleLabel()` shared with DiffView (`@elabs-ai/components-ai`); a second implementation drifts from it.",
+            "Rendering the line number as a `ch`-unit padded string — it is a plain layout box in the content cell, never text-column arithmetic.",
+            "Truncating a long line instead of wrapping it — `min-w-0` plus `whitespace-pre-wrap` on the text cell is what lets it wrap under the content column.",
+            "Putting the collapsed-context-run's expansion in `TerminalSurface`'s context, or hand-rolling a one-way 'show more' button — it is a real, per-row Radix `Collapsible`, same as every other disclosure in this family."
+          ]
+        },
+        "TerminalEventLine": {
+          "purpose": "The CLI dress of an agent lifecycle/hook event line: a fixed marker glyph, a label, and an optional phase/hook-count/duration, sharing AgentEvent's outcome and hook-count model so the two skins stay in sync.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalRow",
+              "TerminalSurface"
+            ],
+            "avoidNextTo": [
+              "AgentEvent (that is the chat skin of the same model, not a row sibling)"
+            ]
+          },
+          "stateTokens": {
+            "hooksFailed": "text-destructive-text",
+            "hooksOk": "text-terminal-muted"
+          },
+          "antiPatterns": [
+            "Importing AgentEvent or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared model lives in `@elabs-ai/components-ui` instead.",
+            "Rendering the outcome word only when it is bad — `succeeded` gets the same glyph-plus-sr-only-word treatment as `blocked`/`failed`, never a silently unmarked default.",
+            "Treating a `hooks` summary's `passed < ran` as merely informational — that mismatch is an independent failure signal (a distinct glyph plus an `sr-only` count), regardless of the row's own `outcome`.",
+            "Renaming `hooks` to `checks` to match AgentEvent literally — the rendered vocabulary IS the literal upstream word \"hooks\", and this component's bracket is a terser summary, never AgentEvent's per-check breakdown list."
+          ]
+        },
+        "TerminalOverlay": {
+          "purpose": "The console-dress modal frame: a real Radix Dialog painted on the terminal ground, with a title row, arbitrary caller content, and an optional key-hint legend along the bottom — a frame, not a catalogue of panels.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalSurface",
+              "KeyboardShortcuts"
+            ]
+          },
+          "stateTokens": {
+            "chrome": "bg-terminal-background text-terminal-foreground",
+            "legend": "border-terminal-border text-terminal-muted"
+          },
+          "antiPatterns": [
+            "Keeping DialogContent's baked-in close icon — it is styled with `text-muted-foreground`, a token calibrated for `--card`/`--background`, never the terminal ground (the same class of bug a sibling already had to repair on this ground); it is hidden and replaced with a close control styled from the terminal token group.",
+            "Adding a `border` alongside the dialog's `shadow-ring-*` — an overlay floats; the elevation rule bans a border beside a ring shadow (the 'double edge').",
+            "Rendering the footer's key glyphs as the only carrier of an action's meaning — each hint's action reaches assistive tech as real words; the glyph is decorative.",
+            "Building the settings-modal catalogue itself here — this component is the ground, the dismissal and the legend only; the content is the caller's (a stated #117 non-goal)."
+          ]
+        },
+        "TerminalPermission": {
+          "purpose": "The per-call scoped approval prompt: title, command preview, question, then numbered options whose SCOPE (once/session/deny) is stated in real label text and chosen through a real Radix RadioGroup, never a hand-rolled focus walk.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalRow",
+              "TerminalSurface"
+            ],
+            "pairsWith": [
+              "TerminalSurface",
+              "TerminalRow"
+            ],
+            "avoidNextTo": [
+              "ApprovalCardOptions (that is the chat skin of the same shared approval model, not a row sibling)"
+            ]
+          },
+          "antiPatterns": [
+            "Importing ApprovalCardOptions/Confirmation or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared model (`ApprovalScope`/`ApprovalOption`/`APPROVAL_SCOPE_DESCRIPTION_KEYS`) lives in `@elabs-ai/components-ui` instead.",
+            "Walking `parentElement.children[i]` for roving focus — a real Radix `RadioGroup` owns keyboard navigation, matching the family's fidelity axis.",
+            "Naming a vendor product in the deny option's label — the third option declines and redirects the agent using the vendor-free `ApprovalScope` vocabulary, never the upstream product name (#117 acceptance criterion).",
+            "Always rendering the reason field — it only reveals, through a real Radix `Collapsible`, once the deny-scoped option is the one selected."
+          ]
+        },
+        "TerminalRow": {
+          "purpose": "The two-column [gutter][content] grid primitive every console row is built from, with the gutter's meaning carried as words for assistive tech.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalSurface"
+            ]
+          },
+          "stateTokens": {
+            "gutter": "text-terminal-muted",
+            "rail": "border-s-2 border-terminal-border"
+          },
+          "antiPatterns": [
+            "Passing a meaningful glyph as `gutter` with no `gutterLabel` — the glyph is aria-hidden, so the row's meaning would exist only as decoration (WCAG 1.4.1).",
+            "Aligning columns with `ch` units or padding — the gutter is a grid track, which is what makes a wrapped continuation line align for free.",
+            "Dropping `min-w-0` from the content cell — without it, and the grid's `minmax(0,1fr)`, a long path pushes the row out of the surface instead of wrapping.",
+            "Writing box-drawing characters as a border — a screen reader reads them aloud and they collapse at a font fallback; the `boxed` variant uses a real border."
+          ]
+        },
+        "TerminalSlashMenu": {
+          "purpose": "The `/`-command palette for the console composer: a popover listbox anchored to TerminalComposer's own textarea, filtered by prefix, navigated with wrapping/clamped arrow keys, and spliced into the text on Enter — the caret never leaves the field.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalComposer"
+            ],
+            "pairsWith": [
+              "TerminalComposer"
+            ],
+            "avoidNextTo": [
+              "PromptInputSlash (that is the chat skin of the same trigger-palette concept, not a console-transcript sibling)"
+            ]
+          },
+          "stateTokens": {
+            "content": "bg-terminal-background text-terminal-foreground",
+            "activeItem": "bg-terminal-selection",
+            "activeMarker": "text-terminal-accent"
+          },
+          "antiPatterns": [
+            "Re-declaring `SlashCommand`/`defaultSlashCommandFilter`/`stepIndex`/`findTriggerQuery`/`replaceTriggerRun` locally — all five are promoted to `@elabs-ai/components-ui` precisely so this package and `@elabs-ai/components-ai` cannot drift; import them.",
+            "Detecting the `/` trigger from a keydown handler instead of deriving it from committed text + caret — a keydown-driven trigger has to `preventDefault()` every printable character, which breaks IME composition, undo, spellcheck and paste.",
+            "Calling `findTriggerQuery` with the default word boundary — a slash palette needs `{ boundary: \"line-start\" }`, or `cd /usr` would wrongly open the popup mid-command.",
+            "Distinguishing the active row with `bg-terminal-selection` alone — a sighted user in greyscale needs a second channel too, so a reserved-width `❯` marker (this family's established 'current' glyph) renders only on the active row.",
+            "Querying the textarea with `querySelector` — `TerminalComposer`'s `textareaRef` prop exists precisely so a caret-tracking wrapper never needs to.",
+            "Leaving a row's description at `text-terminal-muted` once it is active — `--terminal-selection` is only authored to guarantee AA for `--terminal-foreground`/`--terminal-ansi-white` (see that token's comment in `themes.css`), and `--terminal-muted` measures 3.61:1 on it, a real axe failure a unit test cannot see. The active row upgrades to `text-terminal-foreground`."
+          ]
+        },
+        "TerminalStatusBar": {
+          "purpose": "The ambient chrome row along the bottom of a console surface: branch and working directory on the left, connection/context/turn progress on the right, every fact independently optional.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalSurface"
+            ]
+          },
+          "stateTokens": {
+            "disconnectedGlyph": "text-terminal-ansi-bright-red",
+            "disconnectedText": "text-terminal-foreground"
+          },
+          "antiPatterns": [
+            "Reaching for `@elabs-ai/components-ai`'s `Context` component or its tokenlens math — `terminal` and `ai` are layer-2 DAG siblings; `context` takes two ALREADY-FORMATTED display strings the caller computed, never raw token counts to abbreviate.",
+            "Relying on colour alone for `connections.disconnected` — it renders a distinct glyph (UnplugIcon, not PlugZapIcon) plus its own visible text label, recoverable in greyscale and by a screen reader.",
+            "Adding a second `role=\"status\"` on an inner segment — the container itself is already the one live region; a nested one duplicates announcements.",
+            "Rendering the right-cluster divider as a literal `│` character — that is a box-drawing glyph as text; it is a plain `bg-terminal-border` rule instead."
+          ]
+        },
+        "TerminalSurface": {
+          "purpose": "The console ground for the agent-session family: the terminal surface, the mono type role and the two-column gutter grid, established once and published to every row inside.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalRow"
+            ],
+            "pairsWith": [
+              "Terminal",
+              "InteractiveTerminal"
+            ]
+          },
+          "stateTokens": {
+            "surface": "bg-terminal-background text-terminal-foreground border-terminal-border",
+            "elevation": "shadow-sm"
+          },
+          "antiPatterns": [
+            "Adding a second value to its context — it publishes `variant` and nothing else; transcript state, expansion state and a clock all belong to the caller or to the row (D5).",
+            "Expecting it to scroll — it owns no scroll container on purpose, so a caller's virtualizer for a long transcript is never fought.",
+            "Declaring `--terminal-gutter` in themes.css — it is a local layout custom property, not a theme token; it does not vary by theme.",
+            "Reaching for a spinner while `loading` — the not-ready rung is layout-shaped skeleton rows rendered through the real TerminalRow, behind exactly one live region."
+          ]
+        },
+        "TerminalTodoList": {
+          "purpose": "A three-state checklist (done/active/pending) rendered as a real <ol>/<li>, where each row's state is a glyph AND an announced word riding TerminalRow's gutterLabel, so it survives greyscale and reaches assistive tech.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalRow",
+              "TerminalSurface"
+            ]
+          },
+          "stateTokens": {
+            "done": "text-terminal-muted line-through",
+            "active": "font-semibold"
+          },
+          "antiPatterns": [
+            "Minting a fourth `done|active|todo` union — it reuses `@elabs-ai/components-ui`'s `TimelineStatus` (`done|active|pending`) so the vocabulary can't drift from Timeline's.",
+            "Rendering the state as a Lucide icon — the upstream grammar IS the literal ✔ / ◼ / ◻ characters; the fidelity axis reproduces that exactly.",
+            "Hand-rolling a second `sr-only` span for the state word — it rides `TerminalRow`'s existing `gutterLabel`, which already suppresses the glyph correctly per variant.",
+            "Reproducing upstream's `\"  ⎿ \"` / four-space character padding — that is `ch`-unit alignment; `TerminalRow`'s gutter grid track does the same job without it."
+          ]
+        },
+        "TerminalToolCall": {
+          "purpose": "A single tool invocation dressed as a CLI line: a status glyph (success/error/pending), the tool name plus its optional argument in parentheses, a result summary on a `⎿` row, and detail behind a real disclosure.",
+          "category": "terminal",
+          "relationships": {
+            "contains": [
+              "TerminalRow"
+            ],
+            "pairsWith": [
+              "TerminalSurface",
+              "TerminalRow"
+            ],
+            "avoidNextTo": [
+              "Tool (that is the chat skin of the same fact, not a row sibling)"
+            ]
+          },
+          "stateTokens": {
+            "success": "text-terminal-ansi-green",
+            "error": "text-terminal-ansi-red",
+            "pending": "text-terminal-ansi-yellow"
+          },
+          "antiPatterns": [
+            "Relying on the recoloured `⏺` alone to tell success from error — only `success` keeps that literal glyph; `error`/`pending` each get their own shape (`✗`/`○`) plus `gutterLabel`'s announced word, never colour alone.",
+            "Setting `role=\"alert\"` while `status=\"pending\"` — a still-running call is not a settled failure (`.claude/rules/loading-states.md`); only `error` fires the alert.",
+            "Reaching for the 7-state canonical `Status` or `TimelineStatus` — neither matches this grammar's exact `success`/`error`/`pending` vocabulary or its live-not-yet-settled meaning of `pending`.",
+            "Reproducing upstream's inert `\"(ctrl+o to expand)\"` hint as decorative text — the expand affordance is a real, localized, focusable `CollapsibleTrigger`, so a keyboard user never needs to know a CLI chord.",
+            "Putting expansion state in `TerminalSurface`'s context — it is per-row Radix `Collapsible` state, same as every other disclosure in this family."
+          ]
+        },
+        "TerminalTranscriptRow": {
+          "purpose": "One line of an agent transcript on top of TerminalRow: a closed kind axis (user/agent/output/error) that carries who spoke and whether it failed as a glyph, a colour and an accessible label.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalSurface",
+              "TerminalRow"
+            ],
+            "avoidNextTo": [
+              "a second row claiming the same settled turn's error"
+            ]
+          },
+          "stateTokens": {
+            "output": "text-terminal-muted",
+            "error": "text-terminal-ansi-red"
+          },
+          "antiPatterns": [
+            "Rendering `kind=\"error\"` while a turn is still streaming — errors are for settled, terminal failures only (`.claude/rules/loading-states.md`).",
+            "Relying on colour alone to distinguish `error` — the glyph and the `gutterLabel` word are the load-bearing channels; colour is redundant.",
+            "Reaching for a vendor mode/effort union on `kind` — the axis is closed to `user`/`agent`/`output`/`error`, nothing else (#117 acceptance criterion).",
+            "Formatting `exitCode` yourself into a string — pass the number and let the component render the affordance."
+          ]
+        },
+        "TerminalWorking": {
+          "purpose": "The in-turn footer row pinned last in a transcript: a spinner/diamond glyph, a label, elapsed time, token spend and a stop control — the three facts and an exit the human needs while the agent runs.",
+          "category": "terminal",
+          "relationships": {
+            "pairsWith": [
+              "TerminalSurface",
+              "TerminalRow",
+              "TerminalTranscriptRow"
+            ]
+          },
+          "stateTokens": {
+            "trailing": "text-terminal-muted tabular-nums"
+          },
+          "antiPatterns": [
+            "Running a setInterval to advance the spinner or tick elapsedMs — the spinner is a pure CSS keyframe and elapsedMs is a caller-supplied snapshot (D5); this component owns no timer.",
+            "Announcing the ticking elapsed time or token count in the live region — exactly one role=status announces `label`; the stats are plain, non-live text or assistive tech is flooded on every re-render.",
+            "Inventing a keyboard shortcut for the stop control — `stopShortcut` is caller-supplied (mirrors SessionHeader's/PermissionModeSelect's `keyHint`); the component never hardcodes a binding.",
+            "Hand-rolling a second compact-number formatter for `tokens` — it renders through `useLocale().formatNumber`, not a bespoke compacter."
+          ]
+        }
+      }
+    },
     "@elabs-ai/components-tokens": {
       "path": "packages/tokens",
       "peerDependencies": {
@@ -22354,6 +24688,11 @@
           "name": "AlertTitle",
           "kind": "value",
           "module": "packages/ui/src/components/alert/alert.tsx"
+        },
+        {
+          "name": "APPROVAL_SCOPE_DESCRIPTION_KEYS",
+          "kind": "value",
+          "module": "packages/ui/src/lib/approval-option.ts"
         },
         {
           "name": "AppShell",
@@ -23174,6 +25513,11 @@
           "name": "Kbd",
           "kind": "value",
           "module": "packages/ui/src/components/kbd/kbd.tsx"
+        },
+        {
+          "name": "KeyboardShortcuts",
+          "kind": "value",
+          "module": "packages/ui/src/components/keyboard-shortcuts/keyboard-shortcuts.tsx"
         },
         {
           "name": "KeyValueEditor",
@@ -24159,6 +26503,11 @@
           "name": "WizardSteps",
           "kind": "value",
           "module": "packages/ui/src/components/wizard/wizard.tsx"
+        },
+        {
+          "name": "WorkspacePicker",
+          "kind": "value",
+          "module": "packages/ui/src/components/workspace-picker/workspace-picker.tsx"
         }
       ],
       "hooks": [
@@ -24181,6 +26530,11 @@
           "name": "useDialogDismissGuard",
           "kind": "value",
           "module": "packages/ui/src/components/dialog/use-dialog-dismiss-guard.ts"
+        },
+        {
+          "name": "useDiffRows",
+          "kind": "value",
+          "module": "packages/ui/src/lib/diff-rows.ts"
         },
         {
           "name": "useFileUpload",
@@ -24239,12 +26593,28 @@
           "module": "packages/ui/src/components/advanced-group/advanced-group.tsx"
         },
         {
+          "name": "AgentEventOutcome",
+          "module": "packages/ui/src/lib/agent-event-model.ts"
+        },
+        {
+          "name": "AgentEventPhase",
+          "module": "packages/ui/src/lib/agent-event-model.ts"
+        },
+        {
           "name": "AlertDescriptionProps",
           "module": "packages/ui/src/components/alert/alert.tsx"
         },
         {
           "name": "AlertTitleProps",
           "module": "packages/ui/src/components/alert/alert.tsx"
+        },
+        {
+          "name": "ApprovalOption",
+          "module": "packages/ui/src/lib/approval-option.ts"
+        },
+        {
+          "name": "ApprovalScope",
+          "module": "packages/ui/src/lib/approval-option.ts"
         },
         {
           "name": "AppShellProps",
@@ -24363,6 +26733,14 @@
           "module": "packages/ui/src/components/change-review/change-review.tsx"
         },
         {
+          "name": "CheckResult",
+          "module": "packages/ui/src/lib/check-result.ts"
+        },
+        {
+          "name": "CheckSummary",
+          "module": "packages/ui/src/lib/check-result.ts"
+        },
+        {
           "name": "CollapsiblePanelAttrs",
           "module": "packages/ui/src/components/collapsible-panel/use-collapsible-panel.ts"
         },
@@ -24447,6 +26825,18 @@
           "module": "packages/ui/src/components/dialog/dialog.tsx"
         },
         {
+          "name": "DiffLine",
+          "module": "packages/ui/src/lib/diff-line.ts"
+        },
+        {
+          "name": "DiffLineType",
+          "module": "packages/ui/src/lib/diff-line.ts"
+        },
+        {
+          "name": "DiffRow",
+          "module": "packages/ui/src/lib/diff-rows.ts"
+        },
+        {
           "name": "DocumentAddress",
           "module": "packages/ui/src/lib/document-address.ts"
         },
@@ -24457,6 +26847,10 @@
         {
           "name": "DocumentRect",
           "module": "packages/ui/src/lib/document-address.ts"
+        },
+        {
+          "name": "EffortLevel",
+          "module": "packages/ui/src/lib/operating-mode.ts"
         },
         {
           "name": "EmptyStateProps",
@@ -24555,6 +26949,10 @@
           "module": "packages/ui/src/components/view-toolbar/view-toolbar.tsx"
         },
         {
+          "name": "FindTriggerQueryOptions",
+          "module": "packages/ui/src/lib/trigger-query.ts"
+        },
+        {
           "name": "FormSpec",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
         },
@@ -24621,6 +27019,10 @@
         {
           "name": "IntegerFieldSpec",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "KeyboardShortcutsProps",
+          "module": "packages/ui/src/components/keyboard-shortcuts/keyboard-shortcuts.tsx"
         },
         {
           "name": "KeyValueEditorProps",
@@ -24791,6 +27193,10 @@
           "module": "packages/ui/src/components/number-input/number-input.tsx"
         },
         {
+          "name": "OperatingMode",
+          "module": "packages/ui/src/lib/operating-mode.ts"
+        },
+        {
           "name": "PageShellProps",
           "module": "packages/ui/src/components/page-shell/page-shell.tsx"
         },
@@ -24943,12 +27349,36 @@
           "module": "packages/ui/src/components/separator/separator.tsx"
         },
         {
+          "name": "SessionCapability",
+          "module": "packages/ui/src/lib/session-launch.ts"
+        },
+        {
+          "name": "SessionQuickAction",
+          "module": "packages/ui/src/lib/session-launch.ts"
+        },
+        {
+          "name": "SessionWhatsNewItem",
+          "module": "packages/ui/src/lib/session-launch.ts"
+        },
+        {
           "name": "SheetContentProps",
           "module": "packages/ui/src/components/sheet/sheet.tsx"
         },
         {
+          "name": "Shortcut",
+          "module": "packages/ui/src/components/keyboard-shortcuts/keyboard-shortcuts.tsx"
+        },
+        {
+          "name": "ShortcutGroup",
+          "module": "packages/ui/src/components/keyboard-shortcuts/keyboard-shortcuts.tsx"
+        },
+        {
           "name": "SkeletonProps",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
+        },
+        {
+          "name": "SlashCommand",
+          "module": "packages/ui/src/lib/slash-command.ts"
         },
         {
           "name": "SliderNumberProps",
@@ -25119,6 +27549,14 @@
           "module": "packages/ui/src/components/tree-select/tree-select.tsx"
         },
         {
+          "name": "TriggerBoundary",
+          "module": "packages/ui/src/lib/trigger-query.ts"
+        },
+        {
+          "name": "TriggerQuery",
+          "module": "packages/ui/src/lib/trigger-query.ts"
+        },
+        {
           "name": "UploadFile",
           "module": "packages/ui/src/components/file-upload/file-upload.tsx"
         },
@@ -25185,9 +27623,21 @@
         {
           "name": "WizardValidator",
           "module": "packages/ui/src/components/wizard/wizard.tsx"
+        },
+        {
+          "name": "Workspace",
+          "module": "packages/ui/src/components/workspace-picker/workspace-picker-state.ts"
+        },
+        {
+          "name": "WorkspacePickerProps",
+          "module": "packages/ui/src/components/workspace-picker/workspace-picker.tsx"
         }
       ],
       "otherExports": [
+        {
+          "name": "agentEventOutcomeStatus",
+          "module": "packages/ui/src/lib/agent-event-model.ts"
+        },
         {
           "name": "alertVariants",
           "module": "packages/ui/src/components/alert/alert.tsx"
@@ -25225,6 +27675,10 @@
           "module": "packages/ui/src/lib/cn.ts"
         },
         {
+          "name": "collapseDiffRows",
+          "module": "packages/ui/src/lib/diff-rows.ts"
+        },
+        {
           "name": "collectValidatableFields",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
         },
@@ -25237,8 +27691,20 @@
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
         },
         {
+          "name": "defaultSlashCommandFilter",
+          "module": "packages/ui/src/lib/slash-command.ts"
+        },
+        {
           "name": "dialogContentVariants",
           "module": "packages/ui/src/components/dialog/dialog.tsx"
+        },
+        {
+          "name": "diffLineAccessibleLabel",
+          "module": "packages/ui/src/lib/diff-line.ts"
+        },
+        {
+          "name": "diffLineMarker",
+          "module": "packages/ui/src/lib/diff-line.ts"
         },
         {
           "name": "downloadBlob",
@@ -25247,6 +27713,10 @@
         {
           "name": "downloadUrl",
           "module": "packages/ui/src/lib/download.ts"
+        },
+        {
+          "name": "effortRungForIndex",
+          "module": "packages/ui/src/lib/operating-mode.ts"
         },
         {
           "name": "enumFieldSchema",
@@ -25287,6 +27757,18 @@
         {
           "name": "findFieldByName",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "findTriggerQuery",
+          "module": "packages/ui/src/lib/trigger-query.ts"
+        },
+        {
+          "name": "formatElapsed",
+          "module": "packages/ui/src/lib/format-duration.ts"
+        },
+        {
+          "name": "formatLastOpened",
+          "module": "packages/ui/src/components/workspace-picker/workspace-picker-state.ts"
         },
         {
           "name": "formSpecSchema",
@@ -25347,6 +27829,14 @@
         {
           "name": "isFieldVisible",
           "module": "packages/ui/src/components/schema-form/schema-form-spec.ts"
+        },
+        {
+          "name": "isModuleNotFoundMessage",
+          "module": "packages/ui/src/lib/optional-peer.ts"
+        },
+        {
+          "name": "isOptionalPeerMissing",
+          "module": "packages/ui/src/lib/optional-peer.ts"
         },
         {
           "name": "keyValueFieldSchema",
@@ -25433,6 +27923,10 @@
           "module": "packages/ui/src/components/mention-input/mention-value.ts"
         },
         {
+          "name": "replaceTriggerRun",
+          "module": "packages/ui/src/lib/trigger-query.ts"
+        },
+        {
           "name": "resolveFileKind",
           "module": "packages/ui/src/lib/file-kind.ts"
         },
@@ -25463,6 +27957,10 @@
         {
           "name": "statusBadgeVariants",
           "module": "packages/ui/src/components/status-badge/status-badge.tsx"
+        },
+        {
+          "name": "stepIndex",
+          "module": "packages/ui/src/lib/slash-command.ts"
         },
         {
           "name": "stringFieldSchema",
@@ -27073,6 +29571,35 @@
           ],
           "props": []
         },
+        "KeyboardShortcuts": {
+          "extends": [
+            "Omit<ComponentProps<\"div\">, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "groups",
+              "optional": false,
+              "type": "ShortcutGroup[]"
+            },
+            {
+              "name": "searchable",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show the built-in search field. @default true"
+            },
+            {
+              "name": "query",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled search query, if the app owns it."
+            },
+            {
+              "name": "onQueryChange",
+              "optional": true,
+              "type": "(query: string) => void"
+            }
+          ]
+        },
         "KeyValueEditor": {
           "extends": [
             "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onChange\" | \"defaultValue\"\n>"
@@ -27591,6 +30118,12 @@
               "optional": true,
               "type": "(open: boolean) => void",
               "description": "Fires whenever the popover would open/close — a trigger click, or a row select."
+            },
+            {
+              "name": "footer",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Rendered inside the popover BELOW the list — a persistent action row that is not one of the options (a free-text entry, a \"browse…\" affordance). Outside `CommandList` on purpose: it must not be filtered by the search query and must not participate in cmdk's roving selection."
             }
           ]
         },
@@ -29306,6 +31839,59 @@
             "HTMLAttributes<HTMLOListElement>"
           ],
           "props": []
+        },
+        "WorkspacePicker": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "workspaces",
+              "optional": false,
+              "type": "Workspace[]",
+              "description": "Recent workspaces, most-relevant first — the caller owns ordering."
+            },
+            {
+              "name": "currentId",
+              "optional": true,
+              "type": "string",
+              "description": "The currently open workspace's id."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(workspace: Workspace) => void",
+              "description": "Fires with the chosen workspace; the popover closes first."
+            },
+            {
+              "name": "onSubmitPath",
+              "optional": true,
+              "type": "(path: string) => void",
+              "description": "Free-text path entry, rendered in `ModelPicker`'s `footer` slot below the list. Fires with the raw string the user typed once it validates as non-empty — this component performs no filesystem access of any kind (presentation layer, D5); resolving, normalizing or checking the path is the caller's job."
+            },
+            {
+              "name": "status",
+              "optional": true,
+              "type": "ModelPickerStatus",
+              "description": "Drives the same four-body state grid as `ModelPicker` — see `ModelPickerStatus`. Default `\"ready\"`, inherited from `ModelPicker`."
+            },
+            {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean"
+            },
+            {
+              "name": "open",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled popover open state — see `ModelPicker`'s controlled contract."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void"
+            }
+          ]
         }
       },
       "intent": {
@@ -29542,6 +32128,35 @@
             "Missing autocomplete + a meaningful name on a real form field."
           ]
         },
+        "KeyboardShortcuts": {
+          "purpose": "Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.",
+          "category": "display",
+          "relationships": {
+            "usedInside": [
+              "Dialog",
+              "Sheet",
+              "Popover"
+            ],
+            "contains": [
+              "Kbd",
+              "Collapsible",
+              "StatePanel"
+            ],
+            "pairsWith": [
+              "Toolbar",
+              "AppShell"
+            ]
+          },
+          "stateTokens": {
+            "action": "text-body text-foreground for the action, text-muted-foreground for supporting text",
+            "focus": "ring-2 ring-ring on the group triggers and the search field"
+          },
+          "antiPatterns": [
+            "Rendering a raw key string instead of Kbd — the atom carries the platform glyphs and the translate opt-out.",
+            "Showing a group's count without its items — a count with nothing behind it is a claim the sheet cannot keep.",
+            "Leaving an empty filter result blank — an empty search renders a real empty state, not a blank region."
+          ]
+        },
         "MetricCard": {
           "purpose": "Single KPI tile — label, value, delta/trend.",
           "category": "chart",
@@ -29729,6 +32344,37 @@
           "antiPatterns": [
             "Putting essential information ONLY in a Tooltip — it is unreachable on touch and transient; keep critical content visible.",
             "Tooltip on a non-focusable element — it won't show on keyboard focus."
+          ]
+        },
+        "WorkspacePicker": {
+          "purpose": "Choose the workspace or project directory a session runs against, from recents or a typed path.",
+          "category": "input",
+          "relationships": {
+            "usedInside": [
+              "AppShell",
+              "SessionHeader",
+              "Toolbar"
+            ],
+            "contains": [
+              "ModelPicker",
+              "Input",
+              "Button"
+            ],
+            "pairsWith": [
+              "TeamSwitcher",
+              "ModelPicker",
+              "SessionStatusBar"
+            ]
+          },
+          "stateTokens": {
+            "current": "the in-force workspace appends a WORD into the row meta, so it reaches the option's accessible name",
+            "empty": "the free-text path submit is aria-disabled, never natively disabled, so it stays a focusable tab stop"
+          },
+          "antiPatterns": [
+            "Re-implementing the picker list — WorkspacePicker composes ModelPicker; a second searchable-popover list is the duplication this component exists to avoid.",
+            "Marking the current workspace with a glyph alone — the marker is a word in the accessible name (1.4.1).",
+            "Reading the filesystem — the component takes a workspace list as a prop and never enumerates directories itself.",
+            "Natively disabling the path submit — an empty field uses aria-disabled plus a handler guard, so focus is never stranded."
           ]
         }
       },

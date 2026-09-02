@@ -18,7 +18,6 @@
   "packages/ai/src/sandbox.tsx": 3,
   "packages/ai/src/schema-display.tsx": 21,
   "packages/ai/src/stack-trace.tsx": 3,
-  "packages/ai/src/terminal.tsx": 3,
   "packages/ai/src/test-results.tsx": 8,
   "packages/ai/src/transcription.tsx": 1,
   "packages/ai/src/voice-selector.tsx": 5,

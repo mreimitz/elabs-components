@@ -48,7 +48,7 @@
   "packages/ui/src/components/file-upload/file-upload.tsx": 2,
   "packages/ui/src/components/nav-notifications/nav-notifications.tsx": 1,
   "packages/ui/src/components/number-input/number-input.tsx": 2,
-  "packages/ui/src/components/pagination/pagination.tsx": 3,
+  "packages/ui/src/components/pagination/pagination.tsx": 1,
   "packages/ui/src/components/revision-timeline/revision-timeline.tsx": 1,
   "packages/ui/src/components/sheet/sheet.tsx": 1,
   "packages/ui/src/components/sidebar/sidebar.tsx": 4,

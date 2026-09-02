@@ -69,6 +69,24 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.modelPicker.loadFailed": "Couldn't load the list",
   "ui.modelPicker.nothingYet": "Nothing to show yet",
   "ui.modelPicker.retry": "Retry",
+  // KeyboardShortcuts (#113). `emptyFiltered` keeps the user's own query in the
+  // sentence so the empty state says WHY it is empty, not merely that it is.
+  "ui.keyboardShortcuts.searchPlaceholder": "Search shortcuts…",
+  "ui.keyboardShortcuts.emptyTitle": "No shortcuts found",
+  "ui.keyboardShortcuts.emptyFiltered": "No shortcuts match “{query}”.",
+  "ui.keyboardShortcuts.empty": "No shortcuts to show.",
+  // WorkspacePicker (#111). It composes ModelPicker, so it carries its OWN
+  // label/search strings rather than inheriting the generic "Choose a target".
+  // `current` is appended into the row's meta so the in-force workspace reaches
+  // the option's accessible name as a WORD, not only a check glyph (1.4.1).
+  "ui.workspacePicker.label": "Choose a workspace",
+  "ui.workspacePicker.placeholder": "No workspace selected",
+  "ui.workspacePicker.recent": "Recent workspaces",
+  "ui.workspacePicker.searchPlaceholder": "Search workspaces…",
+  "ui.workspacePicker.current": "Current",
+  "ui.workspacePicker.pathLabel": "Workspace path",
+  "ui.workspacePicker.pathPlaceholder": "/path/to/project…",
+  "ui.workspacePicker.openPath": "Open",
   // ViewToolbar (#331). `removeFilter` deliberately WRAPS the visible chip text
   // so the accessible name contains it (WCAG 2.5.3 Label in Name).
   "ui.viewToolbar.about": "About this view",
@@ -298,6 +316,60 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.voiceSelector.playPreview": "Play preview",
   "ai.voiceSelector.pausePreview": "Pause preview",
 
+  // TurnStatus / SessionStatusBar (#105). `label` itself is caller-supplied
+  // ("Working…", "Editing files…") and rendered verbatim, so it needs no key
+  // here — only the component-owned completed-turn sentence and controls do.
+  "ai.turnStatus.completedIn": "Turn completed in {elapsed}",
+  "ai.turnStatus.completed": "Turn completed",
+  "ai.turnStatus.scrollToBottom": "Scroll to bottom",
+  "ai.sessionStatusBar.connections": "{connected} of {total} connections",
+  "ai.sessionStatusBar.connecting": "Connecting…",
+  // SessionHeader (#110). The section headings and the quick-action group name
+  // are component-owned chrome; the capability/what's-new item text itself is
+  // caller-supplied and rendered verbatim.
+  "ai.sessionHeader.capabilities": "Capabilities",
+  "ai.sessionHeader.whatsNew": "What’s new",
+  "ai.sessionHeader.quickActions": "Quick actions",
+  // PermissionModeSelect (#104). The in-force marker is a WORD inside the mode
+  // label, so the current mode survives greyscale and reaches the accessible name.
+  "ai.permissionModeSelect.current": "Current",
+  // AgentEvent (#109). The pass/fail WORD is the non-colour channel — the tone
+  // is redundant with it, so a check outcome survives greyscale (WCAG 1.4.1).
+  "ai.agentEvent.checkPassed": "Passed",
+  "ai.agentEvent.checkFailed": "Failed",
+  "ai.agentEvent.checksSummary": "{passed}/{ran} checks passed",
+  "ai.agentEvent.phaseBefore": "Before",
+  "ai.agentEvent.phaseAfter": "After",
+  "ai.agentEvent.phaseLifecycle": "Lifecycle",
+  // DiffView (#102). `addedLine` / `removedLine` are the sr-only polarity
+  // prefixes — the +/− glyph is aria-hidden, so these WORDS are the channel a
+  // greyscale or screen-reader user recovers the polarity from (WCAG 1.4.1).
+  // They intentionally end in a space so they read as a prefix to the code line.
+  "ai.diffView.addedLine": "Added: ",
+  "ai.diffView.removedLine": "Removed: ",
+  "ai.diffView.statsSummary": "{additions} additions, {deletions} deletions",
+  "ai.diffView.showMore": { one: "Show {count} more line", other: "Show {count} more lines" },
+  "ai.diffView.pagerLegend": "Arrow keys scroll, Page Up/Down page, Home/End jump",
+  "ai.diffView.regionLabel": "Code diff",
+  "ai.diffView.loading": "Loading diff…",
+  // ApprovalCard (#103). The SCOPE sentence is what makes an N-option
+  // permission prompt safe to answer: "Yes" and "Yes, and don't ask again" look
+  // alike and mean very different things. Each option links its scope sentence
+  // through aria-describedby, so the blast radius of a choice reaches assistive
+  // tech as words — never as a colour or a data-* attribute.
+  "ai.approvalCard.scopeOnceDescription": "Applies to this action only.",
+  "ai.approvalCard.scopeSessionDescription":
+    "Applies to actions like this for the rest of this session.",
+  "ai.approvalCard.scopeAlwaysDescription": "Applies to actions like this from now on.",
+  "ai.approvalCard.scopeDenyDescription": "Rejects this action.",
+  "ai.approvalCard.reasonLabel": "Reason",
+  "ai.approvalCard.reasonPlaceholder": "Add a reason (optional)…",
+  // PromptInputSlash (#106). `listLabel` goes to cmdk's own `label` prop, not
+  // `aria-label` — cmdk overwrites a consumer `aria-label` on CommandList and
+  // reads its accessible name off `label` instead.
+  "ai.promptInputSlash.listLabel": "Commands",
+  "ai.promptInputSlash.empty": "No matching commands.",
+
   // ── Streamdown chrome (third-party rendering surface) ──────────────────────
   // `streamdown` renders its OWN controls inside every streamed-markdown block
   // (code header, table menus, Mermaid toolbar, external-link interstitial) and
@@ -447,4 +519,135 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "viewer.highlight.previous": "Previous passage",
   "viewer.highlight.next": "Next passage",
   "viewer.highlight.count": "Passage {index} of {total}",
+
+  // ── @elabs-ai/components-terminal ─────────────────────────────────────────
+  // Terminal (the read-only ANSI log): the ONE live-region announcement for
+  // its `isStreaming` rung. The blinking cursor block is the only other
+  // streaming signal and it is purely visual, so without this a screen-reader
+  // user attached to a running build or deploy log gets no indication that
+  // anything is still arriving.
+  "terminal.output.streaming": "Streaming output…",
+  // TerminalTranscriptRow (#117 T2): the gutter's meaning as words, so the
+  // "who spoke / what it printed / did it fail" grammar survives greyscale
+  // and reaches assistive tech, not only the glyph + colour.
+  "terminal.transcriptRow.user": "Prompt",
+  "terminal.transcriptRow.agent": "Agent",
+  "terminal.transcriptRow.output": "Output",
+  "terminal.transcriptRow.error": "Error",
+  "terminal.transcriptRow.exitCode": "Exit {code}",
+  // TerminalTodoList (#117 T5): the three-state checklist's announced word
+  // per row — the second, non-colour channel beside the ✔ / ◼ / ◻ glyph and
+  // the strikethrough/bold treatment. Wording verified 2026-09-01 against
+  // Claude Code v2.1.207's own upstream state words, parentheses included.
+  "terminal.todoList.done": "(completed)",
+  "terminal.todoList.active": "(in progress)",
+  "terminal.todoList.pending": "(pending)",
+  // TerminalEventLine (#117 T6): the lifecycle/hook event line. `outcome*` is
+  // the sr-only word beside the (always aria-hidden) StatusIcon glyph —
+  // never omitted for the default "ok" case, so "succeeded" is exactly as
+  // recoverable as "failed". `hooksTotal`/`hooksResult` are the terminal's
+  // own literal `[hooks: …]` bracket vocabulary, verified live 2026-09-01
+  // against Grok CLI v0.2.93; `hooksFailed` is the sr-only, count-aware
+  // "N hooks failed" that makes a partial hook failure (e.g. `3/1`) read as
+  // bad without relying on colour.
+  "terminal.eventLine.outcomeOk": "Succeeded",
+  "terminal.eventLine.outcomeBlocked": "Blocked",
+  "terminal.eventLine.outcomeFailed": "Failed",
+  "terminal.eventLine.phaseBefore": "Before",
+  "terminal.eventLine.phaseAfter": "After",
+  "terminal.eventLine.phaseLifecycle": "Lifecycle",
+  "terminal.eventLine.hooksTotal": "[hooks: {total}]",
+  "terminal.eventLine.hooksResult": "[hooks: {ran}/{passed}]",
+  "terminal.eventLine.hooksFailed": {
+    one: "{count} hook failed",
+    other: "{count} hooks failed",
+  },
+  // TerminalWorking (#117 T3): the in-turn footer's default label and its two
+  // icon-only controls' accessible names. No generic "stop"/"scroll to
+  // bottom" key exists yet (only the ai-namespaced `ai.promptInput.stop` /
+  // `ai.turnStatus.scrollToBottom`), so these are minted under the package's
+  // own namespace rather than borrowed cross-package.
+  "terminal.working.label": "Waiting for response…",
+  "terminal.working.stop": "Stop",
+  "terminal.working.scrollToBottom": "Scroll to bottom",
+  // TerminalStatusBar (#117 T4): the ambient chrome row's accessible name and
+  // the sr-only words beside its aria-hidden numerals/glyphs. Mirrors
+  // `ai.sessionStatusBar.connections`' wording under this package's own
+  // namespace (cannot import the `ai` key — sibling packages never import
+  // each other, `.claude/rules/terminal-components.md` § Reuse means
+  // promotion). `disconnected` and `stepsComplete` ("steps complete") are
+  // verified live 2026-09-01 against Grok CLI v0.2.93.
+  "terminal.statusBar.label": "Session status",
+  "terminal.statusBar.connecting": "Connecting…",
+  "terminal.statusBar.connections": "{connected} of {total} connections",
+  "terminal.statusBar.disconnected": "Disconnected",
+  "terminal.statusBar.context": "{used} of {limit} context used",
+  "terminal.statusBar.stepsComplete": "{current} of {total} steps complete",
+  // TerminalBanner (#117 T7): the launch card above an empty transcript.
+  // Mirrors `ai.sessionHeader.*`'s wording under this package's own
+  // namespace — sibling packages never import each other's locale keys
+  // (`.claude/rules/terminal-components.md` § Reuse means promotion).
+  "terminal.banner.capabilities": "Capabilities",
+  "terminal.banner.whatsNew": "What’s new",
+  "terminal.banner.quickActions": "Quick actions",
+  // TerminalToolCall (#117 T8): the tool-call row's status word (announced
+  // beside the glyph via TerminalRow's gutterLabel — never colour alone),
+  // the result row's swapped heading (mirrors ToolOutput's own "Result"/
+  // "Error" heading swap, `@elabs-ai/components-ai`), and the expand
+  // trigger's accessible name. Unlike upstream's inert `"(ctrl+o to
+  // expand)"` hint text, this IS a real focusable control's label — no CLI
+  // chord required.
+  "terminal.toolCall.succeeded": "Succeeded",
+  "terminal.toolCall.failed": "Failed",
+  "terminal.toolCall.running": "Running",
+  "terminal.toolCall.result": "Result",
+  "terminal.toolCall.error": "Error",
+  "terminal.toolCall.expandHint": "Show details",
+  // TerminalDiffHunk (#117 T9): the header's fixed "Update ({file})" phrase,
+  // and the collapsed-context-run disclosure's count-aware label. Mirrors
+  // `ai.diffView.showMore`'s wording under this package's own namespace —
+  // sibling packages never import each other's locale keys
+  // (`.claude/rules/terminal-components.md` § Reuse means promotion). The
+  // per-line `add`/`del` polarity words are NOT duplicated here: they ride
+  // the shared `diffLineAccessibleLabel()` keys (`ai.diffView.addedLine` /
+  // `ai.diffView.removedLine`) above, the actual promoted channel.
+  "terminal.diffHunk.header": "Update ({file})",
+  "terminal.diffHunk.showMore": {
+    one: "Show {count} more line",
+    other: "Show {count} more lines",
+  },
+  // TerminalPermission (#117 T10): the per-call scoped approval prompt's
+  // default title/question and its three scoped option labels, verified
+  // live 2026-09-01 against Claude Code v2.1.207. The third option is the
+  // vendor-free `deny` scope: upstream names its own product in this label,
+  // ours reads "the agent" instead (#117 acceptance criterion). The reason
+  // field reuses `ai.approvalCard.reasonLabel`/`reasonPlaceholder` and the
+  // option descriptions reuse `APPROVAL_SCOPE_DESCRIPTION_KEYS` — both
+  // already generic, so nothing new is minted for either.
+  "terminal.permission.title": "Bash command",
+  "terminal.permission.question": "Do you want to proceed?",
+  "terminal.permission.optionOnce": "Yes",
+  "terminal.permission.optionSession": "Yes, and don’t ask again this session",
+  "terminal.permission.optionDeny": "No, and tell the agent what to do differently",
+  // TerminalComposer (#117 T11): the prompt composer's placeholder, its
+  // merged submit/stop affordance's accessible name (mirrors
+  // `ai.promptInput.submit`/`stop` under this package's own namespace —
+  // sibling packages never import each other's locale keys,
+  // `.claude/rules/terminal-components.md` § Reuse means promotion), the
+  // effort scale's default accessible name, and the shortcut-hint row's
+  // three default words.
+  "terminal.composer.placeholder": "Type your next instruction…",
+  "terminal.composer.submit": "Send",
+  "terminal.composer.stop": "Stop",
+  "terminal.composer.effort": "Effort",
+  "terminal.composer.shortcutSend": "send",
+  "terminal.composer.shortcutNewline": "newline",
+  "terminal.composer.shortcutCancel": "cancel",
+  // TerminalSlashMenu (#117 T12): the `/`-command palette's listbox
+  // accessible name (mirrors `ai.promptInputSlash.listLabel`'s wording under
+  // this package's own namespace — sibling packages never import each
+  // other's locale keys, `.claude/rules/terminal-components.md` § Reuse
+  // means promotion). The empty state reuses the generic `noResults` key
+  // rather than minting a second one.
+  "terminal.slashMenu.listLabel": "Commands",
 };

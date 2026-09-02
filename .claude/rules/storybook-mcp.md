@@ -70,7 +70,7 @@ export. e.g. `title:"Foundation/Button"` → `foundation-button--default`;
 `title:"Disclosure/Accordion"` → `disclosure-accordion--default`. Use
 `list-all-documentation` with `withStoryIds:true` to get exact IDs.
 
-## Themes (three; default `light`)
+## Themes (two; default `light`)
 
 Always pass the **CSS slug**, never the display name:
 `light`, `dark`.
@@ -78,6 +78,22 @@ Always pass the **CSS slug**, never the display name:
 - `preview-stories`: `globals={theme:'dark'}`.
 - Manual URL: `/?path=/story/<storyId>&globals=theme:<slug>` (iframe:
   `iframe.html?id=<storyId>&globals=theme:<slug>`).
+- **Headless, no dev server — `STORYBOOK_THEME=<slug>` pins the whole run:**
+
+  ```
+  cd apps/docs && STORYBOOK_THEME=dark pnpm exec vitest --project storybook run <name>
+  ```
+
+  Both of the mechanisms above need a browser somebody is driving.
+  `@storybook/addon-vitest` composes stories with no toolbar and no URL, so
+  before this seam existed every headless run — local and CI — silently measured
+  `light` only, and a cross-theme claim could not honestly be made from one. The
+  variable sits BELOW a per-story `parameters.themes.themeOverride` and the
+  toolbar global, so a story that pins its own theme is never repainted by a
+  sweep. Locked by `apps/docs/stories/storybook-theme-harness.stories.tsx`,
+  which asserts `data-theme` equals the run's resolved theme — so a future
+  Storybook upgrade that drops the seam fails loudly instead of quietly
+  reverting every sweep to `light`.
 
 ## Workflow by pillar
 

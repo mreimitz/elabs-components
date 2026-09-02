@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 115 entries (data: 2, source: 16, font: 2, dependency: 95).
+// 116 entries (data: 2, source: 17, font: 2, dependency: 95).
 
 import type { Attribution } from "./attribution-types";
 
@@ -101,6 +101,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Copyright (c) 2025 Ephraim Duncan",
     url: "https://github.com/ephraimduncan/blocks",
     usedBy: ["@elabs-ai/components-ui"],
+    required: false,
+  },
+  {
+    version: null,
+    note: "Agent-session UI logic re-expressed on our tokens: the line-level diff model and its screen-reader polarity prefixes, the scoped N-option permission anatomy, the slash-palette prefix-filter/clamp behaviour, the turn-status elapsed formatter, the hook/lifecycle event line, and the grouped keyboard-shortcuts sheet. No upstream code, styling or terminal palette is shipped.",
+    id: "brainless",
+    category: "source",
+    name: "brainless",
+    license: "MIT",
+    copyright: "Copyright (c) 2026 Ben Swerdlow",
+    url: "https://github.com/theswerd/brainless",
+    usedBy: ["@elabs-ai/components-ai", "@elabs-ai/components-ui", "@elabs-ai/components-terminal"],
     required: false,
   },
   {
@@ -933,7 +945,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "BSD-3-Clause",
     copyright: "Kyle Kelley",
     url: "https://www.npmjs.com/package/ansi-to-react",
-    usedBy: ["@elabs-ai/components-ai"],
+    usedBy: ["@elabs-ai/components-terminal"],
     required: false,
     note: null,
   },
@@ -949,6 +961,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
       "@elabs-ai/components-ai",
       "@elabs-ai/components-charts",
       "@elabs-ai/components-editor",
+      "@elabs-ai/components-terminal",
       "@elabs-ai/components-ui",
     ],
     required: false,
@@ -1113,6 +1126,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
       "@elabs-ai/components-editor",
       "@elabs-ai/components-flow",
       "@elabs-ai/components-maps",
+      "@elabs-ai/components-terminal",
       "@elabs-ai/components-ui",
       "@elabs-ai/components-viewer",
     ],

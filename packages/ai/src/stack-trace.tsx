@@ -237,7 +237,9 @@ export const StackTraceErrorType = memo(
     const { trace } = useStackTrace();
 
     return (
-      <span className={cn("shrink-0 font-semibold text-destructive", className)} {...props}>
+      // #124: the error type NAME is running text (e.g. "TypeError"), not a
+      // mark — ink rung, unlike the AlertTriangleIcon mark above.
+      <span className={cn("shrink-0 font-semibold text-destructive-text", className)} {...props}>
         {children ?? trace.errorType}
       </span>
     );

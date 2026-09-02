@@ -123,8 +123,9 @@ function makeErrorChip(message: string): HTMLElement {
   chip.setAttribute("role", "alert");
   chip.setAttribute("aria-live", "assertive");
   chip.setAttribute("title", message);
+  // #124: the chip's own "Upload failed" label is running text — ink rung.
   chip.className =
-    "inline-flex items-center gap-1 rounded px-2 py-0.5 text-caption bg-destructive/10 text-destructive " +
+    "inline-flex items-center gap-1 rounded px-2 py-0.5 text-caption bg-destructive/10 text-destructive-text " +
     "border border-destructive/30 select-none";
 
   const label = document.createElement("span");

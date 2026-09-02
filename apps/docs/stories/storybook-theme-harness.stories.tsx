@@ -40,13 +40,31 @@ rediscovered by manual instrumentation.
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/**
+ * What this run is SUPPOSED to be themed as.
+ *
+ * `STORYBOOK_THEME=<slug>` pins the theme for a whole headless run so a
+ * cross-theme sweep is reproducible by a command instead of by a human driving
+ * the dev-server toolbar (see the `withTheme` decorator in
+ * `apps/docs/.storybook/preview.tsx`). With the variable unset this is the
+ * shipped default, so the #402 guard below is unchanged for an ordinary run.
+ *
+ * Reading it here — rather than hard-coding `DEFAULT_THEME` — is what makes the
+ * env seam load-bearing: a `STORYBOOK_THEME=dark` run that silently kept
+ * rendering `light` would now FAIL this story instead of quietly producing a
+ * cross-theme claim nobody actually measured.
+ */
+const EXPECTED_THEME =
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.STORYBOOK_THEME ||
+  DEFAULT_THEME;
+
 export const AppliesDefaultTheme: Story = {
-  name: "applies default theme (no globals override)",
+  name: "applies the run's theme (no globals override)",
   play: async () => {
     // The decorator applies the theme via a `useEffect`, so it lands one tick
     // after the initial render/commit — `waitFor` covers that, not a race.
     await waitFor(() => {
-      expect(document.documentElement.getAttribute("data-theme")).toBe(DEFAULT_THEME);
+      expect(document.documentElement.getAttribute("data-theme")).toBe(EXPECTED_THEME);
     });
   },
 };

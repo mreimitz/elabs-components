@@ -26,6 +26,7 @@
       "description": "Chat surface with transcript, composer, tool calls and a context rail.",
       "dependencies": [
         "@elabs-ai/components-ai",
+        "@elabs-ai/components-icons",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
       ],
@@ -87,6 +88,7 @@
       "dependencies": [
         "@elabs-ai/components-ai",
         "@elabs-ai/components-charts",
+        "@elabs-ai/components-icons",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui"
       ],
@@ -550,6 +552,45 @@
           "path": "registry/blocks/form-wizard-01/field.tsx",
           "type": "registry:component",
           "target": "components/form-wizard-01/field.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "terminal-session-idle",
+      "type": "registry:block",
+      "title": "Terminal session (idle)",
+      "description": "A settled coding-agent console: launch banner, transcript, composer with mode/effort indicator, status bar. Nothing is running.",
+      "dependencies": [
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/terminal-session-idle/terminal-session-idle.tsx",
+          "type": "registry:component",
+          "target": "components/terminal-session-idle/terminal-session-idle.tsx"
+        }
+      ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "terminal-session-mid-turn",
+      "type": "registry:block",
+      "title": "Terminal session (mid-turn)",
+      "description": "A coding-agent console under way: tool calls, a diff hunk, a working line with a stop affordance, a pending permission prompt, status bar.",
+      "dependencies": [
+        "@elabs-ai/components-terminal",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/terminal-session-mid-turn/terminal-session-mid-turn.tsx",
+          "type": "registry:component",
+          "target": "components/terminal-session-mid-turn/terminal-session-mid-turn.tsx"
         }
       ]
     }

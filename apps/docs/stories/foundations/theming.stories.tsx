@@ -607,7 +607,20 @@ function RuntimeTokenOverridesDemo() {
           />
         </div>
 
-        <div ref={setTarget} className="space-y-1.5 rounded-lg border border-border p-2">
+        {/*
+         * `bg-background` is load-bearing, not decoration. The nested
+         * `ThemeProvider` writes `data-theme` onto THIS element, so every token
+         * inside it — including the caption's `--muted-foreground` — resolves
+         * against that inner scope while the element itself would otherwise
+         * keep showing the OUTER page's ground. Under a dark page that painted
+         * light-theme caption ink on a dark ground and axe measured 2.95:1, a
+         * real 1.4.3 failure. A region that installs its own token scope must
+         * paint its own ground.
+         */}
+        <div
+          ref={setTarget}
+          className="space-y-1.5 rounded-lg border border-border bg-background p-2"
+        >
           <span className="block text-meta text-muted-foreground">
             Tenant preview {previewOpen ? "(open)" : "(closed)"}
           </span>
@@ -772,7 +785,13 @@ function DeriveThemeDemo() {
         </Button>
       </div>
 
-      <div ref={setTarget} className="rounded-lg border border-border p-4">
+      {/*
+       * `bg-background`: the nested `ThemeProvider` scopes its tokens to this
+       * element, so it has to paint the ground those tokens assume — otherwise
+       * the labels below render in the inner scope's ink on the outer page's
+       * ground (measured at 2.95:1 under a dark page).
+       */}
+      <div ref={setTarget} className="rounded-lg border border-border bg-background p-4">
         {target ? (
           <ThemeProvider
             attributeTarget={target}

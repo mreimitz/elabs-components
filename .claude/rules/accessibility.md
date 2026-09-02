@@ -9,6 +9,34 @@
   must, add `role`, `tabIndex={0}`, and key handlers — but prefer the native tag.
 - **Names & labels.** Inputs need labels (visible or `sr-only`). Icon-only
   controls need `aria-label`. Decorative SVGs get `aria-hidden="true"`.
+- **A `Kbd` next to a control's own text CORRUPTS that control's accessible
+  name (#117).** The name is computed from the control's whole text content, so
+  a shortcut glyph rendered inside a `<Label>`, a `<button>`, or a menu item
+  concatenates into it — a mode trigger labelled "Auto" beside a `⇧Tab` hint
+  announces as `"Auto ⇧Tab"`. **Decide which you meant, and make it explicit
+  either way** — the failure is a name nobody chose, not the presence of a
+  shortcut:
+  - **Not part of the name** (the usual answer). A labelled control (radio,
+    checkbox, anything with `<Label htmlFor>`) puts the `Kbd` **beside** the
+    `Label` as a sibling, never inside it. A control that owns its own text
+    (a button, a menu trigger) authors the name with `aria-label` and marks the
+    visible label and the `Kbd` `aria-hidden`.
+  - **Deliberately part of the name.** A quick-action row may reasonably
+    announce "New chat ⌘N". Then it is authored, not accidental: an explicit
+    space text node between them (flex `gap` is layout, not text, so without it
+    the name computes as `"New chat⌘N"`), and a comment saying it is intended.
+    `SessionHeader` and `TerminalBanner` both do this on purpose.
+  - **Standards note, unresolved here:** `aria-keyshortcuts` is the attribute
+    the platform provides for exactly this, and it keeps the name clean while
+    still exposing the shortcut. This repo does not use it yet, and switching
+    the two components above is a cross-package API decision, not a local
+    cleanup — route it through `brand-ui-design-system-architect` rather than
+    changing one side and creating a divergence.
+  - **How to catch it:** assert `toHaveAccessibleName("…")` with the exact
+    string, not `getByRole(…, { name: /…/ })` — a regex happily matches the
+    polluted name and the bug survives the test. The accidental form turned up
+    independently in two components in one wave, so treat a `Kbd` near a control
+    as a standing prompt to check the computed name, not a one-off.
 - **Lean on Radix / React Aria.** Don't reimplement focus management, typeahead,
   or dismissal that the primitive already provides. Reach for **React Aria** only
   when Radix lacks the behavior and the accessibility win is real (e.g. complex

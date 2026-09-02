@@ -36,12 +36,16 @@ import {
   type HTMLAttributes,
   type ReactNode,
 } from "react";
-import { Check, X, CheckCheck, User, Bot, Clock } from "lucide-react";
+import { Check, X, CheckCheck, User, Bot, Clock, ChevronDown } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/cn";
+import { type CheckResult } from "../../lib/check-result";
+import { formatElapsed } from "../../lib/format-duration";
 import { Button } from "../button/button";
 import { Badge } from "../badge/badge";
 import { StatePanel } from "../state-panel/state-panel";
+import { StatusIcon } from "../status-badge/status-badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../collapsible/collapsible";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -74,6 +78,13 @@ export interface ChangeHunk {
   status?: ChangeHunkStatus;
   /** Per-hunk provenance override (overrides the review-level provenance). */
   provenance?: ChangeProvenance;
+  /**
+   * Verification results for this hunk (lint / types / tests / policy hooks).
+   * Purely informational — a failing check never blocks approval, it only
+   * informs the reviewer's decision. Grouped into "Before" / "After" sections
+   * when both phases are present.
+   */
+  checks?: CheckResult[];
 }
 
 /** State surface exposed by the ChangeReview context. */
@@ -419,7 +430,11 @@ const HUNK_STATUS_ICONS: Record<ChangeHunkStatus, ReactNode> = {
     </span>
   ),
   removed: (
-    <span className="text-destructive font-bold text-meta" aria-hidden="true">
+    // #124: sibling of `added`/`modified` above — this glyph is a decorative
+    // aria-hidden marker beside a labelled span (see HUNK_STATUS_LABELS), and
+    // reads as running text at the type scale, so it takes the ink rung the
+    // other two already use.
+    <span className="text-destructive-text font-bold text-meta" aria-hidden="true">
       −
     </span>
   ),
@@ -435,6 +450,145 @@ const HUNK_STATUS_LABELS: Record<ChangeHunkStatus, string> = {
   removed: "removed",
   modified: "modified",
 };
+
+// ─── Checks (verification evidence) ────────────────────────────────────────────
+
+/**
+ * A check's `detail` collapses behind a disclosure once it's long enough that
+ * showing it inline would dominate the hunk row. Short details always render
+ * in place.
+ */
+const CHECK_DETAIL_COLLAPSE_THRESHOLD = 80;
+
+function isLongCheckDetail(detail: string): boolean {
+  return detail.length > CHECK_DETAIL_COLLAPSE_THRESHOLD || detail.includes("\n");
+}
+
+const CHECK_PHASE_LABELS: Record<"before" | "after", string> = {
+  before: "Before",
+  after: "After",
+};
+
+/**
+ * Group checks for display. Phase headers ("Before" / "After") appear ONLY
+ * when both phases are present in the same hunk — a single-phase or
+ * unphased list of checks renders flat, with no header noise.
+ */
+function groupChecksByPhase(
+  checks: CheckResult[],
+): { phase?: "before" | "after"; items: CheckResult[] }[] {
+  const before = checks.filter((c) => c.phase === "before");
+  const after = checks.filter((c) => c.phase === "after");
+  const showPhaseLabels = before.length > 0 && after.length > 0;
+
+  if (!showPhaseLabels) {
+    return [{ items: checks }];
+  }
+
+  const rest = checks.filter((c) => c.phase !== "before" && c.phase !== "after");
+  const groups: { phase?: "before" | "after"; items: CheckResult[] }[] = [];
+  if (rest.length > 0) groups.push({ items: rest });
+  groups.push({ phase: "before", items: before });
+  groups.push({ phase: "after", items: after });
+  return groups;
+}
+
+/**
+ * A single verification result row: icon + label + accessible status word +
+ * optional duration, with an optional collapsed detail line below.
+ *
+ * The pass/fail signal is carried by TWO non-color cues — the icon (distinct
+ * glyph per `StatusIcon`'s canonical vocabulary) and the visible "Passed"/
+ * "Failed" text — so it survives in greyscale (WCAG 1.4.1). `StatusIcon` is
+ * decorative (`aria-hidden`); the status word is what reaches assistive tech.
+ */
+function ChangeCheckRow({ check }: { check: CheckResult }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const { label, ok, detail, durationMs } = check;
+  const statusWord = ok ? "Passed" : "Failed";
+  const hasDetail = detail !== undefined && detail !== "";
+  const longDetail = hasDetail && isLongCheckDetail(detail);
+
+  return (
+    <div data-slot="change-review-hunk-check" data-ok={ok} className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 min-w-0">
+        <StatusIcon status={ok ? "complete" : "failed"} className="size-3.5 shrink-0" />
+        <span className="text-caption font-medium text-foreground truncate">{label}</span>
+        <span className={cn("text-caption", ok ? "text-success-text" : "text-destructive-text")}>
+          {statusWord}
+        </span>
+        {durationMs !== undefined && (
+          <span className="text-caption text-muted-foreground tabular-nums shrink-0">
+            {formatElapsed(durationMs)}
+          </span>
+        )}
+      </div>
+
+      {hasDetail &&
+        (longDetail ? (
+          <Collapsible open={detailOpen} onOpenChange={setDetailOpen}>
+            <CollapsibleTrigger
+              className={cn(
+                "flex items-center gap-1 self-start rounded-sm pl-5 text-caption text-muted-foreground",
+                "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className={cn(
+                  "size-3 transition-transform duration-fast motion-reduce:transition-none",
+                  detailOpen ? "rotate-180" : "rotate-0",
+                )}
+              />
+              {detailOpen ? "Hide detail" : "Show detail"}
+            </CollapsibleTrigger>
+            <CollapsibleContent data-slot="change-review-hunk-check-detail">
+              <p className="pl-5 pt-1 text-caption text-muted-foreground break-words">{detail}</p>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <p
+            data-slot="change-review-hunk-check-detail"
+            className="pl-5 text-caption text-muted-foreground break-words"
+          >
+            {detail}
+          </p>
+        ))}
+    </div>
+  );
+}
+
+/** The full checks section for one hunk — grouped by phase when applicable. */
+function ChangeReviewChecks({ checks }: { checks: CheckResult[] }) {
+  const groups = groupChecksByPhase(checks);
+  const showPhaseLabels = groups.some((g) => g.phase !== undefined);
+
+  return (
+    <div
+      data-slot="change-review-hunk-checks"
+      className="flex flex-col gap-2 border-t border-border pt-3"
+    >
+      {groups.map((group, index) => (
+        <div
+          key={group.phase ?? `_${index}`}
+          data-slot="change-review-hunk-checks-phase"
+          className="flex flex-col gap-1.5"
+        >
+          {showPhaseLabels && group.phase && (
+            <span className="text-meta font-medium text-muted-foreground">
+              {CHECK_PHASE_LABELS[group.phase]}
+            </span>
+          )}
+          <div className="flex flex-col gap-1.5">
+            {group.items.map((check, itemIndex) => (
+              <ChangeCheckRow key={`${check.label}-${itemIndex}`} check={check} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export interface ChangeReviewHunkProps
   extends
@@ -460,7 +614,7 @@ export interface ChangeReviewHunkProps
 export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>(
   function ChangeReviewHunk({ hunk, renderHunk, className, ...props }, ref) {
     const { state, actions } = useChangeReview();
-    const { id, title, before, after, status = "modified", provenance } = hunk;
+    const { id, title, before, after, status = "modified", provenance, checks } = hunk;
     const approved = state.approved.has(id);
 
     const statusLabel = HUNK_STATUS_LABELS[status];
@@ -513,6 +667,7 @@ export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>
           <div className="flex items-center gap-2 min-w-0">
             {/* Status indicator: NON-color cue via symbol + color together */}
             <span
+              role="img"
               aria-label={`Change type: ${statusLabel}`}
               className="shrink-0 inline-flex items-center justify-center size-5"
             >
@@ -561,6 +716,9 @@ export const ChangeReviewHunk = forwardRef<HTMLLIElement, ChangeReviewHunkProps>
 
         {/* Content area: before / after or custom renderHunk */}
         {defaultContent && <div>{defaultContent}</div>}
+
+        {/* Verification evidence — informational only, never blocks approval */}
+        {checks && checks.length > 0 && <ChangeReviewChecks checks={checks} />}
       </li>
     );
   },

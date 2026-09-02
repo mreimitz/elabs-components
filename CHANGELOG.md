@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+- Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
+  now announces its `isStreaming` state. Its only streaming signal was the
+  blinking cursor block, which is purely visual, so a screen-reader user
+  attached to a running build or deploy log had no indication that anything
+  was still arriving. `TerminalContent` now carries exactly one
+  `role="status" aria-live="polite"` region — mounted unconditionally, with
+  its TEXT switching, because a live region has to exist before its content
+  changes to be announced reliably — matching what `TerminalWorking` already
+  did elsewhere in the same package. Adds the `terminal.output.streaming`
+  message key.
+
+- Fixed: three accessibility gaps found by a pre-merge review of the new
+  `@elabs-ai/components-terminal` console family. (1) `TerminalOverlay`'s
+  footer key legend no longer hides its `Kbd` glyphs from assistive tech — in
+  a keyboard-shortcut legend the key IS the information and the action text
+  does not restate it, so a non-visual user was getting the actions and none
+  of the shortcuts. It now matches `KeyboardShortcuts`
+  (`@elabs-ai/components-ui`), the component this frame exists to host.
+  (2) `TerminalDiffHunk`'s header (`⏺`) and summary (`⎿`) rows now pass a
+  `gutterLabel`, announcing "Agent" and "Result" — the same words
+  `TerminalTranscriptRow` and `TerminalToolCall` already announce for those
+  exact glyphs; they were the only place in the family where a meaningful
+  gutter glyph reached a screen reader as nothing at all. (3) The two
+  terminal-session registry blocks now root on `<main>` rather than a bare
+  `<div>`, and the mid-turn block gains an `sr-only` top-level heading (its
+  idle sibling already had one, promoted from its banner title), so heading
+  and landmark navigation land on something.
+
 - Fixed: `SchemaFormTestAction` (`@elabs-ai/components-ui`) no longer keeps
   showing a stale "Connected"/failure result once the tested field values
   change — a fresh `latestEffectiveValuesRef`/`testedValuesRef` pair discards
@@ -829,6 +857,489 @@ work alongside `@elabs-ai/components-ai`.
   keys whose English defaults reproduce dnd-kit's own default text
   byte-for-byte, so an English consumer with no `LocaleProvider` override
   sees unchanged output (#98).
+- Added: `KeyboardShortcuts` (`@elabs-ai/components-ui`) — a grouped, searchable
+  shortcut sheet built on `Kbd` and `Collapsible`. The library shipped the `Kbd`
+  atom and no way to present a shortcut _set_, so every consumer hand-rolled the
+  grouping, the per-group count and the filter. Groups are collapsible and carry
+  their item count while collapsed; the search field filters on action text and
+  on key names, and an empty result renders a real `StatePanel` rather than a
+  blank region (#113).
+- Added: `PermissionModeSelect` (`@elabs-ai/components-ai`) — the standing
+  permission-policy chooser, distinct from the per-call approval card: a mode is
+  `{ id, label, consequence, keyHint? }` where `consequence` is **required** on
+  the type, because a mode whose effect is unstated is the exact failure the
+  component exists to prevent. Built on `RadioGroup`, so focus roving and
+  announcement are Radix's; the in-force mode is marked in text (reaching the
+  accessible name), never by colour alone. No mode vocabulary is shipped — the
+  app supplies its own (#104).
+- Added: `SessionHeader` (`@elabs-ai/components-ai`) — the session launch card
+  that sits above `ChatGreeting` in an empty session: model, workspace, version,
+  a capability list, a what's-new list and quick actions with key hints (#110).
+- Changed: `@elabs-ai/components-icons` is now declared as a **peer dependency**
+  of `@elabs-ai/components-ai`, matching `@elabs-ai/components-data` and
+  `@elabs-ai/components-charts`. It was only a devDependency while
+  `session-header.tsx` imports `BrandLogo` at runtime, so a consumer installing
+  `@elabs-ai/components-ai` alone could resolve-fail at import time (#110).
+- Added: `Plan` (`@elabs-ai/components-ai`) gains a decision contract —
+  `PlanStatus` (`awaiting` / `approved` / `changes-requested`) plus
+  `PlanStatusLine`, `PlanApprove`, `PlanRequestChanges` and `PlanComment`. A plan
+  is a proposal awaiting a decision; the card could previously render the
+  proposal but not the decision. The pending card is `role="group"` +
+  `aria-labelledby` (never an assertive live region — it contains focusable
+  controls); a settled card is `role="alert"`. Status also reaches an accent rail,
+  so it survives greyscale (#108).
+- Added: `ChangeReview` (`@elabs-ai/components-ui`) carries validation results —
+  `ChangeHunk.checks?: CheckResult[]`, rendered as pass/fail rows with a label, an
+  optional duration and a collapsible detail line, grouped by whether they ran
+  before or after the edit. A proposed change now carries its lint/test/hook
+  verdict into the review instead of leaving the reviewer to guess (#112).
+- Added: `TurnStatus` and `SessionStatusBar` (`@elabs-ai/components-ai`) — the
+  in-turn footer and the ambient session row. `TurnStatus` reports the three facts
+  that belong together under a long turn (how long it has been going, what it is
+  costing, and how to stop it) with exactly one `role="status" aria-live="polite"`
+  region that announces the label and the settled sentence but never the ticking
+  elapsed value. `SessionStatusBar` **docks** the existing `Context` component as a
+  child rather than re-implementing usage or cost maths, and renders nothing at all
+  when every segment is absent (#105).
+- Added: `PromptInputMode` and `PromptInputEffort` (`@elabs-ai/components-ai`) —
+  composer controls for an app-defined operating mode and an ordered
+  reasoning-effort scale. Neither ships a built-in vocabulary. The effort
+  indicator encodes its level ordinally: each step's size ramps by position, and
+  selection fills every step at or before it solid against a hollow outline for the
+  rest — a shape difference, not a hue-only one, so the level survives greyscale
+  (#107).
+- Added: four shared seams in `@elabs-ai/components-ui`'s `src/lib/` that several
+  of the above consume, so the same concept is not modelled twice in one release:
+  `CheckResult`/`CheckSummary` (the verdict of one thing that ran), `formatElapsed`
+  (one duration formatter with a sub-second rung, replacing two disagreeing
+  implementations that briefly co-existed in this package), `isOptionalPeerMissing`
+  (promoted from `@elabs-ai/components-ai`'s private copy) and the trigger-query
+  helpers lifted out of `MentionInput`'s private implementation so a slash-command
+  palette can reuse them. `ModelPicker` gains a `footer` slot.
+- Added: `brainless` (MIT, © 2026 Ben Swerdlow) to `scripts/attributions.sources.json`.
+  The agent-session UI logic above is re-expressed on this repo's tokens from that
+  project: the line-level diff model and its screen-reader polarity prefixes, the
+  scoped N-option permission anatomy, the slash-palette prefix-filter/clamp
+  behaviour, the turn-status elapsed formatter, the hook/lifecycle event line and
+  the grouped keyboard-shortcuts sheet. No upstream code, styling or terminal
+  palette is shipped.
+- Added: `AgentEvent` (`@elabs-ai/components-ai`) — the lifecycle/hook event line.
+  Nothing in the package could show _what fired around_ a tool call: which hook
+  ran, whether it blocked, how long it took, and how many of its checks passed.
+  It renders as a step on the existing `AgentTimeline` rail (composing
+  `AgentStep`, exactly as `TaskItem` already does) rather than introducing a
+  second spine, and its three outcomes map onto that rail's closed `Status`
+  vocabulary instead of adding an eighth status. The event-level
+  `phase` (`before` / `after` / `lifecycle`) is deliberately a WIDER, separate
+  type from the per-check `CheckResult["phase"]` it renders alongside — they
+  answer different questions and are not unified. Durations come from the one
+  shared `formatElapsed`, and every check's verdict is carried by a visible
+  status word beside the glyph, so it survives greyscale (#109).
+- Added: `@elabs-ai/components-terminal` — a new, registered but deliberately
+  empty package for terminal surfaces (shell/agent output and coding-agent CLI
+  look-alikes). It is a **layer-2 leaf**: it may depend on `-tokens`/`-icons`/
+  `-ui`, nothing may depend on it, and `@elabs-ai/components-ai` must never
+  import it (`pnpm dep-direction:check` enforces this). `Terminal` /
+  `InteractiveTerminal` move here from `@elabs-ai/components-ai` in a follow-up;
+  keeping a terminal emulator's optional `@xterm/*` peers out of the
+  chat-transcript package is what keeps that package cheap to install. Nothing
+  is exported yet, so no consumer is affected (#114).
+- Added: `DiffView` (`@elabs-ai/components-ai`) — the line-level unified diff
+  renderer. The package could show a whole-block before/after (`ChangeReview`) or
+  a full Monaco `DiffEditor`, but had nothing that renders _what an agent changed_
+  as an inline hunk in a transcript. It takes a plain `DiffLine[]`
+  (`add`/`del`/`context`/`hunk`/`meta` with independent old/new numbers), renders
+  `variant="inline"` or `"split"`, collapses long unchanged runs behind a
+  "show N more" control, and switches into a keyboard-scrollable full-page
+  reading surface with `pager` — so the reading mode is a prop, not a second
+  component. Polarity reaches a greyscale or screen-reader user through a `+`/`−`
+  marker glyph **and** a screen-reader word, with the row tint as a third,
+  redundant cue (WCAG 1.4.1). Intra-line colour reuses `CodeBlock`'s Shiki
+  helper rather than forking it, and it feeds `ChangeReview` through that
+  component's existing `renderHunk` seam, so neither package imports the other
+  (#102).
+- Added: `WorkspacePicker` (`@elabs-ai/components-ui`) — choose the workspace or
+  project directory a session runs against. It **composes `ModelPicker`** rather
+  than growing a second searchable-popover list, adding a relative "last opened"
+  rung (`Intl.RelativeTimeFormat`) and a free-text path form in the picker's new
+  `footer` slot. The in-force workspace is marked with a WORD folded into the
+  option's accessible name, not only a check glyph. It reads nothing from disk —
+  the workspace list is a prop (#111).
+- Added: `ModelPicker` (`@elabs-ai/components-ui`) gained a `footer` slot,
+  rendered below the command list so a caller can attach an escape hatch (a
+  free-text entry, a "manage…" link) that the search query cannot filter away.
+- Added: a **terminal token group** (`@elabs-ai/components-tokens`) —
+  `--terminal-background`/`-foreground`/`-cursor`/`-selection`, the agent-accent
+  roles (`--terminal-accent`, `--terminal-accent-foreground`, `--terminal-muted`,
+  `--terminal-border`) and the ANSI-16 (`--terminal-ansi-black` …
+  `--terminal-ansi-bright-white`), declared in every theme block and mapped in
+  `@theme inline` so `bg-terminal-*` / `text-terminal-*` utilities exist. This is
+  what lets the CLI look-alike family be **themed rather than painted** — a
+  fidelity component that would otherwise carry hex now reads tokens. Each slot
+  takes its hue from the role in that theme that already IS that colour
+  (`--destructive` / `--success` / `--highlight` / `--info` / `--code-tag` /
+  `--code-constant`) and its lightness from a rung measured against that theme's
+  own console ground. **The console is a dark surface in every theme, including
+  `light`** — a console renders another program's colour language, and ANSI
+  palettes are authored for dark grounds, so a light ground would invert every
+  ANSI author's intent. Additive: no existing token changed value and no shipped
+  component reads the group yet. Locked by `themes-contrast.test.ts` (an AA ink
+  floor per slot, a ≥3:1 border, and all 120 pairwise ΔE rows) (#115).
+- Added: `ApprovalCardOptions` / `ApprovalCardTarget` / `ApprovalCardReason`
+  (`@elabs-ai/components-ai`) — an approval prompt can now offer **more than
+  yes/no**. A real coding agent asks "Yes", "Yes, and don't ask again this
+  session", "No, and tell the agent what to do instead"; the shipped card could
+  only express the first and the last, so every scoped grant had to be
+  hand-built. Each option carries an `ApprovalScope` (`once` / `session` /
+  `always` / `deny`) whose blast radius is rendered as a **sentence** linked by
+  `aria-describedby` — "Yes" and "Yes, and don't ask again" look alike and mean
+  very different things, so the difference is words, never a colour. The list is
+  a real Radix `RadioGroup` (arrow-key wrap is the primitive's job, not a
+  hand-rolled focus walk), `ApprovalCardTarget` previews what is being approved
+  (a command, a `DiffView`), and `ApprovalCardReason` writes into the card's own
+  state so a reason rides along with whichever choice is committed instead of
+  being a second step. **Non-breaking:** the binary `ToolUIPart`-bound card is
+  untouched — all 8 of its tests pass unmodified, and a new test locks the
+  frozen `Confirmation*` export list so the plain card can never quietly grow a
+  radio group (#103).
+- Changed (tooling): a cross-theme sweep is now reproducible by a **command**
+  instead of a gesture. `STORYBOOK_THEME=<slug>` pins the theme for a whole
+  headless Storybook run —
+  `cd apps/docs && STORYBOOK_THEME=dark pnpm exec vitest --project storybook run <name>`.
+  The quality gates require a component to be OBSERVED in every theme, but the
+  only routes to a non-default theme were the dev-server toolbar and a
+  `globals=theme:<slug>` URL, both of which need a human driving a browser;
+  `@storybook/addon-vitest` composes stories with neither, so every headless run
+  — local and CI — silently measured `light` only. The variable sits below a
+  per-story `themeOverride` and the toolbar global, so a story that pins its own
+  theme is never repainted by a sweep. The existing #402 harness guard now
+  asserts `data-theme` equals the run's **resolved** theme, which is what keeps
+  the seam load-bearing: a run that claimed `dark` and silently rendered `light`
+  fails instead of producing a cross-theme claim nobody measured.
+- Added: `PromptInputSlash` / `PromptInputSlashTextarea`
+  (`@elabs-ai/components-ai`) — the slash-command palette over a composer. The
+  package shipped thin `PromptInputCommand*` wrappers around `cmdk` but nothing
+  that DETECTED a `/` trigger, so every app rebuilt prefix-filtering, active-index
+  clamping and insert-on-select by hand. Focus never leaves the textarea: the
+  highlighted command is reported through `aria-activedescendant`, so the caret
+  survives and Enter selects the command instead of submitting the form. The
+  trigger scan reuses `MentionInput`'s shared caret machinery rather than a
+  second implementation, and `prompt-input.tsx` needed no seam — its existing
+  `onKeyDown`-before-submit order already lets the palette claim Enter.
+  Two real defects in the `cmdk` wrapper surfaced and were fixed while building
+  it: `CommandList` silently overwrites a consumer `id`/`aria-label` (the
+  accessible name has to go through cmdk's own `label` prop, and the list id has
+  to be read back off the mounted node), and `PromptInputCommand`'s
+  `onActiveItemIdChange` never reports "cleared" when the listbox unmounts, so
+  `aria-activedescendant` was left pointing at a node that no longer existed
+  after Escape (#106).
+- Breaking: `Terminal` and `InteractiveTerminal` moved out of
+  `@elabs-ai/components-ai` into a new leaf package,
+  `@elabs-ai/components-terminal`. There is **no re-export and no compat shim** —
+  import them from the new package. `ansi-to-react` and the
+  `@xterm/xterm` / `@xterm/addon-fit` optional peers moved with them, as did the
+  optional-peer detection helper, which is now shared from
+  `@elabs-ai/components-ui` instead of being duplicated per package. The split
+  exists because a terminal surface and a chat surface have nothing in common but
+  the word "output": keeping xterm's optional peers inside the chat package made
+  every chat consumer reason about a dependency they were never going to load
+  (#116).
+- Fixed: `buildInteractiveTerminalTheme` no longer returns xterm's own `ITheme`.
+  Doing so put `import { ITheme } from "@xterm/xterm"` at the top of the
+  package's generated root `.d.ts`, so a consumer with `skipLibCheck: false` who
+  had not installed the optional peer failed to typecheck merely by importing the
+  barrel — an optional peer that is not optional in practice. It now returns
+  `TerminalColorTheme`, a local structural mirror of the 21 colour fields
+  (#101).
+- Fixed: `TerminalCopyButton` rendered an icon-only button with no accessible
+  name, so it reached assistive technology as an unlabelled control. It now
+  carries the shared `copy` label; `TerminalClearButton` gained one too (#116).
+- Changed: the terminal surfaces stopped painting themselves from Tailwind's raw
+  `zinc-*` palette and now read the terminal token group, so a theme can retune
+  the console instead of a component hardcoding it. Their raw font sizes moved to
+  the type-role vocabulary at the same time, which means a compact density now
+  tightens terminal text along with everything else (#116, #115).
+- Fixed: `PermissionModeSelect` rendered each mode's consequence sentence next to
+  its radio but never linked the two, so the sentence reached a sighted reader
+  and nobody else. A screen-reader user arrowing through the modes heard
+  "Unrestricted" and never heard what unrestricted costs them — which is the one
+  thing the component exists to tell them, and the reason `consequence` is a
+  required field. Each sentence is now the radio's accessible description, wired
+  the same way `ApprovalCard`'s scope sentences already were, so the two
+  permission surfaces answer to one convention instead of two. The regression
+  lock asserts the LINK rather than the text: the pre-existing test that only
+  checked the sentence was on the page passed throughout the defect (#103).
+- Changed: several plain data shapes and pure helper functions that used to
+  live inside individual `@elabs-ai/components-ai` chat components have moved
+  to `@elabs-ai/components-ui`, so the upcoming terminal CLI look-alike family
+  (#117) can reuse them without `@elabs-ai/components-ai` and
+  `@elabs-ai/components-terminal` importing each other — the two packages sit
+  side by side and neither is allowed to depend on the other, so a shared
+  building block has to live one level up, in `@elabs-ai/components-ui`. This
+  affects `SlashCommand`/`defaultSlashCommandFilter` (from
+  `PromptInputSlash`), `ApprovalScope`/`ApprovalOption`/
+  `APPROVAL_SCOPE_DESCRIPTION_KEYS` (from `Confirmation`), `DiffLine`/
+  `DiffLineType`/`diffLineMarker`/`diffLineAccessibleLabel` and the diff
+  row-collapsing hook `useDiffRows` (from `DiffView`), `OperatingMode`/
+  `EffortLevel`/`effortRungForIndex` (from `PromptInputMode`/
+  `PromptInputEffort`), `AgentEventPhase`/`AgentEventOutcome` (from
+  `AgentEvent`), and `SessionCapability`/`SessionWhatsNewItem`/
+  `SessionQuickAction` (from `SessionHeader`). Nothing about how these
+  components look or behave has changed. If your code imports any of the
+  above types or functions directly (most apps only use the components
+  themselves and are unaffected), change the import to
+  `@elabs-ai/components-ui` instead of `@elabs-ai/components-ai` — the
+  components that use them keep working exactly as before (#117).
+- Fixed: coloured **status text** across `@elabs-ai/components-ui`,
+  `@elabs-ai/components-ai`, `@elabs-ai/components-flow` and
+  `@elabs-ai/components-editor` was painted with the status **fill** rung
+  (`text-destructive` / `text-warning` / `text-success` / `text-info`), whose
+  contract is only the WCAG 1.4.11 ≥3:1 bar for a graphical mark — not the
+  ≥4.5:1 floor that running text needs. Every site where the colour was the
+  colour OF text now uses the on-surface ink rung (`text-<tone>-text`), and
+  every site where the colour is the colour of a SHAPE keeps the fill rung it
+  is tuned for: `Alert variant="destructive"` moves its Title/Description ink
+  while its `[&>svg]` icon is untouched, `Tool`'s error body moves while its
+  status glyph stays, and `Rating`'s stars and the illustration marks were
+  left alone. Also replaced a raw, untokened `text-yellow-600` on
+  `WebPreview`'s warning log line — it answered to no theme at all. Affects
+  `StatePanel`, `FileUpload`, `Tree`, `Form`, `TagInput`, `ColorPicker`,
+  `ChangeReview`, `Alert`, `FlowGroupNode`, `StackTrace`, `Tool`,
+  `WebPreview`, `JSXPreview`, the Markdown editor's table view and paste
+  handler, and the editor's copy button (#124).
+- Added: `pnpm rung:check` — a gate that fails a NEW status-fill-as-text
+  class, so the fix above cannot quietly regress. It is deliberately honest
+  about its own reach: it only sees a bare status-fill utility co-occurring
+  with a text tell inside one class-string literal, which measured ~39%
+  coverage of the real corpus at 100% precision, and it says so on every run
+  rather than implying the class is closed. A ternary branch, a lookup-map
+  value shared between an icon and a label, and a tone paired with
+  `[&>svg]:` of the same tone all remain review's job. Self-tested via
+  `pnpm rung:check:test` and wired into the blocking CI job (#124).
+- Fixed: the two terminal surfaces in `@elabs-ai/components-terminal` now agree
+  with each other and with the theme. `InteractiveTerminal`'s colour theme is
+  built from the dedicated terminal token group rather than borrowed
+  `--card`/status/chart tokens, so it no longer drifts from the read-only
+  `Terminal` beside it; the read-only terminal's ANSI output is painted
+  through CSS classes bound to those same tokens instead of the hardcoded
+  inline `rgb(...)` styles its renderer emits by default — which is what
+  finally gives the shipped 16-slot ANSI palette a consumer. Both surfaces now
+  carry the resting-surface elevation (`shadow-sm` beside their border) that
+  every other panel in the system has, so a console reads as raised rather
+  than punched out of the page. The AA ink clamp on every ANSI slot is
+  unchanged (#115, #116).
+- Added: `TerminalSurface` and `TerminalRow` (`@elabs-ai/components-terminal`)
+  — the console **ground** the coding-agent session components are built on.
+  Drop any row inside a surface and it inherits the terminal palette, the
+  monospace type role and a two-column gutter grid, so a wrapped continuation
+  line aligns under the content column with no character-width arithmetic
+  anywhere. A row used **outside** a surface still renders correctly rather
+  than breaking, and can override the surface's gutter grammar
+  (`marker` — a glyph per row · `rail` — a rule down the gutter ·
+  `boxed` — a framed block) for itself. `loading` reserves the real grid with
+  layout-shaped placeholder rows behind a single polite announcement, never a
+  spinner. A gutter glyph is hidden from assistive tech by default; when it
+  carries meaning, `gutterLabel` says so in words — in **every** variant,
+  including the one that hides the glyph — so a row's meaning never depends on
+  its decoration. The surface deliberately owns no scroll container, leaving a
+  long transcript to the caller's own virtualization (#117).
+- Added: `TerminalTranscriptRow` (`@elabs-ai/components-terminal`) — one line of
+  an agent transcript: what the person typed, what the agent said, plain
+  program output, or a settled failure. Each `kind` carries its meaning through
+  a distinct glyph, a colour AND an announced word, so who spoke and whether
+  something failed reach a screen-reader user too. An optional `exitCode`
+  renders the CLI-style `exit 1` affordance on output and error lines. The
+  error rung is `role="alert"` and fires only on a settled failure — a
+  half-arrived line is not an error (#117 T2).
+- Added: `TerminalWorking` (`@elabs-ai/components-terminal`) — the in-turn
+  footer pinned last in a transcript: a ten-frame braille spinner, a label,
+  elapsed time (via the shared `formatElapsed`), token spend (via
+  `useLocale().formatNumber`) and a stop control with an optional caller-supplied
+  key hint. Prop-driven only: it runs no timer and owns no transport, so the
+  frame cycle is a CSS keyframe rather than a `setInterval`. Reduced motion
+  stops it dead on **both** of this repo's channels — the OS
+  `prefers-reduced-motion` query and the in-product `data-motion-pref="reduced"`
+  attribute, which a Tailwind `motion-reduce:` variant cannot see — leaving a
+  static glyph while the live region carries the state in words. The visible
+  elapsed counter is deliberately outside that live region: a per-second
+  re-announcement is unusable (#117 T3).
+- Added: `TerminalStatusBar` (`@elabs-ai/components-terminal`) — the ambient
+  chrome row: branch and working directory on the left, connection, context and
+  turn progress on the right, every fact independently optional so a bar with
+  one fact still reads as deliberate. Mirrors `SessionStatusBar`'s prop names
+  for the same facts, so a consumer swapping the chat skin for the console skin
+  renames nothing. A lost connection is recoverable in greyscale and by a
+  screen reader — a distinct glyph plus a visible word, never colour alone
+  (#117 T4).
+- Added: `TerminalTodoList` (`@elabs-ai/components-terminal`) — a three-state
+  checklist rendered as a real `<ol>`/`<li>`, reusing `TimelineStatus`
+  (`done`/`active`/`pending`) rather than minting a fourth vocabulary for the
+  same idea. Each row's state is a glyph (`✔`/`◼`/`◻`) plus an announced word
+  riding `TerminalRow`'s `gutterLabel`, so it survives greyscale and reaches
+  assistive tech without a second, hand-rolled `sr-only` span (#117 T5).
+- Added: `TerminalEventLine` (`@elabs-ai/components-terminal`) — the CLI dress
+  of an agent lifecycle or hook event: a `◆` marker, an optional phase, a hook
+  count in the terminal's own `[hooks: N]` / `[hooks: N/M]` bracket vocabulary,
+  and an optional duration. It shares its outcome and check models
+  (`AgentEventPhase`, `AgentEventOutcome`, `agentEventOutcomeStatus`,
+  `CheckSummary`) with the chat-skin `AgentEvent` **through
+  `@elabs-ai/components-ui`**, so the two skins cannot structurally drift even
+  though `terminal` and `ai` may never import each other. Every outcome carries
+  a distinct glyph plus an `sr-only` word, and a partial hook failure such as
+  `[hooks: 3/1]` is flagged the same way regardless of the row's own outcome.
+  A failed hook count is inked with the token calibrated for the console ground
+  and only its glyph carries the red, because the app's own status ink measures
+  2.57:1 against that ground (#117 T6).
+- Added: `TerminalBanner` (`@elabs-ai/components-terminal`) — the console-dress
+  launch card above an empty transcript: identity, capabilities, what's new and
+  quick actions with key hints, every section independently optional. Reuses
+  `SessionCapability` / `SessionWhatsNewItem` / `SessionQuickAction` and mirrors
+  `SessionHeader`'s prop names. The title is a real heading beside a real
+  border, never the upstream's `<fieldset>`/`<legend>` trick — that borrows
+  form-control semantics for a decoration and misreports the region to
+  assistive tech. A long workspace path wraps rather than truncating, so the
+  value stays readable (#117 T7).
+- Added: `TerminalToolCall` (`@elabs-ai/components-terminal`) — one tool
+  invocation: a status glyph, the tool name with its optional argument, a result
+  summary on its own `⎿` continuation row, and detail behind a real,
+  keyboard-operable `Collapsible`. Each status gets its OWN glyph shape
+  (`⏺`/`✗`/`○`) plus an announced word, where the reference recoloured a single
+  bullet three ways — a colour-only distinction no greyscale reader could
+  recover. The expand trigger stays visible, named and focusable while open, so
+  what a keyboard opens it can also close. `pending` never fires `role="alert"`,
+  even with a stale error-shaped summary (#117 T8).
+- Added: `TerminalDiffHunk` (`@elabs-ai/components-terminal`) — an inline
+  unified diff hunk in console dress: a header naming the file, one row per line
+  (marker glyph, `sr-only` polarity word, line text), and long runs of unchanged
+  context collapsed behind a real `Collapsible`. Long lines wrap rather than
+  truncate — a diff you cannot read is not a diff. Reuses the shared diff model
+  promoted to `@elabs-ai/components-ui` (`DiffLine`, `diffLineMarker`,
+  `diffLineAccessibleLabel`, `collapseDiffRows`), so the polarity words a screen
+  reader hears here are the same ones `ChangeReview` uses (#117 T9).
+- Added: `TerminalPermission` (`@elabs-ai/components-terminal`) — the per-call
+  scoped approval prompt: a title, an arbitrary preview of what the agent wants
+  to run (a command, a diff hunk, anything renderable), the question, then the
+  options. Scope comes from the promoted, vendor-free `ApprovalScope`, and the
+  default preset offers three of its four rungs — allow once, allow for the
+  session, or decline; picking decline reveals an optional reason field. The
+  options are a real Radix `RadioGroup`, so roving focus and arrow-key wrap come
+  from the primitive rather than from walking a parent's children, and each
+  option's consequence sentence is a real `aria-describedby` rather than a
+  tooltip. A key hint sits beside its option's label, never inside it, so the
+  shortcut glyph cannot leak into the choice's accessible name (#117 T10).
+- Added: `TerminalOverlay` (`@elabs-ai/components-terminal`) — the console-dress
+  modal: a real Radix `Dialog` painted on the terminal ground, with a title row,
+  arbitrary caller content, and an optional key-hint legend along the bottom, so
+  a reference panel can open over a transcript without the reader losing their
+  place. Focus moves in on open and Escape dismisses, both from the primitive.
+  The base dialog's own close icon is styled for the app ground, so it is hidden
+  and replaced with one inked from the terminal token group — and because a
+  hidden-by-CSS control is invisible to a jsdom test, that "exactly one close
+  control" claim is locked in the real-browser pass rather than the unit suite.
+  It hosts `KeyboardShortcuts` rather than restating it (#117 T13).
+- Added: `TerminalComposer` (`@elabs-ai/components-terminal`) — the console-dress
+  prompt box: a text well, an optional mode indicator, an optional ordered effort
+  scale, a shortcut-hint row that gains a cancel hint while the agent is working,
+  and a submit control that becomes a stop control for the same period. Mode and
+  effort vocabularies are entirely caller-supplied, so no vendor's operating
+  modes reach a public type. The effort scale fills as the level rises — an
+  ordinal channel, so the level survives greyscale rather than resting on hue.
+  Its mode and effort props are named for what they set rather than borrowing the
+  chat skin's bare `value`, which would collide with the composer's own text
+  value (#117 T11).
+- Added: `TerminalSlashMenu` (`@elabs-ai/components-terminal`) — the console
+  composer's `/`-command palette: a filtered listbox anchored to the text well,
+  arrow keys that wrap at both ends and clamp into a narrowed list, Enter to
+  splice the command, Escape to dismiss without selecting, and a caret that never
+  leaves the field. The trigger is derived from the committed text and caret
+  rather than from a keypress, so a pasted or programmatically-set value opens the
+  palette exactly as typing does, and `/` only opens at the start of a line
+  (`cd /usr` does not). The command vocabulary, the trigger scan and the wrapping
+  index step are reused verbatim from `@elabs-ai/components-ui` rather than
+  re-derived, so the console palette and the chat one cannot drift. The active row
+  carries a reserved-width marker glyph alongside its selected state, so the
+  highlight survives greyscale. `TerminalComposer` gains one additive, optional
+  `textareaRef` prop, forwarded to its text well, so a caret-tracking wrapper
+  never has to reach into the DOM for it. A real-browser pass caught a contrast
+  failure no unit test could see: the active row's description measured 3.61:1
+  against the selection ground, which guarantees AA only for the console's own
+  foreground inks, so that row's description now takes one (#117 T12).
+- Added: two registry blocks assembled from `@elabs-ai/components-terminal` —
+  `terminal-session-idle` (launch banner, a short transcript, the composer with its
+  mode and effort indicators, the status bar) and `terminal-session-mid-turn` (tool
+  calls, a diff hunk, a working line with a stop affordance, a pending permission
+  prompt and the status bar, with a settled-failure state in place of the last two).
+  They are copy-own exemplars, so they are assembled entirely from the shipped
+  terminal family and add no behaviour of their own; install either with
+  `npx shadcn add` (#118).
+- Added: `Patterns/Templates/Terminal Agent Session` — the first screen that
+  assembles the whole coding-agent CLI look-alike family
+  (`@elabs-ai/components-terminal`) into one composed surface: an app-shell
+  sidebar and header framing a single console session, with an ordinary `Card`
+  inspector rail beside it. That adjacency is the point — every component in the
+  family had been verified alone, so the seam where a console meets app chrome
+  had never been observed. Three states ship: mid-turn, settled and awaiting a
+  permission decision. `apps/docs` gains a workspace dependency on
+  `@elabs-ai/components-terminal` to import the family by name (#117 T14).
+- Fixed: `TerminalComposer` (`@elabs-ai/components-terminal`) now follows ADR 0022's
+  merged primary-action contract instead of the pre-#351 `busy ? "stop" : "send"`
+  shape. A mid-turn follow-up can always be typed and submitted (Enter was
+  previously a dead end while `busy`); a `busy` composer with no `onStop` never
+  renders a Stop control (it previously rendered a dead button that called
+  `onStop?.()` on `undefined`); and the Stop affordance and its cancel hint appear
+  only when this composer was explicitly handed `onStop` — the arrangement that
+  lets a composed screen (a `TerminalWorking` line above the composer, say) own
+  cancellation without a second, identically-named "Stop" control (#128).
+- Fixed: `TerminalPermission`'s `boxed` variant no longer fragments into four
+  disconnected frames. The title, command preview and question — conceptually one
+  sentence — now render inside a single merged `border-terminal-border` frame
+  instead of each drawing its own box; the options list, which was already
+  correct, is unchanged, and `marker`/`rail` render byte-for-byte as before
+  (`@elabs-ai/components-terminal`).
+- Fixed: the terminal agent-session compositions — the `Patterns/Templates` screen
+  and the `terminal-session-idle` / `terminal-session-mid-turn` registry blocks —
+  bottom-anchor the transcript instead of leaving an unanchored void above the
+  composer when the content is short; the template's idle state reuses the sibling
+  block's "No messages yet — type a prompt to begin." empty state instead of
+  showing none; and the composer visually recedes (border and lift dropped, never
+  `disabled` or `aria-disabled`, so it stays a focusable control that can still
+  compose a follow-up) while a permission decision is pending, so the pending
+  decision reads as the focal element.
+- Changed: those same compositions now pass `busy` to the composer with no
+  `onStop` — ADR 0022 case 4 — instead of omitting `busy` or handing the composer
+  a second `onStop`. Both shapes were workarounds for the dead-Stop defect fixed
+  in #128: the turn's single cancellation control lives on the working line, and
+  the composer reports the turn state while still accepting a follow-up.
+- Added: `TerminalConsole` (`@elabs-ai/components-terminal`) — the console frame.
+  A coding-agent console is now one resting surface: the frame draws the edge,
+  radius, elevation and ground once, and the transcript, banner, permission
+  prompt, composer and status bar sit inside it as flush regions separated by a
+  single seam, instead of as separately framed cards floating on the page with
+  strips of page background between them. See
+  `docs/ADR/0033-terminal-console-frame-and-regions.md`.
+- Changed: `TerminalSurface` (`@elabs-ai/components-terminal`) renders as a
+  region — omitting its radius, border, ground fill and resting shadow, and
+  adding an inset focus ring so a focus ring cannot be clipped into two stray
+  lines by the frame — when it sits inside a `TerminalConsole`. A
+  `TerminalSurface` with no console above it is unchanged and still draws its
+  own frame, so every standalone usage is unaffected. Because `TerminalComposer`,
+  `TerminalBanner` and `TerminalPermission` all root on `TerminalSurface`, all
+  three become regions inside a console with no API change of their own. The
+  module also exports `TerminalFrameContext`, the static context that carries
+  this; `TerminalSurface` is its only reader.
+- Changed: the terminal agent-session compositions — the `Patterns/Templates`
+  screen and both registry blocks — now assemble inside a `TerminalConsole`, and
+  `TerminalStatusBar`'s own stories render inside one too (they previously
+  demonstrated the frameless-status-bar shape ADR 0033 rules out).
+- Fixed: those compositions bottom-anchor the transcript with `mt-auto` on its
+  first child rather than `justify-end`. Both anchor identically, but
+  `justify-content: flex-end` strands overflow at the START of a scroll
+  container — Chrome reports `scrollHeight === clientHeight`, so the earliest
+  transcript rows render above the viewport with no scroll range that reaches
+  them (measured at 1440×900 on the template's mid-turn story: 190px of
+  transcript unreachable). The compositions also pin the transcript to its
+  newest line on mount, which is the caller's job by contract — this package
+  owns no scroll container.
 
 ## v4.0.0 — 2026-08-17
 

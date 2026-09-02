@@ -26,6 +26,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AlertDialogTitle
 - AlertDialogTrigger
 - AlertTitle
+- APPROVAL_SCOPE_DESCRIPTION_KEYS
 - AppShell — Top-level application frame — sidebar + header + content region.
   - avoid: Deep wrapper nesting inside the shell — keep the DOM shallow; one element, one job.
   - avoid: Painting the shell's chrome recess in the component — the chrome→canvas hierarchy is a THEME property; fix --sidebar's lightness, not AppShell.
@@ -215,6 +216,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - InputOTPSeparator
 - InputOTPSlot
 - Kbd
+- KeyboardShortcuts — Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in.
+  - avoid: Rendering a raw key string instead of Kbd — the atom carries the platform glyphs and the translate opt-out.
+  - avoid: Showing a group's count without its items — a count with nothing behind it is a claim the sheet cannot keep.
+  - avoid: Leaving an empty filter result blank — an empty search renders a real empty state, not a blank region.
 - KeyValueEditor
 - Label
 - LinkPreview
@@ -432,6 +437,11 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - WizardNav
 - WizardStep
 - WizardSteps
+- WorkspacePicker — Choose the workspace or project directory a session runs against, from recents or a typed path.
+  - avoid: Re-implementing the picker list — WorkspacePicker composes ModelPicker; a second searchable-popover list is the duplication this component exists to avoid.
+  - avoid: Marking the current workspace with a glyph alone — the marker is a word in the accessible name (1.4.1).
+  - avoid: Reading the filesystem — the component takes a workspace list as a prop and never enumerates directories itself.
+  - avoid: Natively disabling the path submit — an empty field uses aria-disabled plus a handler guard, so focus is never stranded.
 
 ## Hooks
 
@@ -439,6 +449,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - useCommandActiveItemId
 - useCopyToClipboard
 - useDialogDismissGuard
+- useDiffRows
 - useFileUpload
 - useFormField
 - useIsMobile

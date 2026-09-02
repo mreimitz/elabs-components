@@ -437,6 +437,63 @@
   --code-tag: oklch(0.42 0.16 336);
   --code-property: oklch(0.3 0.01 257);
 
+  /* TERMINAL / CONSOLE (#115) — see the long derivation note in themes.css
+     :root, which states the rule this block re-measures against its OWN ground.
+     Nothing here is transcribed from a published terminal scheme.
+
+     THE CONSOLE IS DARK IN THIS LIGHT THEME, AND THAT IS ON-IDIOM, NOT AN
+     EXCEPTION. This theme already ships a dark charcoal chrome under a
+     near-white canvas (see --sidebar) — the light-sheet / dark-rail shell — so a
+     dark machine surface is part of its vocabulary, not a foreign object. The
+     console grounds one rung BELOW that chrome (0.30 → 0.24), which makes it the
+     deepest surface in the theme and gives the sixteen-slot ink ladder the
+     headroom it needs. It is the same repair `.claude/rules/theming.md` names for
+     the chart ramp: darken the plot ground rather than lighten the palette.
+
+     Hues come from THIS theme's own roles — red 25.3 (--destructive), green
+     162.5 (--success), yellow 90 (--highlight, the theme's marker yellow, NOT
+     --warning's burnt orange at 55, which exists only because a near-white canvas
+     forced it), blue 237.3 (--info), magenta 336 (--code-tag), cyan 200
+     (--code-constant). The RUNGS are this console's, not those roles': this
+     theme's status fills are deep (0.535-0.635) because they are tuned for white,
+     and on a 0.24 ground they would be barely legible.
+
+     Measured (ground `oklch(0.24 0.016 257)`): every slot except `ansi-black` is
+     ≥4.52:1 (worst: `ansi-bright-black`); foreground 12.98:1; accent 11.56:1;
+     border 3.05:1; the 16 ANSI slots pairwise ≥0.0771 OKLab ΔE. */
+  --terminal-background: oklch(0.24 0.016 257);
+  --terminal-foreground: oklch(0.92 0.006 257);
+  /* The brand plate itself: this theme's --primary is a bright lime that
+     measures 11.56:1 as ink on the console ground, so the console accent can be
+     the brand with no separate rung — and a re-brand reaches the console for
+     free (#385 — an intentional mirror is `var()`). A theme whose --primary is a
+     mid-lightness plate must author its own console rung instead; :root does. */
+  --terminal-accent: var(--primary);
+  --terminal-accent-foreground: var(--terminal-background);
+  --terminal-cursor: var(--terminal-accent);
+  /* Brand-hued (116.5) selection band, quiet at 1.66:1 off the ground so the ink
+     over it stays AA: --terminal-foreground 7.82:1, --terminal-ansi-white 5.45:1. */
+  --terminal-selection: oklch(0.38 0.045 116.5);
+  --terminal-border: oklch(0.525 0.012 257);
+  --terminal-muted: oklch(0.695 0.008 257);
+
+  --terminal-ansi-black: oklch(0.295 0.014 257);
+  --terminal-ansi-red: oklch(0.715 0.152 25.3);
+  --terminal-ansi-green: oklch(0.715 0.132 162.5);
+  --terminal-ansi-yellow: oklch(0.715 0.124 90);
+  --terminal-ansi-blue: oklch(0.715 0.133 237.3);
+  --terminal-ansi-magenta: oklch(0.715 0.19 336);
+  --terminal-ansi-cyan: oklch(0.715 0.103 200);
+  --terminal-ansi-white: oklch(0.808 0.006 257);
+  --terminal-ansi-bright-black: oklch(0.62 0.01 257);
+  --terminal-ansi-bright-red: oklch(0.845 0.072 25.3);
+  --terminal-ansi-bright-green: oklch(0.845 0.156 162.5);
+  --terminal-ansi-bright-yellow: oklch(0.845 0.147 90);
+  --terminal-ansi-bright-blue: oklch(0.845 0.075 237.3);
+  --terminal-ansi-bright-magenta: oklch(0.845 0.105 336);
+  --terminal-ansi-bright-cyan: oklch(0.845 0.122 200);
+  --terminal-ansi-bright-white: var(--terminal-foreground);
+
   /* Brand mark — the reference logo's two inks: `-ring` is the DRAWN linework
      (hatched circle, register dots, stray strokes), `-tail` the construction
      square that carries the brand hue.

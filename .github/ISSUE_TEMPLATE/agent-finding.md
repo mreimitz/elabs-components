@@ -14,7 +14,7 @@ filed via `/file-issue`. Every finding goes through that deep RCA before an issu
 opened — do not skip straight to this template with an undiagnosed symptom.
 
 LABELS: type:<bug|a11y|visual|tech-debt|regression>, severity:<P0|P1|P2>,
-area:<ui|data|ai|flow|maps|charts|marketing|editor|viewer|tokens|icons|docs|registry|test>
+area:<ui|data|ai|flow|maps|charts|marketing|editor|viewer|terminal|tokens|icons|docs|registry|test>
 — see .github/labels.md for the full taxonomy and how to create the labels.
 -->
 

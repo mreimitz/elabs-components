@@ -20,6 +20,7 @@
  * See ATTRIBUTION.md and .claude/rules/attribution.md.
  */
 export * from "./agent";
+export * from "./agent-event";
 export * from "./agent-timeline";
 export * from "./artifact";
 export * from "./asset-preview";
@@ -39,6 +40,7 @@ export * from "./context";
 export * from "./context-panel";
 export * from "./controls";
 export * from "./conversation";
+export * from "./diff-view";
 export * from "./edge";
 export * from "./environment-variables";
 export * from "./file-tree";
@@ -46,7 +48,6 @@ export * from "./gallery";
 export * from "./grouped-parts";
 export * from "./image";
 export * from "./inline-citation";
-export * from "./interactive-terminal";
 export * from "./jsx-preview";
 // Mermaid loads on first diagram render, not in the entry chunk. `preloadMermaid`
 // warms it early when a surface is known to render diagrams.
@@ -68,14 +69,20 @@ export * from "./open-in-chat";
 export * from "./package-info";
 export * from "./panel";
 export * from "./part-groups";
+export * from "./permission-mode-select";
 export * from "./persona";
 export * from "./plan";
 export * from "./prompt-input";
+export * from "./prompt-input-effort";
+export * from "./prompt-input-mode";
+export * from "./prompt-input-slash";
 export * from "./queue";
 export * from "./reasoning";
 export * from "./sandbox";
 export * from "./schema-display";
 export * from "./selection-toolbar";
+export * from "./session-header";
+export * from "./session-status-bar";
 export * from "./shimmer";
 export * from "./snippet";
 export * from "./sources";
@@ -83,12 +90,12 @@ export * from "./speech-input";
 export * from "./stack-trace";
 export * from "./suggestion";
 export * from "./task";
-export * from "./terminal";
 export * from "./test-results";
 export * from "./tool";
 export * from "./tool-result-card";
 export * from "./toolbar";
 export * from "./transcription";
+export * from "./turn-status";
 export * from "./use-audio-level";
 export * from "./voice-selector";
 export * from "./web-preview";

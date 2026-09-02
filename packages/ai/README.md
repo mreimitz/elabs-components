@@ -44,7 +44,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-446 exported components — including `Agent`, `AgentContent`, `AgentHeader`, `AgentInstructions`, `AgentMessage`.
+454 exported components — including `Agent`, `AgentContent`, `AgentEvent`, `AgentHeader`, `AgentInstructions`.
 
 Don't guess the API — ask the CLI:
 

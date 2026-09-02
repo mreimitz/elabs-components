@@ -15,21 +15,38 @@
  * 0015) — the same "wrap an engine, theme it from tokens" pattern as
  * `@elabs-ai/components-editor`'s Monaco bridge and `@elabs-ai/components-maps`' `useTokenColor`. It
  * re-resolves whenever `data-theme` changes (a local MutationObserver, mirroring
- * `persona.tsx`'s theme watcher — `@elabs-ai/components-ai` can't import `@elabs-ai/components-editor`'s
- * shared `useDataTheme` hook per the one-way package graph).
+ * `persona.tsx`'s theme watcher in `@elabs-ai/components-ai` — `@elabs-ai/components-terminal`
+ * can't import `@elabs-ai/components-editor`'s shared `useDataTheme` hook per the
+ * one-way package graph either).
+ *
+ * The tokens it reads are the dedicated `--terminal-*`/`--terminal-ansi-*` group
+ * (issue #115, `packages/tokens/src/themes.css`), not ad-hoc `--card`/status/
+ * chart tokens — that group exists precisely so every console surface in this
+ * package (this one and the read-only `Terminal` log) renders the same console
+ * palette instead of two independently-derived ones.
  *
  * Bundling: xterm and its stylesheet are reached through a dynamic
  * `import("./_interactive-terminal-xterm")` inside the mount effect — the engine
  * is never touched during render — so it lands in its own chunk instead of every
  * consumer's entry chunk. The types below are `import type` and erase. See ADR
  * 0019 and `pnpm heavy-deps:check`.
+ *
+ * Issue #101: `@xterm/xterm`/`@xterm/addon-fit` are OPTIONAL peers, so no
+ * PUBLIC export's type may structurally reference them — doing so would name
+ * the peer in this package's generated root `.d.ts` and hand a
+ * `skipLibCheck: false` consumer who has not installed it a `TS2307` just for
+ * importing the barrel. `FitAddon`/`Terminal as XTerm` below are used only for
+ * PRIVATE, non-exported local state (refs/`useState`), which never reaches the
+ * `.d.ts`; `buildInteractiveTerminalTheme`'s return type is the one exported
+ * signature that used to leak `ITheme` directly, so it now returns the local,
+ * structural `TerminalColorTheme` mirror declared below instead.
  */
 
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
-import { Button, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { Button, isOptionalPeerMissing, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { FitAddon } from "@xterm/addon-fit";
-import type { ITheme, Terminal as XTerm } from "@xterm/xterm";
+import type { Terminal as XTerm } from "@xterm/xterm";
 import { EyeOffIcon } from "lucide-react";
 import {
   forwardRef,
@@ -39,7 +56,6 @@ import {
   useState,
   type HTMLAttributes,
 } from "react";
-import { isOptionalPeerMissing } from "./_optional-peer";
 
 export interface InteractiveTerminalHandle {
   /** Process → screen. ANSI passthrough (colors, cursor movement, clears, …). */
@@ -68,18 +84,9 @@ export interface InteractiveTerminalProps extends Omit<HTMLAttributes<HTMLDivEle
 // --- Runtime color helpers -------------------------------------------------
 // `resolveTokenColor` (@elabs-ai/components-tokens, ADR 0015) is the shared "read a semantic
 // token off an element, oklch → hex" resolver — the same one `@elabs-ai/components-maps`'
-// `useTokenColor` wraps. `withAlpha`/`lighten` below are the same "math on the
+// `useTokenColor` wraps. `mixToward`/`readableInk` below are the same "math on the
 // resolved hex" idiom as `monaco-theme-bridge.ts` (@elabs-ai/components-editor) — never a
 // hardcoded literal color.
-
-/** Mix `alpha` (0..1) into a `#rrggbb` color, returning `#rrggbbaa`. */
-function withAlpha(hex: string, alpha: number): string {
-  const base = hex.slice(0, 7);
-  const byte = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
-    .toString(16)
-    .padStart(2, "0");
-  return `${base}${byte}`;
-}
 
 /** Mix a `#rrggbb` color toward `target` (`#rrggbb`) by `amount` (0..1). */
 function mixToward(hex: string, target: string, amount: number): string {
@@ -117,18 +124,6 @@ function contrastRatio(a: string, b: string): number {
 const awayPole = (bg: string) => (relativeLuminance(bg) > 0.5 ? "#000000" : "#ffffff");
 
 /**
- * Push `hex` AWAY from `bg` by `amount` — darker on a light ground, lighter on
- * a dark one. This is how a "bright" ANSI sibling is derived for a hue with no
- * dedicated lighter/darker token: `lighten()` used to hardcode "toward white",
- * which on a light theme moved the swatch TOWARD the background and made the
- * bright variant the least legible colour on screen (#386 — in `light`
- * brightMagenta bottomed out at 2.91:1, and in the `:root` base at 2.39:1).
- */
-function awayFromBackground(hex: string, bg: string, amount: number): string {
-  return mixToward(hex, awayPole(bg), amount);
-}
-
-/**
  * The readable-ink floor (#386). xterm paints every ANSI colour code as real
  * TEXT on the terminal background, so each one owes WCAG AA (4.5:1) — but the
  * semantic tokens the mapping reaches for are not all text rungs: `--chart-2`/
@@ -154,59 +149,78 @@ function readableInk(hex: string, bg: string, ratio = 4.5): string {
 }
 
 /**
- * Builds xterm's `ITheme` from the active theme's semantic tokens, resolved
- * off `rootEl` (defaults to `<html>`, where `data-theme` lives).
+ * The colour slots this component derives — a local, structural mirror of
+ * xterm's own `ITheme` (never import `ITheme`'s type straight out of the
+ * xterm package — see the #101 note in the module doc comment above). Every property here is
+ * a subset of `ITheme`'s (all-optional) string properties, declared as
+ * required instead, so a value of this type is assignable wherever an
+ * `ITheme` is expected — e.g. `new engine.XTerm({ theme: buildInteractiveTerminalTheme() })`.
+ */
+export interface TerminalColorTheme {
+  background: string;
+  foreground: string;
+  cursor: string;
+  cursorAccent: string;
+  selectionBackground: string;
+  black: string;
+  red: string;
+  green: string;
+  yellow: string;
+  blue: string;
+  magenta: string;
+  cyan: string;
+  white: string;
+  brightBlack: string;
+  brightRed: string;
+  brightGreen: string;
+  brightYellow: string;
+  brightBlue: string;
+  brightMagenta: string;
+  brightCyan: string;
+  brightWhite: string;
+}
+
+/**
+ * Builds xterm's colour theme from the active theme's semantic tokens,
+ * resolved off `rootEl` (defaults to `<html>`, where `data-theme` lives).
  *
- * ANSI mapping (documented so the intent is auditable, not guessed at):
- *  - background/foreground → `--card`/`--foreground` (the terminal reads as a
- *    raised panel, matching the existing `Terminal` log's bordered-box look).
- *  - cursor → `--primary`; cursorAccent → the background, so glyphs stay
- *    legible under a solid block cursor.
- *  - selectionBackground → a low-alpha `--primary` wash.
- *  - red/green/yellow/blue → the AA-tuned `-text` variants (`--destructive-text`,
- *    `--success-text`, `--warning-text`, `--info-text`) — these are the ones
- *    tuned to read as TEXT on a surface, which is exactly what ANSI color codes
- *    paint. `bright*` variants use the more saturated fill tokens
- *    (`--destructive`, `--success`, `--warning`, `--info`).
- *  - magenta/cyan → `--chart-4`/`--chart-2` (no dedicated fill/text pair, so the
- *    `bright*` siblings are the same hue pushed AWAY from the background).
- *  - black/white are `background`/`foreground` RUNGS, not the tokens
- *    themselves: `black` = the terminal's own background (the common "ANSI
- *    black" convention — invisible ink), `brightBlack` = `--border-strong`
- *    (a dim ink for comments/hashes), `white` = `--muted-foreground` (a dimmer
- *    ink), `brightWhite` = `--foreground` (full ink).
+ * Returns the local `TerminalColorTheme` shape above rather than xterm's own
+ * `ITheme` — see the #101 note in the module doc comment.
+ *
+ * ANSI mapping — every slot reads the DEDICATED `--terminal-*`/`--terminal-ansi-*`
+ * group (#115, `packages/tokens/src/themes.css`) instead of ad-hoc `--card`/
+ * status/chart tokens. This is what keeps this component and the read-only
+ * `Terminal` log agreeing on one console palette instead of two independently
+ * derived ones:
+ *  - background/foreground → `--terminal-background`/`--terminal-foreground`.
+ *  - cursor → `--terminal-cursor`; cursorAccent → `--terminal-accent-foreground`
+ *    (ink under a solid block cursor — the console's own ground rung).
+ *  - selectionBackground → `--terminal-selection` (already an opaque band —
+ *    see the token's own comment for why it doesn't need an alpha mix here).
+ *  - black → `--terminal-ansi-black` directly (the ANSI ground rung, exempt
+ *    from the ink floor below — see the token group's doc comment in
+ *    themes.css). Every other slot → its matching `--terminal-ansi-*` token.
  *
  * EVERY slot above except `black` then passes through `readableInk()` — the AA
- * floor (#386). The mapping picks the token that carries the right MEANING; the
- * floor guarantees the resulting ink is legible on this terminal's actual
- * background. Several of these tokens are mark/fill rungs (≥3:1 only), so
- * without the floor EVERY palette this repo ships had sub-AA ANSI slots —
- * measured from `themes.css`: `:root` 7 (worst 2.39:1), `light` 4 (worst
- * 2.91:1), `dark` 1 (3.16:1). Re-derived on every
- * run by `interactive-terminal.test.tsx`, which parses those palettes out of
+ * floor (#386), preserved across this migration as defense-in-depth: the
+ * `--terminal-ansi-*` group is already authored to clear ≥4.5:1 against
+ * `--terminal-background` in every theme this repo ships (themes.css's own
+ * measurement), but the floor still protects a consumer who retunes one ANSI
+ * slot without re-checking contrast. Re-derived on every run by
+ * `interactive-terminal.test.tsx`, which parses those palettes out of
  * `themes.css` rather than hard-coding them. Keep new slots inside `ink(...)`;
  * a raw token assigned straight to an ANSI slot is the bug.
  */
-export function buildInteractiveTerminalTheme(rootEl?: Element | null): ITheme {
+export function buildInteractiveTerminalTheme(rootEl?: Element | null): TerminalColorTheme {
   const el = rootEl ?? (typeof document !== "undefined" ? document.documentElement : null);
   const read = (name: string, fallback: string) => resolveTokenColor(name, { el, fallback });
 
-  const background = read("--card", "#ffffff");
-  const foreground = read("--foreground", "#111111");
-  const primary = read("--primary", foreground);
-  const mutedForeground = read("--muted-foreground", foreground);
-  const borderStrong = read("--border-strong", mutedForeground);
-
-  const destructiveText = read("--destructive-text", "#b91c1c");
-  const destructive = read("--destructive", destructiveText);
-  const successText = read("--success-text", "#15803d");
-  const success = read("--success", successText);
-  const warningText = read("--warning-text", "#a16207");
-  const warning = read("--warning", warningText);
-  const infoText = read("--info-text", primary);
-  const info = read("--info", primary);
-  const chart2 = read("--chart-2", infoText);
-  const chart4 = read("--chart-4", destructiveText);
+  const background = read("--terminal-background", "#0b0e14");
+  const foreground = read("--terminal-foreground", "#e5e7eb");
+  const accent = read("--terminal-accent", foreground);
+  const accentForeground = read("--terminal-accent-foreground", background);
+  const cursor = read("--terminal-cursor", accent);
+  const selection = read("--terminal-selection", background);
 
   // Every ANSI slot below is INK — clamp it to AA against this terminal's own
   // background (#386). `black` is the one exception: it is the background rung
@@ -216,27 +230,27 @@ export function buildInteractiveTerminalTheme(rootEl?: Element | null): ITheme {
   return {
     background,
     foreground,
-    cursor: primary,
-    cursorAccent: background,
-    selectionBackground: withAlpha(primary, 0.28),
+    cursor,
+    cursorAccent: accentForeground,
+    selectionBackground: selection,
 
-    black: background,
-    red: ink(destructiveText),
-    green: ink(successText),
-    yellow: ink(warningText),
-    blue: ink(infoText),
-    magenta: ink(chart4),
-    cyan: ink(chart2),
-    white: ink(mutedForeground),
+    black: read("--terminal-ansi-black", background),
+    red: ink(read("--terminal-ansi-red", foreground)),
+    green: ink(read("--terminal-ansi-green", foreground)),
+    yellow: ink(read("--terminal-ansi-yellow", foreground)),
+    blue: ink(read("--terminal-ansi-blue", foreground)),
+    magenta: ink(read("--terminal-ansi-magenta", foreground)),
+    cyan: ink(read("--terminal-ansi-cyan", foreground)),
+    white: ink(read("--terminal-ansi-white", foreground)),
 
-    brightBlack: ink(borderStrong),
-    brightRed: ink(destructive),
-    brightGreen: ink(success),
-    brightYellow: ink(warning),
-    brightBlue: ink(info),
-    brightMagenta: ink(awayFromBackground(chart4, background, 0.3)),
-    brightCyan: ink(awayFromBackground(chart2, background, 0.3)),
-    brightWhite: ink(foreground),
+    brightBlack: ink(read("--terminal-ansi-bright-black", foreground)),
+    brightRed: ink(read("--terminal-ansi-bright-red", foreground)),
+    brightGreen: ink(read("--terminal-ansi-bright-green", foreground)),
+    brightYellow: ink(read("--terminal-ansi-bright-yellow", foreground)),
+    brightBlue: ink(read("--terminal-ansi-bright-blue", foreground)),
+    brightMagenta: ink(read("--terminal-ansi-bright-magenta", foreground)),
+    brightCyan: ink(read("--terminal-ansi-bright-cyan", foreground)),
+    brightWhite: ink(read("--terminal-ansi-bright-white", foreground)),
   };
 }
 
@@ -461,9 +475,13 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
       const isPeerMissing = isOptionalPeerMissing(loadError);
       return (
         <div
-          className={cn("rounded-lg border bg-card p-2", className)}
+          className={cn(
+            "rounded-lg border border-terminal-border bg-terminal-background p-2 shadow-sm",
+            className,
+          )}
           role={isPeerMissing ? "status" : undefined}
           aria-live={isPeerMissing ? "polite" : undefined}
+          data-slot="interactive-terminal"
           {...props}
         >
           {isPeerMissing ? (
@@ -521,10 +539,11 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
       <div
         ref={containerRef}
         className={cn(
-          "overflow-hidden rounded-lg border bg-card p-2 outline-none",
+          "overflow-hidden rounded-lg border border-terminal-border bg-terminal-background p-2 shadow-sm outline-none",
           "focus-within:ring-2 focus-within:ring-ring",
           className,
         )}
+        data-slot="interactive-terminal"
         {...props}
       />
     );

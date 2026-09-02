@@ -161,6 +161,20 @@
       "root": "registry/blocks/form-wizard-01",
       "title": "Form Wizard — checkout flow",
       "description": "A multi-step form with a horizontal numbered stepper (the Wizard primitive) — a checkout flow (Customer → Shipping → Payment → Review) with real fields, correct autocomplete/type hints, and a Descriptions review step."
+    },
+    {
+      "name": "terminal-session-idle",
+      "type": "registry:block",
+      "root": "registry/blocks/terminal-session-idle",
+      "title": "Terminal session (idle)",
+      "description": "A settled coding-agent console: launch banner, transcript, composer with mode/effort indicator, status bar. Nothing is running."
+    },
+    {
+      "name": "terminal-session-mid-turn",
+      "type": "registry:block",
+      "root": "registry/blocks/terminal-session-mid-turn",
+      "title": "Terminal session (mid-turn)",
+      "description": "A coding-agent console under way: tool calls, a diff hunk, a working line with a stop affordance, a pending permission prompt, status bar."
     }
   ]
 }

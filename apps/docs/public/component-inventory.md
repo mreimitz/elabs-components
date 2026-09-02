@@ -7,7 +7,7 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (2):** dark, light (default)
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 180
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 204
 
 ## Packages
 
@@ -15,15 +15,16 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 382 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 446 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 454 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 130 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
+| `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
 
 ## @elabs-ai/components-tokens
 
@@ -120,6 +121,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AlertDialogTitle | component |  | `@elabs-ai/components-ui` |  |
 | AlertDialogTrigger | component |  | `@elabs-ai/components-ui` |  |
 | AlertTitle | component |  | `@elabs-ai/components-ui` |  |
+| APPROVAL_SCOPE_DESCRIPTION_KEYS | component |  | `@elabs-ai/components-ui` |  |
 | AppShell | component |  | `@elabs-ai/components-ui` | Top-level application frame — sidebar + header + content region. |
 | AppSidebar | component |  | `@elabs-ai/components-ui` |  |
 | AspectRatio | component |  | `@elabs-ai/components-ui` |  |
@@ -284,6 +286,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | InputOTPSeparator | component |  | `@elabs-ai/components-ui` |  |
 | InputOTPSlot | component |  | `@elabs-ai/components-ui` |  |
 | Kbd | component |  | `@elabs-ai/components-ui` |  |
+| KeyboardShortcuts | component |  | `@elabs-ai/components-ui` | Grouped, searchable presentation of an application's shortcut set — the sheet the Kbd atom belongs in. |
 | KeyValueEditor | component |  | `@elabs-ai/components-ui` |  |
 | Label | component |  | `@elabs-ai/components-ui` |  |
 | LinkPreview | component |  | `@elabs-ai/components-ui` |  |
@@ -478,6 +481,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useCommandActiveItemId | hook |  | `@elabs-ai/components-ui` |  |
 | useCopyToClipboard | hook |  | `@elabs-ai/components-ui` |  |
 | useDialogDismissGuard | hook |  | `@elabs-ai/components-ui` |  |
+| useDiffRows | hook |  | `@elabs-ai/components-ui` |  |
 | useFileUpload | hook |  | `@elabs-ai/components-ui` |  |
 | useFormField | hook |  | `@elabs-ai/components-ui` |  |
 | useIsMobile | hook |  | `@elabs-ai/components-ui` |  |
@@ -495,6 +499,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | WizardNav | component |  | `@elabs-ai/components-ui` |  |
 | WizardStep | component |  | `@elabs-ai/components-ui` |  |
 | WizardSteps | component |  | `@elabs-ai/components-ui` |  |
+| WorkspacePicker | component |  | `@elabs-ai/components-ui` | Choose the workspace or project directory a session runs against, from recents or a typed path. |
 
 ## @elabs-ai/components-data
 
@@ -516,6 +521,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --- | --- | --- |
 | Agent | component |  | `@elabs-ai/components-ai` | Accordion-shaped disclosure describing a sub-agent: its instructions, tools and output. |
 | AgentContent | component |  | `@elabs-ai/components-ai` |  |
+| AgentEvent | component |  | `@elabs-ai/components-ai` | One lifecycle or hook event on the agent timeline — what fired around a tool call, and whether its checks passed. |
 | AgentHeader | component |  | `@elabs-ai/components-ai` |  |
 | AgentInstructions | component |  | `@elabs-ai/components-ai` |  |
 | AgentMessage | component | emphasis=default*\|answer | `@elabs-ai/components-ai` |  |
@@ -524,15 +530,18 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AgentTimeline | component |  | `@elabs-ai/components-ai` | Chronological rail of agent steps and checkpoints — what the agent did, in order. |
 | AgentTool | component |  | `@elabs-ai/components-ai` |  |
 | AgentTools | component |  | `@elabs-ai/components-ai` |  |
-| ApprovalCard | component |  | `@elabs-ai/components-ai` | The named human-in-the-loop variant of Confirmation — a titled, described approve/deny card. |
+| ApprovalCard | component |  | `@elabs-ai/components-ai` | The named human-in-the-loop variant of Confirmation — a titled, described approval card, binary or N-option with scope. |
 | ApprovalCardAccepted | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardAction | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardActions | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardApprove | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardDeny | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardDescription | component |  | `@elabs-ai/components-ai` |  |
+| ApprovalCardOptions | component |  | `@elabs-ai/components-ai` |  |
+| ApprovalCardReason | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardRejected | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardRequest | component |  | `@elabs-ai/components-ai` |  |
+| ApprovalCardTarget | component |  | `@elabs-ai/components-ai` |  |
 | ApprovalCardTitle | component |  | `@elabs-ai/components-ai` |  |
 | Artifact | component |  | `@elabs-ai/components-ai` | Panel surface for a durable object the agent produced (document, code, preview) with title, description and actions. |
 | ArtifactAction | component |  | `@elabs-ai/components-ai` |  |
@@ -648,6 +657,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ConversationDownload | component |  | `@elabs-ai/components-ai` |  |
 | ConversationEmptyState | component |  | `@elabs-ai/components-ai` |  |
 | ConversationScrollButton | component |  | `@elabs-ai/components-ai` |  |
+| DiffView | component |  | `@elabs-ai/components-ai` | A line-level unified diff inside an agent transcript — what the agent changed, with correct old/new line numbers. |
 | Edge | component |  | `@elabs-ai/components-ai` | A connection between two workspace-graph nodes — animated/temporary or committed. |
 | EMPTY_CELL | component |  | `@elabs-ai/components-ai` |  |
 | EnvironmentVariable | component |  | `@elabs-ai/components-ai` | One environment variable row — name, masked value, required flag and copy. |
@@ -685,7 +695,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | InlineCitationQuote | component |  | `@elabs-ai/components-ai` |  |
 | InlineCitationSource | component |  | `@elabs-ai/components-ai` |  |
 | InlineCitationText | component |  | `@elabs-ai/components-ai` |  |
-| InteractiveTerminal | component |  | `@elabs-ai/components-ai` | Streaming terminal surface for agent shell output, with an optional input line. |
 | JSXPreview | component |  | `@elabs-ai/components-ai` | Escape-hatch renderer for agent-emitted JSX STRINGS — maximum flexibility, least safety (D2). |
 | JSXPreviewContent | component |  | `@elabs-ai/components-ai` |  |
 | JSXPreviewError | component |  | `@elabs-ai/components-ai` |  |
@@ -779,14 +788,19 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PackageInfoName | component |  | `@elabs-ai/components-ai` |  |
 | PackageInfoVersion | component |  | `@elabs-ai/components-ai` |  |
 | Panel | component |  | `@elabs-ai/components-ai` | A floating overlay panel pinned to a corner of the workspace Canvas. |
+| PermissionModeSelect | component |  | `@elabs-ai/components-ai` | Standing permission-policy chooser — how far the agent may act on its own, not whether one call proceeds. |
 | Persona | component |  | `@elabs-ai/components-ai` | The animated agent avatar/presence mark (Rive), used as the assistant's identity. |
 | PERSONA_SOURCES | component |  | `@elabs-ai/components-ai` |  |
-| Plan | component |  | `@elabs-ai/components-ai` | A Card-shaped, collapsible plan the agent proposes before it starts executing. |
+| Plan | component |  | `@elabs-ai/components-ai` | A Card-shaped, collapsible plan the agent proposes before it starts executing — and the decision the human returns. |
 | PlanAction | component |  | `@elabs-ai/components-ai` |  |
+| PlanApprove | component |  | `@elabs-ai/components-ai` |  |
+| PlanComment | component |  | `@elabs-ai/components-ai` |  |
 | PlanContent | component |  | `@elabs-ai/components-ai` |  |
 | PlanDescription | component |  | `@elabs-ai/components-ai` |  |
 | PlanFooter | component |  | `@elabs-ai/components-ai` |  |
 | PlanHeader | component |  | `@elabs-ai/components-ai` |  |
+| PlanRequestChanges | component |  | `@elabs-ai/components-ai` |  |
+| PlanStatusLine | component |  | `@elabs-ai/components-ai` |  |
 | PlanTitle | component |  | `@elabs-ai/components-ai` |  |
 | PlanTrigger | component |  | `@elabs-ai/components-ai` |  |
 | PRODUCED_ASSET_ICONS | component |  | `@elabs-ai/components-ai` |  |
@@ -807,17 +821,21 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PromptInputCommandItem | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputCommandList | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputCommandSeparator | component |  | `@elabs-ai/components-ai` |  |
+| PromptInputEffort | component |  | `@elabs-ai/components-ai` | Composer control for an ordered reasoning-budget scale whose indicator fills as the level rises. |
 | PromptInputFooter | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputHeader | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputHoverCard | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputHoverCardContent | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputHoverCardTrigger | component |  | `@elabs-ai/components-ai` |  |
+| PromptInputMode | component |  | `@elabs-ai/components-ai` | Composer control for the agent's operating mode — an app-defined enum of how autonomously it may act. |
 | PromptInputProvider | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputSelect | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputSelectContent | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputSelectItem | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputSelectTrigger | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputSelectValue | component |  | `@elabs-ai/components-ai` |  |
+| PromptInputSlash | component |  | `@elabs-ai/components-ai` | The slash-command palette over a composer — type `/`, filter by prefix, pick a command with the keyboard. |
+| PromptInputSlashTextarea | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputStop | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputSubmit | component |  | `@elabs-ai/components-ai` |  |
 | PromptInputTab | component |  | `@elabs-ai/components-ai` |  |
@@ -867,6 +885,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SchemaDisplayRequest | component |  | `@elabs-ai/components-ai` |  |
 | SchemaDisplayResponse | component |  | `@elabs-ai/components-ai` |  |
 | SelectionToolbar | component |  | `@elabs-ai/components-ai` | A floating toolbar over selected transcript text, offering Quote as the default action. |
+| SessionHeader | component |  | `@elabs-ai/components-ai` | Session launch card — model, workspace, capabilities, what's new and quick actions, shown above the greeting in an empty session. |
+| SessionStatusBar | component |  | `@elabs-ai/components-ai` | Ambient session row — workspace, branch, model and integration-connection progress, docked above or below the transcript. |
 | Shimmer | component |  | `@elabs-ai/components-ai` | Motion-aware shimmering TEXT affordance for an in-progress ("Thinking…") line. |
 | Snippet | component |  | `@elabs-ai/components-ai` | One-line copyable command or value, built on the ui InputGroup. |
 | SnippetAddon | component |  | `@elabs-ai/components-ai` |  |
@@ -898,14 +918,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TaskItem | component |  | `@elabs-ai/components-ai` |  |
 | TaskItemFile | component |  | `@elabs-ai/components-ai` |  |
 | TaskTrigger | component |  | `@elabs-ai/components-ai` |  |
-| Terminal | component |  | `@elabs-ai/components-ai` | Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming. |
-| TerminalActions | component |  | `@elabs-ai/components-ai` |  |
-| TerminalClearButton | component |  | `@elabs-ai/components-ai` |  |
-| TerminalContent | component |  | `@elabs-ai/components-ai` |  |
-| TerminalCopyButton | component |  | `@elabs-ai/components-ai` |  |
-| TerminalHeader | component |  | `@elabs-ai/components-ai` |  |
-| TerminalStatus | component |  | `@elabs-ai/components-ai` |  |
-| TerminalTitle | component |  | `@elabs-ai/components-ai` |  |
 | Test | component |  | `@elabs-ai/components-ai` | One test-case row inside a test-results block — name, status and duration. |
 | TestDuration | component |  | `@elabs-ai/components-ai` |  |
 | TestError | component |  | `@elabs-ai/components-ai` |  |
@@ -934,6 +946,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ToolResultCard | component |  | `@elabs-ai/components-ai` | The artifact a tool PRODUCED, presented as the headline — raised surface, no border, children carry the payload. Its header row is title \| actions \| status, where actions are scoped to the whole artifact (expand, download, open). |
 | Transcription | component |  | `@elabs-ai/components-ai` | Time-coded speech segments, highlighted against playback position and seekable. |
 | TranscriptionSegment | component |  | `@elabs-ai/components-ai` |  |
+| TurnStatus | component |  | `@elabs-ai/components-ai` | In-turn footer reporting the three facts a running turn owes the user: elapsed time, cost, and how to stop it. |
 | useAssetPreviewRenderer | hook |  | `@elabs-ai/components-ai` |  |
 | useAttachmentContext | hook |  | `@elabs-ai/components-ai` |  |
 | useAttachmentsContext | hook |  | `@elabs-ai/components-ai` |  |
@@ -1303,6 +1316,45 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useScrollActiveHighlightIntoView | hook |  | `@elabs-ai/components-viewer` |  |
 | VIEWER_ZOOM_STEPS | component |  | `@elabs-ai/components-viewer` |  |
 | ViewerError | component |  | `@elabs-ai/components-viewer` |  |
+
+## @elabs-ai/components-terminal
+
+> Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.
+
+| Name | Kind | Variants | Import | Notes |
+| --- | --- | --- | --- | --- |
+| DEFAULT_TERMINAL_GUTTER | component |  | `@elabs-ai/components-terminal` |  |
+| InteractiveTerminal | component |  | `@elabs-ai/components-terminal` | Streaming terminal surface for agent shell output, with an optional input line. |
+| Terminal | component |  | `@elabs-ai/components-terminal` | Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming. |
+| TERMINAL_TOOL_CALL_STATUSES | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_TRANSCRIPT_ROW_KINDS | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_VARIANTS | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_WORKING_ACTIVE_GLYPH | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_WORKING_SPINNER_FRAMES | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalActions | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalBanner | component |  | `@elabs-ai/components-terminal` | The console-dress launch card above an empty transcript: identity (name, model, version, workspace), capabilities, what's new and quick actions with key hints — every section independently optional. |
+| TerminalClearButton | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalComposer | component |  | `@elabs-ai/components-terminal` | The prompt composer for the agent-session family: a text input well, an optional mode indicator, an optional ordered effort scale, a shortcut-hint row, and a submit affordance that becomes a stop affordance while busy. |
+| TerminalConsole | component |  | `@elabs-ai/components-terminal` | The console FRAME (ADR 0033): the one resting surface a coding-agent console draws — edge, radius, ground and elevation — so a transcript, banner, permission prompt, composer and status bar sit inside it as flush regions separated by a single seam instead of as separately framed cards. |
+| TerminalContent | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalCopyButton | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalDiffHunk | component |  | `@elabs-ai/components-terminal` | An inline unified diff hunk in console dress: a header naming the file, then one row per line — a line-number column, a polarity marker, and the line text — with a collapsed run of context lines behind a real disclosure. |
+| TerminalEventLine | component |  | `@elabs-ai/components-terminal` | The CLI dress of an agent lifecycle/hook event line: a fixed marker glyph, a label, and an optional phase/hook-count/duration, sharing AgentEvent's outcome and hook-count model so the two skins stay in sync. |
+| TerminalFrameContext | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalHeader | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalOverlay | component |  | `@elabs-ai/components-terminal` | The console-dress modal frame: a real Radix Dialog painted on the terminal ground, with a title row, arbitrary caller content, and an optional key-hint legend along the bottom — a frame, not a catalogue of panels. |
+| TerminalPermission | component |  | `@elabs-ai/components-terminal` | The per-call scoped approval prompt: title, command preview, question, then numbered options whose SCOPE (once/session/deny) is stated in real label text and chosen through a real Radix RadioGroup, never a hand-rolled focus walk. |
+| TerminalRow | component | variant=marker*\|rail\|boxed | `@elabs-ai/components-terminal` | The two-column [gutter][content] grid primitive every console row is built from, with the gutter's meaning carried as words for assistive tech. |
+| TerminalSlashMenu | component |  | `@elabs-ai/components-terminal` | The `/`-command palette for the console composer: a popover listbox anchored to TerminalComposer's own textarea, filtered by prefix, navigated with wrapping/clamped arrow keys, and spliced into the text on Enter — the caret never leaves the field. |
+| TerminalStatus | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalStatusBar | component |  | `@elabs-ai/components-terminal` | The ambient chrome row along the bottom of a console surface: branch and working directory on the left, connection/context/turn progress on the right, every fact independently optional. |
+| TerminalSurface | component |  | `@elabs-ai/components-terminal` | The console ground for the agent-session family: the terminal surface, the mono type role and the two-column gutter grid, established once and published to every row inside. |
+| TerminalTitle | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalTodoList | component |  | `@elabs-ai/components-terminal` | A three-state checklist (done/active/pending) rendered as a real <ol>/<li>, where each row's state is a glyph AND an announced word riding TerminalRow's gutterLabel, so it survives greyscale and reaches assistive tech. |
+| TerminalToolCall | component |  | `@elabs-ai/components-terminal` | A single tool invocation dressed as a CLI line: a status glyph (success/error/pending), the tool name plus its optional argument in parentheses, a result summary on a `⎿` row, and detail behind a real disclosure. |
+| TerminalTranscriptRow | component | kind=user*\|agent\|output\|error | `@elabs-ai/components-terminal` | One line of an agent transcript on top of TerminalRow: a closed kind axis (user/agent/output/error) that carries who spoke and whether it failed as a glyph, a colour and an accessible label. |
+| TerminalWorking | component |  | `@elabs-ai/components-terminal` | The in-turn footer row pinned last in a transcript: a spinner/diamond glyph, a label, elapsed time, token spend and a stop control — the three facts and an exit the human needs while the agent runs. |
+| useTerminalVariant | hook |  | `@elabs-ai/components-terminal` |  |
 
 ---
 

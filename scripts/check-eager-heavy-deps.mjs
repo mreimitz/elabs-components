@@ -50,7 +50,7 @@ const REPO_ROOT = dirname(SCRIPT_DIR);
 const BASELINE = join(SCRIPT_DIR, "eager-heavy-deps-baseline.json");
 
 /** Packages whose `src/` is watched. */
-export const WATCHED_PACKAGES = ["ai", "viewer"];
+export const WATCHED_PACKAGES = ["ai", "terminal", "viewer"];
 
 /**
  * Engines that must never be reached by a static import.

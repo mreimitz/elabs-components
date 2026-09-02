@@ -1,0 +1,148 @@
+/*
+ * ansi-to-react class → `--terminal-ansi-*` token bridge (issue #115 defect 2).
+ *
+ * `<Ansi useClasses>` (ansi-to-react@6, built on `anser`) renders ANSI colour
+ * codes as `<span class="ansi-<name>-fg">`/`<span class="ansi-<name>-bg">`
+ * instead of inline `style={{ color: "rgb(...)" }}` — see `createClass()` in
+ * ansi-to-react's `lib/index.js` and `anser`'s `ANSI_COLORS` table
+ * (`node_modules/anser/lib/index.js`). Without `useClasses`, `<Ansi>` paints
+ * ANSI colours from anser's OWN hardcoded RGB table and never touches this
+ * repo's tokens at all — that was defect 2: the 16-slot, OKLab-ΔE-separated,
+ * AA-clamped `--terminal-ansi-*` group (`packages/tokens/src/themes.css`)
+ * protected nothing in the one place ANSI text is actually rendered.
+ *
+ * This file is the other half of `useClasses`: every class anser can emit for
+ * the 16 base ANSI slots is mapped onto the matching `--terminal-ansi-*`
+ * token, so ANSI output follows the active theme instead of a hardcoded
+ * table. It lives in the COMPONENT (not `themes.css`) because it is a mapping
+ * from one third-party library's class names to our tokens, not a themeable
+ * value itself — the tokens stay the theme's, this mapping stays the
+ * component's.
+ *
+ * Decoration classes (`ansi-bold`, `ansi-italic`, …) restore the styling
+ * `createStyle()` applies in ansi-to-react's default (inline-style) mode —
+ * `useClasses` turns that off, so it is re-declared here instead.
+ *
+ * Out of scope: anser's extended 256-colour palette (`ansi-palette-<n>`) and
+ * true-colour (`ansi-truecolor`) escape codes — this repo's token group only
+ * covers the 16-slot base ANSI palette (issue #115); extended-palette output
+ * renders unstyled (inherits `currentColor`), same as any other un-mapped
+ * class would.
+ */
+
+.ansi-black-fg {
+  color: var(--terminal-ansi-black);
+}
+.ansi-red-fg {
+  color: var(--terminal-ansi-red);
+}
+.ansi-green-fg {
+  color: var(--terminal-ansi-green);
+}
+.ansi-yellow-fg {
+  color: var(--terminal-ansi-yellow);
+}
+.ansi-blue-fg {
+  color: var(--terminal-ansi-blue);
+}
+.ansi-magenta-fg {
+  color: var(--terminal-ansi-magenta);
+}
+.ansi-cyan-fg {
+  color: var(--terminal-ansi-cyan);
+}
+.ansi-white-fg {
+  color: var(--terminal-ansi-white);
+}
+.ansi-bright-black-fg {
+  color: var(--terminal-ansi-bright-black);
+}
+.ansi-bright-red-fg {
+  color: var(--terminal-ansi-bright-red);
+}
+.ansi-bright-green-fg {
+  color: var(--terminal-ansi-bright-green);
+}
+.ansi-bright-yellow-fg {
+  color: var(--terminal-ansi-bright-yellow);
+}
+.ansi-bright-blue-fg {
+  color: var(--terminal-ansi-bright-blue);
+}
+.ansi-bright-magenta-fg {
+  color: var(--terminal-ansi-bright-magenta);
+}
+.ansi-bright-cyan-fg {
+  color: var(--terminal-ansi-bright-cyan);
+}
+.ansi-bright-white-fg {
+  color: var(--terminal-ansi-bright-white);
+}
+
+.ansi-black-bg {
+  background-color: var(--terminal-ansi-black);
+}
+.ansi-red-bg {
+  background-color: var(--terminal-ansi-red);
+}
+.ansi-green-bg {
+  background-color: var(--terminal-ansi-green);
+}
+.ansi-yellow-bg {
+  background-color: var(--terminal-ansi-yellow);
+}
+.ansi-blue-bg {
+  background-color: var(--terminal-ansi-blue);
+}
+.ansi-magenta-bg {
+  background-color: var(--terminal-ansi-magenta);
+}
+.ansi-cyan-bg {
+  background-color: var(--terminal-ansi-cyan);
+}
+.ansi-white-bg {
+  background-color: var(--terminal-ansi-white);
+}
+.ansi-bright-black-bg {
+  background-color: var(--terminal-ansi-bright-black);
+}
+.ansi-bright-red-bg {
+  background-color: var(--terminal-ansi-bright-red);
+}
+.ansi-bright-green-bg {
+  background-color: var(--terminal-ansi-bright-green);
+}
+.ansi-bright-yellow-bg {
+  background-color: var(--terminal-ansi-bright-yellow);
+}
+.ansi-bright-blue-bg {
+  background-color: var(--terminal-ansi-bright-blue);
+}
+.ansi-bright-magenta-bg {
+  background-color: var(--terminal-ansi-bright-magenta);
+}
+.ansi-bright-cyan-bg {
+  background-color: var(--terminal-ansi-bright-cyan);
+}
+.ansi-bright-white-bg {
+  background-color: var(--terminal-ansi-bright-white);
+}
+
+.ansi-bold {
+  font-weight: bold;
+}
+.ansi-dim {
+  opacity: 0.5;
+}
+.ansi-italic {
+  font-style: italic;
+}
+.ansi-hidden {
+  visibility: hidden;
+}
+.ansi-strikethrough {
+  text-decoration: line-through;
+}
+.ansi-underline {
+  text-decoration: underline;
+}

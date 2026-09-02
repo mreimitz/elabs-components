@@ -66,7 +66,7 @@ with a one-line justification citing evidence. Anchors are concrete so two runs 
 
 ### D1 — Structure & boundaries
 
-One-way deps (`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer`); no sideways/circular imports; packages match their charter.
+One-way deps (`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/terminal`); no sideways/circular imports; packages match their charter.
 
 - ●○○○ circular/sideways deps or a god-module; one-way rule broken in source.
 - ●●○○ mostly one-way but ≥1 cross-package relative import, or a package whose content contradicts its `AGENTS.md` charter.

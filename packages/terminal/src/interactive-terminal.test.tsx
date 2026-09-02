@@ -229,48 +229,60 @@ describe("buildInteractiveTerminalTheme", () => {
     document.documentElement.removeAttribute("style");
   });
 
-  it("maps ANSI red to the resolved --destructive-text token", () => {
-    document.documentElement.style.setProperty("--destructive-text", "#dc2626");
-    expect(buildInteractiveTerminalTheme().red).toBe("#dc2626");
-  });
-
-  // Fixture values are real AA-clearing `-text` rungs (≥4.5:1 on the default
-  // `#ffffff` background this test leaves in place). A `-text` token that does
-  // NOT clear AA is not a valid fixture for this mapping — the readable-ink
-  // floor below would (correctly) darken it and the identity assertion would
-  // stop describing the mapping.
-  it("maps ANSI green/yellow/blue to their -text tokens", () => {
-    document.documentElement.style.setProperty("--success-text", "#15803d");
-    document.documentElement.style.setProperty("--warning-text", "#854d0e");
-    document.documentElement.style.setProperty("--info-text", "#1d4ed8");
+  // Fixture values are real AA-clearing inks (≥4.5:1 on the dark background set
+  // alongside them). A fixture that does NOT clear AA is not valid for these
+  // identity assertions — the readable-ink floor below would (correctly)
+  // adjust it and the assertion would stop describing the mapping.
+  it("maps ANSI red/green/yellow/blue/magenta/cyan/white to their --terminal-ansi-* tokens", () => {
+    document.documentElement.style.setProperty("--terminal-background", "#0f1115");
+    document.documentElement.style.setProperty("--terminal-ansi-red", "#f87171");
+    document.documentElement.style.setProperty("--terminal-ansi-green", "#4ade80");
+    document.documentElement.style.setProperty("--terminal-ansi-yellow", "#facc15");
+    document.documentElement.style.setProperty("--terminal-ansi-blue", "#60a5fa");
+    document.documentElement.style.setProperty("--terminal-ansi-magenta", "#e879f9");
+    document.documentElement.style.setProperty("--terminal-ansi-cyan", "#22d3ee");
+    document.documentElement.style.setProperty("--terminal-ansi-white", "#e5e7eb");
     const theme = buildInteractiveTerminalTheme();
-    expect(theme.green).toBe("#15803d");
-    expect(theme.yellow).toBe("#854d0e");
-    expect(theme.blue).toBe("#1d4ed8");
+    expect(theme.red).toBe("#f87171");
+    expect(theme.green).toBe("#4ade80");
+    expect(theme.yellow).toBe("#facc15");
+    expect(theme.blue).toBe("#60a5fa");
+    expect(theme.magenta).toBe("#e879f9");
+    expect(theme.cyan).toBe("#22d3ee");
+    expect(theme.white).toBe("#e5e7eb");
   });
 
   it("resolves an oklch() token value to hex, not passed through raw", () => {
-    document.documentElement.style.setProperty("--destructive-text", "oklch(0.5 0.2 27)");
+    document.documentElement.style.setProperty("--terminal-background", "#0f1115");
+    document.documentElement.style.setProperty("--terminal-ansi-red", "oklch(0.7 0.2 27)");
     expect(buildInteractiveTerminalTheme().red).toMatch(/^#[0-9a-f]{6}$/);
   });
 
-  it("derives background/foreground/cursor from --card/--foreground/--primary", () => {
-    document.documentElement.style.setProperty("--card", "#111827");
-    document.documentElement.style.setProperty("--foreground", "#f9fafb");
-    document.documentElement.style.setProperty("--primary", "#6366f1");
+  it("derives background/foreground/cursor from --terminal-background/-foreground/-cursor (#115)", () => {
+    document.documentElement.style.setProperty("--terminal-background", "#111827");
+    document.documentElement.style.setProperty("--terminal-foreground", "#f9fafb");
+    document.documentElement.style.setProperty("--terminal-cursor", "#6366f1");
+    document.documentElement.style.setProperty("--terminal-accent-foreground", "#111827");
     const theme = buildInteractiveTerminalTheme();
     expect(theme.background).toBe("#111827");
     expect(theme.foreground).toBe("#f9fafb");
     expect(theme.cursor).toBe("#6366f1");
-    // cursorAccent tracks the background so glyphs stay legible under a block cursor.
+    // cursorAccent tracks --terminal-accent-foreground so glyphs stay legible
+    // under a block cursor.
     expect(theme.cursorAccent).toBe("#111827");
   });
 
-  it("keeps black/white as background/foreground rungs, not the same value", () => {
-    document.documentElement.style.setProperty("--card", "#0b1220");
-    document.documentElement.style.setProperty("--foreground", "#e5e7eb");
+  it("reads black from the dedicated --terminal-ansi-black token, not the background (#115)", () => {
+    // #115 gave black its OWN ground-rung token, distinct from
+    // --terminal-background (see themes.css's "THE LADDER" — ansi-black sits
+    // ~0.05 L above the console ground). Before the migration this component
+    // derived black FROM the background, which collapsed the two.
+    document.documentElement.style.setProperty("--terminal-background", "#0b1220");
+    document.documentElement.style.setProperty("--terminal-ansi-black", "#161c2c");
+    document.documentElement.style.setProperty("--terminal-foreground", "#e5e7eb");
     const theme = buildInteractiveTerminalTheme();
-    expect(theme.black).toBe("#0b1220");
+    expect(theme.black).toBe("#161c2c");
+    expect(theme.black).not.toBe(theme.background);
     expect(theme.brightWhite).toBe("#e5e7eb");
     expect(theme.black).not.toBe(theme.brightWhite);
   });
@@ -278,11 +290,16 @@ describe("buildInteractiveTerminalTheme", () => {
 
 // --- #386: every ANSI slot is TEXT, so every one of them must clear AA ------
 // xterm paints ANSI colour codes as real text on the terminal background. The
-// original mapping reached for MARK-rung tokens (`--chart-2`/`--chart-4`,
+// PRE-#115 mapping reached for MARK-rung tokens (`--chart-2`/`--chart-4`,
 // `--border-strong`) and FILL-rung tokens (`--success`/`--info`/… for the
 // `bright*` siblings), which are only guaranteed ≥3:1 (see
 // .claude/rules/styling-and-tokens.md, "which status rung a graphical MARK
-// reaches for"), so slots came out below 4.5:1 in EVERY palette this repo ships.
+// reaches for"), so slots came out below 4.5:1 in EVERY palette this repo
+// shipped. #115 moved the mapping onto the dedicated `--terminal-ansi-*` group,
+// which is ALREADY authored to clear 4.5:1 in every shipped theme — this suite
+// stays in place as the regression lock: the floor still runs, so a consumer
+// (or a future edit) that retunes one ANSI slot without re-checking contrast
+// still gets clamped rather than shipping an illegible one.
 //
 // The fixtures below are PARSED FROM `packages/tokens/src/themes.css` at test
 // time and resolved with the same `oklchToHex` the component itself uses —
@@ -357,21 +374,28 @@ function parseThemeBlocks(source: string): Record<string, Record<string, string>
 
 /** The tokens `buildInteractiveTerminalTheme` reads. Every one must resolve. */
 const READ_TOKENS = [
-  "--card",
-  "--foreground",
-  "--primary",
-  "--muted-foreground",
-  "--border-strong",
-  "--destructive-text",
-  "--destructive",
-  "--success-text",
-  "--success",
-  "--warning-text",
-  "--warning",
-  "--info-text",
-  "--info",
-  "--chart-2",
-  "--chart-4",
+  "--terminal-background",
+  "--terminal-foreground",
+  "--terminal-accent",
+  "--terminal-accent-foreground",
+  "--terminal-cursor",
+  "--terminal-selection",
+  "--terminal-ansi-black",
+  "--terminal-ansi-red",
+  "--terminal-ansi-green",
+  "--terminal-ansi-yellow",
+  "--terminal-ansi-blue",
+  "--terminal-ansi-magenta",
+  "--terminal-ansi-cyan",
+  "--terminal-ansi-white",
+  "--terminal-ansi-bright-black",
+  "--terminal-ansi-bright-red",
+  "--terminal-ansi-bright-green",
+  "--terminal-ansi-bright-yellow",
+  "--terminal-ansi-bright-blue",
+  "--terminal-ansi-bright-magenta",
+  "--terminal-ansi-bright-cyan",
+  "--terminal-ansi-bright-white",
 ] as const;
 
 /** Resolve a block's declarations (following one `var()` hop) to concrete hex.
@@ -464,8 +488,8 @@ describe("buildInteractiveTerminalTheme readable-ink floor (#386)", () => {
   }
 
   it("leaves an already-AA ink untouched (the clamp is a floor, not a filter)", () => {
-    document.documentElement.style.setProperty("--card", "#ffffff");
-    document.documentElement.style.setProperty("--destructive-text", "#b3261e");
+    document.documentElement.style.setProperty("--terminal-background", "#ffffff");
+    document.documentElement.style.setProperty("--terminal-ansi-red", "#b3261e");
     expect(buildInteractiveTerminalTheme().red).toBe("#b3261e");
   });
 });

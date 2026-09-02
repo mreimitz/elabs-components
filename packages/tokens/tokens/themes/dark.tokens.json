@@ -462,5 +462,101 @@
   "chart-12": {
     "$type": "color",
     "$value": "oklch(0.843 0.004 248.4)"
+  },
+  "terminal-background": {
+    "$type": "color",
+    "$value": "oklch(0.145 0.012 257)"
+  },
+  "terminal-foreground": {
+    "$type": "color",
+    "$value": "oklch(0.9 0.005 257)"
+  },
+  "terminal-accent": {
+    "$type": "color",
+    "$value": "var(--primary)"
+  },
+  "terminal-accent-foreground": {
+    "$type": "color",
+    "$value": "var(--terminal-background)"
+  },
+  "terminal-cursor": {
+    "$type": "color",
+    "$value": "var(--terminal-accent)"
+  },
+  "terminal-selection": {
+    "$type": "color",
+    "$value": "oklch(0.31 0.042 116.5)"
+  },
+  "terminal-border": {
+    "$type": "color",
+    "$value": "oklch(0.482 0.012 257)"
+  },
+  "terminal-muted": {
+    "$type": "color",
+    "$value": "oklch(0.648 0.008 257)"
+  },
+  "terminal-ansi-black": {
+    "$type": "color",
+    "$value": "oklch(0.2 0.011 257)"
+  },
+  "terminal-ansi-red": {
+    "$type": "color",
+    "$value": "oklch(0.665 0.189 25.3)"
+  },
+  "terminal-ansi-green": {
+    "$type": "color",
+    "$value": "oklch(0.665 0.123 162.5)"
+  },
+  "terminal-ansi-yellow": {
+    "$type": "color",
+    "$value": "oklch(0.665 0.116 88)"
+  },
+  "terminal-ansi-blue": {
+    "$type": "color",
+    "$value": "oklch(0.665 0.124 237.3)"
+  },
+  "terminal-ansi-magenta": {
+    "$type": "color",
+    "$value": "oklch(0.665 0.19 336)"
+  },
+  "terminal-ansi-cyan": {
+    "$type": "color",
+    "$value": "oklch(0.665 0.096 200)"
+  },
+  "terminal-ansi-white": {
+    "$type": "color",
+    "$value": "oklch(0.755 0.006 257)"
+  },
+  "terminal-ansi-bright-black": {
+    "$type": "color",
+    "$value": "oklch(0.575 0.01 257)"
+  },
+  "terminal-ansi-bright-red": {
+    "$type": "color",
+    "$value": "oklch(0.785 0.106 25.3)"
+  },
+  "terminal-ansi-bright-green": {
+    "$type": "color",
+    "$value": "oklch(0.785 0.145 162.5)"
+  },
+  "terminal-ansi-bright-yellow": {
+    "$type": "color",
+    "$value": "oklch(0.785 0.136 88)"
+  },
+  "terminal-ansi-bright-blue": {
+    "$type": "color",
+    "$value": "oklch(0.785 0.106 237.3)"
+  },
+  "terminal-ansi-bright-magenta": {
+    "$type": "color",
+    "$value": "oklch(0.785 0.155 336)"
+  },
+  "terminal-ansi-bright-cyan": {
+    "$type": "color",
+    "$value": "oklch(0.785 0.113 200)"
+  },
+  "terminal-ansi-bright-white": {
+    "$type": "color",
+    "$value": "var(--terminal-foreground)"
   }
 }

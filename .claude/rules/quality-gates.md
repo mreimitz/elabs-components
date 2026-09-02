@@ -25,6 +25,36 @@ A component is "done" only when ALL of these hold:
       before merge** — the contrast tests (`themes-contrast` / `charts-contrast`)
       and `test-storybook` are necessary but NOT sufficient: they prove ratios and
       render, not that the recolored surfaces still read well. (Meta #161.)
+      **How to actually run the non-default theme headlessly** — a bare
+      `vitest --project storybook` run has no toolbar and no URL globals, so it
+      measures `light` and only `light`:
+      `cd apps/docs && STORYBOOK_THEME=dark pnpm exec vitest --project storybook run <name>`.
+      Cite the theme slug you ran, not just "both themes". See
+      @.claude/rules/storybook-mcp.md § Themes.
+      **A story that flips `data-theme` IN PLACE must prove the flip took
+      (measured, 2026-09-02).** Setting the attribute on a guessed ancestor
+      (`document.body`, `document.documentElement`) is a silent no-op whenever
+      the decorator wrote `data-theme` onto an element NEARER the story — the
+      nearer attribute wins the cascade, so both branches of a "check it in
+      both themes" loop assert in the same theme and the cross-theme claim is
+      false. Resolve the governing element from the subject
+      (`el.closest("[data-theme]")`), then assert two things: the attribute is
+      what you set, AND the resolved ink actually differs between the two
+      branches. `packages/ui/src/components/input/input.stories.tsx` is the
+      worked example — it claimed both themes for months while only ever
+      measuring one, and nothing caught it until the suite was run under
+      `STORYBOOK_THEME=dark`.
+      **CI measures `light` only.** `gates.yml` runs the storybook project with
+      no theme pinned, so a dark-only failure is invisible to every blocking
+      job. Run the dark sweep by hand before claiming theme-safety on anything
+      cross-cutting.
+      **An anti-vacuity guard must pick a token pair that differs in EVERY
+      theme.** Two roles may legitimately carry the same literal in one theme
+      and not another — `--sidebar-foreground` equals `--foreground` in the
+      dark reference theme (light's sidebar ink is near-white because that
+      theme's sidebar ground is dark; dark's is near-white because everything
+      is), which is a coincidence, not an undeclared alias. A guard built on
+      that pair is unsatisfiable in dark.
 - [ ] **Accessible** — keyboard operable, visible focus ring, correct
       roles/labels, no div-as-button (see `accessibility.md`).
 - [ ] **Variants via `cva`** when it has more than one visual axis.

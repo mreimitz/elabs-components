@@ -31,11 +31,12 @@ Vitest + Testing Library · tsup · ESLint 9 + Prettier. No paid dependencies.
 - `@elabs-ai/components-marketing` — Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.
 - `@elabs-ai/components-editor` — token-themed Monaco (VS Code) code editor: CodeEditor, DiffEditor, CodeWorkspace (file tabs), with a brand-ui context menu.
 - `@elabs-ai/components-viewer` — FileViewer: render a file the app did not write (upload, signed URL, agent output) through a pluggable adapter registry. See ADR 0024.
+- `@elabs-ai/components-terminal` — terminal surfaces: shell/agent output and coding-agent CLI look-alikes. A **layer-2 leaf** — nothing depends on it, and `@elabs-ai/components-ai` must never import it.
 - Apps: `apps/docs` (Storybook); `fixtures/consumer-smoke` (install-shape smoke test).
 
 ## Architecture rules
 
-- Dependencies flow one way: `tokens` → `ui`/`icons` → `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`.
+- Dependencies flow one way: `tokens` → `ui`/`icons` → `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal`.
 - Import across packages via `@elabs-ai/components-*`, never relative paths.
 - Two consumption modes: import stable primitives from `@elabs-ai/components-*`; copy-own
   prototype blocks via the registry (`npx shadcn add`).

@@ -94,14 +94,15 @@ pnpm add @xyflow/react      # only if you use …-flow or the …-ai canvas
 
 Per-package peers worth knowing:
 
-| Package                       | Extra peer you must provide                                                                                                                                                                                                          |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@elabs-ai/components-tokens` | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                                                                      |
-| `@elabs-ai/components-ai`     | `@xyflow/react` if you render the agent canvas (required); **five more peers are optional** — `ai`, `mermaid`, `@rive-app/react-webgl2`, `@xterm/xterm` + `@xterm/addon-fit`, `media-chrome` — install only what you render (see §6) |
-| `@elabs-ai/components-flow`   | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                                                                         |
-| `@elabs-ai/components-editor` | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                                                                           |
-| `@elabs-ai/components-viewer` | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package                                                |
-| everything else               | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                                                                     |
+| Package                         | Extra peer you must provide                                                                                                                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`   | `tailwindcss` `^4` — you already install it for the Vite/PostCSS plugin below; it must be the SAME instance that processes the token stylesheet                                                 |
+| `@elabs-ai/components-ai`       | `@xyflow/react` if you render the agent canvas (required); **four more peers are optional** — `ai`, `mermaid`, `@rive-app/react-webgl2`, `media-chrome` — install only what you render (see §6) |
+| `@elabs-ai/components-terminal` | `@xterm/xterm` + `@xterm/addon-fit` are **optional**, and only `InteractiveTerminal` needs them; the read-only `Terminal` has no peers at all (see §6)                                          |
+| `@elabs-ai/components-flow`     | `@xyflow/react` (a context singleton — install it yourself); also import `@xyflow/react/dist/style.css` once                                                                                    |
+| `@elabs-ai/components-editor`   | `monaco-editor` (owns `globalThis.MonacoEnvironment`); import `@elabs-ai/components-editor/monaco-environment` once (Vite)                                                                      |
+| `@elabs-ai/components-viewer`   | **optional** parser peers, one per format — install only what you need (see §6). Install none and every format still builds; unsupported ones show a panel naming the missing package           |
+| everything else                 | `@elabs-ai/components-tokens` + `@elabs-ai/components-ui` (already in your deps)                                                                                                                |
 
 All packages are **ESM-only** (`"type": "module"`) — use a bundler that handles
 ESM (Vite, Next, webpack 5, esbuild).
@@ -488,7 +489,7 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   `<FormProvider>`.
 
 - **`@elabs-ai/components-ai`** — `MarkdownPreview` math needs
-  `import "katex/dist/katex.min.css"` once, only if you enable it. Five more
+  `import "katex/dist/katex.min.css"` once, only if you enable it. Four more
   peers are **optional** (issue #33, `docs/ADR/0032-optional-peer-dependency-policy.md`) —
   each is a dependency of ONE feature, reached only through a lazy `import()`
   (ADR 0019), so the package installs and builds with none of them; reaching a
@@ -498,7 +499,6 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   ```bash
   pnpm add mermaid                    # Mermaid diagrams in streamed markdown
   pnpm add @rive-app/react-webgl2     # Persona
-  pnpm add @xterm/xterm @xterm/addon-fit  # InteractiveTerminal
   pnpm add media-chrome               # AudioPlayer
   pnpm add ai                         # types only, no runtime cost
   ```
@@ -517,6 +517,32 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   genuinely unresolved engine still fails actionably rather than crashing.
   `pnpm optional-peers:check` (issue #94) tracks this as a defeated optional
   peer and will fail the day it is fixed upstream.
+
+- **`@elabs-ai/components-terminal`** — the terminal surfaces. `Terminal` (the
+  read-only, streamed-output one) has **no peers at all**. `InteractiveTerminal`
+  needs two, and they are **optional** on the same terms as the ones above: the
+  package installs and builds without them, and reaching the component with them
+  absent renders a panel naming what to install rather than a blank box.
+
+  ```bash
+  pnpm add @xterm/xterm @xterm/addon-fit  # InteractiveTerminal only
+  ```
+
+  **Moved in this release.** `Terminal` and `InteractiveTerminal` used to live in
+  `@elabs-ai/components-ai`, and the `@xterm/*` peers used to be declared there.
+  Change the import path and move those two peers in your own manifest if you
+  install them; there is deliberately no re-export from the old package, so a
+  stale import fails loudly at build time instead of silently resolving.
+
+  ```diff
+  - import { Terminal, InteractiveTerminal } from "@elabs-ai/components-ai";
+  + import { Terminal, InteractiveTerminal } from "@elabs-ai/components-terminal";
+  ```
+
+  `buildInteractiveTerminalTheme` now returns `TerminalColorTheme` rather than
+  xterm's own `ITheme`. If you annotated a variable with `ITheme`, switch to the
+  exported type — the shape is identical, and the change is what keeps the
+  optional peer out of the package's generated type declarations.
 
 ## 7. Make your coding agent brand-ui-aware
 

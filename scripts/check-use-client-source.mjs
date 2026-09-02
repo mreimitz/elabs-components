@@ -34,7 +34,17 @@ const err = (m) => console.error(m);
  * Packages that should have "use client" directives in their source.
  * These are client-side-only or client-containing packages.
  */
-const CLIENT_PACKAGES = ["ui", "data", "ai", "flow", "maps", "charts", "editor", "viewer"];
+const CLIENT_PACKAGES = [
+  "ui",
+  "data",
+  "ai",
+  "flow",
+  "maps",
+  "charts",
+  "editor",
+  "viewer",
+  "terminal",
+];
 
 /**
  * React hook imports that require "use client".

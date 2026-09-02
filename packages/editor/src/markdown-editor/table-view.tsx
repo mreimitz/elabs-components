@@ -111,8 +111,9 @@ function ToolbarButton({
         "border border-border-strong",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         "transition-colors duration-fast ease-standard motion-reduce:transition-none",
+        // #124: the button's LABEL text, not a mark — ink rung.
         variant === "destructive"
-          ? "bg-background text-destructive hover:bg-destructive/10"
+          ? "bg-background text-destructive-text hover:bg-destructive/10"
           : "bg-background text-foreground hover:bg-surface-muted",
       )}
     >

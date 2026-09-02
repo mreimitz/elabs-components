@@ -232,6 +232,129 @@ describe("ChangeReview — accessibility", () => {
   });
 });
 
+// ─── Checks (verification evidence, #112) ─────────────────────────────────────
+
+describe("ChangeReview — checks", () => {
+  it("shows a failing check's status in accessible text with an icon distinct from a passing check's", () => {
+    const hunksWithChecks: ChangeHunk[] = [
+      {
+        id: "h1",
+        title: "config/a.json",
+        status: "modified",
+        before: "old",
+        after: "new",
+        checks: [
+          { label: "eslint", ok: true },
+          { label: "tsc", ok: false, detail: "Type 'string' is not assignable to type 'number'." },
+        ],
+      },
+    ];
+    render(<ChangeReview hunks={hunksWithChecks} />);
+
+    // Accessible text carries the pass/fail status word — not color alone.
+    const passed = screen.getByText("Passed");
+    const failed = screen.getByText("Failed");
+    expect(passed).toBeInTheDocument();
+    expect(failed).toBeInTheDocument();
+
+    // The icon differs between a passing and a failing check (StatusIcon's
+    // canonical `complete` vs `failed` glyphs — never colour alone).
+    const passRow = passed.closest('[data-slot="change-review-hunk-check"]')!;
+    const failRow = failed.closest('[data-slot="change-review-hunk-check"]')!;
+    const passIcon = passRow.querySelector("svg[data-status]");
+    const failIcon = failRow.querySelector("svg[data-status]");
+    expect(passIcon).toHaveAttribute("data-status", "complete");
+    expect(failIcon).toHaveAttribute("data-status", "failed");
+    expect(passIcon?.getAttribute("data-status")).not.toBe(failIcon?.getAttribute("data-status"));
+  });
+
+  it("allows approving a hunk that carries a failing check", async () => {
+    const user = userEvent.setup();
+    const hunksWithFailingCheck: ChangeHunk[] = [
+      {
+        id: "h1",
+        title: "config/a.json",
+        status: "modified",
+        before: "old",
+        after: "new",
+        checks: [{ label: "tsc", ok: false, detail: "Type error" }],
+      },
+    ];
+    render(<ChangeReview hunks={hunksWithFailingCheck} />);
+
+    expect(screen.getByText("Failed")).toBeInTheDocument();
+
+    const btn = screen.getByRole("button", { name: /approve hunk: config\/a\.json/i });
+    await user.click(btn);
+
+    expect(screen.getByText("1 of 1 approved")).toBeInTheDocument();
+    expect(screen.getByText("Approved")).toBeInTheDocument();
+    // The failing check is still shown — informational, not blocking.
+    expect(screen.getByText("Failed")).toBeInTheDocument();
+  });
+
+  it("does not render a checks section when a hunk has no checks (strictly additive)", () => {
+    render(<ChangeReview hunks={HUNKS} />);
+    expect(screen.queryByText("Passed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Failed")).not.toBeInTheDocument();
+  });
+
+  it("groups checks into Before / After sections only when both phases are present", () => {
+    const bothPhases: ChangeHunk[] = [
+      {
+        id: "h1",
+        checks: [
+          { label: "pre_tool_use", ok: true, phase: "before" },
+          { label: "post_tool_use", ok: true, phase: "after" },
+        ],
+      },
+    ];
+    render(<ChangeReview hunks={bothPhases} />);
+    expect(screen.getByText("Before")).toBeInTheDocument();
+    expect(screen.getByText("After")).toBeInTheDocument();
+  });
+
+  it("does not render phase headers when only one phase is present", () => {
+    const onePhase: ChangeHunk[] = [
+      {
+        id: "h1",
+        checks: [{ label: "eslint", ok: true, phase: "before" }],
+      },
+    ];
+    render(<ChangeReview hunks={onePhase} />);
+    expect(screen.queryByText("Before")).not.toBeInTheDocument();
+    expect(screen.queryByText("After")).not.toBeInTheDocument();
+    expect(screen.getByText("eslint")).toBeInTheDocument();
+  });
+
+  it("renders a short detail line inline and shows the duration", () => {
+    const hunksWithDuration: ChangeHunk[] = [
+      { id: "h1", checks: [{ label: "eslint", ok: true, detail: "0 problems", durationMs: 128 }] },
+    ];
+    render(<ChangeReview hunks={hunksWithDuration} />);
+    expect(screen.getByText("0 problems")).toBeInTheDocument();
+    expect(screen.getByText("128ms")).toBeInTheDocument();
+  });
+
+  it("collapses a long detail line behind a disclosure, expandable on click", async () => {
+    const user = userEvent.setup();
+    const longDetail =
+      "This is a deliberately long detail line that exceeds the inline collapse " +
+      "threshold and should therefore render behind a disclosure toggle by default.";
+    const hunksWithLongDetail: ChangeHunk[] = [
+      { id: "h1", checks: [{ label: "tsc", ok: false, detail: longDetail }] },
+    ];
+    render(<ChangeReview hunks={hunksWithLongDetail} />);
+
+    // Collapsed by default: the detail text is not yet in the document.
+    expect(screen.queryByText(longDetail)).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: /show detail/i });
+
+    await user.click(trigger);
+    expect(await screen.findByText(longDetail)).toBeInTheDocument();
+  });
+});
+
 // ─── Compound usage ───────────────────────────────────────────────────────────
 
 describe("ChangeReview — compound component parts", () => {

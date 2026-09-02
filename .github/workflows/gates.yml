@@ -134,6 +134,7 @@ jobs:
           pnpm surface-elevation:check
           pnpm elevation:check
           pnpm separation:check
+          pnpm rung:check
           pnpm text-scale:check
           pnpm motion:check
 
@@ -319,6 +320,7 @@ jobs:
           pnpm release:snapshot:test
           pnpm roles:check:test
           pnpm rules:scoping:check:test
+          pnpm rung:check:test
           pnpm sanitizer-passthrough:check:test
           pnpm separation:check:test
           pnpm sidebar-drift:check:test

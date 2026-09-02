@@ -255,7 +255,18 @@ export const WithNestedCard: Story = {
     const dialog = await within(document.body).findByRole("dialog", {}, { timeout: 12000 });
     const d = within(dialog);
     // The nested card rendered as a real component (title + body interpolated)...
-    await expect(await d.findByText("Lead engineer for Ada", {}, { timeout: 8000 })).toBeVisible();
+    // `findByText` resolves on PRESENCE, which happens while the dialog's own
+    // enter transition (`animate-in`/`fade-in-0`) is still running — so a bare
+    // `toBeVisible()` on the result can catch it at `opacity: 0`. Observed as an
+    // intermittent failure under a loaded full-suite run, green in isolation.
+    // Wait the transition out here; once it holds the rest can assert directly.
+    await waitFor(
+      async () =>
+        await expect(
+          await d.findByText("Lead engineer for Ada", {}, { timeout: 8000 }),
+        ).toBeVisible(),
+      { timeout: 8000 },
+    );
     // ...and the content AFTER it survived (dropped before the fence-collision fix).
     await expect(d.getByText("Notes for Ada")).toBeVisible();
     await expect(d.getByText("Notes for Grace")).toBeVisible();

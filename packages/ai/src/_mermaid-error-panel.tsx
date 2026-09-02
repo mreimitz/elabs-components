@@ -20,9 +20,8 @@
  *   `StatePanel`) wired to Streamdown's own `retry()`, which increments the
  *   render attempt and re-runs the diagram.
  */
-import { Button, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { Button, StatePanel, isModuleNotFoundMessage, useLocale } from "@elabs-ai/components-ui";
 import { EyeOffIcon } from "lucide-react";
-import { isModuleNotFoundMessage } from "./_optional-peer";
 
 export interface MermaidErrorPanelProps {
   chart: string;

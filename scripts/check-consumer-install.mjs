@@ -196,6 +196,7 @@ export function checkUseClient(modules, violations) {
     "@elabs-ai/components-charts/dist/index.js",
     "@elabs-ai/components-editor/dist/index.js",
     "@elabs-ai/components-viewer/dist/index.js",
+    "@elabs-ai/components-terminal/dist/index.js",
   ];
   const mustNotHave = [
     "@elabs-ai/components-ui/dist/lib/cn.js",

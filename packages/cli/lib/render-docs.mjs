@@ -32,6 +32,7 @@ const PKG_ORDER = [
   "@elabs-ai/components-marketing",
   "@elabs-ai/components-editor",
   "@elabs-ai/components-viewer",
+  "@elabs-ai/components-terminal",
 ];
 
 /** One-line purpose per package — the routing map ("which package for what"). */
@@ -55,6 +56,8 @@ export const PKG_PURPOSE = {
     "Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.",
   "@elabs-ai/components-viewer":
     "FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.",
+  "@elabs-ai/components-terminal":
+    "Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.",
 };
 
 /**

@@ -4,7 +4,7 @@
  *
  * `@xterm/xterm` declares no `sideEffects`, so a static import from
  * `interactive-terminal.tsx` put the whole emulator — plus its stylesheet — into
- * the entry chunk of every `@elabs-ai/components-ai` consumer, including
+ * the entry chunk of every `@elabs-ai/components-terminal` consumer, including
  * the vast majority that never render a terminal. The **stylesheet import has to
  * live here too**: a bare `import "@xterm/xterm/css/xterm.css"` in the public
  * module keeps the edge alive on its own.

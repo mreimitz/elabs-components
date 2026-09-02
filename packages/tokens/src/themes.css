@@ -663,6 +663,115 @@
   --code-tag: oklch(0.42 0.16 336);
   --code-property: oklch(0.25 0.02 264);
 
+  /* ----------------------------------------------------------------------
+     TERMINAL / CONSOLE (#115) — the ANSI-16 palette plus the console's own
+     surface, ink and agent-accent roles.
+
+     WHY IT IS A TOKEN GROUP AT ALL. A terminal renders ANOTHER program's
+     colour language: the sixteen ANSI slots are addressed by escape code, not
+     by meaning, so a component cannot express them through the semantic
+     roles it already has. `packages/ai/src/interactive-terminal.tsx` proved the
+     "theme it, don't paint it" half at runtime (`buildInteractiveTerminalTheme`
+     derives xterm's `ITheme` from tokens and clamps every slot to AA); this
+     group promotes that private, per-component derivation into a declared,
+     gate-checked contract every console surface can share.
+
+     NOTHING HERE IS TRANSCRIBED. Every value below is authored on this repo's own
+     token discipline — each slot takes its HUE from the role in THIS theme that
+     already IS that colour, and its LIGHTNESS from a rung measured against this
+     theme's own console ground. No terminal emulator's published scheme, and
+     nothing from the upstream project the CLI look-alikes were scoped against,
+     is transcribed here.
+
+     THE CONSOLE IS A DARK SURFACE IN EVERY THEME, INCLUDING THE LIGHT ONE.
+     A console is a machine surface, not a content surface: it is not `--card`
+     with different text. ANSI palettes are authored for dark grounds — on a
+     light ground "bright" has to mean DARKER, which inverts every ANSI author's
+     intent and is exactly the bug class #386 had to repair at runtime. So each
+     theme grounds its console on the deepest neutral in its OWN neutral hue and
+     runs one ink ladder upward from there. A consumer who wants a light console
+     overrides `--terminal-background` and the ramp in their own theme block.
+
+     THE LADDER (one rule, re-measured per theme against that theme's ground):
+       ansi-black          ground + ~0.05 L — the recessive "invisible ink" slot
+                           ANSI convention reserves; the ONE slot exempt from the
+                           ink floor, because it is a ground rung, not ink.
+       border              ≥3:1 — box-drawing rules between two same-ground
+                           regions are the SOLE structural cue (WCAG 1.4.11).
+       ansi-bright-black   ~4.5:1 — the dimmest LEGIBLE ink the palette offers
+                           (comments, hashes). Still AA: a terminal's dim slot is
+                           real text.
+       muted               ~6:1 — the console CHROME's dim ink (timestamps,
+                           hints). One rung above the ANSI dim slot so app chrome
+                           never disappears into program output.
+       ansi-white          ~9:1 — normal ink.
+       foreground          ~13:1 — full ink; eased below the theme's page
+                           `--foreground` because full-strength ink on the
+                           deepest surface in the system glares.
+       ansi-bright-white   the full ink itself (declared mirror).
+
+     THE SIX CHROMATIC HUES come from this theme's own roles. ANSI names
+     COLOURS, not statuses, so each slot takes the hue of the role that IS that
+     colour — which is why yellow is `--highlight`'s hue (the theme's marker
+     yellow) and not `--warning`'s (a burnt orange in `light`, chosen for a
+     near-white canvas this console does not have):
+       red `--destructive` · green `--success` · yellow `--highlight` ·
+       blue `--info` · magenta `--code-tag` · cyan `--code-constant`.
+     Normal sits at ~6:1 on this theme's ground, bright at ~10:1; chroma is 85%
+     of the sRGB gamut maximum at that lightness (capped 0.19 normal / 0.16
+     bright so magenta, which has by far the most headroom, does not shout over
+     its siblings), so the six hues stay maximally separable inside each band.
+
+     Measured for THIS block (oklch → sRGB → WCAG, ground `oklch(0.15 0.018 264)`):
+     every slot except `ansi-black` is ≥4.56:1 (worst: `ansi-bright-black`);
+     foreground 14.60:1; the 16 ANSI slots are pairwise ≥0.0704 OKLab ΔE (worst:
+     bright-blue vs bright-cyan). Locked by themes-contrast.test.ts.
+     ---------------------------------------------------------------------- */
+  --terminal-background: oklch(0.15 0.018 264);
+  --terminal-foreground: oklch(0.9 0.008 264);
+  /* The agent's accent in the console — prompt sigil, spinner, active
+     affordance. The reference themes alias `var(--primary)` because their brand
+     plate is a bright lime that already clears AA as ink on a dark ground; this
+     BASE cannot, so it authors the brand hue (264) at the console's own bright
+     rung. That is the pattern a consumer theme with a mid-lightness `--primary`
+     must follow — `--primary` is a ≥3:1 MARK rung, never guaranteed as ink. */
+  --terminal-accent: oklch(0.72 0.15 264);
+  /* Ink on an accent plate inside the console (an agent badge) is the console
+     ground itself — a chip punched out of the console. One rule, every theme,
+     and it inherits the ground's own contrast against the accent (7.78:1). */
+  --terminal-accent-foreground: var(--terminal-background);
+  /* The caret IS the agent's accent. Declared as a mirror so a brand that wants
+     a caret distinct from the accent has the seam, and one that doesn't pays
+     nothing (the `--sidebar-ring: var(--ring)` pattern). */
+  --terminal-cursor: var(--terminal-accent);
+  /* OPAQUE selection band, brand-hued, deliberately quiet (1.49:1 off the
+     ground). Not a 1.4.11 mark: the obligation belongs to the ink ON it, so the
+     band is sized so `--terminal-foreground` (9.80:1) and `--terminal-ansi-white`
+     (6.09:1) both stay AA over it. A louder band buys visibility by making the
+     text under it illegible — the trade every terminal makes the same way. */
+  --terminal-selection: oklch(0.31 0.052 264);
+  --terminal-border: oklch(0.484 0.016 264);
+  --terminal-muted: oklch(0.65 0.012 264);
+
+  --terminal-ansi-black: oklch(0.205 0.014 264);
+  --terminal-ansi-red: oklch(0.67 0.185 25.3);
+  --terminal-ansi-green: oklch(0.67 0.124 162.5);
+  --terminal-ansi-yellow: oklch(0.67 0.116 90);
+  --terminal-ansi-blue: oklch(0.67 0.125 237.3);
+  --terminal-ansi-magenta: oklch(0.67 0.19 336);
+  --terminal-ansi-cyan: oklch(0.67 0.097 200);
+  --terminal-ansi-white: oklch(0.757 0.01 264);
+  --terminal-ansi-bright-black: oklch(0.578 0.014 264);
+  --terminal-ansi-bright-red: oklch(0.79 0.103 25.3);
+  --terminal-ansi-bright-green: oklch(0.79 0.146 162.5);
+  --terminal-ansi-bright-yellow: oklch(0.79 0.137 90);
+  --terminal-ansi-bright-blue: oklch(0.79 0.104 237.3);
+  --terminal-ansi-bright-magenta: oklch(0.79 0.15 336);
+  --terminal-ansi-bright-cyan: oklch(0.79 0.114 200);
+  /* ANSI bright-white IS the console's full ink (#385 — an intentional mirror is
+     `var()`, never a second copy of the literal). */
+  --terminal-ansi-bright-white: var(--terminal-foreground);
+
   --radius-base: 0.25rem;
 
   /* ----------------------------------------------------------------------
@@ -1078,6 +1187,37 @@
   --color-code-type: var(--code-type);
   --color-code-tag: var(--code-tag);
   --color-code-property: var(--code-property);
+
+  /* Terminal / console (#115) — `bg-terminal-background`, `text-terminal-muted`,
+     `text-terminal-ansi-bright-green`, `border-terminal-border` etc. become
+     valid utilities, so a CLI look-alike carries no raw colour. The ANSI slots
+     are named by ESCAPE CODE (`ansi-*`), not by meaning, precisely so nobody
+     reaches for one as a status: use `--destructive`/`--success`/… for meaning
+     and the ANSI slots only when rendering a program's own colour stream. */
+  --color-terminal-background: var(--terminal-background);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-terminal-accent: var(--terminal-accent);
+  --color-terminal-accent-foreground: var(--terminal-accent-foreground);
+  --color-terminal-cursor: var(--terminal-cursor);
+  --color-terminal-selection: var(--terminal-selection);
+  --color-terminal-border: var(--terminal-border);
+  --color-terminal-muted: var(--terminal-muted);
+  --color-terminal-ansi-black: var(--terminal-ansi-black);
+  --color-terminal-ansi-red: var(--terminal-ansi-red);
+  --color-terminal-ansi-green: var(--terminal-ansi-green);
+  --color-terminal-ansi-yellow: var(--terminal-ansi-yellow);
+  --color-terminal-ansi-blue: var(--terminal-ansi-blue);
+  --color-terminal-ansi-magenta: var(--terminal-ansi-magenta);
+  --color-terminal-ansi-cyan: var(--terminal-ansi-cyan);
+  --color-terminal-ansi-white: var(--terminal-ansi-white);
+  --color-terminal-ansi-bright-black: var(--terminal-ansi-bright-black);
+  --color-terminal-ansi-bright-red: var(--terminal-ansi-bright-red);
+  --color-terminal-ansi-bright-green: var(--terminal-ansi-bright-green);
+  --color-terminal-ansi-bright-yellow: var(--terminal-ansi-bright-yellow);
+  --color-terminal-ansi-bright-blue: var(--terminal-ansi-bright-blue);
+  --color-terminal-ansi-bright-magenta: var(--terminal-ansi-bright-magenta);
+  --color-terminal-ansi-bright-cyan: var(--terminal-ansi-bright-cyan);
+  --color-terminal-ansi-bright-white: var(--terminal-ansi-bright-white);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
