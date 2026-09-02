@@ -20,8 +20,8 @@ export interface Shortcut {
 /**
  * A named group of shortcuts. There is deliberately no `count` field — the
  * displayed count is always derived from `items.length`, never supplied by
- * the caller (see issue #113: the upstream this was adapted from shipped a
- * `count` with no `items`, an honestly-unverifiable number).
+ * the caller (see issue #113: brainless, the upstream this was adapted from,
+ * shipped a `count` with no `items`, an honestly-unverifiable number).
  */
 export interface ShortcutGroup {
   id: string;

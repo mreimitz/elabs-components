@@ -40,7 +40,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-9 exported components — including `InteractiveTerminal`, `Terminal`, `TerminalActions`, `TerminalClearButton`, `TerminalContent`.
+31 exported components — including `DEFAULT_TERMINAL_GUTTER`, `InteractiveTerminal`, `Terminal`, `TERMINAL_TOOL_CALL_STATUSES`, `TERMINAL_TRANSCRIPT_ROW_KINDS`.
 
 Don't guess the API — ask the CLI:
 

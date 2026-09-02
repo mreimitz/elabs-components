@@ -39,9 +39,9 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 204 · **Registry blocks:** 21
+**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 204 · **Registry blocks:** 23
 
-**Exported surface:** 1097 components · 78 hooks across 12 packages.
+**Exported surface:** 1119 components · 79 hooks across 12 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                               |
 | -------------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
@@ -56,7 +56,7 @@ stale-gated — never hand-edit between the markers.
 | `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
 | `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
 | `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
-| `@elabs-ai/components-terminal`  |          9 |     0 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
+| `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
 
 _Counts are exact, from the manifest. Confirm component names/props with `brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._
 

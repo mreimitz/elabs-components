@@ -25,4 +25,19 @@
  */
 
 export * from "./interactive-terminal";
+export * from "./terminal-row";
+export * from "./terminal-console";
+export * from "./terminal-surface";
 export * from "./terminal";
+export * from "./terminal-transcript-row";
+export * from "./terminal-todo-list";
+export * from "./terminal-working";
+export * from "./terminal-event-line";
+export * from "./terminal-status-bar";
+export * from "./terminal-tool-call";
+export * from "./terminal-banner";
+export * from "./terminal-diff-hunk";
+export * from "./terminal-permission";
+export * from "./terminal-overlay";
+export * from "./terminal-composer";
+export * from "./terminal-slash-menu";

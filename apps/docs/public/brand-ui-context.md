@@ -4,7 +4,7 @@
 Generated from `brand-ui.manifest.json` by `brand-ui context`. Do not hand-edit inside the markers. The live, queryable API is `brand-ui docs <Component>`.
 
 Themes (2): dark, light (default)
-Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 204 · Registry items: 21
+Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 204 · Registry items: 23
 
 Rules: semantic tokens only (no raw hex); forwardRef + cn() + spread props; Radix for
 overlays; compound composition; visible focus ring; works in every theme. Dependency
@@ -46,7 +46,7 @@ CodeEditor, CodeWorkspace, CopyButton, DiffEditor, EDITOR_LANGUAGES, EditorConte
 ACTIVE_HIGHLIGHT_SELECTOR, DEFAULT_ZOOM, FileViewer, FileViewerContent, FileViewerEmpty, FileViewerError, FileViewerFind, FileViewerFrame, FileViewerHighlightStatus, FileViewerPager, FileViewerProvider, FileViewerRotate, FileViewerSkeleton, FileViewerToolbar, FileViewerZoom, FIND_MATCH_LIMIT, PROTOCOL_VERSION, useFileViewer, useScrollActiveHighlightIntoView, VIEWER_ZOOM_STEPS, ViewerError
 
 ### @elabs-ai/components-terminal — Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.
-InteractiveTerminal, Terminal, TerminalActions, TerminalClearButton, TerminalContent, TerminalCopyButton, TerminalHeader, TerminalStatus, TerminalTitle
+DEFAULT_TERMINAL_GUTTER, InteractiveTerminal, Terminal, TERMINAL_TOOL_CALL_STATUSES, TERMINAL_TRANSCRIPT_ROW_KINDS, TERMINAL_VARIANTS, TERMINAL_WORKING_ACTIVE_GLYPH, TERMINAL_WORKING_SPINNER_FRAMES, TerminalActions, TerminalBanner, TerminalClearButton, TerminalComposer, TerminalConsole, TerminalContent, TerminalCopyButton, TerminalDiffHunk, TerminalEventLine, TerminalFrameContext, TerminalHeader, TerminalOverlay, TerminalPermission, TerminalRow, TerminalSlashMenu, TerminalStatus, TerminalStatusBar, TerminalSurface, TerminalTitle, TerminalTodoList, TerminalToolCall, TerminalTranscriptRow, TerminalWorking, useTerminalVariant
 
 ## Playbooks (intent → archetype)
 

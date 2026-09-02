@@ -925,6 +925,323 @@ export const INTENT = {
     ],
   },
 
+  TerminalTranscriptRow: {
+    purpose:
+      "One line of an agent transcript on top of TerminalRow: a closed kind axis (user/agent/output/error) that carries who spoke and whether it failed as a glyph, a colour and an accessible label.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalSurface", "TerminalRow"],
+      avoidNextTo: ["a second row claiming the same settled turn's error"],
+    },
+    stateTokens: {
+      output: "text-terminal-muted",
+      error: "text-terminal-ansi-red",
+    },
+    antiPatterns: [
+      'Rendering `kind="error"` while a turn is still streaming — errors are for settled, terminal failures only (`.claude/rules/loading-states.md`).',
+      "Relying on colour alone to distinguish `error` — the glyph and the `gutterLabel` word are the load-bearing channels; colour is redundant.",
+      "Reaching for a vendor mode/effort union on `kind` — the axis is closed to `user`/`agent`/`output`/`error`, nothing else (#117 acceptance criterion).",
+      "Formatting `exitCode` yourself into a string — pass the number and let the component render the affordance.",
+    ],
+  },
+
+  TerminalTodoList: {
+    purpose:
+      "A three-state checklist (done/active/pending) rendered as a real <ol>/<li>, where each row's state is a glyph AND an announced word riding TerminalRow's gutterLabel, so it survives greyscale and reaches assistive tech.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalRow", "TerminalSurface"],
+    },
+    stateTokens: {
+      done: "text-terminal-muted line-through",
+      active: "font-semibold",
+    },
+    antiPatterns: [
+      "Minting a fourth `done|active|todo` union — it reuses `@elabs-ai/components-ui`'s `TimelineStatus` (`done|active|pending`) so the vocabulary can't drift from Timeline's.",
+      "Rendering the state as a Lucide icon — the upstream grammar IS the literal ✔ / ◼ / ◻ characters; the fidelity axis reproduces that exactly.",
+      "Hand-rolling a second `sr-only` span for the state word — it rides `TerminalRow`'s existing `gutterLabel`, which already suppresses the glyph correctly per variant.",
+      "Reproducing upstream's `\"  ⎿ \"` / four-space character padding — that is `ch`-unit alignment; `TerminalRow`'s gutter grid track does the same job without it.",
+    ],
+  },
+
+  TerminalEventLine: {
+    purpose:
+      "The CLI dress of an agent lifecycle/hook event line: a fixed marker glyph, a label, and an optional phase/hook-count/duration, sharing AgentEvent's outcome and hook-count model so the two skins stay in sync.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalRow", "TerminalSurface"],
+      avoidNextTo: ["AgentEvent (that is the chat skin of the same model, not a row sibling)"],
+    },
+    stateTokens: {
+      hooksFailed: "text-destructive-text",
+      hooksOk: "text-terminal-muted",
+    },
+    antiPatterns: [
+      "Importing AgentEvent or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared model lives in `@elabs-ai/components-ui` instead.",
+      "Rendering the outcome word only when it is bad — `succeeded` gets the same glyph-plus-sr-only-word treatment as `blocked`/`failed`, never a silently unmarked default.",
+      "Treating a `hooks` summary's `passed < ran` as merely informational — that mismatch is an independent failure signal (a distinct glyph plus an `sr-only` count), regardless of the row's own `outcome`.",
+      "Renaming `hooks` to `checks` to match AgentEvent literally — the rendered vocabulary IS the literal upstream word \"hooks\", and this component's bracket is a terser summary, never AgentEvent's per-check breakdown list.",
+    ],
+  },
+
+  TerminalWorking: {
+    purpose:
+      "The in-turn footer row pinned last in a transcript: a spinner/diamond glyph, a label, elapsed time, token spend and a stop control — the three facts and an exit the human needs while the agent runs.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalSurface", "TerminalRow", "TerminalTranscriptRow"],
+    },
+    stateTokens: {
+      trailing: "text-terminal-muted tabular-nums",
+    },
+    antiPatterns: [
+      "Running a setInterval to advance the spinner or tick elapsedMs — the spinner is a pure CSS keyframe and elapsedMs is a caller-supplied snapshot (D5); this component owns no timer.",
+      "Announcing the ticking elapsed time or token count in the live region — exactly one role=status announces `label`; the stats are plain, non-live text or assistive tech is flooded on every re-render.",
+      "Inventing a keyboard shortcut for the stop control — `stopShortcut` is caller-supplied (mirrors SessionHeader's/PermissionModeSelect's `keyHint`); the component never hardcodes a binding.",
+      "Hand-rolling a second compact-number formatter for `tokens` — it renders through `useLocale().formatNumber`, not a bespoke compacter.",
+    ],
+  },
+
+  TerminalStatusBar: {
+    purpose:
+      "The ambient chrome row along the bottom of a console surface: branch and working directory on the left, connection/context/turn progress on the right, every fact independently optional.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalSurface"],
+    },
+    stateTokens: {
+      disconnectedGlyph: "text-terminal-ansi-bright-red",
+      disconnectedText: "text-terminal-foreground",
+    },
+    antiPatterns: [
+      "Reaching for `@elabs-ai/components-ai`'s `Context` component or its tokenlens math — `terminal` and `ai` are layer-2 DAG siblings; `context` takes two ALREADY-FORMATTED display strings the caller computed, never raw token counts to abbreviate.",
+      "Relying on colour alone for `connections.disconnected` — it renders a distinct glyph (UnplugIcon, not PlugZapIcon) plus its own visible text label, recoverable in greyscale and by a screen reader.",
+      'Adding a second `role="status"` on an inner segment — the container itself is already the one live region; a nested one duplicates announcements.',
+      "Rendering the right-cluster divider as a literal `│` character — that is a box-drawing glyph as text; it is a plain `bg-terminal-border` rule instead.",
+    ],
+  },
+
+  TerminalBanner: {
+    purpose:
+      "The console-dress launch card above an empty transcript: identity (name, model, version, workspace), capabilities, what's new and quick actions with key hints — every section independently optional.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalRow"],
+      pairsWith: ["TerminalSurface", "TerminalTranscriptRow", "TerminalWorking"],
+    },
+    stateTokens: {
+      quickAction: "hover:bg-terminal-selection hover:text-terminal-foreground",
+      whatsNewLink: "text-terminal-ansi-bright-cyan",
+    },
+    antiPatterns: [
+      "Using `<fieldset>`/`<legend>` to sit the title in the border — that misreports a decorative heading as a form-control group to assistive tech; it renders a real Heading beside a real border instead.",
+      "Rendering a vendor bitmap logo — the component ships no mark of its own; `logo` is a caller-supplied `ReactNode` slot, never a baked-in wordmark (#117 acceptance criterion).",
+      "Truncating `workspace` to one line — long paths WRAP so the full value stays reachable, matching the family's wrap-over-truncate fidelity axis rather than SessionHeader's single-line truncation.",
+      "Importing `SessionHeader` or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared vocabulary (`SessionCapability`/`SessionWhatsNewItem`/`SessionQuickAction`) lives in `@elabs-ai/components-ui` instead.",
+    ],
+  },
+
+  TerminalToolCall: {
+    purpose:
+      "A single tool invocation dressed as a CLI line: a status glyph (success/error/pending), the tool name plus its optional argument in parentheses, a result summary on a `⎿` row, and detail behind a real disclosure.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalRow"],
+      pairsWith: ["TerminalSurface", "TerminalRow"],
+      avoidNextTo: ["Tool (that is the chat skin of the same fact, not a row sibling)"],
+    },
+    stateTokens: {
+      success: "text-terminal-ansi-green",
+      error: "text-terminal-ansi-red",
+      pending: "text-terminal-ansi-yellow",
+    },
+    antiPatterns: [
+      "Relying on the recoloured `⏺` alone to tell success from error — only `success` keeps that literal glyph; `error`/`pending` each get their own shape (`✗`/`○`) plus `gutterLabel`'s announced word, never colour alone.",
+      'Setting `role="alert"` while `status="pending"` — a still-running call is not a settled failure (`.claude/rules/loading-states.md`); only `error` fires the alert.',
+      "Reaching for the 7-state canonical `Status` or `TimelineStatus` — neither matches this grammar's exact `success`/`error`/`pending` vocabulary or its live-not-yet-settled meaning of `pending`.",
+      'Reproducing upstream\'s inert `"(ctrl+o to expand)"` hint as decorative text — the expand affordance is a real, localized, focusable `CollapsibleTrigger`, so a keyboard user never needs to know a CLI chord.',
+      "Putting expansion state in `TerminalSurface`'s context — it is per-row Radix `Collapsible` state, same as every other disclosure in this family.",
+    ],
+  },
+
+  TerminalDiffHunk: {
+    purpose:
+      "An inline unified diff hunk in console dress: a header naming the file, then one row per line — a line-number column, a polarity marker, and the line text — with a collapsed run of context lines behind a real disclosure.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalRow"],
+      pairsWith: ["TerminalSurface", "TerminalRow"],
+      avoidNextTo: [
+        "DiffView (that is the chat skin of the same shared diff model, not a row sibling)",
+      ],
+    },
+    stateTokens: {
+      add: "bg-terminal-ansi-green/10",
+      del: "bg-terminal-ansi-red/10",
+    },
+    antiPatterns: [
+      'Re-deriving the `"added: "`/`"removed: "` polarity words locally — they ride the promoted `diffLineAccessibleLabel()` shared with DiffView (`@elabs-ai/components-ai`); a second implementation drifts from it.',
+      "Rendering the line number as a `ch`-unit padded string — it is a plain layout box in the content cell, never text-column arithmetic.",
+      "Truncating a long line instead of wrapping it — `min-w-0` plus `whitespace-pre-wrap` on the text cell is what lets it wrap under the content column.",
+      "Putting the collapsed-context-run's expansion in `TerminalSurface`'s context, or hand-rolling a one-way 'show more' button — it is a real, per-row Radix `Collapsible`, same as every other disclosure in this family.",
+    ],
+  },
+
+  TerminalPermission: {
+    purpose:
+      "The per-call scoped approval prompt: title, command preview, question, then numbered options whose SCOPE (once/session/deny) is stated in real label text and chosen through a real Radix RadioGroup, never a hand-rolled focus walk.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalRow", "TerminalSurface"],
+      pairsWith: ["TerminalSurface", "TerminalRow"],
+      avoidNextTo: [
+        "ApprovalCardOptions (that is the chat skin of the same shared approval model, not a row sibling)",
+      ],
+    },
+    antiPatterns: [
+      "Importing ApprovalCardOptions/Confirmation or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared model (`ApprovalScope`/`ApprovalOption`/`APPROVAL_SCOPE_DESCRIPTION_KEYS`) lives in `@elabs-ai/components-ui` instead.",
+      "Walking `parentElement.children[i]` for roving focus — a real Radix `RadioGroup` owns keyboard navigation, matching the family's fidelity axis.",
+      "Naming a vendor product in the deny option's label — the third option declines and redirects the agent using the vendor-free `ApprovalScope` vocabulary, never the upstream product name (#117 acceptance criterion).",
+      "Always rendering the reason field — it only reveals, through a real Radix `Collapsible`, once the deny-scoped option is the one selected.",
+    ],
+  },
+
+  TerminalComposer: {
+    purpose:
+      "The prompt composer for the agent-session family: a text input well, an optional mode indicator, an optional ordered effort scale, a shortcut-hint row, and a submit affordance that becomes a stop affordance while busy.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalSurface"],
+      pairsWith: ["TerminalSurface"],
+      avoidNextTo: [
+        "PromptInput (that is the chat skin of the same composer concept, not a console-transcript sibling)",
+      ],
+    },
+    stateTokens: {
+      effortFilled: "border-terminal-accent! bg-terminal-accent",
+      effortHollow: "border-terminal-border! bg-transparent",
+      modeTrigger: "hover:bg-terminal-selection hover:text-terminal-foreground",
+      submit: "bg-terminal-accent text-terminal-accent-foreground",
+      caret: "caret-terminal-cursor",
+    },
+    antiPatterns: [
+      'Shipping a vendor mode/effort union such as `"auto" | "accept-edits" | "plan"` in a public type — `modes`/`effortLevels` are entirely app-supplied `OperatingMode[]`/`EffortLevel[]` (#117 acceptance criterion).',
+      "Using the native `disabled` attribute for the resting empty-composer state — it drops a focused control from the tab order after every keyboard submit; the affordance is `aria-disabled`, matching `PromptInputSubmit`'s contract.",
+      "Adding an `onPaste` handler that calls `preventDefault()` — paste is never blocked, and the caret is the browser's own, tinted via `caret-terminal-cursor`, never a hand-drawn glyph.",
+      "Relying on the effort scale's fill/size ramp alone — each rung also carries `aria-label={level.label}` and the current level's name renders as real visible text, so the level reaches assistive tech as words, not only as a filled shape.",
+      "Importing `PromptInputMode`/`PromptInputEffort` or anything from `@elabs-ai/components-ai` — `terminal` and `ai` are layer-2 DAG siblings; the shared vocabulary (`OperatingMode`/`EffortLevel`/`effortRungForIndex`) lives in `@elabs-ai/components-ui` instead.",
+    ],
+  },
+
+  TerminalOverlay: {
+    purpose:
+      "The console-dress modal frame: a real Radix Dialog painted on the terminal ground, with a title row, arbitrary caller content, and an optional key-hint legend along the bottom — a frame, not a catalogue of panels.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalSurface", "KeyboardShortcuts"],
+    },
+    stateTokens: {
+      chrome: "bg-terminal-background text-terminal-foreground",
+      legend: "border-terminal-border text-terminal-muted",
+    },
+    antiPatterns: [
+      "Keeping DialogContent's baked-in close icon — it is styled with `text-muted-foreground`, a token calibrated for `--card`/`--background`, never the terminal ground (the same class of bug a sibling already had to repair on this ground); it is hidden and replaced with a close control styled from the terminal token group.",
+      "Adding a `border` alongside the dialog's `shadow-ring-*` — an overlay floats; the elevation rule bans a border beside a ring shadow (the 'double edge').",
+      "Rendering the footer's key glyphs as the only carrier of an action's meaning — each hint's action reaches assistive tech as real words; the glyph is decorative.",
+      "Building the settings-modal catalogue itself here — this component is the ground, the dismissal and the legend only; the content is the caller's (a stated #117 non-goal).",
+    ],
+  },
+
+  TerminalSlashMenu: {
+    purpose:
+      "The `/`-command palette for the console composer: a popover listbox anchored to TerminalComposer's own textarea, filtered by prefix, navigated with wrapping/clamped arrow keys, and spliced into the text on Enter — the caret never leaves the field.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalComposer"],
+      pairsWith: ["TerminalComposer"],
+      avoidNextTo: [
+        "PromptInputSlash (that is the chat skin of the same trigger-palette concept, not a console-transcript sibling)",
+      ],
+    },
+    stateTokens: {
+      content: "bg-terminal-background text-terminal-foreground",
+      activeItem: "bg-terminal-selection",
+      activeMarker: "text-terminal-accent",
+    },
+    antiPatterns: [
+      "Re-declaring `SlashCommand`/`defaultSlashCommandFilter`/`stepIndex`/`findTriggerQuery`/`replaceTriggerRun` locally — all five are promoted to `@elabs-ai/components-ui` precisely so this package and `@elabs-ai/components-ai` cannot drift; import them.",
+      "Detecting the `/` trigger from a keydown handler instead of deriving it from committed text + caret — a keydown-driven trigger has to `preventDefault()` every printable character, which breaks IME composition, undo, spellcheck and paste.",
+      'Calling `findTriggerQuery` with the default word boundary — a slash palette needs `{ boundary: "line-start" }`, or `cd /usr` would wrongly open the popup mid-command.',
+      "Distinguishing the active row with `bg-terminal-selection` alone — a sighted user in greyscale needs a second channel too, so a reserved-width `❯` marker (this family's established 'current' glyph) renders only on the active row.",
+      "Querying the textarea with `querySelector` — `TerminalComposer`'s `textareaRef` prop exists precisely so a caret-tracking wrapper never needs to.",
+      "Leaving a row's description at `text-terminal-muted` once it is active — `--terminal-selection` is only authored to guarantee AA for `--terminal-foreground`/`--terminal-ansi-white` (see that token's comment in `themes.css`), and `--terminal-muted` measures 3.61:1 on it, a real axe failure a unit test cannot see. The active row upgrades to `text-terminal-foreground`.",
+    ],
+  },
+
+  TerminalConsole: {
+    purpose:
+      "The console FRAME (ADR 0033): the one resting surface a coding-agent console draws — edge, radius, ground and elevation — so a transcript, banner, permission prompt, composer and status bar sit inside it as flush regions separated by a single seam instead of as separately framed cards.",
+    category: "terminal",
+    relationships: {
+      contains: [
+        "TerminalSurface",
+        "TerminalBanner",
+        "TerminalComposer",
+        "TerminalPermission",
+        "TerminalStatusBar",
+      ],
+    },
+    stateTokens: {
+      frame: "rounded-lg border-terminal-border bg-terminal-background shadow-sm",
+      seam: "border-t border-terminal-border",
+    },
+    antiPatterns: [
+      "Stacking a second framed piece inside it — a region never draws its own radius, border, shadow or ground; ADR 0033's whole point is exactly one edge per console.",
+      "Adding a `variant`, transcript state, expansion state or a clock to its context — it publishes one static boolean, forever, the same prohibition `TerminalSurface`'s `variant` context carries.",
+      "Negating a region's frame with `rounded-none border-0 shadow-none` instead of omitting it — `TerminalSurface`'s frame-aware branch OMITS those classes; a caller who wants a framed region back adds them through `className`.",
+      "Nesting a console inside another console — a split view of two sessions is two consoles side by side in a layout, never a frame inside a frame.",
+    ],
+  },
+
+  TerminalSurface: {
+    purpose:
+      "The console ground for the agent-session family: the terminal surface, the mono type role and the two-column gutter grid, established once and published to every row inside.",
+    category: "terminal",
+    relationships: {
+      contains: ["TerminalRow"],
+      pairsWith: ["Terminal", "InteractiveTerminal"],
+    },
+    stateTokens: {
+      surface: "bg-terminal-background text-terminal-foreground border-terminal-border",
+      elevation: "shadow-sm",
+    },
+    antiPatterns: [
+      "Adding a second value to its context — it publishes `variant` and nothing else; transcript state, expansion state and a clock all belong to the caller or to the row (D5).",
+      "Expecting it to scroll — it owns no scroll container on purpose, so a caller's virtualizer for a long transcript is never fought.",
+      "Declaring `--terminal-gutter` in themes.css — it is a local layout custom property, not a theme token; it does not vary by theme.",
+      "Reaching for a spinner while `loading` — the not-ready rung is layout-shaped skeleton rows rendered through the real TerminalRow, behind exactly one live region.",
+    ],
+  },
+
+  TerminalRow: {
+    purpose:
+      "The two-column [gutter][content] grid primitive every console row is built from, with the gutter's meaning carried as words for assistive tech.",
+    category: "terminal",
+    relationships: {
+      pairsWith: ["TerminalSurface"],
+    },
+    stateTokens: {
+      gutter: "text-terminal-muted",
+      rail: "border-s-2 border-terminal-border",
+    },
+    antiPatterns: [
+      "Passing a meaningful glyph as `gutter` with no `gutterLabel` — the glyph is aria-hidden, so the row's meaning would exist only as decoration (WCAG 1.4.1).",
+      "Aligning columns with `ch` units or padding — the gutter is a grid track, which is what makes a wrapped continuation line align for free.",
+      "Dropping `min-w-0` from the content cell — without it, and the grid's `minmax(0,1fr)`, a long path pushes the row out of the surface instead of wrapping.",
+      "Writing box-drawing characters as a border — a screen reader reads them aloud and they collapse at a font fallback; the `boxed` variant uses a real border.",
+    ],
+  },
+
   Terminal: {
     purpose: "Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming.",
     category: "terminal",

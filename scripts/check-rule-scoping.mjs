@@ -83,6 +83,7 @@ export const PATH_SCOPED = [
   "ai-sdk-vs-a2ui",
   "decoration",
   "viewer-components",
+  "terminal-components",
   "registry",
   "architecture-review",
 ];

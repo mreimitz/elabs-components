@@ -24,7 +24,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
-| `@elabs-ai/components-terminal` | packages/terminal | 9 | 0 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
+| `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
 
 ## @elabs-ai/components-tokens
 
@@ -1321,15 +1321,38 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| DEFAULT_TERMINAL_GUTTER | component |  | `@elabs-ai/components-terminal` |  |
 | InteractiveTerminal | component |  | `@elabs-ai/components-terminal` | Streaming terminal surface for agent shell output, with an optional input line. |
 | Terminal | component |  | `@elabs-ai/components-terminal` | Read-only ANSI console output with copy/clear actions and stick-to-bottom streaming. |
+| TERMINAL_TOOL_CALL_STATUSES | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_TRANSCRIPT_ROW_KINDS | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_VARIANTS | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_WORKING_ACTIVE_GLYPH | component |  | `@elabs-ai/components-terminal` |  |
+| TERMINAL_WORKING_SPINNER_FRAMES | component |  | `@elabs-ai/components-terminal` |  |
 | TerminalActions | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalBanner | component |  | `@elabs-ai/components-terminal` | The console-dress launch card above an empty transcript: identity (name, model, version, workspace), capabilities, what's new and quick actions with key hints — every section independently optional. |
 | TerminalClearButton | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalComposer | component |  | `@elabs-ai/components-terminal` | The prompt composer for the agent-session family: a text input well, an optional mode indicator, an optional ordered effort scale, a shortcut-hint row, and a submit affordance that becomes a stop affordance while busy. |
+| TerminalConsole | component |  | `@elabs-ai/components-terminal` | The console FRAME (ADR 0033): the one resting surface a coding-agent console draws — edge, radius, ground and elevation — so a transcript, banner, permission prompt, composer and status bar sit inside it as flush regions separated by a single seam instead of as separately framed cards. |
 | TerminalContent | component |  | `@elabs-ai/components-terminal` |  |
 | TerminalCopyButton | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalDiffHunk | component |  | `@elabs-ai/components-terminal` | An inline unified diff hunk in console dress: a header naming the file, then one row per line — a line-number column, a polarity marker, and the line text — with a collapsed run of context lines behind a real disclosure. |
+| TerminalEventLine | component |  | `@elabs-ai/components-terminal` | The CLI dress of an agent lifecycle/hook event line: a fixed marker glyph, a label, and an optional phase/hook-count/duration, sharing AgentEvent's outcome and hook-count model so the two skins stay in sync. |
+| TerminalFrameContext | component |  | `@elabs-ai/components-terminal` |  |
 | TerminalHeader | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalOverlay | component |  | `@elabs-ai/components-terminal` | The console-dress modal frame: a real Radix Dialog painted on the terminal ground, with a title row, arbitrary caller content, and an optional key-hint legend along the bottom — a frame, not a catalogue of panels. |
+| TerminalPermission | component |  | `@elabs-ai/components-terminal` | The per-call scoped approval prompt: title, command preview, question, then numbered options whose SCOPE (once/session/deny) is stated in real label text and chosen through a real Radix RadioGroup, never a hand-rolled focus walk. |
+| TerminalRow | component | variant=marker*\|rail\|boxed | `@elabs-ai/components-terminal` | The two-column [gutter][content] grid primitive every console row is built from, with the gutter's meaning carried as words for assistive tech. |
+| TerminalSlashMenu | component |  | `@elabs-ai/components-terminal` | The `/`-command palette for the console composer: a popover listbox anchored to TerminalComposer's own textarea, filtered by prefix, navigated with wrapping/clamped arrow keys, and spliced into the text on Enter — the caret never leaves the field. |
 | TerminalStatus | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalStatusBar | component |  | `@elabs-ai/components-terminal` | The ambient chrome row along the bottom of a console surface: branch and working directory on the left, connection/context/turn progress on the right, every fact independently optional. |
+| TerminalSurface | component |  | `@elabs-ai/components-terminal` | The console ground for the agent-session family: the terminal surface, the mono type role and the two-column gutter grid, established once and published to every row inside. |
 | TerminalTitle | component |  | `@elabs-ai/components-terminal` |  |
+| TerminalTodoList | component |  | `@elabs-ai/components-terminal` | A three-state checklist (done/active/pending) rendered as a real <ol>/<li>, where each row's state is a glyph AND an announced word riding TerminalRow's gutterLabel, so it survives greyscale and reaches assistive tech. |
+| TerminalToolCall | component |  | `@elabs-ai/components-terminal` | A single tool invocation dressed as a CLI line: a status glyph (success/error/pending), the tool name plus its optional argument in parentheses, a result summary on a `⎿` row, and detail behind a real disclosure. |
+| TerminalTranscriptRow | component | kind=user*\|agent\|output\|error | `@elabs-ai/components-terminal` | One line of an agent transcript on top of TerminalRow: a closed kind axis (user/agent/output/error) that carries who spoke and whether it failed as a glyph, a colour and an accessible label. |
+| TerminalWorking | component |  | `@elabs-ai/components-terminal` | The in-turn footer row pinned last in a transcript: a spinner/diamond glyph, a label, elapsed time, token spend and a stop control — the three facts and an exit the human needs while the agent runs. |
+| useTerminalVariant | hook |  | `@elabs-ai/components-terminal` |  |
 
 ---
 

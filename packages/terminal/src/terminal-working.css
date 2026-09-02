@@ -1,0 +1,71 @@
+/*
+ * terminal-working.css — the ten-frame braille spinner's frame-cycle for
+ * `TerminalWorking` (#117 T3).
+ *
+ * `TerminalWorking` is prop-driven only and runs no JS timer (D5 —
+ * .claude/rules/scope-and-non-goals.md; .claude/rules/terminal-components.md
+ * "It runs no timer, holds no transcript, and fetches nothing"). So the
+ * spinner's frame-advance has to be pure CSS, not a `setInterval` loop.
+ *
+ * Ground truth (verified live against the real CLI, 2026-09-01 — Grok CLI
+ * v0.2.93): ten braille frames — ⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏ — cycling every 90ms
+ * (900ms per full loop).
+ *
+ * Mechanism: `terminal-working.tsx` stacks all ten frame glyphs in one column
+ * inside a fixed-height, `overflow-hidden` window one frame tall. This
+ * keyframe animates that column's `transform` through `steps(10, end)` over a
+ * 900ms iteration, so it lands on exactly ten equal, discrete 90ms holds
+ * (each `-100%` of the column's OWN height, i.e. exactly one frame row) with a
+ * hard cut between them — no cross-fade. This is more robust across browsers
+ * than animating the `content` property directly, whose discrete-value
+ * interpolation point the spec leaves looser.
+ *
+ * ## Why the animation lives here and not in an `animate-[…]` utility
+ *
+ * This repo has TWO reduced-motion channels and a Tailwind `motion-reduce:`
+ * variant only reaches one of them:
+ *
+ *  1. **The OS preference.** `prefers-reduced-motion: reduce` — covered by
+ *     `motion-reduce:animate-none` on the element, and belt-and-braces by the
+ *     global third-party animation cap in `themes.css` § MOTION GATE.
+ *  2. **The APP preference.** `ThemeProvider` writes
+ *     `data-motion-pref="reduced"` on the document element when a person picks
+ *     reduced motion IN THE PRODUCT with a neutral OS setting. That path sets
+ *     `--motion-factor: 0.0001`, which reaches the `--t-*` duration tokens and
+ *     nothing else — a raw `900ms` in an arbitrary utility would keep spinning
+ *     right through it.
+ *
+ * Scaling the duration by `--motion-factor` is NOT the fix: 900ms × 0.0001 is
+ * 0.09ms, which flickers ten frames per tick instead of stopping. Reduced
+ * motion means *stop*, so both channels resolve to `animation: none`, leaving
+ * `transform` at its base value — frame 0 (`⠋`) stays in the window as a
+ * static glyph. The state itself is never carried by the animation; it is in
+ * the live-region text beside it.
+ *
+ * Upstream has NO reduced-motion handling at all; both branches here are a
+ * deliberate improvement, not a copy.
+ */
+@keyframes terminal-working-spin {
+  to {
+    transform: translateY(-1000%);
+  }
+}
+
+.terminal-working-spinner-frames {
+  animation: terminal-working-spin 900ms steps(10, end) infinite;
+}
+
+/* Channel 2 — the in-product preference, which `motion-reduce:` cannot see. */
+[data-motion-pref="reduced"] .terminal-working-spinner-frames {
+  animation: none;
+}
+
+/* Channel 1, restated so the stylesheet stands alone if the utility is ever
+   dropped from the element. `:not([data-motion-pref="full"])` mirrors the
+   MOTION GATE truth table: an explicit in-product "full" is informed consent
+   and outranks the OS hint. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion-pref="full"]) .terminal-working-spinner-frames {
+    animation: none;
+  }
+}
