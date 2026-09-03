@@ -8,7 +8,15 @@ const meta = {
   title: "AI/SelectionToolbar",
   component: SelectionToolbar,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The small toolbar that floats over a TEXT SELECTION in a transcript, offering Quote. A dense secondary control row is `Layout/Toolbar`, the row above a list or table is `Layout/ViewToolbar`, and formatting chrome for a markdown source pane is `Editor/MarkdownToolbar` — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). Positioned with a Popover virtual anchor at the selection rect; presentational only.",
+      },
+    },
+  },
 } satisfies Meta<typeof SelectionToolbar>;
 export default meta;
 type Story = StoryObj<typeof meta>;

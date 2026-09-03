@@ -18,7 +18,15 @@ import {
 const meta = {
   title: "Layout/Sidebar",
   component: Sidebar,
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "The sidebar PRIMITIVE set you assemble yourself — an application sidebar with typed `header` / `footer` / nav slots is `Layout/AppSidebar`, which composes exactly these parts; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `SidebarProvider` owns the open state (⌘B / Ctrl+B, persisted in a `sidebar_state` cookie); `Sidebar` takes `side`, `variant` and a `collapsible` mode of `offcanvas` / `icon` / `none`; `SidebarHeader` / `SidebarContent` / `SidebarFooter` / `SidebarMenu*` are the parts. Reach for these only when the shell is bespoke.",
+      },
+    },
+  },
 } satisfies Meta<typeof Sidebar>;
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -202,6 +202,8 @@
     "source-theme-count:check:test": "node --test scripts/check-source-theme-count.test.mjs",
     "states:check": "node scripts/check-state-coverage.mjs",
     "states:check:test": "node --test scripts/check-state-coverage.test.mjs",
+    "story-descriptions:check": "node scripts/check-story-descriptions.mjs",
+    "story-descriptions:check:test": "node --test scripts/check-story-descriptions.test.mjs",
     "storybook": "pnpm --filter @elabs-ai/components-docs dev",
     "storybook-groups:check": "node scripts/check-storybook-groups.mjs",
     "storybook-groups:check:test": "node --test scripts/check-storybook-groups.test.mjs",

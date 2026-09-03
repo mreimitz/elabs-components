@@ -19,7 +19,15 @@ const meta = {
   title: "AI/ApprovalCard",
   component: ApprovalCard,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The CHAT approval gate; the console skin is `Terminal/TerminalPermission`, and both read the same `ApprovalScope` / `ApprovalOption` model promoted into `@elabs-ai/components-ui` — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). Pending is the attention treatment: a warning wash plus a hue-independent structural rail and a lift, never colour alone.",
+      },
+    },
+  },
 } satisfies Meta<typeof ApprovalCard>;
 export default meta;
 type Story = StoryObj<typeof meta>;

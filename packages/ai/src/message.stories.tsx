@@ -28,7 +28,15 @@ import { SourceList } from "./sources";
 const meta = {
   title: "AI/Message",
   component: Message,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "One turn of a CHAT transcript; one line of a CONSOLE transcript is `Terminal/TerminalTranscriptRow` — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `UserMessage` and `AgentMessage` are named presets over this same component and keep its `message` slot, so one consumer selector matches every entry point.",
+      },
+    },
+  },
 } satisfies Meta<typeof Message>;
 export default meta;
 type Story = StoryObj<typeof meta>;

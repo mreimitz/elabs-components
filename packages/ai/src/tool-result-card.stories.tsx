@@ -9,7 +9,15 @@ import { ToolResultCard } from "./tool-result-card";
 const meta = {
   title: "AI/ToolResultCard",
   component: ToolResultCard,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The CHAT produced-artifact card; a console transcript renders the same moment through `Terminal/TerminalToolCall` — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). A separate component from `AI/Tool` by design: `Tool` is the step that RAN (JSON behind disclosure), `ToolResultCard` hosts what it produced — a chart, a table, a file preview — as `children`, on the elevation channel (raised fill, no border).",
+      },
+    },
+  },
   tags: ["autodocs"],
 } satisfies Meta<typeof ToolResultCard>;
 export default meta;

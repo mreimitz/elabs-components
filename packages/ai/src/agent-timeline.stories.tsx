@@ -6,7 +6,15 @@ import { ToolDetails, ToolInput, ToolOutput } from "./tool";
 const meta = {
   title: "AI/AgentTimeline",
   component: AgentTimeline,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The agent EXECUTION trace on the canonical rail. A generic ordered-steps rail is `Core/Timeline`, and git history is `Data/RevisionTimeline` — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `AgentTimeline` is the convergence compound: sequenced, status-bearing steps on ONE spine (the `@elabs-ai/components-ui` Timeline rail) speaking ONE vocabulary (the closed seven-state `Status` enum). `AI/Task` and `AI/AgentEvent` compose it rather than hand-rolling rails.",
+      },
+    },
+  },
   tags: ["autodocs"],
 } satisfies Meta<typeof AgentTimeline>;
 export default meta;

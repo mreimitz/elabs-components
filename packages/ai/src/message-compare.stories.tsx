@@ -9,7 +9,15 @@ const meta = {
   title: "AI/MessageCompare",
   component: MessageCompare,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Two to four model ANSWERS side by side — not a diff. Nothing here is line-level; for that, start from `AI/DiffView` and the rest of the diff family in [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). The one-at-a-time sibling is `MessageBranch`, which switches between responses instead of showing them at once; each pane here keeps its own status, its own scroll position and its own feedback.",
+      },
+    },
+  },
 } satisfies Meta<typeof MessageCompare>;
 export default meta;
 type Story = StoryObj<typeof meta>;
