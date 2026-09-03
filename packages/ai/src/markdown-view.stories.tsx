@@ -12,7 +12,36 @@ const meta = {
   title: "AI/MarkdownView",
   component: MarkdownView,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "A model-authored answer or a read-only markdown DOCUMENT, rendered as a " +
+          "document — never as Shiki source. " +
+          "Pick a markdown renderer by where the markdown is going to be READ: a " +
+          "read-only document in a chat or a side rail → `AI/MarkdownView`; the preview " +
+          "pane of the markdown editor → `Editor/MarkdownPreview`; a file the app did " +
+          "not write → the markdown adapter behind `Viewer/FileViewer`; streaming into " +
+          "a message as the model writes it → `MessageResponse` on `AI/Message`. See " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs)." +
+          " Its own seams: `baseHeadingLevel` constrains the heading rungs so a " +
+          "document `#` inside a 20rem rail lands on the `title` rung instead of " +
+          "becoming the biggest text on screen, and the sanitiser chain is LOCKED — " +
+          "`rehypePlugins` is omitted at the type level and stripped at runtime, so a " +
+          "caller cannot widen what a model is allowed to emit. It understands no brand " +
+          "directives; those belong to the editor preview.\n\n" +
+          "All three map their element tree onto the same `Prose*` primitives owned " +
+          "by `@elabs-ai/components-ui` (`@elabs-ai/components-editor` re-exports them " +
+          "under short names). The element MAPS stay per-surface on purpose — " +
+          "`@elabs-ai/components-ai`, `@elabs-ai/components-editor` and " +
+          "`@elabs-ai/components-viewer` are leaves that may not import one another, and " +
+          "`streamdown` deliberately never moves down into `@elabs-ai/components-ui`, or " +
+          "every consumer of every foundation component would carry it. One prose source, " +
+          "several renderers.",
+      },
+    },
+  },
 } satisfies Meta<typeof MarkdownView>;
 export default meta;
 type Story = StoryObj<typeof meta>;

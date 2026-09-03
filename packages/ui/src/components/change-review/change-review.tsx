@@ -11,6 +11,27 @@
  * Design references: GitHub PR file-review (per-hunk viewed/comment),
  * Cursor/Copilot "review changes" panel, Graphite/Linear review UIs.
  *
+ * NOT a diff-line renderer, and deliberately never becoming one. A hunk's
+ * `before`/`after` are ordinary `ReactNode` prose, drawn as a quiet no-fill
+ * comparison; the `−`/`+` markers below mean "previous content"/"proposed
+ * content", which is not the same idea as `DiffLine`'s "removed line"/"added
+ * line" even though the glyphs coincide. Do NOT reach for `diffLineMarker` here:
+ * a coincidence stays a literal (theming.md, intentional-mirror rule).
+ *
+ * Structured `DiffLine[]` hunks reach this component by INJECTION, which is a
+ * binding decision, not an unfinished merge — see
+ * `docs/decisions/2026-09-01-brainless-adoption-architecture.md` § 3:
+ *   - `ChangeHunk` gains NO `lines` field and `DiffLine` never moves here.
+ *   - The app that depends on both packages passes a `<DiffView>`
+ *     (`@elabs-ai/components-ai`, Shiki-backed) through `renderHunk` or a hunk's
+ *     `after` slot. Neither package imports the other, in either direction.
+ *   - Re-litigated and re-ratified 2026-09-03: moving this component into
+ *     `@elabs-ai/components-ai` was rejected because it would push a
+ *     dependency-free component into a layer-2 leaf that `terminal`, `editor`
+ *     and `viewer` could then never reach.
+ * See the `InjectedHunkRenderer` story here, and `ChangeReviewComposition` in
+ * `packages/ai/src/diff-view.stories.tsx` for the real two-package wiring.
+ *
  * State grid: empty (no hunks → StatePanel), single hunk, mixed, all-approved,
  * all-rejected, very long hunk content. Approval state is signalled with color
  * AND icon/label (colorblind + high-decoration/high-contrast safe).

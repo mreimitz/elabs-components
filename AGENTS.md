@@ -175,6 +175,8 @@ pnpm components:check           # every @elabs-ai/components-ui component is bar
 pnpm components:check:test      # self-test for the component-registration gate + its story ratchet
 pnpm variants:check             # if a component with cva variants changed — every variant value must appear in a rendered story (#388; ratchet)
 pnpm variants:check:test        # self-test for the variant-coverage gate
+pnpm docs-links:check           # every Storybook `?path=` cross-link in a docs MDX page or a story description resolves to a real story TITLE — story ids are derived from titles, so a retitle silently 404s every link that named it
+pnpm docs-links:check:test      # self-test for the docs cross-link gate
 pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
 pnpm paused-surfaces-drift:check # the deleted "paused surfaces" theme-pause concept must stay fully gone — no live mechanism, no rule doc, no dangling citation reappearing on its own (#35)
 pnpm paused-surfaces-drift:check:test # self-test for the paused-surfaces drift-lock gate

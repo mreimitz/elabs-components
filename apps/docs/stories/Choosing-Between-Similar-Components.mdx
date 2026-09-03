@@ -133,13 +133,31 @@ their own contents. `Toolbar` is the one you reach for when you have no such row
 | reading a patch in a console transcript               | [Terminal/TerminalDiffHunk](?path=/docs/terminal-terminaldiffhunk--docs) |
 | comparing two **answers**, which is not a diff at all | [AI/MessageCompare](?path=/docs/ai-messagecompare--docs)                 |
 
-`DiffView`, `ChangeReview` and `TerminalDiffHunk` all read the same promoted `DiffLine`
-model from `@elabs-ai/components-ui` and label added/removed lines through the same
-`diffLineAccessibleLabel()`, so polarity is announced identically everywhere. They are
-three separate renderers of it today: `ChangeReview` is the trust gate (it owns
-approve/reject state), `DiffView` is the read-only renderer, `TerminalDiffHunk` is the
-console dress. `DiffEditor` is different in kind — it is Monaco, so it is the only one of
-the four that can be typed into.
+`DiffView` and `TerminalDiffHunk` read the same promoted `DiffLine` model from
+`@elabs-ai/components-ui` and label added/removed lines through the same
+`diffLineAccessibleLabel()`, so polarity is announced identically in a chat and in a
+console. They are two renderers of one model on purpose: `DiffView` is the read-only
+renderer, `TerminalDiffHunk` is the console dress.
+
+`ChangeReview` is **not** a third renderer of that model, and it is not going to become
+one. It is the trust gate — it owns approve/reject state — and a hunk's `before` / `after`
+are ordinary `ReactNode` prose, drawn as a deliberately quiet no-fill comparison rather
+than as patch rows. It also ships from `@elabs-ai/components-ui`, not from the package its
+story group names; the `AI/` group is by concern, which
+[Storybook guidelines](https://github.com/mreimitz/elabs-components/blob/main/docs/STORYBOOK_GUIDELINES.md)
+names as intentional. To review structured `DiffLine[]` hunks you inject one component
+into the other **in the app that depends on both** — pass a `<DiffView>` through
+`ChangeReview`'s `renderHunk` render-prop, or through a hunk's `after` slot. The worked
+wiring is the
+[Composed into ChangeReview](?path=/story/ai-diffview--change-review-composition) story.
+
+That seam is ratified, not unfinished: `ChangeHunk` gains no `lines` field and `DiffLine`
+never moves, because `@elabs-ai/components-ui` may not import `@elabs-ai/components-ai`
+and `DiffView` needs Shiki. See § 3 of
+[the adoption-architecture decision](https://github.com/mreimitz/elabs-components/blob/main/docs/decisions/2026-09-01-brainless-adoption-architecture.md).
+
+`DiffEditor` is different in kind — it is Monaco, so it is the only one of the four that
+can be typed into.
 
 `MessageCompare` is in this list only because people look for it here. It puts two model
 responses beside each other; nothing about it is line-level.
@@ -148,12 +166,13 @@ responses beside each other; nothing about it is line-level.
 
 **The rule.** Pick by where the markdown is going to be read.
 
-| The markdown is                                 | Reach for                                                          |
-| ----------------------------------------------- | ------------------------------------------------------------------ |
-| a read-only document in a chat or a side rail   | [AI/MarkdownView](?path=/docs/ai-markdownview--docs)               |
-| the preview pane of the markdown editor         | [Editor/MarkdownPreview](?path=/docs/editor-markdownpreview--docs) |
-| streaming into a message as the model writes it | [AI/Message](?path=/story/ai-message--presets) (`MessageResponse`) |
-| the typographic primitives all three map onto   | [Editor/Prose](?path=/docs/editor-prose--docs)                     |
+| The markdown is                                  | Reach for                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| a read-only document in a chat or a side rail    | [AI/MarkdownView](?path=/docs/ai-markdownview--docs)               |
+| the preview pane of the markdown editor          | [Editor/MarkdownPreview](?path=/docs/editor-markdownpreview--docs) |
+| streaming into a message as the model writes it  | [AI/Message](?path=/story/ai-message--presets) (`MessageResponse`) |
+| a file the app did not write, opened in a viewer | [Viewer/FileViewer](?path=/story/viewer-fileviewer--markdown)      |
+| the typographic primitives they all map onto     | [Editor/Prose](?path=/docs/editor-prose--docs)                     |
 
 `MarkdownView` and `MarkdownPreview` are both Streamdown with a branded component map,
 and they differ in dialect and in intent. `MarkdownPreview` understands the editor's
@@ -163,10 +182,21 @@ document heading inside a 20rem rail lands on the `title` rung instead of becomi
 biggest text on screen. Do not render a markdown document as source through `CodeBlock` —
 that is the defect `MarkdownView` was added to fix.
 
-`Prose` is a re-export, not a fourth renderer: `@elabs-ai/components-ui` owns the
+`Prose` is a re-export, not another renderer: `@elabs-ai/components-ui` owns the
 canonical `ProseHeading` / `ProseText` / `ProseLink` / `ProseList` / `ProseBlockquote` /
-`ProseInlineCode` set, and `@elabs-ai/components-editor` re-exports them under their
-short names. One prose source, three consumers.
+`ProseInlineCode` set, `@elabs-ai/components-editor` re-exports them under their short
+names, and `MarkdownView`, `MarkdownPreview` and the viewer's markdown adapter each map
+their element tree onto that same set. One prose source, several renderers.
+
+The element **maps** stay per-surface, and that is the decision rather than an unpaid
+debt. `MarkdownPreview` wraps every standard element to attach `data-sourcepos`, the
+ghost-diff wash and the search wash, and gives headings slug ids and an action slot;
+`MarkdownView` takes `baseHeadingLevel` and locks its sanitiser chain; the viewer's
+adapter deliberately ships no plugins and no streaming. `@elabs-ai/components-ai`,
+`@elabs-ai/components-editor` and `@elabs-ai/components-viewer` are leaves that may not
+import one another, so the half that could be shared has already moved down into
+`@elabs-ai/components-ui` — and `streamdown` deliberately never follows it there, or
+every consumer of every foundation component would carry it.
 
 ## Slash menus
 
