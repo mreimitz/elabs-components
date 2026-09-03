@@ -12,6 +12,25 @@
  * `attach · modelPicker · mode · effort │ voice · send`, the same arrangement
  * `TerminalComposer` uses, so the chat and console skins agree.
  *
+ * ### Anatomy — and what the pages nested under this one are
+ *
+ * A `Composer` **is** a `PromptInput` form: a muted status strip above the
+ * well, the well itself, and a tools cluster in the footer. The sub-pages under
+ * `AI/Composer` are those parts, not siblings of it:
+ *
+ * - **`PromptInput`** — the raw composer FORM primitive everything here is
+ *   built on. Compose it yourself only for a bespoke shell.
+ * - **`PromptInputMode`**, **`PromptInputEffort`**, **`PromptInputSlash`** —
+ *   the three controls the `mode`, `effort` and `slashCommands` slots render.
+ *   The fourth slot, `modelPicker`, takes a `ModelPicker` from
+ *   `@elabs-ai/components-ui`, which is why it has no page of its own here.
+ * - **`WithMentionInput`** — the one documented bespoke shell: a mention
+ *   roster has to WRAP the textarea, which is the seam `Composer` owns, so
+ *   that page drops to `PromptInput` on purpose.
+ *
+ * `Terminal/TerminalComposer` is the console skin of this same family — same
+ * footer order, different surface.
+ *
  * Semantic tokens only; theme-aware radii; reads in every theme.
  */
 import { useState } from "react";
@@ -122,7 +141,14 @@ const meta = {
         component:
           "The CHAT composer; the console skin is `Terminal/TerminalComposer` — see " +
           "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
-          "Composer is the chat input. Every control the PromptInput family ships is reachable from a Composer prop; drop to PromptInput only for a bespoke shell. A rounded two-tone double card (outer bg-card frame + muted status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a tools cluster, voice, and a circular send — plus four optional slots: modelPicker (pass a ModelPicker), mode (PromptInputMode), effort (PromptInputEffort) and slashCommands (PromptInputSlash). Footer order: attach · modelPicker · mode · effort │ voice · send, mirroring TerminalComposer. Built on the real @elabs-ai/components-ai PromptInput; semantic tokens only; reads in all themes.",
+          "Composer is the chat input. Every control the PromptInput family ships is reachable from a Composer prop; drop to PromptInput only for a bespoke shell. A rounded two-tone double card (outer bg-card frame + muted status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a tools cluster, voice, and a circular send — plus four optional slots: modelPicker (pass a ModelPicker), mode (PromptInputMode), effort (PromptInputEffort) and slashCommands (PromptInputSlash). Footer order: attach · modelPicker · mode · effort │ voice · send, mirroring TerminalComposer. Built on the real @elabs-ai/components-ai PromptInput; semantic tokens only; reads in all themes.\n\n" +
+          "**Anatomy — and what the pages nested under this one are.** A Composer IS a PromptInput form: a muted status strip above the well, the well itself, and a tools cluster in the footer. The sub-pages under `AI/Composer` are those parts, not siblings of it — " +
+          "[PromptInput](?path=/docs/ai-composer-promptinput--docs) is the raw composer FORM primitive everything here is built on; " +
+          "[PromptInputMode](?path=/docs/ai-composer-promptinputmode--docs), " +
+          "[PromptInputEffort](?path=/docs/ai-composer-promptinputeffort--docs) and " +
+          "[PromptInputSlash](?path=/docs/ai-composer-promptinputslash--docs) are the three controls the `mode`, `effort` and `slashCommands` slots render (the fourth slot, `modelPicker`, takes a `ModelPicker` from @elabs-ai/components-ui, which is why it has no page of its own); and " +
+          "[WithMentionInput](?path=/docs/ai-composer-withmentioninput--docs) is the one documented bespoke shell — a mention roster has to WRAP the textarea, the seam Composer owns, so that page drops to PromptInput on purpose. " +
+          "The scaffold that puts this composer under a transcript is [Patterns/Blocks/AI Chat Shell](?path=/docs/patterns-blocks-ai-chat-shell--docs); the console skin of the same family is [Terminal/TerminalComposer](?path=/docs/terminal-terminalcomposer--docs).",
       },
     },
   },

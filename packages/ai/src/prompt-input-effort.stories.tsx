@@ -20,14 +20,14 @@ const LEVELS: EffortLevel[] = [
 ];
 
 const meta = {
-  title: "AI/PromptInputEffort",
+  title: "AI/Composer/PromptInputEffort",
   component: PromptInputEffort,
   parameters: {
     layout: "padded",
     docs: {
       description: {
         component:
-          "An ordered reasoning-effort/budget scale. The order of `levels` IS the semantics: the indicator fills — by size ramp and solid-vs-hollow shape, never colour alone — up to the current level, and the level's name is also rendered as text. Built on Radix `RadioGroup` for arrow-key navigation and an announced current value; `levels` is entirely prop-driven.",
+          "A part of the [Composer](?path=/docs/ai-composer--docs) family — what the `effort` slot renders. An ordered reasoning-effort/budget scale. The order of `levels` IS the semantics: the indicator fills — by size ramp and solid-vs-hollow shape, never colour alone — up to the current level, and the level's name is also rendered as text. Built on Radix `RadioGroup` for arrow-key navigation and an announced current value; `levels` is entirely prop-driven.",
       },
     },
   },
