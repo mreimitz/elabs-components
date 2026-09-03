@@ -286,13 +286,45 @@ const preview: Preview = {
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
     options: {
       storySort: {
-        // Order = primitives → composites → domain packages → utilities → demos.
-        // EVERY top-level group must be listed here; an unlisted group sorts to the
-        // bottom in arbitrary story-import order (the 2026-06-15 IA review finding).
-        // When you add a group, add it here. See docs/STORYBOOK_GUIDELINES.md.
+        // ── The sidebar order. Keep in step with the numbered list in
+        //    docs/STORYBOOK_GUIDELINES.md — same groups, same order.
+        //
+        // ALPHABETICAL IS THE DEFAULT within every group, so a new component
+        // lands in a predictable place with no edit here. Without `method`,
+        // Storybook falls back to "configure", which returns 0 for any two
+        // unlisted siblings — i.e. Vite import order. That is what interleaved
+        // Patterns/{Blocks,Templates,Scenarios} ("blocks in the middle") and left
+        // Foundations in no order at all.
+        //
+        // Story EXPORTS inside one component keep their DECLARATION order:
+        // storySort short-circuits on equal titles unless `includeNames` is set.
+        //
+        // `order` then overrides alphabetical where a reading order matters: the
+        // top-level tiers, plus the three groups (Docs, Foundations, Patterns)
+        // whose children tell a story alphabetical would scramble. A name may be
+        // followed by a nested array ordering ITS children; a name with no nested
+        // array falls through to alphabetical.
+        //
+        // Top-level order = primitives → composites → domain packages → utilities
+        // → demos. EVERY top-level group must be listed; an unlisted group sorts
+        // to the bottom in arbitrary story-import order (the 2026-06-15 IA review
+        // finding, which recurred within three months).
+        //
+        // WHY THE ARRAY IS INLINE AND MUST STAY INLINE: Storybook generates the
+        // order in index.json by STATICALLY parsing this file
+        // (`getStorySortParameter`, storybook/internal/csf-tools). Its `parseValue`
+        // walks literals only and throws "Unexpected '<name>'. Parameter
+        // 'options.storySort' should be defined inline" on ANY identifier — an
+        // imported const, a local const in this same file, and a spread element all
+        // fail the build (probed directly against that parser, 2026-09-03). So this
+        // array cannot be extracted to a module. A gate that needs to read it should
+        // parse THIS literal: bracket-match the array that follows the `order` key,
+        // strip line comments, drop trailing commas, JSON.parse — the array holds
+        // nothing but double-quoted strings and nested arrays. (Match the LAST
+        // occurrence of the key, or skip this comment block: prose above a literal
+        // is the classic way a naive first-match parser reads the wrong bytes.)
+        method: "alphabetical",
         order: [
-          // Within Docs the reading order is logical, NOT alphabetical:
-          // what-is-it (Introduction) → how-to-start (Getting Started) → agent/MCP details.
           "Docs",
           [
             "Introduction",
@@ -304,6 +336,16 @@ const preview: Preview = {
             "Testing Charts in jsdom",
           ],
           "Foundations",
+          [
+            "Colors",
+            "Typography",
+            "Spacing & Radius",
+            "Elevation",
+            "Motion",
+            "Decoration",
+            "Paper",
+            "Theming",
+          ],
           "Core",
           "Icons",
           "Forms",
@@ -317,14 +359,15 @@ const preview: Preview = {
           "Data",
           "Charts",
           "AI",
-          "Editor",
           "Terminal",
+          "Editor",
           "Viewer",
           "Flow",
           "Maps",
           "Marketing",
           "Providers",
           "Patterns",
+          ["Templates", "Scenarios", "Blocks"],
         ],
       },
     },

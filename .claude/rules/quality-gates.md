@@ -119,7 +119,8 @@ agent/skill path can discover it. Register it everywhere packages are enumerated
 - `.claude/commands/new-component.md` — add it to the target-package list.
 - `skills/brand-ui/SKILL.md` (the **judgment prose** around the generated catalogue) +
   `skills/brand-ui-component/SKILL.md` (routing) — and their `description` package lists.
-- `apps/docs/.storybook/preview.tsx` — add its story-title group to `storySort`.
+- `apps/docs/.storybook/preview.tsx` — add its story-title group to `storySort.order`,
+  and to the numbered list in `docs/STORYBOOK_GUIDELINES.md` (the two must match).
 - Run `pnpm manifest` to regenerate `brand-ui.manifest.json`.
 
 **This manual list is now belt-and-suspenders for the common case, not the only
