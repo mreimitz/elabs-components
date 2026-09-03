@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T11:27:54.154Z",
+  "generatedAt": "2026-09-03T12:24:57.971Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1330,46 +1330,6 @@
           "module": "packages/ai/src/connection.tsx"
         },
         {
-          "name": "Context",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextCacheUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContent",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentBody",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentFooter",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentHeader",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextInputUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextOutputUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
           "name": "ContextPanel",
           "kind": "value",
           "module": "packages/ai/src/context-panel.tsx"
@@ -1403,16 +1363,6 @@
           "name": "ContextPanelTrigger",
           "kind": "value",
           "module": "packages/ai/src/context-panel.tsx"
-        },
-        {
-          "name": "ContextReasoningUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextTrigger",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
         },
         {
           "name": "Controls",
@@ -2840,6 +2790,56 @@
           "module": "packages/ai/src/test-results.tsx"
         },
         {
+          "name": "TokenUsage",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageCache",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContent",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentBody",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentFooter",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentHeader",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageInput",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageOutput",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageReasoning",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageTrigger",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
           "name": "Tool",
           "kind": "value",
           "module": "packages/ai/src/tool.tsx"
@@ -3539,6 +3539,14 @@
           "module": "packages/ai/src/commit.tsx"
         },
         {
+          "name": "ComposerEffortProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
+          "name": "ComposerModeProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
           "name": "ComposerProps",
           "module": "packages/ai/src/composer.tsx"
         },
@@ -3591,34 +3599,6 @@
           "module": "packages/ai/src/context-panel.tsx"
         },
         {
-          "name": "ContextCacheUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentBodyProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentFooterProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentHeaderProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextInputUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextOutputUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
           "name": "ContextPanelBodyProps",
           "module": "packages/ai/src/context-panel.tsx"
         },
@@ -3653,18 +3633,6 @@
         {
           "name": "ContextPanelView",
           "module": "packages/ai/src/context-panel.tsx"
-        },
-        {
-          "name": "ContextProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextReasoningUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextTriggerProps",
-          "module": "packages/ai/src/context.tsx"
         },
         {
           "name": "ControlsProps",
@@ -5001,6 +4969,46 @@
         {
           "name": "TextShimmerProps",
           "module": "packages/ai/src/shimmer.tsx"
+        },
+        {
+          "name": "TokenUsageCacheProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentBodyProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentFooterProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentHeaderProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageInputProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageOutputProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageReasoningProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageTriggerProps",
+          "module": "packages/ai/src/token-usage.tsx"
         },
         {
           "name": "ToolbarProps",
@@ -6491,16 +6499,40 @@
               "description": "Muted status line shown above the input well. Default `\"Awaiting your input\"`. Drive it from chat state (\"Thinking…\", \"Generating…\") or pass `null` to hide the strip entirely."
             },
             {
-              "name": "model",
+              "name": "modelPicker",
               "optional": true,
               "type": "ReactNode",
-              "description": "Model-selector pill label. Default `\"Claude Opus 4\"`; pass `null` to hide it."
+              "description": "The model control, rendered first in the tools cluster after `attach`. Pass a `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit in a composer footer) — or anything else. Default: nothing renders. This replaces the old `model` prop, which rendered a static, non-interactive pill defaulted to a hard-coded model name. A composer that shows a model name it cannot change is a lie about what the control does; the slot now takes the real picker instead."
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "ComposerModeProps",
+              "description": "App-defined operating mode control — renders a `PromptInputMode` in the tools cluster. Omitted, nothing renders. `brand-ui` ships no mode vocabulary: `modes` is entirely yours."
+            },
+            {
+              "name": "effort",
+              "optional": true,
+              "type": "ComposerEffortProps",
+              "description": "Ordered reasoning-effort control — renders a `PromptInputEffort` in the tools cluster. Omitted, nothing renders. `levels` is ordered low → high and is entirely yours; `aria-label` names the scale."
+            },
+            {
+              "name": "slashCommands",
+              "optional": true,
+              "type": "PromptInputSlashProps[\"commands\"]",
+              "description": "Slash-command palette. When set (and non-empty) the textarea becomes a `PromptInputSlashTextarea` wrapped in a `PromptInputSlash`, so typing `/` at the start of a line opens a filtered command list — nothing else about the composer changes. Note this makes the textarea REACT-CONTROLLED (the palette needs to read and splice the text), which is why `Composer` clears its own copy of the text on submit: `PromptInput`'s `form.reset()` reaches the DOM node, not React state."
+            },
+            {
+              "name": "onSlashCommand",
+              "optional": true,
+              "type": "PromptInputSlashProps[\"onSelect\"]",
+              "description": "Fires with the chosen slash command (alongside the text splice)."
             },
             {
               "name": "tools",
               "optional": true,
               "type": "ReactNode",
-              "description": "Override the left-hand tool cluster (attach + model pill) — e.g. to add a web-search or connect-data control. Render `PromptInputButton`s / `PromptInputActionMenu` here; when set, `showAttach`/`model` are ignored."
+              "description": "Override the DEFAULT tool buttons (today: the attach button) — e.g. to add a web-search or connect-data control. Render `PromptInputButton`s / `PromptInputActionMenu` here; when set, `showAttach` is ignored. The explicit `modelPicker` / `mode` / `effort` slots are NOT part of this override — they render after whatever this puts in the cluster, so passing `tools` can never silently swallow a control you asked for by name."
             },
             {
               "name": "sendStatus",
@@ -6518,7 +6550,7 @@
               "name": "submitProps",
               "optional": true,
               "type": "Omit<ComponentProps<typeof PromptInputSubmit>, \"status\" | \"onStop\">",
-              "description": "Extra props spread onto the send button — `disabled`, `aria-label`, `variant`, `id`, `className`. `status` and `onStop` are excluded because `Composer` owns them via `sendStatus` / `onStop` above. (A `data-*` key is not assignable through this object: TypeScript only permits arbitrary `data-*` on a JSX element directly, not on a typed props object. Reach for `id` or `aria-label` as the test hook.) **`disabled` is the one that matters for correctness.** `PromptInput`'s submit handler calls `form.reset()` as soon as it ACCEPTS a submit, so a consumer that refuses the send inside `onSubmit` — an app doing async setup on the first message, say — has already had the textarea cleared and the user's text destroyed, with nothing to restore from. Disabling the control is what actually prevents it: `PromptInputTextarea`'s Enter handler checks `submitControl?.disabled` and bails before `requestSubmit()`, so the Enter path is closed too, not just the click. Leave it UNSET rather than passing `false` when you have no opinion — `PromptInputSubmit` resolves `disabled ?? autoDisabled`, so a literal `false` opts out of the library's own empty-composer guard."
+              "description": "Extra props spread onto the send button — `disabled`, `aria-label`, `variant`, `id`, `className`. `status` and `onStop` are excluded because `Composer` owns them via `sendStatus` / `onStop` above. (A `data-*` key is not assignable through this object: TypeScript only permits arbitrary `data-*` on a JSX element directly, not on a typed props object. Reach for `id` or `aria-label` as the test hook.) **`disabled` is the one that matters for correctness.** `PromptInput`'s submit handler calls `form.reset()` as soon as it ACCEPTS a submit, so a consumer that refuses the send inside `onSubmit` — an app doing async setup on the first message, say — has already had the textarea cleared and the user's text destroyed, with nothing to restore from. Disabling the control is what actually prevents it: `PromptInputTextarea`'s Enter handler checks `submitControl?.disabled` and bails before `requestSubmit()`, so the Enter path is closed too, not just the click. It holds with a slash palette open as well — the palette's own Enter handling only ever inserts a command. Leave it UNSET rather than passing `false` when you have no opinion — `PromptInputSubmit` resolves `disabled ?? autoDisabled`, so a literal `false` opts out of the library's own empty-composer guard."
             },
             {
               "name": "tone",
@@ -6638,55 +6670,6 @@
         "ConfirmationTitle": {
           "extends": [
             "ComponentProps<typeof AlertTitle>"
-          ],
-          "props": []
-        },
-        "Context": {
-          "extends": [
-            "ComponentProps<typeof HoverCard>",
-            "ContextSchema"
-          ],
-          "props": []
-        },
-        "ContextCacheUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextContent": {
-          "extends": [
-            "ComponentProps<typeof HoverCardContent>"
-          ],
-          "props": []
-        },
-        "ContextContentBody": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextContentFooter": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextContentHeader": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextInputUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextOutputUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
           ],
           "props": []
         },
@@ -6828,18 +6811,6 @@
           ]
         },
         "ContextPanelTrigger": {
-          "extends": [
-            "ComponentProps<typeof Button>"
-          ],
-          "props": []
-        },
-        "ContextReasoningUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextTrigger": {
           "extends": [
             "ComponentProps<typeof Button>"
           ],
@@ -9744,7 +9715,7 @@
               "name": "children",
               "optional": true,
               "type": "ReactNode",
-              "description": "Docks another component alongside the ambient segments — most often `<Context />` (`@elabs-ai/components-ai`), so token usage/cost keeps its one owner (`context.tsx`, tokenlens) instead of being re-implemented here. Rendered flush to the end of the bar."
+              "description": "Docks another component alongside the ambient segments — most often `<TokenUsage />` (`@elabs-ai/components-ai`), so token usage/cost keeps its one owner (`token-usage.tsx`, tokenlens) instead of being re-implemented here. Rendered flush to the end of the bar."
             }
           ]
         },
@@ -10251,6 +10222,67 @@
               "type": "number"
             }
           ]
+        },
+        "TokenUsage": {
+          "extends": [
+            "ComponentProps<typeof HoverCard>",
+            "TokenUsageSchema"
+          ],
+          "props": []
+        },
+        "TokenUsageCache": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageContent": {
+          "extends": [
+            "ComponentProps<typeof HoverCardContent>"
+          ],
+          "props": []
+        },
+        "TokenUsageContentBody": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageContentFooter": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageContentHeader": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageInput": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageOutput": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageReasoning": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageTrigger": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
         },
         "Tool": {
           "extends": [
@@ -11124,10 +11156,14 @@
               "PromptInput",
               "PromptInputTextarea",
               "PromptInputTools",
-              "PromptInputSubmit"
+              "PromptInputSubmit",
+              "PromptInputMode",
+              "PromptInputEffort",
+              "PromptInputSlash"
             ],
             "pairsWith": [
               "Conversation",
+              "ModelPicker",
               "ModelSelector"
             ]
           },
@@ -11136,6 +11172,8 @@
           },
           "antiPatterns": [
             "Hand-rolling a PromptInput footer per app — Composer is the shipped assembly; reach for it first.",
+            "Dropping to PromptInput to get a mode, effort or slash-command control — Composer exposes all three as props (mode, effort, slashCommands/onSlashCommand); drop to PromptInput only for a bespoke shell.",
+            "Expecting a model name in the footer by default — the old static `model` pill is gone; pass a ModelPicker (@elabs-ai/components-ui) to the `modelPicker` slot.",
             "Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.",
             "Treating the composer as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.",
             "Reaching for surfaceClassName on Composer — it has no such prop; className styles the outer card frame and Composer owns the inner well's shape (surfaceClassName lives on PromptInput)."
@@ -11182,30 +11220,6 @@
             "Styling it like a committed Edge — the pending line must read as provisional until it lands.",
             "Hard-coding its stroke — it draws with the focus/ring token so it stays visible in every theme.",
             "Rendering it outside a Canvas — it is React Flow's connection-line slot, not a standalone SVG."
-          ]
-        },
-        "Context": {
-          "purpose": "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
-          "category": "ai",
-          "relationships": {
-            "usedInside": [
-              "Composer",
-              "PromptInput"
-            ],
-            "contains": [
-              "ContextTrigger",
-              "ContextContent",
-              "ContextInputUsage",
-              "ContextCacheUsage"
-            ],
-            "pairsWith": [
-              "ModelSelector"
-            ]
-          },
-          "antiPatterns": [
-            "Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.",
-            "Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.",
-            "Putting it inside the transcript — usage is composer chrome, not message content."
           ]
         },
         "ContextPanel": {
@@ -12160,11 +12174,11 @@
             ],
             "pairsWith": [
               "TurnStatus",
-              "Context",
+              "TokenUsage",
               "SessionHeader"
             ],
             "contains": [
-              "Context"
+              "TokenUsage"
             ]
           },
           "stateTokens": {
@@ -12367,6 +12381,30 @@
             "Showing the failure stack inline for every row — the error detail belongs behind the row's disclosure."
           ]
         },
+        "TokenUsage": {
+          "purpose": "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Composer",
+              "PromptInput"
+            ],
+            "contains": [
+              "TokenUsageTrigger",
+              "TokenUsageContent",
+              "TokenUsageInput",
+              "TokenUsageCache"
+            ],
+            "pairsWith": [
+              "ModelSelector"
+            ]
+          },
+          "antiPatterns": [
+            "Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.",
+            "Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.",
+            "Putting it inside the transcript — usage is composer chrome, not message content."
+          ]
+        },
         "Tool": {
           "purpose": "Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error.",
           "category": "ai",
@@ -12474,7 +12512,7 @@
               "SessionStatusBar",
               "Shimmer",
               "PromptInputStop",
-              "Context"
+              "TokenUsage"
             ]
           },
           "stateTokens": {

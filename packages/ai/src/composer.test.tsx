@@ -1,23 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Composer } from "./composer";
 
 describe("Composer", () => {
-  it("renders the default status line, placeholder, and model pill", () => {
+  it("renders the default status line and placeholder, and no model control at all", () => {
     render(<Composer />);
 
     expect(screen.getByText("Awaiting your input")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ask me anything…")).toBeInTheDocument();
-    expect(screen.getByText("Claude Opus 4")).toBeInTheDocument();
+    // The `model` prop and its hard-coded "Claude Opus 4" pill are GONE: a
+    // composer must not show a model name it cannot change. The slot is
+    // `modelPicker`, and it renders nothing unless you fill it.
+    expect(screen.queryByText("Claude Opus 4")).not.toBeInTheDocument();
+    // …and none of the four optional slots renders unless it is asked for.
+    expect(document.querySelector('[data-slot="model-picker"]')).toBeNull();
+    expect(document.querySelector('[data-slot="prompt-input-mode"]')).toBeNull();
+    expect(document.querySelector('[data-slot="prompt-input-effort"]')).toBeNull();
+    expect(document.querySelector('[data-slot="prompt-input-slash"]')).toBeNull();
   });
 
-  it("accepts a custom status and placeholder, and hides the model pill when model is null", () => {
-    render(<Composer status="Thinking…" placeholder="Ask the agent…" model={null} />);
+  it("accepts a custom status and placeholder", () => {
+    render(<Composer status="Thinking…" placeholder="Ask the agent…" />);
 
     expect(screen.getByText("Thinking…")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ask the agent…")).toBeInTheDocument();
-    expect(screen.queryByText("Claude Opus 4")).not.toBeInTheDocument();
   });
 
   it("renders suggestion chips and fires onSuggestionClick with the chosen suggestion", async () => {
@@ -178,5 +185,150 @@ describe("Composer — icon-only buttons have an accessible name (#356)", () => 
     // is `tooltip`. Before the fix these had no accessible name at all.
     expect(screen.getByRole("button", { name: "Attach files" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Voice" })).toBeInTheDocument();
+  });
+});
+
+describe("Composer — the four optional control slots (RM-006)", () => {
+  const MODES = [
+    { id: "auto", label: "Auto", description: "Acts without asking." },
+    { id: "plan", label: "Plan first", description: "Proposes a plan first." },
+  ];
+  const LEVELS = [
+    { id: "low", label: "Low" },
+    { id: "high", label: "High" },
+  ];
+  const COMMANDS = [
+    { name: "help", description: "Show available commands" },
+    { name: "clear", description: "Clear the conversation" },
+  ];
+
+  // jsdom does not implement `Element.prototype.scrollIntoView`, and `cmdk`
+  // (which renders the slash palette's list) calls it unconditionally whenever
+  // the highlight moves. Same local no-op stub `prompt-input-slash.test.tsx`
+  // uses — `vitest.setup.ts` deliberately does not stub it globally.
+  let originalScrollIntoView: typeof Element.prototype.scrollIntoView;
+
+  beforeEach(() => {
+    originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+  });
+
+  it("renders modelPicker in the tools cluster, before mode and effort", () => {
+    render(
+      <Composer
+        modelPicker={<button type="button">Sonnet 4.5</button>}
+        mode={{ modes: MODES }}
+        effort={{ levels: LEVELS, "aria-label": "Reasoning effort" }}
+      />,
+    );
+
+    // attach · modelPicker · mode · effort — the TerminalComposer arrangement,
+    // asserted as real sibling order rather than "all four are somewhere".
+    const attach = screen.getByRole("button", { name: "Attach files" });
+    const cluster = attach.parentElement!;
+    const children = Array.from(cluster.children);
+
+    expect(children).toHaveLength(4);
+    expect(children[0]).toBe(attach);
+    expect(children[1]).toBe(screen.getByRole("button", { name: "Sonnet 4.5" }));
+    expect(children[2]).toHaveAttribute("data-slot", "prompt-input-mode");
+    expect(children[3]).toHaveAttribute("data-slot", "prompt-input-effort");
+  });
+
+  it("mode renders a PromptInputMode whose selection reaches onValueChange", async () => {
+    const onValueChange = vi.fn();
+    render(<Composer mode={{ modes: MODES, onValueChange }} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Auto/ }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /Plan first/ }));
+
+    expect(onValueChange).toHaveBeenCalledWith("plan");
+  });
+
+  it("effort renders a PromptInputEffort whose selection reaches onValueChange", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <Composer effort={{ levels: LEVELS, "aria-label": "Reasoning effort", onValueChange }} />,
+    );
+
+    // The scale is a real radiogroup, named by the consumer's own vocabulary.
+    expect(screen.getByRole("radiogroup", { name: "Reasoning effort" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "High" }));
+
+    expect(onValueChange).toHaveBeenCalledWith("high");
+  });
+
+  it("slashCommands swaps in the palette textarea and fires onSlashCommand on select", async () => {
+    const onSlashCommand = vi.fn();
+    render(<Composer slashCommands={COMMANDS} onSlashCommand={onSlashCommand} />);
+
+    const field = screen.getByPlaceholderText("Ask me anything…");
+    expect(field).toHaveAttribute("data-slot", "prompt-input-slash-textarea");
+
+    await userEvent.click(field);
+    await userEvent.keyboard("/he");
+    expect(await screen.findByRole("listbox")).toBeInTheDocument();
+
+    await userEvent.keyboard("{Enter}");
+    expect(onSlashCommand).toHaveBeenCalledWith(expect.objectContaining({ name: "help" }));
+    expect(field).toHaveValue("/help ");
+  });
+
+  it("keeps the submitProps.disabled guard while a slash palette is open", async () => {
+    const onSubmit = vi.fn();
+    render(
+      <Composer onSubmit={onSubmit} slashCommands={COMMANDS} submitProps={{ disabled: true }} />,
+    );
+
+    const field = screen.getByPlaceholderText("Ask me anything…");
+    await userEvent.click(field);
+    await userEvent.keyboard("/he");
+    expect(await screen.findByRole("listbox")).toBeInTheDocument();
+
+    // Enter with the palette open only ever INSERTS the command — it must never
+    // reach the form, and the refused send must not destroy the text either.
+    await userEvent.keyboard("{Enter}");
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // …and Enter once the palette has closed is still refused by the guard.
+    await userEvent.keyboard("{Enter}");
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(field).toHaveValue("/help ");
+  });
+
+  it("clears its controlled slash text after an accepted submit", async () => {
+    const onSubmit = vi.fn();
+    render(<Composer onSubmit={onSubmit} slashCommands={COMMANDS} />);
+
+    const field = screen.getByPlaceholderText("Ask me anything…");
+    await userEvent.type(field, "ship it{Enter}");
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ text: "ship it" }),
+      expect.anything(),
+    );
+    // PromptInput's form.reset() cannot reach React state — Composer clears its
+    // own copy, or the sent text would render straight back into the field.
+    expect(field).toHaveValue("");
+  });
+
+  it("renders the named slots alongside a `tools` override rather than swallowing them", () => {
+    render(
+      <Composer
+        tools={<button type="button">Web search</button>}
+        mode={{ modes: MODES }}
+        effort={{ levels: LEVELS, "aria-label": "Reasoning effort" }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Web search" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Attach files" })).not.toBeInTheDocument();
+    expect(document.querySelector('[data-slot="prompt-input-mode"]')).not.toBeNull();
+    expect(document.querySelector('[data-slot="prompt-input-effort"]')).not.toBeNull();
   });
 });

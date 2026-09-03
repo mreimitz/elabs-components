@@ -12,6 +12,49 @@
  * The APP computes the graph layout (lane indices, edges). This component
  * only renders what it receives. Heavy graph-math stays out.
  *
+ * WHY THIS DOES NOT RIDE THE SHARED `Timeline` RAIL (RM-014, #133).
+ * `components/timeline/` is the canonical rail/node/connector spine (#190) and
+ * `AgentTimeline` rides it. This component deliberately does not. The decision
+ * was taken against the real code, so do not re-investigate it and do not
+ * "converge" the two without reopening #133 — four things block it:
+ *
+ *   1. The node channel already carries a DIFFERENT meaning there. On the
+ *      shared rail a node's colour IS the closed 7-state execution `Status`:
+ *      `NODE_STYLE` is locked to `STATUS_ROLE`/`statusBadgeVariants` (#392)
+ *      and every status owns a unique non-colour signature (#387). A node
+ *      here is coloured by LANE IDENTITY (`laneColor` → `--chart-1..5`, a
+ *      categorical series ramp), and a revision has no execution status at
+ *      all. Mapping lane → status would be a lie (lane 3 is not `failed`),
+ *      and opening the rail node to a free-form colour would dissolve the two
+ *      invariants those tests exist to defend.
+ *   2. A cross-lane join cannot be an item-local connector. The shared rail's
+ *      connector is one `w-px` span inside each `<li>` at a fixed inline
+ *      offset. A fork/merge join here is a cubic bezier from one row's centre
+ *      to ANOTHER row's centre, several rows away and in a different lane —
+ *      geometry that only exists in a coordinate space spanning the whole
+ *      list (`rowCenterY` + `LaneGutter`). No per-item primitive can draw it,
+ *      so the reusable unit would have to be the list, not the item.
+ *   3. Row geometry is load-bearing, not styling. Rows are fixed-height
+ *      (`ROW_H_COMFORTABLE`/`ROW_H_COMPACT`) and day headers fixed at
+ *      `DAY_HEADER_H` precisely because the SVG shares the list's coordinate
+ *      space; the shared rail item is content-height (`pb-5 ps-7 last:pb-0`).
+ *      Riding it means overriding every geometry decision it makes.
+ *   4. The row is a selection control, not a title slot. The whole row is one
+ *      `<button aria-pressed>`, while the rail item's title slot is a span
+ *      that unconditionally prefixes an `sr-only` status word — so every
+ *      revision would announce a status it does not have.
+ *
+ * Teaching the rail all four means ~5 opt-in props, four of which turn OFF
+ * what the spine provides (its node, its connector, its geometry, its status
+ * announcement) and one of which moves `LaneGutter` into it — a behavioural
+ * mode fork (.claude/rules/component-api.md) paid for by every existing rail
+ * consumer. That relocates the duplication rather than removing it. The two
+ * are one silhouette ("a vertical list with dots and lines") speaking two
+ * grammars: an execution trace vs a commit DAG.
+ *
+ * Nothing visual is shared, but the fork-prevention gate still binds this
+ * file — which is why the GATE NOTES below are not optional.
+ *
  * GATE NOTES:
  *   - No identifier starting with `Timeline` (timeline-fork class 1).
  *   - Lanes/connectors drawn with SVG <line> / <path>, NOT `absolute w-px`

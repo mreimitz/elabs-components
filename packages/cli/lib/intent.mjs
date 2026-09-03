@@ -609,12 +609,22 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["ChatShell"],
-      contains: ["PromptInput", "PromptInputTextarea", "PromptInputTools", "PromptInputSubmit"],
-      pairsWith: ["Conversation", "ModelSelector"],
+      contains: [
+        "PromptInput",
+        "PromptInputTextarea",
+        "PromptInputTools",
+        "PromptInputSubmit",
+        "PromptInputMode",
+        "PromptInputEffort",
+        "PromptInputSlash",
+      ],
+      pairsWith: ["Conversation", "ModelPicker", "ModelSelector"],
     },
     stateTokens: { submit: "status=ready|submitted|streaming|error" },
     antiPatterns: [
       "Hand-rolling a PromptInput footer per app — Composer is the shipped assembly; reach for it first.",
+      "Dropping to PromptInput to get a mode, effort or slash-command control — Composer exposes all three as props (mode, effort, slashCommands/onSlashCommand); drop to PromptInput only for a bespoke shell.",
+      "Expecting a model name in the footer by default — the old static `model` pill is gone; pass a ModelPicker (@elabs-ai/components-ui) to the `modelPicker` slot.",
       "Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.",
       "Treating the composer as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.",
       "Reaching for surfaceClassName on Composer — it has no such prop; className styles the outer card frame and Composer owns the inner well's shape (surfaceClassName lives on PromptInput).",
@@ -1884,13 +1894,13 @@ export const INTENT = {
     ],
   },
 
-  Context: {
+  TokenUsage: {
     purpose:
       "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
     category: "ai",
     relationships: {
       usedInside: ["Composer", "PromptInput"],
-      contains: ["ContextTrigger", "ContextContent", "ContextInputUsage", "ContextCacheUsage"],
+      contains: ["TokenUsageTrigger", "TokenUsageContent", "TokenUsageInput", "TokenUsageCache"],
       pairsWith: ["ModelSelector"],
     },
     antiPatterns: [
@@ -2450,7 +2460,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["Conversation", "ChatShell"],
-      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "Context"],
+      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "TokenUsage"],
     },
     stateTokens: {
       working: "bg-primary on the activity dot; text-muted-foreground for the metrics",
@@ -2470,8 +2480,8 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["ChatShell"],
-      pairsWith: ["TurnStatus", "Context", "SessionHeader"],
-      contains: ["Context"],
+      pairsWith: ["TurnStatus", "TokenUsage", "SessionHeader"],
+      contains: ["TokenUsage"],
     },
     stateTokens: {
       surface: "bg-surface-muted with a border-t hairline — recessed chrome, not a raised card",

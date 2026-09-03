@@ -49,16 +49,11 @@ const DEFAULT_ROOT = dirname(dirname(fileURLToPath(import.meta.url))); // script
  *
  * Each entry is checked, not waved through: the named file must exist and must
  * still carry one of the two titles. Once the retitle lands, the ordinary path
- * matches on its own and the entry is dead weight — delete it then.
+ * matches on its own and the entry is dead weight — delete it then. Empty is
+ * the expected steady state: the sole entry (`layout-toolbar`, #131) landed and
+ * was removed.
  */
-const PENDING_RETITLES = [
-  {
-    id: "layout-toolbar",
-    file: "packages/ui/src/components/toolbar/toolbar.stories.tsx",
-    from: "Foundation/Toolbar",
-    to: "Layout/Toolbar",
-  },
-];
+const PENDING_RETITLES = [];
 
 /**
  * `sanitize` from `@storybook/csf` — the function that turns a title into the

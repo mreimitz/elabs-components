@@ -2,6 +2,62 @@
 
 ## Unreleased
 
+- Changed: `@elabs-ai/components-ui` — `RevisionTimeline` and the canonical
+  `Timeline` rail now state, in both docblocks and in `RevisionTimeline`'s
+  Storybook description, why the two are deliberately not one component.
+  Nothing renders differently: a rail node's colour is the closed 7-state
+  execution `Status` (locked to `StatusBadge` by #392/#387), while a
+  `RevisionTimeline` node's colour is lane identity from the chart ramp, and a
+  fork/merge join is a cross-row bezier in a coordinate space spanning the
+  whole list, which no item-local `w-px` connector can draw. Converging them
+  would take about five opt-in props on `Timeline`, four of which would switch
+  its own node, connector, geometry and status announcement off. A new test
+  locks the non-colour channel this keeps: the merge row's glyph stays a
+  distinct shape rather than a second colour.
+
+- Changed (**breaking**): the context-window usage readout in
+  `@elabs-ai/components-ai` is now called `TokenUsage`, and the old `Context*`
+  names are **removed outright** — there are no deprecated aliases and no
+  transitional re-export. `Context` sat one line away from `ContextPanel`, the
+  chat workspace's right rail, in every import list and in the Storybook
+  sidebar; the two are unrelated components and the shared name made it a
+  coin-flip which one a reader (or a coding agent) was looking at. `Context` was
+  the AI Elements upstream name and nothing here depended on keeping it. Rename
+  imports: `Context` → `TokenUsage`, `ContextTrigger` → `TokenUsageTrigger`,
+  `ContextContent` → `TokenUsageContent`, `ContextContentHeader` →
+  `TokenUsageContentHeader`, `ContextContentBody` → `TokenUsageContentBody`,
+  `ContextContentFooter` → `TokenUsageContentFooter`, `ContextInputUsage` →
+  `TokenUsageInput`, `ContextOutputUsage` → `TokenUsageOutput`,
+  `ContextReasoningUsage` → `TokenUsageReasoning`, `ContextCacheUsage` →
+  `TokenUsageCache`; every matching `*Props` type renames the same way
+  (`ContextProps` → `TokenUsageProps`, and so on). The props, behaviour and
+  rendered DOM are unchanged, so a rename is the whole migration. The module
+  moves from `context.tsx` to `token-usage.tsx` and the story from `AI/Context`
+  to `AI/TokenUsage`; `ContextPanel` and its parts are untouched.
+
+- Removed / Added: `Composer` (`@elabs-ai/components-ai`) drops its `model`
+  prop and the hard-coded `"Claude Opus 4"` pill it defaulted to. That pill was
+  a `PromptInputButton` with a globe glyph and no click handler — a composer
+  showing a model name it cannot change. **This is a clean break with no
+  deprecated alias:** the replacement is a `modelPicker?: ReactNode` slot in
+  the same footer position, which renders nothing by default. Pass a
+  `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit in a
+  composer footer) wired to your own state. If you passed `model={null}` to
+  hide the pill, delete the prop; if you passed a label, pass a real picker.
+
+- Added: `Composer` (`@elabs-ai/components-ai`) now reaches every control the
+  `PromptInput` family ships, so a chat input no longer has to be hand-rolled
+  from `PromptInput` to get one. Three new optional props alongside
+  `modelPicker`: `mode` renders a `PromptInputMode` (an app-defined operating
+  mode), `effort` renders a `PromptInputEffort` (an ordered reasoning-effort
+  scale), and `slashCommands` / `onSlashCommand` swap the textarea for a
+  `PromptInputSlash` palette that opens on `/` at the start of a line. The
+  footer order is `attach · modelPicker · mode · effort │ voice · send`,
+  matching `TerminalComposer` so the chat and console skins agree, and the
+  cluster now wraps instead of overflowing a narrow composer. Nothing renders
+  unless you pass the prop, and `tools` no longer swallows the named slots — it
+  overrides the default attach button only.
+
 - Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
   now announces its `isStreaming` state. Its only streaming signal was the
   blinking cursor block, which is purely visual, so a screen-reader user
