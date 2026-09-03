@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Added / Changed (**breaking rename**): `@elabs-ai/components-ui`'s `SplitPanel`
+  exports its per-pane ground-offset tone `cva` as `splitPaneVariants` — the
+  internal `paneToneVariants` name is **gone outright**, no deprecated alias.
+  `SplitPanel` itself is unchanged (same props, defaults and DOM); the export
+  lets a draggable `Layout/Resizable` pane wear the identical `plain`/`muted`/
+  `card` tiering instead of a hand-rolled second copy of the three classes —
+  apply `splitPaneVariants({ tone })` to a `ResizablePanel`'s `className`. Both
+  components' Storybook pages now name the other and link to
+  [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs);
+  `Layout/Resizable` gains a `Tiered` story demonstrating the composition with a
+  drag `play` test.
+
 - Changed: `@elabs-ai/components-ui` — `RevisionTimeline` and the canonical
   `Timeline` rail now state, in both docblocks and in `RevisionTimeline`'s
   Storybook description, why the two are deliberately not one component.

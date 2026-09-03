@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T12:39:22.579Z",
+  "generatedAt": "2026-09-03T12:54:33.931Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -27811,6 +27811,10 @@
           "module": "packages/ui/src/components/sidebar/sidebar.tsx"
         },
         {
+          "name": "splitPaneVariants",
+          "module": "packages/ui/src/components/split-panel/split-panel.tsx"
+        },
+        {
           "name": "statePanelVariants",
           "module": "packages/ui/src/components/state-panel/state-panel.tsx"
         },
@@ -28124,6 +28128,19 @@
             "size": "default"
           },
           "source": "sidebarMenuButtonVariants"
+        },
+        "SplitPane": {
+          "variants": {
+            "tone": [
+              "plain",
+              "muted",
+              "card"
+            ]
+          },
+          "defaultVariants": {
+            "tone": "plain"
+          },
+          "source": "splitPaneVariants"
         },
         "StatePanel": {
           "variants": {
