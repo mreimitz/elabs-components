@@ -24,10 +24,14 @@ group" below.
 1. **Docs** — in reading order (explicit in `storySort.order`, NOT alphabetical):
    **Introduction** (what it is) → **Getting Started** (how to consume) → the
    agent/MCP detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI
-   Output Contract for Agents → View Toolbar Contract → Testing Charts in jsdom).
+   Output Contract for Agents → View Toolbar Contract → Testing Charts in
+   jsdom → Storybook Theme Harness) → Choosing between similar components.
 2. **Foundations** — the design/token layer, in reading order (explicit, NOT
    alphabetical): Colors → Typography → Spacing & Radius → Elevation → Motion →
-   Decoration → Paper → Theming. (Tokens and scales, NOT components.)
+   Decoration → Paper → Theming → Localization. (Tokens and scales, plus the two
+   root providers — `ThemeProvider` via Theming, `LocaleProvider` via
+   Localization — every app mounts at the same root; see "Foundations vs Core"
+   below.)
 3. **Core** — base UI primitives from `@elabs-ai/components-ui` (Badge, Button, Card, Input, …).
 4. **Icons** — brand/product icon vocabulary + BrandLogo.
 5. **Forms** — inputs and form controls.
@@ -48,17 +52,20 @@ group" below.
 19. **Flow** — `@elabs-ai/components-flow` canvas.
 20. **Maps** — `@elabs-ai/components-maps`.
 21. **Marketing** — `@elabs-ai/components-marketing`.
-22. **Providers** — non-visual providers (LocaleProvider, …).
-23. **Patterns** — full composed demos, in that order: `Patterns/Templates` (whole
+22. **Patterns** — full composed demos, in that order: `Patterns/Templates` (whole
     screens) → `Patterns/Scenarios` (multi-screen journeys) → `Patterns/Blocks`
     (copy-own building blocks). Alphabetical would interleave the three.
 
 ## Foundations vs Core
 
 "Foundations" is the **design layer** (tokens, type scale, spacing, elevation,
-theming) — the source of truth a brand re-skins. "Core" is the **base component
-set**. Keep them separate: token/scale docs never go under Core, base components
-never go under Foundations.
+theming) — the source of truth a brand re-skins — **plus the two root
+providers** (`ThemeProvider`, `LocaleProvider`) every app mounts once, at that
+same root (RM-004: folded out of a former standalone "Providers" group so both
+are on the Getting Started path). "Core" is the **base component set**. Keep
+them separate: token/scale docs never go under Core, and a base UI component
+(anything an app composes into a screen, not a root provider) never goes under
+Foundations.
 
 ## Naming
 

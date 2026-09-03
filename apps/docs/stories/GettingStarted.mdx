@@ -102,19 +102,26 @@ required; the reference themes are opt-in:
 
 **3 · Add the bundler plugin.** Vite: `@tailwindcss/vite`. Next.js: `@tailwindcss/postcss`.
 
-**4 · Wrap the app root** in `ThemeProvider`:
+**4 · Wrap the app root** in `ThemeProvider` — and, if your product needs i18n,
+`LocaleProvider` right inside it. These are the **two root providers** an app
+mounts once: full prop reference (theme, density, motion, decoration) with
+live controls at **[Foundations / Theming](?path=/docs/foundations-theming--docs)**;
+locale/plurals/translation bridge at
+**[Foundations / Localization](?path=/docs/foundations-localization--docs)**.
 
 ```tsx
 import "@elabs-ai/components-tokens/styles.css";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
-import { Button, Card } from "@elabs-ai/components-ui";
+import { Button, Card, LocaleProvider } from "@elabs-ai/components-ui";
 
 export default function App() {
   return (
     <ThemeProvider defaultTheme="light">
-      <Card>
-        <Button>Click me</Button>
-      </Card>
+      <LocaleProvider locale="en-US">
+        <Card>
+          <Button>Click me</Button>
+        </Card>
+      </LocaleProvider>
     </ThemeProvider>
   );
 }
@@ -215,6 +222,7 @@ correct across both themes for free. `brand-ui audit <path>` catches violations.
 
 - **Consuming brand-ui (full guide)** — peers, Next.js, per-package extras, troubleshooting, upgrading.
 - **[Docs / brand-ui MCP Server](?path=/docs/docs-brand-ui-mcp-server--docs)** & **[Storybook MCP](?path=/docs/docs-storybook-mcp-for-agents--docs)** — the agent tooling.
-- **[Foundations / Theming](?path=/docs/foundations-theming--docs)** — both themes + decoration/density/motion dials.
+- **[Foundations / Theming](?path=/docs/foundations-theming--docs)** — both themes + decoration/density/motion dials, and the `ThemeProvider` root-setup props with live Controls.
+- **[Foundations / Localization](?path=/docs/foundations-localization--docs)** — `LocaleProvider`, plurals, and bridging to your own i18n runtime.
 - **[Foundations / Colors](?path=/docs/foundations-colors--docs)** · **[Spacing & Radius](?path=/docs/foundations-spacing-radius--docs)** · **[Elevation](?path=/docs/foundations-elevation--docs)** — the token scales.
 - **[Docs / Introduction](?path=/docs/docs-introduction--docs)** — the packages overview and philosophy.
