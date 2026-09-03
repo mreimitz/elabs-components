@@ -14,6 +14,26 @@
   `Layout/Resizable` gains a `Tiered` story demonstrating the composition with a
   drag `play` test.
 
+- Changed: `@elabs-ai/components-ui`, `@elabs-ai/components-ai` and
+  `@elabs-ai/components-editor` now say, in their docblocks and Storybook
+  descriptions, which of the look-alike diff and markdown surfaces to reach for
+  and why they stay separate. Nothing renders differently and no export moved.
+  `ChangeReview` records that it is not a diff-LINE renderer: a hunk's
+  `before`/`after` are ordinary prose nodes, and structured `DiffLine[]` hunks
+  arrive by injection — the app that depends on both packages passes a
+  `<DiffView>` (`@elabs-ai/components-ai`) through `renderHunk` or a hunk's
+  `after` slot, since neither package may import the other. A new
+  `InjectedHunkRenderer` story shows that shape with a stand-in node.
+  `MarkdownView` drops the sentence "one source-owned prose set for chat
+  answers, the editor preview and this view", which described the shared
+  `Prose*` PRIMITIVES but kept being read as "one renderer": the three branded
+  markdown renderers keep their own element maps on purpose, and `streamdown`
+  deliberately never moves down into `@elabs-ai/components-ui`. A new
+  `packages/editor/src/prose/prose.test.ts` locks the part that really is
+  shared — the editor's `Heading`/`Text`/`Link`/`List`/`ListItem`/
+  `Blockquote`/`InlineCode` must stay the SAME objects as `ui`'s `Prose*`, not
+  lookalikes.
+
 - Changed: `@elabs-ai/components-ui` — `RevisionTimeline` and the canonical
   `Timeline` rail now state, in both docblocks and in `RevisionTimeline`'s
   Storybook description, why the two are deliberately not one component.

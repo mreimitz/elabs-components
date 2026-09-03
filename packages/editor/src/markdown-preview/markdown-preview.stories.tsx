@@ -12,14 +12,33 @@ const meta = {
     docs: {
       description: {
         component:
-          "The EDITOR preview pane, which understands the brand `:::` directives; ordinary " +
-          "markdown in a chat or a side rail is `AI/MarkdownView` — see " +
-          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
+          "The EDITOR preview pane, which understands the brand `:::` directives. " +
+          "Pick a markdown renderer by where the markdown is going to be READ: a " +
+          "read-only document in a chat or a side rail → `AI/MarkdownView`; the preview " +
+          "pane of the markdown editor → `Editor/MarkdownPreview`; a file the app did " +
+          "not write → the markdown adapter behind `Viewer/FileViewer`; streaming into " +
+          "a message as the model writes it → `MessageResponse` on `AI/Message`. See " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs)." +
+          "\n\n" +
           "Renders markdown to REAL @brand components (Streamdown + a branded components " +
           "map): `#` → Heading, link → Link, table → Table, `---` → Separator, and the brand " +
           "directives `:::card` / `:::callout` / `::metric` / `:::timeline` → Card / Alert / " +
           "MetricBlock / Timeline. Uses the SAME shared remark pipeline as the Milkdown editor. " +
-          "Unknown directives render an explicit error block instead of disappearing.",
+          "Unknown directives render an explicit error block instead of disappearing.\n\n" +
+          "Its map is NOT a superset or a subset of `MarkdownView`'s — it is a different " +
+          "job. Every standard element here is wrapped to attach `data-sourcepos` (the " +
+          "seam the editor scroll-sync, the ghost-diff wash and the search wash all read), " +
+          "and a heading additionally carries a TOC slug id, a heading-action slot and " +
+          "hover-reveal anchor chrome. It has no `baseHeadingLevel`; it does have " +
+          "wikilinks, transclusion, `resolveUrl` and mermaid fences.\n\n" +
+          "All three map their element tree onto the same `Prose*` primitives owned " +
+          "by `@elabs-ai/components-ui` (`@elabs-ai/components-editor` re-exports them " +
+          "under short names). The element MAPS stay per-surface on purpose — " +
+          "`@elabs-ai/components-ai`, `@elabs-ai/components-editor` and " +
+          "`@elabs-ai/components-viewer` are leaves that may not import one another, and " +
+          "`streamdown` deliberately never moves down into `@elabs-ai/components-ui`, or " +
+          "every consumer of every foundation component would carry it. One prose source, " +
+          "several renderers.",
       },
     },
   },
