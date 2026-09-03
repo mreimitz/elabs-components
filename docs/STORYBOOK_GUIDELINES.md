@@ -1,8 +1,10 @@
 # Storybook Guidelines
 
 How stories are organized, titled, and documented in this repo. The sidebar order
-is enforced by `apps/docs/.storybook/preview.tsx` (`options.storySort.order`); the
-rest are conventions. Background: the 2026-06-15 IA review in `docs/review/`.
+is declared in `apps/docs/.storybook/preview.tsx` (`options.storySort.order`) and
+gated by `pnpm storybook-groups:check`, which also holds the group list below and
+the no-spaces naming rule to it; the rest are conventions. Background: the
+2026-06-15 IA review in `docs/review/`.
 
 ## Sidebar taxonomy (top-level groups, in order)
 
@@ -18,8 +20,8 @@ scramble — Docs, Foundations and Patterns.
 
 **This numbered list must match `storySort.order` group for group, in the same
 order.** The two had already drifted once — the array carried Terminal, Viewer and
-Maps while this list stopped at 20 entries — so keep them in step; see "Adding a
-group" below.
+Maps while this list stopped at 20 entries — so `pnpm storybook-groups:check` now
+fails when they diverge; see "Adding a group" below.
 
 1. **Docs** — in reading order (explicit in `storySort.order`, NOT alphabetical):
    **Introduction** (what it is) → **Getting Started** (how to consume) → the
@@ -128,9 +130,27 @@ signpost the other on both stories (via `parameters.docs.description.component`)
 ## Adding a group
 
 Add it to `preview.tsx`'s `storySort.order` in the right tier, and to the numbered
-list above — same groups, same order. A CI gate that fails when a story's
-top-level group is missing from the order array would make this load-bearing
-(currently a comment-enforced convention).
+list above — same groups, same order. **`pnpm storybook-groups:check`
+(`scripts/check-storybook-groups.mjs`, blocking in CI) is what makes this
+load-bearing** — it is no longer a comment-enforced convention. Four rungs, and a
+title it cannot read is a failure rather than a skip:
+
+1. **Orphan group** — a story whose first title segment is not in `storySort.order`
+   fails, named by `file:line`. (This is the 2026-06-15 IA review's finding, which
+   recurred within three months as `Foundation/Toolbar` and
+   `Typography/MatchHighlight`.)
+2. **Segment naming** — a space in any segment after the group fails, except the
+   sanctioned prose surfaces: `Docs/*`, `Patterns/{Templates,Scenarios,Blocks}/*`,
+   `Layout/App Shell/*` and `Foundations/Spacing & Radius`. They are an explicit,
+   commented allowlist in the script; extending it is a taxonomy decision.
+3. **Doc parity** — the numbered list above must name the same groups in the same
+   order as the array, so this section cannot drift from the code again (it already
+   had: the array carried Terminal, Viewer and Maps while the list stopped at 20).
+4. **Stale group** — a group in the array that no story titles into any more fails
+   too, so a folded-away group (RM-004's `Providers`) cannot be left behind.
+
+Run `node scripts/check-storybook-groups.mjs --list` to see every title the gate
+resolves, with its file and line.
 
 The array has to stay **inline** in `preview.tsx`: Storybook derives the order in
 `index.json` by statically parsing that file, and its parser throws on any
