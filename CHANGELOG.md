@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- Removed / Added: `Composer` (`@elabs-ai/components-ai`) drops its `model`
+  prop and the hard-coded `"Claude Opus 4"` pill it defaulted to. That pill was
+  a `PromptInputButton` with a globe glyph and no click handler — a composer
+  showing a model name it cannot change. **This is a clean break with no
+  deprecated alias:** the replacement is a `modelPicker?: ReactNode` slot in
+  the same footer position, which renders nothing by default. Pass a
+  `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit in a
+  composer footer) wired to your own state. If you passed `model={null}` to
+  hide the pill, delete the prop; if you passed a label, pass a real picker.
+
+- Added: `Composer` (`@elabs-ai/components-ai`) now reaches every control the
+  `PromptInput` family ships, so a chat input no longer has to be hand-rolled
+  from `PromptInput` to get one. Three new optional props alongside
+  `modelPicker`: `mode` renders a `PromptInputMode` (an app-defined operating
+  mode), `effort` renders a `PromptInputEffort` (an ordered reasoning-effort
+  scale), and `slashCommands` / `onSlashCommand` swap the textarea for a
+  `PromptInputSlash` palette that opens on `/` at the start of a line. The
+  footer order is `attach · modelPicker · mode · effort │ voice · send`,
+  matching `TerminalComposer` so the chat and console skins agree, and the
+  cluster now wraps instead of overflowing a narrow composer. Nothing renders
+  unless you pass the prop, and `tools` no longer swallows the named slots — it
+  overrides the default attach button only.
+
 - Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
   now announces its `isStreaming` state. Its only streaming signal was the
   blinking cursor block, which is purely visual, so a screen-reader user

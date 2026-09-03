@@ -128,6 +128,14 @@ Presentational AI/chat components — `ChatShell`, `Conversation`, `Message`,
 `PromptInput`/`Composer`, `Tool`, `Reasoning`, `Sources`, `Artifact`,
 `ContextPanel`, and the workspace/agent set.
 
+**`Composer` is the chat input. Every control the `PromptInput` family ships is
+reachable from a `Composer` prop; drop to `PromptInput` only for a bespoke
+shell.** The slots: `modelPicker` (pass a `ModelPicker` from
+`@elabs-ai/components-ui`), `mode` (`PromptInputMode`), `effort`
+(`PromptInputEffort`) and `slashCommands` (`PromptInputSlash`). The footer order
+is `attach · modelPicker · mode · effort │ voice · send`, matching
+`TerminalComposer` so the chat and console skins agree.
+
 The components render the AI SDK `UIMessage` data model. **Your app owns the model
 calls** (`useChat`, transport, providers) — `@elabs-ai/components-ai` imports the `ai` SDK as
 **types only**, never at runtime (D6 / ADR-0008). See `docs/DECISIONS.md` §D5.
