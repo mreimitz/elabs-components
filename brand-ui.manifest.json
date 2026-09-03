@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T11:27:54.154Z",
+  "generatedAt": "2026-09-03T12:12:59.279Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1330,46 +1330,6 @@
           "module": "packages/ai/src/connection.tsx"
         },
         {
-          "name": "Context",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextCacheUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContent",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentBody",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentFooter",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentHeader",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextInputUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextOutputUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
           "name": "ContextPanel",
           "kind": "value",
           "module": "packages/ai/src/context-panel.tsx"
@@ -1403,16 +1363,6 @@
           "name": "ContextPanelTrigger",
           "kind": "value",
           "module": "packages/ai/src/context-panel.tsx"
-        },
-        {
-          "name": "ContextReasoningUsage",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextTrigger",
-          "kind": "value",
-          "module": "packages/ai/src/context.tsx"
         },
         {
           "name": "Controls",
@@ -2840,6 +2790,56 @@
           "module": "packages/ai/src/test-results.tsx"
         },
         {
+          "name": "TokenUsage",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageCache",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContent",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentBody",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentFooter",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentHeader",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageInput",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageOutput",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageReasoning",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageTrigger",
+          "kind": "value",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
           "name": "Tool",
           "kind": "value",
           "module": "packages/ai/src/tool.tsx"
@@ -3591,34 +3591,6 @@
           "module": "packages/ai/src/context-panel.tsx"
         },
         {
-          "name": "ContextCacheUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentBodyProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentFooterProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentHeaderProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextContentProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextInputUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextOutputUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
           "name": "ContextPanelBodyProps",
           "module": "packages/ai/src/context-panel.tsx"
         },
@@ -3653,18 +3625,6 @@
         {
           "name": "ContextPanelView",
           "module": "packages/ai/src/context-panel.tsx"
-        },
-        {
-          "name": "ContextProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextReasoningUsageProps",
-          "module": "packages/ai/src/context.tsx"
-        },
-        {
-          "name": "ContextTriggerProps",
-          "module": "packages/ai/src/context.tsx"
         },
         {
           "name": "ControlsProps",
@@ -5001,6 +4961,46 @@
         {
           "name": "TextShimmerProps",
           "module": "packages/ai/src/shimmer.tsx"
+        },
+        {
+          "name": "TokenUsageCacheProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentBodyProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentFooterProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentHeaderProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageContentProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageInputProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageOutputProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageReasoningProps",
+          "module": "packages/ai/src/token-usage.tsx"
+        },
+        {
+          "name": "TokenUsageTriggerProps",
+          "module": "packages/ai/src/token-usage.tsx"
         },
         {
           "name": "ToolbarProps",
@@ -6641,55 +6641,6 @@
           ],
           "props": []
         },
-        "Context": {
-          "extends": [
-            "ComponentProps<typeof HoverCard>",
-            "ContextSchema"
-          ],
-          "props": []
-        },
-        "ContextCacheUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextContent": {
-          "extends": [
-            "ComponentProps<typeof HoverCardContent>"
-          ],
-          "props": []
-        },
-        "ContextContentBody": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextContentFooter": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextContentHeader": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextInputUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextOutputUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
         "ContextPanel": {
           "extends": [
             "ComponentProps<\"div\">"
@@ -6828,18 +6779,6 @@
           ]
         },
         "ContextPanelTrigger": {
-          "extends": [
-            "ComponentProps<typeof Button>"
-          ],
-          "props": []
-        },
-        "ContextReasoningUsage": {
-          "extends": [
-            "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ContextTrigger": {
           "extends": [
             "ComponentProps<typeof Button>"
           ],
@@ -9744,7 +9683,7 @@
               "name": "children",
               "optional": true,
               "type": "ReactNode",
-              "description": "Docks another component alongside the ambient segments — most often `<Context />` (`@elabs-ai/components-ai`), so token usage/cost keeps its one owner (`context.tsx`, tokenlens) instead of being re-implemented here. Rendered flush to the end of the bar."
+              "description": "Docks another component alongside the ambient segments — most often `<TokenUsage />` (`@elabs-ai/components-ai`), so token usage/cost keeps its one owner (`token-usage.tsx`, tokenlens) instead of being re-implemented here. Rendered flush to the end of the bar."
             }
           ]
         },
@@ -10251,6 +10190,67 @@
               "type": "number"
             }
           ]
+        },
+        "TokenUsage": {
+          "extends": [
+            "ComponentProps<typeof HoverCard>",
+            "TokenUsageSchema"
+          ],
+          "props": []
+        },
+        "TokenUsageCache": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageContent": {
+          "extends": [
+            "ComponentProps<typeof HoverCardContent>"
+          ],
+          "props": []
+        },
+        "TokenUsageContentBody": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageContentFooter": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageContentHeader": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageInput": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageOutput": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageReasoning": {
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
+          "props": []
+        },
+        "TokenUsageTrigger": {
+          "extends": [
+            "ComponentProps<typeof Button>"
+          ],
+          "props": []
         },
         "Tool": {
           "extends": [
@@ -11182,30 +11182,6 @@
             "Styling it like a committed Edge — the pending line must read as provisional until it lands.",
             "Hard-coding its stroke — it draws with the focus/ring token so it stays visible in every theme.",
             "Rendering it outside a Canvas — it is React Flow's connection-line slot, not a standalone SVG."
-          ]
-        },
-        "Context": {
-          "purpose": "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
-          "category": "ai",
-          "relationships": {
-            "usedInside": [
-              "Composer",
-              "PromptInput"
-            ],
-            "contains": [
-              "ContextTrigger",
-              "ContextContent",
-              "ContextInputUsage",
-              "ContextCacheUsage"
-            ],
-            "pairsWith": [
-              "ModelSelector"
-            ]
-          },
-          "antiPatterns": [
-            "Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.",
-            "Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.",
-            "Putting it inside the transcript — usage is composer chrome, not message content."
           ]
         },
         "ContextPanel": {
@@ -12160,11 +12136,11 @@
             ],
             "pairsWith": [
               "TurnStatus",
-              "Context",
+              "TokenUsage",
               "SessionHeader"
             ],
             "contains": [
-              "Context"
+              "TokenUsage"
             ]
           },
           "stateTokens": {
@@ -12367,6 +12343,30 @@
             "Showing the failure stack inline for every row — the error detail belongs behind the row's disclosure."
           ]
         },
+        "TokenUsage": {
+          "purpose": "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
+          "category": "ai",
+          "relationships": {
+            "usedInside": [
+              "Composer",
+              "PromptInput"
+            ],
+            "contains": [
+              "TokenUsageTrigger",
+              "TokenUsageContent",
+              "TokenUsageInput",
+              "TokenUsageCache"
+            ],
+            "pairsWith": [
+              "ModelSelector"
+            ]
+          },
+          "antiPatterns": [
+            "Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.",
+            "Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.",
+            "Putting it inside the transcript — usage is composer chrome, not message content."
+          ]
+        },
         "Tool": {
           "purpose": "Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error.",
           "category": "ai",
@@ -12474,7 +12474,7 @@
               "SessionStatusBar",
               "Shimmer",
               "PromptInputStop",
-              "Context"
+              "TokenUsage"
             ]
           },
           "stateTokens": {

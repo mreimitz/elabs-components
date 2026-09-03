@@ -190,17 +190,6 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
   - avoid: Styling it like a committed Edge — the pending line must read as provisional until it lands.
   - avoid: Hard-coding its stroke — it draws with the focus/ring token so it stays visible in every theme.
   - avoid: Rendering it outside a Canvas — it is React Flow's connection-line slot, not a standalone SVG.
-- Context — Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.
-  - avoid: Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.
-  - avoid: Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.
-  - avoid: Putting it inside the transcript — usage is composer chrome, not message content.
-- ContextCacheUsage
-- ContextContent
-- ContextContentBody
-- ContextContentFooter
-- ContextContentHeader
-- ContextInputUsage
-- ContextOutputUsage
 - ContextPanel — The chat workspace's right context rail — sources, produced assets and a root↔detail drill-in.
   - avoid: Conditionally mounting the panel to hide it — it stays mounted and collapses by width, because an unmounted panel cannot animate.
   - avoid: Keeping open/view/selection state outside the provider — an external trigger drives the panel through ContextPanelProvider, not through prop-drilling.
@@ -211,8 +200,6 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - ContextPanelProvider
 - ContextPanelSection
 - ContextPanelTrigger
-- ContextReasoningUsage
-- ContextTrigger
 - Controls — Zoom / fit / lock controls for the agent workspace Canvas.
   - avoid: Building a second zoom control in a Panel — one control cluster per canvas, or the two disagree.
   - avoid: Dropping the keyboard path — every canvas action must stay reachable without a pointer.
@@ -662,6 +649,19 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - TestSuiteContent
 - TestSuiteName
 - TestSuiteStats
+- TokenUsage — Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.
+  - avoid: Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.
+  - avoid: Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.
+  - avoid: Putting it inside the transcript — usage is composer chrome, not message content.
+- TokenUsageCache
+- TokenUsageContent
+- TokenUsageContentBody
+- TokenUsageContentFooter
+- TokenUsageContentHeader
+- TokenUsageInput
+- TokenUsageOutput
+- TokenUsageReasoning
+- TokenUsageTrigger
 - Tool — Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error.
   - avoid: Rendering a tool call as plain text — use Tool so the state, input and output stay legible and collapsible.
   - avoid: Showing ToolOutput errorText while the call is still streaming — errors fire only on a terminal, settled failure.

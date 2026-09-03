@@ -18,7 +18,7 @@
   "packages/ai/src/confirmation.tsx": [23, 10],
   "packages/ai/src/connection.tsx": [1, 0],
   "packages/ai/src/context-panel.tsx": [7, 12],
-  "packages/ai/src/context.tsx": [10, 0],
+  "packages/ai/src/token-usage.tsx": [10, 0],
   "packages/ai/src/controls.tsx": [1, 0],
   "packages/ai/src/conversation.tsx": [5, 0],
   "packages/ai/src/diff-view.tsx": [1, 17],

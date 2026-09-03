@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Context, ContextTrigger } from "./context";
+import { TokenUsage, TokenUsageTrigger } from "./token-usage";
 import { SessionStatusBar } from "./session-status-bar";
 
 const meta = {
@@ -10,7 +10,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The ambient session row: workspace, branch, model and integration-connection progress (#105). Every segment renders only when its prop is supplied — an all-empty bar renders nothing at all. Docks `Context` via `children` rather than re-implementing token-usage/cost maths.",
+          "The ambient session row: workspace, branch, model and integration-connection progress (#105). Every segment renders only when its prop is supplied — an all-empty bar renders nothing at all. Docks `TokenUsage` via `children` rather than re-implementing token-usage/cost maths.",
       },
     },
   },
@@ -20,13 +20,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Every ambient segment, with `Context` docked at the trailing edge. */
+/** Every ambient segment, with `TokenUsage` docked at the trailing edge. */
 export const Default: Story = {
   render: () => (
     <SessionStatusBar branch="main" model="Claude Opus 4" workspace="brand-ui">
-      <Context maxTokens={8000} usedTokens={2400}>
-        <ContextTrigger />
-      </Context>
+      <TokenUsage maxTokens={8000} usedTokens={2400}>
+        <TokenUsageTrigger />
+      </TokenUsage>
     </SessionStatusBar>
   ),
 };

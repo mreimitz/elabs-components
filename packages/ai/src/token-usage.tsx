@@ -18,43 +18,49 @@ const ICON_STROKE_WIDTH = 2;
 
 type ModelId = string;
 
-interface ContextSchema {
+interface TokenUsageSchema {
   usedTokens: number;
   maxTokens: number;
   usage?: LanguageModelUsage;
   modelId?: ModelId;
 }
 
-const ContextContext = createContext<ContextSchema | null>(null);
+const TokenUsageContext = createContext<TokenUsageSchema | null>(null);
 
-const useContextValue = () => {
-  const context = useContext(ContextContext);
+const useTokenUsageValue = () => {
+  const context = useContext(TokenUsageContext);
 
   if (!context) {
-    throw new Error("Context components must be used within Context");
+    throw new Error("TokenUsage components must be used within TokenUsage");
   }
 
   return context;
 };
 
-export type ContextProps = ComponentProps<typeof HoverCard> & ContextSchema;
+export type TokenUsageProps = ComponentProps<typeof HoverCard> & TokenUsageSchema;
 
-export const Context = ({ usedTokens, maxTokens, usage, modelId, ...props }: ContextProps) => {
+export const TokenUsage = ({
+  usedTokens,
+  maxTokens,
+  usage,
+  modelId,
+  ...props
+}: TokenUsageProps) => {
   const contextValue = useMemo(
     () => ({ maxTokens, modelId, usage, usedTokens }),
     [maxTokens, modelId, usage, usedTokens],
   );
 
   return (
-    <ContextContext.Provider value={contextValue}>
+    <TokenUsageContext.Provider value={contextValue}>
       <HoverCard closeDelay={0} openDelay={0} {...props} />
-    </ContextContext.Provider>
+    </TokenUsageContext.Provider>
   );
 };
 
-const ContextIcon = () => {
+const TokenUsageIcon = () => {
   const { t } = useLocale();
-  const { usedTokens, maxTokens } = useContextValue();
+  const { usedTokens, maxTokens } = useTokenUsageValue();
   const circumference = 2 * Math.PI * ICON_RADIUS;
   const usedPercent = usedTokens / maxTokens;
   const dashOffset = circumference * (1 - usedPercent);
@@ -94,11 +100,11 @@ const ContextIcon = () => {
   );
 };
 
-export type ContextTriggerProps = ComponentProps<typeof Button>;
+export type TokenUsageTriggerProps = ComponentProps<typeof Button>;
 
-export const ContextTrigger = ({ children, ...props }: ContextTriggerProps) => {
+export const TokenUsageTrigger = ({ children, ...props }: TokenUsageTriggerProps) => {
   const { formatNumber } = useLocale();
-  const { usedTokens, maxTokens } = useContextValue();
+  const { usedTokens, maxTokens } = useTokenUsageValue();
   const usedPercent = usedTokens / maxTokens;
   const renderedPercent = formatNumber(usedPercent, {
     maximumFractionDigits: 1,
@@ -110,28 +116,28 @@ export const ContextTrigger = ({ children, ...props }: ContextTriggerProps) => {
       {children ?? (
         <Button type="button" variant="ghost" {...props}>
           <span className="font-medium text-muted-foreground">{renderedPercent}</span>
-          <ContextIcon />
+          <TokenUsageIcon />
         </Button>
       )}
     </HoverCardTrigger>
   );
 };
 
-export type ContextContentProps = ComponentProps<typeof HoverCardContent>;
+export type TokenUsageContentProps = ComponentProps<typeof HoverCardContent>;
 
-export const ContextContent = ({ className, ...props }: ContextContentProps) => (
+export const TokenUsageContent = ({ className, ...props }: TokenUsageContentProps) => (
   <HoverCardContent className={cn("min-w-60 divide-y overflow-hidden p-0", className)} {...props} />
 );
 
-export type ContextContentHeaderProps = ComponentProps<"div">;
+export type TokenUsageContentHeaderProps = ComponentProps<"div">;
 
-export const ContextContentHeader = ({
+export const TokenUsageContentHeader = ({
   children,
   className,
   ...props
-}: ContextContentHeaderProps) => {
+}: TokenUsageContentHeaderProps) => {
   const { formatNumber } = useLocale();
-  const { usedTokens, maxTokens } = useContextValue();
+  const { usedTokens, maxTokens } = useTokenUsageValue();
   const usedPercent = usedTokens / maxTokens;
   const displayPct = formatNumber(usedPercent, {
     maximumFractionDigits: 1,
@@ -163,23 +169,27 @@ export const ContextContentHeader = ({
   );
 };
 
-export type ContextContentBodyProps = ComponentProps<"div">;
+export type TokenUsageContentBodyProps = ComponentProps<"div">;
 
-export const ContextContentBody = ({ children, className, ...props }: ContextContentBodyProps) => (
+export const TokenUsageContentBody = ({
+  children,
+  className,
+  ...props
+}: TokenUsageContentBodyProps) => (
   <div className={cn("w-full p-3", className)} {...props}>
     {children}
   </div>
 );
 
-export type ContextContentFooterProps = ComponentProps<"div">;
+export type TokenUsageContentFooterProps = ComponentProps<"div">;
 
-export const ContextContentFooter = ({
+export const TokenUsageContentFooter = ({
   children,
   className,
   ...props
-}: ContextContentFooterProps) => {
+}: TokenUsageContentFooterProps) => {
   const { formatNumber, t } = useLocale();
-  const { modelId, usage } = useContextValue();
+  const { modelId, usage } = useTokenUsageValue();
   const costUSD = modelId
     ? getUsage({
         modelId,
@@ -222,11 +232,11 @@ const TokensWithCost = ({ tokens, costText }: { tokens?: number; costText?: stri
   );
 };
 
-export type ContextInputUsageProps = ComponentProps<"div">;
+export type TokenUsageInputProps = ComponentProps<"div">;
 
-export const ContextInputUsage = ({ className, children, ...props }: ContextInputUsageProps) => {
+export const TokenUsageInput = ({ className, children, ...props }: TokenUsageInputProps) => {
   const { formatNumber, t } = useLocale();
-  const { usage, modelId } = useContextValue();
+  const { usage, modelId } = useTokenUsageValue();
   const inputTokens = usage?.inputTokens ?? 0;
 
   if (children) {
@@ -256,11 +266,11 @@ export const ContextInputUsage = ({ className, children, ...props }: ContextInpu
   );
 };
 
-export type ContextOutputUsageProps = ComponentProps<"div">;
+export type TokenUsageOutputProps = ComponentProps<"div">;
 
-export const ContextOutputUsage = ({ className, children, ...props }: ContextOutputUsageProps) => {
+export const TokenUsageOutput = ({ className, children, ...props }: TokenUsageOutputProps) => {
   const { formatNumber, t } = useLocale();
-  const { usage, modelId } = useContextValue();
+  const { usage, modelId } = useTokenUsageValue();
   const outputTokens = usage?.outputTokens ?? 0;
 
   if (children) {
@@ -290,15 +300,15 @@ export const ContextOutputUsage = ({ className, children, ...props }: ContextOut
   );
 };
 
-export type ContextReasoningUsageProps = ComponentProps<"div">;
+export type TokenUsageReasoningProps = ComponentProps<"div">;
 
-export const ContextReasoningUsage = ({
+export const TokenUsageReasoning = ({
   className,
   children,
   ...props
-}: ContextReasoningUsageProps) => {
+}: TokenUsageReasoningProps) => {
   const { formatNumber, t } = useLocale();
-  const { usage, modelId } = useContextValue();
+  const { usage, modelId } = useTokenUsageValue();
   // `reasoningTokens` moved under `outputTokenDetails` in ai@7 (the flat,
   // deprecated top-level alias from ai@6 was removed).
   const reasoningTokens = usage?.outputTokenDetails?.reasoningTokens ?? 0;
@@ -330,11 +340,11 @@ export const ContextReasoningUsage = ({
   );
 };
 
-export type ContextCacheUsageProps = ComponentProps<"div">;
+export type TokenUsageCacheProps = ComponentProps<"div">;
 
-export const ContextCacheUsage = ({ className, children, ...props }: ContextCacheUsageProps) => {
+export const TokenUsageCache = ({ className, children, ...props }: TokenUsageCacheProps) => {
   const { formatNumber, t } = useLocale();
-  const { usage, modelId } = useContextValue();
+  const { usage, modelId } = useTokenUsageValue();
   // `cachedInputTokens` moved under `inputTokenDetails.cacheReadTokens` in
   // ai@7 (the flat, deprecated top-level alias from ai@6 was removed).
   const cacheTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
