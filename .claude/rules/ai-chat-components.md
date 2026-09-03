@@ -37,6 +37,23 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   owns a private instance, so there is no ambient seam for a sibling to attach
   to). Each column is `role="region"` `aria-label={model.name}` so assistive
   tech can tell responses apart.
+- **Composer — the chat input. Reach for it FIRST; `PromptInput` is what it is
+  made of.** Every control the `PromptInput` family ships is reachable from a
+  `Composer` prop (`modelPicker`, `mode`, `effort`, `slashCommands`, `tools`,
+  `sendStatus`, `onStop`, `submitProps`), so a screen, a template or a registry
+  block has no reason to re-assemble the footer by hand. Drop to `PromptInput`
+  only for a genuinely bespoke shell — one whose field must be WRAPPED by
+  something else, which is the seam `Composer` owns
+  (`apps/docs/stories/mention-input-in-composer.stories.tsx`, the
+  `MentionInput` roster, is the one documented case and says so on the page).
+  Do **not** add a `textarea`/`children` escape hatch to `Composer` to avoid
+  this — a slot whose correctness rests on the invisible
+  `<textarea name="message">` invariant, and which collides with
+  `slashCommands`, is configuration where composition already works
+  (@.claude/rules/component-api.md § Composition patterns). `brand-ui audit`
+  nudges this with the **advisory** `ai/prefer-composer` rule; a file that
+  argues its case in prose opts out with
+  `// brand-ui-audit-allow: ai/prefer-composer`.
 - **PromptInput** — a FORM composer (not the old controlled textarea):
   `PromptInput onSubmit={(message) => …}` with `PromptInputBody`,
   `PromptInputTextarea`, `PromptInputFooter`, `PromptInputTools`,

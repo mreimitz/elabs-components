@@ -172,3 +172,178 @@ test("ServiceLogo carve-out: a raw-color line naming ServiceLogo (or data-servic
   const unrelated = scanText('<div style={{ color: "#4A154B" }} />', {});
   assert.ok(ids(unrelated).includes("raw-hex"), "raw-hex still fires without the marker");
 });
+
+// ── composition: ai/prefer-composer (RM-007, #146) ───────────────────────────
+// `Composer` is the canonical brand-ui chat input; `PromptInput` is the
+// primitive it is made of. The rule nudges consumer code back to `Composer`
+// WITHOUT ever failing a build — dropping to the primitive for a bespoke shell
+// is a legitimate, documented escape hatch. Its whole honesty rests on the
+// file-scoped exemptions, so those are what these tests pin.
+
+const CONSUMER_CHAT = `
+import { PromptInput, PromptInputBody, PromptInputTextarea } from "@elabs-ai/components-ai";
+export function Chat() {
+  return (
+    <PromptInput onSubmit={send}>
+      <PromptInputBody><PromptInputTextarea /></PromptInputBody>
+    </PromptInput>
+  );
+}
+`;
+
+test("ai/prefer-composer flags a hand-rolled PromptInput in consumer code", () => {
+  const f = scanText(CONSUMER_CHAT, { path: "src/components/chat.tsx" });
+  const hit = f.find((x) => x.rule === "ai/prefer-composer");
+  assert.ok(hit, "fires on a direct <PromptInput> render");
+  assert.equal(hit.category, "composition");
+  assert.match(hit.msg, /Use <Composer>/);
+});
+
+test("ai/prefer-composer is a WARNING, never an error — it can never fail --strict", () => {
+  const f = scanText(CONSUMER_CHAT, { path: "src/components/chat.tsx" });
+  const hits = f.filter((x) => x.rule === "ai/prefer-composer");
+  assert.ok(hits.length > 0);
+  assert.ok(
+    hits.every((x) => x.advisory === true),
+    "advisory in every register",
+  );
+  // `cmdAudit`'s buckets: blocking = !advisory && category !== "content-slop".
+  // Being advisory AND outside content-slop is what keeps it off both.
+  assert.ok(
+    hits.every((x) => x.category !== "content-slop"),
+    "never counted as content slop (which --strict DOES fail on)",
+  );
+  for (const register of ["product", "brand"]) {
+    const scoped = scanText(CONSUMER_CHAT, { path: "src/chat.tsx", register });
+    assert.ok(
+      scoped.filter((x) => x.rule === "ai/prefer-composer").every((x) => x.advisory === true),
+      `advisory in the ${register} register`,
+    );
+  }
+});
+
+test("ai/prefer-composer never fires on a PromptInput SUB-PART or a closing tag", () => {
+  const subparts = `
+    <Composer tools={<PromptInputButton />} />
+    <PromptInputBody /><PromptInputSubmit /><PromptInputTools />
+  `;
+  assert.equal(
+    scanText(subparts, { path: "src/x.tsx" }).filter((x) => x.rule === "ai/prefer-composer").length,
+    0,
+    "sub-parts are not the primitive",
+  );
+  // A closing tag alone must not double-count the same render.
+  const oneRender = scanText("<PromptInput onSubmit={s}>\n</PromptInput>\n", {
+    path: "src/x.tsx",
+  }).filter((x) => x.rule === "ai/prefer-composer");
+  assert.equal(oneRender.length, 1, "one finding per opening tag, not one per line of the element");
+});
+
+test("ai/prefer-composer exemption: a file that also renders <Composer> is quiet", () => {
+  const both = `${CONSUMER_CHAT}\nexport const Canonical = () => <Composer onSubmit={send} />;`;
+  assert.equal(
+    scanText(both, { path: "apps/docs/stories/compare.stories.tsx" }).filter(
+      (x) => x.rule === "ai/prefer-composer",
+    ).length,
+    0,
+    "a page comparing the two is not making the mistake",
+  );
+});
+
+test("ai/prefer-composer exemption: the library that DEFINES Composer is quiet", () => {
+  // packages/ai/src/composer.tsx renders <PromptInput> because that is what
+  // Composer is made of — and it does NOT render <Composer>, so the
+  // renders-a-Composer exemption alone would miss it.
+  const composerSource = `
+export function Composer({ onSubmit }) {
+  return <PromptInput onSubmit={onSubmit}><PromptInputBody /></PromptInput>;
+}
+`;
+  assert.equal(
+    scanText(composerSource, { path: "packages/ai/src/composer.tsx" }).filter(
+      (x) => x.rule === "ai/prefer-composer",
+    ).length,
+    0,
+    "the composer's own source is exempt",
+  );
+});
+
+test("ai/prefer-composer exemption: the PromptInput family's own files and any test are quiet", () => {
+  for (const path of [
+    "packages/ai/src/prompt-input.tsx",
+    "packages/ai/src/prompt-input.stories.tsx",
+    "packages/ai/src/prompt-input-slash.stories.tsx",
+    "packages/ai/src/microcopy.test.tsx",
+    "src/chat.spec.jsx",
+  ]) {
+    assert.equal(
+      scanText(CONSUMER_CHAT, { path }).filter((x) => x.rule === "ai/prefer-composer").length,
+      0,
+      `exempt: ${path}`,
+    );
+  }
+});
+
+test("ai/prefer-composer: the path exemptions are NARROW (teeth intact)", () => {
+  for (const path of [
+    "src/components/prompt.tsx", // not the prompt-input family
+    "src/components/my-prompt-input.tsx", // the basename must START with it
+    "src/prompt-input/chat.tsx", // a DIRECTORY of that name is not the family
+    "apps/web/app/chat/page.tsx",
+  ]) {
+    assert.ok(
+      scanText(CONSUMER_CHAT, { path }).some((x) => x.rule === "ai/prefer-composer"),
+      `still fires: ${path}`,
+    );
+  }
+  // No path at all: the rule still fires (omitting `path` may cost a false
+  // positive, but must never hide one).
+  assert.ok(
+    scanText(CONSUMER_CHAT, {}).some((x) => x.rule === "ai/prefer-composer"),
+    "fires without a path",
+  );
+});
+
+// ── the advisory-only opt-out marker ─────────────────────────────────────────
+
+test("brand-ui-audit-allow silences ONE advisory rule in ONE file", () => {
+  const marked = `// brand-ui-audit-allow: ai/prefer-composer — documented bespoke shell\n${CONSUMER_CHAT}`;
+  assert.equal(
+    scanText(marked, { path: "apps/docs/stories/mention.stories.tsx" }).filter(
+      (x) => x.rule === "ai/prefer-composer",
+    ).length,
+    0,
+    "the named rule is silenced",
+  );
+  // …and only that one: an unrelated advisory rule in the same file still fires.
+  const other = `// brand-ui-audit-allow: ai/prefer-composer\n<div className="text-black" />`;
+  assert.ok(
+    scanText(other, { path: "src/x.tsx" }).some((x) => x.rule === "pure-black"),
+    "an unnamed rule is untouched",
+  );
+});
+
+test("brand-ui-audit-allow can NEVER silence a blocking rule", () => {
+  for (const [id, line] of [
+    ["raw-hex", 'color: "#ff0000"'],
+    ["gradient-text", '<h1 className="bg-clip-text">x</h1>'],
+    ["over-round", '<div className="rounded-3xl" />'],
+  ]) {
+    const text = `// brand-ui-audit-allow: ${id}\n${line}`;
+    assert.ok(
+      scanText(text, { path: "src/x.tsx" }).some((x) => x.rule === id && !x.advisory),
+      `${id} stays blocking despite the marker`,
+    );
+  }
+  // …including a `brandTolerant` rule in the BRAND register, where the FINDING
+  // is softened to advisory. The opt-out keys off the rule's static `advisory`
+  // flag, not the softened finding, or the register would become a bypass.
+  const brand = scanText('// brand-ui-audit-allow: over-round\n<div className="rounded-3xl" />', {
+    path: "src/x.tsx",
+    register: "brand",
+  });
+  assert.ok(
+    brand.some((x) => x.rule === "over-round"),
+    "over-round is still REPORTED in the brand register despite the marker",
+  );
+});

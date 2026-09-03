@@ -82,6 +82,14 @@ the note above). It flags, per file:line:
 - **Visual anti-slop (WP-15)** — `pure-black` (use the `foreground` token),
   `neon-glow` (tinted/inset shadow), `gradient-text`, `side-stripe`, `over-round`,
   `custom-cursor`, `viewport-h-screen` (`min-h-dvh`). Token-translated tells.
+- **Composition** — `ai/prefer-composer`: a direct `<PromptInput>` render where
+  `<Composer>` is the canonical chat input. **Advisory, always** — dropping to the
+  primitive for a bespoke shell (a mention roster, say) is a documented escape
+  hatch, so this never fails `--strict`. Quiet in a file that also renders
+  `<Composer>`, in the file that defines it, in the `PromptInput` family's own
+  modules/stories, and in any test. A file argues its own case with
+  `// brand-ui-audit-allow: ai/prefer-composer` — which works on advisory rules
+  only, never on a blocking one.
 - **Content anti-slop — the "Jane Doe effect" (WP-15)** — `slop-generic-name`
   ("John/Jane Doe"), `slop-fake-number` ("99.99%"), `slop-brand-name`
   ("Acme/Nexus"), `marketing-buzzword` (filler verbs). Advisory here (placeholders

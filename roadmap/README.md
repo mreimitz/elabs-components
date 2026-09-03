@@ -9,12 +9,9 @@ Status values: `planned`, `in-progress`, `done`, `dropped`. Update the frontmatt
 | ID | Title | Priority | Effort | Depends on | Status |
 |---|---|---|---|---|---|
 | [RM-002](RM-002-storybook-group-gate.md) | CI gate: every top-level group must be in `storySort.order` | P1 | S | – | planned |
-| [RM-004](RM-004-fold-providers-into-foundations.md) | Fold Providers into Foundations; ThemeProvider + LocaleProvider get one home | P2 | S | RM-003 | planned |
 | [RM-005](RM-005-story-title-hygiene.md) | Story title hygiene: demos out of component groups, naming rule, duplicate entry | P2 | S | RM-003 | planned |
 | [RM-007](RM-007-registry-and-stories-use-composer.md) | Registry block and stories use Composer; audit warns on direct PromptInput | P1 | S | RM-006 | planned |
 | [RM-008](RM-008-nest-promptinput-under-composer.md) | Nest the PromptInput family under `AI/Composer` | P2 | S | RM-003, RM-006 | planned |
-| [RM-011](RM-011-changereview-renders-through-diffview.md) | ChangeReview renders its hunks through DiffView | P2 | M | – | planned |
-| [RM-012](RM-012-one-markdown-renderer.md) | One markdown renderer: MarkdownPreview = MarkdownView + directives | P2 | M | – | planned |
 | [RM-016](RM-016-missing-story-descriptions.md) | Every ambiguous-pair story names its sibling in its description | P2 | S | RM-009 | planned |
 
 ## Suggested sequence
@@ -23,9 +20,9 @@ Three independent tracks; items inside a track are ordered by `depends_on`.
 
 1. **Sidebar** (all S, about two days total): RM-004, RM-005 (RM-003 landed), then RM-008.
 2. **Composer** (the only track with real component work): RM-007 — RM-006 and RM-010 have landed.
-3. **Disambiguation** (docs first, code second): RM-016 next; RM-011 and RM-012 are in flight as one unit. (RM-009 and RM-013 have landed.)
+3. **Disambiguation** (docs first, code second): RM-016 is the last one. (RM-009, RM-011, RM-012 and RM-013 have landed.)
 
-Finish RM-002 next: it is the remaining P1. (RM-001, RM-003, RM-006, RM-009, RM-010, RM-013, RM-014 and RM-015 landed on 2026-09-03.)
+Finish RM-002 next: it is the remaining P1. (RM-001, RM-003, RM-006, RM-004, RM-009, RM-010, RM-011, RM-012, RM-013, RM-014 and RM-015 landed on 2026-09-03.)
 
 ## Review coverage
 
