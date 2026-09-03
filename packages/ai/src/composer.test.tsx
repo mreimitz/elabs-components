@@ -2,6 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Composer } from "./composer";
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+  type PromptInputProps,
+} from "./prompt-input";
 
 describe("Composer", () => {
   it("renders the default status line and placeholder, and no model control at all", () => {
@@ -330,5 +339,86 @@ describe("Composer — the four optional control slots (RM-006)", () => {
     expect(screen.queryByRole("button", { name: "Attach files" })).not.toBeInTheDocument();
     expect(document.querySelector('[data-slot="prompt-input-mode"]')).not.toBeNull();
     expect(document.querySelector('[data-slot="prompt-input-effort"]')).not.toBeNull();
+  });
+});
+
+// ── the port from a hand-rolled PromptInput footer (RM-007, #146) ────────────
+// `registry/blocks/ai-chat-shell/ai-chat.tsx` used to assemble its own
+// `PromptInput` + `PromptInputBody` + `PromptInputFooter` + `PromptInputSubmit`
+// and now renders `<Composer>`. The claim that made the port safe is that
+// `Composer` is a pure re-arrangement of the same primitive: the submit payload,
+// the attachment surface and the stop affordance are unchanged. That is an A/B
+// claim, so it gets an A/B test — the old arrangement is inlined here and driven
+// identically to the new one.
+
+describe("Composer — equivalence with a hand-rolled PromptInput footer", () => {
+  const HandRolled = ({ onSubmit }: { onSubmit: PromptInputProps["onSubmit"] }) => (
+    <PromptInput onSubmit={onSubmit}>
+      <PromptInputBody>
+        <PromptInputTextarea placeholder="Send a message…" />
+      </PromptInputBody>
+      <PromptInputFooter>
+        <PromptInputTools />
+        <PromptInputSubmit />
+      </PromptInputFooter>
+    </PromptInput>
+  );
+
+  /** Type `text` into whichever arrangement is mounted, then submit with Enter. */
+  const drive = async (text: string) => {
+    const field = screen.getByPlaceholderText("Send a message…");
+    await userEvent.type(field, `${text}{Enter}`);
+    return field;
+  };
+
+  it("hands onSubmit the identical PromptInputMessage — text untrimmed, files empty", async () => {
+    const before = vi.fn();
+    const { unmount } = render(<HandRolled onSubmit={before} />);
+    await drive("  what changed overnight?  ");
+    unmount();
+
+    const after = vi.fn();
+    render(<Composer onSubmit={after} placeholder="Send a message…" />);
+    await drive("  what changed overnight?  ");
+
+    expect(before).toHaveBeenCalledTimes(1);
+    expect(after).toHaveBeenCalledTimes(1);
+    // Deep-equal on the payload, not just "it was called": the block trims the
+    // text ITSELF, so an arrangement that silently trimmed (or dropped `files`)
+    // would change what a consumer's `send()` receives.
+    expect(after.mock.calls[0]![0]).toEqual(before.mock.calls[0]![0]);
+    expect(after.mock.calls[0]![0]).toEqual({ text: "  what changed overnight?  ", files: [] });
+  });
+
+  it("submits nothing on an empty composer, exactly as the hand-rolled footer did", async () => {
+    const before = vi.fn();
+    const { unmount } = render(<HandRolled onSubmit={before} />);
+    await drive("   ");
+    unmount();
+
+    const after = vi.fn();
+    render(<Composer onSubmit={after} placeholder="Send a message…" />);
+    await drive("   ");
+
+    expect(before).not.toHaveBeenCalled();
+    expect(after).not.toHaveBeenCalled();
+  });
+
+  it("offers no attachment or dictation affordance when the port switches both off", () => {
+    render(<Composer onSubmit={vi.fn()} showAttach={false} showVoice={false} />);
+
+    expect(screen.queryByRole("button", { name: "Attach files" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Voice" })).not.toBeInTheDocument();
+    // The hand-rolled footer rendered an empty `PromptInputTools`; the ported
+    // one must be just as empty, or the block would show a dead control.
+    expect(screen.getAllByRole("button")).toHaveLength(1); // the send button only
+  });
+
+  it("never presents a Stop while the block passes no onStop and a settled sendStatus", () => {
+    render(<Composer onSubmit={vi.fn()} sendStatus="ready" showAttach={false} showVoice={false} />);
+
+    const submit = screen.getByRole("button", { name: "Submit" });
+    expect(submit).toHaveAttribute("data-action", "send");
+    expect(screen.queryByRole("button", { name: "Stop" })).not.toBeInTheDocument();
   });
 });

@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+- Changed: the `ai-chat-shell` registry block — the one a consumer copies with
+  `npx shadcn add ai-chat-shell` — now renders `Composer`, the canonical
+  `@elabs-ai/components-ai` chat input, instead of assembling its own
+  `PromptInput` footer. What a consumer sees differently: the input picks up
+  Composer's rounded two-tone frame and its status strip (driven here from the
+  block's own chat state, so it reads "Thinking…" mid-turn), and the block now
+  demonstrates the props every further control hangs off (`modelPicker`,
+  `mode`, `effort`, `slashCommands`, `tools`). What is unchanged, and locked by
+  tests: the submit payload handed to `send` (untrimmed text plus an empty
+  `files` list, identical to the hand-rolled footer's), the empty-composer
+  guard, the field clearing on submit, the absence of any attachment or
+  dictation affordance, and the absence of a Stop the block could not honour.
+  Attach and voice are switched off explicitly (`showAttach` / `showVoice`)
+  rather than left at their `true` defaults, because this scaffold wires
+  neither handler. The block gains a Storybook page — "AI Chat Shell", under
+  Patterns/Blocks — that renders the shipped file.
+
+- Added: `@elabs-ai/components-cli` — `brand-ui audit` gains a composition rule,
+  `ai/prefer-composer`, that points a direct `<PromptInput>` render back at
+  `<Composer>`. It is **advisory only** and can never fail `--strict`: dropping
+  to the primitive for a bespoke shell is a documented escape hatch, not a
+  defect. It stays quiet in a file that also renders `<Composer>`, in the file
+  that defines `Composer`, in the `PromptInput` family's own modules and
+  stories, and in any test. A file may also opt out of any one advisory rule
+  with a `// brand-ui-audit-allow: <rule-id>` comment — blocking rules (raw
+  colour, gradient text, tiny text, content slop) can never be silenced this
+  way. `scanText` accepts an optional `path` for the path-scoped exemptions;
+  omitting it can only cost a false positive, never hide one.
+
 - Changed: `@elabs-ai/components-ui` — `RevisionTimeline` and the canonical
   `Timeline` rail now state, in both docblocks and in `RevisionTimeline`'s
   Storybook description, why the two are deliberately not one component.

@@ -562,7 +562,12 @@ function cmdAudit() {
     const isThemeFile = /themes\.css$/.test(f) || /registry\/themes\//.test(f);
     const isCss = /\.css$/.test(f);
     const text = readFileSync(f, "utf8");
-    for (const finding of scanText(text, { isCss, isThemeFile, register: taste.register })) {
+    for (const finding of scanText(text, {
+      isCss,
+      isThemeFile,
+      register: taste.register,
+      path: f,
+    })) {
       findings.push({ ...finding, file: f.replace(root ? root + "/" : "", "") });
     }
   }
