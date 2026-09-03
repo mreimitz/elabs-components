@@ -49,13 +49,14 @@ function Field({ commands = COMMANDS }: { commands?: SlashCommand[] }) {
 }
 
 const meta = {
-  title: "AI/PromptInputSlash",
+  title: "AI/Composer/PromptInputSlash",
   component: PromptInputSlash,
   parameters: {
     layout: "padded",
     docs: {
       description: {
         component:
+          "A part of the [Composer](?path=/docs/ai-composer--docs) family — what the `slashCommands` slot renders. " +
           "The CHAT composer slash menu; the console one is `Terminal/TerminalSlashMenu` and the " +
           "Milkdown editor has its own — see " +
           "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +

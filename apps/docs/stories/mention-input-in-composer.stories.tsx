@@ -26,6 +26,11 @@ import {
  * `PromptInputTextarea` (`@elabs-ai/components-ai`) — the composer keeps its own
  * submit contract while the field gains an `@`-mention roster.
  *
+ * It lives under [AI/Composer](?path=/docs/ai-composer--docs) rather than in
+ * `Patterns/Blocks` because it is not a separate pattern: it is a composer,
+ * and specifically the family's one documented bespoke shell. The rest of this
+ * page is the reasoning for that.
+ *
  * ### Why this page drops to `PromptInput` instead of using `Composer`
  *
  * `Composer` is the canonical chat input, and everything else that renders a
@@ -93,7 +98,7 @@ import {
  * `onSubmit` resets the `MentionValue` itself, as it does here.
  */
 const meta = {
-  title: "Patterns/Blocks/MentionInput + PromptInput",
+  title: "AI/Composer/WithMentionInput",
   tags: ["autodocs"],
   parameters: {
     layout: "padded",

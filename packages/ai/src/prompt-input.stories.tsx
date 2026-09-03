@@ -28,14 +28,14 @@ import {
 } from "./prompt-input";
 
 const meta = {
-  title: "AI/PromptInput",
+  title: "AI/Composer/PromptInput",
   component: PromptInput,
   parameters: {
     layout: "padded",
     docs: {
       description: {
         component:
-          "The raw composer FORM primitive Composer is built on. `tone` picks the inner well's fill — `surface` (default, muted) or `card` — so it can nest inside an already-tinted outer frame (the double card, #254). The `card` fill is theme-driven, not universally white: raised on light themes, recessed on dark — still a distinct, legible tone against the outer frame in every theme.",
+          "A part of the [Composer](?path=/docs/ai-composer--docs) family: the raw composer FORM primitive Composer is built on — compose it yourself only for a bespoke shell. `tone` picks the inner well's fill — `surface` (default, muted) or `card` — so it can nest inside an already-tinted outer frame (the double card, #254). The `card` fill is theme-driven, not universally white: raised on light themes, recessed on dark — still a distinct, legible tone against the outer frame in every theme.",
       },
     },
   },
