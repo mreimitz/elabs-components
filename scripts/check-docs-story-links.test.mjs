@@ -41,7 +41,8 @@ const page = (link) => `<Meta title="Docs/Picking" />\n\nSee [it](${link}).\n`;
 
 test("sanitize matches the ids Storybook actually generates", () => {
   assert.equal(sanitize("AI/ChangeReview"), "ai-changereview");
-  assert.equal(sanitize("Editor/MarkdownEditor/Slash menu"), "editor-markdowneditor-slash-menu");
+  assert.equal(sanitize("Editor/MarkdownEditor/SlashMenu"), "editor-markdowneditor-slashmenu");
+  assert.equal(sanitize("Layout/App Shell/Mail"), "layout-app-shell-mail");
   assert.equal(sanitize("Foundations/Spacing & Radius"), "foundations-spacing-radius");
   assert.equal(sanitize("Docs/View Toolbar Contract"), "docs-view-toolbar-contract");
   assert.equal(sanitize("Layout/SplitPanel"), "layout-splitpanel");

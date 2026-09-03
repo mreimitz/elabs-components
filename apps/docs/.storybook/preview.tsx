@@ -332,6 +332,7 @@ const preview: Preview = {
             "brand-ui MCP Server",
             "Storybook MCP for Agents",
             "AI Output Contract for Agents",
+            "AI Content Access",
             "View Toolbar Contract",
             "Testing Charts in jsdom",
             "Storybook Theme Harness",

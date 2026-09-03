@@ -25,6 +25,14 @@ import type { MentionOption, MentionValue } from "./mention-value";
  * lock that only holds when it runs alone is not a lock at all in CI — so it
  * gets its own story file, which the runner loads as its own test file.
  *
+ * It shares the `Forms/MentionInput` TITLE with the main story file so it reads
+ * as one sidebar entry rather than a sub-group of its own (RM-005). That is a
+ * sidebar concern only: `@storybook/addon-vitest` turns each story FILE into its
+ * own test file, so the isolation above survives the shared title. Do NOT
+ * "finish the job" by moving these stories into `mention-input.stories.tsx` —
+ * that is the exact co-residency the audit measured as green-with-the-bug (ADR
+ * 0023 §6).
+ *
  * ### What it pins
  *
  * Every box-affecting property of the field is nailed to absolute pixels, so
@@ -39,7 +47,7 @@ import type { MentionOption, MentionValue } from "./mention-value";
  * the test rather than argued for in a comment.
  */
 const meta = {
-  title: "Forms/MentionInput/Mirror re-measure",
+  title: "Forms/MentionInput",
   component: MentionInput,
   parameters: {
     docs: {

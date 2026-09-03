@@ -106,9 +106,16 @@ function ChatShellExample({ variant = "card" }: { variant?: "card" | "bare" }) {
 
 const meta = {
   title: "AI/ChatShell",
-  component: ChatShellExample,
+  // `component` names the REAL exported component, so the docs/MCP surface reads
+  // ChatShell's own props instead of a story-local demo's (RM-005). `render`
+  // supplies the live transcript + composer a layout shell needs in order to
+  // show anything; `children` is required by ChatShellProps and comes from the
+  // render, so the arg below is only a placeholder to satisfy the type.
+  component: ChatShell,
+  args: { variant: "card", children: null },
+  render: ({ variant }) => <ChatShellExample variant={variant} />,
   parameters: { layout: "fullscreen" },
-} satisfies Meta<typeof ChatShellExample>;
+} satisfies Meta<typeof ChatShell>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
