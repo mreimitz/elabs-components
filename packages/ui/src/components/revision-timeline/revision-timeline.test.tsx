@@ -264,6 +264,32 @@ describe("Merge rows", () => {
     expect(svg).not.toBeNull();
   });
 
+  // #387 — colour is never the only channel (WCAG 1.4.1). The lane graph paints
+  // every node from the same categorical chart ramp, so the ROW GLYPH is the cue
+  // that survives greyscale: the merge-marked row renders `GitMerge`, every other
+  // row `GitCommitHorizontal`. Asserted on the rendered `lucide-*` class (the
+  // actual shape signature) — the idiom flow-node.test.tsx uses. This is also the
+  // non-colour channel that justifies this component keeping its own node
+  // vocabulary instead of the shared `Timeline` rail's status-keyed dot (RM-014,
+  // #133) — see the component docblock.
+  //
+  // WHICH row is marked is deliberately NOT asserted here: the derivation counts
+  // edges by `to` (parents with >=2 children), so today the glyph lands on the
+  // fork point rather than on the commit whose message says "Merge". That routing
+  // question is out of scope for RM-014 and is reported separately; this lock is
+  // about the CHANNEL, and must keep holding whichever row ends up marked.
+  it("marks the merge row with a distinct glyph, not colour alone (#387)", () => {
+    render(<RevisionTimeline revisions={MERGE_REVISIONS} edges={MERGE_EDGES} groupBy="none" />);
+    const rows = Array.from(document.querySelectorAll("[data-revision-id]"));
+    expect(rows).toHaveLength(MERGE_REVISIONS.length);
+    const merge = rows.filter((r) => r.querySelector("svg.lucide-git-merge"));
+    const plain = rows.filter((r) => r.querySelector("svg.lucide-git-commit-horizontal"));
+    expect(merge).toHaveLength(1);
+    expect(plain).toHaveLength(rows.length - 1);
+    // No row carries both shapes, so the two are genuinely exclusive silhouettes.
+    expect(merge[0]!.querySelector("svg.lucide-git-commit-horizontal")).toBeNull();
+  });
+
   it("renders all revisions including the merge commit", () => {
     render(<RevisionTimeline revisions={MERGE_REVISIONS} edges={MERGE_EDGES} groupBy="none" />);
     expect(screen.getAllByRole("listitem")).toHaveLength(MERGE_REVISIONS.length);
