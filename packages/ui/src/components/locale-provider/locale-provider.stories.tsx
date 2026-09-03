@@ -2,9 +2,23 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LocaleProvider, useLocale } from "./locale-provider";
 
 const meta = {
-  title: "Providers/LocaleProvider",
+  title: "Foundations/Localization",
   component: LocaleProvider,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Root i18n provider — one of the two providers every app mounts once, at the root. " +
+          'Wrap it around your app inside `ThemeProvider`: `<ThemeProvider><LocaleProvider locale="en-US">…' +
+          "</LocaleProvider></ThemeProvider>`. Every component's microcopy, number formatting and " +
+          "date formatting then reads through `useLocale()`. Full resolution chain (`translate` → " +
+          "`messages` → shipped English defaults → raw key), cardinal plurals and bridging to your " +
+          "own i18n runtime (next-intl, react-intl, i18next, …): `docs/I18N.md`. See " +
+          "[Foundations / Theming](?path=/docs/foundations-theming--docs) for the other root provider.",
+      },
+    },
+  },
 } satisfies Meta<typeof LocaleProvider>;
 
 export default meta;

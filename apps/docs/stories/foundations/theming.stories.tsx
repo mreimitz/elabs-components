@@ -3,8 +3,18 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import {
   BUILT_IN_THEME_DEFINITIONS,
+  DECORATION_LEVELS,
+  DEFAULT_DECORATION_LEVEL,
+  DEFAULT_DENSITY,
+  DEFAULT_MOTION_PREFERENCE,
+  DEFAULT_THEME,
   defineTheme,
+  DENSITIES,
   deriveTheme,
+  type DecorationLevel,
+  type DensityMode,
+  type MotionPreference,
+  MOTION_PREFERENCES,
   ThemeProvider,
 } from "@elabs-ai/components-tokens";
 import { Button, ThemeSwitcher } from "@elabs-ai/components-ui";
@@ -239,6 +249,146 @@ export const Overview: Story = {
       differs,
       'the "Active" (complete) and "Running" (running) status chips must differ in at least one of background-color/border-color/border-style/background-image/::before-content — colour alone cannot carry this at high decoration (#391)',
     ).toBe(true);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Root setup — the four ThemeProvider props an app sets once, at the root
+// ---------------------------------------------------------------------------
+
+type RootSetupArgs = {
+  theme: string;
+  density: DensityMode;
+  motionPref: MotionPreference;
+  decoration: DecorationLevel;
+};
+
+/**
+ * Mounts a REAL `ThemeProvider` from exactly these args, scoped to its own
+ * wrapper (`attributeTarget`) so a control here never fights the Storybook
+ * toolbar's own theme/density/motion/decoration globals. Remounted on every
+ * args change (`key`) because all four props below are read once, at mount —
+ * `defaultTheme` / `defaultDensity` / `defaultMotionPreference` /
+ * `defaultDecoration` set the INITIAL value; after that the app owns it via
+ * `useTheme()`, exactly like `BringYourOwnThemeDemo` above.
+ */
+function RootSetupDemo({ theme, density, motionPref, decoration }: RootSetupArgs) {
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+  return (
+    <div ref={setTarget} className="rounded-lg border border-border bg-background p-4">
+      {target ? (
+        <ThemeProvider
+          key={`${theme}-${density}-${motionPref}-${decoration}`}
+          attributeTarget={target}
+          defaultTheme={theme}
+          defaultDensity={density}
+          defaultMotionPreference={motionPref}
+          defaultDecoration={decoration}
+          storageKey={null}
+          motionStorageKey={null}
+          decorationStorageKey={null}
+          densityStorageKey={null}
+          registerStorageKey={null}
+        >
+          <SampleComposition />
+        </ThemeProvider>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The `ThemeProvider` root-mount props as a REAL story with Controls — not
+ * only the toolbar switcher demo above, which drives Storybook's own globals
+ * and never touches an actual `ThemeProvider` instance. Open the
+ * **Controls** panel on this story and every value maps to a real prop on a
+ * scoped `ThemeProvider` rendered below.
+ */
+export const RootSetup: StoryObj<RootSetupArgs> = {
+  name: "Root setup",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The four props an app sets ONCE, at the root `<ThemeProvider>` — everything else " +
+          "(the toolbar dials above, `ThemeSwitcher`, `useTheme()`) just calls the setters this " +
+          "provider exposes at runtime. Flip a control below and it remounts a real, scoped " +
+          "`ThemeProvider` with exactly those defaults. Pair with " +
+          "[Foundations / Localization](?path=/docs/foundations-localization--docs) for the other " +
+          "provider every app mounts at the same root.",
+      },
+    },
+  },
+  argTypes: {
+    theme: {
+      control: "select",
+      options: BUILT_IN_THEME_DEFINITIONS.map((definition) => definition.value),
+      description: "`defaultTheme` — the initial theme when nothing is persisted yet.",
+      table: { category: "ThemeProvider", defaultValue: { summary: `"${DEFAULT_THEME}"` } },
+    },
+    density: {
+      control: "select",
+      options: DENSITIES,
+      description: "`defaultDensity` — spacing AND the type scale move together (#340).",
+      table: { category: "ThemeProvider", defaultValue: { summary: `"${DEFAULT_DENSITY}"` } },
+    },
+    motionPref: {
+      control: "select",
+      options: MOTION_PREFERENCES,
+      description: "`defaultMotionPreference` — gates micro-interaction timing.",
+      table: {
+        category: "ThemeProvider",
+        defaultValue: { summary: `"${DEFAULT_MOTION_PREFERENCE}"` },
+      },
+    },
+    decoration: {
+      control: { type: "select" },
+      options: DECORATION_LEVELS,
+      description: "`defaultDecoration` — reprographic drafting texture, 0 (plain) – 10 (full).",
+      table: {
+        category: "ThemeProvider",
+        defaultValue: { summary: String(DEFAULT_DECORATION_LEVEL) },
+      },
+    },
+  },
+  args: {
+    theme: DEFAULT_THEME,
+    density: DEFAULT_DENSITY,
+    motionPref: DEFAULT_MOTION_PREFERENCE,
+    decoration: DEFAULT_DECORATION_LEVEL,
+  },
+  render: (args) => (
+    <div className="space-y-4">
+      <p className="m-0 max-w-prose text-caption text-muted-foreground">
+        Every value below is a real <code className="text-code">ThemeProvider</code> prop — use the{" "}
+        <strong>Controls</strong> panel to change them and watch the scoped region re-render.
+      </p>
+      <pre className="m-0 overflow-x-auto rounded-lg border border-border bg-card p-4 text-code text-card-foreground">
+        {`<ThemeProvider
+  defaultTheme="${args.theme}"
+  defaultDensity="${args.density}"
+  defaultMotionPreference="${args.motionPref}"
+  defaultDecoration={${args.decoration}}
+>
+  <App />
+</ThemeProvider>`}
+      </pre>
+      <RootSetupDemo {...args} />
+    </div>
+  ),
+  // Regression lock: each control genuinely reaches the scoped ThemeProvider
+  // instance, not just the code sample above it.
+  play: async ({ canvasElement }) => {
+    const region = canvasElement.querySelector<HTMLElement>("[data-theme]");
+    await waitFor(() => expect(region?.getAttribute("data-theme")).toBe(DEFAULT_THEME));
+    // "comfortable" density and "system" motion are both the identity value —
+    // the provider omits the attribute rather than writing it explicitly.
+    await expect(region?.getAttribute("data-density")).toBeNull();
+    await expect(region?.getAttribute("data-motion-pref")).toBeNull();
+    // Decoration has no "unset" sentinel here (defaultDecoration={0} is an
+    // explicit value, not the provider's own null/"follow theme" default), so
+    // it's always written.
+    await expect(region?.getAttribute("data-decoration")).toBe(String(DEFAULT_DECORATION_LEVEL));
   },
 };
 
