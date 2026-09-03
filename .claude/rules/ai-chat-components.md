@@ -84,7 +84,7 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   Raw mode is never intercepted. Same shape as `ChartFrame`'s `renderTable`
   (ADR 0024 §6). `ContextAsset` carries `source?: FileSource` + `mediaType?` so an
   asset can BE a file rather than a string.
-- Plus: `Suggestion(s)`, `Task`, `Snippet`, `Context` (token usage),
+- Plus: `Suggestion(s)`, `Task`, `Snippet`, `TokenUsage` (token usage),
   `CodeBlock` (Shiki), `InlineCitation` (sources need **not** be URLs — pass an
   opaque id or `{ id, label, url }`; a non-URL string renders verbatim rather
   than throwing), `Shimmer` (loading), and the

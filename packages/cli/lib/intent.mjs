@@ -1884,13 +1884,13 @@ export const INTENT = {
     ],
   },
 
-  Context: {
+  TokenUsage: {
     purpose:
       "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
     category: "ai",
     relationships: {
       usedInside: ["Composer", "PromptInput"],
-      contains: ["ContextTrigger", "ContextContent", "ContextInputUsage", "ContextCacheUsage"],
+      contains: ["TokenUsageTrigger", "TokenUsageContent", "TokenUsageInput", "TokenUsageCache"],
       pairsWith: ["ModelSelector"],
     },
     antiPatterns: [
@@ -2450,7 +2450,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["Conversation", "ChatShell"],
-      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "Context"],
+      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "TokenUsage"],
     },
     stateTokens: {
       working: "bg-primary on the activity dot; text-muted-foreground for the metrics",
@@ -2470,8 +2470,8 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["ChatShell"],
-      pairsWith: ["TurnStatus", "Context", "SessionHeader"],
-      contains: ["Context"],
+      pairsWith: ["TurnStatus", "TokenUsage", "SessionHeader"],
+      contains: ["TokenUsage"],
     },
     stateTokens: {
       surface: "bg-surface-muted with a border-t hairline — recessed chrome, not a raised card",

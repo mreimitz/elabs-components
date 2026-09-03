@@ -6,7 +6,7 @@
   "packages/ai/src/code-block.tsx": 4,
   "packages/ai/src/commit.tsx": 9,
   "packages/ai/src/confirmation.tsx": 1,
-  "packages/ai/src/context.tsx": 6,
+  "packages/ai/src/token-usage.tsx": 6,
   "packages/ai/src/conversation.tsx": 2,
   "packages/ai/src/environment-variables.tsx": 5,
   "packages/ai/src/file-tree.tsx": 1,

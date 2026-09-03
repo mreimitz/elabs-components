@@ -1,7 +1,7 @@
 import type { LanguageModelUsage } from "ai";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Context, ContextCacheUsage, ContextReasoningUsage } from "./context";
+import { TokenUsage, TokenUsageCache, TokenUsageReasoning } from "./token-usage";
 
 // `LanguageModelUsage`'s reasoning/cache figures live under nested detail
 // objects (`outputTokenDetails.reasoningTokens`, `inputTokenDetails.cacheReadTokens`).
@@ -23,22 +23,22 @@ const usage: LanguageModelUsage = {
   totalTokens: 1200,
 };
 
-describe("Context usage readouts (#30, ai@7 LanguageModelUsage shape)", () => {
-  it("ContextReasoningUsage reads outputTokenDetails.reasoningTokens, not a flat field", () => {
+describe("TokenUsage usage readouts (#30, ai@7 LanguageModelUsage shape)", () => {
+  it("TokenUsageReasoning reads outputTokenDetails.reasoningTokens, not a flat field", () => {
     render(
-      <Context maxTokens={8000} usage={usage} usedTokens={1200}>
-        <ContextReasoningUsage />
-      </Context>,
+      <TokenUsage maxTokens={8000} usage={usage} usedTokens={1200}>
+        <TokenUsageReasoning />
+      </TokenUsage>,
     );
     expect(screen.getByText("Reasoning")).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
   });
 
-  it("ContextCacheUsage reads inputTokenDetails.cacheReadTokens, not a flat field", () => {
+  it("TokenUsageCache reads inputTokenDetails.cacheReadTokens, not a flat field", () => {
     render(
-      <Context maxTokens={8000} usage={usage} usedTokens={1200}>
-        <ContextCacheUsage />
-      </Context>,
+      <TokenUsage maxTokens={8000} usage={usage} usedTokens={1200}>
+        <TokenUsageCache />
+      </TokenUsage>,
     );
     expect(screen.getByText("Cache")).toBeInTheDocument();
     expect(screen.getByText("400")).toBeInTheDocument();
@@ -51,10 +51,10 @@ describe("Context usage readouts (#30, ai@7 LanguageModelUsage shape)", () => {
       outputTokenDetails: { ...usage.outputTokenDetails, reasoningTokens: 0 },
     };
     const { container } = render(
-      <Context maxTokens={8000} usage={zeroUsage} usedTokens={1200}>
-        <ContextReasoningUsage />
-        <ContextCacheUsage />
-      </Context>,
+      <TokenUsage maxTokens={8000} usage={zeroUsage} usedTokens={1200}>
+        <TokenUsageReasoning />
+        <TokenUsageCache />
+      </TokenUsage>,
     );
     expect(container).toBeEmptyDOMElement();
   });

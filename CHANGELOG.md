@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- Changed (**breaking**): the context-window usage readout in
+  `@elabs-ai/components-ai` is now called `TokenUsage`, and the old `Context*`
+  names are **removed outright** — there are no deprecated aliases and no
+  transitional re-export. `Context` sat one line away from `ContextPanel`, the
+  chat workspace's right rail, in every import list and in the Storybook
+  sidebar; the two are unrelated components and the shared name made it a
+  coin-flip which one a reader (or a coding agent) was looking at. `Context` was
+  the AI Elements upstream name and nothing here depended on keeping it. Rename
+  imports: `Context` → `TokenUsage`, `ContextTrigger` → `TokenUsageTrigger`,
+  `ContextContent` → `TokenUsageContent`, `ContextContentHeader` →
+  `TokenUsageContentHeader`, `ContextContentBody` → `TokenUsageContentBody`,
+  `ContextContentFooter` → `TokenUsageContentFooter`, `ContextInputUsage` →
+  `TokenUsageInput`, `ContextOutputUsage` → `TokenUsageOutput`,
+  `ContextReasoningUsage` → `TokenUsageReasoning`, `ContextCacheUsage` →
+  `TokenUsageCache`; every matching `*Props` type renames the same way
+  (`ContextProps` → `TokenUsageProps`, and so on). The props, behaviour and
+  rendered DOM are unchanged, so a rename is the whole migration. The module
+  moves from `context.tsx` to `token-usage.tsx` and the story from `AI/Context`
+  to `AI/TokenUsage`; `ContextPanel` and its parts are untouched.
+
 - Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
   now announces its `isStreaming` state. Its only streaming signal was the
   blinking cursor block, which is purely visual, so a screen-reader user

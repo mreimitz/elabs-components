@@ -86,12 +86,12 @@ import {
   ApprovalCardTitle,
 } from "./confirmation";
 import {
-  Context,
-  ContextContent,
-  ContextContentFooter,
-  ContextContentHeader,
-  ContextTrigger,
-} from "./context";
+  TokenUsage,
+  TokenUsageContent,
+  TokenUsageContentFooter,
+  TokenUsageContentHeader,
+  TokenUsageTrigger,
+} from "./token-usage";
 import {
   ContextPanel,
   ContextPanelBody,
@@ -564,13 +564,13 @@ function WorkspaceContextPanel() {
   return (
     <ContextPanel>
       <ContextPanelHeader title="Context">
-        <Context usedTokens={42000} maxTokens={200000} modelId="anthropic/claude-opus-4">
-          <ContextTrigger />
-          <ContextContent>
-            <ContextContentHeader />
-            <ContextContentFooter />
-          </ContextContent>
-        </Context>
+        <TokenUsage usedTokens={42000} maxTokens={200000} modelId="anthropic/claude-opus-4">
+          <TokenUsageTrigger />
+          <TokenUsageContent>
+            <TokenUsageContentHeader />
+            <TokenUsageContentFooter />
+          </TokenUsageContent>
+        </TokenUsage>
       </ContextPanelHeader>
       <ContextPanelBody root={<ContextRailRoot />} detail={<ContextRailDetail />} />
     </ContextPanel>

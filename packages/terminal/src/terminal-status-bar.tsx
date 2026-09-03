@@ -38,8 +38,8 @@ import { forwardRef } from "react";
  *    VISIBLE text label — colour is a redundant enhancement here, never the
  *    only channel (`.claude/rules/accessibility.md`).
  * 2. **`context` is a pair of ALREADY-FORMATTED strings**, not numbers this
- *    component derives. `SessionStatusBar` docks a whole `<Context />` via
- *    `children` because `context.tsx` (tokenlens) owns that abbreviation
+ *    component derives. `SessionStatusBar` docks a whole `<TokenUsage />` via
+ *    `children` because `token-usage.tsx` (tokenlens) owns that abbreviation
  *    math; `@elabs-ai/components-terminal` cannot import
  *    `@elabs-ai/components-ai` (sibling packages — see
  *    `.claude/rules/terminal-components.md` § Reuse means promotion), so it

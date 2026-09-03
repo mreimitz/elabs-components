@@ -634,14 +634,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ConfirmationRequest | component |  | `@elabs-ai/components-ai` |  |
 | ConfirmationTitle | component |  | `@elabs-ai/components-ai` |  |
 | Connection | component |  | `@elabs-ai/components-ai` | The in-flight connection line drawn while the user drags a new edge on the Canvas. |
-| Context | component |  | `@elabs-ai/components-ai` | Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown. |
-| ContextCacheUsage | component |  | `@elabs-ai/components-ai` |  |
-| ContextContent | component |  | `@elabs-ai/components-ai` |  |
-| ContextContentBody | component |  | `@elabs-ai/components-ai` |  |
-| ContextContentFooter | component |  | `@elabs-ai/components-ai` |  |
-| ContextContentHeader | component |  | `@elabs-ai/components-ai` |  |
-| ContextInputUsage | component |  | `@elabs-ai/components-ai` |  |
-| ContextOutputUsage | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanel | component |  | `@elabs-ai/components-ai` | The chat workspace's right context rail — sources, produced assets and a root↔detail drill-in. |
 | ContextPanelBody | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanelDetail | component |  | `@elabs-ai/components-ai` |  |
@@ -649,8 +641,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ContextPanelProvider | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanelSection | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanelTrigger | component |  | `@elabs-ai/components-ai` |  |
-| ContextReasoningUsage | component |  | `@elabs-ai/components-ai` |  |
-| ContextTrigger | component |  | `@elabs-ai/components-ai` |  |
 | Controls | component |  | `@elabs-ai/components-ai` | Zoom / fit / lock controls for the agent workspace Canvas. |
 | Conversation | component |  | `@elabs-ai/components-ai` | Auto-stick-to-bottom chat transcript region. |
 | ConversationContent | component |  | `@elabs-ai/components-ai` |  |
@@ -936,6 +926,16 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TestSuiteContent | component |  | `@elabs-ai/components-ai` |  |
 | TestSuiteName | component |  | `@elabs-ai/components-ai` |  |
 | TestSuiteStats | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsage | component |  | `@elabs-ai/components-ai` | Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown. |
+| TokenUsageCache | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContent | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContentBody | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContentFooter | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContentHeader | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageInput | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageOutput | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageReasoning | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageTrigger | component |  | `@elabs-ai/components-ai` |  |
 | Tool | component |  | `@elabs-ai/components-ai` | Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error. |
 | Toolbar | component |  | `@elabs-ai/components-ai` | A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls. |
 | ToolContent | component |  | `@elabs-ai/components-ai` |  |
