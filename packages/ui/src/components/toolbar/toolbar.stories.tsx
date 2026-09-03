@@ -28,7 +28,7 @@ import {
  * expect there.
  */
 const meta = {
-  title: "Foundation/Toolbar",
+  title: "Layout/Toolbar",
   component: Toolbar,
   tags: ["autodocs"],
   parameters: { layout: "padded" },

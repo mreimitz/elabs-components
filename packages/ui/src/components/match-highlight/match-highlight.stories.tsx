@@ -4,7 +4,7 @@ import { Button } from "../button";
 import { MatchHighlight, queryToRanges } from "./match-highlight";
 
 const meta = {
-  title: "Typography/MatchHighlight",
+  title: "Display/MatchHighlight",
   component: MatchHighlight,
   tags: ["autodocs"],
   parameters: {
