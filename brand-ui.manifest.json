@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T11:27:54.154Z",
+  "generatedAt": "2026-09-03T12:25:02.822Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -1875,79 +1875,19 @@
           "module": "packages/ai/src/mic-selector.tsx"
         },
         {
-          "name": "MODEL_SELECTOR_LOGO_BASE_URL",
+          "name": "MODEL_PROVIDER_LOGO_BASE_URL",
           "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
+          "module": "packages/ai/src/model-provider-logo.tsx"
         },
         {
-          "name": "ModelSelector",
+          "name": "ModelProviderLogo",
           "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
+          "module": "packages/ai/src/model-provider-logo.tsx"
         },
         {
-          "name": "ModelSelectorContent",
+          "name": "ModelProviderLogoGroup",
           "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorDialog",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorEmpty",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorGroup",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorInput",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorItem",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorList",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorLogo",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorLogoGroup",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorName",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorSeparator",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorShortcut",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorTrigger",
-          "kind": "value",
-          "module": "packages/ai/src/model-selector.tsx"
+          "module": "packages/ai/src/model-provider-logo.tsx"
         },
         {
           "name": "Node",
@@ -4127,60 +4067,12 @@
           "module": "packages/ai/src/mic-selector.tsx"
         },
         {
-          "name": "ModelSelectorContentProps",
-          "module": "packages/ai/src/model-selector.tsx"
+          "name": "ModelProviderLogoGroupProps",
+          "module": "packages/ai/src/model-provider-logo.tsx"
         },
         {
-          "name": "ModelSelectorDialogProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorEmptyProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorGroupProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorInputProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorItemProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorListProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorLogoGroupProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorLogoProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorNameProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorSeparatorProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorShortcutProps",
-          "module": "packages/ai/src/model-selector.tsx"
-        },
-        {
-          "name": "ModelSelectorTriggerProps",
-          "module": "packages/ai/src/model-selector.tsx"
+          "name": "ModelProviderLogoProps",
+          "module": "packages/ai/src/model-provider-logo.tsx"
         },
         {
           "name": "MultiEnumFieldSpec",
@@ -8243,61 +8135,7 @@
           ],
           "props": []
         },
-        "ModelSelector": {
-          "extends": [
-            "ComponentProps<typeof Dialog>"
-          ],
-          "props": []
-        },
-        "ModelSelectorContent": {
-          "extends": [
-            "ComponentProps<typeof DialogContent>"
-          ],
-          "props": [
-            {
-              "name": "title",
-              "optional": true,
-              "type": "ReactNode"
-            }
-          ]
-        },
-        "ModelSelectorDialog": {
-          "extends": [
-            "ComponentProps<typeof CommandDialog>"
-          ],
-          "props": []
-        },
-        "ModelSelectorEmpty": {
-          "extends": [
-            "ComponentProps<typeof CommandEmpty>"
-          ],
-          "props": []
-        },
-        "ModelSelectorGroup": {
-          "extends": [
-            "ComponentProps<typeof CommandGroup>"
-          ],
-          "props": []
-        },
-        "ModelSelectorInput": {
-          "extends": [
-            "ComponentProps<typeof CommandInput>"
-          ],
-          "props": []
-        },
-        "ModelSelectorItem": {
-          "extends": [
-            "ComponentProps<typeof CommandItem>"
-          ],
-          "props": []
-        },
-        "ModelSelectorList": {
-          "extends": [
-            "ComponentProps<typeof CommandList>"
-          ],
-          "props": []
-        },
-        "ModelSelectorLogo": {
+        "ModelProviderLogo": {
           "extends": [
             "Omit<ComponentProps<\"img\">, \"alt\">"
           ],
@@ -8306,7 +8144,7 @@
               "name": "src",
               "optional": true,
               "type": "string",
-              "description": "Override the logo URL — point at a self-hosted or bundled asset when a CSP blocks `models.dev`. Defaults to `${MODEL_SELECTOR_LOGO_BASE_URL}/<provider>.svg`."
+              "description": "Override the logo URL — point at a self-hosted or bundled asset when a CSP blocks `models.dev`. Defaults to `${MODEL_PROVIDER_LOGO_BASE_URL}/<provider>.svg`."
             },
             {
               "name": "fallback",
@@ -8316,33 +8154,9 @@
             }
           ]
         },
-        "ModelSelectorLogoGroup": {
+        "ModelProviderLogoGroup": {
           "extends": [
             "ComponentProps<\"div\">"
-          ],
-          "props": []
-        },
-        "ModelSelectorName": {
-          "extends": [
-            "ComponentProps<\"span\">"
-          ],
-          "props": []
-        },
-        "ModelSelectorSeparator": {
-          "extends": [
-            "ComponentProps<typeof CommandSeparator>"
-          ],
-          "props": []
-        },
-        "ModelSelectorShortcut": {
-          "extends": [
-            "ComponentProps<typeof CommandShortcut>"
-          ],
-          "props": []
-        },
-        "ModelSelectorTrigger": {
-          "extends": [
-            "ComponentProps<typeof DialogTrigger>"
           ],
           "props": []
         },
@@ -11128,7 +10942,7 @@
             ],
             "pairsWith": [
               "Conversation",
-              "ModelSelector"
+              "ModelPicker"
             ]
           },
           "stateTokens": {
@@ -11199,7 +11013,7 @@
               "ContextCacheUsage"
             ],
             "pairsWith": [
-              "ModelSelector"
+              "ModelPicker"
             ]
           },
           "antiPatterns": [
@@ -11674,28 +11488,33 @@
             "Skipping MicSelectorEmpty — no devices (or no permission) is a real state, not a blank popover."
           ]
         },
-        "ModelSelector": {
-          "purpose": "Command-palette picker for the active model, grouped by provider.",
+        "ModelProviderLogo": {
+          "purpose": "The mark of an AI model provider, sized for a row in a model list.",
           "category": "ai",
           "relationships": {
             "usedInside": [
-              "Composer",
-              "PromptInputTools"
+              "ModelPicker",
+              "CommandItem"
             ],
             "contains": [
-              "ModelSelectorTrigger",
-              "ModelSelectorContent",
-              "ModelSelectorItem"
+              "ModelProviderLogoGroup"
+            ],
+            "pairsWith": [
+              "ModelPicker",
+              "CommandDialog"
+            ],
+            "avoidNextTo": [
+              "ServiceLogo — that one is the registry-driven mark for any OTHER third-party service, and never fetches at runtime"
             ]
           },
           "stateTokens": {
-            "surface": "the CommandDialog shell: border-none + outline-border (an outline, not a border)",
-            "highlighted": "data-[selected=true]:bg-accent + text-accent-foreground — inherited from CommandItem"
+            "blocked": "onError swaps the img for a neutral Lucide glyph (or the caller's `fallback`) — never a broken-image icon"
           },
           "antiPatterns": [
-            "Calling a provider API from the selector — it emits a selection; the app owns model configuration (D5).",
-            "Using a plain Select for a long provider list — ModelSelector gives typeahead and grouping.",
-            "Translating provider/model brand names — mark them i18n-exempt instead."
+            "Shipping the default models.dev URL into a deployment with a restrictive img-src — self-host and pass `src`, or set `fallback` (docs/CSP-AND-NETWORK.md).",
+            "Reaching for it as a general service-logo slot — a non-AI-provider mark is ServiceLogo (@elabs-ai/components-icons), which is registry-driven and never fetched.",
+            "Translating provider brand names in the surrounding row — mark them i18n-exempt instead.",
+            "Building a model palette by wrapping it in a bespoke selector component — an inline pill is ModelPicker, a ⌘K palette is CommandDialog + Command* composed directly."
           ]
         },
         "Node": {
@@ -11940,7 +11759,7 @@
             ],
             "pairsWith": [
               "PromptInputMode",
-              "ModelSelector"
+              "ModelPicker"
             ]
           },
           "stateTokens": {
@@ -11965,7 +11784,7 @@
             ],
             "pairsWith": [
               "PromptInputEffort",
-              "ModelSelector",
+              "ModelPicker",
               "PermissionModeSelect"
             ]
           },
@@ -26769,6 +26588,10 @@
           "module": "packages/ui/src/components/combobox/combobox.tsx"
         },
         {
+          "name": "CommandDialogProps",
+          "module": "packages/ui/src/components/command/command.tsx"
+        },
+        {
           "name": "CommandProps",
           "module": "packages/ui/src/components/command/command.tsx"
         },
@@ -28893,6 +28716,25 @@
               "optional": true,
               "type": "(id: string | undefined) => void",
               "description": "Reports the DOM `id` cmdk assigned to the currently highlighted item, so an input rendered OUTSIDE this `Command` tree (a composer textarea, a combobox trigger) can set `aria-activedescendant` without querying `[role=\"option\"]` positionally. Fires with `undefined` when nothing is highlighted. cmdk owns each item's `id`/`role`/`aria-selected` and applies them AFTER the consumer spread, so a consumer-supplied `id` on `CommandItem` is silently dropped (`CommandItem` warns about this in development) — this callback is the supported way to obtain it. See also the `useCommandActiveItemId` hook for reading the same value from a descendant already inside the `<Command>` tree. It fires for EVERY highlight change, including the item cmdk auto-highlights on mount and the one it re-highlights after each filter keystroke — the two states cmdk's own `state.selectedItemId` misses."
+            }
+          ]
+        },
+        "CommandDialog": {
+          "extends": [
+            "ComponentPropsWithoutRef<typeof Dialog>"
+          ],
+          "props": [
+            {
+              "name": "filter",
+              "optional": true,
+              "type": "ComponentPropsWithoutRef<typeof CommandPrimitive>[\"filter\"]",
+              "description": "Custom cmdk ranking (e.g. strict substring instead of fuzzy)."
+            },
+            {
+              "name": "title",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "The dialog's accessible name, rendered `sr-only`. OPTIONAL, and deliberately so: callers that already render their own `DialogTitle` in `children` must not be forced to move it, and `@elabs-ai/components-ai`'s `VoiceSelectorDialog` passes this whole prop type straight through. Supply it when you have no visible title — a `Dialog` with no accessible name is a Radix warning and an axe violation."
             }
           ]
         },

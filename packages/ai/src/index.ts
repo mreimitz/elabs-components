@@ -62,7 +62,7 @@ export * from "./message-form-spec";
 export * from "./message-table";
 export * from "./message-table-spec";
 export * from "./mic-selector";
-export * from "./model-selector";
+export * from "./model-provider-logo";
 export * from "./motion-config";
 export * from "./node";
 export * from "./open-in-chat";

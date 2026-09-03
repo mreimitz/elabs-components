@@ -76,9 +76,9 @@
   "models.dev": {
     "directive": "img-src",
     "kind": "fetch",
-    "note": "ModelSelectorLogo's default provider logo SVGs.",
+    "note": "ModelProviderLogo's default provider logo SVGs.",
     "escapeHatch": "Pass `src` for a self-hosted asset, or `fallback`; a blocked load renders a neutral glyph.",
-    "usedBy": ["packages/ai/src/model-selector.tsx"]
+    "usedBy": ["packages/ai/src/model-provider-logo.tsx"]
   },
   "scira.ai": {
     "directive": "none",

@@ -610,7 +610,7 @@ export const INTENT = {
     relationships: {
       usedInside: ["ChatShell"],
       contains: ["PromptInput", "PromptInputTextarea", "PromptInputTools", "PromptInputSubmit"],
-      pairsWith: ["Conversation", "ModelSelector"],
+      pairsWith: ["Conversation", "ModelPicker"],
     },
     stateTokens: { submit: "status=ready|submitted|streaming|error" },
     antiPatterns: [
@@ -777,22 +777,26 @@ export const INTENT = {
     ],
   },
 
-  ModelSelector: {
-    purpose: "Command-palette picker for the active model, grouped by provider.",
+  ModelProviderLogo: {
+    purpose: "The mark of an AI model provider, sized for a row in a model list.",
     category: "ai",
     relationships: {
-      usedInside: ["Composer", "PromptInputTools"],
-      contains: ["ModelSelectorTrigger", "ModelSelectorContent", "ModelSelectorItem"],
+      usedInside: ["ModelPicker", "CommandItem"],
+      contains: ["ModelProviderLogoGroup"],
+      pairsWith: ["ModelPicker", "CommandDialog"],
+      avoidNextTo: [
+        "ServiceLogo — that one is the registry-driven mark for any OTHER third-party service, and never fetches at runtime",
+      ],
     },
     stateTokens: {
-      surface: "the CommandDialog shell: border-none + outline-border (an outline, not a border)",
-      highlighted:
-        "data-[selected=true]:bg-accent + text-accent-foreground — inherited from CommandItem",
+      blocked:
+        "onError swaps the img for a neutral Lucide glyph (or the caller's `fallback`) — never a broken-image icon",
     },
     antiPatterns: [
-      "Calling a provider API from the selector — it emits a selection; the app owns model configuration (D5).",
-      "Using a plain Select for a long provider list — ModelSelector gives typeahead and grouping.",
-      "Translating provider/model brand names — mark them i18n-exempt instead.",
+      "Shipping the default models.dev URL into a deployment with a restrictive img-src — self-host and pass `src`, or set `fallback` (docs/CSP-AND-NETWORK.md).",
+      "Reaching for it as a general service-logo slot — a non-AI-provider mark is ServiceLogo (@elabs-ai/components-icons), which is registry-driven and never fetched.",
+      "Translating provider brand names in the surrounding row — mark them i18n-exempt instead.",
+      "Building a model palette by wrapping it in a bespoke selector component — an inline pill is ModelPicker, a ⌘K palette is CommandDialog + Command* composed directly.",
     ],
   },
 
@@ -1891,7 +1895,7 @@ export const INTENT = {
     relationships: {
       usedInside: ["Composer", "PromptInput"],
       contains: ["ContextTrigger", "ContextContent", "ContextInputUsage", "ContextCacheUsage"],
-      pairsWith: ["ModelSelector"],
+      pairsWith: ["ModelPicker"],
     },
     antiPatterns: [
       "Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.",
@@ -2510,7 +2514,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["PromptInputTools", "PromptInput", "Composer"],
-      pairsWith: ["PromptInputEffort", "ModelSelector", "PermissionModeSelect"],
+      pairsWith: ["PromptInputEffort", "ModelPicker", "PermissionModeSelect"],
     },
     stateTokens: {
       label: "text-body for the active mode name",
@@ -2529,7 +2533,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["PromptInputTools", "PromptInput", "Composer"],
-      pairsWith: ["PromptInputMode", "ModelSelector"],
+      pairsWith: ["PromptInputMode", "ModelPicker"],
     },
     stateTokens: {
       filled: "bg-primary border-primary — every step at or before the selected level",

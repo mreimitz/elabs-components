@@ -371,24 +371,13 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - MicSelectorList
 - MicSelectorTrigger
 - MicSelectorValue
-- MODEL_SELECTOR_LOGO_BASE_URL
-- ModelSelector — Command-palette picker for the active model, grouped by provider.
-  - avoid: Calling a provider API from the selector — it emits a selection; the app owns model configuration (D5).
-  - avoid: Using a plain Select for a long provider list — ModelSelector gives typeahead and grouping.
-  - avoid: Translating provider/model brand names — mark them i18n-exempt instead.
-- ModelSelectorContent
-- ModelSelectorDialog
-- ModelSelectorEmpty
-- ModelSelectorGroup
-- ModelSelectorInput
-- ModelSelectorItem
-- ModelSelectorList
-- ModelSelectorLogo
-- ModelSelectorLogoGroup
-- ModelSelectorName
-- ModelSelectorSeparator
-- ModelSelectorShortcut
-- ModelSelectorTrigger
+- MODEL_PROVIDER_LOGO_BASE_URL
+- ModelProviderLogo — The mark of an AI model provider, sized for a row in a model list.
+  - avoid: Shipping the default models.dev URL into a deployment with a restrictive img-src — self-host and pass `src`, or set `fallback` (docs/CSP-AND-NETWORK.md).
+  - avoid: Reaching for it as a general service-logo slot — a non-AI-provider mark is ServiceLogo (@elabs-ai/components-icons), which is registry-driven and never fetched.
+  - avoid: Translating provider brand names in the surrounding row — mark them i18n-exempt instead.
+  - avoid: Building a model palette by wrapping it in a bespoke selector component — an inline pill is ModelPicker, a ⌘K palette is CommandDialog + Command* composed directly.
+- ModelProviderLogoGroup
 - Node — A workspace-graph node — a Card with source/target handles, headed and slotted.
   - avoid: Confusing it with FlowNode — FlowNode is the author-built canvas node in the flow package; this is the in-chat agent graph's node (ADR 0018).
   - avoid: Declaring handles it does not use — `handles` drives the connectable sides, so a stray one invites an impossible edge.
