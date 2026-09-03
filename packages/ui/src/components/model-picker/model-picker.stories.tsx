@@ -61,12 +61,15 @@ const meta = {
     docs: {
       description: {
         component:
-          "The INLINE composer pill; the full palette in a dialog is `ModelSelector` " +
-          "(`@elabs-ai/components-ai`) — see " +
+          "The INLINE composer pill; a full palette in a dialog is a `CommandDialog` " +
+          "you compose yourself — see " +
           "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A compact pill that opens a grouped, searchable target list anchored under itself — " +
-          "sized for a composer footer. The inline sibling of `@elabs-ai/components-ai`'s " +
-          "`ModelSelector`, which is the same `Command` internals in a modal `Dialog`.\n\n" +
+          "sized for a composer footer.\n\n" +
+          "**Which one to reach for.** An inline pill in a composer footer → this component. " +
+          "A full ⌘K palette → compose `CommandDialog` + `Command*` from " +
+          "`@elabs-ai/components-ui` directly; there is no separate selector component " +
+          "wrapping them.\n\n" +
           "**`Command` lives in a `Popover`, never a `DropdownMenu`.** `DropdownMenuContent` owns " +
           "roving tabindex and its own typeahead; both fight a real `<input>` in its subtree, so " +
           "arrow keys move the menu's focus instead of cmdk's highlight and typing never reaches " +

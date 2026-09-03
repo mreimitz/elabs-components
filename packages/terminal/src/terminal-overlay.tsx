@@ -132,7 +132,7 @@ export const TerminalOverlay = forwardRef<HTMLDivElement, TerminalOverlayProps>(
           ref={ref}
           data-slot="terminal-overlay"
           // Radix warns without either a rendered Description or an explicit
-          // opt-out — mirrors `voice-selector.tsx` / `model-selector.tsx`.
+          // opt-out — mirrors `voice-selector.tsx` in `@elabs-ai/components-ai`.
           {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
             // Hides DialogContent's own baked-in close icon — see the module

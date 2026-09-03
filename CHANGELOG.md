@@ -58,6 +58,42 @@
   unless you pass the prop, and `tools` no longer swallows the named slots — it
   overrides the default attach button only.
 
+- Removed: the `ModelSelector*` family is gone from `@elabs-ai/components-ai`.
+  It was never a second model picker — eleven of its fourteen exports were
+  one-line pass-throughs of components `@elabs-ai/components-ui` already ships,
+  so `ModelSelectorGroup` _was_ `CommandGroup`, `ModelSelectorItem` _was_
+  `CommandItem` and `ModelSelectorDialog` _was_ `CommandDialog`. Deleted
+  outright, with no deprecated alias: `ModelSelector`, `ModelSelectorTrigger`,
+  `ModelSelectorContent`, `ModelSelectorDialog`, `ModelSelectorInput`,
+  `ModelSelectorList`, `ModelSelectorEmpty`, `ModelSelectorGroup`,
+  `ModelSelectorItem`, `ModelSelectorShortcut`, `ModelSelectorSeparator`,
+  `ModelSelectorName` and their twelve `*Props` types. **What to reach for
+  instead:** a full ⌘K palette is `CommandDialog` + `Command`/`CommandInput`/
+  `CommandList`/`CommandEmpty`/`CommandGroup`/`CommandItem`/`CommandShortcut`/
+  `CommandSeparator` from `@elabs-ai/components-ui`, composed directly; an
+  inline pill in a composer footer is `ModelPicker`, also from
+  `@elabs-ai/components-ui`, which is the one real implementation and is
+  unchanged. `DialogTrigger` replaces `ModelSelectorTrigger` one-for-one.
+
+- Changed: the provider-logo half of that module survives under a name that says
+  what it is. `@elabs-ai/components-ai` now exports `ModelProviderLogo`,
+  `ModelProviderLogoGroup`, `MODEL_PROVIDER_LOGO_BASE_URL`,
+  `ModelProviderLogoProps` and `ModelProviderLogoGroupProps` — previously
+  `ModelSelectorLogo`, `ModelSelectorLogoGroup`,
+  `MODEL_SELECTOR_LOGO_BASE_URL`, `ModelSelectorLogoProps` and
+  `ModelSelectorLogoGroupProps`. Rename-only: the rendering, the `src` /
+  `fallback` / `onError` escape hatches for a restrictive `img-src`, and the
+  default `models.dev` origin are all byte-identical. Its Storybook page moves
+  from `AI/ModelSelectorLogo` to `AI/ModelProviderLogo`.
+
+- Added: `CommandDialog` (`@elabs-ai/components-ui`) accepts an optional
+  `title`, rendered as the dialog's `sr-only` accessible name. This is the one
+  capability the deleted alias shell had that the base package lacked, so a ⌘K
+  palette no longer needs a hand-placed `DialogTitle` for its name. It is
+  optional by design — a caller that already renders its own `DialogTitle` in
+  `children` keeps working unchanged. The prop type is exported as
+  `CommandDialogProps`.
+
 - Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
   now announces its `isStreaming` state. Its only streaming signal was the
   blinking cursor block, which is purely visual, so a screen-reader user

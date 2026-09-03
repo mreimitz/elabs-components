@@ -38,7 +38,7 @@
   "packages/ai/src/message-table.tsx": [2, 0],
   "packages/ai/src/message.tsx": [16, 16],
   "packages/ai/src/mic-selector.tsx": [9, 0],
-  "packages/ai/src/model-selector.tsx": [15, 0],
+  "packages/ai/src/model-provider-logo.tsx": [3, 0],
   "packages/ai/src/motion-config.tsx": [1, 0],
   "packages/ai/src/node.tsx": [7, 0],
   "packages/ai/src/open-in-chat.tsx": [12, 0],

@@ -10,4 +10,5 @@ export {
   CommandShortcut,
   useCommandActiveItemId,
   type CommandProps,
+  type CommandDialogProps,
 } from "./command";

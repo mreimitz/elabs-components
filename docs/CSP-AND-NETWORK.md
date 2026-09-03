@@ -31,7 +31,7 @@ matches `docs/csp-policy.json` and every relaxation carries a named carve-out).
 
 | Origin                                            | Directive                 | Who                                       | Escape hatch                                                                                                            |
 | ------------------------------------------------- | ------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `models.dev`                                      | `img-src`                 | `ModelSelectorLogo` provider logos        | `<ModelSelectorLogo src="/local/x.svg">`, or `fallback`. A blocked load renders a neutral glyph — never a broken image. |
+| `models.dev`                                      | `img-src`                 | `ModelProviderLogo` provider logos        | `<ModelProviderLogo src="/local/x.svg">`, or `fallback`. A blocked load renders a neutral glyph — never a broken image. |
 | `ejiidnob33g9ap1r.public.blob.vercel-storage.com` | `connect-src`             | `Persona` Rive `.riv` artwork             | Self-host the six files (see `PERSONA_SOURCES`) and pass `<Persona src={…}>`. A blocked load renders the fallback orb.  |
 | `basemaps.cartocdn.com`                           | `connect-src` + `img-src` | `MapCanvas` default basemap style + tiles | Pass `mapStyle` for a self-hosted style, or `blank` for no basemap.                                                     |
 
@@ -39,7 +39,7 @@ matches `docs/csp-policy.json` and every relaxation carries a named carve-out).
 `models.dev` fetch above: it never fetches a remote asset — a consuming app
 registers its own marks (`registerServiceLogos`) as local/bundled assets or
 inline JSX, so it needs no `img-src`/`connect-src` allowance at all. Reach for
-it when you don't want the `models.dev` dependency; `ModelSelectorLogo` stays
+it when you don't want the `models.dev` dependency; `ModelProviderLogo` stays
 for its existing consumers.
 
 Minimum policy to keep all three working as shipped:
@@ -444,7 +444,7 @@ by not rendering a feature** — they are not a floor.
 ## 3. Offline / air-gapped checklist
 
 1. Self-host the Persona `.riv` files; pass `src` (or don't render `Persona`).
-2. Self-host provider logos; pass `src` to `ModelSelectorLogo` (or `fallback`).
+2. Self-host provider logos; pass `src` to `ModelProviderLogo` (or `fallback`).
 3. Pass `mapStyle` (or `blank`) to `MapCanvas`.
 4. Don't render `OpenIn*`.
 5. Fonts already ship inside `@elabs-ai/components-tokens` — no remote font origin is used.

@@ -84,19 +84,20 @@ package deliberately diverges, is `packages/terminal/references/agent-session-fa
 ## Model selection
 
 **The rule.** An inline pill that lives in a composer footer →
-[Core/ModelPicker](?path=/docs/core-modelpicker--docs). A full command palette in a
-modal dialog → `ModelSelector` (`@elabs-ai/components-ai`).
+[Core/ModelPicker](?path=/docs/core-modelpicker--docs). A full ⌘K palette in a modal
+dialog → compose [Overlays/Command](?path=/docs/overlays-command--docs)'s `CommandDialog`
+directly.
 
-Both render the same grouped, searchable `Command` list; `ModelPicker` anchors it in a
-popover under the pill, `ModelSelector` puts it in a `Dialog`. The dialog variant lives
-in the AI package because its provider logo fetches from a remote origin
-(`models.dev`), which the foundation package must not own — see
-[AI/ModelSelectorLogo](?path=/docs/ai-modelselectorlogo--docs) for the self-hosting and
-blocked-load behaviour.
+There is deliberately **no third component** for the dialog case. `@elabs-ai/components-ai`
+used to export a `ModelSelector` whose parts were one-line pass-throughs to `Dialog` and
+`Command`; it was deleted in #136 rather than kept as a name for something the foundation
+package already does. Both surfaces render the same grouped, searchable `Command` list —
+`ModelPicker` anchors it in a popover under the pill, a `CommandDialog` puts it in a modal.
 
-**`ModelSelector` has no story of its own yet**, which is why this section links to the
-logo sub-part instead. That gap is tracked; until it closes, read the component source
-or `brand-ui docs ModelSelector` for its prop surface.
+The one piece that genuinely belongs to the AI package is the provider mark, because it
+fetches from a remote origin (`models.dev`) that the foundation package must not own —
+see [AI/ModelProviderLogo](?path=/docs/ai-modelproviderlogo--docs) for the self-hosting
+and blocked-load behaviour.
 
 ## Toolbars
 

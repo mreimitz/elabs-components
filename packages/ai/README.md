@@ -44,7 +44,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-454 exported components — including `Agent`, `AgentContent`, `AgentEvent`, `AgentHeader`, `AgentInstructions`.
+442 exported components — including `Agent`, `AgentContent`, `AgentEvent`, `AgentHeader`, `AgentInstructions`.
 
 Don't guess the API — ask the CLI:
 
@@ -151,7 +151,7 @@ restrictive CSP these fail — usually silently.
 
 | What                               | Origin                                                        | Directive         | Escape hatch                                                    |
 | ---------------------------------- | ------------------------------------------------------------- | ----------------- | --------------------------------------------------------------- |
-| `ModelSelectorLogo` provider logos | `models.dev`                                                  | `img-src`         | `src` for a self-hosted asset, or `fallback`                    |
+| `ModelProviderLogo` provider logos | `models.dev`                                                  | `img-src`         | `src` for a self-hosted asset, or `fallback`                    |
 | `Persona` Rive artwork             | `*.public.blob.vercel-storage.com`                            | `connect-src`     | self-host and pass `src`; blocked loads render a fallback orb   |
 | `OpenIn*` deep links               | chatgpt.com, claude.ai, cursor.com, scira.ai, t3.chat, v0.app | none (navigation) | don't render the component — note the prompt travels in the URL |
 

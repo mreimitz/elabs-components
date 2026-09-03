@@ -4,12 +4,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   Command,
+  CommandDialog,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
   useCommandActiveItemId,
 } from "./command";
+import { DialogTitle } from "../dialog";
 
 // jsdom does not implement `Element.prototype.scrollIntoView`, and `cmdk`
 // calls it unconditionally (not feature-detected — it's a third-party
@@ -276,5 +278,47 @@ describe("Command — external combobox input wiring (integration)", () => {
       expect(nowSelected.id).not.toBe(firstId);
       expect(input).toHaveAttribute("aria-activedescendant", nowSelected.id);
     });
+  });
+});
+
+/**
+ * RM-010 — `CommandDialog` grew a `title` prop when the `ModelSelector` alias
+ * shell in `@elabs-ai/components-ai` was deleted; the `sr-only` `DialogTitle`
+ * was the one capability that shell had and `ui` lacked.
+ *
+ * It MUST stay optional. `@elabs-ai/components-ai`'s `VoiceSelectorDialog`
+ * spreads `ComponentProps<typeof CommandDialog>` straight through, and callers
+ * that already render their own `DialogTitle` in `children` must not be forced
+ * to move it. Both branches are asserted so a later "make it required" change
+ * fails here rather than in a downstream package.
+ */
+describe("CommandDialog — optional title (RM-010)", () => {
+  it("names the dialog from `title`, rendered sr-only", () => {
+    render(
+      <CommandDialog open title="Command palette">
+        <CommandList>
+          <CommandItem>Calendar</CommandItem>
+        </CommandList>
+      </CommandDialog>,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAccessibleName("Command palette");
+    expect(screen.getByText("Command palette")).toHaveClass("sr-only");
+  });
+
+  it("renders no title of its own when `title` is omitted — a caller's own DialogTitle still wins", () => {
+    render(
+      <CommandDialog open>
+        <DialogTitle>Caller-owned title</DialogTitle>
+        <CommandList>
+          <CommandItem>Calendar</CommandItem>
+        </CommandList>
+      </CommandDialog>,
+    );
+
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Caller-owned title");
+    // Exactly one heading — CommandDialog did not add a second, competing one.
+    expect(screen.getAllByText(/title/i)).toHaveLength(1);
   });
 });

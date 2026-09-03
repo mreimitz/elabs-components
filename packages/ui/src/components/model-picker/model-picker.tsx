@@ -108,9 +108,10 @@ function Row({
  * A compact pill that opens a grouped, searchable target list anchored under
  * itself — sized to sit in a composer footer.
  *
- * The inline sibling of `@elabs-ai/components-ai`'s `ModelSelector`,
- * which is the same `Command` internals in a modal `Dialog`. Reach for that one
- * for a full command palette; reach for this one for an in-place picker.
+ * **Which one to reach for.** An inline pill in a composer footer, anchored
+ * under itself → this component. A full ⌘K palette → compose `CommandDialog` +
+ * `Command*` from this package directly; there is no separate "selector"
+ * component wrapping them.
  *
  * **`Command` lives inside a `Popover`, never a `DropdownMenu`, and that is not
  * a stylistic choice.** `DropdownMenuContent` owns roving tabindex and its own
