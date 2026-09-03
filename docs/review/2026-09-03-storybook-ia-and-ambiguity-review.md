@@ -8,10 +8,10 @@ Scope: the live sidebar at `localhost:6006` (read from `/index.json`, 301 titles
 
 Two stories use top-level groups that are not in `storySort.order`, so Storybook appends them after `Patterns` in import order:
 
-| Title | File | Should be |
-|---|---|---|
-| `Foundation/Toolbar` (singular) | `packages/ui/src/components/toolbar/toolbar.stories.tsx:31` | `Layout/Toolbar` (it is a component, not a token doc; guidelines say base components never go under Foundations) |
-| `Typography/MatchHighlight` | `packages/ui/src/components/match-highlight/match-highlight.stories.tsx:7` | `Display/MatchHighlight` (or `Data/MatchHighlight`, since it is a search-hit highlighter) |
+| Title                           | File                                                                       | Should be                                                                                                        |
+| ------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Foundation/Toolbar` (singular) | `packages/ui/src/components/toolbar/toolbar.stories.tsx:31`                | `Layout/Toolbar` (it is a component, not a token doc; guidelines say base components never go under Foundations) |
+| `Typography/MatchHighlight`     | `packages/ui/src/components/match-highlight/match-highlight.stories.tsx:7` | `Display/MatchHighlight` (or `Data/MatchHighlight`, since it is a search-hit highlighter)                        |
 
 This is exactly the failure mode the 2026-06-15 IA review named, and `STORYBOOK_GUIDELINES.md` still says the gate "would make this load-bearing (currently a comment-enforced convention)". It drifted again within three months. Recommendation: add the gate now (`scripts/check-storybook-groups.mjs`: parse `index.json` or the story titles, fail on any top-level segment not in `storySort.order`). It is a 30-line script and the repo already has the pattern (`check-sidebar-drift.mjs`).
 
@@ -77,16 +77,16 @@ Ranked by how likely an agent or a new developer picks the wrong one. "Intention
 
 Eight one-to-one pairs, each a "console skin" of an AI-package component:
 
-| Terminal | AI | Notes |
-|---|---|---|
-| TerminalComposer | Composer | Terminal one has mode/effort/slash; Composer does not (see 2.1) |
-| TerminalSlashMenu | PromptInputSlash | Terminal imports the AI one, so this is a real skin |
-| TerminalStatusBar | SessionStatusBar | Same props shape (workspace, branch, model, progress) |
-| TerminalToolCall | Tool / ToolResultCard | Terminal "derived from claude-tool-call.tsx" |
-| TerminalPermission | ApprovalCard (`confirmation.tsx`) | |
-| TerminalTodoList | Task / Plan | |
-| TerminalDiffHunk | DiffView | |
-| TerminalTranscriptRow / TerminalEventLine | Message / AgentEvent | |
+| Terminal                                  | AI                                | Notes                                                           |
+| ----------------------------------------- | --------------------------------- | --------------------------------------------------------------- |
+| TerminalComposer                          | Composer                          | Terminal one has mode/effort/slash; Composer does not (see 2.1) |
+| TerminalSlashMenu                         | PromptInputSlash                  | Terminal imports the AI one, so this is a real skin             |
+| TerminalStatusBar                         | SessionStatusBar                  | Same props shape (workspace, branch, model, progress)           |
+| TerminalToolCall                          | Tool / ToolResultCard             | Terminal "derived from claude-tool-call.tsx"                    |
+| TerminalPermission                        | ApprovalCard (`confirmation.tsx`) |                                                                 |
+| TerminalTodoList                          | Task / Plan                       |                                                                 |
+| TerminalDiffHunk                          | DiffView                          |                                                                 |
+| TerminalTranscriptRow / TerminalEventLine | Message / AgentEvent              |                                                                 |
 
 The split is documented in `packages/terminal/references/agent-session-family.md` and the ADR, but nowhere in Storybook. Neither group's docs page says "if you are building a chat, use AI; if you are building a CLI-style agent console, use Terminal". Recommendation: an MDX page `Docs/AI vs Terminal` with that one decision rule and the table above, linked from both groups' first story. Also put `Terminal` directly after `AI` in `storySort.order` so the relationship reads in the sidebar.
 
