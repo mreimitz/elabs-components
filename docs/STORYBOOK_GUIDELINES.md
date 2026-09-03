@@ -10,30 +10,48 @@ Order = **primitives → composites → domain packages → utilities → demos*
 top-level group MUST be listed in `preview.tsx`'s `storySort.order`; an unlisted
 group sorts to the bottom in arbitrary story-import order.
 
+Everything NOT named in that array sorts **alphabetically**
+(`storySort.method: "alphabetical"`), so a new component lands in a predictable
+place without an edit to the array. A nested child array is reserved for the
+three groups below whose children carry a reading order alphabetical would
+scramble — Docs, Foundations and Patterns.
+
+**This numbered list must match `storySort.order` group for group, in the same
+order.** The two had already drifted once — the array carried Terminal, Viewer and
+Maps while this list stopped at 20 entries — so keep them in step; see "Adding a
+group" below.
+
 1. **Docs** — in reading order (explicit in `storySort.order`, NOT alphabetical):
-   **Introduction** (what it is) → **Getting Started** (how to consume) → the agent/MCP
-   detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI Output Contract).
-2. **Foundations** — the design/token layer: Colors, Typography, Spacing & Radius,
-   Elevation, Motion, Decoration, Theming. (Tokens and scales, NOT components.)
+   **Introduction** (what it is) → **Getting Started** (how to consume) → the
+   agent/MCP detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI
+   Output Contract for Agents → View Toolbar Contract → Testing Charts in jsdom).
+2. **Foundations** — the design/token layer, in reading order (explicit, NOT
+   alphabetical): Colors → Typography → Spacing & Radius → Elevation → Motion →
+   Decoration → Paper → Theming. (Tokens and scales, NOT components.)
 3. **Core** — base UI primitives from `@elabs-ai/components-ui` (Badge, Button, Card, Input, …).
 4. **Icons** — brand/product icon vocabulary + BrandLogo.
 5. **Forms** — inputs and form controls.
-6. **Display** — presentational primitives (Avatar, Progress, Separator, …).
+6. **Display** — presentational primitives (Avatar, MatchHighlight, Progress, Separator, …).
 7. **Disclosure** — Accordion, Collapsible.
 8. **Navigation** — Breadcrumb, Menubar, Pagination, Tree, Wizard, …
 9. **Overlays** — Dialog, Popover, Tooltip, Sheet, … (portalled surfaces).
 10. **Feedback** — Toast and other transient feedback.
 11. **States** — Alert, Empty / Error / Loading state, Skeleton.
-12. **Layout** — app shells, sidebars, page scaffolding.
+12. **Layout** — app shells, sidebars, page scaffolding, Toolbar.
 13. **Data** — tables and data surfaces (`@elabs-ai/components-data` grid + `@elabs-ai/components-ui` table primitives).
 14. **Charts** — `@elabs-ai/components-charts`.
 15. **AI** — `@elabs-ai/components-ai` chat / agent surfaces.
-16. **Editor** — `@elabs-ai/components-editor`.
-17. **Flow** — `@elabs-ai/components-flow` canvas.
-18. **Marketing** — `@elabs-ai/components-marketing`.
-19. **Providers** — non-visual providers (LocaleProvider, …).
-20. **Patterns** — full composed demos: `Patterns/Templates`, `Patterns/Scenarios`,
-    `Patterns/Blocks`.
+16. **Terminal** — `@elabs-ai/components-terminal`: the console skin of the AI family, which
+    is why it sits directly after AI rather than with the other domain packages.
+17. **Editor** — `@elabs-ai/components-editor`.
+18. **Viewer** — `@elabs-ai/components-viewer`.
+19. **Flow** — `@elabs-ai/components-flow` canvas.
+20. **Maps** — `@elabs-ai/components-maps`.
+21. **Marketing** — `@elabs-ai/components-marketing`.
+22. **Providers** — non-visual providers (LocaleProvider, …).
+23. **Patterns** — full composed demos, in that order: `Patterns/Templates` (whole
+    screens) → `Patterns/Scenarios` (multi-screen journeys) → `Patterns/Blocks`
+    (copy-own building blocks). Alphabetical would interleave the three.
 
 ## Foundations vs Core
 
@@ -82,6 +100,12 @@ signpost the other on both stories (via `parameters.docs.description.component`)
 
 ## Adding a group
 
-Add it to `preview.tsx`'s `storySort.order` in the right tier, and to the list
-above. A CI gate that fails when a story's top-level group is missing from the
-order array would make this load-bearing (currently a comment-enforced convention).
+Add it to `preview.tsx`'s `storySort.order` in the right tier, and to the numbered
+list above — same groups, same order. A CI gate that fails when a story's
+top-level group is missing from the order array would make this load-bearing
+(currently a comment-enforced convention).
+
+The array has to stay **inline** in `preview.tsx`: Storybook derives the order in
+`index.json` by statically parsing that file, and its parser throws on any
+identifier — an imported const, a local const in the same file, and a spread all
+fail the build. A gate reading the array must parse the literal in place.
