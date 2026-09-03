@@ -1,1 +1,6 @@
-export { SplitPanel, type SplitPanelProps, type SplitPanelTone } from "./split-panel";
+export {
+  SplitPanel,
+  splitPaneVariants,
+  type SplitPanelProps,
+  type SplitPanelTone,
+} from "./split-panel";

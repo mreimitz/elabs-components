@@ -4,7 +4,23 @@ import { SplitPanel } from "./split-panel";
 const meta = {
   title: "Layout/SplitPanel",
   component: SplitPanel,
-  parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "A fixed two-pane layout with per-pane surface tones — panes the user can drag to " +
+          "resize are `Layout/Resizable`, see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
+          '`SplitPanel` sizes the start pane with a CSS grid track (`startSize`, e.g. `"320px"`, ' +
+          '`"40%"`, `"1fr"`) rather than a percentage, so layout is predictable in tests and SSR ' +
+          "with no client-side measurement. The three-tone `plain`/`muted`/`card` ground-offset " +
+          "system on `startTone`/`endTone` is exported as `splitPaneVariants` — apply it to a " +
+          "`ResizablePanel` for the identical tiering on a draggable layout.",
+      },
+    },
+  },
 } satisfies Meta<typeof SplitPanel>;
 export default meta;
 type Story = StoryObj<typeof meta>;
