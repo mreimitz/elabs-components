@@ -11,9 +11,11 @@ const meta = {
     docs: {
       description: {
         component:
-          "The canonical KPI tile, owned by @elabs-ai/components-ui (ADR 0012). @elabs-ai/components-charts re-exports this exact " +
-          "component as Charts/MetricCard — they are the same component, so import from @elabs-ai/components-ui for app " +
-          "UI, or from @elabs-ai/components-charts when already in a charts context. Don't fork a second KPI tile.",
+          "The canonical KPI tile, owned by @elabs-ai/components-ui (ADR 0012). @elabs-ai/components-charts re-exports this " +
+          "EXACT component, so import it from @elabs-ai/components-ui for app UI, or from @elabs-ai/components-charts when " +
+          "you are already in a charts context — both resolve to the component documented here, which is why the " +
+          "sidebar carries one MetricCard entry and not two. Don't fork a second KPI tile. The `visual` slot is " +
+          "shown by the WithSparkline story, which fills it with a real @elabs-ai/components-charts mini-chart.",
       },
     },
   },

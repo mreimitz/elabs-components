@@ -20,7 +20,7 @@ import { SlashMenu } from "./slash-menu";
  * keystroke dispatch can't be fully simulated in jsdom.
  */
 const meta = {
-  title: "Editor/MarkdownEditor/Slash menu",
+  title: "Editor/MarkdownEditor/SlashMenu",
   component: SlashMenu,
   tags: ["autodocs"],
   parameters: {

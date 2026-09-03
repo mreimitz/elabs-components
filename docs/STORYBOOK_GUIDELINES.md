@@ -24,8 +24,9 @@ group" below.
 1. **Docs** — in reading order (explicit in `storySort.order`, NOT alphabetical):
    **Introduction** (what it is) → **Getting Started** (how to consume) → the
    agent/MCP detail pages (brand-ui MCP Server → Storybook MCP for Agents → AI
-   Output Contract for Agents → View Toolbar Contract → Testing Charts in
-   jsdom → Storybook Theme Harness) → Choosing between similar components.
+   Output Contract for Agents → AI Content Access → View Toolbar Contract →
+   Testing Charts in jsdom → Storybook Theme Harness) → Choosing between similar
+   components.
 2. **Foundations** — the design/token layer, in reading order (explicit, NOT
    alphabetical): Colors → Typography → Spacing & Radius → Elevation → Motion →
    Decoration → Paper → Theming → Localization. (Tokens and scales, plus the two
@@ -88,8 +89,12 @@ their domain peers. That is intentional.
 When the same capability is reachable two ways, pick a **canonical** entry and
 signpost the other on both stories (via `parameters.docs.description.component`):
 
-- `Core/MetricCard` (`@elabs-ai/components-ui`, canonical, ADR 0012) ↔ `Charts/MetricCard`
-  (re-export) — the same component.
+- `Core/MetricCard` (`@elabs-ai/components-ui`, canonical, ADR 0012) — the ONE entry
+  for the KPI tile. `@elabs-ai/components-charts` re-exports the same component, but
+  a re-export gets **no sidebar entry of its own**: two identical entries read as
+  two components, and the "they are the same thing" signpost was only visible
+  once you opened one of them (RM-005). Say it in the canonical story's
+  description instead.
 - `Data/Table` (`@elabs-ai/components-ui`, simple static table) ↔ `Data/DataTable`
   (`@elabs-ai/components-data`, TanStack grid) — choose by need.
 

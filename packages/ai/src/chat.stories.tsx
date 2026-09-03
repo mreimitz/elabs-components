@@ -89,9 +89,23 @@ function ChatExample() {
 }
 
 const meta = {
-  title: "AI/Chat",
+  title: "Patterns/Scenarios/Chat",
   component: ChatExample,
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "A demo SCENARIO, not an importable component — the smallest end-to-end chat " +
+          "composed from the @elabs-ai/components-ai grammar: a scrolling " +
+          "[Conversation](?path=/story/ai-conversation--default) of " +
+          "[Messages](?path=/story/ai-message--presets) with reasoning and sources, plus a " +
+          "[Composer](?path=/story/ai-composer--default). Reach for " +
+          "[ChatShell](?path=/story/ai-chatshell--default) when you want that header + " +
+          "transcript + composer layout as one component instead of assembling it yourself.",
+      },
+    },
+  },
 } satisfies Meta<typeof ChatExample>;
 export default meta;
 type Story = StoryObj<typeof meta>;
