@@ -203,6 +203,8 @@
     "states:check": "node scripts/check-state-coverage.mjs",
     "states:check:test": "node --test scripts/check-state-coverage.test.mjs",
     "storybook": "pnpm --filter @elabs-ai/components-docs dev",
+    "storybook-groups:check": "node scripts/check-storybook-groups.mjs",
+    "storybook-groups:check:test": "node --test scripts/check-storybook-groups.test.mjs",
     "surface-elevation:check": "node scripts/check-surface-elevation.mjs",
     "surface-elevation:check:test": "node --test scripts/check-surface-elevation.test.mjs",
     "surface:preview": "node scripts/build-surface-preview.mjs",

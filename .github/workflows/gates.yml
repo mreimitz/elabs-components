@@ -215,6 +215,7 @@ jobs:
         run: |
           pnpm docs:check
           pnpm docs-links:check
+          pnpm storybook-groups:check
           pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
           pnpm source-theme-count:check
@@ -330,6 +331,7 @@ jobs:
           pnpm slop:check:test
           pnpm source-theme-count:check:test
           pnpm states:check:test
+          pnpm storybook-groups:check:test
           pnpm surface-elevation:check:test
           pnpm surface:preview:test
           pnpm templates:check:test
