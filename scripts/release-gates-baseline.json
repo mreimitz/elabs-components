@@ -157,6 +157,8 @@
     "source-theme-count:check:test",
     "states:check",
     "states:check:test",
+    "story-descriptions:check",
+    "story-descriptions:check:test",
     "storybook-groups:check",
     "storybook-groups:check:test",
     "surface-elevation:check",

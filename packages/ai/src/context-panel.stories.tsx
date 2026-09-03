@@ -18,7 +18,15 @@ const meta = {
   title: "AI/ContextPanel",
   component: ContextPanel,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The chat workspace’s right context RAIL: produced assets, a preview drill-in, and an always-mounted width tween so an external `ContextPanelTrigger` can drive it from anywhere inside `ContextPanelProvider`. Nothing to do with `AI/TokenUsage`, the context-WINDOW usage ring, which carried the name `Context` until it was renamed for exactly this confusion; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). Below the mobile breakpoint the rail degrades to a right-side `Sheet` driven by the same state.",
+      },
+    },
+  },
 } satisfies Meta<typeof ContextPanel>;
 export default meta;
 type Story = StoryObj<typeof meta>;

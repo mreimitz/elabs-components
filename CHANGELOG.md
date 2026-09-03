@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
+  look-alike a reader is most likely to reach for by mistake, so `brand-ui docs
+<Component>` (and the `brand-ui` MCP `docs` tool, and the per-package `llms`
+  spokes) says which of two similar components to use. Twenty existing entries
+  gained a "don't confuse it with X" anti-pattern — `Tool`, `Message`,
+  `Conversation`, `ChatShell`, `Task`, `Plan`, `AgentEvent`, `ApprovalCard`,
+  `ToolResultCard`, `ContextPanel`, `TokenUsage`, `Badge`, `Input`, `Sandbox`,
+  `MessageCompare` — and five components that had no intent entry at all gained
+  one: `Sidebar`, `AppSidebar`, `ViewToolbar`, `StatusBadge` and `DiffEditor`.
+  No component API changed.
+
 - Added / Changed (**breaking rename**): `@elabs-ai/components-ui`'s `SplitPanel`
   exports its per-pane ground-offset tone `cva` as `splitPaneVariants` — the
   internal `paneToneVariants` name is **gone outright**, no deprecated alias.

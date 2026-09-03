@@ -6,6 +6,14 @@ const meta = {
   title: "Core/StatusBadge",
   component: StatusBadge,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone so two states are still tellable apart in greyscale. A neutral label or count with no state semantics is `Core/Badge`; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
   args: { status: "complete" },
   argTypes: {
     status: {

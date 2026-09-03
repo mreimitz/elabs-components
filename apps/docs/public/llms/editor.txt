@@ -12,7 +12,10 @@ Import from `@elabs-ai/components-editor`. Part of brand-ui — see the root `ll
   - avoid: Forgetting the worker setup (import "@elabs-ai/components-editor/monaco-environment") — IntelliSense is off without it.
 - CodeWorkspace
 - CopyButton
-- DiffEditor
+- DiffEditor — The Monaco side-by-side diff surface — the only diff in the library that can be typed into.
+  - avoid: Reaching for it to READ a patch — that is DiffView in @elabs-ai/components-ai, which needs no editor engine at all.
+  - avoid: Reaching for it to approve or reject hunks — that is ChangeReview, which owns the trust gate.
+  - avoid: Rendering it in a jsdom unit test — it is Monaco; test the surrounding wiring and leave the editor to a browser story.
 - EDITOR_LANGUAGES
 - EditorContextMenu
 - EditorToolbar

@@ -5,7 +5,15 @@ import { AgentStep, AgentTimeline } from "./agent-timeline";
 const meta = {
   title: "AI/AgentEvent",
   component: AgentEvent,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The CHAT lifecycle/guard event line; the console skin is `Terminal/TerminalEventLine`, and both read the same `AgentEventPhase` / `AgentEventOutcome` / `CheckSummary` model from `@elabs-ai/components-ui` — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). It is an `AgentStep` VARIANT on the existing `AI/AgentTimeline` rail, not a second spine: the same ordered list, distinguished by glyph and label.",
+      },
+    },
+  },
   tags: ["autodocs"],
 } satisfies Meta<typeof AgentEvent>;
 export default meta;

@@ -30,7 +30,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AppShell — Top-level application frame — sidebar + header + content region.
   - avoid: Deep wrapper nesting inside the shell — keep the DOM shallow; one element, one job.
   - avoid: Painting the shell's chrome recess in the component — the chrome→canvas hierarchy is a THEME property; fix --sidebar's lightness, not AppShell.
-- AppSidebar
+- AppSidebar — The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children.
+  - avoid: Reaching for it when the shell is genuinely bespoke — then compose the Sidebar primitive set directly instead of fighting the typed slots.
+  - avoid: Passing a whole nav tree through the header slot — header is the identity row; the navigation is children.
+  - avoid: Forgetting SidebarInset for the content pane — the canvas must read brighter than the chrome, which is what stops an app shell going flat.
 - AspectRatio
 - AttributionPanel
 - ATTRIBUTIONS
@@ -38,6 +41,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - AvatarFallback
 - AvatarImage
 - Badge (variant=default*|secondary|outline|success|warning|destructive|info) — Compact status/label chip (status, count, category).
+  - avoid: Using it to carry an execution status — that is StatusBadge, whose closed seven-state vocabulary pairs a distinct glyph with every tone so the state survives greyscale.
   - avoid: Using a Badge as a clickable control — use a Button (Badge is not interactive).
   - avoid: Encoding status by color alone — pair the color with text/icon for non-color users.
 - BentoGrid
@@ -201,6 +205,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - IconButton
 - ILLUSTRATION_ACCENT_VAR
 - Input — Single-line text field — the base form input.
+  - avoid: Hand-building a search field on it — a leading icon plus a clear button is SearchInput in @elabs-ai/components-data.
   - avoid: Input without an associated Label (visible or sr-only) — it has no accessible name.
   - avoid: Blocking paste (onPaste + preventDefault) — never block paste.
   - avoid: Wrong type/inputmode — use type=email/tel/url/number + inputmode so mobile keyboards + validation match.
@@ -342,7 +347,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SheetPortal
 - SheetTitle
 - SheetTrigger
-- Sidebar
+- Sidebar — The sidebar PRIMITIVE set you assemble yourself — provider, rail, header/content/footer regions and the menu parts.
+  - avoid: Rebuilding the Sidebar -> SidebarHeader -> SidebarContent -> SidebarFooter skeleton by hand — that skeleton IS AppSidebar, which takes typed header/footer slots.
+  - avoid: Rendering it outside SidebarProvider — the open state, the keyboard shortcut and the cookie persistence all live on the provider.
+  - avoid: Conditionally mounting it to collapse it — the collapse is a width tween on an always-mounted rail; a conditional mount cannot animate.
 - SidebarContent
 - SidebarFooter
 - SidebarGroup
@@ -375,7 +383,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - STATUS_ROLE
 - STATUS_TONE_ICONS
 - STATUS_TONES
-- StatusBadge (status=pending|running|complete|awaiting-approval|denied|failed|skipped · tone=neutral|info|success|warning|destructive · size=sm|md*)
+- StatusBadge (status=pending|running|complete|awaiting-approval|denied|failed|skipped · tone=neutral|info|success|warning|destructive · size=sm|md*) — The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone.
+  - avoid: Using it for a neutral label or a count — that is Badge; this one asserts an execution state.
+  - avoid: Inventing an eighth status by passing a custom label into the canonical enum — map an out-of-vocabulary state ONCE, near your domain, through the {label, tone, icon} form.
+  - avoid: Relying on the tone alone to distinguish two states — the glyph is the second channel that keeps them apart in greyscale.
 - STATUSES
 - StatusIcon
 - STREAMDOWN_TRANSLATION_KEYS
@@ -430,7 +441,10 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - Tree
 - TreeSelect
 - UnsupportedJsonSchemaError
-- ViewToolbar
+- ViewToolbar — The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop.
+  - avoid: Giving it role=toolbar — it deliberately does not claim that role; a dense row that should cost ONE tab stop with arrow-key roving is Toolbar.
+  - avoid: Putting the primary page action in it — this row acts on the VIEW; a page-level action belongs in the page header.
+  - avoid: Hiding the result count while filters are applied — the count is how a person tells an empty filter from an empty dataset.
 - ViewToolbarFilters
 - VirtualSelect
 - Wizard

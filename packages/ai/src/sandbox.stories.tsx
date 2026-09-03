@@ -13,7 +13,15 @@ import {
 const meta = {
   title: "AI/Sandbox",
   component: Sandbox,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "A collapsible, tabbed view of a code-execution tool part — code in, output out, read-only. The real Monaco editing surface is `Editor/CodeEditor`; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `Sandbox` is the only place that knows whether the run body has arrived, so `SandboxContent` renders a layout-shaped skeleton while `loading`.",
+      },
+    },
+  },
 } satisfies Meta<typeof Sandbox>;
 export default meta;
 type Story = StoryObj<typeof meta>;

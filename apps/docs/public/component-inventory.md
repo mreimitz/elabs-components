@@ -123,7 +123,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AlertTitle | component |  | `@elabs-ai/components-ui` |  |
 | APPROVAL_SCOPE_DESCRIPTION_KEYS | component |  | `@elabs-ai/components-ui` |  |
 | AppShell | component |  | `@elabs-ai/components-ui` | Top-level application frame — sidebar + header + content region. |
-| AppSidebar | component |  | `@elabs-ai/components-ui` |  |
+| AppSidebar | component |  | `@elabs-ai/components-ui` | The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children. |
 | AspectRatio | component |  | `@elabs-ai/components-ui` |  |
 | AttributionPanel | component |  | `@elabs-ai/components-ui` |  |
 | ATTRIBUTIONS | component |  | `@elabs-ai/components-ui` |  |
@@ -398,7 +398,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SheetPortal | component |  | `@elabs-ai/components-ui` |  |
 | SheetTitle | component |  | `@elabs-ai/components-ui` |  |
 | SheetTrigger | component |  | `@elabs-ai/components-ui` |  |
-| Sidebar | component |  | `@elabs-ai/components-ui` |  |
+| Sidebar | component |  | `@elabs-ai/components-ui` | The sidebar PRIMITIVE set you assemble yourself — provider, rail, header/content/footer regions and the menu parts. |
 | SidebarContent | component |  | `@elabs-ai/components-ui` |  |
 | SidebarFooter | component |  | `@elabs-ai/components-ui` |  |
 | SidebarGroup | component |  | `@elabs-ai/components-ui` |  |
@@ -431,7 +431,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | STATUS_ROLE | component |  | `@elabs-ai/components-ui` |  |
 | STATUS_TONE_ICONS | component |  | `@elabs-ai/components-ui` |  |
 | STATUS_TONES | component |  | `@elabs-ai/components-ui` |  |
-| StatusBadge | component | status=pending\|running\|complete\|awaiting-approval\|denied\|failed\|skipped · tone=neutral\|info\|success\|warning\|destructive · size=sm\|md* | `@elabs-ai/components-ui` |  |
+| StatusBadge | component | status=pending\|running\|complete\|awaiting-approval\|denied\|failed\|skipped · tone=neutral\|info\|success\|warning\|destructive · size=sm\|md* | `@elabs-ai/components-ui` | The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone. |
 | STATUSES | component |  | `@elabs-ai/components-ui` |  |
 | StatusIcon | component |  | `@elabs-ai/components-ui` |  |
 | STREAMDOWN_TRANSLATION_KEYS | component |  | `@elabs-ai/components-ui` |  |
@@ -492,7 +492,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useThemeTransition | hook |  | `@elabs-ai/components-ui` |  |
 | useTreeKeyboard | hook |  | `@elabs-ai/components-ui` |  |
 | useVirtualListbox | hook |  | `@elabs-ai/components-ui` |  |
-| ViewToolbar | component |  | `@elabs-ai/components-ui` |  |
+| ViewToolbar | component |  | `@elabs-ai/components-ui` | The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop. |
 | ViewToolbarFilters | component |  | `@elabs-ai/components-ui` |  |
 | VirtualSelect | component |  | `@elabs-ai/components-ui` |  |
 | Wizard | component |  | `@elabs-ai/components-ui` |  |
@@ -1224,7 +1224,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CodeEditor | component |  | `@elabs-ai/components-editor` | Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens. |
 | CodeWorkspace | component |  | `@elabs-ai/components-editor` |  |
 | CopyButton | component |  | `@elabs-ai/components-editor` |  |
-| DiffEditor | component |  | `@elabs-ai/components-editor` |  |
+| DiffEditor | component |  | `@elabs-ai/components-editor` | The Monaco side-by-side diff surface — the only diff in the library that can be typed into. |
 | EDITOR_LANGUAGES | component |  | `@elabs-ai/components-editor` |  |
 | EditorContextMenu | component |  | `@elabs-ai/components-editor` |  |
 | EditorToolbar | component |  | `@elabs-ai/components-editor` |  |

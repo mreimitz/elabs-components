@@ -118,6 +118,13 @@ signpost the other on both stories (via `parameters.docs.description.component`)
 ## Every story
 
 - `tags: ["autodocs"]` so it gets a docs page.
+- `parameters.docs.description.component` — one sentence saying what this is,
+  and, when a sibling answers a nearby question, a second naming it and linking
+  [Choosing between similar components]. **Gated** by `pnpm story-descriptions:check`
+  (#152): a story file with no description, or with one too short to say
+  anything, fails. Pre-existing gaps are a ratchet baseline
+  (`scripts/story-description-baseline.json`) that only shrinks — a NEW story
+  cannot be added to it.
 - Curated `argTypes` for the public props on primitives: a one-line `description`,
   a sensible `control`, and `table: { category }` grouping. Don't rely on inferred
   controls alone — they're noisy and weaker for the agent/MCP surface.

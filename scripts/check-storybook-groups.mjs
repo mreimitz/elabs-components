@@ -59,6 +59,13 @@
  *
  * ## What this gate deliberately does NOT check
  *
+ * STORY DESCRIPTIONS. Whether a story carries
+ * `parameters.docs.description.component` is a SIBLING gate,
+ * `scripts/check-story-descriptions.mjs` (RM-016), which imports this module's
+ * `listStoryFiles()` / `maskNonCode()` / `findMetaObjectRange()` / `lineOf()`
+ * seams rather than duplicating them. Two concerns under a name that says
+ * "groups" is the drift these gates exist to close — so it stays a sibling.
+ *
  * TITLE UNIQUENESS. Two story files sharing one title merge into one sidebar
  * page, and in this repo that is on purpose twice over: `Core/MetricCard`
  * (RM-005 folded the sparkline demo onto the canonical page) and
@@ -318,14 +325,26 @@ export function parseStorySortOrder(src) {
  *   title (an MDX page attached with `<Meta of={…} />`, a story file with no
  *   default export) — the caller decides whether that is legal.
  */
-export function extractStoryTitle(src, { mdx = false } = {}) {
-  if (mdx) {
-    const m = /<Meta\b[^>]*?\btitle\s*=\s*"([^"]*)"/s.exec(src);
-    if (!m) return null;
-    return { title: m[1], line: lineOf(src, m.index) };
-  }
-
-  const masked = maskNonCode(src);
+/**
+ * Byte range of the DEFAULT-EXPORTED meta object literal in a story module.
+ *
+ * Walks the path Storybook itself walks: `export default <ident>` → that
+ * identifier's object literal, or `export default { … }` directly. Reading the
+ * meta object (rather than the first matching key anywhere) is load-bearing —
+ * story files are full of `title:`/`parameters:`-shaped keys in `argTypes`, in
+ * demo data and in JSX props, and a first-match scan reads those instead.
+ *
+ * Exported as a seam so a SIBLING gate can address the same object without
+ * re-deriving this walk. `check-story-descriptions.mjs` (RM-016) is the second
+ * caller; a third copy of this loop is the drift class these gates exist to
+ * close.
+ *
+ * @param {string} masked the source with comments and string bodies blanked
+ *   ({@link maskNonCode}) — offsets address the ORIGINAL source unchanged
+ * @returns {{ open: number, close: number } | null} `open` is the `{`, `close`
+ *   its matching `}`; null when there is no readable default-exported literal
+ */
+export function findMetaObjectRange(masked) {
   const def = /\bexport\s+default\s+/.exec(masked);
   if (!def) return null;
   const after = def.index + def[0].length;
@@ -348,6 +367,20 @@ export function extractStoryTitle(src, { mdx = false } = {}) {
 
   const objClose = matchBracket(masked, objOpen);
   if (objClose < 0) return null;
+  return { open: objOpen, close: objClose };
+}
+
+export function extractStoryTitle(src, { mdx = false } = {}) {
+  if (mdx) {
+    const m = /<Meta\b[^>]*?\btitle\s*=\s*"([^"]*)"/s.exec(src);
+    if (!m) return null;
+    return { title: m[1], line: lineOf(src, m.index) };
+  }
+
+  const masked = maskNonCode(src);
+  const range = findMetaObjectRange(masked);
+  if (!range) return null;
+  const { open: objOpen, close: objClose } = range;
 
   // The `title` key at depth 1 of that object literal.
   let depth = 0;

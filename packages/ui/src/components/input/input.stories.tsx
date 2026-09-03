@@ -6,6 +6,14 @@ const meta = {
   title: "Core/Input",
   component: Input,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "The plain text field. A search box with a leading icon and a clear button is `Data/SearchInput`, which is built on this one; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
   args: { placeholder: "you@example.com" },
   argTypes: {
     type: {

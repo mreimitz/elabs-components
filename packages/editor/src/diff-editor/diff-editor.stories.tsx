@@ -5,7 +5,15 @@ const meta = {
   title: "Editor/DiffEditor",
   component: DiffEditor,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "The only diff surface that can be TYPED INTO — Monaco’s side-by-side editor. Reading lines of a patch is `AI/DiffView`, accepting or rejecting per hunk is `AI/ChangeReview`, and reading a patch in a console transcript is `Terminal/TerminalDiffHunk`. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
 } satisfies Meta<typeof DiffEditor>;
 
 export default meta;
