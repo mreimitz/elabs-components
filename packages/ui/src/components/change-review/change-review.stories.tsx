@@ -89,10 +89,30 @@ const meta = {
     docs: {
       description: {
         component:
+          "The ACCEPT/REJECT diff surface; read-only patch lines are `AI/DiffView` and an " +
+          "editable side-by-side is `Editor/DiffEditor` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "AI-edit trust gate. When an agent proposes edits, the human reviews them " +
           "hunk-by-hunk and accepts or rejects each before they apply. Compound " +
           "component with lifted state — compose parts for custom layouts, or use the " +
-          "convenience `<ChangeReview>` root.",
+          "convenience `<ChangeReview>` root.\n\n" +
+          "**Ships from `@elabs-ai/components-ui`**, not from the package this story " +
+          "group names. Stories are grouped by what a component is *for*, which " +
+          "`docs/STORYBOOK_GUIDELINES.md` names as intentional and cites this component " +
+          "as the worked example.\n\n" +
+          "**A hunk’s `before` / `after` are prose, not diff lines.** They are ordinary " +
+          "`ReactNode`s, drawn as a deliberately quiet no-fill comparison — a struck " +
+          "muted “before” above a plain “after”, with the status rail carrying the " +
+          "polarity. This component is not a line renderer and is not going to become " +
+          "one.\n\n" +
+          "**Structured `DiffLine[]` hunks arrive by injection.** The app that depends " +
+          "on both packages passes a `<DiffView>` (`@elabs-ai/components-ai`) through " +
+          "the `renderHunk` render-prop or a hunk’s `after` slot; neither package " +
+          "imports the other. `ChangeHunk` gains no `lines` field and `DiffLine` " +
+          "never moves — a ratified seam, recorded in § 3 of the adoption-architecture " +
+          "decision. The *Injected hunk renderer* story below shows the shape with a " +
+          "stand-in node; the real wiring is *Composed into ChangeReview (ui)* on " +
+          "[AI/DiffView](?path=/docs/ai-diffview--docs).",
       },
     },
   },
@@ -272,6 +292,55 @@ export const CustomRenderer: Story = {
         {approved ? "Accepted" : "Pending"}: {hunk.title}
       </div>
     ),
+  },
+};
+
+// ─── Injected hunk renderer (the DiffView seam) ───────────────────────────────
+//
+// BINDING SEAM — docs/decisions/2026-09-01-brainless-adoption-architecture.md § 3.
+// `ChangeHunk` gains no `lines` field and `DiffLine` never moves into this
+// package. An app that wants structured patch rows inside the trust gate injects
+// a renderer through `renderHunk` (or a hunk's `after` slot); in a real app that
+// node is `<DiffView lines={…} />` from `@elabs-ai/components-ai`.
+//
+// This package has no dependency on that one in EITHER direction — that is the
+// whole point of the seam — so the story stands in for it with a plain node of
+// the same shape. The real composition is the `ChangeReviewComposition` story in
+// `packages/ai/src/diff-view.stories.tsx`, which can import both.
+
+function StandInLineRenderer({ file }: { file: string }) {
+  return (
+    <div
+      data-testid={`injected-${file}`}
+      className="rounded-md bg-surface-muted p-3 text-meta text-muted-foreground"
+    >
+      <span className="font-mono">{`<DiffView lines={…} />`}</span> renders the patch rows for{" "}
+      <span className="font-medium text-foreground">{file}</span> here.
+    </div>
+  );
+}
+
+export const InjectedHunkRenderer: Story = {
+  args: {
+    hunks: HUNKS,
+    renderHunk: (hunk) => <StandInLineRenderer file={hunk.title ?? hunk.id} />,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // The injected node replaces the default before/after prose on every hunk…
+    await waitFor(() => expect(canvas.getByTestId("injected-config/settings.json")).toBeVisible());
+    expect(canvas.getAllByTestId(/^injected-/)).toHaveLength(3);
+
+    // …and the default prose comparison is gone, because the seam replaces it.
+    expect(canvas.queryByText('"timeout": 30')).not.toBeInTheDocument();
+
+    // Approve/reject still belongs to ChangeReview, not to the injected renderer.
+    await userEvent.click(
+      canvas.getByRole("button", { name: /approve hunk: config\/settings\.json/i }),
+    );
+    await waitFor(() => expect(canvas.getByText("1 of 3 approved")).toBeVisible());
+    expect(canvas.getByTestId("injected-config/settings.json")).toBeVisible();
   },
 };
 

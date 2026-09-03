@@ -141,6 +141,7 @@ export const INTENT = {
       invalid: "border-destructive + ring-destructive (aria-invalid)",
     },
     antiPatterns: [
+      "Hand-building a search field on it — a leading icon plus a clear button is SearchInput in @elabs-ai/components-data.",
       "Input without an associated Label (visible or sr-only) — it has no accessible name.",
       "Blocking paste (onPaste + preventDefault) — never block paste.",
       "Wrong type/inputmode — use type=email/tel/url/number + inputmode so mobile keyboards + validation match.",
@@ -251,6 +252,7 @@ export const INTENT = {
     relationships: { usedInside: ["DataTable", "Card", "SidebarMenuItem"] },
     stateTokens: {},
     antiPatterns: [
+      "Using it to carry an execution status — that is StatusBadge, whose closed seven-state vocabulary pairs a distinct glyph with every tone so the state survives greyscale.",
       "Using a Badge as a clickable control — use a Button (Badge is not interactive).",
       "Encoding status by color alone — pair the color with text/icon for non-color users.",
     ],
@@ -397,6 +399,7 @@ export const INTENT = {
     relationships: { contains: ["Conversation", "PromptInput", "Message"] },
     stateTokens: {},
     antiPatterns: [
+      "Reaching for it for a coding-agent CLI surface — the console frame is TerminalConsole, which makes every region inside it flush.",
       "Calling a model inside the component — @elabs-ai/components-ai is presentational/runtime-agnostic; wire useChat in the app.",
       "Hand-rolling the composer footer inside the shell — compose Composer; it is the shipped chat input.",
       "Putting an animated/collapsible context rail in ChatShell.aside — the aside is for a STATIC rail; compose ContextPanelProvider + ContextPanel as a SIBLING of the shell.",
@@ -416,6 +419,7 @@ export const INTENT = {
     },
     stateTokens: {},
     antiPatterns: [
+      "Reaching for it in a console transcript — the console scrolling transcript region is TerminalSurface.",
       "Giving Conversation no sized flex parent — it needs a bounded, flex parent to stick to bottom.",
       "Rendering [] with no ConversationEmptyState — every list needs a real empty state.",
       "Driving scroll position by hand — Conversation owns stick-to-bottom; ConversationScrollButton is the escape hatch.",
@@ -558,6 +562,7 @@ export const INTENT = {
         'NO fill — the assistant branch is only group-[.is-assistant]:text-foreground; its separation is AgentMessage emphasis="answer" → border-s-4 border-s-primary ps-4',
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — one line of a console transcript is TerminalTranscriptRow, not a chat bubble.",
       "Hand-rolling a bubble div — Message already encodes the user/assistant fork (side, fill, data-slot).",
       'Adding a bg-card fill to the assistant turn — the assistant branch is deliberately unfilled; reach for AgentMessage emphasis="answer" (a left rail), not a redundant surface.',
       "Deleting the `is-user` marker class in favour of the data-slot — the `group-[.is-user]:` selectors compile against the class; the attribute is its twin, not a replacement.",
@@ -579,6 +584,7 @@ export const INTENT = {
       state: 'ToolHeader state="input-streaming|input-available|output-available|output-error"',
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — the console skin of a tool call is TerminalToolCall in @elabs-ai/components-terminal; this package must never be imported from there.",
       "Rendering a tool call as plain text — use Tool so the state, input and output stay legible and collapsible.",
       "Showing ToolOutput errorText while the call is still streaming — errors fire only on a terminal, settled failure.",
       "Executing the tool inside the component — Tool renders the part; the app's runtime runs the tool (D5).",
@@ -609,12 +615,22 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["ChatShell"],
-      contains: ["PromptInput", "PromptInputTextarea", "PromptInputTools", "PromptInputSubmit"],
-      pairsWith: ["Conversation", "ModelSelector"],
+      contains: [
+        "PromptInput",
+        "PromptInputTextarea",
+        "PromptInputTools",
+        "PromptInputSubmit",
+        "PromptInputMode",
+        "PromptInputEffort",
+        "PromptInputSlash",
+      ],
+      pairsWith: ["Conversation", "ModelPicker"],
     },
     stateTokens: { submit: "status=ready|submitted|streaming|error" },
     antiPatterns: [
       "Hand-rolling a PromptInput footer per app — Composer is the shipped assembly; reach for it first.",
+      "Dropping to PromptInput to get a mode, effort or slash-command control — Composer exposes all three as props (mode, effort, slashCommands/onSlashCommand); drop to PromptInput only for a bespoke shell.",
+      "Expecting a model name in the footer by default — the old static `model` pill is gone; pass a ModelPicker (@elabs-ai/components-ui) to the `modelPicker` slot.",
       "Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.",
       "Treating the composer as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.",
       "Reaching for surfaceClassName on Composer — it has no such prop; className styles the outer card frame and Composer owns the inner well's shape (surfaceClassName lives on PromptInput).",
@@ -777,22 +793,26 @@ export const INTENT = {
     ],
   },
 
-  ModelSelector: {
-    purpose: "Command-palette picker for the active model, grouped by provider.",
+  ModelProviderLogo: {
+    purpose: "The mark of an AI model provider, sized for a row in a model list.",
     category: "ai",
     relationships: {
-      usedInside: ["Composer", "PromptInputTools"],
-      contains: ["ModelSelectorTrigger", "ModelSelectorContent", "ModelSelectorItem"],
+      usedInside: ["ModelPicker", "CommandItem"],
+      contains: ["ModelProviderLogoGroup"],
+      pairsWith: ["ModelPicker", "CommandDialog"],
+      avoidNextTo: [
+        "ServiceLogo — that one is the registry-driven mark for any OTHER third-party service, and never fetches at runtime",
+      ],
     },
     stateTokens: {
-      surface: "the CommandDialog shell: border-none + outline-border (an outline, not a border)",
-      highlighted:
-        "data-[selected=true]:bg-accent + text-accent-foreground — inherited from CommandItem",
+      blocked:
+        "onError swaps the img for a neutral Lucide glyph (or the caller's `fallback`) — never a broken-image icon",
     },
     antiPatterns: [
-      "Calling a provider API from the selector — it emits a selection; the app owns model configuration (D5).",
-      "Using a plain Select for a long provider list — ModelSelector gives typeahead and grouping.",
-      "Translating provider/model brand names — mark them i18n-exempt instead.",
+      "Shipping the default models.dev URL into a deployment with a restrictive img-src — self-host and pass `src`, or set `fallback` (docs/CSP-AND-NETWORK.md).",
+      "Reaching for it as a general service-logo slot — a non-AI-provider mark is ServiceLogo (@elabs-ai/components-icons), which is registry-driven and never fetched.",
+      "Translating provider brand names in the surrounding row — mark them i18n-exempt instead.",
+      "Building a model palette by wrapping it in a bespoke selector component — an inline pill is ModelPicker, a ⌘K palette is CommandDialog + Command* composed directly.",
     ],
   },
 
@@ -821,6 +841,7 @@ export const INTENT = {
         "role=group + aria-labelledby while the human decides — the card holds focusable controls, so it is not a live region",
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — the console skin is TerminalPermission, which reads the same promoted ApprovalScope model.",
       "Building a second approve/deny widget — ApprovalCard and Confirmation ship from the same module; extend, don't fork.",
       "Running the action the card describes on render — the card emits a decision; the app performs it (D5).",
       "Leaving the request mounted after the human answers — swap to ApprovalCardAccepted/ApprovalCardRejected so the outcome stays legible.",
@@ -854,6 +875,7 @@ export const INTENT = {
       awaiting: "border-s-4 border-s-border-strong rail on the card",
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — the console counterpart of a three-state agent checklist is TerminalTodoList.",
       "Rendering a parse/validation error while the plan is still arriving — a half-streamed plan is not a failure (loading-states.md).",
       "Using Plan for a finished run — a settled trace is a Task; Plan is the intent, not the record.",
       "Hand-rolling the streaming affordance — pass `isStreaming` and let the shipped Shimmer carry it.",
@@ -871,6 +893,7 @@ export const INTENT = {
       pairsWith: ["AgentTimeline", "Plan"],
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — the console counterpart of an agent checklist is TerminalTodoList.",
       "Hand-rolling a `border-s-2` content rail — the execution trace rides AgentTimeline/AgentStep (#192).",
       "Leaving every Task expanded in a settled transcript — only the produced artifact and the final answer stay open.",
       "Bordering the inline file chip — the fill is the gesture; a border on a filled chip is the redundant-border anti-pattern.",
@@ -905,6 +928,7 @@ export const INTENT = {
       pairsWith: ["Tool", "Terminal", "CodeBlock"],
     },
     antiPatterns: [
+      "Reaching for it to let a person EDIT code — this is a read-only view of a code-execution tool part; the real editing surface is CodeEditor in @elabs-ai/components-editor.",
       "Executing anything — Sandbox renders a tool's reported state; it is not a runtime (D5).",
       "Passing a free-form status string — the header takes the AI SDK `ToolUIPart['state']`, so the badge stays consistent with Tool.",
       "Using it for a single file — reach for CodeBlock; the tab bar is only worth it for a multi-file result.",
@@ -1884,22 +1908,105 @@ export const INTENT = {
     ],
   },
 
-  Context: {
+  TokenUsage: {
     purpose:
       "Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown.",
     category: "ai",
     relationships: {
       usedInside: ["Composer", "PromptInput"],
-      contains: ["ContextTrigger", "ContextContent", "ContextInputUsage", "ContextCacheUsage"],
-      pairsWith: ["ModelSelector"],
+      contains: ["TokenUsageTrigger", "TokenUsageContent", "TokenUsageInput", "TokenUsageCache"],
+      pairsWith: ["ModelPicker"],
     },
     antiPatterns: [
+      "Confusing it with ContextPanel — this is the context-WINDOW usage ring; ContextPanel is the chat workspace's right rail of produced assets.",
       "Rendering it as a bare percentage — the trigger is a gauge plus the numbers; a naked number is unreadable at a glance.",
       "Feeding it estimated token counts — it is a factual readout; if the usage is unknown, do not render it.",
       "Putting it inside the transcript — usage is composer chrome, not message content.",
     ],
   },
 
+  Sidebar: {
+    purpose:
+      "The sidebar PRIMITIVE set you assemble yourself — provider, rail, header/content/footer regions and the menu parts.",
+    category: "layout",
+    relationships: {
+      contains: [
+        "SidebarHeader",
+        "SidebarContent",
+        "SidebarFooter",
+        "SidebarMenu",
+        "SidebarMenuButton",
+        "SidebarTrigger",
+        "SidebarInset",
+      ],
+      pairsWith: ["SidebarProvider", "AppSidebar"],
+      avoidNextTo: ["AppSidebar"],
+    },
+    antiPatterns: [
+      "Rebuilding the Sidebar -> SidebarHeader -> SidebarContent -> SidebarFooter skeleton by hand — that skeleton IS AppSidebar, which takes typed header/footer slots.",
+      "Rendering it outside SidebarProvider — the open state, the keyboard shortcut and the cookie persistence all live on the provider.",
+      "Conditionally mounting it to collapse it — the collapse is a width tween on an always-mounted rail; a conditional mount cannot animate.",
+    ],
+  },
+  AppSidebar: {
+    purpose:
+      "The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children.",
+    category: "layout",
+    relationships: {
+      usedInside: ["SidebarProvider"],
+      contains: ["SidebarHeader", "SidebarContent", "SidebarFooter"],
+      pairsWith: ["SidebarInset", "Sidebar"],
+      avoidNextTo: ["Sidebar"],
+    },
+    antiPatterns: [
+      "Reaching for it when the shell is genuinely bespoke — then compose the Sidebar primitive set directly instead of fighting the typed slots.",
+      "Passing a whole nav tree through the header slot — header is the identity row; the navigation is children.",
+      "Forgetting SidebarInset for the content pane — the canvas must read brighter than the chrome, which is what stops an app shell going flat.",
+    ],
+  },
+  ViewToolbar: {
+    purpose:
+      "The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop.",
+    category: "layout",
+    relationships: {
+      contains: ["ViewToolbarFilters", "FilterChip", "ResultCount"],
+      pairsWith: ["DataTable", "SearchInput", "FacetFilter"],
+      avoidNextTo: ["Toolbar"],
+    },
+    antiPatterns: [
+      "Giving it role=toolbar — it deliberately does not claim that role; a dense row that should cost ONE tab stop with arrow-key roving is Toolbar.",
+      "Putting the primary page action in it — this row acts on the VIEW; a page-level action belongs in the page header.",
+      "Hiding the result count while filters are applied — the count is how a person tells an empty filter from an empty dataset.",
+    ],
+  },
+  StatusBadge: {
+    purpose:
+      "The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone.",
+    category: "display",
+    relationships: {
+      pairsWith: ["Badge", "AgentTimeline", "Tool"],
+      avoidNextTo: ["Badge"],
+    },
+    antiPatterns: [
+      "Using it for a neutral label or a count — that is Badge; this one asserts an execution state.",
+      "Inventing an eighth status by passing a custom label into the canonical enum — map an out-of-vocabulary state ONCE, near your domain, through the {label, tone, icon} form.",
+      "Relying on the tone alone to distinguish two states — the glyph is the second channel that keeps them apart in greyscale.",
+    ],
+  },
+  DiffEditor: {
+    purpose:
+      "The Monaco side-by-side diff surface — the only diff in the library that can be typed into.",
+    category: "input",
+    relationships: {
+      pairsWith: ["CodeEditor", "CodeWorkspace"],
+      avoidNextTo: ["DiffView"],
+    },
+    antiPatterns: [
+      "Reaching for it to READ a patch — that is DiffView in @elabs-ai/components-ai, which needs no editor engine at all.",
+      "Reaching for it to approve or reject hunks — that is ChangeReview, which owns the trust gate.",
+      "Rendering it in a jsdom unit test — it is Monaco; test the surrounding wiring and leave the editor to a browser story.",
+    ],
+  },
   ContextPanel: {
     purpose:
       "The chat workspace's right context rail — sources, produced assets and a root↔detail drill-in.",
@@ -1916,6 +2023,7 @@ export const INTENT = {
       pairsWith: ["ContextPanelTrigger", "AssetPreview", "ProducedAssetTree"],
     },
     antiPatterns: [
+      "Confusing it with TokenUsage — this is the workspace's right RAIL of produced assets; TokenUsage is the context-WINDOW usage ring, and carried the name Context until it was renamed.",
       "Conditionally mounting the panel to hide it — it stays mounted and collapses by width, because an unmounted panel cannot animate.",
       "Keeping open/view/selection state outside the provider — an external trigger drives the panel through ContextPanelProvider, not through prop-drilling.",
       "Building a second collapse mechanism — the canonical width tween is the one collapse implementation.",
@@ -1997,6 +2105,7 @@ export const INTENT = {
         'text-destructive-text (TEXT rung, not -foreground) paired with AlertTriangleIcon + role="alert" — colour is never the only channel',
     },
     antiPatterns: [
+      "Reaching for it to show a patch — nothing here is line-level; reading lines of a diff is DiffView and approving hunks is ChangeReview.",
       "Reaching for MessageCompareProvider/useMessageCompare() from a sibling control — both are unexported internal details; MessageCompare always owns a private instance, so use the controlled syncScroll/onSyncScrollChange props instead.",
       "Passing a columns count that disagrees with the number of MessageCompareColumn children — the grid renders from the actual children, not from columns, so a mismatch renders silently with no dev warning.",
       "Expecting a shared 'stick to bottom' driver across columns — each column's scroll is independent by construction; the only cross-column motion is the opt-in syncScroll proportional broadcast.",
@@ -2212,6 +2321,7 @@ export const INTENT = {
       pairsWith: ["Tool", "AutoChart", "MessageTable", "Artifact", "ExpandDialog"],
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — a console renders the same moment through TerminalToolCall in @elabs-ai/components-terminal.",
       "Adding a border to it — elevation IS the separation gesture here; a border on a raised fill is the redundant-border anti-pattern.",
       "Using it for a step that merely ran — that is Tool (rail + inspect); this hosts the produced object.",
       "Importing a chart/table package to render the payload inside it — it stays dependency-light; the consumer passes the node.",
@@ -2450,7 +2560,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["Conversation", "ChatShell"],
-      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "Context"],
+      pairsWith: ["SessionStatusBar", "Shimmer", "PromptInputStop", "TokenUsage"],
     },
     stateTokens: {
       working: "bg-primary on the activity dot; text-muted-foreground for the metrics",
@@ -2470,8 +2580,8 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["ChatShell"],
-      pairsWith: ["TurnStatus", "Context", "SessionHeader"],
-      contains: ["Context"],
+      pairsWith: ["TurnStatus", "TokenUsage", "SessionHeader"],
+      contains: ["TokenUsage"],
     },
     stateTokens: {
       surface: "bg-surface-muted with a border-t hairline — recessed chrome, not a raised card",
@@ -2510,7 +2620,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["PromptInputTools", "PromptInput", "Composer"],
-      pairsWith: ["PromptInputEffort", "ModelSelector", "PermissionModeSelect"],
+      pairsWith: ["PromptInputEffort", "ModelPicker", "PermissionModeSelect"],
     },
     stateTokens: {
       label: "text-body for the active mode name",
@@ -2529,7 +2639,7 @@ export const INTENT = {
     category: "ai",
     relationships: {
       usedInside: ["PromptInputTools", "PromptInput", "Composer"],
-      pairsWith: ["PromptInputMode", "ModelSelector"],
+      pairsWith: ["PromptInputMode", "ModelPicker"],
     },
     stateTokens: {
       filled: "bg-primary border-primary — every step at or before the selected level",
@@ -2557,6 +2667,7 @@ export const INTENT = {
       check: "a visible pass/fail WORD beside the glyph, so the verdict survives greyscale",
     },
     antiPatterns: [
+      "Reaching for it in a console transcript — the console skin is TerminalEventLine, which reads the same promoted AgentEventPhase model.",
       "Adding an eighth status for an event outcome — map onto AgentStep's closed Status instead; the rail owns the vocabulary.",
       "Building a second timeline spine — an event is a step on the existing AgentTimeline rail, not a parallel structure.",
       "Writing a second duration formatter — durations come from formatElapsed in @elabs-ai/components-ui.",

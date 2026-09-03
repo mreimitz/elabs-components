@@ -28,10 +28,18 @@ import {
  * expect there.
  */
 const meta = {
-  title: "Foundation/Toolbar",
+  title: "Layout/Toolbar",
   component: Toolbar,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The one row that genuinely claims the `toolbar` ARIA role: Radix delegates a roving tabindex to it, so ten controls cost one tab stop instead of ten. The row above a list, table or board — filters left, actions right — is `Layout/ViewToolbar`, which deliberately does NOT claim that role because its controls are ordinary tab stops. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
   args: { "aria-label": "Formatting" },
 } satisfies Meta<typeof Toolbar>;
 

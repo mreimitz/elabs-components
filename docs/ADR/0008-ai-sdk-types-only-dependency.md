@@ -111,8 +111,8 @@ two real, narrow type-shape changes in the surface this package renders:
   dynamic description. `AgentTool` renders a static list with no call context
   to invoke that function with, so it now shows the description only when
   `typeof tool.description === "string"`.
-- **`LanguageModelUsage`** (`context.tsx`, `ContextReasoningUsage` /
-  `ContextCacheUsage`) reads `outputTokenDetails.reasoningTokens` and
+- **`LanguageModelUsage`** (`token-usage.tsx`, `TokenUsageReasoning` /
+  `TokenUsageCache`) reads `outputTokenDetails.reasoningTokens` and
   `inputTokenDetails.cacheReadTokens` instead of the flat, deprecated aliases.
   Both fields — nested shape and flat alias — are present in `ai@6.0.0`
   through `ai@7.0.85`, so this read works unchanged across the whole widened

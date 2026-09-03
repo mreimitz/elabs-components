@@ -15,6 +15,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/SessionHeader` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The console-dress launch card above an empty transcript: identity " +
           "(name, model, version, workspace), capabilities, what's new, and " +
           "quick actions with key hints. Every section is independently " +

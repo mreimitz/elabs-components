@@ -14,6 +14,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/TurnStatus` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The in-turn footer line, pinned last in a transcript: while the agent is " +
           "working, the human can see it is alive, how long it has been going, what " +
           "it has spent, and how to stop it. Prop-driven only — it runs no timer of " +

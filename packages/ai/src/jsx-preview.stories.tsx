@@ -50,7 +50,7 @@ const DASHBOARD =
   "</div>";
 
 const meta = {
-  title: "AI/JSX Preview",
+  title: "AI/JSXPreview",
   component: JSXPreview,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof JSXPreview>;

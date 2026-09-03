@@ -8,6 +8,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The STATIC table markup you lay out yourself; the interactive grid is " +
+          "`Data/DataTable` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Low-level static table primitives (header/body/row/cell styling). For sorting, filtering, " +
           "pagination, virtualization, row selection and column management, use the TanStack-powered " +
           "DataTable (see Data/DataTable, @elabs-ai/components-data) instead.",

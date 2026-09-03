@@ -1,30 +1,39 @@
 /**
- * ModelSelector — a command-palette model picker.
+ * ModelProviderLogo — the mark of an AI model provider, sized for a list row.
  *
- * `ModelSelectorLogo` fetches provider marks from a **remote origin**
+ * It fetches provider marks from a **remote origin**
  * (`models.dev`) by default, so a restrictive `img-src` blocks them. Pass `src`
  * to self-host, or `fallback` to control what a blocked load renders — it is
  * never a broken-image glyph. See `docs/CSP-AND-NETWORK.md`.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { ModelSelectorLogo } from "./model-selector";
+import { ModelProviderLogo } from "./model-provider-logo";
 
 const meta = {
-  title: "AI/ModelSelectorLogo",
-  component: ModelSelectorLogo,
+  title: "AI/ModelProviderLogo",
+  component: ModelProviderLogo,
   parameters: {
     layout: "centered",
     docs: {
       description: {
         component:
-          "Provider logo for the model selector. Defaults to fetching from models.dev; pass `src` for a self-hosted asset and `fallback` for the blocked/offline case. A failed load renders a neutral glyph, never a broken image.",
+          "The mark of an AI model provider, sized for a row in a model list. Defaults to " +
+          "fetching from models.dev; pass `src` for a self-hosted asset and `fallback` for the " +
+          "blocked/offline case. A failed load renders a neutral glyph, never a broken image.\n\n" +
+          "**`ModelProviderLogo` vs `ServiceLogo` (`@elabs-ai/components-icons`).** An AI " +
+          "provider mark with a zero-config remote default → this component. Any other " +
+          "third-party service mark, resolved from a registry the app supplies and never " +
+          "fetched → `ServiceLogo`.\n\n" +
+          "For the list this logo sits in: an inline pill in a composer footer → `ModelPicker` " +
+          "(`@elabs-ai/components-ui`); a full ⌘K palette → compose `CommandDialog` + " +
+          "`Command*` from `@elabs-ai/components-ui` directly.",
       },
     },
   },
   args: { provider: "anthropic" },
   tags: ["autodocs"],
-} satisfies Meta<typeof ModelSelectorLogo>;
+} satisfies Meta<typeof ModelProviderLogo>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -64,7 +73,7 @@ export const LiveRemoteLogos: Story = {
     <div className="flex items-center gap-4">
       {(["anthropic", "openai", "google", "mistral"] as const).map((provider) => (
         <figure className="flex flex-col items-center gap-2" key={provider}>
-          <ModelSelectorLogo provider={provider} />
+          <ModelProviderLogo provider={provider} />
           <figcaption className="text-meta text-muted-foreground">{provider}</figcaption>
         </figure>
       ))}

@@ -3,7 +3,15 @@ import { CodeBlock } from "./code-block";
 const meta = {
   title: "AI/CodeBlock",
   component: CodeBlock,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Multi-line highlighted SOURCE: Shiki tokens themed from the `--code-*` tokens, an optional language picker and a copy button. A single-line copyable command is `AI/Snippet`, and a markdown DOCUMENT belongs in `AI/MarkdownView` rather than here — rendering prose as source is the defect that component was added to fix. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
   tags: ["autodocs"],
 } satisfies Meta<typeof CodeBlock>;
 export default meta;

@@ -44,7 +44,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-454 exported components — including `Agent`, `AgentContent`, `AgentEvent`, `AgentHeader`, `AgentInstructions`.
+442 exported components — including `Agent`, `AgentContent`, `AgentEvent`, `AgentHeader`, `AgentInstructions`.
 
 Don't guess the API — ask the CLI:
 
@@ -128,6 +128,14 @@ Presentational AI/chat components — `ChatShell`, `Conversation`, `Message`,
 `PromptInput`/`Composer`, `Tool`, `Reasoning`, `Sources`, `Artifact`,
 `ContextPanel`, and the workspace/agent set.
 
+**`Composer` is the chat input. Every control the `PromptInput` family ships is
+reachable from a `Composer` prop; drop to `PromptInput` only for a bespoke
+shell.** The slots: `modelPicker` (pass a `ModelPicker` from
+`@elabs-ai/components-ui`), `mode` (`PromptInputMode`), `effort`
+(`PromptInputEffort`) and `slashCommands` (`PromptInputSlash`). The footer order
+is `attach · modelPicker · mode · effort │ voice · send`, matching
+`TerminalComposer` so the chat and console skins agree.
+
 The components render the AI SDK `UIMessage` data model. **Your app owns the model
 calls** (`useChat`, transport, providers) — `@elabs-ai/components-ai` imports the `ai` SDK as
 **types only**, never at runtime (D6 / ADR-0008). See `docs/DECISIONS.md` §D5.
@@ -143,7 +151,7 @@ restrictive CSP these fail — usually silently.
 
 | What                               | Origin                                                        | Directive         | Escape hatch                                                    |
 | ---------------------------------- | ------------------------------------------------------------- | ----------------- | --------------------------------------------------------------- |
-| `ModelSelectorLogo` provider logos | `models.dev`                                                  | `img-src`         | `src` for a self-hosted asset, or `fallback`                    |
+| `ModelProviderLogo` provider logos | `models.dev`                                                  | `img-src`         | `src` for a self-hosted asset, or `fallback`                    |
 | `Persona` Rive artwork             | `*.public.blob.vercel-storage.com`                            | `connect-src`     | self-host and pass `src`; blocked loads render a fallback orb   |
 | `OpenIn*` deep links               | chatgpt.com, claude.ai, cursor.com, scira.ai, t3.chat, v0.app | none (navigation) | don't render the component — note the prompt travels in the URL |
 

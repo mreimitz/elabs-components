@@ -16,6 +16,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The console counterpart of `AI/ChatShell` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The console **frame** (ADR 0033, `docs/ADR/0033-terminal-console-frame-and-regions.md`): " +
           "exactly one element in a console draws the edge, the radius, the ground and the lift. " +
           "Everything placed inside it — a transcript, a composer, a status bar — becomes a flush " +

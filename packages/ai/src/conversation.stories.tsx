@@ -5,7 +5,15 @@ import { Message, MessageContent } from "./message";
 const meta = {
   title: "AI/Conversation",
   component: Conversation,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The CHAT scrolling transcript region — stick-to-bottom, with a scroll-to-bottom button once the reader leaves the end. The console counterpart is `Terminal/TerminalSurface`, and the frame around either is `AI/ChatShell` or `Terminal/TerminalConsole`. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
 } satisfies Meta<typeof Conversation>;
 export default meta;
 type Story = StoryObj<typeof meta>;

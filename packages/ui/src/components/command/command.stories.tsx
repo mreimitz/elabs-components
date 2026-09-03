@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { expect, waitFor, within } from "storybook/test";
 import { Calculator, Calendar, CreditCard, Settings, Smile, User } from "lucide-react";
 import { Button } from "../button";
-import { DialogTitle } from "../dialog";
 import {
   Command,
   CommandDialog,
@@ -19,6 +18,20 @@ const meta = {
   title: "Overlays/Command",
   component: Command,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "A grouped, searchable, keyboard-driven list (cmdk). Render it inline, or wrap it " +
+          "in `CommandDialog` for a full ⌘K palette — pass `CommandDialog`'s optional `title` " +
+          "for the dialog's `sr-only` accessible name.\n\n" +
+          "**Choosing between the two model/target pickers.** A full ⌘K palette → compose " +
+          "`CommandDialog` + `Command*` from `@elabs-ai/components-ui` directly; there is no " +
+          "separate selector component. An inline pill in a composer footer that opens the " +
+          "same grouped list anchored under itself → `ModelPicker`.",
+      },
+    },
+  },
   argTypes: {
     label: {
       description: "Accessible label for the command palette (cmdk `label` prop).",
@@ -113,10 +126,7 @@ function CommandPaletteDemo() {
         Open command palette
       </Button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        {/* CommandDialog doesn't ship a built-in title, so supply an sr-only one
-            for the dialog's accessible name. */}
-        <DialogTitle className="sr-only">Command palette</DialogTitle>
+      <CommandDialog open={open} onOpenChange={setOpen} title="Command palette">
         <CommandInput placeholder="Type a command or search…" />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>

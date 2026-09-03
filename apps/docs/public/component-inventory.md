@@ -17,7 +17,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
 | `@elabs-ai/components-ui` | packages/ui | 382 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
-| `@elabs-ai/components-ai` | packages/ai | 454 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
+| `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 130 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
@@ -123,7 +123,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | AlertTitle | component |  | `@elabs-ai/components-ui` |  |
 | APPROVAL_SCOPE_DESCRIPTION_KEYS | component |  | `@elabs-ai/components-ui` |  |
 | AppShell | component |  | `@elabs-ai/components-ui` | Top-level application frame — sidebar + header + content region. |
-| AppSidebar | component |  | `@elabs-ai/components-ui` |  |
+| AppSidebar | component |  | `@elabs-ai/components-ui` | The opinionated application sidebar: the Sidebar skeleton behind typed header and footer slots, with the navigation as children. |
 | AspectRatio | component |  | `@elabs-ai/components-ui` |  |
 | AttributionPanel | component |  | `@elabs-ai/components-ui` |  |
 | ATTRIBUTIONS | component |  | `@elabs-ai/components-ui` |  |
@@ -398,7 +398,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SheetPortal | component |  | `@elabs-ai/components-ui` |  |
 | SheetTitle | component |  | `@elabs-ai/components-ui` |  |
 | SheetTrigger | component |  | `@elabs-ai/components-ui` |  |
-| Sidebar | component |  | `@elabs-ai/components-ui` |  |
+| Sidebar | component |  | `@elabs-ai/components-ui` | The sidebar PRIMITIVE set you assemble yourself — provider, rail, header/content/footer regions and the menu parts. |
 | SidebarContent | component |  | `@elabs-ai/components-ui` |  |
 | SidebarFooter | component |  | `@elabs-ai/components-ui` |  |
 | SidebarGroup | component |  | `@elabs-ai/components-ui` |  |
@@ -431,7 +431,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | STATUS_ROLE | component |  | `@elabs-ai/components-ui` |  |
 | STATUS_TONE_ICONS | component |  | `@elabs-ai/components-ui` |  |
 | STATUS_TONES | component |  | `@elabs-ai/components-ui` |  |
-| StatusBadge | component | status=pending\|running\|complete\|awaiting-approval\|denied\|failed\|skipped · tone=neutral\|info\|success\|warning\|destructive · size=sm\|md* | `@elabs-ai/components-ui` |  |
+| StatusBadge | component | status=pending\|running\|complete\|awaiting-approval\|denied\|failed\|skipped · tone=neutral\|info\|success\|warning\|destructive · size=sm\|md* | `@elabs-ai/components-ui` | The closed seven-state execution-status vocabulary, each state carrying its own icon as well as its own tone. |
 | STATUSES | component |  | `@elabs-ai/components-ui` |  |
 | StatusIcon | component |  | `@elabs-ai/components-ui` |  |
 | STREAMDOWN_TRANSLATION_KEYS | component |  | `@elabs-ai/components-ui` |  |
@@ -492,7 +492,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useThemeTransition | hook |  | `@elabs-ai/components-ui` |  |
 | useTreeKeyboard | hook |  | `@elabs-ai/components-ui` |  |
 | useVirtualListbox | hook |  | `@elabs-ai/components-ui` |  |
-| ViewToolbar | component |  | `@elabs-ai/components-ui` |  |
+| ViewToolbar | component |  | `@elabs-ai/components-ui` | The row above a list, table or board — status and filters on the left, actions on the right, every control its own tab stop. |
 | ViewToolbarFilters | component |  | `@elabs-ai/components-ui` |  |
 | VirtualSelect | component |  | `@elabs-ai/components-ui` |  |
 | Wizard | component |  | `@elabs-ai/components-ui` |  |
@@ -634,14 +634,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ConfirmationRequest | component |  | `@elabs-ai/components-ai` |  |
 | ConfirmationTitle | component |  | `@elabs-ai/components-ai` |  |
 | Connection | component |  | `@elabs-ai/components-ai` | The in-flight connection line drawn while the user drags a new edge on the Canvas. |
-| Context | component |  | `@elabs-ai/components-ai` | Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown. |
-| ContextCacheUsage | component |  | `@elabs-ai/components-ai` |  |
-| ContextContent | component |  | `@elabs-ai/components-ai` |  |
-| ContextContentBody | component |  | `@elabs-ai/components-ai` |  |
-| ContextContentFooter | component |  | `@elabs-ai/components-ai` |  |
-| ContextContentHeader | component |  | `@elabs-ai/components-ai` |  |
-| ContextInputUsage | component |  | `@elabs-ai/components-ai` |  |
-| ContextOutputUsage | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanel | component |  | `@elabs-ai/components-ai` | The chat workspace's right context rail — sources, produced assets and a root↔detail drill-in. |
 | ContextPanelBody | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanelDetail | component |  | `@elabs-ai/components-ai` |  |
@@ -649,8 +641,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ContextPanelProvider | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanelSection | component |  | `@elabs-ai/components-ai` |  |
 | ContextPanelTrigger | component |  | `@elabs-ai/components-ai` |  |
-| ContextReasoningUsage | component |  | `@elabs-ai/components-ai` |  |
-| ContextTrigger | component |  | `@elabs-ai/components-ai` |  |
 | Controls | component |  | `@elabs-ai/components-ai` | Zoom / fit / lock controls for the agent workspace Canvas. |
 | Conversation | component |  | `@elabs-ai/components-ai` | Auto-stick-to-bottom chat transcript region. |
 | ConversationContent | component |  | `@elabs-ai/components-ai` |  |
@@ -743,21 +733,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MicSelectorList | component |  | `@elabs-ai/components-ai` |  |
 | MicSelectorTrigger | component |  | `@elabs-ai/components-ai` |  |
 | MicSelectorValue | component |  | `@elabs-ai/components-ai` |  |
-| MODEL_SELECTOR_LOGO_BASE_URL | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelector | component |  | `@elabs-ai/components-ai` | Command-palette picker for the active model, grouped by provider. |
-| ModelSelectorContent | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorDialog | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorEmpty | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorGroup | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorInput | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorItem | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorList | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorLogo | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorLogoGroup | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorName | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorSeparator | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorShortcut | component |  | `@elabs-ai/components-ai` |  |
-| ModelSelectorTrigger | component |  | `@elabs-ai/components-ai` |  |
+| MODEL_PROVIDER_LOGO_BASE_URL | component |  | `@elabs-ai/components-ai` |  |
+| ModelProviderLogo | component |  | `@elabs-ai/components-ai` | The mark of an AI model provider, sized for a row in a model list. |
+| ModelProviderLogoGroup | component |  | `@elabs-ai/components-ai` |  |
 | Node | component |  | `@elabs-ai/components-ai` | A workspace-graph node — a Card with source/target handles, headed and slotted. |
 | NodeAction | component |  | `@elabs-ai/components-ai` |  |
 | NodeContent | component |  | `@elabs-ai/components-ai` |  |
@@ -936,6 +914,16 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TestSuiteContent | component |  | `@elabs-ai/components-ai` |  |
 | TestSuiteName | component |  | `@elabs-ai/components-ai` |  |
 | TestSuiteStats | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsage | component |  | `@elabs-ai/components-ai` | Context-window usage readout for a model turn — used vs max tokens, with a hover breakdown. |
+| TokenUsageCache | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContent | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContentBody | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContentFooter | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageContentHeader | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageInput | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageOutput | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageReasoning | component |  | `@elabs-ai/components-ai` |  |
+| TokenUsageTrigger | component |  | `@elabs-ai/components-ai` |  |
 | Tool | component |  | `@elabs-ai/components-ai` | Renders one AI SDK ToolUIPart — header (type + state), the input, and the output or error. |
 | Toolbar | component |  | `@elabs-ai/components-ai` | A dense row of controls that acts on nearby content, collapsed into ONE tab stop with arrow-key navigation between the controls. |
 | ToolContent | component |  | `@elabs-ai/components-ai` |  |
@@ -1236,7 +1224,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CodeEditor | component |  | `@elabs-ai/components-editor` | Monaco-backed editable code editor (controlled/uncontrolled), themed from tokens. |
 | CodeWorkspace | component |  | `@elabs-ai/components-editor` |  |
 | CopyButton | component |  | `@elabs-ai/components-editor` |  |
-| DiffEditor | component |  | `@elabs-ai/components-editor` |  |
+| DiffEditor | component |  | `@elabs-ai/components-editor` | The Monaco side-by-side diff surface — the only diff in the library that can be typed into. |
 | EDITOR_LANGUAGES | component |  | `@elabs-ai/components-editor` |  |
 | EditorContextMenu | component |  | `@elabs-ai/components-editor` |  |
 | EditorToolbar | component |  | `@elabs-ai/components-editor` |  |

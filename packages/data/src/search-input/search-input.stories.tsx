@@ -10,6 +10,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The SEARCH field, with a leading icon and a clear button; a plain text field is " +
+          "`Core/Input` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Controlled search field with a leading icon and a clear button. Pair it with " +
           "`FilterBar` and drive a DataTable's global filter from the `toolbar` render-prop. " +
           "The label is visually hidden but real — the placeholder is never the accessible name.",

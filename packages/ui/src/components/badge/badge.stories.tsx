@@ -5,6 +5,14 @@ const meta = {
   title: "Core/Badge",
   component: Badge,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "A neutral label or count. The closed seven-state execution-status vocabulary — each state carrying its own glyph, so it survives greyscale — is `Core/StatusBadge`; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). Reach for `Badge` when the text IS the meaning and the tone is decoration.",
+      },
+    },
+  },
   args: { children: "Badge" },
   argTypes: {
     variant: {

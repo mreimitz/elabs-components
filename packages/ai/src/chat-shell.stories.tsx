@@ -106,9 +106,24 @@ function ChatShellExample({ variant = "card" }: { variant?: "card" | "bare" }) {
 
 const meta = {
   title: "AI/ChatShell",
-  component: ChatShellExample,
-  parameters: { layout: "fullscreen" },
-} satisfies Meta<typeof ChatShellExample>;
+  // `component` names the REAL exported component, so the docs/MCP surface reads
+  // ChatShell's own props instead of a story-local demo's (RM-005). `render`
+  // supplies the live transcript + composer a layout shell needs in order to
+  // show anything; `children` is required by ChatShellProps and comes from the
+  // render, so the arg below is only a placeholder to satisfy the type.
+  component: ChatShell,
+  args: { variant: "card", children: null },
+  render: ({ variant }) => <ChatShellExample variant={variant} />,
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          'The CHAT frame — header, transcript and composer regions in one layout. The console frame is `Terminal/TerminalConsole`, which goes further and makes every region inside it flush (ADR 0033); see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `variant: "card"` draws its own bordered frame, `variant: "bare"` fills a container that is already bounded so the shell never draws a redundant second frame.',
+      },
+    },
+  },
+} satisfies Meta<typeof ChatShell>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

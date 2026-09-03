@@ -8,9 +8,19 @@ import {
   ToolOutput,
   statusFromToolState,
 } from "./tool";
-const meta = { title: "AI/Tool", component: Tool, parameters: { layout: "padded" } } satisfies Meta<
-  typeof Tool
->;
+const meta = {
+  title: "AI/Tool",
+  component: Tool,
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The CHAT tool-call row; the console skin is `Terminal/TerminalToolCall`, and both speak the same success / error / pending vocabulary — see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `Tool` owns the rail-and-inspect idiom: a header carrying the derived tool name, a `StatusBadge` and a business summary, with the raw payload behind a default-collapsed `ToolDetails`. The artifact a call PRODUCED is `AI/ToolResultCard` instead.",
+      },
+    },
+  },
+} satisfies Meta<typeof Tool>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 // JSON-behind-disclosure is the package default (#192, research 10 §B.5): the

@@ -16,7 +16,7 @@ import { Command as CommandPrimitive, useCommandState } from "cmdk";
 import { Search } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { mergeRefs } from "../../lib/merge-refs";
-import { Dialog, DialogContent } from "../dialog";
+import { Dialog, DialogContent, DialogTitle } from "../dialog";
 
 /** cmdk's own marker attribute on an item row — the scope for the id lookup. */
 const CMDK_ITEM_SELECTOR = '[cmdk-item=""][aria-selected="true"]';
@@ -149,17 +149,34 @@ export function useCommandActiveItemId(): string | undefined {
   return id === NO_COMMAND_PROVIDER ? undefined : id;
 }
 
-export function CommandDialog({
-  children,
-  filter,
-  ...props
-}: ComponentPropsWithoutRef<typeof Dialog> & {
+export type CommandDialogProps = ComponentPropsWithoutRef<typeof Dialog> & {
   /** Custom cmdk ranking (e.g. strict substring instead of fuzzy). */
   filter?: ComponentPropsWithoutRef<typeof CommandPrimitive>["filter"];
-}) {
+  /**
+   * The dialog's accessible name, rendered `sr-only`.
+   *
+   * OPTIONAL, and deliberately so: callers that already render their own
+   * `DialogTitle` in `children` must not be forced to move it, and
+   * `@elabs-ai/components-ai`'s `VoiceSelectorDialog` passes this whole prop
+   * type straight through. Supply it when you have no visible title — a
+   * `Dialog` with no accessible name is a Radix warning and an axe violation.
+   */
+  title?: ReactNode;
+};
+
+/**
+ * A ⌘K command palette in a modal `Dialog`.
+ *
+ * This IS the palette presentation of `Command` — there is no separate
+ * "selector" component. For an inline pill that opens the same grouped,
+ * searchable list anchored under itself (a composer footer), reach for
+ * `ModelPicker` instead.
+ */
+export function CommandDialog({ children, filter, title, ...props }: CommandDialogProps) {
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0">
+        {title === undefined ? null : <DialogTitle className="sr-only">{title}</DialogTitle>}
         <Command
           filter={filter}
           className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3"

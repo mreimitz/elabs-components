@@ -1,7 +1,7 @@
 "use client";
 
-import type { ComponentProps, ReactNode } from "react";
-import { ArrowUp, ChevronDown, Globe, Mic, Paperclip, Sparkles } from "lucide-react";
+import { useCallback, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { ArrowUp, Mic, Paperclip, Sparkles } from "lucide-react";
 import { cn, useLocale } from "@elabs-ai/components-ui";
 
 import {
@@ -14,7 +14,41 @@ import {
   PromptInputTools,
   type PromptInputProps,
 } from "./prompt-input";
+import { PromptInputEffort, type PromptInputEffortProps } from "./prompt-input-effort";
+import { PromptInputMode, type PromptInputModeProps } from "./prompt-input-mode";
+import {
+  PromptInputSlash,
+  PromptInputSlashTextarea,
+  type PromptInputSlashProps,
+} from "./prompt-input-slash";
 import { Suggestion, Suggestions } from "./suggestion";
+
+/**
+ * The slice of `PromptInputModeProps` a `Composer` owns — the vocabulary and
+ * the controlled/uncontrolled seam, never the DOM props of the wrapper div.
+ *
+ * `defaultValue` is deliberately absent: `PromptInputMode` has no uncontrolled
+ * initial-value seam (its uncontrolled default is `modes[0]`), and the
+ * `defaultValue` it inherits from `HTMLAttributes<HTMLDivElement>` is the DOM
+ * attribute, which would type-check and then do nothing. Omit `value` for the
+ * uncontrolled default; pass `value` + `onValueChange` to drive it.
+ */
+export type ComposerModeProps = Pick<
+  PromptInputModeProps,
+  "modes" | "value" | "onValueChange" | "aria-label"
+>;
+
+/**
+ * The slice of `PromptInputEffortProps` a `Composer` owns. `aria-label` stays
+ * REQUIRED, exactly as on the primitive: the name of the scale ("Reasoning
+ * effort", "Thinking budget") is as much the consumer's vocabulary as its
+ * levels are, so `Composer` has no default to invent either. `defaultValue` is
+ * absent for the same reason it is on `ComposerModeProps`.
+ */
+export type ComposerEffortProps = Pick<
+  PromptInputEffortProps,
+  "levels" | "value" | "onValueChange" | "aria-label"
+>;
 
 export interface ComposerProps {
   /** Submit handler — receives the assembled message (text + attachments). */
@@ -27,12 +61,51 @@ export interface ComposerProps {
    * `null` to hide the strip entirely.
    */
   status?: ReactNode;
-  /** Model-selector pill label. Default `"Claude Opus 4"`; pass `null` to hide it. */
-  model?: ReactNode;
   /**
-   * Override the left-hand tool cluster (attach + model pill) — e.g. to add a
-   * web-search or connect-data control. Render `PromptInputButton`s /
-   * `PromptInputActionMenu` here; when set, `showAttach`/`model` are ignored.
+   * The model control, rendered first in the tools cluster after `attach`.
+   * Pass a `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit
+   * in a composer footer) — or anything else. Default: nothing renders.
+   *
+   * This replaces the old `model` prop, which rendered a static, non-interactive
+   * pill defaulted to a hard-coded model name. A composer that shows a model
+   * name it cannot change is a lie about what the control does; the slot now
+   * takes the real picker instead.
+   */
+  modelPicker?: ReactNode;
+  /**
+   * App-defined operating mode control — renders a `PromptInputMode` in the
+   * tools cluster. Omitted, nothing renders. `brand-ui` ships no mode
+   * vocabulary: `modes` is entirely yours.
+   */
+  mode?: ComposerModeProps;
+  /**
+   * Ordered reasoning-effort control — renders a `PromptInputEffort` in the
+   * tools cluster. Omitted, nothing renders. `levels` is ordered low → high
+   * and is entirely yours; `aria-label` names the scale.
+   */
+  effort?: ComposerEffortProps;
+  /**
+   * Slash-command palette. When set (and non-empty) the textarea becomes a
+   * `PromptInputSlashTextarea` wrapped in a `PromptInputSlash`, so typing `/`
+   * at the start of a line opens a filtered command list — nothing else about
+   * the composer changes.
+   *
+   * Note this makes the textarea REACT-CONTROLLED (the palette needs to read
+   * and splice the text), which is why `Composer` clears its own copy of the
+   * text on submit: `PromptInput`'s `form.reset()` reaches the DOM node, not
+   * React state.
+   */
+  slashCommands?: PromptInputSlashProps["commands"];
+  /** Fires with the chosen slash command (alongside the text splice). */
+  onSlashCommand?: PromptInputSlashProps["onSelect"];
+  /**
+   * Override the DEFAULT tool buttons (today: the attach button) — e.g. to add
+   * a web-search or connect-data control. Render `PromptInputButton`s /
+   * `PromptInputActionMenu` here; when set, `showAttach` is ignored.
+   *
+   * The explicit `modelPicker` / `mode` / `effort` slots are NOT part of this
+   * override — they render after whatever this puts in the cluster, so passing
+   * `tools` can never silently swallow a control you asked for by name.
    */
   tools?: ReactNode;
   /** Send-button state, forwarded to `PromptInputSubmit` (ready/submitted/streaming/error). */
@@ -54,7 +127,8 @@ export interface ComposerProps {
    * user's text destroyed, with nothing to restore from. Disabling the control
    * is what actually prevents it: `PromptInputTextarea`'s Enter handler checks
    * `submitControl?.disabled` and bails before `requestSubmit()`, so the Enter
-   * path is closed too, not just the click.
+   * path is closed too, not just the click. It holds with a slash palette open
+   * as well — the palette's own Enter handling only ever inserts a command.
    *
    * Leave it UNSET rather than passing `false` when you have no opinion —
    * `PromptInputSubmit` resolves `disabled ?? autoDisabled`, so a literal
@@ -88,9 +162,9 @@ export interface ComposerProps {
  * Composer — the standard brand-ui AI chat input.
  *
  * A rounded two-tone "double card": a status strip wrapping a recessed
- * `PromptInput` well (sharp top, theme-rounded bottom), a model pill, voice,
- * and a circular send. Built on the real `PromptInput`, so it drops into a
- * `ChatShell` footer or stands alone as an empty-state composer. `tone`
+ * `PromptInput` well (sharp top, theme-rounded bottom), a tools cluster,
+ * voice, and a circular send. Built on the real `PromptInput`, so it drops
+ * into a `ChatShell` footer or stands alone as an empty-state composer. `tone`
  * (default `"surface"`, unchanged) picks the arrangement: `"surface"` keeps
  * the original outer `bg-card` frame around the standard muted well;
  * `"card"` (#254) swaps to an outer `bg-surface-muted` frame around a
@@ -99,14 +173,24 @@ export interface ComposerProps {
  * `tone` prop doc on `PromptInput`. Semantic tokens only; theme-aware radii
  * (`rounded-xl` frame / `rounded-b-lg` well); reads in every theme.
  *
- * This is the canonical chat input — reach for it instead of hand-rolling a
- * `PromptInput` footer.
+ * **Composer is the chat input. Every control the `PromptInput` family ships
+ * is reachable from a `Composer` prop; drop to `PromptInput` only for a
+ * bespoke shell.** `modelPicker`, `mode`, `effort` and `slashCommands` are the
+ * four slots that make that true — they render `ModelPicker`,
+ * `PromptInputMode`, `PromptInputEffort` and `PromptInputSlash` respectively,
+ * in the footer order `attach · modelPicker · mode · effort │ voice · send`
+ * (the same left-to-right arrangement `TerminalComposer` uses, so the chat and
+ * console skins agree).
  */
 export function Composer({
   onSubmit,
   placeholder,
   status = "Awaiting your input",
-  model = "Claude Opus 4",
+  modelPicker,
+  mode,
+  effort,
+  slashCommands,
+  onSlashCommand,
   tools,
   sendStatus,
   onStop,
@@ -119,6 +203,27 @@ export function Composer({
   className,
 }: ComposerProps) {
   const { t } = useLocale();
+
+  // Only read when `slashCommands` is set — the palette needs the live text and
+  // a handle on the field to do its caret math. Without it the textarea stays
+  // uncontrolled, exactly as before.
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [text, setText] = useState("");
+  const hasSlash = slashCommands !== undefined && slashCommands.length > 0;
+
+  const handleSubmit = useCallback<PromptInputProps["onSubmit"]>(
+    (message, event) => {
+      // `PromptInput.handleSubmit` calls `form.reset()`, which clears the DOM
+      // node but cannot touch React state — so the slash-mode textarea would
+      // keep rendering the sent text straight back. Clearing here is a no-op in
+      // the uncontrolled (non-slash) arrangement.
+      setText("");
+      return onSubmit?.(message, event);
+    },
+    [onSubmit],
+  );
+
+  const resolvedPlaceholder = placeholder ?? t("ai.composer.placeholder");
 
   return (
     <div className="w-full">
@@ -139,33 +244,46 @@ export function Composer({
 
         {/* Inner well — sharp top (nests under the strip), theme-rounded bottom. */}
         <PromptInput
-          onSubmit={onSubmit ?? (() => undefined)}
+          onSubmit={handleSubmit}
           surfaceClassName="rounded-t-none rounded-b-lg"
           tone={tone}
         >
           <PromptInputBody>
-            <PromptInputTextarea placeholder={placeholder ?? t("ai.composer.placeholder")} />
+            {hasSlash && slashCommands ? (
+              <PromptInputSlash
+                commands={slashCommands}
+                value={text}
+                textareaRef={textareaRef}
+                onValueChange={(next) => setText(next.text)}
+                onSelect={onSlashCommand}
+              >
+                {/* No `ref` here on purpose: PromptInputSlashTextarea merges the
+                    palette's own `textareaRef` in for us. */}
+                <PromptInputSlashTextarea
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  placeholder={resolvedPlaceholder}
+                />
+              </PromptInputSlash>
+            ) : (
+              <PromptInputTextarea placeholder={resolvedPlaceholder} />
+            )}
           </PromptInputBody>
           <PromptInputFooter>
-            <PromptInputTools>
-              {tools ?? (
-                <>
-                  {showAttach ? (
-                    <PromptInputButton tooltip="Attach files">
-                      <Paperclip className="size-4" />
-                    </PromptInputButton>
-                  ) : null}
-                  {model != null ? (
-                    <PromptInputButton variant="ghost" className="gap-1.5 rounded-full">
-                      <Globe className="size-4" />
-                      <span>{model}</span>
-                      <ChevronDown className="size-4 opacity-60" />
-                    </PromptInputButton>
-                  ) : null}
-                </>
-              )}
+            {/* `flex-wrap` so a full cluster (attach + picker + mode + effort)
+                wraps instead of overflowing a narrow composer. */}
+            <PromptInputTools className="flex-wrap gap-y-1">
+              {tools ??
+                (showAttach ? (
+                  <PromptInputButton tooltip="Attach files">
+                    <Paperclip className="size-4" />
+                  </PromptInputButton>
+                ) : null)}
+              {modelPicker}
+              {mode ? <PromptInputMode {...mode} /> : null}
+              {effort ? <PromptInputEffort {...effort} /> : null}
             </PromptInputTools>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               {showVoice ? (
                 <PromptInputButton tooltip="Voice">
                   <Mic className="size-4" />

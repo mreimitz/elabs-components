@@ -17,7 +17,7 @@ import { expect, waitFor } from "storybook/test";
 import { DEFAULT_THEME } from "@elabs-ai/components-tokens";
 
 const meta = {
-  title: "Providers/Storybook Theme Harness",
+  title: "Docs/Storybook Theme Harness",
   tags: ["autodocs"],
   parameters: {
     layout: "centered",

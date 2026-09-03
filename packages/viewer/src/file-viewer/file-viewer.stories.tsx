@@ -199,6 +199,20 @@ export const PlainText: Story = {
  * is a deliberate trade: fenced code renders as an unhighlighted block rather
  * than costing a consumer four more packages to open one file. A source file
  * opened directly still gets Shiki — see `Source code` below.
+ *
+ * Pick a markdown renderer by where the markdown is going to be READ: a file the
+ * app did not write, opened here → this adapter; a read-only document in a chat
+ * or a side rail → `AI/MarkdownView`; the preview pane of the markdown editor →
+ * `Editor/MarkdownPreview`; streaming into a message as the model writes it →
+ * `MessageResponse` on `AI/Message`. See
+ * [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).
+ *
+ * The element map here is deliberately a near-copy of `MarkdownView`'s, not a
+ * shared module: `@elabs-ai/components-ai`, `@elabs-ai/components-editor` and
+ * `@elabs-ai/components-viewer` are leaves that may not import one another, and
+ * the half that could move down (the `Prose*` primitives, the Streamdown locale
+ * bridge) already has. What differs is the job — a file arrives settled or not at
+ * all, so this adapter takes no plugins and does not stream.
  */
 export const Markdown: Story = {
   args: { source: { kind: "text", text: MARKDOWN, name: "README.md" } },

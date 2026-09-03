@@ -110,6 +110,61 @@ const VISUAL_SLOP_RULES = [
 ];
 
 /**
+ * COMPOSITION rules — "you reached for the primitive where the library ships the
+ * canonical composition". Always ADVISORY: dropping to a primitive is a
+ * legitimate, documented escape hatch, so this can inform but must never fail a
+ * build. The exemptions are what make it honest — see `exemptWhenFileMatches` /
+ * `exemptWhenPathMatches` in the `scanText` docs below.
+ *
+ * @type {{ id: string, re: RegExp, msg: string, advisory: boolean, exemptWhenFileMatches?: RegExp, exemptWhenPathMatches?: RegExp }[]}
+ */
+const COMPOSITION_RULES = [
+  {
+    id: "ai/prefer-composer",
+    advisory: true,
+    // The opening tag of `PromptInput` ITSELF — never a sub-part
+    // (`<PromptInputBody`, `<PromptInputSubmit`, …), which a `Composer` `tools`
+    // slot legitimately renders, and never a closing `</PromptInput>`.
+    re: /<PromptInput(?![A-Za-z0-9_])/,
+    msg: "Use <Composer>; drop to PromptInput only for a bespoke shell (see AI/Composer docs)",
+    // (a) a file that renders `<Composer>` is already doing the right thing —
+    // a docs page comparing the two, a shell that hosts both. (b) a file that
+    // DEFINES `Composer` is `@elabs-ai/components-ai`'s own composer.tsx: it
+    // renders `<PromptInput>` because that is what `Composer` is made of.
+    exemptWhenFileMatches:
+      /<Composer(?![A-Za-z0-9_])|export\s+(?:default\s+)?(?:const|function|class)\s+Composer\b/,
+    // (c) the PromptInput family's own modules, stories and tests — a file whose
+    // basename starts with `prompt-input` is documenting or exercising the
+    // primitive, which is not a composition mistake. (d) any test: mounting the
+    // primitive directly is how you unit-test the primitive.
+    exemptWhenPathMatches: /(?:^|[\\/])prompt-input[^\\/]*$|\.(?:test|spec)\.[cm]?[jt]sx?$/,
+  },
+];
+
+/**
+ * A file-level opt-out for a SINGLE advisory rule, e.g.
+ * `// brand-ui-audit-allow: ai/prefer-composer — this page documents the escape hatch`.
+ *
+ * Deliberately limited to ADVISORY rules: you may silence a warning you have
+ * argued with in prose, never a blocking one (raw color, gradient text, tiny
+ * text, content slop). An opt-out that could switch off the teeth would be a
+ * bypass, not an exemption.
+ */
+const ALLOW_MARKER = /brand-ui-audit-allow:\s*([\w/-]+)/g;
+
+/**
+ * Every rule id a file opts out of via {@link ALLOW_MARKER}.
+ * @param {string} text
+ * @returns {Set<string>}
+ */
+function allowedRuleIds(text) {
+  const out = new Set();
+  ALLOW_MARKER.lastIndex = 0;
+  for (const m of text.matchAll(ALLOW_MARKER)) out.add(m[1]);
+  return out;
+}
+
+/**
  * The full deterministic rule set. Ported (token-aware) from the impeccable
  * detector's regex engine, then extended with the taste-skill catalog (WP-15).
  *
@@ -117,12 +172,17 @@ const VISUAL_SLOP_RULES = [
  *   - `advisory`  — informational; shown in a separate list, never the headline.
  *   - `colorRule` — exempt inside `themes.css` (the one place raw color is legal).
  *   - `copyRule`  — a CONTENT/prose check; skipped in `.css` files (no JSX copy).
- *   - `category`  — grouping for reporting ("content-slop" / "visual-slop").
+ *   - `category`  — grouping for reporting ("content-slop" / "visual-slop" /
+ *                   "composition").
  *   - `brandTolerant` — the BRAND register legitimately does this (see below).
+ *   - `exemptWhenFileMatches` / `exemptWhenPathMatches` — FILE-scoped exemptions,
+ *     evaluated once per scan against the whole text / the file path. Every
+ *     other flag is per-line; these exist because "is this file the library that
+ *     owns the primitive?" is not a question one line can answer.
  *
  * Regexes are NON-global (safe for per-line `.test()`); never add `g` here.
  *
- * @type {{ id: string, re: RegExp, msg: string, advisory?: boolean, colorRule?: boolean, copyRule?: boolean, category?: string, brandTolerant?: boolean }[]}
+ * @type {{ id: string, re: RegExp, msg: string, advisory?: boolean, colorRule?: boolean, copyRule?: boolean, category?: string, brandTolerant?: boolean, exemptWhenFileMatches?: RegExp, exemptWhenPathMatches?: RegExp }[]}
  */
 export const RULES = [
   // — tokens / color —
@@ -209,6 +269,8 @@ export const RULES = [
   },
   // — visual anti-slop (WP-15 taste-skill §3/§5/§7, token-translated) —
   ...VISUAL_SLOP_RULES.map((r) => ({ ...r, category: "visual-slop" })),
+  // — composition (reach for the canonical composition, not its primitive) —
+  ...COMPOSITION_RULES.map((r) => ({ ...r, category: "composition" })),
   // — copy (advisory) —
   {
     id: "marketing-buzzword",
@@ -269,16 +331,33 @@ function softensBrandTells(register) {
 /**
  * Scan one file's text against every applicable rule.
  * @param {string} text - the file contents.
- * @param {{ isCss?: boolean, isThemeFile?: boolean, register?: "product"|"brand" }} [opts]
+ * @param {{ isCss?: boolean, isThemeFile?: boolean, register?: "product"|"brand", path?: string }} [opts]
  *   `register` is the active taste profile's register (default "product", the
- *   restrained bar). See `softensBrandTells`.
+ *   restrained bar). See `softensBrandTells`. `path` is the file being scanned,
+ *   when the caller knows it — it only ever ADDS exemptions
+ *   (`exemptWhenPathMatches`), so omitting it can cost a false positive but
+ *   never hides one.
  * @returns {{ rule: string, advisory: boolean, category: string|undefined, line: number, msg: string, text: string }[]}
  */
-export function scanText(text, { isCss = false, isThemeFile = false, register = "product" } = {}) {
+export function scanText(
+  text,
+  { isCss = false, isThemeFile = false, register = "product", path } = {},
+) {
   const soften = softensBrandTells(register);
+  // FILE-scoped exemptions, resolved once rather than per line.
+  const allowed = allowedRuleIds(text);
+  const exempt = new Set(
+    RULES.filter(
+      (r) =>
+        (r.advisory && allowed.has(r.id)) ||
+        (r.exemptWhenFileMatches && r.exemptWhenFileMatches.test(text)) ||
+        (r.exemptWhenPathMatches && path !== undefined && r.exemptWhenPathMatches.test(path)),
+    ).map((r) => r.id),
+  );
   const findings = [];
   text.split("\n").forEach((line, i) => {
     for (const rule of RULES) {
+      if (exempt.has(rule.id)) continue; // file-scoped exemption / opt-out marker
       if (isThemeFile && rule.colorRule) continue; // themes.css owns raw color
       if (rule.colorRule && SERVICE_LOGO_MARKER.test(line)) continue; // registered service mark — its own brand colour (icons.md)
       if (isCss && rule.copyRule) continue; // no JSX/prose copy in .css

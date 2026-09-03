@@ -157,10 +157,6 @@ export const INHERITED_MODULES = {
     modules: ["packages/ui/src/components/timeline/timeline.tsx"],
     reason: "the rail node styles are the ui Timeline's NODE_STYLE map (#190/#192)",
   },
-  ModelSelector: {
-    modules: ["packages/ui/src/components/command/command.tsx"],
-    reason: "the highlighted row is the ui CommandItem's data-[selected=true] pair",
-  },
   // The React Flow parts reach their engine through ONE dynamic-import boundary
   // (ADR 0019 / `_flow-lazy.ts`), so each public module is a `lazy()` wrapper of
   // ~20 lines that renders no classes at all — every class these entries name is

@@ -95,7 +95,7 @@ seam is built either way.
 ## References
 
 - `packages/ui/src/components/locale-provider/locale-provider.tsx` (the documented
-  FOLLOW-UP this resolves); `packages/ai/src/context.tsx`, `packages/ai/src/commit.tsx`
+  FOLLOW-UP this resolves); `packages/ai/src/token-usage.tsx`, `packages/ai/src/commit.tsx`
   (the hardcoded formatters); `.claude/rules/scope-and-non-goals.md` (D5),
   `.claude/rules/ai-sdk-vs-a2ui.md` (D6); `.claude/rules/component-api.md` (Composition
   patterns — `use(Context)` over `useContext`).

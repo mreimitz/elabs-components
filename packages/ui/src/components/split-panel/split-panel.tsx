@@ -12,8 +12,13 @@ import { cn } from "../../lib/cn";
  * raised tint, not a recess (dark-mode layering only goes UP — there is no surface below
  * the page ground). For a guaranteed cross-theme raise/recess contrast, raise the focus
  * pane with `card` and leave the other `plain`.
+ *
+ * Exported so the same tone system reaches a `Layout/Resizable` pane — a draggable
+ * `ResizablePanel` composes `splitPaneVariants({ tone })` for the identical ground-offset
+ * tiering `SplitPanel` gives its `startTone`/`endTone`, instead of a hand-rolled second
+ * copy of these three classes. See `Layout/Resizable`'s `Tiered` story.
  */
-const paneToneVariants = cva("min-h-0 min-w-0 overflow-auto", {
+export const splitPaneVariants = cva("min-h-0 min-w-0 overflow-auto", {
   variants: {
     tone: {
       plain: "",
@@ -24,7 +29,7 @@ const paneToneVariants = cva("min-h-0 min-w-0 overflow-auto", {
   defaultVariants: { tone: "plain" },
 });
 
-export type SplitPanelTone = NonNullable<VariantProps<typeof paneToneVariants>["tone"]>;
+export type SplitPanelTone = NonNullable<VariantProps<typeof splitPaneVariants>["tone"]>;
 
 export interface SplitPanelProps {
   start: ReactNode;
@@ -49,8 +54,12 @@ export interface SplitPanelProps {
 
 /**
  * Two-pane layout for master/detail, editor/preview and inspector workflows.
- * Static sizing by design (predictable in tests/SSR); for drag-to-resize wrap
- * with a resize hook or compose `react-resizable-panels` at the app level.
+ * Static sizing by design (predictable in tests/SSR) — `startSize` is a CSS grid
+ * track (`"320px"`, `"40%"`, `"1fr"`), not a percentage. For panes the user can
+ * drag to resize, reach for `Layout/Resizable`'s `ResizablePanelGroup`/
+ * `ResizablePanel`/`ResizableHandle` instead and apply `splitPaneVariants({ tone })`
+ * to a panel for the same ground-offset tiering. See
+ * [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).
  *
  * For a master/detail surface where the detail should read as a raised card on a
  * recessed list, use `startTone="muted" endTone="card"` (ground-offset tiering).
@@ -80,10 +89,10 @@ export function SplitPanel({
       )}
       style={style}
     >
-      <div className={cn(paneToneVariants({ tone: startTone }), startClassName)}>{start}</div>
+      <div className={cn(splitPaneVariants({ tone: startTone }), startClassName)}>{start}</div>
       <div
         className={cn(
-          paneToneVariants({ tone: endTone }),
+          splitPaneVariants({ tone: endTone }),
           divider && (isHorizontal ? "border-s" : "border-t"),
           endClassName,
         )}

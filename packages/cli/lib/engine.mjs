@@ -1246,7 +1246,8 @@ function auditEmitted(files) {
   const findings = [];
   for (const [rel, text] of Object.entries(files)) {
     if (!/\.(tsx|jsx|css|html)$/.test(rel)) continue;
-    for (const f of scanText(text, { isCss: rel.endsWith(".css") })) findings.push({ ...f, rel });
+    for (const f of scanText(text, { isCss: rel.endsWith(".css"), path: rel }))
+      findings.push({ ...f, rel });
   }
   const blocking = findings.filter((f) => !f.advisory);
   return {
@@ -1578,7 +1579,7 @@ function scanTokenDebt(files) {
       continue;
     }
     const isCss = /\.css$/.test(f);
-    for (const finding of scanText(src, { isCss })) {
+    for (const finding of scanText(src, { isCss, path: f })) {
       if (COLOR_RULE_IDS.has(finding.rule)) hardcodedColors++;
     }
     for (const line of src.split("\n")) {

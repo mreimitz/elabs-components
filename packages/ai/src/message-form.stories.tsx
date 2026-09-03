@@ -1,3 +1,20 @@
+/**
+ * MessageForm — **not a chat input.** A model-emitted form rendered INSIDE a
+ * message.
+ *
+ * It sits next to `Composer` in the sidebar and reads like a sibling of it; it
+ * is not one. The composer is the field a person types their turn into
+ * ([AI/Composer](?path=/docs/ai-composer--docs)); this is a form the MODEL
+ * authored — it emits a serializable `FormSpec` (`message-form-spec.ts`), the
+ * user fills it in place in the transcript, and the app receives structured
+ * `{ formName, values }` on submit.
+ *
+ * Spec-driven and zod-validated: the model is the author, it never chooses the
+ * look. A malformed spec degrades to `MessageFormFallback` rather than
+ * throwing, half-arrived fields are dropped while streaming, and a submitted
+ * form renders inert with its values still visible — a chat message is a
+ * historical record.
+ */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { MessageForm } from "./message-form";
@@ -7,7 +24,18 @@ const meta = {
   title: "AI/MessageForm",
   component: MessageForm,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Not a chat input. A model-emitted form rendered inside a message. " +
+          "The composer is the field a person types their turn into ([AI/Composer](?path=/docs/ai-composer--docs)); this is a form the MODEL authored — it emits a serializable FormSpec, the user fills it in place in the transcript, and the app receives structured `{ formName, values }` on submit. " +
+          "Spec-driven and zod-validated (the model is the author, it never chooses the look): a malformed spec degrades to MessageFormFallback rather than throwing, half-arrived fields are dropped while streaming, and a submitted form renders inert with its values still visible, because a chat message is a historical record. " +
+          "Composes @elabs-ai/components-ui inputs; semantic tokens only; reads in all themes.",
+      },
+    },
+  },
 } satisfies Meta<typeof MessageForm>;
 export default meta;
 type Story = StoryObj<typeof meta>;

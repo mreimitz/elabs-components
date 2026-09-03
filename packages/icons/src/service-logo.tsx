@@ -6,9 +6,13 @@ import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
  * trademark-bearing asset itself (issue #25). The package ships the MACHINERY —
  * a registry, a themable render contract, a monogram fallback — and the
  * CONSUMER supplies the content by calling `registerServiceLogos` (a licensing
- * decision that belongs to the app, not to brand-ui). This mirrors
- * `@elabs-ai/components-ai`'s `ModelSelectorLogo`, but never fetches a remote
- * asset at runtime — see docs/CSP-AND-NETWORK.md.
+ * decision that belongs to the app, not to brand-ui).
+ *
+ * **`ServiceLogo` vs `ModelProviderLogo` (`@elabs-ai/components-ai`).** An AI
+ * provider mark with a zero-config remote default — name the provider and a logo
+ * appears — is `ModelProviderLogo`. Any other third-party service mark,
+ * registry-driven and never fetched at runtime, is this component. See
+ * docs/CSP-AND-NETWORK.md.
  *
  * A registered mark legitimately paints itself with the service's OWN brand
  * colour as a raw literal — that is a deliberate, narrow exception to the

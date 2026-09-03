@@ -17,10 +17,17 @@ const meta = {
     docs: {
       description: {
         component:
+          "The GIT-HISTORY rail; a generic ordered-steps rail is `Core/Timeline` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A presentational git-history timeline. Renders revisions (newest-first) with " +
           "day grouping, an SVG branch-graph lane gutter, churn indicators (+/−), " +
           "ref chips, and an accessible selection rail. The app computes lane indices " +
-          "and edges; the component only renders what it receives.",
+          "and edges; the component only renders what it receives. " +
+          "It deliberately does not ride the shared `Timeline` rail: a rail node's colour " +
+          "there is the closed 7-state execution `Status`, while a node here is coloured by " +
+          "lane identity (the chart ramp), and a fork/merge join is a cross-row bezier that " +
+          "no item-local connector can draw — the four-point reason is in the component's " +
+          "docblock (RM-014).",
       },
     },
   },

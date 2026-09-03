@@ -41,14 +41,14 @@ const MODES: OperatingMode[] = [
 ];
 
 const meta = {
-  title: "AI/PromptInputMode",
+  title: "AI/Composer/PromptInputMode",
   component: PromptInputMode,
   parameters: {
     layout: "padded",
     docs: {
       description: {
         component:
-          "A composer control for an app-defined operating mode — how autonomously the agent may act. The trigger shows the current mode's icon + label; opening it lists every mode with its optional description and shortcut hint. `modes` is entirely prop-driven — no mode vocabulary is hardcoded.",
+          "A part of the [Composer](?path=/docs/ai-composer--docs) family — what the `mode` slot renders. A composer control for an app-defined operating mode — how autonomously the agent may act. The trigger shows the current mode's icon + label; opening it lists every mode with its optional description and shortcut hint. `modes` is entirely prop-driven — no mode vocabulary is hardcoded.",
       },
     },
   },

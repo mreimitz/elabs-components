@@ -23,6 +23,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/Composer` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The console skin of the agent-session family's prompt composer: a text well, " +
           "an optional mode indicator, an optional ordered effort scale, a shortcut-hint " +
           "row, and a submit affordance that becomes a stop affordance while `busy`. " +

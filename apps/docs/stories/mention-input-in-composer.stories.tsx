@@ -26,6 +26,41 @@ import {
  * `PromptInputTextarea` (`@elabs-ai/components-ai`) — the composer keeps its own
  * submit contract while the field gains an `@`-mention roster.
  *
+ * It lives under [AI/Composer](?path=/docs/ai-composer--docs) rather than in
+ * `Patterns/Blocks` because it is not a separate pattern: it is a composer,
+ * and specifically the family's one documented bespoke shell. The rest of this
+ * page is the reasoning for that.
+ *
+ * ### Why this page drops to `PromptInput` instead of using `Composer`
+ *
+ * `Composer` is the canonical chat input, and everything else that renders a
+ * chat footer in this repo uses it — the `ai-chat-shell` registry block
+ * included. **This page is the documented exception**, and the reason is the
+ * one `Composer` names in its own docstring: *drop to `PromptInput` only for a
+ * bespoke shell.* A mention roster is a bespoke shell.
+ *
+ * Concretely: `MentionInput` has to **wrap** the textarea, and `Composer` owns
+ * that seam. `Composer` renders its own `PromptInputTextarea` (or, with
+ * `slashCommands`, a `PromptInputSlashTextarea`) inside `PromptInputBody`; the
+ * only way to put a wrapper around it would be a `textarea?: ReactNode` prop
+ * handing the whole field slot to the caller. That was considered and
+ * rejected:
+ *
+ * - It is **configuration where composition already works**
+ *   (`.claude/rules/component-api.md` § Composition patterns). `Composer` is a
+ *   single function, not a compound `Composer.Root` / `Composer.Field` pair, so
+ *   the slot could not be a real composition seam — just an opaque node.
+ * - Its correctness would rest on an **invariant the type cannot express**: the
+ *   node must contain a real `<textarea name="message">`, because
+ *   `PromptInput`'s submit reads `new FormData(form).get("message")`. Pass
+ *   anything else and the composer silently submits an empty string.
+ * - It would **collide with `slashCommands`**, which already owns the same
+ *   slot, creating a prop pair with no defined precedence — the "impossible
+ *   combination" the composition rule exists to prevent.
+ *
+ * So the field stays hand-assembled here, and only here. If you are building an
+ * ordinary chat input, use `Composer`.
+ *
  * ### Why this composes at all
  *
  * `MentionInputTextarea asChild` lends the mention behaviour to the composer's
@@ -63,7 +98,7 @@ import {
  * `onSubmit` resets the `MentionValue` itself, as it does here.
  */
 const meta = {
-  title: "Patterns/Blocks/MentionInput + PromptInput",
+  title: "AI/Composer/WithMentionInput",
   tags: ["autodocs"],
   parameters: {
     layout: "padded",
@@ -88,6 +123,8 @@ function MentionComposer({ onSend }: { onSend?: (payload: string) => void }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      {/* brand-ui-audit-allow: ai/prefer-composer — this page IS the documented
+          bespoke-shell exception; the reasoning is in the docblock above. */}
       <PromptInput
         onSubmit={() => {
           const payload = serializeMentions(draft);

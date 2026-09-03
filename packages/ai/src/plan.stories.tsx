@@ -19,7 +19,15 @@ const meta = {
   title: "AI/Plan",
   component: Plan,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The CHAT plan card — what the agent intends to do, optionally with an accept/edit decision. The console counterpart of a three-state agent checklist is `Terminal/TerminalTodoList`; the summary of what already ran is `AI/Task`. See [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `status` is additive: a `Plan` rendered without it has no ARIA region, no rail and no status line.",
+      },
+    },
+  },
 } satisfies Meta<typeof Plan>;
 
 export default meta;

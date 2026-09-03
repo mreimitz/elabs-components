@@ -1,0 +1,239 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Choosing between similar components" />
+
+# Choosing between similar components
+
+This library ships several families of look-alikes **on purpose**. A diff is not one
+component, because reading a patch, approving a patch and editing a patch are three
+different jobs. A composer is not one component, because a chat input and a CLI prompt
+are two different registers. Every one of those decisions is written down somewhere —
+an ADR, a docblock, a package rule — and until this page existed, nowhere a reader of
+Storybook would find it.
+
+So this page is the index of the duplications. Each section gives **one decision rule**
+first and the inventory second. If you are an agent: read the rule, pick the component,
+then read that component's own page for the real prop surface.
+
+## Two facts that explain most of the duplication
+
+**Packages may not import sideways.** The dependency graph runs
+`tokens` → `ui`/`icons` → `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal`,
+and the packages on that last rung are leaves that never import one another. So when two
+leaves need the same idea, the idea moves **up** into `@elabs-ai/components-ui` and both
+reach for it from there. `DiffLine`, `SlashCommand`, `ApprovalScope`, `OperatingMode`,
+`AgentEventPhase`, `formatElapsed` and the `Prose*` primitives all live in `ui` for
+exactly this reason. Two components that look related are usually related **through a
+promoted model**, not through one importing the other.
+
+**Register is a real axis.** The same content reads differently in a chat bubble, in a
+console transcript, in a document editor and in an application shell. Where a family
+exists once per register, the register is the thing choosing for you.
+
+## Chat vs console — `AI/*` vs `Terminal/*`
+
+**The rule.** Building a chat or assistant surface → the `AI/*` components. Building a
+CLI-style coding-agent console → the `Terminal/*` components. Nothing else about your
+app decides this; it is a question about what the surface is dressed as.
+
+`@elabs-ai/components-terminal` is the **console skin** of the agent-session family
+(#117). It is a coding-agent CLI look-alike built from ordinary React and semantic
+tokens — deliberately not a terminal emulator. `Terminal` and `InteractiveTerminal` are
+the exception inside their own package: those two render output a real process actually
+produced.
+
+| Console (`@elabs-ai/components-terminal`)                                 | Chat (`@elabs-ai/components-ai`)                                                              | What is shared                                                                  |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [TerminalComposer](?path=/docs/terminal-terminalcomposer--docs)           | [Composer](?path=/docs/ai-composer--docs)                                                     | `OperatingMode` / `EffortLevel` / `effortRungForIndex`                          |
+| [TerminalSlashMenu](?path=/docs/terminal-terminalslashmenu--docs)         | [PromptInputSlash](?path=/docs/ai-composer-promptinputslash--docs)                            | `SlashCommand` / `defaultSlashCommandFilter` / `findTriggerQuery` / `stepIndex` |
+| [TerminalStatusBar](?path=/docs/terminal-terminalstatusbar--docs)         | [SessionStatusBar](?path=/docs/ai-sessionstatusbar--docs)                                     | prop names, deliberately identical                                              |
+| [TerminalToolCall](?path=/docs/terminal-terminaltoolcall--docs)           | [Tool](?path=/story/ai-tool--default) · [ToolResultCard](?path=/docs/ai-toolresultcard--docs) | the `success` / `error` / `pending` vocabulary                                  |
+| [TerminalPermission](?path=/docs/terminal-terminalpermission--docs)       | [ApprovalCard](?path=/docs/ai-approvalcard--docs)                                             | `ApprovalScope` / `ApprovalOption`                                              |
+| [TerminalTodoList](?path=/docs/terminal-terminaltodolist--docs)           | [Task](?path=/story/ai-task--default) · [Plan](?path=/docs/ai-plan--docs)                     | the three-state checklist grammar                                               |
+| [TerminalDiffHunk](?path=/docs/terminal-terminaldiffhunk--docs)           | [DiffView](?path=/docs/ai-diffview--docs)                                                     | `DiffLine` / `diffLineMarker` / `diffLineAccessibleLabel` / `collapseDiffRows`  |
+| [TerminalTranscriptRow](?path=/docs/terminal-terminaltranscriptrow--docs) | [Message](?path=/story/ai-message--presets)                                                   | one line of a transcript, two registers                                         |
+| [TerminalEventLine](?path=/docs/terminal-terminaleventline--docs)         | [AgentEvent](?path=/docs/ai-agentevent--docs)                                                 | `AgentEventPhase` / `AgentEventOutcome` / `CheckSummary`                        |
+| [TerminalWorking](?path=/docs/terminal-terminalworking--docs)             | [TurnStatus](?path=/docs/ai-turnstatus--docs)                                                 | `formatElapsed`; both take `elapsedMs` and run no timer                         |
+| [TerminalBanner](?path=/docs/terminal-terminalbanner--docs)               | [SessionHeader](?path=/docs/ai-sessionheader--docs)                                           | `SessionCapability` / `SessionQuickAction` / `SessionWhatsNewItem`              |
+| [TerminalOverlay](?path=/docs/terminal-terminaloverlay--docs)             | — (a chat uses `Dialog` directly)                                                             | `KeyboardShortcuts`, hosted rather than re-drawn                                |
+| [TerminalSurface](?path=/docs/terminal-terminalsurface--docs)             | [Conversation](?path=/story/ai-conversation--default)                                         | the scrolling transcript region                                                 |
+| [TerminalConsole](?path=/docs/terminal-terminalconsole--docs)             | [ChatShell](?path=/story/ai-chatshell--default)                                               | the frame around the regions                                                    |
+| [Terminal](?path=/docs/terminal-terminal--docs)                           | —                                                                                             | a **real** read-only ANSI log, not a look-alike                                 |
+| [InteractiveTerminal](?path=/docs/terminal-interactiveterminal--docs)     | —                                                                                             | a **real** xterm.js PTY surface                                                 |
+
+**The console components do not wrap the chat components.** They cannot:
+`@elabs-ai/components-terminal` declares peer dependencies on `tokens` and `ui` only, and
+the dependency gate gives it no edge to `ai` at all. Every row in the third column above
+is a model that was **promoted into `@elabs-ai/components-ui`** so both skins can reach
+it. That is also why `TerminalSlashMenu` is not a re-dress of `PromptInputSlash`: it
+renders the whole `TerminalComposer` internally and anchors its own popover, sharing the
+filter and step helpers rather than the component.
+
+Two more differences worth knowing before you assume the skins are interchangeable.
+`TerminalComposer` names its props for what they set (`mode`, `effort`) because it
+already owns a text `value`, where the chat parts use bare `value`/`onValueChange`. And
+a console is **one frame with regions inside it** — see
+[ADR 0033](https://github.com/mreimitz/elabs-components/blob/main/docs/ADR/0033-terminal-console-frame-and-regions.md):
+put your regions inside a `TerminalConsole` and none of them draws its own border,
+radius or shadow. Stacking four framed terminal cards is the mistake that ADR exists to
+prevent.
+
+The per-component record of what was reproduced from which upstream CLI, and where this
+package deliberately diverges, is `packages/terminal/references/agent-session-family.md`.
+
+## Model selection
+
+**The rule.** An inline pill that lives in a composer footer →
+[Core/ModelPicker](?path=/docs/core-modelpicker--docs). A full ⌘K palette in a modal
+dialog → compose [Overlays/Command](?path=/docs/overlays-command--docs)'s `CommandDialog`
+directly.
+
+There is deliberately **no third component** for the dialog case. `@elabs-ai/components-ai`
+used to export a `ModelSelector` whose parts were one-line pass-throughs to `Dialog` and
+`Command`; it was deleted in #136 rather than kept as a name for something the foundation
+package already does. Both surfaces render the same grouped, searchable `Command` list —
+`ModelPicker` anchors it in a popover under the pill, a `CommandDialog` puts it in a modal.
+
+The one piece that genuinely belongs to the AI package is the provider mark, because it
+fetches from a remote origin (`models.dev`) that the foundation package must not own —
+see [AI/ModelProviderLogo](?path=/docs/ai-modelproviderlogo--docs) for the self-hosting
+and blocked-load behaviour.
+
+## Toolbars
+
+**The rule.** Pick by what the row _is_, not by what it contains.
+
+| You are building                                                                    | Reach for                                                          |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| a dense secondary control row that should be **one tab stop** with arrow-key roving | [Layout/Toolbar](?path=/docs/layout-toolbar--docs)                 |
+| the row above a list, table or board — filters on the left, actions on the right    | [Layout/ViewToolbar](?path=/docs/layout-viewtoolbar--docs)         |
+| formatting chrome for a markdown **source** pane                                    | [Editor/MarkdownToolbar](?path=/docs/editor-markdowntoolbar--docs) |
+| a small toolbar that floats over a **text selection** in a transcript               | [AI/SelectionToolbar](?path=/docs/ai-selectiontoolbar--docs)       |
+
+`Toolbar` is the general-purpose primitive: it implements the roving-tabindex behaviour
+`role="toolbar"` promises, so a row built on it costs one tab stop instead of ten.
+`ViewToolbar` deliberately does **not** claim that role — its controls are ordinary tab
+stops, and the reasoning is in
+[Docs / View Toolbar Contract](?path=/docs/docs-view-toolbar-contract--docs) (rule R10),
+which also settles filter chips, result counts and control heights for that row.
+
+Note that `Toolbar` is not the only element in the library carrying `role="toolbar"`:
+`MarkdownToolbar`, `SelectionToolbar` and the Gantt chart's control row claim it for
+their own contents. `Toolbar` is the one you reach for when you have no such row already.
+
+## Diffs
+
+**The rule.** Pick by what the human is allowed to _do_ with the change.
+
+| The human is                                          | Reach for                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------ |
+| reading lines of a patch                              | [AI/DiffView](?path=/docs/ai-diffview--docs)                             |
+| accepting or rejecting per hunk                       | [AI/ChangeReview](?path=/docs/ai-changereview--docs)                     |
+| editing both sides, side by side                      | [Editor/DiffEditor](?path=/docs/editor-diffeditor--docs)                 |
+| reading a patch in a console transcript               | [Terminal/TerminalDiffHunk](?path=/docs/terminal-terminaldiffhunk--docs) |
+| comparing two **answers**, which is not a diff at all | [AI/MessageCompare](?path=/docs/ai-messagecompare--docs)                 |
+
+`DiffView` and `TerminalDiffHunk` read the same promoted `DiffLine` model from
+`@elabs-ai/components-ui` and label added/removed lines through the same
+`diffLineAccessibleLabel()`, so polarity is announced identically in a chat and in a
+console. They are two renderers of one model on purpose: `DiffView` is the read-only
+renderer, `TerminalDiffHunk` is the console dress.
+
+`ChangeReview` is **not** a third renderer of that model, and it is not going to become
+one. It is the trust gate — it owns approve/reject state — and a hunk's `before` / `after`
+are ordinary `ReactNode` prose, drawn as a deliberately quiet no-fill comparison rather
+than as patch rows. It also ships from `@elabs-ai/components-ui`, not from the package its
+story group names; the `AI/` group is by concern, which
+[Storybook guidelines](https://github.com/mreimitz/elabs-components/blob/main/docs/STORYBOOK_GUIDELINES.md)
+names as intentional. To review structured `DiffLine[]` hunks you inject one component
+into the other **in the app that depends on both** — pass a `<DiffView>` through
+`ChangeReview`'s `renderHunk` render-prop, or through a hunk's `after` slot. The worked
+wiring is the
+[Composed into ChangeReview](?path=/story/ai-diffview--change-review-composition) story.
+
+That seam is ratified, not unfinished: `ChangeHunk` gains no `lines` field and `DiffLine`
+never moves, because `@elabs-ai/components-ui` may not import `@elabs-ai/components-ai`
+and `DiffView` needs Shiki. See § 3 of
+[the adoption-architecture decision](https://github.com/mreimitz/elabs-components/blob/main/docs/decisions/2026-09-01-brainless-adoption-architecture.md).
+
+`DiffEditor` is different in kind — it is Monaco, so it is the only one of the four that
+can be typed into.
+
+`MessageCompare` is in this list only because people look for it here. It puts two model
+responses beside each other; nothing about it is line-level.
+
+## Markdown
+
+**The rule.** Pick by where the markdown is going to be read.
+
+| The markdown is                                  | Reach for                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| a read-only document in a chat or a side rail    | [AI/MarkdownView](?path=/docs/ai-markdownview--docs)               |
+| the preview pane of the markdown editor          | [Editor/MarkdownPreview](?path=/docs/editor-markdownpreview--docs) |
+| streaming into a message as the model writes it  | [AI/Message](?path=/story/ai-message--presets) (`MessageResponse`) |
+| a file the app did not write, opened in a viewer | [Viewer/FileViewer](?path=/story/viewer-fileviewer--markdown)      |
+| the typographic primitives they all map onto     | [Editor/Prose](?path=/docs/editor-prose--docs)                     |
+
+`MarkdownView` and `MarkdownPreview` are both Streamdown with a branded component map,
+and they differ in dialect and in intent. `MarkdownPreview` understands the editor's
+`:::card` / `:::callout` / `::metric` / `:::timeline` directives and renders them as real
+components; `MarkdownView` renders ordinary markdown and takes a `baseHeadingLevel` so a
+document heading inside a 20rem rail lands on the `title` rung instead of becoming the
+biggest text on screen. Do not render a markdown document as source through `CodeBlock` —
+that is the defect `MarkdownView` was added to fix.
+
+`Prose` is a re-export, not another renderer: `@elabs-ai/components-ui` owns the
+canonical `ProseHeading` / `ProseText` / `ProseLink` / `ProseList` / `ProseBlockquote` /
+`ProseInlineCode` set, `@elabs-ai/components-editor` re-exports them under their short
+names, and `MarkdownView`, `MarkdownPreview` and the viewer's markdown adapter each map
+their element tree onto that same set. One prose source, several renderers.
+
+The element **maps** stay per-surface, and that is the decision rather than an unpaid
+debt. `MarkdownPreview` wraps every standard element to attach `data-sourcepos`, the
+ghost-diff wash and the search wash, and gives headings slug ids and an action slot;
+`MarkdownView` takes `baseHeadingLevel` and locks its sanitiser chain; the viewer's
+adapter deliberately ships no plugins and no streaming. `@elabs-ai/components-ai`,
+`@elabs-ai/components-editor` and `@elabs-ai/components-viewer` are leaves that may not
+import one another, so the half that could be shared has already moved down into
+`@elabs-ai/components-ui` — and `streamdown` deliberately never follows it there, or
+every consumer of every foundation component would carry it.
+
+## Slash menus
+
+**The rule.** Pick by which text field the `/` was typed into.
+
+| Typed into                  | Reach for                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| a chat composer             | [AI/Composer/PromptInputSlash](?path=/docs/ai-composer-promptinputslash--docs)       |
+| the console composer        | [Terminal/TerminalSlashMenu](?path=/docs/terminal-terminalslashmenu--docs)           |
+| the WYSIWYG markdown editor | [Editor/MarkdownEditor/SlashMenu](?path=/docs/editor-markdowneditor-slashmenu--docs) |
+
+The first two share `SlashCommand`, `defaultSlashCommandFilter`, `findTriggerQuery` and
+`stepIndex` from `@elabs-ai/components-ui`, and behave the same way: `/` opens only at the
+start of a line, filtering is case-insensitive by prefix, arrow keys wrap, Enter splices
+the command into the text and the caret never leaves the field.
+
+The editor's menu is a separate implementation and stays that way. It inserts ProseMirror
+nodes into a Milkdown document rather than text into a textarea, and the editor package
+sits on the same leaf rung as the AI package, so it could not import the other one even
+if the grammars matched.
+
+## The remaining pairs, one line each
+
+| If you want                                              | Use                                                        | Not                                                                                                                                                                                                                               |
+| -------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| static table markup you lay out yourself                 | [Data/Table](?path=/docs/data-table--docs)                 | [Data/DataTable](?path=/docs/data-datatable--docs), which brings TanStack sorting, filtering, pagination and virtualization                                                                                                       |
+| a generic ordered-steps rail                             | [Core/Timeline](?path=/docs/core-timeline--docs)           | [AI/AgentTimeline](?path=/docs/ai-agenttimeline--docs) (agent execution trace on that rail) or [Data/RevisionTimeline](?path=/docs/data-revisiontimeline--docs) (git history)                                                     |
+| the sidebar primitive set to compose yourself            | [Layout/Sidebar](?path=/story/layout-sidebar--default)     | [Layout/AppSidebar](?path=/docs/layout-appsidebar--docs), which composes those primitives behind `header` / `footer` / nav slots                                                                                                  |
+| panes the **user** can drag to resize                    | [Layout/Resizable](?path=/story/layout-resizable--default) | [Layout/SplitPanel](?path=/story/layout-splitpanel--master-detail), a fixed two-pane layout with per-pane surface tones — those tones are `splitPaneVariants`, exported so a draggable `ResizablePanel` can wear the same tiering |
+| a neutral label or count                                 | [Core/Badge](?path=/docs/core-badge--docs)                 | [Core/StatusBadge](?path=/docs/core-statusbadge--docs), the closed seven-state execution-status vocabulary                                                                                                                        |
+| a plain text field                                       | [Core/Input](?path=/docs/core-input--docs)                 | [Data/SearchInput](?path=/docs/data-searchinput--docs), which adds the leading icon and the clear button                                                                                                                          |
+| multi-line highlighted source with a language picker     | [AI/CodeBlock](?path=/docs/ai-codeblock--docs)             | [AI/Snippet](?path=/story/ai-snippet--default), a single-line copyable command                                                                                                                                                    |
+| the chat workspace's right rail of produced assets       | [AI/ContextPanel](?path=/docs/ai-contextpanel--docs)       | [AI/TokenUsage](?path=/story/ai-tokenusage--default), the context-WINDOW usage ring — it was called `Context` until it was renamed for exactly this confusion                                                                     |
+| a collapsible, tabbed view of a code-execution tool part | [AI/Sandbox](?path=/story/ai-sandbox--default)             | [Editor/CodeEditor](?path=/docs/editor-codeeditor--docs), the real Monaco editing surface                                                                                                                                         |
+
+## When the rule does not decide it
+
+If two components still look interchangeable after reading their rule here, that is a
+finding, not a preference. File it — the fix is either a sharper decision rule on this
+page or a merge of the two components, and both are cheaper than a third look-alike.

@@ -1,5 +1,4 @@
 {
-  "packages/ai/src/blocks-ai-composer.stories.tsx": 1,
   "packages/ai/src/message.stories.tsx": 4,
   "packages/ui/src/components/change-review/change-review.tsx": 1,
   "packages/ui/src/components/field-row/field-row.stories.tsx": 1,

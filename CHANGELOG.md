@@ -2,6 +2,170 @@
 
 ## Unreleased
 
+- Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
+  look-alike a reader is most likely to reach for by mistake, so `brand-ui docs
+<Component>` (and the `brand-ui` MCP `docs` tool, and the per-package `llms`
+  spokes) says which of two similar components to use. Twenty existing entries
+  gained a "don't confuse it with X" anti-pattern — `Tool`, `Message`,
+  `Conversation`, `ChatShell`, `Task`, `Plan`, `AgentEvent`, `ApprovalCard`,
+  `ToolResultCard`, `ContextPanel`, `TokenUsage`, `Badge`, `Input`, `Sandbox`,
+  `MessageCompare` — and five components that had no intent entry at all gained
+  one: `Sidebar`, `AppSidebar`, `ViewToolbar`, `StatusBadge` and `DiffEditor`.
+  No component API changed.
+
+- Added / Changed (**breaking rename**): `@elabs-ai/components-ui`'s `SplitPanel`
+  exports its per-pane ground-offset tone `cva` as `splitPaneVariants` — the
+  internal `paneToneVariants` name is **gone outright**, no deprecated alias.
+  `SplitPanel` itself is unchanged (same props, defaults and DOM); the export
+  lets a draggable `Layout/Resizable` pane wear the identical `plain`/`muted`/
+  `card` tiering instead of a hand-rolled second copy of the three classes —
+  apply `splitPaneVariants({ tone })` to a `ResizablePanel`'s `className`. Both
+  components' Storybook pages now name the other and link to
+  [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs);
+  `Layout/Resizable` gains a `Tiered` story demonstrating the composition with a
+  drag `play` test.
+
+- Changed: `@elabs-ai/components-ui`, `@elabs-ai/components-ai` and
+  `@elabs-ai/components-editor` now say, in their docblocks and Storybook
+  descriptions, which of the look-alike diff and markdown surfaces to reach for
+  and why they stay separate. Nothing renders differently and no export moved.
+  `ChangeReview` records that it is not a diff-LINE renderer: a hunk's
+  `before`/`after` are ordinary prose nodes, and structured `DiffLine[]` hunks
+  arrive by injection — the app that depends on both packages passes a
+  `<DiffView>` (`@elabs-ai/components-ai`) through `renderHunk` or a hunk's
+  `after` slot, since neither package may import the other. A new
+  `InjectedHunkRenderer` story shows that shape with a stand-in node.
+  `MarkdownView` drops the sentence "one source-owned prose set for chat
+  answers, the editor preview and this view", which described the shared
+  `Prose*` PRIMITIVES but kept being read as "one renderer": the three branded
+  markdown renderers keep their own element maps on purpose, and `streamdown`
+  deliberately never moves down into `@elabs-ai/components-ui`. A new
+  `packages/editor/src/prose/prose.test.ts` locks the part that really is
+  shared — the editor's `Heading`/`Text`/`Link`/`List`/`ListItem`/
+  `Blockquote`/`InlineCode` must stay the SAME objects as `ui`'s `Prose*`, not
+  lookalikes.
+
+- Changed: the `ai-chat-shell` registry block — the one a consumer copies with
+  `npx shadcn add ai-chat-shell` — now renders `Composer`, the canonical
+  `@elabs-ai/components-ai` chat input, instead of assembling its own
+  `PromptInput` footer. What a consumer sees differently: the input picks up
+  Composer's rounded two-tone frame and its status strip (driven here from the
+  block's own chat state, so it reads "Thinking…" mid-turn), and the block now
+  demonstrates the props every further control hangs off (`modelPicker`,
+  `mode`, `effort`, `slashCommands`, `tools`). What is unchanged, and locked by
+  tests: the submit payload handed to `send` (untrimmed text plus an empty
+  `files` list, identical to the hand-rolled footer's), the empty-composer
+  guard, the field clearing on submit, the absence of any attachment or
+  dictation affordance, and the absence of a Stop the block could not honour.
+  Attach and voice are switched off explicitly (`showAttach` / `showVoice`)
+  rather than left at their `true` defaults, because this scaffold wires
+  neither handler. The block gains a Storybook page — "AI Chat Shell", under
+  Patterns/Blocks — that renders the shipped file.
+
+- Added: `@elabs-ai/components-cli` — `brand-ui audit` gains a composition rule,
+  `ai/prefer-composer`, that points a direct `<PromptInput>` render back at
+  `<Composer>`. It is **advisory only** and can never fail `--strict`: dropping
+  to the primitive for a bespoke shell is a documented escape hatch, not a
+  defect. It stays quiet in a file that also renders `<Composer>`, in the file
+  that defines `Composer`, in the `PromptInput` family's own modules and
+  stories, and in any test. A file may also opt out of any one advisory rule
+  with a `// brand-ui-audit-allow: <rule-id>` comment — blocking rules (raw
+  colour, gradient text, tiny text, content slop) can never be silenced this
+  way. `scanText` accepts an optional `path` for the path-scoped exemptions;
+  omitting it can only cost a false positive, never hide one.
+
+- Changed: `@elabs-ai/components-ui` — `RevisionTimeline` and the canonical
+  `Timeline` rail now state, in both docblocks and in `RevisionTimeline`'s
+  Storybook description, why the two are deliberately not one component.
+  Nothing renders differently: a rail node's colour is the closed 7-state
+  execution `Status` (locked to `StatusBadge` by #392/#387), while a
+  `RevisionTimeline` node's colour is lane identity from the chart ramp, and a
+  fork/merge join is a cross-row bezier in a coordinate space spanning the
+  whole list, which no item-local `w-px` connector can draw. Converging them
+  would take about five opt-in props on `Timeline`, four of which would switch
+  its own node, connector, geometry and status announcement off. A new test
+  locks the non-colour channel this keeps: the merge row's glyph stays a
+  distinct shape rather than a second colour.
+
+- Changed (**breaking**): the context-window usage readout in
+  `@elabs-ai/components-ai` is now called `TokenUsage`, and the old `Context*`
+  names are **removed outright** — there are no deprecated aliases and no
+  transitional re-export. `Context` sat one line away from `ContextPanel`, the
+  chat workspace's right rail, in every import list and in the Storybook
+  sidebar; the two are unrelated components and the shared name made it a
+  coin-flip which one a reader (or a coding agent) was looking at. `Context` was
+  the AI Elements upstream name and nothing here depended on keeping it. Rename
+  imports: `Context` → `TokenUsage`, `ContextTrigger` → `TokenUsageTrigger`,
+  `ContextContent` → `TokenUsageContent`, `ContextContentHeader` →
+  `TokenUsageContentHeader`, `ContextContentBody` → `TokenUsageContentBody`,
+  `ContextContentFooter` → `TokenUsageContentFooter`, `ContextInputUsage` →
+  `TokenUsageInput`, `ContextOutputUsage` → `TokenUsageOutput`,
+  `ContextReasoningUsage` → `TokenUsageReasoning`, `ContextCacheUsage` →
+  `TokenUsageCache`; every matching `*Props` type renames the same way
+  (`ContextProps` → `TokenUsageProps`, and so on). The props, behaviour and
+  rendered DOM are unchanged, so a rename is the whole migration. The module
+  moves from `context.tsx` to `token-usage.tsx` and the story from `AI/Context`
+  to `AI/TokenUsage`; `ContextPanel` and its parts are untouched.
+
+- Removed / Added: `Composer` (`@elabs-ai/components-ai`) drops its `model`
+  prop and the hard-coded `"Claude Opus 4"` pill it defaulted to. That pill was
+  a `PromptInputButton` with a globe glyph and no click handler — a composer
+  showing a model name it cannot change. **This is a clean break with no
+  deprecated alias:** the replacement is a `modelPicker?: ReactNode` slot in
+  the same footer position, which renders nothing by default. Pass a
+  `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit in a
+  composer footer) wired to your own state. If you passed `model={null}` to
+  hide the pill, delete the prop; if you passed a label, pass a real picker.
+
+- Added: `Composer` (`@elabs-ai/components-ai`) now reaches every control the
+  `PromptInput` family ships, so a chat input no longer has to be hand-rolled
+  from `PromptInput` to get one. Three new optional props alongside
+  `modelPicker`: `mode` renders a `PromptInputMode` (an app-defined operating
+  mode), `effort` renders a `PromptInputEffort` (an ordered reasoning-effort
+  scale), and `slashCommands` / `onSlashCommand` swap the textarea for a
+  `PromptInputSlash` palette that opens on `/` at the start of a line. The
+  footer order is `attach · modelPicker · mode · effort │ voice · send`,
+  matching `TerminalComposer` so the chat and console skins agree, and the
+  cluster now wraps instead of overflowing a narrow composer. Nothing renders
+  unless you pass the prop, and `tools` no longer swallows the named slots — it
+  overrides the default attach button only.
+
+- Removed: the `ModelSelector*` family is gone from `@elabs-ai/components-ai`.
+  It was never a second model picker — eleven of its fourteen exports were
+  one-line pass-throughs of components `@elabs-ai/components-ui` already ships,
+  so `ModelSelectorGroup` _was_ `CommandGroup`, `ModelSelectorItem` _was_
+  `CommandItem` and `ModelSelectorDialog` _was_ `CommandDialog`. Deleted
+  outright, with no deprecated alias: `ModelSelector`, `ModelSelectorTrigger`,
+  `ModelSelectorContent`, `ModelSelectorDialog`, `ModelSelectorInput`,
+  `ModelSelectorList`, `ModelSelectorEmpty`, `ModelSelectorGroup`,
+  `ModelSelectorItem`, `ModelSelectorShortcut`, `ModelSelectorSeparator`,
+  `ModelSelectorName` and their twelve `*Props` types. **What to reach for
+  instead:** a full ⌘K palette is `CommandDialog` + `Command`/`CommandInput`/
+  `CommandList`/`CommandEmpty`/`CommandGroup`/`CommandItem`/`CommandShortcut`/
+  `CommandSeparator` from `@elabs-ai/components-ui`, composed directly; an
+  inline pill in a composer footer is `ModelPicker`, also from
+  `@elabs-ai/components-ui`, which is the one real implementation and is
+  unchanged. `DialogTrigger` replaces `ModelSelectorTrigger` one-for-one.
+
+- Changed: the provider-logo half of that module survives under a name that says
+  what it is. `@elabs-ai/components-ai` now exports `ModelProviderLogo`,
+  `ModelProviderLogoGroup`, `MODEL_PROVIDER_LOGO_BASE_URL`,
+  `ModelProviderLogoProps` and `ModelProviderLogoGroupProps` — previously
+  `ModelSelectorLogo`, `ModelSelectorLogoGroup`,
+  `MODEL_SELECTOR_LOGO_BASE_URL`, `ModelSelectorLogoProps` and
+  `ModelSelectorLogoGroupProps`. Rename-only: the rendering, the `src` /
+  `fallback` / `onError` escape hatches for a restrictive `img-src`, and the
+  default `models.dev` origin are all byte-identical. Its Storybook page moves
+  from `AI/ModelSelectorLogo` to `AI/ModelProviderLogo`.
+
+- Added: `CommandDialog` (`@elabs-ai/components-ui`) accepts an optional
+  `title`, rendered as the dialog's `sr-only` accessible name. This is the one
+  capability the deleted alias shell had that the base package lacked, so a ⌘K
+  palette no longer needs a hand-placed `DialogTitle` for its name. It is
+  optional by design — a caller that already renders its own `DialogTitle` in
+  `children` keeps working unchanged. The prop type is exported as
+  `CommandDialogProps`.
+
 - Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
   now announces its `isStreaming` state. Its only streaming signal was the
   blinking cursor block, which is purely visual, so a screen-reader user

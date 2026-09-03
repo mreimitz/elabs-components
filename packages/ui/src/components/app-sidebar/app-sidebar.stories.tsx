@@ -17,7 +17,15 @@ const meta = {
   title: "Layout/AppSidebar",
   component: AppSidebar,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "The opinionated application sidebar — the raw primitive set it composes is `Layout/Sidebar`; see [Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). `AppSidebar` wraps the `Sidebar` → `SidebarHeader` → `SidebarContent` → `SidebarFooter` skeleton behind typed `header` / `footer` slots with the navigation as `children`, and forwards every `Sidebar` prop. The registry’s sidebar blocks import this rather than rebuilding the skeleton.",
+      },
+    },
+  },
   decorators: [
     (Story) => (
       <SidebarProvider>

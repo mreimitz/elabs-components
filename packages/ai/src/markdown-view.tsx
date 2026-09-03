@@ -7,8 +7,28 @@
  * was the ASSET-2 defect: `CodeBlock code={…} language="markdown"`). Built on
  * the EXISTING `streamdown` dependency (no new heavy dep), but unlike the
  * streaming `MessageResponse` it maps the element tree onto the promoted
- * `Prose*` primitives from `@elabs-ai/components-ui` via a `components` map — one
- * source-owned prose set for chat answers, the editor preview and this view.
+ * `Prose*` primitives from `@elabs-ai/components-ui` via a `components` map.
+ *
+ * What is SHARED is the `Prose*` set — plus the Streamdown locale bridge in
+ * `_streamdown-i18n` and `ui`'s `streamdown-translations` — NOT the renderer and
+ * NOT the element map. The wording this docblock used to carry ("one source-owned
+ * prose set for chat answers, the editor preview and this view") kept being read
+ * as "one renderer", and it never meant that. Three branded document renderers
+ * ship, and their element MAPS stay per-surface on purpose:
+ *   - this view — `baseHeadingLevel` for a constrained rung, and a sanitiser
+ *     chain locked at the type level AND at runtime;
+ *   - `@elabs-ai/components-editor`'s `MarkdownPreview` — the brand `:::card` /
+ *     `:::callout` / `::metric` / `:::timeline` dialect, and every standard
+ *     element wrapped to attach `data-sourcepos`, the ghost-diff wash and the
+ *     search wash, with slug ids and a heading-action slot on headings;
+ *   - `@elabs-ai/components-viewer`'s markdown adapter — a file the app did not
+ *     write, so no plugins and no streaming.
+ * `ai`, `editor` and `viewer` are layer-2 leaves that may not import one
+ * another, so the half that COULD move down already has; and `streamdown` must
+ * never follow it into `ui` — see the rule stated in
+ * `packages/ui/src/lib/streamdown-translations.ts` — or every consumer of every
+ * foundation component would carry it. Re-litigated and re-ratified 2026-09-03:
+ * the three maps are the decision, not an unpaid debt.
  *
  * `baseHeadingLevel` is the constrained-rung seam (research 04 §5 / 09 §G.2):
  * inside a narrow rail pass `baseHeadingLevel={2}` so a document `#` renders

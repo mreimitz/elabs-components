@@ -17,6 +17,16 @@
  *
  * Fork-prevention: a Timeline re-implementation outside this folder fails
  * `pnpm timeline-fork:check` (scripts/check-timeline-fork.mjs).
+ *
+ * Deliberately NOT on this rail (a different grammar, not an oversight —
+ * RM-014, #133): `RevisionTimeline` (@elabs-ai/components-ui). Its rail is a
+ * multi-lane commit DAG whose node colour is LANE IDENTITY (the chart ramp),
+ * not `Status`, and whose fork/merge joins are cross-row beziers living in one
+ * SVG coordinate space spanning the whole list — neither of which a
+ * status-keyed node or an item-local `w-px` connector can express. Carrying
+ * both grammars here would cost ~5 opt-in props, four of them switching this
+ * rail's own node/connector/geometry/status announcement off. The four-point
+ * reason is in that component's docblock; reopen #133 before converging them.
  */
 import { forwardRef, type HTMLAttributes, type LiHTMLAttributes, type ReactNode } from "react";
 import { cn } from "../../lib/cn";

@@ -11,6 +11,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The GENERIC ordered-steps rail; an agent execution trace is `AI/AgentTimeline` " +
+          "and git history is `Data/RevisionTimeline` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Ordered steps with a vertical connector and status-colored nodes — THE shared " +
           "rail spine (#190). Two front doors over one rail: the array `items` API (the " +
           "editor's `:::timeline` target, `done|active|pending`) and the compound " +

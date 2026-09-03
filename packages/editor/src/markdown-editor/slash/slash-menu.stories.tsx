@@ -20,13 +20,16 @@ import { SlashMenu } from "./slash-menu";
  * keystroke dispatch can't be fully simulated in jsdom.
  */
 const meta = {
-  title: "Editor/MarkdownEditor/Slash menu",
+  title: "Editor/MarkdownEditor/SlashMenu",
   component: SlashMenu,
   tags: ["autodocs"],
   parameters: {
     docs: {
       description: {
         component:
+          "The EDITOR slash menu, which inserts ProseMirror nodes; a chat composer uses " +
+          "`AI/Composer/PromptInputSlash` and a console composer `Terminal/TerminalSlashMenu` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Branded `/` command menu for the WYSIWYG editor. Inserts brand `:::` " +
           "directives + basic blocks at the caret. Token-driven `listbox`/`option` " +
           "list; the editor `textbox` owns `aria-activedescendant`.",

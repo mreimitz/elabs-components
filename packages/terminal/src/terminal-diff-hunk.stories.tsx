@@ -21,6 +21,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/DiffView` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "An inline unified diff hunk in console dress (#117, derived from Claude " +
           "Code's own diff view — see `packages/terminal/references/agent-session-family.md`). " +
           "Each real line carries a marker glyph, an `sr-only` polarity word riding " +

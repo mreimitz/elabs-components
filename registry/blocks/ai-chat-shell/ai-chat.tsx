@@ -3,11 +3,18 @@
  * Built on @elabs-ai/components-ai (AI Elements) — render the AI SDK `UIMessage` model;
  * the app owns the model calls (swap `send` for a `useChat` transport).
  * Depends on installed @elabs-ai/components-ai + @elabs-ai/components-ui.
+ *
+ * The input is `<Composer>`, the canonical brand-ui chat input — not a
+ * hand-assembled `PromptInput` footer. Every control the `PromptInput` family
+ * ships is reachable from a `Composer` prop (`modelPicker`, `mode`, `effort`,
+ * `slashCommands`, `tools`), so a scaffold has no reason to drop a rung; reach
+ * for `PromptInput` directly only when you are building a bespoke shell.
  */
 "use client";
 
 import { useState } from "react";
 import {
+  Composer,
   Conversation,
   ConversationContent,
   ConversationEmptyState,
@@ -15,12 +22,6 @@ import {
   Message,
   MessageContent,
   MessageResponse,
-  PromptInput,
-  PromptInputBody,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
 } from "@elabs-ai/components-ai";
 
 interface ChatMessage {
@@ -64,22 +65,25 @@ export function AiChat() {
         <ConversationScrollButton />
       </Conversation>
 
-      <PromptInput
+      <Composer
         onSubmit={(message) => {
           const text = message.text?.trim();
           if (text) {
             void send(text);
           }
         }}
-      >
-        <PromptInputBody>
-          <PromptInputTextarea placeholder="Send a message…" />
-        </PromptInputBody>
-        <PromptInputFooter>
-          <PromptInputTools />
-          <PromptInputSubmit status={status} />
-        </PromptInputFooter>
-      </PromptInput>
+        placeholder="Send a message…"
+        // The status strip is display-only; drive it from whatever your runtime
+        // knows. Pass `null` to hide the strip entirely.
+        status={status === "submitted" ? "Thinking…" : "Awaiting your input"}
+        sendStatus={status}
+        // This scaffold wires neither attachments nor dictation, so it does not
+        // show affordances that would do nothing. Drop these two props (they
+        // default to `true`) once you have wired the handlers, or pass your own
+        // controls through `tools`.
+        showAttach={false}
+        showVoice={false}
+      />
     </div>
   );
 }

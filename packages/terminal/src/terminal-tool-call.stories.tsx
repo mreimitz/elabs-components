@@ -13,6 +13,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/Tool` and `AI/ToolResultCard` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A single tool invocation dressed as a CLI line: a status glyph, the tool " +
           "name plus its optional argument in parentheses, a result summary on its own " +
           "`⎿` row, and detail behind a real, keyboard-operable disclosure. The three " +

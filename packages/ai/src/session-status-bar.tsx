@@ -25,8 +25,8 @@ export interface SessionStatusBarProps extends ComponentProps<"div"> {
   connections?: SessionStatusBarConnections;
   /**
    * Docks another component alongside the ambient segments — most often
-   * `<Context />` (`@elabs-ai/components-ai`), so token usage/cost keeps its
-   * one owner (`context.tsx`, tokenlens) instead of being re-implemented
+   * `<TokenUsage />` (`@elabs-ai/components-ai`), so token usage/cost keeps
+   * its one owner (`token-usage.tsx`, tokenlens) instead of being re-implemented
    * here. Rendered flush to the end of the bar.
    */
   children?: ReactNode;

@@ -45,6 +45,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/Composer/PromptInputSlash` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The console skin's `/`-command palette: a popover listbox anchored to " +
           "`TerminalComposer`'s own textarea, filtered by prefix, navigated with " +
           "wrapping/clamped arrow keys, and spliced into the text on Enter — the caret " +

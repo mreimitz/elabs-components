@@ -214,6 +214,9 @@ jobs:
       - name: Docs and governance
         run: |
           pnpm docs:check
+          pnpm docs-links:check
+          pnpm storybook-groups:check
+          pnpm story-descriptions:check
           pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
           pnpm source-theme-count:check
@@ -283,6 +286,7 @@ jobs:
           pnpm deps-sync:test
           pnpm dispatch:check:test
           pnpm docs:check:test
+          pnpm docs-links:check:test
           pnpm elevation:check:test
           pnpm format:check:test
           pnpm gen:check:test
@@ -328,6 +332,8 @@ jobs:
           pnpm slop:check:test
           pnpm source-theme-count:check:test
           pnpm states:check:test
+          pnpm story-descriptions:check:test
+          pnpm storybook-groups:check:test
           pnpm surface-elevation:check:test
           pnpm surface:preview:test
           pnpm templates:check:test

@@ -6,7 +6,30 @@ import { DiffView } from "./diff-view";
 const meta = {
   title: "AI/DiffView",
   component: DiffView,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The READ-ONLY patch renderer. Pick a diff surface by what the human is allowed " +
+          "to do with the change: reading lines of a patch → `AI/DiffView` " +
+          "(`@elabs-ai/components-ai`); accepting or rejecting per hunk → " +
+          "`AI/ChangeReview` (`@elabs-ai/components-ui`); editing both sides, side by " +
+          "side → `Editor/DiffEditor` (`@elabs-ai/components-editor`); reading a " +
+          "patch in a console transcript → `Terminal/TerminalDiffHunk` " +
+          "(`@elabs-ai/components-terminal`). See " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
+          "This view renders a `DiffLine[]` someone else computed — it never diffs, " +
+          "fetches or parses a patch itself. To put those lines behind an approve/reject " +
+          "gate, the app that depends on both packages injects one into the other: pass a " +
+          "`<DiffView>` through `ChangeReview`’s `renderHunk` render-prop or a " +
+          "hunk’s `after` slot, as the *Composed into ChangeReview (ui)* story below " +
+          "does. That seam is ratified, not unfinished — `ChangeHunk` gains no " +
+          "`lines` field and `DiffLine` never moves, because `@elabs-ai/components-ui` " +
+          "may not import `@elabs-ai/components-ai` and this view needs Shiki.",
+      },
+    },
+  },
   tags: ["autodocs"],
 } satisfies Meta<typeof DiffView>;
 export default meta;
