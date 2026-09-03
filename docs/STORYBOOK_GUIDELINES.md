@@ -45,7 +45,9 @@ group" below.
 12. **Layout** — app shells, sidebars, page scaffolding, Toolbar.
 13. **Data** — tables and data surfaces (`@elabs-ai/components-data` grid + `@elabs-ai/components-ui` table primitives).
 14. **Charts** — `@elabs-ai/components-charts`.
-15. **AI** — `@elabs-ai/components-ai` chat / agent surfaces.
+15. **AI** — `@elabs-ai/components-ai` chat / agent surfaces. `Composer` is a
+    sub-family node: the `PromptInput` primitive and the mode / effort / slash
+    controls it is assembled from are nested under it (see "Naming" below).
 16. **Terminal** — `@elabs-ai/components-terminal`: the console skin of the AI family, which
     is why it sits directly after AI rather than with the other domain packages.
 17. **Editor** — `@elabs-ai/components-editor`.
@@ -72,7 +74,20 @@ Foundations.
 
 - Titles are `Group/ComponentName` (two levels). Use a third level only for a real
   sub-family (`Editor/MarkdownPreview/Academic`, `Patterns/Templates/Settings`,
-  `Layout/App Shell/Mail`).
+  `Layout/App Shell/Mail`, `AI/Composer/PromptInput`).
+- **A sub-family nests under the whole it is part of, and the parent keeps its own
+  page.** `AI/Composer` is both a component page and the parent node: the four pages
+  beneath it (`PromptInput`, `PromptInputMode`, `PromptInputEffort`,
+  `PromptInputSlash`) are the composer's parts, not its siblings, and `AI/Composer`'s
+  description carries the anatomy that says so. Nest only where that relationship is
+  real — a component that merely reads like a neighbour (`AI/MessageForm`, a
+  model-emitted form inside a message) stays a sibling and says in its first sentence
+  what it is not.
+- **A composition of parts that ALREADY have pages is a story, not a block.** A demo
+  whose whole content is "these library components, arranged" belongs as a story on
+  the canonical component's page. `Patterns/Blocks` is for copy-own building blocks —
+  ideally ones backed by a `registry/` item a consumer installs, like
+  `Patterns/Blocks/AI Chat Shell`.
 - The component segment is PascalCase with no spaces: `AI/ChatShell`, not
   `AI/Chat Shell`. Match the exported component name where possible.
 - **No implementation leakage in titles.** The public name is the concept, not the
