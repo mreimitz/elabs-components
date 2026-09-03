@@ -27,6 +27,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The EDITOR slash menu, which inserts ProseMirror nodes; a chat composer uses " +
+          "`AI/PromptInputSlash` and a console composer `Terminal/TerminalSlashMenu` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Branded `/` command menu for the WYSIWYG editor. Inserts brand `:::` " +
           "directives + basic blocks at the caret. Token-driven `listbox`/`option` " +
           "list; the editor `textbox` owns `aria-activedescendant`.",

@@ -214,6 +214,7 @@ jobs:
       - name: Docs and governance
         run: |
           pnpm docs:check
+          pnpm docs-links:check
           pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
           pnpm source-theme-count:check
@@ -283,6 +284,7 @@ jobs:
           pnpm deps-sync:test
           pnpm dispatch:check:test
           pnpm docs:check:test
+          pnpm docs-links:check:test
           pnpm elevation:check:test
           pnpm format:check:test
           pnpm gen:check:test

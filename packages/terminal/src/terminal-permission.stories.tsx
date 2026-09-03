@@ -12,6 +12,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/ApprovalCard` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The per-call scoped approval prompt: title, command preview, question, then " +
           "numbered options whose scope (`once` / `session` / `deny`) is chosen through a " +
           "real Radix `RadioGroup` — never a hand-rolled focus walk. Every option's scope " +

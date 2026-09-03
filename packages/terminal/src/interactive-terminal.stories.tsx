@@ -13,6 +13,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "A REAL terminal, not a console look-alike: for a coding-agent CLI dress use the " +
+          "agent-session family — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A token-themed **xterm.js** terminal — a real interactive PTY surface (ANSI " +
           "output, typed input incl. paste, resize). `Terminal` stays the presentational " +
           "read-only log; this is the wrapper for an actual running process. The " +

@@ -13,6 +13,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The console counterpart of `AI/Conversation` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The console **ground** for the agent-session family: it establishes the " +
           "surface, the monospace type role and the two-column gutter grid exactly " +
           "once, then publishes a single value — the gutter grammar — to every row " +

@@ -14,6 +14,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The WYSIWYG markdown surface; the Monaco SOURCE editor is `Editor/CodeEditor` " +
+          "and the read-only render is `Editor/MarkdownPreview` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A headless Milkdown (ProseMirror) WYSIWYG markdown surface vendored onto " +
           "brand-ui. Companion to the Monaco `CodeEditor` (source) in the same package. " +
           "Theming is 100% semantic tokens, so it tracks every theme via `data-theme`. " +

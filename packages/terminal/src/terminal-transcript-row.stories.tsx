@@ -13,6 +13,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/Message` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "One line of an agent transcript, built on `TerminalRow`. The `kind` axis " +
           "(`user` / `agent` / `output` / `error`) carries who spoke and whether " +
           "something failed as a glyph, a colour, AND an accessible label — never " +

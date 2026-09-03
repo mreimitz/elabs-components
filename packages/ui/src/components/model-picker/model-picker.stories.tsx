@@ -61,6 +61,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The INLINE composer pill; the full palette in a dialog is `ModelSelector` " +
+          "(`@elabs-ai/components-ai`) — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A compact pill that opens a grouped, searchable target list anchored under itself — " +
           "sized for a composer footer. The inline sibling of `@elabs-ai/components-ai`'s " +
           "`ModelSelector`, which is the same `Command` internals in a modal `Dialog`.\n\n" +

@@ -12,6 +12,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The EDITOR preview pane, which understands the brand `:::` directives; ordinary " +
+          "markdown in a chat or a side rail is `AI/MarkdownView` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Renders markdown to REAL @brand components (Streamdown + a branded components " +
           "map): `#` → Heading, link → Link, table → Table, `---` → Separator, and the brand " +
           "directives `:::card` / `:::callout` / `::metric` / `:::timeline` → Card / Alert / " +

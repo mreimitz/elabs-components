@@ -18,6 +18,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The markdown SOURCE-pane toolbar; the general-purpose roving control strip is " +
+          "`Layout/Toolbar` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Formatting chrome for the markdown SOURCE pane, composed from @elabs-ai/components-ui. " +
           "The Insert menu is driven by the slash-command registry, so source mode " +
           "reaches the same brand blocks as the WYSIWYG `/` menu.",

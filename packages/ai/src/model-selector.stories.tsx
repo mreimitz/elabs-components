@@ -18,6 +18,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The logo sub-part of `ModelSelector`, the model palette in a dialog; the inline " +
+          "composer pill is `Core/ModelPicker` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Provider logo for the model selector. Defaults to fetching from models.dev; pass `src` for a self-hosted asset and `fallback` for the blocked/offline case. A failed load renders a neutral glyph, never a broken image.",
       },
     },

@@ -37,6 +37,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The console dress of a `Dialog`; a chat surface uses `Dialog` directly — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The console-dress modal FRAME: a real Radix `Dialog` painted on the terminal " +
           "ground, with a title row, arbitrary caller content, and an optional key-hint " +
           "footer legend. It is a frame, not a catalogue of panels — the canonical filler " +

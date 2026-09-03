@@ -10,6 +10,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The CHAT status row; the console skin is `Terminal/TerminalStatusBar`, with the same " +
+          "prop names — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The ambient session row: workspace, branch, model and integration-connection progress (#105). Every segment renders only when its prop is supplied — an all-empty bar renders nothing at all. Docks `Context` via `children` rather than re-implementing token-usage/cost maths.",
       },
     },

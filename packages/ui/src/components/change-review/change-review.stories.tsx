@@ -89,6 +89,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The ACCEPT/REJECT diff surface; read-only patch lines are `AI/DiffView` and an " +
+          "editable side-by-side is `Editor/DiffEditor` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "AI-edit trust gate. When an agent proposes edits, the human reviews them " +
           "hunk-by-hunk and accepts or rejects each before they apply. Compound " +
           "component with lifted state — compose parts for custom layouts, or use the " +

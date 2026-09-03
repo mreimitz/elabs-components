@@ -10,6 +10,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The CHAT in-turn footer; the console skin is `Terminal/TerminalWorking` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The in-turn footer: label, elapsed time, token counts, turn progress and a stop affordance in one place (#105). Exactly one role=status live region announces the label and the settled state — the ticking elapsed/tokens/turn stats are plain visible text so they never flood assistive tech.",
       },
     },

@@ -56,6 +56,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The CHAT composer slash menu; the console one is `Terminal/TerminalSlashMenu` and the " +
+          "Milkdown editor has its own — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A /-triggered command palette for the composer. Triggers at the start of a line only, filters case-insensitively by prefix, and keeps focus in the textarea throughout — aria-activedescendant on the field always names the highlighted option.",
       },
     },

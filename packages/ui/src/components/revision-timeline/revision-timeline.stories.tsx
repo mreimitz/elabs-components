@@ -17,6 +17,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The GIT-HISTORY rail; a generic ordered-steps rail is `Core/Timeline` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A presentational git-history timeline. Renders revisions (newest-first) with " +
           "day grouping, an SVG branch-graph lane gutter, churn indicators (+/−), " +
           "ref chips, and an accessible selection rail. The app computes lane indices " +

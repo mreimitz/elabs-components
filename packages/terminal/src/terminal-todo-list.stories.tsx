@@ -20,6 +20,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/Task` and `AI/Plan` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The coding-agent CLI three-state checklist (#117, derived from Claude " +
           "Code's own todo list — see `packages/terminal/references/agent-session-family.md`). " +
           "Each row is a real `<li>`, one glyph (`✔` / `◼` / `◻`), and an announced word " +

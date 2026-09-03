@@ -9,6 +9,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The typographic primitives every markdown renderer maps onto, not a renderer " +
+          "itself — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Token-driven typography primitives the markdown preview maps onto: Heading, " +
           "Text, Link, List, Blockquote, InlineCode. Generic and theme-safe.",
       },

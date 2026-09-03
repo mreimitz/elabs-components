@@ -15,6 +15,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "The real Monaco EDITING surface; a read-only highlighted block is `AI/CodeBlock` " +
+          "and a tool-output viewer is `AI/Sandbox` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "A token-themed Monaco editor. The editing surface + widgets are Monaco; " +
           "brand-ui supplies the chrome (toolbar/Select/Button). Colors track the " +
           "active `data-theme` across every theme via the theming bridge.",
