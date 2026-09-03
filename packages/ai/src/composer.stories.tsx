@@ -120,6 +120,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The CHAT composer; the console skin is `Terminal/TerminalComposer` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Composer is the chat input. Every control the PromptInput family ships is reachable from a Composer prop; drop to PromptInput only for a bespoke shell. A rounded two-tone double card (outer bg-card frame + muted status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a tools cluster, voice, and a circular send — plus four optional slots: modelPicker (pass a ModelPicker), mode (PromptInputMode), effort (PromptInputEffort) and slashCommands (PromptInputSlash). Footer order: attach · modelPicker · mode · effort │ voice · send, mirroring TerminalComposer. Built on the real @elabs-ai/components-ai PromptInput; semantic tokens only; reads in all themes.",
       },
     },

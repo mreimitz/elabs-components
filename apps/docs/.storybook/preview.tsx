@@ -334,6 +334,7 @@ const preview: Preview = {
             "AI Output Contract for Agents",
             "View Toolbar Contract",
             "Testing Charts in jsdom",
+            "Choosing between similar components",
           ],
           "Foundations",
           [

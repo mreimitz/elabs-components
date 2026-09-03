@@ -13,6 +13,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/AgentEvent` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The CLI dress of an agent lifecycle/hook event line — a fixed `◆` marker, " +
           "a label, and an optional phase, hook count and duration. Shares its " +
           "outcome/hook-count model with the chat-skin sibling `AgentEvent` " +

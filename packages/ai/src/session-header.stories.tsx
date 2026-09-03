@@ -29,6 +29,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The CHAT launch card; the console skin is `Terminal/TerminalBanner` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The launch card for an empty agent session — model, workspace, version, capabilities, what's new, and quick actions with key hints. Every section is independently optional: with only `title` supplied it renders the identity row alone, with no empty section scaffolding and no stray separators. Pair it above `ChatGreeting` for the standard first-run agent session state; distinct from `ChatGreeting`, which is the centered display-scale greeting for a general assistant chat.",
       },
     },

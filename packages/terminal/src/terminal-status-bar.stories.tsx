@@ -29,6 +29,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "Console skin of `AI/SessionStatusBar` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The ambient chrome row that answers 'where am I, what am I connected to, " +
           "and how far through this turn am I' without the human asking (#117 T4). " +
           "Mirrors `SessionStatusBar`'s (`@elabs-ai/components-ai`) prop names for the " +

@@ -18,6 +18,9 @@ const meta = {
     docs: {
       description: {
         component:
+          "A REAL terminal, not a console look-alike: for a coding-agent CLI dress use the " +
+          "agent-session family — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "Read-only ANSI console output with copy/clear actions and stick-to-bottom " +
           "auto-scroll — the presentational transcript log. For a real interactive " +
           "PTY surface (typed input, resize), use `InteractiveTerminal` instead.",

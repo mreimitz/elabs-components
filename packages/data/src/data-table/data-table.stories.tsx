@@ -69,6 +69,8 @@ const meta = {
     docs: {
       description: {
         component:
+          "The INTERACTIVE grid; static markup you lay out yourself is `Data/Table` — see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs). " +
           "The full data grid (TanStack Table): sorting, filtering, pagination, virtualization, row " +
           "selection and column management. For a simple static table with no interaction, the lighter " +
           "Table primitive (see Data/Table, @elabs-ai/components-ui) is enough.",
