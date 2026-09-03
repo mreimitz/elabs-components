@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Changed: `@elabs-ai/components-ui` — `RevisionTimeline` and the canonical
+  `Timeline` rail now state, in both docblocks and in `RevisionTimeline`'s
+  Storybook description, why the two are deliberately not one component.
+  Nothing renders differently: a rail node's colour is the closed 7-state
+  execution `Status` (locked to `StatusBadge` by #392/#387), while a
+  `RevisionTimeline` node's colour is lane identity from the chart ramp, and a
+  fork/merge join is a cross-row bezier in a coordinate space spanning the
+  whole list, which no item-local `w-px` connector can draw. Converging them
+  would take about five opt-in props on `Timeline`, four of which would switch
+  its own node, connector, geometry and status announcement off. A new test
+  locks the non-colour channel this keeps: the merge row's glyph stays a
+  distinct shape rather than a second colour.
+
 - Fixed: `Terminal` (`@elabs-ai/components-terminal`, the read-only ANSI log)
   now announces its `isStreaming` state. Its only streaming signal was the
   blinking cursor block, which is purely visual, so a screen-reader user
