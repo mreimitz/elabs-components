@@ -4,7 +4,7 @@
  * This block is now a thin showcase of the real `<Composer />` component (the
  * canonical brand-ui AI chat input). The double-card chrome — a status strip
  * wrapping a recessed `PromptInput` well (sharp top, theme-rounded bottom),
- * model pill, voice, circular send, suggestion chips — lives in `composer.tsx`,
+ * tools cluster, voice, circular send, suggestion chips — lives in `composer.tsx`,
  * not here, so every surface gets the same input by importing it. `Composer`'s
  * `tone` prop (#254) picks the outer/inner arrangement: `"surface"` (default)
  * is the outer `bg-card` frame this block ships everywhere else; `"card"` is
@@ -39,7 +39,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The standard AI chat-input block — a thin showcase of the real <Composer /> component: a rounded two-tone double card (a status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a model pill, a circular send, and suggestion chips under a centered greeting. Composer's `tone` prop (#254) picks the arrangement — `surface` (default, this block's Default/ComposerOnly) is the outer bg-card frame; `card` (see DoubleCardToned) is the tinted-outer/distinct-inner frame the reference exemplar calls for. Built on the real @elabs-ai/components-ai PromptInput; semantic tokens only; reads in all themes. Reach for <Composer /> instead of hand-rolling this.",
+          "The standard AI chat-input block — a thin showcase of the real <Composer /> component: a rounded two-tone double card (a status strip around a recessed PromptInput well with a sharp top and theme-rounded bottom), a tools cluster, a circular send, and suggestion chips under a centered greeting. Composer's `tone` prop (#254) picks the arrangement — `surface` (default, this block's Default/ComposerOnly) is the outer bg-card frame; `card` (see DoubleCardToned) is the tinted-outer/distinct-inner frame the reference exemplar calls for. Built on the real @elabs-ai/components-ai PromptInput; semantic tokens only; reads in all themes. Reach for <Composer /> instead of hand-rolling this.",
       },
     },
   },

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T12:12:59.279Z",
+  "generatedAt": "2026-09-03T12:24:57.971Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -3539,6 +3539,14 @@
           "module": "packages/ai/src/commit.tsx"
         },
         {
+          "name": "ComposerEffortProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
+          "name": "ComposerModeProps",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
           "name": "ComposerProps",
           "module": "packages/ai/src/composer.tsx"
         },
@@ -6491,16 +6499,40 @@
               "description": "Muted status line shown above the input well. Default `\"Awaiting your input\"`. Drive it from chat state (\"Thinking…\", \"Generating…\") or pass `null` to hide the strip entirely."
             },
             {
-              "name": "model",
+              "name": "modelPicker",
               "optional": true,
               "type": "ReactNode",
-              "description": "Model-selector pill label. Default `\"Claude Opus 4\"`; pass `null` to hide it."
+              "description": "The model control, rendered first in the tools cluster after `attach`. Pass a `<ModelPicker>` from `@elabs-ai/components-ui` (it is sized to sit in a composer footer) — or anything else. Default: nothing renders. This replaces the old `model` prop, which rendered a static, non-interactive pill defaulted to a hard-coded model name. A composer that shows a model name it cannot change is a lie about what the control does; the slot now takes the real picker instead."
+            },
+            {
+              "name": "mode",
+              "optional": true,
+              "type": "ComposerModeProps",
+              "description": "App-defined operating mode control — renders a `PromptInputMode` in the tools cluster. Omitted, nothing renders. `brand-ui` ships no mode vocabulary: `modes` is entirely yours."
+            },
+            {
+              "name": "effort",
+              "optional": true,
+              "type": "ComposerEffortProps",
+              "description": "Ordered reasoning-effort control — renders a `PromptInputEffort` in the tools cluster. Omitted, nothing renders. `levels` is ordered low → high and is entirely yours; `aria-label` names the scale."
+            },
+            {
+              "name": "slashCommands",
+              "optional": true,
+              "type": "PromptInputSlashProps[\"commands\"]",
+              "description": "Slash-command palette. When set (and non-empty) the textarea becomes a `PromptInputSlashTextarea` wrapped in a `PromptInputSlash`, so typing `/` at the start of a line opens a filtered command list — nothing else about the composer changes. Note this makes the textarea REACT-CONTROLLED (the palette needs to read and splice the text), which is why `Composer` clears its own copy of the text on submit: `PromptInput`'s `form.reset()` reaches the DOM node, not React state."
+            },
+            {
+              "name": "onSlashCommand",
+              "optional": true,
+              "type": "PromptInputSlashProps[\"onSelect\"]",
+              "description": "Fires with the chosen slash command (alongside the text splice)."
             },
             {
               "name": "tools",
               "optional": true,
               "type": "ReactNode",
-              "description": "Override the left-hand tool cluster (attach + model pill) — e.g. to add a web-search or connect-data control. Render `PromptInputButton`s / `PromptInputActionMenu` here; when set, `showAttach`/`model` are ignored."
+              "description": "Override the DEFAULT tool buttons (today: the attach button) — e.g. to add a web-search or connect-data control. Render `PromptInputButton`s / `PromptInputActionMenu` here; when set, `showAttach` is ignored. The explicit `modelPicker` / `mode` / `effort` slots are NOT part of this override — they render after whatever this puts in the cluster, so passing `tools` can never silently swallow a control you asked for by name."
             },
             {
               "name": "sendStatus",
@@ -6518,7 +6550,7 @@
               "name": "submitProps",
               "optional": true,
               "type": "Omit<ComponentProps<typeof PromptInputSubmit>, \"status\" | \"onStop\">",
-              "description": "Extra props spread onto the send button — `disabled`, `aria-label`, `variant`, `id`, `className`. `status` and `onStop` are excluded because `Composer` owns them via `sendStatus` / `onStop` above. (A `data-*` key is not assignable through this object: TypeScript only permits arbitrary `data-*` on a JSX element directly, not on a typed props object. Reach for `id` or `aria-label` as the test hook.) **`disabled` is the one that matters for correctness.** `PromptInput`'s submit handler calls `form.reset()` as soon as it ACCEPTS a submit, so a consumer that refuses the send inside `onSubmit` — an app doing async setup on the first message, say — has already had the textarea cleared and the user's text destroyed, with nothing to restore from. Disabling the control is what actually prevents it: `PromptInputTextarea`'s Enter handler checks `submitControl?.disabled` and bails before `requestSubmit()`, so the Enter path is closed too, not just the click. Leave it UNSET rather than passing `false` when you have no opinion — `PromptInputSubmit` resolves `disabled ?? autoDisabled`, so a literal `false` opts out of the library's own empty-composer guard."
+              "description": "Extra props spread onto the send button — `disabled`, `aria-label`, `variant`, `id`, `className`. `status` and `onStop` are excluded because `Composer` owns them via `sendStatus` / `onStop` above. (A `data-*` key is not assignable through this object: TypeScript only permits arbitrary `data-*` on a JSX element directly, not on a typed props object. Reach for `id` or `aria-label` as the test hook.) **`disabled` is the one that matters for correctness.** `PromptInput`'s submit handler calls `form.reset()` as soon as it ACCEPTS a submit, so a consumer that refuses the send inside `onSubmit` — an app doing async setup on the first message, say — has already had the textarea cleared and the user's text destroyed, with nothing to restore from. Disabling the control is what actually prevents it: `PromptInputTextarea`'s Enter handler checks `submitControl?.disabled` and bails before `requestSubmit()`, so the Enter path is closed too, not just the click. It holds with a slash palette open as well — the palette's own Enter handling only ever inserts a command. Leave it UNSET rather than passing `false` when you have no opinion — `PromptInputSubmit` resolves `disabled ?? autoDisabled`, so a literal `false` opts out of the library's own empty-composer guard."
             },
             {
               "name": "tone",
@@ -11124,10 +11156,14 @@
               "PromptInput",
               "PromptInputTextarea",
               "PromptInputTools",
-              "PromptInputSubmit"
+              "PromptInputSubmit",
+              "PromptInputMode",
+              "PromptInputEffort",
+              "PromptInputSlash"
             ],
             "pairsWith": [
               "Conversation",
+              "ModelPicker",
               "ModelSelector"
             ]
           },
@@ -11136,6 +11172,8 @@
           },
           "antiPatterns": [
             "Hand-rolling a PromptInput footer per app — Composer is the shipped assembly; reach for it first.",
+            "Dropping to PromptInput to get a mode, effort or slash-command control — Composer exposes all three as props (mode, effort, slashCommands/onSlashCommand); drop to PromptInput only for a bespoke shell.",
+            "Expecting a model name in the footer by default — the old static `model` pill is gone; pass a ModelPicker (@elabs-ai/components-ui) to the `modelPicker` slot.",
             "Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.",
             "Treating the composer as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.",
             "Reaching for surfaceClassName on Composer — it has no such prop; className styles the outer card frame and Composer owns the inner well's shape (surfaceClassName lives on PromptInput)."

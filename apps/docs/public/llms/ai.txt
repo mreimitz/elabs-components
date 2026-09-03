@@ -170,6 +170,8 @@ Import from `@elabs-ai/components-ai`. Part of brand-ui — see the root `llms.t
 - CommitTimestamp
 - Composer — The standard chat input — a PromptInput pre-assembled with attachments, tools and submit.
   - avoid: Hand-rolling a PromptInput footer per app — Composer is the shipped assembly; reach for it first.
+  - avoid: Dropping to PromptInput to get a mode, effort or slash-command control — Composer exposes all three as props (mode, effort, slashCommands/onSlashCommand); drop to PromptInput only for a bespoke shell.
+  - avoid: Expecting a model name in the footer by default — the old static `model` pill is gone; pass a ModelPicker (@elabs-ai/components-ui) to the `modelPicker` slot.
   - avoid: Passing children to PromptInputSubmit for every status — the Stop affordance goes invisible while generating; pass it for the resting state only.
   - avoid: Treating the composer as a controlled textarea — it is a form; use onSubmit, not value/onChange plumbing.
   - avoid: Reaching for surfaceClassName on Composer — it has no such prop; className styles the outer card frame and Composer owns the inner well's shape (surfaceClassName lives on PromptInput).
