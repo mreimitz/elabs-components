@@ -1605,6 +1605,32 @@ export const INTENT = {
     ],
   },
 
+  DumbbellChart: {
+    purpose:
+      'Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns.',
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "UnitStack"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      track:
+        "0.6px var(--chart-grid) hairline per row — furniture, independent of the row's colour",
+      markers:
+        "row colour from resolvePalette (--chart-1…--chart-6 categorical, falling back to mono past 6 rows)",
+      beads:
+        "beads.unit draws a UnitStack in var(--chart-foreground) — a neutral ink, NOT the row's colour, by design",
+      labels:
+        "category label in var(--chart-label); the signed delta label in var(--chart-foreground) via HaloText",
+    },
+    antiPatterns: [
+      'Using variant="slope" past the 8-row soft cap — the crossing lines stop being decodable at that density (it dev-warns once); switch to the default variant="dumbbell" (rows) instead of reading the warning as noise.',
+      "Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.",
+      "Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.",
+      "Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.",
+    ],
+  },
+
   ChoroplethChart: {
     purpose: "Region-shaded map for a measure that is defined per geographic area.",
     category: "chart",
@@ -1652,7 +1678,7 @@ export const INTENT = {
       "SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it.",
     category: "chart",
     relationships: {
-      usedInside: ["LineChart", "AreaChart", "BarChart", "ScatterChart"],
+      usedInside: ["LineChart", "AreaChart", "BarChart", "ScatterChart", "DumbbellChart"],
       pairsWith: ["Leader", "PeakRing", "Marginalia", "HairlineFloor"],
     },
     stateTokens: {
@@ -1769,7 +1795,7 @@ export const INTENT = {
       "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
     category: "chart",
     relationships: {
-      usedInside: ["BarChart", "ScatterChart"],
+      usedInside: ["BarChart", "ScatterChart", "DumbbellChart"],
       pairsWith: ["HaloText", "HairlineFloor", "PeakRing", "QuietDot"],
     },
     stateTokens: {
