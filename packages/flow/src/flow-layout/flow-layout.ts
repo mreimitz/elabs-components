@@ -2,6 +2,20 @@ import dagre from "@dagrejs/dagre";
 import { Position } from "@xyflow/react";
 import type { Edge, Node } from "@xyflow/react";
 
+/** The graphlib graph `dagre.graphlib.Graph` produces — dagre exports no standalone type for it. */
+type DagreGraph = InstanceType<typeof dagre.graphlib.Graph>;
+
+/**
+ * The fields dagre writes back onto a node label during `layout()`. `rank` is
+ * absent from dagre's own `.d.ts` (it is documented output, not declared
+ * output), so it is narrowed here rather than asserted at the call site.
+ */
+interface DagreNodeLabel {
+  x: number;
+  y: number;
+  rank?: number;
+}
+
 /** Direction dagre lays the graph out in — top-to-bottom, left-to-right, etc. */
 export type FlowLayoutDirection = "TB" | "LR" | "BT" | "RL";
 
@@ -35,6 +49,22 @@ export interface FlowLayoutOptions {
 export interface FlowLayoutResult<NodeType extends Node = Node, EdgeType extends Edge = Edge> {
   nodes: NodeType[];
   edges: EdgeType[];
+  /**
+   * Ids of edges that run **against** the layout direction — a rework / retry
+   * loop in a process graph. dagre breaks cycles by reversing such edges
+   * internally and never surfaces which ones it reversed, so this is derived
+   * from the ranks dagre stamps on the laid-out graph: an edge whose source
+   * ranks at or after its target went backwards. Render these with
+   * `FlowWeightedEdge`'s `variant="back"`.
+   */
+  backEdges: string[];
+  /**
+   * Ids of edges whose `source === target`. dagre does not lay out self-loops,
+   * so they are withheld from the graph entirely (never `setEdge`-ed) and are
+   * returned unchanged in `edges` — they take part in no rank computation and
+   * cannot distort the layout. Render these with `FlowSelfLoopEdge`.
+   */
+  selfLoops: string[];
 }
 
 /** Fallback size used when a node hasn't been measured yet (React Flow's own default node width). */
@@ -58,6 +88,11 @@ function nodeSize(node: Node): { width: number; height: number } {
  * `node.height`, then a sensible default. Node identity and `data` are left
  * untouched — only `position` changes.
  *
+ * Also reports the graph's two structural signals — `backEdges` (edges that run
+ * against the layout direction) and `selfLoops` (`source === target`). Both are
+ * additive fields on the result; a caller that only destructures
+ * `{ nodes, edges }` is unaffected.
+ *
  * Pair with `useFlowLayout` to apply the result to a live canvas.
  */
 export function layoutFlow<NodeType extends Node = Node, EdgeType extends Edge = Edge>(
@@ -76,11 +111,21 @@ export function layoutFlow<NodeType extends Node = Node, EdgeType extends Edge =
     graph.setNode(node.id, { width, height });
   }
 
+  // Self-loops are withheld from dagre entirely: dagre does not lay them out,
+  // and feeding them in only perturbs the ranks of a graph they say nothing
+  // about. They are re-attached untouched in the returned `edges`.
+  const selfLoops: string[] = [];
   for (const edge of edges) {
+    if (edge.source === edge.target) {
+      selfLoops.push(edge.id);
+      continue;
+    }
     graph.setEdge(edge.source, edge.target);
   }
 
   dagre.layout(graph);
+
+  const backEdges = collectBackEdges(graph, edges);
 
   const handles = HANDLE_BY_DIRECTION[direction];
   const layoutedNodes = nodes.map((node) => {
@@ -100,5 +145,36 @@ export function layoutFlow<NodeType extends Node = Node, EdgeType extends Edge =
     };
   });
 
-  return { nodes: layoutedNodes, edges };
+  return { nodes: layoutedNodes, edges, backEdges, selfLoops };
+}
+
+/**
+ * Which edges dagre had to run backwards, derived from the ranks it stamps on
+ * the laid-out graph (`graph.node(id).rank`).
+ *
+ * The obvious alternative — reading `graph.edge(e).reversed` after dagre's
+ * `acyclic.run` — is **not usable on the pinned `@dagrejs/dagre` 3.0.0**:
+ * cycle breaking happens on an internal copy of the graph, and the caller's
+ * graph carries no `reversed` flag once `dagre.layout()` returns (verified
+ * against the installed version — every edge label is bare `{ points }`).
+ * `rank` *is* on the public graph, and is direction-independent: it counts up
+ * along the flow for every `rankdir`, so `rank(source) >= rank(target)` means
+ * "this edge does not advance the process" in TB, BT, LR and RL alike.
+ *
+ * `>=` rather than `>` on purpose: a same-rank edge between two siblings is
+ * not forward progress either, and dagre would have had to reverse or flatten
+ * it. Self-loops never reach here — they are filtered out before layout.
+ * An edge naming a node that isn't in the graph has no ranks to compare and is
+ * left out rather than guessed at.
+ */
+function collectBackEdges(graph: DagreGraph, edges: Edge[]): string[] {
+  const backEdges: string[] = [];
+  for (const edge of edges) {
+    if (edge.source === edge.target) continue;
+    const sourceRank = (graph.node(edge.source) as DagreNodeLabel | undefined)?.rank;
+    const targetRank = (graph.node(edge.target) as DagreNodeLabel | undefined)?.rank;
+    if (typeof sourceRank !== "number" || typeof targetRank !== "number") continue;
+    if (sourceRank >= targetRank) backEdges.push(edge.id);
+  }
+  return backEdges;
 }
