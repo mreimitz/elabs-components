@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:50:54.708Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12475,6 +12475,11 @@
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
         },
         {
+          "name": "CALENDAR_ROWS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "Candlestick",
           "kind": "value",
           "module": "packages/charts/src/charts/candlestick.tsx"
@@ -12645,6 +12650,11 @@
           "module": "packages/charts/src/charts/composed-chart.tsx"
         },
         {
+          "name": "CONTINUOUS_MIN_OPACITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "DateTicker",
           "kind": "value",
           "module": "packages/charts/src/charts/tooltip/index.ts"
@@ -12663,6 +12673,11 @@
           "name": "DEFAULT_CHART_STATUS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "DEFAULT_HEATMAP_STEPS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "DEFAULT_HOVER_OFFSET",
@@ -12773,6 +12788,11 @@
           "name": "HaloText",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HeatmapChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "Leader",
@@ -13207,6 +13227,16 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "useHeatmap",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "useHeatmapHover",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "useHighDecoration",
           "kind": "value",
           "module": "packages/charts/src/charts/use-high-decoration.ts"
@@ -13351,6 +13381,18 @@
         {
           "name": "BarYAxisProps",
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
+        },
+        {
+          "name": "CalendarCellPosition",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "CalendarLayout",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "CalendarMonthTick",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "CandlestickChartProps",
@@ -13715,6 +13757,58 @@
         {
           "name": "HaloTextProps",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HeatmapBucket",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapCellDatum",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapChartProps",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapContextValue",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapEmptyValue",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapHighlight",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapHoverContextValue",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapInk",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapMargin",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapMode",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapPalette",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapSummaryFacts",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapVariant",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "IndicatorWidth",
@@ -14123,6 +14217,18 @@
       ],
       "otherExports": [
         {
+          "name": "bucketIndexOf",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "buildCalendarLayout",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "buildHeatmapBuckets",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "chartAccentColor",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -14167,6 +14273,10 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "continuousInk",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "defaultChartStatFlowFormat",
           "module": "packages/charts/src/charts/chart-stat-flow.tsx"
         },
@@ -14195,6 +14305,14 @@
           "module": "packages/charts/src/charts/live-line.tsx"
         },
         {
+          "name": "dotRadius",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "firstMondayOfMonth",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "ganttVariants",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
@@ -14215,6 +14333,14 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
+          "name": "heatmapDomain",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "heatmapSummary",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "inferChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -14229,6 +14355,10 @@
         {
           "name": "isNumericField",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "isoWeekdayIndex",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "isPaletteFill",
@@ -14265,6 +14395,10 @@
         {
           "name": "padDatapointRect",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "parseIsoDate",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "pickGanttTimeUnit",
@@ -14307,6 +14441,10 @@
           "module": "packages/charts/src/charts/ring-context.tsx"
         },
         {
+          "name": "sampleContinuousInk",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "sankeyCssVars",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
@@ -14341,6 +14479,10 @@
         {
           "name": "stagger",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "startOfIsoWeek",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "viewModeToScales",

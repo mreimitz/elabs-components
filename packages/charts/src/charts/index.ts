@@ -421,3 +421,47 @@ export {
   type UnitStackKind,
   type UnitStackProps,
 } from "../marks";
+
+// Heatmap — RM-021
+// The sub-parts (`HeatmapCell`, `HeatmapLegend`, `HeatmapTooltip`,
+// `HeatmapProvider`) stay folder-internal on purpose: unlike a Sankey node, a
+// heatmap cell is not independently composable — it reads a layout only
+// `HeatmapChart` can build, so exporting it would publish a part that cannot be
+// used on its own. The layout TYPES are exported, because a consumer's
+// `highlight` predicate and `onDatapointClick` handler are written against them.
+export {
+  buildCalendarLayout,
+  buildHeatmapBuckets,
+  bucketIndexOf,
+  CALENDAR_ROWS,
+  type HeatmapBucket,
+  type CalendarCellPosition,
+  type CalendarLayout,
+  type CalendarMonthTick,
+  CONTINUOUS_MIN_OPACITY,
+  continuousInk,
+  DEFAULT_HEATMAP_STEPS,
+  dotRadius,
+  firstMondayOfMonth,
+  type HeatmapCellDatum,
+  HeatmapChart,
+  type HeatmapChartProps,
+  type HeatmapContextValue,
+  heatmapDomain,
+  type HeatmapEmptyValue,
+  type HeatmapHighlight,
+  type HeatmapHoverContextValue,
+  type HeatmapInk,
+  type HeatmapMargin,
+  type HeatmapMode,
+  type HeatmapPalette,
+  heatmapSummary,
+  type HeatmapSummaryFacts,
+  type HeatmapVariant,
+  isoWeekdayIndex,
+  parseIsoDate,
+  sampleContinuousInk,
+  startOfIsoWeek,
+  useHeatmap,
+  useHeatmapHover,
+} from "./heatmap";

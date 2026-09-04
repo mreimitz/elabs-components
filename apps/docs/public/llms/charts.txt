@@ -23,6 +23,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Rendering an empty frame before data arrives — use the shipped chart skeleton utilities.
 - BarXAxis
 - BarYAxis
+- CALENDAR_ROWS
 - Candlestick
 - CandlestickChart
 - CATEGORICAL_SOFT_CAP
@@ -82,10 +83,12 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Stacking series on two silently-different y-scales — label the second axis or the comparison lies.
   - avoid: Layering more than ~3 series types in one frame — split it into small multiples instead.
   - avoid: Colouring series by hand — resolve --chart-1..5 so the dark theme stays legible.
+- CONTINUOUS_MIN_OPACITY
 - DateTicker
 - DEFAULT_CHART_CONFIG
 - DEFAULT_CHART_LIFECYCLE
 - DEFAULT_CHART_STATUS
+- DEFAULT_HEATMAP_STEPS
 - DEFAULT_HOVER_OFFSET
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
 - DEFAULT_Y_AXIS_ID
@@ -129,6 +132,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.
   - avoid: Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.
   - avoid: Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view.
+- HeatmapChart
 - Leader — The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.
   - avoid: Thickening it so the connection is easier to follow — at series weight a leader stops being furniture and starts being read as data. If it is hard to follow, the label is too far away.
   - avoid: Inventing a third dash rhythm — the union is 1 3 (quiet) and 2 3 (emphatic) on purpose. Sixty-three templates each picking their own dash array is the drift this layer exists to prevent.
@@ -262,6 +266,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useChartStable
 - useChoropleth
 - useChoroplethZoom
+- useHeatmap
+- useHeatmapHover
 - useHighDecoration
 - useHighDecorationOf
 - useLegend
