@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:48:51.632Z",
+  "generatedAt": "2026-09-04T10:56:02.683Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12692,7 +12692,7 @@
         {
           "name": "DistributionChart",
           "kind": "value",
-          "module": "packages/charts/src/charts/distribution/index.ts"
+          "module": "packages/charts/src/charts/distribution/distribution-chart.tsx"
         },
         {
           "name": "DrawPath",
@@ -16060,6 +16060,102 @@
             }
           ]
         },
+        "DistributionChart": {
+          "extends": [
+            "ChartInteractionProps",
+            "ChartA11yProps"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "DistributionRow[]",
+              "description": "RECORD-level rows — one per observation, NOT pre-aggregated buckets. The container does the aggregating; handing it counts defeats the point."
+            },
+            {
+              "name": "valueKey",
+              "optional": false,
+              "type": "string",
+              "description": "The numeric column. Rows whose value is not finite are dropped, and counted."
+            },
+            {
+              "name": "groupKey",
+              "optional": true,
+              "type": "string",
+              "description": "The grouping column. Omit for a single, ungrouped distribution."
+            },
+            {
+              "name": "kind",
+              "optional": false,
+              "type": "DistributionKind",
+              "description": "Which mark to draw. See the table in this file's header for how to pick."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "DistributionOrientation",
+              "description": "Which screen axis the VALUE runs along. `\"horizontal\"` (default) puts groups in rows, which is what long group labels want; `\"vertical\"` puts them in columns."
+            },
+            {
+              "name": "bins",
+              "optional": true,
+              "type": "number | number[]",
+              "description": "Histogram only: a bin COUNT hint (nice, approximate) or the FULL ordered edge list. Edges must be meaningful — a value outside an explicit list is dropped with a dev warning rather than absorbed by an end bucket. See `bins.ts`."
+            },
+            {
+              "name": "bandwidth",
+              "optional": true,
+              "type": "number",
+              "description": "Violin only: KDE bandwidth. Unset uses Silverman's rule of thumb."
+            },
+            {
+              "name": "showMedian",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw the median: a dashed flag on a histogram, a paper tick on a box/violin. Default `true`."
+            },
+            {
+              "name": "showOutliers",
+              "optional": true,
+              "type": "boolean",
+              "description": "Box only: hollow marks beyond 1.5 × IQR. Default `true`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "Histogram only: records per rung. Set it to draw each bin as COUNTABLE rungs (`F14`) instead of a bar — the number is the legend (\"one rung = 5 tickets\"), which is why it is a count and not a boolean."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour family. With `\"sequential\"`, a box/violin's shade is its MEDIAN RANK — the darkest group has the highest median — so the ordering is carried by the fill as well as by position."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "Value formatting for ticks, tooltips and the text summary."
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "description": "ISO 4217 code when `valueFormat=\"currency\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "style",
+              "optional": true,
+              "type": "CSSProperties"
+            }
+          ]
+        },
         "FunnelChart": {
           "extends": [],
           "props": [
@@ -18713,6 +18809,34 @@
             "Stacking series on two silently-different y-scales — label the second axis or the comparison lies.",
             "Layering more than ~3 series types in one frame — split it into small multiples instead.",
             "Colouring series by hand — resolve --chart-1..5 so the dark theme stays legible."
+          ]
+        },
+        "DistributionChart": {
+          "purpose": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartLegend",
+              "DataTable"
+            ]
+          },
+          "stateTokens": {
+            "group": "--chart-1 … --chart-12 via resolvePalette; palette=\"sequential\" shades a box/violin by MEDIAN RANK, not by group order",
+            "median": "cut in the paper colour (--chart-background) through a box/violin waist; a dashed --chart-foreground flag + text-meta label on a histogram",
+            "outlier": "hollow past 1.5 × IQR — fill=none with the group's own stroke, never a filled dot",
+            "axis": "--chart-grid gridlines, --chart-label value ticks, --chart-foreground group labels, all text-meta",
+            "focus": "on a strip every record is a real button in ChartDatapointLayer: focus-visible:ring-2 ring-ring"
+          },
+          "antiPatterns": [
+            "kind=\"violin\" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind=\"strip\", where every record is its own mark.",
+            "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.",
+            "kind=\"box\" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind=\"strip\" shows the same numbers without discarding them.",
+            "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
+            "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning."
           ]
         },
         "DrawPath": {

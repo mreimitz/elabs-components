@@ -1090,7 +1090,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_WHISKER_MULTIPLIER | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
-| DistributionChart | component |  | `@elabs-ai/components-charts` |  |
+| DistributionChart | component |  | `@elabs-ai/components-charts` | One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip. |
 | DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
 | FunnelChart | component |  | `@elabs-ai/components-charts` | Stage-by-stage drop-off through an ordered pipeline. |
 | Gantt | component | density=comfortable*\|compact | `@elabs-ai/components-charts` | Schedule grid — tasks as bars over time, with a task table beside them. |

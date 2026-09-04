@@ -173,6 +173,15 @@ export const INHERITED_MODULES = {
     modules: ["packages/ai/src/_flow-boundary.tsx"],
     reason: "the public module is the ADR 0019 lazy wrapper; the classes are the boundary's",
   },
+  // DistributionChart — RM-026
+  DistributionChart: {
+    modules: [
+      "packages/charts/src/charts/distribution/distribution-value-axis.tsx",
+      "packages/charts/src/charts/chart-datapoint-layer.tsx",
+    ],
+    reason:
+      "the container owns the scale and delegates every mark: the axis/label type belongs to the value-axis part, and a strip's focusable records are ChartDatapointLayer's buttons (#349)",
+  },
 };
 
 /**

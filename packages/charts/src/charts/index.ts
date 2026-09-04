@@ -430,13 +430,16 @@ export {
 // (`DistributionHistogram`, `DistributionBox`, …) stay INTERNAL — `kind` is the
 // public seam, and four more container-shaped exports would be four more ways
 // to build a distribution chart that does not share its scale.
+// The container is re-exported from its OWN module, not through the folder
+// barrel, so the manifest records `distribution-chart.tsx` as its module and
+// `brand-ui docs DistributionChart` points a reader at the file that defines it.
+export { DistributionChart } from "./distribution/distribution-chart";
 export {
   binValues,
   blobPath,
   DEFAULT_WHISKER_MULTIPLIER,
   defaultBinCount,
   describeDistribution,
-  DistributionChart,
   fiveNumberSummary,
   groupRecords,
   integrateDensity,
