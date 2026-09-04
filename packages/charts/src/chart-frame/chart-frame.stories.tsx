@@ -242,3 +242,69 @@ export const DownloadCallback: Story = {
     );
   },
 };
+
+// ── SVG/PNG export (RM-042) ────────────────────────────────────────────────────
+
+// Module-scoped (not `args`) so the play function can inspect `.mock.calls`
+// directly — mirrors `data-table.stories.tsx`'s `clickableRowsOnRowClick`.
+const exportSpy = fn();
+
+/**
+ * Exports the chart's real rendered `<svg>` as SVG/PNG. `onExport` intercepts
+ * the generated file instead of triggering a real browser download, so the
+ * interaction test can inspect the `Blob` directly: the SVG is self-contained
+ * (every `var(--…)` colour resolved via `getComputedStyle` at export time,
+ * `<rect>` background painted from the card) and the PNG rasterises the same
+ * built SVG.
+ */
+export const Export: Story = {
+  render: () => (
+    <div className="w-[560px]">
+      <ChartFrame
+        title="Monthly revenue"
+        description="Jan – Jun 2025"
+        data={monthlyData}
+        columns={monthlyColumns}
+        onExport={exportSpy}
+      >
+        <DemoChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    exportSpy.mockClear();
+    const canvas = within(canvasElement);
+
+    // The controls only appear once ChartFrameInner registers the rendered
+    // <svg> (RM-042) — wait for it rather than assuming it's synchronous.
+    await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
+    await expect(canvas.getByLabelText("Export as PNG")).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByLabelText("Export as SVG"));
+    await waitFor(() =>
+      expect(exportSpy).toHaveBeenCalledWith(
+        "svg",
+        expect.any(Blob),
+        expect.stringContaining(".svg"),
+      ),
+    );
+    const svgCall = exportSpy.mock.calls.find((call) => call[0] === "svg");
+    const svgBlob = svgCall?.[1] as Blob;
+    const svgText = await svgBlob.text();
+    await expect(svgText).not.toContain("var(");
+    await expect(svgText).toContain("<rect");
+
+    await userEvent.click(canvas.getByLabelText("Export as PNG"));
+    await waitFor(() =>
+      expect(exportSpy).toHaveBeenCalledWith(
+        "png",
+        expect.any(Blob),
+        expect.stringContaining(".png"),
+      ),
+    );
+    const pngCall = exportSpy.mock.calls.find((call) => call[0] === "png");
+    const pngBlob = pngCall?.[1] as Blob;
+    await expect(pngBlob.type).toBe("image/png");
+    await expect(pngBlob.size).toBeGreaterThan(0);
+  },
+};

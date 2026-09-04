@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * ChartFrame — universal chart wrapper with expand / flip-to-table / download-CSV.
+ * ChartFrame — universal chart wrapper with expand / flip-to-table /
+ * download-CSV / export-SVG / export-PNG.
  *
  * Architecture notes:
  * - `data`/`columns` are PRIMARY inputs; `useChart` is unreachable here (ChartFrame
@@ -14,10 +15,21 @@
  *   @elabs-ai/components-data DataTable + downloadCsv on flip), use the `chart-frame-data`
  *   registry block: `npx shadcn add chart-frame-data` (composes both siblings in
  *   copy-owned app code, which the charts↛data rule permits).
+ * - SVG/PNG export (RM-042) lives in `export-svg.ts` — it needs the rendered
+ *   `<svg>` DOM node, which only `ChartFrameInner` has access to, so the
+ *   provider holds `refs.chartBody`/`refs.card` and the export actions read
+ *   `.current` at click time rather than pre-resolving like `onDownload` does.
  */
 
-import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { Download, Maximize2, Table as TableIcon } from "lucide-react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  type HTMLAttributes,
+  type MutableRefObject,
+  type ReactNode,
+} from "react";
+import { Download, FileCode2, ImageDown, Maximize2, Table as TableIcon } from "lucide-react";
 import {
   Button,
   Card,
@@ -51,6 +63,7 @@ import {
   type ChartFrameColumn,
   type ChartFrameFeature,
 } from "./chart-frame-context";
+import { findChartSvg, type ChartExportKind } from "./export-svg";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 import { exactValueString } from "../charts/value-format";
 
@@ -194,6 +207,11 @@ function DefaultTable({
 function ChartFrameToolbar() {
   const { state, actions, meta } = useChartFrame();
   const { features } = meta;
+  // export-svg/export-png degrade the same way table/download degrade without
+  // data (chart-components.md § Feature degradation) — `hasSvg` is registered
+  // by ChartFrameInner after render, since (unlike `data`) a rendered `<svg>`
+  // isn't known until the chart body has mounted.
+  const canExport = state.hasSvg;
 
   return (
     <TooltipProvider>
@@ -229,6 +247,38 @@ function ChartFrameToolbar() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>Download CSV</TooltipContent>
+          </Tooltip>
+        )}
+
+        {features.includes("export-svg") && canExport && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Export as SVG"
+                onClick={actions.exportSvg}
+              >
+                <FileCode2 aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export as SVG</TooltipContent>
+          </Tooltip>
+        )}
+
+        {features.includes("export-png") && canExport && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Export as PNG"
+                onClick={actions.exportPng}
+              >
+                <ImageDown aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export as PNG</TooltipContent>
           </Tooltip>
         )}
 
@@ -401,8 +451,10 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   /** Right-pane content in the expand modal. Defaults to a data summary (row count + per-numeric-column min/max/avg). */
   detail?: ReactNode;
   /**
-   * Which toolbar controls to show. Defaults to all three.
-   * `table` and `download` are automatically hidden when `data` is absent/empty.
+   * Which toolbar controls to show. Defaults to all five.
+   * `table` and `download` are automatically hidden when `data` is absent/empty;
+   * `export-svg`/`export-png` are automatically hidden when the chart body has
+   * no `<svg>` (a non-chart placeholder, or the flipped-to-table view).
    */
   features?: ChartFrameFeature[];
   /** Inline body height in px. Defaults to 260. */
@@ -426,11 +478,19 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    */
   onDownload?: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => void;
   /**
+   * Routes an SVG/PNG export to the caller — with the generated `Blob` and
+   * filename — instead of triggering a local browser download. Mirrors
+   * `onDownload`, for apps that want to route an export through their own
+   * storage. When absent, the built-in handler downloads the file directly.
+   */
+  onExport?: (kind: ChartExportKind, blob: Blob, filename: string) => void;
+  /**
    * Attribution / provenance footer — e.g. "Source: Internal analytics,
    * updated daily". Renders as the card's all-caps, letter-spaced source row
    * (the fourth part of lieflat's card contract) inline and in the expand
    * modal; when it is a plain string it also lands as a trailing
-   * `# source: …` comment row in the downloaded CSV. Hidden when absent.
+   * `# source: …` comment row in the downloaded CSV, and as a bottom row in
+   * an SVG/PNG export. Hidden when absent.
    */
   source?: ReactNode;
   /** The chart content. Rendered in both inline and expanded modal positions. */
@@ -448,6 +508,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     height = 260,
     renderTable,
     onDownload,
+    onExport,
     loading = false,
     source,
     className,
@@ -463,14 +524,22 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
   const resolvedColumns: ChartFrameColumn[] =
     columnsProp ?? (firstRow !== undefined ? Object.keys(firstRow).map((k) => ({ key: k })) : []);
 
-  // Feature degradation: table/download require data; every toolbar control is
-  // meaningless while loading (nothing to flip-to-table, download, or expand).
-  const allFeatures: ChartFrameFeature[] = featuresProp ?? ["expand", "table", "download"];
+  // Feature degradation: table/download require data; export-svg/export-png
+  // require a rendered <svg> (checked at runtime via `state.hasSvg`, so they
+  // stay in the resolved set here — same shape as "expand", which needs
+  // neither). Every toolbar control is meaningless while loading.
+  const allFeatures: ChartFrameFeature[] = featuresProp ?? [
+    "expand",
+    "table",
+    "download",
+    "export-svg",
+    "export-png",
+  ];
   const resolvedFeatures: ChartFrameFeature[] = loading
     ? []
     : hasData
       ? allFeatures
-      : allFeatures.filter((f) => f === "expand");
+      : allFeatures.filter((f) => f === "expand" || f === "export-svg" || f === "export-png");
 
   const resolvedDownload =
     onDownload ??
@@ -490,7 +559,9 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
       features={resolvedFeatures}
       title={title}
       description={description}
+      source={source}
       onDownload={resolvedDownload}
+      onExport={onExport}
       loading={loading}
     >
       <ChartFrameInner
@@ -526,13 +597,48 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   { height, detail, renderTable, title, description, source, className, children, ...props },
   ref,
 ) {
-  const { state, meta } = useChartFrame();
+  const { state, actions, meta, refs } = useChartFrame();
   const { rows, columns, loading } = meta;
   const { t } = useLocale();
 
+  // Merge the caller's forwarded ref with the internal `card` ref (RM-042):
+  // export reads the card's resolved background at click time via
+  // `refs.card.current`, which only ChartFrameInner can attach since the
+  // provider renders no DOM of its own.
+  const mergedCardRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      refs.card.current = node;
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        (ref as MutableRefObject<HTMLDivElement | null>).current = node;
+      }
+    },
+    [ref, refs.card],
+  );
+
+  // Registers whether the chart body currently renders an <svg> — the
+  // export-svg/export-png toolbar controls read this off `state.hasSvg`
+  // (RM-042). Re-checked on every commit that could change it (view flip,
+  // loading toggle, or the chart's own children re-rendering) and, since a
+  // chart family may mount its <svg> asynchronously, on any DOM mutation
+  // inside the body while chart view is active.
+  useEffect(() => {
+    const container = refs.chartBody.current;
+    if (!container) {
+      actions.setHasSvg(false);
+      return;
+    }
+    const update = () => actions.setHasSvg(Boolean(findChartSvg(container)));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(container, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [actions, refs.chartBody, state.view, loading, children]);
+
   return (
     <>
-      <Card ref={ref} className={cn("flex flex-col", className)} {...props}>
+      <Card ref={mergedCardRef} className={cn("flex flex-col", className)} {...props}>
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
           <div className="space-y-1">
             {title && <CardTitle className="text-base">{title}</CardTitle>}
@@ -558,6 +664,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
               // motion-reduce:animate-none removes the movement entirely.
               <div
                 key={state.view}
+                ref={refs.chartBody}
                 className="size-full animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none"
               >
                 {state.view === "table" ? renderTable(rows, columns) : children}
