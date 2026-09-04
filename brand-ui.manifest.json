@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:42:12.969Z",
+  "generatedAt": "2026-09-04T10:51:23.086Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12690,6 +12690,11 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "DumbbellChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
           "name": "FunnelChart",
           "kind": "value",
           "module": "packages/charts/src/charts/funnel-chart.tsx"
@@ -13585,6 +13590,34 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "DumbbellBeadsConfig",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellChartProps",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellMarkerStyle",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellOrientation",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellRow",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellSortBy",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "DumbbellVariant",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
           "name": "FunnelChartProps",
           "module": "packages/charts/src/charts/funnel-chart.tsx"
         },
@@ -14123,6 +14156,10 @@
       ],
       "otherExports": [
         {
+          "name": "buildDumbbellRows",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
           "name": "chartAccentColor",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -14157,6 +14194,10 @@
         {
           "name": "choroplethCssVars",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "computeDumbbellDomain",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
           "name": "computeGanttZoomBounds",
@@ -14333,6 +14374,14 @@
         {
           "name": "shouldTweenYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "sortDumbbellRows",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "spaceSlopeLabels",
+          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
           "name": "splitProfitLossSegments",
@@ -15941,6 +15990,120 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            }
+          ]
+        },
+        "DumbbellChart": {
+          "extends": [
+            "ChartInteractionProps"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "Record<string, unknown>[]",
+              "description": "Data array — one row per category."
+            },
+            {
+              "name": "category",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the category label."
+            },
+            {
+              "name": "startKey",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the \"before\" value."
+            },
+            {
+              "name": "endKey",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the \"after\" value."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "DumbbellOrientation",
+              "description": "Rows (default) or columns. Ignored by `variant=\"slope\"`, which is always two columns."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "DumbbellVariant",
+              "description": "`\"dumbbell\"` (default, one track per category) or `\"slope\"` (two columns, one line per category)."
+            },
+            {
+              "name": "beads",
+              "optional": true,
+              "type": "DumbbellBeadsConfig",
+              "description": "F12: draws a countable `UnitStack` between the two markers — one dot per `unit` of `|end - start|`, seeded jitter so each row draws differently. Ignored by `variant=\"slope\"`."
+            },
+            {
+              "name": "markers",
+              "optional": true,
+              "type": "DumbbellMarkerStyle",
+              "description": "Marker fill style. Default `{ start: \"hollow\", end: \"filled\" }` (the F12 \"before/after\" read)."
+            },
+            {
+              "name": "extraKeys",
+              "optional": true,
+              "type": "string[]",
+              "description": "Extra numeric keys (e.g. competitor values) drawn as small dots on the same track. Ignored by `variant=\"slope\"`."
+            },
+            {
+              "name": "showDelta",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show a signed delta label (`HaloText`) at the end marker. Default `false`."
+            },
+            {
+              "name": "sortBy",
+              "optional": true,
+              "type": "DumbbellSortBy",
+              "description": "Sort rows ascending by this key before rendering. Default `\"none\"` (data order)."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Which colour family rows draw from. Default `\"categorical\"`."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How displayed numbers (the delta label) are formatted. Default `\"compact\"`."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>",
+              "description": "Chart margins."
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "string",
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region (announces to AT on focus)."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT (e.g. category count + value range)."
             }
           ]
         },
