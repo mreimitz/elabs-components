@@ -3,12 +3,90 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@elabs-ai/components-ui";
+import { HairlineFloor } from "../marks/hairline-floor";
 import { useChart, useChartStable } from "./chart-context";
 import { shortDateFmt } from "./chart-formatters";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 
 const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
+
+/** A period kind {@link XAxisProps.periodTicks} accepts (`false` disables it). */
+export type XAxisPeriodTicks = "day" | "week" | "month";
+
+/**
+ * Which `HairlineFloor` tick, out of every `n`, is drawn long for a given
+ * period kind (RM-028) — day → weekly (every 7th), week → ~monthly (every
+ * 4th), month → yearly (every 12th). `HairlineFloor`'s `every` is a plain
+ * index stride, so this is an even-interval APPROXIMATION of a calendar
+ * boundary, not a calendar-exact "first of month" check — exact for `"day"`
+ * (a week really is 7 days), approximate for `"week"`/`"month"` (months and
+ * years don't divide evenly into weeks/months).
+ */
+export const PERIOD_TICKS_EVERY: Record<XAxisPeriodTicks, number> = {
+  day: 7,
+  week: 4,
+  month: 12,
+};
+
+/** Normalize to local-midnight so day/week/month stepping never drifts on DST. */
+function atLocalMidnight(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** One entry per calendar day from `start` to `end`, inclusive. */
+function generateDailyPeriods(start: Date, end: Date): Date[] {
+  const periods: Date[] = [];
+  const cursor = atLocalMidnight(start);
+  const last = atLocalMidnight(end).getTime();
+  while (cursor.getTime() <= last) {
+    periods.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return periods;
+}
+
+/** One entry every 7 days from `start` to `end`, inclusive of the last partial week's start. */
+function generateWeeklyPeriods(start: Date, end: Date): Date[] {
+  const periods: Date[] = [];
+  const cursor = atLocalMidnight(start);
+  const last = atLocalMidnight(end).getTime();
+  while (cursor.getTime() <= last) {
+    periods.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return periods;
+}
+
+/** One entry per calendar month (the 1st) from `start` to `end`, inclusive. */
+function generateMonthlyPeriods(start: Date, end: Date): Date[] {
+  const periods: Date[] = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const lastMonth = new Date(end.getFullYear(), end.getMonth(), 1).getTime();
+  while (cursor.getTime() <= lastMonth) {
+    periods.push(new Date(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return periods;
+}
+
+/**
+ * Generate one `Date` per calendar period (`kind`) spanning `[start, end]`,
+ * inclusive of both ends. Pure — exported (alongside {@link PERIOD_TICKS_EVERY})
+ * so `periodTicks`'s calendar math is unit-testable without mounting the axis.
+ */
+export function generatePeriodTicks(kind: XAxisPeriodTicks, start: Date, end: Date): Date[] {
+  switch (kind) {
+    case "day":
+      return generateDailyPeriods(start, end);
+    case "week":
+      return generateWeeklyPeriods(start, end);
+    case "month":
+      return generateMonthlyPeriods(start, end);
+    default:
+      return [];
+  }
+}
 
 export interface XAxisProps {
   /** Number of ticks to show (including first and last). Default: 5. Used when `tickMode` is `"domain"`. */
@@ -38,6 +116,17 @@ export interface XAxisProps {
    * **Time scale only** — see `tickFormat`. #352.
    */
   tickValues?: Date[];
+  /**
+   * Draw a `HairlineFloor` (RM-017) below the plot — one hairline tick per
+   * calendar period, whether or not a data row falls on it, with every
+   * `n`-th tick drawn longer (day → every 7th/weekly, week → every 4th/~monthly,
+   * month → every 12th/yearly). Lieflat provenance: the ruled foot of a ledger
+   * page gives a reader the passage of time with no labels and no axis. This
+   * is a SEPARATE visual layer from the labelled ticks above (`numTicks` /
+   * `tickMode`) — it never changes which labels render or where. `false`
+   * (default) draws nothing — today's behaviour.
+   */
+  periodTicks?: XAxisPeriodTicks | false;
 }
 
 interface AxisTick {
@@ -523,10 +612,22 @@ const XAxisInner = memo(function XAxisInner({
   tickMode = "domain",
   tickFormat,
   tickValues,
+  periodTicks = false,
   container,
 }: XAxisProps & { container: HTMLDivElement }) {
-  const { xScale, margin, tooltipData, data, xAccessor, dateLabels, xDomain, xScaleType } =
-    useChart();
+  const {
+    xScale,
+    margin,
+    tooltipData,
+    data,
+    xAccessor,
+    dateLabels,
+    xDomain,
+    xScaleType,
+    width,
+    height,
+    innerHeight,
+  } = useChart();
 
   // #352: on a band/linear axis the scale's domain holds SYNTHETIC instants, so
   // interpolating dates across it (the `"domain"` tick path) would invent
@@ -545,6 +646,25 @@ const XAxisInner = memo(function XAxisInner({
   // scale; labels come from `dateLabels`, and a dev warning says so.
   const effectiveTickFormat = isNonTimeScale ? undefined : tickFormat;
   const effectiveTickValues = isNonTimeScale ? undefined : tickValues;
+  // RM-028: `periodTicks` generates real calendar Dates (one per day/week/
+  // month) and interpolates them through the time scale — the same synthetic-
+  // instant problem `tickFormat`/`tickValues` have on a band/linear axis, so
+  // it is inert there too.
+  const effectivePeriodTicks = isNonTimeScale ? false : periodTicks;
+
+  // RM-028: one hairline tick per calendar period along the plot's bottom
+  // edge — a SEPARATE layer from the labelled ticks above; it never affects
+  // `labelsToShow`.
+  const periodTickDates = useMemo(() => {
+    if (!effectivePeriodTicks) {
+      return null;
+    }
+    const [start, end] = xScale.domain();
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return null;
+    }
+    return generatePeriodTicks(effectivePeriodTicks, start, end);
+  }, [effectivePeriodTicks, xScale]);
 
   const labelsToShow = useMemo(() => {
     // Explicit tick positions bypass generation AND the label-collision de-dupe
@@ -607,6 +727,23 @@ const XAxisInner = memo(function XAxisInner({
     }
   }, [isNonTimeScale, tickFormat, tickValues]);
 
+  const warnedNonTimePeriodTicksRef = useRef(false);
+  useEffect(() => {
+    if (
+      isNonTimeScale &&
+      periodTicks &&
+      !warnedNonTimePeriodTicksRef.current &&
+      process.env.NODE_ENV !== "production"
+    ) {
+      warnedNonTimePeriodTicksRef.current = true;
+      console.warn(
+        "[XAxis] `periodTicks` generates real calendar dates and is ignored on a non-time x-scale " +
+          '(xScale="band" | "linear"), for the same reason as `tickFormat`/`tickValues` — the scale\'s ' +
+          "instants are synthetic positions, not calendar dates.",
+      );
+    }
+  }, [isNonTimeScale, periodTicks]);
+
   // Dev-only, once-per-mount diagnostic (#357, DataTable #227 idiom): the default
   // label-collision de-dupe can silently collapse the axis to a single (or zero)
   // tick when several data rows format to the same label (e.g. dense timestamps
@@ -643,24 +780,46 @@ const XAxisInner = memo(function XAxisInner({
       : null;
 
   return createPortal(
-    <div className="pointer-events-none absolute inset-0">
-      {labelsToShow.map((item) => (
-        <XAxisLabel
-          animatePosition={xDomain == null}
-          crosshairX={crosshairX}
-          hoveredLabel={hoveredLabel}
-          isHovering={isHovering}
-          // `item.label` is included because a non-Date-coercible xDataKey value
-          // (#352 — dateLabels' text fallback) produces an Invalid Date whose
-          // `.getTime()` is `NaN` for every such tick; `NaN-${x}` alone collided
-          // across ticks (React "duplicate key" warning). The label disambiguates.
-          key={`${item.label}-${item.date.getTime()}-${item.x}`}
-          label={item.label}
-          tickerHalfWidth={tickerHalfWidth}
-          x={item.x}
-        />
-      ))}
-    </div>,
+    <>
+      {periodTickDates && periodTickDates.length > 0 ? (
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          data-slot="x-axis-period-ticks"
+          height={height}
+          width={width}
+        >
+          <HairlineFloor
+            every={PERIOD_TICKS_EVERY[effectivePeriodTicks as XAxisPeriodTicks]}
+            longHeight={7}
+            periods={periodTickDates}
+            scale={(date: Date) => {
+              const x = xScale(date);
+              return x === undefined ? undefined : x + margin.left;
+            }}
+            y={margin.top + innerHeight}
+          />
+        </svg>
+      ) : null}
+      <div className="pointer-events-none absolute inset-0">
+        {labelsToShow.map((item) => (
+          <XAxisLabel
+            animatePosition={xDomain == null}
+            crosshairX={crosshairX}
+            hoveredLabel={hoveredLabel}
+            isHovering={isHovering}
+            // `item.label` is included because a non-Date-coercible xDataKey value
+            // (#352 — dateLabels' text fallback) produces an Invalid Date whose
+            // `.getTime()` is `NaN` for every such tick; `NaN-${x}` alone collided
+            // across ticks (React "duplicate key" warning). The label disambiguates.
+            key={`${item.label}-${item.date.getTime()}-${item.x}`}
+            label={item.label}
+            tickerHalfWidth={tickerHalfWidth}
+            x={item.x}
+          />
+        ))}
+      </div>
+    </>,
     container,
   );
 });

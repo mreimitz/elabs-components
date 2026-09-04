@@ -274,3 +274,42 @@ export function getSeriesMarkerVisualExtent(
   const highlightPad = showActiveHighlight ? radius * 0.35 : 0;
   return radius + ring + outline + highlightPad + 2;
 }
+
+// ── Per-point marker variant (RM-028) ──────────────────────────────────────
+
+/**
+ * Per-point marker semantics for `Line`'s `markerStyle` prop — the lieflat
+ * "hollow dot means weekend, filled means weekday" idiom generalised to any
+ * per-point boolean/enum a caller wants to encode in marker style.
+ *
+ * `"none"` renders no marker at all for that point (a sparse callout series).
+ */
+export type MarkerVariant = "filled" | "hollow" | "none";
+
+export interface ResolvedMarkerVariantFill {
+  fill: string;
+  stroke: string;
+}
+
+/**
+ * Resolve a per-point `MarkerVariant` into a concrete fill/stroke pair for
+ * `StaticSeriesPointMarker`, given the series's base colour. Returns `null`
+ * for `"none"` — the caller skips rendering that point entirely.
+ *
+ * `"hollow"` fills with `--chart-background` (the plot ground) and strokes
+ * with the base colour — never a hardcoded white/transparent — so the same
+ * marker reads correctly on a light OR dark card with no `dark:` override.
+ * `"filled"` fills AND strokes with the base colour (today's default look).
+ */
+export function resolveMarkerVariantFill(
+  variant: MarkerVariant,
+  baseColor: string,
+): ResolvedMarkerVariantFill | null {
+  if (variant === "none") {
+    return null;
+  }
+  if (variant === "hollow") {
+    return { fill: "var(--chart-background)", stroke: baseColor };
+  }
+  return { fill: baseColor, stroke: baseColor };
+}
