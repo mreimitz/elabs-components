@@ -5,7 +5,12 @@
  *
  * Given a serializable `ChartSpec` (the shape an LLM tool-call emits),
  * AutoChart picks and renders the correct existing chart container.
- * Supports Core-7: line, area, bar, pie, scatter, radar, funnel.
+ * Supports all twenty `ChartType` members (RM-038): the original Core-7
+ * (line, area, bar, pie, scatter, radar, funnel) plus candlestick, heatmap,
+ * calendar, waterfall, dumbbell, unit, treemap, histogram, box, strip, bump,
+ * stream and diverging-bar. `network`/`parallel`/`tree`/`sankey` are
+ * deliberately NOT in the union — see the `ChartType` docblock in
+ * `./chart-spec` — and render `ChartFallback`.
  *
  * Design constraints:
  * - Never throws — empty/malformed data and unsupported types → ChartFallback.
@@ -27,12 +32,19 @@ import {
   Bar,
   BarXAxis,
   BarYAxis,
+  BumpChart,
+  Candlestick,
+  CandlestickChart,
   ChartTooltip,
+  DistributionChart,
+  DumbbellChart,
   FunnelChart,
   type FunnelStage,
   Grid,
+  HeatmapChart,
   Line,
   LineChart,
+  type OHLCDataPoint,
   PieCenter,
   PieChart,
   type PieData,
@@ -46,13 +58,25 @@ import {
   type RadarMetric,
   ScatterChart,
   Scatter,
+  TreemapChart,
+  type TreemapNode,
+  UnitChart,
+  type UnitChartDatum,
+  WaterfallChart,
+  type WaterfallDatum,
   XAxis,
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
 
 import type { ChartSpec, ChartSeriesSpec, ChartType } from "./chart-spec";
-import { inferChartType } from "./infer-chart-type";
+import {
+  inferChartType,
+  isChartType,
+  readsAsBeforeAfterPair,
+  readsAsTotalRow,
+  secondCategoricalField,
+} from "./infer-chart-type";
 
 // ---------------------------------------------------------------------------
 // Palette cycling
@@ -178,6 +202,37 @@ function AutoLegend({ series }: AutoLegendProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Row readers shared by the RM-038 families
+// ---------------------------------------------------------------------------
+
+/** A row's numeric cell, or `0` — the containers all take real numbers. */
+function numberAt(row: Record<string, unknown>, key: string): number {
+  const v = row[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * The dumbbell's `[startKey, endKey]`, resolved exactly as the `dumbbell` rule
+ * resolved them: an explicit `spec.y2` is the "after" measure, otherwise the
+ * two declared series are put in reading order by their before/after names.
+ * Falls back to declaration order, which is what a caller who set `type:
+ * "dumbbell"` by hand most likely meant.
+ */
+function dumbbellKeys(spec: ChartSpec, series: NormalizedSeries[]): [string, string] {
+  const first = series[0]?.key ?? "";
+  if (spec.y2) {
+    return [first, spec.y2];
+  }
+  const second = series[1]?.key ?? first;
+  const ordered = readsAsBeforeAfterPair(series[0]?.label ?? first, series[1]?.label ?? second);
+  if (!ordered) {
+    return [first, second];
+  }
+  const keyOf = (label: string) => series.find((x) => x.label === label)?.key ?? label;
+  return [keyOf(ordered[0]), keyOf(ordered[1])];
+}
+
+// ---------------------------------------------------------------------------
 // renderChart switch
 // ---------------------------------------------------------------------------
 
@@ -223,8 +278,12 @@ function renderChart(
       );
     }
 
-    // ── Area ──────────────────────────────────────────────────────────────────
-    case "area": {
+    // ── Area / Stream ─────────────────────────────────────────────────────────
+    //    One case, two baselines: a `stream` is the same stacked bands with
+    //    d3's wiggle offset (RM-029), which is the whole difference between the
+    //    two readings — so forking the JSX would only duplicate it.
+    case "area":
+    case "stream": {
       const timeData = coerceDatesToDate(resolvedData, x);
       return (
         // AreaChart accepts style prop — pass height directly to suppress aspectRatio
@@ -232,6 +291,7 @@ function renderChart(
           data={timeData}
           xDataKey={x}
           aspectRatio={undefined}
+          offset={type === "stream" ? "wiggle" : stacked ? "none" : undefined}
           style={{ height }}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description}
@@ -422,6 +482,232 @@ function renderChart(
       );
     }
 
+    // ── Candlestick ───────────────────────────────────────────────────────────
+    //    `CandlestickChart` plots real `Date`s and four fixed columns, so the
+    //    spec's own column names are mapped onto them here.
+    //    NOTE: it is the one container in this switch with no
+    //    `copyValueOnActivate` — it does not extend `ChartInteractionProps`.
+    case "candlestick": {
+      const named = (want: string) => series.find((s) => s.key.toLowerCase() === want)?.key ?? want;
+      const openKey = named("open");
+      const highKey = named("high");
+      const lowKey = named("low");
+      const closeKey = named("close");
+      const ohlc: OHLCDataPoint[] = coerceDatesToDate(resolvedData, x)
+        .map((row) => ({
+          date: row[x] instanceof Date ? (row[x] as Date) : new Date(String(row[x] ?? "")),
+          open: numberAt(row, openKey),
+          high: numberAt(row, highKey),
+          low: numberAt(row, lowKey),
+          close: numberAt(row, closeKey),
+        }))
+        .filter((d) => !Number.isNaN(d.date.getTime()));
+      return (
+        <CandlestickChart
+          data={ohlc}
+          xDataKey="date"
+          aspectRatio={undefined}
+          style={{ height }}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+        >
+          <Grid horizontal />
+          <Candlestick />
+          <XAxis />
+          <YAxis formatValue={yFormat} />
+          <ChartTooltip />
+        </CandlestickChart>
+      );
+    }
+
+    // ── Heatmap / Calendar ────────────────────────────────────────────────────
+    //    One container, two grids (RM-021). The row key is resolved by the SAME
+    //    helper the inference rule used, so the picture and the explanation
+    //    cannot name different columns. `variant="calendar"` ignores `y`.
+    case "heatmap":
+    case "calendar": {
+      const valueKey = series[0]?.key ?? "";
+      const yKey = secondCategoricalField(spec) ?? "";
+      return (
+        // Sized by aspect ratio internally, so `height` is a FLOOR here rather
+        // than a cap — a clipped heatmap loses cells, which is worse than a
+        // taller box.
+        <div style={{ minHeight: height }}>
+          <HeatmapChart
+            data={resolvedData}
+            x={x}
+            y={yKey}
+            valueKey={valueKey}
+            variant={type === "calendar" ? "calendar" : "matrix"}
+            valueFormat={spec.valueFormat}
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+          />
+        </div>
+      );
+    }
+
+    // ── Waterfall ─────────────────────────────────────────────────────────────
+    case "waterfall": {
+      const valueKey = series[0]?.key ?? "";
+      const steps: WaterfallDatum[] = resolvedData.map((row) => {
+        const label = String(row[x] ?? "");
+        return {
+          label,
+          value: numberAt(row, valueKey),
+          // Same classifier the `waterfall` rule used to recognise the shape.
+          kind: readsAsTotalRow(label) ? "total" : "step",
+        };
+      });
+      return (
+        <WaterfallChart
+          data={steps}
+          height={height}
+          orientation={orientation ?? "vertical"}
+          valueFormat={spec.valueFormat}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        />
+      );
+    }
+
+    // ── Dumbbell ──────────────────────────────────────────────────────────────
+    case "dumbbell": {
+      const [startKey, endKey] = dumbbellKeys(spec, series);
+      return (
+        <div style={{ minHeight: height }}>
+          <DumbbellChart
+            data={resolvedData}
+            category={x}
+            startKey={startKey}
+            endKey={endKey}
+            orientation={orientation ?? "horizontal"}
+            valueFormat={spec.valueFormat}
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+          />
+        </div>
+      );
+    }
+
+    // ── Unit (waffle) ─────────────────────────────────────────────────────────
+    case "unit": {
+      const valueKey = series[0]?.key ?? "";
+      const unitData: UnitChartDatum[] = resolvedData.map((row, i) => ({
+        label: String(row[x] ?? `Part ${i + 1}`),
+        value: numberAt(row, valueKey),
+      }));
+      return (
+        <UnitChart
+          data={unitData}
+          layout="waffle"
+          style={{ height }}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        />
+      );
+    }
+
+    // ── Treemap ───────────────────────────────────────────────────────────────
+    //    The one type that reads `spec.hierarchy` instead of `spec.data`; with
+    //    no hierarchy there is nothing to draw, so it falls back.
+    case "treemap": {
+      const hierarchy: TreemapNode | undefined = spec.hierarchy;
+      if (!hierarchy) {
+        return null;
+      }
+      return (
+        <TreemapChart
+          data={hierarchy}
+          style={{ height }}
+          valueFormat={spec.valueFormat}
+          accessibleLabel={spec.title}
+          accessibleDescription={spec.description}
+          copyValueOnActivate={copyValueOnActivate}
+        />
+      );
+    }
+
+    // ── Distribution: histogram / box / strip ─────────────────────────────────
+    //    One container, three marks (RM-026) — `kind` IS the chart type here,
+    //    which is why the three share a case.
+    case "histogram":
+    case "box":
+    case "strip": {
+      const valueKey = series[0]?.key ?? "";
+      return (
+        <div style={{ height }}>
+          <DistributionChart
+            data={resolvedData}
+            valueKey={valueKey}
+            groupKey={spec.group}
+            kind={type}
+            valueFormat={spec.valueFormat}
+            currency={spec.currency}
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+          />
+        </div>
+      );
+    }
+
+    // ── Bump ──────────────────────────────────────────────────────────────────
+    case "bump": {
+      const measure = series[0]?.key ?? "";
+      const isRank = /^(rank|position|place)$/i.test(measure.trim());
+      return (
+        <div style={{ minHeight: height }}>
+          <BumpChart
+            data={resolvedData}
+            period={x}
+            entity={secondCategoricalField(spec) ?? ""}
+            // A column literally called "rank" IS the rank; anything else is a
+            // magnitude the container ranks for us.
+            rankKey={isRank ? measure : undefined}
+            valueKey={isRank ? undefined : measure}
+            valueFormat={spec.valueFormat}
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+          />
+        </div>
+      );
+    }
+
+    // ── Diverging bar ─────────────────────────────────────────────────────────
+    //    A single signed measure around the zero baseline (RM-027). The signed
+    //    value labels are what separates it from `bar`: the crossing is the
+    //    story, so each bar states which side of zero it landed on.
+    case "diverging-bar": {
+      const valueKey = series[0]?.key ?? "";
+      const color = series[0]?.color ?? "var(--chart-1)";
+      return (
+        <div style={{ height }}>
+          <BarChart
+            data={resolvedData}
+            xDataKey={x}
+            orientation={orientation ?? "vertical"}
+            aspectRatio={undefined}
+            className="h-full"
+            accessibleLabel={spec.title}
+            accessibleDescription={spec.description}
+            copyValueOnActivate={copyValueOnActivate}
+          >
+            <Grid horizontal />
+            <Bar dataKey={valueKey} fill={color} lineCap="round" showValues zeroLine />
+            <BarXAxis />
+            <YAxis formatValue={yFormat} />
+            <ChartTooltip />
+          </BarChart>
+        </div>
+      );
+    }
+
     // ── Unsupported / deferred ────────────────────────────────────────────────
     default: {
       return null;
@@ -434,7 +720,23 @@ function renderChart(
 // ---------------------------------------------------------------------------
 
 export interface AutoChartProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
-  /** The serializable chart specification produced by an LLM tool-call. */
+  /**
+   * The serializable chart specification produced by an LLM tool-call.
+   *
+   * `spec.type` is optional; omit it and the data shape decides (see
+   * `explainChartType`). The full `ChartType` union AutoChart renders is:
+   * `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` |
+   * `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` |
+   * `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` |
+   * `diverging-bar`.
+   *
+   * Anything else — including `network`, `parallel`, `tree` and `sankey`, which
+   * stay explicit-container-only — renders `ChartFallback` instead.
+   *
+   * That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out
+   * of this comment and asserts it equals `CHART_TYPES`, so a type added to the
+   * union without being documented here fails the suite.
+   */
   spec: ChartSpec;
   /** Chart body height in pixels. Default: 280 */
   height?: number;
@@ -499,7 +801,11 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   }
 
   // ── Guard: empty or clearly invalid data ──────────────────────────────────
-  if (!spec.data || spec.data.length === 0) {
+  // A treemap spec carries its rows in `hierarchy`, so an empty `data`/`series`
+  // pair is correct there rather than a missing dataset.
+  const readsHierarchy = Boolean(spec.hierarchy);
+
+  if (!readsHierarchy && (!spec.data || spec.data.length === 0)) {
     return (
       <ChartFallback
         ref={ref}
@@ -511,7 +817,7 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
     );
   }
 
-  if (!spec.series || spec.series.length === 0) {
+  if (!readsHierarchy && (!spec.series || spec.series.length === 0)) {
     return (
       <ChartFallback
         ref={ref}
@@ -527,13 +833,13 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   let type: ChartType;
   let isUnsupported = false;
 
-  const SUPPORTED_TYPES: ChartType[] = ["line", "area", "bar", "pie", "scatter", "radar", "funnel"];
-
   if (spec.type) {
-    if ((SUPPORTED_TYPES as string[]).includes(spec.type)) {
+    // Every `ChartType` member has a branch in `renderChart`, so the guard is
+    // now "is this a member at all" — a spec cast past the type (`"sankey" as
+    // any`, a model inventing a name) still lands on the fallback.
+    if (isChartType(spec.type)) {
       type = spec.type;
     } else {
-      // Unknown/deferred type (e.g. "sankey", "candlestick" cast via `as any`)
       isUnsupported = true;
       type = "bar"; // unused — we render fallback below
     }

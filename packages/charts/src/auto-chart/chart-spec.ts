@@ -7,9 +7,71 @@
  */
 
 import type { ChartValueFormat } from "../charts/value-format";
+import type { TreemapNode } from "../charts/treemap/treemap-layout";
 
-/** The seven chart types supported in AutoChart v1. */
-export type ChartType = "line" | "area" | "bar" | "pie" | "scatter" | "radar" | "funnel";
+/**
+ * Every chart shape `AutoChart` can render from a spec (RM-038).
+ *
+ * The first seven are the original Core-7; the thirteen after them are the
+ * wave-1/2 containers (`CandlestickChart`, `HeatmapChart`, `WaterfallChart`,
+ * `DumbbellChart`, `UnitChart`, `TreemapChart`, `DistributionChart`,
+ * `BumpChart`, plus the streamgraph and diverging-bar readings of `AreaChart`
+ * and `BarChart`).
+ *
+ * DELIBERATELY ABSENT — `network`, `parallel`, `tree`, `sankey`. Those four
+ * read a data shape that a flat `{ x, series[] }` spec cannot express without
+ * ambiguity (a node/link pair, a per-row dimension list, a nested hierarchy
+ * whose edges carry the meaning), so a wrong guess would render a confidently
+ * wrong picture rather than fall back. They stay explicit-only: reach for
+ * `NetworkChart` / `ParallelCoordinatesChart` / `TreeChart` / `SankeyChart`
+ * directly. `AutoChart` renders `ChartFallback` for them.
+ *
+ * The runtime companion list is `CHART_TYPES` in `./infer-chart-type`; the two
+ * are locked together by `chartTypeUnionMembers` in `auto-chart.test.tsx`, so
+ * adding a member here without adding it there fails the suite.
+ */
+export type ChartType =
+  | "line"
+  | "area"
+  | "bar"
+  | "pie"
+  | "scatter"
+  | "radar"
+  | "funnel"
+  | "candlestick"
+  | "heatmap"
+  | "calendar"
+  | "waterfall"
+  | "dumbbell"
+  | "unit"
+  | "treemap"
+  | "histogram"
+  | "box"
+  | "strip"
+  | "bump"
+  | "stream"
+  | "diverging-bar";
+
+/**
+ * A declared hint about what the rows MEAN, for the shapes structure alone
+ * cannot separate (RM-038).
+ *
+ * - `"steps"` — the rows are a running sequence of deltas that add up to a
+ *   total (a bridge/waterfall), not independent categories.
+ * - `"records"` — one row is one OBSERVATION, not a pre-aggregated category;
+ *   this is what turns a numeric column into a distribution rather than a
+ *   series.
+ * - `"ranking"` — long rows of `(period, entity, value)` whose interest is the
+ *   ORDER of the entities per period, not the magnitudes.
+ */
+export type ChartSpecKind = "steps" | "records" | "ranking";
+
+/**
+ * How loud the picture should be. `"analytical"` (the default) keeps the
+ * conventional chart; `"editorial"` asks for the countable, one-mark-per-unit
+ * reading where one exists (a waffle instead of a pie).
+ */
+export type ChartSpecEmphasis = "analytical" | "editorial";
 
 /**
  * How to format numeric values in labels and tooltips.
@@ -67,6 +129,38 @@ export interface ChartSpec {
    * or a full `ChartSeriesSpec`.
    */
   series: Array<ChartSeriesSpec | string>;
+
+  /**
+   * A SECOND field, read differently by the two families that need one (RM-038):
+   *
+   * - dumbbell / slope — the "after" measure, when `series` carries only the
+   *   "before" one. `{ x: "region", series: ["2024"], y2: "2025" }`.
+   * - heatmap / calendar — the ROW key, when `x` is the column key. The value
+   *   is still `series[0]`.
+   *
+   * One field rather than two because a spec never needs both readings at once:
+   * a dumbbell has two measures and one category, a heatmap two categories and
+   * one measure, and which it is falls out of whether `y2` names a numeric or a
+   * categorical column.
+   */
+  y2?: string;
+
+  /**
+   * The grouping column for a distribution — `{ valueKey: series[0], group }`.
+   * Present turns a single numeric column into one distribution per group
+   * (`box`, or `strip` while the groups are still small enough to draw every
+   * record).
+   */
+  group?: string;
+
+  /** The hierarchy to render as a treemap. Present, it wins over `data`. */
+  hierarchy?: TreemapNode;
+
+  /** What the rows MEAN, where structure alone is ambiguous. See {@link ChartSpecKind}. */
+  kind?: ChartSpecKind;
+
+  /** How loud the picture should be. See {@link ChartSpecEmphasis}. */
+  emphasis?: ChartSpecEmphasis;
 
   /** Chart title — rendered as a heading above the chart and as the accessible label. */
   title?: string;

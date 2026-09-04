@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T14:31:33.882Z",
+  "generatedAt": "2026-09-04T15:06:14.738Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12482,6 +12482,11 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "CALENDAR_MIN_ROWS",
+          "kind": "value",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
           "name": "CALENDAR_ROWS",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -12535,6 +12540,11 @@
           "name": "CHART_STAGGER_DOT_MS",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "CHART_TYPES",
+          "kind": "value",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
           "name": "ChartBrush",
@@ -13272,6 +13282,11 @@
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
         },
         {
+          "name": "STRIP_MAX_ROWS_PER_GROUP",
+          "kind": "value",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
           "name": "TreeChart",
           "kind": "value",
           "module": "packages/charts/src/charts/tree-chart.tsx"
@@ -13780,6 +13795,14 @@
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
         {
+          "name": "ChartSpecEmphasis",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "ChartSpecKind",
+          "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
           "name": "ChartStableContextValue",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -13818,6 +13841,10 @@
         {
           "name": "ChartType",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "ChartTypeExplanation",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
           "name": "ChartXScaleType",
@@ -14962,6 +14989,10 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "explainChartType",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
           "name": "firstMondayOfMonth",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -15014,8 +15045,16 @@
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
+          "name": "isCategoricalField",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
           "name": "isChartInteractionPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "isChartType",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
           "name": "isLabelVisible",
@@ -15148,6 +15187,10 @@
         {
           "name": "radarCssVars",
           "module": "packages/charts/src/charts/radar-context.tsx"
+        },
+        {
+          "name": "readsAsBeforeAfterPair",
+          "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
           "name": "resolveEntityLineStyle",
@@ -15691,7 +15734,7 @@
               "name": "spec",
               "optional": false,
               "type": "ChartSpec",
-              "description": "The serializable chart specification produced by an LLM tool-call."
+              "description": "The serializable chart specification produced by an LLM tool-call. `spec.type` is optional; omit it and the data shape decides (see `explainChartType`). The full `ChartType` union AutoChart renders is: `line` | `area` | `bar` | `pie` | `scatter` | `radar` | `funnel` | `candlestick` | `heatmap` | `calendar` | `waterfall` | `dumbbell` | `unit` | `treemap` | `histogram` | `box` | `strip` | `bump` | `stream` | `diverging-bar`. Anything else — including `network`, `parallel`, `tree` and `sankey`, which stay explicit-container-only — renders `ChartFallback` instead. That list is not hand-kept prose: `auto-chart.test.tsx` parses it back out of this comment and asserts it equals `CHART_TYPES`, so a type added to the union without being documented here fails the suite."
             },
             {
               "name": "height",

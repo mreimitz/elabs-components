@@ -3,7 +3,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { AutoChart } from "./auto-chart";
-import type { ChartSpec } from "./chart-spec";
+import type { ChartSpec, ChartType } from "./chart-spec";
+import { explainChartType } from "./infer-chart-type";
 
 const meta = {
   title: "Charts/AutoChart",
@@ -269,7 +270,12 @@ export const CopyExactValueDisabled: Story = {
   },
 };
 
-/** Unsupported type (not in Core-7) renders a ChartFallback. */
+/**
+ * A type outside the `ChartType` union renders a `ChartFallback`. `sankey` is
+ * one of the four shapes AutoChart deliberately never infers or renders — a
+ * flat spec cannot express a node/link graph unambiguously, so it stays
+ * explicit-container-only.
+ */
 export const UnsupportedFallback: Story = {
   args: {
     spec: {
@@ -370,3 +376,300 @@ export const InChatConversation: Story = {
     },
   },
 };
+
+// ── RM-038: the thirteen new families, chosen by data shape ──────────────────
+//
+// Every story below omits `type`. The caption under each chart is the real
+// `explainChartType(spec).reason` string, so the page shows WHY a picture was
+// chosen, and the play function asserts the choice against the rendered DOM.
+
+const inferenceCaptionId = "auto-chart-inference";
+
+/**
+ * One inference story: render the spec with no `type`, print the reason, and
+ * assert in `play` that the shape really chose `expected` — and that the
+ * rendered result is a chart rather than the "not supported yet" fallback.
+ */
+function inferenceStory(spec: ChartSpec, expected: ChartType, rule: string): Story {
+  return {
+    args: { spec, height: 280 },
+    render: (args) => {
+      const explained = explainChartType(args.spec);
+      return (
+        <div className="flex flex-col gap-2">
+          <AutoChart {...args} />
+          <p className="text-meta text-muted-foreground" data-testid={inferenceCaptionId}>
+            {explained.reason}
+          </p>
+        </div>
+      );
+    },
+    play: async ({ canvasElement, args }) => {
+      const canvas = within(canvasElement);
+      const explained = explainChartType(args.spec);
+      await expect(explained.type).toBe(expected);
+      await expect(explained.rule).toBe(rule);
+      // …and the page really says so, so a reason that never reached the DOM
+      // cannot pass this story.
+      const caption = await canvas.findByTestId(inferenceCaptionId);
+      await expect(caption).toHaveTextContent(explained.reason);
+      await expect(caption).toHaveTextContent(expected);
+      // A type with no render branch would show the fallback message instead.
+      await expect(canvasElement.textContent ?? "").not.toContain("not supported yet");
+    },
+  };
+}
+
+/** Daily rows for the calendar story — a full year of one measure. */
+const dailyCommits = Array.from({ length: 366 }, (_, i) => ({
+  date: new Date(Date.UTC(2024, 0, 1) + i * 86_400_000).toISOString().slice(0, 10),
+  commits: (i * 7) % 11,
+}));
+
+/** OHLC columns on a date axis are candles, never a line. */
+export const CandlestickInferred: Story = inferenceStory(
+  {
+    data: [
+      { date: "2024-01-31", open: 112, high: 119, low: 110, close: 118 },
+      { date: "2024-02-29", open: 118, high: 124, low: 116, close: 121 },
+      { date: "2024-03-28", open: 121, high: 126, low: 118, close: 119 },
+      { date: "2024-04-30", open: 119, high: 122, low: 114, close: 115 },
+      { date: "2024-05-31", open: 115, high: 128, low: 113, close: 127 },
+    ],
+    x: "date",
+    series: ["open", "high", "low", "close"],
+    title: "ACME, monthly candles",
+  },
+  "candlestick",
+  "ohlc",
+);
+
+/** A nested hierarchy is the one shape only a treemap can read. */
+export const TreemapInferred: Story = inferenceStory(
+  {
+    data: [],
+    x: "name",
+    series: [],
+    hierarchy: {
+      name: "Cloud spend",
+      children: [
+        {
+          name: "Compute",
+          children: [
+            { name: "EC2", value: 420 },
+            { name: "Lambda", value: 90 },
+          ],
+        },
+        {
+          name: "Storage",
+          children: [
+            { name: "S3", value: 260 },
+            { name: "Glacier", value: 40 },
+          ],
+        },
+      ],
+    },
+    title: "Cloud spend by service",
+  },
+  "treemap",
+  "hierarchy",
+);
+
+/**
+ * Long `(period, entity, rank)` rows DECLARED as a ranking. Without the
+ * declaration the identical shape reads as a heatmap — the two cannot be told
+ * apart structurally, which is why the ranking rule runs first and asks for a
+ * signal.
+ */
+export const BumpInferred: Story = inferenceStory(
+  {
+    data: [
+      { quarter: "Q1", team: "Alpha", rank: 1 },
+      { quarter: "Q1", team: "Beta", rank: 2 },
+      { quarter: "Q1", team: "Gamma", rank: 3 },
+      { quarter: "Q2", team: "Alpha", rank: 3 },
+      { quarter: "Q2", team: "Beta", rank: 1 },
+      { quarter: "Q2", team: "Gamma", rank: 2 },
+      { quarter: "Q3", team: "Alpha", rank: 2 },
+      { quarter: "Q3", team: "Beta", rank: 3 },
+      { quarter: "Q3", team: "Gamma", rank: 1 },
+    ],
+    x: "quarter",
+    series: ["rank"],
+    title: "Team standings by quarter",
+  },
+  "bump",
+  "ranking",
+);
+
+/** A year of dated rows is more days than a line can resolve. */
+export const CalendarInferred: Story = inferenceStory(
+  { data: dailyCommits, x: "date", series: ["commits"], title: "Commits, 2024" },
+  "calendar",
+  "calendar",
+);
+
+/** Stacked bands over time read as a streamgraph, not as lines. */
+export const StreamInferred: Story = inferenceStory(
+  {
+    data: [
+      { date: "2024-01-01", mobile: 12, desktop: 20, tablet: 6 },
+      { date: "2024-02-01", mobile: 18, desktop: 19, tablet: 7 },
+      { date: "2024-03-01", mobile: 24, desktop: 17, tablet: 5 },
+      { date: "2024-04-01", mobile: 30, desktop: 16, tablet: 4 },
+      { date: "2024-05-01", mobile: 34, desktop: 15, tablet: 6 },
+    ],
+    x: "date",
+    series: ["mobile", "desktop", "tablet"],
+    stacked: true,
+    title: "Sessions by device",
+  },
+  "stream",
+  "stream",
+);
+
+/** Two categorical keys and one measure make a matrix, whatever the row count. */
+export const HeatmapInferred: Story = inferenceStory(
+  {
+    data: [
+      { day: "Mon", hour: "09", visits: 12 },
+      { day: "Mon", hour: "12", visits: 30 },
+      { day: "Mon", hour: "17", visits: 22 },
+      { day: "Tue", hour: "09", visits: 9 },
+      { day: "Tue", hour: "12", visits: 34 },
+      { day: "Tue", hour: "17", visits: 26 },
+      { day: "Wed", hour: "09", visits: 15 },
+      { day: "Wed", hour: "12", visits: 28 },
+      { day: "Wed", hour: "17", visits: 31 },
+    ],
+    x: "day",
+    series: ["visits"],
+    title: "Visits by weekday and hour",
+  },
+  "heatmap",
+  "matrix",
+);
+
+/** Two measures whose names read as before/after are one measure twice. */
+export const DumbbellInferred: Story = inferenceStory(
+  {
+    data: [
+      { region: "North", before: 42, after: 61 },
+      { region: "South", before: 31, after: 46 },
+      { region: "West", before: 27, after: 42 },
+      { region: "East", before: 38, after: 35 },
+    ],
+    x: "region",
+    series: [
+      { key: "before", label: "before" },
+      { key: "after", label: "after" },
+    ],
+    title: "Coverage before and after rollout",
+  },
+  "dumbbell",
+  "before-after",
+);
+
+/** A bare column of observations has no category to plot against. */
+export const HistogramInferred: Story = inferenceStory(
+  {
+    data: Array.from({ length: 120 }, (_, i) => ({ ms: 80 + ((i * 37) % 420) })),
+    x: "ms",
+    series: ["ms"],
+    title: "Response time",
+  },
+  "histogram",
+  "distribution-histogram",
+);
+
+/** Few enough records per group and every one can still be drawn. */
+export const StripInferred: Story = inferenceStory(
+  {
+    data: Array.from({ length: 60 }, (_, i) => ({
+      cohort: ["A", "B", "C"][i % 3] as string,
+      ms: 90 + ((i * 53) % 380),
+    })),
+    x: "cohort",
+    series: ["ms"],
+    group: "cohort",
+    title: "Response time by cohort",
+  },
+  "strip",
+  "distribution-strip",
+);
+
+/** Past ~200 records a group, the summary reads better than the records. */
+export const BoxInferred: Story = inferenceStory(
+  {
+    data: Array.from({ length: 900 }, (_, i) => ({
+      cohort: ["A", "B", "C"][i % 3] as string,
+      ms: 90 + ((i * 53) % 380),
+    })),
+    x: "cohort",
+    series: ["ms"],
+    group: "cohort",
+    title: "Response time by cohort",
+  },
+  "box",
+  "distribution-box",
+);
+
+/**
+ * A total/net/gross checkpoint row makes these deltas rather than categories —
+ * and it outranks the diverging rule, which this same data also satisfies.
+ */
+export const WaterfallInferred: Story = inferenceStory(
+  {
+    data: [
+      { stage: "Gross revenue", value: 480 },
+      { stage: "Discounts", value: -60 },
+      { stage: "Refunds", value: -25 },
+      { stage: "Net total", value: 395 },
+    ],
+    x: "stage",
+    series: ["value"],
+    title: "Gross to net",
+  },
+  "waterfall",
+  "steps",
+);
+
+/** A single measure that crosses zero: the baseline is the story. */
+export const DivergingBarInferred: Story = inferenceStory(
+  {
+    data: [
+      { region: "North", change: 12 },
+      { region: "South", change: -8 },
+      { region: "West", change: 4 },
+      { region: "East", change: -3 },
+      { region: "Central", change: 9 },
+    ],
+    x: "region",
+    series: [{ key: "change", label: "Change" }],
+    title: "Year-on-year change",
+  },
+  "diverging-bar",
+  "signed",
+);
+
+/**
+ * The same shares that would draw a pie draw countable marks instead once the
+ * spec asks for the editorial register — `emphasis: "editorial"` is the only
+ * difference between this story and a pie.
+ */
+export const UnitInferred: Story = inferenceStory(
+  {
+    data: [
+      { mode: "Cycled", share: 41 },
+      { mode: "Walked", share: 35 },
+      { mode: "Drove", share: 12 },
+      { mode: "Bus", share: 12 },
+    ],
+    x: "mode",
+    series: ["share"],
+    emphasis: "editorial",
+    title: "How people got to work",
+  },
+  "unit",
+  "waffle",
+);
