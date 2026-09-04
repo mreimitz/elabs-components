@@ -242,7 +242,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - TREEMAP_MAX_LEAVES
 - TREEMAP_MONO_LEAF_COLOR
 - TREEMAP_TITLE_BAND_HEIGHT
-- TreemapChart
+- TreemapChart — Two-level squarified treemap — a hierarchy where area, not position, encodes value.
+  - avoid: Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.
+  - avoid: Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.
+  - avoid: Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.
+  - avoid: Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.
 - UnitStack — n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.
   - avoid: Passing a large n and calling it a bar — past roughly 60 units the stack stops being countable and becomes a texture, at which point a bar is the honest mark. It will happily draw 500; that is your judgment, not its.
   - avoid: Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.

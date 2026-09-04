@@ -1180,7 +1180,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | TREEMAP_MAX_LEAVES | component |  | `@elabs-ai/components-charts` |  |
 | TREEMAP_MONO_LEAF_COLOR | component |  | `@elabs-ai/components-charts` |  |
 | TREEMAP_TITLE_BAND_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
-| TreemapChart | component |  | `@elabs-ai/components-charts` |  |
+| TreemapChart | component |  | `@elabs-ai/components-charts` | Two-level squarified treemap — a hierarchy where area, not position, encodes value. |
 | UnitStack | component |  | `@elabs-ai/components-charts` | n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random. |
 | useActivateDatapoint | hook |  | `@elabs-ai/components-charts` |  |
 | useActiveMarkers | hook |  | `@elabs-ai/components-charts` |  |
