@@ -1090,7 +1090,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
 | DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
-| DumbbellChart | component |  | `@elabs-ai/components-charts` |  |
+| DumbbellChart | component |  | `@elabs-ai/components-charts` | Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns. |
 | FunnelChart | component |  | `@elabs-ai/components-charts` | Stage-by-stage drop-off through an ordered pipeline. |
 | Gantt | component | density=comfortable*\|compact | `@elabs-ai/components-charts` | Schedule grid — tasks as bars over time, with a task table beside them. |
 | GANTT_NOMINAL_VIEWPORT_PX | component |  | `@elabs-ai/components-charts` |  |

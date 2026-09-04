@@ -95,7 +95,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.
   - avoid: Shortening the duration instead of branching for reduced motion — a motion path at duration 0 still leaves the dash attributes in the DOM, and a stroke carrying a dash array is one rounding error away from a visible seam. The reduced-motion state has to be the ordinary, undecorated path.
   - avoid: Letting meaning depend on the animation having run — a reader who arrives after it finished, or who never sees it, must lose nothing.
-- DumbbellChart
+- DumbbellChart — Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns.
+  - avoid: Using variant="slope" past the 8-row soft cap — the crossing lines stop being decodable at that density (it dev-warns once); switch to the default variant="dumbbell" (rows) instead of reading the warning as noise.
+  - avoid: Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.
+  - avoid: Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.
+  - avoid: Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.
 - FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
   - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
   - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.
