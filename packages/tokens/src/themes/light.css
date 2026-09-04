@@ -573,18 +573,42 @@
 
   --chart-accent: var(--chart-1);
 
-  /* Flow edge ramp — RM-043. #282: --flow-edge-weak retuned 2026-09-04 — the
-     originally-authored L 0.82 measured 1.60:1 against --canvas (WCAG 1.4.11
-     fails; 47% of the interpolated ramp rendered under 3:1, since the
-     component lerps per-channel in gamma-sRGB and the ramp's minimum sits at
-     whichever endpoint is closer to the canvas). L 0.63 clears 3.20:1 (the
-     ramp's minimum, verified across the full weak→strong sweep — see the
-     "flow edge ramp" block in themes-contrast.test.ts). Tension, named rather
-     than absorbed: a compliant weak stop this light sits close to the flat
-     --flow-edge default (L 0.62, 3.32:1 on --canvas), so the ramp's quiet end
-     barely reads as quieter than an unramped edge. Buying that range back
-     needs a longer ramp (darkening --flow-edge-strong further) or a darker
-     --canvas — both out of scope for #282; flagged there for the maintainer. */
+  /* Flow edge ramp — RM-043, retuned TWICE under #282; this note supersedes
+     round one's, which recorded a tradeoff that has since been reversed.
+
+     Round one raised --flow-edge-weak from its authored L 0.82, which measured
+     1.60:1 against --canvas (WCAG 1.4.11 fails; 47% of the interpolated ramp
+     rendered under 3:1, since the component lerps per-channel in gamma-sRGB and
+     the ramp's minimum sits at whichever endpoint is nearer the canvas). L 0.63
+     clears 3.19:1 — the ramp's minimum across the whole weak→strong sweep — and
+     is a CEILING, not a preference: any lighter and the bar fails again.
+
+     Round two widens the OTHER end, because buying that compliance at the quiet
+     end alone COLLAPSED the ramp. With strong at L 0.45 the five stops the
+     ColourRamp story renders were, at their closest, only ΔE 0.0407 apart in
+     OKLab — the same metric scripts/check-role-distinctness.mjs uses, and below
+     this repo's own 0.05 "these are two different colours" floor — so a viewer
+     could not rank two edges in the bottom half of the domain. --flow-edge-strong
+     therefore moves L 0.45 → 0.32. That direction is free: darkening a stroke
+     against a light --canvas only RAISES contrast, so the 1.4.11 bar round one
+     existed to clear cannot regress (the ramp minimum is still the weak stop, at
+     3.19:1). The five stops now sit ΔE ≥ 0.0712 apart, clear of the dark theme's
+     own 0.0655, and the "flow edge ramp" block in themes-contrast.test.ts now
+     asserts that DISTINCTNESS alongside the contrast it already swept — nothing
+     asserted it in round one, which is why a full green battery could not see
+     the collapse.
+
+     C 0.16 at h 242 is outside sRGB — as it already was before this round.
+     Browsers clamp per channel, so the stop RENDERS as rgb(0,51,123); the
+     tokens tests and the component model that same clamp, so the declared L is
+     the authoring handle, not the rendered lightness.
+
+     STILL OPEN, and deliberately not addressed here: the weak stop (L 0.63
+     C 0.02) sits ΔE 0.0231 from the flat --flow-edge default (L 0.62 C 0.04),
+     so an edge at the ramp's quiet end and an edge carrying no value at all read
+     alike. Widening the strong end does not move that number at all — it is
+     bounded above by the 3:1 floor and below by a token this ramp does not own,
+     so it needs a darker --canvas or a re-tuned --flow-edge. Filed separately. */
   --flow-edge-weak: oklch(0.63 0.02 242);
-  --flow-edge-strong: oklch(0.45 0.16 242);
+  --flow-edge-strong: oklch(0.32 0.16 242);
 }

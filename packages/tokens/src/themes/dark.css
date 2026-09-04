@@ -419,14 +419,21 @@
 
   --chart-accent: var(--chart-1);
 
-  /* Flow edge ramp — RM-043. #282: --flow-edge-weak retuned 2026-09-04 — the
-     originally-authored L 0.4 measured 2.05:1 against --canvas (WCAG 1.4.11
-     fails; 24.5% of the interpolated ramp rendered under 3:1). L 0.5 clears
-     3.16:1 (the ramp's minimum, verified across the full weak→strong sweep —
-     see the "flow edge ramp" block in themes-contrast.test.ts). See the
-     matching note in themes/light.css for the design tension this buys back
-     on the light theme; on dark the compliant stop still reads distinctly
-     quieter than the flat --flow-edge default (L 0.62, 5.23:1 on --canvas). */
+  /* Flow edge ramp — RM-043. #282 round one raised --flow-edge-weak from its
+     authored L 0.4, which measured 2.05:1 against --canvas (WCAG 1.4.11 fails;
+     24.5% of the interpolated ramp rendered under 3:1). L 0.5 clears 3.14:1 —
+     the ramp's minimum across the whole weak→strong sweep.
+
+     #282 round two re-measured this block and DELIBERATELY LEFT IT ALONE. The
+     collapse it repaired is light-theme-specific: swept as the ColourRamp story
+     renders it, dark's five stops sit ΔE 0.0699 / 0.0673 / 0.0674 / 0.0655
+     apart in OKLab — clear of this repo's 0.05 distinctness floor at every step,
+     where `light` had a step at 0.0407. Dark is the reference the two light-ish
+     blocks were widened TOWARD, so moving it would only move the target. The
+     weak stop also still reads distinctly quieter than the flat --flow-edge
+     default here (L 0.62, 5.23:1 on --canvas; ΔE 0.1351 apart), which is the
+     residual `light` and `:root` are still carrying. See the note in
+     themes/light.css for the full round-two record. */
   --flow-edge-weak: oklch(0.5 0.04 242);
   --flow-edge-strong: oklch(0.75 0.16 242);
 }
