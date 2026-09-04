@@ -1010,9 +1010,34 @@
 
   --chart-accent: var(--chart-1);
 
-  /* Flow edge ramp — RM-043 */
-  --flow-edge-weak: oklch(0.85 0.02 264);
-  --flow-edge-strong: oklch(0.45 0.16 264);
+  /* Flow edge ramp — RM-043, retuned TWICE under #282; this note supersedes
+     round one's, which recorded a tradeoff that has since been reversed. :root
+     is the un-themed fallback a consumer gets with no theme stylesheet imported,
+     so it has the same shape as `light` and takes the same treatment.
+
+     Round one raised --flow-edge-weak from its authored L 0.85, which measured
+     1.47:1 against --canvas (WCAG 1.4.11 fails; 48.9% of the interpolated ramp
+     rendered under 3:1 — the worst of the three blocks). L 0.63 clears 3.27:1 —
+     the ramp's minimum across the whole weak→strong sweep — and is a CEILING.
+
+     Round two widens the OTHER end: with strong at L 0.45 the five stops the
+     ColourRamp story renders were only ΔE 0.0519 apart at their closest (OKLab,
+     the metric scripts/check-role-distinctness.mjs uses), i.e. barely over this
+     repo's own 0.05 distinctness floor and short of the dark theme's 0.0655.
+     --flow-edge-strong moves L 0.45 → 0.32, which cannot regress the 1.4.11 bar
+     (darkening a stroke against a light --canvas only raises contrast; the ramp
+     minimum is still the weak stop, at 3.27:1). The five stops now sit ΔE ≥
+     0.0749 apart, and the "flow edge ramp" block in themes-contrast.test.ts now
+     asserts that DISTINCTNESS as well as the contrast it already swept.
+
+     STILL OPEN here too, and untouched by this round: the weak stop (L 0.63
+     C 0.02) sits ΔE 0.0100 from the flat --flow-edge default (L 0.62 C 0.02) —
+     worse than `light`'s 0.0231, since in this block the two share a chroma and
+     differ by lightness alone. Widening the strong end does not move that
+     number; it needs a darker --canvas or a re-tuned --flow-edge, filed
+     separately. */
+  --flow-edge-weak: oklch(0.63 0.02 264);
+  --flow-edge-strong: oklch(0.32 0.16 264);
 }
 
 /* ========================================================================

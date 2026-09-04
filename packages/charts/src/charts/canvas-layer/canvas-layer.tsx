@@ -37,6 +37,17 @@
  *    scales. Back it with `createSpatialGrid` (see `hit-test.ts`) — a linear
  *    scan at 50k points runs on every `pointermove` and is the fastest way to
  *    make a canvas view feel worse than the SVG one it replaced.
+ * 4. **`draw` owns its own 1.4.11 mark-ink compliance (#283).** Nothing
+ *    downstream — not this layer, not a gate — can inspect a bitmap, so a
+ *    caller painting marks into `draw` is the last place that contrast can be
+ *    checked at all. A categorical series token (`--chart-1`…`--chart-12`,
+ *    `--chart-accent`) is 1.4.11-exempt only AS A RAMP with other series for
+ *    context (see `.claude/rules/theming.md`); painting one of them as 100% of
+ *    a dataset's ink has no such context and is not covered. Reach for a
+ *    neutral "wire" rung (e.g. `--chart-mono-7`, the loudest, which flips
+ *    correctly per theme) for the full-density pass, and reserve a series/
+ *    accent colour for a genuinely highlighted subset drawn over it — see this
+ *    file's own reference stories.
  *
  * The canvas element itself is `aria-hidden` and the keyboard layer is a
  * `pointer-events-none` sibling, so the canvas keeps mousemove/click while the

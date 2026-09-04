@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { BaseEdge, useEdges, useInternalNode, type Edge, type EdgeProps } from "@xyflow/react";
+import { useEdges, useInternalNode, type Edge, type EdgeProps } from "@xyflow/react";
+import { FlowEdgePath } from "../flow-edge-path";
 import {
   computeEdgeWeightScale,
   DEFAULT_EDGE_WIDTH_RANGE,
@@ -64,6 +65,9 @@ function nodeName(data: unknown, fallback: string): string {
  * Stroke width comes from the same `computeEdgeWeightScale` domain
  * `FlowWeightedEdge` uses, so a loop weighted 8 reads as thick as a forward
  * edge weighted 8. Nothing animates, so there is no motion to reduce.
+ *
+ * The arc is drawn through `FlowEdgePath`, so it inherits the shared keyboard
+ * focus indicator (#286) rather than having to opt into it.
  */
 export function FlowSelfLoopEdge({
   id,
@@ -112,13 +116,14 @@ export function FlowSelfLoopEdge({
   return (
     <>
       <g role="img" aria-label={accessibleName}>
-        <BaseEdge
+        <FlowEdgePath
           id={id}
           path={path}
           markerEnd={markerEnd}
           data-slot="flow-self-loop-edge"
-          className="transition-[stroke,stroke-width] duration-fast ease-standard"
-          style={{ stroke, strokeWidth, fill: "none", ...style }}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          style={{ fill: "none", ...style }}
         />
       </g>
       <EdgeLabelPill

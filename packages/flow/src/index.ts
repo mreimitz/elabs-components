@@ -7,6 +7,8 @@
 export * from "./canvas-shell";
 export * from "./flow-node";
 export * from "./flow-edge";
+// The shared edge path + keyboard focus indicator every edge type draws through (#286).
+export * from "./flow-edge-path";
 export * from "./flow-smart-edge";
 export * from "./flow-floating-edge";
 export * from "./flow-placeholder-node";

@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  BaseEdge,
   getBezierPath,
   getSmoothStepPath,
   useEdges,
@@ -8,6 +7,7 @@ import {
   type EdgeProps,
 } from "@xyflow/react";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
+import { FlowEdgePath } from "../flow-edge-path";
 import { EdgeLabelPill } from "./edge-label-pill";
 import {
   computeEdgeWeightScale,
@@ -57,8 +57,8 @@ export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
 // only when the CSS custom property can't be read (SSR, or the tokens
 // stylesheet isn't loaded yet) — resolveTokenColor() reads the live theme
 // value whenever a `document` is available.
-const FALLBACK_WEAK = "#b7c2d6";
-const FALLBACK_STRONG = "#385a91";
+const FALLBACK_WEAK = "#6085a1";
+const FALLBACK_STRONG = "#496d89";
 
 /**
  * Shape channel for `variant="back"`: a dash pattern plus a reduced stroke
@@ -132,6 +132,22 @@ function resolveValueStrokeColor(
  * Register it in `edgeTypes={{ weighted: FlowWeightedEdge }}` and create edges
  * with `type: "weighted"` and `data: FlowWeightedEdgeData`.
  *
+ * `weight`/`value` are VISUAL ONLY — stroke width and colour reach no screen
+ * reader. This component cannot set its own accessible name: React Flow's
+ * `EdgeWrapper` sources it from `edge.ariaLabel` on the edge OBJECT, one level
+ * above the component it renders as a child (issue #285). Run your `edges`
+ * through `withWeightedEdgeAria` (from `./edge-aria`, or set `edge.ariaLabel`
+ * yourself) before handing them to `<CanvasShell>`/`<ReactFlow>` — otherwise
+ * the measure this component exists to show reaches no assistive technology,
+ * and the edge announces only React Flow's generic "Edge from n1 to n2".
+ * `withWeightedEdgeAria` returns a new array each call — memoize it
+ * (`useMemo(() => withWeightedEdgeAria(edges), [edges])`) if you call it
+ * inline in render.
+ *
+ * `data-weight`/`data-value` are also stamped onto the rendered `<path>` (raw
+ * `data.weight`/`data.value`, not the scaled stroke width) — a stable
+ * selector for tests/consumers, independent of the naming seam above.
+ *
  * `data.variant: "back"` marks an edge that runs against the process direction
  * (dagre's reversed edges — see `layoutFlow`'s `backEdges`). It is dashed and
  * routed clear of the forward edge between the same two nodes, and carries a
@@ -141,6 +157,10 @@ function resolveValueStrokeColor(
  * `FlowGroupNode` use), overriding weight/value-derived width and colour so a
  * selected edge always reads clearly. No stroke-dasharray animation — reduced
  * motion is respected because there is no motion to reduce.
+ *
+ * KEYBOARD FOCUS is a separate state, drawn by `FlowEdgePath` (#286): selection
+ * needs a consumer's `onEdgesChange` to ever become true, so it can never be the
+ * indicator a tab stop owes its user.
  */
 export function FlowWeightedEdge({
   id,
@@ -189,21 +209,19 @@ export function FlowWeightedEdge({
   const strokeWidth = selected ? scaledWidth + 1.5 : scaledWidth;
 
   const edge = (
-    <BaseEdge
+    <FlowEdgePath
       id={id}
       path={edgePath}
       markerEnd={markerEnd}
       data-slot="flow-weighted-edge"
       data-variant={variant}
-      className="transition-[stroke,stroke-width] duration-fast ease-standard"
-      style={{
-        stroke,
-        strokeWidth,
-        ...(isBack
-          ? { strokeDasharray: BACK_EDGE_DASHARRAY, strokeOpacity: BACK_EDGE_OPACITY }
-          : null),
-        ...style,
-      }}
+      data-weight={data?.weight}
+      data-value={data?.value}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      strokeDasharray={isBack ? BACK_EDGE_DASHARRAY : undefined}
+      strokeOpacity={isBack ? BACK_EDGE_OPACITY : undefined}
+      style={style}
     />
   );
 

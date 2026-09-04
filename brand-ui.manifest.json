@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T17:18:55.011Z",
+  "generatedAt": "2026-09-04T20:06:50.398Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23058,6 +23058,16 @@
           "module": "packages/flow/src/flow-node/flow-node.tsx"
         },
         {
+          "name": "FLOW_EDGE_FOCUS_CONTOUR_WIDTH",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
+          "name": "FLOW_EDGE_FOCUS_RING_WIDTH",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
           "name": "FLOW_GROUP_NODE_TYPE",
           "kind": "value",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
@@ -23071,6 +23081,11 @@
           "name": "FlowEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-edge/flow-edge.tsx"
+        },
+        {
+          "name": "FlowEdgePath",
+          "kind": "value",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
         },
         {
           "name": "FlowFloatingEdge",
@@ -23270,6 +23285,10 @@
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
         },
         {
+          "name": "FlowEdgePathProps",
+          "module": "packages/flow/src/flow-edge-path/flow-edge-path.tsx"
+        },
+        {
           "name": "FlowGroupNodeData",
           "module": "packages/flow/src/flow-group-node/flow-group-node.tsx"
         },
@@ -23414,6 +23433,10 @@
           "module": "packages/flow/src/helper-lines/use-helper-lines.ts"
         },
         {
+          "name": "WeightedEdgeAriaOptions",
+          "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
+        },
+        {
           "name": "WeightedEdgeLike",
           "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
@@ -23426,6 +23449,10 @@
         {
           "name": "addEdge",
           "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "buildWeightedEdgeAriaLabel",
+          "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
         },
         {
           "name": "collapseGroup",
@@ -23486,6 +23513,10 @@
         {
           "name": "ungroup",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "withWeightedEdgeAria",
+          "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
         }
       ],
       "props": {
@@ -23553,6 +23584,67 @@
               "optional": true,
               "type": "boolean",
               "description": "Matches the parent edge's `selected` state."
+            }
+          ]
+        },
+        "FlowEdgePath": {
+          "extends": [
+            "Omit<\n  SVGProps<SVGPathElement>,\n  \"path\" | \"stroke\" | \"strokeWidth\" | \"style\" | \"ref\"\n>"
+          ],
+          "props": [
+            {
+              "name": "path",
+              "optional": false,
+              "type": "string",
+              "description": "SVG path `d` for this edge, from `getBezierPath`/`getSmoothStepPath`/…"
+            },
+            {
+              "name": "stroke",
+              "optional": false,
+              "type": "string",
+              "description": "Resting stroke paint — a `var(--token)` reference or a resolved colour."
+            },
+            {
+              "name": "strokeWidth",
+              "optional": false,
+              "type": "number",
+              "description": "Resting stroke width in px. The focus layers are drawn wider than this."
+            },
+            {
+              "name": "strokeDasharray",
+              "optional": true,
+              "type": "string",
+              "description": "Dash pattern, applied to the edge AND to both focus layers so a dashed edge keeps its shape when focused."
+            },
+            {
+              "name": "strokeOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Stroke opacity for the edge itself. Never applied to the focus layers."
+            },
+            {
+              "name": "markerEnd",
+              "optional": true,
+              "type": "string",
+              "description": "React Flow marker url, e.g. from `EdgeProps.markerEnd`."
+            },
+            {
+              "name": "markerStart",
+              "optional": true,
+              "type": "string",
+              "description": "React Flow marker url, e.g. from `EdgeProps.markerStart`."
+            },
+            {
+              "name": "interactionWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Width of the invisible pointer-target path React Flow draws over the edge."
+            },
+            {
+              "name": "style",
+              "optional": true,
+              "type": "CSSProperties",
+              "description": "Merged onto the edge path, last — so a consumer's `style.stroke` still wins."
             }
           ]
         },

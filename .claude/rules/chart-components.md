@@ -273,6 +273,22 @@ Locked by `gantt-timescale.test.ts` (calendar tick freeze, DST/month-length,
 stride guard) and the `#360` blocks in `gantt.test.tsx` (a 220-day domain's
 canvas width per preset is the executable form of the pixel-identity guarantee).
 
+## Canvas mark ink is the caller's own compliance (#283)
+
+`CanvasLayer`'s `draw` paints raw pixels into a bitmap that nothing downstream —
+not the layer, not any gate — can inspect. That makes contrast a call-site
+decision, not a checkable one: a categorical series token (`--chart-1`…
+`--chart-12`, `--chart-accent`) is exempt from the 1.4.11 3:1 mark bar only **as
+a ramp**, with other series around it for context (see `.claude/rules/theming.md`
+`CHART_1411_EXEMPT`). Painting one of those tokens as 100% of a dataset's ink —
+the whole plot, no other series in sight — is not covered by that exemption, and
+composites even lower once `globalAlpha` is applied (measured: `--chart-1` at
+α=0.65 is 1.26:1 on `light`, below its own 1.42:1 opaque floor). Reach for a
+neutral "wire" rung (`--chart-mono-7` is the loudest, and flips correctly per
+theme with no `dark:` branch) for full-density canvas ink, and reserve a
+series/accent colour for a genuinely highlighted subset drawn over the neutral
+pass — see `canvas-layer.stories.tsx` and `canvas-layer.tsx`'s docblock §4.
+
 ## Diverging ramp: sign needs a second channel (#178c)
 
 `--chart-div-neg-2 … --chart-div-pos-2` (`Foundations/ChartRamps`, the

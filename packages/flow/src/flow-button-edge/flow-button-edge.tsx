@@ -1,11 +1,6 @@
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  getBezierPath,
-  type Edge,
-  type EdgeProps,
-} from "@xyflow/react";
+import { EdgeLabelRenderer, getBezierPath, type Edge, type EdgeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
+import { FlowEdgePath } from "../flow-edge-path";
 
 export interface FlowButtonEdgeData extends Record<string, unknown> {
   /** aria-label for the insert button. @default "Insert node on edge" */
@@ -51,11 +46,14 @@ export function FlowButtonEdge({
 
   return (
     <>
-      <BaseEdge
+      <FlowEdgePath
         id={id}
         path={edgePath}
         markerEnd={markerEnd}
-        style={{ stroke: "var(--flow-edge)", strokeWidth: 1.5, ...style }}
+        data-slot="flow-button-edge"
+        stroke="var(--flow-edge)"
+        strokeWidth={1.5}
+        style={style}
       />
       <EdgeLabelRenderer>
         <div
