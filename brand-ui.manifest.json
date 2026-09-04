@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T19:08:01.571Z",
+  "generatedAt": "2026-09-04T08:44:38.226Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12466,6 +12466,16 @@
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
         },
         {
+          "name": "CHART_STAGGER_BAR_MS",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "CHART_STAGGER_DOT_MS",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "ChartBrush",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-brush.tsx"
@@ -12646,6 +12656,11 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "DrawPath",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "FunnelChart",
           "kind": "value",
           "module": "packages/charts/src/charts/funnel-chart.tsx"
@@ -12719,6 +12734,21 @@
           "name": "Grid",
           "kind": "value",
           "module": "packages/charts/src/charts/grid.tsx"
+        },
+        {
+          "name": "HairlineFloor",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HaloText",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "Leader",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "Legend",
@@ -12796,6 +12826,11 @@
           "module": "packages/charts/src/charts/live-y-axis.tsx"
         },
         {
+          "name": "Marginalia",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "MarkerGroup",
           "kind": "value",
           "module": "packages/charts/src/charts/markers/index.ts"
@@ -12844,6 +12879,11 @@
           "name": "PatternWaves",
           "kind": "value",
           "module": "packages/charts/src/charts/visx-pattern.tsx"
+        },
+        {
+          "name": "PeakRing",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "PieCenter",
@@ -12904,6 +12944,16 @@
           "name": "ProfitLossLine",
           "kind": "value",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
+        },
+        {
+          "name": "QUIET_DOT_SIZE",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "QuietDot",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "RadarArea",
@@ -13034,6 +13084,11 @@
           "name": "StaticChartPreviewProvider",
           "kind": "value",
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
+        },
+        {
+          "name": "UnitStack",
+          "kind": "value",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "XAxis",
@@ -13493,6 +13548,10 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "DrawPathProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "FunnelChartProps",
           "module": "packages/charts/src/charts/funnel-chart.tsx"
         },
@@ -13613,8 +13672,36 @@
           "module": "packages/charts/src/charts/grid.tsx"
         },
         {
+          "name": "HairlineFloorProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HairlineScale",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HaloTextProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "IndicatorWidth",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "LeaderDash",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "LeaderKind",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "LeaderPoint",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "LeaderProps",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "LegendContextValue",
@@ -13705,6 +13792,10 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "MarginaliaProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "MarkerGroupProps",
           "module": "packages/charts/src/charts/markers/index.ts"
         },
@@ -13735,6 +13826,14 @@
         {
           "name": "PatternAreaProps",
           "module": "packages/charts/src/charts/pattern-area.tsx"
+        },
+        {
+          "name": "PeakRingProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "PeakRingShape",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "PieArcData",
@@ -13779,6 +13878,10 @@
         {
           "name": "ProfitLossSegment",
           "module": "packages/charts/src/charts/profit-loss-segments.ts"
+        },
+        {
+          "name": "QuietDotProps",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "RadarAreaProps",
@@ -13949,6 +14052,18 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "UnitStackDirection",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "UnitStackKind",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "UnitStackProps",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "ValueFormat",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
@@ -14075,6 +14190,10 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "leaderPath",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "legendCssVars",
           "module": "packages/charts/src/charts/legend/index.ts"
         },
@@ -14135,6 +14254,10 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
+          "name": "seededRnd",
+          "module": "packages/charts/src/marks/index.ts"
+        },
+        {
           "name": "seriesDashArray",
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
@@ -14157,6 +14280,10 @@
         {
           "name": "splitProfitLossSegments",
           "module": "packages/charts/src/charts/profit-loss-segments.ts"
+        },
+        {
+          "name": "stagger",
+          "module": "packages/charts/src/marks/index.ts"
         },
         {
           "name": "viewModeToScales",

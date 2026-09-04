@@ -129,6 +129,14 @@ export const ChoroplethFeatureComponent = createInertPart("ChoroplethFeatureComp
 export const ChoroplethGraticule = createInertPart("ChoroplethGraticule");
 export const ChoroplethTooltip = createInertPart("ChoroplethTooltip");
 export const DateTicker = createInertPart("DateTicker");
+// ── Editorial marks (RM-017) — inert like every other part. A mark is a bare SVG
+//    element, so a stand-in that rendered one would put an <svg> outside any
+//    <svg> in the consumer's jsdom tree; the export exists so the mocked
+//    namespace RESOLVES, which is the whole job (see the header). `seededRnd`
+//    and `stagger` are pure FUNCTIONS and deliberately NOT doubled — the parity
+//    gate scopes to PascalCase components, and a test that needs the real hash
+//    composes the two modules via the `importOriginal` form above. ────────────
+export const DrawPath = createInertPart("DrawPath");
 export const Gauge = createInertPart("Gauge");
 export const GradientDarkgreenGreen = createInertPart("GradientDarkgreenGreen");
 export const GradientLightgreenGreen = createInertPart("GradientLightgreenGreen");
@@ -140,6 +148,9 @@ export const GradientPurpleTeal = createInertPart("GradientPurpleTeal");
 export const GradientSteelPurple = createInertPart("GradientSteelPurple");
 export const GradientTealBlue = createInertPart("GradientTealBlue");
 export const Grid = createInertPart("Grid");
+export const HairlineFloor = createInertPart("HairlineFloor");
+export const HaloText = createInertPart("HaloText");
+export const Leader = createInertPart("Leader");
 export const Legend = createInertPart("Legend");
 export const LegendItemComponent = createInertPart("LegendItemComponent");
 export const LegendLabel = createInertPart("LegendLabel");
@@ -153,6 +164,7 @@ export const LinearGradient = createInertPart("LinearGradient");
 export const LiveLine = createInertPart("LiveLine");
 export const LiveXAxis = createInertPart("LiveXAxis");
 export const LiveYAxis = createInertPart("LiveYAxis");
+export const Marginalia = createInertPart("Marginalia");
 export const MarkerGroup = createInertPart("MarkerGroup");
 export const MarkerTooltipContent = createInertPart("MarkerTooltipContent");
 export const PatternArea = createInertPart("PatternArea");
@@ -160,11 +172,13 @@ export const PatternCircles = createInertPart("PatternCircles");
 export const PatternHexagons = createInertPart("PatternHexagons");
 export const PatternLines = createInertPart("PatternLines");
 export const PatternWaves = createInertPart("PatternWaves");
+export const PeakRing = createInertPart("PeakRing");
 export const PieCenter = createInertPart("PieCenter");
 export const PieCenterShell = createInertPart("PieCenterShell");
 export const PieSlice = createInertPart("PieSlice");
 export const ProfitLossLegend = createInertPart("ProfitLossLegend");
 export const ProfitLossLine = createInertPart("ProfitLossLine");
+export const QuietDot = createInertPart("QuietDot");
 export const RadarArea = createInertPart("RadarArea");
 export const RadarAxis = createInertPart("RadarAxis");
 export const RadarGrid = createInertPart("RadarGrid");
@@ -182,5 +196,6 @@ export const SegmentLineTo = createInertPart("SegmentLineTo");
 export const SeriesBar = createInertPart("SeriesBar");
 export const SeriesMarkers = createInertPart("SeriesMarkers");
 export const SeriesPointMarker = createInertPart("SeriesPointMarker");
+export const UnitStack = createInertPart("UnitStack");
 export const XAxis = createInertPart("XAxis");
 export const YAxis = createInertPart("YAxis");

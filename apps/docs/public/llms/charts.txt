@@ -26,6 +26,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - Candlestick
 - CandlestickChart
 - CHART_CLIP_PASSTHROUGH
+- CHART_STAGGER_BAR_MS
+- CHART_STAGGER_DOT_MS
 - ChartBrush
 - ChartBrushLayout
 - ChartBrushSelectionOverlay
@@ -87,6 +89,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
 - DEFAULT_Y_AXIS_ID
 - DEFAULT_Y_DOMAIN_TWEEN_MS
+- DrawPath
 - FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
   - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
   - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.
@@ -111,6 +114,9 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - GradientSteelPurple
 - GradientTealBlue
 - Grid
+- HairlineFloor
+- HaloText
+- Leader
 - Legend
 - LegendItemComponent
 - LegendLabel
@@ -129,6 +135,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - LiveLineChart
 - LiveXAxis
 - LiveYAxis
+- Marginalia
 - MarkerGroup
 - MarkerTooltipContent
 - MetricCard — Single KPI tile — label, value, delta/trend.
@@ -145,6 +152,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - PatternHexagons
 - PatternLines
 - PatternWaves
+- PeakRing
 - PieCenter
 - PieCenterShell
 - PieChart — Part-of-whole split across a handful of categories.
@@ -160,6 +168,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - ProfitLossLegend
 - ProfitLossLegendHoverProvider
 - ProfitLossLine
+- QUIET_DOT_SIZE
+- QuietDot
 - RadarArea
 - RadarAxis
 - RadarChart — Multi-metric profile comparison on a shared radial axis.
@@ -198,6 +208,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: A Sparkline as the only carrier of a number — pair it with the value (MetricCard).
   - avoid: Fixing its width in pixels — let the tile or cell own the box so it reflows.
 - StaticChartPreviewProvider
+- UnitStack
 - XAxis
 - Y_AXIS_DEFAULT_TICK_COUNT
 - Y_AXIS_MAX_TICK_COUNT
