@@ -1504,14 +1504,40 @@ export const INTENT = {
     purpose: "Flow diagram — how quantity moves between stages or nodes.",
     category: "chart",
     relationships: {
-      contains: ["SankeyNode", "SankeyLink", "SankeyTooltip", "SankeyProvider"],
+      contains: [
+        "SankeyNode",
+        "SankeyLink",
+        "SankeyThreadLinks",
+        "SankeyTooltip",
+        "SankeyProvider",
+      ],
       usedInside: ["ChartFrame", "ChartCard"],
     },
-    stateTokens: { series: "--chart-1 … --chart-5" },
+    stateTokens: { series: "--chart-1 … --chart-5", mode: "aggregate (default) | threads" },
     antiPatterns: [
       "A Sankey for a simple two-column comparison — reach for a bar chart.",
       "Raw colors on nodes/links — resolve the chart tokens so the dark theme reads correctly.",
       "So many nodes that the labels collide — aggregate the tail into one 'other' node.",
+    ],
+  },
+
+  SankeyThreadLinks: {
+    purpose:
+      'SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.',
+    category: "chart",
+    relationships: {
+      usedInside: ["SankeyChart"],
+      pairsWith: ["SankeyNode"],
+    },
+    stateTokens: {
+      hover: "bundle-highlight on hover",
+      pin: "click the fat hit-twin to pin a route",
+    },
+    antiPatterns: [
+      'Using mode="threads" for a small, low-cardinality flow — that\'s what the default aggregate SankeyLink is for.',
+      "Supplying `path` names that don't match any `SankeyNodeDatum.name` — the route silently falls back to source/target only.",
+      "Making the visible thread path itself interactive — pointer handling belongs on the fat, transparent hit-twin so overlapping routes don't fight for clicks.",
+      "Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element.",
     ],
   },
 

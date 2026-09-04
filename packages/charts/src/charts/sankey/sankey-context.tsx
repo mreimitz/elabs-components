@@ -27,8 +27,21 @@ export interface SankeyLinkDatum {
   source: number;
   target: number;
   value: number;
+  /**
+   * Threads mode only (RM-037). Ordered node NAMES this record's route
+   * passes through, source through destination inclusive — e.g.
+   * `["Region A", "Hub 3", "Zone Z"]`. When present and `mode="threads"`,
+   * `SankeyThreadLinks` draws one polyline through every intermediate node
+   * instead of a single two-point edge. Ignored in `mode="aggregate"`
+   * (the default) — a record that carries `path` but is rendered by the
+   * plain `SankeyLink` still renders as today, using `source`/`target` only.
+   */
+  path?: string[];
   [key: string]: unknown;
 }
+
+/** `SankeyChart`'s rendering mode (RM-037). Default: `"aggregate"`. */
+export type SankeyMode = "aggregate" | "threads";
 
 export interface SankeyTooltipData {
   type: "node" | "link";
@@ -76,6 +89,18 @@ export interface SankeyContextValue {
 
   // Link path generator
   createPath: (link: SankeyLink<SankeyNodeDatum, SankeyLinkDatum>) => string;
+
+  // Threads mode (RM-037) — additive; unread by SankeyLink/SankeyNode/SankeyTooltip,
+  // so `mode="aggregate"` (the default) is unaffected by any of this.
+  /** Which rendering mode the chart is in. */
+  mode: SankeyMode;
+  /** Original per-record thread data — `data.links` verbatim when `mode="threads"`,
+   *  an empty array otherwise (so `SankeyThreadLinks` is a safe no-op in aggregate mode). */
+  threads: SankeyLinkDatum[];
+  /** Pinned thread index (into `threads`), or `null`. Click-to-pin persists across
+   *  mouse-out; Escape or a click on empty chart space releases it. */
+  pinnedLinkIndex: number | null;
+  setPinnedLinkIndex: Dispatch<SetStateAction<number | null>>;
 }
 
 const SankeyContext = createContext<SankeyContextValue | null>(null);
