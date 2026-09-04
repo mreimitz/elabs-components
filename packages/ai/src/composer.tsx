@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { ArrowUp, Mic, Paperclip, Sparkles } from "lucide-react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn, Kbd, useLocale } from "@elabs-ai/components-ui";
 
 import {
   PromptInput,
@@ -49,6 +49,18 @@ export type ComposerEffortProps = Pick<
   PromptInputEffortProps,
   "levels" | "value" | "onValueChange" | "aria-label"
 >;
+
+/**
+ * One shortcut-hint row entry: the physical key(s) plus what they do, shown
+ * as a `Kbd` chip beside a plain-text label — never inside a control's own
+ * name (see `ComposerProps.shortcuts`).
+ */
+export interface ComposerShortcut {
+  /** Rendered inside a `Kbd` chip, e.g. `"Enter"`, `"Shift+Enter"`. */
+  keys: string;
+  /** What the key does, in a word or two, e.g. `"send"`, `"newline"`. */
+  label: string;
+}
 
 export interface ComposerProps {
   /** Submit handler — receives the assembled message (text + attachments). */
@@ -112,6 +124,21 @@ export interface ComposerProps {
   sendStatus?: ComponentProps<typeof PromptInputSubmit>["status"];
   /** Stop handler used while the send button shows the generating state. */
   onStop?: ComponentProps<typeof PromptInputSubmit>["onStop"];
+  /**
+   * Keyboard-shortcut hints shown as a row beneath the input well — plain
+   * `Kbd` + label pairs, e.g. `[{ keys: "Enter", label: "send" }]`. Omitted,
+   * nothing renders (opt-in, like every other Composer slot); the row is
+   * never invented, since the real bindings are the host app's.
+   */
+  shortcuts?: ComposerShortcut[];
+  /**
+   * A second, busy-only hint appended to `shortcuts` (#107) — shown ONLY
+   * once the composer is actually generating (`sendStatus` is `"submitted"`
+   * or `"streaming"`) AND a real `onStop` handler is set, so the hint never
+   * describes an affordance that isn't there. Mirrors
+   * `TerminalComposer`'s `canCancel = busy && Boolean(onStop)` shape.
+   */
+  cancelShortcut?: ComposerShortcut;
   /**
    * Extra props spread onto the send button — `disabled`, `aria-label`,
    * `variant`, `id`, `className`. `status` and `onStop` are excluded because
@@ -195,6 +222,8 @@ export function Composer({
   sendStatus,
   onStop,
   submitProps,
+  shortcuts,
+  cancelShortcut,
   suggestions,
   onSuggestionClick,
   showVoice = true,
@@ -210,6 +239,17 @@ export function Composer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   const hasSlash = slashCommands !== undefined && slashCommands.length > 0;
+
+  // #107: "Composer shortcut hints change with a busy state" — derived from
+  // the existing canonical `sendStatus`, never a second boolean prop. The
+  // cancel hint only ever joins the row once there is a real Stop affordance
+  // it can describe (mirrors `TerminalComposer`'s `canCancel` derivation).
+  const busy = sendStatus === "submitted" || sendStatus === "streaming";
+  const canCancel = busy && Boolean(onStop);
+  const allShortcuts = [
+    ...(shortcuts ?? []),
+    ...(canCancel && cancelShortcut ? [cancelShortcut] : []),
+  ];
 
   const handleSubmit = useCallback<PromptInputProps["onSubmit"]>(
     (message, event) => {
@@ -306,6 +346,30 @@ export function Composer({
             </div>
           </PromptInputFooter>
         </PromptInput>
+
+        {/* #107: the hint row itself — plain SIBLING `Kbd` + label pairs, never
+            nested inside `PromptInputSubmit` (which already names itself via its
+            own `aria-label`), so the row cannot pollute any control's accessible
+            name (the #153-style trap). */}
+        {allShortcuts.length > 0 ? (
+          <div
+            className="flex flex-wrap items-center gap-3 px-3 pt-1.5 text-meta text-muted-foreground"
+            data-slot="composer-shortcuts"
+          >
+            {allShortcuts.map((shortcut, index) => (
+              <span
+                className="inline-flex items-center gap-1.5"
+                // Shortcut rows are a fixed, non-reorderable list per render —
+                // `keys` alone isn't guaranteed unique (a caller could offer the
+                // same key for two purposes), so index is a stable, honest key.
+                key={index}
+              >
+                <Kbd>{shortcut.keys}</Kbd>
+                <span>{shortcut.label}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {suggestions && suggestions.length > 0 ? (

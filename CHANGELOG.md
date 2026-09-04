@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-ai`'s `Composer` gains opt-in shortcut hints
+  (`ComposerShortcut`, `ComposerProps.shortcuts`, `ComposerProps.cancelShortcut`)
+  that change with a busy state (#107) — a `shortcuts` row renders as plain
+  sibling text beside the composer, and `cancelShortcut` joins it only while
+  `sendStatus` is `submitted`/`streaming` AND a real `onStop` is set,
+  mirroring `TerminalComposer`'s shape. Nothing renders unless a consumer
+  supplies `shortcuts`/`cancelShortcut`; existing `Composer` usage is
+  unaffected. Fixed: `SessionStatusBar`'s connections live region now
+  announces real text content (previously its only text was
+  `aria-hidden`, so it announced nothing) (#155).
+
 - Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
   look-alike a reader is most likely to reach for by mistake, so `brand-ui docs
 <Component>` (and the `brand-ui` MCP `docs` tool, and the per-package `llms`
