@@ -188,6 +188,8 @@ export {
   SankeyLink,
   SankeyNode,
   SankeyProvider,
+  // Sankey threads — RM-037
+  SankeyThreadLinks,
   SankeyTooltip,
   Scatter,
   SegmentBackground,

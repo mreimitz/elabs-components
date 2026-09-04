@@ -189,6 +189,8 @@ export const RingCenter = createInertPart("RingCenter");
 export const SankeyLink = createInertPart("SankeyLink");
 export const SankeyNode = createInertPart("SankeyNode");
 export const SankeyTooltip = createInertPart("SankeyTooltip");
+// Sankey threads — RM-037
+export const SankeyThreadLinks = createInertPart("SankeyThreadLinks");
 export const Scatter = createInertPart("Scatter");
 export const SegmentBackground = createInertPart("SegmentBackground");
 export const SegmentLineFrom = createInertPart("SegmentLineFrom");

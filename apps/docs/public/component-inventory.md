@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 162 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 163 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1174,6 +1174,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SankeyLink | component |  | `@elabs-ai/components-charts` |  |
 | SankeyNode | component |  | `@elabs-ai/components-charts` |  |
 | SankeyProvider | component |  | `@elabs-ai/components-charts` |  |
+| SankeyThreadLinks | component |  | `@elabs-ai/components-charts` | SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops. |
 | SankeyTooltip | component |  | `@elabs-ai/components-charts` |  |
 | Scatter | component |  | `@elabs-ai/components-charts` |  |
 | ScatterChart | component |  | `@elabs-ai/components-charts` | Point cloud for correlation between two continuous measures. |

@@ -3,6 +3,7 @@ export {
   type Margin,
   type SankeyContextValue,
   type SankeyLinkDatum,
+  type SankeyMode,
   type SankeyNodeDatum,
   SankeyProvider,
   type SankeyTooltipData,
@@ -12,3 +13,5 @@ export {
 export { SankeyLink, type SankeyLinkProps } from "./sankey-link";
 export { SankeyNode, type SankeyNodeProps } from "./sankey-node";
 export { SankeyTooltip, type SankeyTooltipProps } from "./sankey-tooltip";
+// Sankey threads mode (RM-037)
+export { SankeyThreadLinks, type SankeyThreadLinksProps } from "./sankey-threads";

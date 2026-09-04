@@ -243,6 +243,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SankeyLink
 - SankeyNode
 - SankeyProvider
+- SankeyThreadLinks — SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.
+  - avoid: Using mode="threads" for a small, low-cardinality flow — that's what the default aggregate SankeyLink is for.
+  - avoid: Supplying `path` names that don't match any `SankeyNodeDatum.name` — the route silently falls back to source/target only.
+  - avoid: Making the visible thread path itself interactive — pointer handling belongs on the fat, transparent hit-twin so overlapping routes don't fight for clicks.
+  - avoid: Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element.
 - SankeyTooltip
 - Scatter
 - ScatterChart — Point cloud for correlation between two continuous measures.

@@ -34,7 +34,11 @@ const defaultColors = [
   "var(--chart-5)",
 ];
 
-function getDefaultNodeColor(node: SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum>): string {
+/** Exported so `SankeyThreadLinks` (RM-037) can color a thread by its route's
+ *  source node without duplicating the palette. */
+export function getDefaultNodeColor(
+  node: SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum>,
+): string {
   const index = node.index ?? 0;
   return defaultColors[index % defaultColors.length] ?? "var(--chart-1)";
 }
