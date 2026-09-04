@@ -244,6 +244,37 @@ Locked by `gantt-timescale.test.ts` (calendar tick freeze, DST/month-length,
 stride guard) and the `#360` blocks in `gantt.test.tsx` (a 220-day domain's
 canvas width per preset is the executable form of the pixel-identity guarantee).
 
+## Diverging ramp: sign needs a second channel (#178c)
+
+`--chart-div-neg-2 … --chart-div-pos-2` (`Foundations/ChartRamps`, the
+"Diverging" ramp) carries **sign by hue alone** — the negative arm rides the
+blue family, the positive arm the brand lime, meeting at a neutral mid. Measured
+greyscale lightness delta between mirrored steps: `neg-1` vs `pos-1` = **0.003**;
+`neg-2` vs `pos-2` = **0.002**. In greyscale, in print, or for any reader going by
+lightness only, a `+1` cell and a `-1` cell are indistinguishable.
+
+- **This is inherent to a diverging ramp, not a token defect.** Two arms meeting
+  at a shared mid by construction have to be lightness-symmetric around it — that
+  symmetry is what makes the ramp read as "signed" in the first place. Do not
+  "fix" this by re-tuning `--chart-div-*` in `packages/tokens/` to break the
+  symmetry; that would defeat the ramp's own premise. It is also **not** a
+  colour-vision-deficiency problem — deuteranopia (ΔE 0.183-0.202) and
+  protanopia (ΔE 0.173-0.190) simulations both stay well separated; only
+  greyscale/print collapses it.
+- **It IS a constraint every consumer of this ramp for signed data must honour.**
+  RM-021's correlation-matrix layout (and any future signed choropleth/signed-bar
+  container built on this ramp) needs a **second, non-hue channel** carrying
+  sign: a `+`/`−` glyph, a texture/hatch, or a value label rendered on or beside
+  the cell. Apply the greyscale decision test from
+  @.claude/rules/accessibility.md ("if I rendered this in greyscale, could a
+  user still tell these two states apart?") to any new diverging-ramp
+  consumer before shipping it — the answer here is no by construction, so the
+  second channel is not optional.
+- **Reference:** `Foundations/ChartRamps` → `Default` story documents the
+  measured delta in its `Diverging` ramp entry (source docblock + rendered
+  blurb) so it is legible both to someone reading the tokens and to someone
+  reading the rendered story.
+
 ## Story coverage & verification
 
 Stories live in `packages/charts/src/chart-frame/chart-frame.stories.tsx` and
