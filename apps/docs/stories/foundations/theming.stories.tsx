@@ -169,7 +169,7 @@ function SampleComposition() {
             type="text"
             autoComplete="off"
             placeholder="Focus me…"
-            className="h-9 w-40 rounded-md border border-input bg-background px-3 text-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 w-40 rounded-md border border-input bg-background px-3 text-body text-foreground focus-ring"
           />
         </div>
       </div>

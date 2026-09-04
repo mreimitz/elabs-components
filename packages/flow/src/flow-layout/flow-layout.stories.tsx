@@ -65,7 +65,7 @@ function AutoLayoutButton({ direction }: { direction: FlowLayoutDirection }) {
       type="button"
       disabled={layouting}
       onClick={() => layout(direction)}
-      className="rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-body shadow-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+      className="rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-body shadow-sm hover:bg-accent focus-ring disabled:opacity-50"
     >
       Auto layout ({direction === "TB" ? "top → bottom" : "left → right"})
     </button>
@@ -127,7 +127,7 @@ function AutoLayoutGraphButton({ algorithm }: { algorithm: LayoutAlgorithm }) {
       type="button"
       disabled={layouting}
       onClick={handleClick}
-      className="rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-body shadow-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+      className="rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-body shadow-sm hover:bg-accent focus-ring disabled:opacity-50"
     >
       Auto layout ({ALGORITHM_LABEL[algorithm]})
     </button>

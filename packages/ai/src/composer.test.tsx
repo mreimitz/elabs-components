@@ -422,3 +422,112 @@ describe("Composer — equivalence with a hand-rolled PromptInput footer", () =>
     expect(screen.queryByRole("button", { name: "Stop" })).not.toBeInTheDocument();
   });
 });
+
+// ── shortcut hints change with a busy state (#107) ───────────────────────────
+// The acceptance criterion, verbatim: "Composer shortcut hints change with a
+// busy state." `shortcuts` is the always-shown row (opt-in — nothing renders
+// unless it's supplied, matching every other Composer slot); `cancelShortcut`
+// is a SECOND, busy-only hint that appears once the composer is actually
+// generating AND there is a real Stop affordance to describe (`onStop`),
+// mirroring `TerminalComposer`'s `canCancel = busy && Boolean(onStop)` shape.
+describe("Composer — shortcut hints change with a busy state (#107)", () => {
+  it("renders no shortcuts row at all when neither prop is supplied", () => {
+    render(<Composer />);
+    expect(document.querySelector('[data-slot="composer-shortcuts"]')).toBeNull();
+  });
+
+  it("renders the supplied shortcut hints as plain, non-interactive text", () => {
+    render(
+      <Composer
+        shortcuts={[
+          { keys: "Enter", label: "send" },
+          { keys: "Shift+Enter", label: "newline" },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Enter")).toBeInTheDocument();
+    expect(screen.getByText("send")).toBeInTheDocument();
+    expect(screen.getByText("Shift+Enter")).toBeInTheDocument();
+    expect(screen.getByText("newline")).toBeInTheDocument();
+  });
+
+  it("appends the cancel hint only once the composer goes busy, and drops it again at rest", () => {
+    const { rerender } = render(
+      <Composer
+        cancelShortcut={{ keys: "Esc", label: "cancel" }}
+        onStop={() => undefined}
+        sendStatus="ready"
+        shortcuts={[{ keys: "Enter", label: "send" }]}
+      />,
+    );
+    expect(screen.getByText("Enter")).toBeInTheDocument();
+    expect(screen.queryByText("Esc")).not.toBeInTheDocument();
+    expect(screen.queryByText("cancel")).not.toBeInTheDocument();
+
+    rerender(
+      <Composer
+        cancelShortcut={{ keys: "Esc", label: "cancel" }}
+        onStop={() => undefined}
+        sendStatus="streaming"
+        shortcuts={[{ keys: "Enter", label: "send" }]}
+      />,
+    );
+    expect(screen.getByText("Enter")).toBeInTheDocument();
+    expect(screen.getByText("Esc")).toBeInTheDocument();
+    expect(screen.getByText("cancel")).toBeInTheDocument();
+
+    rerender(
+      <Composer
+        cancelShortcut={{ keys: "Esc", label: "cancel" }}
+        onStop={() => undefined}
+        sendStatus="ready"
+        shortcuts={[{ keys: "Enter", label: "send" }]}
+      />,
+    );
+    expect(screen.queryByText("Esc")).not.toBeInTheDocument();
+  });
+
+  it("never shows the cancel hint while busy if there is no onStop to describe", () => {
+    render(<Composer cancelShortcut={{ keys: "Esc", label: "cancel" }} sendStatus="streaming" />);
+    expect(screen.queryByText("Esc")).not.toBeInTheDocument();
+  });
+
+  // The accessible-name trap (#153's failure mode, avoided here by construction):
+  // the shortcut row renders as PLAIN SIBLINGS of PromptInputSubmit, never
+  // nested inside it, so the Kbd chip cannot concatenate into the button's
+  // name.
+  //
+  // `PromptInputSubmit` sets `aria-label` unconditionally
+  // (`prompt-input.tsx`'s `action === "stop" ? t("ai.promptInput.stop") :
+  // t("ai.promptInput.submit")`), so an accessible-name assertion alone is
+  // VACUOUS here: an explicit `aria-label` wins the accname computation over
+  // descendant content, so `toHaveAccessibleName("Stop")` would pass
+  // identically whether the Kbd row sat beside the button or was nested
+  // inside it (confirmed by mutation-testing this file — nesting a `<span>`
+  // child in the button left this assertion green). The property actually
+  // being relied on is DOM containment: the shortcut row must never be a
+  // descendant of the submit button. Assert that directly.
+  it("keeps the shortcut row OUT of the submit button's DOM subtree (#153-style trap)", () => {
+    render(
+      <Composer
+        cancelShortcut={{ keys: "Esc", label: "cancel" }}
+        onStop={() => undefined}
+        sendStatus="streaming"
+        shortcuts={[{ keys: "Enter", label: "send" }]}
+      />,
+    );
+
+    const stopButton = screen.getByRole("button", { name: "Stop" });
+    const shortcutRow = document.querySelector<HTMLElement>('[data-slot="composer-shortcuts"]');
+    expect(shortcutRow).not.toBeNull();
+    // The row renders at all (sanity check the fixture is exercising the
+    // real thing, not an empty composer).
+    expect(screen.getByText("Esc")).toBeInTheDocument();
+    // The actual lock: the button never contains the row (would fail the
+    // instant the row moved inside `PromptInputSubmit`), and the row never
+    // contains the button (rules out the trap from the other direction).
+    expect(stopButton).not.toContainElement(shortcutRow);
+    expect(shortcutRow).not.toContainElement(stopButton);
+  });
+});

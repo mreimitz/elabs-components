@@ -110,7 +110,7 @@ export const HeadingActions: Story = {
         type="button"
         aria-label={`Pin section “${h.text}”`}
         aria-pressed={h.text === "Timeline"}
-        className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-ring"
       >
         <Pin className="size-3.5" aria-hidden="true" />
       </button>

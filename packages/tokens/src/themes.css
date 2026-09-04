@@ -448,6 +448,17 @@
      identity rests on the recessed fill + focus ring + control glyphs + hover. */
   --input: oklch(0.92 0.008 264);
   --ring: oklch(0.45 0.21 264);
+  /* #67 — the CONTOUR layer of the compound focus indicator. `--ring` alone is a
+     single colour and therefore only ever as visible as that colour is against
+     whatever it lands on; the reference themes alias it to the brand plate
+     (ADR 0027 Amendment), which on a near-white canvas is invisible. The
+     compound indicator draws the brand ring AND a 1px contour hairline just
+     outside it, so at least ONE edge clears WCAG 1.4.11 (>=3:1) against every
+     mark surface AND against `--primary` (a focused primary button's own fill).
+     Reached ONLY through the `focus-ring` utility below — never hand-stacked.
+     This :root value is the fallback an unregistered consumer theme inherits
+     (ADR 0029), so it is a deep neutral ink that works on a light ground. */
+  --ring-contour: oklch(0.22 0.02 264);
 
   /* Surfaces — layered neutrals for shells, panels and cards. */
   --surface: oklch(0.978 0.005 264);
@@ -1173,6 +1184,7 @@
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-ring-contour: var(--ring-contour);
 
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
@@ -1796,6 +1808,172 @@
    squared large radii and shadowless surfaces — lives in decoration.css, firing
    wherever --decoration > 0. It paints BACKGROUNDS only: the dial never reaches
    inside a control (no hatch on buttons, no drawn-not-filled fills). */
+
+/* ---------------------------------------------------------------------------
+   THE FOCUS INDICATOR — the `focus-ring*` utilities (#67, ADR 0027).
+
+   THE ONE WAY A COMPONENT DECLARES FOCUS. Do not hand-stack
+   `focus-visible:ring-2 focus-visible:ring-ring` any more: a single-colour ring
+   is only ever as visible as that colour is against whatever it lands on, and
+   the reference themes deliberately alias `--ring: var(--primary)` (ADR 0027's
+   2026-08-16 Amendment). On a near-white canvas the brand lime measures
+   1.23-1.42:1 — a focus indicator a keyboard user cannot see, failing WCAG
+   2.4.7 and 1.4.11.
+
+   The COMPOUND indicator is the repair that Amendment prescribed: keep the
+   brand ring, and draw a 1px CONTOUR hairline (`--ring-contour`) immediately
+   outside it, so at least one edge of the indicator clears 3:1 against every
+   mark surface AND against `--primary` itself (a focused primary button, whose
+   own fill the ring merges into). Which layer does the work is a per-theme
+   answer carried by the token, not by the call site — that is the whole point
+   of putting it here rather than in each component.
+
+   MECHANISM, and why it is these two properties:
+     - the RING layer is Tailwind's own `ring-2`, coloured
+       `var(--focus-ring-color, var(--ring))` — which with the seam unset is
+       exactly what the swept call sites already emitted, so the ring itself is
+       a visual no-op. It composes through `--tw-ring-shadow`, so an element's
+       own `shadow-*` rung survives being focused (a raw `box-shadow` here would
+       wipe it, and hand-rolling a shadow is forbidden anyway — ADR 0020).
+     - the CONTOUR layer is a real `outline`, NOT a second shadow: `outline` is
+       an independent property, so it cannot collide with the elevation ramp,
+       and it follows `border-radius` in every browser we support. It also means
+       this utility never leaves `outline: none` without a replacement — it IS
+       the replacement (accessibility.md, "Visible focus"), which is why a swept
+       call site drops its `focus-visible:outline-none`.
+     - `outline-offset` tracks `--tw-ring-offset-width`, the variable Tailwind's
+       own `ring-offset-*` utilities set, so a call site that keeps
+       `focus-visible:ring-offset-2 focus-visible:ring-offset-background` still
+       gets the contour on the OUTER edge of its ring instead of underneath it.
+       Unset, that variable resolves to its registered `0px` initial value.
+
+   WHY THE CONTOUR'S COLOUR IS ALSO DECLARED AT REST. Tailwind v4's
+   `transition-colors` includes `outline-color` in its `transition-property`
+   list. The ring is a `box-shadow` and is NOT in that list, so on any element
+   that also carries `transition-colors` — every `sidebar-menu-button`, the flow
+   `zoom-controls` — the ring used to snap in while the contour animated from
+   `outline-color`'s initial `currentColor`: measured on
+   `patterns-templates-enterprise-admin-console--default` [light] immediately
+   after `Tab`, the contour resolved to `oklch(0.3 0.021 257)` (the element's own
+   text ink) and only reached `oklch(0.4 0.06 116.5)` a `duration-fast` later, so
+   the first frames of every focus move painted a dark-grey hairline around a
+   lime ring. Declaring `outline-color: var(--ring-contour)` OUTSIDE the state
+   selector fixes it at the utility instead of at ~125 call sites: the colour is
+   already its final value at rest, so the state change has nothing to animate.
+   Only `outline-style`/`outline-width`/`outline-offset` flip on focus, and none
+   of them is a `transition-colors` property. Nothing else here animates — the
+   indicator appears and disappears with its state selector.
+
+   FIVE FLAVOURS, one indicator. They differ ONLY in the trigger and the
+   geometry — same two layers, same two tokens, same contract:
+     - `focus-ring`        — `:focus-visible` on the element itself. The default;
+                             reach for this unless one of the other two applies.
+     - `focus-ring-within` — `:focus-within`, for a COMPOSITE control whose real
+                             focus target is a descendant (a composer well, a
+                             dropzone, a card wrapping a link).
+     - `focus-ring-inset`  — `:focus-visible` with both layers drawn INSIDE the
+                             box, for a surface where an outside ring would be
+                             clipped (a scroll container, a table viewport, a map
+                             pane).
+     - `focus-ring-static` — the same two layers with NO state selector, for a
+                             control whose focus is PROXIED and therefore not a
+                             CSS state on the painted element: an OTP slot that
+                             mirrors a visually-hidden `<input>`, a
+                             `has-[…:focus-visible]:` wrapper, or a
+                             pseudo-element seam a `focus-visible:after:` variant
+                             already gates (the DataTable's resize grip). Apply it
+                             CONDITIONALLY from the component; it is never a
+                             resting style.
+     - `focus-ring-static-inset`
+                           — static trigger, inset geometry. The two axes are
+                             TRIGGER (`:focus-visible` / `:focus-within` /
+                             static) x GEOMETRY (outside / inset); five of the
+                             six combinations have a live caller, so the sixth
+                             (`focus-ring-within-inset`) is deliberately not
+                             declared. Reach for this one when the focused thing
+                             is proxied AND an ancestor would clip an outside
+                             ring (a clickable DataTable row inside the scroll
+                             viewport).
+
+   RETARGETING THE RING COLOUR — `[--focus-ring-color:var(--some-token)]`.
+   The ring layer reads `var(--focus-ring-color, var(--ring))`, so a call site
+   whose focus ring is owned by a DIFFERENT token retargets it with one arbitrary
+   property instead of hand-rolling the two layers — the same seam idiom the
+   elevation ramp already uses for `[--shadow-ring-color:…]`. `Sidebar` is the
+   live caller: its rings are `--sidebar-ring`, the sanctioned `var(--ring)`
+   mirror (ADR 0027 clause 4), and it keeps consuming that token rather than
+   silently moving to `--ring`. The CONTOUR is deliberately NOT retargetable —
+   there is one contour token per theme and no call site needs a second.
+
+   INVERSE-INK GROUNDS ARE SINGLE-LAYER BY DESIGN, AND THAT IS ASSERTED.
+   On a dark region inside a light theme — the sidebar (`--sidebar`), a terminal
+   surface (`--terminal-background`), a flow canvas — the deep contour is
+   invisible and the indicator degrades to the brand ring alone. That is correct:
+   the lime carries the mark comfortably on a 0.24-0.30 ground. It is not left to
+   luck, though: `themes-contrast.test.ts`'s `INDICATOR_SURFACES` row measures
+   `max(ring, contour) >= 3:1` against those grounds too, so a future `--primary`
+   retune that stays legible on the mark surfaces but goes quiet on the sidebar
+   still fails.
+
+   Anything else — a SELECTION marker (`ring-2 ring-ring` on a selected flow node
+   or colour swatch) — is not a focus indicator and is deliberately not swept
+   into these utilities.
+
+   NEVER RE-DECLARE `outline-*` ON AN ELEMENT CARRYING ONE OF THESE UTILITIES.
+   Tailwind's `outline-none` sets `--tw-outline-style: none` and its
+   `outline-<width>` re-declares `outline-style: var(--tw-outline-style)` — so a
+   class string that pairs `focus-ring-static` with `outline-1` silently paints
+   the ring and drops the contour (`InputGroup` shipped exactly that, #67 fix
+   round 2). The utility owns both layers; adjust the geometry with
+   `ring-offset-*`, which `outline-offset` already tracks.
+
+   A CONTROL THAT DELEGATES ITS INDICATOR TO A WRAPPER MUST DROP BOTH LAYERS.
+   `focus-visible:ring-0 focus-visible:ring-offset-0` alone leaves the contour
+   behind — an inner hairline drawn ~10px inside the wrapper's ring, at a
+   different radius, which reads as a stray rectangle rather than a focus mark.
+   Pair it with `focus-visible:outline-none`; the wrapper's `focus-ring-within`
+   / `has-[…:focus-visible]:focus-ring-static` is the replacement indicator, so
+   this is not a bare `outline: none`.
+   --------------------------------------------------------------------------- */
+
+@utility focus-ring {
+  outline-color: var(--ring-contour);
+  &:focus-visible {
+    @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+    outline: 1px solid var(--ring-contour);
+    outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+  }
+}
+
+@utility focus-ring-within {
+  outline-color: var(--ring-contour);
+  &:focus-within {
+    @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+    outline: 1px solid var(--ring-contour);
+    outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+  }
+}
+
+@utility focus-ring-inset {
+  outline-color: var(--ring-contour);
+  &:focus-visible {
+    @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
+    outline: 1px solid var(--ring-contour);
+    outline-offset: -3px;
+  }
+}
+
+@utility focus-ring-static {
+  @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+  outline: 1px solid var(--ring-contour);
+  outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+}
+
+@utility focus-ring-static-inset {
+  @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
+  outline: 1px solid var(--ring-contour);
+  outline-offset: -3px;
+}
 
 /* ---------------------------------------------------------------------------
    THE PAPER GROUNDS — `bg-grid-paper` / `bg-dot-grid` / `bg-paper`.

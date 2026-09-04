@@ -116,7 +116,7 @@ export function FlowGroupNode({ id, data, selected }: NodeProps<BrandFlowGroupNo
           className={cn(
             "-ml-1 grid size-5 shrink-0 place-items-center rounded",
             "text-muted-foreground hover:bg-muted hover:text-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "focus-ring",
           )}
         >
           {collapsed ? (

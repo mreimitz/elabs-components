@@ -151,6 +151,7 @@ jobs:
           pnpm dep-direction:check
           pnpm heavy-deps:check
           pnpm optional-peers:check
+          pnpm optional-peer-types:check
           pnpm lucide:check
           pnpm charts:reuse:check
           pnpm charts:test-double:check
@@ -306,6 +307,7 @@ jobs:
           pnpm microcopy:check:test
           pnpm microtypography:check:test
           pnpm motion:check:test
+          pnpm optional-peer-types:check:test
           pnpm optional-peers:check:test
           pnpm origins:check:test
           pnpm palette:check:test

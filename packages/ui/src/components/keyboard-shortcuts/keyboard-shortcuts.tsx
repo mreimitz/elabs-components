@@ -166,7 +166,7 @@ function ShortcutGroupItem({ group, items, forceOpen }: ShortcutGroupItemProps) 
         data-slot="keyboard-shortcuts-group-trigger"
         className={cn(
           "flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-start",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "focus-ring",
           "[&[data-state=open]>svg]:rotate-180",
         )}
       >

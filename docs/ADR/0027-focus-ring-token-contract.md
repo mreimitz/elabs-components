@@ -1,7 +1,171 @@
 # ADR 0027 — The `--ring` focus-indicator contract
 
-- Status: Accepted, **partially superseded 2026-08-16** (see Amendment)
+- Status: Accepted, **partially superseded 2026-08-16**, **repaired 2026-09-04**
+  (read Amendment 2 first — it is what ships)
 - Date: 2026-08-10
+
+## Amendment 2 (2026-09-04, #67) — the compound indicator shipped; clause 2 now binds the INDICATOR, not the ring token
+
+**This is the current state.** Amendment 1 below described a knowingly-accepted
+WCAG 2.4.7 / 1.4.11 regression in the `light` reference theme and named the
+compound indicator as "the compliant repair, if this is revisited". It has been
+revisited and the repair has landed. Read this section before the one below it.
+
+**The alias is unchanged.** `--ring: var(--primary)` still ships in both
+reference themes. Nothing about the brand decision in Amendment 1 was reversed —
+the ring token was NOT deepened, NOT re-hued, and NOT walked back to a blue.
+
+**What is new is a second layer.** A companion token `--ring-contour` is declared
+in `:root` and in every theme block, and one shared utility draws both layers:
+
+```css
+@utility focus-ring {
+  &:focus-visible {
+    @apply ring-2 ring-ring;
+    outline: 1px solid var(--ring-contour);
+    outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+  }
+}
+```
+
+Siblings `focus-ring-within` (`:focus-within`, for compound controls) and
+`focus-ring-inset` (`ring-inset` + a negative outline offset, for controls
+clipped by an overflow container) carry the same two layers. All three live in
+`packages/tokens/src/themes.css`, so they reach every package, every copy-own
+registry block and every consumer with no import — `tokens` is the base of the
+one-way dependency graph, and a `packages/ui` helper would have been unreachable
+from `tokens`/`icons` and would have added a `ui` dependency to nine leaf
+packages.
+
+**Mechanism, and why each half is what it is.** The ring layer stays Tailwind's
+own `ring-2 ring-ring` (reached through `@apply`, so it is byte-for-byte the
+utility it replaces and still composes through the `--tw-shadow` variable, i.e.
+an element's own `shadow-*` rung survives). The contour is an `outline` — an
+independent property that cannot collide with the elevation ramp (ADR 0020
+forbids hand-rolled shadows outright), follows `border-radius`, and IS the
+`focus-visible` replacement the a11y rule demands where `outline-none` used to
+sit. `outline-offset` tracks `--tw-ring-offset-width` (an `@property`-registered
+variable with initial `0px`), so the ~23 `ring-offset-{1,2}` call sites keep the
+contour on the OUTER edge without per-site arithmetic. Nothing animates, so no
+`motion-reduce:` neutralizer is required.
+
+**The obligation moved from the token to the indicator.** Clause 2 of the
+Decision below is a statement about `--ring` alone. It is superseded by:
+
+> **`max(contrast(--ring, S), contrast(--ring-contour, S)) ≥ 3:1`** for every
+> `S` in `--background`, `--card`, `--surface-muted`, `--muted`, `--secondary`
+> **and `--primary`** — at least ONE layer of the indicator must have a visible
+> edge on every surface a focus indicator can land on, including a focused
+> primary button's own fill.
+
+`--primary` is in that list deliberately: with `--ring: var(--primary)` the ring
+layer is invisible against a filled brand button (1.00:1), so the contour is the
+only thing that makes focus visible there. Locked in
+`packages/tokens/src/themes-contrast.test.ts` — the old `RING_1411_EXEMPT`
+carve-out is DELETED and replaced by a per-surface `max(…)` assertion plus a
+companion assertion that a theme whose ring cannot carry the indicator has a
+contour that clears 3:1 against the ring itself.
+
+**Measured, from the shipped tokens** (`max(ring, contour)` per surface):
+
+| theme   | background | card  | muted | surface-muted | secondary | primary |
+| ------- | ---------- | ----- | ----- | ------------- | --------- | ------- |
+| `:root` | 16.26      | 17.32 | 15.74 | 15.42         | 15.74     | 3.45    |
+| `light` | 8.70       | 9.08  | 8.28  | 8.09          | 7.85      | 6.39    |
+| `dark`  | 12.46      | 11.25 | 10.59 | 10.26         | 10.26     | 12.46   |
+
+**`dark` is a deliberate visual no-op.** Its ring already measures 10.26–12.46:1,
+so `--ring-contour: var(--background)` collapses into the page ground (invisible
+on `--background`, a quiet 1px separator on raised surfaces) while keeping the
+`max(…)` invariant satisfied by the ring layer. Do not "improve" it into a dark
+ink — that would thicken every dark-theme focus ring for no accessibility gain.
+
+**What did NOT change, and must not be "fixed" later.** The
+`(--ring, --primary)` and `(--ring, --chart-1)` rows stay DELETED from
+`MUST_DIFFER` (`scripts/check-role-distinctness.mjs`). The alias is what those
+rows forbid, and the alias still ships — restoring them would red the gate and
+reverse the Amendment 1 decision. Clause 1 (hue family) and clause 4
+(`--sidebar-ring: var(--ring)`) are untouched.
+
+**Five flavours, two axes.** The trigger axis is `:focus-visible` /
+`:focus-within` / static, the geometry axis is outside / inset:
+`focus-ring`, `focus-ring-within`, `focus-ring-inset`, `focus-ring-static` and
+`focus-ring-static-inset`. The static pair exists because a real focus indicator
+is not always expressible as a CSS state on the element that paints it — an OTP
+slot mirrors a visually-hidden `<input>`, an `InputGroup` wrapper and a clickable
+`DataTable` row ring on `has-[…:focus-visible]`, and the `DataTable` resize grip
+paints on an `after:` pseudo-element because its own box is a transparent 24px hit
+target. The sixth combination (`focus-ring-within-inset`) has no caller and is
+deliberately not declared.
+
+**Retargeting the ring colour is one variable, never a second stack.** The ring
+layer reads `var(--focus-ring-color, var(--ring))`, so `Sidebar` writes
+`focus-ring [--focus-ring-color:var(--sidebar-ring)]` and goes on consuming
+`--sidebar-ring` — clause 4's sanctioned mirror stays a live token instead of
+becoming a token nothing paints with. Same seam idiom as the elevation ramp's
+`[--shadow-ring-color:…]`. The contour is deliberately NOT retargetable.
+
+**Where a CSS utility cannot reach.** Two indicators are SVG, drawn beside an
+`aria-hidden` chart body while focus lives on a sibling button: `CanvasLayer`'s
+focus rect and `ChoroplethChart`'s focused feature. Both express the compound
+indicator directly — a wider `--ring-contour` stroke stacked under the `--ring`
+one, so 1px of contour shows on each side. Monaco is the third: `focusBorder` is
+a single-colour theme key, so `buildBrandThemeData` picks whichever layer clears
+3:1 against that editor's own ground (`contrast(…)` at runtime, the same
+`max(ring, contour)` rule the token test asserts) — on `light` that is the
+contour, on `dark` the ring. Locked by a test in
+`packages/editor/src/lib/monaco-theme-bridge.test.ts`; before the fix it measured
+1.36:1.
+
+**What this does not cover.** The call-site sweep deliberately excludes
+`packages/ai/src/**` (concurrent work in a sibling branch); nine call sites in
+eight modules there still carry the one-layer
+`focus-visible:ring-2 focus-visible:ring-ring` shape and get the ring layer only.
+Genuine SELECTION markers that reuse `ring-2 ring-ring` to mean "selected" rather
+than "focused" are NOT focus indicators and are deliberately left alone:
+`FlowNode` / `FlowGroupNode` selection, `FlowWeightedEdge`'s selected stroke, the
+`ColorPicker` swatch's selected outline (which carries `focus-ring` separately for
+its own focus), `GanttBar`'s `isSelected` outline and its link-source/link-target
+outlines, and the `--ring` swatches in the Foundations token stories, which
+demonstrate the token itself. **The first pass of this sweep missed twelve real
+indicators because it grepped for the string `ring-ring`**; the ones that spell
+the ring another way (`ring-sidebar-ring`, `outline-ring`, `stroke-ring`,
+`stroke="var(--ring)"`, or a JS boolean) were found only on review. A future sweep
+should enumerate by TOKEN, not by class string.
+
+### The indicator is SINGLE-LAYER on inverse-ink grounds, by design and by assertion
+
+A focus indicator is not confined to the five mark surfaces. A sidebar nav
+button, a terminal composer, a chat bubble and a flow node are all Tab stops,
+and inside a LIGHT theme several of those grounds are dark — `light` ships
+`--sidebar: oklch(0.3 0.021 257)` and `--terminal-background: oklch(0.24 0.016
+257)`. There the deep contour is invisible and the compound indicator degrades
+to the brand ring alone. **That is correct, not a defect:** the lime measures
+comfortably above 3:1 on a 0.24–0.30 ground, and which layer does the work is
+exactly the per-theme answer `--ring-contour` exists to carry.
+
+What changed in fix round 2 is that it is now **asserted** rather than assumed.
+`themes-contrast.test.ts`'s `INDICATOR_SURFACES` row covers `--sidebar`,
+`--terminal-background`, `--chat-user`, `--chat-assistant`, `--flow-node` and
+`--canvas` alongside the mark surfaces and `--primary`, still as
+`max(ring, contour) ≥ 3:1`. Without it, a future `--primary` retune that stayed
+legible on the mark surfaces could go quiet on the sidebar with every gate
+green.
+
+Extending the row surfaced one genuine, **pre-existing** below-bar pairing, which
+is carried as a named carve-out rather than dropped: `:root` (the neutral light
+fallback a consumer inherits when they import no theme stylesheet) measures
+2.49:1 for its blue ring and 1.14:1 for its near-black contour against its own
+`--terminal-background` (`oklch(0.15 0.018 264)`). Both of `:root`'s layers are
+tuned for a white page, so neither carries a very dark ground. #67 did not
+introduce this — before the compound indicator the same ring measured the same
+2.49:1 there, with no second layer at all. The carve-out is asserted in the
+INVERSE (the shape `CHART_1411_EXEMPT` already uses): the suite fails the day the
+pairing clears 3:1, so it cannot go stale. The repair is either a `:root` ring
+retune — a fallback-wide token-value change that needs its own cross-theme
+sweep — or the terminal region retargeting its ring through the sanctioned
+`[--focus-ring-color:…]` seam. Both reference themes pass this surface, so
+nothing that ships a theme is affected.
 
 ## Amendment (2026-08-16) — the reference themes now alias `--ring: var(--primary)`
 

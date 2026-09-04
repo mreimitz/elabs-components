@@ -153,17 +153,17 @@ export const DetailSideHover: Story = {
             </p>
             <ul className="text-body space-y-1">
               <li>
-                <button className="text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1">
+                <button className="text-foreground hover:underline focus-ring rounded-sm px-1">
                   View report
                 </button>
               </li>
               <li>
-                <button className="text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1">
+                <button className="text-foreground hover:underline focus-ring rounded-sm px-1">
                   Export CSV
                 </button>
               </li>
               <li>
-                <button className="text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1">
+                <button className="text-foreground hover:underline focus-ring rounded-sm px-1">
                   Share
                 </button>
               </li>
@@ -223,10 +223,10 @@ export const DetailBottomHover: Story = {
         className="h-full"
         detail={
           <div className="flex items-center gap-3">
-            <button className="text-body text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1">
+            <button className="text-body text-foreground hover:underline focus-ring rounded-sm px-1">
               Drill down
             </button>
-            <button className="text-body text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1">
+            <button className="text-body text-foreground hover:underline focus-ring rounded-sm px-1">
               Download
             </button>
           </div>
@@ -390,7 +390,7 @@ export const DetailHoverKeyboardReveal: Story = {
           <div className="flex flex-col gap-2 pt-1">
             <button
               data-testid="detail-action"
-              className="text-body text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 text-start"
+              className="text-body text-foreground hover:underline focus-ring rounded-sm px-1 text-start"
             >
               Open details
             </button>

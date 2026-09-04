@@ -103,6 +103,35 @@ test("recognises the @lazy-boundary marker", () => {
   assert.equal(isLazyBoundary("// mentions lazy-boundaries in prose"), false);
 });
 
+// ── Round-2 validator finding R3: a PROSE mention must not self-classify ────
+test("does NOT recognise the literal tag when it only appears in running prose", () => {
+  // The exact shape that mis-tagged `_lazy-boundary-conformance.ts` as a
+  // boundary: the tag appears mid-sentence, wrapped in backticks, describing
+  // the convention rather than declaring the module IS one. Before the R3
+  // fix `isLazyBoundary` matched `/@lazy-boundary\b/` anywhere in the source,
+  // so this returned `true` and both real boundary modules that statically
+  // import this helper were flagged for "static-import-of-lazy-boundary".
+  const src = [
+    "/**",
+    " * Shared helper. Every `@lazy-boundary` sibling module that owns a",
+    " * mirror of an optional peer's type uses THIS declaration rather than",
+    " * redeclaring it locally — so it is safe for a `@lazy-boundary` module",
+    " * to import it statically without pulling the peer back into the",
+    " * entry chunk.",
+    " */",
+    "export type AssertAssignable<_TOwned extends TReal, TReal> = true;",
+  ].join("\n");
+  assert.equal(
+    isLazyBoundary(src),
+    false,
+    "a mid-sentence, backtick-wrapped mention must not self-classify as a boundary",
+  );
+});
+
+test("still recognises the marker when the tag opens a single-line block comment", () => {
+  assert.equal(isLazyBoundary("/** @lazy-boundary only via import() */"), true);
+});
+
 test("finds the static relative imports that would defeat a boundary", () => {
   const src = `
     import PersonaRive from "./_persona-rive";

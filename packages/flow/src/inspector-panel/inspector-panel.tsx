@@ -90,7 +90,7 @@ export function InspectorPanel({
                 type="button"
                 aria-label="Close inspector"
                 onClick={onClose}
-                className="rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="rounded-sm p-1 text-muted-foreground hover:text-foreground focus-ring"
               >
                 <svg
                   width="14"

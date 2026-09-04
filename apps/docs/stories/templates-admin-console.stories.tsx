@@ -480,7 +480,7 @@ function OverviewView({ onInspect }: { onInspect: (c: Connection) => void }) {
                 <button
                   type="button"
                   onClick={() => onInspect(c)}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-surface-muted focus-ring"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-body font-medium text-foreground">

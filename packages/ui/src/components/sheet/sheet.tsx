@@ -66,7 +66,7 @@ export const SheetContent = forwardRef<
       >
         {children}
         <SheetPrimitive.Close
-          className="absolute end-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute end-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-ring"
           aria-label="Close"
         >
           <X className="size-4" />

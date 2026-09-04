@@ -301,7 +301,7 @@ function ExternalInputComboboxDemo() {
         role="combobox"
         onKeyDown={forwardKey}
         placeholder="Type @ to mention…"
-        className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-body outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-body focus-ring"
       />
       <Command
         id="mention-list"

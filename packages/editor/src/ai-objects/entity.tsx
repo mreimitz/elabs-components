@@ -62,7 +62,7 @@ function kindMeta(kind: string | undefined): KindMeta {
 export const entityChipVariants = cva(
   // inline-flex + align-middle keeps the chip in the text baseline;
   // no `block` wrapper so it is valid inside <p>.
-  "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-meta font-medium align-middle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+  "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-meta font-medium align-middle focus-ring",
   {
     variants: {
       kind: {

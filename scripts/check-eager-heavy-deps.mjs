@@ -137,9 +137,23 @@ export function findStaticHeavyImports(source, extraDeps = []) {
   return found;
 }
 
-/** A module declaring itself reachable only through a dynamic `import()`. */
+/**
+ * A module declaring itself reachable only through a dynamic `import()`.
+ *
+ * The tag must appear in genuine JSDoc-tag POSITION — the first token on a
+ * comment line (`* @lazy-boundary …` or `/** @lazy-boundary …`) — not merely
+ * anywhere in the file's prose. A doc comment that *describes* the convention
+ * (e.g. "every `@lazy-boundary` sibling module…", inline, wrapped in
+ * backticks, mid-sentence) must NOT self-classify as a boundary — that
+ * mis-tagged a shared type-only helper as a boundary and made every module
+ * that imports it fail the "nobody statically imports a boundary" rule
+ * (round-2 validator finding R3). A backtick immediately before the tag
+ * breaks the `[ \t]*` run between the leading `*` and `@lazy-boundary`, so an
+ * inline `` `@lazy-boundary` `` mention already fails this regex on its own;
+ * requiring line-start position is the belt to that suspenders.
+ */
 export function isLazyBoundary(source) {
-  return /@lazy-boundary\b/.test(source);
+  return /^[ \t]*(?:\/\*\*|\*)[ \t]*@lazy-boundary\b/m.test(source);
 }
 
 /**

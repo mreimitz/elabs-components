@@ -483,7 +483,7 @@ function RevealSelectedNodeDemo() {
             key={id}
             type="button"
             onClick={() => setTarget(id)}
-            className="rounded-md border border-border-strong bg-background px-3 py-1.5 text-body font-medium text-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-md border border-border-strong bg-background px-3 py-1.5 text-body font-medium text-foreground hover:bg-surface-muted focus-ring"
           >
             Navigate to Node {Number(id.split("-")[1]) + 1}
           </button>

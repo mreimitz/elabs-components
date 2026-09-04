@@ -101,7 +101,7 @@ export function MapPopup({
           type="button"
           onClick={handleClose}
           aria-label="Close popup"
-          className="absolute top-1 right-1 z-10 inline-flex size-5 items-center justify-center rounded-sm text-foreground transition-colors duration-fast hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className="absolute top-1 right-1 z-10 inline-flex size-5 items-center justify-center rounded-sm text-foreground transition-colors duration-fast hover:bg-muted focus-ring-inset"
         >
           <X className="size-3.5" aria-hidden="true" />
         </button>

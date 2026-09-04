@@ -71,6 +71,20 @@ export const SessionStatusBar = forwardRef<HTMLDivElement, SessionStatusBarProps
       return null;
     }
 
+    // Computed once and reused for BOTH the connections region's name (for a
+    // user who navigates to it deliberately) and its real, non-hidden text
+    // content — what a polite announcement actually reads on change. An
+    // aria-label alone is NOT that (#155): a live region announces its
+    // content, not its own accessible name.
+    const connectionsAnnouncement = connections
+      ? connections.connecting
+        ? t("ai.sessionStatusBar.connecting")
+        : t("ai.sessionStatusBar.connections", {
+            connected: connections.connected,
+            total: connections.total,
+          })
+      : undefined;
+
     return (
       <div
         ref={ref}
@@ -100,14 +114,6 @@ export const SessionStatusBar = forwardRef<HTMLDivElement, SessionStatusBarProps
         ) : null}
         {connections ? (
           <span
-            aria-label={
-              connections.connecting
-                ? t("ai.sessionStatusBar.connecting")
-                : t("ai.sessionStatusBar.connections", {
-                    connected: connections.connected,
-                    total: connections.total,
-                  })
-            }
             aria-live="polite"
             className="inline-flex shrink-0 items-center gap-1.5"
             data-slot="session-status-bar-connections"
@@ -124,6 +130,25 @@ export const SessionStatusBar = forwardRef<HTMLDivElement, SessionStatusBarProps
             <span aria-hidden="true" className="tabular-nums">
               {formatNumber(connections.connected)}/{formatNumber(connections.total)}
             </span>
+            {/* The live region's only NON-hidden text — mirrors
+                terminal-status-bar.tsx's aria-hidden-visual +
+                sr-only-sentence pair (#155). Without this, every polite
+                update announced an empty string: the counter above is
+                aria-hidden, so it was the region's ONLY text content.
+                Deliberately no `aria-label` here (unlike
+                terminal-status-bar.tsx, where the label lives on the OUTER
+                bar as a generic region name distinct from any segment's
+                content): an explicit `aria-label` here would give this
+                span an ACCESSIBLE NAME byte-identical to its announced
+                CONTENT, which risks a double announcement ("Connecting…
+                Connecting…") on ATs that speak a live region's name
+                alongside its changed content. Leaving `aria-label` off
+                does NOT relocate the name to this text — `role="status"`
+                is `nameFrom: author`, so it never falls back to content
+                the way e.g. a `button` does. The span simply has no
+                accessible name, which is fine: no acceptance criterion
+                needs one here, only the announced content does. */}
+            <span className="sr-only">{connectionsAnnouncement}</span>
           </span>
         ) : null}
         {children ? (

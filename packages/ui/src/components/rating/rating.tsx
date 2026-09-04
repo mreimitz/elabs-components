@@ -187,7 +187,7 @@ export const Rating = forwardRef<HTMLDivElement, RatingProps>(function Rating(
             aria-checked={checked}
             aria-label={`${index} ${index === 1 ? "star" : "stars"}`}
             tabIndex={i === tabStopIndex ? 0 : -1}
-            className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            className="rounded-sm focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             onClick={(e) =>
               commit(valueFromPointer(e as unknown as PointerEvent<HTMLButtonElement>, index))
             }

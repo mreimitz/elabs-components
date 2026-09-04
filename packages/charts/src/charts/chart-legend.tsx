@@ -274,10 +274,7 @@ export function ChartLegend({
         if (renderItem) {
           return (
             <Item
-              className={cn(
-                onItemClick &&
-                  "text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              )}
+              className={cn(onItemClick && "text-start focus-ring")}
               data-hovered={isHovered ? "" : undefined}
               key={`legend-${item.label}-${item.value}`}
               onMouseEnter={() => onHover?.(i)}
@@ -293,8 +290,7 @@ export function ChartLegend({
           <Item
             className={cn(
               "cursor-pointer rounded-lg px-2 py-1.5 transition-[background-color,opacity] duration-fast ease-entrance motion-reduce:transition-none",
-              onItemClick &&
-                "w-full text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              onItemClick && "w-full text-start focus-ring",
               isHovered && "bg-legend-muted",
               isFaded && "opacity-40",
               itemClassName,

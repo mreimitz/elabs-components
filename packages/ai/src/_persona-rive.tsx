@@ -19,6 +19,13 @@
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import type { RiveParameters } from "@rive-app/react-webgl2";
+// `import type` from an optional peer is safe HERE ONLY because this module is
+// reached exclusively through `lazy(() => import("./_persona-rive"))` — it is
+// never statically imported, so nothing in this file reaches the barrel's
+// `.d.ts` declaration graph. `persona.tsx`'s PUBLIC types must never do this
+// (issue #101) — see its module doc comment and `PersonaRiveEvent`/
+// `PersonaRiveEventCallback`, which this module imports below and proves
+// conformant against the real peer type at the bottom of this file.
 // A NAMED import (`import { useRive } from "@rive-app/react-webgl2"`) is a
 // static ESM binding a bundler must resolve at build time. Now that
 // `@rive-app/react-webgl2` is a genuinely optional peer (issue #33), a
@@ -36,6 +43,8 @@ import * as RiveModule from "@rive-app/react-webgl2";
 import type { ReactNode } from "react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 
+import type { AssertAssignable } from "./_lazy-boundary-conformance";
+import type { PersonaRiveEventCallback } from "./persona";
 import type { PersonaSource, PersonaState } from "./persona-sources";
 
 const {
@@ -158,12 +167,12 @@ PersonaWithoutModel.displayName = "PersonaWithoutModel";
 
 export interface PersonaRiveProps {
   className?: string;
-  onLoad?: RiveParameters["onLoad"];
-  onLoadError?: RiveParameters["onLoadError"];
-  onPause?: RiveParameters["onPause"];
-  onPlay?: RiveParameters["onPlay"];
+  onLoad?: PersonaRiveEventCallback;
+  onLoadError?: PersonaRiveEventCallback;
+  onPause?: PersonaRiveEventCallback;
+  onPlay?: PersonaRiveEventCallback;
   onReady?: () => void;
-  onStop?: RiveParameters["onStop"];
+  onStop?: PersonaRiveEventCallback;
   source: PersonaSource;
   /** Resolved `.riv` URL — `Persona`'s `src` override, or the variant default. */
   src: string;
@@ -269,3 +278,27 @@ const PersonaRive = ({
 };
 
 export default PersonaRive;
+
+/**
+ * Conformance assertion (issue #101): compile-time proof that the owned
+ * `PersonaRiveEventCallback` (declared in `persona.tsx`, structurally free of
+ * `@rive-app/react-webgl2`/`@rive-app/webgl2`) is still assignable to the REAL
+ * `RiveParameters["onLoad"]` — and, since `onLoad`/`onLoadError`/`onPause`/
+ * `onPlay`/`onStop` all share Rive's one `EventCallback` type, this single
+ * check covers all five. `AssertAssignable`'s type parameter is constrained
+ * (`TOwned extends TReal`), so if a future Rive release changes `Event`'s
+ * shape in a way `PersonaRiveEvent` no longer satisfies, this line fails to
+ * typecheck — caught by `pnpm --filter @elabs-ai/components-ai typecheck`
+ * locally, never shipped as a silent mismatch to a consumer.
+ *
+ * `AssertAssignable` itself is shared with `_audio-player-media-chrome.tsx`
+ * via `_lazy-boundary-conformance.ts` — see that module's doc comment for
+ * what this check can and cannot prove (it is one-directional: it cannot
+ * catch the owned type being NARROWER than the real one, which is exactly
+ * what `PersonaRiveEvent["data"]` is — see the CHANGELOG's "Breaking (types)"
+ * entry).
+ */
+export type _PersonaRiveEventCallbackConformance = AssertAssignable<
+  PersonaRiveEventCallback,
+  NonNullable<RiveParameters["onLoad"]>
+>;

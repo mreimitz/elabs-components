@@ -115,7 +115,7 @@ export const LinkPreviewCard = forwardRef<HTMLDivElement, LinkPreviewCardProps>(
           // When `href` is present: stretched-link focus ring (via focus-within on
           // the container, not the <a>) + hover lift + motion-tokened transition.
           href &&
-            "cursor-pointer transition-[translate,box-shadow,border-color] duration-fast ease-standard focus-within:outline-none focus-within:ring-2 focus-within:ring-ring hover:-translate-y-0.5 hover:border-ring/40 hover:shadow-md motion-reduce:hover:translate-y-0",
+            "cursor-pointer transition-[translate,box-shadow,border-color] duration-fast ease-standard focus-ring-within hover:-translate-y-0.5 hover:border-ring/40 hover:shadow-md motion-reduce:hover:translate-y-0",
           className,
         )}
         {...props}

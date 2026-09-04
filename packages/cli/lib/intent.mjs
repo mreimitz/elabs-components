@@ -64,7 +64,8 @@ export const INTENT = {
     },
     stateTokens: {
       hover: "bg-primary/90 (variant default)",
-      focus: "ring-2 ring-ring",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
       disabled: "opacity-50 pointer-events-none",
     },
     antiPatterns: [
@@ -93,7 +94,8 @@ export const INTENT = {
         "DialogOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
       surface:
         "DialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — a floating surface bakes its hairline into the shadow; it carries NO border)",
-      focus: "ring-2 ring-ring (the close button)",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67), on the close button",
     },
     antiPatterns: [
       "Dialog without a DialogTitle — screen readers announce no name (use sr-only if visually hidden).",
@@ -119,7 +121,8 @@ export const INTENT = {
       overlay: "AlertDialogOverlay: bg-foreground/50 + backdrop-blur-sm",
       surface:
         "AlertDialogContent: bg-card text-card-foreground + shadow-ring-lg (ADR 0020 — the hairline is the shadow's last layer, so there is no border)",
-      focus: "ring-2 ring-ring — inherited: Action/Cancel are buttonVariants",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) — inherited: Action/Cancel are buttonVariants",
     },
     antiPatterns: [
       "Firing the destructive action immediately on click — require the AlertDialog confirm (or an undo window).",
@@ -136,7 +139,8 @@ export const INTENT = {
     },
     stateTokens: {
       rest: "border-input + bg-background (the subtle form-field hairline, ADR 0010)",
-      focus: "ring-2 ring-ring + ring-offset-1 ring-offset-background (the border does NOT change)",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-1 ring-offset-background (the border does NOT change)",
       disabled: "opacity-50 cursor-not-allowed + bg-muted",
       invalid: "border-destructive + ring-destructive (aria-invalid)",
     },
@@ -157,7 +161,11 @@ export const INTENT = {
       contains: ["SelectTrigger", "SelectContent", "SelectItem"],
       pairsWith: ["Label"],
     },
-    stateTokens: { focus: "ring-2 ring-ring", disabled: "opacity-50" },
+    stateTokens: {
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-1 ring-offset-background",
+      disabled: "opacity-50",
+    },
     antiPatterns: [
       "Using Select for free-form or searchable values — use Combobox when the user may type/search.",
       "Select without a Label — no accessible name.",
@@ -170,7 +178,8 @@ export const INTENT = {
     category: "input",
     relationships: { usedInside: ["Form"], pairsWith: ["Label"] },
     stateTokens: {
-      focus: "ring-2 ring-ring — inherited: the trigger is a Button",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) — inherited: the trigger is a Button",
       highlighted:
         "data-[selected=true]:bg-accent + text-accent-foreground — inherited from CommandItem",
     },
@@ -184,7 +193,11 @@ export const INTENT = {
     purpose: "Binary on/off toggle within a form (multi-select within a group).",
     category: "input",
     relationships: { usedInside: ["Form"], pairsWith: ["Label"] },
-    stateTokens: { checked: "bg-primary text-primary-foreground", focus: "ring-2 ring-ring" },
+    stateTokens: {
+      checked: "bg-primary text-primary-foreground",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
+    },
     antiPatterns: [
       "Checkbox and its Label not sharing one hit target — clicking the label must toggle the box (no dead zone).",
       "Using a Checkbox for mutually-exclusive choices — use RadioGroup.",
@@ -199,7 +212,8 @@ export const INTENT = {
       rest: "border-input (the subtle form-field hairline)",
       checked:
         "data-[state=checked]:border-primary + a fill-primary indicator dot (the item is NOT filled)",
-      focus: "ring-2 ring-ring",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
     },
     antiPatterns: [
       "Using a RadioGroup for many options — use Select/Combobox past ~7 options.",
@@ -211,7 +225,11 @@ export const INTENT = {
     purpose: "Immediate on/off setting toggle (applies on change, not on submit).",
     category: "input",
     relationships: { pairsWith: ["Label"] },
-    stateTokens: { checked: "bg-primary", focus: "ring-2 ring-ring" },
+    stateTokens: {
+      checked: "bg-primary",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
+    },
     antiPatterns: [
       "Switch that needs a separate Save to apply — use a Checkbox in a form instead; a Switch should apply immediately.",
     ],
@@ -265,7 +283,8 @@ export const INTENT = {
     stateTokens: {
       list: "TabsList: bg-muted text-muted-foreground",
       active: "data-[state=active]: bg-surface-elevated text-foreground shadow-sm",
-      focus: "ring-2 ring-ring + ring-offset-2 ring-offset-background",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67) + ring-offset-2 ring-offset-background",
     },
     antiPatterns: [
       "Tabs for sequential steps — use a stepper/wizard; tabs are for peer, non-sequential views.",
@@ -296,7 +315,8 @@ export const INTENT = {
         "SheetOverlay: bg-foreground/50 + backdrop-blur-sm (a semantic token — never a raw black)",
       surface:
         "SheetContent: bg-card text-card-foreground + shadow-ring-lg, plus the anchored edge only (border-t / border-b / border-l / border-r per side)",
-      focus: "ring-2 ring-ring (the close button)",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67), on the close button",
     },
     antiPatterns: [
       "Sheet without a SheetTitle — no accessible name.",
@@ -387,7 +407,10 @@ export const INTENT = {
     purpose: "Controlled search box that drives a DataTable's global filter.",
     category: "data",
     relationships: { pairsWith: ["DataTable"] },
-    stateTokens: { focus: "ring-2 ring-ring" },
+    stateTokens: {
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67)",
+    },
     antiPatterns: [
       "Keeping uncontrolled internal state — SearchInput is controlled (value + onChange); reflect filter state into the table.",
     ],
@@ -1414,7 +1437,8 @@ export const INTENT = {
     category: "chart",
     relationships: { usedInside: ["ChartDatapointProvider"] },
     stateTokens: {
-      focus: "each target is a real button: focus-visible:ring-2 ring-ring, outline-none",
+      focus:
+        "each target is a real button carrying focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67)",
     },
     antiPatterns: [
       "Putting tabIndex on an SVG shape instead — every chart body is aria-hidden, so a focusable child inside it is the axe aria-hidden-focus violation, and axe is blocking here.",
@@ -1970,7 +1994,7 @@ export const INTENT = {
       label:
         "HaloText: the band title renders in the chart-source type role, the leaf label in the chart-value type role (RM-019, both pinned to the meta size step); the halo punches from var(--chart-background)",
       focus:
-        "the drilldown zoom/back buttons carry the shared interactive focus ring (the --ring token, shown only on :focus-visible)",
+        "the drilldown zoom/back buttons carry the shared compound focus indicator (--ring plus the --ring-contour outline), shown only on keyboard focus",
     },
     antiPatterns: [
       "Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.",
@@ -2023,7 +2047,7 @@ export const INTENT = {
       marks:
         "every colour the draw callback paints is read per frame via canvasTokenColor(--chart-*) — ctx.fillStyle cannot resolve a CSS variable, so a literal here is a canvas that stops theming",
       focus:
-        "the focused datum gets ONE SVG overlay rect stroked with the focus-ring token (--ring), never a ring painted into the picture the caller draws",
+        "the focused datum gets ONE SVG overlay rect stroked with the --ring token (the SVG stroke reads the variable directly, not the shared focus utility), never a ring painted into the picture the caller draws",
       cursor:
         "the focused datum's label is spoken by a single polite live region; the button's own name stays static",
       reducedMotion: "the enter ramp does not run at all — scales.progress starts and stays at 1",
@@ -3084,7 +3108,8 @@ export const INTENT = {
     },
     stateTokens: {
       action: "text-body text-foreground for the action, text-muted-foreground for supporting text",
-      focus: "ring-2 ring-ring on the group triggers and the search field",
+      focus:
+        "focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67), on the group triggers and the search field",
     },
     antiPatterns: [
       "Rendering a raw key string instead of Kbd — the atom carries the platform glyphs and the translate opt-out.",
@@ -3180,7 +3205,7 @@ export const INTENT = {
       outlier: "hollow past 1.5 × IQR — fill=none with the group's own stroke, never a filled dot",
       axis: "--chart-grid gridlines, --chart-label value ticks, --chart-foreground group labels, all text-meta",
       focus:
-        "on a strip every record is a real button in ChartDatapointLayer: focus-visible:ring-2 ring-ring",
+        "on a strip every record is a real button in ChartDatapointLayer carrying focus-ring — the compound indicator: a ring-2 in --ring plus a 1px --ring-contour outline (#67)",
     },
     antiPatterns: [
       'kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.',
@@ -3231,7 +3256,7 @@ export const INTENT = {
       label:
         "HaloText in the chart-source type role, punched from var(--chart-background); drawn only at or above labelThreshold",
       focus:
-        "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared interactive focus ring (the --ring token, shown only on :focus-visible); one tab stop, arrows across the rest",
+        "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared compound focus indicator (--ring plus the --ring-contour outline), shown only on keyboard focus; one tab stop, arrows across the rest",
     },
     antiPatterns: [
       'Reading a force layout\'s POSITIONS as data — only adjacency is encoded; distance, direction and the picture\'s orientation are artefacts of the solver\'s seed. Use layout="circular" or "arc" whenever position must mean something.',

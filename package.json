@@ -138,6 +138,8 @@
     "microtypography:check:test": "node --test scripts/check-microtypography.test.mjs",
     "motion:check": "node scripts/check-motion-tokens.mjs",
     "motion:check:test": "node --test scripts/check-motion-tokens.test.mjs",
+    "optional-peer-types:check": "node scripts/check-optional-peer-types.mjs",
+    "optional-peer-types:check:test": "node --test scripts/check-optional-peer-types.test.mjs",
     "optional-peers:check": "node scripts/check-optional-peer-transitives.mjs",
     "optional-peers:check:test": "node --test scripts/check-optional-peer-transitives.test.mjs",
     "origins:check": "node scripts/check-remote-origins.mjs",

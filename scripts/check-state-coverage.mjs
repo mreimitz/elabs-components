@@ -23,8 +23,14 @@
  *
  * For every allowlisted component, assert at least one co-located/referencing
  * `*.stories.tsx` file exports a story whose name signals a non-happy-path STATE
- * (Loading/Empty/Error/Disabled/Skeleton/FirstRun — case-sensitive substring in the
- * exported identifier, e.g. `LoadingState`, `EmptyResults`, `FirstRunOnboarding`).
+ * (Loading/Empty/Error/Disabled/Skeleton/FirstRun/Awaiting — case-sensitive substring
+ * in the exported identifier, e.g. `LoadingState`, `EmptyResults`, `FirstRunOnboarding`).
+ * `Awaiting` was added for #108: a decision-bearing compound (`Plan`) has a genuine
+ * non-happy-path state — blocked pending a human decision — that the original
+ * Loading/Empty/Error/Disabled/Skeleton/FirstRun vocabulary has no word for; the
+ * component already ships a real `Awaiting` story (packages/ai/src/plan.stories.tsx)
+ * exercising exactly that state, so the fix is to widen the vocabulary the gate
+ * reads, not to force a misleading rename or to grandfather a still-blind gate.
  *
  * Pre-existing gaps are a RATCHET, not a rewrite mandate — same contract as
  * check-loading-states.mjs / check-raw-palette.mjs / check-anti-slop.mjs:
@@ -72,14 +78,15 @@ export const STATEFUL_COMPONENTS = [
   "Accordion",
   "Breadcrumb",
   "Calendar",
+  "Plan",
 ];
 
 /** A story identifier signals a non-happy-path STATE if it contains one of these. */
-const STATE_KEYWORD_RE = /(?:Loading|Empty|Error|Disabled|Skeleton|FirstRun)/;
+const STATE_KEYWORD_RE = /(?:Loading|Empty|Error|Disabled|Skeleton|FirstRun|Awaiting)/;
 
 /**
  * Does `storyText` export at least one named story whose identifier signals a
- * state (Loading/Empty/Error/Disabled/Skeleton/FirstRun)?
+ * state (Loading/Empty/Error/Disabled/Skeleton/FirstRun/Awaiting)?
  */
 export function hasStateStory(storyText) {
   const exportNameRe = /export\s+const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*[:=]/g;
@@ -229,7 +236,7 @@ function main(argv) {
     for (const m of unbaselined) {
       console.error(
         `  ${m.module} — ${m.pkg} ${m.name} — no *Loading/*Empty/*Error/*Disabled/` +
-          "*Skeleton/*FirstRun story export",
+          "*Skeleton/*FirstRun/*Awaiting story export",
       );
     }
     console.error(

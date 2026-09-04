@@ -61,7 +61,7 @@ function ControlButton({
       className={cn(
         "flex size-8 items-center justify-center text-foreground transition-colors duration-fast",
         "hover:bg-surface-muted",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+        "focus-ring-inset",
         "disabled:pointer-events-none disabled:opacity-50",
       )}
       disabled={disabled}

@@ -543,7 +543,7 @@ describe("DataTable — virtualized a11y + composability", () => {
     );
     const scroll = container.querySelector(".overflow-auto");
     expect(scroll).toHaveAttribute("tabindex", "0");
-    expect(scroll?.className).toMatch(/focus-visible:ring-2/);
+    expect(scroll?.className).toMatch(/focus-ring/);
     // A focusable element must have an accessible name (WCAG 4.1.2).
     expect(scroll).toHaveAttribute("aria-label");
   });
@@ -820,7 +820,7 @@ describe("DataTable — #330 plain-branch scroll container is overflow-auto, not
     const scrollRegion = scrollRegionOf(container);
     expect(scrollRegion.className).toMatch(/overflow-auto/);
     expect(scrollRegion.className).not.toMatch(/overflow-hidden/);
-    expect(scrollRegion.className).toMatch(/focus-visible:ring-2/);
+    expect(scrollRegion.className).toMatch(/focus-ring-inset/);
 
     // The OUTER chrome div (border/rounded/bg-card) stays overflow-hidden (it
     // clips to the rounded corners) — only the SCROLL region changed.
@@ -1186,8 +1186,12 @@ describe("DataTable — #337 onRowClick + rowClassName", () => {
     expect(row.className).toMatch(/cursor-pointer/);
     // Focus lives on the sr-only button; the visible indicator paints on the
     // ROW via `:has()`, so the user sees which row they are about to activate.
+    // …and it is the SHARED compound indicator (#67), not a hand-rolled ring:
+    // `focus-ring-static-inset` is the static-trigger, inset-geometry flavour,
+    // because the focused element is the sr-only button and an outside ring
+    // would be clipped by the scroll viewport.
     expect(row.className).toMatch(
-      /has-\[\[data-slot=data-table-row-action\]:focus-visible\]:outline-2/,
+      /has-\[\[data-slot=data-table-row-action\]:focus-visible\]:focus-ring-static-inset/,
     );
   });
 });

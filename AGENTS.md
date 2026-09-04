@@ -288,6 +288,8 @@ pnpm heavy-deps:check           # if @elabs-ai/components-ai, -terminal or -view
 pnpm heavy-deps:check:test      # self-test for the eager-heavy-dependency ratchet
 pnpm optional-peers:check       # if a packages/*/package.json optional peer changed — an optional peer a plain transitive dependency drags in anyway is DEFEATED: it installs for every consumer, so the capability-gap panel never renders and the "install only what you use" promise is false. Baselined per package; a new defeat fails (#94)
 pnpm optional-peers:check:test  # self-test for the defeated-optional-peer gate
+pnpm optional-peer-types:check       # if a package's built .d.ts changed — an optional peer's OWN TYPE must never leak into a package's generated declarations (module specifier reachable from the root barrel), which breaks skipLibCheck:false consumers who don't install that peer (#101)
+pnpm optional-peer-types:check:test  # self-test for the optional-peer-type-leak gate
 pnpm origins:check              # if a packages/*/src file gained a URL — every remote origin is allowlisted (scripts/remote-origins-allowlist.json) AND documented in docs/CSP-AND-NETWORK.md
 pnpm origins:check:test         # self-test for the remote-origin inventory gate
 pnpm tt-aliases:check           # if apps/*/vite config or the CSP doc changed — the published Trusted-Types aliases stay dogfooded and resolve to DOM-free builds
