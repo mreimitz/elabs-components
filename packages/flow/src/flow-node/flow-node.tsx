@@ -106,6 +106,32 @@ const handleClassName = "!size-2 !border-2 !border-flow-edge !bg-flow-node";
 /**
  * Branded custom node. Register it in `nodeTypes={{ brand: FlowNode }}` and
  * create nodes with `type: "brand"` and `data: FlowNodeData`.
+ *
+ * ## Focus vs selection (#312)
+ *
+ * `selected && "ring-2 ring-ring"` below is a SELECTION marker, not a focus
+ * indicator — it is React Flow's own click-driven `selected` state and is the
+ * genuine-selection carve-out `.claude/rules/theming.md` names explicitly.
+ * Keyboard focus is a separate, independent signal this component used to omit
+ * entirely (issue #312): React Flow puts `tabIndex`/`role="group"` and the real
+ * `:focus-visible` state on **its own wrapper** (`.react-flow__node`, which
+ * also always carries a `data-id` attribute), one level ABOVE the `<div>` this
+ * component returns — so neither `focus-ring` (`:focus-visible` on self) nor
+ * `focus-ring-within` (`:focus-within`, a focused descendant) can ever fire
+ * here; focus is PROXIED to an ancestor this component doesn't render.
+ * `focus-ring-static` is the flavour built for that exact shape (ADR 0027),
+ * gated by an ancestor-selector arbitrary variant — the same idiom
+ * `FlowEdgePath` uses for `.react-flow__edge:focus-visible`, keyed on
+ * `[data-id]` here (rather than the escaped `.react-flow\_\_node` class) so
+ * the selector needs no backslash escaping inside a plain JS string — a
+ * literal `\_` in a `cn()` argument is a real JS string escape and would be
+ * silently stripped at runtime (unlike in a bare, unbraced JSX attribute,
+ * where backslashes are never processed — the reason `FlowEdgePath` can use
+ * the class form safely and this component, composing through `cn()`, cannot).
+ * The two signals compose without merging into one ring: `selected` alone
+ * paints the ring layer only, while a focused node additionally gets the
+ * `--ring-contour` outline drawn outside it, so "selected AND focused" reads
+ * as two visible layers, not the single ring "selected alone" paints.
  */
 export function FlowNode({
   data,
@@ -122,6 +148,7 @@ export function FlowNode({
         "min-w-44 rounded-lg border bg-flow-node px-3 py-2 text-flow-node-foreground shadow-sm transition-[box-shadow,border-color] duration-fast ease-standard",
         toneRing[tone],
         selected && "ring-2 ring-ring",
+        "[[data-id]:focus-visible_&]:focus-ring-static",
       )}
     >
       {data.handles ? (
