@@ -360,18 +360,54 @@ export const KeyboardFocus: Story = {
     // (`--decoration` really reads 10) before re-measuring.
     const decorationHost = group.closest<HTMLElement>("[data-decoration]") ?? canvasElement;
     const previousDecoration = decorationHost.getAttribute("data-decoration");
-    decorationHost.setAttribute("data-decoration", "10");
+    try {
+      decorationHost.setAttribute("data-decoration", "10");
+      await waitFor(() => {
+        expect(getComputedStyle(decorationHost).getPropertyValue("--decoration").trim()).toBe("10");
+      });
+      await expect(getComputedStyle(contour).opacity).toBe("1");
+      const decoratedRatio = contrast(getComputedStyle(contour).stroke, groundOf(group));
+      await expect(
+        decoratedRatio,
+        `focus contour at data-decoration="10" = ${decoratedRatio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    } finally {
+      // These hosts are shared with every other story in this page, so the
+      // restore must survive a failing assertion — otherwise one red story
+      // repaints the rest of the file and the real failure is unfindable.
+      if (previousDecoration === null) decorationHost.removeAttribute("data-decoration");
+      else decorationHost.setAttribute("data-decoration", previousDecoration);
+    }
+
+    // #297 watch. The indicator must read LIVE token references, never a colour
+    // baked at render time — a memoised hex goes stale on a theme switch while
+    // every other colour on the same element updates. Flip `data-theme` on the
+    // element that actually GOVERNS this subtree (a guessed ancestor is a silent
+    // no-op whenever the decorator wrote the attribute nearer the story), then
+    // prove both that the flip took and that the resolved ink actually moved.
+    const themeHost = group.closest<HTMLElement>("[data-theme]");
+    await expect(themeHost).not.toBe(null);
+    const previousTheme = themeHost!.getAttribute("data-theme")!;
+    const otherTheme = previousTheme === "dark" ? "light" : "dark";
+    const inkBefore = getComputedStyle(contour).stroke;
+    try {
+      themeHost!.setAttribute("data-theme", otherTheme);
+      await waitFor(() => {
+        expect(themeHost!.getAttribute("data-theme")).toBe(otherTheme);
+        expect(getComputedStyle(contour).stroke).not.toBe(inkBefore);
+      });
+      // …and it is still an indicator in the theme we switched INTO.
+      const switchedRatio = contrast(getComputedStyle(contour).stroke, groundOf(group));
+      await expect(
+        switchedRatio,
+        `focus contour after a live switch to ${otherTheme} = ${switchedRatio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    } finally {
+      themeHost!.setAttribute("data-theme", previousTheme);
+    }
     await waitFor(() => {
-      expect(getComputedStyle(decorationHost).getPropertyValue("--decoration").trim()).toBe("10");
+      expect(getComputedStyle(contour).stroke).toBe(inkBefore);
     });
-    await expect(getComputedStyle(contour).opacity).toBe("1");
-    const decoratedRatio = contrast(getComputedStyle(contour).stroke, groundOf(group));
-    await expect(
-      decoratedRatio,
-      `focus contour at data-decoration="10" = ${decoratedRatio.toFixed(2)}:1`,
-    ).toBeGreaterThanOrEqual(3);
-    if (previousDecoration === null) decorationHost.removeAttribute("data-decoration");
-    else decorationHost.setAttribute("data-decoration", previousDecoration);
 
     // Blur restores the resting state.
     await userEvent.tab();
