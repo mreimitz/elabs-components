@@ -1616,6 +1616,26 @@ export const INTENT = {
     ],
   },
 
+  // Heatmap — RM-021
+  HeatmapChart: {
+    purpose:
+      "Two discrete dimensions \u00d7 one value \u2014 weekday \u00d7 hour, product \u00d7 region, or a year of days.",
+    category: "chart",
+    relationships: { usedInside: ["ChartFrame", "ChartCard"], pairsWith: ["ChartTooltip"] },
+    stateTokens: {
+      cell: "value \u2192 an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
+      empty: "null or 0 \u2192 a QuietDot pinprick in --chart-foreground-muted, not a hole",
+      peak: "the highlighted cell \u2192 a dashed PeakRing in --chart-foreground",
+      loading: "loading \u2192 the same grid as skeleton cells in --muted",
+    },
+    antiPatterns: [
+      "steps: 0 (the continuous ramp) when the reader must compare exact values \u2014 opacity is not countable; keep the stepped ramp or turn showValues on.",
+      'emptyValue="blank" on data that contains real zeroes \u2014 a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.',
+      "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) \u2014 it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
+      'Leaning on the darkest ramp step to say "this is the peak" \u2014 colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.',
+    ],
+  },
+
   ChartLegend: {
     purpose:
       "Series key with label, value and an optional progress bar; pattern-aware under decoration.",

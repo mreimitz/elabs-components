@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:50:54.708Z",
+  "generatedAt": "2026-09-04T10:54:48.784Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18877,6 +18877,31 @@
             "Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.",
             "Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.",
             "Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view."
+          ]
+        },
+        "HeatmapChart": {
+          "purpose": "Two discrete dimensions × one value — weekday × hour, product × region, or a year of days.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartTooltip"
+            ]
+          },
+          "stateTokens": {
+            "cell": "value → an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
+            "empty": "null or 0 → a QuietDot pinprick in --chart-foreground-muted, not a hole",
+            "peak": "the highlighted cell → a dashed PeakRing in --chart-foreground",
+            "loading": "loading → the same grid as skeleton cells in --muted"
+          },
+          "antiPatterns": [
+            "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
+            "emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.",
+            "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
+            "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
           ]
         },
         "Leader": {

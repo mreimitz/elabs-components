@@ -1110,7 +1110,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Grid | component |  | `@elabs-ai/components-charts` |  |
 | HairlineFloor | component |  | `@elabs-ai/components-charts` | One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read. |
 | HaloText | component |  | `@elabs-ai/components-charts` | SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it. |
-| HeatmapChart | component |  | `@elabs-ai/components-charts` |  |
+| HeatmapChart | component |  | `@elabs-ai/components-charts` | Two discrete dimensions × one value — weekday × hour, product × region, or a year of days. |
 | Leader | component |  | `@elabs-ai/components-charts` | The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms. |
 | Legend | component |  | `@elabs-ai/components-charts` |  |
 | LegendItemComponent | component |  | `@elabs-ai/components-charts` |  |

@@ -132,7 +132,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.
   - avoid: Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.
   - avoid: Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view.
-- HeatmapChart
+- HeatmapChart — Two discrete dimensions × one value — weekday × hour, product × region, or a year of days.
+  - avoid: steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.
+  - avoid: emptyValue="blank" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.
+  - avoid: Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.
+  - avoid: Leaning on the darkest ramp step to say "this is the peak" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.
 - Leader — The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.
   - avoid: Thickening it so the connection is easier to follow — at series weight a leader stops being furniture and starts being read as data. If it is hard to follow, the label is too far away.
   - avoid: Inventing a third dash rhythm — the union is 1 3 (quiet) and 2 3 (emphatic) on purpose. Sixty-three templates each picking their own dash array is the drift this layer exists to prevent.
