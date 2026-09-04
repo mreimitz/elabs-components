@@ -99,6 +99,8 @@ export {
   WaterfallChart,
   // ParallelCoordinates — RM-034
   ParallelCoordinatesChart,
+  // Tree — RM-035
+  TreeChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -242,3 +244,5 @@ export type {
   ParallelCoordinatesChartProps,
   ParallelCoordinatesDimension,
 } from "../charts/parallel-coordinates/parallel-coordinates-chart";
+// Tree — RM-035
+export type { TreeChartProps, TreeNode } from "../charts/tree-chart";

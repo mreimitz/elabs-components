@@ -615,3 +615,11 @@ export {
   type ParallelCoordinatesLineStyle,
   type ParallelCoordinatesRow,
 } from "./parallel-coordinates";
+// Tree — RM-035
+export {
+  TreeChart,
+  type TreeChartProps,
+  type TreeNode,
+  type TreeOrientation,
+  type TreePalette,
+} from "./tree-chart";

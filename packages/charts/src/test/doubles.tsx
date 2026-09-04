@@ -100,7 +100,9 @@ export type ChartFamilyName =
   // Bump — RM-033
   | "BumpChart"
   // ParallelCoordinates — RM-034
-  | "ParallelCoordinatesChart";
+  | "ParallelCoordinatesChart"
+  // Tree — RM-035
+  | "TreeChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -286,6 +288,11 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "dimensions", numeric: true, arrayOf: { field: "key", min: 3, max: 6 } },
     ],
   },
+  // Tree — RM-035
+  TreeChart: {
+    dataKind: "hierarchy",
+    requiredProps: ["data"],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -365,6 +372,8 @@ import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 // Waterfall — RM-022
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
+// Tree — RM-035
+import type { TreeChartProps } from "../charts/tree-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -471,6 +480,12 @@ import type { ParallelCoordinatesChartProps } from "../charts/parallel-coordinat
 export const ParallelCoordinatesChart = createChartContainerDouble<ParallelCoordinatesChartProps>(
   "ParallelCoordinatesChart",
   CHART_CONTRACT_SPECS.ParallelCoordinatesChart,
+);
+
+// Tree — RM-035
+export const TreeChart = createChartContainerDouble<TreeChartProps>(
+  "TreeChart",
+  CHART_CONTRACT_SPECS.TreeChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
