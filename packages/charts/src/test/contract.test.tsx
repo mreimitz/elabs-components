@@ -327,11 +327,12 @@ describe("chart test doubles — contract violations throw", () => {
 
 describe("AutoChart's spec contract", () => {
   it("throws for a `type` outside the ChartType union", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the whole point
+    const outsideTheUnion = "sankey" as any;
     expect(() =>
       render(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the whole point
         <AutoChart
-          spec={{ type: "sankey" as any, data: [{ a: "x", b: 1 }], x: "a", series: ["b"] }}
+          spec={{ type: outsideTheUnion, data: [{ a: "x", b: 1 }], x: "a", series: ["b"] }}
         />,
       ),
     ).toThrow(/"type" must be one of/);
