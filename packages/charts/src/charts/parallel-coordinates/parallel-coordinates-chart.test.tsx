@@ -109,6 +109,39 @@ describe("buildParallelAxes (per-axis normalisation)", () => {
     expect(priceAxis?.normalize((priceAxis.min + priceAxis.max) / 2)).toBeCloseTo(0.5);
   });
 
+  // #230 sent-back — the test above only ever reads the FIRST dimension
+  // (`price` is `dims[0]`), so a mutation that derives every axis's domain
+  // from `dimensions[0]` instead of its own `dim.key` (collapsing per-axis
+  // independence) left it green. This case pins a NON-first dimension
+  // (`latency`, mismatched unit and range from `price` — a descending
+  // ms column, not a rising currency one) against LITERAL expected numbers
+  // computed by hand from the fixture formula (`200 - i * 5`, i = 0..11),
+  // never derived from `dimensionDomain` itself, so it cannot pass by
+  // agreeing with the implementation under test.
+  it("derives a NON-first axis's domain from its OWN column, not the first dimension's", () => {
+    const rows = buildParallelRows(products, "product", dims);
+    const axes = buildParallelAxes(dims, rows);
+    const latencyAxis = axes.find((a) => a.key === "latency");
+    // latency = 200 - i * 5 for i = 0..11 → min 145 (i=11), max 200 (i=0).
+    // Deliberately NOT price's domain ([10, 87]) — if it were, the axis
+    // collapsed onto the wrong column.
+    expect(latencyAxis?.min).toBe(145);
+    expect(latencyAxis?.max).toBe(200);
+    expect(latencyAxis?.normalize(145)).toBeCloseTo(0);
+    expect(latencyAxis?.normalize(200)).toBeCloseTo(1);
+    expect(latencyAxis?.normalize(172.5)).toBeCloseTo(0.5);
+
+    // A third, independently mismatched-unit axis (a 0-100 score band, not a
+    // currency or a millisecond count) for the same property.
+    const npsAxis = axes.find((a) => a.key === "nps");
+    // nps = 30 + i * 3 for i = 0..11 → min 30 (i=0), max 63 (i=11).
+    expect(npsAxis?.min).toBe(30);
+    expect(npsAxis?.max).toBe(63);
+    expect(npsAxis?.normalize(30)).toBeCloseTo(0);
+    expect(npsAxis?.normalize(63)).toBeCloseTo(1);
+    expect(npsAxis?.normalize(46.5)).toBeCloseTo(0.5);
+  });
+
   it("honours an explicit domain over the data's own min/max", () => {
     const rows = buildParallelRows(products, "product", dims);
     const axes = buildParallelAxes([{ key: "price", domain: [0, 100] }], rows);
