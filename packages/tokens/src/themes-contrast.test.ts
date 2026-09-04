@@ -656,14 +656,73 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // both reference themes the ring IS that fill — so without this row the
     // indicator around the one control the alias affects most would be
     // unmeasured (issue #67's first acceptance criterion).
-    const INDICATOR_SURFACES = [...MARK_SURFACES, "--primary"] as const;
+    //
+    // THE INVERSE-INK GROUNDS ARE IN THE LIST TOO (#67 fix round 2). A focus
+    // indicator is not confined to the mark surfaces: a sidebar nav button, a
+    // terminal composer, a chat bubble and a flow node are all Tab stops, and on
+    // `light` several of those grounds are DARK (`--sidebar` is 0.30,
+    // `--terminal-background` 0.24). There the deep contour vanishes and the
+    // brand ring alone carries the indicator — which is correct and comfortable
+    // today, and was measured before this row was written. The gap this closes
+    // is that nothing asserted it: a future `--primary` retune that kept the
+    // five mark surfaces green could go quiet on the sidebar and no gate would
+    // notice. `max(ring, contour)` is exactly the right shape for these grounds,
+    // because which layer does the work is the per-theme answer the token is
+    // there to carry.
+    const INDICATOR_SURFACES = [
+      ...MARK_SURFACES,
+      "--primary",
+      "--sidebar",
+      "--terminal-background",
+      "--chat-user",
+      "--chat-assistant",
+      "--flow-node",
+      "--canvas",
+    ] as const;
+    //
+    // ONE DECLARED, MEASURED CARVE-OUT — `:root` on the terminal ground.
+    // `:root` is the neutral light fallback a consumer who imports no theme
+    // stylesheet inherits. Its ring is a mid blue (`oklch(0.45 0.21 264)`) and
+    // its contour is a near-black blue (`oklch(0.22 0.02 264)`), both tuned for
+    // a white page; against `:root`'s very dark terminal ground
+    // (`oklch(0.15 0.018 264)`) they measure 2.49:1 and 1.14:1. So on that ONE
+    // pairing the indicator has no layer that clears 3:1.
+    //
+    // This is PRE-EXISTING and is not something #67 introduced — before the
+    // compound indicator the same ring measured the same 2.49:1 there, with no
+    // second layer at all. It is carried here rather than silently dropped from
+    // the surface list, and it is not a licence: the repair is either a `:root`
+    // ring retune (a fallback-wide token-value change that needs its own
+    // cross-theme sweep) or the terminal region retargeting its ring through
+    // the sanctioned `[--focus-ring-color:…]` seam. Both reference themes pass
+    // this surface, so nothing that ships a theme is affected.
+    const INDICATOR_SURFACE_EXEMPT: Record<string, readonly string[]> = {
+      root: ["--terminal-background"],
+    };
+    const exempt = (surface: string) => (INDICATOR_SURFACE_EXEMPT[theme] ?? []).includes(surface);
+
     it.each(INDICATOR_SURFACES)(
       "compound focus indicator ≥ 3:1 on %s (WCAG 1.4.11 / 2.4.7)",
       (surface) => {
         const ring = contrast(token(theme, "--ring"), token(theme, surface));
         const contour = contrast(token(theme, "--ring-contour"), token(theme, surface));
+        const best = Math.max(ring, contour);
+        if (exempt(surface)) {
+          // The carve-out is asserted in the INVERSE, the shape
+          // `CHART_1411_EXEMPT` already uses: it fails the day it stops
+          // excusing anything, so a retune that fixes the pairing cannot leave
+          // a stale exemption behind claiming a failure that no longer exists.
+          expect(
+            best,
+            `focus indicator vs ${surface} in ${theme} now measures ` +
+              `${best.toFixed(2)} — it clears 3:1, so the declared carve-out is ` +
+              `stale. Delete this theme/surface pair from ` +
+              `INDICATOR_SURFACE_EXEMPT.`,
+          ).toBeLessThan(AA_NONTEXT);
+          return;
+        }
         expect(
-          Math.max(ring, contour),
+          best,
           `focus indicator vs ${surface} in ${theme}: ring = ${ring.toFixed(2)}, ` +
             `contour = ${contour.toFixed(2)} — neither layer clears 3:1, so the ` +
             `indicator has no visible edge on this surface`,

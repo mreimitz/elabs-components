@@ -506,7 +506,7 @@ export const TerminalComposer = forwardRef<HTMLDivElement, TerminalComposerProps
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             placeholder={placeholder ?? t("terminal.composer.placeholder")}
-            className="field-sizing-content max-h-48 min-h-10 resize-none border-0 bg-transparent p-0 text-code text-terminal-foreground shadow-none caret-terminal-cursor placeholder:text-terminal-muted focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="field-sizing-content max-h-48 min-h-10 resize-none border-0 bg-transparent p-0 text-code text-terminal-foreground shadow-none caret-terminal-cursor placeholder:text-terminal-muted focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
 

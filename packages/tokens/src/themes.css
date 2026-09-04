@@ -1822,8 +1822,22 @@
        gets the contour on the OUTER edge of its ring instead of underneath it.
        Unset, that variable resolves to its registered `0px` initial value.
 
-   Nothing here animates, so there is no motion to neutralize: the indicator
-   appears and disappears with `:focus-visible` and never transitions.
+   WHY THE CONTOUR'S COLOUR IS ALSO DECLARED AT REST. Tailwind v4's
+   `transition-colors` includes `outline-color` in its `transition-property`
+   list. The ring is a `box-shadow` and is NOT in that list, so on any element
+   that also carries `transition-colors` — every `sidebar-menu-button`, the flow
+   `zoom-controls` — the ring used to snap in while the contour animated from
+   `outline-color`'s initial `currentColor`: measured on
+   `patterns-templates-enterprise-admin-console--default` [light] immediately
+   after `Tab`, the contour resolved to `oklch(0.3 0.021 257)` (the element's own
+   text ink) and only reached `oklch(0.4 0.06 116.5)` a `duration-fast` later, so
+   the first frames of every focus move painted a dark-grey hairline around a
+   lime ring. Declaring `outline-color: var(--ring-contour)` OUTSIDE the state
+   selector fixes it at the utility instead of at ~125 call sites: the colour is
+   already its final value at rest, so the state change has nothing to animate.
+   Only `outline-style`/`outline-width`/`outline-offset` flip on focus, and none
+   of them is a `transition-colors` property. Nothing else here animates — the
+   indicator appears and disappears with its state selector.
 
    FIVE FLAVOURS, one indicator. They differ ONLY in the trigger and the
    geometry — same two layers, same two tokens, same contract:
@@ -1866,12 +1880,39 @@
    silently moving to `--ring`. The CONTOUR is deliberately NOT retargetable —
    there is one contour token per theme and no call site needs a second.
 
+   INVERSE-INK GROUNDS ARE SINGLE-LAYER BY DESIGN, AND THAT IS ASSERTED.
+   On a dark region inside a light theme — the sidebar (`--sidebar`), a terminal
+   surface (`--terminal-background`), a flow canvas — the deep contour is
+   invisible and the indicator degrades to the brand ring alone. That is correct:
+   the lime carries the mark comfortably on a 0.24-0.30 ground. It is not left to
+   luck, though: `themes-contrast.test.ts`'s `INDICATOR_SURFACES` row measures
+   `max(ring, contour) >= 3:1` against those grounds too, so a future `--primary`
+   retune that stays legible on the mark surfaces but goes quiet on the sidebar
+   still fails.
+
    Anything else — a SELECTION marker (`ring-2 ring-ring` on a selected flow node
    or colour swatch) — is not a focus indicator and is deliberately not swept
    into these utilities.
+
+   NEVER RE-DECLARE `outline-*` ON AN ELEMENT CARRYING ONE OF THESE UTILITIES.
+   Tailwind's `outline-none` sets `--tw-outline-style: none` and its
+   `outline-<width>` re-declares `outline-style: var(--tw-outline-style)` — so a
+   class string that pairs `focus-ring-static` with `outline-1` silently paints
+   the ring and drops the contour (`InputGroup` shipped exactly that, #67 fix
+   round 2). The utility owns both layers; adjust the geometry with
+   `ring-offset-*`, which `outline-offset` already tracks.
+
+   A CONTROL THAT DELEGATES ITS INDICATOR TO A WRAPPER MUST DROP BOTH LAYERS.
+   `focus-visible:ring-0 focus-visible:ring-offset-0` alone leaves the contour
+   behind — an inner hairline drawn ~10px inside the wrapper's ring, at a
+   different radius, which reads as a stray rectangle rather than a focus mark.
+   Pair it with `focus-visible:outline-none`; the wrapper's `focus-ring-within`
+   / `has-[…:focus-visible]:focus-ring-static` is the replacement indicator, so
+   this is not a bare `outline: none`.
    --------------------------------------------------------------------------- */
 
 @utility focus-ring {
+  outline-color: var(--ring-contour);
   &:focus-visible {
     @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
     outline: 1px solid var(--ring-contour);
@@ -1880,6 +1921,7 @@
 }
 
 @utility focus-ring-within {
+  outline-color: var(--ring-contour);
   &:focus-within {
     @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
     outline: 1px solid var(--ring-contour);
@@ -1888,6 +1930,7 @@
 }
 
 @utility focus-ring-inset {
+  outline-color: var(--ring-contour);
   &:focus-visible {
     @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
     outline: 1px solid var(--ring-contour);

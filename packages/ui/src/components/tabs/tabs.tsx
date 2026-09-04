@@ -142,7 +142,13 @@ export const TabsTrigger = forwardRef<
       ref={mergedRef}
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-colors duration-fast",
-        "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        // `ring-offset-1`, not `-2`: the compound indicator's reach is
+        // `ring-offset` + 2px ring + 1px contour, and `TabsList` is an
+        // `overflow-x-auto` strip with `p-1` (4px). At offset 2 the reach is 5px
+        // and the scroll box clips the contour on three sides (#67 fix round 2,
+        // measured on `patterns-templates-object-detail-hub--default` tab stop
+        // 9); at offset 1 it is exactly 4px and the loop closes.
+        "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         "disabled:pointer-events-none disabled:opacity-50",
         "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         className,

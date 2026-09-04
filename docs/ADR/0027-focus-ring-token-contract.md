@@ -133,6 +133,40 @@ the ring another way (`ring-sidebar-ring`, `outline-ring`, `stroke-ring`,
 `stroke="var(--ring)"`, or a JS boolean) were found only on review. A future sweep
 should enumerate by TOKEN, not by class string.
 
+### The indicator is SINGLE-LAYER on inverse-ink grounds, by design and by assertion
+
+A focus indicator is not confined to the five mark surfaces. A sidebar nav
+button, a terminal composer, a chat bubble and a flow node are all Tab stops,
+and inside a LIGHT theme several of those grounds are dark — `light` ships
+`--sidebar: oklch(0.3 0.021 257)` and `--terminal-background: oklch(0.24 0.016
+257)`. There the deep contour is invisible and the compound indicator degrades
+to the brand ring alone. **That is correct, not a defect:** the lime measures
+comfortably above 3:1 on a 0.24–0.30 ground, and which layer does the work is
+exactly the per-theme answer `--ring-contour` exists to carry.
+
+What changed in fix round 2 is that it is now **asserted** rather than assumed.
+`themes-contrast.test.ts`'s `INDICATOR_SURFACES` row covers `--sidebar`,
+`--terminal-background`, `--chat-user`, `--chat-assistant`, `--flow-node` and
+`--canvas` alongside the mark surfaces and `--primary`, still as
+`max(ring, contour) ≥ 3:1`. Without it, a future `--primary` retune that stayed
+legible on the mark surfaces could go quiet on the sidebar with every gate
+green.
+
+Extending the row surfaced one genuine, **pre-existing** below-bar pairing, which
+is carried as a named carve-out rather than dropped: `:root` (the neutral light
+fallback a consumer inherits when they import no theme stylesheet) measures
+2.49:1 for its blue ring and 1.14:1 for its near-black contour against its own
+`--terminal-background` (`oklch(0.15 0.018 264)`). Both of `:root`'s layers are
+tuned for a white page, so neither carries a very dark ground. #67 did not
+introduce this — before the compound indicator the same ring measured the same
+2.49:1 there, with no second layer at all. The carve-out is asserted in the
+INVERSE (the shape `CHART_1411_EXEMPT` already uses): the suite fails the day the
+pairing clears 3:1, so it cannot go stale. The repair is either a `:root` ring
+retune — a fallback-wide token-value change that needs its own cross-theme
+sweep — or the terminal region retargeting its ring through the sanctioned
+`[--focus-ring-color:…]` seam. Both reference themes pass this surface, so
+nothing that ships a theme is affected.
+
 ## Amendment (2026-08-16) — the reference themes now alias `--ring: var(--primary)`
 
 **Clauses 1 and 3 of the Decision below no longer describe what ships**, and the

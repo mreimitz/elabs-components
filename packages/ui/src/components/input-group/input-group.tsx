@@ -7,12 +7,21 @@ import { Textarea } from "../textarea";
 
 export const inputGroupVariants = cva(
   cn(
-    "group/input-group relative flex w-full flex-wrap items-center rounded-md outline-none transition-[color,box-shadow] duration-fast ease-standard",
+    "group/input-group relative flex w-full flex-wrap items-center rounded-md transition-[color,box-shadow] duration-fast ease-standard",
     // Grow to fit a textarea even when it's nested (e.g. wrapped in a
     // `display:contents` body like PromptInputBody). `:has(>textarea)`
     // misses through that wrapper, so match any descendant textarea.
     "h-9 has-[textarea]:h-auto",
-    "has-[[data-slot=input-group-control]:focus-visible]:focus-ring-static has-[[data-slot=input-group-control]:focus-visible]:ring-offset-1 has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background has-[[data-slot=input-group-control]:focus-visible]:outline-1 has-[[data-slot=input-group-control]:focus-visible]:outline-ring-contour has-[[data-slot=input-group-control]:focus-visible]:outline-offset-[3px]",
+    // The compound indicator is the wrapper's, not the control's — the control
+    // is borderless and full-bleed, so a ring around IT would draw inside the
+    // well. `focus-ring-static` paints BOTH layers; the only geometry knob is
+    // `ring-offset-1`, which `outline-offset: calc(--tw-ring-offset-width + 2px)`
+    // tracks so ring and contour stay flush at the same radius. Do NOT add an
+    // `outline-*` utility here: `outline-1` re-declares
+    // `outline-style: var(--tw-outline-style)`, which `outline-none` on this
+    // same element used to pin to `none` — that pairing shipped, and it cancelled
+    // the contour on every composer, NumberInput and TagInput (#67 fix round 2).
+    "has-[[data-slot=input-group-control]:focus-visible]:focus-ring-static has-[[data-slot=input-group-control]:focus-visible]:ring-offset-1 has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background",
     "has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-destructive",
   ),
   {
@@ -144,7 +153,7 @@ export const InputGroupInput = forwardRef<HTMLInputElement, ComponentProps<typeo
         ref={ref}
         data-slot="input-group-control"
         className={cn(
-          "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
+          "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
           className,
         )}
         {...props}
@@ -160,7 +169,7 @@ export const InputGroupTextarea = forwardRef<HTMLTextAreaElement, ComponentProps
         ref={ref}
         data-slot="input-group-control"
         className={cn(
-          "flex-1 resize-none rounded-none border-0 bg-transparent py-2.5 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
+          "flex-1 resize-none rounded-none border-0 bg-transparent py-2.5 shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
           className,
         )}
         {...props}
