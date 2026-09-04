@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:51:23.086Z",
+  "generatedAt": "2026-09-04T10:55:28.299Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15547,7 +15547,7 @@
               "name": "features",
               "optional": true,
               "type": "ChartFrameFeature[]",
-              "description": "Which toolbar controls to show. Defaults to all three. `table` and `download` are automatically hidden when `data` is absent/empty."
+              "description": "Which toolbar controls to show. Defaults to all five. `table` and `download` are automatically hidden when `data` is absent/empty; `export-svg`/`export-png` are automatically hidden when the chart body has no `<svg>` (a non-chart placeholder, or the flipped-to-table view)."
             },
             {
               "name": "height",
@@ -15574,10 +15574,16 @@
               "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @elabs-ai/components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
             },
             {
+              "name": "onExport",
+              "optional": true,
+              "type": "(kind: ChartExportKind, blob: Blob, filename: string) => void",
+              "description": "Routes an SVG/PNG export to the caller — with the generated `Blob` and filename — instead of triggering a local browser download. Mirrors `onDownload`, for apps that want to route an export through their own storage. When absent, the built-in handler downloads the file directly."
+            },
+            {
               "name": "source",
               "optional": true,
               "type": "ReactNode",
-              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV. Hidden when absent."
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent."
             },
             {
               "name": "children",

@@ -70,6 +70,22 @@ When `data` is absent or empty, `table` and `download` controls are
 automatically hidden — only `expand` remains. This prevents broken UX when a
 chart has no associated tabular data.
 
+`export-svg`/`export-png` degrade on a **different** signal — `state.hasSvg`,
+detected at runtime (a `MutationObserver` on the chart body, since the chart's
+`<svg>` isn't guaranteed synchronously present) rather than `hasData` — so a
+chart with a rendered `<svg>` but no `data`/`columns` can still export, and a
+non-SVG chart body (or the flipped table view) hides both controls. See
+`export-svg.ts` (RM-042): the exported SVG is made self-contained by reading
+`getComputedStyle` on the source tree at export time and writing every
+resolved value onto BOTH the clone's inline `style` and its presentation
+ATTRIBUTE (`cloneNode` copies attribute text verbatim, so patching only
+`style` leaves a literal `var(--…)` in the serialized string even though it
+would paint correctly) — `transition`/`animation` are stripped outright, not
+inlined, since motion tokens have no place in a static export. PNG export
+rasterizes the same built SVG onto a canvas at a fixed 2× pixel ratio
+(deliberately not the exporting device's own `devicePixelRatio`, for
+deterministic output) with the card's resolved background painted in.
+
 ## Test double (issue #364)
 
 `@visx/*` (SVG measurement — `ParentSize`/`ResizeObserver`, `getTotalLength()`, …)
