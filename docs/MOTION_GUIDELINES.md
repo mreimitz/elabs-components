@@ -98,6 +98,45 @@ Reach for these instead of hand-rolling — they're gated and reduced-motion-saf
 - **Overlays** (Dialog, Sheet, Popover, Tooltip, Dropdown, Accordion) already
   animate via Radix `data-state` + the gated `--tw-duration`/`--tw-ease`.
 
+## Chart reveal & stagger timing (RM-020)
+
+Four `:root`-only tokens in `packages/tokens/src/themes.css`, read by
+`packages/charts/src/charts/animation.ts` via `getComputedStyle` (SSR-safe —
+falls back to the literal below when there is no `document`, or the token
+isn't set). Provenance: lieflat gap analysis,
+`docs/review/2026-09-04-lieflat-charts-gap-analysis.md` §1(7) / §5 C4.
+
+| Token                   | Value  | Use                                             |
+| ----------------------- | ------ | ----------------------------------------------- |
+| `--t-chart-stagger-dot` | 12ms   | per-dot stagger delay (scatter/point markers)   |
+| `--t-chart-stagger-bar` | 100ms  | per-bar stagger delay                           |
+| `--t-chart-enter`       | 900ms  | default chart reveal-in-view enter duration     |
+| `--t-chart-enter-slow`  | 1200ms | slow/denser chart reveal-in-view enter duration |
+
+**Naming deviates from the roadmap's literal spec, on purpose.** RM-020
+originally named these `--chart-stagger-dot` / `--chart-stagger-bar` /
+`--chart-enter` / `--chart-enter-slow` (no `t-` prefix). `--chart-*` is
+already a real **per-theme** prefix (`--chart-1`…`--chart-12`,
+`--chart-background`, …), so the unprefixed names failed
+`pnpm theme-parity:check` (missing from every `[data-theme="…"]` block) —
+these are `:root`-only timing machinery, not a per-theme color semantic. They
+were renamed to `--t-chart-*` to land in the `ROOT_ONLY_RE` allowlist in
+`scripts/check-theme-parity.mjs`, the same exemption `--t-fast`/`--t-base`
+already use. Not multiplied through `--motion-factor` — a chart already has
+its own reduced-motion path (`animating=false`, driven by the consumer), kept
+independent of the app-wide gate.
+
+**Reveal in view for anything below the fold.** A chart mounted off-screen
+(a dashboard tile several scrolls down, a report section) should hold its
+enter reveal at width 0 until it's actually visible, rather than firing
+uselessly under content nobody has scrolled to yet — `ChartRevealClip`'s
+`revealOn="inView"` (default `"mount"`, no behaviour change) does this via
+`motion`'s `useInView(viewportRef, { amount: 0.3, once: true })`. Pair with
+`replayOnClick` to let a user re-trigger the reveal for emphasis — it must
+never swallow a datapoint's own click handling (`shouldReplayOnClick`). See
+`Charts/Reveal/InView` in Storybook and
+`packages/charts/src/charts/chart-reveal-clip.tsx`.
+
 ## Theme default (requirement: per-theme enable/disable)
 
 A theme enables/disables motion by overriding **only** `--motion-factor` in its

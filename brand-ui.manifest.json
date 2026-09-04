@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T19:08:01.571Z",
+  "generatedAt": "2026-09-04T09:00:22.750Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 204,
+  "tokenCount": 208,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -211,6 +211,10 @@
     "--t-base",
     "--t-slow",
     "--t-slower",
+    "--t-chart-stagger-dot",
+    "--t-chart-stagger-bar",
+    "--t-chart-enter",
+    "--t-chart-enter-slow",
     "--brand-mark-ring",
     "--brand-mark-tail"
   ],
@@ -15513,6 +15517,36 @@
               "optional": true,
               "type": "() => void",
               "description": "Called when a conceal animation finishes."
+            },
+            {
+              "name": "revealOn",
+              "optional": true,
+              "type": "ChartRevealOn",
+              "description": "When the enter reveal (`mode=\"reveal\"` only) is allowed to play. `\"mount\"` (default) is byte-identical to pre-RM-020 behaviour — it plays as soon as this component renders. `\"inView\"` holds the clip at width 0 (series fully hidden, nothing animating) until `viewportRef`'s element scrolls to `amount: 0.3` in the viewport, then plays once. Requires `viewportRef` — without one this degrades to `\"mount\"` (with a dev-only console warning) rather than silently never revealing."
+            },
+            {
+              "name": "viewportRef",
+              "optional": true,
+              "type": "RefObject<Element | null>",
+              "description": "Element observed for `revealOn=\"inView\"`, and — when `replayOnClick` is set — listened to for replay clicks. Typically the chart's outer container (`ChartContextValue.containerRef`)."
+            },
+            {
+              "name": "replayOnClick",
+              "optional": true,
+              "type": "boolean",
+              "description": "Clicking `viewportRef`'s element replays the enter reveal. Default `false`. Pass `shouldReplayOnClick` to ignore clicks that already mean something else (e.g. a datapoint activation) — this option exists precisely so a caller can guarantee `replayOnClick` never swallows `onDatapointClick`; with no predicate every click on the element replays."
+            },
+            {
+              "name": "shouldReplayOnClick",
+              "optional": true,
+              "type": "(event: MouseEvent) => boolean",
+              "description": "Return `false` to ignore a click for replay purposes."
+            },
+            {
+              "name": "onEnterPlay",
+              "optional": true,
+              "type": "() => void",
+              "description": "Fires each time the enter reveal actually starts playing — on mount (`revealOn=\"mount\"`, or immediately if `viewportRef` is already in view), the first time `viewportRef` scrolls into view, and on every replay (`revealEpoch` bump or `replayOnClick`). Never fires for `mode=\"conceal\"` or while `animating` is false. Exists for observability (tests, a `Charts/Reveal/InView` story) — nothing in the component depends on it."
             }
           ]
         },
