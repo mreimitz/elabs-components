@@ -3081,6 +3081,34 @@ export const INTENT = {
       "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.",
     ],
   },
+
+  // NetworkChart — RM-036
+  NetworkChart: {
+    purpose:
+      "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartLegend", "DataTable"],
+    },
+    stateTokens: {
+      node: "--chart-1 … --chart-12 by group via resolvePalette (categorical at or under 6 groups, mono above); the mark is stroked in the paper colour (--chart-background) so touching nodes still read apart",
+      link: "--chart-grid hairlines at 0.35 opacity, width scaled by the link's own value",
+      emphasis:
+        "hover/focus dims non-neighbours to opacity 0.12 and non-incident links to 0.03 — a CLASS on each <g>, transitioned on the compositor, so no node re-renders per frame",
+      label:
+        "HaloText in the chart-source type role, punched from var(--chart-background); drawn only at or above labelThreshold",
+      focus:
+        "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared interactive focus ring (the --ring token, shown only on :focus-visible); one tab stop, arrows across the rest",
+    },
+    antiPatterns: [
+      'Reading a force layout\'s POSITIONS as data — only adjacency is encoded; distance, direction and the picture\'s orientation are artefacts of the solver\'s seed. Use layout="circular" or "arc" whenever position must mean something.',
+      "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.",
+      'Reaching for layout="arc" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.',
+      "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
+      "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.",
+    ],
+  },
 };
 
 /**

@@ -1011,7 +1011,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "ISC",
     copyright: "Mike Bostock",
     url: "https://www.npmjs.com/package/d3-force",
-    usedBy: ["@elabs-ai/components-flow"],
+    usedBy: ["@elabs-ai/components-charts", "@elabs-ai/components-flow"],
     required: false,
     note: null,
   },

@@ -96,7 +96,9 @@ export type ChartFamilyName =
   // DistributionChart — RM-026
   | "DistributionChart"
   // Waterfall — RM-022
-  | "WaterfallChart";
+  | "WaterfallChart"
+  // Network — RM-036
+  | "NetworkChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -252,6 +254,22 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "groupKey", numeric: false },
     ],
   },
+  // Network — RM-036
+  // A graph is TWO arrays that reference each other, so the primary data prop
+  // is `nodes` and the edge list gets the relational check (`edgeProp`) — an
+  // edge naming a node that is not in `nodes` is the failure a mocked test
+  // would otherwise never see. Deliberately NOT `hasStatus`: this family has no
+  // `status` prop, so an empty `nodes` array is a violation, not a loading
+  // state.
+  NetworkChart: {
+    dataProp: "nodes",
+    dataKind: "array",
+    requiredProps: ["nodes", "links", "layout"],
+    itemRequiredKeys: ["id"],
+    itemNumericKeys: ["value"],
+    numericProps: ["labelThreshold", "maxNodes", "seed"],
+    edgeProp: { prop: "links" },
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -331,6 +349,8 @@ import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 // Waterfall — RM-022
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
+// Network — RM-036
+import type { NetworkChartProps } from "../charts/network/network-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -421,6 +441,12 @@ export const DistributionChart = createChartContainerDouble<DistributionChartPro
 export const WaterfallChart = createChartContainerDouble<WaterfallChartProps>(
   "WaterfallChart",
   CHART_CONTRACT_SPECS.WaterfallChart,
+);
+
+// Network — RM-036
+export const NetworkChart = createChartContainerDouble<NetworkChartProps>(
+  "NetworkChart",
+  CHART_CONTRACT_SPECS.NetworkChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

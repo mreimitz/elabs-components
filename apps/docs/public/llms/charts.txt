@@ -88,6 +88,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_CONFIG
 - DEFAULT_CHART_LIFECYCLE
 - DEFAULT_CHART_STATUS
+- DEFAULT_CIRCULAR_CURVENESS
+- DEFAULT_FORCE_SEED
 - DEFAULT_HEATMAP_STEPS
 - DEFAULT_HOVER_OFFSET
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
@@ -110,6 +112,9 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.
   - avoid: Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.
   - avoid: Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.
+- FORCE_ALPHA_MIN
+- FORCE_GRAVITY
+- FORCE_TICK_BUDGET
 - FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
   - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
   - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.
@@ -191,6 +196,17 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Numbers without tabular-nums — figures jitter across the row.
   - avoid: Re-declaring a KPI tile locally — MetricCard is owned by @elabs-ai/components-ui and re-exported here (ADR 0012).
 - MIN_DATAPOINT_TARGET_SIZE
+- NETWORK_DEFAULT_MAX_NODES
+- NETWORK_DEFAULT_NODE_RADIUS
+- NETWORK_MAX_NODE_RADIUS
+- NETWORK_MIN_NODE_RADIUS
+- NETWORK_PADDING
+- NetworkChart — A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.
+  - avoid: Reading a force layout's POSITIONS as data — only adjacency is encoded; distance, direction and the picture's orientation are artefacts of the solver's seed. Use layout="circular" or "arc" whenever position must mean something.
+  - avoid: Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.
+  - avoid: Reaching for layout="arc" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.
+  - avoid: Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.
+  - avoid: Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.
 - PatternArea
 - PatternCircles
 - PatternHexagons
