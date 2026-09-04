@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:46:17.789Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13115,6 +13115,36 @@
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
         },
         {
+          "name": "TREEMAP_BAND_COLOR",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_CATEGORICAL_GROUP_CAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_MAX_LEAVES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_MONO_LEAF_COLOR",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_TITLE_BAND_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
           "name": "UnitStack",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -14089,6 +14119,38 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "TreemapChartProps",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapGroupDatum",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapLayoutOptions",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapLayoutResult",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapLeafDatum",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapNode",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapPalette",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapRect",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
           "name": "UnitStackDirection",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -14161,6 +14223,10 @@
         {
           "name": "computeGanttZoomBounds",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "computeTreemapLayout",
+          "module": "packages/charts/src/charts/treemap/index.ts"
         },
         {
           "name": "computeYDomainsByAxis",
@@ -14341,6 +14407,10 @@
         {
           "name": "stagger",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "validateTreemapData",
+          "module": "packages/charts/src/charts/treemap/index.ts"
         },
         {
           "name": "viewModeToScales",

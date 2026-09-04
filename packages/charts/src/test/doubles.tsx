@@ -86,7 +86,9 @@ export type ChartFamilyName =
   | "RadarChart"
   | "ChoroplethChart"
   | "SankeyChart"
-  | "Gantt";
+  | "Gantt"
+  // Treemap — RM-025
+  | "TreemapChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -185,6 +187,11 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
   },
+  // Treemap — RM-025
+  TreemapChart: {
+    dataKind: "hierarchy",
+    requiredProps: ["data"],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -255,6 +262,8 @@ import type { RadarChartProps } from "../charts/radar-chart";
 import type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
+// Treemap — RM-025
+import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -309,6 +318,11 @@ export const SankeyChart = createChartContainerDouble<SankeyChartProps>(
   CHART_CONTRACT_SPECS.SankeyChart,
 );
 export const Gantt = createChartContainerDouble<GanttProps>("Gantt", CHART_CONTRACT_SPECS.Gantt);
+// Treemap — RM-025
+export const TreemapChart = createChartContainerDouble<TreemapChartProps>(
+  "TreemapChart",
+  CHART_CONTRACT_SPECS.TreemapChart,
+);
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
 

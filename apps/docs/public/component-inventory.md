@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 142 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 148 | 32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1175,6 +1175,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
 | Sparkline | component |  | `@elabs-ai/components-charts` | Tiny, axis-less trend that lives inside a KPI tile or a table cell. |
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_BAND_COLOR | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_CATEGORICAL_GROUP_CAP | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_MAX_LEAVES | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_MONO_LEAF_COLOR | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_TITLE_BAND_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
+| TreemapChart | component |  | `@elabs-ai/components-charts` |  |
 | UnitStack | component |  | `@elabs-ai/components-charts` | n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random. |
 | useActivateDatapoint | hook |  | `@elabs-ai/components-charts` |  |
 | useActiveMarkers | hook |  | `@elabs-ai/components-charts` |  |
