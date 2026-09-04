@@ -7,6 +7,7 @@ import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
 import {
   Children,
+  cloneElement,
   forwardRef,
   isValidElement,
   memo,
@@ -31,12 +32,14 @@ import {
 } from "./chart-datapoint-layer";
 import {
   defaultPieColors,
+  pieCssVars,
   pieDatapointTarget,
   type PieArcData,
   type PieContextValue,
   type PieData,
   PieProvider,
 } from "./pie-context";
+import type { PieSliceProps } from "./pie-slice";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecorationOf } from "./use-high-decoration";
 
@@ -105,6 +108,27 @@ export interface PieChartProps {
    * Uses plain SVG paths instead of Motion `d` / spring hover morphing.
    */
   geometryScrubbing?: boolean;
+  /**
+   * Second measure driving each slice's OUTER radius — angle × radius double
+   * encoding (lieflat G13 "Big Slice", #RM-030). Reads `data[i][radiusKey]`
+   * as a number; `outerRadius = innerRadius + (R - innerRadius) *
+   * sqrt(v / max)` (area-honest — equal AREA differences read as equal
+   * magnitude differences, not equal radius differences). A slice whose
+   * value is missing/non-numeric — or every slice, when `radiusKey` is
+   * unset — renders at the chart's full outer radius, today's behavior.
+   */
+  radiusKey?: string;
+  /**
+   * Dashed reference rings (in `radiusKey`'s units) with small value labels
+   * — e.g. `[15, 30, 45]` for a "minutes/day" second measure. No-op when
+   * `radiusKey` is unset.
+   */
+  referenceRings?: number[];
+  /**
+   * Paper-seam stroke (px) drawn between slices — the lieflat "3px paper
+   * seam" cut-paper look. Default: `0` (no seam — today's behavior).
+   */
+  seams?: number;
 }
 
 interface PieChartInnerProps {
@@ -124,6 +148,9 @@ interface PieChartInnerProps {
   enterTransition?: Transition;
   enterStaggerScale: number;
   geometryScrubbing: boolean;
+  radiusKey?: string;
+  referenceRings?: number[];
+  seams: number;
 }
 
 function generatePieArcPath(
@@ -154,12 +181,19 @@ function isPieCenter(child: ReactNode): boolean {
 }
 
 function isPieSlice(child: ReactNode): boolean {
-  return (
-    isValidElement(child) &&
-    typeof child.type === "function" &&
-    ((child.type as { displayName?: string }).displayName === "PieSlice" ||
-      (child.type as { name?: string }).name === "PieSlice")
-  );
+  // `PieSlice` is `memo()`-wrapped, so `child.type` is an OBJECT
+  // (`$$typeof: react.memo`), not a function — a `typeof === "function"`
+  // guard here would never match a real `<PieSlice>` element. Read
+  // displayName/name off whatever `child.type` is instead of gating on its
+  // typeof.
+  if (!isValidElement(child)) {
+    return false;
+  }
+  const type = child.type as { displayName?: string; name?: string } | string;
+  if (typeof type === "string") {
+    return false;
+  }
+  return type.displayName === "PieSlice" || type.name === "PieSlice";
 }
 
 // Helper to check if a component is a gradient or pattern definition
@@ -203,6 +237,9 @@ const PieChartCore = memo(function PieChartCore({
   enterTransition,
   enterStaggerScale,
   geometryScrubbing,
+  radiusKey,
+  referenceRings,
+  seams,
 }: PieChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
@@ -237,6 +274,32 @@ const PieChartCore = memo(function PieChartCore({
   // Decoration pattern fills
   const high = useHighDecorationOf(containerRef);
   const patternScope = useId().replace(/:/g, "");
+
+  // radiusKey (#RM-030) — the max value of the second measure across `data`,
+  // used to normalize every slice's radius scale. 0 when radiusKey is unset
+  // or every value is missing/non-positive (in which case no slice scales).
+  const radiusKeyMax = useMemo(() => {
+    if (!radiusKey) return 0;
+    return data.reduce((max, d) => {
+      const raw = (d as unknown as Record<string, unknown>)[radiusKey];
+      const v = typeof raw === "number" ? raw : Number(raw);
+      return Number.isFinite(v) && v > max ? v : max;
+    }, 0);
+  }, [data, radiusKey]);
+
+  // Per-slice outer radius (area-honest: innerR + (R - innerR) * sqrt(v / max)).
+  // `null` means "no override" — every slice renders at the uniform outerRadius,
+  // which is exactly today's behavior when `radiusKey` is unset.
+  const sliceOuterRadii = useMemo(() => {
+    if (!radiusKey || radiusKeyMax <= 0) return null;
+    return data.map((d) => {
+      const raw = (d as unknown as Record<string, unknown>)[radiusKey];
+      const v = typeof raw === "number" ? raw : Number(raw);
+      const clean = Number.isFinite(v) && v > 0 ? v : 0;
+      const ratio = Math.sqrt(clean / radiusKeyMax);
+      return innerRadius + (outerRadius - innerRadius) * ratio;
+    });
+  }, [data, radiusKey, radiusKeyMax, innerRadius, outerRadius]);
 
   // Get color for a slice index
   const getColor = useCallback(
@@ -306,25 +369,31 @@ const PieChartCore = memo(function PieChartCore({
     if (!geometryScrubbing) {
       return null;
     }
-    return arcs.map((arc) =>
+    return arcs.map((arc, index) =>
       generatePieArcPath(
         innerRadius,
-        outerRadius,
+        sliceOuterRadii ? (sliceOuterRadii[index] ?? outerRadius) : outerRadius,
         arc.startAngle,
         arc.endAngle,
         cornerRadius,
         arc.padAngle,
       ),
     );
-  }, [geometryScrubbing, arcs, innerRadius, outerRadius, cornerRadius]);
+  }, [geometryScrubbing, arcs, innerRadius, outerRadius, cornerRadius, sliceOuterRadii]);
 
   const datapointsEnabled = useChartDatapointsEnabled();
   const datapointTargets = useMemo(() => {
     if (!datapointsEnabled) {
       return EMPTY_PIE_TARGETS;
     }
-    return arcs.map((arc) => pieDatapointTarget(arc, { center, innerRadius, outerRadius }));
-  }, [arcs, center, datapointsEnabled, innerRadius, outerRadius]);
+    return arcs.map((arc) =>
+      pieDatapointTarget(arc, {
+        center,
+        innerRadius,
+        outerRadius: sliceOuterRadii ? (sliceOuterRadii[arc.index] ?? outerRadius) : outerRadius,
+      }),
+    );
+  }, [arcs, center, datapointsEnabled, innerRadius, outerRadius, sliceOuterRadii]);
   useRegisterDatapointTargets("slices", datapointTargets);
 
   const effectiveIsLoaded = geometryScrubbing || isLoaded;
@@ -359,6 +428,23 @@ const PieChartCore = memo(function PieChartCore({
         defsNodes.push(child);
       } else if (geometryScrubbing && isPieSlice(child)) {
         return;
+      } else if (isPieSlice(child) && (sliceOuterRadii || seams > 0)) {
+        // radiusKey / seams (#RM-030) — inject the per-slice outer radius
+        // override and/or the paper-seam stroke via cloneElement, so PieSlice
+        // stays context-free for this feature. A slice never rendered inside
+        // a radiusKey/seams chart (outerRadiusOverride/seams both undefined)
+        // is byte-identical to before.
+        const sliceProps = child.props as PieSliceProps;
+        const overrideRadius =
+          sliceOuterRadii && typeof sliceProps.index === "number"
+            ? sliceOuterRadii[sliceProps.index]
+            : undefined;
+        svgNodes.push(
+          cloneElement<PieSliceProps>(child as ReactElement<PieSliceProps>, {
+            outerRadiusOverride: overrideRadius,
+            seams: seams > 0 ? seams : undefined,
+          }),
+        );
       } else {
         svgNodes.push(child);
       }
@@ -369,7 +455,7 @@ const PieChartCore = memo(function PieChartCore({
       centerChildren: centerNodes,
       defsChildren: defsNodes,
     };
-  }, [children, geometryScrubbing]);
+  }, [children, geometryScrubbing, sliceOuterRadii, seams]);
 
   const scrubSliceFills = useMemo(() => {
     if (!(geometryScrubbing && scrubSlicePaths)) {
@@ -458,6 +544,38 @@ const PieChartCore = memo(function PieChartCore({
           )}
 
           <Group left={center} top={center}>
+            {/* radiusKey reference rings (#RM-030) — dashed value gridlines
+                behind the slices, on the same sqrt(v / max) radius scale. */}
+            {radiusKey && referenceRings && referenceRings.length > 0 && radiusKeyMax > 0 ? (
+              <g aria-hidden="true">
+                {referenceRings.map((ringValue) => {
+                  const ratio = Math.sqrt(Math.max(ringValue, 0) / radiusKeyMax);
+                  const r = innerRadius + (outerRadius - innerRadius) * ratio;
+                  return (
+                    <g key={`pie-reference-ring-${ringValue}`}>
+                      <circle
+                        cx={0}
+                        cy={0}
+                        fill="none"
+                        r={r}
+                        stroke={pieCssVars.foregroundMuted}
+                        strokeDasharray="4 3"
+                        strokeWidth={1}
+                      />
+                      <text
+                        fill={pieCssVars.foregroundMuted}
+                        fontSize={9}
+                        textAnchor="middle"
+                        x={0}
+                        y={-r - 2}
+                      >
+                        {ringValue}
+                      </text>
+                    </g>
+                  );
+                })}
+              </g>
+            ) : null}
             {scrubSlicePaths && scrubSliceFills
               ? scrubSlicePaths.map((d, index) =>
                   d ? (
@@ -513,6 +631,9 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
     prev.enterTransition === next.enterTransition &&
     prev.enterStaggerScale === next.enterStaggerScale &&
     prev.geometryScrubbing === next.geometryScrubbing &&
+    prev.radiusKey === next.radiusKey &&
+    prev.referenceRings === next.referenceRings &&
+    prev.seams === next.seams &&
     prev.children === next.children
   );
 }
@@ -533,6 +654,9 @@ export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieCh
     enterTransition,
     enterStaggerScale = 1,
     geometryScrubbing = false,
+    radiusKey,
+    referenceRings,
+    seams = 0,
     children,
     copyValueOnActivate,
     onDatapointClick,
@@ -611,6 +735,9 @@ export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieCh
             innerRadius={innerRadius}
             onHoverChange={onHoverChange}
             padAngle={padAngle}
+            radiusKey={radiusKey}
+            referenceRings={referenceRings}
+            seams={seams}
             startAngle={startAngle}
             width={fixedSize}
           >
@@ -649,6 +776,9 @@ export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieCh
               innerRadius={innerRadius}
               onHoverChange={onHoverChange}
               padAngle={padAngle}
+              radiusKey={radiusKey}
+              referenceRings={referenceRings}
+              seams={seams}
               startAngle={startAngle}
               width={width}
             >

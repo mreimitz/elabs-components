@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:52:33.485Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17491,6 +17491,24 @@
               "optional": true,
               "type": "boolean",
               "description": "High-frequency geometry updates (e.g. studio NumberField scrub). Uses plain SVG paths instead of Motion `d` / spring hover morphing."
+            },
+            {
+              "name": "radiusKey",
+              "optional": true,
+              "type": "string",
+              "description": "Second measure driving each slice's OUTER radius — angle × radius double encoding (lieflat G13 \"Big Slice\", #RM-030). Reads `data[i][radiusKey]` as a number; `outerRadius = innerRadius + (R - innerRadius) * sqrt(v / max)` (area-honest — equal AREA differences read as equal magnitude differences, not equal radius differences). A slice whose value is missing/non-numeric — or every slice, when `radiusKey` is unset — renders at the chart's full outer radius, today's behavior."
+            },
+            {
+              "name": "referenceRings",
+              "optional": true,
+              "type": "number[]",
+              "description": "Dashed reference rings (in `radiusKey`'s units) with small value labels — e.g. `[15, 30, 45]` for a \"minutes/day\" second measure. No-op when `radiusKey` is unset."
+            },
+            {
+              "name": "seams",
+              "optional": true,
+              "type": "number",
+              "description": "Paper-seam stroke (px) drawn between slices — the lieflat \"3px paper seam\" cut-paper look. Default: `0` (no seam — today's behavior)."
             }
           ]
         },
@@ -17544,6 +17562,18 @@
               "optional": true,
               "type": "string",
               "description": "Additional CSS class"
+            },
+            {
+              "name": "outerRadiusOverride",
+              "optional": true,
+              "type": "number",
+              "description": "Per-slice outer radius override (px) — RM-030's `radiusKey`. Injected automatically by `PieChart` via `cloneElement` when its `radiusKey` prop is set; a `PieSlice` rendered standalone (or inside a chart with no `radiusKey`) never receives it and falls back to the chart's uniform `outerRadius` — today's behavior."
+            },
+            {
+              "name": "seams",
+              "optional": true,
+              "type": "number",
+              "description": "Paper-seam stroke (px) between this slice and its neighbors — RM-030's `seams`. Injected automatically by `PieChart` via `cloneElement` when its `seams` prop is > 0. Default: no stroke (today's behavior)."
             }
           ]
         },
@@ -18024,6 +18054,12 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. ring names + values)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "\"outside\"",
+              "description": "Outside-label mode for the high-decoration tick ring (lieflat F4 \"Tick Donut\", #RM-030). `\"outside\"` draws a dotted leader line from each segment's ticks to its label, placed outside the ring, and reserves layout room for it. Only takes visible effect at `--decoration` ≥ 8 (the smooth-arc rendering below that threshold has no leader/label treatment); unset renders exactly as before."
             }
           ]
         },

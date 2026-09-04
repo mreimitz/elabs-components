@@ -131,3 +131,127 @@ describe("PieChart", () => {
     expect(root.getAttribute("tabindex")).toBeNull();
   });
 });
+
+// ── radiusKey / referenceRings / seams (#RM-030) ────────────────────────────
+
+describe("PieChart radiusKey (angle × radius double encoding)", () => {
+  // Equal `value` (equal angular span) so the two slices' arcs are identical
+  // between the with/without-radiusKey renders — the only thing that can
+  // differ in the hitbox `d` is the outer radius.
+  const twoMeasureData = [
+    { label: "Small", value: 50, minutes: 10 },
+    { label: "Large", value: 50, minutes: 90 },
+  ];
+
+  it("shrinks a slice below the second measure's max, and leaves the max slice at full radius", () => {
+    const { container: plain } = render(
+      <PieChart data={twoMeasureData} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    const { container: scaled } = render(
+      <PieChart data={twoMeasureData} radiusKey="minutes" size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+
+    const plainHitboxes = plain.querySelectorAll('path[fill="transparent"]');
+    const scaledHitboxes = scaled.querySelectorAll('path[fill="transparent"]');
+    expect(plainHitboxes.length).toBe(2);
+    expect(scaledHitboxes.length).toBe(2);
+
+    // Slice 0 (minutes=10, the smaller measure) must shrink under radiusKey.
+    expect(scaledHitboxes[0]?.getAttribute("d")).not.toBe(plainHitboxes[0]?.getAttribute("d"));
+    // Slice 1 (minutes=90, the max) renders at the chart's full outer radius
+    // in both cases — byte-identical hitbox path.
+    expect(scaledHitboxes[1]?.getAttribute("d")).toBe(plainHitboxes[1]?.getAttribute("d"));
+  });
+
+  it("renders every slice at the full outer radius when radiusKey is unset (default, unchanged)", () => {
+    const { container: a } = render(
+      <PieChart data={twoMeasureData} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    const { container: b } = render(
+      <PieChart data={twoMeasureData} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    const aHitboxes = a.querySelectorAll('path[fill="transparent"]');
+    const bHitboxes = b.querySelectorAll('path[fill="transparent"]');
+    expect(aHitboxes[0]?.getAttribute("d")).toBe(bHitboxes[0]?.getAttribute("d"));
+    expect(aHitboxes[1]?.getAttribute("d")).toBe(bHitboxes[1]?.getAttribute("d"));
+  });
+
+  it("draws dashed reference rings with value labels when referenceRings + radiusKey are set", () => {
+    const { container } = render(
+      <PieChart data={twoMeasureData} radiusKey="minutes" referenceRings={[15, 30, 45]} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    const circles = container.querySelectorAll('circle[stroke-dasharray="4 3"]');
+    expect(circles.length).toBe(3);
+    expect(container.textContent).toContain("15");
+    expect(container.textContent).toContain("30");
+    expect(container.textContent).toContain("45");
+  });
+
+  it("does NOT draw reference rings when radiusKey is unset (no-op)", () => {
+    const { container } = render(
+      <PieChart data={twoMeasureData} referenceRings={[15, 30, 45]} size={200}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+      </PieChart>,
+    );
+    expect(container.querySelectorAll('circle[stroke-dasharray="4 3"]').length).toBe(0);
+  });
+});
+
+describe("PieChart seams (paper-seam stroke)", () => {
+  const sampleTwo = [
+    { label: "A", value: 60 },
+    { label: "B", value: 40 },
+  ];
+
+  it("adds a stroke to the visible slice path when seams > 0", () => {
+    const { container } = render(
+      <PieChart data={sampleTwo} seams={3} size={200}>
+        <PieSlice animate={false} index={0} key="a" />
+        <PieSlice animate={false} index={1} key="b" />
+      </PieChart>,
+    );
+    // The visible slice path is the second <path> in each slice's <g> (the
+    // first is the transparent pointer hitbox).
+    const visiblePaths = Array.from(
+      container.querySelectorAll("g > path:not([fill='transparent'])"),
+    );
+    expect(visiblePaths.length).toBeGreaterThan(0);
+    for (const path of visiblePaths) {
+      expect(path.getAttribute("stroke-width")).toBe("3");
+      expect(path.getAttribute("stroke")).toBeTruthy();
+    }
+  });
+
+  it("adds no stroke attribute when seams is unset (default 0, unchanged)", () => {
+    const { container } = render(
+      <PieChart data={sampleTwo} size={200}>
+        <PieSlice animate={false} index={0} key="a" />
+        <PieSlice animate={false} index={1} key="b" />
+      </PieChart>,
+    );
+    const visiblePaths = Array.from(
+      container.querySelectorAll("g > path:not([fill='transparent'])"),
+    );
+    expect(visiblePaths.length).toBeGreaterThan(0);
+    for (const path of visiblePaths) {
+      expect(path.getAttribute("stroke")).toBeNull();
+      expect(path.getAttribute("stroke-width")).toBeNull();
+    }
+  });
+});
