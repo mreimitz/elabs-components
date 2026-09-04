@@ -1,0 +1,5 @@
+# @elabs-ai/components-process
+
+> Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.
+
+Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `llms.txt` for routing.
