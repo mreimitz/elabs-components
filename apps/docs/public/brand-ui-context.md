@@ -4,7 +4,7 @@
 Generated from `brand-ui.manifest.json` by `brand-ui context`. Do not hand-edit inside the markers. The live, queryable API is `brand-ui docs <Component>`.
 
 Themes (2): dark, light (default)
-Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 224 · Registry items: 23
+Radius: calc(var(--radius-base) * (1 - var(--decoration-factor))) · Tokens: 228 · Registry items: 23
 
 Rules: semantic tokens only (no raw hex); forwardRef + cn() + spread props; Radix for
 overlays; compound composition; visible focus ring; works in every theme. Dependency

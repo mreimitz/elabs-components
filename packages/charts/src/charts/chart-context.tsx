@@ -16,6 +16,7 @@ import {
   useContext,
   useMemo,
 } from "react";
+import type { ChartRevealOn } from "./animation";
 import type { CategoryAxisPlan } from "./category-axis-plan";
 import type { ChartPhase, ChartStatus } from "./chart-phase";
 import type { ChartSelection } from "./use-chart-interaction";
@@ -331,6 +332,22 @@ export interface ChartContextValue extends ChartHoverContextValue {
   enterTransition?: Transition;
   /** Increments when enter animation should replay. */
   revealEpoch?: number;
+  /**
+   * When the enter reveal is allowed to play (RM-020). `"mount"` (default,
+   * unset behaves the same) plays as soon as the chart renders — no change
+   * from today. `"inView"` defers the first reveal until the chart scrolls
+   * into the viewport; see `ChartRevealClip`'s `revealOn`/`viewportRef`
+   * props, which are the part of this that is wired up today. Published here
+   * so a future per-series consumer (`Bar`, `Line`, …) can read the same
+   * decision from context instead of threading another prop.
+   */
+  revealOn?: ChartRevealOn;
+  /**
+   * Clicking the chart body replays the enter reveal (RM-020). Default
+   * `false`. Must never swallow a datapoint activation click — see
+   * `ChartRevealClip`'s `shouldReplayOnClick`.
+   */
+  replayOnClick?: boolean;
   /** Fired when a one-shot loading pulse (exit / enter) completes. */
   notifyLoadingPulseComplete?: () => void;
 
@@ -441,6 +458,8 @@ export function ChartProvider({
       animationEasing: value.animationEasing,
       enterTransition: value.enterTransition,
       revealEpoch: value.revealEpoch,
+      revealOn: value.revealOn,
+      replayOnClick: value.replayOnClick,
       notifyLoadingPulseComplete: value.notifyLoadingPulseComplete,
       xAccessor: value.xAccessor,
       xScaleType: value.xScaleType,
@@ -487,6 +506,8 @@ export function ChartProvider({
       value.animationEasing,
       value.enterTransition,
       value.revealEpoch,
+      value.revealOn,
+      value.replayOnClick,
       value.notifyLoadingPulseComplete,
       value.xAccessor,
       value.xScaleType,

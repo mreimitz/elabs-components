@@ -916,6 +916,25 @@
   --t-base: max(calc(var(--duration-base) * var(--motion-factor)), var(--motion-min));
   --t-slow: max(calc(var(--duration-slow) * var(--motion-factor)), var(--motion-min));
   --t-slower: max(calc(var(--duration-slower) * var(--motion-factor)), var(--motion-min));
+
+  /* motion — RM-020: chart reveal-in-view + stagger rhythm (lieflat
+     provenance, docs/review/2026-09-04-lieflat-charts-gap-analysis.md §1(7),
+     §5 C4). Read by packages/charts/src/charts/animation.ts via
+     getComputedStyle; the literal fallbacks there match these values, so a
+     consumer who never overrides them sees no change. Deliberately NOT
+     multiplied through --motion-factor here — a chart already carries its own
+     reduced-motion path via animationDuration=0, driven by the consumer (see
+     docs/MOTION_GUIDELINES.md § Chart reveal & stagger timing).
+     Named --t-chart-* (not --chart-*) so the root-only allowlist in
+     scripts/check-theme-parity.mjs (the `t-` alternative) exempts them —
+     these are :root-only timing machinery like --t-fast/--t-base, not a
+     per-theme semantic (--chart-1..12, --chart-background, …), which is what
+     that gate exists to guard. */
+  --t-chart-stagger-dot: 12ms; /* per-dot stagger delay (scatter/point markers) */
+  --t-chart-stagger-bar: 100ms; /* per-bar stagger delay */
+  --t-chart-enter: 900ms; /* default chart reveal-in-view enter duration */
+  --t-chart-enter-slow: 1200ms; /* slow/denser chart reveal-in-view enter duration */
+
   /* Brand mark — the two inks `BrandLogo` (@elabs-ai/components-icons) paints with:
      `-ring` is the drawn linework (hatched circle, register dots), `-tail` the
      construction square. Neutral here, matching this fallback base's own
