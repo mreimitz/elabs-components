@@ -36,19 +36,46 @@ RiveFile` union). An inline handler (`onLoad={(event) => …}`, the normal
     deep-peer-type mirror this fix exists to avoid — so `unknown` is kept, not
     treated as a bug to chase.
   - `AudioPlayer`'s ten exported part-prop types (`AudioPlayerProps`,
-    `AudioPlayerControlBarProps`, …) type only ordinary HTML attributes plus
-    the one custom attribute each part actually declares (`seekOffset` on
-    the two seek buttons). Real `media-chrome/react` parts additionally
-    accept every OTHER instance property of their underlying custom element
-    (e.g. `autohide`/`hotkeys` on the top-level `<AudioPlayer>`); passing one
-    of those now fails to typecheck even though `AudioPlayerImpl` still
-    spreads it onto the underlying custom element at runtime, so it still
-    takes effect — the loss is compile-time coverage, not behavior.
-  - Every `AudioPlayer*` part type also drops `ref`: the real
-    `RefObject<MediaController>` (etc.) was never usable in practice (none of
-    the ten parts forwards a ref), and `RefObject`'s mutable `current` makes
-    ref types invariant, so keeping it would have made the type dishonest
-    rather than useful. This one is not considered a real-world break.
+    `AudioPlayerControlBarProps`, …) type only ordinary HTML attributes, plus —
+    for the two parts the round-2 validation actually measured,
+    `AudioPlayerProps` (`<media-controller>`) and
+    `AudioPlayerSeekForwardButtonProps` (`<media-seek-forward-button>`) — every
+    PRIMITIVE-typed (`string`/`boolean`/`number`) extra instance property the
+    real element declares: 20 on `AudioPlayerProps`
+    (`autohide`/`breakpoints`/`keyboardControl`/`noHotkeys`/`userInteractive`/
+    …) and 5 new ones on `AudioPlayerSeekForwardButtonProps`
+    (`disabled`/`mediaController`/`mediaCurrentTime`/`noTooltip`/
+    `preventClick`, alongside the existing `seekOffset`). Real
+    `media-chrome/react` parts additionally accept every PEER/COMPLEX-typed
+    instance property of their underlying custom element — `mediaStore`,
+    `hotkeys` (an `AttributeTokenList`), DOM-element members
+    (`media`/`fullscreenElement`), `HTMLMediaElement` callbacks, and every
+    method — and, for the other eight parts (`AudioPlayerControlBarProps`,
+    `AudioPlayerPlayButtonProps`, `AudioPlayerSeekBackwardButtonProps`
+    (unmeasured; still `seekOffset`-only), `AudioPlayerTimeDisplayProps`,
+    `AudioPlayerTimeRangeProps`, `AudioPlayerDurationDisplayProps`,
+    `AudioPlayerMuteButtonProps`, `AudioPlayerVolumeRangeProps`), their entire
+    extra surface, primitive or not. Passing one of those now fails to
+    typecheck even though `AudioPlayerImpl` still spreads it onto the
+    underlying custom element at runtime, so it still takes effect — the loss
+    is compile-time coverage, not behavior.
+  - Every `AudioPlayer*` part type also drops `ref`. `RefObject`'s mutable
+    `current` makes ref types INVARIANT, so keeping the real
+    `RefObject<MediaController>` (etc.) would have made every owned type fail
+    its own conformance assertion — that half is unchanged. **This IS a
+    real-world break for a React 19 consumer**, unlike an earlier draft of
+    this entry claimed: none of the ten parts this package renders is wrapped
+    in `forwardRef`, but `media-chrome/react`'s `MediaController` (and its
+    nine siblings) are genuine `forwardRef` components
+    (`$typeof: Symbol(react.forward_ref)`), and React 19's ref-as-prop carries
+    a `ref` straight through an ordinary function component's `{...props}`
+    spread to the real underlying custom element — measured on this repo's
+    own React (19.2.7): a `ref` passed to `<AudioPlayer>` really does resolve
+    to the live `<media-controller>` DOM node. The break is **inert only
+    under React 18** (where a plain function component drops an unforwarded
+    `ref` on the floor); this package's peer range (`^18.2.0 || ^19.0.0`)
+    covers both, so a consumer's own React version decides whether they ever
+    notice.
 
 - Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
   look-alike a reader is most likely to reach for by mistake, so `brand-ui docs

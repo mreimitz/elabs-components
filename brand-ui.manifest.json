@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T16:45:15.825Z",
+  "generatedAt": "2026-09-04T18:34:46.978Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -5835,7 +5835,128 @@
           "extends": [
             "AudioPlayerPartProps"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "autohide",
+              "optional": true,
+              "type": "string",
+              "description": "Seconds of inactivity before controls hide; a string because it mirrors the HTML attribute value."
+            },
+            {
+              "name": "autohideOverControls",
+              "optional": true,
+              "type": "boolean",
+              "description": "Also autohide while the pointer is over the control elements themselves, not just the media."
+            },
+            {
+              "name": "breakpoints",
+              "optional": true,
+              "type": "string",
+              "description": "Breakpoint definitions (space-separated `name:width` pairs) driving `breakpointsComputed`."
+            },
+            {
+              "name": "breakpointsComputed",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the controller has computed its current breakpoint(s) at least once."
+            },
+            {
+              "name": "defaultDuration",
+              "optional": true,
+              "type": "number",
+              "description": "Fallback duration (seconds) to display before the real media duration is known."
+            },
+            {
+              "name": "defaultStreamType",
+              "optional": true,
+              "type": "string",
+              "description": "Default stream type (\"on-demand\" or \"live\") before the media has resolved its own."
+            },
+            {
+              "name": "defaultSubtitles",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether subtitles/captions are enabled by default."
+            },
+            {
+              "name": "gesturesDisabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disables the controller's built-in tap/gesture handling (e.g. tap-to-play, double-tap-to-seek)."
+            },
+            {
+              "name": "keyboardControl",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether hotkey keyboard control is currently active on the controller."
+            },
+            {
+              "name": "keysUsed",
+              "optional": true,
+              "type": "string",
+              "description": "Space-separated list of hotkey names currently in use, for conflict detection with other listeners."
+            },
+            {
+              "name": "liveEdgeOffset",
+              "optional": true,
+              "type": "number",
+              "description": "Seconds behind the live edge still considered \"at\" live, for a live stream's seek range."
+            },
+            {
+              "name": "noAutohide",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disables the controller's autohide-controls-on-inactivity behavior entirely."
+            },
+            {
+              "name": "noAutoSeekToLive",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disables automatically seeking back to the live edge after a manual seek on a live stream."
+            },
+            {
+              "name": "noDefaultStore",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opts out of the controller creating its own default internal media store."
+            },
+            {
+              "name": "noHotkeys",
+              "optional": true,
+              "type": "boolean",
+              "description": "Disables the controller's built-in keyboard hotkeys entirely."
+            },
+            {
+              "name": "noMutedPref",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opts out of remembering the user's mute preference across sessions."
+            },
+            {
+              "name": "noSubtitlesLangPref",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opts out of remembering the user's subtitles-language preference across sessions."
+            },
+            {
+              "name": "noVolumePref",
+              "optional": true,
+              "type": "boolean",
+              "description": "Opts out of remembering the user's volume preference across sessions."
+            },
+            {
+              "name": "resolvedLang",
+              "optional": true,
+              "type": "string",
+              "description": "The language the controller resolved for its UI text, after applying any language preference."
+            },
+            {
+              "name": "userInteractive",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the user has interacted with the controller yet (affects autoplay-adjacent UI)."
+            }
+          ]
         },
         "AudioPlayerControlBar": {
           "extends": [
@@ -5887,10 +6008,40 @@
           ],
           "props": [
             {
+              "name": "disabled",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the button is disabled."
+            },
+            {
+              "name": "mediaController",
+              "optional": true,
+              "type": "string",
+              "description": "ID of the `<media-controller>` element this button controls, when it is not an ancestor."
+            },
+            {
+              "name": "mediaCurrentTime",
+              "optional": true,
+              "type": "number",
+              "description": "The media's current playback time (seconds), as reflected by the controller's media store."
+            },
+            {
               "name": "seekOffset",
               "optional": true,
               "type": "number",
               "description": "Skip distance in seconds. Mirrors the element's own default (10)."
+            },
+            {
+              "name": "noTooltip",
+              "optional": true,
+              "type": "boolean",
+              "description": "Suppresses the built-in hover tooltip on this button."
+            },
+            {
+              "name": "preventClick",
+              "optional": true,
+              "type": "boolean",
+              "description": "Prevents the button's default click handling (for a consumer that wants to fully own the behavior)."
             }
           ]
         },
