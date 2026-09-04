@@ -105,6 +105,8 @@ export const THEME_TOKEN_NAMES = [
   "--destructive-foreground",
   "--destructive-text",
   "--flow-edge",
+  "--flow-edge-strong",
+  "--flow-edge-weak",
   "--flow-group",
   "--flow-group-border",
   "--flow-helper-line",
@@ -194,5 +196,5 @@ export const THEME_TOKEN_NAMES = [
   "--warning-text",
 ] as const;
 
-/** One of the 184 semantic tokens a complete theme defines. */
+/** One of the 186 semantic tokens a complete theme defines. */
 export type ThemeTokenName = (typeof THEME_TOKEN_NAMES)[number];

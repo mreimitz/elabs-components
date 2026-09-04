@@ -7,7 +7,7 @@
 The full component/hook surface, generated from the manifest. `*` marks a cva default value. Subpath-exported items show their import path.
 
 **Themes (2):** dark, light (default)
-**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 228
+**Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 230
 
 ## Packages
 
@@ -18,7 +18,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 382 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 5 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 26 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 151 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
@@ -985,6 +985,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | Background | component |  | `@elabs-ai/components-flow` |  |
 | CanvasShell | component |  | `@elabs-ai/components-flow` | Branded React Flow canvas wrapper with token-driven background + sane defaults. |
 | Controls | component |  | `@elabs-ai/components-flow` | Zoom / fit / lock controls for the agent workspace Canvas. |
+| DEFAULT_EDGE_WIDTH_RANGE | component |  | `@elabs-ai/components-flow` |  |
+| EdgeLabelPill | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_ALL_SIDE_HANDLES | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_GROUP_NODE_TYPE | component |  | `@elabs-ai/components-flow` |  |
 | FlowButtonEdge | component |  | `@elabs-ai/components-flow` |  |
@@ -995,6 +997,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FlowNode | component |  | `@elabs-ai/components-flow` | Branded custom React Flow node (title/subtitle/kind/icon/tone). |
 | FlowPlaceholderNode | component |  | `@elabs-ai/components-flow` |  |
 | FlowSmartEdge | component |  | `@elabs-ai/components-flow` |  |
+| FlowWeightedEdge | component |  | `@elabs-ai/components-flow` |  |
 | HANDLE_SIDES | component |  | `@elabs-ai/components-flow` |  |
 | HelperLines | component |  | `@elabs-ai/components-flow` |  |
 | InspectorPanel | component |  | `@elabs-ai/components-flow` |  |
