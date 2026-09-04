@@ -1,0 +1,200 @@
+{
+  "events": [
+    {
+      "caseId": "case-1",
+      "activity": "Create Order",
+      "timestamp": "2026-01-05T09:00:00.000Z",
+      "resource": "A. Novak"
+    },
+    {
+      "caseId": "case-1",
+      "activity": "Check Credit",
+      "timestamp": "2026-01-05T10:00:00.000Z",
+      "resource": "Credit Service"
+    },
+    {
+      "caseId": "case-1",
+      "activity": "Approve Order",
+      "timestamp": "2026-01-05T11:00:00.000Z",
+      "resource": "C. Okafor"
+    },
+    {
+      "caseId": "case-1",
+      "activity": "Ship Order",
+      "timestamp": "2026-01-05T12:00:00.000Z",
+      "resource": "Warehouse Robot"
+    },
+    {
+      "caseId": "case-1",
+      "activity": "Send Invoice",
+      "timestamp": "2026-01-05T13:00:00.000Z",
+      "resource": "D. Lindqvist"
+    },
+    {
+      "caseId": "case-1",
+      "activity": "Receive Payment",
+      "timestamp": "2026-01-05T14:00:00.000Z",
+      "resource": "E. Haddad"
+    },
+    {
+      "caseId": "case-2",
+      "activity": "Create Order",
+      "timestamp": "2026-01-06T09:00:00.000Z",
+      "resource": "A. Novak"
+    },
+    {
+      "caseId": "case-2",
+      "activity": "Check Credit",
+      "timestamp": "2026-01-06T10:00:00.000Z",
+      "resource": "Credit Service"
+    },
+    {
+      "caseId": "case-2",
+      "activity": "Approve Order",
+      "timestamp": "2026-01-06T11:00:00.000Z",
+      "resource": "C. Okafor"
+    },
+    {
+      "caseId": "case-2",
+      "activity": "Ship Order",
+      "timestamp": "2026-01-06T12:00:00.000Z",
+      "resource": "Warehouse Robot"
+    },
+    {
+      "caseId": "case-2",
+      "activity": "Send Invoice",
+      "timestamp": "2026-01-06T13:00:00.000Z",
+      "resource": "D. Lindqvist"
+    },
+    {
+      "caseId": "case-2",
+      "activity": "Receive Payment",
+      "timestamp": "2026-01-06T14:00:00.000Z",
+      "resource": "E. Haddad"
+    },
+    {
+      "caseId": "case-3",
+      "activity": "Create Order",
+      "timestamp": "2026-01-07T09:00:00.000Z",
+      "resource": "A. Novak"
+    },
+    {
+      "caseId": "case-3",
+      "activity": "Check Credit",
+      "timestamp": "2026-01-07T10:00:00.000Z",
+      "resource": "Credit Service"
+    },
+    {
+      "caseId": "case-3",
+      "activity": "Reject Order",
+      "timestamp": "2026-01-07T11:00:00.000Z",
+      "resource": "C. Okafor"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Create Order",
+      "timestamp": "2026-01-08T09:00:00.000Z",
+      "resource": "A. Novak"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Check Credit",
+      "timestamp": "2026-01-08T10:00:00.000Z",
+      "resource": "Credit Service"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Amend Order",
+      "timestamp": "2026-01-08T11:00:00.000Z",
+      "resource": "B. Ferreira"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Check Credit",
+      "timestamp": "2026-01-08T12:00:00.000Z",
+      "resource": "Credit Service"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Approve Order",
+      "timestamp": "2026-01-08T13:00:00.000Z",
+      "resource": "C. Okafor"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Ship Order",
+      "timestamp": "2026-01-08T14:00:00.000Z",
+      "resource": "Warehouse Robot"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Send Invoice",
+      "timestamp": "2026-01-08T15:00:00.000Z",
+      "resource": "D. Lindqvist"
+    },
+    {
+      "caseId": "case-4",
+      "activity": "Receive Payment",
+      "timestamp": "2026-01-08T16:00:00.000Z",
+      "resource": "E. Haddad"
+    },
+    {
+      "caseId": "case-5",
+      "activity": "Create Order",
+      "timestamp": "2026-01-09T09:00:00.000Z",
+      "resource": "A. Novak"
+    },
+    {
+      "caseId": "case-5",
+      "activity": "Check Credit",
+      "timestamp": "2026-01-09T11:00:00.000Z",
+      "resource": "Credit Service"
+    },
+    {
+      "caseId": "case-5",
+      "activity": "Approve Order",
+      "timestamp": "2026-01-09T13:00:00.000Z",
+      "resource": "C. Okafor"
+    },
+    {
+      "caseId": "case-5",
+      "activity": "Send Invoice",
+      "timestamp": "2026-01-09T15:00:00.000Z",
+      "resource": "D. Lindqvist"
+    },
+    {
+      "caseId": "case-5",
+      "activity": "Ship Order",
+      "timestamp": "2026-01-09T17:00:00.000Z",
+      "resource": "Warehouse Robot"
+    },
+    {
+      "caseId": "case-5",
+      "activity": "Receive Payment",
+      "timestamp": "2026-01-09T19:00:00.000Z",
+      "resource": "E. Haddad"
+    }
+  ],
+  "caseAttributes": {
+    "case-1": {
+      "region": "North",
+      "segment": "Enterprise"
+    },
+    "case-2": {
+      "region": "South",
+      "segment": "SMB"
+    },
+    "case-3": {
+      "region": "East",
+      "segment": "SMB"
+    },
+    "case-4": {
+      "region": "West",
+      "segment": "Mid-market"
+    },
+    "case-5": {
+      "region": "North",
+      "segment": "Enterprise"
+    }
+  }
+}

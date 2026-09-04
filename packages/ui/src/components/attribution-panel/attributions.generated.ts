@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 118 entries (data: 2, source: 18, font: 2, dependency: 96).
+// 119 entries (data: 2, source: 19, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -173,6 +173,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Copyright (c) 2020-present Mirone",
     url: "https://github.com/Milkdown/milkdown",
     usedBy: ["@elabs-ai/components-editor"],
+    required: false,
+  },
+  {
+    version: null,
+    note: "Algorithm shape for the framework-free process-mining core: which aggregates a directly-follows graph carries (discoverGraph) and how traces are grouped into variants (extractVariants), with durationStats as their shared summary. Re-typed in TypeScript from the published algorithms, not copied.",
+    id: "pm4js",
+    category: "source",
+    name: "pm4js",
+    license: "BSD-3-Clause",
+    copyright: "Copyright 2021 Alessandro Berti",
+    url: "https://github.com/pm4js/pm4js-core",
+    usedBy: ["@elabs-ai/components-process"],
     required: false,
   },
   {
