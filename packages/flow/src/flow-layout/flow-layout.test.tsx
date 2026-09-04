@@ -130,4 +130,95 @@ describe("layoutFlow", () => {
     const wideGap = wide.nodes[1]!.position.y - wide.nodes[0]!.position.y;
     expect(wideGap).toBeGreaterThan(tightGap);
   });
+  describe("back edges and self-loops (RM-044)", () => {
+    /** The canonical rework fixture: A → B → C, C loops back to B, and B repeats itself. */
+    function reworkGraph(): { nodes: Node[]; edges: Edge[] } {
+      return {
+        nodes: chainNodes(),
+        edges: [
+          { id: "e-ab", source: "a", target: "b" },
+          { id: "e-bc", source: "b", target: "c" },
+          { id: "e-cb", source: "c", target: "b" },
+          { id: "e-bb", source: "b", target: "b" },
+        ],
+      };
+    }
+
+    it("reports the reversed edge in backEdges and the self-loop in selfLoops", () => {
+      const { nodes, edges } = reworkGraph();
+      const result = layoutFlow(nodes, edges);
+
+      expect(result.backEdges).toEqual(["e-cb"]);
+      expect(result.selfLoops).toEqual(["e-bb"]);
+      // Both classifications are disjoint — a self-loop is never a back edge.
+      expect(result.backEdges).not.toContain("e-bb");
+    });
+
+    it("keeps the self-loop out of the rank computation", () => {
+      const { nodes, edges } = reworkGraph();
+      const withLoop = layoutFlow(nodes, edges);
+      const withoutLoop = layoutFlow(
+        nodes,
+        edges.filter((e) => e.id !== "e-bb"),
+      );
+
+      // Identical positions: the loop contributed nothing to the layout.
+      expect(withLoop.nodes.map((n) => n.position)).toEqual(
+        withoutLoop.nodes.map((n) => n.position),
+      );
+    });
+
+    it("returns every edge untouched, self-loops included", () => {
+      const { nodes, edges } = reworkGraph();
+      const result = layoutFlow(nodes, edges);
+      expect(result.edges).toBe(edges);
+      expect(result.edges.map((e) => e.id)).toContain("e-bb");
+    });
+
+    it("produces no NaN position on the rework fixture", () => {
+      const { nodes, edges } = reworkGraph();
+      for (const n of layoutFlow(nodes, edges).nodes) {
+        expect(Number.isFinite(n.position.x)).toBe(true);
+        expect(Number.isFinite(n.position.y)).toBe(true);
+      }
+    });
+
+    it("classifies the same edge as a back edge in every direction", () => {
+      const { nodes, edges } = reworkGraph();
+      for (const direction of ["TB", "BT", "LR", "RL"] as const) {
+        expect(layoutFlow(nodes, edges, { direction }).backEdges).toEqual(["e-cb"]);
+      }
+    });
+
+    it("reports nothing for an acyclic, loop-free graph", () => {
+      const result = layoutFlow(chainNodes(), chainEdges());
+      expect(result.backEdges).toEqual([]);
+      expect(result.selfLoops).toEqual([]);
+    });
+
+    it("counts a same-rank edge as a back edge — it does not advance the process", () => {
+      const nodes: Node[] = [
+        { id: "a", position: { x: 0, y: 0 }, data: {} },
+        { id: "b", position: { x: 0, y: 0 }, data: {} },
+      ];
+      // Two mutually-referencing nodes: dagre has to break the cycle somewhere.
+      const result = layoutFlow(nodes, [
+        { id: "e-ab", source: "a", target: "b" },
+        { id: "e-ba", source: "b", target: "a" },
+      ]);
+      expect(result.backEdges).toEqual(["e-ba"]);
+    });
+
+    it("pins node positions on the rework fixture (regression snapshot)", () => {
+      const { nodes, edges } = reworkGraph();
+      const positions = Object.fromEntries(
+        layoutFlow(nodes, edges).nodes.map((n) => [n.id, n.position]),
+      );
+      expect(positions).toEqual({
+        a: { x: 0, y: 0 },
+        b: { x: 0, y: 112 },
+        c: { x: 0, y: 224 },
+      });
+    });
+  });
 });

@@ -107,6 +107,35 @@ export function isGatedModule(module) {
 }
 
 /**
+ * SCREAMING_SNAKE_CASE — the universal constant convention, and a name a React
+ * component can never carry (JSX resolves a lowercase tag to an intrinsic
+ * element, so components are PascalCase by construction, and nobody writes a
+ * component as `FOO_BAR`). Used to keep exported CONSTANTS out of the
+ * component count below.
+ */
+const CONSTANT_NAME_RE = /^[A-Z0-9]+(?:_[A-Z0-9]+)*$/;
+
+/**
+ * Is this manifest `kind: "value"` export actually a COMPONENT, as opposed to
+ * an exported constant that happens to live in the same `.tsx`?
+ *
+ * The manifest does not distinguish the two — both are `kind: "value"` — so
+ * before this filter existed the gate counted `export const CATEGORICAL_SOFT_CAP = 6`
+ * in `chart-context.tsx` as a second "component" and failed the module for
+ * "gained 1 component(s) but no new `data-slot`". There is no `data-slot` to
+ * add: a number has no root element, and `ChartProvider` renders no DOM. 32
+ * such constants exist across the gated modules; every one of them is a
+ * false positive waiting for whoever next edits its file.
+ *
+ * Deliberately narrow: it excludes only SCREAMING_SNAKE_CASE. A PascalCase
+ * constant still counts, which costs a false positive rather than a missed
+ * component — the direction a gate should err in.
+ */
+export function isComponentName(name) {
+  return typeof name === "string" && /^[A-Z]/.test(name) && !CONSTANT_NAME_RE.test(name);
+}
+
+/**
  * Group the manifest's value-components by the module that defines them.
  * @returns {Map<string, string[]>} relModulePath -> component names (sorted)
  */
@@ -115,6 +144,7 @@ export function componentsByModule(manifest) {
   for (const pkg of Object.values(manifest?.packages ?? {})) {
     for (const comp of pkg?.components ?? []) {
       if (comp?.kind !== "value") continue;
+      if (!isComponentName(comp?.name)) continue;
       if (!isGatedModule(comp?.module)) continue;
       const list = byModule.get(comp.module) ?? [];
       list.push(comp.name);

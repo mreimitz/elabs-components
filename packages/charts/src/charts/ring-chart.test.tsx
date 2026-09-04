@@ -66,11 +66,21 @@ vi.mock("./use-mount-progress", () => ({
 }));
 
 import React from "react";
-import { Ring } from "./ring";
+import { computeRingTickSegments, Ring } from "./ring";
 import { RingCenter } from "./ring-center";
 import { RingChart } from "./ring-chart";
 
-afterEach(cleanup);
+/** Stub `getComputedStyle` so `--decoration` returns `value` for any element. */
+function stubDecoration(value: string) {
+  vi.spyOn(window, "getComputedStyle").mockReturnValue({
+    getPropertyValue: (prop: string) => (prop === "--decoration" ? value : ""),
+  } as unknown as CSSStyleDeclaration);
+}
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const sampleData = [
   { label: "Email", value: 42, maxValue: 100 },
@@ -183,5 +193,167 @@ describe("RingChart", () => {
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
     expect(root.getAttribute("tabindex")).toBeNull();
+  });
+});
+
+// ── Tick ring at high decoration (#RM-030) ──────────────────────────────────
+
+describe("computeRingTickSegments (pure — tick-count rounding)", () => {
+  it("divides 100 ticks proportionally and reports zero remainder when shares round exactly", () => {
+    // 42/88, 28/88, 18/88 round to 48/32/20, which already sums to 100.
+    const { segments, totalTicks, remainder } = computeRingTickSegments(sampleData, () => "red");
+    expect(segments.map((s) => s.tickCount)).toEqual([48, 32, 20]);
+    expect(totalTicks).toBe(100);
+    expect(remainder).toBe(0);
+  });
+
+  it("reports a positive remainder (unassigned ticks) when rounding undershoots 100", () => {
+    // Three equal shares of 1/3 each round to 33, summing to 99 — 1 tick unassigned.
+    const equalThirds = [
+      { label: "A", value: 1, maxValue: 1 },
+      { label: "B", value: 1, maxValue: 1 },
+      { label: "C", value: 1, maxValue: 1 },
+    ];
+    const { segments, totalTicks, remainder } = computeRingTickSegments(equalThirds, () => "blue");
+    expect(segments.map((s) => s.tickCount)).toEqual([33, 33, 33]);
+    expect(totalTicks).toBe(99);
+    expect(remainder).toBe(1);
+  });
+
+  it("assigns contiguous, non-overlapping tick ranges per segment", () => {
+    const { segments } = computeRingTickSegments(sampleData, () => "red");
+    expect(segments[0]).toMatchObject({ startTick: 0, endTick: 48 });
+    expect(segments[1]).toMatchObject({ startTick: 48, endTick: 80 });
+    expect(segments[2]).toMatchObject({ startTick: 80, endTick: 100 });
+  });
+});
+
+describe("RingChart tick-ring rendering at high decoration (#RM-030)", () => {
+  const equalThirds = [
+    { label: "A", value: 1, maxValue: 1 },
+    { label: "B", value: 1, maxValue: 1 },
+    { label: "C", value: 1, maxValue: 1 },
+  ];
+
+  it("renders unchanged (no tick group, original smooth Ring arcs) below decoration 8 — default", () => {
+    stubDecoration("3");
+    const { container } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(container.querySelector("[data-tick-ring]")).toBeNull();
+    expect(container.querySelectorAll("svg path").length).toBeGreaterThan(0);
+  });
+
+  it("renders unchanged when --decoration is absent (default, unchanged)", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(container.querySelector("[data-tick-ring]")).toBeNull();
+    expect(container.querySelectorAll("svg path").length).toBeGreaterThan(0);
+  });
+
+  it("renders exactly 100 ticks and REPLACES the smooth Ring arcs at decoration >= 8", () => {
+    stubDecoration("10");
+    const { container } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(container.querySelectorAll("[data-tick-ring-tick]").length).toBe(100);
+    // Old smooth-arc <Ring> children are swapped out in tick mode — no leftover
+    // background/progress paths should render alongside the tick group.
+    expect(container.querySelectorAll("svg path").length).toBe(0);
+  });
+
+  it("gives each segment exactly round(share) ticks, matching the pure helper", () => {
+    stubDecoration("10");
+    const { container } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    const { segments } = computeRingTickSegments(sampleData, () => "");
+    const ticks = container.querySelectorAll("[data-tick-ring-tick]");
+    expect(ticks.length).toBe(100);
+    for (const segment of segments) {
+      expect(segment.tickCount).toBe(segment.endTick - segment.startTick);
+    }
+    expect(segments.reduce((sum, s) => sum + s.tickCount, 0)).toBeLessThanOrEqual(100);
+  });
+
+  it("states the rounding remainder in the caption when shares don't sum exactly to 100", () => {
+    stubDecoration("10");
+    const { container } = render(
+      <RingChart data={equalThirds} size={280} strokeWidth={14}>
+        {equalThirds.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    const caption = container.querySelector("[data-tick-ring-caption]");
+    expect(caption).toBeInTheDocument();
+    expect(caption?.textContent).toBe(
+      "100 ticks — segments round to 99 of 100 (1 tick unassigned).",
+    );
+  });
+
+  it("draws a dot every 10th tick", () => {
+    stubDecoration("10");
+    const { container } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(container.querySelectorAll("[data-tick-ring-dot]").length).toBe(10);
+  });
+
+  it('draws dotted Leader lines to outside labels only when labels="outside"', () => {
+    stubDecoration("10");
+    const { container: withoutLabels } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(withoutLabels.querySelectorAll("[data-tick-ring-leader]").length).toBe(0);
+
+    const { container: withLabels } = render(
+      <RingChart data={sampleData} labels="outside" size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    const leaders = withLabels.querySelectorAll("[data-tick-ring-leader]");
+    expect(leaders.length).toBe(sampleData.length);
+    expect(withLabels.textContent).toContain("Email 48%");
+  });
+
+  it("still renders RingCenter unchanged inside tick mode", () => {
+    stubDecoration("10");
+    const { getByText } = render(
+      <RingChart data={sampleData} size={280} strokeWidth={14}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+        <RingCenter defaultLabel="Channels" />
+      </RingChart>,
+    );
+    expect(getByText("Channels")).toBeInTheDocument();
   });
 });

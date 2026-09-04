@@ -122,6 +122,47 @@ export const TokenColors: Story = {
   ),
 };
 
+/**
+ * Stage-to-stage conversion (lieflat L13) at every boundary — the number
+ * funnel readers actually want, distinct from `showPercentage`'s "% of the
+ * first stage" badge. Reconciles with the data: 4,800/12,000 = 40%,
+ * 2,100/4,800 = 44%, 840/2,100 = 40%.
+ */
+export const ConversionBetween: Story = {
+  name: "Conversion — between stages",
+  args: {
+    data: conversionFunnel,
+    orientation: "horizontal",
+    showConversion: "between",
+    showLabels: true,
+    showValues: true,
+    showPercentage: true,
+  },
+  render: (args) => (
+    <div className="h-72 w-[560px]">
+      <FunnelChart {...args} />
+    </div>
+  ),
+};
+
+/** Same conversion numbers, stacked in the left margin (lieflat L13's "62% GET THROUGH"). */
+export const ConversionMargin: Story = {
+  name: "Conversion — margin",
+  args: {
+    data: conversionFunnel,
+    orientation: "horizontal",
+    showConversion: "margin",
+    showLabels: true,
+    showValues: true,
+    showPercentage: true,
+  },
+  render: (args) => (
+    <div className="h-72 w-[560px]">
+      <FunnelChart {...args} />
+    </div>
+  ),
+};
+
 // #349: drill-down on a funnel stage.
 function FunnelDrilldownDemo() {
   const [selected, setSelected] = useState<ChartDatapoint | null>(null);

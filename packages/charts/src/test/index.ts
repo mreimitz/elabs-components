@@ -57,6 +57,7 @@
 // ── The contract engine + diagnostics ────────────────────────────────────────
 export {
   assertChartContract,
+  assertChartSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
@@ -70,14 +71,19 @@ export {
   AreaChart,
   AutoChart,
   BarChart,
+  BumpChart,
   CandlestickChart,
   CHART_CONTRACT_SPECS,
   ChartCard,
   ChartFrame,
   ChoroplethChart,
   ComposedChart,
+  DumbbellChart,
+  DistributionChart,
   FunnelChart,
   Gantt,
+  // Heatmap — RM-021
+  HeatmapChart,
   LineChart,
   LiveLineChart,
   MetricCard,
@@ -88,6 +94,16 @@ export {
   SankeyChart,
   ScatterChart,
   Sparkline,
+  UnitChart,
+  // Treemap — RM-025
+  TreemapChart,
+  WaterfallChart,
+  // ParallelCoordinates — RM-034
+  ParallelCoordinatesChart,
+  // Tree — RM-035
+  TreeChart,
+  // Network — RM-036
+  NetworkChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -123,6 +139,7 @@ export {
   ChoroplethProvider,
   ChoroplethTooltip,
   DateTicker,
+  DrawPath,
   Gauge,
   GradientDarkgreenGreen,
   GradientLightgreenGreen,
@@ -134,6 +151,9 @@ export {
   GradientSteelPurple,
   GradientTealBlue,
   Grid,
+  HairlineFloor,
+  HaloText,
+  Leader,
   Legend,
   LegendItemComponent,
   LegendLabel,
@@ -147,6 +167,7 @@ export {
   LiveLine,
   LiveXAxis,
   LiveYAxis,
+  Marginalia,
   MarkerGroup,
   MarkerTooltipContent,
   PatternArea,
@@ -154,6 +175,7 @@ export {
   PatternHexagons,
   PatternLines,
   PatternWaves,
+  PeakRing,
   PieCenter,
   PieCenterShell,
   PieProvider,
@@ -161,6 +183,7 @@ export {
   ProfitLossLegend,
   ProfitLossLegendHoverProvider,
   ProfitLossLine,
+  QuietDot,
   RadarArea,
   RadarAxis,
   RadarGrid,
@@ -173,6 +196,8 @@ export {
   SankeyLink,
   SankeyNode,
   SankeyProvider,
+  // Sankey threads — RM-037
+  SankeyThreadLinks,
   SankeyTooltip,
   Scatter,
   SegmentBackground,
@@ -182,6 +207,7 @@ export {
   SeriesMarkers,
   SeriesPointMarker,
   StaticChartPreviewProvider,
+  UnitStack,
   XAxis,
   YAxis,
 } from "./primitives";
@@ -190,12 +216,15 @@ export {
 export type { AreaChartProps } from "../charts/area-chart";
 export type { AutoChartProps } from "../auto-chart/auto-chart";
 export type { BarChartProps } from "../charts/bar-chart";
+export type { BumpChartProps } from "../charts/bump-chart";
 export type { CandlestickChartProps, OHLCDataPoint } from "../charts/candlestick-chart";
 export type { ChartCardProps } from "../chart-card/chart-card";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 export type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
 export type { ComposedChartProps } from "../charts/composed-chart";
+export type { DumbbellChartProps } from "../charts/dumbbell-chart";
+export type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 export type { FunnelChartProps, FunnelStage } from "../charts/funnel-chart";
 export type { GanttProps, GanttTask } from "../gantt/gantt";
 export type { LineChartProps } from "../charts/line-chart";
@@ -211,3 +240,31 @@ export type { RingData } from "../charts/ring-context";
 export type { SankeyChartProps, SankeyData } from "../charts/sankey/sankey-chart";
 export type { ScatterChartProps } from "../charts/scatter-chart";
 export type { SparklineProps } from "../sparkline/sparkline";
+export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
+// Treemap — RM-025
+export type { TreemapChartProps, TreemapNode } from "../charts/treemap/treemap-chart";
+export type { WaterfallChartProps } from "../charts/waterfall-chart";
+// ParallelCoordinates — RM-034
+export type {
+  ParallelCoordinatesChartProps,
+  ParallelCoordinatesDimension,
+} from "../charts/parallel-coordinates/parallel-coordinates-chart";
+// Tree — RM-035
+export type { TreeChartProps, TreeNode } from "../charts/tree-chart";
+// Network — RM-036
+export type {
+  NetworkChartProps,
+  NetworkLinkDatum,
+  NetworkNodeDatum,
+} from "../charts/network/network-chart";
+
+// ── CanvasLayer — RM-046 ─────────────────────────────────────────────────────
+// The inert stand-in (parity rung (a)) plus the canvas-context helpers, which
+// are the only way to assert what a canvas `draw` callback did under jsdom —
+// where `getContext("2d")` is `null`. See `primitives.tsx`.
+export {
+  type CanvasContextStub,
+  CanvasLayer,
+  createCanvasContextStub,
+  installCanvasContextStub,
+} from "./primitives";

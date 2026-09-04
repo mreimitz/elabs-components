@@ -368,3 +368,170 @@ export const DensityComparison: Story = {
     );
   },
 };
+
+// ── RM-028: per-point marker semantics, peak labels, period ticks ─────────
+
+/** 90 consecutive daily points, starting Monday 2024-01-01, so weekday/weekend
+ * and week-boundary math below is deterministic. `valueAt` is a pure function
+ * of the day index so each story can shape its own series (a smooth wave for
+ * the marker/floor demos, deliberate spikes for the peak-label demo). */
+function makeNinetyDayData(valueAt: (day: number) => number) {
+  return Array.from({ length: 90 }, (_, day) => ({
+    date: new Date(2024, 0, 1 + day),
+    value: valueAt(day),
+  }));
+}
+
+const ninetyDaySeries = makeNinetyDayData((day) => Math.round(100 + 30 * Math.sin(day / 6)));
+
+// Three deliberate, well-separated spikes (30+ days apart) over a flat
+// baseline, so `labelPeaks={3}` picks exactly these three, deterministically.
+const threePeaksSeries = makeNinetyDayData((day) => {
+  if (day === 10) return 300;
+  if (day === 40) return 280;
+  if (day === 70) return 260;
+  return 100;
+});
+
+/**
+ * `markerStyle` (RM-028): a hollow dot means weekend, a filled dot means
+ * weekday — the lieflat "hairline line, weekend/weekday marker" idiom. Every
+ * point still gets a marker; only the fill/stroke resolution differs.
+ */
+export const WeekendHollow: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <LineChart aspectRatio={undefined} data={ninetyDaySeries}>
+        <Grid horizontal />
+        <Line
+          curve={curveNatural}
+          dataKey="value"
+          markerStyle={(d) => {
+            const day = (d.date as Date).getDay();
+            return day === 0 || day === 6 ? "hollow" : "filled";
+          }}
+          stroke="var(--chart-1)"
+          strokeWidth={1.5}
+        />
+        <XAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    let markers: NodeListOf<SVGCircleElement> = canvasElement.querySelectorAll(
+      '[data-slot="line-marker-variants"] circle',
+    );
+    await waitFor(() => {
+      markers = canvasElement.querySelectorAll('[data-slot="line-marker-variants"] circle');
+      expect(markers.length).toBeGreaterThan(0);
+    });
+    const fills = new Set([...markers].map((circle) => circle.getAttribute("fill")));
+    // Both a filled (weekday) and a hollow (weekend, plot-ground fill) marker render.
+    expect(fills.has("var(--chart-1)")).toBe(true);
+    expect(fills.has("var(--chart-background)")).toBe(true);
+  },
+};
+
+/**
+ * `labelPeaks` (RM-028): the top-k highest points get an enlarged marker and
+ * a `HaloText` value label — lieflat's "top-2/top-3 peaks, enlarged and
+ * labelled" rule. This series has exactly three well-separated spikes, so all
+ * three are labelled.
+ */
+export const TopThreePeaks: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <LineChart aspectRatio={undefined} data={threePeaksSeries}>
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="value" labelPeaks={3} stroke="var(--chart-1)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    let labels: NodeListOf<Element> = canvasElement.querySelectorAll(
+      '[data-slot="line-peak-labels"] text',
+    );
+    await waitFor(() => {
+      labels = canvasElement.querySelectorAll('[data-slot="line-peak-labels"] text');
+      expect(labels).toHaveLength(3);
+    });
+    expect([...labels].map((label) => label.textContent)).toEqual(["300", "280", "260"]);
+  },
+};
+
+/**
+ * The acceptance case, literally: "90-day series with two peaks 3 days apart
+ * labels only the higher one." `labelPeaks={1}` requests a single label —
+ * the taller of the pair (3 days apart, well inside the default 6-sample
+ * spacing floor) wins it. (`spacedTopK`'s exhaustive unit tests in
+ * `line-chart.test.tsx` additionally cover the `count > 1` case, where a
+ * rejected close peak's slot is backfilled by the next legitimate — but
+ * unrelated — peak in the series, rather than left empty.)
+ */
+const closePeaksSeries = makeNinetyDayData((day) => {
+  if (day === 40) return 80; // shorter of the pair
+  if (day === 43) return 90; // taller of the pair — 3 days apart
+  return 10;
+});
+
+export const AdjacentPeaksForcedApart: Story = {
+  name: "Adjacent peaks forced apart (acceptance)",
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <LineChart aspectRatio={undefined} data={closePeaksSeries}>
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="value" labelPeaks={1} stroke="var(--chart-1)" />
+        <XAxis />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    let labels: NodeListOf<Element> = canvasElement.querySelectorAll(
+      '[data-slot="line-peak-labels"] text',
+    );
+    await waitFor(() => {
+      labels = canvasElement.querySelectorAll('[data-slot="line-peak-labels"] text');
+      expect(labels).toHaveLength(1);
+    });
+    expect(labels[0]?.textContent).toBe("90");
+  },
+};
+
+/**
+ * `periodTicks="day"` (RM-028): a `HairlineFloor` tick for every calendar day
+ * — 90 of them — whether or not a label renders there, with every 7th tick
+ * drawn longer (a weekly boundary). Acceptance: 90 ticks, every 7th longer,
+ * and — since this is a SEPARATE layer from the labelled ticks above — no
+ * label collisions at 400px width (labels still land at their usual
+ * evenly-spaced/month-boundary positions).
+ */
+export const BarcodeFloor: Story = {
+  render: () => (
+    <div className="h-64 w-[400px]">
+      <LineChart aspectRatio={undefined} data={ninetyDaySeries}>
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="value" strokeWidth={1} stroke="var(--chart-1)" />
+        <XAxis periodTicks="day" />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    let floor: SVGGElement | null = canvasElement.querySelector('[data-slot="hairline-floor"]');
+    await waitFor(() => {
+      floor = canvasElement.querySelector('[data-slot="hairline-floor"]');
+      expect(floor).not.toBeNull();
+    });
+    const ticks = floor?.querySelectorAll("line") ?? [];
+    expect(ticks).toHaveLength(90);
+    const longTicks = [...ticks].filter((tick) => {
+      const y1 = Number(tick.getAttribute("y1"));
+      const y2 = Number(tick.getAttribute("y2"));
+      return Math.abs(y2 - y1) > 3.5; // longHeight (7) vs default height (3)
+    });
+    expect(longTicks).toHaveLength(13); // ceil(90 / 7)
+    // The labelled ticks above are unaffected by periodTicks — still render.
+    expect(canvasElement.querySelectorAll(".text-chart-label").length).toBeGreaterThan(0);
+  },
+};

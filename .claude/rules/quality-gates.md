@@ -69,7 +69,11 @@ A component is "done" only when ALL of these hold:
       reading the implementation.
 - [ ] **No paid dependencies.**
 - [ ] **Separation of concerns** — app UI in `@elabs-ai/components-ui`, marketing in
-      `@elabs-ai/components-marketing`; data/ai/flow/charts stay in their packages.
+      `@elabs-ai/components-marketing`; data/ai/flow/charts stay in their packages. The
+      one-way line ends in `→ process`: `@elabs-ai/components-process` is the single
+      **layer-3** composite (ADR 0034), so a missing primitive goes **down** into the base
+      package that owns it — it is never authored in `process`, and never reached for
+      sideways between two layer-2 leaves.
 - [ ] **Green checks** — `pnpm --filter <pkg> typecheck test` (and `lint`) pass.
 - [ ] **Motion-tokened** — animations use the gated `duration-*`/`ease-*`
       utilities (or `--t-*`), never raw `duration-200`/`ease-in-out`; movement
@@ -115,7 +119,12 @@ agent/skill path can discover it. Register it everywhere packages are enumerated
   `packages/cli/lib/render-docs.mjs` (`PKG_PURPOSE` for the 10 manifest packages,
   `INFRA_PKGS` for the 5 infra rows), then run `pnpm gen`. Only edit the prose
   **outside** the `<!-- brand-ui:gen:* -->` markers by hand.
-- `CLAUDE.md` — the one-way dependency line (prose, not the generated table).
+- `CLAUDE.md` — the one-way dependency line (prose, not the generated table), plus its
+  three siblings that must state it identically: `.claude/rules/design-system.md`,
+  `.claude/rules/architecture-review.md` D1 and
+  `.claude/agents/repo-architect-structure-auditor.md`.
+- `scripts/check-dep-direction.mjs` — the `ALLOWED` map is the MACHINE-READABLE copy of
+  that line; a package missing from it fails `pnpm dep-direction:check` by name.
 - `.claude/commands/new-component.md` — add it to the target-package list.
 - `skills/brand-ui/SKILL.md` (the **judgment prose** around the generated catalogue) +
   `skills/brand-ui-component/SKILL.md` (routing) — and their `description` package lists.

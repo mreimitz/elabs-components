@@ -24,10 +24,10 @@ test("initialize advertises the brand-ui server + tools capability", () => {
   assert.ok(res.result.capabilities.tools, "the tools capability is advertised");
 });
 
-test("tools/list returns the five read tools, each with an input schema", () => {
+test("tools/list returns the six read tools, each with an input schema", () => {
   const res = call("tools/list", {});
   const names = res.result.tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["audit", "docs", "info", "search", "tokens"]);
+  assert.deepEqual(names, ["audit", "chart_for", "docs", "info", "search", "tokens"]);
   for (const t of res.result.tools) {
     assert.ok(t.description, `${t.name} has a description`);
     assert.equal(t.inputSchema.type, "object", `${t.name} has an object input schema`);

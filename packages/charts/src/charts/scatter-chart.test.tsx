@@ -167,3 +167,151 @@ describe("ScatterChart — non-Date xDataKey value (#352)", () => {
     }
   });
 });
+
+// RM-031: dropLines, labelExtremes, categorical jitter, highlightKey.
+describe("Scatter — RM-031 dropLines / labelExtremes / jitter / highlightKey", () => {
+  it("a plain numeric Scatter (no new props) renders through the SAME path as before — no new data-slots", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter dataKey="sessions" />
+      </ScatterChart>,
+    );
+    // The advanced-feature overlays/markup introduced by this item must be
+    // entirely absent when none of dropLines / labelExtremes / jitter /
+    // highlightKey is set — the acceptance bar for "existing numeric scatter
+    // stories unchanged".
+    expect(container.querySelector('[data-slot="scatter-markers"]')).toBeNull();
+    expect(container.querySelector('[data-slot="scatter-drop-lines"]')).toBeNull();
+    expect(container.querySelector('[data-slot="scatter-highlights"]')).toBeNull();
+    expect(container.querySelector('[data-slot="scatter-point"]')).toBeNull();
+  });
+
+  it("dropLines='both' draws two hairlines per point, under the markers and excluded from hit-testing", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter animate={false} dataKey="sessions" dropLines="both" />
+      </ScatterChart>,
+    );
+    const group = container.querySelector('[data-slot="scatter-drop-lines"]');
+    expect(group).not.toBeNull();
+    expect(group?.getAttribute("aria-hidden")).toBe("true");
+    expect((group as HTMLElement).style.pointerEvents).toBe("none");
+    // one "x" line + one "y" line per point
+    expect(group?.querySelectorAll("line")).toHaveLength(chartData.length * 2);
+  });
+
+  it("dropLines is false (default) — no drop-line group at all", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter dataKey="sessions" />
+      </ScatterChart>,
+    );
+    expect(container.querySelector('[data-slot="scatter-drop-lines"]')).toBeNull();
+  });
+
+  it("F8 recreation: labelExtremes labels ONLY the best and worst point; the other 10 fade to fadedOpacity", () => {
+    const rows = [
+      { date: new Date("2024-01-01"), name: "Editor", score: 92 },
+      { date: new Date("2024-01-02"), name: "Hub", score: 11 },
+      ...Array.from({ length: 10 }, (_, i) => ({
+        date: new Date(2024, 1, i + 1),
+        name: `Product ${i}`,
+        score: 40 + i,
+      })),
+    ];
+
+    const { container, getByText } = render(
+      <ScatterChart data={rows}>
+        <Scatter
+          animate={false}
+          dataKey="score"
+          fadedOpacity={0.35}
+          labelExtremes={{ by: "y", count: 1, labelKey: "name" }}
+        />
+      </ScatterChart>,
+    );
+
+    // Best and worst, and ONLY best and worst, are labeled.
+    expect(getByText("Editor")).toBeInTheDocument();
+    expect(getByText("Hub")).toBeInTheDocument();
+    for (let i = 0; i < 10; i++) {
+      expect(container.textContent).not.toContain(`Product ${i}`);
+    }
+
+    const points = Array.from(container.querySelectorAll('[data-slot="scatter-point"]'));
+    expect(points).toHaveLength(rows.length);
+    const faded = points.filter((p) => p.getAttribute("opacity") === "0.35");
+    const full = points.filter((p) => p.getAttribute("opacity") === "1");
+    expect(faded).toHaveLength(10);
+    expect(full).toHaveLength(2);
+  });
+
+  it("jitter positions are IDENTICAL across independent renders (deterministic seededRnd)", () => {
+    const rows = [
+      { date: new Date("2024-01-01"), tier: "Free" },
+      { date: new Date("2024-01-02"), tier: "Pro" },
+      { date: new Date("2024-01-03"), tier: "Free" },
+      { date: new Date("2024-01-04"), tier: "Enterprise" },
+      { date: new Date("2024-01-05"), tier: "Pro" },
+    ];
+
+    const readTransforms = () => {
+      const { container, unmount } = render(
+        <ScatterChart data={rows}>
+          <Scatter animate={false} dataKey="tier" jitter={0.4} yType="category" />
+        </ScatterChart>,
+      );
+      const transforms = Array.from(
+        container.querySelectorAll('[data-slot="scatter-point"] > g'),
+      ).map((el) => el.getAttribute("transform"));
+      unmount();
+      return transforms;
+    };
+
+    const first = readTransforms();
+    const second = readTransforms();
+    expect(first).toHaveLength(rows.length);
+    expect(first).toEqual(second);
+  });
+
+  it("jitter is ignored (no crash, numeric path) when yType is not 'category'", () => {
+    expect(() =>
+      render(
+        <ScatterChart data={chartData}>
+          <Scatter dataKey="sessions" jitter={0.4} />
+        </ScatterChart>,
+      ),
+    ).not.toThrow();
+  });
+
+  it("highlightKey (string) rings only matching points — a shape channel, not color alone", () => {
+    const rows = [
+      { date: new Date("2024-01-01"), isHero: true, sessions: 100 },
+      { date: new Date("2024-01-02"), isHero: false, sessions: 200 },
+      { date: new Date("2024-01-03"), isHero: false, sessions: 300 },
+    ];
+
+    const { container } = render(
+      <ScatterChart data={rows}>
+        <Scatter animate={false} dataKey="sessions" highlightKey="isHero" />
+      </ScatterChart>,
+    );
+
+    expect(container.querySelectorAll('[data-slot="peak-ring"]')).toHaveLength(1);
+  });
+
+  it("highlightKey (predicate function) rings the points the predicate matches", () => {
+    const { container } = render(
+      <ScatterChart data={chartData}>
+        <Scatter
+          animate={false}
+          dataKey="sessions"
+          highlightKey={(d) => (d.sessions as number) > 450}
+        />
+      </ScatterChart>,
+    );
+
+    // Only the 510-session row clears the threshold.
+    expect(container.querySelectorAll('[data-slot="peak-ring"]')).toHaveLength(1);
+  });
+});

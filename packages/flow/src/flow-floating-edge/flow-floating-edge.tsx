@@ -1,4 +1,5 @@
-import { BaseEdge, getBezierPath, useInternalNode, type EdgeProps } from "@xyflow/react";
+import { getBezierPath, useInternalNode, type EdgeProps } from "@xyflow/react";
+import { FlowEdgePath } from "../flow-edge-path";
 import { getEdgeParams } from "./floating-edge-geometry";
 
 /** Optional per-edge `data` for {@link FlowFloatingEdge}. */
@@ -45,11 +46,14 @@ export function FlowFloatingEdge({ id, source, target, markerEnd, style, data }:
 
   return (
     <>
-      <BaseEdge
+      <FlowEdgePath
         id={id}
         path={edgePath}
         markerEnd={markerEnd}
-        style={{ stroke: "var(--flow-edge)", strokeWidth: 1.5, ...style }}
+        data-slot="flow-floating-edge"
+        stroke="var(--flow-edge)"
+        strokeWidth={1.5}
+        style={style}
       />
       {showAnchors ? (
         <g

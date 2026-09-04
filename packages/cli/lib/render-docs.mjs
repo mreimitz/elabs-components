@@ -33,6 +33,9 @@ const PKG_ORDER = [
   "@elabs-ai/components-editor",
   "@elabs-ai/components-viewer",
   "@elabs-ai/components-terminal",
+  // Layer 3 — the only package that composes other leaves (ADR 0034). Last in the
+  // display order because it sits at the end of the one-way dependency line.
+  "@elabs-ai/components-process",
 ];
 
 /** One-line purpose per package — the routing map ("which package for what"). */
@@ -58,6 +61,8 @@ export const PKG_PURPOSE = {
     "FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.",
   "@elabs-ai/components-terminal":
     "Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.",
+  "@elabs-ai/components-process":
+    "Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.",
 };
 
 /**

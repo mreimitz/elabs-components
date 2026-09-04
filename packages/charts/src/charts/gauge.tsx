@@ -13,6 +13,7 @@ import {
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
+import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
 
 function isDefsComponent(child: ReactElement): boolean {
@@ -153,6 +154,20 @@ export interface GaugeProps {
   enterTransition?: Transition;
   /** Scales notch stagger delays relative to default timing (1 = reference). */
   enterStaggerScale?: number;
+  /**
+   * Milestone values (0–100) marked with a small halo-text dot + number inside
+   * the notch band — e.g. `[25, 50, 75, 100]` (lieflat F11). Unset (default)
+   * renders no milestones, so an existing `Gauge` is unaffected.
+   */
+  milestones?: number[];
+  /**
+   * Caption rendered under the center value/label. Receives the number of
+   * notches remaining (`totalNotches - activeNotches`) and returns the
+   * caption text — e.g. `(remaining) => \`${remaining} ticks to go\`` renders
+   * as "27 TICKS TO GO" (lieflat F11; the caption is rendered upper-cased via
+   * CSS, so pass ordinary sentence case). Unset (default) renders no caption.
+   */
+  remainingLabel?: (remaining: number) => string;
 }
 
 interface GaugeInnerProps extends Omit<GaugeProps, "className" | "minWidth"> {
@@ -186,6 +201,8 @@ function GaugeInner({
   notchLengthPercent = 100,
   enterTransition,
   enterStaggerScale = 1,
+  milestones,
+  remainingLabel,
 }: GaugeInnerProps) {
   const prefersReducedMotion = useReducedMotion();
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
@@ -290,6 +307,31 @@ function GaugeInner({
     useGradient,
     useThemePaletteGradient,
   ]);
+
+  // Milestone dots + numbers (F11) — placed inside the notch band, on the same
+  // arc the fill sweeps, so a milestone reads as "part of the dial" rather than
+  // a separate overlay. Angle is mapped over `availableAngle` (the same span
+  // the notches occupy), not the raw start/end angle, so a milestone at 100
+  // lands at the outer edge of the last notch.
+  const milestoneMarks = useMemo(() => {
+    if (!milestones || milestones.length === 0) {
+      return [];
+    }
+    const dotRadius = (outerRadius + innerRadius) / 2;
+    const labelRadius = Math.max(innerRadius - 14, dotRadius * 0.5);
+    return milestones.map((m) => {
+      const clamped = Math.min(100, Math.max(0, m));
+      const angle = startAngle + (clamped / 100) * availableAngle;
+      const radians = (angle * Math.PI) / 180;
+      return {
+        value: m,
+        dotX: centerX + Math.cos(radians) * dotRadius,
+        dotY: centerY + Math.sin(radians) * dotRadius,
+        labelX: centerX + Math.cos(radians) * labelRadius,
+        labelY: centerY + Math.sin(radians) * labelRadius,
+      };
+    });
+  }, [milestones, outerRadius, innerRadius, startAngle, availableAngle, centerX, centerY]);
 
   const createNotchPath = (
     points: {
@@ -435,6 +477,33 @@ function GaugeInner({
               }}
             />
           ))}
+
+        {milestoneMarks.length > 0 ? (
+          <g aria-hidden="true">
+            {milestoneMarks.map((mark) => (
+              <g key={`milestone-${mark.value}`}>
+                <circle
+                  cx={mark.dotX}
+                  cy={mark.dotY}
+                  fill="var(--chart-foreground)"
+                  r={3}
+                  stroke="var(--chart-background)"
+                  strokeWidth={1.5}
+                />
+                <HaloText
+                  dominantBaseline="middle"
+                  fontSize={9}
+                  fontWeight={600}
+                  textAnchor="middle"
+                  x={mark.labelX}
+                  y={mark.labelY}
+                >
+                  {mark.value}
+                </HaloText>
+              </g>
+            ))}
+          </g>
+        ) : null}
       </svg>
 
       <div
@@ -450,11 +519,20 @@ function GaugeInner({
           prefix={prefix}
           suffix={suffix}
         />
+        {remainingLabel ? (
+          <div className="mt-1 text-center text-meta text-muted-foreground uppercase tracking-wide">
+            {remainingLabel(Math.max(totalNotches - activeNotches, 0))}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
+/**
+ * @dataShape a single value against a target or threshold bands
+ * @avoidWhen the trend over time matters more than the instant — use a line chart
+ */
 export function Gauge({
   width: widthProp,
   height: heightProp,

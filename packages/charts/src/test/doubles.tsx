@@ -44,8 +44,8 @@ import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import {
   assertChartContract,
+  assertChartSpecContract,
   buildChartDoublePayload,
-  ChartContractError,
   type ChartContractSpec,
 } from "./contract";
 
@@ -86,7 +86,25 @@ export type ChartFamilyName =
   | "RadarChart"
   | "ChoroplethChart"
   | "SankeyChart"
-  | "Gantt";
+  | "Gantt"
+  | "DumbbellChart"
+  // Heatmap — RM-021
+  | "HeatmapChart"
+  | "UnitChart"
+  // Treemap — RM-025
+  | "TreemapChart"
+  // DistributionChart — RM-026
+  | "DistributionChart"
+  // Waterfall — RM-022
+  | "WaterfallChart"
+  // Bump — RM-033
+  | "BumpChart"
+  // ParallelCoordinates — RM-034
+  | "ParallelCoordinatesChart"
+  // Tree — RM-035
+  | "TreeChart"
+  // Network — RM-036
+  | "NetworkChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -178,12 +196,120 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     dataKind: "sankey",
     requiredProps: ["data", "children"],
   },
+  // Heatmap — RM-021. The three grid keys are all caller-named, and only the
+  // calendar variant reads `x` as a date — see `propNamedKeys`.
+  HeatmapChart: {
+    dataKind: "array",
+    requiredProps: ["data", "x", "y", "valueKey"],
+    propNamedKeys: [
+      { prop: "x" },
+      { prop: "y", onlyWhen: { prop: "variant", equals: "matrix" } },
+      { prop: "valueKey" },
+      { prop: "x", onlyWhen: { prop: "variant", equals: "calendar" }, requireDate: true },
+    ],
+  },
   Gantt: {
     dataProp: "tasks",
     dataKind: "array",
     requiredProps: ["tasks"],
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
+  },
+  // Dumbbell — RM-023
+  DumbbellChart: {
+    dataKind: "array",
+    requiredProps: ["data", "category", "startKey", "endKey"],
+    hasStatus: false,
+    dynamicKeys: [
+      { prop: "category" },
+      { prop: "startKey", numeric: true },
+      { prop: "endKey", numeric: true },
+    ],
+  },
+  UnitChart: {
+    dataKind: "array",
+    requiredProps: ["data", "layout"],
+  },
+  // Waterfall — RM-022
+  WaterfallChart: {
+    dataKind: "array",
+    requiredProps: ["data"],
+    hasStatus: false,
+    itemRequiredKeys: ["label", "value"],
+    itemNumericKeys: ["value"],
+  },
+  // Treemap — RM-025
+  TreemapChart: {
+    dataKind: "hierarchy",
+    requiredProps: ["data"],
+  },
+  // DistributionChart — RM-026
+  // The real container reads exactly two columns off every row and puts one of
+  // them on a NUMERIC scale, so those are the two things a mocked test must
+  // still fail on: a `valueKey` whose column is missing (`itemRequiredKeys`) or
+  // non-numeric (`itemNumericKeys`), and a declared `groupKey` whose column is
+  // absent. Both are driven by PROP-NAMED keys, which is why they use the
+  // `keyProps` form rather than a fixed key list — see `contract.ts`.
+  // Deliberately NOT `hasStatus`: this family has no `status` prop, so an empty
+  // `data` array is a violation here rather than a legitimate loading state.
+  DistributionChart: {
+    dataKind: "array",
+    requiredProps: ["data", "valueKey", "kind"],
+    keyProps: [
+      { prop: "valueKey", numeric: true },
+      { prop: "groupKey", numeric: false },
+    ],
+  },
+  // Bump — RM-033
+  // `period` and `entity` name the two columns every row must own (the
+  // DumbbellChart `dynamicKeys` shape, not a fixed key list — the caller picks
+  // the column names). `valueKey`/`rankKey` are both optional `keyProps`: the
+  // real component derives rank from `valueKey` whenever `rankKey` is absent,
+  // so neither one alone is required — only that whichever IS passed names a
+  // real, numeric column.
+  BumpChart: {
+    dataKind: "array",
+    requiredProps: ["data", "period", "entity"],
+    hasStatus: false,
+    dynamicKeys: [{ prop: "period" }, { prop: "entity" }],
+    keyProps: [
+      { prop: "valueKey", numeric: true },
+      { prop: "rankKey", numeric: true },
+    ],
+  },
+  // ParallelCoordinates — RM-034
+  // `entity` names a single column (the existing single-key `dynamicKeys`
+  // form); `dimensions` is an ARRAY OF OBJECTS, each naming one more numeric
+  // column via its `key` field (the `arrayOf` generalization of the same
+  // field — see `contract.ts`). 3–6 axes, every one numeric on every row.
+  ParallelCoordinatesChart: {
+    dataKind: "array",
+    requiredProps: ["data", "entity", "dimensions"],
+    dynamicKeys: [
+      { prop: "entity" },
+      { prop: "dimensions", numeric: true, arrayOf: { field: "key", min: 3, max: 6 } },
+    ],
+  },
+  // Tree — RM-035
+  TreeChart: {
+    dataKind: "hierarchy",
+    requiredProps: ["data"],
+  },
+  // Network — RM-036
+  // A graph is TWO arrays that reference each other, so the primary data prop
+  // is `nodes` and the edge list gets the relational check (`edgeProp`) — an
+  // edge naming a node that is not in `nodes` is the failure a mocked test
+  // would otherwise never see. Deliberately NOT `hasStatus`: this family has no
+  // `status` prop, so an empty `nodes` array is a violation, not a loading
+  // state.
+  NetworkChart: {
+    dataProp: "nodes",
+    dataKind: "array",
+    requiredProps: ["nodes", "links", "layout"],
+    itemRequiredKeys: ["id"],
+    itemNumericKeys: ["value"],
+    numericProps: ["labelThreshold", "maxNodes", "seed"],
+    edgeProp: { prop: "links" },
   },
 };
 
@@ -255,6 +381,19 @@ import type { RadarChartProps } from "../charts/radar-chart";
 import type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
+// Heatmap — RM-021
+import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
+import type { UnitChartProps } from "../charts/unit-chart";
+// Treemap — RM-025
+import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
+// DistributionChart — RM-026
+import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
+// Waterfall — RM-022
+import type { WaterfallChartProps } from "../charts/waterfall-chart";
+// Tree — RM-035
+import type { TreeChartProps } from "../charts/tree-chart";
+// Network — RM-036
+import type { NetworkChartProps } from "../charts/network/network-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -309,6 +448,71 @@ export const SankeyChart = createChartContainerDouble<SankeyChartProps>(
   CHART_CONTRACT_SPECS.SankeyChart,
 );
 export const Gantt = createChartContainerDouble<GanttProps>("Gantt", CHART_CONTRACT_SPECS.Gantt);
+// Heatmap — RM-021
+export const HeatmapChart = createChartContainerDouble<HeatmapChartProps>(
+  "HeatmapChart",
+  CHART_CONTRACT_SPECS.HeatmapChart,
+);
+
+// ── DumbbellChart — RM-023 ───────────────────────────────────────────────────
+
+import type { DumbbellChartProps } from "../charts/dumbbell-chart";
+
+export const DumbbellChart = createChartContainerDouble<DumbbellChartProps>(
+  "DumbbellChart",
+  CHART_CONTRACT_SPECS.DumbbellChart,
+);
+
+export const UnitChart = createChartContainerDouble<UnitChartProps>(
+  "UnitChart",
+  CHART_CONTRACT_SPECS.UnitChart,
+);
+
+// Treemap — RM-025
+export const TreemapChart = createChartContainerDouble<TreemapChartProps>(
+  "TreemapChart",
+  CHART_CONTRACT_SPECS.TreemapChart,
+);
+
+// DistributionChart — RM-026
+export const DistributionChart = createChartContainerDouble<DistributionChartProps>(
+  "DistributionChart",
+  CHART_CONTRACT_SPECS.DistributionChart,
+);
+
+// Waterfall — RM-022
+export const WaterfallChart = createChartContainerDouble<WaterfallChartProps>(
+  "WaterfallChart",
+  CHART_CONTRACT_SPECS.WaterfallChart,
+);
+
+// Bump — RM-033
+import type { BumpChartProps } from "../charts/bump-chart";
+
+export const BumpChart = createChartContainerDouble<BumpChartProps>(
+  "BumpChart",
+  CHART_CONTRACT_SPECS.BumpChart,
+);
+
+// ParallelCoordinates — RM-034
+import type { ParallelCoordinatesChartProps } from "../charts/parallel-coordinates/parallel-coordinates-chart";
+
+export const ParallelCoordinatesChart = createChartContainerDouble<ParallelCoordinatesChartProps>(
+  "ParallelCoordinatesChart",
+  CHART_CONTRACT_SPECS.ParallelCoordinatesChart,
+);
+
+// Tree — RM-035
+export const TreeChart = createChartContainerDouble<TreeChartProps>(
+  "TreeChart",
+  CHART_CONTRACT_SPECS.TreeChart,
+);
+
+// Network — RM-036
+export const NetworkChart = createChartContainerDouble<NetworkChartProps>(
+  "NetworkChart",
+  CHART_CONTRACT_SPECS.NetworkChart,
+);
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
 
@@ -318,14 +522,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
   function AutoChartTestDouble(props, ref) {
     const record = props as unknown as Record<string, unknown>;
     assertChartContract("AutoChart", record, { dataKind: "none", requiredProps: ["spec"] });
-    if (props.spec !== undefined && (typeof props.spec !== "object" || props.spec === null)) {
-      throw new ChartContractError(
-        "AutoChart",
-        "spec",
-        props.spec,
-        `"spec" must be a ChartSpec object`,
-      );
-    }
+    // The spec's own value-contract (RM-038) — the type union, the declared
+    // columns, and the per-family requirements the real component silently
+    // falls back on. Lives in `contract.ts` beside the other value rules.
+    assertChartSpecContract(props.spec);
     return (
       <div
         ref={ref}

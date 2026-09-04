@@ -26,6 +26,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
+import { RingTickRing } from "./ring";
 import {
   defaultRingColors,
   type RingContextValue,
@@ -34,6 +35,7 @@ import {
   RingProvider,
   ringCssVars,
 } from "./ring-context";
+import { useHighDecorationOf } from "./use-high-decoration";
 
 function generateRingArcPath(
   innerRadius: number,
@@ -108,6 +110,15 @@ export interface RingChartProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. ring names + values). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Outside-label mode for the high-decoration tick ring (lieflat F4 "Tick
+   * Donut", #RM-030). `"outside"` draws a dotted leader line from each
+   * segment's ticks to its label, placed outside the ring, and reserves
+   * layout room for it. Only takes visible effect at `--decoration` ≥ 8 (the
+   * smooth-arc rendering below that threshold has no leader/label
+   * treatment); unset renders exactly as before.
+   */
+  labels?: "outside";
 }
 
 interface RingChartInnerProps {
@@ -126,15 +137,23 @@ interface RingChartInnerProps {
   enterTransition?: Transition;
   enterStaggerScale: number;
   geometryScrubbing: boolean;
+  labels?: "outside";
 }
 
 function isRing(child: ReactNode): boolean {
-  return (
-    isValidElement(child) &&
-    typeof child.type === "function" &&
-    ((child.type as { displayName?: string }).displayName === "Ring" ||
-      (child.type as { name?: string }).name === "Ring")
-  );
+  // `Ring` is `memo()`-wrapped, so `child.type` is an OBJECT
+  // (`$typeof: react.memo`), not a function — a `typeof === "function"`
+  // guard here would never match a real `<Ring>` element (the same bug class
+  // as `isPieSlice` in pie-chart.tsx). Read displayName/name off whatever
+  // `child.type` is instead of gating on its typeof.
+  if (!isValidElement(child)) {
+    return false;
+  }
+  const type = child.type as { displayName?: string; name?: string } | string;
+  if (typeof type === "string") {
+    return false;
+  }
+  return type.displayName === "Ring" || type.name === "Ring";
 }
 
 // Helper to check if a child is a RingCenter component
@@ -179,6 +198,7 @@ const RingChartCore = memo(function RingChartCore({
   enterTransition,
   enterStaggerScale,
   geometryScrubbing,
+  labels,
 }: RingChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<number | null>(null);
   const [animationKey] = useState(0);
@@ -203,9 +223,12 @@ const RingChartCore = memo(function RingChartCore({
   const center = size / 2;
 
   // Calculate scaled dimensions to fit within the available space
-  // The outermost ring needs to fit within the chart with some padding
+  // The outermost ring needs to fit within the chart with some padding.
+  // `labels="outside"` reserves extra room for the tick-ring's leader
+  // lines/labels — reserved unconditionally (not gated on `high`) so sizing
+  // never shifts when the decoration signal resolves a frame after mount.
   const ringCount = data.length;
-  const padding = 8; // Padding from edge
+  const padding = labels === "outside" ? 8 + 56 : 8; // Padding from edge
   const availableRadius = center - padding;
 
   // Calculate the "design" outer radius (what we'd need at 1:1 scale)
@@ -222,6 +245,13 @@ const RingChartCore = memo(function RingChartCore({
 
   // Calculate total value
   const totalValue = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
+
+  // Tick-ring rendering (#RM-030 — lieflat F4 "Tick Donut") activates only at
+  // high decoration; below that threshold RingChart renders exactly as
+  // before. `high` starts `false` (SSR-safe, no hydration mismatch) and
+  // flips via a layout effect on mount.
+  const high = useHighDecorationOf(containerRef);
+  const tickMode = high && !geometryScrubbing;
 
   // Get color for a ring index
   const getColor = useCallback(
@@ -295,7 +325,9 @@ const RingChartCore = memo(function RingChartCore({
     Children.forEach(children, (child) => {
       if (isRingCenter(child)) {
         centerNodes.push(child);
-      } else if (geometryScrubbing && isRing(child)) {
+      } else if ((geometryScrubbing || tickMode) && isRing(child)) {
+        // tickMode (#RM-030): the procedural `RingTickRing` group replaces
+        // every `<Ring>` child's smooth-arc rendering at high decoration.
         return;
       } else {
         svgNodes.push(child);
@@ -303,7 +335,7 @@ const RingChartCore = memo(function RingChartCore({
     });
 
     return { svgChildren: svgNodes, centerChildren: centerNodes };
-  }, [children, geometryScrubbing]);
+  }, [children, geometryScrubbing, tickMode]);
 
   const datapointsEnabled = useChartDatapointsEnabled();
   const datapointTargets = useMemo(() => {
@@ -391,6 +423,17 @@ const RingChartCore = memo(function RingChartCore({
                   </g>
                 ))
               : null}
+            {tickMode ? (
+              <RingTickRing
+                data={data}
+                endAngle={endAngle}
+                getColor={getColor}
+                innerRadius={baseInnerRadius}
+                labels={labels}
+                outerRadius={baseInnerRadius + strokeWidth}
+                startAngle={startAngle}
+              />
+            ) : null}
             {svgChildren}
           </Group>
         </svg>
@@ -432,10 +475,15 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
     prev.enterTransition === next.enterTransition &&
     prev.enterStaggerScale === next.enterStaggerScale &&
     prev.geometryScrubbing === next.geometryScrubbing &&
+    prev.labels === next.labels &&
     prev.children === next.children
   );
 }
 
+/**
+ * @dataShape one proportion against its maximum, read as a single ring
+ * @avoidWhen several categories matter — use a pie or unit chart
+ */
 export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
@@ -451,6 +499,7 @@ export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function Rin
     enterTransition,
     enterStaggerScale = 1,
     geometryScrubbing = false,
+    labels,
     children,
     copyValueOnActivate,
     onDatapointClick,
@@ -525,6 +574,7 @@ export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function Rin
             geometryScrubbing={geometryScrubbing}
             height={fixedSize}
             hoveredIndexProp={hoveredIndex}
+            labels={labels}
             onHoverChange={onHoverChange}
             ringGap={ringGap}
             startAngle={startAngle}
@@ -562,6 +612,7 @@ export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function Rin
               geometryScrubbing={geometryScrubbing}
               height={height}
               hoveredIndexProp={hoveredIndex}
+              labels={labels}
               onHoverChange={onHoverChange}
               ringGap={ringGap}
               startAngle={startAngle}

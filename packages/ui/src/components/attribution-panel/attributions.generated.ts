@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 116 entries (data: 2, source: 17, font: 2, dependency: 95).
+// 118 entries (data: 2, source: 18, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -125,6 +125,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Copyright (c) 2026 CrowdView Inc, dba Extend; portions Copyright (c) 2023 shadcn",
     url: "https://github.com/extend-hq/ui",
     usedBy: ["@elabs-ai/components-viewer"],
+    required: false,
+  },
+  {
+    version: null,
+    note: "The editorial chart gallery behind the 2026-09-04 charts gap analysis: 71 files across the charts and tokens packages cite it as the source of a value, a mark shape or a composition (unit decomposition, hairline furniture, the sequential/diverging ramps, the reveal timing), and three copy-own registry blocks (chart-editorial-hourglass, -patchwork, -almanac) reproduce three of its gallery cards' DATA-SHAPE DESCRIPTIONS from that same analysis' one-line prose. No code was copied verbatim — each was re-expressed onto this repo's tokens and primitives. Its LICENSE is PolyForm Noncommercial 1.0.0, read verbatim from the upstream file; GitHub's own detection reports NOASSERTION, which is why nothing flagged it earlier. The licence's Required Notice slot is left at the template's example value, so upstream states no copyright holder and none is claimed here. Noncommercial-only is unresolved for a repo headed for public release — a licensing decision for the maintainer, not something attribution settles.",
+    id: "lieflat-charts",
+    category: "source",
+    name: "lieflat-charts",
+    license: "PolyForm-Noncommercial-1.0.0",
+    copyright: null,
+    url: "https://github.com/larashero3-dotcom/lieflat-charts",
+    usedBy: ["@elabs-ai/components-charts", "@elabs-ai/components-tokens"],
     required: false,
   },
   {
@@ -961,6 +973,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
       "@elabs-ai/components-ai",
       "@elabs-ai/components-charts",
       "@elabs-ai/components-editor",
+      "@elabs-ai/components-process",
       "@elabs-ai/components-terminal",
       "@elabs-ai/components-ui",
     ],
@@ -1011,7 +1024,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "ISC",
     copyright: "Mike Bostock",
     url: "https://www.npmjs.com/package/d3-force",
-    usedBy: ["@elabs-ai/components-flow"],
+    usedBy: ["@elabs-ai/components-charts", "@elabs-ai/components-flow"],
     required: false,
     note: null,
   },
@@ -1023,6 +1036,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "ISC",
     copyright: "Mike Bostock",
     url: "https://www.npmjs.com/package/d3-geo",
+    usedBy: ["@elabs-ai/components-charts"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "d3-hierarchy",
+    category: "dependency",
+    name: "d3-hierarchy",
+    version: "3.1.2",
+    license: "ISC",
+    copyright: "Mike Bostock",
+    url: "https://www.npmjs.com/package/d3-hierarchy",
     usedBy: ["@elabs-ai/components-charts"],
     required: false,
     note: null,
@@ -1126,6 +1151,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
       "@elabs-ai/components-editor",
       "@elabs-ai/components-flow",
       "@elabs-ai/components-maps",
+      "@elabs-ai/components-process",
       "@elabs-ai/components-terminal",
       "@elabs-ai/components-ui",
       "@elabs-ai/components-viewer",

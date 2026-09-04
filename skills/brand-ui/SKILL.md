@@ -37,24 +37,25 @@ stale-gated — never hand-edit between the markers.
 <!-- brand-ui:gen:catalogue:start -->
 <!-- GENERATED from brand-ui.manifest.json by 'pnpm gen' (WP-10 #87). Edit package purposes in the CLI's render-docs module (PKG_PURPOSE), not here. The gen:check gate fails on drift. -->
 
-**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 204 · **Registry blocks:** 23
+**Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 230 · **Registry blocks:** 26
 
-**Exported surface:** 1109 components · 79 hooks across 12 packages.
+**Exported surface:** 1175 components · 82 hooks across 13 packages.
 
-| Package                          | Components | Hooks | Use it for                                                                               |
-| -------------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@elabs-ai/components-ui`        |        382 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@elabs-ai/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@elabs-ai/components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts`    |        130 |    32 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
-| `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
+| Package                          | Components | Hooks | Use it for                                                                                                    |
+| -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                        |
+| `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
+| `@elabs-ai/components-ui`        |        382 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
+| `@elabs-ai/components-data`      |          6 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
+| `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
+| `@elabs-ai/components-flow`      |         31 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
+| `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
+| `@elabs-ai/components-charts`    |        187 |    35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
+| `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
+| `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
+| `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
+| `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                       |
+| `@elabs-ai/components-process`   |          0 |     0 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 _Counts are exact, from the manifest. Confirm component names/props with `brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._
 
@@ -361,6 +362,15 @@ it must NOT import from `@elabs-ai/components-data` (sibling dep rule).
 
 ### Which chart when
 
+For the full 25-container data-shape table (which axis/measure combination maps
+to which container, alternatives, and when to avoid each), the four
+chart-selection rules (judge the shape first, compare ≥ 3 candidates, cap a page
+at 6 charts, never repeat a silhouette), and palette-by-cardinality guidance, see
+[reference/chart-selection.md](reference/chart-selection.md) — or query it
+directly with `brand-ui chart-for "<data shape>"` (also exposed as the `chart_for`
+MCP tool). The quick table below is a shorter, pre-RM-038 cheat sheet covering
+13 of the 25 containers.
+
 | Chart              | Use when                                                       |
 | ------------------ | -------------------------------------------------------------- |
 | `AreaChart`        | Trend over time with magnitude / filled area emphasis          |
@@ -532,4 +542,7 @@ tokens and every theme renders correctly for free.
 
 - [reference/rules.md](reference/rules.md) — critical rules with Incorrect/Correct pairs.
 - [reference/composition.md](reference/composition.md) — app shell, dashboard, chat, flow, forms patterns.
+- [reference/chart-selection.md](reference/chart-selection.md) — data-shape table for all
+  25 chart containers, the four chart-selection rules, palette-by-cardinality guidance;
+  query it directly with `brand-ui chart-for "<data shape>"` / the `chart_for` MCP tool.
 - [reference/theming.md](reference/theming.md) — tokens, ThemeProvider, themes, contrast.

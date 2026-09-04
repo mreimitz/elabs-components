@@ -12,6 +12,19 @@ paths:
 `ChartFrame` is the standard opt-in chart wrapper that adds expand / flip-to-table /
 download-CSV to any chart child.
 
+## Choosing a chart (RM-040)
+
+Judge the data's SHAPE before reaching for a container name: how many measures,
+how many categorical axes, ordered or not, a range or a hierarchy. The full
+25-container data-shape table, the four chart-selection rules (shape first, ≥ 3
+candidates compared, ≤ 6 charts per page, no repeated silhouette on one page) and
+palette-by-cardinality guidance live in
+`skills/brand-ui/reference/chart-selection.md` — read it before hand-picking a
+container, and before hardcoding `AutoChart`'s inference logic instead of letting
+it run. Query it directly instead of re-deriving it: `brand-ui chart-for "<data
+shape>"` (CLI) or the `chart_for` MCP tool (`brand-ui mcp`) rank chart containers
+by matching your query against each container's own `@dataShape` JSDoc tag.
+
 ## ChartFrame
 
 ### Why `data`/`columns` are primary inputs (not context)
@@ -69,6 +82,22 @@ panel collapses. Chart is in the `start` pane (left), detail is in the `end` pan
 When `data` is absent or empty, `table` and `download` controls are
 automatically hidden — only `expand` remains. This prevents broken UX when a
 chart has no associated tabular data.
+
+`export-svg`/`export-png` degrade on a **different** signal — `state.hasSvg`,
+detected at runtime (a `MutationObserver` on the chart body, since the chart's
+`<svg>` isn't guaranteed synchronously present) rather than `hasData` — so a
+chart with a rendered `<svg>` but no `data`/`columns` can still export, and a
+non-SVG chart body (or the flipped table view) hides both controls. See
+`export-svg.ts` (RM-042): the exported SVG is made self-contained by reading
+`getComputedStyle` on the source tree at export time and writing every
+resolved value onto BOTH the clone's inline `style` and its presentation
+ATTRIBUTE (`cloneNode` copies attribute text verbatim, so patching only
+`style` leaves a literal `var(--…)` in the serialized string even though it
+would paint correctly) — `transition`/`animation` are stripped outright, not
+inlined, since motion tokens have no place in a static export. PNG export
+rasterizes the same built SVG onto a canvas at a fixed 2× pixel ratio
+(deliberately not the exporting device's own `devicePixelRatio`, for
+deterministic output) with the card's resolved background painted in.
 
 ## Test double (issue #364)
 
@@ -243,6 +272,53 @@ Two adjacent invariants a change here must not undo:
 Locked by `gantt-timescale.test.ts` (calendar tick freeze, DST/month-length,
 stride guard) and the `#360` blocks in `gantt.test.tsx` (a 220-day domain's
 canvas width per preset is the executable form of the pixel-identity guarantee).
+
+## Canvas mark ink is the caller's own compliance (#283)
+
+`CanvasLayer`'s `draw` paints raw pixels into a bitmap that nothing downstream —
+not the layer, not any gate — can inspect. That makes contrast a call-site
+decision, not a checkable one: a categorical series token (`--chart-1`…
+`--chart-12`, `--chart-accent`) is exempt from the 1.4.11 3:1 mark bar only **as
+a ramp**, with other series around it for context (see `.claude/rules/theming.md`
+`CHART_1411_EXEMPT`). Painting one of those tokens as 100% of a dataset's ink —
+the whole plot, no other series in sight — is not covered by that exemption, and
+composites even lower once `globalAlpha` is applied (measured: `--chart-1` at
+α=0.65 is 1.26:1 on `light`, below its own 1.42:1 opaque floor). Reach for a
+neutral "wire" rung (`--chart-mono-7` is the loudest, and flips correctly per
+theme with no `dark:` branch) for full-density canvas ink, and reserve a
+series/accent colour for a genuinely highlighted subset drawn over the neutral
+pass — see `canvas-layer.stories.tsx` and `canvas-layer.tsx`'s docblock §4.
+
+## Diverging ramp: sign needs a second channel (#178c)
+
+`--chart-div-neg-2 … --chart-div-pos-2` (`Foundations/ChartRamps`, the
+"Diverging" ramp) carries **sign by hue alone** — the negative arm rides the
+blue family, the positive arm the brand lime, meeting at a neutral mid. Measured
+greyscale lightness delta between mirrored steps: `neg-1` vs `pos-1` = **0.003**;
+`neg-2` vs `pos-2` = **0.002**. In greyscale, in print, or for any reader going by
+lightness only, a `+1` cell and a `-1` cell are indistinguishable.
+
+- **This is inherent to a diverging ramp, not a token defect.** Two arms meeting
+  at a shared mid by construction have to be lightness-symmetric around it — that
+  symmetry is what makes the ramp read as "signed" in the first place. Do not
+  "fix" this by re-tuning `--chart-div-*` in `packages/tokens/` to break the
+  symmetry; that would defeat the ramp's own premise. It is also **not** a
+  colour-vision-deficiency problem — deuteranopia (ΔE 0.183-0.202) and
+  protanopia (ΔE 0.173-0.190) simulations both stay well separated; only
+  greyscale/print collapses it.
+- **It IS a constraint every consumer of this ramp for signed data must honour.**
+  RM-021's correlation-matrix layout (and any future signed choropleth/signed-bar
+  container built on this ramp) needs a **second, non-hue channel** carrying
+  sign: a `+`/`−` glyph, a texture/hatch, or a value label rendered on or beside
+  the cell. Apply the greyscale decision test from
+  @.claude/rules/accessibility.md ("if I rendered this in greyscale, could a
+  user still tell these two states apart?") to any new diverging-ramp
+  consumer before shipping it — the answer here is no by construction, so the
+  second channel is not optional.
+- **Reference:** `Foundations/ChartRamps` → `Default` story documents the
+  measured delta in its `Diverging` ramp entry (source docblock + rendered
+  blurb) so it is legible both to someone reading the tokens and to someone
+  reading the rendered story.
 
 ## Story coverage & verification
 

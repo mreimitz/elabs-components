@@ -916,6 +916,25 @@
   --t-base: max(calc(var(--duration-base) * var(--motion-factor)), var(--motion-min));
   --t-slow: max(calc(var(--duration-slow) * var(--motion-factor)), var(--motion-min));
   --t-slower: max(calc(var(--duration-slower) * var(--motion-factor)), var(--motion-min));
+
+  /* motion — RM-020: chart reveal-in-view + stagger rhythm (lieflat
+     provenance, docs/review/2026-09-04-lieflat-charts-gap-analysis.md §1(7),
+     §5 C4). Read by packages/charts/src/charts/animation.ts via
+     getComputedStyle; the literal fallbacks there match these values, so a
+     consumer who never overrides them sees no change. Deliberately NOT
+     multiplied through --motion-factor here — a chart already carries its own
+     reduced-motion path via animationDuration=0, driven by the consumer (see
+     docs/MOTION_GUIDELINES.md § Chart reveal & stagger timing).
+     Named --t-chart-* (not --chart-*) so the root-only allowlist in
+     scripts/check-theme-parity.mjs (the `t-` alternative) exempts them —
+     these are :root-only timing machinery like --t-fast/--t-base, not a
+     per-theme semantic (--chart-1..12, --chart-background, …), which is what
+     that gate exists to guard. */
+  --t-chart-stagger-dot: 12ms; /* per-dot stagger delay (scatter/point markers) */
+  --t-chart-stagger-bar: 100ms; /* per-bar stagger delay */
+  --t-chart-enter: 900ms; /* default chart reveal-in-view enter duration */
+  --t-chart-enter-slow: 1200ms; /* slow/denser chart reveal-in-view enter duration */
+
   /* Brand mark — the two inks `BrandLogo` (@elabs-ai/components-icons) paints with:
      `-ring` is the drawn linework (hatched circle, register dots), `-tail` the
      construction square. Neutral here, matching this fallback base's own
@@ -930,6 +949,95 @@
      it. */
   --brand-mark-ring: currentColor;
   --brand-mark-tail: var(--primary);
+
+  /* ── Chart ramps — RM-018 ─────────────────────────────────────────────────
+     ORDERED ramps, for the charts where LIGHTNESS IS DATA (heatmap, calendar,
+     treemap, matrix, choropleth, signed bars). The categorical `--chart-1..12`
+     ramp above answers *which series*; these answer *how much*. Four families:
+
+       --chart-seq-1 .. -7    single hue (this theme's `--chart-2` blue), step 7
+                              the most INTENSE. Step 1 is the QUIET step and the
+                              only member exempt from the 1.4.11 3:1 mark bar —
+                              it still clears 1.5:1, so one low cell reads as a
+                              pinprick instead of as blank paper.
+       --chart-div-neg-2 ..
+       --chart-div-pos-2      diverging, negative arm on the blue family and
+                              positive arm on the brand lime, neutral in the
+                              middle. Every member clears 3:1 INCLUDING the mid,
+                              because a zero-valued cell is still a drawn cell.
+       --chart-mono-1 .. -7   the neutral ladder (chroma ≤ 0.02) that a
+                              categorical chart falls back to past six series,
+                              and the ground of the "wire" palette.
+       --chart-accent         the one hero colour the wire palette draws over
+                              that ladder. Aliased to `--chart-1`, so a re-brand
+                              reaches it for free (#385 — an intentional mirror
+                              is `var()`, never a copied literal).
+
+     RAMP DIRECTION IS A PROPERTY OF THE THEME'S GROUND, not of the names. On a
+     white `--chart-background` "more intense" means DARKER; on a dark one it
+     means lighter. Both are monotonic; neither direction is portable.
+
+     RETUNE WITH THE GATES, NEVER BY EYE — three machine-checked invariants, and
+     moving one step can break a pair it is not adjacent to:
+       · contrast    every step ≥ 3:1 vs `--chart-background`, except the two
+                     quiet steps, which must clear 1.5:1 (charts-contrast.test.ts)
+       · monotonic   each 7-step ramp is strictly monotonic in OKLab L AND in
+                     contrast against its own ground; the diverging ramp rises in
+                     contrast from the mid outward on both arms (same file)
+       · distinct    adjacent steps, all ten diverging pairs, and accent-vs-ladder
+                     clear the 0.05 OKLab ΔE role floor (`pnpm roles:check`) */
+  --chart-seq-1: oklch(0.841 0.03 241.8);
+  --chart-seq-2: oklch(0.658 0.075 241.8);
+  --chart-seq-3: oklch(0.582 0.09 241.8);
+  --chart-seq-4: oklch(0.509 0.1 241.8);
+  --chart-seq-5: oklch(0.442 0.102 241.8);
+  --chart-seq-6: oklch(0.373 0.087 241.8);
+  --chart-seq-7: oklch(0.301 0.07 241.8);
+
+  --chart-div-neg-2: oklch(0.403 0.093 241.8);
+  --chart-div-neg-1: oklch(0.56 0.1 241.8);
+  --chart-div-mid: oklch(0.641 0.006 257);
+  --chart-div-pos-1: oklch(0.557 0.115 117.6);
+  --chart-div-pos-2: oklch(0.401 0.091 117.6);
+
+  --chart-mono-1: oklch(0.842 0.006 257);
+  --chart-mono-2: oklch(0.661 0.01 257);
+  --chart-mono-3: oklch(0.585 0.012 257);
+  --chart-mono-4: oklch(0.512 0.014 257);
+  --chart-mono-5: oklch(0.445 0.014 257);
+  --chart-mono-6: oklch(0.375 0.012 257);
+  --chart-mono-7: oklch(0.303 0.01 257);
+
+  --chart-accent: var(--chart-1);
+
+  /* Flow edge ramp — RM-043, retuned TWICE under #282; this note supersedes
+     round one's, which recorded a tradeoff that has since been reversed. :root
+     is the un-themed fallback a consumer gets with no theme stylesheet imported,
+     so it has the same shape as `light` and takes the same treatment.
+
+     Round one raised --flow-edge-weak from its authored L 0.85, which measured
+     1.47:1 against --canvas (WCAG 1.4.11 fails; 48.9% of the interpolated ramp
+     rendered under 3:1 — the worst of the three blocks). L 0.63 clears 3.27:1 —
+     the ramp's minimum across the whole weak→strong sweep — and is a CEILING.
+
+     Round two widens the OTHER end: with strong at L 0.45 the five stops the
+     ColourRamp story renders were only ΔE 0.0519 apart at their closest (OKLab,
+     the metric scripts/check-role-distinctness.mjs uses), i.e. barely over this
+     repo's own 0.05 distinctness floor and short of the dark theme's 0.0655.
+     --flow-edge-strong moves L 0.45 → 0.32, which cannot regress the 1.4.11 bar
+     (darkening a stroke against a light --canvas only raises contrast; the ramp
+     minimum is still the weak stop, at 3.27:1). The five stops now sit ΔE ≥
+     0.0749 apart, and the "flow edge ramp" block in themes-contrast.test.ts now
+     asserts that DISTINCTNESS as well as the contrast it already swept.
+
+     STILL OPEN here too, and untouched by this round: the weak stop (L 0.63
+     C 0.02) sits ΔE 0.0100 from the flat --flow-edge default (L 0.62 C 0.02) —
+     worse than `light`'s 0.0231, since in this block the two share a chroma and
+     differ by lightness alone. Widening the strong end does not move that
+     number; it needs a darker --canvas or a re-tuned --flow-edge, filed
+     separately. */
+  --flow-edge-weak: oklch(0.63 0.02 264);
+  --flow-edge-strong: oklch(0.32 0.16 264);
 }
 
 /* ========================================================================
@@ -1103,6 +1211,9 @@
   --color-flow-group-border: var(--flow-group-border);
   --color-flow-minimap-node: var(--flow-minimap-node);
   --color-flow-minimap-mask: var(--flow-minimap-mask);
+  /* Flow edge ramp — RM-043 */
+  --color-flow-edge-weak: var(--flow-edge-weak);
+  --color-flow-edge-strong: var(--flow-edge-strong);
 
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
@@ -1233,6 +1344,30 @@
   --transition-duration-base: var(--t-base);
   --transition-duration-slow: var(--t-slow);
   --transition-duration-slower: var(--t-slower);
+
+  /* Chart ramps — RM-018. Enables bg-chart-seq-4, fill-chart-div-pos-2,
+     text-chart-mono-7, bg-chart-accent, … INLINE like the rest of the colour
+     bridge, so a utility resolves the LIVE var and re-colours on a theme flip. */
+  --color-chart-seq-1: var(--chart-seq-1);
+  --color-chart-seq-2: var(--chart-seq-2);
+  --color-chart-seq-3: var(--chart-seq-3);
+  --color-chart-seq-4: var(--chart-seq-4);
+  --color-chart-seq-5: var(--chart-seq-5);
+  --color-chart-seq-6: var(--chart-seq-6);
+  --color-chart-seq-7: var(--chart-seq-7);
+  --color-chart-div-neg-2: var(--chart-div-neg-2);
+  --color-chart-div-neg-1: var(--chart-div-neg-1);
+  --color-chart-div-mid: var(--chart-div-mid);
+  --color-chart-div-pos-1: var(--chart-div-pos-1);
+  --color-chart-div-pos-2: var(--chart-div-pos-2);
+  --color-chart-mono-1: var(--chart-mono-1);
+  --color-chart-mono-2: var(--chart-mono-2);
+  --color-chart-mono-3: var(--chart-mono-3);
+  --color-chart-mono-4: var(--chart-mono-4);
+  --color-chart-mono-5: var(--chart-mono-5);
+  --color-chart-mono-6: var(--chart-mono-6);
+  --color-chart-mono-7: var(--chart-mono-7);
+  --color-chart-accent: var(--chart-accent);
 }
 
 /* Constant easing curves → `ease-standard` / `ease-entrance` / `ease-exit`
@@ -1495,6 +1630,23 @@
 
   --type-weight-code: 400;
   --type-tracking-code: 0em;
+
+  /* chart type roles — RM-019. Two card-contract rungs (lieflat's fixed
+     four-part card: title/description/chart/source) — NOT among the eight
+     `ROLES` density-type-scale.test.ts enumerates (that suite's list is
+     fixed at eight by design), but density-aware like `--text-meta`: size
+     and line-height are redeclared per `[data-density]` in density.css
+     (weight/tracking are never rescaled, same as every other role). Both
+     reuse the meta rung's size/leading (small metadata/labels). */
+  --type-size-chart-value: var(--type-size-meta);
+  --type-leading-chart-value: var(--type-leading-meta);
+  --type-weight-chart-value: 800;
+  --type-tracking-chart-value: 0em;
+
+  --type-size-chart-source: var(--type-size-meta);
+  --type-leading-chart-source: var(--type-leading-meta);
+  --type-weight-chart-source: 500;
+  --type-tracking-chart-source: 0.08em;
 }
 
 @theme {
@@ -1537,6 +1689,23 @@
   --text-code--line-height: var(--type-leading-code);
   --text-code--font-weight: var(--type-weight-code);
   --text-code--letter-spacing: var(--type-tracking-code);
+
+  /* chart type roles — RM-019: `text-chart-value` / `text-chart-source`, the
+     ChartCard/ChartFrame card-contract value + source rungs (RM-041/RM-042
+     build on these). Companion keys only cover size/line-height/weight/
+     letter-spacing — Tailwind v4 has no `font-variant-numeric` or
+     `text-transform` companion — so, same convention as `kpi` pairing with
+     `tabular-nums`: pair `text-chart-value` with `tabular-nums` and
+     `text-chart-source` with `uppercase` at the call site. */
+  --text-chart-value: var(--type-size-chart-value);
+  --text-chart-value--line-height: var(--type-leading-chart-value);
+  --text-chart-value--font-weight: var(--type-weight-chart-value);
+  --text-chart-value--letter-spacing: var(--type-tracking-chart-value);
+
+  --text-chart-source: var(--type-size-chart-source);
+  --text-chart-source--line-height: var(--type-leading-chart-source);
+  --text-chart-source--font-weight: var(--type-weight-chart-source);
+  --text-chart-source--letter-spacing: var(--type-tracking-chart-source);
 
   /* `font-display` utility for the display seam — references the :root var so
      a [data-theme] override re-skins headlines live. */

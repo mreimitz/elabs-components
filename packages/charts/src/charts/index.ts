@@ -65,13 +65,21 @@ export {
   type ChartHoverContextValue,
   ChartProvider,
   type ChartStableContextValue,
+  chartAccentColor,
+  type ChartPalette,
   chartCssVars,
+  chartDivergingRamp,
+  chartMonoRamp,
+  chartSequentialRamp,
+  CATEGORICAL_SOFT_CAP,
   defaultScatterColors,
   type LineConfig,
   type Margin,
   type TooltipData,
   useChart,
   useChartHover,
+  resolvePalette,
+  type ResolvePaletteOptions,
   useChartStable,
   useYScale,
 } from "./chart-context";
@@ -285,10 +293,13 @@ export {
   SankeyLink,
   type SankeyLinkDatum,
   type SankeyLinkProps,
+  type SankeyMode,
   SankeyNode,
   type SankeyNodeDatum,
   type SankeyNodeProps,
   SankeyProvider,
+  SankeyThreadLinks,
+  type SankeyThreadLinksProps,
   SankeyTooltip,
   type SankeyTooltipData,
   type SankeyTooltipProps,
@@ -374,3 +385,324 @@ export {
   shouldTweenYDomain,
   type YDomain,
 } from "./y-domain-utils";
+
+// Editorial marks — RM-017
+// The shared low-level drawing vocabulary (`packages/charts/src/marks/`): halo
+// text, dashed leaders, peak rings, marginalia, hairline floors, quiet dots,
+// countable unit stacks, seeded jitter, animation stagger and self-drawing
+// paths. Re-exported here so the package barrel carries them alongside the
+// composition primitives; see `../marks/index.ts` for the rules that hold
+// across all ten.
+export {
+  CHART_STAGGER_BAR_MS,
+  CHART_STAGGER_DOT_MS,
+  DrawPath,
+  type DrawPathProps,
+  HairlineFloor,
+  type HairlineFloorProps,
+  type HairlineScale,
+  HaloText,
+  type HaloTextProps,
+  Leader,
+  type LeaderDash,
+  type LeaderKind,
+  type LeaderPoint,
+  type LeaderProps,
+  leaderPath,
+  Marginalia,
+  type MarginaliaProps,
+  PeakRing,
+  type PeakRingProps,
+  type PeakRingShape,
+  QUIET_DOT_SIZE,
+  QuietDot,
+  type QuietDotProps,
+  seededRnd,
+  stagger,
+  UnitStack,
+  type UnitStackDirection,
+  type UnitStackKind,
+  type UnitStackProps,
+} from "../marks";
+
+// Dumbbell — RM-023
+export {
+  buildDumbbellRows,
+  computeDumbbellDomain,
+  DumbbellChart,
+  type DumbbellBeadsConfig,
+  type DumbbellChartProps,
+  type DumbbellMarkerStyle,
+  type DumbbellOrientation,
+  type DumbbellRow,
+  type DumbbellSortBy,
+  type DumbbellVariant,
+  sortDumbbellRows,
+  spaceSlopeLabels,
+} from "./dumbbell-chart";
+// Heatmap — RM-021
+// The sub-parts (`HeatmapCell`, `HeatmapLegend`, `HeatmapTooltip`,
+// `HeatmapProvider`) stay folder-internal on purpose: unlike a Sankey node, a
+// heatmap cell is not independently composable — it reads a layout only
+// `HeatmapChart` can build, so exporting it would publish a part that cannot be
+// used on its own. The layout TYPES are exported, because a consumer's
+// `highlight` predicate and `onDatapointClick` handler are written against them.
+export {
+  buildCalendarLayout,
+  buildHeatmapBuckets,
+  bucketIndexOf,
+  CALENDAR_ROWS,
+  type HeatmapBucket,
+  type CalendarCellPosition,
+  type CalendarLayout,
+  type CalendarMonthTick,
+  CONTINUOUS_MIN_OPACITY,
+  continuousInk,
+  DEFAULT_HEATMAP_STEPS,
+  dotRadius,
+  firstMondayOfMonth,
+  type HeatmapCellDatum,
+  HeatmapChart,
+  type HeatmapChartProps,
+  type HeatmapContextValue,
+  heatmapDomain,
+  type HeatmapEmptyValue,
+  type HeatmapHighlight,
+  type HeatmapHoverContextValue,
+  type HeatmapInk,
+  type HeatmapMargin,
+  type HeatmapMode,
+  type HeatmapPalette,
+  heatmapSummary,
+  type HeatmapSummaryFacts,
+  type HeatmapVariant,
+  isoWeekdayIndex,
+  parseIsoDate,
+  sampleContinuousInk,
+  startOfIsoWeek,
+  useHeatmap,
+  useHeatmapHover,
+} from "./heatmap";
+// Unit — RM-024
+// UnitChart — "one mark = one honest unit": waffle / phyllotaxis-field /
+// tick-row layouts, lieflat's default replacement for pie charts.
+export {
+  UnitChart,
+  type UnitChartDatum,
+  type UnitChartLayout,
+  type UnitChartMark,
+  type UnitChartProps,
+} from "./unit-chart";
+export {
+  buildUnitChartSummary,
+  computeArithmetic,
+  computeUnitCounts,
+  type FieldCluster,
+  type FieldLayout,
+  type FieldLayoutOptions,
+  GOLDEN_ANGLE_RAD,
+  layoutField,
+  layoutRows,
+  layoutWaffle,
+  type RowsLayout,
+  type RowsLayoutOptions,
+  type RowsLayoutRow,
+  UNIT_CHART_GROUP_STAGGER_MS,
+  UNIT_CHART_POSITION_STAGGER_MS,
+  type UnitArithmetic,
+  unitMarkDelayMs,
+  type UnitMark,
+  type UnitRect,
+  type WaffleLayout,
+  type WaffleLayoutOptions,
+} from "./unit-layouts";
+// Treemap — RM-025
+export {
+  computeTreemapLayout,
+  TREEMAP_BAND_COLOR,
+  TREEMAP_CATEGORICAL_GROUP_CAP,
+  TREEMAP_MAX_LEAVES,
+  TREEMAP_MONO_LEAF_COLOR,
+  TREEMAP_TITLE_BAND_HEIGHT,
+  TreemapChart,
+  type TreemapChartProps,
+  type TreemapGroupDatum,
+  type TreemapLayoutOptions,
+  type TreemapLayoutResult,
+  type TreemapLeafDatum,
+  type TreemapNode,
+  type TreemapPalette,
+  type TreemapRect,
+  validateTreemapData,
+} from "./treemap";
+// Distribution — RM-026
+// One container, one numeric scale, four marks: histogram / box / violin /
+// strip of a record-level numeric variable, optionally by group. The pure
+// statistics helpers ship alongside it so a caller's own table and the drawn
+// box plot cannot disagree about a quartile. The per-kind mark components
+// (`DistributionHistogram`, `DistributionBox`, …) stay INTERNAL — `kind` is the
+// public seam, and four more container-shaped exports would be four more ways
+// to build a distribution chart that does not share its scale.
+// The container is re-exported from its OWN module, not through the folder
+// barrel, so the manifest records `distribution-chart.tsx` as its module and
+// `brand-ui docs DistributionChart` points a reader at the file that defines it.
+export { DistributionChart } from "./distribution/distribution-chart";
+export {
+  binValues,
+  blobPath,
+  DEFAULT_WHISKER_MULTIPLIER,
+  defaultBinCount,
+  describeDistribution,
+  fiveNumberSummary,
+  groupRecords,
+  integrateDensity,
+  KDE_GRID_POINTS,
+  KDE_TAPER,
+  kde,
+  kdeDensityAt,
+  quantileSorted,
+  silvermanBandwidth,
+  type BinValuesOptions,
+  type BlobPoint,
+  type DistributionBin,
+  type DistributionChartProps,
+  type DistributionGroup,
+  type DistributionKind,
+  type DistributionOrientation,
+  type DistributionRow,
+  type FiveNumberSummary,
+  type GroupedDistribution,
+  type KdeOptions,
+  type KdePoint,
+  type KdeResult,
+} from "./distribution";
+// Waterfall — RM-022
+export {
+  WaterfallChart,
+  type WaterfallChartProps,
+  type WaterfallDatum,
+  type WaterfallStep,
+} from "./waterfall-chart";
+
+// Bump — RM-033
+export {
+  buildBumpMatrix,
+  BumpChart,
+  computeBumpDelta,
+  END_LABEL_MIN_GAP,
+  limitBumpSeries,
+  type BumpChartProps,
+  type BumpMatrix,
+  type BumpPoint,
+  type BumpSeries,
+  type BumpVariant,
+} from "./bump-chart";
+
+// ParallelCoordinates — RM-034
+export {
+  buildParallelAxes,
+  buildParallelRows,
+  computeRowPoints,
+  nonHeroLineOpacity,
+  orderRowsForRender,
+  PARALLEL_COORDINATES_MAX_DIMENSIONS,
+  PARALLEL_COORDINATES_MIN_DIMENSIONS,
+  ParallelCoordinatesChart,
+  resolveEntityLineStyle,
+  resolveHeroEntity,
+  resolveParallelDimensions,
+  type ParallelCoordinatesAxis,
+  type ParallelCoordinatesChartProps,
+  type ParallelCoordinatesCurve,
+  type ParallelCoordinatesDimension,
+  type ParallelCoordinatesLineStyle,
+  type ParallelCoordinatesRow,
+} from "./parallel-coordinates";
+// Tree — RM-035
+export {
+  TreeChart,
+  type TreeChartProps,
+  type TreeNode,
+  type TreeOrientation,
+  type TreePalette,
+} from "./tree-chart";
+// Network — RM-036
+// Node-link graphs in three layouts (force / circular / arc). The container is
+// re-exported from its OWN module so the manifest records `network-chart.tsx`
+// as its module; the pure layout maths comes through the folder barrel. The
+// marks and the provider stay INTERNAL — `layout` is the public seam.
+export {
+  defaultNetworkDatapointLabel,
+  NetworkChart,
+  type NetworkChartProps,
+  type NetworkDatapointDatum,
+} from "./network/network-chart";
+export {
+  arcLinkPath,
+  arcPositions,
+  circularLinkPath,
+  circularPositions,
+  circularRing,
+  computeAdjacency,
+  computeDegrees,
+  computeForcePositions,
+  computeNetworkLayout,
+  danglingLinks,
+  DEFAULT_CIRCULAR_CURVENESS,
+  DEFAULT_FORCE_SEED,
+  fitToBox,
+  FORCE_ALPHA_MIN,
+  FORCE_GRAVITY,
+  FORCE_TICK_BUDGET,
+  isLabelVisible,
+  isLinkDimmed,
+  isNodeDimmed,
+  linkWidth,
+  NETWORK_DEFAULT_MAX_NODES,
+  NETWORK_DEFAULT_NODE_RADIUS,
+  NETWORK_MAX_NODE_RADIUS,
+  NETWORK_MIN_NODE_RADIUS,
+  NETWORK_PADDING,
+  networkSummary,
+  nodeRadius,
+  partitionBipartite,
+  resolveLabelAnchor,
+  resolveLitIds,
+  resolveNodeWeight,
+  seededRandomSource,
+  solveAlphaDecay,
+  type ArcLayoutOptions,
+  type CircularLayoutOptions,
+  type ForceLayoutNode,
+  type ForceLayoutOptions,
+  type NetworkEmphasis,
+  type NetworkLayout,
+  type NetworkLayoutOptions,
+  type NetworkLayoutResult,
+  type NetworkLinkDatum,
+  type NetworkLinkLayout,
+  type NetworkNodeDatum,
+  type NetworkNodeLayout,
+  type NetworkPoint,
+  type NetworkSide,
+} from "./network";
+
+// CanvasLayer — RM-046
+// The canvas mark path for ChartFrame: a drop-in sibling of the SVG marks for
+// views past ~20k points (dotted chart, performance spectrum), with a bucketed
+// spatial-grid hit test and a single-tab-stop virtual cursor for keyboard/AT.
+export {
+  CANVAS_LAYER_DEFAULT_MARGIN,
+  CANVAS_LAYER_ENTER_MS,
+  CANVAS_LAYER_HIT_RADIUS,
+  CanvasLayer,
+  type CanvasLayerProps,
+  type CanvasLayerRect,
+  canvasTokenColor,
+  type ChartScales,
+  createSpatialGrid,
+  type SpatialGrid,
+  useCanvasDraw,
+  type UseCanvasDrawOptions,
+  type UseCanvasDrawResult,
+} from "./canvas-layer";

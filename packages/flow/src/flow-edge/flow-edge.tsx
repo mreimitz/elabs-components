@@ -1,8 +1,12 @@
-import { BaseEdge, getBezierPath, type EdgeProps } from "@xyflow/react";
+import { getBezierPath, type EdgeProps } from "@xyflow/react";
+import { FlowEdgePath } from "../flow-edge-path";
 
 /**
  * Branded bezier edge using the `--flow-edge` token. Register it in
  * `edgeTypes={{ brand: FlowEdge }}` and create edges with `type: "brand"`.
+ *
+ * Drawn through `FlowEdgePath`, so it carries the shared keyboard focus
+ * indicator (#286) — never reach for React Flow's `BaseEdge` directly.
  */
 export function FlowEdge({
   id,
@@ -24,11 +28,14 @@ export function FlowEdge({
     targetPosition,
   });
   return (
-    <BaseEdge
+    <FlowEdgePath
       id={id}
       path={edgePath}
       markerEnd={markerEnd}
-      style={{ stroke: "var(--flow-edge)", strokeWidth: 1.5, ...style }}
+      data-slot="flow-edge"
+      stroke="var(--flow-edge)"
+      strokeWidth={1.5}
+      style={style}
     />
   );
 }

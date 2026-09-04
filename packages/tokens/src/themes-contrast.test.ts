@@ -11,7 +11,14 @@
 import { describe, expect, it } from "vitest";
 
 import { readThemeCss } from "./_theme-css-source";
-import { contrast, contrastSrgb, mixOverSrgb, parseOklch } from "./color-contrast";
+import {
+  contrast,
+  contrastSrgb,
+  mixOverSrgb,
+  oklchToSrgb,
+  parseOklch,
+  relativeLuminance,
+} from "./color-contrast";
 
 // ADR 0029 — the reference themes live in their own stylesheets now, so read
 // the SET. The helper throws if a theme's block is missing rather than let a
@@ -365,16 +372,56 @@ const TERMINAL_CHROME_INK = [
  */
 const TERMINAL_SELECTION_INK = ["--terminal-foreground", "--terminal-ansi-white"] as const;
 
+type Oklab = readonly [number, number, number];
+
+/**
+ * The ONE perceptual metric in this file: Euclidean distance between two OKLab
+ * triples. Named and shared on purpose — `oklabDistance()` (token vs token) and
+ * the flow-edge ramp's swept-stop check (rendered colour vs rendered colour)
+ * must answer "are these two different colours?" with the SAME yardstick
+ * `scripts/check-role-distinctness.mjs` uses, not with a second one invented at
+ * a call site.
+ */
+function oklabDelta(a: Oklab, b: Oklab): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+/** An `oklch()` literal as rectangular OKLab — the polar chroma/hue, unwound. */
+function oklchToOklab(raw: string): Oklab {
+  const { l, c, h } = parseOklch(raw);
+  const rad = (h * Math.PI) / 180;
+  return [l, c * Math.cos(rad), c * Math.sin(rad)];
+}
+
+/**
+ * Gamma-encoded sRGB (0..1) → OKLab: the exact inverse of `oklchToSrgb()` in
+ * ./color-contrast (CSS Color 4 reference matrices, run the other way).
+ *
+ * Needed because a colour a COMPONENT computes has no `oklch()` literal to
+ * read: `FlowWeightedEdge` interpolates its stroke between two tokens in
+ * gamma-encoded sRGB, so every stop except the two endpoints exists only as
+ * sRGB bytes. Guarded against silent drift by the round-trip assertion in the
+ * "flow edge ramp" block — a broken inverse here would make every ΔE it
+ * measures meaningless in a direction no other test would notice.
+ */
+function srgbToOklab([r, g, b]: [number, number, number]): Oklab {
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  const lr = lin(r);
+  const lg = lin(g);
+  const lb = lin(b);
+  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
 /** Euclidean distance in OKLab between two `oklch()` literals. */
 function oklabDistance(a: string, b: string): number {
-  const toLab = (raw: string) => {
-    const { l, c, h } = parseOklch(raw);
-    const rad = (h * Math.PI) / 180;
-    return [l, c * Math.cos(rad), c * Math.sin(rad)] as const;
-  };
-  const [l1, a1, b1] = toLab(a);
-  const [l2, a2, b2] = toLab(b);
-  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+  return oklabDelta(oklchToOklab(a), oklchToOklab(b));
 }
 
 function token(theme: string, name: string): string {
@@ -674,6 +721,136 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
         }
       });
     }
+
+    // #282 — WCAG 1.4.11: the flow-edge value RAMP as a colour-only graphical
+    // mark. `--flow-edge-weak`/`--flow-edge-strong` shipped (RM-043) with NO
+    // contrast assertion of any kind, and `--canvas` — the only ground a flow
+    // edge is ever drawn on — was not even one of MARK_SURFACES. That let
+    // `--flow-edge-weak` ship at 1.60:1 (light) / 2.05:1 (dark) / 1.47:1
+    // (:root): `FlowWeightedEdge` interpolates its stroke colour between the
+    // weak/strong tokens by `data.value` (stroke WIDTH carries the separate
+    // `data.weight` measure), so a low-value edge's sole information channel
+    // is colour, and colour alone must clear the non-text bar.
+    describe("flow edge ramp — WCAG 1.4.11 on --canvas", () => {
+      const FLOW_EDGE_CANVAS = "--canvas";
+
+      it("--flow-edge / --flow-edge-weak / --flow-edge-strong ≥ 3:1 on --canvas", () => {
+        for (const name of ["--flow-edge", "--flow-edge-weak", "--flow-edge-strong"]) {
+          const ratio = contrast(token(theme, name), token(theme, FLOW_EDGE_CANVAS));
+          expect(
+            ratio,
+            `${name} vs ${FLOW_EDGE_CANVAS} in ${theme} = ${ratio.toFixed(2)}`,
+          ).toBeGreaterThanOrEqual(AA_NONTEXT);
+        }
+      });
+
+      // The component (`flow-weighted-edge.tsx`'s `mixHex()`) interpolates the
+      // stroke colour with a per-channel lerp in GAMMA-ENCODED sRGB between the
+      // two tokens' resolved sRGB bytes — NOT an OKLab lerp. Replicating that
+      // model (rather than lerping in OKLab) is load-bearing: the two models
+      // disagree about where the ramp's minimum sits, so an OKLab sweep would
+      // pass a ramp the component never actually draws.
+      //
+      // Contrast is monotone along the ramp only while --canvas's luminance
+      // sits OUTSIDE [L_weak, L_strong] (see the root-cause note in #282) — so
+      // this samples ≥100 stops rather than only the two endpoints. A future
+      // theme that puts --canvas BETWEEN the two stops would create a 1:1
+      // crossing point an endpoint-only check would miss entirely.
+      it("every interpolated stop of the weak→strong ramp ≥ 3:1 on --canvas", () => {
+        const weakSrgb = oklchToSrgb(parseOklch(token(theme, "--flow-edge-weak")));
+        const strongSrgb = oklchToSrgb(parseOklch(token(theme, "--flow-edge-strong")));
+        const canvasLum = relativeLuminance(
+          oklchToSrgb(parseOklch(token(theme, FLOW_EDGE_CANVAS))),
+        );
+        const STEPS = 101;
+        let minRatio = Infinity;
+        let minT = -1;
+        const [wr, wg, wb] = weakSrgb;
+        const [sr, sg, sb] = strongSrgb;
+        for (let i = 0; i < STEPS; i++) {
+          const t = i / (STEPS - 1);
+          const stopSrgb: [number, number, number] = [
+            wr + (sr - wr) * t,
+            wg + (sg - wg) * t,
+            wb + (sb - wb) * t,
+          ];
+          const stopLum = relativeLuminance(stopSrgb);
+          const [hi, lo] = stopLum >= canvasLum ? [stopLum, canvasLum] : [canvasLum, stopLum];
+          const ratio = (hi + 0.05) / (lo + 0.05);
+          if (ratio < minRatio) {
+            minRatio = ratio;
+            minT = t;
+          }
+        }
+        expect(
+          minRatio,
+          `weak→strong ramp minimum in ${theme} = ${minRatio.toFixed(2)} at t=${minT.toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(AA_NONTEXT);
+      });
+
+      // #282 ROUND TWO — the gap that let round one ship a regression with a
+      // full green battery. Everything above measures the ramp against the
+      // CANVAS; nothing measured the stops against EACH OTHER. So a retune
+      // could satisfy 1.4.11 at both ends and still squash the stops into a
+      // band a viewer cannot rank — which is exactly what round one did on
+      // `light` (closest adjacent pair: ΔE 0.0407). A ramp whose stops are
+      // indistinguishable is not a ramp; it just passes a contrast gate.
+      //
+      // Two choices here are load-bearing and should not be "tidied":
+      //
+      // 1. FIVE stops, not 101. Distinctness is scale-dependent — sample the
+      //    ramp finely enough and every adjacent pair is below any floor, which
+      //    would make the assertion unsatisfiable rather than strict. Five is
+      //    the granularity the surface actually presents: `Legend`'s
+      //    `scale="color"` draws exactly five gradient stops, and the
+      //    `flow-flowweightededge--colour-ramp` story renders exactly five
+      //    edges. It is the sweep a viewer is asked to rank.
+      // 2. The stops are quantized to sRGB BYTES before comparing, because
+      //    `mixHex()` in flow-weighted-edge.tsx emits a hex string. Measure
+      //    what ships, not the continuous ideal.
+      //
+      // The floor is the repo's own: ROLE_SEPARATION_DELTA_E (0.05) in
+      // scripts/check-role-distinctness.mjs, re-declared rather than imported
+      // because that module is a repo script, not a package dependency.
+      const RAMP_STOPS = 5;
+      const RAMP_MIN_DELTA_E = 0.05;
+
+      it("the sRGB→OKLab inverse round-trips (anti-vacuity for the sweep below)", () => {
+        const literal = token(theme, "--flow-edge-weak");
+        const viaSrgb = srgbToOklab(oklchToSrgb(parseOklch(literal)));
+        const direct = oklchToOklab(literal);
+        expect(
+          oklabDelta(viaSrgb, direct),
+          `srgbToOklab(oklchToSrgb(${literal})) drifted from the literal's own OKLab in ${theme}`,
+        ).toBeLessThan(1e-6);
+      });
+
+      it(`every adjacent pair of the ${RAMP_STOPS}-stop swept ramp is ≥ ${RAMP_MIN_DELTA_E} ΔE apart`, () => {
+        const toByte = (v: number) => Math.round(Math.min(255, Math.max(0, v * 255)));
+        const [wr, wg, wb] = oklchToSrgb(parseOklch(token(theme, "--flow-edge-weak"))).map(
+          toByte,
+        ) as [number, number, number];
+        const [sr, sg, sb] = oklchToSrgb(parseOklch(token(theme, "--flow-edge-strong"))).map(
+          toByte,
+        ) as [number, number, number];
+        const stopAt = (t: number): Oklab =>
+          srgbToOklab([
+            Math.round(wr + (sr - wr) * t) / 255,
+            Math.round(wg + (sg - wg) * t) / 255,
+            Math.round(wb + (sb - wb) * t) / 255,
+          ]);
+        const stops = Array.from({ length: RAMP_STOPS }, (_, i) => stopAt(i / (RAMP_STOPS - 1)));
+        const deltas = stops.slice(1).map((stop, i) => oklabDelta(stops[i] as Oklab, stop));
+        const all = deltas.map((d) => d.toFixed(4)).join(", ");
+        deltas.forEach((delta, i) => {
+          expect(
+            delta,
+            `${theme} ramp stop ${i + 1}→${i + 2} of ${RAMP_STOPS}: ΔE ${delta.toFixed(4)} ` +
+              `(all adjacent steps: ${all}) — the stops are too close to rank by eye`,
+          ).toBeGreaterThanOrEqual(RAMP_MIN_DELTA_E);
+        });
+      });
+    });
 
     // #321/#383 — the INK rung, generalized to EVERY status tone.
     //

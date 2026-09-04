@@ -112,6 +112,12 @@
   --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
   --text-code: calc(var(--type-size-code) * var(--type-factor));
   --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+
+  /* chart type roles — RM-019 */
+  --text-chart-value: calc(var(--type-size-chart-value) * var(--type-factor));
+  --text-chart-value--line-height: calc(var(--type-leading-chart-value) * var(--type-factor));
+  --text-chart-source: calc(var(--type-size-chart-source) * var(--type-factor));
+  --text-chart-source--line-height: calc(var(--type-leading-chart-source) * var(--type-factor));
 }
 
 [data-density="comfortable"] {
@@ -134,6 +140,12 @@
   --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
   --text-code: calc(var(--type-size-code) * var(--type-factor));
   --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+
+  /* chart type roles — RM-019 */
+  --text-chart-value: calc(var(--type-size-chart-value) * var(--type-factor));
+  --text-chart-value--line-height: calc(var(--type-leading-chart-value) * var(--type-factor));
+  --text-chart-source: calc(var(--type-size-chart-source) * var(--type-factor));
+  --text-chart-source--line-height: calc(var(--type-leading-chart-source) * var(--type-factor));
 }
 
 [data-density="spacious"] {
@@ -156,4 +168,10 @@
   --text-kpi--line-height: calc(var(--type-leading-kpi) * var(--type-factor));
   --text-code: calc(var(--type-size-code) * var(--type-factor));
   --text-code--line-height: calc(var(--type-leading-code) * var(--type-factor));
+
+  /* chart type roles — RM-019 */
+  --text-chart-value: calc(var(--type-size-chart-value) * var(--type-factor));
+  --text-chart-value--line-height: calc(var(--type-leading-chart-value) * var(--type-factor));
+  --text-chart-source: calc(var(--type-size-chart-source) * var(--type-factor));
+  --text-chart-source--line-height: calc(var(--type-leading-chart-source) * var(--type-factor));
 }

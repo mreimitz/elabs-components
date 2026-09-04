@@ -36,7 +36,13 @@ function distance(p: { x: number; y: number }, q: { x: number; y: number } = { x
 describe("layoutGraph", () => {
   describe("empty / disconnected input", () => {
     it("returns [] for an empty graph, for every algorithm", () => {
-      for (const algorithm of ["concentric", "force", "layered-lr", "grid"] as const) {
+      for (const algorithm of [
+        "concentric",
+        "force",
+        "layered-lr",
+        "layered-tb",
+        "grid",
+      ] as const) {
         expect(layoutGraph([], [], { algorithm })).toEqual([]);
       }
     });
@@ -45,7 +51,13 @@ describe("layoutGraph", () => {
       const nodes = ["a", "b", "c", "isolated1", "isolated2"].map(node);
       const edges = [edge("a", "b"), edge("b", "c")];
 
-      for (const algorithm of ["concentric", "force", "layered-lr", "grid"] as const) {
+      for (const algorithm of [
+        "concentric",
+        "force",
+        "layered-lr",
+        "layered-tb",
+        "grid",
+      ] as const) {
         const laidOut = layoutGraph(nodes, edges, { algorithm, iterations: 20 });
         for (const n of laidOut) {
           expect(Number.isFinite(n.position.x)).toBe(true);
@@ -251,6 +263,75 @@ describe("layoutGraph", () => {
       const nodes = ["a", "b", "c"].map(node);
       const first = layoutGraph(nodes, [], { algorithm: "grid" });
       const second = layoutGraph(nodes, [], { algorithm: "grid" });
+      expect(first.map((n) => n.position)).toEqual(second.map((n) => n.position));
+    });
+  });
+  describe("layered-tb", () => {
+    it("delegates to layoutFlow direction=TB, ordering a chain top-to-bottom", () => {
+      const { nodes, edges } = chainGraph();
+      const laidOut = layoutGraph(nodes, edges, { algorithm: "layered-tb" });
+      const [a, b, c] = laidOut as [Node, Node, Node];
+      expect(a.position.y).toBeLessThan(b.position.y);
+      expect(b.position.y).toBeLessThan(c.position.y);
+    });
+
+    it("stamps bottom-out / top-in handle sides (not just position)", () => {
+      const { nodes, edges } = chainGraph();
+      const [a] = layoutGraph(nodes, edges, { algorithm: "layered-tb" }) as [Node];
+      expect(a.sourcePosition).toBe("bottom");
+      expect(a.targetPosition).toBe("top");
+    });
+
+    it("maps spacing.y onto rank spacing (the axis TB ranks along)", () => {
+      const { nodes, edges } = chainGraph();
+      const tight = layoutGraph(nodes, edges, {
+        algorithm: "layered-tb",
+        spacing: { x: 10, y: 10 },
+      });
+      const wide = layoutGraph(nodes, edges, {
+        algorithm: "layered-tb",
+        spacing: { x: 10, y: 500 },
+      });
+      const tightGap = tight[1]!.position.y - tight[0]!.position.y;
+      const wideGap = wide[1]!.position.y - wide[0]!.position.y;
+      expect(wideGap).toBeGreaterThan(tightGap);
+    });
+
+    it("respects a custom nodeSize without permanently resizing the nodes", () => {
+      const nodes: Node[] = [
+        { id: "a", type: "brand", position: { x: 0, y: 0 }, data: {} },
+        { id: "b", type: "brand", position: { x: 0, y: 0 }, data: {} },
+      ];
+      const laidOut = layoutGraph(nodes, [edge("a", "b")], {
+        algorithm: "layered-tb",
+        nodeSize: () => ({ width: 200, height: 400 }),
+      });
+      expect(laidOut[1]!.position.y - laidOut[0]!.position.y).toBeGreaterThanOrEqual(400 + 72 - 1);
+      expect(laidOut[0]).not.toHaveProperty("measured");
+    });
+
+    it("is the same layout as layered-lr with the axes swapped", () => {
+      // A fork exercises BOTH axes: a rank progression and a within-rank stack.
+      // Square nodes + isotropic spacing make the two layouts exact mirrors, so
+      // the assertion is "x and y trade places", not "the numbers look similar".
+      const nodes = ["a", "b", "c"].map(node);
+      const edges = [edge("a", "b"), edge("a", "c")];
+      const options = {
+        spacing: { x: 150, y: 150 },
+        nodeSize: () => ({ width: 100, height: 100 }),
+      };
+      const lr = layoutGraph(nodes, edges, { ...options, algorithm: "layered-lr" });
+      const tb = layoutGraph(nodes, edges, { ...options, algorithm: "layered-tb" });
+
+      expect(tb.map((n) => n.position)).toEqual(
+        lr.map((n) => ({ x: n.position.y, y: n.position.x })),
+      );
+    });
+
+    it("is deterministic", () => {
+      const { nodes, edges } = chainGraph();
+      const first = layoutGraph(nodes, edges, { algorithm: "layered-tb" });
+      const second = layoutGraph(nodes, edges, { algorithm: "layered-tb" });
       expect(first.map((n) => n.position)).toEqual(second.map((n) => n.position));
     });
   });

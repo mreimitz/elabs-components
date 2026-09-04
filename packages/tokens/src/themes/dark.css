@@ -358,4 +358,82 @@
      `--primary-text` rung). */
   --brand-mark-ring: currentColor;
   --brand-mark-tail: var(--primary);
+
+  /* ── Chart ramps — RM-018 ─────────────────────────────────────────────────
+     ORDERED ramps, for the charts where LIGHTNESS IS DATA (heatmap, calendar,
+     treemap, matrix, choropleth, signed bars). The categorical `--chart-1..12`
+     ramp above answers *which series*; these answer *how much*. Four families:
+
+       --chart-seq-1 .. -7    single hue (this theme's `--chart-2` blue), step 7
+                              the most INTENSE. Step 1 is the QUIET step and the
+                              only member exempt from the 1.4.11 3:1 mark bar —
+                              it still clears 1.5:1, so one low cell reads as a
+                              pinprick instead of as blank paper.
+       --chart-div-neg-2 ..
+       --chart-div-pos-2      diverging, negative arm on the blue family and
+                              positive arm on the brand lime, neutral in the
+                              middle. Every member clears 3:1 INCLUDING the mid,
+                              because a zero-valued cell is still a drawn cell.
+       --chart-mono-1 .. -7   the neutral ladder (chroma ≤ 0.02) that a
+                              categorical chart falls back to past six series,
+                              and the ground of the "wire" palette.
+       --chart-accent         the one hero colour the wire palette draws over
+                              that ladder. Aliased to `--chart-1`, so a re-brand
+                              reaches it for free (#385 — an intentional mirror
+                              is `var()`, never a copied literal).
+
+     RAMP DIRECTION IS A PROPERTY OF THE THEME'S GROUND, not of the names. On a
+     white `--chart-background` "more intense" means DARKER; on a dark one it
+     means lighter. Both are monotonic; neither direction is portable.
+
+     RETUNE WITH THE GATES, NEVER BY EYE — three machine-checked invariants, and
+     moving one step can break a pair it is not adjacent to:
+       · contrast    every step ≥ 3:1 vs `--chart-background`, except the two
+                     quiet steps, which must clear 1.5:1 (charts-contrast.test.ts)
+       · monotonic   each 7-step ramp is strictly monotonic in OKLab L AND in
+                     contrast against its own ground; the diverging ramp rises in
+                     contrast from the mid outward on both arms (same file)
+       · distinct    adjacent steps, all ten diverging pairs, and accent-vs-ladder
+                     clear the 0.05 OKLab ΔE role floor (`pnpm roles:check`) */
+  --chart-seq-1: oklch(0.382 0.03 241.8);
+  --chart-seq-2: oklch(0.533 0.07 241.8);
+  --chart-seq-3: oklch(0.606 0.08 241.8);
+  --chart-seq-4: oklch(0.684 0.085 241.8);
+  --chart-seq-5: oklch(0.763 0.08 241.8);
+  --chart-seq-6: oklch(0.85 0.065 241.8);
+  --chart-seq-7: oklch(0.941 0.03 241.8);
+
+  --chart-div-neg-2: oklch(0.812 0.07 241.8);
+  --chart-div-neg-1: oklch(0.629 0.085 241.8);
+  --chart-div-mid: oklch(0.554 0.006 257);
+  --chart-div-pos-1: oklch(0.626 0.11 117.6);
+  --chart-div-pos-2: oklch(0.807 0.13 117.6);
+
+  --chart-mono-1: oklch(0.383 0.008 257);
+  --chart-mono-2: oklch(0.535 0.01 257);
+  --chart-mono-3: oklch(0.609 0.012 257);
+  --chart-mono-4: oklch(0.687 0.012 257);
+  --chart-mono-5: oklch(0.766 0.01 257);
+  --chart-mono-6: oklch(0.852 0.008 257);
+  --chart-mono-7: oklch(0.942 0.005 257);
+
+  --chart-accent: var(--chart-1);
+
+  /* Flow edge ramp — RM-043. #282 round one raised --flow-edge-weak from its
+     authored L 0.4, which measured 2.05:1 against --canvas (WCAG 1.4.11 fails;
+     24.5% of the interpolated ramp rendered under 3:1). L 0.5 clears 3.14:1 —
+     the ramp's minimum across the whole weak→strong sweep.
+
+     #282 round two re-measured this block and DELIBERATELY LEFT IT ALONE. The
+     collapse it repaired is light-theme-specific: swept as the ColourRamp story
+     renders it, dark's five stops sit ΔE 0.0699 / 0.0673 / 0.0674 / 0.0655
+     apart in OKLab — clear of this repo's 0.05 distinctness floor at every step,
+     where `light` had a step at 0.0407. Dark is the reference the two light-ish
+     blocks were widened TOWARD, so moving it would only move the target. The
+     weak stop also still reads distinctly quieter than the flat --flow-edge
+     default here (L 0.62, 5.23:1 on --canvas; ΔE 0.1351 apart), which is the
+     residual `light` and `:root` are still carrying. See the note in
+     themes/light.css for the full round-two record. */
+  --flow-edge-weak: oklch(0.5 0.04 242);
+  --flow-edge-strong: oklch(0.75 0.16 242);
 }

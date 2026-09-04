@@ -6,6 +6,7 @@ import { scaleBand, scaleLinear, type scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
 import {
   Children,
+  cloneElement,
   forwardRef,
   isValidElement,
   memo,
@@ -28,7 +29,15 @@ import {
   planCategoryAxis,
 } from "./category-axis-plan";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import { ChartProvider, type LineConfig, type Margin, type TooltipData } from "./chart-context";
+import {
+  chartCssVars,
+  type ChartPalette,
+  ChartProvider,
+  type LineConfig,
+  type Margin,
+  resolvePalette,
+  type TooltipData,
+} from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -115,32 +124,46 @@ export interface BarChartProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. series names + value range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Default fill for `Bar` children that don't set their own `fill`, via
+   * `resolvePalette` (RM-018) over the series count — so, for example, nine
+   * unfilled `Bar` series degrade to the neutral ladder with a dev warning
+   * instead of nine bars painted identically. A `Bar` with an explicit `fill`
+   * is never touched. Default: `"categorical"` (`resolvePalette`'s own
+   * default) — but see `applyBarPalette`: it only ever assigns colours to
+   * SERIES THAT WOULD OTHERWISE COLLIDE (2+ unfilled `Bar` children), so a
+   * chart with a single unfilled `Bar` keeps today's `--chart-line-primary`.
+   */
+  palette?: ChartPalette;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
+
+/** Shared "is this child a `<Bar>`" predicate — component name OR a `dataKey` prop. */
+function isBarChild(child: ReactNode): child is ReactElement<BarProps> {
+  if (!isValidElement(child)) {
+    return false;
+  }
+  const childType = child.type as { displayName?: string; name?: string };
+  const componentName =
+    typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+  const props = child.props as BarProps | undefined;
+  return (
+    componentName === "Bar" || Boolean(props && typeof props.dataKey === "string" && props.dataKey)
+  );
+}
 
 // Extract bar configs from children synchronously
 function extractBarConfigs(children: ReactNode): LineConfig[] {
   const configs: LineConfig[] = [];
 
   Children.forEach(children, (child) => {
-    if (!isValidElement(child)) {
+    if (!isBarChild(child)) {
       return;
     }
+    const props = child.props;
 
-    const childType = child.type as {
-      displayName?: string;
-      name?: string;
-    };
-    const componentName =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-
-    const props = child.props as BarProps | undefined;
-    const isBarComponent =
-      componentName === "Bar" ||
-      (props && typeof props.dataKey === "string" && props.dataKey.length > 0);
-
-    if (isBarComponent && props?.dataKey) {
+    if (props.dataKey) {
       // Use stroke for tooltip dot color if provided, otherwise fall back to fill
       // This allows gradient/pattern fills to have a solid dot color
       const dotColor = props.stroke || props.fill || "var(--chart-line-primary)";
@@ -154,6 +177,64 @@ function extractBarConfigs(children: ReactNode): LineConfig[] {
   });
 
   return configs;
+}
+
+/**
+ * Assign a default `fill` (RM-027) to `Bar` children that don't set their
+ * own, via `resolvePalette`. Only ever touches series that would otherwise
+ * COLLIDE — a single unfilled `Bar` keeps the pre-RM-027
+ * `--chart-line-primary` default untouched, so this is a no-op for the
+ * overwhelmingly common one-series chart. `explicit` mirrors whether THIS
+ * BarChart's caller passed `palette` — omitting it is what lets a naive
+ * multi-series chart (no `palette`, no per-`Bar` `fill`) hit the soft-cap
+ * warning automatically once it grows past six series.
+ */
+function applyBarPalette(children: ReactNode, palette: ChartPalette | undefined): ReactNode {
+  const unfilledCount = Children.toArray(children).filter(
+    (child) => isBarChild(child) && child.props.fill === undefined,
+  ).length;
+  if (unfilledCount < 2) {
+    return children;
+  }
+
+  const colors = resolvePalette(palette, unfilledCount, { explicit: palette !== undefined });
+  let colorIndex = 0;
+  return Children.map(children, (child) => {
+    if (!isBarChild(child) || child.props.fill !== undefined) {
+      return child;
+    }
+    const color = colors[colorIndex];
+    colorIndex += 1;
+    return cloneElement(child, { fill: color });
+  });
+}
+
+/**
+ * Whether the zero baseline hairline (RM-027) should draw, gathered from
+ * every `Bar` child's `zeroLine` prop: any `true` forces it on, any `false`
+ * (with no `true`) forces it off, and no opinion at all leaves it to the
+ * caller — `undefined` means "auto", decided from the data by `ChartCore`.
+ */
+function extractZeroLineSetting(children: ReactNode): boolean | undefined {
+  let hasForceOn = false;
+  let hasForceOff = false;
+  Children.forEach(children, (child) => {
+    if (!isBarChild(child)) {
+      return;
+    }
+    if (child.props.zeroLine === true) {
+      hasForceOn = true;
+    } else if (child.props.zeroLine === false) {
+      hasForceOff = true;
+    }
+  });
+  if (hasForceOn) {
+    return true;
+  }
+  if (hasForceOff) {
+    return false;
+  }
+  return undefined;
 }
 
 /**
@@ -202,6 +283,24 @@ function fitMarginToBox(margin: Margin, width: number, height: number): Margin {
   const [left, right] = fitMarginPair(margin.left, margin.right, width);
   const [top, bottom] = fitMarginPair(margin.top, margin.bottom, height);
   return { top, right, bottom, left };
+}
+
+/**
+ * The value-axis domain for a bar chart (RM-027: diverging bars), given the
+ * highest and lowest value present (`min` is 0 whenever nothing is negative).
+ *
+ * `min >= 0` reproduces the PRE-RM-027 domain exactly — `[0, (max || 100) *
+ * 1.1]`, the same "no data defaults to a 100 domain" fallback the chart has
+ * always used — so every all-positive chart's geometry is byte-identical to
+ * before. Only once a negative value is present does the domain extend below
+ * 0, padded by the same 10% headroom the positive side already had.
+ */
+function resolveBarValueDomain(max: number, min: number): [number, number] {
+  if (min >= 0) {
+    return [0, (max || 100) * 1.1];
+  }
+  const domainMax = max > 0 ? max * 1.1 : 0;
+  return [min * 1.1, domainMax];
 }
 
 interface CategoryAxisChildConfig {
@@ -315,6 +414,7 @@ interface ChartInnerProps {
   datapointLabel?: ChartDatapointLabel;
   maxInteractiveDatapoints?: number;
   onPhaseChange?: (phase: ChartPhase) => void;
+  palette?: ChartPalette;
 }
 
 function ChartInner(props: ChartInnerProps) {
@@ -362,11 +462,12 @@ const ChartCore = memo(function ChartCore({
   orientation,
   stacked,
   stackGap,
-  children,
+  children: childrenProp,
   containerRef,
   chartStatus,
   loadingLabel,
   onPhaseChange,
+  palette,
 }: ChartInnerProps) {
   const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip } =
     useScheduledTooltip<TooltipData>();
@@ -377,8 +478,16 @@ const ChartCore = memo(function ChartCore({
   const isHorizontal = orientation === "horizontal";
   const isLoadingStatus = chartStatus === "loading";
 
+  // Default-fill assignment (RM-027) for `Bar` children that don't set their
+  // own `fill` — a no-op unless 2+ series would otherwise collide on the same
+  // default colour. Every other extraction below reads FROM this, so a
+  // resolved default reaches the tooltip dot colour, the axis and the plot
+  // alike.
+  const children = useMemo(() => applyBarPalette(childrenProp, palette), [childrenProp, palette]);
+
   // Extract bar configs synchronously from children
   const lines = useMemo(() => extractBarConfigs(children), [children]);
+  const zeroLineSetting = useMemo(() => extractZeroLineSetting(children), [children]);
 
   // While loading, render layout-shaped placeholder categories/bars instead of
   // the (likely empty) real data — mirrors the chart dataKeys so the
@@ -510,47 +619,70 @@ const ChartCore = memo(function ChartCore({
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  // Compute max value considering stacking
-  const maxValue = useMemo(() => {
+  // Compute value extent considering stacking AND sign (RM-027: diverging
+  // bars). `min` stays 0 whenever no series has a negative value, so
+  // `resolveBarValueDomain` reproduces the pre-RM-027 domain exactly for
+  // every all-positive chart (see its own doc comment).
+  const { maxValue, minValue } = useMemo(() => {
     if (stacked) {
-      // For stacked bars, sum all values at each data point
+      // For stacked bars, sum the POSITIVE and NEGATIVE segments at each
+      // category SEPARATELY — a diverging stack has an independent positive
+      // tower and negative tower sharing one zero baseline.
       let max = 0;
+      let min = 0;
       for (const d of data) {
-        let sum = 0;
+        let posSum = 0;
+        let negSum = 0;
         for (const line of lines) {
           const value = d[line.dataKey];
           if (typeof value === "number") {
-            sum += value;
+            if (value >= 0) {
+              posSum += value;
+            } else {
+              negSum += value;
+            }
           }
         }
-        if (sum > max) {
-          max = sum;
+        if (posSum > max) {
+          max = posSum;
+        }
+        if (negSum < min) {
+          min = negSum;
         }
       }
-      return max || 100;
+      return { maxValue: max, minValue: min };
     }
-    // For grouped bars, find max single value
+    // For grouped bars, find the max and min single values
     let max = 0;
+    let min = 0;
     for (const line of lines) {
       for (const d of data) {
         const value = d[line.dataKey];
-        if (typeof value === "number" && value > max) {
-          max = value;
+        if (typeof value === "number") {
+          if (value > max) {
+            max = value;
+          }
+          if (value < min) {
+            min = value;
+          }
         }
       }
     }
-    return max || 100;
+    return { maxValue: max, minValue: min };
   }, [data, lines, stacked]);
+
+  // Any negative value anywhere drives the zero-line auto-on default below.
+  const hasNegativeValues = minValue < 0;
 
   // Value scale (linear) - for the value axis
   const valueScale = useMemo(() => {
     const range = isHorizontal ? [0, innerWidth] : [innerHeight, 0];
     return scaleLinear({
       range,
-      domain: [0, maxValue * 1.1],
+      domain: resolveBarValueDomain(maxValue, minValue),
       nice: true,
     });
-  }, [innerWidth, innerHeight, maxValue, isHorizontal]);
+  }, [innerWidth, innerHeight, maxValue, minValue, isHorizontal]);
 
   const yScales = useMemo(() => {
     if (isHorizontal) {
@@ -562,20 +694,32 @@ const ChartCore = memo(function ChartCore({
       innerHeight,
       resolveDomain: (dataKeys) => {
         let max = 0;
+        let min = 0;
         for (const d of data) {
           for (const key of dataKeys) {
             const value = d[key];
-            if (typeof value === "number" && value > max) {
-              max = value;
+            if (typeof value === "number") {
+              if (value > max) {
+                max = value;
+              }
+              if (value < min) {
+                min = value;
+              }
             }
           }
         }
-        return [0, (max || 100) * 1.1];
+        return resolveBarValueDomain(max, min);
       },
     });
   }, [data, innerHeight, isHorizontal, lines, valueScale]);
 
   const primaryYScale = getPrimaryYScale(yScales, valueScale);
+
+  // The zero baseline in plot pixels, on whichever axis carries the value —
+  // used by the zero-line hairline below.
+  const zeroBaselineVertical = primaryYScale(0) ?? innerHeight;
+  const zeroBaselineHorizontal = valueScale(0) ?? 0;
+  const showZeroLine = zeroLineSetting ?? hasNegativeValues;
 
   // Compute stack offsets for stacked bars
   const stackOffsets = useMemo(() => {
@@ -855,6 +999,19 @@ const ChartCore = memo(function ChartCore({
         {/* Background rect for mouse event detection */}
         <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
 
+        {/* Zero baseline (RM-027) — drawn under the bars, auto-on with any
+            negative value so a diverging series always shows where it flips. */}
+        {showZeroLine && (
+          <line
+            stroke={chartCssVars.foregroundMuted}
+            strokeWidth={0.8}
+            x1={isHorizontal ? zeroBaselineHorizontal : 0}
+            x2={isHorizontal ? zeroBaselineHorizontal : innerWidth}
+            y1={isHorizontal ? 0 : zeroBaselineVertical}
+            y2={isHorizontal ? innerHeight : zeroBaselineVertical}
+          />
+        )}
+
         {/* SVG children rendered before markers */}
         {preOverlayChildren}
 
@@ -880,6 +1037,13 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
+/**
+ * @dataShape categorical comparison of one or more measures across a small set of named
+ *   categories
+ * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
+ *   zero line
+ * @avoidWhen a time axis with many points — use a line or area chart
+ */
 export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
   {
     data,
@@ -906,6 +1070,7 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
     maxInteractiveDatapoints,
     accessibleLabel,
     accessibleDescription,
+    palette,
   },
   ref,
 ) {
@@ -976,6 +1141,7 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarCh
             onDatapointClick={onDatapointClick}
             onPhaseChange={handlePhaseChange}
             orientation={orientation}
+            palette={palette}
             revealSignature={revealSignature}
             stacked={stacked}
             stackGap={stackGap}

@@ -84,6 +84,7 @@ export const PATH_SCOPED = [
   "decoration",
   "viewer-components",
   "terminal-components",
+  "process-components",
   "registry",
   "architecture-review",
 ];

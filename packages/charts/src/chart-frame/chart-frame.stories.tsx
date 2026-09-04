@@ -185,6 +185,41 @@ export const Loading: Story = {
   },
 };
 
+/**
+ * The card contract's fourth part (lieflat) — an attribution/provenance
+ * footer, shown inline and (via the play function below) inside the expand
+ * modal's detail pane too. A plain-string `source` also rides the downloaded
+ * CSV as a trailing `# source: …` comment row.
+ */
+export const WithSource: Story = {
+  render: () => (
+    <div className="w-[560px]">
+      <ChartFrame
+        title="Revenue is up 8% quarter over quarter"
+        description="Monthly revenue, Jan – Jun 2025"
+        data={monthlyData}
+        columns={monthlyColumns}
+        source="Source: Internal analytics, updated daily"
+      >
+        <DemoChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Source: Internal analytics, updated daily")).toBeVisible();
+
+    await userEvent.click(canvas.getByLabelText("Expand chart"));
+    const dialog = await within(document.body).findByRole("dialog");
+    await waitFor(() => expect(dialog).toBeVisible());
+    await waitFor(() =>
+      expect(
+        within(dialog).getAllByText("Source: Internal analytics, updated daily").length,
+      ).toBeGreaterThan(0),
+    );
+  },
+};
+
 /** Download callback fires with the correct rows when triggered. */
 export const DownloadCallback: Story = {
   args: {
@@ -205,5 +240,71 @@ export const DownloadCallback: Story = {
       monthlyData,
       expect.arrayContaining([expect.objectContaining({ key: "month" })]),
     );
+  },
+};
+
+// ── SVG/PNG export (RM-042) ────────────────────────────────────────────────────
+
+// Module-scoped (not `args`) so the play function can inspect `.mock.calls`
+// directly — mirrors `data-table.stories.tsx`'s `clickableRowsOnRowClick`.
+const exportSpy = fn();
+
+/**
+ * Exports the chart's real rendered `<svg>` as SVG/PNG. `onExport` intercepts
+ * the generated file instead of triggering a real browser download, so the
+ * interaction test can inspect the `Blob` directly: the SVG is self-contained
+ * (every `var(--…)` colour resolved via `getComputedStyle` at export time,
+ * `<rect>` background painted from the card) and the PNG rasterises the same
+ * built SVG.
+ */
+export const Export: Story = {
+  render: () => (
+    <div className="w-[560px]">
+      <ChartFrame
+        title="Monthly revenue"
+        description="Jan – Jun 2025"
+        data={monthlyData}
+        columns={monthlyColumns}
+        onExport={exportSpy}
+      >
+        <DemoChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    exportSpy.mockClear();
+    const canvas = within(canvasElement);
+
+    // The controls only appear once ChartFrameInner registers the rendered
+    // <svg> (RM-042) — wait for it rather than assuming it's synchronous.
+    await waitFor(() => expect(canvas.getByLabelText("Export as SVG")).toBeInTheDocument());
+    await expect(canvas.getByLabelText("Export as PNG")).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByLabelText("Export as SVG"));
+    await waitFor(() =>
+      expect(exportSpy).toHaveBeenCalledWith(
+        "svg",
+        expect.any(Blob),
+        expect.stringContaining(".svg"),
+      ),
+    );
+    const svgCall = exportSpy.mock.calls.find((call) => call[0] === "svg");
+    const svgBlob = svgCall?.[1] as Blob;
+    const svgText = await svgBlob.text();
+    await expect(svgText).not.toContain("var(");
+    await expect(svgText).toContain("<rect");
+
+    await userEvent.click(canvas.getByLabelText("Export as PNG"));
+    await waitFor(() =>
+      expect(exportSpy).toHaveBeenCalledWith(
+        "png",
+        expect.any(Blob),
+        expect.stringContaining(".png"),
+      ),
+    );
+    const pngCall = exportSpy.mock.calls.find((call) => call[0] === "png");
+    const pngBlob = pngCall?.[1] as Blob;
+    await expect(pngBlob.type).toBe("image/png");
+    await expect(pngBlob.size).toBeGreaterThan(0);
   },
 };

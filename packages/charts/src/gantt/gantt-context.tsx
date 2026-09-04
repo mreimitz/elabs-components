@@ -25,6 +25,13 @@ import type {
   GanttTimeUnit,
 } from "./gantt";
 
+/** A {@link GanttGap} with its dates pre-coerced, mirroring {@link ResolvedTask}. */
+export interface ResolvedGap {
+  start: Date;
+  end: Date;
+  label?: string;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface GanttState {
@@ -100,6 +107,8 @@ export interface ResolvedTask {
   baseline?: { start: Date; end: Date };
   /** Custom task-type key (P2). */
   type?: string;
+  /** Coerced idle-time bands drawn on this row (P2, #221). */
+  gaps?: ResolvedGap[];
   /** Depth level (root = 1). */
   level: number;
   /** Set size within the parent group. */
@@ -154,6 +163,11 @@ export function buildFlatTasks(tasks: GanttTask[]): ResolvedTask[] {
           ? { start: toDate(t.baseline.start), end: toDate(t.baseline.end) }
           : undefined,
         type: t.type,
+        gaps: t.gaps?.map((g) => ({
+          start: toDate(g.start),
+          end: toDate(g.end),
+          label: g.label,
+        })),
         level,
         setSize: children.length,
         posInSet: i + 1,

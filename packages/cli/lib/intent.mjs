@@ -1504,14 +1504,40 @@ export const INTENT = {
     purpose: "Flow diagram — how quantity moves between stages or nodes.",
     category: "chart",
     relationships: {
-      contains: ["SankeyNode", "SankeyLink", "SankeyTooltip", "SankeyProvider"],
+      contains: [
+        "SankeyNode",
+        "SankeyLink",
+        "SankeyThreadLinks",
+        "SankeyTooltip",
+        "SankeyProvider",
+      ],
       usedInside: ["ChartFrame", "ChartCard"],
     },
-    stateTokens: { series: "--chart-1 … --chart-5" },
+    stateTokens: { series: "--chart-1 … --chart-5", mode: "aggregate (default) | threads" },
     antiPatterns: [
       "A Sankey for a simple two-column comparison — reach for a bar chart.",
       "Raw colors on nodes/links — resolve the chart tokens so the dark theme reads correctly.",
       "So many nodes that the labels collide — aggregate the tail into one 'other' node.",
+    ],
+  },
+
+  SankeyThreadLinks: {
+    purpose:
+      'SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.',
+    category: "chart",
+    relationships: {
+      usedInside: ["SankeyChart"],
+      pairsWith: ["SankeyNode"],
+    },
+    stateTokens: {
+      hover: "bundle-highlight on hover",
+      pin: "click the fat hit-twin to pin a route",
+    },
+    antiPatterns: [
+      'Using mode="threads" for a small, low-cardinality flow — that\'s what the default aggregate SankeyLink is for.',
+      "Supplying `path` names that don't match any `SankeyNodeDatum.name` — the route silently falls back to source/target only.",
+      "Making the visible thread path itself interactive — pointer handling belongs on the fat, transparent hit-twin so overlapping routes don't fight for clicks.",
+      "Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element.",
     ],
   },
 
@@ -1566,6 +1592,56 @@ export const INTENT = {
     ],
   },
 
+  WaterfallChart: {
+    purpose:
+      "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
+    category: "chart",
+    relationships: {
+      contains: ["Grid", "BarXAxis", "BarYAxis", "ChartTooltip"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      connector:
+        "var(--chart-foreground-muted), 0.6px, dashed (furniture, not data — Leader's default)",
+      decrease: "var(--chart-seq-3) (default negativeFill)",
+      increase: "var(--chart-seq-6) (default positiveFill)",
+      total: "var(--chart-foreground) (default totalFill)",
+      valueLabel: "var(--chart-foreground) on a var(--chart-background) halo (HaloText)",
+    },
+    antiPatterns: [
+      "A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.",
+      "Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.",
+      "Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.",
+      "More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead.",
+    ],
+  },
+
+  ParallelCoordinatesChart: {
+    purpose:
+      "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "DrawPath", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["DumbbellChart", "RadarChart"],
+    },
+    stateTokens: {
+      axis: "var(--chart-foreground-muted) vertical hairline with end ticks (HairlineFloor style)",
+      extremeLabel:
+        "var(--chart-foreground-muted) on a var(--chart-background) halo, axis feet only when showExtremes",
+      heroLine:
+        "2px, var(--chart-foreground) or the resolved palette ink, opacity 1 — drawn LAST so it sits on top",
+      nonHeroLine:
+        "0.65px hairline, seeded 0.5-0.8 opacity — a texture of many lines, not individually legible",
+    },
+    antiPatterns: [
+      "Fewer than 3 or more than 6 dimensions — below 3 a DumbbellChart (2) or MetricCard (1) reads better; above 6 the axes crowd and `resolveParallelDimensions` clamps to the first 6 with a console warning, silently dropping the rest.",
+      "Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).",
+      "Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.",
+      "Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot.",
+    ],
+  },
+
   RadarChart: {
     purpose: "Multi-metric profile comparison on a shared radial axis.",
     category: "chart",
@@ -1605,6 +1681,32 @@ export const INTENT = {
     ],
   },
 
+  DumbbellChart: {
+    purpose:
+      'Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns.',
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "UnitStack"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      track:
+        "0.6px var(--chart-grid) hairline per row — furniture, independent of the row's colour",
+      markers:
+        "row colour from resolvePalette (--chart-1…--chart-6 categorical, falling back to mono past 6 rows)",
+      beads:
+        "beads.unit draws a UnitStack in var(--chart-foreground) — a neutral ink, NOT the row's colour, by design",
+      labels:
+        "category label in var(--chart-label); the signed delta label in var(--chart-foreground) via HaloText",
+    },
+    antiPatterns: [
+      'Using variant="slope" past the 8-row soft cap — the crossing lines stop being decodable at that density (it dev-warns once); switch to the default variant="dumbbell" (rows) instead of reading the warning as noise.',
+      "Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.",
+      "Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.",
+      "Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.",
+    ],
+  },
+
   ChoroplethChart: {
     purpose: "Region-shaded map for a measure that is defined per geographic area.",
     category: "chart",
@@ -1613,6 +1715,53 @@ export const INTENT = {
       "Shading raw counts instead of a rate — area size becomes the story and the map lies.",
       "A rainbow ramp for a sequential measure — use one ordered ramp so darker always means more.",
       "Shipping it without a legend — a shaded region carries no value without the scale.",
+    ],
+  },
+
+  // Heatmap — RM-021
+  HeatmapChart: {
+    purpose:
+      "Two discrete dimensions \u00d7 one value \u2014 weekday \u00d7 hour, product \u00d7 region, or a year of days.",
+    category: "chart",
+    relationships: { usedInside: ["ChartFrame", "ChartCard"], pairsWith: ["ChartTooltip"] },
+    stateTokens: {
+      cell: "value \u2192 an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
+      empty: "null or 0 \u2192 a QuietDot pinprick in --chart-foreground-muted, not a hole",
+      peak: "the highlighted cell \u2192 a dashed PeakRing in --chart-foreground",
+      loading: "loading \u2192 the same grid as skeleton cells in --muted",
+    },
+    antiPatterns: [
+      "steps: 0 (the continuous ramp) when the reader must compare exact values \u2014 opacity is not countable; keep the stepped ramp or turn showValues on.",
+      'emptyValue="blank" on data that contains real zeroes \u2014 a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.',
+      "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) \u2014 it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
+      'Leaning on the darkest ramp step to say "this is the peak" \u2014 colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.',
+    ],
+  },
+
+  UnitChart: {
+    purpose:
+      "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
+    category: "chart",
+    relationships: {
+      contains: ["UnitStack", "Leader", "ChartLegend"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartTooltip"],
+    },
+    stateTokens: {
+      marks:
+        "fill/stroke resolved per series from the active ChartPalette (--chart-1.. or the mono ladder past 6 series) — never a raw hex",
+      leader:
+        "field's cluster-to-label callout is a 0.6px var(--chart-foreground-muted) dashed hairline — furniture, never a second data channel",
+      caption:
+        "text-caption in var(--chart-label) for unitLabel, var(--chart-foreground-muted) tabular-nums for the arithmetic remainder",
+      rowValue:
+        "rows' value at the inked edge is var(--chart-foreground) at font-weight 800 — the one heavy mark in the row",
+    },
+    antiPatterns: [
+      "Sizing a waffle or field past a few hundred marks in a small frame — UnitStack already warns that one stack stops being countable past ~60 units; here the same failure happens across the WHOLE canvas at once, so budget total/columns/frame size together, not one series at a time.",
+      "Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.",
+      'Reaching for layout="field" when the reader needs to rank two series or compare them precisely — a phyllotaxis cluster reads as an area-at-a-glance impression, not a countable structure; a real comparison wants rows or waffle, where the grid gives the reader something to count.',
+      "Falling back to a pie chart because comparing shares 'still feels easier' to build — that instinct is exactly what this chart exists to correct: a slice angle cannot be counted, a mark can. If the categories genuinely don't sum to a meaningful whole, reach for the rows layout, not a pie.",
     ],
   },
 
@@ -1636,6 +1785,255 @@ export const INTENT = {
       "Putting information ONLY in the tooltip — hover content is unreachable by keyboard and on touch.",
       "Showing every series in a shared tooltip on a dense chart — filter to the hovered series.",
       "Formatting numbers by hand — use Intl so locale and units stay consistent with the axis.",
+    ],
+  },
+
+  // ── @elabs-ai/components-charts · editorial marks (RM-017) ──────
+  // The shared low-level drawing vocabulary in packages/charts/src/marks/. These
+  // are not charts: each is a bare SVG element or <g> with no provider, so it
+  // composes inside ANY container's children — and inside the heatmap, waterfall,
+  // dumbbell, unit and treemap containers of the wave that follows. Sourced from
+  // the marks' own docblocks + .claude/rules/chart-components.md (the aria-hidden
+  // chart body) + the styling rule's tokens-only line.
+
+  HaloText: {
+    purpose:
+      "SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart", "BarChart", "ScatterChart", "DumbbellChart"],
+      pairsWith: ["Leader", "PeakRing", "Marginalia", "HairlineFloor"],
+    },
+    stateTokens: {
+      halo: "stroke paints var(--chart-background) beneath the glyphs, under paint-order stroke",
+      ink: "fill defaults to var(--chart-foreground)",
+    },
+    antiPatterns: [
+      "Hard-coding a paper colour for the halo — the halo IS the plot ground, so a literal white one becomes a white smear the moment the theme goes dark. It defaults to var(--chart-background) for that reason; an override names another token, never a colour.",
+      "Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.",
+      "Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.",
+      "Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view.",
+    ],
+  },
+
+  Leader: {
+    purpose:
+      "The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart", "ScatterChart"],
+      pairsWith: ["Marginalia", "HaloText", "PeakRing"],
+    },
+    stateTokens: {
+      ink: "0.6px in var(--chart-foreground-muted) — deliberately below every series weight",
+    },
+    antiPatterns: [
+      "Thickening it so the connection is easier to follow — at series weight a leader stops being furniture and starts being read as data. If it is hard to follow, the label is too far away.",
+      "Inventing a third dash rhythm — the union is 1 3 (quiet) and 2 3 (emphatic) on purpose. Sixty-three templates each picking their own dash array is the drift this layer exists to prevent.",
+      "Copying the path but not the unset fill — an elbow is an OPEN path, and an open path that is filled paints a solid triangle between its two ends. The component sets it; hand-rolled copies routinely do not.",
+      "Routing it across the series it points at — at this weight a leader that overlaps the data is indistinguishable from a gridline. Bend the elbow around instead.",
+    ],
+  },
+
+  PeakRing: {
+    purpose:
+      "A dashed outline around the one mark that matters — the peak, the outlier, the cell the caption is about.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ScatterChart", "LineChart", "BarChart", "ChoroplethChart"],
+      pairsWith: ["HaloText", "Marginalia", "QuietDot"],
+    },
+    stateTokens: {
+      ink: "dashed 2 3 at 0.8px in var(--chart-foreground) — emphasis carried by shape, never by hue",
+    },
+    antiPatterns: [
+      "Swapping the dash for a highlight hue — the ring exists because emphasis by SHAPE survives greyscale and a colour-blind reader (WCAG 1.4.1). Recolouring it throws away the only reason to reach for it.",
+      "Ringing three marks — the ring points at whatever the caption is about. A second ring halves the emphasis and a third deletes it.",
+      "Treating the ring as the statement — it is aria-hidden furniture that points; it says nothing. A peak worth ringing is worth writing in the caption or the summary.",
+      "Dashing a plotted mark elsewhere in the same chart — nothing that carries data is dashed here, and that is precisely what stops the ring being read as a series.",
+    ],
+  },
+
+  Marginalia: {
+    purpose:
+      "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
+    category: "chart",
+    relationships: {
+      contains: ["Leader", "HaloText"],
+      usedInside: ["LineChart", "AreaChart", "ScatterChart"],
+      pairsWith: ["PeakRing"],
+    },
+    stateTokens: {
+      note: "italic, one step below body size, in var(--chart-foreground-muted) so it reads as commentary rather than as a label the chart produced",
+    },
+    antiPatterns: [
+      "Reaching for foreignObject to get HTML wrapping — it does not survive the download-as-image path, renders inconsistently across engines, and smuggles AT-visible, focusable HTML into the aria-hidden chart body, which is the axe aria-hidden-focus violation this package treats as a red build. Pass tspans for a second line.",
+      "Using it for a value — a value belongs ON its mark as HaloText. Marginalia carries a JUDGMENT the data cannot state by itself, which is the whole reason it is set in the analyst's voice.",
+      "More than one or two per chart — a margin note is why a reader trusts the chart; a margin full of them is an essay with a plot in it.",
+      "Leaving a caveat here and nowhere else — the chart body is aria-hidden, so the note reaches nobody using a screen reader.",
+    ],
+  },
+
+  HairlineFloor: {
+    purpose:
+      "One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart", "BarChart", "Sparkline"],
+      pairsWith: ["QuietDot", "UnitStack", "HaloText"],
+      avoidNextTo: ["XAxis on the same edge — two answers to the same question"],
+    },
+    stateTokens: {
+      ticks: "0.55px in var(--chart-grid) — grid furniture, below every series weight",
+    },
+    antiPatterns: [
+      "Decimating the ticks to make them fit — one tick per period, always. An irregular floor reads as missing data, and dropping ticks silently costs the reader the duration the mark exists to show. Too many periods to draw means the chart is too small for this mark.",
+      "Using it where the reader needs to know WHICH date — a floor answers how long, an axis answers when. If labels are wanted the answer is XAxis, not a longer floor.",
+      "Choosing every for looks — the long tick is the only navigational cue on the mark, so it has to land on a boundary the reader already holds: 12 for months, 7 for days, 4 for quarters.",
+      "Painting it at series weight — at var(--chart-foreground) the floor stops being a rule and becomes a second data row along the bottom.",
+    ],
+  },
+
+  QuietDot: {
+    purpose:
+      "The 0.9px pinprick that renders a measured null or zero, so an empty cell in a matrix is never a hole.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChoroplethChart", "BarChart", "LineChart"],
+      pairsWith: ["HairlineFloor", "PeakRing", "UnitStack"],
+    },
+    stateTokens: {
+      ink: "var(--chart-foreground-muted) at radius 0.45 — the quietest mark in the system by construction",
+    },
+    antiPatterns: [
+      "Scattering it as decoration — it has ONE job, and it is the null/zero render. A pinprick that is not standing for an absent value teaches the reader that absence is noise.",
+      "Leaving a zero cell blank instead — blank reads identically to no data collected, to the grid ends here, and to a rendering bug. The dot says the cell was visited and the answer was nothing.",
+      "Assuming it distinguishes 0 from null — it says MEASURED, not which. Where the difference is load-bearing keep the dot for the zero, give the missing cell a hatch or an explicit gap, and say so in the legend.",
+      "Enlarging it so it is easier to see — an absence rendered at the weight of a value becomes a value.",
+    ],
+  },
+
+  UnitStack: {
+    purpose:
+      "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
+    category: "chart",
+    relationships: {
+      usedInside: ["BarChart", "ScatterChart", "DumbbellChart"],
+      pairsWith: ["HaloText", "HairlineFloor", "PeakRing", "QuietDot"],
+    },
+    stateTokens: {
+      ink: "var(--chart-foreground) unless the caller passes a series token",
+      emphasis:
+        "every markEvery-th unit is drawn 1.5x longer and heavier, so the eye counts in fives",
+    },
+    antiPatterns: [
+      "Passing a large n and calling it a bar — past roughly 60 units the stack stops being countable and becomes a texture, at which point a bar is the honest mark. It will happily draw 500; that is your judgment, not its.",
+      "Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.",
+      "Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.",
+      "Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid.",
+    ],
+  },
+
+  DrawPath: {
+    purpose:
+      "A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart"],
+      pairsWith: ["ChartRevealClip", "Leader", "HaloText"],
+    },
+    stateTokens: {
+      draw: "strokeDashoffset animates 1 to 0 against a pathLength of 1",
+      reducedMotion: "renders the plain, finished path with no dash attributes at all",
+    },
+    antiPatterns: [
+      "Filling it — a dash offset acts on the stroke, so a filled path appears in a single frame and the draw-in does nothing at all.",
+      "Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.",
+      "Shortening the duration instead of branching for reduced motion — a motion path at duration 0 still leaves the dash attributes in the DOM, and a stroke carrying a dash array is one rounding error away from a visible seam. The reduced-motion state has to be the ordinary, undecorated path.",
+      "Letting meaning depend on the animation having run — a reader who arrives after it finished, or who never sees it, must lose nothing.",
+    ],
+  },
+
+  TreemapChart: {
+    purpose: "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "ChartTooltipBox", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["MetricCard"],
+    },
+    stateTokens: {
+      band: "var(--chart-mono-2) — always neutral, even under palette: 'categorical', so grouping reads from the title band + gap alone, never from hue",
+      leafMono: "var(--chart-mono-4) — one shared shade for every leaf (the default)",
+      leafSequential: "--chart-seq-1 … --chart-seq-7 by the leaf's own value",
+      leafCategorical: "one hue per top-level group (≤ 4 groups, else falls back to mono)",
+      label:
+        "HaloText: the band title renders in the chart-source type role, the leaf label in the chart-value type role (RM-019, both pinned to the meta size step); the halo punches from var(--chart-background)",
+      focus:
+        "the drilldown zoom/back buttons carry the shared interactive focus ring (the --ring token, shown only on :focus-visible)",
+    },
+    antiPatterns: [
+      "Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.",
+      "Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.",
+      "Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.",
+      "Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.",
+    ],
+  },
+
+  TreeChart: {
+    purpose:
+      "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "DrawPath", "ChartTooltipBox", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["TreemapChart"],
+    },
+    stateTokens: {
+      linkStroke: "var(--chart-grid), 1.4px — links are furniture, not data, whatever the palette",
+      nodeMono:
+        "--chart-mono-1 … 7, indexed by DEPTH (the default) — every node at one depth shares one shade",
+      nodeCategorical:
+        "one hue per top-level branch (a direct child of the root); the root itself stays var(--chart-mono-4), since it belongs to no branch",
+      label:
+        "HaloText in the chart-value type role, placed before a leaf / after a branch on the growth axis; the halo punches from var(--chart-background)",
+      collapsedPill:
+        "var(--chart-mono-3) fill, '+k' label — k is the count of leaves the pill hides",
+      reveal:
+        "links draw depth by depth via DrawPath + stagger — every link into one depth shares a single reveal delay",
+    },
+    antiPatterns: [
+      "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.",
+      "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
+      "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
+      "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand.",
+    ],
+  },
+
+  // CanvasLayer — RM-046
+  CanvasLayer: {
+    purpose:
+      "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartTooltip", "ChartTooltipContent", "ChartDatapointLayer"],
+    },
+    stateTokens: {
+      marks:
+        "every colour the draw callback paints is read per frame via canvasTokenColor(--chart-*) — ctx.fillStyle cannot resolve a CSS variable, so a literal here is a canvas that stops theming",
+      focus:
+        "the focused datum gets ONE SVG overlay rect stroked with the focus-ring token (--ring), never a ring painted into the picture the caller draws",
+      cursor:
+        "the focused datum's label is spoken by a single polite live region; the button's own name stays static",
+      reducedMotion: "the enter ramp does not run at all — scales.progress starts and stays at 1",
+    },
+    antiPatterns: [
+      "Reaching for it below ~20k marks — the SVG path is inspectable, stylable and testable, and ChartDatapointLayer already gives every point a real keyboard target. A canvas is what you accept when the DOM has run out, not an upgrade.",
+      "Backing hitTest with a linear scan over the points — it runs on every pointermove, so at 50k points the hover path, not the draw, is what makes the canvas view feel worse than the SVG one it replaced. Use createSpatialGrid.",
+      "Shipping it without accessibleDescription — canvas pixels are invisible to assistive technology, so with no parallel summary the marks simply cease to exist for a screen-reader user. That is the one failure this component cannot recover from on the reader's behalf.",
+      "Hardcoding a colour in draw (a hex, an rgb()) instead of canvasTokenColor — the layer redraws on a theme flip, which repaints exactly the same wrong colours.",
+      "Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here.",
     ],
   },
 
@@ -2762,6 +3160,85 @@ export const INTENT = {
       "Leaving aria-activedescendant set after the palette closes — a stale id points at a node that no longer exists.",
       "Hand-rolling the trigger scan — the caret/trigger machinery is shared with MentionInput (findTriggerQuery in @elabs-ai/components-ui), not re-derived here.",
       "Submitting the composer on Enter while the palette is open — Enter selects the command; the textarea's own onKeyDown-before-submit order is what makes that possible.",
+    ],
+  },
+
+  // DistributionChart — RM-026
+  DistributionChart: {
+    purpose:
+      "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartLegend", "DataTable"],
+    },
+    stateTokens: {
+      group:
+        '--chart-1 … --chart-12 via resolvePalette; palette="sequential" shades a box/violin by MEDIAN RANK, not by group order',
+      median:
+        "cut in the paper colour (--chart-background) through a box/violin waist; a dashed --chart-foreground flag + text-meta label on a histogram",
+      outlier: "hollow past 1.5 × IQR — fill=none with the group's own stroke, never a filled dot",
+      axis: "--chart-grid gridlines, --chart-label value ticks, --chart-foreground group labels, all text-meta",
+      focus:
+        "on a strip every record is a real button in ChartDatapointLayer: focus-visible:ring-2 ring-ring",
+    },
+    antiPatterns: [
+      'kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.',
+      "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.",
+      'kind="box" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind="strip" shows the same numbers without discarding them.',
+      "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
+      "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.",
+    ],
+  },
+
+  // BumpChart — RM-033
+  BumpChart: {
+    purpose:
+      'Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).',
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "QuietDot"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      hero: "highlightKey draws var(--chart-foreground) (ink) + bold labels; every other entity draws from the neutral mono ladder, never a second categorical hue",
+      rank: 'variant="strip" cell shade = --chart-seq-1…7 via resolvePalette("sequential", maxRank) — rank 1 is always the most-ink step, whichever theme is active',
+      delta:
+        "showDelta reads var(--success) for a climb (▲) and var(--destructive) for a drop (▼) via profitLossColor — colour reinforces the arrow glyph, it never stands alone",
+      missing: "a period an entity has no row for draws a QuietDot pinprick, never a blank cell",
+    },
+    antiPatterns: [
+      "Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.",
+      "Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.",
+      'Choosing variant="lines" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities\' default cap of 10 kicks in; variant="strip" reads a crowded field better because rows never move.',
+      "Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period.",
+    ],
+  },
+  // NetworkChart — RM-036
+  NetworkChart: {
+    purpose:
+      "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartLegend", "DataTable"],
+    },
+    stateTokens: {
+      node: "--chart-1 … --chart-12 by group via resolvePalette (categorical at or under 6 groups, mono above); the mark is stroked in the paper colour (--chart-background) so touching nodes still read apart",
+      link: "--chart-grid hairlines at 0.35 opacity, width scaled by the link's own value",
+      emphasis:
+        "hover/focus dims non-neighbours to opacity 0.12 and non-incident links to 0.03 — a CLASS on each <g>, transitioned on the compositor, so no node re-renders per frame",
+      label:
+        "HaloText in the chart-source type role, punched from var(--chart-background); drawn only at or above labelThreshold",
+      focus:
+        "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared interactive focus ring (the --ring token, shown only on :focus-visible); one tab stop, arrows across the rest",
+    },
+    antiPatterns: [
+      'Reading a force layout\'s POSITIONS as data — only adjacency is encoded; distance, direction and the picture\'s orientation are artefacts of the solver\'s seed. Use layout="circular" or "arc" whenever position must mean something.',
+      "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.",
+      'Reaching for layout="arc" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.',
+      "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
+      "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.",
     ],
   },
 };

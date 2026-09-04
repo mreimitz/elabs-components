@@ -63,6 +63,15 @@ import { FileViewer } from "@elabs-ai/components-viewer";
 // the new package's barrel resolves and bundles; it does NOT re-prove the
 // xterm-optional-peer-absent contract InteractiveTerminal used to cover here.
 import { Terminal } from "@elabs-ai/components-terminal";
+// `@elabs-ai/components-process` is a wave-0 SCAFFOLD: both its barrel and its
+// `/core` subpath currently export nothing (`export {}`). There is no symbol to
+// import, so these are side-effect imports — they prove the published package
+// installs and that both entry points resolve and bundle from a real consumer
+// app, which is exactly the assertion that was missing when the package landed
+// and left this gate red on `main`. Swap them for a real import the moment the
+// package exports its first view.
+import "@elabs-ai/components-process";
+import "@elabs-ai/components-process/core";
 
 import "./index.css";
 

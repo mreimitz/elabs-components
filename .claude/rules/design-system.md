@@ -15,7 +15,8 @@ Core principles:
 - **Two consumption modes.** Stable primitives are _imported_ from `@elabs-ai/components-*`;
   prototype-specific compositions are _copy-owned_ via the registry.
 - **One direction of dependency.** `tokens` → `ui`/`icons` →
-  `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal`. Never import sideways with relative
+  `data`/`ai`/`flow`/`maps`/`charts`/`marketing`/`editor`/`viewer`/`terminal` → `process`
+  (the one layer-3 composite — ADR 0034). Never import sideways with relative
   paths; use the package alias.
 - **Brand-agnostic components.** No package hardcodes a brand. Brand lives in
   tokens, icons, logos, and theme variables.

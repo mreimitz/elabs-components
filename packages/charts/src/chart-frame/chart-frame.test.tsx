@@ -159,3 +159,185 @@ describe("ChartFrame loading", () => {
     expect(screen.getByLabelText("Expand chart")).toBeInTheDocument();
   });
 });
+
+// Card contract source row (RM-019): a fourth, optional attribution part —
+// inline, in the expand modal, and (for a plain string) in the CSV download.
+describe("ChartFrame source", () => {
+  it("renders the source row inline when provided", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Source: Internal analytics">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Source: Internal analytics")).toBeInTheDocument();
+  });
+
+  it("renders no source row when absent", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(screen.queryByText(/source/i)).not.toBeInTheDocument();
+  });
+
+  it("also shows the source row inside the expand modal", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Source: Internal analytics">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Expand chart"));
+    // Two occurrences now: the inline card footer + the modal's detail pane.
+    expect(screen.getAllByText("Source: Internal analytics")).toHaveLength(2);
+  });
+
+  it("appends a trailing '# source: …' comment row to the downloaded CSV", () => {
+    global.URL.createObjectURL = vi.fn(() => "blob:mock");
+    global.URL.revokeObjectURL = vi.fn();
+    let captured = "";
+    const OriginalBlob = global.Blob;
+    // @ts-expect-error minimal test stub — only the constructor is exercised
+    global.Blob = class {
+      constructor(parts: BlobPart[]) {
+        captured = parts.join("");
+      }
+    };
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Internal analytics, updated daily">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Download CSV"));
+
+    expect(captured).toContain("# source: Internal analytics, updated daily");
+
+    clickSpy.mockRestore();
+    global.Blob = OriginalBlob;
+  });
+});
+
+// SVG/PNG export (RM-042): export-svg/export-png degrade the same way
+// table/download degrade without data — except the condition is a rendered
+// `<svg>` (registered by ChartFrameInner after mount), not `data`. A plain
+// `<div>` placeholder — what every other test in this file renders as
+// `children` — has no `<svg>`, so those tests already double as "hidden
+// without a chart" coverage; this block makes that explicit and covers the
+// export actions themselves.
+//
+// var(--…) resolution genuinely needs a browser (`getComputedStyle` doesn't
+// resolve CSS custom properties under jsdom — see export-svg.ts's module
+// doc) — that assertion lives in the `Export` Storybook story instead. These
+// tests cover the parts that are deterministic under jsdom: control
+// visibility, the default download path, and the `onExport` seam.
+function FakeChartSvg() {
+  return (
+    <svg data-testid="fake-chart" width={200} height={100}>
+      <rect width={200} height={100} fill="var(--chart-1)" />
+    </svg>
+  );
+}
+
+describe("ChartFrame export controls (RM-042)", () => {
+  it("shows export-svg/export-png once the chart body renders an <svg>", () => {
+    render(
+      <ChartFrame title="Test" data={sampleData}>
+        <FakeChartSvg />
+      </ChartFrame>,
+    );
+    expect(screen.getByLabelText("Export as SVG")).toBeInTheDocument();
+    expect(screen.getByLabelText("Export as PNG")).toBeInTheDocument();
+  });
+
+  it("hides export-svg/export-png for a non-svg placeholder", () => {
+    render(
+      <ChartFrame title="Test" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(screen.queryByLabelText("Export as SVG")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Export as PNG")).not.toBeInTheDocument();
+  });
+
+  it("hides export-svg/export-png once flipped to table view (the <svg> unmounts)", () => {
+    render(
+      <ChartFrame title="Test" data={sampleData}>
+        <FakeChartSvg />
+      </ChartFrame>,
+    );
+    expect(screen.getByLabelText("Export as SVG")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Flip to table view"));
+    expect(screen.queryByLabelText("Export as SVG")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Export as PNG")).not.toBeInTheDocument();
+  });
+
+  it("honours a features list that excludes export-png", () => {
+    render(
+      <ChartFrame title="Test" data={sampleData} features={["expand", "export-svg"]}>
+        <FakeChartSvg />
+      </ChartFrame>,
+    );
+    expect(screen.getByLabelText("Export as SVG")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Export as PNG")).not.toBeInTheDocument();
+  });
+
+  it("downloads a self-contained SVG file (with a <rect> background) by default", () => {
+    global.URL.createObjectURL = vi.fn(() => "blob:mock");
+    global.URL.revokeObjectURL = vi.fn();
+    let capturedText = "";
+    let capturedType = "";
+    let capturedFilename = "";
+    const OriginalBlob = global.Blob;
+    // @ts-expect-error minimal test stub — only the constructor is exercised
+    global.Blob = class {
+      type: string;
+      constructor(parts: BlobPart[], options?: BlobPropertyBag) {
+        capturedText = parts.join("");
+        capturedType = options?.type ?? "";
+        this.type = capturedType;
+      }
+    };
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      capturedFilename = this.download;
+    });
+
+    render(
+      <ChartFrame title="Revenue is up" data={sampleData}>
+        <FakeChartSvg />
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Export as SVG"));
+
+    expect(capturedType).toContain("image/svg+xml");
+    expect(capturedText).toContain("<rect");
+    expect(capturedText).toContain("<svg");
+    expect(capturedFilename).toBe("revenue-is-up.svg");
+    expect(clickSpy).toHaveBeenCalledOnce();
+
+    clickSpy.mockRestore();
+    global.Blob = OriginalBlob;
+  });
+
+  it("routes the export to onExport instead of downloading, when provided", () => {
+    const onExport = vi.fn();
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(
+      <ChartFrame title="Revenue" data={sampleData} onExport={onExport}>
+        <FakeChartSvg />
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Export as SVG"));
+
+    expect(onExport).toHaveBeenCalledOnce();
+    expect(onExport).toHaveBeenCalledWith("svg", expect.any(Blob), "revenue.svg");
+    // The onExport seam replaces the local download — no anchor click.
+    expect(clickSpy).not.toHaveBeenCalled();
+
+    clickSpy.mockRestore();
+  });
+});
