@@ -1498,10 +1498,11 @@
 
   /* chart type roles — RM-019. Two card-contract rungs (lieflat's fixed
      four-part card: title/description/chart/source) — NOT among the eight
-     `ROLES` density-type-scale.test.ts enumerates, and NOT yet redeclared per
-     `[data-density]` in density.css (tracked as a follow-up; these two rungs
-     render at the `comfortable` size in every density until that lands).
-     Both reuse the meta rung's size/leading (small metadata/labels). */
+     `ROLES` density-type-scale.test.ts enumerates (that suite's list is
+     fixed at eight by design), but density-aware like `--text-meta`: size
+     and line-height are redeclared per `[data-density]` in density.css
+     (weight/tracking are never rescaled, same as every other role). Both
+     reuse the meta rung's size/leading (small metadata/labels). */
   --type-size-chart-value: var(--type-size-meta);
   --type-leading-chart-value: var(--type-leading-meta);
   --type-weight-chart-value: 800;
