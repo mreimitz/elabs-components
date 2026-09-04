@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 
 /**
  * The ORDERED chart ramps (RM-018) — the half of the chart palette where
@@ -59,8 +60,24 @@ const RAMPS: Ramp[] = [
   },
   {
     name: "Diverging",
+    // GREYSCALE CONSTRAINT (issue #178c, part of RM-018's wave-0 review):
+    // sign on this ramp is carried by hue alone. Measured greyscale
+    // lightness delta between mirrored steps: neg-1 vs pos-1 = 0.003;
+    // neg-2 vs pos-2 = 0.002 — in print, in greyscale, or for a reader
+    // going by lightness only, a +1 cell and a -1 cell are indistinguishable.
+    // This is INHERENT to a diverging ramp (colour-vision-deficiency is
+    // genuinely fine here — deuteranopia ΔE 0.183-0.202, protanopia ΔE
+    // 0.173-0.190 — this is a greyscale/monochrome problem, not a
+    // colour-blindness one), so it is not a defect to fix in the tokens.
+    // It IS a constraint every consumer of this ramp for signed data (a
+    // correlation matrix, signed bars, a choropleth of net change) must
+    // honour: add a second, non-hue channel — a sign glyph (+/−), a
+    // texture/hatch, or a value label — see
+    // .claude/rules/chart-components.md "Diverging ramp: sign needs a
+    // second channel" and .claude/rules/accessibility.md's greyscale
+    // decision test.
     blurb:
-      "Signed data around a meaningful zero: signed bars, a correlation matrix. The negative arm rides the blue family and the positive arm the brand lime, meeting at a neutral middle. The mid clears 3:1 like every other step, because a zero-valued cell is still a drawn cell.",
+      "Signed data around a meaningful zero: signed bars, a correlation matrix. The negative arm rides the blue family and the positive arm the brand lime, meeting at a neutral middle. The mid clears 3:1 like every other step, because a zero-valued cell is still a drawn cell. Sign is carried by HUE ALONE — mirrored steps differ by only ~0.002-0.003 in greyscale lightness (see the docblock above), so a consuming container must add a second, non-hue channel (a sign glyph, a texture, or a value label) to stay legible in greyscale or print.",
     vars: [
       "--chart-div-neg-2",
       "--chart-div-neg-1",
@@ -136,28 +153,60 @@ export const Default: Story = {
 
 /**
  * The ramps doing their job: a 7 × 5 grid of cells coloured by value. Nothing
- * here names a step — a real chart calls `resolvePalette("sequential", n)` and
- * gets these back in order.
+ * here names a step by DESIGN — a real chart calls `resolvePalette("sequential",
+ * n)` and gets these back in order.
+ *
+ * **The rule this story demonstrates (issue #178a/#178b — colour is never the
+ * only channel, `.claude/rules/accessibility.md`):** once an arrangement of
+ * cells carries a per-cell VALUE, colour can no longer be the sole channel.
+ * Every cell below carries `role="img"` + `aria-label` naming its position and
+ * bucket — mirroring `PlaceholderBars` in
+ * `packages/charts/src/templates-dashboard.stories.tsx`, the pattern this repo
+ * already established for exactly this problem — so the value reaches
+ * assistive tech without a hover. `title` is kept only as a SIGHTED hover
+ * convenience alongside the label, never as the only alternative. The legend
+ * below the intro paragraph gives a sighted reader the same colour → bucket
+ * mapping, so the story's own claim (the quiet step still reads as a cell
+ * against the plot ground) is checkable rather than asserted.
  */
 export const AsAHeatmap: Story = {
   render: () => {
     const rows = Array.from({ length: 5 }, (_, r) =>
       Array.from({ length: 7 }, (_, c) => ((r * 3 + c * 2) % 7) + 1),
     );
+    const legendSteps = Array.from({ length: 7 }, (_, i) => i + 1);
     return (
       <div className="space-y-3">
         <p className="m-0 max-w-prose text-caption text-muted-foreground">
           Each cell fills from <code className="text-code">--chart-seq-N</code> where N is its
-          bucket. The quiet step is visible as a cell without competing with the loud ones.
+          bucket (1 = quiet, 7 = most intense). The legend below maps colour to bucket so the claim
+          — that the quiet step is still visible as a cell, without competing with the loud ones —
+          is checkable by eye. Every cell also carries an accessible name (
+          <code className="text-code">row R, column C: bucket N of 7</code>), so the same value
+          reaches assistive tech without hovering.
         </p>
+        <div className="flex items-end gap-2">
+          <span className="pb-1 text-meta text-muted-foreground">Legend</span>
+          {legendSteps.map((step) => (
+            <div key={step} className="flex flex-col items-center gap-0.5">
+              <div
+                className="size-5 rounded-xs"
+                style={{ background: `var(--chart-seq-${step})` }}
+              />
+              <span className="text-meta text-muted-foreground">{step}</span>
+            </div>
+          ))}
+        </div>
         <div className="inline-block rounded-md bg-chart-background p-3">
           <div className="grid grid-cols-7 gap-1">
             {rows.flatMap((row, r) =>
               row.map((step, c) => (
                 <div
                   key={`${r}-${c}`}
+                  role="img"
                   className="size-8 rounded-xs"
                   style={{ background: `var(--chart-seq-${step})` }}
+                  aria-label={`row ${r + 1}, column ${c + 1}: bucket ${step} of 7`}
                   title={`bucket ${step} of 7`}
                 />
               )),
@@ -166,5 +215,13 @@ export const AsAHeatmap: Story = {
         </div>
       </div>
     );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // 5 rows x 7 columns — one accessible name per cell, none of it hover-only.
+    const cells = await canvas.findAllByRole("img");
+    await expect(cells).toHaveLength(35);
+    // row 1, column 1 → step = ((0 * 3 + 0 * 2) % 7) + 1 = 1.
+    await expect(cells[0]).toHaveAccessibleName("row 1, column 1: bucket 1 of 7");
   },
 };
