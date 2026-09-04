@@ -120,6 +120,8 @@
     "plugin:check:test",
     "plugin:consumer-clean:check",
     "plugin:consumer-clean:check:test",
+    "process:reuse:check",
+    "process:reuse:check:test",
     "publish-ready:check",
     "publish-ready:check:test",
     "registry:publish:test",

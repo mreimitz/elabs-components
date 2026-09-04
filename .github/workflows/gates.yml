@@ -154,6 +154,7 @@ jobs:
           pnpm lucide:check
           pnpm charts:reuse:check
           pnpm charts:test-double:check
+          pnpm process:reuse:check
           pnpm timeline-fork:check
           pnpm collapse-fork:check
           pnpm sidebar-drift:check
@@ -311,6 +312,7 @@ jobs:
           pnpm plugin:agents:check:test
           pnpm plugin:check:test
           pnpm plugin:consumer-clean:check:test
+          pnpm process:reuse:check:test
           pnpm publish-ready:check:test
           pnpm registry:publish:test
           pnpm registry:published:check:test
