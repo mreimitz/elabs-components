@@ -3081,6 +3081,30 @@ export const INTENT = {
       "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.",
     ],
   },
+
+  // BumpChart — RM-033
+  BumpChart: {
+    purpose:
+      'Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).',
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "QuietDot"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      hero: "highlightKey draws var(--chart-foreground) (ink) + bold labels; every other entity draws from the neutral mono ladder, never a second categorical hue",
+      rank: 'variant="strip" cell shade = --chart-seq-1…7 via resolvePalette("sequential", maxRank) — rank 1 is always the most-ink step, whichever theme is active',
+      delta:
+        "showDelta reads var(--success) for a climb (▲) and var(--destructive) for a drop (▼) via profitLossColor — colour reinforces the arrow glyph, it never stands alone",
+      missing: "a period an entity has no row for draws a QuietDot pinprick, never a blank cell",
+    },
+    antiPatterns: [
+      "Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.",
+      "Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.",
+      'Choosing variant="lines" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities\' default cap of 10 kicks in; variant="strip" reads a crowded field better because rows never move.',
+      "Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period.",
+    ],
+  },
 };
 
 /**

@@ -580,3 +580,17 @@ export {
   type WaterfallDatum,
   type WaterfallStep,
 } from "./waterfall-chart";
+
+// Bump — RM-033
+export {
+  buildBumpMatrix,
+  BumpChart,
+  computeBumpDelta,
+  END_LABEL_MIN_GAP,
+  limitBumpSeries,
+  type BumpChartProps,
+  type BumpMatrix,
+  type BumpPoint,
+  type BumpSeries,
+  type BumpVariant,
+} from "./bump-chart";

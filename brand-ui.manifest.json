@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:15:24.536Z",
+  "generatedAt": "2026-09-04T11:41:00.893Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12475,6 +12475,11 @@
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
         },
         {
+          "name": "BumpChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
           "name": "CALENDAR_ROWS",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -12718,6 +12723,11 @@
           "name": "DumbbellChart",
           "kind": "value",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "END_LABEL_MIN_GAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
           "name": "FunnelChart",
@@ -13469,6 +13479,26 @@
         {
           "name": "BlobPoint",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "BumpChartProps",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpMatrix",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpPoint",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpSeries",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpVariant",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
           "name": "CalendarCellPosition",
@@ -14493,6 +14523,10 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "buildBumpMatrix",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
           "name": "buildCalendarLayout",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -14547,6 +14581,10 @@
         {
           "name": "computeArithmetic",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "computeBumpDelta",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
           "name": "computeDumbbellDomain",
@@ -14715,6 +14753,10 @@
         {
           "name": "legendCssVars",
           "module": "packages/charts/src/charts/legend/index.ts"
+        },
+        {
+          "name": "limitBumpSeries",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
           "name": "makeSeriesPattern",
@@ -15593,6 +15635,108 @@
               "optional": true,
               "type": "CategoryAxisFit",
               "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+            }
+          ]
+        },
+        "BumpChart": {
+          "extends": [
+            "ChartInteractionProps"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "Record<string, unknown>[]",
+              "description": "Long-format data — one row per (period, entity) pair."
+            },
+            {
+              "name": "period",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the discrete period (e.g. \"Q1\", \"2026-W12\")."
+            },
+            {
+              "name": "entity",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the entity being ranked."
+            },
+            {
+              "name": "valueKey",
+              "optional": true,
+              "type": "string",
+              "description": "Key in `data` for the entity's value that period. Ranks are derived from it when `rankKey` is absent."
+            },
+            {
+              "name": "rankKey",
+              "optional": true,
+              "type": "string",
+              "description": "Key in `data` for an already-computed rank (1 = best). Takes priority over a derived rank when present."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "BumpVariant",
+              "description": "`\"lines\"` (default) — one line per entity on an inverted rank y-axis. `\"strip\"` — G21's fixed-row filmstrip: shade + a printed number carry the per-period rank instead of vertical position."
+            },
+            {
+              "name": "highlightKey",
+              "optional": true,
+              "type": "string",
+              "description": "The hero entity — drawn in ink (`var(--chart-foreground)`) and bold; every other entity draws from the neutral mono ladder."
+            },
+            {
+              "name": "showDelta",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show a ▲n / ▼n delta flag (rank movement into the LAST period) per row. Default `false`."
+            },
+            {
+              "name": "maxEntities",
+              "optional": true,
+              "type": "number",
+              "description": "Cap on plotted entities, kept by final rank. Default `10`; dev-warns once when the data has more."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How the tooltip's raw value cell is formatted. Default `\"compact\"`."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>",
+              "description": "Chart margins."
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "string",
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region (announces to AT on focus)."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT (e.g. entity count + period range)."
             }
           ]
         },
@@ -19501,6 +19645,32 @@
             "Truncating the value axis so small differences look large — a bar axis starts at zero.",
             "Hardcoding series colors — use the chart-1…chart-5 tokens so every theme works.",
             "Rendering an empty frame before data arrives — use the shipped chart skeleton utilities."
+          ]
+        },
+        "BumpChart": {
+          "purpose": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "HaloText",
+              "QuietDot"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ]
+          },
+          "stateTokens": {
+            "hero": "highlightKey draws var(--chart-foreground) (ink) + bold labels; every other entity draws from the neutral mono ladder, never a second categorical hue",
+            "rank": "variant=\"strip\" cell shade = --chart-seq-1…7 via resolvePalette(\"sequential\", maxRank) — rank 1 is always the most-ink step, whichever theme is active",
+            "delta": "showDelta reads var(--success) for a climb (▲) and var(--destructive) for a drop (▼) via profitLossColor — colour reinforces the arrow glyph, it never stands alone",
+            "missing": "a period an entity has no row for draws a QuietDot pinprick, never a blank cell"
+          },
+          "antiPatterns": [
+            "Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.",
+            "Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.",
+            "Choosing variant=\"lines\" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities' default cap of 10 kicks in; variant=\"strip\" reads a crowded field better because rows never move.",
+            "Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period."
           ]
         },
         "ChartCard": {

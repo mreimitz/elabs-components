@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 162 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 164 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1047,6 +1047,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | BarChart | component |  | `@elabs-ai/components-charts` | Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider. |
 | BarXAxis | component |  | `@elabs-ai/components-charts` |  |
 | BarYAxis | component |  | `@elabs-ai/components-charts` |  |
+| BumpChart | component |  | `@elabs-ai/components-charts` | Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank). |
 | CALENDAR_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | Candlestick | component |  | `@elabs-ai/components-charts` |  |
 | CandlestickChart | component |  | `@elabs-ai/components-charts` |  |
@@ -1096,6 +1097,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DistributionChart | component |  | `@elabs-ai/components-charts` | One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip. |
 | DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
 | DumbbellChart | component |  | `@elabs-ai/components-charts` | Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns. |
+| END_LABEL_MIN_GAP | component |  | `@elabs-ai/components-charts` |  |
 | FunnelChart | component |  | `@elabs-ai/components-charts` | Stage-by-stage drop-off through an ordered pipeline. |
 | Gantt | component | density=comfortable*\|compact | `@elabs-ai/components-charts` | Schedule grid — tasks as bars over time, with a task table beside them. |
 | GANTT_NOMINAL_VIEWPORT_PX | component |  | `@elabs-ai/components-charts` |  |

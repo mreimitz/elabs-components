@@ -23,6 +23,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Rendering an empty frame before data arrives — use the shipped chart skeleton utilities.
 - BarXAxis
 - BarYAxis
+- BumpChart — Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).
+  - avoid: Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.
+  - avoid: Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.
+  - avoid: Choosing variant="lines" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities' default cap of 10 kicks in; variant="strip" reads a crowded field better because rows never move.
+  - avoid: Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period.
 - CALENDAR_ROWS
 - Candlestick
 - CandlestickChart
@@ -110,6 +115,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.
   - avoid: Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.
   - avoid: Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.
+- END_LABEL_MIN_GAP
 - FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
   - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
   - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.

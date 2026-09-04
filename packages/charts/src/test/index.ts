@@ -70,6 +70,7 @@ export {
   AreaChart,
   AutoChart,
   BarChart,
+  BumpChart,
   CandlestickChart,
   CHART_CONTRACT_SPECS,
   ChartCard,
@@ -206,6 +207,7 @@ export {
 export type { AreaChartProps } from "../charts/area-chart";
 export type { AutoChartProps } from "../auto-chart/auto-chart";
 export type { BarChartProps } from "../charts/bar-chart";
+export type { BumpChartProps } from "../charts/bump-chart";
 export type { CandlestickChartProps, OHLCDataPoint } from "../charts/candlestick-chart";
 export type { ChartCardProps } from "../chart-card/chart-card";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";

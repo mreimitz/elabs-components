@@ -96,7 +96,9 @@ export type ChartFamilyName =
   // DistributionChart — RM-026
   | "DistributionChart"
   // Waterfall — RM-022
-  | "WaterfallChart";
+  | "WaterfallChart"
+  // Bump — RM-033
+  | "BumpChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -250,6 +252,23 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     keyProps: [
       { prop: "valueKey", numeric: true },
       { prop: "groupKey", numeric: false },
+    ],
+  },
+  // Bump — RM-033
+  // `period` and `entity` name the two columns every row must own (the
+  // DumbbellChart `dynamicKeys` shape, not a fixed key list — the caller picks
+  // the column names). `valueKey`/`rankKey` are both optional `keyProps`: the
+  // real component derives rank from `valueKey` whenever `rankKey` is absent,
+  // so neither one alone is required — only that whichever IS passed names a
+  // real, numeric column.
+  BumpChart: {
+    dataKind: "array",
+    requiredProps: ["data", "period", "entity"],
+    hasStatus: false,
+    dynamicKeys: [{ prop: "period" }, { prop: "entity" }],
+    keyProps: [
+      { prop: "valueKey", numeric: true },
+      { prop: "rankKey", numeric: true },
     ],
   },
 };
@@ -421,6 +440,14 @@ export const DistributionChart = createChartContainerDouble<DistributionChartPro
 export const WaterfallChart = createChartContainerDouble<WaterfallChartProps>(
   "WaterfallChart",
   CHART_CONTRACT_SPECS.WaterfallChart,
+);
+
+// Bump — RM-033
+import type { BumpChartProps } from "../charts/bump-chart";
+
+export const BumpChart = createChartContainerDouble<BumpChartProps>(
+  "BumpChart",
+  CHART_CONTRACT_SPECS.BumpChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
