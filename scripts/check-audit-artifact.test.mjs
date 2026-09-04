@@ -305,6 +305,24 @@ test("the accepted ramp is still MEASURED and shown as ⚠️, never hidden", ()
   assert.ok(/✅ no failures/.test(artifact), "an accepted row is not counted as a failure");
 });
 
+test("#179: the accepted-ramp prose also names --chart-accent, not just the ramp", () => {
+  // `--chart-accent` is `var(--chart-1)` (packages/tokens/src/charts-contrast.test.ts
+  // asserts the alias), so it is already covered by CHART_1411_EXEMPT/isExemptChartRow
+  // via --chart-1's own row — no new row, no widened carve-out. What #179 requires is
+  // that the artifact's PROSE also says so, since the accent palette's design premise
+  // (one hero colour, the loudest mark on a neutral ground) is a sharper cost than the
+  // categorical ramp's and deserves its own sentence, not silent inheritance.
+  const artifact = renderArtifact(lightCss(PALE_RAMP), LIGHT_THEMES);
+  assert.ok(
+    /--chart-accent/.test(artifact),
+    "the accepted-pairings section names --chart-accent by token",
+  );
+  assert.ok(
+    /var\(--chart-1\)/.test(artifact),
+    "the prose says the accent is --chart-1 under a second name, not a new exemption",
+  );
+});
+
 test("FAILS: the SAME below-bar ramp in a non-exempt theme", () => {
   // The carve-out is per-theme. `mint` is not exempt, so the identical palette
   // must still red the gate — otherwise the exemption is a hole, not a decision.

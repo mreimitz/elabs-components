@@ -133,6 +133,22 @@ function resolve(theme: string, name: string, seen: string[] = []): string {
  * passing quietly. `:root` is deliberately NOT exempt; it keeps its own
  * compliant ramp so a consumer who imports no theme stylesheet still gets
  * legible charts.
+ *
+ * `--chart-accent` (RM-018's "wire" palette hero colour) is COVERED BY THIS SAME
+ * SET, not a second exemption — decided 2026-09-04 (#179). It is declared
+ * `var(--chart-1)` (see the "--chart-accent mirrors --chart-1" test below), so
+ * it is `--chart-1` under a second name and inherits `CHART_1411_EXEMPT`
+ * automatically; there is nothing to add here. What #179 is about is the
+ * SURFACE, not the token: the accent palette's premise is "one hero colour,
+ * loudest mark on the plot", and on `light` it measures 1.42:1 against
+ * `--chart-background`/`--card` — quieter than its usual "wire" companions
+ * `--chart-mono-2`/`-4`/`-6` (3.10 / 5.70 / 10.21:1) and quieter than the
+ * sequential ramp's own declared quiet step `--chart-seq-1` (1.62:1). Declined
+ * repairs (darken `--chart-background`; derive a per-theme accent) and the full
+ * cost are recorded in `.claude/rules/theming.md` beside this bullet's sibling.
+ * No assertion is added for it: a gate requiring the accent not be the
+ * lowest-contrast member of its palette would fail by design on `light` — see
+ * issue #179's revised acceptance.
  */
 const CHART_1411_EXEMPT = new Set(["light"]);
 
@@ -310,6 +326,9 @@ describe("themes.css — ordered chart ramps (RM-018)", () => {
     // `var(--chart-1)` so a re-brand reaches it for free (#385 — an intentional
     // mirror is a `var()`, never a copied literal). Asserted as an EQUALITY of
     // resolved values, so replacing the alias with today's literal fails here.
+    // Because the equality holds, `--chart-accent` also inherits `CHART_1411_EXEMPT`
+    // on `light` for free — see the comment on that set (#179) for the accent
+    // palette's own cost, which is sharper than the categorical ramp's.
     it("--chart-accent mirrors --chart-1", () => {
       expect(TOKENS[theme]?.["--chart-accent"]).toBe("var(--chart-1)");
       expect(resolve(theme, "--chart-accent")).toBe(resolve(theme, "--chart-1"));
