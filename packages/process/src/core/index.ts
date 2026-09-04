@@ -68,3 +68,38 @@ export {
   SYNTHETIC_LOG_EPOCH,
 } from "./fixtures/synthetic-log";
 export type { SyntheticActivity, SyntheticLogOptions } from "./fixtures/synthetic-log";
+
+// abstractGraph — RM-050
+export { abstractGraph } from "./abstract-graph";
+export type { AbstractedGraph, AbstractionOptions } from "./abstract-graph";
+
+// aggregatePerformance — RM-050
+export { aggregatePerformance, DURATION_UNIT_MS, performanceValue } from "./aggregate-performance";
+export type {
+  DurationUnit,
+  PerformanceGraph,
+  PerformanceLayer,
+  PerformanceOptions,
+} from "./aggregate-performance";
+
+// detectRework — RM-050
+export { detectRework } from "./detect-rework";
+export type { ActivityRework, ReworkStats } from "./detect-rework";
+
+// filterLog — RM-050
+export { caseMatchesFilters, filterLog, filterNormalizedLog } from "./filter-log";
+export type { FilterSpec } from "./filter-log";
+
+// createProcessWorker — RM-050
+export { createProcessWorker } from "./worker/create-process-worker";
+export type {
+  CreateProcessWorkerOptions,
+  ProcessWorkerHandle,
+  ProcessWorkerLike,
+} from "./worker/create-process-worker";
+export { handleProcessRequest } from "./worker/process-worker";
+export type { ProcessWorkerRequest, ProcessWorkerResponse } from "./worker/process-worker";
+
+// EDGE_KEY_SEPARATOR — RM-050 (the edge-key convention abstraction and the
+// performance layer both index on; discovery has always used it internally)
+export { EDGE_KEY_SEPARATOR } from "./discover-graph";

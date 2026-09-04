@@ -1422,7 +1422,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --- | --- | --- |
 | DEFAULT_LIFECYCLE_VALUES | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_SAMPLE_CAP | component |  | `@elabs-ai/components-process/core` |  |
+| DURATION_UNIT_MS | component |  | `@elabs-ai/components-process/core` |  |
 | DurationSampler | component |  | `@elabs-ai/components-process/core` |  |
+| EDGE_KEY_SEPARATOR | component |  | `@elabs-ai/components-process/core` |  |
 | EMPTY_DURATION_STATS | component |  | `@elabs-ai/components-process/core` |  |
 | SYNTHETIC_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
 | SYNTHETIC_LOG_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
