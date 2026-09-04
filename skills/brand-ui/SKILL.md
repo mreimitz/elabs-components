@@ -1,6 +1,6 @@
 ---
 name: brand-ui
-description: Build UI with the brand-ui component system (@elabs-ai/components-* packages — ui, data, ai, flow, maps, charts, marketing, editor, viewer, tokens, icons). Use when working in a project that depends on @elabs-ai/components-ui or any @elabs-ai/components-* package, when adding/composing components, building dashboards, data tables, AI/chat surfaces, React Flow canvases, MapLibre maps, code editors, file/document viewers, app shells, forms, or marketing sections, when theming with the token system, or when the user mentions brand-ui, @brand, light/dark themes, or "our design system". Provides live project context, the real component API, composition patterns, and the rules that keep components token-driven, accessible, and theme-safe.
+description: Build UI with the brand-ui component system (@elabs-ai/components-* packages — ui, data, ai, flow, maps, charts, marketing, editor, viewer, terminal, process, tokens, icons). Use when working in a project that depends on @elabs-ai/components-ui or any @elabs-ai/components-* package, when adding/composing components, building dashboards, data tables, AI/chat surfaces, React Flow canvases, MapLibre maps, code editors, file/document viewers, app shells, forms, or marketing sections, when theming with the token system, or when the user mentions brand-ui, @brand, light/dark themes, or "our design system". Provides live project context, the real component API, composition patterns, and the rules that keep components token-driven, accessible, and theme-safe.
 user-invocable: false
 allowed-tools:
   - Bash(npx @elabs-ai/components-cli *)
@@ -19,6 +19,9 @@ default, themeable to any brand. Packages: `@elabs-ai/components-ui` (foundation
 `@elabs-ai/components-charts` (KPI tiles + 13 charts + `ChartFrame`), `@elabs-ai/components-marketing`
 (landing sections), `@elabs-ai/components-editor` (Monaco code editor),
 `@elabs-ai/components-viewer` (FileViewer — display a file the app did not write),
+`@elabs-ai/components-terminal` (shell/agent output + coding-agent CLI look-alikes),
+`@elabs-ai/components-process` (process mining / event-log analysis — the one layer-3
+package, which composes flow/charts/data; ADR 0034),
 `@elabs-ai/components-tokens` (themes +
 `ThemeProvider`), `@elabs-ai/components-icons` (brand/product icons; generic UI glyphs use the
 default icon library **Lucide** / `lucide-react`).
@@ -39,22 +42,23 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 228 · **Registry blocks:** 23
 
-**Exported surface:** 1130 components · 81 hooks across 12 packages.
+**Exported surface:** 1130 components · 81 hooks across 13 packages.
 
-| Package                          | Components | Hooks | Use it for                                                                               |
-| -------------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
-| `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
-| `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
-| `@elabs-ai/components-ui`        |        382 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@elabs-ai/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
-| `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
-| `@elabs-ai/components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
-| `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts`    |        151 |    34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                    |
-| `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                        |
-| `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                       |
-| `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.         |
-| `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                  |
+| Package                          | Components | Hooks | Use it for                                                                                                    |
+| -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
+| `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                                        |
+| `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).                                 |
+| `@elabs-ai/components-ui`        |        382 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                                                |
+| `@elabs-ai/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                                        |
+| `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.                                    |
+| `@elabs-ai/components-flow`      |         23 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                                                 |
+| `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters.                      |
+| `@elabs-ai/components-charts`    |        151 |    34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download).                                         |
+| `@elabs-ai/components-marketing` |          6 |     0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip.                                             |
+| `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
+| `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
+| `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                       |
+| `@elabs-ai/components-process`   |          0 |     0 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 _Counts are exact, from the manifest. Confirm component names/props with `brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._
 
