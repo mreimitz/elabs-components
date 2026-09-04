@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:05:49.240Z",
+  "generatedAt": "2026-09-04T11:40:23.621Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 228,
+  "tokenCount": 230,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -236,7 +236,9 @@
     "--chart-mono-5",
     "--chart-mono-6",
     "--chart-mono-7",
-    "--chart-accent"
+    "--chart-accent",
+    "--flow-edge-weak",
+    "--flow-edge-strong"
   ],
   "taste": {
     "axes": {
@@ -21451,6 +21453,16 @@
           "module": "packages/flow/src/index.ts"
         },
         {
+          "name": "DEFAULT_EDGE_WIDTH_RANGE",
+          "kind": "value",
+          "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
+        },
+        {
+          "name": "EdgeLabelPill",
+          "kind": "value",
+          "module": "packages/flow/src/flow-weighted-edge/edge-label-pill.tsx"
+        },
+        {
           "name": "FLOW_ALL_SIDE_HANDLES",
           "kind": "value",
           "module": "packages/flow/src/flow-node/flow-node.tsx"
@@ -21499,6 +21511,11 @@
           "name": "FlowSmartEdge",
           "kind": "value",
           "module": "packages/flow/src/flow-smart-edge/flow-smart-edge.tsx"
+        },
+        {
+          "name": "FlowWeightedEdge",
+          "kind": "value",
+          "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
         {
           "name": "HANDLE_SIDES",
@@ -21606,6 +21623,10 @@
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
         },
         {
+          "name": "BrandFlowWeightedEdge",
+          "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
+        },
+        {
           "name": "CanvasShellProps",
           "module": "packages/flow/src/canvas-shell/canvas-shell.tsx"
         },
@@ -21622,12 +21643,20 @@
           "module": "packages/flow/src/index.ts"
         },
         {
+          "name": "EdgeLabelPillProps",
+          "module": "packages/flow/src/flow-weighted-edge/edge-label-pill.tsx"
+        },
+        {
           "name": "EdgeParams",
           "module": "packages/flow/src/flow-floating-edge/floating-edge-geometry.ts"
         },
         {
           "name": "EdgeProps",
           "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "EdgeWeightScaleOptions",
+          "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
         {
           "name": "FloatingEdgeData",
@@ -21688,6 +21717,10 @@
         {
           "name": "FlowPlaceholderNodeData",
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
+        },
+        {
+          "name": "FlowWeightedEdgeData",
+          "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
         {
           "name": "GroupNodesOptions",
@@ -21762,6 +21795,10 @@
           "module": "packages/flow/src/helper-lines/use-helper-lines.ts"
         },
         {
+          "name": "WeightedEdgeLike",
+          "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
+        },
+        {
           "name": "ZoomControlsProps",
           "module": "packages/flow/src/zoom-controls/zoom-controls.tsx"
         }
@@ -21774,6 +21811,10 @@
         {
           "name": "collapseGroup",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "computeEdgeWeightScale",
+          "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
         {
           "name": "expandGroup",
@@ -21855,6 +21896,40 @@
               "name": "className",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "EdgeLabelPill": {
+          "extends": [],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Primary label, e.g. a frequency count (\"128×\")."
+            },
+            {
+              "name": "secondaryLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Secondary label rendered alongside the primary, e.g. a duration (\"3.4d avg\")."
+            },
+            {
+              "name": "x",
+              "optional": false,
+              "type": "number",
+              "description": "Label anchor, from `getBezierPath`/`getSmoothStepPath`'s `labelX`/`labelY`."
+            },
+            {
+              "name": "y",
+              "optional": false,
+              "type": "number"
+            },
+            {
+              "name": "selected",
+              "optional": true,
+              "type": "boolean",
+              "description": "Matches the parent edge's `selected` state."
             }
           ]
         },

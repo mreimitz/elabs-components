@@ -35,3 +35,6 @@ export {
   addEdge,
 } from "@xyflow/react";
 export type { Node, Edge, Connection, NodeProps, EdgeProps } from "@xyflow/react";
+
+// FlowWeightedEdge — RM-043
+export * from "./flow-weighted-edge";

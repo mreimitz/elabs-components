@@ -40,10 +40,11 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 - `@xyflow/react` is a peer — it carries the React context `useReactFlow` reads, so two copies break.
 - Import `"@xyflow/react/dist/style.css"` once.
+- `FlowWeightedEdge` scales stroke width/colour from `data.weight`/`data.value` — reuse its exported `computeEdgeWeightScale` (pure, no React) if you build a matching legend.
 
 ## What's in it
 
-23 exported components — including `Background`, `CanvasShell`, `Controls`, `FLOW_ALL_SIDE_HANDLES`, `FLOW_GROUP_NODE_TYPE`.
+26 exported components — including `Background`, `CanvasShell`, `Controls`, `DEFAULT_EDGE_WIDTH_RANGE`, `EdgeLabelPill`.
 
 Don't guess the API — ask the CLI:
 
