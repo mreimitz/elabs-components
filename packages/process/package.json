@@ -21,6 +21,10 @@
     "./core": {
       "types": "./src/core/index.ts",
       "default": "./src/core/index.ts"
+    },
+    "./test": {
+      "types": "./src/test/index.ts",
+      "default": "./src/test/index.ts"
     }
   },
   "publishConfig": {
@@ -34,6 +38,10 @@
       "./core": {
         "types": "./dist/core/index.d.ts",
         "default": "./dist/core/index.js"
+      },
+      "./test": {
+        "types": "./dist/test/index.d.ts",
+        "default": "./dist/test/index.js"
       }
     }
   },
