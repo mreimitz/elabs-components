@@ -10,3 +10,8 @@ export {
   type EdgeWeightScaleOptions,
   type WeightedEdgeLike,
 } from "./weight-scale";
+export {
+  buildWeightedEdgeAriaLabel,
+  withWeightedEdgeAria,
+  type WeightedEdgeAriaOptions,
+} from "./edge-aria";

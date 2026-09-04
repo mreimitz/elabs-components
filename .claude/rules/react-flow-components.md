@@ -24,6 +24,49 @@ paths:
   with `type: "brand"` and typed `data: FlowNodeData` (`title`, `subtitle`,
   `kind`, `icon`, `tone`). Node visuals use `flow-node`/`flow-edge` tokens.
 - **Custom edge:** `edgeTypes={{ brand: FlowEdge }}` (bezier, `--flow-edge`).
+- **A custom edge draws through `FlowEdgePath`, never React Flow's `BaseEdge`
+  (#286).** Every edge is a real tab stop, and React Flow zeroes the native focus
+  outline (`.react-flow__edge:focus-visible { outline: none }`) and substitutes a
+  stroke recolour on `.react-flow__edge-path`. `BaseEdge` spreads the caller's
+  `style` onto that exact path, so an inline `stroke` — which every brand edge
+  passed — beats the substitute and the indicator disappears entirely. Nobody
+  wrote `outline: none`; somebody wrote an inline stroke that silently disabled
+  someone else's replacement. That is the accessibility rule's "never remove the
+  outline without a replacement" arriving sideways, and it shipped on six edge
+  types because the two-line pattern was copied each time.
+  - `FlowEdgePath` (`packages/flow/src/flow-edge-path`) takes `stroke` and
+    `strokeWidth` as real props and draws the indicator itself: a neutral
+    `--foreground` contour at `strokeWidth + 6` with the `--ring` band at
+    `strokeWidth + 3` inside it, both hidden until the ancestor
+    `g.react-flow__edge` matches `:focus-visible`.
+  - **It is compound because one colour is not enough.** `--ring` measures
+    **1.30:1** against `--canvas` in the `light` theme — a bare `--ring` recolour
+    is a non-indicator on the default theme. The `--foreground` contour is the
+    layer that clears WCAG 1.4.11: **12.54:1 light, 16.30:1 dark**, measured in
+    the browser by `FlowWeightedEdge`'s `KeyboardFocus` story. It is opacity +
+    stroke only, never a shadow, so it survives `data-decoration="8|9|10"`.
+  - **Do NOT "fix" this by moving the stroke into a CSS custom property and
+    painting it with a Tailwind class.** Measured, not assumed: React Flow's own
+    `.react-flow__edge-path { stroke: … }` ships **unlayered**, and unlayered CSS
+    outranks everything in `@layer utilities` — a `stroke-[var(--flow-edge-stroke)]`
+    utility loses to React Flow's `#b1b1b7` default and repaints every edge in the
+    library. `!important` and setting `--xy-edge-stroke-selected` were both
+    rejected in #286 (each trades one silent override for another).
+  - **`selected` is a different state and is not a focus indicator.** It keys on
+    selection, and in a controlled flow with no `onEdgesChange` — the shape most
+    stories ship — it can never become true. Keep the selection recolour; never
+    let it be the only thing between a keyboard user and a visible indicator.
+  - Enforced by `packages/flow/src/flow-edge-path/no-raw-base-edge.test.ts`: a
+    shipped module that imports `BaseEdge` from `@xyflow/react` fails the suite.
+- **A custom edge that encodes a measure (stroke width, colour) owns its
+  `ariaLabel` (#285).** React Flow's `EdgeWrapper` sources an edge's accessible
+  name from `edge.ariaLabel` on the edge OBJECT, not from anything the edge
+  COMPONENT renders — a component has no channel to set it. `FlowWeightedEdge`
+  ships the naming seam this pattern needs: `withWeightedEdgeAria`/
+  `buildWeightedEdgeAriaLabel` (`flow-weighted-edge/edge-aria.ts`) compose a
+  name from `data.weight`/`data.value`/the pill text, and never overwrite an
+  explicit `ariaLabel`. Reach for the same shape for any future edge type that
+  encodes a measure visually.
 - **Controls/overlays:** `ZoomControls` (uses `useReactFlow`, render inside the
   canvas), `Legend`, and `InspectorPanel` (reusable beside the canvas, e.g. in a
   `SplitPanel`, or as a `<Panel>`).

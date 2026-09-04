@@ -1010,8 +1010,16 @@
 
   --chart-accent: var(--chart-1);
 
-  /* Flow edge ramp — RM-043 */
-  --flow-edge-weak: oklch(0.85 0.02 264);
+  /* Flow edge ramp — RM-043. #282: --flow-edge-weak retuned 2026-09-04 — the
+     originally-authored L 0.85 measured 1.47:1 against --canvas (WCAG 1.4.11
+     fails; 48.9% of the interpolated ramp rendered under 3:1 — the worst of
+     the three theme blocks, since :root is the un-themed fallback). L 0.63
+     clears 3.26:1 (the ramp's minimum, verified across the full weak→strong
+     sweep — see the "flow edge ramp" block in themes-contrast.test.ts). See
+     the matching note in themes/light.css for the design tension this buys
+     back; the same near-collision with the flat --flow-edge default (L 0.62,
+     3.39:1 on --canvas) applies here. */
+  --flow-edge-weak: oklch(0.63 0.02 264);
   --flow-edge-strong: oklch(0.45 0.16 264);
 }
 

@@ -57,14 +57,23 @@ vi.mock("@xyflow/react", () => {
       path,
       style,
       className,
+      markerStart: _markerStart,
+      interactionWidth: _interactionWidth,
+      ...rest
     }: {
       id: string;
       path: string;
       style?: React.CSSProperties;
       className?: string;
+      markerStart?: string;
+      interactionWidth?: number;
+      [key: string]: unknown;
     }) =>
+      // `...rest` forwards data-* passthrough (e.g. `data-weight`/`data-value`,
+      // #285) onto the mocked path, exactly as `FlowEdgePath`'s own `...props`
+      // spread does onto the real `BaseEdge`.
       React.createElement("svg", { "data-testid": "base-edge" }, [
-        React.createElement("path", { key: "p", d: path, id, style, className }),
+        React.createElement("path", { key: "p", d: path, id, style, className, ...rest }),
       ]),
     // Real EdgeLabelRenderer portals into a fixed container; a passthrough is
     // enough here since we only assert the brand component's own output.
@@ -76,6 +85,7 @@ vi.mock("@xyflow/react", () => {
   };
 });
 
+import { oklchToHex } from "@elabs-ai/components-tokens";
 import { FlowWeightedEdge, type BrandFlowWeightedEdge } from "./flow-weighted-edge";
 import type { EdgeProps } from "@xyflow/react";
 
@@ -144,6 +154,70 @@ describe("FlowWeightedEdge", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
+  // #285 — the raw data.weight/data.value (not the scaled stroke width/colour)
+  // land on the path as data attributes: a stable selector for tests/consumers,
+  // independent of the accessible-name seam in `edge-aria.ts`.
+  it("stamps data-weight on the path from data.weight", () => {
+    edgesBox.current = [{ id: "test-edge", data: { weight: 7 } }];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { weight: 7 } })} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.getAttribute("data-weight")).toBe("7");
+  });
+
+  it("stamps data-value on the path from data.value", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { value: 5, valueDomain: [0, 10] } })} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.getAttribute("data-value")).toBe("5");
+  });
+
+  it("omits data-weight/data-value entirely when neither is set", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(<FlowWeightedEdge {...makeEdgeProps()} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.hasAttribute("data-weight")).toBe(false);
+    expect(path.hasAttribute("data-value")).toBe(false);
+  });
+
+  // #286 — an edge is a real tab stop, so it must show a focus indicator with
+  // NO `selected` state and no consumer-supplied `onEdgesChange`. These lock
+  // the structure; `KeyboardFocus` in the stories locks the rendered result
+  // (resolved computed values in a real browser, both themes).
+  it("draws the compound focus indicator with no `selected` state (#286)", () => {
+    edgesBox.current = [{ id: "test-edge", data: { weight: 5 } }];
+    const { container } = render(
+      <FlowWeightedEdge {...makeEdgeProps({ selected: false, data: { weight: 5 } })} />,
+    );
+    const contour = container.querySelector<SVGPathElement>(
+      '[data-slot="flow-edge-focus-contour"]',
+    );
+    const ring = container.querySelector<SVGPathElement>('[data-slot="flow-edge-focus-ring"]');
+    expect(contour).not.toBeNull();
+    expect(ring).not.toBeNull();
+
+    const edgeWidth = parseFloat(
+      screen.getByTestId("base-edge").querySelector("path")!.style.strokeWidth,
+    );
+    const contourWidth = parseFloat(contour!.getAttribute("stroke-width")!);
+    const ringWidth = parseFloat(ring!.getAttribute("stroke-width")!);
+    // Neutral contour outside the --ring band, both outside the edge itself.
+    expect(contourWidth).toBeGreaterThan(ringWidth);
+    expect(ringWidth).toBeGreaterThan(edgeWidth);
+
+    // Same geometry as the edge — a halo, not a second shape.
+    expect(contour!.getAttribute("d")).toBe(ring!.getAttribute("d"));
+
+    // Hidden until the ancestor g.react-flow__edge matches :focus-visible. The
+    // pattern is asserted rather than the literal class string so this file does
+    // not itself become a Tailwind candidate.
+    for (const layer of [contour!, ring!]) {
+      const cls = layer.getAttribute("class") ?? "";
+      expect(cls).toContain("opacity-0");
+      expect(cls).toMatch(/react-flow.+edge:focus-visible.+opacity-100/);
+      expect(cls).toContain("pointer-events-none");
+    }
+  });
+
   it("uses --ring and a wider stroke when selected", () => {
     edgesBox.current = [{ id: "test-edge", data: { weight: 5 } }];
     render(<FlowWeightedEdge {...makeEdgeProps({ selected: true, data: { weight: 5 } })} />);
@@ -172,4 +246,123 @@ describe("FlowWeightedEdge", () => {
     expect(getBezierPathMock).toHaveBeenCalled();
     expect(getSmoothStepPathMock).not.toHaveBeenCalled();
   });
+});
+
+// #282 — the SSR fallback hexes (used whenever `--flow-edge-weak`/
+// `--flow-edge-strong` can't be resolved from a live stylesheet — true SSR,
+// or, as here, jsdom with no themes.css custom properties set, which
+// `resolveTokenColor` treats identically via its `if (!raw) return fallback`
+// branch) must clear WCAG 1.4.11's 3:1 non-text bar against BOTH reference
+// themes' `--canvas` — not just the theme they happen to approximate. A pure
+// SSR render can't know which theme will apply, so a single hex pair has to
+// be safe under either one.
+//
+// The oklch→sRGB→luminance math below is a MINIMAL, self-contained
+// reimplementation of `packages/tokens/src/color-contrast.ts` — that module
+// isn't part of `@elabs-ai/components-tokens`'s public barrel (only
+// `oklchToHex`/`resolveTokenColor` are), so this package can't reach it
+// without a relative cross-package import. Keep this in sync with
+// `color-contrast.ts` if that math ever changes; `themes-contrast.test.ts`
+// is the source of truth for the underlying token values.
+describe("FlowWeightedEdge SSR fallback contrast (#282)", () => {
+  function hexToSrgb01(hex: string): [number, number, number] {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)!;
+    return [parseInt(m[1]!, 16) / 255, parseInt(m[2]!, 16) / 255, parseInt(m[3]!, 16) / 255];
+  }
+
+  function relativeLuminance([r, g, b]: [number, number, number]): number {
+    const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  }
+
+  function contrastHexVsHex(a: string, b: string): number {
+    const la = relativeLuminance(hexToSrgb01(a));
+    const lb = relativeLuminance(hexToSrgb01(b));
+    const [hi, lo] = la >= lb ? [la, lb] : [lb, la];
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  // `--canvas` in each reference theme (packages/tokens/src/themes/light.css,
+  // themes/dark.css), pre-converted to hex via the same oklch math — kept as
+  // hex here rather than re-deriving oklch→sRGB locally a second time.
+  const LIGHT_CANVAS_HEX = "#f4f5f6"; // oklch(0.97 0.002 257)
+  const DARK_CANVAS_HEX = "#0e1217"; // oklch(0.18 0.012 257)
+  const AA_NONTEXT = 3;
+
+  function strokeAt(value: number, valueDomain: [number, number]): string {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { value, valueDomain } })} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    const stroke = path.style.stroke;
+    cleanup();
+    return stroke;
+  }
+
+  it("FALLBACK_WEAK (t=0) clears 3:1 on light's and dark's --canvas", () => {
+    const stroke = strokeAt(0, [0, 10]);
+    expect(stroke).toMatch(/^#[0-9a-f]{6}$/i);
+    const vsLight = contrastHexVsHex(stroke, LIGHT_CANVAS_HEX);
+    const vsDark = contrastHexVsHex(stroke, DARK_CANVAS_HEX);
+    expect(
+      vsLight,
+      `FALLBACK_WEAK ${stroke} vs light --canvas = ${vsLight.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(AA_NONTEXT);
+    expect(
+      vsDark,
+      `FALLBACK_WEAK ${stroke} vs dark --canvas = ${vsDark.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(AA_NONTEXT);
+  });
+
+  it("FALLBACK_STRONG (t=1) clears 3:1 on light's and dark's --canvas", () => {
+    const stroke = strokeAt(10, [0, 10]);
+    expect(stroke).toMatch(/^#[0-9a-f]{6}$/i);
+    const vsLight = contrastHexVsHex(stroke, LIGHT_CANVAS_HEX);
+    const vsDark = contrastHexVsHex(stroke, DARK_CANVAS_HEX);
+    expect(
+      vsLight,
+      `FALLBACK_STRONG ${stroke} vs light --canvas = ${vsLight.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(AA_NONTEXT);
+    expect(
+      vsDark,
+      `FALLBACK_STRONG ${stroke} vs dark --canvas = ${vsDark.toFixed(2)}`,
+    ).toBeGreaterThanOrEqual(AA_NONTEXT);
+  });
+});
+
+// #286 — the focus indicator's neutral contour is what carries WCAG 1.4.11's
+// 3:1 non-text bar, because `--ring` alone measures 1.30:1 against `--canvas`
+// in the `light` reference theme. That makes `--foreground` vs `--canvas` a
+// load-bearing token pairing for the flow package, and nothing else gates it:
+// `--canvas` is not one of the five MARK_SURFACES in
+// packages/tokens/src/themes-contrast.test.ts. Values are the literals in
+// packages/tokens/src/themes/{light,dark}.css.
+describe("edge focus contour contrast (#286)", () => {
+  const THEMES = [
+    { name: "light", foreground: "oklch(0.3 0.021 257)", canvas: "oklch(0.97 0.002 257)" },
+    { name: "dark", foreground: "oklch(0.95 0.004 257)", canvas: "oklch(0.18 0.012 257)" },
+  ] as const;
+
+  function srgb01(hex: string): [number, number, number] {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)!;
+    return [parseInt(m[1]!, 16) / 255, parseInt(m[2]!, 16) / 255, parseInt(m[3]!, 16) / 255];
+  }
+  function luminance([r, g, b]: [number, number, number]): number {
+    const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  }
+
+  it.each(THEMES)(
+    "--foreground clears 3:1 against --canvas in $name",
+    ({ name, foreground, canvas }) => {
+      const [la, lb] = [
+        luminance(srgb01(oklchToHex(foreground)!)),
+        luminance(srgb01(oklchToHex(canvas)!)),
+      ].sort((x, y) => y - x);
+      const ratio = (la! + 0.05) / (lb! + 0.05);
+      expect(
+        ratio,
+        `--foreground vs --canvas in ${name} = ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    },
+  );
 });

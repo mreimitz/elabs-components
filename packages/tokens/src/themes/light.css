@@ -573,7 +573,18 @@
 
   --chart-accent: var(--chart-1);
 
-  /* Flow edge ramp — RM-043 */
-  --flow-edge-weak: oklch(0.82 0.02 242);
+  /* Flow edge ramp — RM-043. #282: --flow-edge-weak retuned 2026-09-04 — the
+     originally-authored L 0.82 measured 1.60:1 against --canvas (WCAG 1.4.11
+     fails; 47% of the interpolated ramp rendered under 3:1, since the
+     component lerps per-channel in gamma-sRGB and the ramp's minimum sits at
+     whichever endpoint is closer to the canvas). L 0.63 clears 3.20:1 (the
+     ramp's minimum, verified across the full weak→strong sweep — see the
+     "flow edge ramp" block in themes-contrast.test.ts). Tension, named rather
+     than absorbed: a compliant weak stop this light sits close to the flat
+     --flow-edge default (L 0.62, 3.32:1 on --canvas), so the ramp's quiet end
+     barely reads as quieter than an unramped edge. Buying that range back
+     needs a longer ramp (darkening --flow-edge-strong further) or a darker
+     --canvas — both out of scope for #282; flagged there for the maintainer. */
+  --flow-edge-weak: oklch(0.63 0.02 242);
   --flow-edge-strong: oklch(0.45 0.16 242);
 }
