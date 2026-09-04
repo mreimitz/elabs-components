@@ -23,7 +23,12 @@ vi.mock("@visx/responsive", () => {
   };
 });
 
-import { WaterfallChart, type WaterfallDatum } from "./waterfall-chart";
+import {
+  computeWaterfallConnectorAnchors,
+  computeWaterfallRows,
+  WaterfallChart,
+  type WaterfallDatum,
+} from "./waterfall-chart";
 
 const grossToNet: WaterfallDatum[] = [
   { kind: "total", label: "Gross", value: 1000 },
@@ -136,5 +141,155 @@ describe("WaterfallChart", () => {
   it("wires accessibleLabel through to the chart region", () => {
     render(<WaterfallChart accessibleLabel="Gross to net revenue bridge" data={grossToNet} />);
     expect(screen.getByLabelText("Gross to net revenue bridge")).toBeInTheDocument();
+  });
+});
+
+// `computeWaterfallRows` is where the waterfall's actual geometry lives — a
+// "step" row floats from the PREVIOUS row's running total, a "total" row
+// resets it. This is deliberately unit-tested on the pure function directly,
+// not only through a render: a coordinator review mutated
+// `before = kind === "total" ? 0 : running` to `before = 0` (every bar
+// growing from the axis instead of floating — a bar chart with dashed lines
+// over it, not a waterfall) and every one of the 16 rendering tests above,
+// plus all 6 Storybook stories, stayed green. None of them assert the
+// running-total VALUE, only shape/count/presence. These do.
+describe("computeWaterfallRows", () => {
+  const gross = 1000;
+  const refunds = -100;
+  const cogs = -300;
+  const ops = -200;
+  const net = 400;
+
+  it("computes the full { before, after, base, top, kind } shape per row", () => {
+    const rows = computeWaterfallRows(grossToNet);
+
+    // Expected values computed here from the input deltas, not pasted from a
+    // run of the function under test.
+    const afterGross = gross;
+    const afterRefunds = afterGross + refunds;
+    const afterCogs = afterRefunds + cogs;
+    const afterOps = afterCogs + ops;
+
+    expect(
+      rows.map((r) => ({
+        after: r.after,
+        base: r.base,
+        before: r.before,
+        kind: r.kind,
+        top: r.top,
+      })),
+    ).toEqual([
+      { after: afterGross, base: 0, before: 0, kind: "total", top: afterGross },
+      {
+        after: afterRefunds,
+        base: Math.min(afterGross, afterRefunds),
+        before: afterGross,
+        kind: "step",
+        top: Math.max(afterGross, afterRefunds),
+      },
+      {
+        after: afterCogs,
+        base: Math.min(afterRefunds, afterCogs),
+        before: afterRefunds,
+        kind: "step",
+        top: Math.max(afterRefunds, afterCogs),
+      },
+      {
+        after: afterOps,
+        base: Math.min(afterCogs, afterOps),
+        before: afterCogs,
+        kind: "step",
+        top: Math.max(afterCogs, afterOps),
+      },
+      { after: net, base: 0, before: 0, kind: "total", top: net },
+    ]);
+  });
+
+  it("a step row's before equals the previous row's after — the one the mutation breaks", () => {
+    const rows = computeWaterfallRows(grossToNet);
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row?.kind === "step") {
+        expect(row.before).toBe(rows[i - 1]?.after);
+        // The mutated version (`before = 0`) would fail this on every step
+        // after the opening total, since the true previous `after` is 1000.
+        expect(row.before).not.toBe(0);
+      }
+    }
+  });
+
+  it("a total row's before is 0, its after is its own value, and it resets the running total for the row after it", () => {
+    const rows = computeWaterfallRows(grossToNet);
+    const grossRow = rows[0];
+    const refundsRow = rows[1];
+    const netRow = rows[rows.length - 1];
+
+    expect(grossRow?.kind).toBe("total");
+    expect(grossRow?.before).toBe(0);
+    expect(grossRow?.after).toBe(gross);
+
+    // Refunds floats from Gross's `after` — the reset the total performed.
+    expect(refundsRow?.before).toBe(grossRow?.after);
+
+    expect(netRow?.kind).toBe("total");
+    expect(netRow?.before).toBe(0);
+    expect(netRow?.after).toBe(net);
+  });
+
+  it("orders base/top correctly and reports isIncrease=false for a negative step", () => {
+    const rows = computeWaterfallRows(grossToNet);
+    const refundsRow = rows[1];
+    expect(refundsRow?.value).toBeLessThan(0);
+    expect(refundsRow?.after).toBeLessThan(refundsRow?.before ?? 0);
+    expect(refundsRow?.base).toBe(refundsRow?.after);
+    expect(refundsRow?.top).toBe(refundsRow?.before);
+    expect(refundsRow?.isIncrease).toBe(false);
+  });
+
+  it("the final row's after reconciles with the arithmetic sum of the steps off gross", () => {
+    const rows = computeWaterfallRows(grossToNet);
+    const stepSum = grossToNet
+      .filter((d) => (d.kind ?? "step") === "step")
+      .reduce((sum, d) => sum + d.value, 0);
+    expect(gross + stepSum).toBe(net);
+    expect(rows[rows.length - 1]?.after).toBe(net);
+  });
+});
+
+// The connector's hand-off is the SAME running-total property, one level up:
+// a `Leader` wired to the wrong field (a row's `top` instead of its `after`)
+// is invisible on an increasing row — `top === after` there — and only shows
+// up as a diagonal jump on a decreasing row or into a "total" row.
+describe("computeWaterfallConnectorAnchors", () => {
+  it("anchors `from` at the source row's after and `to` at the target row's before (or its after for a total)", () => {
+    const rows = computeWaterfallRows(grossToNet);
+    const anchors = computeWaterfallConnectorAnchors(rows);
+    expect(anchors).toHaveLength(rows.length - 1);
+
+    // Refunds (index 1) is a decreasing step: its `top` (1000, == before)
+    // differs from its `after` (900) — the case that stays hidden on an
+    // increasing row, where the two are equal.
+    const refundsRow = rows[1];
+    const refundsToCogs = anchors[1];
+    expect(refundsRow?.top).not.toBe(refundsRow?.after);
+    expect(refundsToCogs?.from).toBe(refundsRow?.after);
+    expect(refundsToCogs?.from).not.toBe(refundsRow?.top);
+
+    // The connector into the closing "total" row anchors at the total's OWN
+    // after (its value), not its before (always 0 for a total) — otherwise
+    // the hairline would plunge to the axis and back.
+    const netRow = rows[rows.length - 1];
+    const opsToNet = anchors[anchors.length - 1];
+    expect(netRow?.before).toBe(0);
+    expect(opsToNet?.to).toBe(netRow?.after);
+    expect(opsToNet?.to).not.toBe(netRow?.before);
+  });
+
+  it("every connector's from continues exactly where the running total left the previous step", () => {
+    const rows = computeWaterfallRows(grossToNet);
+    const anchors = computeWaterfallConnectorAnchors(rows);
+    for (let i = 0; i < anchors.length; i++) {
+      expect(anchors[i]?.from).toBe(rows[i]?.after);
+    }
   });
 });

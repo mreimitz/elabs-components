@@ -74,7 +74,11 @@ export interface WaterfallStep {
   after: number;
 }
 
-interface WaterfallRow extends WaterfallStep {
+/** Exported ONLY so `computeWaterfallRows` — where the waterfall's actual
+ * geometry lives (the running total, not the rendering) — is unit-testable
+ * directly, without going through a jsdom render. Not part of the component's
+ * documented public props surface. */
+export interface WaterfallRow extends WaterfallStep {
   /** `min(before, after)` — the bar's lower edge value. */
   base: number;
   /** `max(before, after)` — the bar's upper edge value. */
@@ -86,7 +90,53 @@ interface WaterfallRow extends WaterfallStep {
   __cumulative: number;
 }
 
-function computeWaterfallRows(data: WaterfallDatum[]): WaterfallRow[] {
+/** One connector's VALUE-space (not pixel) endpoints — the running-total
+ * hand-off a `Leader` draws between adjacent rows. */
+export interface WaterfallConnectorAnchor {
+  /** The row it leaves — always that row's `after` (its far/outer edge, the
+   * value the running total reached). NEVER its `top`: on an increasing row
+   * `top === after` so the two are indistinguishable, but on a DECREASING
+   * row `top` is the row's `before` (the bigger of the two), so anchoring to
+   * `top` by mistake silently draws the hairline from the wrong edge. */
+  from: number;
+  /** The row it enters — that row's `before`, UNLESS it is a `"total"` row,
+   * whose `before` is always 0 (a total draws from zero); a total's real
+   * hand-off point is its own `after`. */
+  to: number;
+}
+
+/**
+ * The connectors' value-space anchors — a pure function of `rows` alone, so
+ * the hand-off logic is unit-testable independent of scales/DOM. Exported and
+ * consumed by `WaterfallBars` below instead of re-deriving `from`/`to` inline,
+ * so the render path and the test assert the exact same computation.
+ */
+export function computeWaterfallConnectorAnchors(rows: WaterfallRow[]): WaterfallConnectorAnchor[] {
+  const anchors: WaterfallConnectorAnchor[] = [];
+  for (let i = 0; i < rows.length - 1; i++) {
+    const row = rows[i];
+    const nextRow = rows[i + 1];
+    if (!row || !nextRow) {
+      continue;
+    }
+    anchors.push({
+      from: row.after,
+      to: nextRow.kind === "total" ? nextRow.after : nextRow.before,
+    });
+  }
+  return anchors;
+}
+
+/**
+ * The running-total geometry — this IS the waterfall. Deliberately a pure
+ * function of `data` alone (no scales, no DOM) so the property that makes a
+ * waterfall a waterfall — a `"step"` row floats from the PREVIOUS row's
+ * running total, a `"total"` row resets it — is unit-testable directly. See
+ * `waterfall-chart.test.tsx`'s `computeWaterfallRows` suite: it exists because
+ * this exact function was mutated (`before` hard-coded to 0) and 16 rendering
+ * tests plus 6 story tests all stayed green.
+ */
+export function computeWaterfallRows(data: WaterfallDatum[]): WaterfallRow[] {
   let running = 0;
   return data.map((d, index) => {
     const kind = d.kind ?? "step";
@@ -251,20 +301,19 @@ function WaterfallBars({
     if (!connectors || !barScale || !bandWidth) {
       return null;
     }
+    const anchors = computeWaterfallConnectorAnchors(rows);
     const els: ReactNode[] = [];
-    for (let i = 0; i < rows.length - 1; i++) {
+    for (let i = 0; i < anchors.length; i++) {
       const row = rows[i];
       const nextRow = rows[i + 1];
-      if (!row || !nextRow) {
+      const anchor = anchors[i];
+      if (!row || !nextRow || !anchor) {
         continue;
       }
       const fromCat = barScale(row.label) ?? 0;
       const toCat = barScale(nextRow.label) ?? 0;
-      const fromValuePx = yScale(row.after);
-      // A "total" row always draws from zero, so the point it visually
-      // continues from is its OWN far edge (`after`), not its `before` (which
-      // is always 0) — otherwise the hairline plunges to the axis and back.
-      const toValuePx = yScale(nextRow.kind === "total" ? nextRow.after : nextRow.before);
+      const fromValuePx = yScale(anchor.from);
+      const toValuePx = yScale(anchor.to);
       const from: LeaderPoint = isHorizontal
         ? [fromValuePx, fromCat + bandWidth]
         : [fromCat + bandWidth, fromValuePx];
