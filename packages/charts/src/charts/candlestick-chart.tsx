@@ -308,6 +308,10 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
+/**
+ * @dataShape open, high, low and close per period — an OHLC financial series over time
+ * @avoidWhen the data is not OHLC-shaped — a line of closing values is enough
+ */
 export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps>(
   function CandlestickChart(
     {

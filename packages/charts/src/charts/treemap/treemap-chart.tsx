@@ -486,6 +486,9 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
  * `drilldown` zoom is a SEPARATE, real-`<button>` affordance on each group's
  * title band, so a static chart never gains a click handler beyond
  * `onDatapointClick`.
+ *
+ * @dataShape a nested hierarchy sized by one measure
+ * @avoidWhen the hierarchy has fewer than 2 levels — a flat bar chart is clearer
  */
 export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {

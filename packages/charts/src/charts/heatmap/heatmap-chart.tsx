@@ -1030,6 +1030,13 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartProps>(function
  * a `ChartDatapointProvider` so the cells can register keyboard targets — the
  * provider has to sit ABOVE whatever registers. With neither set there is no
  * provider, no layer and no extra DOM.
+ *
+ * @dataShape two categorical axes (weekday by hour, for example) with one numeric value per
+ *   cell — ticket volume, event counts; many small cells favour mode="dot" over the default
+ *   cell fill
+ * @dataShape one measure per calendar day over several months, as variant="calendar"
+ * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
+ *   more than the pattern
  */
 export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(props, ref) {

@@ -556,6 +556,10 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
 // Public component
 // ---------------------------------------------------------------------------
 
+/**
+ * @dataShape a metric updating in real time, appended over a rolling window
+ * @avoidWhen the series is static or historical — use a line chart
+ */
 export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(function LiveLineChart(
   {
     data,

@@ -471,6 +471,10 @@ function ChoroplethChartInner({
   );
 }
 
+/**
+ * @dataShape a measure by geographic region
+ * @avoidWhen there is no real geography — use a bar chart
+ */
 export const ChoroplethChart = forwardRef<HTMLDivElement, ChoroplethChartProps>(
   function ChoroplethChart(
     {

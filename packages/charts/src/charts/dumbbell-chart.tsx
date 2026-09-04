@@ -803,6 +803,10 @@ function defaultMargin(orientation: DumbbellOrientation, variant: DumbbellVarian
   return orientation === "vertical" ? VERTICAL_MARGIN : HORIZONTAL_MARGIN;
 }
 
+/**
+ * @dataShape two time points per category — a before and after, or a range with two ends
+ * @avoidWhen more than 2 points per category — use small-multiple lines
+ */
 export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
   {
     data,

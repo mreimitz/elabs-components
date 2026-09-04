@@ -152,6 +152,10 @@ export interface DistributionChartProps extends ChartInteractionProps, ChartA11y
 /**
  * DistributionChart — histogram / box / violin / strip of one numeric variable,
  * optionally by group, on one shared scale.
+ *
+ * @dataShape the spread of one measure, optionally grouped — a histogram, box plot or strip
+ *   plot
+ * @avoidWhen a single summary number would do — use a metric card
  */
 export const DistributionChart = forwardRef<HTMLDivElement, DistributionChartProps>(
   function DistributionChart(

@@ -638,6 +638,10 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
   );
 }
 
+/**
+ * @dataShape parts of a whole across a few categories, read as proportions of the total
+ * @avoidWhen more than about 6 slices — use a bar or unit chart
+ */
 export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
   {
     data,

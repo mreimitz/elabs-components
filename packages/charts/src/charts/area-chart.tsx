@@ -288,6 +288,11 @@ function ChartInner({
   );
 }
 
+/**
+ * @dataShape measures over time where magnitude matters — stacked, or as a stream with
+ *   offset="wiggle"
+ * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
+ */
 export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function AreaChart(
   {
     data,

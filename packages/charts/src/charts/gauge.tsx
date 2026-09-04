@@ -529,6 +529,10 @@ function GaugeInner({
   );
 }
 
+/**
+ * @dataShape a single value against a target or threshold bands
+ * @avoidWhen the trend over time matters more than the instant — use a line chart
+ */
 export function Gauge({
   width: widthProp,
   height: heightProp,

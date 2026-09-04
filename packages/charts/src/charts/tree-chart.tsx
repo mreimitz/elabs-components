@@ -645,6 +645,9 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
  * keyboard-operable: nodes register as `ChartDatapointLayer` targets when
  * `onDatapointClick`/`copyValueOnActivate` is set (the shared cross-family
  * interaction contract, #349).
+ *
+ * @dataShape a hierarchy read as a branching tree rather than as sized rectangles
+ * @avoidWhen size, not structure, is the point — use a treemap
  */
 export const TreeChart = forwardRef<HTMLDivElement, TreeChartProps>(function TreeChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
