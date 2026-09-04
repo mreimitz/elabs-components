@@ -173,12 +173,19 @@ example and the default registry, not the menu.
     `CHART_1411_EXEMPT` already uses in `scripts/check-audit-artifact.mjs`; a matching
     comment sits beside `CHART_1411_EXEMPT` in `packages/tokens/src/charts-contrast.test.ts`,
     not a new assertion.
-  - **Recorded in the committed evidence**, same as the ramp: `apps/e2e/reports/theme-aa-audit.md`
-    names the accent pairing in a hand-recorded addendum. The generator
-    (`scripts/check-audit-artifact.mjs`) walks the twelve-series categorical ramp only, not
-    the ordinal ramps (`--chart-seq-*`/`--chart-mono-*`/`--chart-div-*`/`--chart-accent`), so
-    this one pairing is not yet auto-derived the way the categorical rows above it are —
-    teaching the generator about the ordinal ramps is a follow-up, not done here.
+  - **Recorded in the committed evidence, auto-derived — not hand-kept.**
+    `apps/e2e/reports/theme-aa-audit.md` names the accent pairing in its generated
+    `### ⚠️ accepted below-bar pairing(s)` section, as a sibling bullet beside the
+    ramp's own; `scripts/check-audit-artifact.mjs`'s `renderArtifact` emits it, so
+    `pnpm audit-artifact` reproduces it and `pnpm audit-artifact:check` fails if it
+    ever drifts — there is nothing to hand-keep. It needed no new measured ROW: the
+    generator measures the twelve-series categorical ramp only (never the ordinal
+    ramps as rows), and `--chart-accent` is covered because it aliases `--chart-1`,
+    which already is one of those twelve rows — the same reasoning as the exemption
+    itself, one level up. What genuinely IS still a follow-up: `--chart-seq-*`,
+    `--chart-mono-*` and `--chart-div-*` have no rows of their own in the artifact
+    at all (aliasing doesn't help them, they are not `--chart-1`), so teaching the
+    generator to walk the ordinal ramps remains open.
   - **What this does not settle:** wave-1 chart containers built against this accent on
     `light` inherit a hero colour that is now a known, accepted property rather than an
     open defect — but a container whose design depends on the accent reading as the hero
