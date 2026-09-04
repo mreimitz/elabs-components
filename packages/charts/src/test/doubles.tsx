@@ -87,7 +87,9 @@ export type ChartFamilyName =
   | "ChoroplethChart"
   | "SankeyChart"
   | "Gantt"
-  | "DumbbellChart";
+  | "DumbbellChart"
+  // Heatmap — RM-021
+  | "HeatmapChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -179,6 +181,18 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     dataKind: "sankey",
     requiredProps: ["data", "children"],
   },
+  // Heatmap — RM-021. The three grid keys are all caller-named, and only the
+  // calendar variant reads `x` as a date — see `propNamedKeys`.
+  HeatmapChart: {
+    dataKind: "array",
+    requiredProps: ["data", "x", "y", "valueKey"],
+    propNamedKeys: [
+      { prop: "x" },
+      { prop: "y", onlyWhen: { prop: "variant", equals: "matrix" } },
+      { prop: "valueKey" },
+      { prop: "x", onlyWhen: { prop: "variant", equals: "calendar" }, requireDate: true },
+    ],
+  },
   Gantt: {
     dataProp: "tasks",
     dataKind: "array",
@@ -267,6 +281,8 @@ import type { RadarChartProps } from "../charts/radar-chart";
 import type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
+// Heatmap — RM-021
+import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -321,6 +337,11 @@ export const SankeyChart = createChartContainerDouble<SankeyChartProps>(
   CHART_CONTRACT_SPECS.SankeyChart,
 );
 export const Gantt = createChartContainerDouble<GanttProps>("Gantt", CHART_CONTRACT_SPECS.Gantt);
+// Heatmap — RM-021
+export const HeatmapChart = createChartContainerDouble<HeatmapChartProps>(
+  "HeatmapChart",
+  CHART_CONTRACT_SPECS.HeatmapChart,
+);
 
 // ── DumbbellChart — RM-023 ───────────────────────────────────────────────────
 

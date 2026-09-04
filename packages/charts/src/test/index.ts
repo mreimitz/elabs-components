@@ -79,6 +79,8 @@ export {
   DumbbellChart,
   FunnelChart,
   Gantt,
+  // Heatmap — RM-021
+  HeatmapChart,
   LineChart,
   LiveLineChart,
   MetricCard,

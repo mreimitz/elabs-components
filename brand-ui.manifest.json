@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:00:23.886Z",
+  "generatedAt": "2026-09-04T11:01:20.755Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12475,6 +12475,11 @@
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
         },
         {
+          "name": "CALENDAR_ROWS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "Candlestick",
           "kind": "value",
           "module": "packages/charts/src/charts/candlestick.tsx"
@@ -12645,6 +12650,11 @@
           "module": "packages/charts/src/charts/composed-chart.tsx"
         },
         {
+          "name": "CONTINUOUS_MIN_OPACITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "DateTicker",
           "kind": "value",
           "module": "packages/charts/src/charts/tooltip/index.ts"
@@ -12663,6 +12673,11 @@
           "name": "DEFAULT_CHART_STATUS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "DEFAULT_HEATMAP_STEPS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "DEFAULT_HOVER_OFFSET",
@@ -12778,6 +12793,11 @@
           "name": "HaloText",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HeatmapChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "Leader",
@@ -13212,6 +13232,16 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "useHeatmap",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "useHeatmapHover",
+          "kind": "value",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "useHighDecoration",
           "kind": "value",
           "module": "packages/charts/src/charts/use-high-decoration.ts"
@@ -13356,6 +13386,18 @@
         {
           "name": "BarYAxisProps",
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
+        },
+        {
+          "name": "CalendarCellPosition",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "CalendarLayout",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "CalendarMonthTick",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "CandlestickChartProps",
@@ -13748,6 +13790,58 @@
         {
           "name": "HaloTextProps",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "HeatmapBucket",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapCellDatum",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapChartProps",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapContextValue",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapEmptyValue",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapHighlight",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapHoverContextValue",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapInk",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapMargin",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapMode",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapPalette",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapSummaryFacts",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "HeatmapVariant",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "IndicatorWidth",
@@ -14156,8 +14250,20 @@
       ],
       "otherExports": [
         {
+          "name": "bucketIndexOf",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "buildCalendarLayout",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "buildDumbbellRows",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "buildHeatmapBuckets",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "chartAccentColor",
@@ -14208,6 +14314,10 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "continuousInk",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "defaultChartStatFlowFormat",
           "module": "packages/charts/src/charts/chart-stat-flow.tsx"
         },
@@ -14236,6 +14346,14 @@
           "module": "packages/charts/src/charts/live-line.tsx"
         },
         {
+          "name": "dotRadius",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "firstMondayOfMonth",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "ganttVariants",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
@@ -14256,6 +14374,14 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
+          "name": "heatmapDomain",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "heatmapSummary",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
           "name": "inferChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -14270,6 +14396,10 @@
         {
           "name": "isNumericField",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "isoWeekdayIndex",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "isPaletteFill",
@@ -14306,6 +14436,10 @@
         {
           "name": "padDatapointRect",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "parseIsoDate",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "pickGanttTimeUnit",
@@ -14346,6 +14480,10 @@
         {
           "name": "ringCssVars",
           "module": "packages/charts/src/charts/ring-context.tsx"
+        },
+        {
+          "name": "sampleContinuousInk",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "sankeyCssVars",
@@ -14390,6 +14528,10 @@
         {
           "name": "stagger",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "startOfIsoWeek",
+          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "viewModeToScales",
@@ -19063,6 +19205,31 @@
             "Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.",
             "Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.",
             "Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view."
+          ]
+        },
+        "HeatmapChart": {
+          "purpose": "Two discrete dimensions × one value — weekday × hour, product × region, or a year of days.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartTooltip"
+            ]
+          },
+          "stateTokens": {
+            "cell": "value → an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
+            "empty": "null or 0 → a QuietDot pinprick in --chart-foreground-muted, not a hole",
+            "peak": "the highlighted cell → a dashed PeakRing in --chart-foreground",
+            "loading": "loading → the same grid as skeleton cells in --muted"
+          },
+          "antiPatterns": [
+            "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
+            "emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.",
+            "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
+            "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
           ]
         },
         "Leader": {

@@ -122,6 +122,27 @@ export interface ChartContractSpec {
    * caller-named column instead of a fixed one.
    */
   dynamicKeys?: { prop: string; numeric?: boolean }[];
+  /**
+   * Keys whose NAME is itself a prop value, and which must be present on every
+   * row — `HeatmapChart`'s `x` / `y` / `valueKey`, where the caller names all
+   * three. `xKey` cannot express this: it is a single key, and its date rule is
+   * gated on `xScale`, which a heatmap does not have.
+   *
+   * `requireDate` may be conditional, because the same prop means different
+   * things per variant: a heatmap's `x` is an arbitrary label in `"matrix"` and
+   * an ISO date in `"calendar"`, and only the second one can crash the real
+   * chart on an unparseable value.
+   */
+  propNamedKeys?: {
+    /** Prop carrying the key's name. */
+    prop: string;
+    /** Key name to fall back on when the prop is absent. */
+    default?: string;
+    /** Skip this key entirely unless the named prop equals this value. */
+    onlyWhen?: { prop: string; equals: unknown };
+    /** Require the value to coerce to a valid `Date`, under the same condition. */
+    requireDate?: boolean;
+  }[];
   /** Props that must be finite numbers when provided. */
   numericProps?: string[];
   /** Walk `children` for elements carrying a `dataKey` prop and verify it exists on every row. */
@@ -238,6 +259,27 @@ export function assertChartContract(
             key,
             record[key],
             `row ${index}'s "${key}" is not coercible to a valid Date — this is the ` +
+              `"RangeError: Invalid time value" class of bug`,
+          );
+        }
+      }
+      for (const named of spec.propNamedKeys ?? []) {
+        if (named.onlyWhen && props[named.onlyWhen.prop] !== named.onlyWhen.equals) continue;
+        const keyName = (props[named.prop] as string) || named.default;
+        if (!keyName) continue;
+        if (!(keyName in record)) {
+          fail(
+            component,
+            named.prop,
+            row,
+            `row ${index} of "${dataProp}" is missing the key "${keyName}" named by prop "${named.prop}"`,
+          );
+        } else if (named.requireDate && isInvalidDate(record[keyName])) {
+          fail(
+            component,
+            named.prop,
+            record[keyName],
+            `row ${index}'s "${keyName}" is not coercible to a valid Date — this is the ` +
               `"RangeError: Invalid time value" class of bug`,
           );
         }
