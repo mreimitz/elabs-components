@@ -159,3 +159,62 @@ describe("ChartFrame loading", () => {
     expect(screen.getByLabelText("Expand chart")).toBeInTheDocument();
   });
 });
+
+// Card contract source row (RM-019): a fourth, optional attribution part —
+// inline, in the expand modal, and (for a plain string) in the CSV download.
+describe("ChartFrame source", () => {
+  it("renders the source row inline when provided", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Source: Internal analytics">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(screen.getByText("Source: Internal analytics")).toBeInTheDocument();
+  });
+
+  it("renders no source row when absent", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData}>
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    expect(screen.queryByText(/source/i)).not.toBeInTheDocument();
+  });
+
+  it("also shows the source row inside the expand modal", () => {
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Source: Internal analytics">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Expand chart"));
+    // Two occurrences now: the inline card footer + the modal's detail pane.
+    expect(screen.getAllByText("Source: Internal analytics")).toHaveLength(2);
+  });
+
+  it("appends a trailing '# source: …' comment row to the downloaded CSV", () => {
+    global.URL.createObjectURL = vi.fn(() => "blob:mock");
+    global.URL.revokeObjectURL = vi.fn();
+    let captured = "";
+    const OriginalBlob = global.Blob;
+    // @ts-expect-error minimal test stub — only the constructor is exercised
+    global.Blob = class {
+      constructor(parts: BlobPart[]) {
+        captured = parts.join("");
+      }
+    };
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(
+      <ChartFrame title="Revenue" data={sampleData} source="Internal analytics, updated daily">
+        <div>chart</div>
+      </ChartFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Download CSV"));
+
+    expect(captured).toContain("# source: Internal analytics, updated daily");
+
+    clickSpy.mockRestore();
+    global.Blob = OriginalBlob;
+  });
+});

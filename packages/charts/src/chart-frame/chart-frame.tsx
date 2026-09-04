@@ -22,6 +22,7 @@ import {
   Button,
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -73,22 +74,31 @@ function localQuote(field: string, delim: string): string {
   return field;
 }
 
-function localToCsv(rows: Record<string, unknown>[], cols: ChartFrameColumn[]): string {
+function localToCsv(
+  rows: Record<string, unknown>[],
+  cols: ChartFrameColumn[],
+  /** Attribution text, appended as a trailing `# source: …` comment row. */
+  sourceText?: string,
+): string {
   const D = ",";
   const header = cols.map((c) => localQuote(c.header ?? c.key, D)).join(D);
   const body = rows
     .map((r) => cols.map((c) => localQuote(localStringify(r[c.key]), D)).join(D))
     .join("\r\n");
-  return header + "\r\n" + body + "\r\n";
+  const sourceLine = sourceText
+    ? "\r\n# source: " + sourceText.replaceAll(/[\r\n]+/g, " ").trim()
+    : "";
+  return header + "\r\n" + body + sourceLine + "\r\n";
 }
 
 function localDownloadCsv(
   rows: Record<string, unknown>[],
   cols: ChartFrameColumn[],
   filename = "chart-data",
+  sourceText?: string,
 ): void {
   if (typeof document === "undefined") return;
-  const csv = localToCsv(rows, cols);
+  const csv = localToCsv(rows, cols, sourceText);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -312,10 +322,12 @@ function ChartFrameModal({
   children,
   detail,
   renderTable,
+  source,
 }: {
   children: ReactNode;
   detail?: ReactNode;
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
+  source?: ReactNode;
 }) {
   const { state, actions, meta } = useChartFrame();
   const { title, description, rows, columns } = meta;
@@ -326,13 +338,28 @@ function ChartFrameModal({
    * an image and a chart all open the same surface. What stays here is
    * chart-domain: the title fallback, the data summary, and the view↔table
    * crossfade below.
+   *
+   * `ExpandDialog` has no dedicated footer slot, so the source row rides
+   * inside the detail pane as its own bottom-anchored block — untouched
+   * (byte-identical `detail ?? <DefaultDetail />`) when `source` is absent.
    */
+  const detailContent = source ? (
+    <div className="flex h-full flex-col">
+      <div className="min-h-0 flex-1">{detail ?? <DefaultDetail />}</div>
+      <p className="shrink-0 border-t p-4 text-chart-source text-chart-foreground-muted uppercase">
+        {source}
+      </p>
+    </div>
+  ) : (
+    (detail ?? <DefaultDetail />)
+  );
+
   return (
     <Dialog open={state.expanded} onOpenChange={actions.setExpanded}>
       <ExpandDialog
         title={title ?? "Chart"}
         description={description}
-        detail={detail ?? <DefaultDetail />}
+        detail={detailContent}
         detailLabel="Chart summary"
       >
         <div
@@ -353,7 +380,16 @@ function ChartFrameModal({
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+  /**
+   * Write the title as the CONCLUSION, not the chart type — "Revenue is up
+   * 8% QoQ", not "Revenue chart". Put what each series means in prose in
+   * `description` (lieflat's card contract).
+   */
   title?: ReactNode;
+  /**
+   * Prose that IS the legend — what a reader needs to read the chart
+   * correctly (series, units, scope), written as a sentence, not a caption.
+   */
   description?: ReactNode;
   /** Primary data input for table view and CSV download. */
   data?: Record<string, unknown>[];
@@ -389,6 +425,14 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv.
    */
   onDownload?: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => void;
+  /**
+   * Attribution / provenance footer — e.g. "Source: Internal analytics,
+   * updated daily". Renders as the card's all-caps, letter-spaced source row
+   * (the fourth part of lieflat's card contract) inline and in the expand
+   * modal; when it is a plain string it also lands as a trailing
+   * `# source: …` comment row in the downloaded CSV. Hidden when absent.
+   */
+  source?: ReactNode;
   /** The chart content. Rendered in both inline and expanded modal positions. */
   children: ReactNode;
 }
@@ -405,6 +449,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
     renderTable,
     onDownload,
     loading = false,
+    source,
     className,
     children,
     ...props
@@ -429,7 +474,8 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
 
   const resolvedDownload =
     onDownload ??
-    ((rows: Record<string, unknown>[], cols: ChartFrameColumn[]) => localDownloadCsv(rows, cols));
+    ((rows: Record<string, unknown>[], cols: ChartFrameColumn[]) =>
+      localDownloadCsv(rows, cols, "chart-data", typeof source === "string" ? source : undefined));
 
   const resolvedRenderTable =
     renderTable ??
@@ -455,6 +501,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
         renderTable={resolvedRenderTable}
         title={title}
         description={description}
+        source={source}
         {...props}
       >
         {children}
@@ -471,11 +518,12 @@ interface ChartFrameInnerProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
   renderTable: (rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => ReactNode;
   title?: ReactNode;
   description?: ReactNode;
+  source?: ReactNode;
   children: ReactNode;
 }
 
 const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(function ChartFrameInner(
-  { height, detail, renderTable, title, description, className, children, ...props },
+  { height, detail, renderTable, title, description, source, className, children, ...props },
   ref,
 ) {
   const { state, meta } = useChartFrame();
@@ -517,9 +565,16 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
             )}
           </div>
         </CardContent>
+        {source ? (
+          <CardFooter className="pt-0">
+            <p className="w-full truncate text-chart-source text-chart-foreground-muted uppercase">
+              {source}
+            </p>
+          </CardFooter>
+        ) : null}
       </Card>
 
-      <ChartFrameModal detail={detail} renderTable={renderTable}>
+      <ChartFrameModal detail={detail} renderTable={renderTable} source={source}>
         {children}
       </ChartFrameModal>
     </>

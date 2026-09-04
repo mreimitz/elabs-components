@@ -1495,6 +1495,22 @@
 
   --type-weight-code: 400;
   --type-tracking-code: 0em;
+
+  /* chart type roles — RM-019. Two card-contract rungs (lieflat's fixed
+     four-part card: title/description/chart/source) — NOT among the eight
+     `ROLES` density-type-scale.test.ts enumerates, and NOT yet redeclared per
+     `[data-density]` in density.css (tracked as a follow-up; these two rungs
+     render at the `comfortable` size in every density until that lands).
+     Both reuse the meta rung's size/leading (small metadata/labels). */
+  --type-size-chart-value: var(--type-size-meta);
+  --type-leading-chart-value: var(--type-leading-meta);
+  --type-weight-chart-value: 800;
+  --type-tracking-chart-value: 0em;
+
+  --type-size-chart-source: var(--type-size-meta);
+  --type-leading-chart-source: var(--type-leading-meta);
+  --type-weight-chart-source: 500;
+  --type-tracking-chart-source: 0.08em;
 }
 
 @theme {
@@ -1537,6 +1553,23 @@
   --text-code--line-height: var(--type-leading-code);
   --text-code--font-weight: var(--type-weight-code);
   --text-code--letter-spacing: var(--type-tracking-code);
+
+  /* chart type roles — RM-019: `text-chart-value` / `text-chart-source`, the
+     ChartCard/ChartFrame card-contract value + source rungs (RM-041/RM-042
+     build on these). Companion keys only cover size/line-height/weight/
+     letter-spacing — Tailwind v4 has no `font-variant-numeric` or
+     `text-transform` companion — so, same convention as `kpi` pairing with
+     `tabular-nums`: pair `text-chart-value` with `tabular-nums` and
+     `text-chart-source` with `uppercase` at the call site. */
+  --text-chart-value: var(--type-size-chart-value);
+  --text-chart-value--line-height: var(--type-leading-chart-value);
+  --text-chart-value--font-weight: var(--type-weight-chart-value);
+  --text-chart-value--letter-spacing: var(--type-tracking-chart-value);
+
+  --text-chart-source: var(--type-size-chart-source);
+  --text-chart-source--line-height: var(--type-leading-chart-source);
+  --text-chart-source--font-weight: var(--type-weight-chart-source);
+  --text-chart-source--letter-spacing: var(--type-tracking-chart-source);
 
   /* `font-display` utility for the display seam — references the :root var so
      a [data-theme] override re-skins headlines live. */

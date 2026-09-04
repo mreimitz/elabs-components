@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
   Skeleton,
@@ -13,7 +14,16 @@ import {
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+  /**
+   * Write the title as the CONCLUSION, not the chart type — "Revenue is up
+   * 8% QoQ", not "Revenue chart". Put what each series means in prose in
+   * `description` (lieflat's card contract).
+   */
   title: ReactNode;
+  /**
+   * Prose that IS the legend — what a reader needs to read the chart
+   * correctly (series, units, scope), written as a sentence, not a caption.
+   */
   description?: ReactNode;
   /** Header actions (range picker, menu). */
   actions?: ReactNode;
@@ -26,6 +36,12 @@ export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * height; title/description keep rendering. Default: `false`.
    */
   loading?: boolean;
+  /**
+   * Attribution / provenance footer — e.g. "Source: Internal analytics,
+   * updated daily". Renders as the card's all-caps, letter-spaced source row
+   * (the fourth part of lieflat's card contract); hidden when absent.
+   */
+  source?: ReactNode;
 }
 
 /**
@@ -34,7 +50,17 @@ export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
  * tokens for series colors so charts theme with the rest of the system.
  */
 export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function ChartCard(
-  { title, description, actions, children, height = 260, loading = false, className, ...props },
+  {
+    title,
+    description,
+    actions,
+    children,
+    height = 260,
+    loading = false,
+    source,
+    className,
+    ...props
+  },
   ref,
 ) {
   const { t } = useLocale();
@@ -63,6 +89,13 @@ export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function Cha
           )}
         </div>
       </CardContent>
+      {source ? (
+        <CardFooter className="pt-0">
+          <p className="w-full truncate text-chart-source text-chart-foreground-muted uppercase">
+            {source}
+          </p>
+        </CardFooter>
+      ) : null}
     </Card>
   );
 });

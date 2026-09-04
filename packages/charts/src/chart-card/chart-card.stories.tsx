@@ -17,6 +17,7 @@ function PlaceholderBars({ bars }: { bars: { label: string; pct: number; colorCl
       {bars.map(({ label, pct, colorClass }) => (
         <div key={label} className="flex flex-1 flex-col items-center gap-1">
           <div
+            role="img"
             className={`w-full rounded-sm ${colorClass}`}
             style={{ height: `${pct}%` }}
             aria-label={`${label}: ${pct}%`}
@@ -102,6 +103,26 @@ export const Loading: Story = {
     title: "Monthly revenue",
     description: "Jan – Jun 2025",
     loading: true,
+  },
+  render: (args) => (
+    <div className="w-[480px]">
+      <ChartCard {...args}>
+        <PlaceholderBars bars={sampleBars} />
+      </ChartCard>
+    </div>
+  ),
+};
+
+/**
+ * The card contract's fourth part (lieflat) — an attribution/provenance
+ * footer, rendered all-caps and letter-spaced. `title` is the conclusion,
+ * `description` is the legend in prose, `source` is where the data came from.
+ */
+export const WithSource: Story = {
+  args: {
+    title: "Revenue is up 8% quarter over quarter",
+    description: "Monthly revenue, Jan – Jun 2025",
+    source: "Source: Internal analytics, updated daily",
   },
   render: (args) => (
     <div className="w-[480px]">

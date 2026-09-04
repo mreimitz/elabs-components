@@ -34,6 +34,18 @@ them directly under `src/`. Match the package you're in.
 - Visible focus on every interactive element.
 - Keep the DOM shallow; avoid wrapper soup.
 
+## Chart cards (ChartCard / ChartFrame)
+
+`ChartCard`/`ChartFrame` follow a fixed, four-part card contract (lieflat):
+write `title` as the **conclusion**, not the chart type ("Revenue is up 8% QoQ",
+not "Revenue chart"); put what each series means in **prose, in `description`**
+— that prose IS the legend; the chart itself is the body; and an optional
+`source` prop renders a fourth, all-caps letter-spaced attribution row
+(`text-chart-source`) — `ChartFrame` also carries it into the expand modal and,
+for a plain string, into the downloaded CSV as a trailing `# source: …`
+comment row. Pair the sibling `text-chart-value` role with `tabular-nums` for
+in-chart data-label values (weight 800, vs. the lighter axis-label weight).
+
 ## Quality gates
 
 Every component must pass the checklist in `.claude/rules/quality-gates.md`:

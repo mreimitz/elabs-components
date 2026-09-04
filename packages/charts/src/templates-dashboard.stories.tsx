@@ -23,6 +23,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { AppIcon } from "@elabs-ai/components-icons";
 import { MetricGrid } from "./metric-grid/metric-grid";
+import { ChartCard } from "./chart-card/chart-card";
 import { BarChart3, Home, Settings, Users } from "lucide-react";
 
 const nav = [
@@ -63,6 +64,42 @@ const metrics = [
     positiveIsGood: false,
     description: "vs. last week",
   },
+];
+
+/** A simple tokenized bar chart used as a placeholder child — no charting lib needed. */
+function PlaceholderBars({ bars }: { bars: { label: string; pct: number; colorClass: string }[] }) {
+  return (
+    <div className="flex h-full items-end gap-2 pb-4">
+      {bars.map(({ label, pct, colorClass }) => (
+        <div key={label} className="flex flex-1 flex-col items-center gap-1">
+          <div
+            role="img"
+            className={`w-full rounded-sm ${colorClass}`}
+            style={{ height: `${pct}%` }}
+            aria-label={`${label}: ${pct}%`}
+          />
+          <span className="text-meta text-muted-foreground">{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const revenueBars = [
+  { label: "Jan", pct: 55, colorClass: "bg-chart-1" },
+  { label: "Feb", pct: 72, colorClass: "bg-chart-1" },
+  { label: "Mar", pct: 60, colorClass: "bg-chart-1" },
+  { label: "Apr", pct: 85, colorClass: "bg-chart-1" },
+  { label: "May", pct: 68, colorClass: "bg-chart-1" },
+  { label: "Jun", pct: 90, colorClass: "bg-chart-1" },
+];
+
+const sessionBars = [
+  { label: "Mon", pct: 40, colorClass: "bg-chart-2" },
+  { label: "Tue", pct: 65, colorClass: "bg-chart-2" },
+  { label: "Wed", pct: 80, colorClass: "bg-chart-2" },
+  { label: "Thu", pct: 55, colorClass: "bg-chart-2" },
+  { label: "Fri", pct: 75, colorClass: "bg-chart-2" },
 ];
 
 function DashboardTemplate() {
@@ -120,11 +157,21 @@ function DashboardTemplate() {
               ))}
             </MetricGrid>
           </section>
-          <section
-            aria-label="Chart area"
-            className="rounded-lg border bg-card p-4 text-body text-muted-foreground"
-          >
-            Add stat-card-area-01 or stat-card-line-01 blocks here.
+          <section aria-label="Chart area" className="grid gap-4 md:grid-cols-2">
+            <ChartCard
+              title="Revenue is up 8% quarter over quarter"
+              description="Monthly revenue, Jan – Jun 2025"
+              source="Source: Internal analytics, updated daily"
+            >
+              <PlaceholderBars bars={revenueBars} />
+            </ChartCard>
+            <ChartCard
+              title="Sessions are steady week over week"
+              description="Active sessions, last 5 weekdays"
+              source="Source: Internal analytics, updated daily"
+            >
+              <PlaceholderBars bars={sessionBars} />
+            </ChartCard>
           </section>
         </main>
       </SidebarInset>
