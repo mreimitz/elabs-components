@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:56:38.115Z",
+  "generatedAt": "2026-09-04T10:57:53.229Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14879,6 +14879,36 @@
               "optional": true,
               "type": "number",
               "description": "Gap between grouped bars in pixels. Default: 4"
+            },
+            {
+              "name": "showValues",
+              "optional": true,
+              "type": "BarShowValues",
+              "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "Draw each bar as a countable `UnitStack` of `round(value / unit)` rungs (vertical bars, `kind=\"rung\"`) or ticks (horizontal bars, `kind=\"tick\"`) instead of a solid fill — lieflat F1 Rung Bars. Width and opacity jitter via `seededRnd`, keyed per bar so neighbours never jitter in lockstep; every 5th unit draws heavier so the stack stays countable. Renders instantly (no `animate`/`animationType` grow-in). Default: off (solid fill)."
+            },
+            {
+              "name": "highlightKey",
+              "optional": true,
+              "type": "BarHighlightKey",
+              "description": "Mark ONE bar as this series' \"hero\": it draws in `--chart-foreground` ink while every OTHER bar draws from `palette` instead of `fill` — lieflat's one-hero-bar-in-ink convention. A string/number is matched against the bar's category value; a function receives `(datum, index)`. Default: off (every bar draws `fill`)."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Palette the non-hero bars draw from when `highlightKey` is set, via `resolvePalette` (RM-018). Default: `\"categorical\"`."
+            },
+            {
+              "name": "zeroLine",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw a 0.8px `--chart-foreground-muted` hairline at the zero baseline across the whole plot. Default: auto — shown whenever ANY bar series in this chart has a negative value; pass `false` to force it off on this series, or `true` to force it on even with all-positive data."
             }
           ]
         },
@@ -15028,6 +15058,12 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Default fill for `Bar` children that don't set their own `fill`, via `resolvePalette` (RM-018) over the series count — so, for example, nine unfilled `Bar` series degrade to the neutral ladder with a dev warning instead of nine bars painted identically. A `Bar` with an explicit `fill` is never touched. Default: `\"categorical\"` (`resolvePalette`'s own default) — but see `applyBarPalette`: it only ever assigns colours to SERIES THAT WOULD OTHERWISE COLLIDE (2+ unfilled `Bar` children), so a chart with a single unfilled `Bar` keeps today's `--chart-line-primary`."
             }
           ]
         },
