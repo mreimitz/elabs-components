@@ -178,7 +178,7 @@ export const bentoGridItemVariants = cva(
        * (elevation + edge) is on the base — every tile lifts, clickable or not.
        */
       interactive: {
-        true: "cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-ring",
+        true: "cursor-pointer focus-ring-within",
         false: "",
       },
     },

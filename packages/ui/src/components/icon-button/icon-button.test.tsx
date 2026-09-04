@@ -59,7 +59,7 @@ describe("IconButton", () => {
     );
     const wrapper = document.querySelector('[data-slot="icon-button"]')!;
     expect(wrapper).toHaveAttribute("tabindex", "0");
-    expect(wrapper.className).toContain("focus-visible:ring-ring");
+    expect(wrapper.className).toContain("focus-ring");
     await userEvent.tab();
     expect(wrapper).toHaveFocus();
   });

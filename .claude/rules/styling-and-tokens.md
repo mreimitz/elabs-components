@@ -10,8 +10,20 @@
   (`clsx` + `tailwind-merge`) so later utilities win predictably.
 - **Spacing & radius:** use the standard Tailwind scale and the `rounded-*`
   utilities backed by `--radius`. Don't invent ad-hoc spacing.
-- **Focus:** every interactive element gets a visible ring:
-  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`.
+- **Focus:** every interactive element gets the shared **compound** focus
+  utility — **`focus-ring`** (or `focus-ring-within` for a compound control,
+  `focus-ring-inset` for one clipped by an overflow container,
+  `focus-ring-static` for a control whose focus is proxied by a hidden input or
+  gated by a `focus-visible:after:` variant). It draws the
+  brand ring AND a `--ring-contour` outline outside it, because the reference
+  themes alias `--ring` to the brand plate and on `light` that plate alone is
+  invisible (1.23–1.42:1). **Do not write
+  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`** —
+  that is the one-layer shape the #67 sweep replaced. A call site whose ring is
+  owned by another token retargets one variable —
+  `focus-ring [--focus-ring-color:var(--sidebar-ring)]` — instead of
+  re-stacking the layers. Full contract:
+  @.claude/rules/theming.md and `docs/ADR/0027-focus-ring-token-contract.md`.
 - **`border` vs `border-strong` (WCAG 1.4.11, non-text 3:1).** Two divider rungs
   (ADR `docs/ADR/0010-border-strong-token.md`, issue #172):
   - **`border-border` (subtle, the default base border-color)** — a **redundant**

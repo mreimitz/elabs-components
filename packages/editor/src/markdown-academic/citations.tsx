@@ -262,7 +262,7 @@ function CiteLink({ entry, label }: { entry: ResolvedCitation; label: string }) 
       // (4.5:1), which `--primary` missed at 4.29-4.31:1 in light. The
       // resting `underline` is the separate 1.4.1 non-colour cue (#317's
       // link-in-text-block half) — keep both.
-      className="text-primary-text underline hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="text-primary-text underline hover:underline focus-visible:rounded-sm focus-ring"
     >
       {label}
     </a>
@@ -427,7 +427,7 @@ export const Bibliography = forwardRef<HTMLElement, BibliographyProps>(function 
                     rel="noopener noreferrer"
                     // #317/#399 — bibliography DOI/URL is body text: `-text` rung
                     // + resting underline (the non-colour cue).
-                    className="break-words text-primary-text underline underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="break-words text-primary-text underline underline-offset-2 hover:underline focus-visible:rounded-sm focus-ring"
                   >
                     {data.url ?? `doi:${data.doi}`}
                   </a>

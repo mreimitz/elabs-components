@@ -459,7 +459,7 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
         {targets.map((target) => (
           <button
             aria-label={context.labelFor(target)}
-            className="absolute rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="absolute rounded-sm focus-ring"
             data-slot="chart-datapoint-layer-target"
             data-target-id={target.id}
             key={target.id}

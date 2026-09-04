@@ -124,11 +124,20 @@ export const MUST_DIFFER = [
   //
   // WHAT IS NO LONGER GUARDED, in plain terms: nothing here now stops a focus
   // ring from rendering in the primary colour, because that is the shipped
-  // intent. What that costs — a 1.23-1.42:1 focus indicator in the LIGHT theme,
-  // failing WCAG 2.4.7 and 1.4.11 — is recorded at the token, not here, and the
-  // "ring ≥ 3:1 on every mark surface" assertion in themes-contrast.test.ts now
-  // carries a light-theme exemption saying the same thing. If the ring is ever
-  // given an independent value again, restore BOTH rows.
+  // intent. If the ring is ever given an independent value again, restore BOTH
+  // rows.
+  //
+  // STILL REMOVED AFTER THE #67 FIX (2026-09-04) — read this before "restoring"
+  // them. The 1.23-1.42:1 light-theme focus indicator these two rows used to
+  // guard against is FIXED, and the themes-contrast exemption that recorded it
+  // is gone. But the fix is a COMPOUND indicator — the ring plus a
+  // `--ring-contour` hairline (the `focus-ring` utility) — not an un-aliasing:
+  // `--ring: var(--primary)` still ships in both reference themes, exactly as
+  // the maintainer decided. So the condition these rows were waiting on has
+  // NOT been met; adding either back reds the gate on both reference themes and
+  // would reverse a decision this repo took twice. The 1.4.11 obligation moved
+  // to where it belongs — the INDICATOR, asserted as
+  // `max(ring, ring-contour) ≥ 3:1` per surface in themes-contrast.test.ts.
   //
   // A hovered/selected row's ink vs the focus ring — both are "attention" cues
   // that must be told apart.

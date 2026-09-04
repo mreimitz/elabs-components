@@ -120,7 +120,7 @@ const Swatch = forwardRef<HTMLButtonElement, SwatchProps>(function Swatch(
         selected
           ? "border-foreground ring-2 ring-ring ring-offset-1 ring-offset-background"
           : "border-transparent hover:border-foreground/40",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+        "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         className,
       )}
       {...props}
@@ -266,7 +266,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
               "inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm",
               "transition-[color,box-shadow] duration-fast",
               "hover:bg-accent hover:text-accent-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+              "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
               "disabled:pointer-events-none disabled:opacity-50",
             )}
           >
@@ -317,7 +317,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
                   }}
                   className={cn(
                     "h-8 w-28 rounded-md border border-input bg-background px-2 text-sm",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     "placeholder:text-muted-foreground",
                   )}
                 />
@@ -327,7 +327,7 @@ export const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(function
                   className={cn(
                     "h-8 rounded-md border border-input bg-background px-2 text-sm",
                     "hover:bg-accent hover:text-accent-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                   )}
                 >
                   Apply

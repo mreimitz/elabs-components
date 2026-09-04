@@ -55,7 +55,7 @@ export const DocumentOutline = forwardRef<HTMLElement, DocumentOutlineProps>(
                   className={cn(
                     "-ms-px block w-full truncate border-s-2 py-1 pe-2 text-start text-caption",
                     "transition-colors duration-fast ease-standard motion-reduce:transition-none",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                    "focus-ring-inset",
                     item.id === activeId
                       ? "border-s-primary font-medium text-foreground"
                       : "border-s-transparent text-muted-foreground hover:border-s-border-strong hover:text-foreground",

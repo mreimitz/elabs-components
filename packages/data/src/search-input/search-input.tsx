@@ -59,7 +59,7 @@ export function SearchInput({
           type="button"
           onClick={() => onValueChange("")}
           aria-label="Clear search"
-          className="absolute end-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in zoom-in-95 duration-fast ease-entrance"
+          className="absolute end-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground focus-ring animate-in fade-in zoom-in-95 duration-fast ease-entrance"
         >
           <svg
             width="14"

@@ -609,7 +609,7 @@ function BranchToggle({ branchName, onToggle }: { branchName: string; onToggle: 
         "flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground",
         "transition-colors duration-fast ease-standard motion-reduce:transition-none",
         "hover:bg-accent hover:text-accent-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "focus-ring",
       )}
     >
       <BranchChevron expanded />
@@ -658,7 +658,7 @@ function CollapsedBranchRow({
         className={cn(
           "flex h-full w-full min-w-0 items-center gap-2 px-2 text-start",
           "transition-colors duration-fast ease-standard motion-reduce:transition-none",
-          "rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "rounded focus-ring",
           "hover:bg-accent hover:text-accent-foreground",
         )}
       >
@@ -738,7 +738,7 @@ function RevisionRow({ revision, isMerge, density, indent, collapseToggle }: Rev
             ? "flex h-full min-w-0 flex-1 items-center gap-2 px-2 text-start"
             : "flex h-full w-full min-w-0 items-center gap-2 px-2 text-start",
           "transition-colors duration-fast ease-standard motion-reduce:transition-none",
-          "rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "rounded focus-ring",
           "hover:bg-accent hover:text-accent-foreground",
           isSelected && "border-s-2 border-s-primary bg-accent text-accent-foreground",
         )}

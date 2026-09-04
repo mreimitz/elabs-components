@@ -149,7 +149,7 @@ export const DialogContent = forwardRef<
         {children}
         <DialogPrimitive.Close
           data-slot="dialog-close"
-          className="absolute end-4 top-4 rounded-md p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute end-4 top-4 rounded-md p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-ring"
           aria-label="Close"
         >
           <svg
@@ -275,7 +275,7 @@ export const DialogBody = forwardRef<HTMLDivElement, DialogBodyProps>(function D
       // focusable content.
       tabIndex={tabIndex ?? 0}
       className={cn(
-        "-m-1 min-h-0 overflow-y-auto overscroll-contain p-1 scroll-p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "-m-1 min-h-0 overflow-y-auto overscroll-contain p-1 scroll-p-1 focus-ring",
         className,
       )}
       {...props}

@@ -141,6 +141,7 @@ export const THEME_TOKEN_NAMES = [
   "--primary-foreground",
   "--primary-text",
   "--ring",
+  "--ring-contour",
   "--rule",
   "--rule-strong",
   "--secondary",
@@ -196,5 +197,5 @@ export const THEME_TOKEN_NAMES = [
   "--warning-text",
 ] as const;
 
-/** One of the 186 semantic tokens a complete theme defines. */
+/** One of the 187 semantic tokens a complete theme defines. */
 export type ThemeTokenName = (typeof THEME_TOKEN_NAMES)[number];

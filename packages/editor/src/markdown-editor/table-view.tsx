@@ -109,7 +109,7 @@ function ToolbarButton({
       className={cn(
         "inline-flex h-7 items-center gap-1 rounded px-2 text-caption font-medium",
         "border border-border-strong",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "focus-ring",
         "transition-colors duration-fast ease-standard motion-reduce:transition-none",
         // #124: the button's LABEL text, not a mark — ink rung.
         variant === "destructive"

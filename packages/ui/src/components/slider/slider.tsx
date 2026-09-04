@@ -124,7 +124,7 @@ export const Slider = forwardRef<ElementRef<typeof SliderPrimitive.Root>, Slider
               aria-valuetext={ariaValueText}
               {...safeThumbProps}
               className={cn(
-                "block size-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+                "block size-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-ring disabled:pointer-events-none disabled:opacity-50",
                 safeThumbProps?.className,
               )}
             />

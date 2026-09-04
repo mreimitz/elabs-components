@@ -171,6 +171,17 @@ export function buildBrandThemeData(
   const border = read("--border", muted);
   const primary = read("--primary", foreground);
   const ring = read("--ring", primary);
+  const ringContour = read("--ring-contour", ring);
+  // Monaco's `focusBorder` is a SINGLE colour key — a theme cannot hand it the
+  // two-layer compound indicator the DOM gets from the `focus-ring` utility (#67),
+  // so it gets whichever layer actually clears the 1.4.11 bar against this editor's
+  // own ground. That is exactly the `max(ring, contour)` rule
+  // `themes-contrast.test.ts` asserts on the tokens, evaluated here at runtime so it
+  // also holds for a consumer theme this package has never heard of: on `light` the
+  // ring IS `--primary` (1.36:1) and the contour wins; on `dark` the contour
+  // deliberately collapses into the background and the ring wins.
+  const focusBorder =
+    contrast(ringContour, background) > contrast(ring, background) ? ringContour : ring;
   const popover = read("--popover", background);
   const popoverFg = read("--popover-foreground", foreground);
   const input = read("--input", border);
@@ -232,7 +243,7 @@ export function buildBrandThemeData(
     "input.background": input,
     "input.foreground": foreground,
     "input.border": border,
-    focusBorder: ring,
+    focusBorder,
     "dropdown.background": popover,
     "dropdown.foreground": popoverFg,
     "dropdown.border": border,

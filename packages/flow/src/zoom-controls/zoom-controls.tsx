@@ -20,7 +20,7 @@ function ControlButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-8 items-center justify-center text-foreground transition-colors duration-fast hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
+      className="flex size-8 items-center justify-center text-foreground transition-colors duration-fast hover:bg-surface-muted focus-ring [&_svg]:size-4"
     >
       {children}
     </button>

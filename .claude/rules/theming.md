@@ -191,35 +191,84 @@ example and the default registry, not the menu.
     open defect — but a container whose design depends on the accent reading as the hero
     on `light` needs a second channel of its own (shape, label, position), the same way a
     diverging ramp does not rely on hue alone.
-- **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427),
-  AMENDED 2026-08-16: the reference themes now alias `--ring: var(--primary)`.**
-  `--ring` had no stated contract, only a negative comment ("distinct from the
-  green brand AND `--info`"), which is why #334's fix was free to leave the
-  brand palette entirely and land a blue ring in both reference themes with every
-  gate green. The contract below is what a theme's `--ring` must satisfy — with
-  clauses 1 and 3 **relaxed in the two reference themes only**, by the decision
-  recorded in the ADR's Amendment:
+- **The focus indicator is COMPOUND — two layers, one utility (`docs/ADR/0027-focus-ring-token-contract.md`
+  Amendment 2, #67).** `--ring` is brand-derived and the reference themes alias
+  it to the brand plate (`--ring: var(--primary)`, 2026-08-16); on `light` that
+  plate measures 1.23–1.42:1 and is invisible on its own. **The repair is a
+  second layer, not a retune of the ring**: a companion token `--ring-contour`
+  (declared in `:root` and every theme block) drawn as a 1px `outline` outside
+  the ring by ONE shared utility. **Never hand-roll a focus indicator, and never
+  write `focus-visible:ring-2 focus-visible:ring-ring` again** — reach for:
+  - **`focus-ring`** — the default. `:focus-visible`, ring + contour outside it.
+  - **`focus-ring-within`** — same, on `:focus-within`, for a compound control
+    whose visible frame is a wrapper (input groups, composers, tiles).
+  - **`focus-ring-inset`** — `ring-inset` + a negative outline offset, for a
+    control whose edge is clipped by an overflow container (table scroll
+    regions, list rows).
+  - **`focus-ring-static`** — the same two layers with NO state selector, for a
+    control whose focus is PROXIED and therefore not expressible as a CSS state
+    on the painted element: an OTP slot mirroring a visually-hidden `<input>`,
+    or a pseudo-element seam that a `focus-visible:after:` variant already gates
+    (the DataTable resize grip, whose own box is a transparent 24px hit target).
+    Apply it conditionally; it is never a resting style.
+
+  **A ring owned by a different token retargets ONE variable, it does not
+  re-stack the layers**: the ring layer reads
+  `var(--focus-ring-color, var(--ring))`, so `Sidebar` writes
+  `focus-ring [--focus-ring-color:var(--sidebar-ring)]` and keeps consuming
+  `--sidebar-ring` (clause 4's sanctioned mirror) instead of silently moving to
+  `--ring`. Same seam idiom as the elevation ramp's `[--shadow-ring-color:…]`.
+  The contour is deliberately NOT retargetable — one contour token per theme.
+
+  All four are declared in `packages/tokens/src/themes.css` — `tokens` is the
+  base of the one-way dependency graph, so they reach every package, every
+  copy-own registry block and every consumer with no import. The ring layer is
+  Tailwind's own `ring-2` (via `@apply`, so an element's `shadow-*` rung still
+  composes through `--tw-shadow`), coloured
+  `var(--focus-ring-color, var(--ring))`; the contour is an `outline`,
+  which cannot collide with the elevation ramp (ADR 0020 bans hand-rolled
+  shadows), follows `border-radius`, and IS the `focus-visible` replacement
+  where `outline-none` used to sit. `outline-offset` tracks
+  `--tw-ring-offset-width`, so `ring-offset-*` call sites keep the contour on
+  the outer edge with no per-site arithmetic. **A `ring-2 ring-ring` that means
+  "selected" rather than "focused"** (flow-node selection, a colour-picker
+  swatch, an OTP active cell) is NOT a focus indicator — leave it alone.
+
+  The contract below is what a theme must satisfy — with clauses 1 and 3
+  **relaxed in the two reference themes only**, by the decision recorded in the
+  ADR's Amendment 1:
   1. **Brand family** — within ~20° of that theme's `--primary` hue. The
      "clearly different rung, never an alias" half is **withdrawn for the
      reference themes**, which alias the plate outright; the hue bound still
      holds and is still asserted.
-  2. **1.4.11 (≥3:1)** against `--background`, `--card`, `--surface-muted`,
-     `--muted` and `--secondary` — a focus ring lands on all five. **The `light`
-     reference theme knowingly FAILS this** (1.23–1.42:1, so WCAG 2.4.7 and
-     1.4.11 both fail) as the accepted cost of the alias; `dark` (10.26–12.46:1)
-     and `:root` still pass and are still gated. A theme you author should
-     satisfy it — the exemption is a signed-off regression in one shipped theme,
-     not a licence.
+  2. **1.4.11 (≥3:1) binds the INDICATOR, not the ring token** —
+     `max(contrast(--ring, S), contrast(--ring-contour, S)) ≥ 3:1` for every `S`
+     in `--background`, `--card`, `--surface-muted`, `--muted`, `--secondary`
+     **and `--primary`**. At least one layer must have a visible edge on every
+     surface focus can land on, including a focused primary button's own fill
+     (where the aliased ring is 1.00:1 and only the contour is visible).
+     Measured `max(…)` from the shipped tokens: `light` 6.39–9.08, `dark`
+     10.26–12.46, `:root` 3.45–17.32. **The `light`-only `RING_1411_EXEMPT`
+     carve-out is GONE** — `themes-contrast.test.ts` now asserts the `max(…)`
+     bar in every theme, plus a companion assertion that a theme whose ring
+     cannot carry the indicator has a contour that clears 3:1 against the ring
+     itself. A theme you author satisfies it with either layer.
   3. **Distinctness (ΔE ≥ 0.05 OKLab)** from `--accent-foreground`
      (`MUST_DIFFER`), `--info` (`ROLE_PAIRS`) and `--success`. The
      `(--ring, --primary)` and `(--ring, --chart-1)` rows were **deleted** — the
      first is what the alias intentionally breaks, the second collapses into
-     `(--primary, --chart-1)`, which this repo declines to gate.
-  - **The compliant way to have a brand-coloured ring on a light canvas is a
-    COMPOUND indicator** — the lime plus a dark contour layer, so one edge
-    clears 3:1 against both the lime and the page. That is a call-site sweep
-    behind a shared focus utility, not a token change. Reach for it before
-    reaching for another exemption.
+     `(--primary, --chart-1)`, which this repo declines to gate. **They stay
+     deleted after the #67 compound-indicator fix**: that fix added a layer, it
+     did not un-alias the ring, so the condition those rows waited on has not
+     been met.
+  - **`--ring-contour` is a per-theme choice, and "invisible" is a legitimate
+    value.** Give it a dark ink where the ring is too light to be seen (`light`
+    ships `oklch(0.4 0.06 116.5)`, a deep lime-family contour). Where the ring
+    ALREADY clears the bar, alias the contour to the page ground so the second
+    layer collapses — `dark` ships `--ring-contour: var(--background)` and is a
+    deliberate visual no-op (verified by screenshot). Do not "improve" that into
+    a dark ink: it would thicken every dark-theme ring for no accessibility
+    gain.
   4. **`--sidebar-ring: var(--ring)`** is the sanctioned mirror — an override
      reaches sidebar focus automatically. Never re-declare it with a literal.
   5. **Overriding it is supported — pick the mechanism by WHEN the value is
@@ -255,6 +304,7 @@ example and the default registry, not the menu.
   - **Ordering with #416** (`--success-text` retune): whichever of #416 and
     #427 lands second re-runs `pnpm roles:check` and re-measures
     `(--ring, --success-text)`.
+
 - **A region that scopes its own tokens must paint its own ground (measured,
   2026-09-02).** `ThemeProvider`'s `attributeTarget` writes `data-theme` onto an
   element you choose, so every token inside that element resolves in the inner

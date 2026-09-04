@@ -93,7 +93,7 @@ function CollapsibleDemo() {
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
-          className="rounded-md border border-input px-3 py-1.5 text-body hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded-md border border-input px-3 py-1.5 text-body hover:bg-accent focus-ring"
         >
           Toggle inspector
         </button>

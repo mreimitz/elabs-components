@@ -250,7 +250,7 @@ export const TerminalBanner = forwardRef<HTMLDivElement, TerminalBannerProps>(
                     {item.href != null ? (
                       <a
                         href={item.href}
-                        className="min-w-0 break-words text-terminal-ansi-bright-cyan underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="min-w-0 break-words text-terminal-ansi-bright-cyan underline-offset-4 hover:underline focus-ring"
                       >
                         {item.label}
                       </a>

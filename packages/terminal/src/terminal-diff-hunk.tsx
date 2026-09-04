@@ -189,7 +189,7 @@ function TerminalDiffHunkCollapsedRun({
           <button
             type="button"
             data-slot="terminal-diff-hunk-collapsed-trigger"
-            className="rounded-sm text-meta text-terminal-muted hover:text-terminal-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-sm text-meta text-terminal-muted hover:text-terminal-foreground hover:underline focus-ring"
           >
             {t("terminal.diffHunk.showMore", { count: hiddenCount })}
           </button>

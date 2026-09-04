@@ -1013,10 +1013,7 @@ export const FileViewerContent = forwardRef<HTMLDivElement, FileViewerContentPro
         role="region"
         aria-label={t("viewer.content")}
         tabIndex={0}
-        className={cn(
-          "focus-visible:ring-ring min-h-0 flex-1 overflow-auto p-4 focus-visible:outline-none focus-visible:ring-2",
-          className,
-        )}
+        className={cn("focus-ring min-h-0 flex-1 overflow-auto p-4", className)}
         {...props}
       >
         {state.status === "empty" && <FileViewerEmpty />}

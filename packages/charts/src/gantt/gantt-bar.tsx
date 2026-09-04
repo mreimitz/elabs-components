@@ -744,8 +744,10 @@ export function GanttBar({
    */
   const sharedButtonClass = cn(
     "absolute",
-    // Use outline-based focus ring so it isn't clipped by ancestor overflow-hidden (#8)
-    "focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
+    // The shared compound indicator (#67) in its INSET geometry, so neither layer
+    // is clipped by an ancestor `overflow-hidden` (#8, the reason this was an
+    // outline rather than a ring in the first place).
+    "focus-ring-inset",
     "motion-reduce:transition-none transition-opacity duration-fast ease-standard",
     // Selected state also uses outline so it isn't clipped
     isSelected && "outline-2 outline-ring outline-offset-1",

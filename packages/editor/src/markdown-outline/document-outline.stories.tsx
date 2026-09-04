@@ -60,7 +60,7 @@ function ItemActionsDemo() {
             aria-label={`Pin section “${item.text}”`}
             aria-pressed={pinned === item.id}
             onClick={() => setPinned((p) => (p === item.id ? null : item.id))}
-            className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-ring"
           >
             <Pin className="size-3" aria-hidden="true" />
           </button>

@@ -85,7 +85,7 @@ export function AdvancedGroup({
     >
       <CollapsibleTrigger
         data-slot="advanced-group-trigger"
-        className="group -mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-body font-medium hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group -mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-body font-medium hover:bg-accent hover:text-accent-foreground focus-ring"
       >
         <ChevronDown
           aria-hidden="true"
