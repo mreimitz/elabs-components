@@ -558,5 +558,105 @@
   "terminal-ansi-bright-white": {
     "$type": "color",
     "$value": "var(--terminal-foreground)"
+  },
+  "chart-seq-1": {
+    "$type": "color",
+    "$value": "oklch(0.841 0.03 241.8)",
+    "$description": "Sequential ramp step 1 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-seq-2": {
+    "$type": "color",
+    "$value": "oklch(0.658 0.075 241.8)",
+    "$description": "Sequential ramp step 2 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-seq-3": {
+    "$type": "color",
+    "$value": "oklch(0.582 0.09 241.8)",
+    "$description": "Sequential ramp step 3 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-seq-4": {
+    "$type": "color",
+    "$value": "oklch(0.509 0.1 241.8)",
+    "$description": "Sequential ramp step 4 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-seq-5": {
+    "$type": "color",
+    "$value": "oklch(0.442 0.102 241.8)",
+    "$description": "Sequential ramp step 5 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-seq-6": {
+    "$type": "color",
+    "$value": "oklch(0.373 0.087 241.8)",
+    "$description": "Sequential ramp step 6 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-seq-7": {
+    "$type": "color",
+    "$value": "oklch(0.301 0.07 241.8)",
+    "$description": "Sequential ramp step 7 of 7 — ordered single-hue ladder; step 7 is the most intense. Step 1 is the quiet step (exempt from the 3:1 mark bar, must clear 1.5:1)."
+  },
+  "chart-div-neg-2": {
+    "$type": "color",
+    "$value": "oklch(0.403 0.093 241.8)",
+    "$description": "Diverging ramp, far negative arm."
+  },
+  "chart-div-neg-1": {
+    "$type": "color",
+    "$value": "oklch(0.56 0.1 241.8)",
+    "$description": "Diverging ramp, near negative arm."
+  },
+  "chart-div-mid": {
+    "$type": "color",
+    "$value": "oklch(0.641 0.006 257)",
+    "$description": "Diverging ramp, neutral middle (a zero-valued cell is still a drawn cell, so it clears 3:1)."
+  },
+  "chart-div-pos-1": {
+    "$type": "color",
+    "$value": "oklch(0.557 0.115 117.6)",
+    "$description": "Diverging ramp, near positive arm."
+  },
+  "chart-div-pos-2": {
+    "$type": "color",
+    "$value": "oklch(0.401 0.091 117.6)",
+    "$description": "Diverging ramp, far positive arm."
+  },
+  "chart-mono-1": {
+    "$type": "color",
+    "$value": "oklch(0.842 0.006 257)",
+    "$description": "Neutral ladder step 1 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-mono-2": {
+    "$type": "color",
+    "$value": "oklch(0.661 0.01 257)",
+    "$description": "Neutral ladder step 2 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-mono-3": {
+    "$type": "color",
+    "$value": "oklch(0.585 0.012 257)",
+    "$description": "Neutral ladder step 3 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-mono-4": {
+    "$type": "color",
+    "$value": "oklch(0.512 0.014 257)",
+    "$description": "Neutral ladder step 4 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-mono-5": {
+    "$type": "color",
+    "$value": "oklch(0.445 0.014 257)",
+    "$description": "Neutral ladder step 5 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-mono-6": {
+    "$type": "color",
+    "$value": "oklch(0.375 0.012 257)",
+    "$description": "Neutral ladder step 6 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-mono-7": {
+    "$type": "color",
+    "$value": "oklch(0.303 0.01 257)",
+    "$description": "Neutral ladder step 7 of 7 (chroma ≤ 0.02) — the fallback for a categorical chart past six series, and the ground of the \"wire\" palette. Step 1 is the quiet step."
+  },
+  "chart-accent": {
+    "$type": "color",
+    "$value": "var(--chart-1)",
+    "$description": "The single hero colour the \"wire\" palette draws over the mono ladder. Aliased to --chart-1 so a re-brand reaches it for free."
   }
 }

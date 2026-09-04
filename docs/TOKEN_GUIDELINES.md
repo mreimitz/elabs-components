@@ -37,7 +37,9 @@ Lines & focus: `--border`, `--input`, `--ring`.
 App chrome: `--sidebar(-foreground/-border/-accent/-muted-foreground...)`.
 Canvas/flow: `--canvas`, `--canvas-grid`, `--flow-node(-foreground)`, `--flow-edge`.
 Chat: `--chat-user(-foreground)`, `--chat-assistant(-foreground)`.
-Data: `--chart-1..12`. Shape: `--radius` (+ derived `--radius-sm/md/lg/xl`).
+Data: `--chart-1..12` (categorical) plus the ordered ramps `--chart-seq-1..7`,
+`--chart-div-neg-2..--chart-div-pos-2`, `--chart-mono-1..7` and `--chart-accent`
+— see "Chart ramps" below. Shape: `--radius` (+ derived `--radius-sm/md/lg/xl`).
 
 ## Ordered neutral ramp (#14)
 
@@ -97,6 +99,81 @@ wants to be "the lightest surface"; see the comment at their declaration in
 `packages/tokens/src/themes/light.css`), so `surface-3` (`== --card`) and
 `surface-4` (`== --surface-elevated`) render the same for the same reason
 `surface-1`/`surface-2` do. `dark.css` differentiates all of these.
+
+## Chart ramps (RM-018)
+
+**`--chart-1 … --chart-12` answers _which series_. It cannot answer _how much_,
+and it must not be asked to.** Twelve categorical colours are, by construction,
+mutually distinct and mutually unordered — that is the whole point of them.
+Colour a heatmap with `--chart-1 … --chart-7` and a reader has no way to tell
+which cell is bigger, because nothing in the palette says one is. So a second,
+ORDINAL half exists, and picking between the two halves is the first decision
+any chart makes.
+
+**Lightness is data.** Every ordered ramp encodes magnitude as lightness against
+the plot ground: quiet at step 1, most intense at step 7. Hue carries _category_;
+lightness carries _quantity_. A ramp that varies hue as well is a ramp whose
+steps a reader has to memorise rather than see.
+
+| Family                                  | Answers                          | Reach for it in                                                                  |
+| --------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
+| `--chart-1..12`                         | which series                     | line / bar / area / pie / scatter — anything with a legend of independent things |
+| `--chart-seq-1..7`                      | how much (unsigned)              | heatmap, calendar, treemap, matrix, choropleth                                   |
+| `--chart-div-neg-2 … --chart-div-pos-2` | how much, and which side of zero | signed bars, correlation matrix, variance-vs-target                              |
+| `--chart-mono-1..7`                     | how much, with no hue at all     | the fallback past six categories; the ground of the "wire" look                  |
+| `--chart-accent`                        | "this one is the point"          | the one hero series drawn over the mono ladder                                   |
+
+### The rules
+
+- **Ramp DIRECTION belongs to the theme, not to the token names.** Step 7 is the
+  most intense in every theme; whether that renders darker (light theme, white
+  `--chart-background`) or lighter (dark theme) is a property of that theme's plot
+  ground. Never reverse a ramp in a component, and never assume "higher step =
+  darker" in code.
+- **Six categories is the cap.** Past six, colour has stopped distinguishing
+  anything a legend can hold, and the twelve-colour ramp is three hue FAMILIES —
+  so series 7+ are near-neighbours of series 1-6 by construction. A categorical
+  chart with more than six series falls back to `--chart-mono-1..7` and says so
+  once in dev. Group the tail into an "Other" series; that is the fix, not more
+  colours. Overriding it is expressible (pass the palette explicitly) but it is a
+  choice you have to type.
+- **Reach for `resolvePalette()`, not for a step by name.**
+  `resolvePalette(palette, n)` in `@elabs-ai/components-charts` returns `n`
+  `var(--chart-…)` strings spread evenly across the ramp, ends included, so two
+  charts with different bucket counts read on the same scale. Naming
+  `--chart-seq-3` by hand in a component is how a ramp silently stops being a
+  ramp.
+- **The two quiet steps are the ONLY sub-3:1 members.** `--chart-seq-1` and
+  `--chart-mono-1` sit below the WCAG 1.4.11 mark bar on purpose — a heatmap's
+  lowest bucket should read as a pinprick — but they are held above 1.5:1, so
+  "quiet" never becomes "absent". `--chart-div-mid` is deliberately NOT quiet: a
+  zero-valued cell in a diverging chart is still a drawn cell.
+- **`--chart-accent` is `var(--chart-1)`.** An intentional mirror, declared as a
+  `var()` and never as a copied literal (#385), so a re-brand reaches the hero
+  colour for free.
+- **Retune a ramp with the gates, never by eye.** Three invariants are
+  machine-checked and moving one step can break a pair it is not adjacent to:
+  contrast against `--chart-background` and strict monotonicity (in OKLab L _and_
+  in contrast) live in `packages/tokens/src/charts-contrast.test.ts`; the 0.05
+  OKLab ΔE floor on adjacent steps, on all ten diverging pairs, and on
+  accent-vs-ladder lives in `scripts/check-role-distinctness.mjs`
+  (`pnpm roles:check`).
+- **Adding a theme means authoring all four families.** They are per-theme
+  semantic tokens, so `pnpm theme-parity:check` requires every block to declare
+  every one of them; a missing ramp step falls back to `:root` and renders a
+  ladder with a rung from another theme in it.
+
+### What is NOT gated, and why
+
+- **Cross-ramp distinctness.** `--chart-seq-N` and `--chart-mono-N` sit at the
+  same lightness rungs and are close in ΔE by design — they are ALTERNATIVE
+  palettes, never on screen together. Only `--chart-accent` vs the mono ladder is
+  gated, because the "wire" look really does draw those two at once.
+- **Non-adjacent steps within a ramp.** Gating step 2 against step 5 at the
+  categorical floor would either force the ladder to span more lightness than the
+  3:1 bar leaves it, or push chroma in until it stops reading as one hue.
+  Neighbour separation plus the monotonicity assertion is the correct pair of
+  constraints; either alone is not.
 
 ## Rules
 

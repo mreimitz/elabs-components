@@ -56,6 +56,34 @@ const BASE = {
   "--chart-10": "oklch(0.5 0.1 200)",
   "--chart-11": "oklch(0.82 0.09 160)",
   "--chart-12": "oklch(0.33 0.08 20)",
+  // The RM-018 ORDERED ramps, in full, for the same reason the twelve categorical
+  // series are in full: MUST_DIFFER enumerates the six adjacent pairs of each
+  // seven-step ladder, all ten diverging pairs, and accent-vs-every-mono-step. A
+  // fixture that declares a ladder PARTLY reports `not-declared` for the rest —
+  // a different failure wearing the same red as a real collision.
+  "--chart-seq-1": "oklch(0.15 0.06 250)",
+  "--chart-seq-2": "oklch(0.28 0.06 250)",
+  "--chart-seq-3": "oklch(0.41 0.06 250)",
+  "--chart-seq-4": "oklch(0.54 0.06 250)",
+  "--chart-seq-5": "oklch(0.67 0.06 250)",
+  "--chart-seq-6": "oklch(0.80 0.06 250)",
+  "--chart-seq-7": "oklch(0.93 0.06 250)",
+  "--chart-mono-1": "oklch(0.20 0.01 260)",
+  "--chart-mono-2": "oklch(0.32 0.01 260)",
+  "--chart-mono-3": "oklch(0.44 0.01 260)",
+  "--chart-mono-4": "oklch(0.56 0.01 260)",
+  "--chart-mono-5": "oklch(0.68 0.01 260)",
+  "--chart-mono-6": "oklch(0.80 0.01 260)",
+  "--chart-mono-7": "oklch(0.92 0.01 260)",
+  "--chart-div-neg-2": "oklch(0.25 0.12 250)",
+  "--chart-div-neg-1": "oklch(0.45 0.08 250)",
+  "--chart-div-mid": "oklch(0.6 0.01 260)",
+  "--chart-div-pos-1": "oklch(0.45 0.1 120)",
+  "--chart-div-pos-2": "oklch(0.25 0.14 120)",
+  // The wire palette's hero. A literal here rather than `var(--chart-1)`: this
+  // fixture is testing SEPARATION, and the alias is asserted where it belongs,
+  // in `charts-contrast.test.ts`.
+  "--chart-accent": "oklch(0.55 0.2 300)",
   // The ADR 0025 pair: a current search match is orange, a destructive state is
   // red. Both are deep plates with white ink, which is why they are MUST_DIFFER.
   "--highlight-active": "oklch(0.56 0.16 60)",

@@ -691,5 +691,85 @@
     "$type": "color",
     "$value": "var(--terminal-foreground)",
     "$description": "ANSI 15 — the console's full ink (mirrors --terminal-foreground)."
+  },
+  "chart-seq-1": {
+    "$type": "color",
+    "$value": "oklch(0.841 0.03 241.8)"
+  },
+  "chart-seq-2": {
+    "$type": "color",
+    "$value": "oklch(0.658 0.075 241.8)"
+  },
+  "chart-seq-3": {
+    "$type": "color",
+    "$value": "oklch(0.582 0.09 241.8)"
+  },
+  "chart-seq-4": {
+    "$type": "color",
+    "$value": "oklch(0.509 0.1 241.8)"
+  },
+  "chart-seq-5": {
+    "$type": "color",
+    "$value": "oklch(0.442 0.102 241.8)"
+  },
+  "chart-seq-6": {
+    "$type": "color",
+    "$value": "oklch(0.373 0.087 241.8)"
+  },
+  "chart-seq-7": {
+    "$type": "color",
+    "$value": "oklch(0.301 0.07 241.8)"
+  },
+  "chart-div-neg-2": {
+    "$type": "color",
+    "$value": "oklch(0.403 0.093 241.8)"
+  },
+  "chart-div-neg-1": {
+    "$type": "color",
+    "$value": "oklch(0.56 0.1 241.8)"
+  },
+  "chart-div-mid": {
+    "$type": "color",
+    "$value": "oklch(0.641 0.006 257)"
+  },
+  "chart-div-pos-1": {
+    "$type": "color",
+    "$value": "oklch(0.557 0.115 117.6)"
+  },
+  "chart-div-pos-2": {
+    "$type": "color",
+    "$value": "oklch(0.401 0.091 117.6)"
+  },
+  "chart-mono-1": {
+    "$type": "color",
+    "$value": "oklch(0.842 0.006 257)"
+  },
+  "chart-mono-2": {
+    "$type": "color",
+    "$value": "oklch(0.661 0.01 257)"
+  },
+  "chart-mono-3": {
+    "$type": "color",
+    "$value": "oklch(0.585 0.012 257)"
+  },
+  "chart-mono-4": {
+    "$type": "color",
+    "$value": "oklch(0.512 0.014 257)"
+  },
+  "chart-mono-5": {
+    "$type": "color",
+    "$value": "oklch(0.445 0.014 257)"
+  },
+  "chart-mono-6": {
+    "$type": "color",
+    "$value": "oklch(0.375 0.012 257)"
+  },
+  "chart-mono-7": {
+    "$type": "color",
+    "$value": "oklch(0.303 0.01 257)"
+  },
+  "chart-accent": {
+    "$type": "color",
+    "$value": "var(--chart-1)"
   }
 }

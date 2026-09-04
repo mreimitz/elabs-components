@@ -930,6 +930,66 @@
      it. */
   --brand-mark-ring: currentColor;
   --brand-mark-tail: var(--primary);
+
+  /* ── Chart ramps — RM-018 ─────────────────────────────────────────────────
+     ORDERED ramps, for the charts where LIGHTNESS IS DATA (heatmap, calendar,
+     treemap, matrix, choropleth, signed bars). The categorical `--chart-1..12`
+     ramp above answers *which series*; these answer *how much*. Four families:
+
+       --chart-seq-1 .. -7    single hue (this theme's `--chart-2` blue), step 7
+                              the most INTENSE. Step 1 is the QUIET step and the
+                              only member exempt from the 1.4.11 3:1 mark bar —
+                              it still clears 1.5:1, so one low cell reads as a
+                              pinprick instead of as blank paper.
+       --chart-div-neg-2 ..
+       --chart-div-pos-2      diverging, negative arm on the blue family and
+                              positive arm on the brand lime, neutral in the
+                              middle. Every member clears 3:1 INCLUDING the mid,
+                              because a zero-valued cell is still a drawn cell.
+       --chart-mono-1 .. -7   the neutral ladder (chroma ≤ 0.02) that a
+                              categorical chart falls back to past six series,
+                              and the ground of the "wire" palette.
+       --chart-accent         the one hero colour the wire palette draws over
+                              that ladder. Aliased to `--chart-1`, so a re-brand
+                              reaches it for free (#385 — an intentional mirror
+                              is `var()`, never a copied literal).
+
+     RAMP DIRECTION IS A PROPERTY OF THE THEME'S GROUND, not of the names. On a
+     white `--chart-background` "more intense" means DARKER; on a dark one it
+     means lighter. Both are monotonic; neither direction is portable.
+
+     RETUNE WITH THE GATES, NEVER BY EYE — three machine-checked invariants, and
+     moving one step can break a pair it is not adjacent to:
+       · contrast    every step ≥ 3:1 vs `--chart-background`, except the two
+                     quiet steps, which must clear 1.5:1 (charts-contrast.test.ts)
+       · monotonic   each 7-step ramp is strictly monotonic in OKLab L AND in
+                     contrast against its own ground; the diverging ramp rises in
+                     contrast from the mid outward on both arms (same file)
+       · distinct    adjacent steps, all ten diverging pairs, and accent-vs-ladder
+                     clear the 0.05 OKLab ΔE role floor (`pnpm roles:check`) */
+  --chart-seq-1: oklch(0.841 0.03 241.8);
+  --chart-seq-2: oklch(0.658 0.075 241.8);
+  --chart-seq-3: oklch(0.582 0.09 241.8);
+  --chart-seq-4: oklch(0.509 0.1 241.8);
+  --chart-seq-5: oklch(0.442 0.102 241.8);
+  --chart-seq-6: oklch(0.373 0.087 241.8);
+  --chart-seq-7: oklch(0.301 0.07 241.8);
+
+  --chart-div-neg-2: oklch(0.403 0.093 241.8);
+  --chart-div-neg-1: oklch(0.56 0.1 241.8);
+  --chart-div-mid: oklch(0.641 0.006 257);
+  --chart-div-pos-1: oklch(0.557 0.115 117.6);
+  --chart-div-pos-2: oklch(0.401 0.091 117.6);
+
+  --chart-mono-1: oklch(0.842 0.006 257);
+  --chart-mono-2: oklch(0.661 0.01 257);
+  --chart-mono-3: oklch(0.585 0.012 257);
+  --chart-mono-4: oklch(0.512 0.014 257);
+  --chart-mono-5: oklch(0.445 0.014 257);
+  --chart-mono-6: oklch(0.375 0.012 257);
+  --chart-mono-7: oklch(0.303 0.01 257);
+
+  --chart-accent: var(--chart-1);
 }
 
 /* ========================================================================
@@ -1233,6 +1293,30 @@
   --transition-duration-base: var(--t-base);
   --transition-duration-slow: var(--t-slow);
   --transition-duration-slower: var(--t-slower);
+
+  /* Chart ramps — RM-018. Enables bg-chart-seq-4, fill-chart-div-pos-2,
+     text-chart-mono-7, bg-chart-accent, … INLINE like the rest of the colour
+     bridge, so a utility resolves the LIVE var and re-colours on a theme flip. */
+  --color-chart-seq-1: var(--chart-seq-1);
+  --color-chart-seq-2: var(--chart-seq-2);
+  --color-chart-seq-3: var(--chart-seq-3);
+  --color-chart-seq-4: var(--chart-seq-4);
+  --color-chart-seq-5: var(--chart-seq-5);
+  --color-chart-seq-6: var(--chart-seq-6);
+  --color-chart-seq-7: var(--chart-seq-7);
+  --color-chart-div-neg-2: var(--chart-div-neg-2);
+  --color-chart-div-neg-1: var(--chart-div-neg-1);
+  --color-chart-div-mid: var(--chart-div-mid);
+  --color-chart-div-pos-1: var(--chart-div-pos-1);
+  --color-chart-div-pos-2: var(--chart-div-pos-2);
+  --color-chart-mono-1: var(--chart-mono-1);
+  --color-chart-mono-2: var(--chart-mono-2);
+  --color-chart-mono-3: var(--chart-mono-3);
+  --color-chart-mono-4: var(--chart-mono-4);
+  --color-chart-mono-5: var(--chart-mono-5);
+  --color-chart-mono-6: var(--chart-mono-6);
+  --color-chart-mono-7: var(--chart-mono-7);
+  --color-chart-accent: var(--chart-accent);
 }
 
 /* Constant easing curves → `ease-standard` / `ease-entrance` / `ease-exit`
