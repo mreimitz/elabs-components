@@ -79,23 +79,56 @@ const matchesPeer = (specifier, peers) =>
   peers.find((peer) => specifier === peer || specifier.startsWith(`${peer}/`));
 
 /**
- * Every bare module specifier a BUILT `.d.ts` file imports or re-exports
- * from — restricted to lines that themselves OPEN with `import`/`export`
- * (a JSDoc line of prose mentioning `from "media-chrome"` is never mistaken
- * for a real declaration edge; those lines start with `*`/`/**`, not
- * `import`/`export`). `.d.ts` output never carries `import type` — rollup's
- * declaration bundler already erases pure-type-only imports on the way in —
- * so unlike the source-level `heavy-deps:check` gate there is no `type`
- * keyword to special-case here: every specifier this finds is one the
- * COMPILER decided the public surface still needs.
+ * Strip `/* … *\/` and `// …` comments before scanning. This is what makes
+ * the statement regex below safe to span newlines: a JSDoc line of prose
+ * mentioning `from "media-chrome"` is never mistaken for a real declaration
+ * edge because it is gone before the regex runs, not because it happens to
+ * fail a same-line anchor — the earlier line-anchored version relied on the
+ * latter, which is exactly what made it reject a genuinely wrapped import.
+ * `.d.ts` specifiers are plain package names, so a blunt strip is safe for
+ * this narrow input (no embedded `/*`/`//` to misread).
+ *
+ * @param {string} source
+ */
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*$/gm, "");
+}
+
+/**
+ * Every bare module specifier a BUILT `.d.ts` file's public surface still
+ * needs — two shapes, both matched on the comment-stripped source:
+ *
+ * 1. An ordinary `import …/export …` statement's `from "…"` clause. Allowed
+ *    to span multiple lines (rollup-plugin-dts currently always emits even a
+ *    many-binding import on one line — verified against the real built
+ *    `packages/ai`/`packages/terminal` `.d.ts` — but nothing about the
+ *    declaration-emission format guarantees that, and comment-stripping
+ *    already makes a multi-line match safe).
+ * 2. An inline `import("specifier").Type` type-position reference — the
+ *    shape a declaration bundler falls back to when it can't hoist a named
+ *    import (e.g. an anonymous/default-exported type). Does not occur in
+ *    this repo's built output today, but it is the identical reachability
+ *    hazard as (1) and costs nothing extra to catch.
+ *
+ * `.d.ts` output never carries `import type` — rollup's declaration bundler
+ * already erases pure-type-only imports on the way in — so unlike the
+ * source-level `heavy-deps:check` gate there is no `type` keyword to
+ * special-case here: every specifier this finds is one the COMPILER decided
+ * the public surface still needs.
  *
  * @param {string} dtsSource
  * @returns {string[]} specifiers, in file order, may repeat.
  */
 export function findDtsImportSpecifiers(dtsSource) {
+  const source = stripComments(dtsSource);
   const found = [];
-  const re = /^[ \t]*(?:import|export)\b[^;\n]*\bfrom\s*["']([^"']+)["'];?[ \t]*$/gm;
-  for (const m of dtsSource.matchAll(re)) found.push(m[1]);
+
+  const statementRe = /\b(?:import|export)\b[^;]*?\bfrom\s*["']([^"']+)["']/g;
+  for (const m of source.matchAll(statementRe)) found.push(m[1]);
+
+  const dynamicRe = /\bimport\(\s*["']([^"']+)["']\s*\)/g;
+  for (const m of source.matchAll(dynamicRe)) found.push(m[1]);
+
   return found;
 }
 

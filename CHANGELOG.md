@@ -16,8 +16,39 @@
   CI) reads every `@elabs-ai/components-*` package's BUILT `.d.ts` output and
   fails on a NEW optional-peer type leak; `@elabs-ai/components-ai`'s own `ai`
   (Vercel AI SDK) peer leak is a separately tracked, already-known gap and
-  stays baselined. No public API removed — `AudioPlayer`/`Persona`'s prop
-  types are unchanged in shape, only in where they are declared.
+  stays baselined. No public API name removed, but the owned types are
+  **narrower** than the peer types they replace — see the breaking entry
+  immediately below.
+
+- **Breaking (types), `@elabs-ai/components-ai`: `AudioPlayer`'s and
+  `Persona`'s prop types narrowed as a consequence of the fix above; nothing
+  narrowed at runtime.** Three concrete surfaces, in decreasing likelihood of
+  hitting a real consumer:
+  - `PersonaRiveEventCallback`'s `event.data` is now typed `unknown` (was
+    Rive's own `string | string[] | LoopEvent | number | RiveEventPayload |
+RiveFile` union). An inline handler (`onLoad={(event) => …}`, the normal
+    way to use `Persona`) still type-checks fine via contextual inference; a
+    handler pre-typed against `@rive-app/webgl2`'s own `EventCallback` is no
+    longer directly assignable to `onLoad`/`onLoadError`/`onPause`/`onPlay`/
+    `onStop`, because `unknown` narrows in one direction only. Replicating
+    Rive's real union without importing it would mean hand-mirroring
+    `LoopEvent`/`RiveEventPayload`/`RiveFile` too — exactly the fragile,
+    deep-peer-type mirror this fix exists to avoid — so `unknown` is kept, not
+    treated as a bug to chase.
+  - `AudioPlayer`'s ten exported part-prop types (`AudioPlayerProps`,
+    `AudioPlayerControlBarProps`, …) type only ordinary HTML attributes plus
+    the one custom attribute each part actually declares (`seekOffset` on
+    the two seek buttons). Real `media-chrome/react` parts additionally
+    accept every OTHER instance property of their underlying custom element
+    (e.g. `autohide`/`hotkeys` on the top-level `<AudioPlayer>`); passing one
+    of those now fails to typecheck even though `AudioPlayerImpl` still
+    spreads it onto the underlying custom element at runtime, so it still
+    takes effect — the loss is compile-time coverage, not behavior.
+  - Every `AudioPlayer*` part type also drops `ref`: the real
+    `RefObject<MediaController>` (etc.) was never usable in practice (none of
+    the ten parts forwards a ref), and `RefObject`'s mutable `current` makes
+    ref types invariant, so keeping it would have made the type dishonest
+    rather than useful. This one is not considered a real-world break.
 
 - Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
   look-alike a reader is most likely to reach for by mistake, so `brand-ui docs

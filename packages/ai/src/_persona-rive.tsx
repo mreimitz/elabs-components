@@ -43,6 +43,7 @@ import * as RiveModule from "@rive-app/react-webgl2";
 import type { ReactNode } from "react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 
+import type { AssertAssignable } from "./_lazy-boundary-conformance";
 import type { PersonaRiveEventCallback } from "./persona";
 import type { PersonaSource, PersonaState } from "./persona-sources";
 
@@ -289,8 +290,14 @@ export default PersonaRive;
  * shape in a way `PersonaRiveEvent` no longer satisfies, this line fails to
  * typecheck — caught by `pnpm --filter @elabs-ai/components-ai typecheck`
  * locally, never shipped as a silent mismatch to a consumer.
+ *
+ * `AssertAssignable` itself is shared with `_audio-player-media-chrome.tsx`
+ * via `_lazy-boundary-conformance.ts` — see that module's doc comment for
+ * what this check can and cannot prove (it is one-directional: it cannot
+ * catch the owned type being NARROWER than the real one, which is exactly
+ * what `PersonaRiveEvent["data"]` is — see the CHANGELOG's "Breaking (types)"
+ * entry).
  */
-export type AssertAssignable<_TOwned extends TReal, TReal> = true;
 export type _PersonaRiveEventCallbackConformance = AssertAssignable<
   PersonaRiveEventCallback,
   NonNullable<RiveParameters["onLoad"]>

@@ -96,12 +96,33 @@ test("PASSES: an unrelated import from a real dependency", () => {
 });
 
 test("multi-line import blocks are matched as ONE logical statement", () => {
-  // rollup-plugin-dts emits single-line import statements even for many named
-  // bindings, but the regex must not require the whole statement to be on one
-  // line if a future toolchain wraps it — assert the common (single-line)
-  // case explicitly, since that's what this repo's build actually produces.
-  const dts = `import { A, B, C } from 'some-pkg';\n`;
+  // rollup-plugin-dts currently always emits even a many-binding import on a
+  // single line (verified against the real built packages/ai and
+  // packages/terminal `.d.ts`), but nothing about the declaration-emission
+  // format guarantees that — a wrapped import must still resolve to the same
+  // one specifier.
+  const dts = `import {\n  A,\n  B,\n  C,\n} from 'some-pkg';\n`;
   assert.deepEqual(findDtsImportSpecifiers(dts), ["some-pkg"]);
+});
+
+test("a trailing line comment after an import statement does not hide it", () => {
+  const dts = `import { MediaController } from 'media-chrome/react'; // eslint-disable-line\n`;
+  assert.deepEqual(findDtsImportSpecifiers(dts), ["media-chrome/react"]);
+});
+
+test("PASSES-shape: a // line comment merely mentioning the phrase is not a real edge", () => {
+  const dts = `// see media-chrome/react for details, not imported here\nexport declare const AudioPlayer: () => void;\n`;
+  assert.deepEqual(findDtsImportSpecifiers(dts), []);
+});
+
+test('finds an inline `import("specifier").Type` type-position reference', () => {
+  // The shape a declaration bundler falls back to when it can't hoist a named
+  // import (e.g. an anonymous/default-exported type) — does not occur in this
+  // repo's built output today (verified: zero `import(` occurrences in the
+  // real built packages/ai and packages/terminal `.d.ts`), but it is the
+  // identical reachability hazard as a top-level import.
+  const dts = `export declare function onLoad(event: import('@rive-app/react-webgl2').Event): void;\n`;
+  assert.deepEqual(findDtsImportSpecifiers(dts), ["@rive-app/react-webgl2"]);
 });
 
 // ── findLeakedPeerTypes ──────────────────────────────────────────────────────

@@ -40,6 +40,7 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 import * as MediaChromeReactModule from "media-chrome/react";
 import type { ComponentProps, CSSProperties } from "react";
 
+import type { AssertAssignable } from "./_lazy-boundary-conformance";
 import type {
   AudioPlayerControlBarProps,
   AudioPlayerDurationDisplayProps,
@@ -183,9 +184,13 @@ export const AudioPlayerVolumeRange = ({ className, ...props }: AudioPlayerVolum
  * longer satisfies, ONE of these ten lines fails to typecheck — caught by
  * `pnpm --filter @elabs-ai/components-ai typecheck` locally, never shipped as
  * a silent mismatch to a consumer using the real component underneath.
+ *
+ * `AssertAssignable` itself is shared with `_persona-rive.tsx` via
+ * `_lazy-boundary-conformance.ts` — see that module's doc comment for what
+ * this check can and cannot prove (it is one-directional: it cannot catch the
+ * owned type being NARROWER than the real one, which is exactly what these
+ * owned types are — see the CHANGELOG's "Breaking (types)" entry).
  */
-export type AssertAssignable<_TOwned extends TReal, TReal> = true;
-
 export type _AudioPlayerPropsConformance = AssertAssignable<
   AudioPlayerProps,
   Omit<ComponentProps<typeof MediaController>, "audio">
