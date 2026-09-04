@@ -319,6 +319,73 @@ describe("chart test doubles — contract violations throw", () => {
 
 // ── (3) props round-trip out of the DOM ──────────────────────────────────────
 
+// ── (2b) AutoChart's spec contract (RM-038) ─────────────────────────────────
+//
+// AutoChart is the one container that never throws — it renders ChartFallback.
+// That is right in production and wrong in a test, so the double is stricter
+// than the component exactly where the component's leniency hides a mistake.
+
+describe("AutoChart's spec contract", () => {
+  it("throws for a `type` outside the ChartType union", () => {
+    expect(() =>
+      render(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the whole point
+        <AutoChart
+          spec={{ type: "sankey" as any, data: [{ a: "x", b: 1 }], x: "a", series: ["b"] }}
+        />,
+      ),
+    ).toThrow(/"type" must be one of/);
+  });
+
+  it("throws when a declared series names a column no row has", () => {
+    expect(() =>
+      render(
+        <AutoChart
+          spec={{ data: [{ month: "Jan", revenue: 10 }], x: "month", series: ["profit"] }}
+        />,
+      ),
+    ).toThrow(/names a column that no row has/);
+  });
+
+  it("throws for a treemap with no hierarchy", () => {
+    expect(() =>
+      render(
+        <AutoChart spec={{ type: "treemap", data: [{ a: "x", b: 1 }], x: "a", series: ["b"] }} />,
+      ),
+    ).toThrow(/carries its nodes in "hierarchy"/);
+  });
+
+  it("throws for an explicit heatmap with no second categorical column", () => {
+    expect(() =>
+      render(
+        <AutoChart
+          spec={{
+            type: "heatmap",
+            data: [{ day: "Mon", visits: 3 }],
+            x: "day",
+            series: ["visits"],
+          }}
+        />,
+      ),
+    ).toThrow(/needs a SECOND categorical column/);
+  });
+
+  it("accepts a treemap whose rows live in `hierarchy`", () => {
+    const { container } = render(
+      <AutoChart
+        spec={{
+          type: "treemap",
+          data: [],
+          x: "name",
+          series: [],
+          hierarchy: { name: "Spend", children: [{ name: "Cloud", value: 40 }] },
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-chart="AutoChart"]')).toBeInTheDocument();
+  });
+});
+
 describe("readChartDoubleProps — round trip", () => {
   it("recovers xDataKey, series and dataLength from the rendered double", () => {
     const rows = [

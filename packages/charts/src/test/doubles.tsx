@@ -44,8 +44,8 @@ import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import {
   assertChartContract,
+  assertChartSpecContract,
   buildChartDoublePayload,
-  ChartContractError,
   type ChartContractSpec,
 } from "./contract";
 
@@ -522,14 +522,10 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(
   function AutoChartTestDouble(props, ref) {
     const record = props as unknown as Record<string, unknown>;
     assertChartContract("AutoChart", record, { dataKind: "none", requiredProps: ["spec"] });
-    if (props.spec !== undefined && (typeof props.spec !== "object" || props.spec === null)) {
-      throw new ChartContractError(
-        "AutoChart",
-        "spec",
-        props.spec,
-        `"spec" must be a ChartSpec object`,
-      );
-    }
+    // The spec's own value-contract (RM-038) — the type union, the declared
+    // columns, and the per-family requirements the real component silently
+    // falls back on. Lives in `contract.ts` beside the other value rules.
+    assertChartSpecContract(props.spec);
     return (
       <div
         ref={ref}

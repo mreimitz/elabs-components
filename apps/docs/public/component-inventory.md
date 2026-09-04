@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 180 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 183 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1048,6 +1048,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | BarXAxis | component |  | `@elabs-ai/components-charts` |  |
 | BarYAxis | component |  | `@elabs-ai/components-charts` |  |
 | BumpChart | component |  | `@elabs-ai/components-charts` | Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank). |
+| CALENDAR_MIN_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | CALENDAR_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | Candlestick | component |  | `@elabs-ai/components-charts` |  |
 | CandlestickChart | component |  | `@elabs-ai/components-charts` |  |
@@ -1055,6 +1056,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CHART_CLIP_PASSTHROUGH | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_BAR_MS | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_DOT_MS | component |  | `@elabs-ai/components-charts` |  |
+| CHART_TYPES | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrush | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrushLayout | component |  | `@elabs-ai/components-charts` |  |
 | ChartBrushSelectionOverlay | component |  | `@elabs-ai/components-charts` |  |
@@ -1202,6 +1204,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
 | Sparkline | component |  | `@elabs-ai/components-charts` | Tiny, axis-less trend that lives inside a KPI tile or a table cell. |
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
+| STRIP_MAX_ROWS_PER_GROUP | component |  | `@elabs-ai/components-charts` |  |
 | TreeChart | component |  | `@elabs-ai/components-charts` | Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'. |
 | TREEMAP_BAND_COLOR | component |  | `@elabs-ai/components-charts` |  |
 | TREEMAP_CATEGORICAL_GROUP_CAP | component |  | `@elabs-ai/components-charts` |  |

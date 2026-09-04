@@ -28,6 +28,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.
   - avoid: Choosing variant="lines" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities' default cap of 10 kicks in; variant="strip" reads a crowded field better because rows never move.
   - avoid: Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period.
+- CALENDAR_MIN_ROWS
 - CALENDAR_ROWS
 - Candlestick
 - CandlestickChart
@@ -35,6 +36,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CHART_CLIP_PASSTHROUGH
 - CHART_STAGGER_BAR_MS
 - CHART_STAGGER_DOT_MS
+- CHART_TYPES
 - ChartBrush
 - ChartBrushLayout
 - ChartBrushSelectionOverlay
@@ -294,6 +296,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: A Sparkline as the only carrier of a number — pair it with the value (MetricCard).
   - avoid: Fixing its width in pixels — let the tile or cell own the box so it reflows.
 - StaticChartPreviewProvider
+- STRIP_MAX_ROWS_PER_GROUP
 - TreeChart — Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.
   - avoid: Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.
   - avoid: Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.

@@ -46,6 +46,22 @@ beforeAll(() => {
       disconnect() {}
     };
   }
+  // HeatmapChart's reveal path mounts framer-motion's `useInView`, which reads
+  // the global directly — jsdom has no IntersectionObserver at all (RM-038).
+  if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
+    class StubIntersectionObserver {
+      readonly root = null;
+      readonly rootMargin = "";
+      readonly thresholds: readonly number[] = [];
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords(): IntersectionObserverEntry[] {
+        return [];
+      }
+    }
+    (globalThis as Record<string, unknown>).IntersectionObserver = StubIntersectionObserver;
+  }
   // jsdom does not implement SVGPathElement or SVGGeometryElement.getTotalLength().
   // Line and Area series children call it via usePathStrokeMetrics (path-stroke-utils.ts:56).
   // Stub it on Element.prototype so any SVG path element created in jsdom resolves to 0.
@@ -56,7 +72,7 @@ beforeAll(() => {
 });
 
 import { AutoChart } from "./auto-chart";
-import { inferChartType, isNumericField, isTemporalField } from "./infer-chart-type";
+import { CHART_TYPES, inferChartType, isNumericField, isTemporalField } from "./infer-chart-type";
 import type { ChartSpec } from "./chart-spec";
 
 afterEach(cleanup);
@@ -480,6 +496,216 @@ describe("AutoChart", () => {
         />,
       );
       expect(getByText("Rev").className).toContain("text-subtitle");
+    });
+  });
+
+  // ── RM-038: every new ChartType reaches a real container ────────────────────
+  //
+  // The `type` is EXPLICIT in each case: this asserts the render switch, not
+  // the inference (which `infer-chart-type.test.ts` owns end to end). A type
+  // with no branch returns `null` from `renderChart` and AutoChart renders the
+  // "not supported yet" fallback — so "is the fallback absent" is the real
+  // assertion here, not "did something render".
+  describe("the RM-038 families", () => {
+    const specs: Array<[string, ChartSpec]> = [
+      [
+        "candlestick",
+        {
+          type: "candlestick",
+          data: [
+            { date: "2024-01-15", open: 112, high: 119, low: 110, close: 118 },
+            { date: "2024-01-16", open: 118, high: 124, low: 116, close: 121 },
+          ],
+          x: "date",
+          series: ["open", "high", "low", "close"],
+        },
+      ],
+      [
+        "heatmap",
+        {
+          type: "heatmap",
+          data: [
+            { day: "Mon", hour: "09", visits: 12 },
+            { day: "Tue", hour: "10", visits: 22 },
+          ],
+          x: "day",
+          series: ["visits"],
+        },
+      ],
+      [
+        "calendar",
+        {
+          type: "calendar",
+          data: [
+            { date: "2024-01-01", commits: 3 },
+            { date: "2024-01-02", commits: 7 },
+          ],
+          x: "date",
+          series: ["commits"],
+        },
+      ],
+      [
+        "waterfall",
+        {
+          type: "waterfall",
+          data: [
+            { stage: "Gross revenue", value: 480 },
+            { stage: "Discounts", value: -60 },
+            { stage: "Net total", value: 420 },
+          ],
+          x: "stage",
+          series: ["value"],
+        },
+      ],
+      [
+        "dumbbell",
+        {
+          type: "dumbbell",
+          data: [
+            { region: "North", before: 42, after: 61 },
+            { region: "South", before: 31, after: 46 },
+          ],
+          x: "region",
+          series: ["before", "after"],
+        },
+      ],
+      [
+        "unit",
+        {
+          type: "unit",
+          data: [
+            { group: "Cycled", share: 41 },
+            { group: "Walked", share: 59 },
+          ],
+          x: "group",
+          series: ["share"],
+        },
+      ],
+      [
+        "treemap",
+        {
+          type: "treemap",
+          data: [],
+          x: "name",
+          series: [],
+          hierarchy: {
+            name: "Spend",
+            children: [
+              { name: "Cloud", value: 40 },
+              { name: "Salaries", value: 60 },
+            ],
+          },
+        },
+      ],
+      [
+        "histogram",
+        {
+          type: "histogram",
+          data: [{ ms: 120 }, { ms: 340 }, { ms: 95 }, { ms: 610 }],
+          x: "ms",
+          series: ["ms"],
+        },
+      ],
+      [
+        "box",
+        {
+          type: "box",
+          data: Array.from({ length: 40 }, (_, i) => ({
+            cohort: i % 2 === 0 ? "A" : "B",
+            ms: 100 + ((i * 37) % 300),
+          })),
+          x: "cohort",
+          series: ["ms"],
+          group: "cohort",
+        },
+      ],
+      [
+        "strip",
+        {
+          type: "strip",
+          data: Array.from({ length: 20 }, (_, i) => ({
+            cohort: i % 2 === 0 ? "A" : "B",
+            ms: 100 + ((i * 37) % 300),
+          })),
+          x: "cohort",
+          series: ["ms"],
+          group: "cohort",
+        },
+      ],
+      [
+        "bump",
+        {
+          type: "bump",
+          data: [
+            { quarter: "Q1", team: "Alpha", rank: 1 },
+            { quarter: "Q1", team: "Beta", rank: 2 },
+            { quarter: "Q2", team: "Alpha", rank: 2 },
+            { quarter: "Q2", team: "Beta", rank: 1 },
+          ],
+          x: "quarter",
+          series: ["rank"],
+        },
+      ],
+      [
+        "stream",
+        {
+          type: "stream",
+          data: [
+            { date: "2024-01-01", a: 4, b: 6 },
+            { date: "2024-02-01", a: 5, b: 4 },
+          ],
+          x: "date",
+          series: ["a", "b"],
+          stacked: true,
+        },
+      ],
+      [
+        "diverging-bar",
+        {
+          type: "diverging-bar",
+          data: [
+            { region: "North", change: 12 },
+            { region: "South", change: -8 },
+          ],
+          x: "region",
+          series: ["change"],
+        },
+      ],
+    ];
+
+    for (const [name, spec] of specs) {
+      it(`renders a real container for '${name}' — not the unsupported fallback`, () => {
+        const { container } = render(<AutoChart spec={spec} height={280} />);
+        expect(container.firstChild).toBeInTheDocument();
+        expect(container.textContent ?? "").not.toContain("not supported yet");
+      });
+    }
+
+    it("covers every member of the ChartType union", () => {
+      // Seven Core-7 cases already have their own tests above; between the two
+      // sets every union member must have a render assertion, so a type added
+      // to the union with no `renderChart` branch cannot slip through.
+      const covered = new Set<string>([
+        ...specs.map(([name]) => name),
+        "line",
+        "area",
+        "bar",
+        "pie",
+        "scatter",
+        "radar",
+        "funnel",
+      ]);
+      expect([...CHART_TYPES].filter((t) => !covered.has(t))).toEqual([]);
+    });
+
+    it("falls back for a type outside the union", () => {
+      const { container } = render(
+        <AutoChart
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately out-of-catalogue
+          spec={{ type: "sankey" as any, data: categoricalData, x: "name", series: ["value"] }}
+        />,
+      );
+      expect(container.textContent ?? "").toContain("not supported yet");
     });
   });
 

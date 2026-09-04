@@ -57,6 +57,7 @@
 // ── The contract engine + diagnostics ────────────────────────────────────────
 export {
   assertChartContract,
+  assertChartSpecContract,
   buildChartDoublePayload,
   ChartContractError,
   configureChartTestDouble,
