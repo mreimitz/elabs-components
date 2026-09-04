@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T20:07:35.575Z",
+  "generatedAt": "2026-09-04T22:10:54.091Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25617,7 +25617,222 @@
       "components": [],
       "hooks": [],
       "types": [],
-      "otherExports": []
+      "otherExports": [],
+      "subpaths": {
+        "@elabs-ai/components-process/core": {
+          "components": [
+            {
+              "name": "DEFAULT_LIFECYCLE_VALUES",
+              "kind": "value",
+              "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "DURATION_SAMPLE_CAP",
+              "kind": "value",
+              "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "DurationSampler",
+              "kind": "value",
+              "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "EMPTY_DURATION_STATS",
+              "kind": "value",
+              "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "SYNTHETIC_ACTIVITIES",
+              "kind": "value",
+              "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "SYNTHETIC_LOG_EPOCH",
+              "kind": "value",
+              "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "TRIM_FRACTION",
+              "kind": "value",
+              "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "VARIANT_KEY_SEPARATOR",
+              "kind": "value",
+              "module": "packages/process/src/core/extract-variants.ts"
+            }
+          ],
+          "hooks": [],
+          "types": [
+            {
+              "name": "ActivityStats",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "AnyLog",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "CsvMapping",
+              "module": "packages/process/src/core/adapters/csv.ts"
+            },
+            {
+              "name": "CsvOptions",
+              "module": "packages/process/src/core/adapters/csv.ts"
+            },
+            {
+              "name": "DiscoverGraphOptions",
+              "module": "packages/process/src/core/discover-graph.ts"
+            },
+            {
+              "name": "DurationStats",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "EventLog",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "EventRow",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "FlatRow",
+              "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "FlatRowMapping",
+              "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "FlowTime",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "FrequencyMode",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "LifecycleValues",
+              "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "NormalizedCase",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "NormalizedEvent",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "NormalizedLog",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "PerformanceAgg",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "ProcessGraph",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "SyntheticActivity",
+              "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "SyntheticLogOptions",
+              "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "TransitionStats",
+              "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "Variant",
+              "module": "packages/process/src/core/types.ts"
+            }
+          ],
+          "otherExports": [
+            {
+              "name": "asNormalizedLog",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "clampWidth",
+              "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "discoverGraph",
+              "module": "packages/process/src/core/discover-graph.ts"
+            },
+            {
+              "name": "durationStats",
+              "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "emptyDurationStats",
+              "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "extractVariants",
+              "module": "packages/process/src/core/extract-variants.ts"
+            },
+            {
+              "name": "fromCsv",
+              "module": "packages/process/src/core/adapters/csv.ts"
+            },
+            {
+              "name": "fromFlatRows",
+              "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "generateSyntheticLog",
+              "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "isNormalizedLog",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "minMax",
+              "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "normalizeLifecycle",
+              "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "normalizeLog",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "parseDelimited",
+              "module": "packages/process/src/core/adapters/csv.ts"
+            },
+            {
+              "name": "quantile",
+              "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "quantileSorted",
+              "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "toEpochMs",
+              "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "variantId",
+              "module": "packages/process/src/core/extract-variants.ts"
+            },
+            {
+              "name": "variantKey",
+              "module": "packages/process/src/core/extract-variants.ts"
+            }
+          ]
+        }
+      }
     },
     "@elabs-ai/components-terminal": {
       "path": "packages/terminal",
