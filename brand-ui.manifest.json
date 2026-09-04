@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:05:49.240Z",
+  "generatedAt": "2026-09-04T11:42:20.965Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12490,6 +12490,26 @@
           "module": "packages/charts/src/charts/candlestick-chart.tsx"
         },
         {
+          "name": "CANVAS_LAYER_DEFAULT_MARGIN",
+          "kind": "value",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "CANVAS_LAYER_ENTER_MS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "CANVAS_LAYER_HIT_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "CanvasLayer",
+          "kind": "value",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
           "name": "CATEGORICAL_SOFT_CAP",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-context.tsx"
@@ -13207,6 +13227,11 @@
           "module": "packages/charts/src/charts/use-animated-y-domains.ts"
         },
         {
+          "name": "useCanvasDraw",
+          "kind": "value",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
           "name": "useChart",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-context.tsx"
@@ -13428,6 +13453,14 @@
           "module": "packages/charts/src/charts/candlestick.tsx"
         },
         {
+          "name": "CanvasLayerProps",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "CanvasLayerRect",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
           "name": "ChartBrushLayoutProps",
           "module": "packages/charts/src/charts/chart-brush-layout.tsx"
         },
@@ -13550,6 +13583,10 @@
         {
           "name": "ChartRevealClipProps",
           "module": "packages/charts/src/charts/chart-reveal-clip.tsx"
+        },
+        {
+          "name": "ChartScales",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
           "name": "ChartSelection",
@@ -14240,6 +14277,10 @@
           "module": "packages/charts/src/sparkline/sparkline.tsx"
         },
         {
+          "name": "SpatialGrid",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
           "name": "SpringConfig",
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
@@ -14300,6 +14341,14 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "UseCanvasDrawOptions",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
+          "name": "UseCanvasDrawResult",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
+        },
+        {
           "name": "ValueFormat",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
         },
@@ -14348,6 +14397,10 @@
         {
           "name": "buildUnitChartSummary",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "canvasTokenColor",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
           "name": "chartAccentColor",
@@ -14408,6 +14461,10 @@
         {
           "name": "continuousInk",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "createSpatialGrid",
+          "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
           "name": "defaultChartStatFlowFormat",

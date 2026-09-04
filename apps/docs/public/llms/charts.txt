@@ -26,6 +26,10 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CALENDAR_ROWS
 - Candlestick
 - CandlestickChart
+- CANVAS_LAYER_DEFAULT_MARGIN
+- CANVAS_LAYER_ENTER_MS
+- CANVAS_LAYER_HIT_RADIUS
+- CanvasLayer
 - CATEGORICAL_SOFT_CAP
 - CHART_CLIP_PASSTHROUGH
 - CHART_STAGGER_BAR_MS
@@ -274,6 +278,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useActivateDatapoint
 - useActiveMarkers
 - useAnimatedYDomains
+- useCanvasDraw
 - useChart
 - useChartConfig
 - useChartDatapointsEnabled
