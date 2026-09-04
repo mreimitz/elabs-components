@@ -52,6 +52,10 @@ test("hasStateStory: a named *FirstRun export", () => {
   assert.ok(hasStateStory("export const FirstRunOnboarding: Story = {};"));
 });
 
+test("hasStateStory: a named *Awaiting export (#108 — a decision-pending state)", () => {
+  assert.ok(hasStateStory("export const Awaiting: Story = {};"));
+});
+
 test("hasStateStory: false for Default/Variants-only stories", () => {
   assert.equal(
     hasStateStory(
