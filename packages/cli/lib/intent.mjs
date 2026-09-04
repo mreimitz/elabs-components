@@ -1639,6 +1639,172 @@ export const INTENT = {
     ],
   },
 
+  // ── @elabs-ai/components-charts · editorial marks (RM-017) ──────
+  // The shared low-level drawing vocabulary in packages/charts/src/marks/. These
+  // are not charts: each is a bare SVG element or <g> with no provider, so it
+  // composes inside ANY container's children — and inside the heatmap, waterfall,
+  // dumbbell, unit and treemap containers of the wave that follows. Sourced from
+  // the marks' own docblocks + .claude/rules/chart-components.md (the aria-hidden
+  // chart body) + the styling rule's tokens-only line.
+
+  HaloText: {
+    purpose:
+      "SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart", "BarChart", "ScatterChart"],
+      pairsWith: ["Leader", "PeakRing", "Marginalia", "HairlineFloor"],
+    },
+    stateTokens: {
+      halo: "stroke paints var(--chart-background) beneath the glyphs, under paint-order stroke",
+      ink: "fill defaults to var(--chart-foreground)",
+    },
+    antiPatterns: [
+      "Hard-coding a paper colour for the halo — the halo IS the plot ground, so a literal white one becomes a white smear the moment the theme goes dark. It defaults to var(--chart-background) for that reason; an override names another token, never a colour.",
+      "Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.",
+      "Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.",
+      "Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view.",
+    ],
+  },
+
+  Leader: {
+    purpose:
+      "The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart", "ScatterChart"],
+      pairsWith: ["Marginalia", "HaloText", "PeakRing"],
+    },
+    stateTokens: {
+      ink: "0.6px in var(--chart-foreground-muted) — deliberately below every series weight",
+    },
+    antiPatterns: [
+      "Thickening it so the connection is easier to follow — at series weight a leader stops being furniture and starts being read as data. If it is hard to follow, the label is too far away.",
+      "Inventing a third dash rhythm — the union is 1 3 (quiet) and 2 3 (emphatic) on purpose. Sixty-three templates each picking their own dash array is the drift this layer exists to prevent.",
+      "Copying the path but not the unset fill — an elbow is an OPEN path, and an open path that is filled paints a solid triangle between its two ends. The component sets it; hand-rolled copies routinely do not.",
+      "Routing it across the series it points at — at this weight a leader that overlaps the data is indistinguishable from a gridline. Bend the elbow around instead.",
+    ],
+  },
+
+  PeakRing: {
+    purpose:
+      "A dashed outline around the one mark that matters — the peak, the outlier, the cell the caption is about.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ScatterChart", "LineChart", "BarChart", "ChoroplethChart"],
+      pairsWith: ["HaloText", "Marginalia", "QuietDot"],
+    },
+    stateTokens: {
+      ink: "dashed 2 3 at 0.8px in var(--chart-foreground) — emphasis carried by shape, never by hue",
+    },
+    antiPatterns: [
+      "Swapping the dash for a highlight hue — the ring exists because emphasis by SHAPE survives greyscale and a colour-blind reader (WCAG 1.4.1). Recolouring it throws away the only reason to reach for it.",
+      "Ringing three marks — the ring points at whatever the caption is about. A second ring halves the emphasis and a third deletes it.",
+      "Treating the ring as the statement — it is aria-hidden furniture that points; it says nothing. A peak worth ringing is worth writing in the caption or the summary.",
+      "Dashing a plotted mark elsewhere in the same chart — nothing that carries data is dashed here, and that is precisely what stops the ring being read as a series.",
+    ],
+  },
+
+  Marginalia: {
+    purpose:
+      "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
+    category: "chart",
+    relationships: {
+      contains: ["Leader", "HaloText"],
+      usedInside: ["LineChart", "AreaChart", "ScatterChart"],
+      pairsWith: ["PeakRing"],
+    },
+    stateTokens: {
+      note: "italic, one step below body size, in var(--chart-foreground-muted) so it reads as commentary rather than as a label the chart produced",
+    },
+    antiPatterns: [
+      "Reaching for foreignObject to get HTML wrapping — it does not survive the download-as-image path, renders inconsistently across engines, and smuggles AT-visible, focusable HTML into the aria-hidden chart body, which is the axe aria-hidden-focus violation this package treats as a red build. Pass tspans for a second line.",
+      "Using it for a value — a value belongs ON its mark as HaloText. Marginalia carries a JUDGMENT the data cannot state by itself, which is the whole reason it is set in the analyst's voice.",
+      "More than one or two per chart — a margin note is why a reader trusts the chart; a margin full of them is an essay with a plot in it.",
+      "Leaving a caveat here and nowhere else — the chart body is aria-hidden, so the note reaches nobody using a screen reader.",
+    ],
+  },
+
+  HairlineFloor: {
+    purpose:
+      "One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart", "BarChart", "Sparkline"],
+      pairsWith: ["QuietDot", "UnitStack", "HaloText"],
+      avoidNextTo: ["XAxis on the same edge — two answers to the same question"],
+    },
+    stateTokens: {
+      ticks: "0.55px in var(--chart-grid) — grid furniture, below every series weight",
+    },
+    antiPatterns: [
+      "Decimating the ticks to make them fit — one tick per period, always. An irregular floor reads as missing data, and dropping ticks silently costs the reader the duration the mark exists to show. Too many periods to draw means the chart is too small for this mark.",
+      "Using it where the reader needs to know WHICH date — a floor answers how long, an axis answers when. If labels are wanted the answer is XAxis, not a longer floor.",
+      "Choosing every for looks — the long tick is the only navigational cue on the mark, so it has to land on a boundary the reader already holds: 12 for months, 7 for days, 4 for quarters.",
+      "Painting it at series weight — at var(--chart-foreground) the floor stops being a rule and becomes a second data row along the bottom.",
+    ],
+  },
+
+  QuietDot: {
+    purpose:
+      "The 0.9px pinprick that renders a measured null or zero, so an empty cell in a matrix is never a hole.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChoroplethChart", "BarChart", "LineChart"],
+      pairsWith: ["HairlineFloor", "PeakRing", "UnitStack"],
+    },
+    stateTokens: {
+      ink: "var(--chart-foreground-muted) at radius 0.45 — the quietest mark in the system by construction",
+    },
+    antiPatterns: [
+      "Scattering it as decoration — it has ONE job, and it is the null/zero render. A pinprick that is not standing for an absent value teaches the reader that absence is noise.",
+      "Leaving a zero cell blank instead — blank reads identically to no data collected, to the grid ends here, and to a rendering bug. The dot says the cell was visited and the answer was nothing.",
+      "Assuming it distinguishes 0 from null — it says MEASURED, not which. Where the difference is load-bearing keep the dot for the zero, give the missing cell a hatch or an explicit gap, and say so in the legend.",
+      "Enlarging it so it is easier to see — an absence rendered at the weight of a value becomes a value.",
+    ],
+  },
+
+  UnitStack: {
+    purpose:
+      "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
+    category: "chart",
+    relationships: {
+      usedInside: ["BarChart", "ScatterChart"],
+      pairsWith: ["HaloText", "HairlineFloor", "PeakRing", "QuietDot"],
+    },
+    stateTokens: {
+      ink: "var(--chart-foreground) unless the caller passes a series token",
+      emphasis:
+        "every markEvery-th unit is drawn 1.5x longer and heavier, so the eye counts in fives",
+    },
+    antiPatterns: [
+      "Passing a large n and calling it a bar — past roughly 60 units the stack stops being countable and becomes a texture, at which point a bar is the honest mark. It will happily draw 500; that is your judgment, not its.",
+      "Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.",
+      "Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.",
+      "Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid.",
+    ],
+  },
+
+  DrawPath: {
+    purpose:
+      "A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.",
+    category: "chart",
+    relationships: {
+      usedInside: ["LineChart", "AreaChart"],
+      pairsWith: ["ChartRevealClip", "Leader", "HaloText"],
+    },
+    stateTokens: {
+      draw: "strokeDashoffset animates 1 to 0 against a pathLength of 1",
+      reducedMotion: "renders the plain, finished path with no dash attributes at all",
+    },
+    antiPatterns: [
+      "Filling it — a dash offset acts on the stroke, so a filled path appears in a single frame and the draw-in does nothing at all.",
+      "Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.",
+      "Shortening the duration instead of branching for reduced motion — a motion path at duration 0 still leaves the dash attributes in the DOM, and a stroke carrying a dash array is one rounding error away from a visible seam. The reduced-motion state has to be the ordinary, undecorated path.",
+      "Letting meaning depend on the animation having run — a reader who arrives after it finished, or who never sees it, must lose nothing.",
+    ],
+  },
+
   // ── @elabs-ai/components-maps ────────────────────────────────────
   // Sourced from .claude/rules/map-components.md (token paints, attribution, WebGL).
 

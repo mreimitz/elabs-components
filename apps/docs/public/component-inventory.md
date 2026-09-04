@@ -1088,7 +1088,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_MAX_INTERACTIVE_DATAPOINTS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
-| DrawPath | component |  | `@elabs-ai/components-charts` |  |
+| DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
 | FunnelChart | component |  | `@elabs-ai/components-charts` | Stage-by-stage drop-off through an ordered pipeline. |
 | Gantt | component | density=comfortable*\|compact | `@elabs-ai/components-charts` | Schedule grid — tasks as bars over time, with a task table beside them. |
 | GANTT_NOMINAL_VIEWPORT_PX | component |  | `@elabs-ai/components-charts` |  |
@@ -1104,9 +1104,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | GradientSteelPurple | component |  | `@elabs-ai/components-charts` |  |
 | GradientTealBlue | component |  | `@elabs-ai/components-charts` |  |
 | Grid | component |  | `@elabs-ai/components-charts` |  |
-| HairlineFloor | component |  | `@elabs-ai/components-charts` |  |
-| HaloText | component |  | `@elabs-ai/components-charts` |  |
-| Leader | component |  | `@elabs-ai/components-charts` |  |
+| HairlineFloor | component |  | `@elabs-ai/components-charts` | One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read. |
+| HaloText | component |  | `@elabs-ai/components-charts` | SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it. |
+| Leader | component |  | `@elabs-ai/components-charts` | The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms. |
 | Legend | component |  | `@elabs-ai/components-charts` |  |
 | LegendItemComponent | component |  | `@elabs-ai/components-charts` |  |
 | LegendLabel | component |  | `@elabs-ai/components-charts` |  |
@@ -1122,7 +1122,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | LiveLineChart | component |  | `@elabs-ai/components-charts` |  |
 | LiveXAxis | component |  | `@elabs-ai/components-charts` |  |
 | LiveYAxis | component |  | `@elabs-ai/components-charts` |  |
-| Marginalia | component |  | `@elabs-ai/components-charts` |  |
+| Marginalia | component |  | `@elabs-ai/components-charts` | An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart. |
 | MarkerGroup | component |  | `@elabs-ai/components-charts` |  |
 | MarkerTooltipContent | component |  | `@elabs-ai/components-charts` |  |
 | MetricCard | component |  | `@elabs-ai/components-charts` | Single KPI tile — label, value, delta/trend. |
@@ -1133,7 +1133,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | PatternHexagons | component |  | `@elabs-ai/components-charts` |  |
 | PatternLines | component |  | `@elabs-ai/components-charts` |  |
 | PatternWaves | component |  | `@elabs-ai/components-charts` |  |
-| PeakRing | component |  | `@elabs-ai/components-charts` |  |
+| PeakRing | component |  | `@elabs-ai/components-charts` | A dashed outline around the one mark that matters — the peak, the outlier, the cell the caption is about. |
 | PieCenter | component |  | `@elabs-ai/components-charts` |  |
 | PieCenterShell | component |  | `@elabs-ai/components-charts` |  |
 | PieChart | component |  | `@elabs-ai/components-charts` | Part-of-whole split across a handful of categories. |
@@ -1147,7 +1147,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ProfitLossLegendHoverProvider | component |  | `@elabs-ai/components-charts` |  |
 | ProfitLossLine | component |  | `@elabs-ai/components-charts` |  |
 | QUIET_DOT_SIZE | component |  | `@elabs-ai/components-charts` |  |
-| QuietDot | component |  | `@elabs-ai/components-charts` |  |
+| QuietDot | component |  | `@elabs-ai/components-charts` | The 0.9px pinprick that renders a measured null or zero, so an empty cell in a matrix is never a hole. |
 | RadarArea | component |  | `@elabs-ai/components-charts` |  |
 | RadarAxis | component |  | `@elabs-ai/components-charts` |  |
 | RadarChart | component |  | `@elabs-ai/components-charts` | Multi-metric profile comparison on a shared radial axis. |
@@ -1174,7 +1174,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
 | Sparkline | component |  | `@elabs-ai/components-charts` | Tiny, axis-less trend that lives inside a KPI tile or a table cell. |
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
-| UnitStack | component |  | `@elabs-ai/components-charts` |  |
+| UnitStack | component |  | `@elabs-ai/components-charts` | n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random. |
 | useActivateDatapoint | hook |  | `@elabs-ai/components-charts` |  |
 | useActiveMarkers | hook |  | `@elabs-ai/components-charts` |  |
 | useAnimatedYDomains | hook |  | `@elabs-ai/components-charts` |  |
