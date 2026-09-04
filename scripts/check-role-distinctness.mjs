@@ -224,6 +224,59 @@ export const MUST_DIFFER = [
   ["--chart-10", "--chart-11"],
   ["--chart-10", "--chart-12"],
   ["--chart-11", "--chart-12"],
+
+  // ── ORDERED ramps (RM-018) ────────────────────────────────────────────────
+  // A different shape of invariant from the twelve categorical rows above, and
+  // deliberately NOT the same "every pair" enumeration. A sequential ramp IS
+  // ordinal: `--chart-seq-2` and `--chart-seq-5` are SUPPOSED to be two rungs of
+  // one hue, and gating them apart at the same floor as two independent
+  // categories would either force the ladder to span more lightness than the
+  // ≥3:1 mark bar leaves it, or force chroma into the ramp until it stops
+  // reading as one hue. What must hold is that NEIGHBOURS are told apart — if
+  // step N and step N+1 collapse, the ladder silently loses a rung, and every
+  // non-adjacent pair follows from that plus the monotonicity assertion in
+  // `charts-contrast.test.ts` (which is the other half of this invariant: drop
+  // it and adjacency alone would permit a ramp that wanders).
+  ["--chart-seq-1", "--chart-seq-2"],
+  ["--chart-seq-2", "--chart-seq-3"],
+  ["--chart-seq-3", "--chart-seq-4"],
+  ["--chart-seq-4", "--chart-seq-5"],
+  ["--chart-seq-5", "--chart-seq-6"],
+  ["--chart-seq-6", "--chart-seq-7"],
+  ["--chart-mono-1", "--chart-mono-2"],
+  ["--chart-mono-2", "--chart-mono-3"],
+  ["--chart-mono-3", "--chart-mono-4"],
+  ["--chart-mono-4", "--chart-mono-5"],
+  ["--chart-mono-5", "--chart-mono-6"],
+  ["--chart-mono-6", "--chart-mono-7"],
+  // The DIVERGING ramp is enumerated in FULL — all ten pairs — because it is not
+  // one ordered run but two arms meeting at a neutral, and both arms are on
+  // screen at once in the chart that needs it (a signed bar column, a
+  // correlation matrix). "Negative two rungs" reading as "positive two rungs" is
+  // a sign error, not a lost rung, so every pair is real here in the same way
+  // every pair of the categorical ramp is.
+  ["--chart-div-neg-2", "--chart-div-neg-1"],
+  ["--chart-div-neg-2", "--chart-div-mid"],
+  ["--chart-div-neg-2", "--chart-div-pos-1"],
+  ["--chart-div-neg-2", "--chart-div-pos-2"],
+  ["--chart-div-neg-1", "--chart-div-mid"],
+  ["--chart-div-neg-1", "--chart-div-pos-1"],
+  ["--chart-div-neg-1", "--chart-div-pos-2"],
+  ["--chart-div-mid", "--chart-div-pos-1"],
+  ["--chart-div-mid", "--chart-div-pos-2"],
+  ["--chart-div-pos-1", "--chart-div-pos-2"],
+  // The "wire" palette draws ONE hero colour over the neutral ladder. That is
+  // literally a co-occurrence of `--chart-accent` with every mono step, so the
+  // hero collapsing into any rung of its own ground is the failure the palette
+  // exists to avoid. `--chart-accent` is `var(--chart-1)`, so these rows also
+  // pin the ladder away from the brand plate.
+  ["--chart-accent", "--chart-mono-1"],
+  ["--chart-accent", "--chart-mono-2"],
+  ["--chart-accent", "--chart-mono-3"],
+  ["--chart-accent", "--chart-mono-4"],
+  ["--chart-accent", "--chart-mono-5"],
+  ["--chart-accent", "--chart-mono-6"],
+  ["--chart-accent", "--chart-mono-7"],
 ];
 
 /**

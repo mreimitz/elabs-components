@@ -61,6 +61,169 @@ export const defaultScatterColors = [
   "var(--chart-12)",
 ] as const;
 
+/**
+ * The ORDERED chart ramps (RM-018), as `var()` references. Ordinal siblings of
+ * `defaultScatterColors`: that answers *which series*, these answer *how much*.
+ * Ramp DIRECTION is a property of the active theme's plot ground, so never
+ * reverse one here — `--chart-seq-7` is "most intense" in every theme, whether
+ * that renders darker (light ground) or lighter (dark ground).
+ */
+export const chartSequentialRamp = [
+  "var(--chart-seq-1)",
+  "var(--chart-seq-2)",
+  "var(--chart-seq-3)",
+  "var(--chart-seq-4)",
+  "var(--chart-seq-5)",
+  "var(--chart-seq-6)",
+  "var(--chart-seq-7)",
+] as const;
+
+/** The neutral ladder — a categorical chart's fallback past six series. */
+export const chartMonoRamp = [
+  "var(--chart-mono-1)",
+  "var(--chart-mono-2)",
+  "var(--chart-mono-3)",
+  "var(--chart-mono-4)",
+  "var(--chart-mono-5)",
+  "var(--chart-mono-6)",
+  "var(--chart-mono-7)",
+] as const;
+
+/** Diverging, in ramp order: far-negative → neutral → far-positive. */
+export const chartDivergingRamp = [
+  "var(--chart-div-neg-2)",
+  "var(--chart-div-neg-1)",
+  "var(--chart-div-mid)",
+  "var(--chart-div-pos-1)",
+  "var(--chart-div-pos-2)",
+] as const;
+
+/** The single hero colour the `"accent"` palette draws over the mono ladder. */
+export const chartAccentColor = "var(--chart-accent)";
+
+/**
+ * Which family of colours a chart container should draw with.
+ *
+ * - `categorical` — the twelve independent series colours. The default, and the
+ *   only one that answers "which series". **Capped at six** (see
+ *   `CATEGORICAL_SOFT_CAP`).
+ * - `sequential` — the single-hue ordered ladder: heatmap, calendar, treemap,
+ *   choropleth, anything where the number IS the colour.
+ * - `diverging` — signed data around a meaningful zero: signed bars, a
+ *   correlation matrix.
+ * - `mono` — the neutral ladder on its own.
+ * - `accent` — the "wire" look: the neutral ladder with ONE hero colour on top,
+ *   for the series that is actually the point.
+ */
+export type ChartPalette = "categorical" | "sequential" | "diverging" | "mono" | "accent";
+
+/**
+ * Past this many categories, colour stops distinguishing anything: a reader
+ * cannot hold seven-plus hues against a legend, and the twelve-colour ramp is
+ * three hue FAMILIES, so series 7+ are near-neighbours of series 1-6 by
+ * construction. `resolvePalette` therefore degrades to the neutral ladder rather
+ * than handing back colours that only look like categories.
+ */
+export const CATEGORICAL_SOFT_CAP = 6;
+
+/**
+ * Pick `n` entries spread evenly across `ramp`, INCLUDING both ends — the first
+ * entry is always the quietest step and the last always the most intense, which
+ * is what makes two charts with different bucket counts read on the same scale.
+ *
+ * `n === 1` returns the MOST intense step, not the middle: one bucket means "the
+ * value", and a lone pale cell reads as no data.
+ *
+ * `n` greater than the ramp length REPEATS steps (there is no interpolation —
+ * these are `var()` references, not colours we can mix). That is a signal to
+ * bucket the data to the ramp's length, not a licence to ask for 20 steps.
+ */
+function spread(ramp: readonly string[], n: number): string[] {
+  if (n <= 0) return [];
+  const last = ramp.length - 1;
+  if (n === 1) return [ramp[last] as string];
+  return Array.from({ length: n }, (_, i) => ramp[Math.round((i * last) / (n - 1))] as string);
+}
+
+/**
+ * Messages already warned about, so a component that re-renders every frame does
+ * not re-log every frame. Keyed by the full message, so a DIFFERENT series count
+ * still gets its own warning.
+ */
+const warnedPaletteMessages = new Set<string>();
+
+function warnOnce(message: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  if (warnedPaletteMessages.has(message)) return;
+  warnedPaletteMessages.add(message);
+  console.warn(message);
+}
+
+/** Options for {@link resolvePalette}. */
+export interface ResolvePaletteOptions {
+  /**
+   * Did the CALLER of the container actually pass `palette`, as opposed to the
+   * container defaulting it? Only the container knows, so it has to say
+   * (`explicit: props.palette !== undefined`).
+   *
+   * It matters for exactly one case: `"categorical"` past
+   * {@link CATEGORICAL_SOFT_CAP}. Left to itself, that degrades to the neutral
+   * ladder and warns — the right default, because nobody CHOSE nine colours,
+   * the data had nine rows. Asked for deliberately, it is honoured in silence:
+   * a soft cap that cannot be overridden is a wall, and the caller who typed the
+   * word has already been told.
+   */
+  explicit?: boolean;
+}
+
+/**
+ * Resolve a palette + series count into `n` CSS colour references.
+ *
+ * The ONE thing every chart container calls, so that "which colours" is a
+ * token-level decision made once rather than a `defaultColors` array copied per
+ * family. Returns `var(--chart-…)` strings — never literals — so the result
+ * re-colours on a theme flip with no re-render.
+ *
+ * @param palette - the family to draw from; defaults to `"categorical"`.
+ * @param n - how many colours are needed (one per series / bucket).
+ * @param options - see {@link ResolvePaletteOptions}.
+ */
+export function resolvePalette(
+  palette: ChartPalette = "categorical",
+  n = 1,
+  options: ResolvePaletteOptions = {},
+): string[] {
+  if (n <= 0) return [];
+  switch (palette) {
+    case "sequential":
+      return spread(chartSequentialRamp, n);
+    case "mono":
+      return spread(chartMonoRamp, n);
+    case "diverging":
+      return spread(chartDivergingRamp, n);
+    case "accent":
+      // The hero first, then as much neutral ground as the rest of the series
+      // need. One series means the hero alone.
+      return [chartAccentColor, ...spread(chartMonoRamp, n - 1)];
+    default: {
+      if (n > CATEGORICAL_SOFT_CAP && !options.explicit) {
+        warnOnce(
+          `[brand-ui/charts] ${n} categorical series exceeds the ${CATEGORICAL_SOFT_CAP}-category ` +
+            'cap, so the neutral ladder (palette="mono") is used instead. Group the tail into ' +
+            'an "Other" series, or pass palette="categorical" explicitly to override.',
+        );
+        return spread(chartMonoRamp, n);
+      }
+      // Cycles past twelve. A chart drawing more than twelve categorical series
+      // has already lost the plot; repeating is the honest failure.
+      return Array.from(
+        { length: n },
+        (_, i) => defaultScatterColors[i % defaultScatterColors.length] as string,
+      );
+    }
+  }
+}
+
 export interface Margin {
   top: number;
   right: number;

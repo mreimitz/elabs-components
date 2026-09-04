@@ -25,6 +25,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - BarYAxis
 - Candlestick
 - CandlestickChart
+- CATEGORICAL_SOFT_CAP
 - CHART_CLIP_PASSTHROUGH
 - CHART_STAGGER_BAR_MS
 - CHART_STAGGER_DOT_MS

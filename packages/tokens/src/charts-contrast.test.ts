@@ -21,7 +21,7 @@
 import { describe, expect, it } from "vitest";
 
 import { readThemeCss } from "./_theme-css-source";
-import { contrast } from "./color-contrast";
+import { contrast, parseOklch } from "./color-contrast";
 
 // ADR 0029 — the reference themes live in their own stylesheets now, so read
 // the SET. The helper throws if a theme's block is missing rather than let a
@@ -184,6 +184,135 @@ describe("themes.css — chart palette WCAG contrast (all themes)", () => {
         ratio,
         `--chart-foreground-muted in ${theme} = ${ratio.toFixed(2)}`,
       ).toBeGreaterThanOrEqual(NON_TEXT);
+    });
+  });
+});
+
+/**
+ * ORDERED RAMPS (RM-018) — the other half of the chart palette.
+ *
+ * `SERIES` above is CATEGORICAL: twelve colours that answer "which series". The
+ * ramps below are ORDINAL — they answer "how much", and the whole contract is
+ * that lightness IS the data. That makes them a different gate, not more rows of
+ * the same one: a categorical ramp must only be mutually distinct, an ordinal
+ * ramp must additionally be MONOTONIC, or a heatmap cell's colour stops meaning
+ * its value. Adjacent-step separation (0.05 OKLab ΔE) is the sibling half and
+ * lives in `scripts/check-role-distinctness.mjs`, with the twelve categorical
+ * rows, rather than being duplicated here.
+ */
+const SEQ = Array.from({ length: 7 }, (_, i) => `--chart-seq-${i + 1}`);
+const MONO = Array.from({ length: 7 }, (_, i) => `--chart-mono-${i + 1}`);
+/** Diverging, in RAMP order: far-negative → neutral → far-positive. */
+const DIV = [
+  "--chart-div-neg-2",
+  "--chart-div-neg-1",
+  "--chart-div-mid",
+  "--chart-div-pos-1",
+  "--chart-div-pos-2",
+] as const;
+/** Index of the neutral middle in `DIV`. */
+const DIV_MID = 2;
+/**
+ * The QUIET steps — the ONLY members exempt from the 1.4.11 3:1 mark bar, and
+ * the exemption is bounded rather than open: they must still clear
+ * `QUIET_MIN`, so one low cell in a heatmap reads as a pinprick instead of as
+ * blank paper. `--chart-div-mid` is deliberately NOT here: a zero-valued cell
+ * in a diverging chart is still a drawn cell that has to be told from the plot
+ * ground.
+ */
+const QUIET = new Set<string>(["--chart-seq-1", "--chart-mono-1"]);
+const QUIET_MIN = 1.5;
+/** Max chroma for the neutral ladder — "mono" has to actually read as neutral. */
+const MONO_MAX_CHROMA = 0.02;
+
+/** The OKLab L of a resolved `oklch(...)` literal. */
+function lightnessOf(theme: string, token: string): number {
+  return parseOklch(resolve(theme, token)).l;
+}
+function chromaOf(theme: string, token: string): number {
+  return parseOklch(resolve(theme, token)).c;
+}
+
+describe("themes.css — ordered chart ramps (RM-018)", () => {
+  // Anti-vacuity: every assertion below is a `.each` over these lists, so an
+  // empty/typo'd list would make the whole block pass without measuring a thing.
+  it("gates three ramps of the expected length", () => {
+    expect([SEQ.length, MONO.length, DIV.length]).toEqual([7, 7, 5]);
+  });
+
+  describe.each(THEMES)("%s", (theme) => {
+    it.each([...SEQ, ...MONO, ...DIV])("%s clears its contrast bar", (token) => {
+      const ratio = contrast(resolve(theme, token), resolve(theme, "--chart-background"));
+      const bar = QUIET.has(token) ? QUIET_MIN : NON_TEXT;
+      expect(
+        ratio,
+        `${token} vs --chart-background in ${theme} = ${ratio.toFixed(2)} (bar ${bar})`,
+      ).toBeGreaterThanOrEqual(bar);
+    });
+
+    // MONOTONIC, stated twice on purpose. OKLab L is the authored dimension —
+    // "lightness is data" — and contrast-against-the-ground is what the reader
+    // actually perceives. They can come apart at high chroma, and a ramp that is
+    // monotonic in one but not the other is a ramp whose steps read out of
+    // order. Note the DIRECTION is not asserted: it is a property of the theme's
+    // ground (darker = more intense on a white plot ground, lighter on a dark
+    // one), so the invariant is monotonicity, not a sign.
+    it.each([
+      ["sequential", SEQ],
+      ["mono", MONO],
+    ] as const)("the %s ramp is strictly monotonic in OKLab L", (_name, ramp) => {
+      const ls = ramp.map((t) => lightnessOf(theme, t));
+      const rising = ls.every((l, i) => i === 0 || l > (ls[i - 1] as number));
+      const falling = ls.every((l, i) => i === 0 || l < (ls[i - 1] as number));
+      expect(rising || falling, `${theme} L: ${ls.map((l) => l.toFixed(3)).join(" → ")}`).toBe(
+        true,
+      );
+    });
+
+    it.each([
+      ["sequential", SEQ],
+      ["mono", MONO],
+    ] as const)("the %s ramp gains contrast with every step", (_name, ramp) => {
+      const bg = resolve(theme, "--chart-background");
+      const rs = ramp.map((t) => contrast(resolve(theme, t), bg));
+      expect(
+        rs.every((r, i) => i === 0 || r > (rs[i - 1] as number)),
+        `${theme}: ${rs.map((r) => r.toFixed(2)).join(" → ")}`,
+      ).toBe(true);
+    });
+
+    // The diverging ramp is a V, not a run: intensity has to grow from the
+    // neutral middle outward along BOTH arms, or "strongly negative" reads
+    // quieter than "slightly negative".
+    it("the diverging ramp gains contrast from the mid outward on both arms", () => {
+      const bg = resolve(theme, "--chart-background");
+      const rs = DIV.map((t) => contrast(resolve(theme, t), bg));
+      for (let i = DIV_MID; i > 0; i--) {
+        expect(
+          rs[i - 1] as number,
+          `${theme} ${DIV[i - 1]} vs ${DIV[i]}: ${rs.map((r) => r.toFixed(2)).join(" ")}`,
+        ).toBeGreaterThan(rs[i] as number);
+      }
+      for (let i = DIV_MID; i < DIV.length - 1; i++) {
+        expect(
+          rs[i + 1] as number,
+          `${theme} ${DIV[i + 1]} vs ${DIV[i]}: ${rs.map((r) => r.toFixed(2)).join(" ")}`,
+        ).toBeGreaterThan(rs[i] as number);
+      }
+    });
+
+    it.each(MONO)("%s is neutral (chroma ≤ 0.02)", (token) => {
+      const c = chromaOf(theme, token);
+      expect(c, `${token} in ${theme} has chroma ${c}`).toBeLessThanOrEqual(MONO_MAX_CHROMA);
+    });
+
+    // `--chart-accent` is the wire palette's one hero colour and is declared as
+    // `var(--chart-1)` so a re-brand reaches it for free (#385 — an intentional
+    // mirror is a `var()`, never a copied literal). Asserted as an EQUALITY of
+    // resolved values, so replacing the alias with today's literal fails here.
+    it("--chart-accent mirrors --chart-1", () => {
+      expect(TOKENS[theme]?.["--chart-accent"]).toBe("var(--chart-1)");
+      expect(resolve(theme, "--chart-accent")).toBe(resolve(theme, "--chart-1"));
     });
   });
 });

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T08:52:27.868Z",
+  "generatedAt": "2026-09-04T08:56:23.034Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -7,7 +7,7 @@
   ],
   "defaultTheme": "light",
   "radius": "calc(var(--radius-base) * (1 - var(--decoration-factor)))",
-  "tokenCount": 204,
+  "tokenCount": 224,
   "tokens": [
     "--font-cjk-sans",
     "--font-sans",
@@ -212,7 +212,27 @@
     "--t-slow",
     "--t-slower",
     "--brand-mark-ring",
-    "--brand-mark-tail"
+    "--brand-mark-tail",
+    "--chart-seq-1",
+    "--chart-seq-2",
+    "--chart-seq-3",
+    "--chart-seq-4",
+    "--chart-seq-5",
+    "--chart-seq-6",
+    "--chart-seq-7",
+    "--chart-div-neg-2",
+    "--chart-div-neg-1",
+    "--chart-div-mid",
+    "--chart-div-pos-1",
+    "--chart-div-pos-2",
+    "--chart-mono-1",
+    "--chart-mono-2",
+    "--chart-mono-3",
+    "--chart-mono-4",
+    "--chart-mono-5",
+    "--chart-mono-6",
+    "--chart-mono-7",
+    "--chart-accent"
   ],
   "taste": {
     "axes": {
@@ -12461,6 +12481,11 @@
           "module": "packages/charts/src/charts/candlestick-chart.tsx"
         },
         {
+          "name": "CATEGORICAL_SOFT_CAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
           "name": "CHART_CLIP_PASSTHROUGH",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
@@ -13444,6 +13469,10 @@
           "module": "packages/charts/src/charts/markers/index.ts"
         },
         {
+          "name": "ChartPalette",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
           "name": "ChartPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
@@ -13920,6 +13949,10 @@
           "module": "packages/charts/src/gantt/gantt-context.tsx"
         },
         {
+          "name": "ResolvePaletteOptions",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
           "name": "RingCenterProps",
           "module": "packages/charts/src/charts/ring-center.tsx"
         },
@@ -14086,6 +14119,10 @@
       ],
       "otherExports": [
         {
+          "name": "chartAccentColor",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
           "name": "chartCenterContainerClassName",
           "module": "packages/charts/src/charts/chart-center-typography.ts"
         },
@@ -14099,6 +14136,18 @@
         },
         {
           "name": "chartCssVars",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
+          "name": "chartDivergingRamp",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
+          "name": "chartMonoRamp",
+          "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
+          "name": "chartSequentialRamp",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
@@ -14232,6 +14281,10 @@
         {
           "name": "resolveLineLoadingPulseMode",
           "module": "packages/charts/src/charts/line-loading-pulse.tsx"
+        },
+        {
+          "name": "resolvePalette",
+          "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
           "name": "resolveProfitLossTooltipLabel",
