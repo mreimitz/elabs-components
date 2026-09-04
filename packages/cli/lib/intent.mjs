@@ -1928,6 +1928,36 @@ export const INTENT = {
     ],
   },
 
+  TreeChart: {
+    purpose:
+      "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "DrawPath", "ChartTooltipBox", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["TreemapChart"],
+    },
+    stateTokens: {
+      linkStroke: "var(--chart-grid), 1.4px — links are furniture, not data, whatever the palette",
+      nodeMono:
+        "--chart-mono-1 … 7, indexed by DEPTH (the default) — every node at one depth shares one shade",
+      nodeCategorical:
+        "one hue per top-level branch (a direct child of the root); the root itself stays var(--chart-mono-4), since it belongs to no branch",
+      label:
+        "HaloText in the chart-value type role, placed before a leaf / after a branch on the growth axis; the halo punches from var(--chart-background)",
+      collapsedPill:
+        "var(--chart-mono-3) fill, '+k' label — k is the count of leaves the pill hides",
+      reveal:
+        "links draw depth by depth via DrawPath + stagger — every link into one depth shares a single reveal delay",
+    },
+    antiPatterns: [
+      "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.",
+      "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
+      "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
+      "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand.",
+    ],
+  },
+
   // ── @elabs-ai/components-maps ────────────────────────────────────
   // Sourced from .claude/rules/map-components.md (token paints, attribution, WebGL).
 

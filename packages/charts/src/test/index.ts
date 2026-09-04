@@ -96,6 +96,8 @@ export {
   // Treemap — RM-025
   TreemapChart,
   WaterfallChart,
+  // Tree — RM-035
+  TreeChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -233,3 +235,5 @@ export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
 // Treemap — RM-025
 export type { TreemapChartProps, TreemapNode } from "../charts/treemap/treemap-chart";
 export type { WaterfallChartProps } from "../charts/waterfall-chart";
+// Tree — RM-035
+export type { TreeChartProps, TreeNode } from "../charts/tree-chart";

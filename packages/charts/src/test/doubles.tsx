@@ -96,7 +96,9 @@ export type ChartFamilyName =
   // DistributionChart — RM-026
   | "DistributionChart"
   // Waterfall — RM-022
-  | "WaterfallChart";
+  | "WaterfallChart"
+  // Tree — RM-035
+  | "TreeChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -252,6 +254,11 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "groupKey", numeric: false },
     ],
   },
+  // Tree — RM-035
+  TreeChart: {
+    dataKind: "hierarchy",
+    requiredProps: ["data"],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -331,6 +338,8 @@ import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 // Waterfall — RM-022
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
+// Tree — RM-035
+import type { TreeChartProps } from "../charts/tree-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -421,6 +430,12 @@ export const DistributionChart = createChartContainerDouble<DistributionChartPro
 export const WaterfallChart = createChartContainerDouble<WaterfallChartProps>(
   "WaterfallChart",
   CHART_CONTRACT_SPECS.WaterfallChart,
+);
+
+// Tree — RM-035
+export const TreeChart = createChartContainerDouble<TreeChartProps>(
+  "TreeChart",
+  CHART_CONTRACT_SPECS.TreeChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

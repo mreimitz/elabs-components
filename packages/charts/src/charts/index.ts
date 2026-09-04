@@ -580,3 +580,11 @@ export {
   type WaterfallDatum,
   type WaterfallStep,
 } from "./waterfall-chart";
+// Tree — RM-035
+export {
+  TreeChart,
+  type TreeChartProps,
+  type TreeNode,
+  type TreeOrientation,
+  type TreePalette,
+} from "./tree-chart";
