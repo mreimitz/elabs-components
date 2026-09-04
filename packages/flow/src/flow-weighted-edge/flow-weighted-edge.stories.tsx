@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
 import { FlowWeightedEdge, type BrandFlowWeightedEdge } from "./flow-weighted-edge";
@@ -161,13 +161,21 @@ export const TenEdgesMixed: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    const paths = Array.from(
-      canvasElement.querySelectorAll<SVGPathElement>(".react-flow__edge-path"),
-    );
-    await expect(paths).toHaveLength(10);
-    const widths = paths.map((p) => parseFloat(p.style.strokeWidth));
-    await expect(Math.min(...widths)).toBeCloseTo(1.5, 1);
-    await expect(Math.max(...widths)).toBeCloseTo(8, 1);
+    // React Flow's layout/measurement pass paints edges asynchronously (it
+    // arrives in a lazy chunk and needs a frame to measure node handles) —
+    // reading .react-flow__edge-path once, synchronously, races that paint
+    // (~1-in-3 observed). Poll until all 10 have rendered, then re-read the
+    // (by-then-stable) widths inside the same retrying wait.
+    let paths: SVGPathElement[] = [];
+    await waitFor(() => {
+      paths = Array.from(canvasElement.querySelectorAll<SVGPathElement>(".react-flow__edge-path"));
+      expect(paths).toHaveLength(10);
+    });
+    await waitFor(() => {
+      const widths = paths.map((p) => parseFloat(p.style.strokeWidth));
+      expect(Math.min(...widths)).toBeCloseTo(1.5, 1);
+      expect(Math.max(...widths)).toBeCloseTo(8, 1);
+    });
 
     // Also reachable by keyboard: the "min"-labelled pill is a real tab stop.
     const canvas = within(canvasElement);
