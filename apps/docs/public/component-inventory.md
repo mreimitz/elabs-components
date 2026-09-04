@@ -18,7 +18,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 382 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 26 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 28 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 187 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
@@ -988,6 +988,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CanvasShell | component |  | `@elabs-ai/components-flow` | Branded React Flow canvas wrapper with token-driven background + sane defaults. |
 | Controls | component |  | `@elabs-ai/components-flow` | Zoom / fit / lock controls for the agent workspace Canvas. |
 | DEFAULT_EDGE_WIDTH_RANGE | component |  | `@elabs-ai/components-flow` |  |
+| DEFAULT_LOOP_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | EdgeLabelPill | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_ALL_SIDE_HANDLES | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_GROUP_NODE_TYPE | component |  | `@elabs-ai/components-flow` |  |
@@ -998,6 +999,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FlowMiniMap | component |  | `@elabs-ai/components-flow` |  |
 | FlowNode | component |  | `@elabs-ai/components-flow` | Branded custom React Flow node (title/subtitle/kind/icon/tone). |
 | FlowPlaceholderNode | component |  | `@elabs-ai/components-flow` |  |
+| FlowSelfLoopEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowSmartEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowWeightedEdge | component |  | `@elabs-ai/components-flow` |  |
 | HANDLE_SIDES | component |  | `@elabs-ai/components-flow` |  |

@@ -8,12 +8,12 @@ import {
   type SimulationNodeDatum,
 } from "d3-force";
 import type { Edge, Node } from "@xyflow/react";
-import { HANDLE_BY_DIRECTION, layoutFlow } from "./flow-layout";
+import { HANDLE_BY_DIRECTION, layoutFlow, type FlowLayoutDirection } from "./flow-layout";
 
 /** Which generic graph-geometry algorithm `layoutGraph` should run. */
-export type LayoutAlgorithm = "concentric" | "force" | "layered-lr" | "grid";
+export type LayoutAlgorithm = "concentric" | "force" | "layered-lr" | "layered-tb" | "grid";
 
-/** Horizontal/vertical gap used by the `"grid"` and `"layered-lr"` algorithms. */
+/** Horizontal/vertical gap used by the `"grid"` and `"layered-*"` algorithms. */
 export interface LayoutSpacing {
   x: number;
   y: number;
@@ -31,7 +31,7 @@ export interface LayoutOptions {
   ringRadius?: number;
   /** `"force"` only — number of synchronous simulation ticks to run. @default 300 */
   iterations?: number;
-  /** `"grid"` / `"layered-lr"` — gap between nodes. @default {x:200,y:120} for grid. */
+  /** `"grid"` / `"layered-lr"` / `"layered-tb"` — gap between nodes. @default {x:200,y:120} for grid. */
   spacing?: LayoutSpacing;
   /** Resolve a node's size by id. Falls back to `measured`/`width`/`height`/a sensible default. */
   nodeSize?: (id: string) => { width: number; height: number };
@@ -66,7 +66,10 @@ function resolveNodeSize(
  * Node identity and `data` are left untouched — only `position` changes.
  * Pair with `useAutoLayout` for a memoized hook form.
  *
- * - `"layered-lr"` delegates to the dagre-powered `layoutFlow` (direction `"LR"`).
+ * - `"layered-lr"` / `"layered-tb"` delegate to the dagre-powered `layoutFlow`
+ *   (direction `"LR"` / `"TB"`). `spacing.x` is always the horizontal gap and
+ *   `spacing.y` the vertical one, so the two differ only in which axis carries
+ *   the ranks.
  * - `"concentric"` places `centerId` (or the highest-degree node) at the
  *   origin, with BFS shells at `ring × ringRadius`; disconnected nodes land in
  *   one extra outer ring so positions are never `NaN`.
@@ -83,7 +86,9 @@ export function layoutGraph<NodeType extends Node = Node, EdgeType extends Edge 
 
   switch (options.algorithm) {
     case "layered-lr":
-      return layoutLayeredLr(nodes, edges, options);
+      return layoutLayered(nodes, edges, options, "LR");
+    case "layered-tb":
+      return layoutLayered(nodes, edges, options, "TB");
     case "concentric":
       return layoutConcentric(nodes, edges, options);
     case "force":
@@ -97,10 +102,11 @@ export function layoutGraph<NodeType extends Node = Node, EdgeType extends Edge 
   }
 }
 
-function layoutLayeredLr<NodeType extends Node, EdgeType extends Edge>(
+function layoutLayered<NodeType extends Node, EdgeType extends Edge>(
   nodes: NodeType[],
   edges: EdgeType[],
   options: LayoutOptions,
+  direction: FlowLayoutDirection,
 ): NodeType[] {
   const { spacing, nodeSize } = options;
 
@@ -114,17 +120,19 @@ function layoutLayeredLr<NodeType extends Node, EdgeType extends Edge>(
       })
     : nodes;
 
+  // Ranks progress along the layout axis and nodes stack across it, so the two
+  // directions map the SAME `spacing.x`/`spacing.y` onto dagre's rank/node sep
+  // with the axes swapped: LR ranks horizontally (x), TB ranks vertically (y).
+  const horizontalRanks = direction === "LR" || direction === "RL";
   const { nodes: laidOut } = layoutFlow(sizedNodes, edges, {
-    direction: "LR",
-    // For an LR flow, ranks progress horizontally (x) and nodes within a rank
-    // stack vertically (y) — map spacing accordingly onto dagre's rank/node sep.
-    nodeSpacing: spacing?.y,
-    rankSpacing: spacing?.x,
+    direction,
+    nodeSpacing: horizontalRanks ? spacing?.y : spacing?.x,
+    rankSpacing: horizontalRanks ? spacing?.x : spacing?.y,
   });
 
-  // Carry the LR handle sides (right-out / left-in) that layoutFlow stamped on,
-  // not just the position — otherwise the layout flips positions but leaves the
-  // anchors on top/bottom.
+  // Carry the handle sides layoutFlow stamped on (LR right-out/left-in, TB
+  // bottom-out/top-in), not just the position — otherwise the layout moves the
+  // nodes but leaves the anchors on the wrong sides.
   return nodes.map((node, i) => ({
     ...node,
     sourcePosition: laidOut[i]!.sourcePosition,

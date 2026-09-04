@@ -38,3 +38,6 @@ export type { Node, Edge, Connection, NodeProps, EdgeProps } from "@xyflow/react
 
 // FlowWeightedEdge — RM-043
 export * from "./flow-weighted-edge";
+
+// FlowSelfLoopEdge — RM-044
+export * from "./flow-self-loop-edge";

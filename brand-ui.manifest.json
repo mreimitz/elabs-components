@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T15:21:23.865Z",
+  "generatedAt": "2026-09-04T15:30:15.038Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22918,6 +22918,11 @@
           "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
         {
+          "name": "DEFAULT_LOOP_RADIUS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
+        },
+        {
           "name": "EdgeLabelPill",
           "kind": "value",
           "module": "packages/flow/src/flow-weighted-edge/edge-label-pill.tsx"
@@ -22966,6 +22971,11 @@
           "name": "FlowPlaceholderNode",
           "kind": "value",
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
+        },
+        {
+          "name": "FlowSelfLoopEdge",
+          "kind": "value",
+          "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
         },
         {
           "name": "FlowSmartEdge",
@@ -23083,6 +23093,10 @@
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
         },
         {
+          "name": "BrandFlowSelfLoopEdge",
+          "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
+        },
+        {
           "name": "BrandFlowWeightedEdge",
           "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
@@ -23179,6 +23193,10 @@
           "module": "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx"
         },
         {
+          "name": "FlowSelfLoopEdgeData",
+          "module": "packages/flow/src/flow-self-loop-edge/flow-self-loop-edge.tsx"
+        },
+        {
           "name": "FlowWeightedEdgeData",
           "module": "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx"
         },
@@ -23237,6 +23255,14 @@
         {
           "name": "NodeRect",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "SelfLoopAnchor",
+          "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
+        },
+        {
+          "name": "SelfLoopPath",
+          "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
         {
           "name": "UseFlowGroupsResult",
@@ -23311,6 +23337,10 @@
         {
           "name": "pickClosestHandles",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "selfLoopPath",
+          "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
         {
           "name": "sideToPosition",

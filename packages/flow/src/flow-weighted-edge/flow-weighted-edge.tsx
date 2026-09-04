@@ -28,8 +28,27 @@ export interface FlowWeightedEdgeData extends Record<string, unknown> {
   label?: string;
   /** Secondary edge-label-pill text, e.g. a duration. */
   secondaryLabel?: string;
-  /** Path geometry. @default "bezier" */
+  /** Path geometry. Ignored when `variant` is `"back"`, which always routes smoothstep. @default "bezier" */
   path?: "bezier" | "smoothstep";
+  /**
+   * Whether this edge advances the process (`"forward"`) or runs against the
+   * layout direction (`"back"` — a rework/retry edge, as reported by
+   * `layoutFlow`'s `backEdges`).
+   *
+   * `"back"` is distinguished by SHAPE, not colour: a dashed stroke, and a
+   * smoothstep route pushed clear of the forward edge between the same pair of
+   * nodes so the two never overlap. It also carries a real accessible name, so
+   * the direction reaches assistive technology as text rather than only as a
+   * `data-variant` attribute.
+   *
+   * @default "forward"
+   */
+  variant?: "forward" | "back";
+  /**
+   * Overrides the accessible name given to a `"back"` edge's graphic. Defaults
+   * to "Back edge — runs against the process direction".
+   */
+  variantLabel?: string;
 }
 
 export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
@@ -40,6 +59,23 @@ export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
 // value whenever a `document` is available.
 const FALLBACK_WEAK = "#b7c2d6";
 const FALLBACK_STRONG = "#385a91";
+
+/**
+ * Shape channel for `variant="back"`: a dash pattern plus a reduced stroke
+ * opacity on the same `--flow-edge` token. Dashes are readable in greyscale
+ * and under any theme, so the back edge never depends on hue (WCAG 1.4.1).
+ */
+const BACK_EDGE_DASHARRAY = "6 4";
+const BACK_EDGE_OPACITY = 0.7;
+/**
+ * Horizontal clearance, in px, between a back edge and the forward edge
+ * joining the same two nodes. Applied to `getSmoothStepPath`'s `offset` (how
+ * far the path runs straight out of a handle) AND to `centerX` (where its
+ * cross-segment sits), so the two never overlay each other.
+ */
+const BACK_EDGE_CLEARANCE = 40;
+
+const DEFAULT_BACK_EDGE_LABEL = "Back edge — runs against the process direction";
 
 function clamp01(t: number): number {
   return Math.min(1, Math.max(0, t));
@@ -96,6 +132,11 @@ function resolveValueStrokeColor(
  * Register it in `edgeTypes={{ weighted: FlowWeightedEdge }}` and create edges
  * with `type: "weighted"` and `data: FlowWeightedEdgeData`.
  *
+ * `data.variant: "back"` marks an edge that runs against the process direction
+ * (dagre's reversed edges — see `layoutFlow`'s `backEdges`). It is dashed and
+ * routed clear of the forward edge between the same two nodes, and carries a
+ * real accessible name; the default `"forward"` renders exactly as before.
+ *
  * Selected state uses `--ring` (matching the `ring-ring` treatment `FlowNode`/
  * `FlowGroupNode` use), overriding weight/value-derived width and colour so a
  * selected edge always reads clearly. No stroke-dasharray animation — reduced
@@ -120,9 +161,21 @@ export function FlowWeightedEdge({
     [edges],
   );
 
+  const variant = data?.variant ?? "forward";
+  const isBack = variant === "back";
   const pathType = data?.path ?? "bezier";
-  const [edgePath, labelX, labelY] =
-    pathType === "smoothstep"
+  const [edgePath, labelX, labelY] = isBack
+    ? getSmoothStepPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        offset: BACK_EDGE_CLEARANCE,
+        centerX: (sourceX + targetX) / 2 + BACK_EDGE_CLEARANCE,
+      })
+    : pathType === "smoothstep"
       ? getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
       : getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
 
@@ -135,16 +188,38 @@ export function FlowWeightedEdge({
   const stroke = selected ? "var(--ring)" : (valueColor ?? "var(--flow-edge)");
   const strokeWidth = selected ? scaledWidth + 1.5 : scaledWidth;
 
+  const edge = (
+    <BaseEdge
+      id={id}
+      path={edgePath}
+      markerEnd={markerEnd}
+      data-slot="flow-weighted-edge"
+      data-variant={variant}
+      className="transition-[stroke,stroke-width] duration-fast ease-standard"
+      style={{
+        stroke,
+        strokeWidth,
+        ...(isBack
+          ? { strokeDasharray: BACK_EDGE_DASHARRAY, strokeOpacity: BACK_EDGE_OPACITY }
+          : null),
+        ...style,
+      }}
+    />
+  );
+
   return (
     <>
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        markerEnd={markerEnd}
-        data-slot="flow-weighted-edge"
-        className="transition-[stroke,stroke-width] duration-fast ease-standard"
-        style={{ stroke, strokeWidth, ...style }}
-      />
+      {isBack ? (
+        // A `data-variant` is invisible to assistive technology, so the back
+        // edge's meaning is also published as a named graphic. Only the back
+        // variant is wrapped — a forward edge's DOM is unchanged from before
+        // this prop existed.
+        <g role="img" aria-label={data?.variantLabel ?? DEFAULT_BACK_EDGE_LABEL}>
+          {edge}
+        </g>
+      ) : (
+        edge
+      )}
       <EdgeLabelPill
         label={data?.label}
         secondaryLabel={data?.secondaryLabel}
