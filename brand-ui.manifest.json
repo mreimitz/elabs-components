@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:36:29.148Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -18049,6 +18049,42 @@
               "optional": true,
               "type": "boolean | { from?: string; to?: string }",
               "description": "Color each dot by its vertical position using a chart-space linear gradient. Lower values use `from`; higher values use `to`. Default stops: red (bottom) → green (top)."
+            },
+            {
+              "name": "dropLines",
+              "optional": true,
+              "type": "\"x\" | \"y\" | \"both\" | false",
+              "description": "Draw a hairline \"drop line\" from each point down to the axis it names — `\"x\"` to the bottom (x) axis, `\"y\"` to the left (y) axis, `\"both\"` for both. Rendered UNDER the markers and excluded from hit-testing (`pointer-events: none`, `aria-hidden`). Default: `false` — no drop lines, today's behavior."
+            },
+            {
+              "name": "labelExtremes",
+              "optional": true,
+              "type": "{ /** Rank by the series' own value (`\"y\"`) or by x-axis position (`\"x\"`). */ by: \"y\" | \"x\"; /** How many points to label at EACH end (best and worst). Default: 1. */ count?: number; /** Data field to read the point's display label from. */ labelKey?: string; /** Formats the ranked numeric value next to the label. */ format?: (value: number) => string; }",
+              "description": "Hero-and-rest labeling (lieflat F8 \"Plumb Scatter\"): mark the `count` highest AND `count` lowest points (ranked `by`) in full-opacity ink with a `HaloText` label, fading every other point to `fadedOpacity`. `labelKey` names the data field to read the display label from; when omitted the label falls back to the chart's own x-axis date label for that row. `format`, when given, formats the numeric value alongside the label (only applied when the ranked value is a number, i.e. `by: \"y\"`)."
+            },
+            {
+              "name": "fadedOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Opacity applied to points NOT selected by `labelExtremes`. Default: 0.35."
+            },
+            {
+              "name": "jitter",
+              "optional": true,
+              "type": "number",
+              "description": "Deterministic jitter (`seededRnd` — identical across re-renders and test runs), as a fraction of the row band, `0–0.5`. Requires `yType=\"category\"`; ignored otherwise."
+            },
+            {
+              "name": "yType",
+              "optional": true,
+              "type": "\"number\" | \"category\"",
+              "description": "Treat this series' values (`d[dataKey]`) as category labels laid out on a local band scale (one row per distinct value) rather than a numeric y position on the chart's shared y-scale. Default: `\"number\"` — today's behavior."
+            },
+            {
+              "name": "highlightKey",
+              "optional": true,
+              "type": "string | ((d: Record<string, unknown>) => boolean)",
+              "description": "Highlight matching points with a non-color ring (`PeakRing` — shape, not hue, carries the emphasis; see `.claude/rules/accessibility.md`). A string names a data field read as a truthy flag (`d[highlightKey]`); a function is called with the row and returns whether it is highlighted."
             }
           ]
         },
