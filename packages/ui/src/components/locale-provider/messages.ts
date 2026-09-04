@@ -251,9 +251,6 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ai.agent.tools": "Tools",
   "ai.codeBlock.generating": "Generating…",
   "ai.composer.placeholder": "Ask me anything…",
-  // Mirrors `terminal.composer.shortcutCancel` — the lowercase label beside a
-  // `Kbd` chip in the shortcut-hint row, not a control's accessible name.
-  "ai.composer.shortcutCancel": "cancel",
   "ai.context.usage": "Model context usage",
   "ai.context.totalCost": "Total cost",
   "ai.context.input": "Input",

@@ -114,7 +114,6 @@ export const SessionStatusBar = forwardRef<HTMLDivElement, SessionStatusBarProps
         ) : null}
         {connections ? (
           <span
-            aria-label={connectionsAnnouncement}
             aria-live="polite"
             className="inline-flex shrink-0 items-center gap-1.5"
             data-slot="session-status-bar-connections"
@@ -135,7 +134,15 @@ export const SessionStatusBar = forwardRef<HTMLDivElement, SessionStatusBarProps
                 terminal-status-bar.tsx's aria-hidden-visual +
                 sr-only-sentence pair (#155). Without this, every polite
                 update announced an empty string: the counter above is
-                aria-hidden, so it was the region's ONLY text content. */}
+                aria-hidden, so it was the region's ONLY text content.
+                Deliberately no `aria-label` here (unlike
+                terminal-status-bar.tsx, where the label lives on the OUTER
+                bar as a generic region name distinct from any segment's
+                content): this span's accessible name and its announced
+                content would otherwise be the byte-identical string, which
+                risks a double announcement ("Connecting… Connecting…") on
+                ATs that speak a live region's name alongside its changed
+                content. Let the name derive from this text instead. */}
             <span className="sr-only">{connectionsAnnouncement}</span>
           </span>
         ) : null}

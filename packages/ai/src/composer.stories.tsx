@@ -247,12 +247,19 @@ export const WithShortcutsBusy: Story = {
       <Composer {...args} />
     </div>
   ),
-  play: async ({ canvas }) => {
+  play: async ({ canvas, canvasElement }) => {
     await expect(canvas.getByText("Esc")).toBeInTheDocument();
     await expect(canvas.getByText("cancel")).toBeInTheDocument();
-    // The row is a plain sibling, never nested in the Stop button — its name
-    // stays exactly "Stop", not "Stop Esc" (the #153-style accessible-name trap).
-    await expect(canvas.getByRole("button", { name: "Stop" })).toHaveAccessibleName("Stop");
+    // The row is a plain sibling, never nested in the Stop button. Note this
+    // is NOT provable via accessible name: `PromptInputSubmit` sets
+    // `aria-label` unconditionally, so `toHaveAccessibleName("Stop")` would
+    // pass even if the row were wrongly nested inside the button (an
+    // explicit `aria-label` wins over descendant content in the accname
+    // computation). The real #153-style trap check is DOM containment.
+    const stopButton = canvas.getByRole("button", { name: "Stop" });
+    const shortcutRow = canvasElement.querySelector('[data-slot="composer-shortcuts"]');
+    await expect(shortcutRow).not.toBeNull();
+    await expect(stopButton).not.toContainElement(shortcutRow);
   },
 };
 

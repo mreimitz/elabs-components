@@ -496,9 +496,19 @@ describe("Composer — shortcut hints change with a busy state (#107)", () => {
   // The accessible-name trap (#153's failure mode, avoided here by construction):
   // the shortcut row renders as PLAIN SIBLINGS of PromptInputSubmit, never
   // nested inside it, so the Kbd chip cannot concatenate into the button's
-  // name. Asserted with the exact string, not a regex — a regex would still
-  // match a polluted "Stop Esc" name and let the bug back in undetected.
-  it("does not pollute the submit button's accessible name with the shortcut row (#153-style trap)", () => {
+  // name.
+  //
+  // `PromptInputSubmit` sets `aria-label` unconditionally
+  // (`prompt-input.tsx`'s `action === "stop" ? t("ai.promptInput.stop") :
+  // t("ai.promptInput.submit")`), so an accessible-name assertion alone is
+  // VACUOUS here: an explicit `aria-label` wins the accname computation over
+  // descendant content, so `toHaveAccessibleName("Stop")` would pass
+  // identically whether the Kbd row sat beside the button or was nested
+  // inside it (confirmed by mutation-testing this file — nesting a `<span>`
+  // child in the button left this assertion green). The property actually
+  // being relied on is DOM containment: the shortcut row must never be a
+  // descendant of the submit button. Assert that directly.
+  it("keeps the shortcut row OUT of the submit button's DOM subtree (#153-style trap)", () => {
     render(
       <Composer
         cancelShortcut={{ keys: "Esc", label: "cancel" }}
@@ -508,7 +518,16 @@ describe("Composer — shortcut hints change with a busy state (#107)", () => {
       />,
     );
 
+    const stopButton = screen.getByRole("button", { name: "Stop" });
+    const shortcutRow = document.querySelector<HTMLElement>('[data-slot="composer-shortcuts"]');
+    expect(shortcutRow).not.toBeNull();
+    // The row renders at all (sanity check the fixture is exercising the
+    // real thing, not an empty composer).
     expect(screen.getByText("Esc")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Stop" })).toHaveAccessibleName("Stop");
+    // The actual lock: the button never contains the row (would fail the
+    // instant the row moved inside `PromptInputSubmit`), and the row never
+    // contains the button (rules out the trap from the other direction).
+    expect(stopButton).not.toContainElement(shortcutRow);
+    expect(shortcutRow).not.toContainElement(stopButton);
   });
 });
