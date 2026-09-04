@@ -199,3 +199,127 @@ export const SeriesPointMarker = createInertPart("SeriesPointMarker");
 export const UnitStack = createInertPart("UnitStack");
 export const XAxis = createInertPart("XAxis");
 export const YAxis = createInertPart("YAxis");
+
+// ── CanvasLayer — RM-046 ─────────────────────────────────────────────────────
+// Inert like every other part: the real layer paints into a 2D context, and
+// jsdom's `HTMLCanvasElement.getContext` returns `null` without the optional
+// `canvas` package, so a stand-in that rendered a real <canvas> would be a
+// surface that never paints. The export exists so the mocked namespace
+// RESOLVES (see the header).
+export const CanvasLayer = createInertPart("CanvasLayer");
+
+/**
+ * A recording stand-in for `CanvasRenderingContext2D`, so a consumer can assert
+ * what a `draw` callback DID without a browser.
+ *
+ * jsdom has no 2D context at all: `canvas.getContext("2d")` is `null` unless the
+ * native `canvas` package is installed, which this repo deliberately does not
+ * depend on. So the choice for a consumer testing a canvas view is "assert
+ * nothing" or "hand the callback a context you can read back" — this is the
+ * second. Every method is a no-op that appends to `calls`; every settable
+ * property (`fillStyle`, `strokeStyle`, `lineWidth`, `globalAlpha`, `font`)
+ * is a real property, so a callback that reads back what it set behaves.
+ *
+ * ```ts
+ * const ctx = createCanvasContextStub();
+ * draw(ctx.context, scales, 2);
+ * expect(ctx.calls.filter((c) => c.method === "fillRect")).toHaveLength(50_000);
+ * expect(ctx.context.fillStyle).toBe("#123456");
+ * ```
+ *
+ * Pair it with `installCanvasContextStub()` when the component under test owns
+ * its own canvas element and you cannot reach the context yourself.
+ */
+export interface CanvasContextStub {
+  /** Pass this where a `CanvasRenderingContext2D` is expected. */
+  context: CanvasRenderingContext2D;
+  /** Every method call, in order. */
+  calls: { method: string; args: unknown[] }[];
+  /** Drop the recorded calls, keeping the same context object. */
+  reset: () => void;
+}
+
+/** Methods a chart `draw` callback realistically reaches for. */
+const CANVAS_STUB_METHODS = [
+  "arc",
+  "beginPath",
+  "clearRect",
+  "clip",
+  "closePath",
+  "createLinearGradient",
+  "drawImage",
+  "ellipse",
+  "fill",
+  "fillRect",
+  "fillText",
+  "lineTo",
+  "measureText",
+  "moveTo",
+  "rect",
+  "resetTransform",
+  "restore",
+  "rotate",
+  "save",
+  "scale",
+  "setLineDash",
+  "setTransform",
+  "stroke",
+  "strokeRect",
+  "strokeText",
+  "transform",
+  "translate",
+] as const;
+
+export function createCanvasContextStub(canvas?: HTMLCanvasElement): CanvasContextStub {
+  const calls: { method: string; args: unknown[] }[] = [];
+  const context = {
+    canvas: canvas ?? null,
+    fillStyle: "",
+    strokeStyle: "",
+    lineWidth: 1,
+    globalAlpha: 1,
+    font: "",
+    textAlign: "start",
+    textBaseline: "alphabetic",
+  } as unknown as CanvasRenderingContext2D;
+
+  for (const method of CANVAS_STUB_METHODS) {
+    (context as unknown as Record<string, unknown>)[method] = (...args: unknown[]) => {
+      calls.push({ method, args });
+      // `measureText` has a return contract callers divide by; the rest do not.
+      return method === "measureText" ? ({ width: 0 } as TextMetrics) : undefined;
+    };
+  }
+
+  return {
+    context,
+    calls,
+    reset: () => {
+      calls.length = 0;
+    },
+  };
+}
+
+/**
+ * Patches `HTMLCanvasElement.prototype.getContext` so every canvas in the test
+ * hands back one shared {@link CanvasContextStub}. Returns the stub plus a
+ * `restore()` — call it in `afterEach`, or the patch leaks into the next file.
+ */
+export function installCanvasContextStub(): CanvasContextStub & { restore: () => void } {
+  const stub = createCanvasContextStub();
+  const original = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function patched(this: HTMLCanvasElement, kind: string) {
+    if (kind === "2d") {
+      (stub.context as unknown as { canvas: HTMLCanvasElement }).canvas = this;
+      return stub.context;
+    }
+    return null;
+  } as typeof HTMLCanvasElement.prototype.getContext;
+
+  return {
+    ...stub,
+    restore: () => {
+      HTMLCanvasElement.prototype.getContext = original;
+    },
+  };
+}
