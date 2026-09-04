@@ -32,12 +32,16 @@ vi.mock("./time-series-chart-shell", () => ({
 }));
 
 // Mock Area so it doesn't call useChartStable (which requires ChartProvider).
-vi.mock("./area", () => ({
-  Area: () => null,
-}));
+// Real exports (computeAreaStackBands, areaStackExtent, AreaStackProvider, …)
+// pass through `importOriginal` so the RM-029 stacking-math tests below can
+// exercise the real, un-mocked implementation.
+vi.mock("./area", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./area")>();
+  return { ...actual, Area: () => null };
+});
 
 import { AreaChart } from "./area-chart";
-import { Area } from "./area";
+import { Area, areaStackExtent, computeAreaStackBands } from "./area";
 
 afterEach(cleanup);
 
@@ -121,5 +125,82 @@ describe("AreaChart", () => {
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
     expect(root.getAttribute("tabindex")).toBeNull();
+  });
+});
+
+// ── RM-029: streamgraph stacking math ──────────────────────────────────────
+//
+// F16 three-product stream: `computeAreaStackBands` is a pure function, so
+// the Acceptance criteria ("matches lieflat band order"; "sum of band widths
+// at every x equals total") are verified directly against it — no chart
+// mount required, and the assertions hold for every offset, not just the
+// story's `silhouette`.
+
+const streamData: Record<string, unknown>[] = [
+  { date: new Date("2024-01-01"), desktop: 186, tablet: 80, mobile: 40 },
+  { date: new Date("2024-02-01"), desktop: 305, tablet: 200, mobile: 60 },
+  { date: new Date("2024-03-01"), desktop: 237, tablet: 120, mobile: 90 },
+  { date: new Date("2024-04-01"), desktop: 73, tablet: 190, mobile: 30 },
+];
+const streamKeys = ["desktop", "tablet", "mobile"];
+
+describe("computeAreaStackBands", () => {
+  it.each(["none", "silhouette", "wiggle", "expand"] as const)(
+    "offset=%s — sum of band widths at every x equals the raw total",
+    (offset) => {
+      const bands = computeAreaStackBands(streamData, streamKeys, offset);
+      expect(bands.size).toBe(streamKeys.length);
+
+      streamData.forEach((datum, i) => {
+        const rawTotal = streamKeys.reduce((sum, key) => sum + (datum[key] as number), 0);
+        const stackedTotal = streamKeys.reduce((sum, key) => {
+          const [y0, y1] = bands.get(key)!.values[i]!;
+          return sum + Math.abs(y1 - y0);
+        }, 0);
+        // `expand` normalizes to fractions of 1 rather than the raw total —
+        // still "the whole", just on a 0–1 scale (a 100% stacked area).
+        const expected = offset === "expand" ? (rawTotal > 0 ? 1 : 0) : rawTotal;
+        expect(stackedTotal).toBeCloseTo(expected, 6);
+      });
+    },
+  );
+
+  it("returns bands keyed in the caller's own order — F16 band order matches", () => {
+    const bands = computeAreaStackBands(streamData, streamKeys, "none");
+    expect(Array.from(bands.keys())).toEqual(streamKeys);
+  });
+
+  it("stacks contiguously (stackOrderNone): each band's y1 equals the next band's y0", () => {
+    const bands = computeAreaStackBands(streamData, streamKeys, "none");
+    for (let i = 0; i < streamData.length; i++) {
+      for (let s = 0; s < streamKeys.length - 1; s++) {
+        const current = bands.get(streamKeys[s]!)!.values[i]!;
+        const next = bands.get(streamKeys[s + 1]!)!.values[i]!;
+        expect(current[1]).toBeCloseTo(next[0], 6);
+      }
+    }
+  });
+
+  it("`none` stacks from a zero baseline, matching classic stacked areas", () => {
+    const bands = computeAreaStackBands(streamData, streamKeys, "none");
+    expect(bands.get("desktop")!.values[0]![0]).toBe(0);
+  });
+
+  it("returns an empty map for no keys or no data", () => {
+    expect(computeAreaStackBands(streamData, [], "none").size).toBe(0);
+    expect(computeAreaStackBands([], streamKeys, "none").size).toBe(0);
+  });
+});
+
+describe("areaStackExtent", () => {
+  it("spans the min/max of every band (silhouette centers around zero)", () => {
+    const bands = computeAreaStackBands(streamData, streamKeys, "silhouette");
+    const [min, max] = areaStackExtent(bands);
+    expect(min).toBeLessThan(0);
+    expect(max).toBeGreaterThan(0);
+  });
+
+  it("falls back to a non-degenerate range for an empty stack", () => {
+    expect(areaStackExtent(new Map())).toEqual([0, 1]);
   });
 });
