@@ -13,18 +13,44 @@
  * Provenance: `docs/review/2026-09-04-lieflat-charts-gap-analysis.md` §5 C5;
  * lieflat `SKILL.md` §2 "数据", §7, §8.
  *
- * ## Scope
+ * ## Scope — a DECLARED limit, not an implicit one (orchestrator send-back, #265)
  *
- * Only `packages/charts/src/charts/**` and `packages/charts/src/marks/**` —
- * the statistical/analytical chart machinery — are in scope. Sibling
- * directories under `packages/charts/src` (`gantt/`, `metric-card/`,
+ * `SCAN_DIRS` is `packages/charts/src/charts/**` and `packages/charts/src/marks/**`
+ * only — narrower than the item's literal spec ("`Math.random` banned in
+ * `packages/charts/src/**`"). Sibling directories (`gantt/`, `metric-card/`,
  * `metric-grid/`, `sparkline/`, `chart-card/`, `chart-frame/`, `auto-chart/`)
- * are NOT chart-honesty surfaces in lieflat's sense: a Gantt bar encodes a
- * DATE RANGE and a 0–100 progress fraction, not a length pulled from an
- * arbitrary y-domain, and it has no area/radius encoding at all; a MetricCard
- * has no scale. Narrowing to `charts/` + `marks/` also matches where this
- * item's own roadmap entry (RM-039) placed its two new files
- * (`charts/y-domain-utils.ts`, `marks/area-radius.ts`).
+ * are NOT SCANNED AT ALL, by any of the four rules — this is a real, stated
+ * gap, not a claim that those directories are clean.
+ *
+ * For rules 1, 2 and 4 the narrowing is a reasoned exclusion: those rules
+ * police a VALUE ENCODING (a length/area/radius/unit scale), and `gantt/`,
+ * `metric-card/` etc. own no such encoding — a Gantt bar draws a DATE RANGE
+ * and a 0–100 progress fraction against a fixed timeline, never a length
+ * pulled from an arbitrary y-domain, and has no area/radius mark at all; a
+ * MetricCard has no scale. `charts/` + `marks/` is also where this item's own
+ * roadmap entry (RM-039) placed its two new files (`charts/y-domain-utils.ts`,
+ * `marks/area-radius.ts`).
+ *
+ * For rule 3 (no `Math.random`) that reasoning does NOT apply — the item's
+ * spec bans it package-wide, with no encoding caveat, and a Gantt story can
+ * be exactly as non-reproducible as a bar-chart story. The scope narrowing
+ * hid a REAL, in-spec violation:
+ * `packages/charts/src/gantt/gantt.stories.tsx:250` calls `Math.random()` in
+ * a story's fixture data. This was found during RM-039 development, reported
+ * to the orchestrator instead of fixed here (`gantt.stories.tsx` is outside
+ * this item's `touches`), and is being routed to `/file-issue` by the
+ * orchestrator. Widening `SCAN_DIRS` to fix it here was considered and
+ * declined: it would mean editing `gantt.stories.tsx` (an inline
+ * `honesty:allow`) or the file outside this item's write-set either way, and
+ * a ratchet baseline for rule 3 is explicitly NOT authorized for this item
+ * (RM-039's orchestrator amendments permit a ratchet baseline for rule 4's
+ * story captions only). So the chosen resolution is the third option the
+ * orchestrator offered: keep the narrower scope and STATE the limit here and
+ * in `docs/GATES.md`, rather than widen the scan and immediately need an
+ * exception this item isn't allowed to make. **Whoever fixes the Gantt
+ * finding should also decide there whether to widen `SCAN_DIRS` to
+ * `packages/charts/src` for rule 3** (dropping this whole paragraph) or add
+ * the `honesty:allow` once the fix lands.
  *
  * ## Escape hatch
  *
@@ -140,10 +166,23 @@ export function stripCommentsPreservingLines(src) {
 // by construction and is correctly not flagged.
 const BAR_FAMILY_FILE_RE = /[/\\](bar-chart|waterfall-chart|histogram)\.tsx?$/i;
 
-/** A call that is known to force the domain to include zero. */
+/**
+ * A CALL SITE that is known to force the domain to include zero — scoped to
+ * the statement that actually feeds a `domain`, never a bare mention of the
+ * helper's name. `bar-chart.tsx` both CALLS `resolveBarValueDomain` (as
+ * `domain: resolveBarValueDomain(...)` and `return resolveBarValueDomain(...)`
+ * inside a `resolveDomain` callback) AND, being the one file that owns the
+ * helper, DEFINES it (`function resolveBarValueDomain(...)`). An unscoped
+ * `/resolveBarValueDomain\s*\(/` matches the definition too, which makes the
+ * marker permanently present in the one file rule 1 exists to police —
+ * unfalsifiable exactly where it matters (found by orchestrator mutation
+ * probe: replacing both call sites' domains with `[min, max]` left the gate
+ * at exit 0). Requiring the call to be immediately preceded by `domain:` or
+ * `return` matches every real call site and never the `function` keyword.
+ */
 const ZERO_FORCING_MARKERS = [
-  /resolveBarValueDomain\s*\(/,
-  /resolveYDomain\s*\([\s\S]{0,200}?includeZero\s*:\s*true/,
+  /\b(?:domain\s*:\s*|return\s+)resolveBarValueDomain\s*\(/,
+  /\b(?:domain\s*:\s*|return\s+)resolveYDomain\s*\([\s\S]{0,200}?includeZero\s*:\s*true/,
 ];
 
 export function findZeroBasedBarViolations(file, src) {

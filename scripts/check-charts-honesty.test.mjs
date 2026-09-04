@@ -88,6 +88,51 @@ test("RULE 1 self-test sanity: mutating away the zero-forcing marker turns green
   assert.equal(findZeroBasedBarViolations("/x/bar-chart.tsx", mutated).length, 1);
 });
 
+test(
+  "RULE 1 FLAGS: a file that DEFINES the zero-forcing helper but never CALLS it for its own domain " +
+    "(the orchestrator's real-tree mutation probe — bar-chart.tsx defines resolveBarValueDomain, so an " +
+    "unscoped marker matching the definition itself made the rule permanently unfalsifiable in the one " +
+    "file it exists to police)",
+  () => {
+    const src = `
+    function resolveBarValueDomain(max, min) {
+      return [Math.min(min, 0), Math.max(max, 0)];
+    }
+    const valueScale = scaleLinear({
+      domain: [minValue, maxValue],
+      range: [innerHeight, 0],
+    });
+    function otherScale() {
+      return [min, max];
+    }
+  `;
+    const findings = findZeroBasedBarViolations("/x/bar-chart.tsx", src);
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].rule, "zero-based-bars");
+  },
+);
+
+test(
+  "RULE 1 PASSES: a file that defines AND actually calls the helper for its domain (the real shape " +
+    "of bar-chart.tsx: domain: resolveBarValueDomain(...) and a return resolveBarValueDomain(...) inside " +
+    "a resolveDomain callback)",
+  () => {
+    const src = `
+    function resolveBarValueDomain(max, min) {
+      return [Math.min(min, 0), Math.max(max, 0)];
+    }
+    const valueScale = scaleLinear({
+      domain: resolveBarValueDomain(maxValue, minValue),
+      range: [innerHeight, 0],
+    });
+    const resolveDomain = (dataKeys) => {
+      return resolveBarValueDomain(max, min);
+    };
+  `;
+    assert.equal(findZeroBasedBarViolations("/x/bar-chart.tsx", src).length, 0);
+  },
+);
+
 // ═══════════════════════════ Rule 2 — area/radius sqrt ═══════════════════════
 
 test("RULE 2 FLAGS: a linear radius-from-max-ratio assignment", () => {

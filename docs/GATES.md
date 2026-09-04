@@ -154,57 +154,81 @@ hook, or generator does not. So this is a standing rule, not a one-off:
 - **`charts:honesty:check` (`pnpm charts:honesty:check`, self-test
   `pnpm charts:honesty:check:test`, RM-039 / #265) enforces four chart-honesty
   rules ported from an external gap analysis of the "lieflat-charts" project
-  (`docs/review/2026-09-04-lieflat-charts-gap-analysis.md` §5 C5) into
-  `packages/charts/src/{charts,marks}/**`— the two source directories that
- actually draw a value-encoded mark;`packages/charts/src/gantt/**`is
- deliberately OUT of scope because Gantt bars encode date ranges / progress
- fractions, not an arbitrary y-domain length, and carry no area/radius
- encoding at all, so they aren't a "chart honesty" surface in lieflat's
- sense (a real`Math.random()`at`gantt/gantt.stories.tsx:250`is a
- pre-existing, separately-tracked finding, not something this gate
- silently waives). The four rules: (1) a bar/length mark's value scale must
- be zero-based — the gate accepts either`resolveBarValueDomain`(the
- existing RM-027 zero-forcing helper`bar-chart.tsx`already calls) or the
- newer generic`resolveYDomain(domain, { includeZero: true })`
- (`packages/charts/src/charts/y-domain-utils.ts`) as proof, so a bar-family
- container is never free to silently switch to a non-zero-based scale; (2)
- an area/radius mark's size must come from a sqrt-based encoding — the gate
- looks for `Math.sqrt`/`Math.pow(…, 0.5)`alongside the mark's value
- variable, or a call into the new`areaRadius()` helper
- (`packages/charts/src/marks/area-radius.ts`, `radius = rMax \*
-  sqrt(value / max)`, so drawn AREA — not radius — is proportional to
- value); (3) no `Math.random()`— chart randomness must go through the
- deterministic`seededRnd` (`packages/charts/src/marks/seeded-rnd.ts`) so a
- story/test is reproducible; (4) a unit-decomposed chart (a story whose
- block sets `unit={…}`alongside a`layout`/pictogram-style prop) must
- state its unit visibly, via a `unitLabel`/`description`/
- `accessibleDescription`prop whose value reads as "one X = N" (the gate
- extracts and matches only the VALUE of those props — not a story's whole
- block text — after a brace-depth-aware split of each`export const … :
-  Story = {…}` block, specifically so one story's caption or a later
- story's stray comment can't be mistaken for another's). Every rule runs
- its detection regex against a comment-stripped copy of the source
- (`stripCommentsPreservingLines`, blanks comment bodies without shifting
- line numbers) so an explanatory docblock that merely discusses
- `Math.random()`or a sqrt formula can't trip the gate — while an inline
-`// honesty:allow <reason>` escape (checked against the ORIGINAL,
+  (`docs/review/2026-09-04-lieflat-charts-gap-analysis.md` §5 C5). The four
+  rules: (1) a bar/length mark's value scale must be zero-based — the gate
+  accepts either `resolveBarValueDomain` (the existing RM-027 zero-forcing
+  helper `bar-chart.tsx` already calls) or the newer generic
+  `resolveYDomain(domain, { includeZero: true })`
+  (`packages/charts/src/charts/y-domain-utils.ts`) as proof, **matched only
+  at the CALL SITE** (immediately after `domain:` or `return`) — an earlier
+  version matched the helper name anywhere in the file, which made the rule
+  permanently unfalsifiable in `bar-chart.tsx` itself, the one file that both
+  calls AND defines `resolveBarValueDomain` (an orchestrator mutation probe
+  — swap both real call sites for a bare `[min, max]` — caught this; the gate
+  now fails on that probe and the self-test locks a fixture with the same
+  shape: a file that defines the helper without calling it for its own
+  domain). **Rule 1's real reach today is one file**, `bar-chart.tsx` — the
+  only member of `BAR_FAMILY_FILE_RE` (`bar-chart|waterfall-chart|histogram`)
+  that owns a `scaleLinear` domain; `waterfall-chart.tsx` is built on
+  `BarChart` and calls no `scaleLinear` of its own, `unit-chart.tsx` has no
+  scale at all (marks are counted, not measured), and
+  `distribution/kinds/histogram.tsx` computes a direct `count / countMax`
+  proportion with no `scaleLinear` domain — all three are zero-based by
+  construction and are correctly un-flagged, not un-checked. (2) an
+  area/radius mark's size must come from a sqrt-based encoding — the gate
+  looks for `Math.sqrt`/`Math.pow(…, 0.5)` alongside the mark's value
+  variable, or a call into the new `areaRadius()` helper
+  (`packages/charts/src/marks/area-radius.ts`, `radius = rMax *
+sqrt(value / max)`, so drawn AREA — not radius — is proportional to value);
+  (3) no `Math.random()` — chart randomness must go through the deterministic
+  `seededRnd` (`packages/charts/src/marks/seeded-rnd.ts`) so a story/test is
+  reproducible; (4) a unit-decomposed chart (a story whose block sets
+  `unit={…}` alongside a `layout`/pictogram-style prop) must state its unit
+  visibly, via a `unitLabel`/`description`/`accessibleDescription` prop whose
+  value reads as "one X = N" (the gate extracts and matches only the VALUE of
+  those props — not a story's whole block text — after a brace-depth-aware
+  split of each `export const … : Story = {…}` block, specifically so one
+  story's caption or a later story's stray comment can't be mistaken for
+  another's). Every rule runs its detection regex against a comment-stripped
+  copy of the source (`stripCommentsPreservingLines`, blanks comment bodies
+  without shifting line numbers) so an explanatory docblock that merely
+  discusses `Math.random()` or a sqrt formula can't trip the gate — while an
+  inline `// honesty:allow <reason>` escape (checked against the ORIGINAL,
   unstripped source, since the allow comment itself lives in a comment) can
   suppress a genuine, reviewed exception on its line. Rule 4's pre-existing
   gaps (containers with no visible caption prop, or stories that never set
-  one) are carried in a **ratchet-only\*\* ADR-parity-style baseline,
+  one) are carried in a **ratchet-only** ADR-parity-style baseline,
   `scripts/charts-honesty-caption-baseline.json` — `--update` (no `--force`)
   can only shrink it (a currently-failing key not already in the baseline is
   REJECTED, not silently added); rules 1-3 have no baseline and fail
-  immediately on any new violation. Self-tested
-  (`scripts/check-charts-honesty.test.mjs`) including a dedicated
-  regression for the union-vs-intersect baseline-update bug class (a naive
+  immediately on any new violation.
+  **Scope is `packages/charts/src/{charts,marks}/**` only — a DECLARED
+  limit, not a silent one.** For rules 1/2/4 this is a reasoned exclusion:
+  those rules police a value ENCODING (length/area/radius/unit), and the
+  sibling directories (`gantt/`, `metric-card/`, `metric-grid/`,
+  `sparkline/`, `chart-card/`, `chart-frame/`, `auto-chart/`) own none — a
+  Gantt bar draws a date range and a 0–100 progress fraction against a fixed
+  timeline, never a length pulled from an arbitrary y-domain, and has no
+  area/radius mark at all. For rule 3 (no `Math.random`) that reasoning does
+  **not** hold — the item's spec bans it package-wide with no encoding
+  caveat — and the narrowing hid a real, in-spec violation:
+  `gantt/gantt.stories.tsx:250` calls `Math.random()` in a story's fixture
+  data. This is **not fixed by this gate\*\*: fixing it means editing
+  `gantt.stories.tsx`, which is outside this item's write-set, and a ratchet
+  baseline for rule 3 is not authorized (RM-039's ratchet exception covers
+  only rule 4's story captions). The finding is reported for `/file-issue`
+  routing instead. Whoever fixes it should also decide whether to widen
+  `SCAN_DIRS` to `packages/charts/src` for rule 3 at the same time — see the
+  script's own header for the fuller reasoning. Self-tested
+  (`scripts/check-charts-honesty.test.mjs`) including a dedicated regression
+  for the union-vs-intersect baseline-update bug class (a naive
   `[...current, ...old].filter(current.includes)` always reduces to
-  `current`, which would silently accept every new failure) and for both
+  `current`, which would silently accept every new failure) and for the
   real-tree false positives this gate hit during development (a JSX
   attribute like `fill="var(--chart-1)" … unit={2000}` satisfying a
-  whole-block "one … = …" regex by punctuation accident, and a story-block
+  whole-block "one … = …" regex by punctuation accident, a story-block
   splitter that bled a later story's trailing text into an earlier story's
-  block).
+  block, and the rule-1 call-site vacuity above).
 - **Nothing is published from a commit the battery has not passed (#103) — but the
   release path no longer RE-RUNS it (2026-08-10).** Every blocking gate lives once,
   in the reusable `.github/workflows/gates.yml`, which `ci.yml` calls on every PR
