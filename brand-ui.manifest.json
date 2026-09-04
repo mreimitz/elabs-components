@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T15:30:15.038Z",
+  "generatedAt": "2026-09-04T15:30:36.775Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23237,11 +23237,19 @@
           "module": "packages/flow/src/flow-layout/layout-graph.ts"
         },
         {
+          "name": "LegendCategoricalProps",
+          "module": "packages/flow/src/legend/legend.tsx"
+        },
+        {
           "name": "LegendItem",
           "module": "packages/flow/src/legend/legend.tsx"
         },
         {
           "name": "LegendProps",
+          "module": "packages/flow/src/legend/legend.tsx"
+        },
+        {
+          "name": "LegendScaleProps",
           "module": "packages/flow/src/legend/legend.tsx"
         },
         {
@@ -23511,26 +23519,6 @@
               "optional": true,
               "type": "string",
               "description": "Expanded width (any CSS length). Default `\"18rem\"` (the original `w-72`)."
-            },
-            {
-              "name": "className",
-              "optional": true,
-              "type": "string"
-            }
-          ]
-        },
-        "Legend": {
-          "extends": [],
-          "props": [
-            {
-              "name": "items",
-              "optional": false,
-              "type": "LegendItem[]"
-            },
-            {
-              "name": "title",
-              "optional": true,
-              "type": "string"
             },
             {
               "name": "className",

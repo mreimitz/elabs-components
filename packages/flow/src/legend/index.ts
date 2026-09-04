@@ -1,1 +1,7 @@
-export { Legend, type LegendProps, type LegendItem } from "./legend";
+export {
+  Legend,
+  type LegendProps,
+  type LegendItem,
+  type LegendCategoricalProps,
+  type LegendScaleProps,
+} from "./legend";
