@@ -18,6 +18,7 @@ import {
   countDataSlots,
   isGatedModule,
   componentsByModule,
+  isComponentName,
   scanModules,
   scanToBaseline,
   compareToBaseline,
@@ -97,6 +98,66 @@ test("componentsByModule groups value components per gated .tsx module", () => {
   const byModule = componentsByModule(manifest);
   assert.deepEqual([...byModule.keys()], [WIDGET]);
   assert.deepEqual(byModule.get(WIDGET), ["Widget", "WidgetHeader"]);
+});
+
+// #189 — an exported SCREAMING_SNAKE_CASE constant is not a component. Before
+// this filter, `export const CATEGORICAL_SOFT_CAP = 6` in `chart-context.tsx`
+// counted as a second component and failed the module for "gained 1
+// component(s) but no new `data-slot`" — a gap with no possible fix, since a
+// number has no root element. Locked here so the false positive cannot return.
+test("componentsByModule skips exported CONSTANTS, counts components", () => {
+  const withConstant = {
+    packages: {
+      "@elabs-ai/components-ui": {
+        path: "packages/ui",
+        components: [
+          ...manifest.packages["@elabs-ai/components-ui"].components,
+          { name: "WIDGET_SOFT_CAP", kind: "value", module: WIDGET },
+          { name: "WIDGET_A11Y_LABELS", kind: "value", module: WIDGET },
+        ],
+      },
+    },
+  };
+  assert.deepEqual(componentsByModule(withConstant).get(WIDGET), ["Widget", "WidgetHeader"]);
+});
+
+test("isComponentName: constants out, components in, PascalCase kept on purpose", () => {
+  for (const name of [
+    "CATEGORICAL_SOFT_CAP",
+    "STATUS_TONE_ICONS",
+    "GANTT_UNIT_MS",
+    "COLOR_TOKENS",
+  ]) {
+    assert.equal(isComponentName(name), false, name);
+  }
+  for (const name of ["Widget", "WidgetHeader", "ChartProvider", "AreaChart"]) {
+    assert.equal(isComponentName(name), true, name);
+  }
+  // Deliberately narrow: a PascalCase constant still counts (a false positive,
+  // which is the safe direction) and a lowercase export never did.
+  assert.equal(isComponentName("ColorTokens"), true);
+  assert.equal(isComponentName("useChart"), false);
+});
+
+// The gate must still FAIL on a real slot-less component landing in an
+// already-slotted module — the filter narrows what counts, it does not soften
+// the ratchet.
+test("ratchet still fires for a real component added beside a constant", () => {
+  const both = {
+    packages: {
+      "@elabs-ai/components-ui": {
+        path: "packages/ui",
+        components: [
+          ...manifest.packages["@elabs-ai/components-ui"].components,
+          { name: "WIDGET_SOFT_CAP", kind: "value", module: WIDGET },
+          { name: "WidgetFooter", kind: "value", module: WIDGET },
+        ],
+      },
+    },
+  };
+  const rows = scan(both, source("widget", "widget-header"));
+  assert.deepEqual(rows[0].components, ["Widget", "WidgetFooter", "WidgetHeader"]);
+  assert.equal(compareToBaseline(rows, { [WIDGET]: [2, 2] }).length, 1);
 });
 
 test("scan pairs each module's component count with its data-slot count", () => {
