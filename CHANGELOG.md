@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-flow`'s `FlowNode` now shows a visible keyboard-focus
+  indicator. Previously its only ring fired on `selected` (a click/marquee
+  selection state), so tabbing to a node with the keyboard left no visual cue
+  of where focus was — the node looked identical to an unfocused one. Focus
+  now renders the shared compound focus ring, stays visually distinct from
+  the selection ring when both apply at once, and is verified in both `light`
+  and `dark` themes (#312).
+
 - Fixed: `ChartFrame`'s “Export as SVG” and “Export as PNG” actions are now
   translatable — both the icon buttons' accessible names and their tooltips read
   from `charts.chartFrame.exportSvg` / `charts.chartFrame.exportPng`, so an app
