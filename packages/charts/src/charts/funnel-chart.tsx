@@ -1259,6 +1259,9 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
  * Token-driven funnel chart. When `onDatapointClick` is set the body is wrapped
  * in a `ChartDatapointProvider` so the stages can register keyboard targets —
  * the provider has to sit ABOVE the component that registers (#349).
+ *
+ * @dataShape a sequential process with drop-off between stages
+ * @avoidWhen the stages are not sequential, or there is no drop-off story to tell
  */
 export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
   function FunnelChart(props, ref) {

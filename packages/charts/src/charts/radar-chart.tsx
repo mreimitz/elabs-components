@@ -196,6 +196,11 @@ function RadarChartInner({
   );
 }
 
+/**
+ * @dataShape several measures per entity, compared as an overall shape rather than value by
+ *   value
+ * @avoidWhen more than about 8 spokes, or absolute magnitude matters more than the shape
+ */
 export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function RadarChart(
   {
     data,

@@ -448,6 +448,10 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
 }
 
+/**
+ * @dataShape a running total with signed steps into and out of it
+ * @avoidWhen there is no meaningful running total — use diverging bars instead
+ */
 export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
   function WaterfallChart(
     {

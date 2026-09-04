@@ -27,6 +27,7 @@ import {
   tasteSearchDirs,
 } from "./core.mjs";
 import { scanText } from "./audit.mjs";
+import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 
 export const PROTOCOL_VERSION = "2024-11-05";
 export const SERVER_INFO = { name: "brand-ui", version: "4.0.0" };
@@ -87,6 +88,22 @@ export const TOOLS = [
         },
       },
       required: ["path"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "chart_for",
+    description:
+      'Rank @elabs-ai/components-charts chart containers for a data shape ("weekday by hour ticket volume", "two time points per category", "OHLC"). Judges the shape FIRST, per the chart-selection rules — call this before picking a chart type by hand or hardcoding AutoChart\'s inference. Returns ranked candidates with the @dataShape text that matched and, when the container declared one, an avoidWhen note.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        shape: {
+          type: "string",
+          description: 'Free text or shape keywords, e.g. "weekday by hour ticket volume".',
+        },
+      },
+      required: ["shape"],
       additionalProperties: false,
     },
   },
@@ -310,6 +327,15 @@ function toolAudit(root, targetPath, registerOverride) {
   return textContent(lines.join("\n"));
 }
 
+function toolChartFor(root, shape) {
+  const query = String(shape || "");
+  if (!query) return { ...textContent("usage: chart_for { shape }"), isError: true };
+  const manifest = root ? loadManifest(root) : null;
+  if (!manifest) return { ...textContent("No manifest."), isError: true };
+  const candidates = matchChartFor(manifest, query);
+  return textContent(renderChartForText(query, candidates));
+}
+
 function callTool(root, name, argsObj = {}) {
   switch (name) {
     case "info":
@@ -322,6 +348,8 @@ function callTool(root, name, argsObj = {}) {
       return toolTokens(root);
     case "audit":
       return toolAudit(root, argsObj.path, argsObj.register);
+    case "chart_for":
+      return toolChartFor(root, argsObj.shape);
     default:
       return null; // unknown tool → caller emits an MCP error
   }

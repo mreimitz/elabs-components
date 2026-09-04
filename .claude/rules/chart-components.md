@@ -12,6 +12,19 @@ paths:
 `ChartFrame` is the standard opt-in chart wrapper that adds expand / flip-to-table /
 download-CSV to any chart child.
 
+## Choosing a chart (RM-040)
+
+Judge the data's SHAPE before reaching for a container name: how many measures,
+how many categorical axes, ordered or not, a range or a hierarchy. The full
+25-container data-shape table, the four chart-selection rules (shape first, ≥ 3
+candidates compared, ≤ 6 charts per page, no repeated silhouette on one page) and
+palette-by-cardinality guidance live in
+`skills/brand-ui/reference/chart-selection.md` — read it before hand-picking a
+container, and before hardcoding `AutoChart`'s inference logic instead of letting
+it run. Query it directly instead of re-deriving it: `brand-ui chart-for "<data
+shape>"` (CLI) or the `chart_for` MCP tool (`brand-ui mcp`) rank chart containers
+by matching your query against each container's own `@dataShape` JSDoc tag.
+
 ## ChartFrame
 
 ### Why `data`/`columns` are primary inputs (not context)

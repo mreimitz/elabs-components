@@ -358,6 +358,10 @@ function ChartInner({
   );
 }
 
+/**
+ * @dataShape mixed marks on one shared axis — bars with a line target, for example
+ * @avoidWhen a single mark type would do — reach for that container directly
+ */
 export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(function ComposedChart(
   {
     data,

@@ -480,6 +480,10 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
   );
 }
 
+/**
+ * @dataShape one proportion against its maximum, read as a single ring
+ * @avoidWhen several categories matter — use a pie or unit chart
+ */
 export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,

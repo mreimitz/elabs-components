@@ -341,6 +341,10 @@ function SankeyThreadsBody({
   );
 }
 
+/**
+ * @dataShape a weighted flow between named nodes, source to target
+ * @avoidWhen the nodes have no real flow between them — use a network chart
+ */
 export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function SankeyChart(
   {
     data,

@@ -280,6 +280,10 @@ function ChartInner({
   );
 }
 
+/**
+ * @dataShape one or more measures over continuous time, where the trend itself is the point
+ * @avoidWhen more than about 8 series — use a stream area chart or a composed chart
+ */
 export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
   {
     data,

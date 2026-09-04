@@ -1220,6 +1220,145 @@ function collectProps(repoRoot, components) {
   return byComponent;
 }
 
+/**
+ * A component's `@dataShape`/`@avoidWhen` JSDoc tags — the chart-selection
+ * metadata (RM-040), SOURCE-DERIVED like `extractPropTable`/`extractVariants`,
+ * never hand-authored (that is what `lib/intent.mjs`'s `INTENT` map is for).
+ *
+ * `@dataShape <text>` may repeat (a container closes more than one data shape —
+ * a heatmap is both "two categorical axes with one value per cell" AND, in its
+ * `variant="calendar"` reading, "one measure per calendar day"); each occurrence
+ * becomes one entry of `dataShapes`, in source order, and a tag may WRAP over
+ * continuation lines. `@avoidWhen <text>` is singular — the one sentence that
+ * steers a reader to a sibling container instead.
+ *
+ * ANCHORED TO ONE DECLARATION, not scanned over the whole file. A file commonly
+ * exports a container AND its tuning constants (`bump-chart.tsx` exports
+ * `BumpChart` and `END_LABEL_MIN_GAP`; `heatmap/index.ts` re-exports
+ * `HeatmapChart` alongside `CALENDAR_ROWS` and `DEFAULT_HEATMAP_STEPS`), and a
+ * whole-file scan would hand every one of those siblings the container's data
+ * shapes — they would then surface as candidates from `brand-ui chart-for`,
+ * which is exactly the black-box ranking that command is built to avoid. So the
+ * tags are read from the docblock immediately preceding `name`'s own
+ * declaration and nowhere else.
+ *
+ * `pnpm manifest:check` is what makes this "keep them honest": delete a tag from
+ * the source and the manifest entry loses it on the next `pnpm manifest` — there
+ * is nowhere else the value could come from.
+ *
+ * @param {string} src   the file's text
+ * @param {string} name  the exported symbol whose docblock to read
+ * @returns {{ dataShapes?: string[], avoidWhen?: string } | null}
+ */
+export function extractChartDataShapes(src, name) {
+  const block = docblockFor(src, name);
+  if (!block) return null;
+  const dataShapes = jsdocTagValues(block, "dataShape");
+  const [avoidWhen] = jsdocTagValues(block, "avoidWhen");
+  if (!dataShapes.length && !avoidWhen) return null;
+  return {
+    ...(dataShapes.length ? { dataShapes } : {}),
+    ...(avoidWhen ? { avoidWhen } : {}),
+  };
+}
+
+/**
+ * The `/** … *\/` block immediately preceding `name`'s declaration, or null.
+ * Only whitespace may sit between the block and the declaration — a comment
+ * separated by other code is somebody else's docblock.
+ */
+function docblockFor(src, name) {
+  if (!src || !name) return null;
+  const decl = new RegExp(
+    `^export\\s+(?:default\\s+)?(?:async\\s+)?(?:function|const|let|class)\\s+${name}\\b`,
+    "m",
+  ).exec(src);
+  if (!decl) return null;
+  const before = src.slice(0, decl.index);
+  const close = before.lastIndexOf("*/");
+  if (close === -1) return null;
+  if (before.slice(close + 2).trim() !== "") return null; // not adjacent
+  const open = before.lastIndexOf("/**", close);
+  if (open === -1) return null;
+  return before.slice(open, close + 2);
+}
+
+/**
+ * Every value of a repeatable JSDoc tag in one docblock, continuation lines
+ * folded in. A tag's value runs until the next `@tag` or the end of the block,
+ * so a shape sentence may wrap across as many lines as it needs to read well.
+ */
+function jsdocTagValues(block, tag) {
+  const lines = block
+    .split("\n")
+    // strip the block's own `/**`, `*/` and each line's leading ` * `
+    .map((l) => l.replace(/^\s*\/?\*+\/?/, "").trim())
+    .filter((l) => l !== "");
+  const out = [];
+  let current = null;
+  for (const line of lines) {
+    const opened = new RegExp(`^@${tag}\\b\\s*(.*)$`).exec(line);
+    if (opened) {
+      if (current !== null) out.push(current);
+      current = opened[1].trim();
+      continue;
+    }
+    if (current === null) continue;
+    if (line.startsWith("@")) {
+      out.push(current);
+      current = null;
+      continue;
+    }
+    current = `${current} ${line}`.trim();
+  }
+  if (current !== null) out.push(current);
+  return out.filter(Boolean);
+}
+
+/**
+ * Map a package's component source files → { ComponentName: { dataShapes, avoidWhen } }.
+ *
+ * A component's `module` is where the manifest FOUND the export, which for a
+ * multi-file container is its directory barrel (`charts/heatmap/index.ts`) —
+ * the declaration, and therefore the docblock, lives in a sibling. So when the
+ * name is not declared in `module` itself and `module` is a barrel, its
+ * directory's own files are searched for the declaration.
+ */
+function collectChartDataShapes(repoRoot, components) {
+  const byComponent = {};
+  for (const c of components) {
+    if (!c.module) continue;
+    for (const file of declarationCandidates(repoRoot, c.module)) {
+      const shapes = extractChartDataShapes(read(join(repoRoot, file)), c.name);
+      if (shapes) {
+        byComponent[c.name] = shapes;
+        break;
+      }
+    }
+  }
+  return byComponent;
+}
+
+/** `module` first, then — when it is a barrel — the source files beside it. */
+function declarationCandidates(repoRoot, module) {
+  const files = [module];
+  if (!/(^|\/)index\.tsx?$/.test(module)) return files;
+  const dir = dirname(module);
+  let entries = [];
+  try {
+    entries = readdirSync(join(repoRoot, dir));
+  } catch {
+    return files;
+  }
+  for (const entry of entries.sort()) {
+    if (!/\.tsx?$/.test(entry)) continue;
+    if (/\.(test|stories)\.tsx?$/.test(entry)) continue;
+    const path = `${dir}/${entry}`;
+    if (path !== module) files.push(path);
+  }
+  return files;
+}
+
 /** Map a package's component source files → { ComponentName: variantData }. */
 function collectVariants(repoRoot, components) {
   const byComponent = {};
@@ -1327,6 +1466,18 @@ export function generateManifest(repoRoot, opts = {}) {
     // anti-patterns) — authored sidecar (lib/intent.mjs), folded in for the
     // components this package actually exports. Absent → omitted (graceful). #80.
     const intent = collectIntent(bucketed.components);
+    // Chart-selection metadata (RM-040) — SOURCE-DERIVED from each container's
+    // own `@dataShape`/`@avoidWhen` JSDoc tags (never hand-authored), merged
+    // additively into the SAME `intent` entry so `brand-ui docs <Chart>` and
+    // `chart-for` read one record per component. Seeds an intent entry when the
+    // component has tags but no authored INTENT row (mirrors how docgen seeds
+    // `props[comp]` in the block above) — a chart container's dataShapes must
+    // never be silently dropped for lack of an unrelated authored `purpose`.
+    for (const [comp, shapes] of Object.entries(
+      collectChartDataShapes(repoRoot, bucketed.components),
+    )) {
+      intent[comp] = { ...(intent[comp] || {}), ...shapes };
+    }
     packages[name] = {
       path: `packages/${entry}`,
       ...(peerDependencies && Object.keys(peerDependencies).length ? { peerDependencies } : {}),

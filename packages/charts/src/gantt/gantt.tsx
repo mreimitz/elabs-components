@@ -1397,6 +1397,10 @@ type GanttComponent = ReturnType<typeof forwardRef<HTMLDivElement, GanttProps>> 
  *   <Gantt.Body domainStart={start} domainEnd={end} canvasWidth={800} />
  * </Gantt>
  * ```
+ *
+ * @dataShape tasks or phases across a timeline, with dependencies between them
+ * @avoidWhen it is not really scheduled work — a dumbbell chart shows a single before and
+ *   after
  */
 export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   {
