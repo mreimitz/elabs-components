@@ -49,10 +49,13 @@ export interface CreateProcessWorkerOptions {
    * Build the worker yourself.
    *
    * The default construction is
-   * `new Worker(new URL("./process-worker.ts", import.meta.url), { type: "module" })`,
-   * which Vite and webpack rewrite at build time. A bundler that does not — or a host that
-   * needs its own URL — supplies this instead. Throwing from it is safe: the handle falls
-   * back to the inline path.
+   * `new Worker(new URL("./process-worker.ts", import.meta.url), { type: "module" })`.
+   * A bundler compiling THIS SOURCE (Vite, webpack) rewrites that literal itself; a
+   * consumer of the BUILT package gets `dist/core/process-worker.js`, which
+   * `tsup.config.ts` emits as its own pass and points the built bundle at — a bundler
+   * rewrites the source it compiles, never a `dist` it merely consumes, so that file has
+   * to be real. A host that needs its own URL supplies this instead. Throwing from it is
+   * safe: the handle falls back to the inline path.
    */
   createWorker?: () => ProcessWorkerLike;
 }
