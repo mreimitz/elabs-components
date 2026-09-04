@@ -57,8 +57,8 @@ export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
 // only when the CSS custom property can't be read (SSR, or the tokens
 // stylesheet isn't loaded yet) — resolveTokenColor() reads the live theme
 // value whenever a `document` is available.
-const FALLBACK_WEAK = "#b7c2d6";
-const FALLBACK_STRONG = "#385a91";
+const FALLBACK_WEAK = "#6085a1";
+const FALLBACK_STRONG = "#496d89";
 
 /**
  * Shape channel for `variant="back"`: a dash pattern plus a reduced stroke

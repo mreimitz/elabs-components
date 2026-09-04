@@ -11,7 +11,14 @@
 import { describe, expect, it } from "vitest";
 
 import { readThemeCss } from "./_theme-css-source";
-import { contrast, contrastSrgb, mixOverSrgb, parseOklch } from "./color-contrast";
+import {
+  contrast,
+  contrastSrgb,
+  mixOverSrgb,
+  oklchToSrgb,
+  parseOklch,
+  relativeLuminance,
+} from "./color-contrast";
 
 // ADR 0029 — the reference themes live in their own stylesheets now, so read
 // the SET. The helper throws if a theme's block is missing rather than let a
@@ -674,6 +681,73 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
         }
       });
     }
+
+    // #282 — WCAG 1.4.11: the flow-edge value RAMP as a colour-only graphical
+    // mark. `--flow-edge-weak`/`--flow-edge-strong` shipped (RM-043) with NO
+    // contrast assertion of any kind, and `--canvas` — the only ground a flow
+    // edge is ever drawn on — was not even one of MARK_SURFACES. That let
+    // `--flow-edge-weak` ship at 1.60:1 (light) / 2.05:1 (dark) / 1.47:1
+    // (:root): `FlowWeightedEdge` interpolates its stroke colour between the
+    // weak/strong tokens by `data.value` (stroke WIDTH carries the separate
+    // `data.weight` measure), so a low-value edge's sole information channel
+    // is colour, and colour alone must clear the non-text bar.
+    describe("flow edge ramp — WCAG 1.4.11 on --canvas", () => {
+      const FLOW_EDGE_CANVAS = "--canvas";
+
+      it("--flow-edge / --flow-edge-weak / --flow-edge-strong ≥ 3:1 on --canvas", () => {
+        for (const name of ["--flow-edge", "--flow-edge-weak", "--flow-edge-strong"]) {
+          const ratio = contrast(token(theme, name), token(theme, FLOW_EDGE_CANVAS));
+          expect(
+            ratio,
+            `${name} vs ${FLOW_EDGE_CANVAS} in ${theme} = ${ratio.toFixed(2)}`,
+          ).toBeGreaterThanOrEqual(AA_NONTEXT);
+        }
+      });
+
+      // The component (`flow-weighted-edge.tsx`'s `mixHex()`) interpolates the
+      // stroke colour with a per-channel lerp in GAMMA-ENCODED sRGB between the
+      // two tokens' resolved sRGB bytes — NOT an OKLab lerp. Replicating that
+      // model (rather than lerping in OKLab) is load-bearing: the two models
+      // disagree about where the ramp's minimum sits, so an OKLab sweep would
+      // pass a ramp the component never actually draws.
+      //
+      // Contrast is monotone along the ramp only while --canvas's luminance
+      // sits OUTSIDE [L_weak, L_strong] (see the root-cause note in #282) — so
+      // this samples ≥100 stops rather than only the two endpoints. A future
+      // theme that puts --canvas BETWEEN the two stops would create a 1:1
+      // crossing point an endpoint-only check would miss entirely.
+      it("every interpolated stop of the weak→strong ramp ≥ 3:1 on --canvas", () => {
+        const weakSrgb = oklchToSrgb(parseOklch(token(theme, "--flow-edge-weak")));
+        const strongSrgb = oklchToSrgb(parseOklch(token(theme, "--flow-edge-strong")));
+        const canvasLum = relativeLuminance(
+          oklchToSrgb(parseOklch(token(theme, FLOW_EDGE_CANVAS))),
+        );
+        const STEPS = 101;
+        let minRatio = Infinity;
+        let minT = -1;
+        const [wr, wg, wb] = weakSrgb;
+        const [sr, sg, sb] = strongSrgb;
+        for (let i = 0; i < STEPS; i++) {
+          const t = i / (STEPS - 1);
+          const stopSrgb: [number, number, number] = [
+            wr + (sr - wr) * t,
+            wg + (sg - wg) * t,
+            wb + (sb - wb) * t,
+          ];
+          const stopLum = relativeLuminance(stopSrgb);
+          const [hi, lo] = stopLum >= canvasLum ? [stopLum, canvasLum] : [canvasLum, stopLum];
+          const ratio = (hi + 0.05) / (lo + 0.05);
+          if (ratio < minRatio) {
+            minRatio = ratio;
+            minT = t;
+          }
+        }
+        expect(
+          minRatio,
+          `weak→strong ramp minimum in ${theme} = ${minRatio.toFixed(2)} at t=${minT.toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(AA_NONTEXT);
+      });
+    });
 
     // #321/#383 — the INK rung, generalized to EVERY status tone.
     //
