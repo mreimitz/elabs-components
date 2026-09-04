@@ -1878,6 +1878,32 @@ export const INTENT = {
     ],
   },
 
+  TreemapChart: {
+    purpose: "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "ChartTooltipBox", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["MetricCard"],
+    },
+    stateTokens: {
+      band: "var(--chart-mono-2) — always neutral, even under palette: 'categorical', so grouping reads from the title band + gap alone, never from hue",
+      leafMono: "var(--chart-mono-4) — one shared shade for every leaf (the default)",
+      leafSequential: "--chart-seq-1 … --chart-seq-7 by the leaf's own value",
+      leafCategorical: "one hue per top-level group (≤ 4 groups, else falls back to mono)",
+      label:
+        "HaloText: the band title renders in the chart-source type role, the leaf label in the chart-value type role (RM-019, both pinned to the meta size step); the halo punches from var(--chart-background)",
+      focus:
+        "the drilldown zoom/back buttons carry the shared interactive focus ring (the --ring token, shown only on :focus-visible)",
+    },
+    antiPatterns: [
+      "Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.",
+      "Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.",
+      "Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.",
+      "Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.",
+    ],
+  },
+
   // ── @elabs-ai/components-maps ────────────────────────────────────
   // Sourced from .claude/rules/map-components.md (token paints, attribution, WebGL).
 

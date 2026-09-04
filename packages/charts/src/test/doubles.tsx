@@ -90,7 +90,9 @@ export type ChartFamilyName =
   | "DumbbellChart"
   // Heatmap — RM-021
   | "HeatmapChart"
-  | "UnitChart";
+  | "UnitChart"
+  // Treemap — RM-025
+  | "TreemapChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -219,6 +221,11 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["label", "value"],
     itemNumericKeys: ["value"],
   },
+  // Treemap — RM-025
+  TreemapChart: {
+    dataKind: "hierarchy",
+    requiredProps: ["data"],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -292,6 +299,8 @@ import type { GanttProps } from "../gantt/gantt";
 // Heatmap — RM-021
 import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
 import type { UnitChartProps } from "../charts/unit-chart";
+// Treemap — RM-025
+import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -364,6 +373,12 @@ export const DumbbellChart = createChartContainerDouble<DumbbellChartProps>(
 export const UnitChart = createChartContainerDouble<UnitChartProps>(
   "UnitChart",
   CHART_CONTRACT_SPECS.UnitChart,
+);
+
+// Treemap — RM-025
+export const TreemapChart = createChartContainerDouble<TreemapChartProps>(
+  "TreemapChart",
+  CHART_CONTRACT_SPECS.TreemapChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

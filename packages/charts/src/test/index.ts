@@ -92,6 +92,8 @@ export {
   ScatterChart,
   Sparkline,
   UnitChart,
+  // Treemap — RM-025
+  TreemapChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -225,3 +227,5 @@ export type { SankeyChartProps, SankeyData } from "../charts/sankey/sankey-chart
 export type { ScatterChartProps } from "../charts/scatter-chart";
 export type { SparklineProps } from "../sparkline/sparkline";
 export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
+// Treemap — RM-025
+export type { TreemapChartProps, TreemapNode } from "../charts/treemap/treemap-chart";

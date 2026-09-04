@@ -94,7 +94,7 @@ export interface ChartContractSpec {
   /** Name of the primary data prop. Default `"data"` (Gantt uses `"tasks"`). */
   dataProp?: string;
   /** Shape the data prop must have. `"none"` skips all data-prop checks (e.g. AutoChart's `spec`). */
-  dataKind: "array" | "feature-collection" | "sankey" | "none";
+  dataKind: "array" | "feature-collection" | "sankey" | "hierarchy" | "none";
   /** Prop names (besides the data prop) that must not be `undefined`. */
   requiredProps?: string[];
   /** True when the component accepts a `status` prop that exempts an empty data array. */
@@ -182,6 +182,75 @@ function collectSeriesKeys(children: ReactNode): string[] {
 function isInvalidDate(raw: unknown): boolean {
   const coerced = raw instanceof Date ? raw : new Date(raw as string | number);
   return Number.isNaN(coerced.getTime());
+}
+
+/**
+ * Structural check for a `"hierarchy"`-kind data prop (RM-025's `TreemapNode`:
+ * `{ name: string; value?: number; children?: TreemapNode[] }`, recursive).
+ * Mirrors `computeTreemapLayout`'s own shape assumptions — a leaf owns a
+ * `value`, a branch owns `children`, and every node owns a non-negative
+ * `value` when it has one — without duplicating the sum-equals-children rule
+ * (that is a dev-only invariant of the real component, not a runtime
+ * value-contract shape check).
+ */
+function assertHierarchyNode(
+  component: string,
+  dataProp: string,
+  node: unknown,
+  path: string[],
+): void {
+  if (typeof node !== "object" || node === null || Array.isArray(node)) {
+    fail(
+      component,
+      dataProp,
+      node,
+      `node at "${path.join(" › ") || "root"}" must be a plain object`,
+    );
+    return;
+  }
+  const record = node as Record<string, unknown>;
+  if (typeof record.name !== "string" || record.name.length === 0) {
+    fail(
+      component,
+      dataProp,
+      node,
+      `node at "${path.join(" › ") || "root"}" is missing a non-empty "name"`,
+    );
+  }
+  if (record.value !== undefined) {
+    if (typeof record.value !== "number" || record.value < 0) {
+      fail(
+        component,
+        dataProp,
+        node,
+        `node "${record.name as string}"'s "value" must be a non-negative number`,
+      );
+    }
+  }
+  if (record.children !== undefined) {
+    if (!Array.isArray(record.children)) {
+      fail(
+        component,
+        dataProp,
+        node,
+        `node "${record.name as string}"'s "children" must be an array`,
+      );
+      return;
+    }
+    for (const child of record.children) {
+      assertHierarchyNode(component, dataProp, child, [
+        ...path,
+        typeof record.name === "string" ? record.name : "?",
+      ]);
+    }
+  } else if (record.value === undefined) {
+    fail(
+      component,
+      dataProp,
+      node,
+      `node "${record.name as string}" has neither a "value" nor "children"`,
+    );
+  }
 }
 
 /**
@@ -369,6 +438,10 @@ export function assertChartContract(
     if (!Array.isArray(value.nodes) || !Array.isArray(value.links)) {
       fail(component, dataProp, value, `"${dataProp}" must be { nodes: [], links: [] }`);
     }
+  } else if (spec.dataKind === "hierarchy") {
+    const value = props[dataProp];
+    if (value === undefined) return;
+    assertHierarchyNode(component, dataProp, value, []);
   }
 
   for (const p of spec.numericProps ?? []) {
@@ -407,6 +480,9 @@ export function buildChartDoublePayload(
   } else if (spec.dataKind === "sankey" && dataValue && typeof dataValue === "object") {
     const nodes = (dataValue as { nodes?: unknown }).nodes;
     if (Array.isArray(nodes)) payload.dataLength = nodes.length;
+  } else if (spec.dataKind === "hierarchy" && dataValue && typeof dataValue === "object") {
+    const children = (dataValue as { children?: unknown }).children;
+    payload.dataLength = Array.isArray(children) ? children.length : 1;
   }
 
   if (typeof props.status === "string") payload.status = props.status;

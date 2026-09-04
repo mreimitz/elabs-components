@@ -513,3 +513,22 @@ export {
   type WaffleLayout,
   type WaffleLayoutOptions,
 } from "./unit-layouts";
+// Treemap — RM-025
+export {
+  computeTreemapLayout,
+  TREEMAP_BAND_COLOR,
+  TREEMAP_CATEGORICAL_GROUP_CAP,
+  TREEMAP_MAX_LEAVES,
+  TREEMAP_MONO_LEAF_COLOR,
+  TREEMAP_TITLE_BAND_HEIGHT,
+  TreemapChart,
+  type TreemapChartProps,
+  type TreemapGroupDatum,
+  type TreemapLayoutOptions,
+  type TreemapLayoutResult,
+  type TreemapLeafDatum,
+  type TreemapNode,
+  type TreemapPalette,
+  type TreemapRect,
+  validateTreemapData,
+} from "./treemap";

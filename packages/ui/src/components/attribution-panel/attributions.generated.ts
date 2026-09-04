@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 116 entries (data: 2, source: 17, font: 2, dependency: 95).
+// 117 entries (data: 2, source: 17, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -1023,6 +1023,18 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "ISC",
     copyright: "Mike Bostock",
     url: "https://www.npmjs.com/package/d3-geo",
+    usedBy: ["@elabs-ai/components-charts"],
+    required: false,
+    note: null,
+  },
+  {
+    id: "d3-hierarchy",
+    category: "dependency",
+    name: "d3-hierarchy",
+    version: "3.1.2",
+    license: "ISC",
+    copyright: "Mike Bostock",
+    url: "https://www.npmjs.com/package/d3-hierarchy",
     usedBy: ["@elabs-ai/components-charts"],
     required: false,
     note: null,

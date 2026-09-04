@@ -339,6 +339,9 @@ importers:
       d3-geo:
         specifier: 3.1.0
         version: 3.1.0
+      d3-hierarchy:
+        specifier: ^3.1.2
+        version: 3.1.2
       d3-sankey:
         specifier: ^0.12.3
         version: 0.12.3
@@ -385,6 +388,9 @@ importers:
       '@types/d3-geo':
         specifier: ^3.1.0
         version: 3.1.0
+      '@types/d3-hierarchy':
+        specifier: ^3.1.7
+        version: 3.1.7
       '@types/d3-sankey':
         specifier: ^0.12.5
         version: 0.12.5
