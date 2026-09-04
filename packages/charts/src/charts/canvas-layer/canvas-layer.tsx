@@ -347,15 +347,30 @@ function CanvasLayerImpl<T>(
         data-slot="canvas-layer-focus-ring"
       >
         {ring ? (
-          <rect
-            className="fill-none stroke-ring"
-            height={ring.height}
-            rx={2}
-            strokeWidth={2}
-            width={ring.width}
-            x={ring.x}
-            y={ring.y}
-          />
+          // The compound indicator (#67) drawn in SVG: a wider `--ring-contour`
+          // stroke UNDER the brand stroke, so 1px of contour shows on each side.
+          // A CSS `focus-ring*` utility cannot reach here — the focused element is
+          // the sibling button, and this rect is the only thing a user can see.
+          <>
+            <rect
+              className="fill-none stroke-ring-contour"
+              height={ring.height}
+              rx={2}
+              strokeWidth={4}
+              width={ring.width}
+              x={ring.x}
+              y={ring.y}
+            />
+            <rect
+              className="fill-none stroke-ring"
+              height={ring.height}
+              rx={2}
+              strokeWidth={2}
+              width={ring.width}
+              x={ring.x}
+              y={ring.y}
+            />
+          </>
         ) : null}
       </svg>
 

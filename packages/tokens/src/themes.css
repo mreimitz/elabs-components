@@ -1785,7 +1785,7 @@
    inside a control (no hatch on buttons, no drawn-not-filled fills). */
 
 /* ---------------------------------------------------------------------------
-   THE FOCUS INDICATOR — `focus-ring` / `focus-ring-inset` (#67, ADR 0027).
+   THE FOCUS INDICATOR — the `focus-ring*` utilities (#67, ADR 0027).
 
    THE ONE WAY A COMPONENT DECLARES FOCUS. Do not hand-stack
    `focus-visible:ring-2 focus-visible:ring-ring` any more: a single-colour ring
@@ -1804,10 +1804,11 @@
    of putting it here rather than in each component.
 
    MECHANISM, and why it is these two properties:
-     - the RING layer is Tailwind's own `ring-2 ring-ring`, unchanged from what
-       the 78 swept call sites already emitted, so the ring is a byte-for-byte
-       no-op. It composes through `--tw-ring-shadow`, so an element's own
-       `shadow-*` rung survives being focused (a raw `box-shadow` here would
+     - the RING layer is Tailwind's own `ring-2`, coloured
+       `var(--focus-ring-color, var(--ring))` — which with the seam unset is
+       exactly what the swept call sites already emitted, so the ring itself is
+       a visual no-op. It composes through `--tw-ring-shadow`, so an element's
+       own `shadow-*` rung survives being focused (a raw `box-shadow` here would
        wipe it, and hand-rolling a shadow is forbidden anyway — ADR 0020).
      - the CONTOUR layer is a real `outline`, NOT a second shadow: `outline` is
        an independent property, so it cannot collide with the elevation ramp,
@@ -1824,7 +1825,7 @@
    Nothing here animates, so there is no motion to neutralize: the indicator
    appears and disappears with `:focus-visible` and never transitions.
 
-   THREE FLAVOURS, one indicator. They differ ONLY in the trigger and the
+   FIVE FLAVOURS, one indicator. They differ ONLY in the trigger and the
    geometry — same two layers, same two tokens, same contract:
      - `focus-ring`        — `:focus-visible` on the element itself. The default;
                              reach for this unless one of the other two applies.
@@ -1835,6 +1836,36 @@
                              box, for a surface where an outside ring would be
                              clipped (a scroll container, a table viewport, a map
                              pane).
+     - `focus-ring-static` — the same two layers with NO state selector, for a
+                             control whose focus is PROXIED and therefore not a
+                             CSS state on the painted element: an OTP slot that
+                             mirrors a visually-hidden `<input>`, a
+                             `has-[…:focus-visible]:` wrapper, or a
+                             pseudo-element seam a `focus-visible:after:` variant
+                             already gates (the DataTable's resize grip). Apply it
+                             CONDITIONALLY from the component; it is never a
+                             resting style.
+     - `focus-ring-static-inset`
+                           — static trigger, inset geometry. The two axes are
+                             TRIGGER (`:focus-visible` / `:focus-within` /
+                             static) x GEOMETRY (outside / inset); five of the
+                             six combinations have a live caller, so the sixth
+                             (`focus-ring-within-inset`) is deliberately not
+                             declared. Reach for this one when the focused thing
+                             is proxied AND an ancestor would clip an outside
+                             ring (a clickable DataTable row inside the scroll
+                             viewport).
+
+   RETARGETING THE RING COLOUR — `[--focus-ring-color:var(--some-token)]`.
+   The ring layer reads `var(--focus-ring-color, var(--ring))`, so a call site
+   whose focus ring is owned by a DIFFERENT token retargets it with one arbitrary
+   property instead of hand-rolling the two layers — the same seam idiom the
+   elevation ramp already uses for `[--shadow-ring-color:…]`. `Sidebar` is the
+   live caller: its rings are `--sidebar-ring`, the sanctioned `var(--ring)`
+   mirror (ADR 0027 clause 4), and it keeps consuming that token rather than
+   silently moving to `--ring`. The CONTOUR is deliberately NOT retargetable —
+   there is one contour token per theme and no call site needs a second.
+
    Anything else — a SELECTION marker (`ring-2 ring-ring` on a selected flow node
    or colour swatch) — is not a focus indicator and is deliberately not swept
    into these utilities.
@@ -1842,7 +1873,7 @@
 
 @utility focus-ring {
   &:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
     outline: 1px solid var(--ring-contour);
     outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
   }
@@ -1850,7 +1881,7 @@
 
 @utility focus-ring-within {
   &:focus-within {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
     outline: 1px solid var(--ring-contour);
     outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
   }
@@ -1858,10 +1889,22 @@
 
 @utility focus-ring-inset {
   &:focus-visible {
-    @apply ring-2 ring-ring ring-inset;
+    @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
     outline: 1px solid var(--ring-contour);
     outline-offset: -3px;
   }
+}
+
+@utility focus-ring-static {
+  @apply ring-2 ring-[var(--focus-ring-color,var(--ring))];
+  outline: 1px solid var(--ring-contour);
+  outline-offset: calc(var(--tw-ring-offset-width, 0px) + 2px);
+}
+
+@utility focus-ring-static-inset {
+  @apply ring-2 ring-inset ring-[var(--focus-ring-color,var(--ring))];
+  outline: 1px solid var(--ring-contour);
+  outline-offset: -3px;
 }
 
 /* ---------------------------------------------------------------------------

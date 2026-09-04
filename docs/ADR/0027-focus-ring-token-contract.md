@@ -87,13 +87,51 @@ rows forbid, and the alias still ships — restoring them would red the gate and
 reverse the Amendment 1 decision. Clause 1 (hue family) and clause 4
 (`--sidebar-ring: var(--ring)`) are untouched.
 
+**Five flavours, two axes.** The trigger axis is `:focus-visible` /
+`:focus-within` / static, the geometry axis is outside / inset:
+`focus-ring`, `focus-ring-within`, `focus-ring-inset`, `focus-ring-static` and
+`focus-ring-static-inset`. The static pair exists because a real focus indicator
+is not always expressible as a CSS state on the element that paints it — an OTP
+slot mirrors a visually-hidden `<input>`, an `InputGroup` wrapper and a clickable
+`DataTable` row ring on `has-[…:focus-visible]`, and the `DataTable` resize grip
+paints on an `after:` pseudo-element because its own box is a transparent 24px hit
+target. The sixth combination (`focus-ring-within-inset`) has no caller and is
+deliberately not declared.
+
+**Retargeting the ring colour is one variable, never a second stack.** The ring
+layer reads `var(--focus-ring-color, var(--ring))`, so `Sidebar` writes
+`focus-ring [--focus-ring-color:var(--sidebar-ring)]` and goes on consuming
+`--sidebar-ring` — clause 4's sanctioned mirror stays a live token instead of
+becoming a token nothing paints with. Same seam idiom as the elevation ramp's
+`[--shadow-ring-color:…]`. The contour is deliberately NOT retargetable.
+
+**Where a CSS utility cannot reach.** Two indicators are SVG, drawn beside an
+`aria-hidden` chart body while focus lives on a sibling button: `CanvasLayer`'s
+focus rect and `ChoroplethChart`'s focused feature. Both express the compound
+indicator directly — a wider `--ring-contour` stroke stacked under the `--ring`
+one, so 1px of contour shows on each side. Monaco is the third: `focusBorder` is
+a single-colour theme key, so `buildBrandThemeData` picks whichever layer clears
+3:1 against that editor's own ground (`contrast(…)` at runtime, the same
+`max(ring, contour)` rule the token test asserts) — on `light` that is the
+contour, on `dark` the ring. Locked by a test in
+`packages/editor/src/lib/monaco-theme-bridge.test.ts`; before the fix it measured
+1.36:1.
+
 **What this does not cover.** The call-site sweep deliberately excludes
 `packages/ai/src/**` (concurrent work in a sibling branch); nine call sites in
 eight modules there still carry the one-layer
-`focus-visible:ring-2 focus-visible:ring-ring` shape and get the ring layer only. Selection markers that reuse `ring-2 ring-ring` to mean
-"selected" rather than "focused" (flow node selection, the colour-picker swatch,
-the OTP active cell, the DataTable resize grip) are NOT focus indicators and were
-deliberately left alone.
+`focus-visible:ring-2 focus-visible:ring-ring` shape and get the ring layer only.
+Genuine SELECTION markers that reuse `ring-2 ring-ring` to mean "selected" rather
+than "focused" are NOT focus indicators and are deliberately left alone:
+`FlowNode` / `FlowGroupNode` selection, `FlowWeightedEdge`'s selected stroke, the
+`ColorPicker` swatch's selected outline (which carries `focus-ring` separately for
+its own focus), `GanttBar`'s `isSelected` outline and its link-source/link-target
+outlines, and the `--ring` swatches in the Foundations token stories, which
+demonstrate the token itself. **The first pass of this sweep missed twelve real
+indicators because it grepped for the string `ring-ring`**; the ones that spell
+the ring another way (`ring-sidebar-ring`, `outline-ring`, `stroke-ring`,
+`stroke="var(--ring)"`, or a JS boolean) were found only on review. A future sweep
+should enumerate by TOKEN, not by class string.
 
 ## Amendment (2026-08-16) — the reference themes now alias `--ring: var(--primary)`
 

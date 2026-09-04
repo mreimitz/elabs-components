@@ -42,7 +42,11 @@ export const InputOTPSlot = forwardRef<
       ref={ref}
       className={cn(
         "relative flex size-9 items-center justify-center border-y border-e border-input text-sm shadow-sm transition-[color,border-color,box-shadow] duration-fast ease-standard first:rounded-s-md first:border-s last:rounded-e-md",
-        isActive && "z-10 ring-2 ring-ring",
+        // The OTP slot IS the field's focus indicator: the real focused element is
+        // InputOTP's visually-hidden <input>, and `isActive` is the caret's slot. It
+        // therefore carries the compound indicator (#67) — the state is JS-driven, so
+        // it is the `-static` flavour rather than a `:focus-visible` one.
+        isActive && "z-10 focus-ring-static",
         className,
       )}
       {...props}

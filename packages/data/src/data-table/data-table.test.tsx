@@ -1186,8 +1186,12 @@ describe("DataTable — #337 onRowClick + rowClassName", () => {
     expect(row.className).toMatch(/cursor-pointer/);
     // Focus lives on the sr-only button; the visible indicator paints on the
     // ROW via `:has()`, so the user sees which row they are about to activate.
+    // …and it is the SHARED compound indicator (#67), not a hand-rolled ring:
+    // `focus-ring-static-inset` is the static-trigger, inset-geometry flavour,
+    // because the focused element is the sr-only button and an outside ring
+    // would be clipped by the scroll viewport.
     expect(row.className).toMatch(
-      /has-\[\[data-slot=data-table-row-action\]:focus-visible\]:outline-2/,
+      /has-\[\[data-slot=data-table-row-action\]:focus-visible\]:focus-ring-static-inset/,
     );
   });
 });

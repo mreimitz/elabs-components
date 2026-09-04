@@ -205,12 +205,27 @@ example and the default registry, not the menu.
   - **`focus-ring-inset`** — `ring-inset` + a negative outline offset, for a
     control whose edge is clipped by an overflow container (table scroll
     regions, list rows).
+  - **`focus-ring-static`** — the same two layers with NO state selector, for a
+    control whose focus is PROXIED and therefore not expressible as a CSS state
+    on the painted element: an OTP slot mirroring a visually-hidden `<input>`,
+    or a pseudo-element seam that a `focus-visible:after:` variant already gates
+    (the DataTable resize grip, whose own box is a transparent 24px hit target).
+    Apply it conditionally; it is never a resting style.
 
-  All three are declared in `packages/tokens/src/themes.css` — `tokens` is the
+  **A ring owned by a different token retargets ONE variable, it does not
+  re-stack the layers**: the ring layer reads
+  `var(--focus-ring-color, var(--ring))`, so `Sidebar` writes
+  `focus-ring [--focus-ring-color:var(--sidebar-ring)]` and keeps consuming
+  `--sidebar-ring` (clause 4's sanctioned mirror) instead of silently moving to
+  `--ring`. Same seam idiom as the elevation ramp's `[--shadow-ring-color:…]`.
+  The contour is deliberately NOT retargetable — one contour token per theme.
+
+  All four are declared in `packages/tokens/src/themes.css` — `tokens` is the
   base of the one-way dependency graph, so they reach every package, every
   copy-own registry block and every consumer with no import. The ring layer is
-  Tailwind's own `ring-2 ring-ring` (via `@apply`, so an element's `shadow-*`
-  rung still composes through `--tw-shadow`); the contour is an `outline`,
+  Tailwind's own `ring-2` (via `@apply`, so an element's `shadow-*` rung still
+  composes through `--tw-shadow`), coloured
+  `var(--focus-ring-color, var(--ring))`; the contour is an `outline`,
   which cannot collide with the elevation ramp (ADR 0020 bans hand-rolled
   shadows), follows `border-radius`, and IS the `focus-visible` replacement
   where `outline-none` used to sit. `outline-offset` tracks

@@ -110,9 +110,17 @@ export const COMPLEX_MIN_ANTI_PATTERNS = 3;
  * the colour/edge-bearing ones (a state→token map is about colour and edges) so
  * ordinary prose can't be mistaken for a class. Gradient families (`from-`/`via-`/
  * `to-`) are excluded on purpose — they are unused here and `to-do` would false-fire.
+ *
+ * `focus` is in the list for ONE reason (#67): the compound focus indicator ships as
+ * the `focus-ring` / `focus-ring-within` / `focus-ring-inset` custom utilities
+ * (`packages/tokens/src/themes.css`), which ARE edge-bearing classes. Without the
+ * family, a `stateTokens` entry naming `focus-ring` would extract NO class at all and
+ * rule 5 would wave it through as prose — i.e. the fix that removed `ring-ring` from
+ * 15 modules would also have removed those entries from the anti-hallucination
+ * contract. It also catches a stale bare `focus-visible` claim.
  */
 const CLASS_FAMILIES =
-  "bg|text|border|ring|fill|stroke|shadow|outline|divide|accent|caret|placeholder";
+  "bg|text|border|ring|fill|stroke|shadow|outline|divide|accent|caret|placeholder|focus";
 
 /**
  * Matches a utility class inside a prose `stateTokens` value: a family, a

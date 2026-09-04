@@ -12,7 +12,7 @@ export const inputGroupVariants = cva(
     // `display:contents` body like PromptInputBody). `:has(>textarea)`
     // misses through that wrapper, so match any descendant textarea.
     "h-9 has-[textarea]:h-auto",
-    "has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-ring has-[[data-slot=input-group-control]:focus-visible]:ring-offset-1 has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background has-[[data-slot=input-group-control]:focus-visible]:outline-1 has-[[data-slot=input-group-control]:focus-visible]:outline-ring-contour has-[[data-slot=input-group-control]:focus-visible]:outline-offset-[3px]",
+    "has-[[data-slot=input-group-control]:focus-visible]:focus-ring-static has-[[data-slot=input-group-control]:focus-visible]:ring-offset-1 has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background has-[[data-slot=input-group-control]:focus-visible]:outline-1 has-[[data-slot=input-group-control]:focus-visible]:outline-ring-contour has-[[data-slot=input-group-control]:focus-visible]:outline-offset-[3px]",
     "has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-destructive",
   ),
   {

@@ -101,6 +101,7 @@ const TOKEN_NAMES = [
   "--border",
   "--primary",
   "--ring",
+  "--ring-contour",
   "--popover",
   "--popover-foreground",
   "--input",
@@ -168,6 +169,16 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
       }
     }
     expect(failures).toEqual([]);
+  });
+
+  it("gives Monaco's focusBorder a layer of the compound indicator that clears 1.4.11 (#67)", () => {
+    // Monaco's `focusBorder` is a SINGLE colour key, so it cannot carry the DOM's
+    // two-layer `focus-ring` (ring + `--ring-contour` outline). It must therefore be
+    // whichever layer actually clears the non-text 3:1 bar against the editor ground.
+    // Before the fix this was hard-wired to `--ring`, which on `light` IS `--primary`
+    // and measures ~1.36:1 — a focus indicator nobody can see.
+    const focusBorder = colors.focusBorder!;
+    expect(contrast(focusBorder, background)).toBeGreaterThanOrEqual(3);
   });
 
   it("still clamps the calc-result inlay color against the composited ground", () => {
