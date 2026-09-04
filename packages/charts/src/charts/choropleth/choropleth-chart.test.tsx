@@ -268,3 +268,202 @@ describe("ChoroplethChart", () => {
     expect(options[1]?.getAttribute("aria-selected")).toBe("true");
   });
 });
+
+// ---------------------------------------------------------------------------
+// noDataFill (RM-032) — one feature carries `value`, one does not.
+// ---------------------------------------------------------------------------
+const twoFeaturesOneNoData: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      id: "A",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-100, 40],
+            [-90, 40],
+            [-90, 50],
+            [-100, 50],
+            [-100, 40],
+          ],
+        ],
+      },
+      properties: { id: "A", name: "Has Data", value: 100 },
+    },
+    {
+      type: "Feature",
+      id: "B",
+      // No `value` — this is the no-data region.
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-80, 40],
+            [-70, 40],
+            [-70, 50],
+            [-80, 50],
+            [-80, 40],
+          ],
+        ],
+      },
+      properties: { id: "B", name: "No Data" },
+    },
+  ],
+};
+
+describe("ChoroplethFeature noDataFill (RM-032)", () => {
+  it('"hatch" gives the no-data feature a pattern fill and defines the pattern', () => {
+    const { container } = render(
+      <ChoroplethChart data={twoFeaturesOneNoData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent noDataFill="hatch" />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelector('pattern[id^="choropleth-no-data-hatch-"]')).toBeInTheDocument();
+    const paths = container.querySelectorAll(".choropleth-features path");
+    const noDataPath = Array.from(paths).find((p) =>
+      (p.getAttribute("fill") ?? "").startsWith("url(#choropleth-no-data-hatch-"),
+    );
+    expect(noDataPath).toBeTruthy();
+    // The has-data feature keeps an ordinary (non-hatch) fill.
+    const hasDataPaths = Array.from(paths).filter(
+      (p) => !(p.getAttribute("fill") ?? "").startsWith("url(#choropleth-no-data-hatch-"),
+    );
+    expect(hasDataPaths.length).toBeGreaterThan(0);
+  });
+
+  it('"muted" gives the no-data feature a flat var(--muted) fill', () => {
+    const { container } = render(
+      <ChoroplethChart data={twoFeaturesOneNoData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent noDataFill="muted" />
+      </ChoroplethChart>,
+    );
+    const paths = container.querySelectorAll(".choropleth-features path");
+    const mutedPath = Array.from(paths).find((p) => p.getAttribute("fill") === "var(--muted)");
+    expect(mutedPath).toBeTruthy();
+  });
+
+  it("leaves fills unaffected when noDataFill is unset (default)", () => {
+    const { container } = render(
+      <ChoroplethChart data={twoFeaturesOneNoData} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    const paths = container.querySelectorAll(".choropleth-features path");
+    for (const p of paths) {
+      const fill = p.getAttribute("fill") ?? "";
+      expect(fill).not.toBe("var(--muted)");
+      expect(fill.startsWith("url(#choropleth-no-data-hatch-")).toBe(false);
+    }
+    expect(container.querySelector('pattern[id^="choropleth-no-data-hatch-"]')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// labelTop (RM-032) — top-N regions by value, inline halo'd name label.
+// ---------------------------------------------------------------------------
+const threeFeaturesRankedByValue: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      id: "A",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-100, 40],
+            [-90, 40],
+            [-90, 50],
+            [-100, 50],
+            [-100, 40],
+          ],
+        ],
+      },
+      properties: { id: "A", name: "Has Data", value: 100 },
+    },
+    {
+      type: "Feature",
+      id: "B",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-80, 40],
+            [-70, 40],
+            [-70, 50],
+            [-80, 50],
+            [-80, 40],
+          ],
+        ],
+      },
+      properties: { id: "B", name: "No Data" },
+    },
+    {
+      type: "Feature",
+      id: "C",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-60, 40],
+            [-50, 40],
+            [-50, 50],
+            [-60, 50],
+            [-60, 40],
+          ],
+        ],
+      },
+      properties: { id: "C", name: "Lower", value: 50 },
+    },
+  ],
+};
+
+describe("ChoroplethFeature labelTop (RM-032)", () => {
+  it("renders no labels when labelTop is unset (default, unaffected)", () => {
+    const { container } = render(
+      <ChoroplethChart data={threeFeaturesRankedByValue} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent />
+      </ChoroplethChart>,
+    );
+    expect(container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+  });
+
+  it("labelTop=1 labels only the single highest-value region", () => {
+    const { container } = render(
+      <ChoroplethChart data={threeFeaturesRankedByValue} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent labelTop={1} />
+      </ChoroplethChart>,
+    );
+    const labels = container.querySelectorAll('[data-slot="halo-text"]');
+    expect(labels).toHaveLength(1);
+    expect(labels[0]?.textContent).toBe("Has Data");
+  });
+
+  it("labelTop=2 labels the two highest-value regions, excluding the no-data one", () => {
+    const { container } = render(
+      <ChoroplethChart data={threeFeaturesRankedByValue} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent labelTop={2} />
+      </ChoroplethChart>,
+    );
+    const labels = container.querySelectorAll('[data-slot="halo-text"]');
+    expect(labels).toHaveLength(2);
+    expect(new Set(Array.from(labels).map((el) => el.textContent))).toEqual(
+      new Set(["Has Data", "Lower"]),
+    );
+  });
+
+  it("labelTop bigger than the number of valued regions labels every valued region, never the no-data one", () => {
+    const { container } = render(
+      <ChoroplethChart data={threeFeaturesRankedByValue} aspectRatio="16 / 9">
+        <ChoroplethFeatureComponent labelTop={10} />
+      </ChoroplethChart>,
+    );
+    const labels = container.querySelectorAll('[data-slot="halo-text"]');
+    expect(labels).toHaveLength(2);
+    for (const label of labels) {
+      expect(label.textContent).not.toBe("No Data");
+    }
+  });
+});

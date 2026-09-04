@@ -2,7 +2,8 @@
 
 import { geoCentroid } from "d3-geo";
 import { motion, useTransform } from "motion/react";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useId, useMemo } from "react";
+import { HaloText } from "../../marks/halo-text";
 import { useEnterComplete } from "../use-enter-complete";
 import { useMountProgress } from "../use-mount-progress";
 import {
@@ -20,6 +21,30 @@ export interface ChoroplethFeatureProps {
   getFeatureColor?: (feature: ChoroplethFeatureType, index: number) => string;
   patterns?: React.ReactNode;
   getFeaturePattern?: (feature: ChoroplethFeatureType, index: number) => string | null | undefined;
+  /**
+   * Distinguish "no data" regions (`properties.value` is not a finite number)
+   * from regions that simply happen to be colored by the default palette.
+   * - `"hatch"` — a diagonal `<pattern>` in `--chart-grid` (the pattern
+   *   infrastructure `series-pattern.tsx` already ships; this is its
+   *   no-data-specific sibling, not tied to a series index).
+   * - `"muted"` — a flat `var(--muted)` fill (the same token BarChart/series-bar
+   *   already use for a "not real data yet" fill).
+   * - `undefined` (default) — no-data regions render exactly as before
+   *   (`getFeatureColor` / `fill` / the default palette), unaffected.
+   *
+   * Takes priority over `fill` and `getFeatureColor` (a chart-wide default
+   * that doesn't know which regions lack data) but NOT over `getFeaturePattern`
+   * (an author's explicit, per-feature choice always wins).
+   */
+  noDataFill?: "hatch" | "muted";
+  /**
+   * Label the top-N regions BY VALUE (`properties.value`, descending) inline
+   * at their centroid with a halo'd `<text>` showing the region's name — the
+   * M1/M2 "top-N inline labels with halo" enhancement. Labels that would
+   * otherwise collide are nudged apart vertically (see `spacedTopK` below).
+   * Unset (default) renders no labels.
+   */
+  labelTop?: number;
 }
 
 interface FeatureRecord {
@@ -30,16 +55,39 @@ interface FeatureRecord {
   centroid: { x: number; y: number } | null;
 }
 
+/** `properties.value`, when it is a finite number — the "does this region have data" test. */
+function getFeatureNumericValue(feature: ChoroplethFeatureType): number | undefined {
+  const raw = feature.properties?.value;
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
+}
+
+/** A human-readable name for a feature, for the `labelTop` inline label. */
+function getFeatureDisplayName(feature: ChoroplethFeatureType, index: number): string {
+  const props = feature.properties;
+  if (props?.name && typeof props.name === "string") {
+    return props.name;
+  }
+  if (props?.id !== undefined) {
+    return String(props.id);
+  }
+  return `Region ${index + 1}`;
+}
+
 function resolveFeatureFill(
   feature: ChoroplethFeatureType,
   index: number,
   fill: string | undefined,
   getFeatureColor: ChoroplethFeatureProps["getFeatureColor"],
   getFeaturePattern: ChoroplethFeatureProps["getFeaturePattern"],
+  noDataFill: ChoroplethFeatureProps["noDataFill"],
+  noDataHatchFillUrl: string,
 ): string {
   const patternId = getFeaturePattern?.(feature, index);
   if (patternId) {
     return `url(#${patternId})`;
+  }
+  if (noDataFill && getFeatureNumericValue(feature) === undefined) {
+    return noDataFill === "hatch" ? noDataHatchFillUrl : "var(--muted)";
   }
   if (fill) {
     return fill;
@@ -48,6 +96,37 @@ function resolveFeatureFill(
     return getFeatureColor(feature, index);
   }
   return defaultChoroplethColors[index % defaultChoroplethColors.length] ?? "var(--chart-1)";
+}
+
+/**
+ * A minimum-gap collision-avoidance pass over a set of candidate label points.
+ * Picks the top `k` by value, then nudges any two points that are close on
+ * BOTH axes apart vertically so labels don't stack on top of one another.
+ *
+ * Private copy — the shared `spacedTopK` (RM-028) has not landed yet; this is
+ * scoped to `labelTop`'s needs (a handful of points, one pass) rather than a
+ * general-purpose export. Replace with the shared version once RM-028 ships.
+ */
+function spacedTopK<T extends { value: number; x: number; y: number }>(
+  points: readonly T[],
+  k: number,
+  minGap = 14,
+): T[] {
+  const top = [...points].sort((a, b) => b.value - a.value).slice(0, Math.max(0, k));
+  const byY = [...top].sort((a, b) => a.y - b.y);
+  const placed: T[] = [];
+  for (const point of byY) {
+    let y = point.y;
+    for (const prev of placed) {
+      // Only push apart labels that are also horizontally close — two labels
+      // at a similar height but far apart in x shouldn't collide.
+      if (Math.abs(prev.x - point.x) < minGap * 4 && y - prev.y < minGap) {
+        y = prev.y + minGap;
+      }
+    }
+    placed.push({ ...point, y });
+  }
+  return placed;
 }
 
 const StaticFeatureLayer = memo(function StaticFeatureLayer({
@@ -236,6 +315,8 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
   getFeatureColor,
   patterns,
   getFeaturePattern,
+  noDataFill,
+  labelTop,
 }: ChoroplethFeatureProps) {
   const {
     features,
@@ -249,6 +330,8 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
   } = useChoroplethStable();
   const { hoveredFeatureIndex, setHoveredFeatureIndex, focusedFeatureIndex, setTooltipData } =
     useChoroplethInteraction();
+  const noDataHatchId = `choropleth-no-data-hatch-${useId().replace(/:/g, "")}`;
+  const noDataHatchFillUrl = `url(#${noDataHatchId})`;
 
   const featureCentroids = useMemo(() => {
     return features.map((feature) => {
@@ -287,7 +370,15 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
       items.push({
         index,
         path,
-        fill: resolveFeatureFill(feature, index, fill, getFeatureColor, getFeaturePattern),
+        fill: resolveFeatureFill(
+          feature,
+          index,
+          fill,
+          getFeatureColor,
+          getFeaturePattern,
+          noDataFill,
+          noDataHatchFillUrl,
+        ),
         feature,
         centroid: featureCentroids[index] ?? null,
       });
@@ -300,8 +391,34 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     fill,
     getFeatureColor,
     getFeaturePattern,
+    noDataFill,
+    noDataHatchFillUrl,
     pathGenerator,
   ]);
+
+  // labelTop (M1/M2) — the top-N regions by `properties.value`, inline
+  // halo'd text at their centroid, collision-avoided.
+  const topLabels = useMemo(() => {
+    if (!labelTop || labelTop <= 0) {
+      return [];
+    }
+    const candidates = records
+      .map((record) => {
+        const value = getFeatureNumericValue(record.feature);
+        if (value === undefined || !record.centroid) {
+          return null;
+        }
+        return {
+          value,
+          x: record.centroid.x,
+          y: record.centroid.y,
+          name: getFeatureDisplayName(record.feature, record.index),
+          key: record.index,
+        };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+    return spacedTopK(candidates, labelTop);
+  }, [records, labelTop]);
 
   const handleFeatureEnter = useCallback(
     (record: FeatureRecord) => {
@@ -335,12 +452,45 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
 
   return (
     <g className="choropleth-features">
-      {patterns ? <defs>{patterns}</defs> : null}
+      {patterns || noDataFill === "hatch" ? (
+        <defs>
+          {patterns}
+          {noDataFill === "hatch" ? (
+            <pattern height={8} id={noDataHatchId} patternUnits="userSpaceOnUse" width={8}>
+              <rect fill="var(--chart-background)" height={8} width={8} />
+              <path
+                d="M-1,1 l2,-2 M0,8 l8,-8 M7,9 l2,-2"
+                fill="none"
+                stroke="var(--chart-grid)"
+                strokeLinecap="square"
+                strokeWidth={1}
+              />
+            </pattern>
+          ) : null}
+        </defs>
+      ) : null}
       {isLoaded ? (
         <StaticFeatureLayer {...layerProps} />
       ) : (
         <EnterFeatureLayer {...layerProps} revealEpoch={revealEpoch} />
       )}
+      {topLabels.length > 0 ? (
+        <g aria-hidden="true">
+          {topLabels.map((label) => (
+            <HaloText
+              dominantBaseline="middle"
+              fontSize={11}
+              fontWeight={700}
+              key={label.key}
+              textAnchor="middle"
+              x={label.x}
+              y={label.y}
+            >
+              {label.name}
+            </HaloText>
+          ))}
+        </g>
+      ) : null}
     </g>
   );
 });
