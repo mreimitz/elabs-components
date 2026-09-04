@@ -12,6 +12,44 @@ export function niceYDomain(domain: YDomain): YDomain {
   return [niceDomain[0] ?? domain[0], niceDomain[1] ?? domain[1]];
 }
 
+/** Options for {@link resolveYDomain}. */
+export interface ResolveYDomainOptions {
+  /**
+   * Widen `domain` to cover 0 before nicing it. Default `false`.
+   *
+   * This is lieflat's honesty rule #1 — "bars never break the axis"
+   * (`docs/review/2026-09-04-lieflat-charts-gap-analysis.md` §5 C5; lieflat
+   * `SKILL.md` §2 "数据", §7, §8) — turned into an option instead of a prompt
+   * instruction: a LENGTH encoding (a bar, a rung stack, a waterfall total)
+   * must be drawn from true zero, because starting the axis away from zero is
+   * exactly the trick that exaggerates a difference. A POSITION encoding (a
+   * line, a dot, a dumbbell end) has no such obligation — it may legitimately
+   * zoom into the range its data actually occupies — so this defaults to
+   * `false` and a caller opts in per length-encoding axis, never globally.
+   */
+  includeZero?: boolean;
+}
+
+/**
+ * The generic, reusable sibling of `resolveBarValueDomain` (RM-027,
+ * `bar-chart.tsx`) — RM-039 (#265). `BarChart` already forces a zero baseline
+ * today via its own hand-written `resolveBarValueDomain` (it predates this
+ * helper and is intentionally left as-is: `bar-chart.tsx` is a container, out
+ * of this item's `touches`). This is what a FUTURE length-encoding container
+ * should reach for instead of re-deriving the same "extend the domain to
+ * cover zero, then nice() it" logic on its own — one call,
+ * `resolveYDomain(rawDomain, { includeZero: true })`, rather than a bespoke
+ * min/max dance per container.
+ */
+export function resolveYDomain(domain: YDomain, options: ResolveYDomainOptions = {}): YDomain {
+  const { includeZero = false } = options;
+  if (!includeZero) {
+    return niceYDomain(domain);
+  }
+  const [lo, hi] = domain;
+  return niceYDomain([Math.min(lo, 0), Math.max(hi, 0)]);
+}
+
 /**
  * Skip Y tween when both endpoints move less than the threshold relative to span.
  * When in doubt callers should tween — beauty wins over micro-optimization.

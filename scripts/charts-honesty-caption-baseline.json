@@ -1,0 +1,14 @@
+{
+  "$schema": "Ratchet baseline for charts:honesty:check rule 4 (unit captions) — RM-039, #265. Only shrinks: a key here is a pre-existing story that does not yet state its unit visibly. Never add a NEW key by hand for a NEW story — write the caption instead. Regenerate with `node scripts/check-charts-honesty.mjs --update` after fixing one.",
+  "knownFailing": [
+    "packages/charts/src/charts/bar-chart.stories.tsx#UnitRungs",
+    "packages/charts/src/charts/dumbbell-chart.stories.tsx#Default",
+    "packages/charts/src/charts/dumbbell-chart.stories.tsx#WithAccessibleLabel",
+    "packages/charts/src/charts/heatmap/heatmap-chart.stories.tsx#DotHeat",
+    "packages/charts/src/charts/heatmap/heatmap-chart.stories.tsx#DotHeatDark",
+    "packages/charts/src/charts/unit-chart.stories.tsx#AllLayouts",
+    "packages/charts/src/charts/unit-chart.stories.tsx#MarkShapes",
+    "packages/charts/src/charts/unit-chart.stories.tsx#PerformanceStress",
+    "packages/charts/src/charts/waterfall-chart.stories.tsx#UnitRungs"
+  ]
+}
