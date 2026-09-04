@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T08:56:23.034Z",
+  "generatedAt": "2026-09-04T08:56:59.147Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15354,12 +15354,14 @@
             {
               "name": "title",
               "optional": false,
-              "type": "ReactNode"
+              "type": "ReactNode",
+              "description": "Write the title as the CONCLUSION, not the chart type — \"Revenue is up 8% QoQ\", not \"Revenue chart\". Put what each series means in prose in `description` (lieflat's card contract)."
             },
             {
               "name": "description",
               "optional": true,
-              "type": "ReactNode"
+              "type": "ReactNode",
+              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption."
             },
             {
               "name": "actions",
@@ -15384,6 +15386,12 @@
               "optional": true,
               "type": "boolean",
               "description": "Loading vs ready — the body becomes a layout-shaped skeleton at the same height; title/description keep rendering. Default: `false`."
+            },
+            {
+              "name": "source",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract); hidden when absent."
             }
           ]
         },
@@ -15455,12 +15463,14 @@
             {
               "name": "title",
               "optional": true,
-              "type": "ReactNode"
+              "type": "ReactNode",
+              "description": "Write the title as the CONCLUSION, not the chart type — \"Revenue is up 8% QoQ\", not \"Revenue chart\". Put what each series means in prose in `description` (lieflat's card contract)."
             },
             {
               "name": "description",
               "optional": true,
-              "type": "ReactNode"
+              "type": "ReactNode",
+              "description": "Prose that IS the legend — what a reader needs to read the chart correctly (series, units, scope), written as a sentence, not a caption."
             },
             {
               "name": "data",
@@ -15509,6 +15519,12 @@
               "optional": true,
               "type": "(rows: Record<string, unknown>[], columns: ChartFrameColumn[]) => void",
               "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @elabs-ai/components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
+            },
+            {
+              "name": "source",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV. Hidden when absent."
             },
             {
               "name": "children",

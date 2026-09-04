@@ -185,6 +185,41 @@ export const Loading: Story = {
   },
 };
 
+/**
+ * The card contract's fourth part (lieflat) — an attribution/provenance
+ * footer, shown inline and (via the play function below) inside the expand
+ * modal's detail pane too. A plain-string `source` also rides the downloaded
+ * CSV as a trailing `# source: …` comment row.
+ */
+export const WithSource: Story = {
+  render: () => (
+    <div className="w-[560px]">
+      <ChartFrame
+        title="Revenue is up 8% quarter over quarter"
+        description="Monthly revenue, Jan – Jun 2025"
+        data={monthlyData}
+        columns={monthlyColumns}
+        source="Source: Internal analytics, updated daily"
+      >
+        <DemoChart />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Source: Internal analytics, updated daily")).toBeVisible();
+
+    await userEvent.click(canvas.getByLabelText("Expand chart"));
+    const dialog = await within(document.body).findByRole("dialog");
+    await waitFor(() => expect(dialog).toBeVisible());
+    await waitFor(() =>
+      expect(
+        within(dialog).getAllByText("Source: Internal analytics, updated daily").length,
+      ).toBeGreaterThan(0),
+    );
+  },
+};
+
 /** Download callback fires with the correct rows when triggered. */
 export const DownloadCallback: Story = {
   args: {

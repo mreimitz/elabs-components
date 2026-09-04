@@ -77,4 +77,25 @@ describe("ChartCard", () => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
   });
+
+  // Card contract source row (RM-019): a fourth, optional attribution part.
+  describe("source", () => {
+    it("renders the source row when provided", () => {
+      render(
+        <ChartCard title="Monthly Revenue" source="Source: Internal analytics">
+          <div>chart</div>
+        </ChartCard>,
+      );
+      expect(screen.getByText("Source: Internal analytics")).toBeInTheDocument();
+    });
+
+    it("renders no source row when absent", () => {
+      render(
+        <ChartCard title="Monthly Revenue">
+          <div>chart</div>
+        </ChartCard>,
+      );
+      expect(screen.queryByText(/source/i)).not.toBeInTheDocument();
+    });
+  });
 });
