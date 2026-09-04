@@ -26,6 +26,15 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - CALENDAR_ROWS
 - Candlestick
 - CandlestickChart
+- CANVAS_LAYER_DEFAULT_MARGIN
+- CANVAS_LAYER_ENTER_MS
+- CANVAS_LAYER_HIT_RADIUS
+- CanvasLayer — The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.
+  - avoid: Reaching for it below ~20k marks — the SVG path is inspectable, stylable and testable, and ChartDatapointLayer already gives every point a real keyboard target. A canvas is what you accept when the DOM has run out, not an upgrade.
+  - avoid: Backing hitTest with a linear scan over the points — it runs on every pointermove, so at 50k points the hover path, not the draw, is what makes the canvas view feel worse than the SVG one it replaced. Use createSpatialGrid.
+  - avoid: Shipping it without accessibleDescription — canvas pixels are invisible to assistive technology, so with no parallel summary the marks simply cease to exist for a screen-reader user. That is the one failure this component cannot recover from on the reader's behalf.
+  - avoid: Hardcoding a colour in draw (a hex, an rgb()) instead of canvasTokenColor — the layer redraws on a theme flip, which repaints exactly the same wrong colours.
+  - avoid: Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here.
 - CATEGORICAL_SOFT_CAP
 - CHART_CLIP_PASSTHROUGH
 - CHART_STAGGER_BAR_MS
@@ -274,6 +283,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - useActivateDatapoint
 - useActiveMarkers
 - useAnimatedYDomains
+- useCanvasDraw
 - useChart
 - useChartConfig
 - useChartDatapointsEnabled

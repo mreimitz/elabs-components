@@ -513,3 +513,22 @@ export {
   type WaffleLayout,
   type WaffleLayoutOptions,
 } from "./unit-layouts";
+// CanvasLayer — RM-046
+// The canvas mark path for ChartFrame: a drop-in sibling of the SVG marks for
+// views past ~20k points (dotted chart, performance spectrum), with a bucketed
+// spatial-grid hit test and a single-tab-stop virtual cursor for keyboard/AT.
+export {
+  CANVAS_LAYER_DEFAULT_MARGIN,
+  CANVAS_LAYER_ENTER_MS,
+  CANVAS_LAYER_HIT_RADIUS,
+  CanvasLayer,
+  type CanvasLayerProps,
+  type CanvasLayerRect,
+  canvasTokenColor,
+  type ChartScales,
+  createSpatialGrid,
+  type SpatialGrid,
+  useCanvasDraw,
+  type UseCanvasDrawOptions,
+  type UseCanvasDrawResult,
+} from "./canvas-layer";

@@ -225,3 +225,14 @@ export type { SankeyChartProps, SankeyData } from "../charts/sankey/sankey-chart
 export type { ScatterChartProps } from "../charts/scatter-chart";
 export type { SparklineProps } from "../sparkline/sparkline";
 export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
+
+// ── CanvasLayer — RM-046 ─────────────────────────────────────────────────────
+// The inert stand-in (parity rung (a)) plus the canvas-context helpers, which
+// are the only way to assert what a canvas `draw` callback did under jsdom —
+// where `getContext("2d")` is `null`. See `primitives.tsx`.
+export {
+  type CanvasContextStub,
+  CanvasLayer,
+  createCanvasContextStub,
+  installCanvasContextStub,
+} from "./primitives";

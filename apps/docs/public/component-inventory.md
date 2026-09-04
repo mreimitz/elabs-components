@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 26 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 151 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 155 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1053,6 +1053,10 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CALENDAR_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | Candlestick | component |  | `@elabs-ai/components-charts` |  |
 | CandlestickChart | component |  | `@elabs-ai/components-charts` |  |
+| CANVAS_LAYER_DEFAULT_MARGIN | component |  | `@elabs-ai/components-charts` |  |
+| CANVAS_LAYER_ENTER_MS | component |  | `@elabs-ai/components-charts` |  |
+| CANVAS_LAYER_HIT_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| CanvasLayer | component |  | `@elabs-ai/components-charts` | The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor. |
 | CATEGORICAL_SOFT_CAP | component |  | `@elabs-ai/components-charts` |  |
 | CHART_CLIP_PASSTHROUGH | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_BAR_MS | component |  | `@elabs-ai/components-charts` |  |
@@ -1191,6 +1195,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useActivateDatapoint | hook |  | `@elabs-ai/components-charts` |  |
 | useActiveMarkers | hook |  | `@elabs-ai/components-charts` |  |
 | useAnimatedYDomains | hook |  | `@elabs-ai/components-charts` |  |
+| useCanvasDraw | hook |  | `@elabs-ai/components-charts` |  |
 | useChart | hook |  | `@elabs-ai/components-charts` |  |
 | useChartConfig | hook |  | `@elabs-ai/components-charts` |  |
 | useChartDatapointsEnabled | hook |  | `@elabs-ai/components-charts` |  |
