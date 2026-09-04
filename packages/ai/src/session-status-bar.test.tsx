@@ -70,10 +70,14 @@ describe("SessionStatusBar", () => {
     ) as HTMLElement;
     expect(connecting).toHaveAttribute("role", "status");
     expect(connecting).toHaveAttribute("aria-live", "polite");
-    // No separate `aria-label`: the region's accessible name and its
-    // announced content must not be the same string twice over, or some ATs
-    // speak it twice ("Connecting… Connecting…"). Let the name derive from
-    // the (sr-only) text content instead.
+    // No separate `aria-label`: an explicit one would duplicate the
+    // announced content as the accessible name too, and some ATs speak a
+    // live region's name alongside its changed content ("Connecting…
+    // Connecting…"). Leaving it off does NOT relocate the name to the
+    // (sr-only) text — `role="status"` is `nameFrom: author`, so with no
+    // `aria-label`/`aria-labelledby` the region simply has no accessible
+    // name. That is fine: no acceptance criterion needs one here, only the
+    // announced content (asserted below) does.
     expect(connecting).not.toHaveAttribute("aria-label");
     // Before the fix this was "" — the only text node was aria-hidden.
     expect(announceableText(connecting)).toBe("Connecting…");

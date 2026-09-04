@@ -138,11 +138,16 @@ export const SessionStatusBar = forwardRef<HTMLDivElement, SessionStatusBarProps
                 Deliberately no `aria-label` here (unlike
                 terminal-status-bar.tsx, where the label lives on the OUTER
                 bar as a generic region name distinct from any segment's
-                content): this span's accessible name and its announced
-                content would otherwise be the byte-identical string, which
-                risks a double announcement ("Connecting… Connecting…") on
-                ATs that speak a live region's name alongside its changed
-                content. Let the name derive from this text instead. */}
+                content): an explicit `aria-label` here would give this
+                span an ACCESSIBLE NAME byte-identical to its announced
+                CONTENT, which risks a double announcement ("Connecting…
+                Connecting…") on ATs that speak a live region's name
+                alongside its changed content. Leaving `aria-label` off
+                does NOT relocate the name to this text — `role="status"`
+                is `nameFrom: author`, so it never falls back to content
+                the way e.g. a `button` does. The span simply has no
+                accessible name, which is fine: no acceptance criterion
+                needs one here, only the announced content does. */}
             <span className="sr-only">{connectionsAnnouncement}</span>
           </span>
         ) : null}
