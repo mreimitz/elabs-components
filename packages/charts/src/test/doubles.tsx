@@ -86,7 +86,8 @@ export type ChartFamilyName =
   | "RadarChart"
   | "ChoroplethChart"
   | "SankeyChart"
-  | "Gantt";
+  | "Gantt"
+  | "DumbbellChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -184,6 +185,17 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     requiredProps: ["tasks"],
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
+  },
+  // Dumbbell — RM-023
+  DumbbellChart: {
+    dataKind: "array",
+    requiredProps: ["data", "category", "startKey", "endKey"],
+    hasStatus: false,
+    dynamicKeys: [
+      { prop: "category" },
+      { prop: "startKey", numeric: true },
+      { prop: "endKey", numeric: true },
+    ],
   },
 };
 
@@ -309,6 +321,15 @@ export const SankeyChart = createChartContainerDouble<SankeyChartProps>(
   CHART_CONTRACT_SPECS.SankeyChart,
 );
 export const Gantt = createChartContainerDouble<GanttProps>("Gantt", CHART_CONTRACT_SPECS.Gantt);
+
+// ── DumbbellChart — RM-023 ───────────────────────────────────────────────────
+
+import type { DumbbellChartProps } from "../charts/dumbbell-chart";
+
+export const DumbbellChart = createChartContainerDouble<DumbbellChartProps>(
+  "DumbbellChart",
+  CHART_CONTRACT_SPECS.DumbbellChart,
+);
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
 

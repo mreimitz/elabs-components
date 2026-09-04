@@ -95,6 +95,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.
   - avoid: Shortening the duration instead of branching for reduced motion — a motion path at duration 0 still leaves the dash attributes in the DOM, and a stroke carrying a dash array is one rounding error away from a visible seam. The reduced-motion state has to be the ordinary, undecorated path.
   - avoid: Letting meaning depend on the animation having run — a reader who arrives after it finished, or who never sees it, must lose nothing.
+- DumbbellChart
 - FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
   - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
   - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.

@@ -421,3 +421,19 @@ export {
   type UnitStackKind,
   type UnitStackProps,
 } from "../marks";
+
+// Dumbbell — RM-023
+export {
+  buildDumbbellRows,
+  computeDumbbellDomain,
+  DumbbellChart,
+  type DumbbellBeadsConfig,
+  type DumbbellChartProps,
+  type DumbbellMarkerStyle,
+  type DumbbellOrientation,
+  type DumbbellRow,
+  type DumbbellSortBy,
+  type DumbbellVariant,
+  sortDumbbellRows,
+  spaceSlopeLabels,
+} from "./dumbbell-chart";

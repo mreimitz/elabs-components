@@ -113,6 +113,15 @@ export interface ChartContractSpec {
    * those scales a non-Date x value is exactly what the real chart expects.
    */
   xKey?: { prop: string; default: string; requireDate: boolean };
+  /**
+   * Row keys whose NAME is itself driven by a prop, generalized past `xKey`
+   * for a component with more than one prop-driven key name (DumbbellChart's
+   * `category`/`startKey`/`endKey`, RM-023). Each entry checks the row has the
+   * named key; `numeric: true` additionally requires the value to be
+   * `number | null | undefined`, mirroring `itemNumericKeys` but for a
+   * caller-named column instead of a fixed one.
+   */
+  dynamicKeys?: { prop: string; numeric?: boolean }[];
   /** Props that must be finite numbers when provided. */
   numericProps?: string[];
   /** Walk `children` for elements carrying a `dataKey` prop and verify it exists on every row. */
@@ -258,6 +267,28 @@ export function assertChartContract(
             `row ${index}'s "${xKeyName}" is not coercible to a valid Date — this is the ` +
               `"RangeError: Invalid time value" class of bug`,
           );
+        }
+      }
+      for (const dynamicKey of spec.dynamicKeys ?? []) {
+        const keyName = props[dynamicKey.prop] as string | undefined;
+        if (!keyName) continue; // presence of the prop itself is `requiredProps`'s job
+        if (!(keyName in record)) {
+          fail(
+            component,
+            dynamicKey.prop,
+            row,
+            `row ${index} of "${dataProp}" is missing the key named by "${dynamicKey.prop}" ("${keyName}")`,
+          );
+        } else if (dynamicKey.numeric) {
+          const v = record[keyName];
+          if (v != null && typeof v !== "number") {
+            fail(
+              component,
+              dynamicKey.prop,
+              row,
+              `row ${index}'s "${keyName}" (named by "${dynamicKey.prop}") must be number | null | undefined`,
+            );
+          }
         }
       }
       for (const key of seriesKeys) {
