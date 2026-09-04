@@ -539,6 +539,59 @@ export const BaselineTrack: Story = {
   },
 };
 
+// ── Gap bands (idle time on a row — P2, #221) ───────────────────────────────
+
+const gapBandTasks: GanttTask[] = [
+  {
+    id: "1",
+    name: "Intake",
+    start: d(0),
+    end: d(6),
+    status: "success",
+    // Idle time between finishing Intake and Review starting on the next
+    // row — rendered as a hatched band on Intake's OWN row, in the empty
+    // canvas space its own bar doesn't cover.
+    gaps: [{ start: d(6), end: d(12), label: "Waiting for handoff" }],
+  },
+  { id: "2", name: "Review", start: d(12), end: d(20), status: "info" },
+  { id: "3", name: "Approval", start: d(20), end: d(26), status: "warning" },
+];
+
+/**
+ * Idle-time bands (P2, #221) — a hatched fill spanning a row's `gaps`
+ * entries, reusing the ADR 0011 series-pattern mechanism UNCONDITIONALLY (not
+ * gated behind high decoration): the meaning ("idle") must not rest on
+ * colour alone (WCAG 1.4.1), so the hatch shape is always the second
+ * channel. Hover the band, or inspect its `aria-label`, for the accessible
+ * name — the caller's `label` when given, else a generated description.
+ */
+export const GapBands: Story = {
+  args: {
+    tasks: gapBandTasks,
+    defaultViewMode: "day",
+    style: { height: 260 },
+  },
+  play: async ({ canvasElement }) => {
+    const band = canvasElement.querySelector('[data-gantt-gap="true"]') as HTMLElement;
+    await expect(band).not.toBeNull();
+    await expect(band).toHaveAttribute("role", "img");
+    await expect(band).toHaveAttribute("aria-label", "Waiting for handoff");
+    await expect(band.querySelector("pattern")).not.toBeNull();
+  },
+};
+
+/**
+ * Same data at high decoration — the hatch is unconditional, so this renders
+ * IDENTICALLY to {@link GapBands}: gap bands are never a decoration-gated
+ * enhancement, unlike an ordinary series fill (ADR 0011).
+ */
+export const GapBandsHighDecoration: Story = {
+  name: "GapBands — high decoration",
+  globals: { decoration: "10" },
+  args: GapBands.args,
+  play: GapBands.play,
+};
+
 /** Vertical annotation markers (P2) — themed lines + label chips. */
 export const Annotations: Story = {
   args: {

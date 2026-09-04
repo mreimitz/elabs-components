@@ -39,14 +39,14 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 230 · **Registry blocks:** 23
 
-**Exported surface:** 1137 components · 82 hooks across 12 packages.
+**Exported surface:** 1138 components · 82 hooks across 12 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                               |
 | -------------------------------- | ---------: | ----: | ---------------------------------------------------------------------------------------- |
 | `@elabs-ai/components-tokens`    |         19 |     6 | Semantic CSS-variable themes + ThemeProvider/useTheme.                                   |
 | `@elabs-ai/components-icons`     |         32 |     0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react).            |
 | `@elabs-ai/components-ui`        |        382 |    15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …).                           |
-| `@elabs-ai/components-data`      |          5 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
+| `@elabs-ai/components-data`      |          6 |     0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker.                   |
 | `@elabs-ai/components-ai`        |        442 |    14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations.               |
 | `@elabs-ai/components-flow`      |         26 |     7 | Branded React Flow canvas, nodes, edges, controls, inspector.                            |
 | `@elabs-ai/components-maps`      |         12 |     1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
