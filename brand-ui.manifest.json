@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T15:34:46.809Z",
+  "generatedAt": "2026-09-04T15:58:51.837Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -3535,6 +3535,10 @@
           "module": "packages/ai/src/composer.tsx"
         },
         {
+          "name": "ComposerShortcut",
+          "module": "packages/ai/src/composer.tsx"
+        },
+        {
           "name": "ConfirmationAcceptedProps",
           "module": "packages/ai/src/confirmation.tsx"
         },
@@ -6481,6 +6485,18 @@
               "optional": true,
               "type": "ComponentProps<typeof PromptInputSubmit>[\"onStop\"]",
               "description": "Stop handler used while the send button shows the generating state."
+            },
+            {
+              "name": "shortcuts",
+              "optional": true,
+              "type": "ComposerShortcut[]",
+              "description": "Keyboard-shortcut hints shown as a row beneath the input well — plain `Kbd` + label pairs, e.g. `[{ keys: \"Enter\", label: \"send\" }]`. Omitted, nothing renders (opt-in, like every other Composer slot); the row is never invented, since the real bindings are the host app's."
+            },
+            {
+              "name": "cancelShortcut",
+              "optional": true,
+              "type": "ComposerShortcut",
+              "description": "A second, busy-only hint appended to `shortcuts` (#107) — shown ONLY once the composer is actually generating (`sendStatus` is `\"submitted\"` or `\"streaming\"`) AND a real `onStop` handler is set, so the hint never describes an affordance that isn't there. Mirrors `TerminalComposer`'s `canCancel = busy && Boolean(onStop)` shape."
             },
             {
               "name": "submitProps",

@@ -210,6 +210,53 @@ export const Streaming: Story = {
 };
 
 /**
+ * `shortcuts` — a row of keyboard-shortcut hints beneath the well (#107).
+ * Opt-in: nothing renders unless you pass at least one. At rest only the
+ * always-shown hints appear.
+ */
+export const WithShortcuts: Story = {
+  args: {
+    shortcuts: [
+      { keys: "Enter", label: "send" },
+      { keys: "Shift+Enter", label: "newline" },
+    ],
+  },
+  render: (args) => (
+    <div className="mx-auto max-w-2xl">
+      <Composer {...args} />
+    </div>
+  ),
+};
+
+/**
+ * The hints CHANGE with a busy state (#107's acceptance criterion, verbatim):
+ * `cancelShortcut` joins the row only once the composer is actually
+ * generating (`sendStatus="streaming"`) AND a real `onStop` is set — a hint
+ * for an affordance that isn't there is never shown.
+ */
+export const WithShortcutsBusy: Story = {
+  args: {
+    status: "Generating…",
+    sendStatus: "streaming",
+    onStop: fn(),
+    shortcuts: [{ keys: "Enter", label: "send" }],
+    cancelShortcut: { keys: "Esc", label: "cancel" },
+  },
+  render: (args) => (
+    <div className="mx-auto max-w-2xl">
+      <Composer {...args} />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("Esc")).toBeInTheDocument();
+    await expect(canvas.getByText("cancel")).toBeInTheDocument();
+    // The row is a plain sibling, never nested in the Stop button — its name
+    // stays exactly "Stop", not "Stop Esc" (the #153-style accessible-name trap).
+    await expect(canvas.getByRole("button", { name: "Stop" })).toHaveAccessibleName("Stop");
+  },
+};
+
+/**
  * Running, but the user has already typed a follow-up (#351's P0 fix): the
  * control flips back to the circular ArrowUp `sendIcon` — never the Stop
  * square — and submits normally, letting the app decide what a mid-turn
