@@ -8,6 +8,18 @@ const meta = {
   title: "Charts/DistributionChart",
   component: DistributionChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "One container, one shared numeric scale, four readings of the same per-record " +
+          'measure — `kind="strip"` shows every record, `kind="box"` compresses to five ' +
+          'numbers per group, `kind="violin"` reveals the shape (including bimodality a box ' +
+          'plot hides entirely), and `kind="histogram"` bins a single group — so switching ' +
+          "the reading is one prop, never a rebuild onto a different chart.",
+      },
+    },
+  },
 } satisfies Meta<typeof DistributionChart>;
 
 export default meta;

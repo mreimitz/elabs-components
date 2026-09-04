@@ -9,6 +9,17 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A radial dial that reads one value as a colored, notched arc against 0 to 100, " +
+          "with optional milestone dots and a “N to go” caption for the next one — the read " +
+          "for a score, a completion percentage, or a value against a target or threshold " +
+          "band. The similarly circular `RingChart` reads a single proportion of its own " +
+          "maximum instead of a value against a target; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
   },
 } satisfies Meta<typeof Gauge>;
 

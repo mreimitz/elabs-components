@@ -207,6 +207,7 @@ function DefaultTable({
 function ChartFrameToolbar() {
   const { state, actions, meta } = useChartFrame();
   const { features } = meta;
+  const { t } = useLocale();
   // export-svg/export-png degrade the same way table/download degrade without
   // data (chart-components.md § Feature degradation) — `hasSvg` is registered
   // by ChartFrameInner after render, since (unlike `data`) a rendered `<svg>`
@@ -256,13 +257,13 @@ function ChartFrameToolbar() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Export as SVG"
+                aria-label={t("charts.chartFrame.exportSvg")}
                 onClick={actions.exportSvg}
               >
                 <FileCode2 aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Export as SVG</TooltipContent>
+            <TooltipContent>{t("charts.chartFrame.exportSvg")}</TooltipContent>
           </Tooltip>
         )}
 
@@ -272,13 +273,13 @@ function ChartFrameToolbar() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Export as PNG"
+                aria-label={t("charts.chartFrame.exportPng")}
                 onClick={actions.exportPng}
               >
                 <ImageDown aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Export as PNG</TooltipContent>
+            <TooltipContent>{t("charts.chartFrame.exportPng")}</TooltipContent>
           </Tooltip>
         )}
 

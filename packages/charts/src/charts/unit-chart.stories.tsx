@@ -9,6 +9,17 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "One mark equals one honest unit: a waffle grid, a phyllotaxis field, or tally " +
+          "rows of ticks, for showing a whole as discrete countable pieces (a hundred dots, " +
+          "a multi-select survey) rather than as a smoothed proportion. When exact per-unit " +
+          "counts do not matter, a `PieChart` or `BarChart` reads faster for the same " +
+          "composition; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
   },
 } satisfies Meta<typeof UnitChart>;
 

@@ -17,13 +17,27 @@
  *
  * WHY "color block", not "any duplicate selector": some themes legitimately
  * declare a SECOND, machinery-only block for the same selector — e.g. a theme's
- * font/mono *mechanism* block (`--font-sans`/`--font-mono` + `font-family`), and
- * the second `:root` carrying the `--expo-out` easing ramp. Those declare NO
- * synced color token (no `--x: oklch()/var()`), so the DTCG tooling does not
- * track them and they do not override the color layer. The gate counts only
- * color blocks — mirroring `themes-io.mjs isInScope()` (a token is synced iff its
- * value is an `oklch(...)` literal or a `var(--...)` alias) — so such a
- * mechanism block and the easing `:root` are correctly allowed.
+ * font/mono *mechanism* block (`--font-sans`/`--font-mono` + `font-family`), the
+ * second `:root` carrying the `--expo-out` easing ramp, and the second `:root`
+ * holding the TYPE SCALE BASE layer. Those declare NO color token, so the DTCG
+ * tooling does not track them and they do not override the color layer.
+ *
+ * HOW an alias is classified (and why this is not `isInScope()` verbatim).
+ * `themes-io.mjs isInScope()` answers a per-DECLARATION question inside a block
+ * the assembler already owns: is this line one the DTCG source round-trips? Any
+ * `var(--…)` there is a color alias, because the block it sits in is a color
+ * block. This gate asks the different, per-BLOCK question "is this a color block
+ * at all", so it cannot borrow that shortcut: a machinery block may alias
+ * machinery. The type-scale base does exactly that —
+ * `--type-size-chart-value: var(--type-size-meta)` (RM-019) — and under the old
+ * shape-only predicate it made the type-scale `:root` read as a second color
+ * block and failed a blocking gate on `main` for a file with no color in it.
+ * So an alias is resolved: `--x: var(--y)` counts as color iff `--y` itself
+ * resolves to a color. Resolution is FAIL-CLOSED — an undeclared target, a
+ * cycle, or a token declared as a color anywhere all count as color — so the
+ * #196 regression shape (`--sidebar-primary: var(--primary)`, `--primary`
+ * being an `oklch()` literal) is still caught, and so is an alias to a token
+ * this file cannot see.
  *
  * (Deliberately NOT done: hardening `locateBlock()` to throw on >1 match — that
  * would false-fail on a legitimate 2nd block. This dedicated gate, with
@@ -47,12 +61,71 @@ import { readThemesCss } from "./lib/theme-sources.mjs";
 /** The theme selectors whose color layer must live in exactly one block. */
 const SELECTORS = [":root", ...ACTIVE_THEMES.map((n) => `[data-theme="${n}"]`)];
 
+/** Every custom-property declaration: `--name: value;` (value up to `;`/`}`). */
+const DECL_RE = /(--[\w-]+)\s*:\s*([^;}]*)/g;
+
+/** A value that is an `oklch(...)` literal — the unambiguous color form. */
+const OKLCH_RE = /^oklch\(/;
+
+/** A value that is a bare `var(--target)` alias; captures the target name. */
+const ALIAS_RE = /^var\(\s*(--[\w-]+)/;
+
 /**
- * A block "declares synced color tokens" iff it has ≥1 `--token: oklch(...)` or
- * `--token: var(--...)` declaration. Mirrors `themes-io.mjs isInScope()` — the
- * exact predicate the DTCG assembler uses to decide which lines it owns.
+ * Index every `--name: value` in the theme sources, keeping ALL values a name
+ * is given (a token may be declared once per theme block). Used to resolve
+ * `var()` aliases; see the header for why resolution is fail-closed.
+ * @param {string} cssText
+ * @returns {Map<string, string[]>}
  */
-const COLOR_DECL_RE = /--[\w-]+\s*:\s*(?:oklch\(|var\(--)/;
+function indexDeclarations(cssText) {
+  const index = new Map();
+  for (const m of cssText.matchAll(DECL_RE)) {
+    const name = m[1];
+    const value = m[2].trim();
+    if (!index.has(name)) index.set(name, []);
+    index.get(name).push(value);
+  }
+  return index;
+}
+
+/**
+ * Does `name` resolve to a color? FAIL-CLOSED: an undeclared name, an alias
+ * cycle, or a name that is a color in ANY of its declarations answers `true`,
+ * so a token this file cannot see is never waved through as machinery.
+ * @param {string} name
+ * @param {Map<string, string[]>} index
+ * @param {Set<string>} [seen] - alias chain, for cycle detection.
+ * @returns {boolean}
+ */
+function resolvesToColor(name, index, seen = new Set()) {
+  if (seen.has(name)) return true; // cycle — cannot prove it is machinery
+  seen.add(name);
+  const values = index.get(name);
+  if (!values || values.length === 0) return true; // undeclared — unknown
+  return values.some((value) => {
+    if (OKLCH_RE.test(value)) return true;
+    const alias = ALIAS_RE.exec(value);
+    if (alias) return resolvesToColor(alias[1], index, new Set(seen));
+    return false; // a literal that is not a color (a rem, a font stack, an easing)
+  });
+}
+
+/**
+ * A block "declares color tokens" iff ≥1 of its declarations is an `oklch(...)`
+ * literal, or a `var(--target)` alias whose target resolves to a color.
+ * @param {string} body
+ * @param {Map<string, string[]>} index
+ * @returns {boolean}
+ */
+function declaresColor(body, index) {
+  for (const m of body.matchAll(DECL_RE)) {
+    const value = m[2].trim();
+    if (OKLCH_RE.test(value)) return true;
+    const alias = ALIAS_RE.exec(value);
+    if (alias && resolvesToColor(alias[1], index)) return true;
+  }
+  return false;
+}
 
 /** 1-based line number of a character offset in `text`. */
 function lineAt(text, index) {
@@ -67,7 +140,7 @@ function lineAt(text, index) {
  * selector (`[data-theme="dark"], [data-theme="dark"] *, … {`) is NOT matched —
  * the selector there is followed by `,`/` *`, not `{`.
  */
-function findBlocks(cssText, selector) {
+function findBlocks(cssText, selector, index) {
   // Escape regex metachars in the selector ([ ] " etc.), require it at line start
   // (after optional indent) followed by optional ws then `{`.
   const esc = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -80,7 +153,7 @@ function findBlocks(cssText, selector) {
     const body = closeIdx === -1 ? cssText.slice(braceIdx) : cssText.slice(braceIdx, closeIdx);
     blocks.push({
       line: lineAt(cssText, m.index + (m[0].startsWith("\n") ? 1 : 0)),
-      isColor: COLOR_DECL_RE.test(body),
+      isColor: declaresColor(body, index),
     });
   }
   return blocks;
@@ -93,8 +166,9 @@ function findBlocks(cssText, selector) {
  */
 export function findDuplicateThemeBlocks(cssText) {
   const violations = [];
+  const index = indexDeclarations(cssText);
   for (const selector of SELECTORS) {
-    const colorBlockLines = findBlocks(cssText, selector)
+    const colorBlockLines = findBlocks(cssText, selector, index)
       .filter((b) => b.isColor)
       .map((b) => b.line);
     if (colorBlockLines.length > 1) violations.push({ selector, colorBlockLines });
@@ -136,8 +210,9 @@ function main(argv) {
         "is invisible to the DTCG assembler / theme-parity / contrast gates (all\n" +
         "first-match), so the tools go green while the browser renders the stale\n" +
         "values. Delete the duplicate block(s) in packages/tokens/src/themes.css\n" +
-        "(keep the maintained one). Machinery-only secondary blocks (e.g. a font/easing\n" +
-        "font mechanism, the easing :root) are allowed — they declare no color token.\n" +
+        "(keep the maintained one). Machinery-only secondary blocks (a theme's font\n" +
+        "mechanism, the easing :root, the type-scale base :root) are allowed — they\n" +
+        "declare no color token, and a var() alias to a non-color token is not one.\n" +
         "See GitHub issue #196.",
     );
     if (!warnOnly) process.exit(1);

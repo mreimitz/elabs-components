@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Fixed: `ChartFrame`'s “Export as SVG” and “Export as PNG” actions are now
+  translatable — both the icon buttons' accessible names and their tooltips read
+  from `charts.chartFrame.exportSvg` / `charts.chartFrame.exportPng`, so an app
+  running under a non-English locale no longer gets two hardcoded English
+  strings in the chart toolbar. Fourteen chart and flow Storybook pages (Gauge,
+  Heatmap, Network, ParallelCoordinates, Tree, Treemap, Unit, Waterfall, Bump,
+  Dumbbell, Distribution, CanvasLayer, FlowSelfLoopEdge, FlowWeightedEdge) now
+  describe what they are and, where a sibling is genuinely confusable, which one
+  to reach for instead. The shipped `chart-selection` skill reference no longer
+  points consumers at paths inside this monorepo.
+
 - Added: `@elabs-ai/components-ai`'s `Composer` gains opt-in shortcut hints
   (`ComposerShortcut`, `ComposerProps.shortcuts`, `ComposerProps.cancelShortcut`)
   that change with a busy state (#107) — a `shortcuts` row renders as plain

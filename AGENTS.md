@@ -220,6 +220,8 @@ pnpm ai:types-only              # if @elabs-ai/components-ai touched — the AI 
 pnpm lucide:check               # if any `lucide-react` import touched — one Lucide version across the workspace
 pnpm charts:reuse:check         # if @elabs-ai/components-charts touched — charts must not redefine @elabs-ai/components-ui component names
 pnpm charts:test-double:check   # if packages/charts/src/test/** or its wiring touched — the ./test double stays in parity with the real components, pulls no @visx/d3/motion engine, and exports/publishConfig/tsup.config.ts agree (#364)
+pnpm charts:honesty:check       # if packages/charts/src/{charts,marks}/** touched — bars never break the axis, area/radius encodings scale by sqrt(v), demo data is deterministic (no `Math.random`), and a unit-decomposed chart states its unit (RM-039, #265)
+pnpm charts:honesty:check:test  # self-test for the charts honesty gate
 pnpm process:reuse:check        # if @elabs-ai/components-process touched — the layer-3 package must not redefine a flow/charts/data/ui component name, author a raw SVG mark, import an unwrapped @xyflow/react primitive, reach a layer-2 sibling sideways, or pull an engine into /core (ADR 0034)
 pnpm process:reuse:check:test   # self-test for the process reuse-audit gate
 pnpm dep-direction:check        # if any packages/*/package.json touched — @elabs-ai/components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)

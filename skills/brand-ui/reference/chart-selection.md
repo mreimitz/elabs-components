@@ -31,8 +31,8 @@ or the `chart_for` MCP tool (`brand-ui mcp`) rank every chart container whose ow
 
 ## Palette, by cardinality (RM-018)
 
-Pick the `ChartPalette` (`packages/charts/src/charts/chart-context.tsx`) by what
-the SERIES represent, not by taste:
+Pick the `ChartPalette` (the type is exported from `@elabs-ai/components-charts`)
+by what the SERIES represent, not by taste:
 
 | Series are…                                   | Palette       |
 | --------------------------------------------- | ------------- |
@@ -44,17 +44,18 @@ the SERIES represent, not by taste:
 
 `mono` beyond 6 unordered categories exists because a categorical ramp beyond ~6
 hues stops being distinguishable at a glance — don't stretch `categorical` to
-cover a 12-series legend. `accent` is `--chart-1` under the hood (see
-`.claude/rules/theming.md` "chart ACCENT") — reach for it when exactly one series
-is the point and the rest are context, not when several series compete for
-attention.
+cover a 12-series legend. `accent` draws the neutral `--chart-mono-*` ladder with
+one hero colour (`--chart-1`) over it — reach for it when exactly one series is
+the point and the rest are context, not when several series compete for
+attention. On a light theme that hero colour is the palette's LOWEST-contrast
+member, so give the hero a second channel (a label, a shape, its position) rather
+than relying on the colour to carry it.
 
 ## Data-shape table
 
-Fifteen of the 25 containers are reachable through `AutoChart`'s shape inference
-(`packages/charts/src/auto-chart/infer-chart-type.ts`) — give `AutoChart` a
-`ChartSpec` and it picks one of these `ChartType` values for you, in the priority
-order the rules file documents. The other ten (marked **manual-select** below)
+Fifteen of the 25 containers are reachable through `AutoChart`'s shape
+inference — give `AutoChart` a `ChartSpec` and it picks one of these `ChartType`
+values for you, in a fixed priority order. The other ten (marked **manual-select** below)
 read shapes a flat `{ x, series[] }` spec cannot express without ambiguity — a
 node/link pair, a per-row dimension list, a nested hierarchy — so `AutoChart`
 never guesses at them; you reach for the container directly.
@@ -100,11 +101,10 @@ never guesses at them; you reach for the container directly.
 
 `brand-ui chart-for "<data shape>"` and the `chart_for` MCP tool rank chart
 containers by matching your free-text query against each container's own
-`@dataShape` JSDoc tag (`packages/cli/lib/chart-for.mjs`; the tag itself lives on
-the container in `packages/charts/src/**` and is read into the manifest by
-`extractChartDataShapes` in `packages/cli/lib/core.mjs`). The match is
-deliberately dumb — plain token overlap, no synonyms — so the ranking you get is
-always traceable back to the exact words the container's own docblock uses:
+`@dataShape` JSDoc tag, which is extracted from the component source into the
+shipped manifest. The match is deliberately dumb — plain token overlap, no
+synonyms — so the ranking you get is always traceable back to the exact words the
+container's own docblock uses:
 
 ```
 $ brand-ui chart-for "weekday by hour ticket volume"
@@ -117,7 +117,7 @@ chart-for "weekday by hour ticket volume" — 2 candidate(s), ranked:
      avoid when: exact per-unit counts do not matter — a pie or bar chart reads faster
 
 Per the chart-selection rules: compare at least 3 candidates and write down why the
-others lost — see skills/brand-ui/reference/chart-selection.md.
+others lost — see this chart-selection reference.
 ```
 
 All 25 containers carry their tags, so this is what the command actually prints
@@ -145,25 +145,21 @@ one `@dataShape` line per reading so a query naming either reading matches:
  */
 ```
 
-`pnpm manifest` reads these into `manifest.packages[pkg].intent[Name].dataShapes`
-/`.avoidWhen` — **never hand-type either field into the manifest.** They are
-generated exactly like `extractPropTable`/`extractVariants`; deleting the tag and
-re-running `pnpm manifest` must delete the manifest entry.
+The manifest's `intent[Name].dataShapes` / `.avoidWhen` fields are GENERATED from
+these tags — **never hand-type either field into a manifest.** They are extracted
+exactly like the prop table and the variant list; deleting the tag and
+regenerating must delete the manifest entry.
 
 ### Where the tags live
 
-Every one of the 25 containers above carries its `@dataShape` / `@avoidWhen` tags
-on its own declaration, in the file that declares it — `HeatmapChart` in
-`packages/charts/src/charts/heatmap/heatmap-chart.tsx`, not in that directory's
-`index.ts` barrel. The tags are read from the docblock **immediately preceding
-the declaration** and nowhere else, so a tuning constant exported from the same
-file (`CALENDAR_ROWS`, `END_LABEL_MIN_GAP`) never inherits the container's shapes
-and never turns up as a `chart-for` candidate.
+Every one of the 25 containers carries its `@dataShape` / `@avoidWhen` tags on its
+own declaration, in the module that declares it — never in a barrel re-export. The
+tags are read from the docblock **immediately preceding the declaration** and
+nowhere else, so a tuning constant exported from the same module never inherits
+the container's shapes and never turns up as a `chart-for` candidate.
 
-Adding a new chart container means adding its tags in the same change: write the
-shape sentences the way a reader would describe their data, not the way the
-component is named — `chart-for` matches on the words the caller types, so a tag
-that only repeats the component's own name matches nothing. `pnpm manifest` reads
-them; `packages/cli/test/chart-for.test.mjs` fails if any container is left
-untagged, and `pnpm manifest:check` fails if the committed manifest has drifted
-from the source.
+If you copy-own a chart container and want it discoverable the same way, add its
+tags in the same change and write the shape sentences the way a reader would
+describe their data, not the way the component is named — `chart-for` matches on
+the words the caller types, so a tag that only repeats the component's own name
+matches nothing.

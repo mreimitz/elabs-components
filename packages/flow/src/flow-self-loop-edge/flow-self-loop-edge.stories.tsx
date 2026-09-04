@@ -16,7 +16,21 @@ const meta = {
   title: "Flow/FlowSelfLoopEdge",
   component: FlowSelfLoopEdge,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "A branded edge for the case where source and target are the same node — the " +
+          "this-step-repeated signal in a process map — drawn as a closed arc above the node " +
+          "instead of a straight or curved line between two points, since dagre cannot lay a " +
+          "self-loop out on its own. It shares its weight-to-stroke-width scale with " +
+          "`FlowWeightedEdge`, so reach for this one only for a genuine self-loop and the " +
+          "weighted edge for everything else; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
 } satisfies Meta<typeof FlowSelfLoopEdge>;
 export default meta;
 type Story = StoryObj<typeof meta>;

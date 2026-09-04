@@ -82,3 +82,54 @@ test("FAILS: a second color block that aliases tokens via var(--…)", () => {
   assert.equal(v.length, 1);
   assert.equal(v[0].selector, '[data-theme="dark"]');
 });
+
+// ── F: an alias to a NON-color token is machinery, not a color block ──────────
+// The RM-019 regression: the type-scale base `:root` aliases the meta rung
+// (`--type-size-chart-value: var(--type-size-meta)`), which is a `rem`, not a
+// color. Under the old shape-only predicate this read as a second color block
+// and failed a blocking gate for a file that declares no color at all.
+
+test("PASSES: a second :root aliasing only NON-color tokens (the type-scale base)", () => {
+  const css =
+    cleanCss() +
+    "\n\n" +
+    `:root {\n` +
+    `  --type-size-meta: 0.75rem;\n` +
+    `  --type-leading-meta: 1rem;\n` +
+    `  --type-size-chart-value: var(--type-size-meta);\n` +
+    `  --type-leading-chart-value: var(--type-leading-meta);\n` +
+    `  --type-weight-chart-value: 800;\n` +
+    `}`;
+  assert.equal(
+    violations(css).length,
+    0,
+    "an alias whose target is a rem is not a color declaration",
+  );
+});
+
+// ── G: the #196 shape still fails THROUGH an alias chain ─────────────────────
+// Narrowing the predicate must not weaken it: the regression that produced this
+// gate was a stale block full of color aliases, and one hop of indirection must
+// not launder it.
+
+test("FAILS: a second color block aliasing a color through a chain", () => {
+  const css =
+    cleanCss() +
+    "\n\n" +
+    `[data-theme="light"] {\n` +
+    `  --brand-base: oklch(0.7 0.2 150);\n` +
+    `  --brand: var(--brand-base);\n` +
+    `  --sidebar-primary: var(--brand);\n` +
+    `}`;
+  const v = violations(css);
+  assert.equal(v.length, 1, "a two-hop alias to an oklch() literal is still a color block");
+  assert.equal(v[0].selector, '[data-theme="light"]');
+});
+
+// ── H: resolution is FAIL-CLOSED on a cycle ──────────────────────────────────
+// An unresolvable alias must never be waved through as machinery.
+
+test("FAILS: an alias cycle counts as color (fail-closed)", () => {
+  const css = cleanCss() + "\n\n" + `[data-theme="dark"] {\n  --a: var(--b);\n  --b: var(--a);\n}`;
+  assert.equal(violations(css).length, 1, "a cycle cannot prove the token is machinery");
+});

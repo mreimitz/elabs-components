@@ -232,6 +232,12 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Announced when `copyValueOnActivate` puts a datapoint's exact value on the
   // clipboard — the recovery path for a compact axis label.
   "charts.datapoint.copied": "Exact value copied",
+  // ChartFrame's SVG/PNG export actions (RM-025). Each string is used twice —
+  // as the icon button's `aria-label` (its ONLY accessible name) and as the
+  // tooltip a sighted user reads — so one key serves both and they cannot
+  // drift apart in translation.
+  "charts.chartFrame.exportSvg": "Export as SVG",
+  "charts.chartFrame.exportPng": "Export as PNG",
 
   // ── @elabs-ai/components-ai ───────────────────────────────────────────────────────────────
   // Namespaced `ai.<area>.<key>` so package microcopy can't collide with the

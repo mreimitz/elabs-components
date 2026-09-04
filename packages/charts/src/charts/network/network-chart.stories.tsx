@@ -12,6 +12,17 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A node-link graph in three layouts — circular, a force-settled cloud, or a " +
+          "bipartite arc — for arbitrary relationships between entities that carry no " +
+          "inherent hierarchy: service dependencies, a social graph, a two-group flow. When " +
+          "the relationship really is a hierarchy, `TreeChart` (branching structure) or " +
+          "`TreemapChart` (structure sized by a measure) reads faster; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
   },
 } satisfies Meta<typeof NetworkChart>;
 
