@@ -11,7 +11,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { PieChart } from "./pie-chart";
+import { DEFAULT_HOVER_OFFSET, PieChart } from "./pie-chart";
 import { PieSlice } from "./pie-slice";
 
 // Provide a fixed 300×300 viewport so PieChartInner renders (size >= 10)
@@ -210,6 +210,65 @@ describe("PieChart radiusKey (angle × radius double encoding)", () => {
       </PieChart>,
     );
     expect(container.querySelectorAll('circle[stroke-dasharray="4 3"]').length).toBe(0);
+  });
+
+  it("scales the emitted outer radius by sqrt(v/max), NOT the linear ratio v/max", () => {
+    // Three slices: two whose sqrt and linear ratios genuinely diverge, plus
+    // the max slice (ratio 1 under both formulas) as a control — if the
+    // control's radius didn't match, the test would be reading the wrong
+    // number entirely, not just missing the square root.
+    const threeMeasureData = [
+      { label: "Quarter", value: 34, minutes: 25 }, // v/max = 0.25 -> sqrt 0.5, linear 0.25
+      { label: "Fourpercent", value: 33, minutes: 4 }, // v/max = 0.04 -> sqrt 0.2, linear 0.04
+      { label: "Max", value: 33, minutes: 100 }, // v/max = 1 -> both formulas give 1 (control)
+    ];
+    // size=220 -> center=110; outerRadius = center - DEFAULT_HOVER_OFFSET = 100,
+    // a round base radius so the expected values below are easy to verify by eye.
+    const size = 220;
+    const outerRadius = size / 2 - DEFAULT_HOVER_OFFSET;
+    const innerRadius = 0;
+    const radiusKeyMax = 100;
+
+    const { container } = render(
+      <PieChart data={threeMeasureData} radiusKey="minutes" size={size}>
+        <PieSlice index={0} key="a" />
+        <PieSlice index={1} key="b" />
+        <PieSlice index={2} key="c" />
+      </PieChart>,
+    );
+
+    const hitboxes = container.querySelectorAll('path[fill="transparent"]');
+    expect(hitboxes.length).toBe(3);
+
+    // The visible slice's outer edge is drawn by an SVG elliptical-arc command
+    // (`A{rx},{ry},...`) whose radius, for a circular (non-donut, no corner
+    // rounding) arc, IS the emitted outer radius — read it straight off the
+    // path rather than asserting on the whole `d` string, so this test fails
+    // only when the radius itself is wrong.
+    const emittedOuterRadius = (d: string | null): number => {
+      const match = d?.match(/A(-?[\d.]+),/);
+      if (!match?.[1]) {
+        throw new Error(`no elliptical-arc command found in path: ${d}`);
+      }
+      return Number(match[1]);
+    };
+
+    threeMeasureData.forEach((datum, index) => {
+      const expected =
+        innerRadius + (outerRadius - innerRadius) * Math.sqrt(datum.minutes / radiusKeyMax);
+      const actual = emittedOuterRadius(hitboxes[index]?.getAttribute("d") ?? null);
+      expect(actual).toBeCloseTo(expected, 5);
+    });
+
+    // Pin the divergence explicitly: sqrt(0.25) = 0.5 (radius 50) is what
+    // must render — the linear ratio 0.25 (radius 25) is the bug this test
+    // exists to catch if the square root is ever dropped.
+    expect(emittedOuterRadius(hitboxes[0]?.getAttribute("d") ?? null)).toBeCloseTo(50, 5);
+    expect(emittedOuterRadius(hitboxes[1]?.getAttribute("d") ?? null)).toBeCloseTo(20, 5);
+    // Control: the max slice is ratio 1 under EITHER formula, so it renders
+    // at the full outer radius regardless — proves the assertions above are
+    // reading the real per-slice radius, not a value that's always 100.
+    expect(emittedOuterRadius(hitboxes[2]?.getAttribute("d") ?? null)).toBeCloseTo(100, 5);
   });
 });
 
