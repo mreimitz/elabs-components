@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:10:21.445Z",
+  "generatedAt": "2026-09-04T11:14:44.607Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13215,6 +13215,11 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "WaterfallChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
           "name": "XAxis",
           "kind": "value",
           "module": "packages/charts/src/charts/x-axis.tsx"
@@ -14444,6 +14449,18 @@
         {
           "name": "WaffleLayoutOptions",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "WaterfallChartProps",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallDatum",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallStep",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
           "name": "XAxisProps",
@@ -19199,6 +19216,97 @@
             }
           ]
         },
+        "WaterfallChart": {
+          "extends": [
+            "ChartInteractionProps<WaterfallStep>"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "WaterfallDatum[]",
+              "description": "Steps from gross to net — one row per bar."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "BarOrientation",
+              "description": "Default `\"vertical\"`."
+            },
+            {
+              "name": "showValues",
+              "optional": true,
+              "type": "boolean",
+              "description": "Signed value label on each step (`HaloText`, 800 weight). Default `true`."
+            },
+            {
+              "name": "connectors",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
+            },
+            {
+              "name": "positiveFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for an increasing step. Default `var(--chart-seq-6)`."
+            },
+            {
+              "name": "negativeFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for a decreasing step. Default `var(--chart-seq-3)`."
+            },
+            {
+              "name": "totalFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for a `\"total\"` row. Default `var(--chart-foreground)`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "When set, render each bar as a counted `UnitStack` of rungs (the F9 look) instead of a solid capsule — one rung per `unit` of value. Off by default."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "Value/label format. Default: locale number."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest of the bar family."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>",
+              "description": "Chart margins."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Additional class name for the container."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
+            }
+          ]
+        },
         "XAxis": {
           "extends": [],
           "props": [
@@ -20091,6 +20199,35 @@
             "Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.",
             "Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.",
             "Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid."
+          ]
+        },
+        "WaterfallChart": {
+          "purpose": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "Grid",
+              "BarXAxis",
+              "BarYAxis",
+              "ChartTooltip"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ]
+          },
+          "stateTokens": {
+            "connector": "var(--chart-foreground-muted), 0.6px, dashed (furniture, not data — Leader's default)",
+            "decrease": "var(--chart-seq-3) (default negativeFill)",
+            "increase": "var(--chart-seq-6) (default positiveFill)",
+            "total": "var(--chart-foreground) (default totalFill)",
+            "valueLabel": "var(--chart-foreground) on a var(--chart-background) halo (HaloText)"
+          },
+          "antiPatterns": [
+            "A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.",
+            "Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.",
+            "Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.",
+            "More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead."
           ]
         }
       }

@@ -94,7 +94,9 @@ export type ChartFamilyName =
   // Treemap — RM-025
   | "TreemapChart"
   // DistributionChart — RM-026
-  | "DistributionChart";
+  | "DistributionChart"
+  // Waterfall — RM-022
+  | "WaterfallChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -219,6 +221,11 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
   UnitChart: {
     dataKind: "array",
     requiredProps: ["data", "layout"],
+  },
+  // Waterfall — RM-022
+  WaterfallChart: {
+    dataKind: "array",
+    requiredProps: ["data"],
     hasStatus: false,
     itemRequiredKeys: ["label", "value"],
     itemNumericKeys: ["value"],
@@ -322,6 +329,8 @@ import type { UnitChartProps } from "../charts/unit-chart";
 import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 // DistributionChart — RM-026
 import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
+// Waterfall — RM-022
+import type { WaterfallChartProps } from "../charts/waterfall-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -406,6 +415,12 @@ export const TreemapChart = createChartContainerDouble<TreemapChartProps>(
 export const DistributionChart = createChartContainerDouble<DistributionChartProps>(
   "DistributionChart",
   CHART_CONTRACT_SPECS.DistributionChart,
+);
+
+// Waterfall — RM-022
+export const WaterfallChart = createChartContainerDouble<WaterfallChartProps>(
+  "WaterfallChart",
+  CHART_CONTRACT_SPECS.WaterfallChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

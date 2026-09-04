@@ -282,6 +282,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.
   - avoid: Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.
   - avoid: Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid.
+- WaterfallChart — Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.
+  - avoid: A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.
+  - avoid: Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.
+  - avoid: Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.
+  - avoid: More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead.
 - XAxis
 - Y_AXIS_DEFAULT_TICK_COUNT
 - Y_AXIS_MAX_TICK_COUNT

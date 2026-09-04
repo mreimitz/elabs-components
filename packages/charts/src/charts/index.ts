@@ -573,3 +573,10 @@ export {
   type KdePoint,
   type KdeResult,
 } from "./distribution";
+// Waterfall — RM-022
+export {
+  WaterfallChart,
+  type WaterfallChartProps,
+  type WaterfallDatum,
+  type WaterfallStep,
+} from "./waterfall-chart";
