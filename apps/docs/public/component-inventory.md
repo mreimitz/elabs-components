@@ -1178,7 +1178,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_CHART_GROUP_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_CHART_POSITION_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
-| UnitChart | component |  | `@elabs-ai/components-charts` |  |
+| UnitChart | component |  | `@elabs-ai/components-charts` | One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie. |
 | UnitStack | component |  | `@elabs-ai/components-charts` | n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random. |
 | useActivateDatapoint | hook |  | `@elabs-ai/components-charts` |  |
 | useActiveMarkers | hook |  | `@elabs-ai/components-charts` |  |

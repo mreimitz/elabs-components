@@ -240,7 +240,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - StaticChartPreviewProvider
 - UNIT_CHART_GROUP_STAGGER_MS
 - UNIT_CHART_POSITION_STAGGER_MS
-- UnitChart
+- UnitChart — One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.
+  - avoid: Sizing a waffle or field past a few hundred marks in a small frame — UnitStack already warns that one stack stops being countable past ~60 units; here the same failure happens across the WHOLE canvas at once, so budget total/columns/frame size together, not one series at a time.
+  - avoid: Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.
+  - avoid: Reaching for layout="field" when the reader needs to rank two series or compare them precisely — a phyllotaxis cluster reads as an area-at-a-glance impression, not a countable structure; a real comparison wants rows or waffle, where the grid gives the reader something to count.
+  - avoid: Falling back to a pie chart because comparing shares 'still feels easier' to build — that instinct is exactly what this chart exists to correct: a slice angle cannot be counted, a mark can. If the categories genuinely don't sum to a meaningful whole, reach for the rows layout, not a pie.
 - UnitStack — n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.
   - avoid: Passing a large n and calling it a bar — past roughly 60 units the stack stops being countable and becomes a texture, at which point a bar is the honest mark. It will happily draw 500; that is your judgment, not its.
   - avoid: Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.
