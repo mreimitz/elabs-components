@@ -76,6 +76,7 @@ vi.mock("@xyflow/react", () => {
   };
 });
 
+import { oklchToHex } from "@elabs-ai/components-tokens";
 import { FlowWeightedEdge, type BrandFlowWeightedEdge } from "./flow-weighted-edge";
 import type { EdgeProps } from "@xyflow/react";
 
@@ -142,6 +143,45 @@ describe("FlowWeightedEdge", () => {
     edgesBox.current = [{ id: "test-edge", data: {} }];
     render(<FlowWeightedEdge {...makeEdgeProps()} />);
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  // #286 — an edge is a real tab stop, so it must show a focus indicator with
+  // NO `selected` state and no consumer-supplied `onEdgesChange`. These lock
+  // the structure; `KeyboardFocus` in the stories locks the rendered result
+  // (resolved computed values in a real browser, both themes).
+  it("draws the compound focus indicator with no `selected` state (#286)", () => {
+    edgesBox.current = [{ id: "test-edge", data: { weight: 5 } }];
+    const { container } = render(
+      <FlowWeightedEdge {...makeEdgeProps({ selected: false, data: { weight: 5 } })} />,
+    );
+    const contour = container.querySelector<SVGPathElement>(
+      '[data-slot="flow-edge-focus-contour"]',
+    );
+    const ring = container.querySelector<SVGPathElement>('[data-slot="flow-edge-focus-ring"]');
+    expect(contour).not.toBeNull();
+    expect(ring).not.toBeNull();
+
+    const edgeWidth = parseFloat(
+      screen.getByTestId("base-edge").querySelector("path")!.style.strokeWidth,
+    );
+    const contourWidth = parseFloat(contour!.getAttribute("stroke-width")!);
+    const ringWidth = parseFloat(ring!.getAttribute("stroke-width")!);
+    // Neutral contour outside the --ring band, both outside the edge itself.
+    expect(contourWidth).toBeGreaterThan(ringWidth);
+    expect(ringWidth).toBeGreaterThan(edgeWidth);
+
+    // Same geometry as the edge — a halo, not a second shape.
+    expect(contour!.getAttribute("d")).toBe(ring!.getAttribute("d"));
+
+    // Hidden until the ancestor g.react-flow__edge matches :focus-visible. The
+    // pattern is asserted rather than the literal class string so this file does
+    // not itself become a Tailwind candidate.
+    for (const layer of [contour!, ring!]) {
+      const cls = layer.getAttribute("class") ?? "";
+      expect(cls).toContain("opacity-0");
+      expect(cls).toMatch(/react-flow.+edge:focus-visible.+opacity-100/);
+      expect(cls).toContain("pointer-events-none");
+    }
   });
 
   it("uses --ring and a wider stroke when selected", () => {
@@ -253,4 +293,42 @@ describe("FlowWeightedEdge SSR fallback contrast (#282)", () => {
       `FALLBACK_STRONG ${stroke} vs dark --canvas = ${vsDark.toFixed(2)}`,
     ).toBeGreaterThanOrEqual(AA_NONTEXT);
   });
+});
+
+// #286 — the focus indicator's neutral contour is what carries WCAG 1.4.11's
+// 3:1 non-text bar, because `--ring` alone measures 1.30:1 against `--canvas`
+// in the `light` reference theme. That makes `--foreground` vs `--canvas` a
+// load-bearing token pairing for the flow package, and nothing else gates it:
+// `--canvas` is not one of the five MARK_SURFACES in
+// packages/tokens/src/themes-contrast.test.ts. Values are the literals in
+// packages/tokens/src/themes/{light,dark}.css.
+describe("edge focus contour contrast (#286)", () => {
+  const THEMES = [
+    { name: "light", foreground: "oklch(0.3 0.021 257)", canvas: "oklch(0.97 0.002 257)" },
+    { name: "dark", foreground: "oklch(0.95 0.004 257)", canvas: "oklch(0.18 0.012 257)" },
+  ] as const;
+
+  function srgb01(hex: string): [number, number, number] {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)!;
+    return [parseInt(m[1]!, 16) / 255, parseInt(m[2]!, 16) / 255, parseInt(m[3]!, 16) / 255];
+  }
+  function luminance([r, g, b]: [number, number, number]): number {
+    const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  }
+
+  it.each(THEMES)(
+    "--foreground clears 3:1 against --canvas in $name",
+    ({ name, foreground, canvas }) => {
+      const [la, lb] = [
+        luminance(srgb01(oklchToHex(foreground)!)),
+        luminance(srgb01(oklchToHex(canvas)!)),
+      ].sort((x, y) => y - x);
+      const ratio = (la! + 0.05) / (lb! + 0.05);
+      expect(
+        ratio,
+        `--foreground vs --canvas in ${name} = ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    },
+  );
 });

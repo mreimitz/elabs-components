@@ -18,7 +18,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 382 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 28 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 31 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
 | `@elabs-ai/components-charts` | packages/charts | 187 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
@@ -991,9 +991,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_LOOP_RADIUS | component |  | `@elabs-ai/components-flow` |  |
 | EdgeLabelPill | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_ALL_SIDE_HANDLES | component |  | `@elabs-ai/components-flow` |  |
+| FLOW_EDGE_FOCUS_CONTOUR_WIDTH | component |  | `@elabs-ai/components-flow` |  |
+| FLOW_EDGE_FOCUS_RING_WIDTH | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_GROUP_NODE_TYPE | component |  | `@elabs-ai/components-flow` |  |
 | FlowButtonEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdge | component |  | `@elabs-ai/components-flow` |  |
+| FlowEdgePath | component |  | `@elabs-ai/components-flow` |  |
 | FlowFloatingEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowGroupNode | component |  | `@elabs-ai/components-flow` |  |
 | FlowMiniMap | component |  | `@elabs-ai/components-flow` |  |

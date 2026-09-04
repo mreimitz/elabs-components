@@ -1,10 +1,5 @@
-import {
-  BaseEdge,
-  getBezierPath,
-  useInternalNode,
-  type EdgeProps,
-  type InternalNode,
-} from "@xyflow/react";
+import { getBezierPath, useInternalNode, type EdgeProps, type InternalNode } from "@xyflow/react";
+import { FlowEdgePath } from "../flow-edge-path";
 import type { FlowNodeData } from "../flow-node";
 import {
   pickClosestHandles,
@@ -65,11 +60,14 @@ export function FlowSmartEdge({ id, source, target, markerEnd, style }: EdgeProp
   });
 
   return (
-    <BaseEdge
+    <FlowEdgePath
       id={id}
       path={edgePath}
       markerEnd={markerEnd}
-      style={{ stroke: "var(--flow-edge)", strokeWidth: 1.5, ...style }}
+      data-slot="flow-smart-edge"
+      stroke="var(--flow-edge)"
+      strokeWidth={1.5}
+      style={style}
     />
   );
 }

@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  BaseEdge,
   getBezierPath,
   getSmoothStepPath,
   useEdges,
@@ -8,6 +7,7 @@ import {
   type EdgeProps,
 } from "@xyflow/react";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
+import { FlowEdgePath } from "../flow-edge-path";
 import { EdgeLabelPill } from "./edge-label-pill";
 import {
   computeEdgeWeightScale,
@@ -141,6 +141,10 @@ function resolveValueStrokeColor(
  * `FlowGroupNode` use), overriding weight/value-derived width and colour so a
  * selected edge always reads clearly. No stroke-dasharray animation — reduced
  * motion is respected because there is no motion to reduce.
+ *
+ * KEYBOARD FOCUS is a separate state, drawn by `FlowEdgePath` (#286): selection
+ * needs a consumer's `onEdgesChange` to ever become true, so it can never be the
+ * indicator a tab stop owes its user.
  */
 export function FlowWeightedEdge({
   id,
@@ -189,21 +193,17 @@ export function FlowWeightedEdge({
   const strokeWidth = selected ? scaledWidth + 1.5 : scaledWidth;
 
   const edge = (
-    <BaseEdge
+    <FlowEdgePath
       id={id}
       path={edgePath}
       markerEnd={markerEnd}
       data-slot="flow-weighted-edge"
       data-variant={variant}
-      className="transition-[stroke,stroke-width] duration-fast ease-standard"
-      style={{
-        stroke,
-        strokeWidth,
-        ...(isBack
-          ? { strokeDasharray: BACK_EDGE_DASHARRAY, strokeOpacity: BACK_EDGE_OPACITY }
-          : null),
-        ...style,
-      }}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      strokeDasharray={isBack ? BACK_EDGE_DASHARRAY : undefined}
+      strokeOpacity={isBack ? BACK_EDGE_OPACITY : undefined}
+      style={style}
     />
   );
 
