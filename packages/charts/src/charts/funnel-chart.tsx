@@ -14,6 +14,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
+import { HaloText } from "../marks/halo-text";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
@@ -129,6 +130,22 @@ export interface FunnelChartProps {
    * For vertical funnel: start=left, end=right.
    */
   labelAlign?: "center" | "start" | "end";
+  /**
+   * Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered
+   * as a `HaloText` annotation (lieflat L13's "62% GET THROUGH" margin note —
+   * the number funnel readers actually want, distinct from the existing
+   * `showPercentage` badge which is always "% of the first stage").
+   * - `"between"` places one annotation at the boundary between each pair of
+   *   adjacent segments.
+   * - `"margin"` stacks all transitions in a column near the funnel's leading
+   *   edge (left edge for horizontal, top edge for vertical).
+   * - `false` (default) renders nothing — an existing `FunnelChart` with no
+   *   `showConversion` prop is unaffected.
+   *
+   * When set, the interactive stage overlay (hover/click target) also gets a
+   * native `title` tooltip reading "N% of previous stage · M% of first stage".
+   */
+  showConversion?: "between" | "margin" | false;
   /** Grid configuration. Pass `true` for default bands + lines, or an object for fine control. */
   grid?:
     | boolean
@@ -774,6 +791,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
     labelLayout = "spread",
     labelOrientation,
     labelAlign = "center",
+    showConversion = false,
     grid: gridProp = false,
     accessibleLabel,
     accessibleDescription,
@@ -909,6 +927,17 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
   const gridLineColor = gridCfg.lineColor ?? "var(--chart-grid)";
   const gridLineOpacity = gridCfg.lineOpacity ?? 1;
   const gridLineWidth = gridCfg.lineWidth ?? 1;
+
+  // Stage-to-stage conversion — % of the PREVIOUS stage's value. `null` at
+  // index 0 (no previous stage). Distinct from `pct` below (% of the FIRST
+  // stage), which the existing `showPercentage` badge already renders.
+  const conversions: (number | null)[] = data.map((stage, i) => {
+    if (i === 0) {
+      return null;
+    }
+    const prevValue = data[i - 1]?.value ?? 0;
+    return prevValue > 0 ? (stage.value / prevValue) * 100 : 0;
+  });
 
   return (
     <div
@@ -1067,6 +1096,95 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
             </svg>
           )}
 
+          {/* Stage-to-stage conversion (lieflat L13) — % of the previous
+              stage, one annotation per boundary. Decorative-by-default like
+              every other mark layer in this package: the interactive stage
+              overlay below carries the equivalent as a native `title`. */}
+          {showConversion && n > 1 && (
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full"
+              preserveAspectRatio="none"
+              role="presentation"
+              viewBox={`0 0 ${W} ${H}`}
+            >
+              {Array.from({ length: n - 1 }, (_, i) => {
+                const idx = i + 1;
+                const conv = conversions[idx] ?? 0;
+                const label = formatPercentage(conv);
+                const convKey = `conversion-${idx}`;
+
+                if (showConversion === "between") {
+                  if (horiz) {
+                    const x = segW * idx + gap * i + gap / 2;
+                    return (
+                      <HaloText
+                        dominantBaseline="middle"
+                        fontSize={11}
+                        fontWeight={700}
+                        key={convKey}
+                        textAnchor="middle"
+                        x={x}
+                        y={H / 2}
+                      >
+                        {label}
+                      </HaloText>
+                    );
+                  }
+                  const y = segH * idx + gap * i + gap / 2;
+                  return (
+                    <HaloText
+                      dominantBaseline="middle"
+                      fontSize={11}
+                      fontWeight={700}
+                      key={convKey}
+                      textAnchor="middle"
+                      x={W / 2}
+                      y={y}
+                    >
+                      {label}
+                    </HaloText>
+                  );
+                }
+
+                // "margin" — stack every transition near the leading edge
+                // (left for horizontal, top for vertical) rather than on
+                // each individual boundary.
+                const frac = n > 2 ? i / (n - 2) : 0.5;
+                if (horiz) {
+                  const y = H * (0.18 + frac * 0.64);
+                  return (
+                    <HaloText
+                      dominantBaseline="middle"
+                      fontSize={11}
+                      fontWeight={700}
+                      key={convKey}
+                      textAnchor="start"
+                      x={10}
+                      y={y}
+                    >
+                      {label}
+                    </HaloText>
+                  );
+                }
+                const x = W * (0.18 + frac * 0.64);
+                return (
+                  <HaloText
+                    dominantBaseline="hanging"
+                    fontSize={11}
+                    fontWeight={700}
+                    key={convKey}
+                    textAnchor="middle"
+                    x={x}
+                    y={10}
+                  >
+                    {label}
+                  </HaloText>
+                );
+              })}
+            </svg>
+          )}
+
           {/* Label overlays — one per segment, positioned over each segment cell.
               These are the hover triggers for each segment. */}
           {data.map((stage, i) => {
@@ -1086,6 +1204,11 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
                 };
 
             const isDimmed = hoveredIndex !== null && hoveredIndex !== i;
+            const conv = conversions[i];
+            const title =
+              showConversion && typeof conv === "number"
+                ? `${formatPercentage(conv)} of previous stage · ${formatPercentage(pct)} of first stage`
+                : undefined;
 
             return (
               <motion.div
@@ -1101,6 +1224,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
                 onMouseEnter={() => setHoveredIndex(i)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 style={{ ...posStyle, zIndex: 20 }}
+                title={title}
                 transition={{ type: "spring", stiffness: 300, damping: 24 }}
               >
                 <SegmentLabel

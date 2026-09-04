@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:55:28.299Z",
+  "generatedAt": "2026-09-04T10:56:38.115Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16266,6 +16266,12 @@
               "optional": true,
               "type": "\"center\" | \"start\" | \"end\"",
               "description": "Where the label group sits within the segment cell. - \"center\" (default), \"start\", \"end\" For horizontal funnel: start=top, end=bottom. For vertical funnel: start=left, end=right."
+            },
+            {
+              "name": "showConversion",
+              "optional": true,
+              "type": "\"between\" | \"margin\" | false",
+              "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a `HaloText` annotation (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\"."
             }
           ]
         },
@@ -16632,6 +16638,18 @@
               "optional": true,
               "type": "number",
               "description": "Scales notch stagger delays relative to default timing (1 = reference)."
+            },
+            {
+              "name": "milestones",
+              "optional": true,
+              "type": "number[]",
+              "description": "Milestone values (0–100) marked with a small halo-text dot + number inside the notch band — e.g. `[25, 50, 75, 100]` (lieflat F11). Unset (default) renders no milestones, so an existing `Gauge` is unaffected."
+            },
+            {
+              "name": "remainingLabel",
+              "optional": true,
+              "type": "(remaining: number) => string",
+              "description": "Caption rendered under the center value/label. Receives the number of notches remaining (`totalNotches - activeNotches`) and returns the caption text — e.g. `(remaining) => \\`${remaining} ticks to go\\`` renders as \"27 TICKS TO GO\" (lieflat F11; the caption is rendered upper-cased via CSS, so pass ordinary sentence case). Unset (default) renders no caption."
             }
           ]
         },
