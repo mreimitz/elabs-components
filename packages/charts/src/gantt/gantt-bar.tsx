@@ -40,12 +40,13 @@ import { cva } from "class-variance-authority";
 import { motion, useReducedMotion } from "motion/react";
 import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs-ai/components-ui";
 import { useGantt } from "./gantt-context";
-import type { ResolvedTask } from "./gantt-context";
+import type { ResolvedGap, ResolvedTask } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
 import type { GanttFormatDate, GanttLabelPosition, GanttTaskType, GanttTimeUnit } from "./gantt";
 import { applyDragDelta, DRAG_THRESHOLD_PX, snapDeltaMs, type DragMode } from "./gantt-drag";
 import { transitionWithDelay } from "../charts/motion-utils";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "../charts/animation";
+import { makeSeriesPattern, seriesPatternId } from "../charts/series-pattern";
 
 // ── Color resolution ──────────────────────────────────────────────────────────
 
@@ -198,6 +199,19 @@ function buildAriaLabel(
   return `${name}: ${start}–${end}, ${progress} complete, status ${status}${baseline}${depSuffix}`;
 }
 
+/**
+ * Accessible name for a gap band: the caller's `label` when given, else a
+ * generated "Gap, <start>–<end>" description — the band always exposes a
+ * name (#221), it never falls back to purely decorative.
+ */
+function buildGapAriaLabel(gap: ResolvedGap, fmt: GanttFormatDate): string {
+  if (gap.label) return gap.label;
+  return `Gap, ${fmt(gap.start)}–${fmt(gap.end)}`;
+}
+
+/** Fixed pattern-ramp index for every gap band — a stable, deterministic hatch for "idle". */
+const GAP_PATTERN_INDEX = 0;
+
 // ── Pixel mapping ─────────────────────────────────────────────────────────────
 
 export function dateToX(d: Date, domainStart: Date, domainEnd: Date, canvasWidth: number): number {
@@ -308,6 +322,10 @@ export function GanttBar({
   const color = resolveBarColor(task, index, taskTypes);
   const prefersReducedMotion = useReducedMotion();
   const clipId = useId();
+  // Stable, collision-free scope for this row's gap-band patterns (ADR 0011's
+  // seriesPatternId scope convention) — mint once with useId(), unlike bar.tsx's
+  // decoration-gated usage, so it's always available (no `high` gate here).
+  const gapPatternScope = useId().replace(/:/g, "");
 
   // A custom task type can force the milestone (diamond) shape (P2).
   const isMilestone =
@@ -335,6 +353,42 @@ export function GanttBar({
   const barH = rowHeight - padY * 2;
   const barY = rowY + padY;
   const centerY = rowY + rowHeight / 2;
+
+  // ── Gap bands (idle time on this row — P2, render-only, #221) ───────────────
+  // Hatched, never colour-only (WCAG 1.4.1): the pattern ink is a neutral token,
+  // so the hatch shape itself — not a hue — is what reads as "idle". Reuses the
+  // ADR 0011 series-pattern mechanism, but UNCONDITIONALLY (not high-decoration
+  // gated) since this is a permanent semantic distinction, not a decoration
+  // enhancement. Composed into every bar branch via `wrap()` below.
+  const gapEls = task.gaps?.map((gap, gapIndex) => {
+    const gapX = dateToX(gap.start, domainStart, domainEnd, canvasWidth);
+    const gapEndX = dateToX(gap.end, domainStart, domainEnd, canvasWidth);
+    const gapWidth = Math.max(gapEndX - gapX, 2);
+    const patternId = seriesPatternId(GAP_PATTERN_INDEX, `${gapPatternScope}-gap-${gapIndex}`);
+    const gapAriaLabel = buildGapAriaLabel(gap, fmt);
+    return (
+      <Tooltip key={`gap-${gapIndex}`}>
+        <TooltipTrigger asChild>
+          <div
+            role="img"
+            aria-label={gapAriaLabel}
+            data-gantt-gap="true"
+            className="absolute rounded-sm"
+            style={{ left: gapX, top: barY, width: gapWidth, height: barH }}
+          >
+            <svg aria-hidden="true" width={gapWidth} height={barH} style={{ display: "block" }}>
+              <defs>
+                {makeSeriesPattern(GAP_PATTERN_INDEX, patternId, "var(--muted-foreground)")}
+              </defs>
+              <rect width={gapWidth} height={barH} fill={`url(#${patternId})`} />
+            </svg>
+          </div>
+        </TooltipTrigger>
+        {/* aria-hidden: the band's aria-label is the AT channel; this is a visual aid only. */}
+        <TooltipContent aria-hidden="true">{gapAriaLabel}</TooltipContent>
+      </Tooltip>
+    );
+  });
   // Summary bracket shows ONLY when the parent is EXPANDED; a collapsed parent
   // renders a regular bar (user request) — its children aren't visible to roll up.
   const isExpandedParent = task.hasChildren && state.expandedIds.has(task.id);
@@ -672,12 +726,13 @@ export function GanttBar({
     }
   }
 
-  // Compose each bar branch with its (optional) external label, drag ghost and
-  // (portaled) link line.
+  // Compose each bar branch with its (optional) external label, gap bands,
+  // drag ghost and (portaled) link line.
   const wrap = (node: ReactNode): ReactNode => (
     <>
       {node}
       {externalLabel}
+      {gapEls}
       {ghost}
       {linkPortal}
     </>

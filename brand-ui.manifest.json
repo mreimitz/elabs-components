@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:05:49.240Z",
+  "generatedAt": "2026-09-04T11:42:59.142Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13729,6 +13729,10 @@
         },
         {
           "name": "GanttFormatDate",
+          "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "GanttGap",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
         {

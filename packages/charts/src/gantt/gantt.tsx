@@ -110,6 +110,8 @@ export interface GanttTask {
   baseline?: GanttBaseline;
   /** Selects a `taskTypes` entry for custom color/shape (P2). */
   type?: string;
+  /** Idle-time bands drawn on this row, e.g. waiting time between activity instances (P2, #221). */
+  gaps?: GanttGap[];
 }
 
 /**
@@ -265,6 +267,27 @@ export type GanttHighlightTime = (date: Date) => string | undefined;
 export interface GanttBaseline {
   start: Date | string | number;
   end: Date | string | number;
+}
+
+/**
+ * Idle time on a row (P2 — gap bands, #221). Render-only: an interval where
+ * the row is waiting, drawn as a hatched band rather than an empty stretch of
+ * canvas — e.g. the dead time between two activity instances in a case
+ * timeline, or between shifts on any resource schedule.
+ *
+ * Rendered with the series pattern-fill mechanism (ADR 0011,
+ * `series-pattern.tsx`) UNCONDITIONALLY — not gated behind high decoration
+ * like a chart series' fill. Idle time is a distinct MEANING a graphical mark
+ * must carry without relying on colour alone (WCAG 1.4.1): the hatch is the
+ * second channel in every theme and every decoration level, and the band
+ * always exposes an accessible name (`label`, when given, else a generated
+ * "Gap, <start>–<end>" description).
+ */
+export interface GanttGap {
+  start: Date | string | number;
+  end: Date | string | number;
+  /** Exposed as the band's accessible name and hover tooltip when given. */
+  label?: string;
 }
 
 /** Tone for a vertical annotation marker (maps to a semantic token). */

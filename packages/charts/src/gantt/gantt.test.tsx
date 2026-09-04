@@ -667,6 +667,70 @@ describe("Gantt v2 — baseline track (P2)", () => {
   });
 });
 
+describe("Gantt v2 — gap bands (P2, #221)", () => {
+  it("renders a hatched band spanning [start, end] with an aria-label matching the given label", () => {
+    const tasks: GanttTask[] = [
+      {
+        id: "t1",
+        name: "Task One",
+        start: d(0),
+        end: d(20),
+        gaps: [{ start: d(7), end: d(12), label: "Waiting for approval" }],
+      },
+    ];
+    render(<Gantt tasks={tasks} style={{ height: 300 }} />);
+    const gap = document.querySelector('[data-gantt-gap="true"]') as HTMLElement;
+    expect(gap).not.toBeNull();
+    expect(gap.getAttribute("role")).toBe("img");
+    expect(gap.getAttribute("aria-label")).toBe("Waiting for approval");
+    // The hatch pattern is the second (non-colour) channel (WCAG 1.4.1) — a
+    // real SVG <pattern>, not just a tinted fill.
+    expect(gap.querySelector("pattern")).not.toBeNull();
+    expect(gap.querySelector("rect[fill^='url(#']")).not.toBeNull();
+  });
+
+  it("generates a fallback accessible name when no label is given — never purely decorative", () => {
+    const tasks: GanttTask[] = [
+      { id: "t1", name: "Task One", start: d(0), end: d(20), gaps: [{ start: d(7), end: d(12) }] },
+    ];
+    render(<Gantt tasks={tasks} style={{ height: 300 }} />);
+    const gap = document.querySelector('[data-gantt-gap="true"]') as HTMLElement;
+    expect(gap.getAttribute("aria-label")).toMatch(/^Gap, /);
+  });
+
+  it("positions the band independently of the task's own bar span", () => {
+    const tasks: GanttTask[] = [
+      { id: "t1", name: "Task One", start: d(0), end: d(20), gaps: [{ start: d(7), end: d(12) }] },
+    ];
+    render(<Gantt tasks={tasks} style={{ height: 300 }} />);
+    const gap = document.querySelector('[data-gantt-gap="true"]') as HTMLElement;
+    expect(parseFloat(gap.style.left)).toBeGreaterThan(0);
+    expect(parseFloat(gap.style.width)).toBeGreaterThan(0);
+  });
+
+  it("renders every entry for a row with multiple gaps", () => {
+    const tasks: GanttTask[] = [
+      {
+        id: "t1",
+        name: "Task One",
+        start: d(0),
+        end: d(20),
+        gaps: [
+          { start: d(3), end: d(5) },
+          { start: d(10), end: d(14) },
+        ],
+      },
+    ];
+    render(<Gantt tasks={tasks} style={{ height: 300 }} />);
+    expect(document.querySelectorAll('[data-gantt-gap="true"]')).toHaveLength(2);
+  });
+
+  it("renders no gap bands when a task has none — additive, opt-in only", () => {
+    render(<Gantt tasks={baseTasks} style={{ height: 300 }} />);
+    expect(document.querySelector('[data-gantt-gap="true"]')).toBeNull();
+  });
+});
+
 describe("Gantt v2 — markers (P2)", () => {
   it("renders annotation markers with labels", () => {
     render(
