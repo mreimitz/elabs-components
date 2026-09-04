@@ -440,3 +440,156 @@ export const DensityComparison: Story = {
     );
   },
 };
+
+// --- RM-027: showValues, unit mode, diverging, highlightKey, palette -------
+
+/**
+ * `showValues` prints each bar's value as a `HaloText` label (the
+ * `text-chart-value` role) — lieflat G3 Chunky Bars. `animate={false}` settles
+ * the labels immediately for a stable story.
+ */
+export const WithValues: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <BarChart data={monthlyData} xDataKey="month">
+        <Grid horizontal />
+        <Bar animate={false} dataKey="revenue" fill="var(--chart-1)" lineCap="round" showValues />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll(".text-chart-value").length).toBe(monthlyData.length);
+    });
+  },
+};
+
+/**
+ * `unit` draws each bar as a countable `UnitStack` of `round(value / unit)`
+ * rungs instead of a solid fill — lieflat F1 Rung Bars. Renders instantly
+ * (no grow-in).
+ */
+export const UnitRungs: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <BarChart data={monthlyData} xDataKey="month">
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" lineCap="round" unit={2000} />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('[data-slot="unit-stack"]').length).toBe(
+        monthlyData.length,
+      );
+    });
+  },
+};
+
+const profitLossData = [
+  { month: "Jan", net: 4200 },
+  { month: "Feb", net: -1800 },
+  { month: "Mar", net: 3100 },
+  { month: "Apr", net: -900 },
+  { month: "May", net: 5600 },
+  { month: "Jun", net: -2400 },
+];
+
+/**
+ * Negative values draw BELOW the zero baseline (lieflat G10 Diverging Bar):
+ * capsule radius on the outer end only, and the zero hairline auto-shows
+ * because at least one value is negative.
+ */
+export const Diverging: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <BarChart data={profitLossData} xDataKey="month">
+        <Grid horizontal />
+        <Bar animate={false} dataKey="net" fill="var(--chart-1)" lineCap="round" showValues />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector("svg > g > line")).not.toBeNull();
+    });
+    // At least one negative bar renders via the asymmetric-radius path branch.
+    const barPaths = [...canvasElement.querySelectorAll("path")].filter((p) =>
+      p.getAttribute("fill")?.includes("chart"),
+    );
+    expect(barPaths.length).toBeGreaterThan(0);
+    // A negative label is signed with the Unicode minus, not a hyphen.
+    expect(canvasElement.textContent).toContain("−");
+  },
+};
+
+/**
+ * `highlightKey` marks ONE bar as the series' "hero" — it draws in
+ * `--chart-foreground` ink while every other bar draws from `palette`
+ * instead of `fill` — lieflat's one-hero-bar-in-ink convention.
+ */
+export const Highlight: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <BarChart data={monthlyData} xDataKey="month">
+        <Grid horizontal />
+        <Bar dataKey="revenue" fill="var(--chart-1)" highlightKey="Apr" lineCap="round" />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const heroRects = [...canvasElement.querySelectorAll("rect")].filter(
+        (r) => r.getAttribute("fill") === "var(--chart-foreground)",
+      );
+      expect(heroRects.length).toBe(1);
+    });
+  },
+};
+
+const nineSeriesData = [
+  { month: "Jan", a: 10, b: 14, c: 8, d: 12, e: 16, f: 9, g: 11, h: 13, i: 7 },
+  { month: "Feb", a: 12, b: 11, c: 9, d: 15, e: 10, f: 13, g: 8, h: 14, i: 9 },
+];
+
+/**
+ * Nine unfilled `Bar` series exceed the categorical palette's 6-series soft
+ * cap (RM-018), so `resolvePalette` auto-degrades to the neutral mono ladder
+ * and logs a dev-only warning — a naive multi-series chart never silently
+ * paints two series the same colour.
+ */
+export const MonoPalette: Story = {
+  render: () => (
+    <div className="h-72 w-[560px]">
+      <BarChart data={nineSeriesData} xDataKey="month">
+        <Grid horizontal />
+        <Bar dataKey="a" />
+        <Bar dataKey="b" />
+        <Bar dataKey="c" />
+        <Bar dataKey="d" />
+        <Bar dataKey="e" />
+        <Bar dataKey="f" />
+        <Bar dataKey="g" />
+        <Bar dataKey="h" />
+        <Bar dataKey="i" />
+        <BarXAxis />
+      </BarChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const rects = [...canvasElement.querySelectorAll('g[class^="bar-series-"] rect')].filter(
+        (r) => r.hasAttribute("fill"),
+      );
+      expect(rects.length).toBeGreaterThan(0);
+      // Every series got a resolved colour — none fell back to the
+      // single-series default.
+      expect(rects.every((r) => r.getAttribute("fill") !== "var(--chart-line-primary)")).toBe(true);
+    });
+  },
+};

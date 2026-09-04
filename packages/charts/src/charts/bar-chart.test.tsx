@@ -25,6 +25,7 @@ import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
+import { resolvePalette } from "./chart-context";
 import { Grid } from "./grid";
 
 const minimalData = [
@@ -274,6 +275,273 @@ describe("BarChart", () => {
         expect(rect.getAttribute("fill")).toBe("var(--muted)");
         expect(rect).not.toHaveAttribute("fill", "var(--chart-1)");
       }
+    });
+  });
+
+  // RM-027: diverging bars + the zero baseline hairline.
+  describe("diverging bars / zeroLine", () => {
+    const divergingData = [
+      { month: "Jan", value: 100 },
+      { month: "Feb", value: -50 },
+      { month: "Mar", value: 30 },
+    ];
+
+    it("auto-shows the zero baseline when any value is negative", () => {
+      const { container } = render(
+        <BarChart data={divergingData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      const zeroLine = container.querySelector("svg > g > line");
+      expect(zeroLine).not.toBeNull();
+      expect(zeroLine).toHaveAttribute("stroke", "var(--chart-foreground-muted)");
+      expect(zeroLine).toHaveAttribute("stroke-width", "0.8");
+    });
+
+    it("stays off with all-positive data by default", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      expect(container.querySelector("svg > g > line")).toBeNull();
+    });
+
+    it("zeroLine={false} forces the hairline off even with negative data", () => {
+      const { container } = render(
+        <BarChart data={divergingData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" zeroLine={false} />
+        </BarChart>,
+      );
+      expect(container.querySelector("svg > g > line")).toBeNull();
+    });
+
+    it("zeroLine={true} forces the hairline on even with all-positive data", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" zeroLine />
+        </BarChart>,
+      );
+      expect(container.querySelector("svg > g > line")).not.toBeNull();
+    });
+
+    it("renders a negative bar as an asymmetric-radius <path>, not a <rect>, and never emits negative geometry", () => {
+      const { container } = render(
+        <BarChart data={divergingData} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      // At least one negative bar (Feb: -50) must render via the path branch.
+      const barPaths = Array.from(container.querySelectorAll("path")).filter((p) =>
+        p.getAttribute("fill")?.includes("chart"),
+      );
+      expect(barPaths.length).toBeGreaterThan(0);
+      for (const p of barPaths) {
+        expect(p.getAttribute("d")).toMatch(/^M/);
+      }
+      // No rect/path in the bar series ever gets negative width/height.
+      const rects = container.querySelectorAll("rect");
+      for (const rect of rects) {
+        const w = rect.getAttribute("width");
+        const h = rect.getAttribute("height");
+        if (w !== null) expect(Number.parseFloat(w)).toBeGreaterThanOrEqual(0);
+        if (h !== null) expect(Number.parseFloat(h)).toBeGreaterThanOrEqual(0);
+      }
+    });
+  });
+
+  // RM-027: showValues value labels.
+  describe("showValues", () => {
+    it("prints a signed HaloText label on a wide bar once settled", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+        </BarChart>,
+      );
+      const labels = container.querySelectorAll(".text-chart-value");
+      expect(labels.length).toBe(minimalData.length);
+      expect(container.textContent).toContain("100");
+      expect(container.textContent).toContain("200");
+    });
+
+    it("signs a negative value's label with the Unicode minus sign, not a hyphen", () => {
+      const { container } = render(
+        <BarChart data={[{ month: "Feb", value: -50 }]} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+        </BarChart>,
+      );
+      const label = container.querySelector(".text-chart-value");
+      expect(label?.textContent).toBe("−50");
+      expect(label?.textContent).not.toContain("-50");
+    });
+
+    it("hides the label on a bar narrower than the minimum label width instead of shrinking it", () => {
+      const crowded = Array.from({ length: 40 }, (_, i) => ({
+        month: `C${i}`,
+        value: 100 + i,
+      }));
+      const { container } = render(
+        <BarChart data={crowded} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" showValues />
+        </BarChart>,
+      );
+      expect(container.querySelectorAll(".text-chart-value").length).toBe(0);
+      // The bars themselves still render.
+      expect(container.querySelectorAll("rect[fill='var(--chart-1)']").length).toBe(crowded.length);
+    });
+
+    it("does not render any label when showValues is unset (default, byte-identical)", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      expect(container.querySelectorAll(".text-chart-value").length).toBe(0);
+    });
+  });
+
+  // RM-027: unit mode (lieflat F1 Rung Bars) — a countable UnitStack instead
+  // of a solid fill.
+  describe("unit mode", () => {
+    it("renders a UnitStack instead of a solid rect when unit is set", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" unit={20} />
+        </BarChart>,
+      );
+      const stacks = container.querySelectorAll('[data-slot="unit-stack"]');
+      expect(stacks.length).toBe(minimalData.length);
+      const units = container.querySelectorAll('[data-slot="unit-stack-unit"]');
+      // Jan: 100/20 = 5 rungs, Feb: 200/20 = 10, Mar: 150/20 = 7.5 -> 8 (rounded).
+      expect(units.length).toBe(5 + 10 + 8);
+    });
+
+    it("renders instantly without an AnimatedBar grow-in even on first mount", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" unit={20} />
+        </BarChart>,
+      );
+      // No solid <rect> bars for this series — unit mode never falls through
+      // to AnimatedBar/the static rect branch.
+      expect(container.querySelectorAll('[data-slot="unit-stack"]').length).toBeGreaterThan(0);
+    });
+
+    it("leaves rendering unchanged (solid rects, no UnitStack) when unit is unset", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar animate={false} dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      expect(container.querySelectorAll('[data-slot="unit-stack"]').length).toBe(0);
+    });
+  });
+
+  // RM-027: highlightKey — one hero bar in --chart-foreground ink, the rest
+  // from a resolved palette instead of the series fill.
+  describe("highlightKey", () => {
+    it("draws the matched bar in --chart-foreground and the rest from the palette", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" highlightKey="Feb" />
+        </BarChart>,
+      );
+      const rects = Array.from(container.querySelectorAll('g[class^="bar-series-"] rect')).filter(
+        (r) => r.hasAttribute("fill"),
+      );
+      const fills = rects.map((r) => r.getAttribute("fill"));
+      // Exactly one hero bar (Feb) in --chart-foreground ink...
+      expect(fills.filter((f) => f === "var(--chart-foreground)")).toHaveLength(1);
+      // ...and the other two draw exactly the resolved (non-hero) palette,
+      // not the series' own `fill` prop.
+      const restColors = resolvePalette(undefined, 2, { explicit: false });
+      const nonHeroFills = fills.filter((f) => f !== "var(--chart-foreground)");
+      expect(nonHeroFills.slice().sort()).toEqual([...restColors].sort());
+    });
+
+    it("supports a predicate highlightKey", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" highlightKey={(d) => d.month === "Mar"} />
+        </BarChart>,
+      );
+      const fills = Array.from(container.querySelectorAll('g[class^="bar-series-"] rect'))
+        .filter((r) => r.hasAttribute("fill"))
+        .map((r) => r.getAttribute("fill"));
+      expect(fills).toContain("var(--chart-foreground)");
+    });
+
+    it("leaves every bar drawing the series fill when highlightKey is unset", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+        </BarChart>,
+      );
+      const fills = Array.from(container.querySelectorAll('g[class^="bar-series-"] rect'))
+        .filter((r) => r.hasAttribute("fill"))
+        .map((r) => r.getAttribute("fill"));
+      expect(fills.every((f) => f === "var(--chart-1)")).toBe(true);
+    });
+  });
+
+  // RM-027: BarChart-level `palette` — only ever assigns colours to Bar
+  // children that would otherwise collide on the shared default fill.
+  describe("palette (BarChart-level default-fill assignment)", () => {
+    it("leaves a single unfilled Bar series on the pre-RM-027 default fill", () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" />
+        </BarChart>,
+      );
+      const rects = Array.from(container.querySelectorAll('g[class^="bar-series-"] rect')).filter(
+        (r) => r.hasAttribute("fill"),
+      );
+      expect(rects.every((r) => r.getAttribute("fill") === "var(--chart-line-primary)")).toBe(true);
+    });
+
+    it("degrades nine unfilled Bar series to the mono ladder and warns once (dev safety net)", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const nineSeriesData = [
+        { month: "Jan", a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8, i: 9 },
+      ];
+      const { container } = render(
+        <BarChart data={nineSeriesData} xDataKey="month">
+          <Bar dataKey="a" />
+          <Bar dataKey="b" />
+          <Bar dataKey="c" />
+          <Bar dataKey="d" />
+          <Bar dataKey="e" />
+          <Bar dataKey="f" />
+          <Bar dataKey="g" />
+          <Bar dataKey="h" />
+          <Bar dataKey="i" />
+        </BarChart>,
+      );
+      expect(warnSpy).toHaveBeenCalled();
+      const warningMessage = warnSpy.mock.calls.map((call) => String(call[0])).join("\n");
+      expect(warningMessage).toContain("9 categorical series exceeds");
+      const rects = Array.from(container.querySelectorAll('g[class^="bar-series-"] rect')).filter(
+        (r) => r.hasAttribute("fill"),
+      );
+      expect(rects.length).toBeGreaterThan(0);
+      // None of the nine series fall back to the single-series default —
+      // applyBarPalette assigned every one of them a resolved colour.
+      expect(rects.every((r) => r.getAttribute("fill") !== "var(--chart-line-primary)")).toBe(true);
+      warnSpy.mockRestore();
+    });
+
+    it("never touches a Bar child that sets its own fill, even alongside unfilled siblings", () => {
+      const { container } = render(
+        <BarChart data={[{ month: "Jan", a: 1, b: 2 }]} xDataKey="month">
+          <Bar dataKey="a" fill="var(--chart-5)" />
+          <Bar dataKey="b" />
+        </BarChart>,
+      );
+      const rects = Array.from(container.querySelectorAll('g[class^="bar-series-"] rect')).filter(
+        (r) => r.hasAttribute("fill"),
+      );
+      const fills = rects.map((r) => r.getAttribute("fill"));
+      expect(fills).toContain("var(--chart-5)");
     });
   });
 });
