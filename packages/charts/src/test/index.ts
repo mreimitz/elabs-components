@@ -101,6 +101,8 @@ export {
   ParallelCoordinatesChart,
   // Tree — RM-035
   TreeChart,
+  // Network — RM-036
+  NetworkChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -246,3 +248,9 @@ export type {
 } from "../charts/parallel-coordinates/parallel-coordinates-chart";
 // Tree — RM-035
 export type { TreeChartProps, TreeNode } from "../charts/tree-chart";
+// Network — RM-036
+export type {
+  NetworkChartProps,
+  NetworkLinkDatum,
+  NetworkNodeDatum,
+} from "../charts/network/network-chart";

@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 168 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 179 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1088,6 +1088,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_CHART_CONFIG | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_LIFECYCLE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_FORCE_SEED | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_HEATMAP_STEPS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_HOVER_OFFSET | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_MAX_INTERACTIVE_DATAPOINTS | component |  | `@elabs-ai/components-charts` |  |
@@ -1098,6 +1100,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
 | DumbbellChart | component |  | `@elabs-ai/components-charts` | Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns. |
 | END_LABEL_MIN_GAP | component |  | `@elabs-ai/components-charts` |  |
+| FORCE_ALPHA_MIN | component |  | `@elabs-ai/components-charts` |  |
+| FORCE_GRAVITY | component |  | `@elabs-ai/components-charts` |  |
+| FORCE_TICK_BUDGET | component |  | `@elabs-ai/components-charts` |  |
 | FunnelChart | component |  | `@elabs-ai/components-charts` | Stage-by-stage drop-off through an ordered pipeline. |
 | Gantt | component | density=comfortable*\|compact | `@elabs-ai/components-charts` | Schedule grid — tasks as bars over time, with a task table beside them. |
 | GANTT_NOMINAL_VIEWPORT_PX | component |  | `@elabs-ai/components-charts` |  |
@@ -1141,6 +1146,12 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MetricCard | component |  | `@elabs-ai/components-charts` | Single KPI tile — label, value, delta/trend. |
 | MetricGrid | component |  | `@elabs-ai/components-charts` | Responsive grid of KPI tiles — the summary row at the top of a dashboard. |
 | MIN_DATAPOINT_TARGET_SIZE | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_DEFAULT_MAX_NODES | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_DEFAULT_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_MAX_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_MIN_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_PADDING | component |  | `@elabs-ai/components-charts` |  |
+| NetworkChart | component |  | `@elabs-ai/components-charts` | A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis. |
 | PARALLEL_COORDINATES_MAX_DIMENSIONS | component |  | `@elabs-ai/components-charts` |  |
 | PARALLEL_COORDINATES_MIN_DIMENSIONS | component |  | `@elabs-ai/components-charts` |  |
 | ParallelCoordinatesChart | component |  | `@elabs-ai/components-charts` | Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit. |

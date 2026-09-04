@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T13:58:44.311Z",
+  "generatedAt": "2026-09-04T14:13:04.071Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12680,6 +12680,16 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "DEFAULT_CIRCULAR_CURVENESS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "DEFAULT_FORCE_SEED",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "DEFAULT_HEATMAP_STEPS",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -12728,6 +12738,21 @@
           "name": "END_LABEL_MIN_GAP",
           "kind": "value",
           "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "FORCE_ALPHA_MIN",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "FORCE_GRAVITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "FORCE_TICK_BUDGET",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "FunnelChart",
@@ -12943,6 +12968,36 @@
           "name": "MIN_DATAPOINT_TARGET_SIZE",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "NETWORK_DEFAULT_MAX_NODES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_DEFAULT_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_MAX_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_MIN_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_PADDING",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
         },
         {
           "name": "PARALLEL_COORDINATES_MAX_DIMENSIONS",
@@ -13449,6 +13504,10 @@
       ],
       "types": [
         {
+          "name": "ArcLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "AreaChartLoadingProps",
           "module": "packages/charts/src/charts/area-chart-loading.tsx"
         },
@@ -13753,6 +13812,10 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "CircularLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "ComposedChartProps",
           "module": "packages/charts/src/charts/composed-chart.tsx"
         },
@@ -13831,6 +13894,14 @@
         {
           "name": "FiveNumberSummary",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "ForceLayoutNode",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "ForceLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "FunnelChartProps",
@@ -14167,6 +14238,54 @@
         {
           "name": "MomentumColors",
           "module": "packages/charts/src/charts/live-line.tsx"
+        },
+        {
+          "name": "NetworkChartProps",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
+        },
+        {
+          "name": "NetworkDatapointDatum",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
+        },
+        {
+          "name": "NetworkEmphasis",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLayoutResult",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLinkDatum",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLinkLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkNodeDatum",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkNodeLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkPoint",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkSide",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "OHLCDataPoint",
@@ -14571,6 +14690,14 @@
       ],
       "otherExports": [
         {
+          "name": "arcLinkPath",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "arcPositions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "binValues",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -14647,6 +14774,22 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "circularLinkPath",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "circularPositions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "circularRing",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "computeAdjacency",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "computeArithmetic",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -14655,12 +14798,24 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "computeDegrees",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "computeDumbbellDomain",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "computeForcePositions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "computeGanttZoomBounds",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "computeNetworkLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "computeRowPoints",
@@ -14683,6 +14838,10 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "danglingLinks",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "defaultBinCount",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -14693,6 +14852,10 @@
         {
           "name": "defaultChoroplethColors",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "defaultNetworkDatapointLabel",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
         },
         {
           "name": "defaultPieColors",
@@ -14725,6 +14888,10 @@
         {
           "name": "firstMondayOfMonth",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "fitToBox",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "fiveNumberSummary",
@@ -14775,8 +14942,20 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "isLabelVisible",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "isLinkDimmed",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "isLoadingChromePhase",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "isNodeDimmed",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "isNumericField",
@@ -14831,6 +15010,10 @@
           "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
+          "name": "linkWidth",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "makeSeriesPattern",
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
@@ -14839,8 +15022,16 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "networkSummary",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "niceYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "nodeRadius",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "nonHeroLineOpacity",
@@ -14857,6 +15048,10 @@
         {
           "name": "parseIsoDate",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "partitionBipartite",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "pickGanttTimeUnit",
@@ -14887,8 +15082,20 @@
           "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
+          "name": "resolveLabelAnchor",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "resolveLineLoadingPulseMode",
           "module": "packages/charts/src/charts/line-loading-pulse.tsx"
+        },
+        {
+          "name": "resolveLitIds",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "resolveNodeWeight",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "resolvePalette",
@@ -14923,6 +15130,10 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
+          "name": "seededRandomSource",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "seededRnd",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -14949,6 +15160,10 @@
         {
           "name": "silvermanBandwidth",
           "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "solveAlphaDecay",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "sortDumbbellRows",
@@ -18294,6 +18509,107 @@
             }
           ]
         },
+        "NetworkChart": {
+          "extends": [
+            "ChartInteractionProps<NetworkDatapointDatum>"
+          ],
+          "props": [
+            {
+              "name": "nodes",
+              "optional": false,
+              "type": "NetworkNodeDatum[]",
+              "description": "The graph's nodes. `id` is the identity `links` reference."
+            },
+            {
+              "name": "links",
+              "optional": false,
+              "type": "NetworkLinkDatum[]",
+              "description": "The graph's edges. An endpoint naming an unknown node is dropped (dev warning)."
+            },
+            {
+              "name": "layout",
+              "optional": false,
+              "type": "NetworkLayout",
+              "description": "- `\"force\"` — a settled force-directed cloud (G11, B2). - `\"circular\"` — one ring, chords bundled toward the centre (G6, B1). - `\"arc\"` — bipartite ownership: two columns, hairline béziers (L12)."
+            },
+            {
+              "name": "nodeSize",
+              "optional": true,
+              "type": "\"value\" | number",
+              "description": "`\"value\"` (default) — AREA is proportional to the node's weight, i.e. radius ∝ √weight. A number pins every node to that radius. \"Weight\" is the node's own `value`, or its DEGREE when it has none — which is what gives a colonnade \"hub radius ∝ link count\" for free."
+            },
+            {
+              "name": "labelThreshold",
+              "optional": true,
+              "type": "number",
+              "description": "Draw a node's label only when its weight reaches this (lieflat B1's rule for a 60-node ring). Omit to label every node — right for ≤ ~15 nodes, unreadable above it."
+            },
+            {
+              "name": "emphasis",
+              "optional": true,
+              "type": "NetworkEmphasis",
+              "description": "`\"adjacency\"` (default) — hovering or focusing a node keeps it and its neighbours lit and blurs the rest. `\"none\"` disables it."
+            },
+            {
+              "name": "draggable",
+              "optional": true,
+              "type": "boolean",
+              "description": "`force` only: let the pointer pull a node out of place. It springs back to its settled position on release — the layout is the answer, the drag is a way to look under a cluster. Ignored (with a dev warning) on the other two layouts, which have no free positions to give."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour family. Default: `\"categorical\"` at or under six groups, `\"mono\"` above — past six, a hue per group names nothing."
+            },
+            {
+              "name": "maxNodes",
+              "optional": true,
+              "type": "number",
+              "description": "Dev-warning threshold on node count. Default 200. NOT a cap."
+            },
+            {
+              "name": "seed",
+              "optional": true,
+              "type": "number",
+              "description": "`force` only: changes the starting cloud, and so which arrangement is found."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How node values render in the tooltip. Default `\"compact\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "style",
+              "optional": true,
+              "type": "CSSProperties"
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "string",
+              "description": "Aspect ratio as \"width / height\". Default `\"16 / 9\"`."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region. Defaults to the auto summary — `\"Network, 60 nodes, 140 links, 5 groups\"` — because the counts are exactly what an `aria-hidden` SVG withholds."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
+            }
+          ]
+        },
         "PatternArea": {
           "extends": [],
           "props": [
@@ -20307,6 +20623,34 @@
             "More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.",
             "Numbers without tabular-nums — figures jitter across the row.",
             "Re-declaring a KPI tile locally — MetricCard is owned by @elabs-ai/components-ui and re-exported here (ADR 0012)."
+          ]
+        },
+        "NetworkChart": {
+          "purpose": "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartLegend",
+              "DataTable"
+            ]
+          },
+          "stateTokens": {
+            "node": "--chart-1 … --chart-12 by group via resolvePalette (categorical at or under 6 groups, mono above); the mark is stroked in the paper colour (--chart-background) so touching nodes still read apart",
+            "link": "--chart-grid hairlines at 0.35 opacity, width scaled by the link's own value",
+            "emphasis": "hover/focus dims non-neighbours to opacity 0.12 and non-incident links to 0.03 — a CLASS on each <g>, transitioned on the compositor, so no node re-renders per frame",
+            "label": "HaloText in the chart-source type role, punched from var(--chart-background); drawn only at or above labelThreshold",
+            "focus": "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared interactive focus ring (the --ring token, shown only on :focus-visible); one tab stop, arrows across the rest"
+          },
+          "antiPatterns": [
+            "Reading a force layout's POSITIONS as data — only adjacency is encoded; distance, direction and the picture's orientation are artefacts of the solver's seed. Use layout=\"circular\" or \"arc\" whenever position must mean something.",
+            "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.",
+            "Reaching for layout=\"arc\" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.",
+            "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
+            "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it."
           ]
         },
         "ParallelCoordinatesChart": {

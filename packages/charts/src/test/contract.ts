@@ -180,6 +180,27 @@ export interface ChartContractSpec {
   numericProps?: string[];
   /** Walk `children` for elements carrying a `dataKey` prop and verify it exists on every row. */
   seriesFromChildren?: boolean;
+  // Network — RM-036
+  /**
+   * A SECOND array prop that references the first by id — `NetworkChart`'s
+   * `links`, whose `source`/`target` name nodes in `nodes`.
+   *
+   * None of the fields above can express it: they all validate rows of the ONE
+   * data prop against fixed or prop-named keys, and a graph's failure mode is
+   * relational — an edge pointing at a node that is not there. The real
+   * container drops such an edge with a dev warning, which a consumer's test
+   * would never see; here it is an error, on the same reasoning as the
+   * empty-`data` rule above (a double is stricter than the component precisely
+   * where the component's own mercy would hide a mistake in the test's data).
+   */
+  edgeProp?: {
+    /** The prop carrying the edges, e.g. `"links"`. */
+    prop: string;
+    /** Endpoint keys on each edge. Default `["source", "target"]`. */
+    endpointKeys?: [string, string];
+    /** Key that identifies a node in the data prop. Default `"id"`. */
+    nodeIdKey?: string;
+  };
 }
 
 /**
@@ -587,6 +608,70 @@ export function assertChartContract(
       fail(component, p, v, `"${p}" must be a finite number`);
     }
   }
+
+  // Network — RM-036
+  if (spec.edgeProp) {
+    assertEdges(component, props, spec.edgeProp, dataProp);
+  }
+}
+
+// Network — RM-036
+/**
+ * Validate an edge list against the node list it references (`NetworkChart`).
+ * Shape first, then the relational rule: every endpoint must name a node that
+ * exists, because an edge to nowhere is a mistake in the test's data rather
+ * than a state the chart is being asked to render.
+ */
+function assertEdges(
+  component: string,
+  props: Record<string, unknown>,
+  edge: NonNullable<ChartContractSpec["edgeProp"]>,
+  dataProp: string,
+): void {
+  const value = props[edge.prop];
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    fail(component, edge.prop, value, `"${edge.prop}" must be an array of plain objects`);
+    return;
+  }
+  const [sourceKey, targetKey] = edge.endpointKeys ?? ["source", "target"];
+  const nodeIdKey = edge.nodeIdKey ?? "id";
+  const nodes = props[dataProp];
+  const ids = new Set<unknown>(
+    Array.isArray(nodes)
+      ? nodes
+          .filter((n): n is Record<string, unknown> => typeof n === "object" && n !== null)
+          .map((n) => n[nodeIdKey])
+      : [],
+  );
+
+  value.forEach((row: unknown, index: number) => {
+    if (typeof row !== "object" || row === null || Array.isArray(row)) {
+      fail(component, edge.prop, row, `row ${index} of "${edge.prop}" must be a plain object`);
+      return;
+    }
+    const record = row as Record<string, unknown>;
+    for (const key of [sourceKey, targetKey]) {
+      const endpoint = record[key];
+      if (typeof endpoint !== "string" || endpoint.length === 0) {
+        fail(
+          component,
+          edge.prop,
+          row,
+          `row ${index} of "${edge.prop}" must carry a non-empty string "${key}"`,
+        );
+        continue;
+      }
+      if (ids.size > 0 && !ids.has(endpoint)) {
+        fail(
+          component,
+          edge.prop,
+          row,
+          `row ${index} of "${edge.prop}" names "${endpoint}" in "${key}", which is not a "${dataProp}" ${nodeIdKey}`,
+        );
+      }
+    }
+  });
 }
 
 // ── data-chart-props payload (the `readChartDoubleProps` round trip) ────────
