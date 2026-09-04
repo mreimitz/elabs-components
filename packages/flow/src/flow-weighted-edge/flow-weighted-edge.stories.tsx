@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { useEdgesState } from "@xyflow/react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
+import { withWeightedEdgeAria } from "./edge-aria";
 import { FlowWeightedEdge, type BrandFlowWeightedEdge } from "./flow-weighted-edge";
 
 const nodeTypes = { brand: FlowNode };
@@ -18,7 +20,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A chain of five nodes, edges weighted 1/4/8/2/6 — stroke width scales per edge, min-maxed against the others. */
+/**
+ * A chain of five nodes, edges weighted 1/4/8/2/6 — stroke width scales per edge,
+ * min-maxed against the others. Every edge is run through `withWeightedEdgeAria`
+ * (#285) so its weight reaches assistive technology as its accessible name,
+ * naming both endpoints via the node's own title rather than its raw id.
+ */
 export const Weighted: Story = {
   render: function WeightedStory() {
     const nodes: BrandFlowNode[] = Array.from({ length: 5 }, (_, i) => ({
@@ -27,16 +34,28 @@ export const Weighted: Story = {
       position: { x: 0, y: i * 110 },
       data: { kind: "Step", title: `Step ${i + 1}` },
     }));
+    const nameOf = (nodeId: string) => nodes.find((n) => n.id === nodeId)?.data.title ?? nodeId;
     const weights = [1, 4, 8, 2, 6];
-    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(
-      weights.slice(0, 4).map((w, i) => ({
-        id: `e${i + 1}`,
-        source: `n${i + 1}`,
-        target: `n${i + 2}`,
-        type: "weighted",
-        data: { weight: w },
-      })),
+    // withWeightedEdgeAria returns a new array each call — memoized here so a
+    // re-render doesn't hand React Flow a new `edges` identity every frame.
+    const initialEdges = useMemo(
+      () =>
+        withWeightedEdgeAria(
+          weights.slice(0, 4).map(
+            (w, i): BrandFlowWeightedEdge => ({
+              id: `e${i + 1}`,
+              source: `n${i + 1}`,
+              target: `n${i + 2}`,
+              type: "weighted",
+              data: { weight: w },
+            }),
+          ),
+          { nameOf },
+        ),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial edges built once, deliberately mirroring useState's "lazy initial value" convention; nameOf/weights are stable for the story's lifetime
+      [],
     );
+    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(initialEdges);
     return (
       <div className="h-[520px]">
         <CanvasShell
@@ -49,9 +68,33 @@ export const Weighted: Story = {
       </div>
     );
   },
+  play: async ({ canvasElement }) => {
+    // Regression lock for #285: every edge's accessible name states its
+    // weight, by exact string — a regex would happily match a wrong name.
+    const expected: Record<string, string> = {
+      e1: "Edge from Step 1 to Step 2, weight 1",
+      e2: "Edge from Step 2 to Step 3, weight 4",
+      e3: "Edge from Step 3 to Step 4, weight 8",
+      e4: "Edge from Step 4 to Step 5, weight 2",
+    };
+    for (const [id, name] of Object.entries(expected)) {
+      let group: Element | null = null;
+      await waitFor(() => {
+        group = canvasElement.querySelector(`[data-id="${id}"]`);
+        expect(group).not.toBe(null);
+      });
+      await expect(group as unknown as HTMLElement).toHaveAccessibleName(name);
+    }
+  },
 };
 
-/** Weighted edges that also carry an `EdgeLabelPill` (frequency + duration). Tab to reach a pill. */
+/**
+ * Weighted edges that also carry an `EdgeLabelPill` (frequency + duration). Tab
+ * to reach a pill. Also run through `withWeightedEdgeAria` (#285) — the pill
+ * stays a separate tab stop with its own name, but the edge's own accessible
+ * name now states its weight too (deliberately heard twice: they are two
+ * different objects on the accessibility tree).
+ */
 export const WeightedWithLabels: Story = {
   render: function WeightedWithLabelsStory() {
     const nodes: BrandFlowNode[] = [
@@ -74,22 +117,32 @@ export const WeightedWithLabels: Story = {
         data: { kind: "Step", title: "Shipped" },
       },
     ];
-    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>([
-      {
-        id: "e-a-b",
-        source: "a",
-        target: "b",
-        type: "weighted",
-        data: { weight: 9, label: "128×", secondaryLabel: "3.4d avg" },
-      },
-      {
-        id: "e-b-c",
-        source: "b",
-        target: "c",
-        type: "weighted",
-        data: { weight: 3, label: "42×", secondaryLabel: "1.1d avg" },
-      },
-    ]);
+    const nameOf = (nodeId: string) => nodes.find((n) => n.id === nodeId)?.data.title ?? nodeId;
+    const initialEdges = useMemo(
+      () =>
+        withWeightedEdgeAria(
+          [
+            {
+              id: "e-a-b",
+              source: "a",
+              target: "b",
+              type: "weighted",
+              data: { weight: 9, label: "128×", secondaryLabel: "3.4d avg" },
+            },
+            {
+              id: "e-b-c",
+              source: "b",
+              target: "c",
+              type: "weighted",
+              data: { weight: 3, label: "42×", secondaryLabel: "1.1d avg" },
+            },
+          ] satisfies BrandFlowWeightedEdge[],
+          { nameOf },
+        ),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial edges built once, deliberately mirroring useState's "lazy initial value" convention; nameOf is stable for the story's lifetime
+      [],
+    );
+    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(initialEdges);
     return (
       <div className="h-[300px]">
         <CanvasShell
@@ -103,6 +156,17 @@ export const WeightedWithLabels: Story = {
     );
   },
   play: async ({ canvasElement }) => {
+    // The edge's own accessible name — unaffected by, and separate from, the
+    // pill's own name asserted below.
+    let group: Element | null = null;
+    await waitFor(() => {
+      group = canvasElement.querySelector('[data-id="e-a-b"]');
+      expect(group).not.toBe(null);
+    });
+    await expect(group as unknown as HTMLElement).toHaveAccessibleName(
+      "Edge from Order placed to Picked, weight 9, 128× 3.4d avg",
+    );
+
     const canvas = within(canvasElement);
     const pill = await canvas.findByRole("button", { name: "128× · 3.4d avg" });
 
@@ -117,7 +181,12 @@ export const WeightedWithLabels: Story = {
   },
 };
 
-/** `data.value` + `data.valueDomain` interpolate stroke colour from `--flow-edge-weak` to `--flow-edge-strong`. */
+/**
+ * `data.value` + `data.valueDomain` interpolate stroke colour from
+ * `--flow-edge-weak` to `--flow-edge-strong`. Every edge shares the same
+ * `weight: 4` — before #285, that uniform weight (and the colour ramp) never
+ * reached assistive technology; `withWeightedEdgeAria` now names both.
+ */
 export const ColourRamp: Story = {
   render: function ColourRampStory() {
     const steps = 5;
@@ -127,15 +196,31 @@ export const ColourRamp: Story = {
       position: { x: 0, y: i * 110 },
       data: { kind: "Stage", title: `Stage ${i + 1}` },
     }));
-    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(
-      Array.from({ length: steps }, (_, i) => ({
-        id: `e${i + 1}`,
-        source: `n${i + 1}`,
-        target: `n${i + 2}`,
-        type: "weighted",
-        data: { weight: 4, value: i, valueDomain: [0, steps - 1], secondaryLabel: `avg ${i}d` },
-      })),
+    const nameOf = (nodeId: string) => nodes.find((n) => n.id === nodeId)?.data.title ?? nodeId;
+    const initialEdges = useMemo(
+      () =>
+        withWeightedEdgeAria(
+          Array.from(
+            { length: steps },
+            (_, i): BrandFlowWeightedEdge => ({
+              id: `e${i + 1}`,
+              source: `n${i + 1}`,
+              target: `n${i + 2}`,
+              type: "weighted",
+              data: {
+                weight: 4,
+                value: i,
+                valueDomain: [0, steps - 1],
+                secondaryLabel: `avg ${i}d`,
+              },
+            }),
+          ),
+          { nameOf },
+        ),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial edges built once, deliberately mirroring useState's "lazy initial value" convention; nameOf is stable for the story's lifetime
+      [],
     );
+    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(initialEdges);
     return (
       <div className="h-[600px]">
         <CanvasShell
@@ -150,7 +235,30 @@ export const ColourRamp: Story = {
   },
 };
 
-/** Ten edges, weight 1..10 in one (default) scaleGroup — strokes must span exactly [1.5, 8]px, linear. Mixes in labels and a colour ramp on a few edges. */
+// Exact accessible names asserted below, per issue #285's naming contract
+// (weight, plus value where present, plus the pill text where present) — an
+// exact-string match, never a regex, per the accessibility rule.
+const TEN_EDGES_EXPECTED_ARIA_LABELS: Record<string, string> = {
+  e1: "Edge from Node 1 to Node 2, weight 1, min 1×",
+  e2: "Edge from Node 2 to Node 3, weight 2",
+  e3: "Edge from Node 3 to Node 4, weight 3",
+  e4: "Edge from Node 4 to Node 5, weight 4, value 4",
+  e5: "Edge from Node 5 to Node 6, weight 5",
+  e6: "Edge from Node 6 to Node 7, weight 6",
+  e7: "Edge from Node 7 to Node 8, weight 7, value 7",
+  e8: "Edge from Node 8 to Node 9, weight 8",
+  e9: "Edge from Node 9 to Node 10, weight 9",
+  e10: "Edge from Node 10 to Node 11, weight 10, max 10×",
+};
+
+/**
+ * Ten edges, weight 1..10 in one (default) scaleGroup — strokes must span
+ * exactly [1.5, 8]px, linear. Mixes in labels and a colour ramp on a few
+ * edges. Run through `withWeightedEdgeAria` (#285): all 10 announce their
+ * weight, the 2 that also carry `data.value` announce it too, and the 2
+ * labelled edges (`min`/`max`) keep their pill's own accessible name
+ * unchanged alongside the edge's new one.
+ */
 export const TenEdgesMixed: Story = {
   render: function TenEdgesMixedStory() {
     const nodes: BrandFlowNode[] = Array.from({ length: 11 }, (_, i) => ({
@@ -159,26 +267,34 @@ export const TenEdgesMixed: Story = {
       position: { x: 0, y: i * 90 },
       data: { kind: "Node", title: `Node ${i + 1}` },
     }));
-    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(
-      Array.from({ length: 10 }, (_, i) => {
-        const weight = i + 1;
-        const extra =
-          i === 0
-            ? { label: "min", secondaryLabel: "1×" }
-            : i === 9
-              ? { label: "max", secondaryLabel: "10×" }
-              : i % 3 === 0
-                ? { value: weight, valueDomain: [1, 10] as [number, number] }
-                : {};
-        return {
-          id: `e${i + 1}`,
-          source: `n${i + 1}`,
-          target: `n${i + 2}`,
-          type: "weighted",
-          data: { weight, ...extra },
-        };
-      }),
+    const nameOf = (nodeId: string) => nodes.find((n) => n.id === nodeId)?.data.title ?? nodeId;
+    const initialEdges = useMemo(
+      () =>
+        withWeightedEdgeAria(
+          Array.from({ length: 10 }, (_, i): BrandFlowWeightedEdge => {
+            const weight = i + 1;
+            const extra =
+              i === 0
+                ? { label: "min", secondaryLabel: "1×" }
+                : i === 9
+                  ? { label: "max", secondaryLabel: "10×" }
+                  : i % 3 === 0
+                    ? { value: weight, valueDomain: [1, 10] as [number, number] }
+                    : {};
+            return {
+              id: `e${i + 1}`,
+              source: `n${i + 1}`,
+              target: `n${i + 2}`,
+              type: "weighted",
+              data: { weight, ...extra },
+            };
+          }),
+          { nameOf },
+        ),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial edges built once, deliberately mirroring useState's "lazy initial value" convention; nameOf is stable for the story's lifetime
+      [],
     );
+    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(initialEdges);
     return (
       <div className="h-[900px]">
         <CanvasShell
@@ -208,7 +324,19 @@ export const TenEdgesMixed: Story = {
       expect(Math.max(...widths)).toBeCloseTo(8, 1);
     });
 
-    // Also reachable by keyboard: the "min"-labelled pill is a real tab stop.
+    // #285 — every edge's accessible name states its weight (and its value,
+    // where present), by exact string.
+    for (const [id, name] of Object.entries(TEN_EDGES_EXPECTED_ARIA_LABELS)) {
+      let group: Element | null = null;
+      await waitFor(() => {
+        group = canvasElement.querySelector(`[data-id="${id}"]`);
+        expect(group).not.toBe(null);
+      });
+      await expect(group as unknown as HTMLElement).toHaveAccessibleName(name);
+    }
+
+    // Also reachable by keyboard: the "min"-labelled pill is a real tab stop,
+    // with its OWN name — untouched by the edge-level name asserted above.
     const canvas = within(canvasElement);
     const pill = await canvas.findByRole("button", { name: "min · 1×" });
     let guard = 0;

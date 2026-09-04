@@ -132,6 +132,22 @@ function resolveValueStrokeColor(
  * Register it in `edgeTypes={{ weighted: FlowWeightedEdge }}` and create edges
  * with `type: "weighted"` and `data: FlowWeightedEdgeData`.
  *
+ * `weight`/`value` are VISUAL ONLY — stroke width and colour reach no screen
+ * reader. This component cannot set its own accessible name: React Flow's
+ * `EdgeWrapper` sources it from `edge.ariaLabel` on the edge OBJECT, one level
+ * above the component it renders as a child (issue #285). Run your `edges`
+ * through `withWeightedEdgeAria` (from `./edge-aria`, or set `edge.ariaLabel`
+ * yourself) before handing them to `<CanvasShell>`/`<ReactFlow>` — otherwise
+ * the measure this component exists to show reaches no assistive technology,
+ * and the edge announces only React Flow's generic "Edge from n1 to n2".
+ * `withWeightedEdgeAria` returns a new array each call — memoize it
+ * (`useMemo(() => withWeightedEdgeAria(edges), [edges])`) if you call it
+ * inline in render.
+ *
+ * `data-weight`/`data-value` are also stamped onto the rendered `<path>` (raw
+ * `data.weight`/`data.value`, not the scaled stroke width) — a stable
+ * selector for tests/consumers, independent of the naming seam above.
+ *
  * `data.variant: "back"` marks an edge that runs against the process direction
  * (dagre's reversed edges — see `layoutFlow`'s `backEdges`). It is dashed and
  * routed clear of the forward edge between the same two nodes, and carries a
@@ -199,6 +215,8 @@ export function FlowWeightedEdge({
       markerEnd={markerEnd}
       data-slot="flow-weighted-edge"
       data-variant={variant}
+      data-weight={data?.weight}
+      data-value={data?.value}
       stroke={stroke}
       strokeWidth={strokeWidth}
       strokeDasharray={isBack ? BACK_EDGE_DASHARRAY : undefined}

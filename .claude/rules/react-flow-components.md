@@ -58,6 +58,15 @@ paths:
     let it be the only thing between a keyboard user and a visible indicator.
   - Enforced by `packages/flow/src/flow-edge-path/no-raw-base-edge.test.ts`: a
     shipped module that imports `BaseEdge` from `@xyflow/react` fails the suite.
+- **A custom edge that encodes a measure (stroke width, colour) owns its
+  `ariaLabel` (#285).** React Flow's `EdgeWrapper` sources an edge's accessible
+  name from `edge.ariaLabel` on the edge OBJECT, not from anything the edge
+  COMPONENT renders — a component has no channel to set it. `FlowWeightedEdge`
+  ships the naming seam this pattern needs: `withWeightedEdgeAria`/
+  `buildWeightedEdgeAriaLabel` (`flow-weighted-edge/edge-aria.ts`) compose a
+  name from `data.weight`/`data.value`/the pill text, and never overwrite an
+  explicit `ariaLabel`. Reach for the same shape for any future edge type that
+  encodes a measure visually.
 - **Controls/overlays:** `ZoomControls` (uses `useReactFlow`, render inside the
   canvas), `Legend`, and `InspectorPanel` (reusable beside the canvas, e.g. in a
   `SplitPanel`, or as a `<Panel>`).

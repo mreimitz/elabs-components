@@ -57,14 +57,23 @@ vi.mock("@xyflow/react", () => {
       path,
       style,
       className,
+      markerStart: _markerStart,
+      interactionWidth: _interactionWidth,
+      ...rest
     }: {
       id: string;
       path: string;
       style?: React.CSSProperties;
       className?: string;
+      markerStart?: string;
+      interactionWidth?: number;
+      [key: string]: unknown;
     }) =>
+      // `...rest` forwards data-* passthrough (e.g. `data-weight`/`data-value`,
+      // #285) onto the mocked path, exactly as `FlowEdgePath`'s own `...props`
+      // spread does onto the real `BaseEdge`.
       React.createElement("svg", { "data-testid": "base-edge" }, [
-        React.createElement("path", { key: "p", d: path, id, style, className }),
+        React.createElement("path", { key: "p", d: path, id, style, className, ...rest }),
       ]),
     // Real EdgeLabelRenderer portals into a fixed container; a passthrough is
     // enough here since we only assert the brand component's own output.
@@ -143,6 +152,31 @@ describe("FlowWeightedEdge", () => {
     edgesBox.current = [{ id: "test-edge", data: {} }];
     render(<FlowWeightedEdge {...makeEdgeProps()} />);
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  // #285 — the raw data.weight/data.value (not the scaled stroke width/colour)
+  // land on the path as data attributes: a stable selector for tests/consumers,
+  // independent of the accessible-name seam in `edge-aria.ts`.
+  it("stamps data-weight on the path from data.weight", () => {
+    edgesBox.current = [{ id: "test-edge", data: { weight: 7 } }];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { weight: 7 } })} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.getAttribute("data-weight")).toBe("7");
+  });
+
+  it("stamps data-value on the path from data.value", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { value: 5, valueDomain: [0, 10] } })} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.getAttribute("data-value")).toBe("5");
+  });
+
+  it("omits data-weight/data-value entirely when neither is set", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    render(<FlowWeightedEdge {...makeEdgeProps()} />);
+    const path = screen.getByTestId("base-edge").querySelector("path")!;
+    expect(path.hasAttribute("data-weight")).toBe(false);
+    expect(path.hasAttribute("data-value")).toBe(false);
   });
 
   // #286 — an edge is a real tab stop, so it must show a focus indicator with

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T16:47:19.360Z",
+  "generatedAt": "2026-09-04T17:30:10.425Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23417,6 +23417,10 @@
           "module": "packages/flow/src/helper-lines/use-helper-lines.ts"
         },
         {
+          "name": "WeightedEdgeAriaOptions",
+          "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
+        },
+        {
           "name": "WeightedEdgeLike",
           "module": "packages/flow/src/flow-weighted-edge/weight-scale.ts"
         },
@@ -23429,6 +23433,10 @@
         {
           "name": "addEdge",
           "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "buildWeightedEdgeAriaLabel",
+          "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
         },
         {
           "name": "collapseGroup",
@@ -23489,6 +23497,10 @@
         {
           "name": "ungroup",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "withWeightedEdgeAria",
+          "module": "packages/flow/src/flow-weighted-edge/edge-aria.ts"
         }
       ],
       "props": {
