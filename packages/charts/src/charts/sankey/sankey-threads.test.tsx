@@ -3,9 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // SankeyLink's AnimatedLink calls SVGPathElement.getTotalLength() in a
 // useLayoutEffect for its path-reveal animation — jsdom SVG elements don't
-// implement this geometry API (same rationale as sankey-chart.test.tsx). Only
-// the AGGREGATE-mode assertions below render a real `<SankeyLink>`; keep
-// `getDefaultNodeColor` real since `sankey-threads.tsx` imports it.
+// implement this geometry API (same rationale as sankey-chart.test.tsx).
+// `vi.mock` replaces the module for the WHOLE file, so every render below —
+// aggregate-mode included — gets the mocked `<g data-testid="sankey-link-mock">`
+// stand-in, never a real `<SankeyLink>`; real link rendering + animation is
+// covered by the Storybook browser tests. Keep `getDefaultNodeColor` real
+// since `sankey-threads.tsx` imports it.
 vi.mock("./sankey-link", async (importOriginal) => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
@@ -369,13 +372,31 @@ describe("SankeyChart aggregate mode — unaffected by RM-037 (byte-identical)",
     );
   }
 
-  it('omitting `mode` and passing mode="aggregate" render byte-identical DOM', () => {
-    const a = renderAggregate(undefined);
-    const html1 = a.container.innerHTML;
-    a.unmount();
-    const b = renderAggregate("aggregate");
-    const html2 = b.container.innerHTML;
-    expect(html1).toBe(html2);
+  /**
+   * Regression lock against `main` (pre-RM-037), NOT against this branch's
+   * own output — comparing two renders taken from the SAME `mode !== "threads"`
+   * branch (as an earlier version of this test did) only proves the branch is
+   * self-consistent; it moves in lockstep with any change to that branch and
+   * cannot catch one. `EXPECTED_AGGREGATE_DOM` below is a literal capture of
+   * `container.innerHTML` from commit 3b05fa3 (the branch point), rendered
+   * with the exact same mocks (`ParentSize` fixed at 800×400, `SankeyLink`
+   * stubbed — see the file-level comment above) and the same `aggregateData`,
+   * so a change to the aggregate-mode branch — new prop, new wrapper, new
+   * attribute — fails here even though both sides of a self-comparison would
+   * still agree with each other. Recapture only for an INTENTIONAL aggregate
+   * DOM change (never to make this test pass).
+   */
+  const EXPECTED_AGGREGATE_DOM =
+    '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><div class="relative h-full w-full"><svg aria-hidden="true" height="400" width="800"><g transform="translate(180,40)"><g data-testid="sankey-link-mock"></g><g class="sankey-nodes"><g style="cursor: pointer;"><rect fill="var(--chart-1)" height="320" rx="4" ry="4" width="16" x="0" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text class="fill-foreground font-medium text-[13px]" dy="0.35em" text-anchor="end" y="160" opacity="0" style="transform: translateX(8px); transform-origin: 50% 50%; transform-box: fill-box;">A</text><text class="fill-foreground text-[11px]" dy="0.35em" text-anchor="end" y="176" opacity="0" style="transform: translateX(8px); transform-origin: 50% 50%; transform-box: fill-box;">0 sessions</text></g><g style="cursor: pointer;"><rect fill="var(--chart-2)" height="320" rx="4" ry="4" width="16" x="424" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text class="fill-foreground font-medium text-[13px]" dy="0.35em" text-anchor="start" y="160" opacity="0" style="transform: translateX(432px); transform-origin: 50% 50%; transform-box: fill-box;">B</text><text class="fill-foreground text-[11px]" dy="0.35em" text-anchor="start" y="176" opacity="0" style="transform: translateX(432px); transform-origin: 50% 50%; transform-box: fill-box;">42 sessions</text></g></g></g></svg></div></div></div>';
+
+  it("omitting `mode` renders byte-identical DOM to `main` (pre-RM-037)", () => {
+    const { container } = renderAggregate(undefined);
+    expect(container.innerHTML).toBe(EXPECTED_AGGREGATE_DOM);
+  });
+
+  it('passing mode="aggregate" explicitly renders the same DOM as omitting `mode`', () => {
+    const { container } = renderAggregate("aggregate");
+    expect(container.innerHTML).toBe(EXPECTED_AGGREGATE_DOM);
   });
 
   it("never renders threads markup or a datapoint layer", () => {
