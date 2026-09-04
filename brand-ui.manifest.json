@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:48:51.632Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12675,6 +12675,11 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "DEFAULT_WHISKER_MULTIPLIER",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "DEFAULT_Y_AXIS_ID",
           "kind": "value",
           "module": "packages/charts/src/charts/y-axis-scales.ts"
@@ -12683,6 +12688,11 @@
           "name": "DEFAULT_Y_DOMAIN_TWEEN_MS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-phase.ts"
+        },
+        {
+          "name": "DistributionChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "DrawPath",
@@ -12773,6 +12783,16 @@
           "name": "HaloText",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "KDE_GRID_POINTS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KDE_TAPER",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "Leader",
@@ -13353,6 +13373,14 @@
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
         },
         {
+          "name": "BinValuesOptions",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "BlobPoint",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "CandlestickChartProps",
           "module": "packages/charts/src/charts/candlestick-chart.tsx"
         },
@@ -13581,8 +13609,36 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "DistributionBin",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionChartProps",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionGroup",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionKind",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionOrientation",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionRow",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "DrawPathProps",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "FiveNumberSummary",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "FunnelChartProps",
@@ -13705,6 +13761,10 @@
           "module": "packages/charts/src/charts/grid.tsx"
         },
         {
+          "name": "GroupedDistribution",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "HairlineFloorProps",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -13719,6 +13779,18 @@
         {
           "name": "IndicatorWidth",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "KdeOptions",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KdePoint",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KdeResult",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "LeaderDash",
@@ -14123,6 +14195,14 @@
       ],
       "otherExports": [
         {
+          "name": "binValues",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "blobPath",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "chartAccentColor",
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
@@ -14167,6 +14247,10 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "defaultBinCount",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "defaultChartStatFlowFormat",
           "module": "packages/charts/src/charts/chart-stat-flow.tsx"
         },
@@ -14191,8 +14275,16 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "describeDistribution",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "detectMomentum",
           "module": "packages/charts/src/charts/live-line.tsx"
+        },
+        {
+          "name": "fiveNumberSummary",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "ganttVariants",
@@ -14215,8 +14307,16 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
+          "name": "groupRecords",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "inferChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
+        },
+        {
+          "name": "integrateDensity",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "isChartInteractionPhase",
@@ -14241,6 +14341,14 @@
         {
           "name": "isYDomainTweenPhase",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "kde",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "kdeDensityAt",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "leaderPath",
@@ -14277,6 +14385,10 @@
         {
           "name": "profitLossColor",
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
+        },
+        {
+          "name": "quantileSorted",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "radarCssVars",
@@ -14333,6 +14445,10 @@
         {
           "name": "shouldTweenYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "silvermanBandwidth",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "splitProfitLossSegments",

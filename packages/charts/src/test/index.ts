@@ -76,6 +76,7 @@ export {
   ChartFrame,
   ChoroplethChart,
   ComposedChart,
+  DistributionChart,
   FunnelChart,
   Gantt,
   LineChart,
@@ -204,6 +205,7 @@ export type { ChartFrameProps } from "../chart-frame/chart-frame";
 export type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 export type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
 export type { ComposedChartProps } from "../charts/composed-chart";
+export type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 export type { FunnelChartProps, FunnelStage } from "../charts/funnel-chart";
 export type { GanttProps, GanttTask } from "../gantt/gantt";
 export type { LineChartProps } from "../charts/line-chart";

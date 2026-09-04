@@ -421,3 +421,42 @@ export {
   type UnitStackKind,
   type UnitStackProps,
 } from "../marks";
+
+// Distribution — RM-026
+// One container, one numeric scale, four marks: histogram / box / violin /
+// strip of a record-level numeric variable, optionally by group. The pure
+// statistics helpers ship alongside it so a caller's own table and the drawn
+// box plot cannot disagree about a quartile. The per-kind mark components
+// (`DistributionHistogram`, `DistributionBox`, …) stay INTERNAL — `kind` is the
+// public seam, and four more container-shaped exports would be four more ways
+// to build a distribution chart that does not share its scale.
+export {
+  binValues,
+  blobPath,
+  DEFAULT_WHISKER_MULTIPLIER,
+  defaultBinCount,
+  describeDistribution,
+  DistributionChart,
+  fiveNumberSummary,
+  groupRecords,
+  integrateDensity,
+  KDE_GRID_POINTS,
+  KDE_TAPER,
+  kde,
+  kdeDensityAt,
+  quantileSorted,
+  silvermanBandwidth,
+  type BinValuesOptions,
+  type BlobPoint,
+  type DistributionBin,
+  type DistributionChartProps,
+  type DistributionGroup,
+  type DistributionKind,
+  type DistributionOrientation,
+  type DistributionRow,
+  type FiveNumberSummary,
+  type GroupedDistribution,
+  type KdeOptions,
+  type KdePoint,
+  type KdeResult,
+} from "./distribution";

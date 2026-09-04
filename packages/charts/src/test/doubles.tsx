@@ -86,7 +86,9 @@ export type ChartFamilyName =
   | "RadarChart"
   | "ChoroplethChart"
   | "SankeyChart"
-  | "Gantt";
+  | "Gantt"
+  // DistributionChart — RM-026
+  | "DistributionChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -185,6 +187,23 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
   },
+  // DistributionChart — RM-026
+  // The real container reads exactly two columns off every row and puts one of
+  // them on a NUMERIC scale, so those are the two things a mocked test must
+  // still fail on: a `valueKey` whose column is missing (`itemRequiredKeys`) or
+  // non-numeric (`itemNumericKeys`), and a declared `groupKey` whose column is
+  // absent. Both are driven by PROP-NAMED keys, which is why they use the
+  // `keyProps` form rather than a fixed key list — see `contract.ts`.
+  // Deliberately NOT `hasStatus`: this family has no `status` prop, so an empty
+  // `data` array is a violation here rather than a legitimate loading state.
+  DistributionChart: {
+    dataKind: "array",
+    requiredProps: ["data", "valueKey", "kind"],
+    keyProps: [
+      { prop: "valueKey", numeric: true },
+      { prop: "groupKey", numeric: false },
+    ],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -255,6 +274,8 @@ import type { RadarChartProps } from "../charts/radar-chart";
 import type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
+// DistributionChart — RM-026
+import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -309,6 +330,12 @@ export const SankeyChart = createChartContainerDouble<SankeyChartProps>(
   CHART_CONTRACT_SPECS.SankeyChart,
 );
 export const Gantt = createChartContainerDouble<GanttProps>("Gantt", CHART_CONTRACT_SPECS.Gantt);
+
+// DistributionChart — RM-026
+export const DistributionChart = createChartContainerDouble<DistributionChartProps>(
+  "DistributionChart",
+  CHART_CONTRACT_SPECS.DistributionChart,
+);
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
 

@@ -88,8 +88,10 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_STATUS
 - DEFAULT_HOVER_OFFSET
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
+- DEFAULT_WHISKER_MULTIPLIER
 - DEFAULT_Y_AXIS_ID
 - DEFAULT_Y_DOMAIN_TWEEN_MS
+- DistributionChart
 - DrawPath — A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.
   - avoid: Filling it — a dash offset acts on the stroke, so a filled path appears in a single frame and the draw-in does nothing at all.
   - avoid: Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.
@@ -129,6 +131,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.
   - avoid: Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.
   - avoid: Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view.
+- KDE_GRID_POINTS
+- KDE_TAPER
 - Leader — The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.
   - avoid: Thickening it so the connection is easier to follow — at series weight a leader stops being furniture and starts being read as data. If it is hard to follow, the label is too far away.
   - avoid: Inventing a third dash rhythm — the union is 1 3 (quiet) and 2 3 (emphatic) on purpose. Sixty-three templates each picking their own dash array is the drift this layer exists to prevent.

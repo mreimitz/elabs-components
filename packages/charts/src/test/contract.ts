@@ -113,6 +113,23 @@ export interface ChartContractSpec {
    * those scales a non-Date x value is exactly what the real chart expects.
    */
   xKey?: { prop: string; default: string; requireDate: boolean };
+  /**
+   * Row keys whose NAME is itself a prop (`valueKey`, `groupKey`) — RM-026.
+   *
+   * The sibling `itemRequiredKeys`/`itemNumericKeys` cannot express this: they
+   * are fixed key names, and a `DistributionChart` reads whichever column the
+   * caller nominated. A `required: false` entry (the default) is only checked
+   * when the caller actually passed the prop, which is what makes an OPTIONAL
+   * nominated column (`groupKey`) validate exactly when it exists.
+   */
+  keyProps?: Array<{
+    /** The prop that names the column, e.g. `"valueKey"`. */
+    prop: string;
+    /** The column's cells must be finite numbers (numeric strings accepted). */
+    numeric?: boolean;
+    /** Fail when the prop itself is absent. Default `false` — an unset optional key checks nothing. */
+    required?: boolean;
+  }>;
   /** Props that must be finite numbers when provided. */
   numericProps?: string[];
   /** Walk `children` for elements carrying a `dataKey` prop and verify it exists on every row. */
@@ -231,6 +248,43 @@ export function assertChartContract(
             `row ${index}'s "${key}" is not coercible to a valid Date — this is the ` +
               `"RangeError: Invalid time value" class of bug`,
           );
+        }
+      }
+      // RM-026: columns nominated BY a prop (`valueKey`, `groupKey`).
+      for (const keyProp of spec.keyProps ?? []) {
+        const keyName = props[keyProp.prop];
+        if (typeof keyName !== "string" || keyName.length === 0) {
+          if (keyProp.required) {
+            fail(
+              component,
+              keyProp.prop,
+              keyName,
+              `"${keyProp.prop}" must name a column on every row`,
+            );
+          }
+          continue;
+        }
+        if (!(keyName in record)) {
+          fail(
+            component,
+            keyProp.prop,
+            row,
+            `row ${index} of "${dataProp}" is missing the column "${keyName}" named by "${keyProp.prop}"`,
+          );
+          continue;
+        }
+        if (keyProp.numeric) {
+          const cell = record[keyName];
+          const coerced = typeof cell === "string" ? Number(cell) : cell;
+          if (typeof coerced !== "number" || !Number.isFinite(coerced)) {
+            fail(
+              component,
+              keyProp.prop,
+              cell,
+              `row ${index}'s "${keyName}" must be a finite number — a distribution puts this ` +
+                "column on a numeric scale, and a non-numeric cell has no position on it",
+            );
+          }
         }
       }
       if (xKeyName) {
