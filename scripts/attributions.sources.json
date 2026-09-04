@@ -231,6 +231,17 @@
       "usedBy": [],
       "required": false,
       "note": "world-countries.json, fetched at runtime by the stat-card-choropleth-01 registry block. Its LICENSE names no holder, and upstream traces the file to johan/world.geo.json, which calls its own legal status dubious — the block already carries a TODO to self-host a clean source."
+    },
+    {
+      "id": "lieflat-charts",
+      "category": "source",
+      "name": "lieflat-charts",
+      "license": "PolyForm-Noncommercial-1.0.0",
+      "copyright": null,
+      "url": "https://github.com/larashero3-dotcom/lieflat-charts",
+      "usedBy": ["@elabs-ai/components-charts", "@elabs-ai/components-tokens"],
+      "required": false,
+      "note": "The editorial chart gallery behind the 2026-09-04 charts gap analysis: 71 files across the charts and tokens packages cite it as the source of a value, a mark shape or a composition (unit decomposition, hairline furniture, the sequential/diverging ramps, the reveal timing). No code was copied verbatim — each was re-expressed onto this repo's tokens and primitives. Its LICENSE is PolyForm Noncommercial 1.0.0, read verbatim from the upstream file; GitHub's own detection reports NOASSERTION, which is why nothing flagged it earlier. The licence's Required Notice slot is left at the template's example value, so upstream states no copyright holder and none is claimed here. Noncommercial-only is unresolved for a repo headed for public release — a licensing decision for the maintainer, not something attribution settles."
     }
   ]
 }
