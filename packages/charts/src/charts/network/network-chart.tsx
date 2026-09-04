@@ -517,6 +517,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
  * (`chart-a11y.tsx`) rather than a bare `role="img"`, so a reader can still
  * reach the datapoint targets inside it; the summary string RM-036 asks for
  * (`"Network, 60 nodes, 140 links, 5 groups"`) is the default accessible name.
+ *
+ * @dataShape arbitrary node and edge relationships with no hierarchy
+ * @avoidWhen the relationship really is a hierarchy — use a tree chart or a treemap
  */
 export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(
   function NetworkChart(props, ref) {

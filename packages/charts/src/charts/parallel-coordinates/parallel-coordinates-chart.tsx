@@ -700,6 +700,10 @@ function ParallelCoordinatesBody({
   );
 }
 
+/**
+ * @dataShape many numeric dimensions compared across entities at once
+ * @avoidWhen more than about 2 entities need per-entity detail — use small-multiple radar
+ */
 export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoordinatesChartProps>(
   function ParallelCoordinatesChart(
     {

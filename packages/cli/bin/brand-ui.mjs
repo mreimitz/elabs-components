@@ -8,6 +8,7 @@
  *   brand-ui gen [--check]          Generate doc regions (package tables, decisions) (+ stale-gate)
  *   brand-ui search <query>         Find components / registry items / archetype playbooks
  *   brand-ui docs <Component...>    Locate a component + print its real props
+ *   brand-ui chart-for "<shape>"    Rank chart containers for a data shape (RM-040)
  *   brand-ui audit <path> [--json] [--strict]  Static token/style + anti-slop lint (no LLM)
  *
  * The vibe-coder-plugin experience engine (scaffold is implemented — VP-02 #123;
@@ -34,6 +35,7 @@ import {
 import { writeContext, checkContext } from "../lib/context.mjs";
 import { resolveAllProps } from "../lib/docgen.mjs";
 import { scanText } from "../lib/audit.mjs";
+import { matchChartFor, renderChartForText } from "../lib/chart-for.mjs";
 import {
   planScaffold,
   emitScaffold,
@@ -416,6 +418,26 @@ function docsJsonRecord(hit, props) {
     variants: hit.variants ?? null,
     snippets: props?.snippets ?? null,
   };
+}
+
+/**
+ * `brand-ui chart-for "<data shape>"` (RM-040) — rank @elabs-ai/components-charts
+ * chart containers for a free-text data shape. Thin renderer over
+ * `matchChartFor`/`renderChartForText` (lib/chart-for.mjs); see that module for
+ * the ranking rule and where `dataShapes` actually comes from (a container's own
+ * `@dataShape` JSDoc tags — never hand-typed here or in the manifest).
+ */
+function cmdChartFor() {
+  const query = args.join(" ");
+  if (!query) return console.error('usage: brand-ui chart-for "<data shape>"');
+  const manifest = loadManifest(root);
+  if (!manifest)
+    return console.error(
+      "chart-for: no manifest (run inside the monorepo or install @elabs-ai/components-cli).",
+    );
+  const candidates = matchChartFor(manifest, query);
+  if (json) return out({ query, candidates });
+  console.log(renderChartForText(query, candidates));
 }
 
 function cmdDocs() {
@@ -839,7 +861,7 @@ const MAP_SUMMARY_ORDER = ["direct", "props", "compose", "gap", "drop"];
 async function cmdMcp() {
   const { runMcpServer } = await import("../lib/mcp.mjs");
   process.stderr.write(
-    "brand-ui MCP server ready (stdio). Tools: info, search, docs, tokens, audit.\n",
+    "brand-ui MCP server ready (stdio). Tools: info, search, docs, tokens, audit, chart_for.\n",
   );
   await runMcpServer({ root });
 }
@@ -852,6 +874,7 @@ const commands = {
   mcp: cmdMcp,
   search: cmdSearch,
   docs: cmdDocs,
+  "chart-for": cmdChartFor,
   audit: cmdAudit,
   scaffold: cmdScaffold,
   scan: cmdScan,
@@ -870,6 +893,9 @@ const GENERAL_HELP = `brand-ui <command>
                          (a whole-screen intent like "dashboard" routes to its playbook)
   docs <Component...>    Locate a component and print its real props from source
       [--json]           …or emit the same data as structured JSON
+  chart-for "<shape>"    Rank @elabs-ai/components-charts chart containers for a data shape
+      [--json]           ("weekday by hour ticket volume") — judge the shape first;
+                         see skills/brand-ui/reference/chart-selection.md
   audit <path> [--json]  Static token/style + content & visual anti-slop lint
                          [--strict] exit 1 on any blocking style finding or content
                          slop (the "blocks done" gate for generated output)
@@ -914,6 +940,8 @@ const SUBCOMMAND_HELP = {
   search:
     "usage: brand-ui search <query>\n  Find components / hooks / registry items / archetype playbooks",
   docs: "usage: brand-ui docs <Component...> [--json]\n  Locate a component and print its real props from source (or structured JSON with --json)",
+  "chart-for":
+    'usage: brand-ui chart-for "<data shape>" [--json]\n  Rank @elabs-ai/components-charts chart containers for a data shape — see skills/brand-ui/reference/chart-selection.md',
   audit:
     "usage: brand-ui audit <path> [--json] [--strict] [--register=product|brand]\n  Static token/style + content & visual anti-slop lint",
   scaffold:

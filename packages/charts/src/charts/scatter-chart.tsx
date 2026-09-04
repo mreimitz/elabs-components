@@ -128,6 +128,10 @@ function ChartInner({
   );
 }
 
+/**
+ * @dataShape two continuous measures per row — correlation, or the shape of a distribution
+ * @avoidWhen one axis is categorical — use a bar or dumbbell chart
+ */
 export const ScatterChart = forwardRef<HTMLDivElement, ScatterChartProps>(function ScatterChart(
   {
     data,

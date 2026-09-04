@@ -1037,6 +1037,13 @@ const ChartCore = memo(function ChartCore({
   );
 });
 
+/**
+ * @dataShape categorical comparison of one or more measures across a small set of named
+ *   categories
+ * @dataShape a single signed measure around a meaningful zero, as diverging bars with a
+ *   zero line
+ * @avoidWhen a time axis with many points — use a line or area chart
+ */
 export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(function BarChart(
   {
     data,

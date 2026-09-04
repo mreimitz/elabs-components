@@ -41,3 +41,17 @@ prompt for migrating an existing project: `docs/CONSUMING.md`.
 MIT
 
 <!-- brand-ui:gen:readme:end -->
+
+## `chart-for` — which chart for this data shape? (RM-040)
+
+```bash
+brand-ui chart-for "weekday by hour ticket volume"
+```
+
+Ranks `@elabs-ai/components-charts` chart containers for a free-text data-shape
+query by matching it against each container's own `@dataShape` JSDoc tag (never
+hand-typed into the manifest — see `packages/cli/lib/chart-for.mjs`). Add
+`--json` for a machine-readable `{ query, candidates }` payload. Also exposed as
+the `chart_for` tool on `brand-ui mcp` (stdio), alongside `info`/`search`/`docs`/
+`tokens`/`audit`. See `skills/brand-ui/reference/chart-selection.md` for the full
+data-shape table and the chart-selection rules this command is meant to serve.

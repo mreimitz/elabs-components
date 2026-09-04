@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T15:21:23.865Z",
+  "generatedAt": "2026-09-04T15:34:46.809Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20198,7 +20198,11 @@
             "Stacking areas that are not parts of one whole — a stack asserts summation; use lines.",
             "Overlapping opaque areas — either stack them or switch to a LineChart.",
             "Leaving status=\"loading\" unhandled — AreaChartLoading is the shipped skeleton."
-          ]
+          ],
+          "dataShapes": [
+            "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\""
+          ],
+          "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster"
         },
         "AutoChart": {
           "purpose": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
@@ -20244,7 +20248,12 @@
             "Truncating the value axis so small differences look large — a bar axis starts at zero.",
             "Hardcoding series colors — use the chart-1…chart-5 tokens so every theme works.",
             "Rendering an empty frame before data arrives — use the shipped chart skeleton utilities."
-          ]
+          ],
+          "dataShapes": [
+            "categorical comparison of one or more measures across a small set of named categories",
+            "a single signed measure around a meaningful zero, as diverging bars with a zero line"
+          ],
+          "avoidWhen": "a time axis with many points — use a line or area chart"
         },
         "BumpChart": {
           "purpose": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
@@ -20270,7 +20279,11 @@
             "Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.",
             "Choosing variant=\"lines\" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities' default cap of 10 kicks in; variant=\"strip\" reads a crowded field better because rows never move.",
             "Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period."
-          ]
+          ],
+          "dataShapes": [
+            "rank of several entities over ordered periods"
+          ],
+          "avoidWhen": "only 2 periods — use a dumbbell chart"
         },
         "CanvasLayer": {
           "purpose": "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
@@ -20426,7 +20439,11 @@
             "Shading raw counts instead of a rate — area size becomes the story and the map lies.",
             "A rainbow ramp for a sequential measure — use one ordered ramp so darker always means more.",
             "Shipping it without a legend — a shaded region carries no value without the scale."
-          ]
+          ],
+          "dataShapes": [
+            "a measure by geographic region"
+          ],
+          "avoidWhen": "there is no real geography — use a bar chart"
         },
         "ComposedChart": {
           "purpose": "One cartesian frame that layers several series types (bars + lines + areas) together.",
@@ -20451,7 +20468,11 @@
             "Stacking series on two silently-different y-scales — label the second axis or the comparison lies.",
             "Layering more than ~3 series types in one frame — split it into small multiples instead.",
             "Colouring series by hand — resolve --chart-1..5 so the dark theme stays legible."
-          ]
+          ],
+          "dataShapes": [
+            "mixed marks on one shared axis — bars with a line target, for example"
+          ],
+          "avoidWhen": "a single mark type would do — reach for that container directly"
         },
         "DistributionChart": {
           "purpose": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
@@ -20479,7 +20500,11 @@
             "kind=\"box\" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind=\"strip\" shows the same numbers without discarding them.",
             "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
             "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning."
-          ]
+          ],
+          "dataShapes": [
+            "the spread of one measure, optionally grouped — a histogram, box plot or strip plot"
+          ],
+          "avoidWhen": "a single summary number would do — use a metric card"
         },
         "DrawPath": {
           "purpose": "A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.",
@@ -20530,7 +20555,11 @@
             "Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.",
             "Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.",
             "Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels."
-          ]
+          ],
+          "dataShapes": [
+            "two time points per category — a before and after, or a range with two ends"
+          ],
+          "avoidWhen": "more than 2 points per category — use small-multiple lines"
         },
         "FunnelChart": {
           "purpose": "Stage-by-stage drop-off through an ordered pipeline.",
@@ -20548,7 +20577,11 @@
             "Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.",
             "Encoding stage identity by colour alone — label each stage; colour is not a legend.",
             "Hiding the absolute counts behind percentages only — a funnel without its base number cannot be judged."
-          ]
+          ],
+          "dataShapes": [
+            "a sequential process with drop-off between stages"
+          ],
+          "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell"
         },
         "Gantt": {
           "purpose": "Schedule grid — tasks as bars over time, with a task table beside them.",
@@ -20568,7 +20601,11 @@
             "Mutating task dates inside the component on drag — Gantt is emit-only; the app owns the model (D5).",
             "Bar labels that rely on the bar fill for contrast — check the label against the bar color in every theme.",
             "Rendering the grid without `loading` while rows are still fetching — skeleton rows must hold the layout."
-          ]
+          ],
+          "dataShapes": [
+            "tasks or phases across a timeline, with dependencies between them"
+          ],
+          "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after"
         },
         "Gauge": {
           "purpose": "Single-value dial against a known range — a KPI with an explicit ceiling.",
@@ -20586,7 +20623,11 @@
             "A gauge for a value with no meaningful maximum — that is a MetricCard, not a dial.",
             "A gauge per KPI in a grid — a row of dials reads worse than a MetricGrid; use one for the headline only.",
             "Encoding the threshold by colour alone — pair the band with a label or a tick."
-          ]
+          ],
+          "dataShapes": [
+            "a single value against a target or threshold bands"
+          ],
+          "avoidWhen": "the trend over time matters more than the instant — use a line chart"
         },
         "HairlineFloor": {
           "purpose": "One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read.",
@@ -20669,7 +20710,12 @@
             "emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.",
             "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
             "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
-          ]
+          ],
+          "dataShapes": [
+            "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+            "one measure per calendar day over several months, as variant=\"calendar\""
+          ],
+          "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern"
         },
         "Leader": {
           "purpose": "The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.",
@@ -20719,7 +20765,11 @@
             "A LineChart over unordered categories — a line asserts continuity; use a BarChart.",
             "More than ~5 series in one plot — past the chart-1…chart-5 palette the series stop being distinguishable; facet instead.",
             "Distinguishing series by color alone — add markers or direct labels for non-color users."
-          ]
+          ],
+          "dataShapes": [
+            "one or more measures over continuous time, where the trend itself is the point"
+          ],
+          "avoidWhen": "more than about 8 series — use a stream area chart or a composed chart"
         },
         "Marginalia": {
           "purpose": "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
@@ -20816,7 +20866,11 @@
             "Reaching for layout=\"arc\" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.",
             "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
             "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it."
-          ]
+          ],
+          "dataShapes": [
+            "arbitrary node and edge relationships with no hierarchy"
+          ],
+          "avoidWhen": "the relationship really is a hierarchy — use a tree chart or a treemap"
         },
         "ParallelCoordinatesChart": {
           "purpose": "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
@@ -20847,7 +20901,11 @@
             "Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).",
             "Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.",
             "Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot."
-          ]
+          ],
+          "dataShapes": [
+            "many numeric dimensions compared across entities at once"
+          ],
+          "avoidWhen": "more than about 2 entities need per-entity detail — use small-multiple radar"
         },
         "PeakRing": {
           "purpose": "A dashed outline around the one mark that matters — the peak, the outlier, the cell the caption is about.",
@@ -20896,7 +20954,11 @@
             "More than ~5 slices — a bar chart compares better; a pie is not a ranking.",
             "A pie for values that don't sum to a meaningful whole.",
             "Identifying slices by color alone — put the label and value on or beside the slice."
-          ]
+          ],
+          "dataShapes": [
+            "parts of a whole across a few categories, read as proportions of the total"
+          ],
+          "avoidWhen": "more than about 6 slices — use a bar or unit chart"
         },
         "QuietDot": {
           "purpose": "The 0.9px pinprick that renders a measured null or zero, so an empty cell in a matrix is never a hole.",
@@ -20942,7 +21004,11 @@
             "Plotting metrics with different units on one radar — normalize first or the shape is meaningless.",
             "Overlaying more than ~3 profiles — the filled areas occlude each other; use small multiples.",
             "Relying on the filled area to be readable at low opacity — check the fill against every theme's canvas."
-          ]
+          ],
+          "dataShapes": [
+            "several measures per entity, compared as an overall shape rather than value by value"
+          ],
+          "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape"
         },
         "SankeyChart": {
           "purpose": "Flow diagram — how quantity moves between stages or nodes.",
@@ -20968,7 +21034,11 @@
             "A Sankey for a simple two-column comparison — reach for a bar chart.",
             "Raw colors on nodes/links — resolve the chart tokens so the dark theme reads correctly.",
             "So many nodes that the labels collide — aggregate the tail into one 'other' node."
-          ]
+          ],
+          "dataShapes": [
+            "a weighted flow between named nodes, source to target"
+          ],
+          "avoidWhen": "the nodes have no real flow between them — use a network chart"
         },
         "SankeyThreadLinks": {
           "purpose": "SankeyChart mode=\"threads\" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.",
@@ -21010,7 +21080,11 @@
             "Connecting the points — a line asserts a sequence a scatter does not have.",
             "Plotting tens of thousands of raw points — bin or sample; the browser and the reader both give up.",
             "Distinguishing groups by colour only at default opacity — overlapping marks collapse; add shape or facets."
-          ]
+          ],
+          "dataShapes": [
+            "two continuous measures per row — correlation, or the shape of a distribution"
+          ],
+          "avoidWhen": "one axis is categorical — use a bar or dumbbell chart"
         },
         "Sparkline": {
           "purpose": "Tiny, axis-less trend that lives inside a KPI tile or a table cell.",
@@ -21059,7 +21133,11 @@
             "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
             "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
             "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand."
-          ]
+          ],
+          "dataShapes": [
+            "a hierarchy read as a branching tree rather than as sized rectangles"
+          ],
+          "avoidWhen": "size, not structure, is the point — use a treemap"
         },
         "TreemapChart": {
           "purpose": "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
@@ -21091,7 +21169,11 @@
             "Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.",
             "Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.",
             "Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in."
-          ]
+          ],
+          "dataShapes": [
+            "a nested hierarchy sized by one measure"
+          ],
+          "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer"
         },
         "UnitChart": {
           "purpose": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
@@ -21121,7 +21203,12 @@
             "Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.",
             "Reaching for layout=\"field\" when the reader needs to rank two series or compare them precisely — a phyllotaxis cluster reads as an area-at-a-glance impression, not a countable structure; a real comparison wants rows or waffle, where the grid gives the reader something to count.",
             "Falling back to a pie chart because comparing shares 'still feels easier' to build — that instinct is exactly what this chart exists to correct: a slice angle cannot be counted, a mark can. If the categories genuinely don't sum to a meaningful whole, reach for the rows layout, not a pie."
-          ]
+          ],
+          "dataShapes": [
+            "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
+            "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\""
+          ],
+          "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster"
         },
         "UnitStack": {
           "purpose": "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
@@ -21177,7 +21264,29 @@
             "Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.",
             "Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.",
             "More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead."
-          ]
+          ],
+          "dataShapes": [
+            "a running total with signed steps into and out of it"
+          ],
+          "avoidWhen": "there is no meaningful running total — use diverging bars instead"
+        },
+        "CandlestickChart": {
+          "dataShapes": [
+            "open, high, low and close per period — an OHLC financial series over time"
+          ],
+          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough"
+        },
+        "LiveLineChart": {
+          "dataShapes": [
+            "a metric updating in real time, appended over a rolling window"
+          ],
+          "avoidWhen": "the series is static or historical — use a line chart"
+        },
+        "RingChart": {
+          "dataShapes": [
+            "one proportion against its maximum, read as a single ring"
+          ],
+          "avoidWhen": "several categories matter — use a pie or unit chart"
         }
       }
     },

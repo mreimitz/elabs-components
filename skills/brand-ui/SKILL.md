@@ -362,6 +362,15 @@ it must NOT import from `@elabs-ai/components-data` (sibling dep rule).
 
 ### Which chart when
 
+For the full 25-container data-shape table (which axis/measure combination maps
+to which container, alternatives, and when to avoid each), the four
+chart-selection rules (judge the shape first, compare ≥ 3 candidates, cap a page
+at 6 charts, never repeat a silhouette), and palette-by-cardinality guidance, see
+[reference/chart-selection.md](reference/chart-selection.md) — or query it
+directly with `brand-ui chart-for "<data shape>"` (also exposed as the `chart_for`
+MCP tool). The quick table below is a shorter, pre-RM-038 cheat sheet covering
+13 of the 25 containers.
+
 | Chart              | Use when                                                       |
 | ------------------ | -------------------------------------------------------------- |
 | `AreaChart`        | Trend over time with magnitude / filled area emphasis          |
@@ -533,4 +542,7 @@ tokens and every theme renders correctly for free.
 
 - [reference/rules.md](reference/rules.md) — critical rules with Incorrect/Correct pairs.
 - [reference/composition.md](reference/composition.md) — app shell, dashboard, chat, flow, forms patterns.
+- [reference/chart-selection.md](reference/chart-selection.md) — data-shape table for all
+  25 chart containers, the four chart-selection rules, palette-by-cardinality guidance;
+  query it directly with `brand-ui chart-for "<data shape>"` / the `chart_for` MCP tool.
 - [reference/theming.md](reference/theming.md) — tokens, ThemeProvider, themes, contrast.

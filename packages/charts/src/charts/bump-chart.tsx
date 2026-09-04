@@ -804,6 +804,10 @@ function defaultMargin(variant: BumpVariant): Margin {
   return variant === "strip" ? STRIP_MARGIN : LINES_MARGIN;
 }
 
+/**
+ * @dataShape rank of several entities over ordered periods
+ * @avoidWhen only 2 periods — use a dumbbell chart
+ */
 export const BumpChart = forwardRef<HTMLDivElement, BumpChartProps>(function BumpChart(
   {
     data,
