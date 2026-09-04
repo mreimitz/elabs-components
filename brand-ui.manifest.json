@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:50:42.846Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12715,6 +12715,11 @@
           "module": "packages/charts/src/charts/gauge.tsx"
         },
         {
+          "name": "GOLDEN_ANGLE_RAD",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "GradientDarkgreenGreen",
           "kind": "value",
           "module": "packages/charts/src/charts/index.ts"
@@ -13113,6 +13118,21 @@
           "name": "StaticChartPreviewProvider",
           "kind": "value",
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
+        },
+        {
+          "name": "UNIT_CHART_GROUP_STAGGER_MS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UNIT_CHART_POSITION_STAGGER_MS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UnitChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
         },
         {
           "name": "UnitStack",
@@ -13585,6 +13605,18 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "FieldCluster",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "FieldLayout",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "FieldLayoutOptions",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "FunnelChartProps",
           "module": "packages/charts/src/charts/funnel-chart.tsx"
         },
@@ -13981,6 +14013,18 @@
           "module": "packages/charts/src/charts/ring.tsx"
         },
         {
+          "name": "RowsLayout",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "RowsLayoutOptions",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "RowsLayoutRow",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "SankeyChartProps",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
@@ -14089,6 +14133,34 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "UnitArithmetic",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UnitChartDatum",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitChartLayout",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitChartMark",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitChartProps",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitMark",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UnitRect",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "UnitStackDirection",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -14103,6 +14175,14 @@
         {
           "name": "ValueFormat",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "WaffleLayout",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "WaffleLayoutOptions",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "XAxisProps",
@@ -14122,6 +14202,10 @@
         }
       ],
       "otherExports": [
+        {
+          "name": "buildUnitChartSummary",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
         {
           "name": "chartAccentColor",
           "module": "packages/charts/src/charts/chart-context.tsx"
@@ -14159,8 +14243,16 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "computeArithmetic",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "computeGanttZoomBounds",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "computeUnitCounts",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "computeYDomainsByAxis",
@@ -14241,6 +14333,18 @@
         {
           "name": "isYDomainTweenPhase",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "layoutField",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "layoutRows",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "layoutWaffle",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "leaderPath",
@@ -14341,6 +14445,10 @@
         {
           "name": "stagger",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "unitMarkDelayMs",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "viewModeToScales",
@@ -18289,6 +18397,86 @@
               "name": "height",
               "optional": true,
               "type": "number"
+            }
+          ]
+        },
+        "UnitChart": {
+          "extends": [
+            "ChartInteractionProps",
+            "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "UnitChartDatum[]",
+              "description": "The series — one labeled quantity per row."
+            },
+            {
+              "name": "layout",
+              "optional": false,
+              "type": "UnitChartLayout",
+              "description": "Which lieflat layout to draw."
+            },
+            {
+              "name": "total",
+              "optional": true,
+              "type": "number",
+              "description": "What 100% of the marks represents. Default 100 (percent). Ignored by `rows`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "Value per mark. Default 1 — a `unit={2}` chart draws one mark per two incidents."
+            },
+            {
+              "name": "unitLabel",
+              "optional": true,
+              "type": "string",
+              "description": "\"one dot = one person in a hundred\" — rendered as a caption and folded into the a11y summary."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "number",
+              "description": "Grid columns for `waffle`. Default 10."
+            },
+            {
+              "name": "mark",
+              "optional": true,
+              "type": "UnitChartMark",
+              "description": "Mark shape for `waffle`/`field`. Default `\"dot\"`."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
+            },
+            {
+              "name": "showArithmetic",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show the footer arithmetic (\"41 + 35 + 12 + 12 = 100 · 2 rounded away\"). Default `true`. Ignored by `rows`."
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "\"desc\" | \"none\"",
+              "description": "Sort series by value, descending, before laying out. Default `\"none\"` (caller order)."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
             }
           ]
         },

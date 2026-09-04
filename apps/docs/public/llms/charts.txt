@@ -109,6 +109,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: A gauge for a value with no meaningful maximum — that is a MetricCard, not a dial.
   - avoid: A gauge per KPI in a grid — a row of dials reads worse than a MetricGrid; use one for the headline only.
   - avoid: Encoding the threshold by colour alone — pair the band with a label or a tick.
+- GOLDEN_ANGLE_RAD
 - GradientDarkgreenGreen
 - GradientLightgreenGreen
 - GradientOrangeRed
@@ -237,6 +238,9 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: A Sparkline as the only carrier of a number — pair it with the value (MetricCard).
   - avoid: Fixing its width in pixels — let the tile or cell own the box so it reflows.
 - StaticChartPreviewProvider
+- UNIT_CHART_GROUP_STAGGER_MS
+- UNIT_CHART_POSITION_STAGGER_MS
+- UnitChart
 - UnitStack — n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.
   - avoid: Passing a large n and calling it a bar — past roughly 60 units the stack stops being countable and becomes a texture, at which point a bar is the honest mark. It will happily draw 500; that is your judgment, not its.
   - avoid: Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.
