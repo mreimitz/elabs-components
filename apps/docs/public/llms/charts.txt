@@ -23,6 +23,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Rendering an empty frame before data arrives — use the shipped chart skeleton utilities.
 - BarXAxis
 - BarYAxis
+- BumpChart — Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).
+  - avoid: Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.
+  - avoid: Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.
+  - avoid: Choosing variant="lines" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities' default cap of 10 kicks in; variant="strip" reads a crowded field better because rows never move.
+  - avoid: Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period.
 - CALENDAR_ROWS
 - Candlestick
 - CandlestickChart
@@ -97,11 +102,20 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_CHART_CONFIG
 - DEFAULT_CHART_LIFECYCLE
 - DEFAULT_CHART_STATUS
+- DEFAULT_CIRCULAR_CURVENESS
+- DEFAULT_FORCE_SEED
 - DEFAULT_HEATMAP_STEPS
 - DEFAULT_HOVER_OFFSET
 - DEFAULT_MAX_INTERACTIVE_DATAPOINTS
+- DEFAULT_WHISKER_MULTIPLIER
 - DEFAULT_Y_AXIS_ID
 - DEFAULT_Y_DOMAIN_TWEEN_MS
+- DistributionChart — One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.
+  - avoid: kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.
+  - avoid: Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.
+  - avoid: kind="box" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind="strip" shows the same numbers without discarding them.
+  - avoid: Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.
+  - avoid: Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.
 - DrawPath — A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.
   - avoid: Filling it — a dash offset acts on the stroke, so a filled path appears in a single frame and the draw-in does nothing at all.
   - avoid: Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.
@@ -112,6 +126,10 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.
   - avoid: Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.
   - avoid: Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels.
+- END_LABEL_MIN_GAP
+- FORCE_ALPHA_MIN
+- FORCE_GRAVITY
+- FORCE_TICK_BUDGET
 - FunnelChart — Stage-by-stage drop-off through an ordered pipeline.
   - avoid: Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.
   - avoid: Encoding stage identity by colour alone — label each stage; colour is not a legend.
@@ -152,6 +170,8 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: emptyValue="blank" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.
   - avoid: Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.
   - avoid: Leaning on the darkest ramp step to say "this is the peak" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.
+- KDE_GRID_POINTS
+- KDE_TAPER
 - Leader — The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.
   - avoid: Thickening it so the connection is easier to follow — at series weight a leader stops being furniture and starts being read as data. If it is hard to follow, the label is too far away.
   - avoid: Inventing a third dash rhythm — the union is 1 3 (quiet) and 2 3 (emphatic) on purpose. Sixty-three templates each picking their own dash array is the drift this layer exists to prevent.
@@ -191,6 +211,24 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Numbers without tabular-nums — figures jitter across the row.
   - avoid: Re-declaring a KPI tile locally — MetricCard is owned by @elabs-ai/components-ui and re-exported here (ADR 0012).
 - MIN_DATAPOINT_TARGET_SIZE
+- NETWORK_DEFAULT_MAX_NODES
+- NETWORK_DEFAULT_NODE_RADIUS
+- NETWORK_MAX_NODE_RADIUS
+- NETWORK_MIN_NODE_RADIUS
+- NETWORK_PADDING
+- NetworkChart — A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.
+  - avoid: Reading a force layout's POSITIONS as data — only adjacency is encoded; distance, direction and the picture's orientation are artefacts of the solver's seed. Use layout="circular" or "arc" whenever position must mean something.
+  - avoid: Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.
+  - avoid: Reaching for layout="arc" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.
+  - avoid: Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.
+  - avoid: Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.
+- PARALLEL_COORDINATES_MAX_DIMENSIONS
+- PARALLEL_COORDINATES_MIN_DIMENSIONS
+- ParallelCoordinatesChart — Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.
+  - avoid: Fewer than 3 or more than 6 dimensions — below 3 a DumbbellChart (2) or MetricCard (1) reads better; above 6 the axes crowd and `resolveParallelDimensions` clamps to the first 6 with a console warning, silently dropping the rest.
+  - avoid: Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).
+  - avoid: Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.
+  - avoid: Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot.
 - PatternArea
 - PatternCircles
 - PatternHexagons
@@ -243,6 +281,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - SankeyLink
 - SankeyNode
 - SankeyProvider
+- SankeyThreadLinks — SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.
+  - avoid: Using mode="threads" for a small, low-cardinality flow — that's what the default aggregate SankeyLink is for.
+  - avoid: Supplying `path` names that don't match any `SankeyNodeDatum.name` — the route silently falls back to source/target only.
+  - avoid: Making the visible thread path itself interactive — pointer handling belongs on the fat, transparent hit-twin so overlapping routes don't fight for clicks.
+  - avoid: Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element.
 - SankeyTooltip
 - Scatter
 - ScatterChart — Point cloud for correlation between two continuous measures.
@@ -260,6 +303,21 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: A Sparkline as the only carrier of a number — pair it with the value (MetricCard).
   - avoid: Fixing its width in pixels — let the tile or cell own the box so it reflows.
 - StaticChartPreviewProvider
+- TreeChart — Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.
+  - avoid: Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.
+  - avoid: Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.
+  - avoid: Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.
+  - avoid: Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand.
+- TREEMAP_BAND_COLOR
+- TREEMAP_CATEGORICAL_GROUP_CAP
+- TREEMAP_MAX_LEAVES
+- TREEMAP_MONO_LEAF_COLOR
+- TREEMAP_TITLE_BAND_HEIGHT
+- TreemapChart — Two-level squarified treemap — a hierarchy where area, not position, encodes value.
+  - avoid: Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.
+  - avoid: Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.
+  - avoid: Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.
+  - avoid: Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.
 - UNIT_CHART_GROUP_STAGGER_MS
 - UNIT_CHART_POSITION_STAGGER_MS
 - UnitChart — One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.
@@ -272,6 +330,11 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.
   - avoid: Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.
   - avoid: Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid.
+- WaterfallChart — Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.
+  - avoid: A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.
+  - avoid: Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.
+  - avoid: Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.
+  - avoid: More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead.
 - XAxis
 - Y_AXIS_DEFAULT_TICK_COUNT
 - Y_AXIS_MAX_TICK_COUNT

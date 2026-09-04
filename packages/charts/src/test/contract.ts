@@ -94,7 +94,7 @@ export interface ChartContractSpec {
   /** Name of the primary data prop. Default `"data"` (Gantt uses `"tasks"`). */
   dataProp?: string;
   /** Shape the data prop must have. `"none"` skips all data-prop checks (e.g. AutoChart's `spec`). */
-  dataKind: "array" | "feature-collection" | "sankey" | "none";
+  dataKind: "array" | "feature-collection" | "sankey" | "hierarchy" | "none";
   /** Prop names (besides the data prop) that must not be `undefined`. */
   requiredProps?: string[];
   /** True when the component accepts a `status` prop that exempts an empty data array. */
@@ -121,7 +121,23 @@ export interface ChartContractSpec {
    * `number | null | undefined`, mirroring `itemNumericKeys` but for a
    * caller-named column instead of a fixed one.
    */
-  dynamicKeys?: { prop: string; numeric?: boolean }[];
+  dynamicKeys?: {
+    prop: string;
+    numeric?: boolean;
+    /**
+     * ParallelCoordinates — RM-034. `dynamicKeys` above covers a prop whose
+     * VALUE directly IS one key name (`category`, `startKey`, …). This is the
+     * plural generalization of the same idea for a prop whose value is an
+     * ARRAY OF OBJECTS, each naming one more key — `ParallelCoordinatesChart`'s
+     * `dimensions: { key: string }[]`. Deliberately reusing `dynamicKeys`
+     * rather than adding a fourth "row key named by a prop" field alongside
+     * `propNamedKeys`/`keyProps` (see the three-field debt note on those two).
+     * `field` names the property each array element carries the key in
+     * (default `"key"`); `min`/`max` bound the array's own length, checked
+     * once per render rather than once per row.
+     */
+    arrayOf?: { field?: string; min?: number; max?: number };
+  }[];
   /**
    * Keys whose NAME is itself a prop value, and which must be present on every
    * row — `HeatmapChart`'s `x` / `y` / `valueKey`, where the caller names all
@@ -143,10 +159,48 @@ export interface ChartContractSpec {
     /** Require the value to coerce to a valid `Date`, under the same condition. */
     requireDate?: boolean;
   }[];
+  /**
+   * Row keys whose NAME is itself a prop (`valueKey`, `groupKey`) — RM-026.
+   *
+   * The sibling `itemRequiredKeys`/`itemNumericKeys` cannot express this: they
+   * are fixed key names, and a `DistributionChart` reads whichever column the
+   * caller nominated. A `required: false` entry (the default) is only checked
+   * when the caller actually passed the prop, which is what makes an OPTIONAL
+   * nominated column (`groupKey`) validate exactly when it exists.
+   */
+  keyProps?: Array<{
+    /** The prop that names the column, e.g. `"valueKey"`. */
+    prop: string;
+    /** The column's cells must be finite numbers (numeric strings accepted). */
+    numeric?: boolean;
+    /** Fail when the prop itself is absent. Default `false` — an unset optional key checks nothing. */
+    required?: boolean;
+  }>;
   /** Props that must be finite numbers when provided. */
   numericProps?: string[];
   /** Walk `children` for elements carrying a `dataKey` prop and verify it exists on every row. */
   seriesFromChildren?: boolean;
+  // Network — RM-036
+  /**
+   * A SECOND array prop that references the first by id — `NetworkChart`'s
+   * `links`, whose `source`/`target` name nodes in `nodes`.
+   *
+   * None of the fields above can express it: they all validate rows of the ONE
+   * data prop against fixed or prop-named keys, and a graph's failure mode is
+   * relational — an edge pointing at a node that is not there. The real
+   * container drops such an edge with a dev warning, which a consumer's test
+   * would never see; here it is an error, on the same reasoning as the
+   * empty-`data` rule above (a double is stricter than the component precisely
+   * where the component's own mercy would hide a mistake in the test's data).
+   */
+  edgeProp?: {
+    /** The prop carrying the edges, e.g. `"links"`. */
+    prop: string;
+    /** Endpoint keys on each edge. Default `["source", "target"]`. */
+    endpointKeys?: [string, string];
+    /** Key that identifies a node in the data prop. Default `"id"`. */
+    nodeIdKey?: string;
+  };
 }
 
 /**
@@ -182,6 +236,75 @@ function collectSeriesKeys(children: ReactNode): string[] {
 function isInvalidDate(raw: unknown): boolean {
   const coerced = raw instanceof Date ? raw : new Date(raw as string | number);
   return Number.isNaN(coerced.getTime());
+}
+
+/**
+ * Structural check for a `"hierarchy"`-kind data prop (RM-025's `TreemapNode`:
+ * `{ name: string; value?: number; children?: TreemapNode[] }`, recursive).
+ * Mirrors `computeTreemapLayout`'s own shape assumptions — a leaf owns a
+ * `value`, a branch owns `children`, and every node owns a non-negative
+ * `value` when it has one — without duplicating the sum-equals-children rule
+ * (that is a dev-only invariant of the real component, not a runtime
+ * value-contract shape check).
+ */
+function assertHierarchyNode(
+  component: string,
+  dataProp: string,
+  node: unknown,
+  path: string[],
+): void {
+  if (typeof node !== "object" || node === null || Array.isArray(node)) {
+    fail(
+      component,
+      dataProp,
+      node,
+      `node at "${path.join(" › ") || "root"}" must be a plain object`,
+    );
+    return;
+  }
+  const record = node as Record<string, unknown>;
+  if (typeof record.name !== "string" || record.name.length === 0) {
+    fail(
+      component,
+      dataProp,
+      node,
+      `node at "${path.join(" › ") || "root"}" is missing a non-empty "name"`,
+    );
+  }
+  if (record.value !== undefined) {
+    if (typeof record.value !== "number" || record.value < 0) {
+      fail(
+        component,
+        dataProp,
+        node,
+        `node "${record.name as string}"'s "value" must be a non-negative number`,
+      );
+    }
+  }
+  if (record.children !== undefined) {
+    if (!Array.isArray(record.children)) {
+      fail(
+        component,
+        dataProp,
+        node,
+        `node "${record.name as string}"'s "children" must be an array`,
+      );
+      return;
+    }
+    for (const child of record.children) {
+      assertHierarchyNode(component, dataProp, child, [
+        ...path,
+        typeof record.name === "string" ? record.name : "?",
+      ]);
+    }
+  } else if (record.value === undefined) {
+    fail(
+      component,
+      dataProp,
+      node,
+      `node "${record.name as string}" has neither a "value" nor "children"`,
+    );
+  }
 }
 
 /**
@@ -224,6 +347,46 @@ export function assertChartContract(
     const seriesKeys = spec.seriesFromChildren
       ? collectSeriesKeys(props.children as ReactNode)
       : [];
+    // ParallelCoordinates — RM-034. Expand each `dynamicKeys` entry that
+    // carries `arrayOf` into its concrete list of row-key names, once, before
+    // the per-row walk below — `dimensions: { key }[]` becomes an ordinary
+    // dynamic-key list. The array's own shape/length is checked here (once
+    // per render), not once per row.
+    const dynamicArrayKeys: { prop: string; numeric?: boolean; keys: string[] }[] = [];
+    for (const dynamicKey of spec.dynamicKeys ?? []) {
+      if (!dynamicKey.arrayOf) continue;
+      const arr = props[dynamicKey.prop];
+      if (arr === undefined) continue; // presence of the prop itself is `requiredProps`'s job
+      if (!Array.isArray(arr)) {
+        fail(component, dynamicKey.prop, arr, `"${dynamicKey.prop}" must be an array`);
+        continue;
+      }
+      const { field = "key", min, max } = dynamicKey.arrayOf;
+      if (min !== undefined && arr.length < min) {
+        fail(
+          component,
+          dynamicKey.prop,
+          arr,
+          `"${dynamicKey.prop}" must have at least ${min} entries (received ${arr.length})`,
+        );
+      }
+      if (max !== undefined && arr.length > max) {
+        fail(
+          component,
+          dynamicKey.prop,
+          arr,
+          `"${dynamicKey.prop}" must have at most ${max} entries (received ${arr.length})`,
+        );
+      }
+      const keys = arr
+        .map((entry: unknown) =>
+          entry && typeof entry === "object"
+            ? (entry as Record<string, unknown>)[field]
+            : undefined,
+        )
+        .filter((key): key is string => typeof key === "string" && key.length > 0);
+      dynamicArrayKeys.push({ prop: dynamicKey.prop, numeric: dynamicKey.numeric, keys });
+    }
     value.forEach((row: unknown, index: number) => {
       if (typeof row !== "object" || row === null || Array.isArray(row)) {
         fail(component, dataProp, row, `row ${index} of "${dataProp}" must be a plain object`);
@@ -284,6 +447,43 @@ export function assertChartContract(
           );
         }
       }
+      // RM-026: columns nominated BY a prop (`valueKey`, `groupKey`).
+      for (const keyProp of spec.keyProps ?? []) {
+        const keyName = props[keyProp.prop];
+        if (typeof keyName !== "string" || keyName.length === 0) {
+          if (keyProp.required) {
+            fail(
+              component,
+              keyProp.prop,
+              keyName,
+              `"${keyProp.prop}" must name a column on every row`,
+            );
+          }
+          continue;
+        }
+        if (!(keyName in record)) {
+          fail(
+            component,
+            keyProp.prop,
+            row,
+            `row ${index} of "${dataProp}" is missing the column "${keyName}" named by "${keyProp.prop}"`,
+          );
+          continue;
+        }
+        if (keyProp.numeric) {
+          const cell = record[keyName];
+          const coerced = typeof cell === "string" ? Number(cell) : cell;
+          if (typeof coerced !== "number" || !Number.isFinite(coerced)) {
+            fail(
+              component,
+              keyProp.prop,
+              cell,
+              `row ${index}'s "${keyName}" must be a finite number — a distribution puts this ` +
+                "column on a numeric scale, and a non-numeric cell has no position on it",
+            );
+          }
+        }
+      }
       if (xKeyName) {
         if (!(xKeyName in record)) {
           fail(
@@ -312,6 +512,7 @@ export function assertChartContract(
         }
       }
       for (const dynamicKey of spec.dynamicKeys ?? []) {
+        if (dynamicKey.arrayOf) continue; // handled by `dynamicArrayKeys` below
         const keyName = props[dynamicKey.prop] as string | undefined;
         if (!keyName) continue; // presence of the prop itself is `requiredProps`'s job
         if (!(keyName in record)) {
@@ -330,6 +531,32 @@ export function assertChartContract(
               row,
               `row ${index}'s "${keyName}" (named by "${dynamicKey.prop}") must be number | null | undefined`,
             );
+          }
+        }
+      }
+      // ParallelCoordinates — RM-034: one or more keys per row, all named by
+      // ONE array-shaped prop (`dynamicArrayKeys`, expanded above).
+      for (const arrayKey of dynamicArrayKeys) {
+        for (const keyName of arrayKey.keys) {
+          if (!(keyName in record)) {
+            fail(
+              component,
+              arrayKey.prop,
+              row,
+              `row ${index} of "${dataProp}" is missing the key named by "${arrayKey.prop}" ("${keyName}")`,
+            );
+            continue;
+          }
+          if (arrayKey.numeric) {
+            const v = record[keyName];
+            if (v != null && typeof v !== "number") {
+              fail(
+                component,
+                arrayKey.prop,
+                row,
+                `row ${index}'s "${keyName}" (named by "${arrayKey.prop}") must be number | null | undefined`,
+              );
+            }
           }
         }
       }
@@ -369,6 +596,10 @@ export function assertChartContract(
     if (!Array.isArray(value.nodes) || !Array.isArray(value.links)) {
       fail(component, dataProp, value, `"${dataProp}" must be { nodes: [], links: [] }`);
     }
+  } else if (spec.dataKind === "hierarchy") {
+    const value = props[dataProp];
+    if (value === undefined) return;
+    assertHierarchyNode(component, dataProp, value, []);
   }
 
   for (const p of spec.numericProps ?? []) {
@@ -377,6 +608,70 @@ export function assertChartContract(
       fail(component, p, v, `"${p}" must be a finite number`);
     }
   }
+
+  // Network — RM-036
+  if (spec.edgeProp) {
+    assertEdges(component, props, spec.edgeProp, dataProp);
+  }
+}
+
+// Network — RM-036
+/**
+ * Validate an edge list against the node list it references (`NetworkChart`).
+ * Shape first, then the relational rule: every endpoint must name a node that
+ * exists, because an edge to nowhere is a mistake in the test's data rather
+ * than a state the chart is being asked to render.
+ */
+function assertEdges(
+  component: string,
+  props: Record<string, unknown>,
+  edge: NonNullable<ChartContractSpec["edgeProp"]>,
+  dataProp: string,
+): void {
+  const value = props[edge.prop];
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    fail(component, edge.prop, value, `"${edge.prop}" must be an array of plain objects`);
+    return;
+  }
+  const [sourceKey, targetKey] = edge.endpointKeys ?? ["source", "target"];
+  const nodeIdKey = edge.nodeIdKey ?? "id";
+  const nodes = props[dataProp];
+  const ids = new Set<unknown>(
+    Array.isArray(nodes)
+      ? nodes
+          .filter((n): n is Record<string, unknown> => typeof n === "object" && n !== null)
+          .map((n) => n[nodeIdKey])
+      : [],
+  );
+
+  value.forEach((row: unknown, index: number) => {
+    if (typeof row !== "object" || row === null || Array.isArray(row)) {
+      fail(component, edge.prop, row, `row ${index} of "${edge.prop}" must be a plain object`);
+      return;
+    }
+    const record = row as Record<string, unknown>;
+    for (const key of [sourceKey, targetKey]) {
+      const endpoint = record[key];
+      if (typeof endpoint !== "string" || endpoint.length === 0) {
+        fail(
+          component,
+          edge.prop,
+          row,
+          `row ${index} of "${edge.prop}" must carry a non-empty string "${key}"`,
+        );
+        continue;
+      }
+      if (ids.size > 0 && !ids.has(endpoint)) {
+        fail(
+          component,
+          edge.prop,
+          row,
+          `row ${index} of "${edge.prop}" names "${endpoint}" in "${key}", which is not a "${dataProp}" ${nodeIdKey}`,
+        );
+      }
+    }
+  });
 }
 
 // ── data-chart-props payload (the `readChartDoubleProps` round trip) ────────
@@ -407,6 +702,9 @@ export function buildChartDoublePayload(
   } else if (spec.dataKind === "sankey" && dataValue && typeof dataValue === "object") {
     const nodes = (dataValue as { nodes?: unknown }).nodes;
     if (Array.isArray(nodes)) payload.dataLength = nodes.length;
+  } else if (spec.dataKind === "hierarchy" && dataValue && typeof dataValue === "object") {
+    const children = (dataValue as { children?: unknown }).children;
+    payload.dataLength = Array.isArray(children) ? children.length : 1;
   }
 
   if (typeof props.status === "string") payload.status = props.status;

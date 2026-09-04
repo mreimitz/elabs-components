@@ -1504,14 +1504,40 @@ export const INTENT = {
     purpose: "Flow diagram — how quantity moves between stages or nodes.",
     category: "chart",
     relationships: {
-      contains: ["SankeyNode", "SankeyLink", "SankeyTooltip", "SankeyProvider"],
+      contains: [
+        "SankeyNode",
+        "SankeyLink",
+        "SankeyThreadLinks",
+        "SankeyTooltip",
+        "SankeyProvider",
+      ],
       usedInside: ["ChartFrame", "ChartCard"],
     },
-    stateTokens: { series: "--chart-1 … --chart-5" },
+    stateTokens: { series: "--chart-1 … --chart-5", mode: "aggregate (default) | threads" },
     antiPatterns: [
       "A Sankey for a simple two-column comparison — reach for a bar chart.",
       "Raw colors on nodes/links — resolve the chart tokens so the dark theme reads correctly.",
       "So many nodes that the labels collide — aggregate the tail into one 'other' node.",
+    ],
+  },
+
+  SankeyThreadLinks: {
+    purpose:
+      'SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.',
+    category: "chart",
+    relationships: {
+      usedInside: ["SankeyChart"],
+      pairsWith: ["SankeyNode"],
+    },
+    stateTokens: {
+      hover: "bundle-highlight on hover",
+      pin: "click the fat hit-twin to pin a route",
+    },
+    antiPatterns: [
+      'Using mode="threads" for a small, low-cardinality flow — that\'s what the default aggregate SankeyLink is for.',
+      "Supplying `path` names that don't match any `SankeyNodeDatum.name` — the route silently falls back to source/target only.",
+      "Making the visible thread path itself interactive — pointer handling belongs on the fat, transparent hit-twin so overlapping routes don't fight for clicks.",
+      "Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element.",
     ],
   },
 
@@ -1563,6 +1589,56 @@ export const INTENT = {
       "Using it for unordered categories — a funnel asserts a sequence; unordered data belongs in a bar chart.",
       "Encoding stage identity by colour alone — label each stage; colour is not a legend.",
       "Hiding the absolute counts behind percentages only — a funnel without its base number cannot be judged.",
+    ],
+  },
+
+  WaterfallChart: {
+    purpose:
+      "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
+    category: "chart",
+    relationships: {
+      contains: ["Grid", "BarXAxis", "BarYAxis", "ChartTooltip"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      connector:
+        "var(--chart-foreground-muted), 0.6px, dashed (furniture, not data — Leader's default)",
+      decrease: "var(--chart-seq-3) (default negativeFill)",
+      increase: "var(--chart-seq-6) (default positiveFill)",
+      total: "var(--chart-foreground) (default totalFill)",
+      valueLabel: "var(--chart-foreground) on a var(--chart-background) halo (HaloText)",
+    },
+    antiPatterns: [
+      "A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.",
+      "Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.",
+      "Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.",
+      "More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead.",
+    ],
+  },
+
+  ParallelCoordinatesChart: {
+    purpose:
+      "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "DrawPath", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["DumbbellChart", "RadarChart"],
+    },
+    stateTokens: {
+      axis: "var(--chart-foreground-muted) vertical hairline with end ticks (HairlineFloor style)",
+      extremeLabel:
+        "var(--chart-foreground-muted) on a var(--chart-background) halo, axis feet only when showExtremes",
+      heroLine:
+        "2px, var(--chart-foreground) or the resolved palette ink, opacity 1 — drawn LAST so it sits on top",
+      nonHeroLine:
+        "0.65px hairline, seeded 0.5-0.8 opacity — a texture of many lines, not individually legible",
+    },
+    antiPatterns: [
+      "Fewer than 3 or more than 6 dimensions — below 3 a DumbbellChart (2) or MetricCard (1) reads better; above 6 the axes crowd and `resolveParallelDimensions` clamps to the first 6 with a console warning, silently dropping the rest.",
+      "Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).",
+      "Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.",
+      "Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot.",
     ],
   },
 
@@ -1875,6 +1951,62 @@ export const INTENT = {
       "Measuring the geometry with getTotalLength to drive the animation — pathLength 1 exists to avoid it. That measurement is a layout read in render, and it returns 0 under jsdom, so every mocked test would draw nothing.",
       "Shortening the duration instead of branching for reduced motion — a motion path at duration 0 still leaves the dash attributes in the DOM, and a stroke carrying a dash array is one rounding error away from a visible seam. The reduced-motion state has to be the ordinary, undecorated path.",
       "Letting meaning depend on the animation having run — a reader who arrives after it finished, or who never sees it, must lose nothing.",
+    ],
+  },
+
+  TreemapChart: {
+    purpose: "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "ChartTooltipBox", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["MetricCard"],
+    },
+    stateTokens: {
+      band: "var(--chart-mono-2) — always neutral, even under palette: 'categorical', so grouping reads from the title band + gap alone, never from hue",
+      leafMono: "var(--chart-mono-4) — one shared shade for every leaf (the default)",
+      leafSequential: "--chart-seq-1 … --chart-seq-7 by the leaf's own value",
+      leafCategorical: "one hue per top-level group (≤ 4 groups, else falls back to mono)",
+      label:
+        "HaloText: the band title renders in the chart-source type role, the leaf label in the chart-value type role (RM-019, both pinned to the meta size step); the halo punches from var(--chart-background)",
+      focus:
+        "the drilldown zoom/back buttons carry the shared interactive focus ring (the --ring token, shown only on :focus-visible)",
+    },
+    antiPatterns: [
+      "Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.",
+      "Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.",
+      "Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.",
+      "Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in.",
+    ],
+  },
+
+  TreeChart: {
+    purpose:
+      "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "DrawPath", "ChartTooltipBox", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["TreemapChart"],
+    },
+    stateTokens: {
+      linkStroke: "var(--chart-grid), 1.4px — links are furniture, not data, whatever the palette",
+      nodeMono:
+        "--chart-mono-1 … 7, indexed by DEPTH (the default) — every node at one depth shares one shade",
+      nodeCategorical:
+        "one hue per top-level branch (a direct child of the root); the root itself stays var(--chart-mono-4), since it belongs to no branch",
+      label:
+        "HaloText in the chart-value type role, placed before a leaf / after a branch on the growth axis; the halo punches from var(--chart-background)",
+      collapsedPill:
+        "var(--chart-mono-3) fill, '+k' label — k is the count of leaves the pill hides",
+      reveal:
+        "links draw depth by depth via DrawPath + stagger — every link into one depth shares a single reveal delay",
+    },
+    antiPatterns: [
+      "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.",
+      "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
+      "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
+      "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand.",
     ],
   },
 
@@ -3028,6 +3160,85 @@ export const INTENT = {
       "Leaving aria-activedescendant set after the palette closes — a stale id points at a node that no longer exists.",
       "Hand-rolling the trigger scan — the caret/trigger machinery is shared with MentionInput (findTriggerQuery in @elabs-ai/components-ui), not re-derived here.",
       "Submitting the composer on Enter while the palette is open — Enter selects the command; the textarea's own onKeyDown-before-submit order is what makes that possible.",
+    ],
+  },
+
+  // DistributionChart — RM-026
+  DistributionChart: {
+    purpose:
+      "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartLegend", "DataTable"],
+    },
+    stateTokens: {
+      group:
+        '--chart-1 … --chart-12 via resolvePalette; palette="sequential" shades a box/violin by MEDIAN RANK, not by group order',
+      median:
+        "cut in the paper colour (--chart-background) through a box/violin waist; a dashed --chart-foreground flag + text-meta label on a histogram",
+      outlier: "hollow past 1.5 × IQR — fill=none with the group's own stroke, never a filled dot",
+      axis: "--chart-grid gridlines, --chart-label value ticks, --chart-foreground group labels, all text-meta",
+      focus:
+        "on a strip every record is a real button in ChartDatapointLayer: focus-visible:ring-2 ring-ring",
+    },
+    antiPatterns: [
+      'kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.',
+      "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.",
+      'kind="box" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind="strip" shows the same numbers without discarding them.',
+      "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
+      "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.",
+    ],
+  },
+
+  // BumpChart — RM-033
+  BumpChart: {
+    purpose:
+      'Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).',
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "QuietDot"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      hero: "highlightKey draws var(--chart-foreground) (ink) + bold labels; every other entity draws from the neutral mono ladder, never a second categorical hue",
+      rank: 'variant="strip" cell shade = --chart-seq-1…7 via resolvePalette("sequential", maxRank) — rank 1 is always the most-ink step, whichever theme is active',
+      delta:
+        "showDelta reads var(--success) for a climb (▲) and var(--destructive) for a drop (▼) via profitLossColor — colour reinforces the arrow glyph, it never stands alone",
+      missing: "a period an entity has no row for draws a QuietDot pinprick, never a blank cell",
+    },
+    antiPatterns: [
+      "Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.",
+      "Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.",
+      'Choosing variant="lines" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities\' default cap of 10 kicks in; variant="strip" reads a crowded field better because rows never move.',
+      "Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period.",
+    ],
+  },
+  // NetworkChart — RM-036
+  NetworkChart: {
+    purpose:
+      "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartLegend", "DataTable"],
+    },
+    stateTokens: {
+      node: "--chart-1 … --chart-12 by group via resolvePalette (categorical at or under 6 groups, mono above); the mark is stroked in the paper colour (--chart-background) so touching nodes still read apart",
+      link: "--chart-grid hairlines at 0.35 opacity, width scaled by the link's own value",
+      emphasis:
+        "hover/focus dims non-neighbours to opacity 0.12 and non-incident links to 0.03 — a CLASS on each <g>, transitioned on the compositor, so no node re-renders per frame",
+      label:
+        "HaloText in the chart-source type role, punched from var(--chart-background); drawn only at or above labelThreshold",
+      focus:
+        "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared interactive focus ring (the --ring token, shown only on :focus-visible); one tab stop, arrows across the rest",
+    },
+    antiPatterns: [
+      'Reading a force layout\'s POSITIONS as data — only adjacency is encoded; distance, direction and the picture\'s orientation are artefacts of the solver\'s seed. Use layout="circular" or "arc" whenever position must mean something.',
+      "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.",
+      'Reaching for layout="arc" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.',
+      "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
+      "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.",
     ],
   },
 };

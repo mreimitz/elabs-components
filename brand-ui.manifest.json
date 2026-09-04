@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T14:27:41.006Z",
+  "generatedAt": "2026-09-04T14:31:33.882Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12477,6 +12477,11 @@
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
         },
         {
+          "name": "BumpChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
           "name": "CALENDAR_ROWS",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -12697,6 +12702,16 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "DEFAULT_CIRCULAR_CURVENESS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "DEFAULT_FORCE_SEED",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "DEFAULT_HEATMAP_STEPS",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
@@ -12712,6 +12727,11 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "DEFAULT_WHISKER_MULTIPLIER",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "DEFAULT_Y_AXIS_ID",
           "kind": "value",
           "module": "packages/charts/src/charts/y-axis-scales.ts"
@@ -12722,6 +12742,11 @@
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "DistributionChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/distribution-chart.tsx"
+        },
+        {
           "name": "DrawPath",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -12730,6 +12755,26 @@
           "name": "DumbbellChart",
           "kind": "value",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+        },
+        {
+          "name": "END_LABEL_MIN_GAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "FORCE_ALPHA_MIN",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "FORCE_GRAVITY",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "FORCE_TICK_BUDGET",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "FunnelChart",
@@ -12825,6 +12870,16 @@
           "name": "HeatmapChart",
           "kind": "value",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "KDE_GRID_POINTS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KDE_TAPER",
+          "kind": "value",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "Leader",
@@ -12935,6 +12990,51 @@
           "name": "MIN_DATAPOINT_TARGET_SIZE",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
+        },
+        {
+          "name": "NETWORK_DEFAULT_MAX_NODES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_DEFAULT_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_MAX_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_MIN_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_PADDING",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
+        },
+        {
+          "name": "PARALLEL_COORDINATES_MAX_DIMENSIONS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "PARALLEL_COORDINATES_MIN_DIMENSIONS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "PatternArea",
@@ -13112,6 +13212,11 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
+          "name": "SankeyThreadLinks",
+          "kind": "value",
+          "module": "packages/charts/src/charts/sankey/index.ts"
+        },
+        {
           "name": "SankeyTooltip",
           "kind": "value",
           "module": "packages/charts/src/charts/sankey/index.ts"
@@ -13167,6 +13272,41 @@
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
         },
         {
+          "name": "TreeChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "TREEMAP_BAND_COLOR",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_CATEGORICAL_GROUP_CAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_MAX_LEAVES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_MONO_LEAF_COLOR",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TREEMAP_TITLE_BAND_HEIGHT",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
           "name": "UNIT_CHART_GROUP_STAGGER_MS",
           "kind": "value",
           "module": "packages/charts/src/charts/unit-layouts.ts"
@@ -13185,6 +13325,11 @@
           "name": "UnitStack",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
+        },
+        {
+          "name": "WaterfallChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
           "name": "XAxis",
@@ -13391,6 +13536,10 @@
       ],
       "types": [
         {
+          "name": "ArcLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "AreaChartLoadingProps",
           "module": "packages/charts/src/charts/area-chart-loading.tsx"
         },
@@ -13433,6 +13582,34 @@
         {
           "name": "BarYAxisProps",
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
+        },
+        {
+          "name": "BinValuesOptions",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "BlobPoint",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "BumpChartProps",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpMatrix",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpPoint",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpSeries",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "BumpVariant",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
           "name": "CalendarCellPosition",
@@ -13679,12 +13856,40 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "CircularLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "ComposedChartProps",
           "module": "packages/charts/src/charts/composed-chart.tsx"
         },
         {
           "name": "DateTickerProps",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "DistributionBin",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionChartProps",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionGroup",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionKind",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionOrientation",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "DistributionRow",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "DrawPathProps",
@@ -13729,6 +13934,18 @@
         {
           "name": "FieldLayoutOptions",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "FiveNumberSummary",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "ForceLayoutNode",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "ForceLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "FunnelChartProps",
@@ -13855,6 +14072,10 @@
           "module": "packages/charts/src/charts/grid.tsx"
         },
         {
+          "name": "GroupedDistribution",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "HairlineFloorProps",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -13921,6 +14142,18 @@
         {
           "name": "IndicatorWidth",
           "module": "packages/charts/src/charts/tooltip/index.ts"
+        },
+        {
+          "name": "KdeOptions",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KdePoint",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "KdeResult",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "LeaderDash",
@@ -14055,8 +14288,80 @@
           "module": "packages/charts/src/charts/live-line.tsx"
         },
         {
+          "name": "NetworkChartProps",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
+        },
+        {
+          "name": "NetworkDatapointDatum",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
+        },
+        {
+          "name": "NetworkEmphasis",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLayoutOptions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLayoutResult",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLinkDatum",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkLinkLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkNodeDatum",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkNodeLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkPoint",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NetworkSide",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "OHLCDataPoint",
           "module": "packages/charts/src/charts/candlestick-chart.tsx"
+        },
+        {
+          "name": "ParallelCoordinatesAxis",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesChartProps",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesCurve",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesDimension",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesLineStyle",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesRow",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "PatternAreaProps",
@@ -14215,11 +14520,19 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
+          "name": "SankeyMode",
+          "module": "packages/charts/src/charts/sankey/index.ts"
+        },
+        {
           "name": "SankeyNodeDatum",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
           "name": "SankeyNodeProps",
+          "module": "packages/charts/src/charts/sankey/index.ts"
+        },
+        {
+          "name": "SankeyThreadLinksProps",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
@@ -14307,6 +14620,54 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "TreeChartProps",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "TreemapChartProps",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapGroupDatum",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapLayoutOptions",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapLayoutResult",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapLeafDatum",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapNode",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapPalette",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreemapRect",
+          "module": "packages/charts/src/charts/treemap/index.ts"
+        },
+        {
+          "name": "TreeNode",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "TreeOrientation",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
+          "name": "TreePalette",
+          "module": "packages/charts/src/charts/tree-chart.tsx"
+        },
+        {
           "name": "UnitArithmetic",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -14367,6 +14728,18 @@
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
+          "name": "WaterfallChartProps",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallDatum",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallStep",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
           "name": "XAxisProps",
           "module": "packages/charts/src/charts/x-axis.tsx"
         },
@@ -14385,8 +14758,28 @@
       ],
       "otherExports": [
         {
+          "name": "arcLinkPath",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "arcPositions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "binValues",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "blobPath",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "bucketIndexOf",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "buildBumpMatrix",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
         },
         {
           "name": "buildCalendarLayout",
@@ -14399,6 +14792,14 @@
         {
           "name": "buildHeatmapBuckets",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "buildParallelAxes",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "buildParallelRows",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "buildUnitChartSummary",
@@ -14445,16 +14846,56 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "circularLinkPath",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "circularPositions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "circularRing",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "computeAdjacency",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "computeArithmetic",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "computeBumpDelta",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "computeDegrees",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "computeDumbbellDomain",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
         {
+          "name": "computeForcePositions",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "computeGanttZoomBounds",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "computeNetworkLayout",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "computeRowPoints",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "computeTreemapLayout",
+          "module": "packages/charts/src/charts/treemap/index.ts"
         },
         {
           "name": "computeUnitCounts",
@@ -14473,12 +14914,24 @@
           "module": "packages/charts/src/charts/canvas-layer/index.ts"
         },
         {
+          "name": "danglingLinks",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "defaultBinCount",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "defaultChartStatFlowFormat",
           "module": "packages/charts/src/charts/chart-stat-flow.tsx"
         },
         {
           "name": "defaultChoroplethColors",
           "module": "packages/charts/src/charts/choropleth/index.ts"
+        },
+        {
+          "name": "defaultNetworkDatapointLabel",
+          "module": "packages/charts/src/charts/network/network-chart.tsx"
         },
         {
           "name": "defaultPieColors",
@@ -14497,6 +14950,10 @@
           "module": "packages/charts/src/charts/chart-context.tsx"
         },
         {
+          "name": "describeDistribution",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "detectMomentum",
           "module": "packages/charts/src/charts/live-line.tsx"
         },
@@ -14507,6 +14964,14 @@
         {
           "name": "firstMondayOfMonth",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "fitToBox",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "fiveNumberSummary",
+          "module": "packages/charts/src/charts/distribution/index.ts"
         },
         {
           "name": "ganttVariants",
@@ -14529,6 +14994,10 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
+          "name": "groupRecords",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "heatmapDomain",
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
@@ -14541,12 +15010,28 @@
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
+          "name": "integrateDensity",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "isChartInteractionPhase",
           "module": "packages/charts/src/charts/chart-phase.ts"
         },
         {
+          "name": "isLabelVisible",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "isLinkDimmed",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "isLoadingChromePhase",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "isNodeDimmed",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "isNumericField",
@@ -14569,6 +15054,14 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "kde",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "kdeDensityAt",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "layoutField",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -14589,6 +15082,14 @@
           "module": "packages/charts/src/charts/legend/index.ts"
         },
         {
+          "name": "limitBumpSeries",
+          "module": "packages/charts/src/charts/bump-chart.tsx"
+        },
+        {
+          "name": "linkWidth",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "makeSeriesPattern",
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
@@ -14597,8 +15098,24 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "networkSummary",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "niceYDomain",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "nodeRadius",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "nonHeroLineOpacity",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "orderRowsForRender",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "padDatapointRect",
@@ -14607,6 +15124,10 @@
         {
           "name": "parseIsoDate",
           "module": "packages/charts/src/charts/heatmap/index.ts"
+        },
+        {
+          "name": "partitionBipartite",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "pickGanttTimeUnit",
@@ -14621,16 +15142,44 @@
           "module": "packages/charts/src/charts/profit-loss-line.tsx"
         },
         {
+          "name": "quantileSorted",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
           "name": "radarCssVars",
           "module": "packages/charts/src/charts/radar-context.tsx"
+        },
+        {
+          "name": "resolveEntityLineStyle",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "resolveHeroEntity",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "resolveLabelAnchor",
+          "module": "packages/charts/src/charts/network/index.ts"
         },
         {
           "name": "resolveLineLoadingPulseMode",
           "module": "packages/charts/src/charts/line-loading-pulse.tsx"
         },
         {
+          "name": "resolveLitIds",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "resolveNodeWeight",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "resolvePalette",
           "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
+          "name": "resolveParallelDimensions",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "resolveProfitLossTooltipLabel",
@@ -14657,6 +15206,10 @@
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
         {
+          "name": "seededRandomSource",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "seededRnd",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -14681,6 +15234,14 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "silvermanBandwidth",
+          "module": "packages/charts/src/charts/distribution/index.ts"
+        },
+        {
+          "name": "solveAlphaDecay",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "sortDumbbellRows",
           "module": "packages/charts/src/charts/dumbbell-chart.tsx"
         },
@@ -14703,6 +15264,10 @@
         {
           "name": "unitMarkDelayMs",
           "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "validateTreemapData",
+          "module": "packages/charts/src/charts/treemap/index.ts"
         },
         {
           "name": "viewModeToScales",
@@ -15453,6 +16018,108 @@
               "optional": true,
               "type": "CategoryAxisFit",
               "description": "`\"off\"` pins the pre-fit behaviour — full labels, count-capped stride, no measurement and no reserved gutter. The regression escape hatch. Default: `\"auto\"`."
+            }
+          ]
+        },
+        "BumpChart": {
+          "extends": [
+            "ChartInteractionProps"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "Record<string, unknown>[]",
+              "description": "Long-format data — one row per (period, entity) pair."
+            },
+            {
+              "name": "period",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the discrete period (e.g. \"Q1\", \"2026-W12\")."
+            },
+            {
+              "name": "entity",
+              "optional": false,
+              "type": "string",
+              "description": "Key in `data` for the entity being ranked."
+            },
+            {
+              "name": "valueKey",
+              "optional": true,
+              "type": "string",
+              "description": "Key in `data` for the entity's value that period. Ranks are derived from it when `rankKey` is absent."
+            },
+            {
+              "name": "rankKey",
+              "optional": true,
+              "type": "string",
+              "description": "Key in `data` for an already-computed rank (1 = best). Takes priority over a derived rank when present."
+            },
+            {
+              "name": "variant",
+              "optional": true,
+              "type": "BumpVariant",
+              "description": "`\"lines\"` (default) — one line per entity on an inverted rank y-axis. `\"strip\"` — G21's fixed-row filmstrip: shade + a printed number carry the per-period rank instead of vertical position."
+            },
+            {
+              "name": "highlightKey",
+              "optional": true,
+              "type": "string",
+              "description": "The hero entity — drawn in ink (`var(--chart-foreground)`) and bold; every other entity draws from the neutral mono ladder."
+            },
+            {
+              "name": "showDelta",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show a ▲n / ▼n delta flag (rank movement into the LAST period) per row. Default `false`."
+            },
+            {
+              "name": "maxEntities",
+              "optional": true,
+              "type": "number",
+              "description": "Cap on plotted entities, kept by final rank. Default `10`; dev-warns once when the data has more."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Which colour family the `\"strip\"` cell shade draws from. Default `\"sequential\"` (rank 1 = most ink). Ignored by `\"lines\"`, which always draws hero-ink + mono."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How the tooltip's raw value cell is formatted. Default `\"compact\"`."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>",
+              "description": "Chart margins."
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "string",
+              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region (announces to AT on focus)."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT (e.g. entity count + period range)."
             }
           ]
         },
@@ -16369,6 +17036,102 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            }
+          ]
+        },
+        "DistributionChart": {
+          "extends": [
+            "ChartInteractionProps",
+            "ChartA11yProps"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "DistributionRow[]",
+              "description": "RECORD-level rows — one per observation, NOT pre-aggregated buckets. The container does the aggregating; handing it counts defeats the point."
+            },
+            {
+              "name": "valueKey",
+              "optional": false,
+              "type": "string",
+              "description": "The numeric column. Rows whose value is not finite are dropped, and counted."
+            },
+            {
+              "name": "groupKey",
+              "optional": true,
+              "type": "string",
+              "description": "The grouping column. Omit for a single, ungrouped distribution."
+            },
+            {
+              "name": "kind",
+              "optional": false,
+              "type": "DistributionKind",
+              "description": "Which mark to draw. See the table in this file's header for how to pick."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "DistributionOrientation",
+              "description": "Which screen axis the VALUE runs along. `\"horizontal\"` (default) puts groups in rows, which is what long group labels want; `\"vertical\"` puts them in columns."
+            },
+            {
+              "name": "bins",
+              "optional": true,
+              "type": "number | number[]",
+              "description": "Histogram only: a bin COUNT hint (nice, approximate) or the FULL ordered edge list. Edges must be meaningful — a value outside an explicit list is dropped with a dev warning rather than absorbed by an end bucket. See `bins.ts`."
+            },
+            {
+              "name": "bandwidth",
+              "optional": true,
+              "type": "number",
+              "description": "Violin only: KDE bandwidth. Unset uses Silverman's rule of thumb."
+            },
+            {
+              "name": "showMedian",
+              "optional": true,
+              "type": "boolean",
+              "description": "Draw the median: a dashed flag on a histogram, a paper tick on a box/violin. Default `true`."
+            },
+            {
+              "name": "showOutliers",
+              "optional": true,
+              "type": "boolean",
+              "description": "Box only: hollow marks beyond 1.5 × IQR. Default `true`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "Histogram only: records per rung. Set it to draw each bin as COUNTABLE rungs (`F14`) instead of a bar — the number is the legend (\"one rung = 5 tickets\"), which is why it is a count and not a boolean."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour family. With `\"sequential\"`, a box/violin's shade is its MEDIAN RANK — the darkest group has the highest median — so the ordering is carried by the fill as well as by position."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "Value formatting for ticks, tooltips and the text summary."
+            },
+            {
+              "name": "currency",
+              "optional": true,
+              "type": "string",
+              "description": "ISO 4217 code when `valueFormat=\"currency\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "style",
+              "optional": true,
+              "type": "CSSProperties"
             }
           ]
         },
@@ -17822,6 +18585,107 @@
             }
           ]
         },
+        "NetworkChart": {
+          "extends": [
+            "ChartInteractionProps<NetworkDatapointDatum>"
+          ],
+          "props": [
+            {
+              "name": "nodes",
+              "optional": false,
+              "type": "NetworkNodeDatum[]",
+              "description": "The graph's nodes. `id` is the identity `links` reference."
+            },
+            {
+              "name": "links",
+              "optional": false,
+              "type": "NetworkLinkDatum[]",
+              "description": "The graph's edges. An endpoint naming an unknown node is dropped (dev warning)."
+            },
+            {
+              "name": "layout",
+              "optional": false,
+              "type": "NetworkLayout",
+              "description": "- `\"force\"` — a settled force-directed cloud (G11, B2). - `\"circular\"` — one ring, chords bundled toward the centre (G6, B1). - `\"arc\"` — bipartite ownership: two columns, hairline béziers (L12)."
+            },
+            {
+              "name": "nodeSize",
+              "optional": true,
+              "type": "\"value\" | number",
+              "description": "`\"value\"` (default) — AREA is proportional to the node's weight, i.e. radius ∝ √weight. A number pins every node to that radius. \"Weight\" is the node's own `value`, or its DEGREE when it has none — which is what gives a colonnade \"hub radius ∝ link count\" for free."
+            },
+            {
+              "name": "labelThreshold",
+              "optional": true,
+              "type": "number",
+              "description": "Draw a node's label only when its weight reaches this (lieflat B1's rule for a 60-node ring). Omit to label every node — right for ≤ ~15 nodes, unreadable above it."
+            },
+            {
+              "name": "emphasis",
+              "optional": true,
+              "type": "NetworkEmphasis",
+              "description": "`\"adjacency\"` (default) — hovering or focusing a node keeps it and its neighbours lit and blurs the rest. `\"none\"` disables it."
+            },
+            {
+              "name": "draggable",
+              "optional": true,
+              "type": "boolean",
+              "description": "`force` only: let the pointer pull a node out of place. It springs back to its settled position on release — the layout is the answer, the drag is a way to look under a cluster. Ignored (with a dev warning) on the other two layouts, which have no free positions to give."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Colour family. Default: `\"categorical\"` at or under six groups, `\"mono\"` above — past six, a hue per group names nothing."
+            },
+            {
+              "name": "maxNodes",
+              "optional": true,
+              "type": "number",
+              "description": "Dev-warning threshold on node count. Default 200. NOT a cap."
+            },
+            {
+              "name": "seed",
+              "optional": true,
+              "type": "number",
+              "description": "`force` only: changes the starting cloud, and so which arrangement is found."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "How node values render in the tooltip. Default `\"compact\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "style",
+              "optional": true,
+              "type": "CSSProperties"
+            },
+            {
+              "name": "aspectRatio",
+              "optional": true,
+              "type": "string",
+              "description": "Aspect ratio as \"width / height\". Default `\"16 / 9\"`."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region. Defaults to the auto summary — `\"Network, 60 nodes, 140 links, 5 groups\"` — because the counts are exactly what an `aria-hidden` SVG withholds."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
+            }
+          ]
+        },
         "PatternArea": {
           "extends": [],
           "props": [
@@ -18063,6 +18927,24 @@
               "optional": true,
               "type": "boolean",
               "description": "High-frequency geometry updates (e.g. studio NumberField scrub). Uses plain SVG paths instead of Motion `d` / spring hover morphing."
+            },
+            {
+              "name": "radiusKey",
+              "optional": true,
+              "type": "string",
+              "description": "Second measure driving each slice's OUTER radius — angle × radius double encoding (lieflat G13 \"Big Slice\", #RM-030). Reads `data[i][radiusKey]` as a number; `outerRadius = innerRadius + (R - innerRadius) * sqrt(v / max)` (area-honest — equal AREA differences read as equal magnitude differences, not equal radius differences). A slice whose value is missing/non-numeric — or every slice, when `radiusKey` is unset — renders at the chart's full outer radius, today's behavior."
+            },
+            {
+              "name": "referenceRings",
+              "optional": true,
+              "type": "number[]",
+              "description": "Dashed reference rings (in `radiusKey`'s units) with small value labels — e.g. `[15, 30, 45]` for a \"minutes/day\" second measure. No-op when `radiusKey` is unset."
+            },
+            {
+              "name": "seams",
+              "optional": true,
+              "type": "number",
+              "description": "Paper-seam stroke (px) drawn between slices — the lieflat \"3px paper seam\" cut-paper look. Default: `0` (no seam — today's behavior)."
             }
           ]
         },
@@ -18116,6 +18998,18 @@
               "optional": true,
               "type": "string",
               "description": "Additional CSS class"
+            },
+            {
+              "name": "outerRadiusOverride",
+              "optional": true,
+              "type": "number",
+              "description": "Per-slice outer radius override (px) — RM-030's `radiusKey`. Injected automatically by `PieChart` via `cloneElement` when its `radiusKey` prop is set; a `PieSlice` rendered standalone (or inside a chart with no `radiusKey`) never receives it and falls back to the chart's uniform `outerRadius` — today's behavior."
+            },
+            {
+              "name": "seams",
+              "optional": true,
+              "type": "number",
+              "description": "Paper-seam stroke (px) between this slice and its neighbors — RM-030's `seams`. Injected automatically by `PieChart` via `cloneElement` when its `seams` prop is > 0. Default: no stroke (today's behavior)."
             }
           ]
         },
@@ -18596,6 +19490,12 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. ring names + values)."
+            },
+            {
+              "name": "labels",
+              "optional": true,
+              "type": "\"outside\"",
+              "description": "Outside-label mode for the high-decoration tick ring (lieflat F4 \"Tick Donut\", #RM-030). `\"outside\"` draws a dotted leader line from each segment's ticks to its label, placed outside the ring, and reserves layout room for it. Only takes visible effect at `--decoration` ≥ 8 (the smooth-arc rendering below that threshold has no leader/label treatment); unset renders exactly as before."
             }
           ]
         },
@@ -18900,6 +19800,60 @@
             }
           ]
         },
+        "TreeChart": {
+          "extends": [
+            "ChartInteractionProps"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "TreeNode",
+              "description": "The hierarchy. Every leaf needs no `value` — membership only."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "TreeOrientation",
+              "description": "`\"lr\"` (default) or `\"tb\"`."
+            },
+            {
+              "name": "nodeSize",
+              "optional": true,
+              "type": "number",
+              "description": "Node dot diameter, in px. Default `7` (the lieflat G7 value)."
+            },
+            {
+              "name": "collapseDepth",
+              "optional": true,
+              "type": "number",
+              "description": "Render everything past this depth (root = `0`) as a single \"+k\" pill — `k` is the number of leaves the pill summarizes. `undefined` (default) renders the full tree, however deep."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "TreePalette",
+              "description": "Which colour family shades a node. Default `\"mono\"`."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region (announces to AT on focus)."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
+            }
+          ]
+        },
         "UnitChart": {
           "extends": [
             "ChartInteractionProps",
@@ -18965,6 +19919,97 @@
               "optional": true,
               "type": "\"desc\" | \"none\"",
               "description": "Sort series by value, descending, before laying out. Default `\"none\"` (caller order)."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
+            }
+          ]
+        },
+        "WaterfallChart": {
+          "extends": [
+            "ChartInteractionProps<WaterfallStep>"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "WaterfallDatum[]",
+              "description": "Steps from gross to net — one row per bar."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "BarOrientation",
+              "description": "Default `\"vertical\"`."
+            },
+            {
+              "name": "showValues",
+              "optional": true,
+              "type": "boolean",
+              "description": "Signed value label on each step (`HaloText`, 800 weight). Default `true`."
+            },
+            {
+              "name": "connectors",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
+            },
+            {
+              "name": "positiveFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for an increasing step. Default `var(--chart-seq-6)`."
+            },
+            {
+              "name": "negativeFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for a decreasing step. Default `var(--chart-seq-3)`."
+            },
+            {
+              "name": "totalFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for a `\"total\"` row. Default `var(--chart-foreground)`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "When set, render each bar as a counted `UnitStack` of rungs (the F9 look) instead of a solid capsule — one rung per `unit` of value. Off by default."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "Value/label format. Default: locale number."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest of the bar family."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>",
+              "description": "Chart margins."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Additional class name for the container."
             },
             {
               "name": "accessibleLabel",
@@ -19138,6 +20183,32 @@
             "Truncating the value axis so small differences look large — a bar axis starts at zero.",
             "Hardcoding series colors — use the chart-1…chart-5 tokens so every theme works.",
             "Rendering an empty frame before data arrives — use the shipped chart skeleton utilities."
+          ]
+        },
+        "BumpChart": {
+          "purpose": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "HaloText",
+              "QuietDot"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ]
+          },
+          "stateTokens": {
+            "hero": "highlightKey draws var(--chart-foreground) (ink) + bold labels; every other entity draws from the neutral mono ladder, never a second categorical hue",
+            "rank": "variant=\"strip\" cell shade = --chart-seq-1…7 via resolvePalette(\"sequential\", maxRank) — rank 1 is always the most-ink step, whichever theme is active",
+            "delta": "showDelta reads var(--success) for a climb (▲) and var(--destructive) for a drop (▼) via profitLossColor — colour reinforces the arrow glyph, it never stands alone",
+            "missing": "a period an entity has no row for draws a QuietDot pinprick, never a blank cell"
+          },
+          "antiPatterns": [
+            "Passing neither valueKey nor rankKey — there is no honest rank to derive, and every row is silently dropped rather than plotting a guessed order.",
+            "Mixing rankKey and valueKey inconsistently across periods — rankKey, when present, wins outright per row; a dataset that supplies rank for some periods and expects value-derived rank to fill the rest will jump between two different orderings.",
+            "Choosing variant=\"lines\" for more than ~10-12 entities — crossing lines stop being followable well before maxEntities' default cap of 10 kicks in; variant=\"strip\" reads a crowded field better because rows never move.",
+            "Reading the strip's row POSITION as the current rank — rows are fixed at each entity's FINAL rank; only the cell shade and its printed number carry the rank at any other period."
           ]
         },
         "CanvasLayer": {
@@ -19319,6 +20390,34 @@
             "Stacking series on two silently-different y-scales — label the second axis or the comparison lies.",
             "Layering more than ~3 series types in one frame — split it into small multiples instead.",
             "Colouring series by hand — resolve --chart-1..5 so the dark theme stays legible."
+          ]
+        },
+        "DistributionChart": {
+          "purpose": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartLegend",
+              "DataTable"
+            ]
+          },
+          "stateTokens": {
+            "group": "--chart-1 … --chart-12 via resolvePalette; palette=\"sequential\" shades a box/violin by MEDIAN RANK, not by group order",
+            "median": "cut in the paper colour (--chart-background) through a box/violin waist; a dashed --chart-foreground flag + text-meta label on a histogram",
+            "outlier": "hollow past 1.5 × IQR — fill=none with the group's own stroke, never a filled dot",
+            "axis": "--chart-grid gridlines, --chart-label value ticks, --chart-foreground group labels, all text-meta",
+            "focus": "on a strip every record is a real button in ChartDatapointLayer: focus-visible:ring-2 ring-ring"
+          },
+          "antiPatterns": [
+            "kind=\"violin\" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind=\"strip\", where every record is its own mark.",
+            "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.",
+            "kind=\"box\" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind=\"strip\" shows the same numbers without discarding them.",
+            "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
+            "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning."
           ]
         },
         "DrawPath": {
@@ -19630,6 +20729,65 @@
             "Re-declaring a KPI tile locally — MetricCard is owned by @elabs-ai/components-ui and re-exported here (ADR 0012)."
           ]
         },
+        "NetworkChart": {
+          "purpose": "A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartLegend",
+              "DataTable"
+            ]
+          },
+          "stateTokens": {
+            "node": "--chart-1 … --chart-12 by group via resolvePalette (categorical at or under 6 groups, mono above); the mark is stroked in the paper colour (--chart-background) so touching nodes still read apart",
+            "link": "--chart-grid hairlines at 0.35 opacity, width scaled by the link's own value",
+            "emphasis": "hover/focus dims non-neighbours to opacity 0.12 and non-incident links to 0.03 — a CLASS on each <g>, transitioned on the compositor, so no node re-renders per frame",
+            "label": "HaloText in the chart-source type role, punched from var(--chart-background); drawn only at or above labelThreshold",
+            "focus": "every node is a real button in ChartDatapointLayer beside the aria-hidden SVG (never inside it), carrying the shared interactive focus ring (the --ring token, shown only on :focus-visible); one tab stop, arrows across the rest"
+          },
+          "antiPatterns": [
+            "Reading a force layout's POSITIONS as data — only adjacency is encoded; distance, direction and the picture's orientation are artefacts of the solver's seed. Use layout=\"circular\" or \"arc\" whenever position must mean something.",
+            "Labelling every node past roughly 15 — set `labelThreshold` so only the nodes worth naming carry text; an unreadable label ring is noise, and the datapoint targets already announce every node to a screen reader.",
+            "Reaching for layout=\"arc\" on a graph that is not bipartite — the two columns are DERIVED (exactly two groups, else the nodes that are only ever a link source go left), so a general graph draws a colonnade that asserts a split the data does not have.",
+            "Turning `draggable` on and expecting the dragged position to persist — a node springs back on release because the settled layout is the answer; a pinned position would be a claim about the data that the layout never made.",
+            "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it."
+          ]
+        },
+        "ParallelCoordinatesChart": {
+          "purpose": "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "HaloText",
+              "DrawPath",
+              "ChartDatapointLayer"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "DumbbellChart",
+              "RadarChart"
+            ]
+          },
+          "stateTokens": {
+            "axis": "var(--chart-foreground-muted) vertical hairline with end ticks (HairlineFloor style)",
+            "extremeLabel": "var(--chart-foreground-muted) on a var(--chart-background) halo, axis feet only when showExtremes",
+            "heroLine": "2px, var(--chart-foreground) or the resolved palette ink, opacity 1 — drawn LAST so it sits on top",
+            "nonHeroLine": "0.65px hairline, seeded 0.5-0.8 opacity — a texture of many lines, not individually legible"
+          },
+          "antiPatterns": [
+            "Fewer than 3 or more than 6 dimensions — below 3 a DumbbellChart (2) or MetricCard (1) reads better; above 6 the axes crowd and `resolveParallelDimensions` clamps to the first 6 with a console warning, silently dropping the rest.",
+            "Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).",
+            "Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.",
+            "Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot."
+          ]
+        },
         "PeakRing": {
           "purpose": "A dashed outline around the one mark that matters — the peak, the outlier, the cell the caption is about.",
           "category": "chart",
@@ -19732,6 +20890,7 @@
             "contains": [
               "SankeyNode",
               "SankeyLink",
+              "SankeyThreadLinks",
               "SankeyTooltip",
               "SankeyProvider"
             ],
@@ -19741,12 +20900,35 @@
             ]
           },
           "stateTokens": {
-            "series": "--chart-1 … --chart-5"
+            "series": "--chart-1 … --chart-5",
+            "mode": "aggregate (default) | threads"
           },
           "antiPatterns": [
             "A Sankey for a simple two-column comparison — reach for a bar chart.",
             "Raw colors on nodes/links — resolve the chart tokens so the dark theme reads correctly.",
             "So many nodes that the labels collide — aggregate the tail into one 'other' node."
+          ]
+        },
+        "SankeyThreadLinks": {
+          "purpose": "SankeyChart mode=\"threads\" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.",
+          "category": "chart",
+          "relationships": {
+            "usedInside": [
+              "SankeyChart"
+            ],
+            "pairsWith": [
+              "SankeyNode"
+            ]
+          },
+          "stateTokens": {
+            "hover": "bundle-highlight on hover",
+            "pin": "click the fat hit-twin to pin a route"
+          },
+          "antiPatterns": [
+            "Using mode=\"threads\" for a small, low-cardinality flow — that's what the default aggregate SankeyLink is for.",
+            "Supplying `path` names that don't match any `SankeyNodeDatum.name` — the route silently falls back to source/target only.",
+            "Making the visible thread path itself interactive — pointer handling belongs on the fat, transparent hit-twin so overlapping routes don't fight for clicks.",
+            "Relying on keyboard focus reaching inside the <svg> — the keyboard path is the sibling ChartDatapointLayer, never a focusable SVG element."
           ]
         },
         "ScatterChart": {
@@ -19783,6 +20965,71 @@
             "Adding axes and tooltips to a Sparkline — if it needs them it is a LineChart.",
             "A Sparkline as the only carrier of a number — pair it with the value (MetricCard).",
             "Fixing its width in pixels — let the tile or cell own the box so it reflows."
+          ]
+        },
+        "TreeChart": {
+          "purpose": "Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "HaloText",
+              "DrawPath",
+              "ChartTooltipBox",
+              "ChartDatapointLayer"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "TreemapChart"
+            ]
+          },
+          "stateTokens": {
+            "linkStroke": "var(--chart-grid), 1.4px — links are furniture, not data, whatever the palette",
+            "nodeMono": "--chart-mono-1 … 7, indexed by DEPTH (the default) — every node at one depth shares one shade",
+            "nodeCategorical": "one hue per top-level branch (a direct child of the root); the root itself stays var(--chart-mono-4), since it belongs to no branch",
+            "label": "HaloText in the chart-value type role, placed before a leaf / after a branch on the growth axis; the halo punches from var(--chart-background)",
+            "collapsedPill": "var(--chart-mono-3) fill, '+k' label — k is the count of leaves the pill hides",
+            "reveal": "links draw depth by depth via DrawPath + stagger — every link into one depth shares a single reveal delay"
+          },
+          "antiPatterns": [
+            "Reaching for TreeChart when the real question is 'how big is each part' — that is TreemapChart's job (leaf AREA proportional to value). TreeChart has no `value` field on TreeNode at all, on purpose: every node is the same visual weight, so it can only ever answer 'what contains what'.",
+            "Sizing or coloring a node by anything other than its DEPTH or top-level BRANCH — the two palettes are the only two encodings; a third meaning bolted onto node size or a per-leaf hue turns a membership diagram back into an unlabeled treemap.",
+            "Expecting the layout to shrink to fit its container — TreeChart lays out at FIXED node/level spacing (no ResizeObserver) precisely so it never shrinks; a tree bigger than its box scrolls inside ChartFrame instead of compressing into illegibility.",
+            "Using collapseDepth as an expand-on-click affordance — it is a static truncation (a '+k' pill with no interaction of its own); compose onDatapointClick to open a detail panel if the reader needs to reveal a hidden branch on demand."
+          ]
+        },
+        "TreemapChart": {
+          "purpose": "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "HaloText",
+              "ChartTooltipBox",
+              "ChartDatapointLayer"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "MetricCard"
+            ]
+          },
+          "stateTokens": {
+            "band": "var(--chart-mono-2) — always neutral, even under palette: 'categorical', so grouping reads from the title band + gap alone, never from hue",
+            "leafMono": "var(--chart-mono-4) — one shared shade for every leaf (the default)",
+            "leafSequential": "--chart-seq-1 … --chart-seq-7 by the leaf's own value",
+            "leafCategorical": "one hue per top-level group (≤ 4 groups, else falls back to mono)",
+            "label": "HaloText: the band title renders in the chart-source type role, the leaf label in the chart-value type role (RM-019, both pinned to the meta size step); the halo punches from var(--chart-background)",
+            "focus": "the drilldown zoom/back buttons carry the shared interactive focus ring (the --ring token, shown only on :focus-visible)"
+          },
+          "antiPatterns": [
+            "Comparing a leaf's area against a leaf in a different group — area is only comparable WITHIN one parent's total; two leaves under different groups are fractions of different denominators, so their tile sizes are not commensurate across the group boundary.",
+            "Reaching for palette: 'categorical' to encode a second measure on top of area — the hue there still only labels the group a leaf already belongs to (structurally, via the band); asking it to carry an unrelated variable makes one channel do two jobs and defeats the mono default's greyscale-legible design.",
+            "Leaving a long tail of small leaves unmerged until tiles fall below labelMinArea — set otherThreshold before that happens (the unconditional 30-leaf cap is a backstop, not a substitute for tuning it); a treemap of unlabeled slivers reads as noise, not a breakdown.",
+            "Turning on drilldown as the only way to reach a leaf's value — the group-band zoom button is a SEPARATE affordance from onDatapointClick on purpose; a leaf stays selectable by its own click/Enter without first forcing a reader to drill in."
           ]
         },
         "UnitChart": {
@@ -19840,6 +21087,35 @@
             "Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.",
             "Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.",
             "Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid."
+          ]
+        },
+        "WaterfallChart": {
+          "purpose": "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "Grid",
+              "BarXAxis",
+              "BarYAxis",
+              "ChartTooltip"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ]
+          },
+          "stateTokens": {
+            "connector": "var(--chart-foreground-muted), 0.6px, dashed (furniture, not data — Leader's default)",
+            "decrease": "var(--chart-seq-3) (default negativeFill)",
+            "increase": "var(--chart-seq-6) (default positiveFill)",
+            "total": "var(--chart-foreground) (default totalFill)",
+            "valueLabel": "var(--chart-foreground) on a var(--chart-background) halo (HaloText)"
+          },
+          "antiPatterns": [
+            "A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.",
+            "Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.",
+            "Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.",
+            "More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead."
           ]
         }
       }

@@ -70,6 +70,7 @@ export {
   AreaChart,
   AutoChart,
   BarChart,
+  BumpChart,
   CandlestickChart,
   CHART_CONTRACT_SPECS,
   ChartCard,
@@ -77,6 +78,7 @@ export {
   ChoroplethChart,
   ComposedChart,
   DumbbellChart,
+  DistributionChart,
   FunnelChart,
   Gantt,
   // Heatmap — RM-021
@@ -92,6 +94,15 @@ export {
   ScatterChart,
   Sparkline,
   UnitChart,
+  // Treemap — RM-025
+  TreemapChart,
+  WaterfallChart,
+  // ParallelCoordinates — RM-034
+  ParallelCoordinatesChart,
+  // Tree — RM-035
+  TreeChart,
+  // Network — RM-036
+  NetworkChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -184,6 +195,8 @@ export {
   SankeyLink,
   SankeyNode,
   SankeyProvider,
+  // Sankey threads — RM-037
+  SankeyThreadLinks,
   SankeyTooltip,
   Scatter,
   SegmentBackground,
@@ -202,6 +215,7 @@ export {
 export type { AreaChartProps } from "../charts/area-chart";
 export type { AutoChartProps } from "../auto-chart/auto-chart";
 export type { BarChartProps } from "../charts/bar-chart";
+export type { BumpChartProps } from "../charts/bump-chart";
 export type { CandlestickChartProps, OHLCDataPoint } from "../charts/candlestick-chart";
 export type { ChartCardProps } from "../chart-card/chart-card";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
@@ -209,6 +223,7 @@ export type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart
 export type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
 export type { ComposedChartProps } from "../charts/composed-chart";
 export type { DumbbellChartProps } from "../charts/dumbbell-chart";
+export type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 export type { FunnelChartProps, FunnelStage } from "../charts/funnel-chart";
 export type { GanttProps, GanttTask } from "../gantt/gantt";
 export type { LineChartProps } from "../charts/line-chart";
@@ -225,6 +240,22 @@ export type { SankeyChartProps, SankeyData } from "../charts/sankey/sankey-chart
 export type { ScatterChartProps } from "../charts/scatter-chart";
 export type { SparklineProps } from "../sparkline/sparkline";
 export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";
+// Treemap — RM-025
+export type { TreemapChartProps, TreemapNode } from "../charts/treemap/treemap-chart";
+export type { WaterfallChartProps } from "../charts/waterfall-chart";
+// ParallelCoordinates — RM-034
+export type {
+  ParallelCoordinatesChartProps,
+  ParallelCoordinatesDimension,
+} from "../charts/parallel-coordinates/parallel-coordinates-chart";
+// Tree — RM-035
+export type { TreeChartProps, TreeNode } from "../charts/tree-chart";
+// Network — RM-036
+export type {
+  NetworkChartProps,
+  NetworkLinkDatum,
+  NetworkNodeDatum,
+} from "../charts/network/network-chart";
 
 // ── CanvasLayer — RM-046 ─────────────────────────────────────────────────────
 // The inert stand-in (parity rung (a)) plus the canvas-context helpers, which

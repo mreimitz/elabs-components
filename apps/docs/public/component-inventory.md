@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 26 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 155 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 184 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1052,6 +1052,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | BarChart | component |  | `@elabs-ai/components-charts` | Categorical comparison — composed from Bar + BarXAxis/BarYAxis inside its provider. |
 | BarXAxis | component |  | `@elabs-ai/components-charts` |  |
 | BarYAxis | component |  | `@elabs-ai/components-charts` |  |
+| BumpChart | component |  | `@elabs-ai/components-charts` | Rank over discrete time — who is #1 changes over time. variant="lines" plots the trajectory (rank as an inverted y-axis); variant="strip" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank). |
 | CALENDAR_ROWS | component |  | `@elabs-ai/components-charts` |  |
 | Candlestick | component |  | `@elabs-ai/components-charts` |  |
 | CandlestickChart | component |  | `@elabs-ai/components-charts` |  |
@@ -1096,13 +1097,21 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | DEFAULT_CHART_CONFIG | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_LIFECYCLE | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_CHART_STATUS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_CIRCULAR_CURVENESS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_FORCE_SEED | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_HEATMAP_STEPS | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_HOVER_OFFSET | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_MAX_INTERACTIVE_DATAPOINTS | component |  | `@elabs-ai/components-charts` |  |
+| DEFAULT_WHISKER_MULTIPLIER | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_AXIS_ID | component |  | `@elabs-ai/components-charts` |  |
 | DEFAULT_Y_DOMAIN_TWEEN_MS | component |  | `@elabs-ai/components-charts` |  |
+| DistributionChart | component |  | `@elabs-ai/components-charts` | One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip. |
 | DrawPath | component |  | `@elabs-ai/components-charts` | A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration. |
 | DumbbellChart | component |  | `@elabs-ai/components-charts` | Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant="slope" swaps the per-category track for two shared value columns. |
+| END_LABEL_MIN_GAP | component |  | `@elabs-ai/components-charts` |  |
+| FORCE_ALPHA_MIN | component |  | `@elabs-ai/components-charts` |  |
+| FORCE_GRAVITY | component |  | `@elabs-ai/components-charts` |  |
+| FORCE_TICK_BUDGET | component |  | `@elabs-ai/components-charts` |  |
 | FunnelChart | component |  | `@elabs-ai/components-charts` | Stage-by-stage drop-off through an ordered pipeline. |
 | Gantt | component | density=comfortable*\|compact | `@elabs-ai/components-charts` | Schedule grid — tasks as bars over time, with a task table beside them. |
 | GANTT_NOMINAL_VIEWPORT_PX | component |  | `@elabs-ai/components-charts` |  |
@@ -1122,6 +1131,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | HairlineFloor | component |  | `@elabs-ai/components-charts` | One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read. |
 | HaloText | component |  | `@elabs-ai/components-charts` | SVG text that punches a plot-ground halo out from behind itself, so a label stays readable directly ON a mark instead of beside it. |
 | HeatmapChart | component |  | `@elabs-ai/components-charts` | Two discrete dimensions × one value — weekday × hour, product × region, or a year of days. |
+| KDE_GRID_POINTS | component |  | `@elabs-ai/components-charts` |  |
+| KDE_TAPER | component |  | `@elabs-ai/components-charts` |  |
 | Leader | component |  | `@elabs-ai/components-charts` | The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms. |
 | Legend | component |  | `@elabs-ai/components-charts` |  |
 | LegendItemComponent | component |  | `@elabs-ai/components-charts` |  |
@@ -1144,6 +1155,15 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MetricCard | component |  | `@elabs-ai/components-charts` | Single KPI tile — label, value, delta/trend. |
 | MetricGrid | component |  | `@elabs-ai/components-charts` | Responsive grid of KPI tiles — the summary row at the top of a dashboard. |
 | MIN_DATAPOINT_TARGET_SIZE | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_DEFAULT_MAX_NODES | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_DEFAULT_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_MAX_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_MIN_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_PADDING | component |  | `@elabs-ai/components-charts` |  |
+| NetworkChart | component |  | `@elabs-ai/components-charts` | A node-link graph in three layouts — a settled force cloud, a ring of chords, or a bipartite colonnade — with hover/focus adjacency emphasis. |
+| PARALLEL_COORDINATES_MAX_DIMENSIONS | component |  | `@elabs-ai/components-charts` |  |
+| PARALLEL_COORDINATES_MIN_DIMENSIONS | component |  | `@elabs-ai/components-charts` |  |
+| ParallelCoordinatesChart | component |  | `@elabs-ai/components-charts` | Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit. |
 | PatternArea | component |  | `@elabs-ai/components-charts` |  |
 | PatternCircles | component |  | `@elabs-ai/components-charts` |  |
 | PatternHexagons | component |  | `@elabs-ai/components-charts` |  |
@@ -1179,6 +1199,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SankeyLink | component |  | `@elabs-ai/components-charts` |  |
 | SankeyNode | component |  | `@elabs-ai/components-charts` |  |
 | SankeyProvider | component |  | `@elabs-ai/components-charts` |  |
+| SankeyThreadLinks | component |  | `@elabs-ai/components-charts` | SankeyChart mode="threads" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops. |
 | SankeyTooltip | component |  | `@elabs-ai/components-charts` |  |
 | Scatter | component |  | `@elabs-ai/components-charts` |  |
 | ScatterChart | component |  | `@elabs-ai/components-charts` | Point cloud for correlation between two continuous measures. |
@@ -1190,6 +1211,13 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | SeriesPointMarker | component |  | `@elabs-ai/components-charts` |  |
 | Sparkline | component |  | `@elabs-ai/components-charts` | Tiny, axis-less trend that lives inside a KPI tile or a table cell. |
 | StaticChartPreviewProvider | component |  | `@elabs-ai/components-charts` |  |
+| TreeChart | component |  | `@elabs-ai/components-charts` | Fixed-spacing, left-to-right (or top-to-bottom) orthogonal hierarchy diagram — every node the same visual weight, no sizes: 'who belongs to whom'. |
+| TREEMAP_BAND_COLOR | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_CATEGORICAL_GROUP_CAP | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_MAX_LEAVES | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_MONO_LEAF_COLOR | component |  | `@elabs-ai/components-charts` |  |
+| TREEMAP_TITLE_BAND_HEIGHT | component |  | `@elabs-ai/components-charts` |  |
+| TreemapChart | component |  | `@elabs-ai/components-charts` | Two-level squarified treemap — a hierarchy where area, not position, encodes value. |
 | UNIT_CHART_GROUP_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
 | UNIT_CHART_POSITION_STAGGER_MS | component |  | `@elabs-ai/components-charts` |  |
 | UnitChart | component |  | `@elabs-ai/components-charts` | One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie. |
@@ -1229,6 +1257,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useSankey | hook |  | `@elabs-ai/components-charts` |  |
 | useStaticChartPreview | hook |  | `@elabs-ai/components-charts` |  |
 | useYScale | hook |  | `@elabs-ai/components-charts` |  |
+| WaterfallChart | component |  | `@elabs-ai/components-charts` | Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way. |
 | XAxis | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_DEFAULT_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
