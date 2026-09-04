@@ -1878,6 +1878,33 @@ export const INTENT = {
     ],
   },
 
+  // CanvasLayer — RM-046
+  CanvasLayer: {
+    purpose:
+      "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartTooltip", "ChartTooltipContent", "ChartDatapointLayer"],
+    },
+    stateTokens: {
+      marks:
+        "every colour the draw callback paints is read per frame via canvasTokenColor(--chart-*) — ctx.fillStyle cannot resolve a CSS variable, so a literal here is a canvas that stops theming",
+      focus:
+        "the focused datum gets ONE SVG overlay rect stroked with the focus-ring token (--ring), never a ring painted into the picture the caller draws",
+      cursor:
+        "the focused datum's label is spoken by a single polite live region; the button's own name stays static",
+      reducedMotion: "the enter ramp does not run at all — scales.progress starts and stays at 1",
+    },
+    antiPatterns: [
+      "Reaching for it below ~20k marks — the SVG path is inspectable, stylable and testable, and ChartDatapointLayer already gives every point a real keyboard target. A canvas is what you accept when the DOM has run out, not an upgrade.",
+      "Backing hitTest with a linear scan over the points — it runs on every pointermove, so at 50k points the hover path, not the draw, is what makes the canvas view feel worse than the SVG one it replaced. Use createSpatialGrid.",
+      "Shipping it without accessibleDescription — canvas pixels are invisible to assistive technology, so with no parallel summary the marks simply cease to exist for a screen-reader user. That is the one failure this component cannot recover from on the reader's behalf.",
+      "Hardcoding a colour in draw (a hex, an rgb()) instead of canvasTokenColor — the layer redraws on a theme flip, which repaints exactly the same wrong colours.",
+      "Registering one ChartDatapointLayer target per point to 'get keyboard for free' — that is the DOM cost the canvas exists to avoid; the virtual cursor is the contract here.",
+    ],
+  },
+
   // ── @elabs-ai/components-maps ────────────────────────────────────
   // Sourced from .claude/rules/map-components.md (token paints, attribution, WebGL).
 

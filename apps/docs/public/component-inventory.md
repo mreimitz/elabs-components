@@ -1053,7 +1053,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CANVAS_LAYER_DEFAULT_MARGIN | component |  | `@elabs-ai/components-charts` |  |
 | CANVAS_LAYER_ENTER_MS | component |  | `@elabs-ai/components-charts` |  |
 | CANVAS_LAYER_HIT_RADIUS | component |  | `@elabs-ai/components-charts` |  |
-| CanvasLayer | component |  | `@elabs-ai/components-charts` |  |
+| CanvasLayer | component |  | `@elabs-ai/components-charts` | The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor. |
 | CATEGORICAL_SOFT_CAP | component |  | `@elabs-ai/components-charts` |  |
 | CHART_CLIP_PASSTHROUGH | component |  | `@elabs-ai/components-charts` |  |
 | CHART_STAGGER_BAR_MS | component |  | `@elabs-ai/components-charts` |  |
