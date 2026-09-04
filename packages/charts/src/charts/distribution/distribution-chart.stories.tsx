@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, waitFor, within } from "storybook/test";
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { seededRnd } from "../../marks/seeded-rnd";
 import { DistributionChart } from "./distribution-chart";
 
@@ -46,6 +46,9 @@ const REPLIES = [
 ];
 
 const SUPPORT_ONLY = REPLIES.filter((row) => row.team === "Support");
+
+/** The interaction-budget fixture: one queue, two thousand replies. */
+const DENSE = replyTimes(2000, 41, "Support", (u) => 4 + u * u * 190);
 
 /**
  * **F14 — rung histogram.** `unit` turns each bin into COUNTABLE rungs instead of
@@ -233,4 +236,52 @@ export const VerticalSequential: Story = {
       />
     </div>
   ),
+};
+
+/**
+ * Two thousand replies, one queue. Past roughly 150 records per group a strip's
+ * ink saturates and the violin is the honest reading — this story exists to
+ * prove the interaction budget rather than to recommend the picture.
+ *
+ * The hover is measured in the browser, where 16 ms is a frame: the marks are
+ * memoized behind a stable hover callback, so moving the pointer costs one
+ * tooltip, never a redraw of two thousand circles.
+ */
+export const DenseStrip: Story = {
+  render: () => (
+    <div className="h-72 w-[640px]">
+      <DistributionChart
+        accessibleLabel="Two thousand replies"
+        data={DENSE}
+        kind="strip"
+        valueFormat="number"
+        valueKey="minutes"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelectorAll('[data-slot="distribution-chart-record"]'),
+      ).toHaveLength(DENSE.length);
+    });
+    const dots = canvasElement.querySelectorAll('[data-slot="distribution-chart-record"]');
+    const dot = dots[1000] as SVGCircleElement;
+
+    // Warm the path once, then measure — the first hover also mounts the
+    // tooltip, which is not what the frame budget is about.
+    fireEvent.pointerEnter(dot);
+    await waitFor(() => {
+      expect(canvasElement.textContent).toContain("minutes");
+    });
+    const start = performance.now();
+    fireEvent.pointerEnter(dots[1400] as SVGCircleElement);
+    const elapsed = performance.now() - start;
+    expect(elapsed).toBeLessThan(16);
+
+    // The strip itself was not redrawn: same nodes, after the hover.
+    expect(canvasElement.querySelectorAll('[data-slot="distribution-chart-record"]')[1000]).toBe(
+      dot,
+    );
+  },
 };
