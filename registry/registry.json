@@ -593,6 +593,81 @@
           "target": "components/terminal-session-mid-turn/terminal-session-mid-turn.tsx"
         }
       ]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-editorial-hourglass",
+      "type": "registry:block",
+      "title": "Chart Editorial — Hourglass Stream",
+      "description": "A funnel redrawn as counted barcode strips (UnitStack) with trickle threads (DrawPath) narrowing between stages, plus stage-to-stage conversion callouts. One-off editorial composition adapted from lieflat-charts' 'L13 Hourglass Stream', built entirely from @elabs-ai/components-charts' marks layer.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-editorial-hourglass/chart-editorial-hourglass.tsx",
+          "type": "registry:component",
+          "target": "components/chart-editorial-hourglass/chart-editorial-hourglass.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-editorial-hourglass/data/conversion-funnel.ts",
+          "type": "registry:component",
+          "target": "components/chart-editorial-hourglass/data/conversion-funnel.ts"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-editorial-patchwork",
+      "type": "registry:block",
+      "title": "Chart Editorial — Radial Patchwork",
+      "description": "Events on a 24 h clock face, density shown by overlaid translucent sectors (fill-opacity 0.07–0.16 — the one sanctioned use of transparency in this system) with rim ticks and a category legend. One-off editorial composition adapted from lieflat-charts' 'L10 Radial Patchwork'.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-editorial-patchwork/chart-editorial-patchwork.tsx",
+          "type": "registry:component",
+          "target": "components/chart-editorial-patchwork/chart-editorial-patchwork.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-editorial-patchwork/data/daily-events.ts",
+          "type": "registry:component",
+          "target": "components/chart-editorial-patchwork/data/daily-events.ts"
+        }
+      ],
+      "categories": ["chart-editorial"]
+    },
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "chart-editorial-almanac",
+      "type": "registry:block",
+      "title": "Chart Editorial — Bubble Almanac",
+      "description": "A category × category matrix drawn as hand-irregular blob bubbles on ruled ledger paper, with a margin note calling out the busiest cell (PeakRing + Marginalia). One-off editorial composition adapted from lieflat-charts' 'L9 Bubble Almanac'.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/chart-editorial-almanac/chart-editorial-almanac.tsx",
+          "type": "registry:component",
+          "target": "components/chart-editorial-almanac/chart-editorial-almanac.tsx"
+        },
+        {
+          "path": "registry/blocks/chart-editorial-almanac/data/activity-matrix.ts",
+          "type": "registry:component",
+          "target": "components/chart-editorial-almanac/data/activity-matrix.ts"
+        }
+      ],
+      "categories": ["chart-editorial"]
     }
   ]
 }

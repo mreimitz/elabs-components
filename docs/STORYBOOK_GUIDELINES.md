@@ -46,7 +46,16 @@ fails when they diverge; see "Adding a group" below.
 11. **States** — Alert, Empty / Error / Loading state, Skeleton.
 12. **Layout** — app shells, sidebars, page scaffolding, Toolbar.
 13. **Data** — tables and data surfaces (`@elabs-ai/components-data` grid + `@elabs-ai/components-ui` table primitives).
-14. **Charts** — `@elabs-ai/components-charts`.
+14. **Charts** — `@elabs-ai/components-charts`. Sorts alphabetically among itself
+    (no nested reading-order array), which places `Charts/ByDataShape` — a
+    "which container for this data shape?" index over every container the
+    package exports, RM-041 — between the ordinary per-container story titles
+    rather than first; that placement is an accepted, scope-driven trade-off
+    (see `packages/charts/src/by-data-shape.stories.tsx`'s own docblock), not a
+    naming mistake. The three lieflat-charts-derived editorial recipes it
+    points at (Hourglass Stream, Radial Patchwork, Bubble Almanac) are NOT
+    package components — they are copy-own blocks under `Patterns/Blocks/Chart
+Editorial — …`, built entirely from the package's public `marks` layer.
 15. **AI** — `@elabs-ai/components-ai` chat / agent surfaces. `Composer` is a
     sub-family node: the `PromptInput` primitive and the mode / effort / slash
     controls it is assembled from are nested under it (see "Naming" below).
