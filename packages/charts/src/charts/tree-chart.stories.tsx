@@ -11,6 +11,17 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A left-to-right (or top-to-bottom) orthogonal hierarchy diagram — who belongs to " +
+          "whom — where every node draws at the same visual weight; there is no `value` " +
+          "field, because a tree answers what contains what, never how big each part is. The " +
+          "moment the question becomes how big each part is, reach for `TreemapChart`, which " +
+          "sizes every leaf’s area by its value over the same kind of hierarchy; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
   },
 } satisfies Meta<typeof TreeChart>;
 

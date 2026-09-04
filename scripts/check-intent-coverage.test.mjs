@@ -510,7 +510,17 @@ test("every shipped llms spoke carries at least one `avoid:` line (#60 acceptanc
   const manifestReal = JSON.parse(
     readFileSync(path.join(REPO_ROOT, "brand-ui.manifest.json"), "utf8"),
   );
-  for (const pkg of Object.keys(manifestReal.packages ?? {})) {
+  // A package that exports NO components yet cannot carry an `avoid:` line: the
+  // spoke is generated from per-component intent, so a freshly scaffolded
+  // package (`@elabs-ai/components-process` at ADR 0034) emits a 5-line header
+  // and nothing else. The acceptance is about components that exist without
+  // stated anti-patterns, not about an empty package — so the predicate is
+  // "has components", derived from the manifest, never a package name list.
+  // The count assertion below keeps this from going vacuous if the manifest
+  // ever loses its component arrays.
+  let checked = 0;
+  for (const [pkg, entry] of Object.entries(manifestReal.packages ?? {})) {
+    if ((entry?.components ?? []).length === 0) continue;
     const slug = pkg.replace("@elabs-ai/components-", "");
     const spoke = path.join(REPO_ROOT, "apps/docs/public/llms", `${slug}.txt`);
     const text = readFileSync(spoke, "utf8");
@@ -518,5 +528,10 @@ test("every shipped llms spoke carries at least one `avoid:` line (#60 acceptanc
       text.includes("avoid:"),
       `apps/docs/public/llms/${slug}.txt has zero \`avoid:\` lines — add intent for a ${pkg} component`,
     );
+    checked++;
   }
+  assert.ok(
+    checked >= 8,
+    `expected to check at least 8 component-bearing spokes, checked ${checked}`,
+  );
 });

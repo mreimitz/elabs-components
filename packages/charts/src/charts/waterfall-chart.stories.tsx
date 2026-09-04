@@ -8,6 +8,18 @@ const meta = {
   title: "Charts/WaterfallChart",
   component: WaterfallChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Each step floats from the running total the previous step left off, connected by " +
+          "a dashed hand-off hairline; rows marked kind “total” draw from zero and reset the " +
+          "running total for a subtotal, gross, or net checkpoint — the read for a bridge " +
+          "from a starting number to an ending one through a sequence of additions and " +
+          "subtractions.",
+      },
+    },
+  },
 } satisfies Meta<typeof WaterfallChart>;
 
 export default meta;

@@ -19,7 +19,21 @@ const meta = {
   title: "Charts/CanvasLayer",
   component: CanvasLayer as (props: CanvasLayerProps<LogEvent>) => ReactElement,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "A canvas mark-rendering path for `ChartFrame` — a drop-in sibling of the ordinary " +
+          "SVG marks, for the rare view whose mark count is past what the DOM can carry " +
+          "(roughly 20,000 marks and up); below that threshold the SVG path stays easier to " +
+          "style, test and inspect, so reach for this only once a scale test shows it is " +
+          "needed. It replaces the accessibility an SVG mark gets for free with a parallel " +
+          "accessible summary and a single keyboard-navigable virtual cursor, since canvas " +
+          "pixels are otherwise invisible to assistive technology.",
+      },
+    },
+  },
 } satisfies Meta<(props: CanvasLayerProps<LogEvent>) => ReactElement>;
 
 export default meta;

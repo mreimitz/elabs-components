@@ -15,7 +15,22 @@ const meta = {
   title: "Flow/FlowWeightedEdge",
   component: FlowWeightedEdge,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "A branded process-map edge whose stroke width scales with a weight value " +
+          "(frequency or volume) relative to the other edges sharing its scaleGroup, and can " +
+          "optionally colour the stroke by a second continuous value between " +
+          "--flow-edge-weak and --flow-edge-strong; a “back” variant renders dashed and " +
+          "routed clear of the forward edge it doubles back over. The plain `FlowEdge` draws " +
+          "every edge at the same fixed width and colour; reach for `FlowWeightedEdge` the " +
+          "moment volume or a second metric needs to be visible on the edge itself; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
 } satisfies Meta<typeof FlowWeightedEdge>;
 export default meta;
 type Story = StoryObj<typeof meta>;

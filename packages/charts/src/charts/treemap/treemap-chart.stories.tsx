@@ -11,6 +11,17 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Rectangles sized by area to a leaf’s value inside a nested hierarchy — up to two " +
+          "rendered levels, with parent title bands and paper-gap separators between groups; " +
+          "palette can shade by level, by value, or by top-level category. When structure " +
+          "matters and size does not, `TreeChart` draws the same kind of hierarchy as a " +
+          "branching diagram instead; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
   },
 } satisfies Meta<typeof TreemapChart>;
 

@@ -11,6 +11,21 @@ const meta = {
   title: "Charts/ParallelCoordinatesChart",
   component: ParallelCoordinatesChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "One hairline per entity drawn across three to six independently scaled numeric " +
+          "axes, so entities with mixed units (a price, a latency in milliseconds, an NPS " +
+          "score) compare by shape rather than by a shared radius; an optional `highlightKey` " +
+          "promotes one entity to a bold hero line. `RadarChart` shares every metric on one " +
+          "radial scale, which only stays honest once every dimension is already normalized " +
+          "to the same unit, and suits a couple of entities needing per-entity detail rather " +
+          "than a whole set compared at once; see " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
 } satisfies Meta<typeof ParallelCoordinatesChart>;
 
 export default meta;

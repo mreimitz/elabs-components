@@ -6,6 +6,21 @@ const meta = {
   title: "Charts/BumpChart",
   component: BumpChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Tracks the rank of several entities across ordered periods — not their value — " +
+          "on an inverted y-axis (rank 1 at the top), as either a trajectory line per entity " +
+          '(`variant="lines"`) or a fixed-row, shaded filmstrip with printed numbers ' +
+          '(`variant="strip"`) for a narrow, printable read. A `LineChart` over the same data ' +
+          "plots value, so an overtake is invisible unless the reader does the arithmetic " +
+          "themselves; with only two periods, a `DumbbellChart` reads the same before/after " +
+          "delta more directly. See " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
+  },
 } satisfies Meta<typeof BumpChart>;
 
 export default meta;

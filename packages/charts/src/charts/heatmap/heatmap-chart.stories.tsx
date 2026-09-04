@@ -9,7 +9,18 @@ const meta = {
   title: "Charts/HeatmapChart",
   component: HeatmapChart,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A grid of two categorical axes — weekday by hour, or any category by category — " +
+          'shaded or sized by one numeric value per cell, with a `variant="calendar"` mode ' +
+          "for one measure per day across a year. Cell fill suits few, dense cells; " +
+          '`mode="dot"` reads better once cells get small and numerous.',
+      },
+    },
+  },
 } satisfies Meta<typeof HeatmapChart>;
 
 export default meta;

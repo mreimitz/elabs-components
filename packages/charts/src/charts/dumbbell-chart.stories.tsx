@@ -7,6 +7,19 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "One track per category (a hairline) with a marker at `start` and one at `end`, " +
+          "joined by a connector — the visible delta between two points, in rows or columns " +
+          '(`orientation`), with an optional `variant="slope"` that draws one line per ' +
+          "category across two value columns instead. A grouped `BarChart`, the previous " +
+          "standing answer for two values per category, hides that delta behind two separate " +
+          "bar heights the reader has to subtract themselves; with more than two points per " +
+          "category, `BumpChart` reads the trajectory instead. See " +
+          "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs).",
+      },
+    },
   },
 } satisfies Meta<typeof DumbbellChart>;
 

@@ -173,7 +173,7 @@ function Sheet({ decoration }: { decoration?: string }) {
 }
 
 const meta = {
-  title: "Charts/Editorial Marks",
+  title: "Charts/EditorialMarks",
   component: HaloText,
   tags: ["autodocs"],
   parameters: {
