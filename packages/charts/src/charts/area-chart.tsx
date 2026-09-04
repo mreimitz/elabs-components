@@ -14,7 +14,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { Area, type AreaProps } from "./area";
+import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { LineConfig, Margin } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
@@ -106,6 +106,26 @@ export interface AreaChartProps {
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. series names + value range). */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /**
+   * Streamgraph baseline (RM-029) — maps to `d3-shape`'s
+   * `stackOffsetNone` / `Silhouette` / `Wiggle` / `Expand`. Unset (default):
+   * no stacking — every child `Area` renders independently, exactly as today.
+   * Set it to stack every child `Area` (in JSX order) using that baseline;
+   * `"silhouette"` is the F16 lieflat "Stream Ribbon" look.
+   */
+  offset?: AreaStackOffset;
+  /**
+   * Paper gap between stacked bands, in px — a `--chart-background` stroke
+   * drawn along each band's own top edge. Only takes effect when `offset` is
+   * set. Default: 0 (no seam). 2 is the F16 lieflat value.
+   */
+  seams?: number;
+  /**
+   * Label each stacked band with its series name at the band's widest x
+   * (`HaloText`, clamped inside the plot). Only takes effect when `offset` is
+   * set. Default: false.
+   */
+  labelBands?: boolean;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -176,6 +196,12 @@ interface ChartInnerProps {
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onPhaseChange: (phase: ChartPhase) => void;
+  /** Streamgraph baseline (RM-029) — see `AreaChartProps.offset`. */
+  offset?: AreaStackOffset;
+  /** Paper gap between stacked bands — see `AreaChartProps.seams`. */
+  seams?: number;
+  /** Band name labels — see `AreaChartProps.labelBands`. */
+  labelBands?: boolean;
 }
 
 function ChartInner({
@@ -203,35 +229,44 @@ function ChartInner({
   datapointLabel,
   maxInteractiveDatapoints,
   onPhaseChange,
+  offset,
+  seams,
+  labelBands,
 }: ChartInnerProps) {
   const lines = useMemo(() => extractAreaConfigs(children), [children]);
 
   const chart = (
-    <TimeSeriesChartInner
-      animationDuration={animationDuration}
-      animationEasing={animationEasing}
-      chartStatus={chartStatus}
-      clipPathId="chart-area-grow-clip"
-      containerRef={containerRef}
-      data={data}
-      enterTransition={enterTransition}
-      height={height}
-      lines={lines}
-      loadingLabel={loadingLabel}
-      margin={margin}
-      onPhaseChange={onPhaseChange}
-      revealSignature={revealSignature}
-      tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
-      width={width}
-      xDataKey={xDataKey}
-      xDomain={xDomain}
-      xDomainSlotCount={xDomainSlotCount}
-      xScaleType={xScaleType}
-      yDomainTween={yDomainTween}
-      yDomainTweenDuration={yDomainTweenDuration}
-    >
-      {children}
-    </TimeSeriesChartInner>
+    // The provider wraps the WHOLE `TimeSeriesChartInner` tree, not `children`
+    // — so `Children.forEach`'s series/def/axis classification inside the
+    // shell still walks the caller's original `children` untouched. See
+    // `AreaStackProvider`'s own docblock in `./area`.
+    <AreaStackProvider labelBands={labelBands} offset={offset} seams={seams}>
+      <TimeSeriesChartInner
+        animationDuration={animationDuration}
+        animationEasing={animationEasing}
+        chartStatus={chartStatus}
+        clipPathId="chart-area-grow-clip"
+        containerRef={containerRef}
+        data={data}
+        enterTransition={enterTransition}
+        height={height}
+        lines={lines}
+        loadingLabel={loadingLabel}
+        margin={margin}
+        onPhaseChange={onPhaseChange}
+        revealSignature={revealSignature}
+        tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
+        width={width}
+        xDataKey={xDataKey}
+        xDomain={xDomain}
+        xDomainSlotCount={xDomainSlotCount}
+        xScaleType={xScaleType}
+        yDomainTween={yDomainTween}
+        yDomainTweenDuration={yDomainTweenDuration}
+      >
+        {children}
+      </TimeSeriesChartInner>
+    </AreaStackProvider>
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
@@ -281,6 +316,9 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
     maxInteractiveDatapoints,
     accessibleLabel,
     accessibleDescription,
+    offset,
+    seams,
+    labelBands,
   },
   ref,
 ) {
@@ -352,9 +390,12 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(function Are
             maxInteractiveDatapoints={maxInteractiveDatapoints}
             margin={margin}
             copyValueOnActivate={copyValueOnActivate}
+            labelBands={labelBands}
+            offset={offset}
             onDatapointClick={onDatapointClick}
             onPhaseChange={handlePhaseChange}
             revealSignature={revealSignature}
+            seams={seams}
             tweenYDomainOnXDomainChange={tweenYDomainOnXDomainChange}
             width={width}
             xDataKey={xDataKey}

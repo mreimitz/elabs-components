@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:49:07.999Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -14490,6 +14490,12 @@
               "optional": true,
               "type": "LineLoadingPulseMode",
               "description": "Override pulse animation mode (loop / exit / enter)."
+            },
+            {
+              "name": "labelPeaks",
+              "optional": true,
+              "type": "boolean",
+              "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false."
             }
           ]
         },
@@ -14651,6 +14657,24 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
+            },
+            {
+              "name": "offset",
+              "optional": true,
+              "type": "AreaStackOffset",
+              "description": "Streamgraph baseline (RM-029) — maps to `d3-shape`'s `stackOffsetNone` / `Silhouette` / `Wiggle` / `Expand`. Unset (default): no stacking — every child `Area` renders independently, exactly as today. Set it to stack every child `Area` (in JSX order) using that baseline; `\"silhouette\"` is the F16 lieflat \"Stream Ribbon\" look."
+            },
+            {
+              "name": "seams",
+              "optional": true,
+              "type": "number",
+              "description": "Paper gap between stacked bands, in px — a `--chart-background` stroke drawn along each band's own top edge. Only takes effect when `offset` is set. Default: 0 (no seam). 2 is the F16 lieflat value."
+            },
+            {
+              "name": "labelBands",
+              "optional": true,
+              "type": "boolean",
+              "description": "Label each stacked band with its series name at the band's widest x (`HaloText`, clamped inside the plot). Only takes effect when `offset` is set. Default: false."
             }
           ]
         },
