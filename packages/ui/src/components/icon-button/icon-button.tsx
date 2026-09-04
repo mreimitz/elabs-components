@@ -102,7 +102,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
               // of the tab order), so it must carry the system's focus ring —
               // without this it falls back to the UA default outline, which is
               // a hardcoded browser blue identical in every theme.
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               disabled && "cursor-not-allowed",
             )}
           >

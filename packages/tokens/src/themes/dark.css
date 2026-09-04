@@ -134,6 +134,16 @@
      override reaches sidebar focus for free — never re-declare it with a literal. */
   --ring: var(--primary);
 
+  /* #67 — the CONTOUR layer of the compound focus indicator. On THIS theme the
+     ring already carries the indicator on its own (10.26-12.46:1 on every mark
+     surface), so the contour has no contrast work to do and is declared as the
+     page ground: on `--background` it is literally invisible, which keeps the
+     focus indicator here a visual no-op, and on a raised `--card`/`--muted`
+     surface it degrades to a quiet 1px separator rather than a second stroke.
+     Do NOT "improve" this into a dark ink — that would thicken every focus
+     indicator in the dark theme to repair a problem the light theme has. */
+  --ring-contour: var(--background);
+
   --surface: oklch(0.23 0.012 257);
   --surface-muted: oklch(0.28 0.012 257);
   --surface-elevated: oklch(0.29 0.014 257);

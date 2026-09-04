@@ -551,7 +551,7 @@ function ChangeCheckRow({ check }: { check: CheckResult }) {
             <CollapsibleTrigger
               className={cn(
                 "flex items-center gap-1 self-start rounded-sm pl-5 text-caption text-muted-foreground",
-                "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "hover:text-foreground focus-ring",
               )}
             >
               <ChevronDown

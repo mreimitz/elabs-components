@@ -315,7 +315,7 @@ export const FocusRingVsStatus: Story = {
         </div>
         <button
           type="button"
-          className="shrink-0 self-center rounded-md border border-input bg-background px-4 py-2 text-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="shrink-0 self-center rounded-md border border-input bg-background px-4 py-2 text-body text-foreground focus-ring"
         >
           Tab into me
         </button>

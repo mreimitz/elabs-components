@@ -209,7 +209,7 @@ function PipelineList({
                   onClick={() => onSelect(p.id)}
                   className={[
                     "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-start transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "focus-ring",
                     selected ? "bg-primary/10 text-foreground" : "hover:bg-surface-muted",
                   ].join(" ")}
                 >

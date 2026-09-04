@@ -208,7 +208,7 @@ export const TagInput = forwardRef<HTMLDivElement, TagInputProps>(function TagIn
               }}
               className={cn(
                 "rounded-full p-0.5 transition-colors",
-                "hover:bg-secondary-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "hover:bg-secondary-foreground/20 focus-ring",
                 "disabled:pointer-events-none disabled:opacity-50",
               )}
             >

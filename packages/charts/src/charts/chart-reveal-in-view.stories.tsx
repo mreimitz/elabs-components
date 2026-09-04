@@ -75,7 +75,7 @@ function RevealChart({ label, testId, replayOnClick = false }: RevealChartProps)
       */}
       {replayOnClick ? (
         <button
-          className="mb-2 rounded-md border border-input bg-background px-2 py-1 text-meta font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="mb-2 rounded-md border border-input bg-background px-2 py-1 text-meta font-medium text-foreground hover:bg-muted focus-ring"
           data-testid={`${testId}-replay`}
           onClick={() => setReplays((n) => n + 1)}
           type="button"

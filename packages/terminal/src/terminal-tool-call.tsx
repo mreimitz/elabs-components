@@ -200,7 +200,7 @@ export const TerminalToolCall = forwardRef<HTMLDivElement, TerminalToolCallProps
                 className={cn(
                   "rounded-sm text-terminal-muted underline-offset-2 outline-none",
                   "hover:text-terminal-foreground hover:underline",
-                  "focus-visible:ring-2 focus-visible:ring-ring",
+                  "focus-ring",
                 )}
               >
                 {/*

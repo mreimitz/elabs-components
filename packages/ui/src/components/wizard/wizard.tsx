@@ -234,7 +234,7 @@ export const WizardSteps = forwardRef<HTMLOListElement, WizardStepsProps>(functi
               onClick={() => goTo(index)}
               className={cn(
                 "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium tabular-nums",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isActive && "border-primary bg-primary text-primary-foreground",
                 // #399 — the step NUMBER is text on a `/10` wash, not plate ink
                 // and not a mark: `-text` rung. The border keeps the fill rung.

@@ -142,7 +142,7 @@ export const TabsTrigger = forwardRef<
       ref={mergedRef}
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-colors duration-fast",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "disabled:pointer-events-none disabled:opacity-50",
         "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         className,
@@ -160,7 +160,7 @@ export const TabsContent = forwardRef<
     <TabsPrimitive.Content
       ref={ref}
       className={cn(
-        "mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "mt-2 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:[--tw-ease:var(--ease-entrance)]",
         className,
       )}

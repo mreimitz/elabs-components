@@ -493,10 +493,7 @@ export const TerminalComposer = forwardRef<HTMLDivElement, TerminalComposerProps
         variant={variant}
         data-slot="terminal-composer"
         data-busy={busy || undefined}
-        className={cn(
-          "gap-0 overflow-hidden p-0 focus-within:ring-2 focus-within:ring-ring",
-          className,
-        )}
+        className={cn("gap-0 overflow-hidden p-0 focus-ring-within", className)}
         {...props}
       >
         <div data-slot="terminal-composer-well" className="p-3">

@@ -11,7 +11,7 @@ import { FlowGroupNode } from "./flow-group-node";
 const nodeTypes = { brand: FlowNode, group: FlowGroupNode };
 
 const toolbarButton =
-  "rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-body shadow-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+  "rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-body shadow-sm hover:bg-accent focus-ring disabled:opacity-50";
 
 const meta = {
   title: "Flow/FlowGroupNode",

@@ -289,7 +289,7 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
           "hover:border-ring hover:bg-accent/50",
           "data-[dragging]:border-primary data-[dragging]:bg-primary/5",
           "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-          "focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
+          "focus-ring-within focus-within:ring-offset-2 focus-within:ring-offset-background",
           className,
         )}
         {...props}
@@ -312,7 +312,7 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
                   }}
                   className={cn(
                     // #399 — inline text trigger inside a sentence → `-text` rung.
-                    "text-primary-text underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                    "text-primary-text underline-offset-2 hover:underline focus-ring rounded-sm",
                     "disabled:pointer-events-none disabled:opacity-50",
                   )}
                 >

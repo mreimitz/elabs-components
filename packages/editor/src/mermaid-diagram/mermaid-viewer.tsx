@@ -278,7 +278,7 @@ export function MermaidViewer({ svg, label }: { svg: string; label: string }) {
                 className={cn(
                   "w-full truncate rounded-md px-2 py-1.5 text-start text-caption transition-colors duration-fast ease-standard motion-reduce:transition-none",
                   "hover:bg-accent hover:text-accent-foreground",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                  "focus-ring-inset",
                   activeHit === hit.id
                     ? "bg-accent font-medium text-foreground"
                     : "text-muted-foreground",

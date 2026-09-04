@@ -104,7 +104,7 @@ describe("BentoGridItem", () => {
     // The tile stays a div; the inner anchor is the focusable element.
     const item = screen.getByTestId("item");
     expect(item.tagName).toBe("DIV");
-    expect(item.className).toMatch(/focus-within:ring/);
+    expect(item.className).toMatch(/focus-ring-within/);
     expect(screen.getByRole("link", { name: "go" })).toBeInTheDocument();
   });
 

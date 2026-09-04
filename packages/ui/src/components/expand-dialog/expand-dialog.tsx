@@ -111,8 +111,7 @@ export const expandDialogPanesVariants = cva("grid min-h-0 gap-3 overflow-hidden
  * and a pane holding only text has no focusable child to scroll from. Pass
  * `tabIndex={-1}` when the pane always contains its own focusable content.
  */
-const paneClass =
-  "min-h-0 min-w-0 overflow-auto overscroll-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const paneClass = "min-h-0 min-w-0 overflow-auto overscroll-contain focus-ring";
 
 export interface ExpandDialogPanesProps
   extends

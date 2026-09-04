@@ -264,7 +264,7 @@ function VirtualFlatRow<T>({
         "flex min-w-0 cursor-pointer select-none items-center gap-1.5 rounded-md px-2 py-1.5 text-body outline-none",
         "transition-colors duration-fast ease-standard motion-reduce:transition-none",
         "hover:bg-accent hover:text-accent-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+        "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         isSelected &&
           selectionMode !== "none" &&
           (surface === "sidebar"
@@ -336,7 +336,7 @@ function VirtualFlatRow<T>({
             className={cn(
               "ms-1 flex items-center gap-0.5 rounded px-1 py-0.5 text-caption",
               "text-muted-foreground hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              "focus-ring",
             )}
           >
             <RotateCcw className="size-3" aria-hidden="true" />
@@ -419,7 +419,7 @@ function ErrorRow({ level, onRetry }: { level: number; onRetry: () => void }) {
         className={cn(
           "ms-1 flex items-center gap-0.5 rounded px-1 py-0.5 text-xs",
           "text-muted-foreground hover:text-foreground",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+          "focus-ring",
         )}
       >
         <RotateCcw className="size-3" aria-hidden="true" />
@@ -546,7 +546,7 @@ function TreeItem<T>({
           "flex min-w-0 cursor-pointer select-none items-center gap-1.5 rounded-md px-2 py-1.5 text-body outline-none",
           "transition-colors duration-fast ease-standard motion-reduce:transition-none",
           "hover:bg-accent hover:text-accent-foreground",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           isSelected &&
             selectionMode !== "none" &&
             (surface === "sidebar"

@@ -175,7 +175,7 @@ export const TerminalOverlay = forwardRef<HTMLDivElement, TerminalOverlayProps>(
                 className={cn(
                   "shrink-0 rounded-md p-1 text-terminal-muted transition-colors duration-fast ease-standard",
                   "hover:text-terminal-foreground",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "focus-ring",
                 )}
               >
                 <XIcon aria-hidden="true" className="size-4" />

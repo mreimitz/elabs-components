@@ -88,7 +88,7 @@ export function SheetTable({
         tabIndex={0}
         role="group"
         aria-label={t("viewer.content")}
-        className="focus-visible:ring-ring min-h-0 flex-1 overflow-auto focus-visible:outline-none focus-visible:ring-2"
+        className="focus-ring min-h-0 flex-1 overflow-auto"
       >
         <Table>
           <TableCaption className="sr-only">

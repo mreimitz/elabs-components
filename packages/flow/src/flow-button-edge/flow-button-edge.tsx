@@ -69,7 +69,7 @@ export function FlowButtonEdge({
             type="button"
             aria-label={label}
             onClick={() => data?.onInsert?.()}
-            className="flex size-5 items-center justify-center rounded-full border border-flow-group-border bg-flow-node text-flow-node-foreground shadow-sm transition-colors duration-fast ease-standard hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex size-5 items-center justify-center rounded-full border border-flow-group-border bg-flow-node text-flow-node-foreground shadow-sm transition-colors duration-fast ease-standard hover:bg-accent hover:text-accent-foreground focus-ring"
           >
             <Plus className="size-3" aria-hidden="true" />
           </button>

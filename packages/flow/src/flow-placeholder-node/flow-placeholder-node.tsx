@@ -38,7 +38,7 @@ export function FlowPlaceholderNode({ data }: NodeProps<BrandFlowPlaceholderNode
         className={cn(
           "flex min-w-44 items-center justify-center gap-1.5 rounded-lg border border-dashed border-flow-group-border bg-flow-group px-3 py-2 text-muted-foreground",
           "transition-colors duration-fast ease-standard hover:bg-accent hover:text-accent-foreground",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "focus-ring",
         )}
       >
         <Plus className="size-4" aria-hidden="true" />

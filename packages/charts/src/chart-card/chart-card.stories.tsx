@@ -59,7 +59,7 @@ export const WithActions: Story = {
         title="Active sessions"
         description="Last 7 days"
         actions={
-          <button className="rounded-md border border-border bg-surface px-2 py-1 text-meta text-muted-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button className="rounded-md border border-border bg-surface px-2 py-1 text-meta text-muted-foreground hover:bg-surface-muted focus-ring">
             Export
           </button>
         }

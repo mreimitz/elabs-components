@@ -543,7 +543,7 @@ describe("DataTable — virtualized a11y + composability", () => {
     );
     const scroll = container.querySelector(".overflow-auto");
     expect(scroll).toHaveAttribute("tabindex", "0");
-    expect(scroll?.className).toMatch(/focus-visible:ring-2/);
+    expect(scroll?.className).toMatch(/focus-ring/);
     // A focusable element must have an accessible name (WCAG 4.1.2).
     expect(scroll).toHaveAttribute("aria-label");
   });
@@ -820,7 +820,7 @@ describe("DataTable — #330 plain-branch scroll container is overflow-auto, not
     const scrollRegion = scrollRegionOf(container);
     expect(scrollRegion.className).toMatch(/overflow-auto/);
     expect(scrollRegion.className).not.toMatch(/overflow-hidden/);
-    expect(scrollRegion.className).toMatch(/focus-visible:ring-2/);
+    expect(scrollRegion.className).toMatch(/focus-ring-inset/);
 
     // The OUTER chrome div (border/rounded/bg-card) stays overflow-hidden (it
     // clips to the rounded corners) — only the SCROLL region changed.

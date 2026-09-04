@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- Fixed (**accessibility, WCAG 2.4.7 + 1.4.11**): the focus indicator is now
+  **compound** — the brand ring plus a 1px contour drawn outside it — so keyboard
+  focus is visible on the `light` reference theme, where `--ring` aliases the
+  brand plate and measured 1.23–1.42:1 against every surface it lands on (and
+  1.00:1 on a focused primary button's own fill). `@elabs-ai/components-tokens`
+  adds one token, **`--ring-contour`**, declared in `:root` and both reference
+  themes, and three utilities in `themes.css` that every package and every
+  copy-own block can reach with no import: **`focus-ring`** (the default,
+  `:focus-visible`), **`focus-ring-within`** (compound controls) and
+  **`focus-ring-inset`** (controls clipped by an overflow container). **113 call
+  sites in 87 modules** across `ui` (55), `editor` (16), `charts` (12), `flow`
+  (10), `data` (7), `terminal` (6), `viewer` (3), `maps` (3), `icons` (1), the
+  docs stories (3) and one registry block (2) moved from
+  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` to
+  the utility. Measured `max(ring, contour)` per surface: `light` 6.39–9.08,
+  `dark` 10.26–12.46, `:root` 3.45–17.32 — all ≥ 3:1, and
+  `themes-contrast.test.ts`'s `light`-only `RING_1411_EXEMPT` carve-out is
+  deleted in favour of that assertion. **The ring token is unchanged**:
+  `--ring: var(--primary)` still ships, the repair adds a layer rather than
+  retuning the brand. `dark` is a deliberate visual no-op
+  (`--ring-contour: var(--background)`). Three behaviour notes: three sites that
+  drew a 1px ring now draw 2px; `Select`'s and `Badge`'s focus styling moved from
+  `:focus` to `:focus-visible`; and `packages/ai` is **not** swept (nine call sites
+  in eight modules keep the one-layer shape, tracked separately). See ADR 0027 Amendment 2 (#67).
+
 - Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
   look-alike a reader is most likely to reach for by mistake, so `brand-ui docs
 <Component>` (and the `brand-ui` MCP `docs` tool, and the per-package `llms`

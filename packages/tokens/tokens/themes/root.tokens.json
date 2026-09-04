@@ -154,6 +154,10 @@
     "$value": "oklch(0.45 0.21 264)",
     "$description": "Focus ring color. DEEPER + more saturated than --primary on purpose (#385): the two were byte-identical, so 'this control is focused' and 'this is the primary action' were one signal. Same move light already made for its own ring. ΔE(OKLab) 0.104 from --primary and 0.178 from --info; 7.42:1 vs --background."
   },
+  "ring-contour": {
+    "$type": "color",
+    "$value": "oklch(0.22 0.02 264)"
+  },
   "surface": {
     "$type": "color",
     "$value": "oklch(0.978 0.005 264)",

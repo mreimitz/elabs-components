@@ -1842,7 +1842,7 @@ function DataTableInner<TData, TValue>(
                       // from the cell's trailing edge) sits entirely outside
                       // this button's box (which ends at the same 12px inset
                       // as the body), so dragging is unaffected.
-                      className="relative z-10 inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="relative z-10 inline-flex items-center gap-1 rounded-sm transition-colors duration-fast ease-standard hover:text-foreground focus-ring"
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       <SortIcon
@@ -2117,7 +2117,7 @@ function DataTableInner<TData, TValue>(
               data-slot="data-table-row-drag-handle"
               aria-label={t("data.table.reorderHandle", { name: rowActionName(row) })}
               className={cn(
-                "inline-flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground transition-colors duration-fast ease-standard hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+                "inline-flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground transition-colors duration-fast ease-standard hover:bg-foreground/10 hover:text-foreground focus-ring active:cursor-grabbing",
                 dragHandle.isDragging && "text-foreground",
               )}
               {...dragHandle.activator.attributes}
@@ -2398,7 +2398,7 @@ function DataTableInner<TData, TValue>(
           // here would add a redundant landmark over the inner real <table>.
           aria-label={t("data.table.scrollRegion")}
           aria-busy={loading || undefined}
-          className="relative overflow-auto rounded-lg border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative overflow-auto rounded-lg border bg-card focus-ring"
           style={{ maxHeight: maxBodyHeight, ...pinnedScrollPadding }}
         >
           {/* Loading overlay */}
@@ -2476,7 +2476,7 @@ function DataTableInner<TData, TValue>(
           tabIndex={scrollOverflows ? 0 : undefined}
           aria-label={scrollOverflows ? t("data.table.scrollRegion") : undefined}
           onScroll={updateScrollAffordance}
-          className="overflow-auto rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className="overflow-auto rounded-lg focus-ring-inset"
           style={hasLeftPinned || hasRightPinned ? pinnedScrollPadding : undefined}
         >
           <table aria-busy={loading || undefined} className="w-full caption-bottom text-body">

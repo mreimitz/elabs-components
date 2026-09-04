@@ -540,7 +540,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalHandle, Interac
         ref={containerRef}
         className={cn(
           "overflow-hidden rounded-lg border border-terminal-border bg-terminal-background p-2 shadow-sm outline-none",
-          "focus-within:ring-2 focus-within:ring-ring",
+          "focus-ring-within",
           className,
         )}
         data-slot="interactive-terminal"
