@@ -20,7 +20,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 23 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 164 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 167 | 34 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -1141,6 +1141,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MetricCard | component |  | `@elabs-ai/components-charts` | Single KPI tile — label, value, delta/trend. |
 | MetricGrid | component |  | `@elabs-ai/components-charts` | Responsive grid of KPI tiles — the summary row at the top of a dashboard. |
 | MIN_DATAPOINT_TARGET_SIZE | component |  | `@elabs-ai/components-charts` |  |
+| PARALLEL_COORDINATES_MAX_DIMENSIONS | component |  | `@elabs-ai/components-charts` |  |
+| PARALLEL_COORDINATES_MIN_DIMENSIONS | component |  | `@elabs-ai/components-charts` |  |
+| ParallelCoordinatesChart | component |  | `@elabs-ai/components-charts` | Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit. |
 | PatternArea | component |  | `@elabs-ai/components-charts` |  |
 | PatternCircles | component |  | `@elabs-ai/components-charts` |  |
 | PatternHexagons | component |  | `@elabs-ai/components-charts` |  |

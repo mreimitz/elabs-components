@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:41:00.893Z",
+  "generatedAt": "2026-09-04T12:01:49.164Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12945,6 +12945,21 @@
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
         {
+          "name": "PARALLEL_COORDINATES_MAX_DIMENSIONS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "PARALLEL_COORDINATES_MIN_DIMENSIONS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
           "name": "PatternArea",
           "kind": "value",
           "module": "packages/charts/src/charts/pattern-area.tsx"
@@ -14153,6 +14168,30 @@
           "module": "packages/charts/src/charts/candlestick-chart.tsx"
         },
         {
+          "name": "ParallelCoordinatesAxis",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesChartProps",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesCurve",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesDimension",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesLineStyle",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "ParallelCoordinatesRow",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
           "name": "PatternAreaProps",
           "module": "packages/charts/src/charts/pattern-area.tsx"
         },
@@ -14539,6 +14578,14 @@
           "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
+          "name": "buildParallelAxes",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "buildParallelRows",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
           "name": "buildUnitChartSummary",
           "module": "packages/charts/src/charts/unit-layouts.ts"
         },
@@ -14593,6 +14640,10 @@
         {
           "name": "computeGanttZoomBounds",
           "module": "packages/charts/src/gantt/gantt.tsx"
+        },
+        {
+          "name": "computeRowPoints",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "computeTreemapLayout",
@@ -14771,6 +14822,14 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
+          "name": "nonHeroLineOpacity",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "orderRowsForRender",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
           "name": "padDatapointRect",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
         },
@@ -14799,12 +14858,24 @@
           "module": "packages/charts/src/charts/radar-context.tsx"
         },
         {
+          "name": "resolveEntityLineStyle",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
+          "name": "resolveHeroEntity",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
+        },
+        {
           "name": "resolveLineLoadingPulseMode",
           "module": "packages/charts/src/charts/line-loading-pulse.tsx"
         },
         {
           "name": "resolvePalette",
           "module": "packages/charts/src/charts/chart-context.tsx"
+        },
+        {
+          "name": "resolveParallelDimensions",
+          "module": "packages/charts/src/charts/parallel-coordinates/index.ts"
         },
         {
           "name": "resolveProfitLossTooltipLabel",
@@ -20161,6 +20232,37 @@
             "More than ~5 tiles in one row — KPIs answer 'how are we doing', not 'everything we measure'.",
             "Numbers without tabular-nums — figures jitter across the row.",
             "Re-declaring a KPI tile locally — MetricCard is owned by @elabs-ai/components-ui and re-exported here (ADR 0012)."
+          ]
+        },
+        "ParallelCoordinatesChart": {
+          "purpose": "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "HaloText",
+              "DrawPath",
+              "ChartDatapointLayer"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "DumbbellChart",
+              "RadarChart"
+            ]
+          },
+          "stateTokens": {
+            "axis": "var(--chart-foreground-muted) vertical hairline with end ticks (HairlineFloor style)",
+            "extremeLabel": "var(--chart-foreground-muted) on a var(--chart-background) halo, axis feet only when showExtremes",
+            "heroLine": "2px, var(--chart-foreground) or the resolved palette ink, opacity 1 — drawn LAST so it sits on top",
+            "nonHeroLine": "0.65px hairline, seeded 0.5-0.8 opacity — a texture of many lines, not individually legible"
+          },
+          "antiPatterns": [
+            "Fewer than 3 or more than 6 dimensions — below 3 a DumbbellChart (2) or MetricCard (1) reads better; above 6 the axes crowd and `resolveParallelDimensions` clamps to the first 6 with a console warning, silently dropping the rest.",
+            "Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).",
+            "Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.",
+            "Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot."
           ]
         },
         "PeakRing": {

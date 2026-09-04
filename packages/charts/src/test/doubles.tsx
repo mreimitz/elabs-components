@@ -98,7 +98,9 @@ export type ChartFamilyName =
   // Waterfall — RM-022
   | "WaterfallChart"
   // Bump — RM-033
-  | "BumpChart";
+  | "BumpChart"
+  // ParallelCoordinates — RM-034
+  | "ParallelCoordinatesChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -269,6 +271,19 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     keyProps: [
       { prop: "valueKey", numeric: true },
       { prop: "rankKey", numeric: true },
+    ],
+  },
+  // ParallelCoordinates — RM-034
+  // `entity` names a single column (the existing single-key `dynamicKeys`
+  // form); `dimensions` is an ARRAY OF OBJECTS, each naming one more numeric
+  // column via its `key` field (the `arrayOf` generalization of the same
+  // field — see `contract.ts`). 3–6 axes, every one numeric on every row.
+  ParallelCoordinatesChart: {
+    dataKind: "array",
+    requiredProps: ["data", "entity", "dimensions"],
+    dynamicKeys: [
+      { prop: "entity" },
+      { prop: "dimensions", numeric: true, arrayOf: { field: "key", min: 3, max: 6 } },
     ],
   },
 };
@@ -448,6 +463,14 @@ import type { BumpChartProps } from "../charts/bump-chart";
 export const BumpChart = createChartContainerDouble<BumpChartProps>(
   "BumpChart",
   CHART_CONTRACT_SPECS.BumpChart,
+);
+
+// ParallelCoordinates — RM-034
+import type { ParallelCoordinatesChartProps } from "../charts/parallel-coordinates/parallel-coordinates-chart";
+
+export const ParallelCoordinatesChart = createChartContainerDouble<ParallelCoordinatesChartProps>(
+  "ParallelCoordinatesChart",
+  CHART_CONTRACT_SPECS.ParallelCoordinatesChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

@@ -594,3 +594,24 @@ export {
   type BumpSeries,
   type BumpVariant,
 } from "./bump-chart";
+
+// ParallelCoordinates — RM-034
+export {
+  buildParallelAxes,
+  buildParallelRows,
+  computeRowPoints,
+  nonHeroLineOpacity,
+  orderRowsForRender,
+  PARALLEL_COORDINATES_MAX_DIMENSIONS,
+  PARALLEL_COORDINATES_MIN_DIMENSIONS,
+  ParallelCoordinatesChart,
+  resolveEntityLineStyle,
+  resolveHeroEntity,
+  resolveParallelDimensions,
+  type ParallelCoordinatesAxis,
+  type ParallelCoordinatesChartProps,
+  type ParallelCoordinatesCurve,
+  type ParallelCoordinatesDimension,
+  type ParallelCoordinatesLineStyle,
+  type ParallelCoordinatesRow,
+} from "./parallel-coordinates";

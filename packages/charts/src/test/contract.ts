@@ -121,7 +121,23 @@ export interface ChartContractSpec {
    * `number | null | undefined`, mirroring `itemNumericKeys` but for a
    * caller-named column instead of a fixed one.
    */
-  dynamicKeys?: { prop: string; numeric?: boolean }[];
+  dynamicKeys?: {
+    prop: string;
+    numeric?: boolean;
+    /**
+     * ParallelCoordinates — RM-034. `dynamicKeys` above covers a prop whose
+     * VALUE directly IS one key name (`category`, `startKey`, …). This is the
+     * plural generalization of the same idea for a prop whose value is an
+     * ARRAY OF OBJECTS, each naming one more key — `ParallelCoordinatesChart`'s
+     * `dimensions: { key: string }[]`. Deliberately reusing `dynamicKeys`
+     * rather than adding a fourth "row key named by a prop" field alongside
+     * `propNamedKeys`/`keyProps` (see the three-field debt note on those two).
+     * `field` names the property each array element carries the key in
+     * (default `"key"`); `min`/`max` bound the array's own length, checked
+     * once per render rather than once per row.
+     */
+    arrayOf?: { field?: string; min?: number; max?: number };
+  }[];
   /**
    * Keys whose NAME is itself a prop value, and which must be present on every
    * row — `HeatmapChart`'s `x` / `y` / `valueKey`, where the caller names all
@@ -310,6 +326,46 @@ export function assertChartContract(
     const seriesKeys = spec.seriesFromChildren
       ? collectSeriesKeys(props.children as ReactNode)
       : [];
+    // ParallelCoordinates — RM-034. Expand each `dynamicKeys` entry that
+    // carries `arrayOf` into its concrete list of row-key names, once, before
+    // the per-row walk below — `dimensions: { key }[]` becomes an ordinary
+    // dynamic-key list. The array's own shape/length is checked here (once
+    // per render), not once per row.
+    const dynamicArrayKeys: { prop: string; numeric?: boolean; keys: string[] }[] = [];
+    for (const dynamicKey of spec.dynamicKeys ?? []) {
+      if (!dynamicKey.arrayOf) continue;
+      const arr = props[dynamicKey.prop];
+      if (arr === undefined) continue; // presence of the prop itself is `requiredProps`'s job
+      if (!Array.isArray(arr)) {
+        fail(component, dynamicKey.prop, arr, `"${dynamicKey.prop}" must be an array`);
+        continue;
+      }
+      const { field = "key", min, max } = dynamicKey.arrayOf;
+      if (min !== undefined && arr.length < min) {
+        fail(
+          component,
+          dynamicKey.prop,
+          arr,
+          `"${dynamicKey.prop}" must have at least ${min} entries (received ${arr.length})`,
+        );
+      }
+      if (max !== undefined && arr.length > max) {
+        fail(
+          component,
+          dynamicKey.prop,
+          arr,
+          `"${dynamicKey.prop}" must have at most ${max} entries (received ${arr.length})`,
+        );
+      }
+      const keys = arr
+        .map((entry: unknown) =>
+          entry && typeof entry === "object"
+            ? (entry as Record<string, unknown>)[field]
+            : undefined,
+        )
+        .filter((key): key is string => typeof key === "string" && key.length > 0);
+      dynamicArrayKeys.push({ prop: dynamicKey.prop, numeric: dynamicKey.numeric, keys });
+    }
     value.forEach((row: unknown, index: number) => {
       if (typeof row !== "object" || row === null || Array.isArray(row)) {
         fail(component, dataProp, row, `row ${index} of "${dataProp}" must be a plain object`);
@@ -435,6 +491,7 @@ export function assertChartContract(
         }
       }
       for (const dynamicKey of spec.dynamicKeys ?? []) {
+        if (dynamicKey.arrayOf) continue; // handled by `dynamicArrayKeys` below
         const keyName = props[dynamicKey.prop] as string | undefined;
         if (!keyName) continue; // presence of the prop itself is `requiredProps`'s job
         if (!(keyName in record)) {
@@ -453,6 +510,32 @@ export function assertChartContract(
               row,
               `row ${index}'s "${keyName}" (named by "${dynamicKey.prop}") must be number | null | undefined`,
             );
+          }
+        }
+      }
+      // ParallelCoordinates — RM-034: one or more keys per row, all named by
+      // ONE array-shaped prop (`dynamicArrayKeys`, expanded above).
+      for (const arrayKey of dynamicArrayKeys) {
+        for (const keyName of arrayKey.keys) {
+          if (!(keyName in record)) {
+            fail(
+              component,
+              arrayKey.prop,
+              row,
+              `row ${index} of "${dataProp}" is missing the key named by "${arrayKey.prop}" ("${keyName}")`,
+            );
+            continue;
+          }
+          if (arrayKey.numeric) {
+            const v = record[keyName];
+            if (v != null && typeof v !== "number") {
+              fail(
+                component,
+                arrayKey.prop,
+                row,
+                `row ${index}'s "${keyName}" (named by "${arrayKey.prop}") must be number | null | undefined`,
+              );
+            }
           }
         }
       }
