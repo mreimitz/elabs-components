@@ -1590,6 +1590,32 @@ export const INTENT = {
     ],
   },
 
+  ParallelCoordinatesChart: {
+    purpose:
+      "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
+    category: "chart",
+    relationships: {
+      contains: ["HaloText", "DrawPath", "ChartDatapointLayer"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["DumbbellChart", "RadarChart"],
+    },
+    stateTokens: {
+      axis: "var(--chart-foreground-muted) vertical hairline with end ticks (HairlineFloor style)",
+      extremeLabel:
+        "var(--chart-foreground-muted) on a var(--chart-background) halo, axis feet only when showExtremes",
+      heroLine:
+        "2px, var(--chart-foreground) or the resolved palette ink, opacity 1 — drawn LAST so it sits on top",
+      nonHeroLine:
+        "0.65px hairline, seeded 0.5-0.8 opacity — a texture of many lines, not individually legible",
+    },
+    antiPatterns: [
+      "Fewer than 3 or more than 6 dimensions — below 3 a DumbbellChart (2) or MetricCard (1) reads better; above 6 the axes crowd and `resolveParallelDimensions` clamps to the first 6 with a console warning, silently dropping the rest.",
+      "Dimensions on wildly different natural scales with no explicit `domain` — each axis normalizes independently, so an unset domain just uses that dimension's own min/max, which is usually right; only override when you need a domain that isn't in the data (e.g. a known 0-100 ceiling).",
+      "Using `highlightKey` to try to promote MULTIPLE entities to hero status — only the first row a predicate matches (or the one literal id) is promoted; for comparing several entities at once, dim the rest via a different technique or fall back to small multiples.",
+      "Reaching for this when the entities do NOT share the same dimensions, or when there is only one entity — a single-entity profile across many metrics is a RadarChart (shared 0-100 radial scale) or a MetricGrid, not a parallel-coordinates plot.",
+    ],
+  },
+
   RadarChart: {
     purpose: "Multi-metric profile comparison on a shared radial axis.",
     category: "chart",
