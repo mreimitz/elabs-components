@@ -1,0 +1,8 @@
+[
+  {
+    "package": "@elabs-ai/components-ai",
+    "file": "packages/ai/dist/index.d.ts",
+    "peer": "ai",
+    "specifier": "ai"
+  }
+]
