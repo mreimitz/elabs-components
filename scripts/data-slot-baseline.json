@@ -155,6 +155,8 @@
   "packages/flow/src/flow-node/flow-node.tsx": [1, 0],
   "packages/flow/src/flow-placeholder-node/flow-placeholder-node.tsx": [1, 0],
   "packages/flow/src/flow-smart-edge/flow-smart-edge.tsx": [1, 0],
+  "packages/flow/src/flow-weighted-edge/edge-label-pill.tsx": [1, 2],
+  "packages/flow/src/flow-weighted-edge/flow-weighted-edge.tsx": [1, 1],
   "packages/flow/src/helper-lines/helper-lines.tsx": [1, 0],
   "packages/flow/src/inspector-panel/inspector-panel.tsx": [1, 2],
   "packages/flow/src/legend/legend.tsx": [1, 0],

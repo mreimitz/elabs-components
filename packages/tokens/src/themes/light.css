@@ -572,4 +572,8 @@
   --chart-mono-7: oklch(0.303 0.01 257);
 
   --chart-accent: var(--chart-1);
+
+  /* Flow edge ramp — RM-043 */
+  --flow-edge-weak: oklch(0.82 0.02 242);
+  --flow-edge-strong: oklch(0.45 0.16 242);
 }

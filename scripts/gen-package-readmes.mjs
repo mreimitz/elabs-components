@@ -61,6 +61,7 @@ const EXTRAS = {
   [`${SCOPE}/components-flow`]: [
     "`@xyflow/react` is a peer — it carries the React context `useReactFlow` reads, so two copies break.",
     'Import `"@xyflow/react/dist/style.css"` once.',
+    "`FlowWeightedEdge` scales stroke width/colour from `data.weight`/`data.value` — reuse its exported `computeEdgeWeightScale` (pure, no React) if you build a matching legend.",
   ],
   [`${SCOPE}/components-ai`]: [
     "`ai` (Vercel AI SDK) is a **types-only, optional** peer — your app owns the model calls.",

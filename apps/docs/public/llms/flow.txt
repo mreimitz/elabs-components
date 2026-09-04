@@ -15,6 +15,8 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
   - avoid: Building a second zoom control in a Panel — one control cluster per canvas, or the two disagree.
   - avoid: Dropping the keyboard path — every canvas action must stay reachable without a pointer.
   - avoid: Stacking it under the canvas content — it is chrome and must stay above the graph and clickable.
+- DEFAULT_EDGE_WIDTH_RANGE
+- EdgeLabelPill
 - FLOW_ALL_SIDE_HANDLES
 - FLOW_GROUP_NODE_TYPE
 - FlowButtonEdge
@@ -26,6 +28,7 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
   - avoid: Raw colors on the node — use flow-node tokens.
 - FlowPlaceholderNode
 - FlowSmartEdge
+- FlowWeightedEdge
 - HANDLE_SIDES
 - HelperLines
 - InspectorPanel
