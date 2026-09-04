@@ -10,8 +10,11 @@
  * never render an `AudioPlayer`. Keeping every media-chrome *value* import in
  * this module, reached only through
  * `lazy(() => import("./_audio-player-media-chrome"))`, confines it to its own
- * chunk. `audio-player.tsx` still owns the public prop types and imports the
- * media-chrome element types with `import type` (types erase).
+ * chunk. `audio-player.tsx` owns the public prop types, and — since issue #101
+ * — owns them as OWNED types (`AudioPlayerPartProps` and its ten aliases) that
+ * never reference `media-chrome/react`'s own types; this module still imports
+ * the REAL media-chrome values (below) and, at the bottom of the file, proves
+ * every owned type stays assignable to its real counterpart.
  *
  * See ADR 0019 and `pnpm heavy-deps:check`.
  *
@@ -35,7 +38,7 @@ import { cn } from "@elabs-ai/components-ui/lib/cn";
 // and the guard turns that into a render-phase throw `LazyEngineBoundary`
 // already catches (see `persona.tsx`'s identical pattern).
 import * as MediaChromeReactModule from "media-chrome/react";
-import type { CSSProperties } from "react";
+import type { ComponentProps, CSSProperties } from "react";
 
 import type {
   AudioPlayerControlBarProps,
@@ -168,3 +171,58 @@ export const AudioPlayerVolumeRange = ({ className, ...props }: AudioPlayerVolum
     <MediaVolumeRange className={cn("", className)} {...props} />
   </ButtonGroupText>
 );
+
+/**
+ * Conformance assertions (issue #101): compile-time proof that every OWNED
+ * type declared in `audio-player.tsx` stays assignable to its REAL
+ * `media-chrome/react` counterpart — this module still has the real values
+ * (and therefore the real types) in scope, since it is the one place they are
+ * allowed to be (see the module doc comment above). `AssertAssignable`'s type
+ * parameter is constrained (`TOwned extends TReal`), so if a future
+ * media-chrome release narrows an element's props in a way the owned type no
+ * longer satisfies, ONE of these ten lines fails to typecheck — caught by
+ * `pnpm --filter @elabs-ai/components-ai typecheck` locally, never shipped as
+ * a silent mismatch to a consumer using the real component underneath.
+ */
+export type AssertAssignable<_TOwned extends TReal, TReal> = true;
+
+export type _AudioPlayerPropsConformance = AssertAssignable<
+  AudioPlayerProps,
+  Omit<ComponentProps<typeof MediaController>, "audio">
+>;
+export type _AudioPlayerControlBarPropsConformance = AssertAssignable<
+  AudioPlayerControlBarProps,
+  ComponentProps<typeof MediaControlBar>
+>;
+export type _AudioPlayerPlayButtonPropsConformance = AssertAssignable<
+  AudioPlayerPlayButtonProps,
+  ComponentProps<typeof MediaPlayButton>
+>;
+export type _AudioPlayerSeekBackwardButtonPropsConformance = AssertAssignable<
+  AudioPlayerSeekBackwardButtonProps,
+  ComponentProps<typeof MediaSeekBackwardButton>
+>;
+export type _AudioPlayerSeekForwardButtonPropsConformance = AssertAssignable<
+  AudioPlayerSeekForwardButtonProps,
+  ComponentProps<typeof MediaSeekForwardButton>
+>;
+export type _AudioPlayerTimeDisplayPropsConformance = AssertAssignable<
+  AudioPlayerTimeDisplayProps,
+  ComponentProps<typeof MediaTimeDisplay>
+>;
+export type _AudioPlayerTimeRangePropsConformance = AssertAssignable<
+  AudioPlayerTimeRangeProps,
+  ComponentProps<typeof MediaTimeRange>
+>;
+export type _AudioPlayerDurationDisplayPropsConformance = AssertAssignable<
+  AudioPlayerDurationDisplayProps,
+  ComponentProps<typeof MediaDurationDisplay>
+>;
+export type _AudioPlayerMuteButtonPropsConformance = AssertAssignable<
+  AudioPlayerMuteButtonProps,
+  ComponentProps<typeof MediaMuteButton>
+>;
+export type _AudioPlayerVolumeRangePropsConformance = AssertAssignable<
+  AudioPlayerVolumeRangeProps,
+  ComponentProps<typeof MediaVolumeRange>
+>;

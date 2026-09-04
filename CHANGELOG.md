@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Fixed: `@elabs-ai/components-ai`'s built type declarations no longer leak
+  `media-chrome`'s or `@rive-app/react-webgl2`'s own module specifiers (issue
+  #101). A `skipLibCheck: false` consumer who correctly omits one of these
+  optional peers used to get `TS2307` from `import { Message } from
+"@elabs-ai/components-ai"` alone — not from using `AudioPlayer`/`Persona`,
+  the only two features that actually need them. `AudioPlayerPartProps` and
+  `PersonaRiveEventCallback` (and their siblings) are now locally owned,
+  structurally-compatible mirrors of the peer's shape rather than re-exports
+  of it, with a compile-time conformance assertion in each feature's
+  lazy-loaded module proving the mirror stays assignable to the real peer
+  type. A new `pnpm optional-peer-types:check` gate (self-tested, wired in
+  CI) reads every `@elabs-ai/components-*` package's BUILT `.d.ts` output and
+  fails on a NEW optional-peer type leak; `@elabs-ai/components-ai`'s own `ai`
+  (Vercel AI SDK) peer leak is a separately tracked, already-known gap and
+  stays baselined. No public API removed — `AudioPlayer`/`Persona`'s prop
+  types are unchanged in shape, only in where they are declared.
+
 - Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
   look-alike a reader is most likely to reach for by mistake, so `brand-ui docs
 <Component>` (and the `brand-ui` MCP `docs` tool, and the per-package `llms`

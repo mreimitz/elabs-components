@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T15:34:46.809Z",
+  "generatedAt": "2026-09-04T16:45:15.825Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -3295,6 +3295,10 @@
           "module": "packages/ai/src/audio-player.tsx"
         },
         {
+          "name": "AudioPlayerPartProps",
+          "module": "packages/ai/src/audio-player.tsx"
+        },
+        {
           "name": "AudioPlayerPlayButtonProps",
           "module": "packages/ai/src/audio-player.tsx"
         },
@@ -4240,6 +4244,14 @@
         },
         {
           "name": "PersonaProps",
+          "module": "packages/ai/src/persona.tsx"
+        },
+        {
+          "name": "PersonaRiveEvent",
+          "module": "packages/ai/src/persona.tsx"
+        },
+        {
+          "name": "PersonaRiveEventCallback",
           "module": "packages/ai/src/persona.tsx"
         },
         {
@@ -5821,19 +5833,19 @@
         },
         "AudioPlayer": {
           "extends": [
-            "Omit<ComponentProps<typeof MediaController>, \"audio\">"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
         "AudioPlayerControlBar": {
           "extends": [
-            "ComponentProps<typeof MediaControlBar>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
         "AudioPlayerDurationDisplay": {
           "extends": [
-            "ComponentProps<typeof MediaDurationDisplay>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
@@ -5846,43 +5858,57 @@
         },
         "AudioPlayerMuteButton": {
           "extends": [
-            "ComponentProps<typeof MediaMuteButton>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
         "AudioPlayerPlayButton": {
           "extends": [
-            "ComponentProps<typeof MediaPlayButton>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
         "AudioPlayerSeekBackwardButton": {
           "extends": [
-            "ComponentProps<typeof MediaSeekBackwardButton>"
+            "AudioPlayerPartProps"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "seekOffset",
+              "optional": true,
+              "type": "number",
+              "description": "Skip distance in seconds. Mirrors the element's own default (10)."
+            }
+          ]
         },
         "AudioPlayerSeekForwardButton": {
           "extends": [
-            "ComponentProps<typeof MediaSeekForwardButton>"
+            "AudioPlayerPartProps"
           ],
-          "props": []
+          "props": [
+            {
+              "name": "seekOffset",
+              "optional": true,
+              "type": "number",
+              "description": "Skip distance in seconds. Mirrors the element's own default (10)."
+            }
+          ]
         },
         "AudioPlayerTimeDisplay": {
           "extends": [
-            "ComponentProps<typeof MediaTimeDisplay>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
         "AudioPlayerTimeRange": {
           "extends": [
-            "ComponentProps<typeof MediaTimeRange>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
         "AudioPlayerVolumeRange": {
           "extends": [
-            "ComponentProps<typeof MediaVolumeRange>"
+            "AudioPlayerPartProps"
           ],
           "props": []
         },
@@ -8449,22 +8475,22 @@
             {
               "name": "onLoad",
               "optional": true,
-              "type": "RiveParameters[\"onLoad\"]"
+              "type": "PersonaRiveEventCallback"
             },
             {
               "name": "onLoadError",
               "optional": true,
-              "type": "RiveParameters[\"onLoadError\"]"
+              "type": "PersonaRiveEventCallback"
             },
             {
               "name": "onPause",
               "optional": true,
-              "type": "RiveParameters[\"onPause\"]"
+              "type": "PersonaRiveEventCallback"
             },
             {
               "name": "onPlay",
               "optional": true,
-              "type": "RiveParameters[\"onPlay\"]"
+              "type": "PersonaRiveEventCallback"
             },
             {
               "name": "onReady",
@@ -8474,7 +8500,7 @@
             {
               "name": "onStop",
               "optional": true,
-              "type": "RiveParameters[\"onStop\"]"
+              "type": "PersonaRiveEventCallback"
             },
             {
               "name": "src",

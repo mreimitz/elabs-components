@@ -4,19 +4,7 @@ import { Skeleton, isOptionalPeerMissing, useLocale } from "@elabs-ai/components
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import type { Experimental_SpeechResult as SpeechResult } from "ai";
 import { VolumeOffIcon } from "lucide-react";
-import type {
-  MediaControlBar,
-  MediaController,
-  MediaDurationDisplay,
-  MediaMuteButton,
-  MediaPlayButton,
-  MediaSeekBackwardButton,
-  MediaSeekForwardButton,
-  MediaTimeDisplay,
-  MediaTimeRange,
-  MediaVolumeRange,
-} from "media-chrome/react";
-import type { ComponentProps, ComponentType } from "react";
+import type { ComponentProps, ComponentType, HTMLAttributes } from "react";
 import { lazy, Suspense } from "react";
 
 import { LazyEngineBoundary } from "./_lazy-engine-boundary";
@@ -25,18 +13,54 @@ import { LazyEngineBoundary } from "./_lazy-engine-boundary";
  * media-chrome lives behind a dynamic import — it declares no `sideEffects`, so
  * a static import would put the whole custom-element library in every consumer's
  * entry chunk, `AudioPlayer` rendered or not. Every value import lives in
- * `_audio-player-media-chrome.tsx`; the element types above are TYPE imports and
- * erase. See ADR 0019 and `pnpm heavy-deps:check`.
+ * `_audio-player-media-chrome.tsx`. See ADR 0019 and `pnpm heavy-deps:check`.
  *
  * All ten parts resolve from the SAME module specifier, so they share one chunk:
  * once `AudioPlayer` has loaded it, the controls inside it resolve from cache.
+ *
+ * Issue #101: `media-chrome` is an OPTIONAL peer, so no PUBLIC export's type
+ * may structurally reference `media-chrome/react`'s own types (previously
+ * `ComponentProps<typeof MediaController>` and nine siblings, imported as
+ * TYPE-only above) — doing so names `media-chrome/react`'s module specifier in
+ * this package's generated root `.d.ts` and hands a `skipLibCheck: false`
+ * consumer who has correctly omitted the peer a `TS2307` just for importing
+ * the barrel — not just for using `AudioPlayer`. `AudioPlayerPartProps` below
+ * is an OWNED base type: `media-chrome/react`'s wrapper
+ * (`media-chrome/react`'s `createComponent`, from the `ce-la-react` helper it
+ * is built on) types every part as `Omit<HTMLAttributes<I>, …> &
+ * Partial<the element's own instance members>` — i.e. ordinary HTML attributes
+ * plus a handful of optional custom attributes, which for every part this
+ * package renders reduces to "ordinary HTML attributes, plus `seekOffset` on
+ * the two seek buttons". `AudioPlayerPartProps` is therefore NOT a full replica
+ * of media-chrome's surface, only of the part this package actually uses and
+ * re-exports (the same scoping `TerminalColorTheme` uses for xterm's `ITheme`
+ * in `packages/terminal/src/interactive-terminal.tsx`, also issue #101). The
+ * ten conformance assertions at the bottom of `_audio-player-media-chrome.tsx`
+ * (which still imports the real peer types — that module is reached only
+ * through `lazy()` and never sits in the barrel's declaration graph) prove
+ * every owned type here stays assignable to its real media-chrome counterpart;
+ * a peer version bump that narrows a prop incompatibly fails
+ * `pnpm --filter @elabs-ai/components-ai typecheck` locally instead of
+ * reaching a consumer as silent drift.
+ *
+ * Deliberately no `ref` field: `ComponentProps<typeof MediaController>` (and
+ * its nine siblings) included one via `RefAttributes<I>`, but `RefObject<T>`'s
+ * mutable `current` makes ref types INVARIANT in `T` — a `Ref<HTMLElement>`
+ * can never be assignable to a real element's own `Ref<MediaController>` (the
+ * custom element subclass carries private/extra members `HTMLElement` lacks),
+ * so keeping it would make every owned type fail its own conformance
+ * assertion below. None of the ten parts this package renders is wrapped in
+ * `forwardRef` or reads a forwarded `ref`, so the field was unusable in
+ * practice already; this only makes that honest in the type.
  */
+export type AudioPlayerPartProps = HTMLAttributes<HTMLElement>;
+
 type MediaChromeModule = typeof import("./_audio-player-media-chrome");
 
 const lazyPart = <P,>(pick: (module: MediaChromeModule) => ComponentType<P>) =>
   lazy(() => import("./_audio-player-media-chrome").then((m) => ({ default: pick(m) })));
 
-export type AudioPlayerProps = Omit<ComponentProps<typeof MediaController>, "audio">;
+export type AudioPlayerProps = AudioPlayerPartProps;
 
 const AudioPlayerImpl = lazyPart<AudioPlayerProps>((m) => m.AudioPlayer);
 
@@ -103,7 +127,7 @@ export const AudioPlayerElement = ({ ...props }: AudioPlayerElementProps) => (
   />
 );
 
-export type AudioPlayerControlBarProps = ComponentProps<typeof MediaControlBar>;
+export type AudioPlayerControlBarProps = AudioPlayerPartProps;
 
 const AudioPlayerControlBarImpl = lazyPart<AudioPlayerControlBarProps>(
   (m) => m.AudioPlayerControlBar,
@@ -117,7 +141,7 @@ export const AudioPlayerControlBar = (props: AudioPlayerControlBarProps) => (
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerPlayButtonProps = ComponentProps<typeof MediaPlayButton>;
+export type AudioPlayerPlayButtonProps = AudioPlayerPartProps;
 
 const AudioPlayerPlayButtonImpl = lazyPart<AudioPlayerPlayButtonProps>(
   (m) => m.AudioPlayerPlayButton,
@@ -131,7 +155,10 @@ export const AudioPlayerPlayButton = (props: AudioPlayerPlayButtonProps) => (
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerSeekBackwardButtonProps = ComponentProps<typeof MediaSeekBackwardButton>;
+export interface AudioPlayerSeekBackwardButtonProps extends AudioPlayerPartProps {
+  /** Skip distance in seconds. Mirrors the element's own default (10). */
+  seekOffset?: number;
+}
 
 const AudioPlayerSeekBackwardButtonImpl = lazyPart<AudioPlayerSeekBackwardButtonProps>(
   (m) => m.AudioPlayerSeekBackwardButton,
@@ -145,7 +172,10 @@ export const AudioPlayerSeekBackwardButton = (props: AudioPlayerSeekBackwardButt
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerSeekForwardButtonProps = ComponentProps<typeof MediaSeekForwardButton>;
+export interface AudioPlayerSeekForwardButtonProps extends AudioPlayerPartProps {
+  /** Skip distance in seconds. Mirrors the element's own default (10). */
+  seekOffset?: number;
+}
 
 const AudioPlayerSeekForwardButtonImpl = lazyPart<AudioPlayerSeekForwardButtonProps>(
   (m) => m.AudioPlayerSeekForwardButton,
@@ -159,7 +189,7 @@ export const AudioPlayerSeekForwardButton = (props: AudioPlayerSeekForwardButton
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerTimeDisplayProps = ComponentProps<typeof MediaTimeDisplay>;
+export type AudioPlayerTimeDisplayProps = AudioPlayerPartProps;
 
 const AudioPlayerTimeDisplayImpl = lazyPart<AudioPlayerTimeDisplayProps>(
   (m) => m.AudioPlayerTimeDisplay,
@@ -173,7 +203,7 @@ export const AudioPlayerTimeDisplay = (props: AudioPlayerTimeDisplayProps) => (
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
+export type AudioPlayerTimeRangeProps = AudioPlayerPartProps;
 
 const AudioPlayerTimeRangeImpl = lazyPart<AudioPlayerTimeRangeProps>((m) => m.AudioPlayerTimeRange);
 
@@ -185,7 +215,7 @@ export const AudioPlayerTimeRange = (props: AudioPlayerTimeRangeProps) => (
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerDurationDisplayProps = ComponentProps<typeof MediaDurationDisplay>;
+export type AudioPlayerDurationDisplayProps = AudioPlayerPartProps;
 
 const AudioPlayerDurationDisplayImpl = lazyPart<AudioPlayerDurationDisplayProps>(
   (m) => m.AudioPlayerDurationDisplay,
@@ -199,7 +229,7 @@ export const AudioPlayerDurationDisplay = (props: AudioPlayerDurationDisplayProp
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerMuteButtonProps = ComponentProps<typeof MediaMuteButton>;
+export type AudioPlayerMuteButtonProps = AudioPlayerPartProps;
 
 const AudioPlayerMuteButtonImpl = lazyPart<AudioPlayerMuteButtonProps>(
   (m) => m.AudioPlayerMuteButton,
@@ -213,7 +243,7 @@ export const AudioPlayerMuteButton = (props: AudioPlayerMuteButtonProps) => (
   </LazyEngineBoundary>
 );
 
-export type AudioPlayerVolumeRangeProps = ComponentProps<typeof MediaVolumeRange>;
+export type AudioPlayerVolumeRangeProps = AudioPlayerPartProps;
 
 const AudioPlayerVolumeRangeImpl = lazyPart<AudioPlayerVolumeRangeProps>(
   (m) => m.AudioPlayerVolumeRange,
