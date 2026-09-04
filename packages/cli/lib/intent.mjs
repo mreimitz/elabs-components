@@ -1659,6 +1659,9 @@ export const INTENT = {
       'emptyValue="blank" on data that contains real zeroes \u2014 a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.',
       "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) \u2014 it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
       'Leaning on the darkest ramp step to say "this is the peak" \u2014 colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.',
+    ],
+  },
+
   UnitChart: {
     purpose:
       "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
