@@ -4,7 +4,7 @@ import { arc as arcGenerator } from "@visx/shape";
 import { motion, useSpring, useTransform } from "motion/react";
 import { memo, useEffect } from "react";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
-import { pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
+import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
 import { useEnterComplete } from "./use-enter-complete";
 import { useMountProgress } from "./use-mount-progress";
 
@@ -67,6 +67,20 @@ export interface PieSliceProps {
   hoverOffset?: number;
   /** Additional CSS class */
   className?: string;
+  /**
+   * Per-slice outer radius override (px) — RM-030's `radiusKey`. Injected
+   * automatically by `PieChart` via `cloneElement` when its `radiusKey` prop
+   * is set; a `PieSlice` rendered standalone (or inside a chart with no
+   * `radiusKey`) never receives it and falls back to the chart's uniform
+   * `outerRadius` — today's behavior.
+   */
+  outerRadiusOverride?: number;
+  /**
+   * Paper-seam stroke (px) between this slice and its neighbors — RM-030's
+   * `seams`. Injected automatically by `PieChart` via `cloneElement` when
+   * its `seams` prop is > 0. Default: no stroke (today's behavior).
+   */
+  seams?: number;
 }
 
 interface AnimatedSliceTranslateProps {
@@ -84,6 +98,8 @@ interface AnimatedSliceTranslateProps {
   animationKey: number;
   showGlow: boolean;
   hoverOffset: number;
+  /** Paper-seam stroke (px), RM-030. 0 = no stroke (today's behavior). */
+  seams: number;
 }
 
 function AnimatedSliceTranslate({
@@ -101,6 +117,7 @@ function AnimatedSliceTranslate({
   animationKey,
   showGlow,
   hoverOffset,
+  seams,
 }: AnimatedSliceTranslateProps) {
   const { enterTransition, enterStaggerScale, animationKey: pieAnimationKey } = usePieStable();
   const animationDelay = (0.1 + index * 0.08) * enterStaggerScale;
@@ -132,6 +149,10 @@ function AnimatedSliceTranslate({
     cornerRadius,
     padAngle,
   );
+  // Paper-seam stroke (RM-030): only added when seams > 0, so a chart with no
+  // `seams` prop renders paths with no stroke attributes at all — unchanged.
+  const seamStroke = seams > 0 ? pieCssVars.background : undefined;
+  const seamStrokeWidth = seams > 0 ? seams : undefined;
 
   if (enterComplete) {
     const shouldTranslate = isHovered;
@@ -145,6 +166,8 @@ function AnimatedSliceTranslate({
         d={hitboxPath}
         fill={fill}
         pointerEvents="none"
+        stroke={seamStroke}
+        strokeWidth={seamStrokeWidth}
         style={{
           filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
         }}
@@ -168,6 +191,8 @@ function AnimatedSliceTranslate({
       fill={fill}
       key={`slice-${animationKey}-${index}`}
       pointerEvents="none"
+      stroke={seamStroke}
+      strokeWidth={seamStrokeWidth}
       style={{
         filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
       }}
@@ -195,6 +220,8 @@ interface AnimatedSliceGrowProps {
   animationKey: number;
   showGlow: boolean;
   hoverOffset: number;
+  /** Paper-seam stroke (px), RM-030. 0 = no stroke (today's behavior). */
+  seams: number;
 }
 
 function AnimatedSliceGrow({
@@ -212,6 +239,7 @@ function AnimatedSliceGrow({
   animationKey,
   showGlow,
   hoverOffset,
+  seams,
 }: AnimatedSliceGrowProps) {
   const { enterTransition, enterStaggerScale, animationKey: pieAnimationKey } = usePieStable();
   const animationDelay = (0.1 + index * 0.08) * enterStaggerScale;
@@ -252,6 +280,10 @@ function AnimatedSliceGrow({
     cornerRadius,
     padAngle,
   );
+  // Paper-seam stroke (RM-030): only added when seams > 0, so a chart with no
+  // `seams` prop renders paths with no stroke attributes at all — unchanged.
+  const seamStroke = seams > 0 ? pieCssVars.background : undefined;
+  const seamStrokeWidth = seams > 0 ? seams : undefined;
 
   if (enterComplete) {
     return (
@@ -263,6 +295,8 @@ function AnimatedSliceGrow({
         d={grownPath}
         fill={fill}
         pointerEvents="none"
+        stroke={seamStroke}
+        strokeWidth={seamStrokeWidth}
         style={{
           filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
         }}
@@ -282,6 +316,8 @@ function AnimatedSliceGrow({
       d={animatedPath}
       fill={fill}
       key={`slice-${animationKey}-${index}`}
+      stroke={seamStroke}
+      strokeWidth={seamStrokeWidth}
       pointerEvents="none"
       style={{
         filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${glowColor})` : "none",
@@ -301,6 +337,8 @@ export const PieSlice = memo(function PieSlice({
   showGlow = true,
   hoverEffect = "translate",
   hoverOffset: hoverOffsetProp,
+  outerRadiusOverride,
+  seams = 0,
 }: PieSliceProps) {
   const {
     arcs,
@@ -320,6 +358,10 @@ export const PieSlice = memo(function PieSlice({
 
   // Use prop if provided, otherwise use context value
   const hoverOffset = hoverOffsetProp ?? contextHoverOffset;
+  // radiusKey (#RM-030) — a slice never cloned with an override (no
+  // `radiusKey` on the chart, or `PieSlice` used standalone) resolves to the
+  // chart's uniform outerRadius, today's behavior.
+  const resolvedOuterRadius = outerRadiusOverride ?? outerRadius;
 
   const arcData = arcs[index];
   if (!arcData) {
@@ -331,7 +373,10 @@ export const PieSlice = memo(function PieSlice({
   // inside this aria-hidden SVG ever becomes focusable.
   const onSliceClick = activateDatapoint
     ? (event: React.MouseEvent) =>
-        activateDatapoint(pieDatapointTarget(arcData, { center, innerRadius, outerRadius }), event)
+        activateDatapoint(
+          pieDatapointTarget(arcData, { center, innerRadius, outerRadius: resolvedOuterRadius }),
+          event,
+        )
     : undefined;
 
   const color = colorProp || getColor(index);
@@ -351,10 +396,11 @@ export const PieSlice = memo(function PieSlice({
   // Calculate values for non-animated/static paths
   const offset = getSliceOffset(arcData.startAngle, arcData.endAngle, hoverOffset);
 
-  // Generate the static hitbox path (always uses base outer radius)
+  // Generate the static hitbox path (uses the resolved — possibly radiusKey-
+  // scaled — outer radius, so hover/click only trigger within the visible wedge)
   const hitboxPath = generateArcPath(
     innerRadius,
-    outerRadius,
+    resolvedOuterRadius,
     arcData.startAngle,
     arcData.endAngle,
     cornerRadius,
@@ -362,7 +408,7 @@ export const PieSlice = memo(function PieSlice({
   );
 
   // Generate the visible path for grow effect
-  const grownOuterRadius = isHovered ? outerRadius + hoverOffset : outerRadius;
+  const grownOuterRadius = isHovered ? resolvedOuterRadius + hoverOffset : resolvedOuterRadius;
   const grownPath = generateArcPath(
     innerRadius,
     grownOuterRadius,
@@ -371,6 +417,10 @@ export const PieSlice = memo(function PieSlice({
     cornerRadius,
     arcData.padAngle,
   );
+  // Paper-seam stroke (RM-030): only added when seams > 0, so a chart with no
+  // `seams` prop renders paths with no stroke attributes at all — unchanged.
+  const seamStroke = seams > 0 ? pieCssVars.background : undefined;
+  const seamStrokeWidth = seams > 0 ? seams : undefined;
 
   // Render animated slice based on effect type
   const renderAnimatedSlice = () => {
@@ -387,8 +437,9 @@ export const PieSlice = memo(function PieSlice({
           innerRadius={innerRadius}
           isFaded={isFaded}
           isHovered={isHovered}
-          outerRadius={outerRadius}
+          outerRadius={resolvedOuterRadius}
           padAngle={arcData.padAngle}
+          seams={seams}
           showGlow={showGlow}
           startAngle={arcData.startAngle}
         />
@@ -408,8 +459,9 @@ export const PieSlice = memo(function PieSlice({
         innerRadius={innerRadius}
         isFaded={isFaded}
         isHovered={isHovered}
-        outerRadius={outerRadius}
+        outerRadius={resolvedOuterRadius}
         padAngle={arcData.padAngle}
+        seams={seams}
         showGlow={showGlow}
         startAngle={arcData.startAngle}
       />
@@ -428,6 +480,8 @@ export const PieSlice = memo(function PieSlice({
           d={hitboxPath}
           fill={fill}
           pointerEvents="none"
+          stroke={seamStroke}
+          strokeWidth={seamStrokeWidth}
           style={{
             filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : "none",
           }}
@@ -454,6 +508,8 @@ export const PieSlice = memo(function PieSlice({
         d={hitboxPath}
         fill={fill}
         pointerEvents="none"
+        stroke={seamStroke}
+        strokeWidth={seamStrokeWidth}
         style={{
           filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : "none",
         }}
