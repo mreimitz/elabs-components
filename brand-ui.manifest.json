@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:42:59.142Z",
+  "generatedAt": "2026-09-04T11:49:44.677Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -19788,6 +19788,11 @@
           "module": "packages/data/src/filter-bar/filter-bar.tsx"
         },
         {
+          "name": "FilterChip",
+          "kind": "value",
+          "module": "packages/data/src/filter-bar/filter-chip.tsx"
+        },
+        {
           "name": "SearchInput",
           "kind": "value",
           "module": "packages/data/src/search-input/search-input.tsx"
@@ -19858,6 +19863,10 @@
         {
           "name": "FilterBarProps",
           "module": "packages/data/src/filter-bar/filter-bar.tsx"
+        },
+        {
+          "name": "FilterChipProps",
+          "module": "packages/data/src/filter-bar/filter-chip.tsx"
         },
         {
           "name": "Row",
@@ -20256,6 +20265,31 @@
               "name": "className",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "FilterChip": {
+          "extends": [
+            "Omit<BaseFilterChipProps, \"label\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": false,
+              "type": "string",
+              "description": "Label-in-value text — `\"Status: Failed\"`, never `\"Status = failed\"` and never a bare `\"Failed\"`. Same contract as the base `FilterChip`."
+            },
+            {
+              "name": "count",
+              "optional": true,
+              "type": "number",
+              "description": "How many records this active filter excluded (or matched) — rendered as a secondary, locale-formatted segment alongside `label`. Omit for a bare chip with no count."
+            },
+            {
+              "name": "countLabel",
+              "optional": true,
+              "type": "string",
+              "description": "The word placed before the formatted count, e.g. `\"excluded\"` → `\"excluded 1,204\"`. Omitted by default: a bare `count` renders as just the formatted number."
             }
           ]
         },
