@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:01:20.755Z",
+  "generatedAt": "2026-09-04T10:54:42.181Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -12475,11 +12475,6 @@
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
         },
         {
-          "name": "CALENDAR_ROWS",
-          "kind": "value",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
           "name": "Candlestick",
           "kind": "value",
           "module": "packages/charts/src/charts/candlestick.tsx"
@@ -12650,11 +12645,6 @@
           "module": "packages/charts/src/charts/composed-chart.tsx"
         },
         {
-          "name": "CONTINUOUS_MIN_OPACITY",
-          "kind": "value",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
           "name": "DateTicker",
           "kind": "value",
           "module": "packages/charts/src/charts/tooltip/index.ts"
@@ -12673,11 +12663,6 @@
           "name": "DEFAULT_CHART_STATUS",
           "kind": "value",
           "module": "packages/charts/src/charts/chart-phase.ts"
-        },
-        {
-          "name": "DEFAULT_HEATMAP_STEPS",
-          "kind": "value",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "DEFAULT_HOVER_OFFSET",
@@ -12705,11 +12690,6 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
-          "name": "DumbbellChart",
-          "kind": "value",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
           "name": "FunnelChart",
           "kind": "value",
           "module": "packages/charts/src/charts/funnel-chart.tsx"
@@ -12733,6 +12713,11 @@
           "name": "Gauge",
           "kind": "value",
           "module": "packages/charts/src/charts/gauge.tsx"
+        },
+        {
+          "name": "GOLDEN_ANGLE_RAD",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "GradientDarkgreenGreen",
@@ -12793,11 +12778,6 @@
           "name": "HaloText",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
-        },
-        {
-          "name": "HeatmapChart",
-          "kind": "value",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "Leader",
@@ -13140,6 +13120,21 @@
           "module": "packages/charts/src/charts/static-chart-preview-context.tsx"
         },
         {
+          "name": "UNIT_CHART_GROUP_STAGGER_MS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UNIT_CHART_POSITION_STAGGER_MS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UnitChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
           "name": "UnitStack",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -13230,16 +13225,6 @@
           "name": "useChoroplethZoom",
           "kind": "value",
           "module": "packages/charts/src/charts/choropleth/index.ts"
-        },
-        {
-          "name": "useHeatmap",
-          "kind": "value",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "useHeatmapHover",
-          "kind": "value",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "useHighDecoration",
@@ -13386,18 +13371,6 @@
         {
           "name": "BarYAxisProps",
           "module": "packages/charts/src/charts/bar-y-axis.tsx"
-        },
-        {
-          "name": "CalendarCellPosition",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "CalendarLayout",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "CalendarMonthTick",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "CandlestickChartProps",
@@ -13632,32 +13605,16 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
-          "name": "DumbbellBeadsConfig",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+          "name": "FieldCluster",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
-          "name": "DumbbellChartProps",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+          "name": "FieldLayout",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
-          "name": "DumbbellMarkerStyle",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
-          "name": "DumbbellOrientation",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
-          "name": "DumbbellRow",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
-          "name": "DumbbellSortBy",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
-          "name": "DumbbellVariant",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+          "name": "FieldLayoutOptions",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "FunnelChartProps",
@@ -13790,58 +13747,6 @@
         {
           "name": "HaloTextProps",
           "module": "packages/charts/src/marks/index.ts"
-        },
-        {
-          "name": "HeatmapBucket",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapCellDatum",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapChartProps",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapContextValue",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapEmptyValue",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapHighlight",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapHoverContextValue",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapInk",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapMargin",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapMode",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapPalette",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapSummaryFacts",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "HeatmapVariant",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "IndicatorWidth",
@@ -14108,6 +14013,18 @@
           "module": "packages/charts/src/charts/ring.tsx"
         },
         {
+          "name": "RowsLayout",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "RowsLayoutOptions",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "RowsLayoutRow",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "SankeyChartProps",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
@@ -14216,6 +14133,34 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
+          "name": "UnitArithmetic",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UnitChartDatum",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitChartLayout",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitChartMark",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitChartProps",
+          "module": "packages/charts/src/charts/unit-chart.tsx"
+        },
+        {
+          "name": "UnitMark",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "UnitRect",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
           "name": "UnitStackDirection",
           "module": "packages/charts/src/marks/index.ts"
         },
@@ -14230,6 +14175,14 @@
         {
           "name": "ValueFormat",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "WaffleLayout",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "WaffleLayoutOptions",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "XAxisProps",
@@ -14250,20 +14203,8 @@
       ],
       "otherExports": [
         {
-          "name": "bucketIndexOf",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "buildCalendarLayout",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "buildDumbbellRows",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
-          "name": "buildHeatmapBuckets",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
+          "name": "buildUnitChartSummary",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "chartAccentColor",
@@ -14302,20 +14243,20 @@
           "module": "packages/charts/src/charts/choropleth/index.ts"
         },
         {
-          "name": "computeDumbbellDomain",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
+          "name": "computeArithmetic",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "computeGanttZoomBounds",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
         {
-          "name": "computeYDomainsByAxis",
-          "module": "packages/charts/src/charts/y-domain-utils.ts"
+          "name": "computeUnitCounts",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
-          "name": "continuousInk",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
+          "name": "computeYDomainsByAxis",
+          "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
           "name": "defaultChartStatFlowFormat",
@@ -14346,14 +14287,6 @@
           "module": "packages/charts/src/charts/live-line.tsx"
         },
         {
-          "name": "dotRadius",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "firstMondayOfMonth",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
           "name": "ganttVariants",
           "module": "packages/charts/src/gantt/gantt.tsx"
         },
@@ -14374,14 +14307,6 @@
           "module": "packages/charts/src/charts/series-point-marker.tsx"
         },
         {
-          "name": "heatmapDomain",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
-          "name": "heatmapSummary",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
           "name": "inferChartType",
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
@@ -14398,10 +14323,6 @@
           "module": "packages/charts/src/auto-chart/infer-chart-type.ts"
         },
         {
-          "name": "isoWeekdayIndex",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
           "name": "isPaletteFill",
           "module": "packages/charts/src/charts/series-pattern.tsx"
         },
@@ -14412,6 +14333,18 @@
         {
           "name": "isYDomainTweenPhase",
           "module": "packages/charts/src/charts/y-domain-utils.ts"
+        },
+        {
+          "name": "layoutField",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "layoutRows",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
+        },
+        {
+          "name": "layoutWaffle",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "leaderPath",
@@ -14436,10 +14369,6 @@
         {
           "name": "padDatapointRect",
           "module": "packages/charts/src/charts/chart-datapoint-layer.tsx"
-        },
-        {
-          "name": "parseIsoDate",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
         },
         {
           "name": "pickGanttTimeUnit",
@@ -14482,10 +14411,6 @@
           "module": "packages/charts/src/charts/ring-context.tsx"
         },
         {
-          "name": "sampleContinuousInk",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
-        },
-        {
           "name": "sankeyCssVars",
           "module": "packages/charts/src/charts/sankey/index.ts"
         },
@@ -14514,14 +14439,6 @@
           "module": "packages/charts/src/charts/y-domain-utils.ts"
         },
         {
-          "name": "sortDumbbellRows",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
-          "name": "spaceSlopeLabels",
-          "module": "packages/charts/src/charts/dumbbell-chart.tsx"
-        },
-        {
           "name": "splitProfitLossSegments",
           "module": "packages/charts/src/charts/profit-loss-segments.ts"
         },
@@ -14530,8 +14447,8 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
-          "name": "startOfIsoWeek",
-          "module": "packages/charts/src/charts/heatmap/index.ts"
+          "name": "unitMarkDelayMs",
+          "module": "packages/charts/src/charts/unit-layouts.ts"
         },
         {
           "name": "viewModeToScales",
@@ -14681,12 +14598,6 @@
               "optional": true,
               "type": "LineLoadingPulseMode",
               "description": "Override pulse animation mode (loop / exit / enter)."
-            },
-            {
-              "name": "labelPeaks",
-              "optional": true,
-              "type": "boolean",
-              "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false."
             }
           ]
         },
@@ -14848,24 +14759,6 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
-            },
-            {
-              "name": "offset",
-              "optional": true,
-              "type": "AreaStackOffset",
-              "description": "Streamgraph baseline (RM-029) — maps to `d3-shape`'s `stackOffsetNone` / `Silhouette` / `Wiggle` / `Expand`. Unset (default): no stacking — every child `Area` renders independently, exactly as today. Set it to stack every child `Area` (in JSX order) using that baseline; `\"silhouette\"` is the F16 lieflat \"Stream Ribbon\" look."
-            },
-            {
-              "name": "seams",
-              "optional": true,
-              "type": "number",
-              "description": "Paper gap between stacked bands, in px — a `--chart-background` stroke drawn along each band's own top edge. Only takes effect when `offset` is set. Default: 0 (no seam). 2 is the F16 lieflat value."
-            },
-            {
-              "name": "labelBands",
-              "optional": true,
-              "type": "boolean",
-              "description": "Label each stacked band with its series name at the band's widest x (`HaloText`, clamped inside the plot). Only takes effect when `offset` is set. Default: false."
             }
           ]
         },
@@ -15045,36 +14938,6 @@
               "optional": true,
               "type": "number",
               "description": "Gap between grouped bars in pixels. Default: 4"
-            },
-            {
-              "name": "showValues",
-              "optional": true,
-              "type": "BarShowValues",
-              "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off."
-            },
-            {
-              "name": "unit",
-              "optional": true,
-              "type": "number",
-              "description": "Draw each bar as a countable `UnitStack` of `round(value / unit)` rungs (vertical bars, `kind=\"rung\"`) or ticks (horizontal bars, `kind=\"tick\"`) instead of a solid fill — lieflat F1 Rung Bars. Width and opacity jitter via `seededRnd`, keyed per bar so neighbours never jitter in lockstep; every 5th unit draws heavier so the stack stays countable. Renders instantly (no `animate`/`animationType` grow-in). Default: off (solid fill)."
-            },
-            {
-              "name": "highlightKey",
-              "optional": true,
-              "type": "BarHighlightKey",
-              "description": "Mark ONE bar as this series' \"hero\": it draws in `--chart-foreground` ink while every OTHER bar draws from `palette` instead of `fill` — lieflat's one-hero-bar-in-ink convention. A string/number is matched against the bar's category value; a function receives `(datum, index)`. Default: off (every bar draws `fill`)."
-            },
-            {
-              "name": "palette",
-              "optional": true,
-              "type": "ChartPalette",
-              "description": "Palette the non-hero bars draw from when `highlightKey` is set, via `resolvePalette` (RM-018). Default: `\"categorical\"`."
-            },
-            {
-              "name": "zeroLine",
-              "optional": true,
-              "type": "boolean",
-              "description": "Draw a 0.8px `--chart-foreground-muted` hairline at the zero baseline across the whole plot. Default: auto — shown whenever ANY bar series in this chart has a negative value; pass `false` to force it off on this series, or `true` to force it on even with all-positive data."
             }
           ]
         },
@@ -15224,12 +15087,6 @@
               "optional": true,
               "type": "ChartA11yProps[\"accessibleDescription\"]",
               "description": "Supplemental description read by AT (e.g. series names + value range)."
-            },
-            {
-              "name": "palette",
-              "optional": true,
-              "type": "ChartPalette",
-              "description": "Default fill for `Bar` children that don't set their own `fill`, via `resolvePalette` (RM-018) over the series count — so, for example, nine unfilled `Bar` series degrade to the neutral ladder with a dev warning instead of nine bars painted identically. A `Bar` with an explicit `fill` is never touched. Default: `\"categorical\"` (`resolvePalette`'s own default) — but see `applyBarPalette`: it only ever assigns colours to SERIES THAT WOULD OTHERWISE COLLIDE (2+ unfilled `Bar` children), so a chart with a single unfilled `Bar` keeps today's `--chart-line-primary`."
             }
           ]
         },
@@ -15749,7 +15606,7 @@
               "name": "features",
               "optional": true,
               "type": "ChartFrameFeature[]",
-              "description": "Which toolbar controls to show. Defaults to all five. `table` and `download` are automatically hidden when `data` is absent/empty; `export-svg`/`export-png` are automatically hidden when the chart body has no `<svg>` (a non-chart placeholder, or the flipped-to-table view)."
+              "description": "Which toolbar controls to show. Defaults to all three. `table` and `download` are automatically hidden when `data` is absent/empty."
             },
             {
               "name": "height",
@@ -15776,16 +15633,10 @@
               "description": "Custom CSV download handler. Defaults to the local RFC-4180 serializer (injection-guarded). The canonical reusable version is @elabs-ai/components-data `toCsv`; wire it here, or use the `chart-frame-data` registry block (`npx shadcn add chart-frame-data`) for the full sortable DataTable + downloadCsv."
             },
             {
-              "name": "onExport",
-              "optional": true,
-              "type": "(kind: ChartExportKind, blob: Blob, filename: string) => void",
-              "description": "Routes an SVG/PNG export to the caller — with the generated `Blob` and filename — instead of triggering a local browser download. Mirrors `onDownload`, for apps that want to route an export through their own storage. When absent, the built-in handler downloads the file directly."
-            },
-            {
               "name": "source",
               "optional": true,
               "type": "ReactNode",
-              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV, and as a bottom row in an SVG/PNG export. Hidden when absent."
+              "description": "Attribution / provenance footer — e.g. \"Source: Internal analytics, updated daily\". Renders as the card's all-caps, letter-spaced source row (the fourth part of lieflat's card contract) inline and in the expand modal; when it is a plain string it also lands as a trailing `# source: …` comment row in the downloaded CSV. Hidden when absent."
             },
             {
               "name": "children",
@@ -16201,120 +16052,6 @@
             }
           ]
         },
-        "DumbbellChart": {
-          "extends": [
-            "ChartInteractionProps"
-          ],
-          "props": [
-            {
-              "name": "data",
-              "optional": false,
-              "type": "Record<string, unknown>[]",
-              "description": "Data array — one row per category."
-            },
-            {
-              "name": "category",
-              "optional": false,
-              "type": "string",
-              "description": "Key in `data` for the category label."
-            },
-            {
-              "name": "startKey",
-              "optional": false,
-              "type": "string",
-              "description": "Key in `data` for the \"before\" value."
-            },
-            {
-              "name": "endKey",
-              "optional": false,
-              "type": "string",
-              "description": "Key in `data` for the \"after\" value."
-            },
-            {
-              "name": "orientation",
-              "optional": true,
-              "type": "DumbbellOrientation",
-              "description": "Rows (default) or columns. Ignored by `variant=\"slope\"`, which is always two columns."
-            },
-            {
-              "name": "variant",
-              "optional": true,
-              "type": "DumbbellVariant",
-              "description": "`\"dumbbell\"` (default, one track per category) or `\"slope\"` (two columns, one line per category)."
-            },
-            {
-              "name": "beads",
-              "optional": true,
-              "type": "DumbbellBeadsConfig",
-              "description": "F12: draws a countable `UnitStack` between the two markers — one dot per `unit` of `|end - start|`, seeded jitter so each row draws differently. Ignored by `variant=\"slope\"`."
-            },
-            {
-              "name": "markers",
-              "optional": true,
-              "type": "DumbbellMarkerStyle",
-              "description": "Marker fill style. Default `{ start: \"hollow\", end: \"filled\" }` (the F12 \"before/after\" read)."
-            },
-            {
-              "name": "extraKeys",
-              "optional": true,
-              "type": "string[]",
-              "description": "Extra numeric keys (e.g. competitor values) drawn as small dots on the same track. Ignored by `variant=\"slope\"`."
-            },
-            {
-              "name": "showDelta",
-              "optional": true,
-              "type": "boolean",
-              "description": "Show a signed delta label (`HaloText`) at the end marker. Default `false`."
-            },
-            {
-              "name": "sortBy",
-              "optional": true,
-              "type": "DumbbellSortBy",
-              "description": "Sort rows ascending by this key before rendering. Default `\"none\"` (data order)."
-            },
-            {
-              "name": "palette",
-              "optional": true,
-              "type": "ChartPalette",
-              "description": "Which colour family rows draw from. Default `\"categorical\"`."
-            },
-            {
-              "name": "valueFormat",
-              "optional": true,
-              "type": "ChartValueFormat",
-              "description": "How displayed numbers (the delta label) are formatted. Default `\"compact\"`."
-            },
-            {
-              "name": "margin",
-              "optional": true,
-              "type": "Partial<Margin>",
-              "description": "Chart margins."
-            },
-            {
-              "name": "aspectRatio",
-              "optional": true,
-              "type": "string",
-              "description": "Aspect ratio as `\"width / height\"`. Default `\"2 / 1\"`."
-            },
-            {
-              "name": "className",
-              "optional": true,
-              "type": "string"
-            },
-            {
-              "name": "accessibleLabel",
-              "optional": true,
-              "type": "ChartA11yProps[\"accessibleLabel\"]",
-              "description": "Accessible name for the chart region (announces to AT on focus)."
-            },
-            {
-              "name": "accessibleDescription",
-              "optional": true,
-              "type": "ChartA11yProps[\"accessibleDescription\"]",
-              "description": "Supplemental description read by AT (e.g. category count + value range)."
-            }
-          ]
-        },
         "FunnelChart": {
           "extends": [],
           "props": [
@@ -16468,12 +16205,6 @@
               "optional": true,
               "type": "\"center\" | \"start\" | \"end\"",
               "description": "Where the label group sits within the segment cell. - \"center\" (default), \"start\", \"end\" For horizontal funnel: start=top, end=bottom. For vertical funnel: start=left, end=right."
-            },
-            {
-              "name": "showConversion",
-              "optional": true,
-              "type": "\"between\" | \"margin\" | false",
-              "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a `HaloText` annotation (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\"."
             }
           ]
         },
@@ -16840,18 +16571,6 @@
               "optional": true,
               "type": "number",
               "description": "Scales notch stagger delays relative to default timing (1 = reference)."
-            },
-            {
-              "name": "milestones",
-              "optional": true,
-              "type": "number[]",
-              "description": "Milestone values (0–100) marked with a small halo-text dot + number inside the notch band — e.g. `[25, 50, 75, 100]` (lieflat F11). Unset (default) renders no milestones, so an existing `Gauge` is unaffected."
-            },
-            {
-              "name": "remainingLabel",
-              "optional": true,
-              "type": "(remaining: number) => string",
-              "description": "Caption rendered under the center value/label. Receives the number of notches remaining (`totalNotches - activeNotches`) and returns the caption text — e.g. `(remaining) => \\`${remaining} ticks to go\\`` renders as \"27 TICKS TO GO\" (lieflat F11; the caption is rendered upper-cased via CSS, so pass ordinary sentence case). Unset (default) renders no caption."
             }
           ]
         },
@@ -17023,7 +16742,7 @@
               "name": "strokeWidth",
               "optional": true,
               "type": "number",
-              "description": "Stroke width. Default: 2.5. Set to 1 for a lieflat-style \"hairline\" line."
+              "description": "Stroke width. Default: 2.5"
             },
             {
               "name": "curve",
@@ -17060,18 +16779,6 @@
               "optional": true,
               "type": "SeriesPointMarkerStyle",
               "description": "Marker styling (same options as Scatter)."
-            },
-            {
-              "name": "markerStyle",
-              "optional": true,
-              "type": "(d: Record<string, unknown>, index: number) => MarkerVariant",
-              "description": "Per-point marker style — `\"filled\"` | `\"hollow\"` | `\"none\"`, decided per data point (RM-028). E.g. `(d) => (isWeekend(d.date) ? \"hollow\" : \"filled\")` — the lieflat \"hollow dot = weekend, filled = weekday\" idiom. Setting this renders a marker at every non-`\"none\"` point regardless of `showMarkers` — the per-point fill/stroke decision takes over from the shared marker style, while `markers.radius`/`ringGap`/`strokeWidth` still apply as the shared geometry. A hollow marker fills with `--chart-background` (the plot ground) so it stays theme-safe with no `dark:` override. Default: unset — no per-point styling, today's behaviour."
-            },
-            {
-              "name": "labelPeaks",
-              "optional": true,
-              "type": "number | { count: number; minGap?: number }",
-              "description": "Label the top-k highest points on the line (RM-028) — lieflat's \"top-2/top-3 peaks, enlarged and labelled\" rule (L3 Barcode Lollipop). A bare number is the peak count at the default {@link DEFAULT_PEAK_MIN_GAP} -sample spacing; pass `{ count, minGap }` to override spacing. A peak within `minGap` samples of an already-picked (necessarily higher — peaks are picked highest-first) peak is skipped — \"the barcode lesson: adjacent peaks must be forced apart\" — so two close peaks label only the taller one. Uses the exported {@link spacedTopK} helper. Default: unset — no peak labels, today's behaviour."
             },
             {
               "name": "dashFromIndex",
@@ -18450,42 +18157,6 @@
               "optional": true,
               "type": "boolean | { from?: string; to?: string }",
               "description": "Color each dot by its vertical position using a chart-space linear gradient. Lower values use `from`; higher values use `to`. Default stops: red (bottom) → green (top)."
-            },
-            {
-              "name": "dropLines",
-              "optional": true,
-              "type": "\"x\" | \"y\" | \"both\" | false",
-              "description": "Draw a hairline \"drop line\" from each point down to the axis it names — `\"x\"` to the bottom (x) axis, `\"y\"` to the left (y) axis, `\"both\"` for both. Rendered UNDER the markers and excluded from hit-testing (`pointer-events: none`, `aria-hidden`). Default: `false` — no drop lines, today's behavior."
-            },
-            {
-              "name": "labelExtremes",
-              "optional": true,
-              "type": "{ /** Rank by the series' own value (`\"y\"`) or by x-axis position (`\"x\"`). */ by: \"y\" | \"x\"; /** How many points to label at EACH end (best and worst). Default: 1. */ count?: number; /** Data field to read the point's display label from. */ labelKey?: string; /** Formats the ranked numeric value next to the label. */ format?: (value: number) => string; }",
-              "description": "Hero-and-rest labeling (lieflat F8 \"Plumb Scatter\"): mark the `count` highest AND `count` lowest points (ranked `by`) in full-opacity ink with a `HaloText` label, fading every other point to `fadedOpacity`. `labelKey` names the data field to read the display label from; when omitted the label falls back to the chart's own x-axis date label for that row. `format`, when given, formats the numeric value alongside the label (only applied when the ranked value is a number, i.e. `by: \"y\"`)."
-            },
-            {
-              "name": "fadedOpacity",
-              "optional": true,
-              "type": "number",
-              "description": "Opacity applied to points NOT selected by `labelExtremes`. Default: 0.35."
-            },
-            {
-              "name": "jitter",
-              "optional": true,
-              "type": "number",
-              "description": "Deterministic jitter (`seededRnd` — identical across re-renders and test runs), as a fraction of the row band, `0–0.5`. Requires `yType=\"category\"`; ignored otherwise."
-            },
-            {
-              "name": "yType",
-              "optional": true,
-              "type": "\"number\" | \"category\"",
-              "description": "Treat this series' values (`d[dataKey]`) as category labels laid out on a local band scale (one row per distinct value) rather than a numeric y position on the chart's shared y-scale. Default: `\"number\"` — today's behavior."
-            },
-            {
-              "name": "highlightKey",
-              "optional": true,
-              "type": "string | ((d: Record<string, unknown>) => boolean)",
-              "description": "Highlight matching points with a non-color ring (`PeakRing` — shape, not hue, carries the emphasis; see `.claude/rules/accessibility.md`). A string names a data field read as a truthy flag (`d[highlightKey]`); a function is called with the row and returns whether it is highlighted."
             }
           ]
         },
@@ -18729,6 +18400,86 @@
             }
           ]
         },
+        "UnitChart": {
+          "extends": [
+            "ChartInteractionProps",
+            "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "UnitChartDatum[]",
+              "description": "The series — one labeled quantity per row."
+            },
+            {
+              "name": "layout",
+              "optional": false,
+              "type": "UnitChartLayout",
+              "description": "Which lieflat layout to draw."
+            },
+            {
+              "name": "total",
+              "optional": true,
+              "type": "number",
+              "description": "What 100% of the marks represents. Default 100 (percent). Ignored by `rows`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "Value per mark. Default 1 — a `unit={2}` chart draws one mark per two incidents."
+            },
+            {
+              "name": "unitLabel",
+              "optional": true,
+              "type": "string",
+              "description": "\"one dot = one person in a hundred\" — rendered as a caption and folded into the a11y summary."
+            },
+            {
+              "name": "columns",
+              "optional": true,
+              "type": "number",
+              "description": "Grid columns for `waffle`. Default 10."
+            },
+            {
+              "name": "mark",
+              "optional": true,
+              "type": "UnitChartMark",
+              "description": "Mark shape for `waffle`/`field`. Default `\"dot\"`."
+            },
+            {
+              "name": "palette",
+              "optional": true,
+              "type": "ChartPalette",
+              "description": "Color family. Default categorical; degrades past 6 series (RM-018)."
+            },
+            {
+              "name": "showArithmetic",
+              "optional": true,
+              "type": "boolean",
+              "description": "Show the footer arithmetic (\"41 + 35 + 12 + 12 = 100 · 2 rounded away\"). Default `true`. Ignored by `rows`."
+            },
+            {
+              "name": "sort",
+              "optional": true,
+              "type": "\"desc\" | \"none\"",
+              "description": "Sort series by value, descending, before laying out. Default `\"none\"` (caller order)."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
+            }
+          ]
+        },
         "XAxis": {
           "extends": [],
           "props": [
@@ -18761,12 +18512,6 @@
               "optional": true,
               "type": "Date[]",
               "description": "Render exactly these tick positions, bypassing tick generation AND the default label-collision de-dupe entirely — use when the default de-dupe would collapse the axis (e.g. dense data whose formatted labels collide). #357. **Time scale only** — see `tickFormat`. #352."
-            },
-            {
-              "name": "periodTicks",
-              "optional": true,
-              "type": "XAxisPeriodTicks | false",
-              "description": "Draw a `HairlineFloor` (RM-017) below the plot — one hairline tick per calendar period, whether or not a data row falls on it, with every `n`-th tick drawn longer (day → every 7th/weekly, week → every 4th/~monthly, month → every 12th/yearly). Lieflat provenance: the ruled foot of a ledger page gives a reader the passage of time with no labels and no axis. This is a SEPARATE visual layer from the labelled ticks above (`numTicks` / `tickMode`) — it never changes which labels render or where. `false` (default) draws nothing — today's behaviour."
             }
           ]
         },
@@ -19067,32 +18812,6 @@
             "Letting meaning depend on the animation having run — a reader who arrives after it finished, or who never sees it, must lose nothing."
           ]
         },
-        "DumbbellChart": {
-          "purpose": "Before/after (or this-year/last-year) per category — a track with two markers and the delta between them, so the CHANGE is the mark, not a second bar. variant=\"slope\" swaps the per-category track for two shared value columns.",
-          "category": "chart",
-          "relationships": {
-            "contains": [
-              "HaloText",
-              "UnitStack"
-            ],
-            "usedInside": [
-              "ChartFrame",
-              "ChartCard"
-            ]
-          },
-          "stateTokens": {
-            "track": "0.6px var(--chart-grid) hairline per row — furniture, independent of the row's colour",
-            "markers": "row colour from resolvePalette (--chart-1…--chart-6 categorical, falling back to mono past 6 rows)",
-            "beads": "beads.unit draws a UnitStack in var(--chart-foreground) — a neutral ink, NOT the row's colour, by design",
-            "labels": "category label in var(--chart-label); the signed delta label in var(--chart-foreground) via HaloText"
-          },
-          "antiPatterns": [
-            "Using variant=\"slope\" past the 8-row soft cap — the crossing lines stop being decodable at that density (it dev-warns once); switch to the default variant=\"dumbbell\" (rows) instead of reading the warning as noise.",
-            "Picking a beads.unit so small that round(delta / unit) draws dozens of dots — past a few tens of units a UnitStack reads as a texture smear, not a count; choose a coarser unit and say so in the caption.",
-            "Passing more than 2-3 extraKeys — every extra competitor dot draws on the SAME track as the primary pair, and past a couple they overlap the very marker they were meant to contextualize.",
-            "Turning on showDelta with many closely-spaced rows — the delta label sits fixed beside the end marker with no collision avoidance of its own (unlike the slope columns' spaceSlopeLabels pass), so a small aspectRatio with many rows will overlap labels."
-          ]
-        },
         "FunnelChart": {
           "purpose": "Stage-by-stage drop-off through an ordered pipeline.",
           "category": "chart",
@@ -19186,8 +18905,7 @@
               "LineChart",
               "AreaChart",
               "BarChart",
-              "ScatterChart",
-              "DumbbellChart"
+              "ScatterChart"
             ],
             "pairsWith": [
               "Leader",
@@ -19205,31 +18923,6 @@
             "Reaching for it to rescue low-contrast text — the halo separates a label from BUSYNESS, not from its ground. The ink still has to clear 4.5:1 against the card; a halo over a 3:1 label is still a 1.4.3 failure.",
             "Widening the halo until labels stop colliding — the visible outline is half the width, so a wide one starts eating glyph counters and neighbouring letters. Move the label or drop one; 3px is the calibrated value.",
             "Letting it carry the only copy of a number — the chart body is aria-hidden, so a halo label reaches no screen reader. Repeat the figure in the caption, the summary or the flip-to-table view."
-          ]
-        },
-        "HeatmapChart": {
-          "purpose": "Two discrete dimensions × one value — weekday × hour, product × region, or a year of days.",
-          "category": "chart",
-          "relationships": {
-            "usedInside": [
-              "ChartFrame",
-              "ChartCard"
-            ],
-            "pairsWith": [
-              "ChartTooltip"
-            ]
-          },
-          "stateTokens": {
-            "cell": "value → an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
-            "empty": "null or 0 → a QuietDot pinprick in --chart-foreground-muted, not a hole",
-            "peak": "the highlighted cell → a dashed PeakRing in --chart-foreground",
-            "loading": "loading → the same grid as skeleton cells in --muted"
-          },
-          "antiPatterns": [
-            "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
-            "emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.",
-            "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
-            "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
           ]
         },
         "Leader": {
@@ -19506,14 +19199,43 @@
             "Fixing its width in pixels — let the tile or cell own the box so it reflows."
           ]
         },
+        "UnitChart": {
+          "purpose": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
+          "category": "chart",
+          "relationships": {
+            "contains": [
+              "UnitStack",
+              "Leader",
+              "ChartLegend"
+            ],
+            "usedInside": [
+              "ChartFrame",
+              "ChartCard"
+            ],
+            "pairsWith": [
+              "ChartTooltip"
+            ]
+          },
+          "stateTokens": {
+            "marks": "fill/stroke resolved per series from the active ChartPalette (--chart-1.. or the mono ladder past 6 series) — never a raw hex",
+            "leader": "field's cluster-to-label callout is a 0.6px var(--chart-foreground-muted) dashed hairline — furniture, never a second data channel",
+            "caption": "text-caption in var(--chart-label) for unitLabel, var(--chart-foreground-muted) tabular-nums for the arithmetic remainder",
+            "rowValue": "rows' value at the inked edge is var(--chart-foreground) at font-weight 800 — the one heavy mark in the row"
+          },
+          "antiPatterns": [
+            "Sizing a waffle or field past a few hundred marks in a small frame — UnitStack already warns that one stack stops being countable past ~60 units; here the same failure happens across the WHOLE canvas at once, so budget total/columns/frame size together, not one series at a time.",
+            "Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.",
+            "Reaching for layout=\"field\" when the reader needs to rank two series or compare them precisely — a phyllotaxis cluster reads as an area-at-a-glance impression, not a countable structure; a real comparison wants rows or waffle, where the grid gives the reader something to count.",
+            "Falling back to a pie chart because comparing shares 'still feels easier' to build — that instinct is exactly what this chart exists to correct: a slice angle cannot be counted, a mark can. If the categories genuinely don't sum to a meaningful whole, reach for the rows layout, not a pie."
+          ]
+        },
         "UnitStack": {
           "purpose": "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
           "category": "chart",
           "relationships": {
             "usedInside": [
               "BarChart",
-              "ScatterChart",
-              "DumbbellChart"
+              "ScatterChart"
             ],
             "pairsWith": [
               "HaloText",

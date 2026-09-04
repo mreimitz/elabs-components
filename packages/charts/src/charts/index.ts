@@ -480,3 +480,36 @@ export {
   useHeatmap,
   useHeatmapHover,
 } from "./heatmap";
+// Unit — RM-024
+// UnitChart — "one mark = one honest unit": waffle / phyllotaxis-field /
+// tick-row layouts, lieflat's default replacement for pie charts.
+export {
+  UnitChart,
+  type UnitChartDatum,
+  type UnitChartLayout,
+  type UnitChartMark,
+  type UnitChartProps,
+} from "./unit-chart";
+export {
+  buildUnitChartSummary,
+  computeArithmetic,
+  computeUnitCounts,
+  type FieldCluster,
+  type FieldLayout,
+  type FieldLayoutOptions,
+  GOLDEN_ANGLE_RAD,
+  layoutField,
+  layoutRows,
+  layoutWaffle,
+  type RowsLayout,
+  type RowsLayoutOptions,
+  type RowsLayoutRow,
+  UNIT_CHART_GROUP_STAGGER_MS,
+  UNIT_CHART_POSITION_STAGGER_MS,
+  type UnitArithmetic,
+  unitMarkDelayMs,
+  type UnitMark,
+  type UnitRect,
+  type WaffleLayout,
+  type WaffleLayoutOptions,
+} from "./unit-layouts";

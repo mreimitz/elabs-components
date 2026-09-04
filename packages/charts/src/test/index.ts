@@ -91,6 +91,7 @@ export {
   SankeyChart,
   ScatterChart,
   Sparkline,
+  UnitChart,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─
@@ -223,3 +224,4 @@ export type { RingData } from "../charts/ring-context";
 export type { SankeyChartProps, SankeyData } from "../charts/sankey/sankey-chart";
 export type { ScatterChartProps } from "../charts/scatter-chart";
 export type { SparklineProps } from "../sparkline/sparkline";
+export type { UnitChartDatum, UnitChartProps } from "../charts/unit-chart";

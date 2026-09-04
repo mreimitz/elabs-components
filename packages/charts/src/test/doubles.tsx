@@ -89,7 +89,8 @@ export type ChartFamilyName =
   | "Gantt"
   | "DumbbellChart"
   // Heatmap — RM-021
-  | "HeatmapChart";
+  | "HeatmapChart"
+  | "UnitChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -211,6 +212,13 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
       { prop: "endKey", numeric: true },
     ],
   },
+  UnitChart: {
+    dataKind: "array",
+    requiredProps: ["data", "layout"],
+    hasStatus: false,
+    itemRequiredKeys: ["label", "value"],
+    itemNumericKeys: ["value"],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -283,6 +291,7 @@ import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
 // Heatmap — RM-021
 import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
+import type { UnitChartProps } from "../charts/unit-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -350,6 +359,11 @@ import type { DumbbellChartProps } from "../charts/dumbbell-chart";
 export const DumbbellChart = createChartContainerDouble<DumbbellChartProps>(
   "DumbbellChart",
   CHART_CONTRACT_SPECS.DumbbellChart,
+);
+
+export const UnitChart = createChartContainerDouble<UnitChartProps>(
+  "UnitChart",
+  CHART_CONTRACT_SPECS.UnitChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

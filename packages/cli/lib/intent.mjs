@@ -1659,6 +1659,30 @@ export const INTENT = {
       'emptyValue="blank" on data that contains real zeroes \u2014 a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.',
       "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) \u2014 it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
       'Leaning on the darkest ramp step to say "this is the peak" \u2014 colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.',
+  UnitChart: {
+    purpose:
+      "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
+    category: "chart",
+    relationships: {
+      contains: ["UnitStack", "Leader", "ChartLegend"],
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartTooltip"],
+    },
+    stateTokens: {
+      marks:
+        "fill/stroke resolved per series from the active ChartPalette (--chart-1.. or the mono ladder past 6 series) — never a raw hex",
+      leader:
+        "field's cluster-to-label callout is a 0.6px var(--chart-foreground-muted) dashed hairline — furniture, never a second data channel",
+      caption:
+        "text-caption in var(--chart-label) for unitLabel, var(--chart-foreground-muted) tabular-nums for the arithmetic remainder",
+      rowValue:
+        "rows' value at the inked edge is var(--chart-foreground) at font-weight 800 — the one heavy mark in the row",
+    },
+    antiPatterns: [
+      "Sizing a waffle or field past a few hundred marks in a small frame — UnitStack already warns that one stack stops being countable past ~60 units; here the same failure happens across the WHOLE canvas at once, so budget total/columns/frame size together, not one series at a time.",
+      "Turning showArithmetic off (or padding a count) because a rounded-away caption looks untidy — the caption exists BECAUSE the chart never invents a mark to hit total; hiding it trades the one honest-count promise this chart makes for a tidier footer.",
+      'Reaching for layout="field" when the reader needs to rank two series or compare them precisely — a phyllotaxis cluster reads as an area-at-a-glance impression, not a countable structure; a real comparison wants rows or waffle, where the grid gives the reader something to count.',
+      "Falling back to a pie chart because comparing shares 'still feels easier' to build — that instinct is exactly what this chart exists to correct: a slice angle cannot be counted, a mark can. If the categories genuinely don't sum to a meaningful whole, reach for the rows layout, not a pie.",
     ],
   },
 
