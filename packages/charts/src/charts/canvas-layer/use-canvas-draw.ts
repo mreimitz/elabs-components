@@ -144,6 +144,16 @@ function useDevicePixelRatio(): number {
  * variable, so without it a canvas view hardcodes hex and stops theming. Call
  * it INSIDE `draw` (i.e. per frame), never at module scope — the whole point is
  * that the value is re-read after a theme flip.
+ *
+ * **The token you pick is your own 1.4.11 compliance (#283).** Nothing
+ * downstream can inspect a painted bitmap, so contrast has to be right at the
+ * call site. A categorical series token (`--chart-1`…`--chart-12`,
+ * `--chart-accent`) is exempt from the 3:1 mark bar only AS A RAMP with other
+ * series for context (`.claude/rules/theming.md`) — using one as the SOLE ink
+ * for an entire dataset is not covered, and composites even lower once
+ * `globalAlpha` is applied. Reach for a neutral rung (e.g. `--chart-mono-7`)
+ * for full-density ink, and reserve a series/accent colour for a highlighted
+ * subset drawn over it — see `canvas-layer.stories.tsx`.
  */
 export function canvasTokenColor(name: string, el: Element | null, fallback: string): string {
   return resolveTokenColor(name, { el: el ?? undefined, fallback });

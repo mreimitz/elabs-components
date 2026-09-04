@@ -21,7 +21,7 @@
 import { describe, expect, it } from "vitest";
 
 import { readThemeCss } from "./_theme-css-source";
-import { contrast, parseOklch } from "./color-contrast";
+import { contrast, contrastSrgb, mixOverSrgb, parseOklch } from "./color-contrast";
 
 // ADR 0029 — the reference themes live in their own stylesheets now, so read
 // the SET. The helper throws if a theme's block is missing rather than let a
@@ -334,6 +334,41 @@ describe("themes.css — ordered chart ramps (RM-018)", () => {
       expect(resolve(theme, "--chart-accent")).toBe(resolve(theme, "--chart-1"));
     });
   });
+});
+
+/**
+ * CanvasLayer reference-story full-density mark ink (#283).
+ *
+ * A canvas `draw` composites its own pixels — nothing downstream can read a
+ * bitmap, so this pins the ink the shipped `canvas-layer.stories.tsx`
+ * reference wiring actually uses at the alpha it actually uses it at, rather
+ * than trusting the recommendation once. It is NOT a general canvas-ink
+ * gate: an arbitrary consumer's `draw` is unchecked by anything in this repo
+ * (that is what `canvas-layer.tsx`'s docblock §4 and the "Canvas mark ink is
+ * the caller's own compliance" note in `.claude/rules/chart-components.md`
+ * are for).
+ *
+ * `CHART_1411_EXEMPT` does not apply here on purpose: this token is a NEUTRAL
+ * mono rung, not a categorical series colour, so it is held to the ordinary
+ * 3:1 bar in every theme, `light` included.
+ */
+describe("CanvasLayer full-density mark ink (#283)", () => {
+  /** The alpha `canvas-layer.stories.tsx`'s `DottedCanvas` paints marks at. */
+  const CANVAS_MARK_ALPHA = 0.65;
+
+  it.each(THEMES)(
+    "--chart-mono-7 composited at α=0.65 over --chart-background ≥ 3:1 in %s",
+    (theme) => {
+      const ground = parseOklch(resolve(theme, "--chart-background"));
+      const ink = parseOklch(resolve(theme, "--chart-mono-7"));
+      const composited = mixOverSrgb(ink, ground, CANVAS_MARK_ALPHA);
+      const ratio = contrastSrgb(ground, composited);
+      expect(
+        ratio,
+        `--chart-mono-7 @ α=${CANVAS_MARK_ALPHA} vs --chart-background in ${theme} = ${ratio.toFixed(2)}`,
+      ).toBeGreaterThanOrEqual(NON_TEXT);
+    },
+  );
 });
 
 // NOTE Issue #163's monochrome chart-series lightness ramp lived here. It only

@@ -104,6 +104,10 @@ function DottedCanvas({
   const events = useMemo(() => eventLog(count, rows), [count, rows]);
   const [focused, setFocused] = useState<LogEvent | null>(null);
   const [drawMs, setDrawMs] = useState<number | null>(null);
+  // Test-only: the actual resolved colours the last frame painted with, so a
+  // play function can assert the full-density ink is not the brand series
+  // colour (#283) without reading canvas pixels.
+  const [ink, setInk] = useState<{ neutral: string; accent: string } | null>(null);
   const measuredRef = useRef(false);
 
   const grid = useMemo(() => {
@@ -126,15 +130,35 @@ function DottedCanvas({
           accessibleLabel="Event log marks"
           draw={(ctx, scales) => {
             const started = performance.now();
-            ctx.fillStyle = // A token, never a literal — and a transparent fallback, so a
-              // context with no document draws nothing rather than an off-brand hue.
-              canvasTokenColor("--chart-1", ctx.canvas, "transparent");
+            // The full-density ink: `--chart-mono-7`, the loudest rung of the
+            // neutral "wire" ladder (a token, never a literal — and a
+            // transparent fallback, so a context with no document draws
+            // nothing rather than an off-brand hue). NOT `--chart-1`/
+            // `--chart-accent`: a categorical series token is 1.4.11-exempt
+            // only as a RAMP with other series for context; painting one
+            // series colour as 100% of a dataset's ink has no such context
+            // and composites BELOW even that exemption's own floor at this
+            // alpha (#283 — see `canvas-layer.tsx`'s docblock and
+            // `.claude/rules/chart-components.md`).
+            const neutralInk = canvasTokenColor("--chart-mono-7", ctx.canvas, "transparent");
+            ctx.fillStyle = neutralInk;
             ctx.globalAlpha = 0.65;
             for (const event of events) {
               const { x, y } = positionOf(event, rows);
               ctx.fillRect(x, y, 2, 2);
             }
+            // The accent as a HERO device: a genuinely highlighted SUBSET
+            // drawn over the neutral pass, at full opacity — the documented,
+            // accepted use of `--chart-accent` (one loudest mark among many
+            // WITH context), not the whole dataset's ink.
+            const accentInk = canvasTokenColor("--chart-accent", ctx.canvas, "transparent");
+            ctx.fillStyle = accentInk;
             ctx.globalAlpha = 1;
+            for (const event of events) {
+              if (event.activity !== "Approved") continue;
+              const { x, y } = positionOf(event, rows);
+              ctx.fillRect(x, y, 2, 2);
+            }
             if (!measuredRef.current) {
               measuredRef.current = true;
               const elapsed = performance.now() - started;
@@ -142,6 +166,7 @@ function DottedCanvas({
               // re-enter the layout effect that called it.
               queueMicrotask(() => setDrawMs(elapsed));
             }
+            queueMicrotask(() => setInk({ accent: accentInk, neutral: neutralInk }));
             void scales;
           }}
           drawSignature={`${events.length}`}
@@ -174,6 +199,18 @@ function DottedCanvas({
         {showTiming && drawMs != null ? ` · drawn in ${drawMs.toFixed(1)} ms` : ""}
         {focused ? ` · focused: ${focused.activity} (row ${focused.row + 1})` : ""}
       </p>
+      {/*
+        Test-only probe, not UI: exposes the resolved colours the canvas just
+        painted with so a play function can assert the full-density ink is
+        not the brand series colour (#283) without reading canvas pixels.
+      */}
+      <span
+        aria-hidden="true"
+        className="sr-only"
+        data-accent-ink={ink?.accent ?? ""}
+        data-neutral-ink={ink?.neutral ?? ""}
+        data-testid="canvas-layer-ink"
+      />
     </div>
   );
 }
@@ -187,6 +224,20 @@ function DottedCanvas({
 export const Default: Story = {
   args: PLACEHOLDER_ARGS,
   render: () => <DottedCanvas count={20_000} />,
+  play: async ({ canvas, canvasElement }) => {
+    // Regression lock (#283): the full-density ink must not be the brand
+    // series colour. This is what actually regresses if someone "restores
+    // the brand colour" — a token-name diff alone wouldn't catch it, since
+    // the docblock comment could be reverted right along with it.
+    await waitFor(() => {
+      expect(canvas.getByTestId("canvas-layer-ink").getAttribute("data-neutral-ink")).not.toBe("");
+    });
+    const inkEl = canvas.getByTestId("canvas-layer-ink");
+    const neutralInk = inkEl.getAttribute("data-neutral-ink");
+    const surface = canvasElement.querySelector('[data-slot="canvas-layer-surface"]');
+    await expect(neutralInk).not.toBe(canvasTokenColor("--chart-1", surface, "transparent"));
+    await expect(neutralInk).not.toBe(canvasTokenColor("--chart-accent", surface, "transparent"));
+  },
 };
 
 /**
