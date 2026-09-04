@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T09:02:55.355Z",
+  "generatedAt": "2026-09-04T10:03:26.102Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15730,7 +15730,7 @@
               "name": "replayOnClick",
               "optional": true,
               "type": "boolean",
-              "description": "Clicking `viewportRef`'s element replays the enter reveal. Default `false`. Pass `shouldReplayOnClick` to ignore clicks that already mean something else (e.g. a datapoint activation) — this option exists precisely so a caller can guarantee `replayOnClick` never swallows `onDatapointClick`; with no predicate every click on the element replays."
+              "description": "Clicking `viewportRef`'s element replays the enter reveal. Default `false`. Pass `shouldReplayOnClick` to ignore clicks that already mean something else (e.g. a datapoint activation) — this option exists precisely so a caller can guarantee `replayOnClick` never swallows `onDatapointClick`; with no predicate every click on the element replays. **Pointer-only by construction — always pair it with `replayCount` (#176).** `viewportRef` is an element chosen for intersection OBSERVATION, not a control: it has no role, no accessible name and no tab stop, and it usually wraps an `aria-hidden` chart body where adding `tabIndex` would be the axe `aria-hidden-focus` violation. So this option cannot carry the keyboard path itself. Whenever you enable it, also render a real `<button>` OUTSIDE the chart body that bumps `replayCount` — a replay affordance a keyboard user cannot reach is a WCAG 2.1.1 failure. See `Charts/Reveal/InView` → `ReplayOnClick` for the reference wiring."
             },
             {
               "name": "shouldReplayOnClick",
@@ -15739,10 +15739,16 @@
               "description": "Return `false` to ignore a click for replay purposes."
             },
             {
+              "name": "replayCount",
+              "optional": true,
+              "type": "number",
+              "description": "Caller-driven replay signal — the KEYBOARD half of `replayOnClick`. Default `0`. Bump it from a real, focusable control you render outside the (`aria-hidden`) chart body: `<button type=\"button\" onClick={() => setReplays((n) => n + 1)}>Replay reveal</button>`. A `<button>` is activated by both Enter and Space for free, so no key handling is needed and no `tabIndex` lands inside the chart. It goes through the SAME internal replay counter as a pointer click, so it replays identically and releases a `revealOn=\"inView\"` hold identically — the keyboard path is equivalent to the mouse path, not a lesser one. `shouldReplayOnClick` does not apply: that predicate protects a chart body's own click handling, while a dedicated control unambiguously means \"replay\"."
+            },
+            {
               "name": "onEnterPlay",
               "optional": true,
               "type": "() => void",
-              "description": "Fires each time the enter reveal actually starts playing — on mount (`revealOn=\"mount\"`, or immediately if `viewportRef` is already in view), the first time `viewportRef` scrolls into view, and on every replay (`revealEpoch` bump or `replayOnClick`). Never fires for `mode=\"conceal\"` or while `animating` is false. Exists for observability (tests, a `Charts/Reveal/InView` story) — nothing in the component depends on it."
+              "description": "Fires each time the enter reveal actually starts playing — on mount (`revealOn=\"mount\"`, or immediately if `viewportRef` is already in view), the first time `viewportRef` scrolls into view, and on every replay (`revealEpoch` bump, `replayOnClick`, or a `replayCount` bump). Never fires for `mode=\"conceal\"` or while `animating` is false. Under `prefers-reduced-motion` it still fires — the reveal \"plays\", it just lands on its finished state in one frame — so the observability contract is identical on both motion paths. Exists for observability (tests, a `Charts/Reveal/InView` story) — nothing in the component depends on it."
             }
           ]
         },

@@ -122,9 +122,10 @@ already a real **per-theme** prefix (`--chart-1`…`--chart-12`,
 these are `:root`-only timing machinery, not a per-theme color semantic. They
 were renamed to `--t-chart-*` to land in the `ROOT_ONLY_RE` allowlist in
 `scripts/check-theme-parity.mjs`, the same exemption `--t-fast`/`--t-base`
-already use. Not multiplied through `--motion-factor` — a chart already has
-its own reduced-motion path (`animating=false`, driven by the consumer), kept
-independent of the app-wide gate.
+already use. Not multiplied through `--motion-factor` — the chart primitives
+own their reduced-motion path in JS rather than through the CSS gate (a
+`motion.rect`/`motion.path` never reads `--motion-factor`), so the token stays
+independent of the app-wide dial.
 
 **Reveal in view for anything below the fold.** A chart mounted off-screen
 (a dashboard tile several scrolls down, a report section) should hold its
@@ -136,6 +137,30 @@ uselessly under content nobody has scrolled to yet — `ChartRevealClip`'s
 never swallow a datapoint's own click handling (`shouldReplayOnClick`). See
 `Charts/Reveal/InView` in Storybook and
 `packages/charts/src/charts/chart-reveal-clip.tsx`.
+
+**`ChartRevealClip` neutralizes ITSELF under reduced motion — the consumer is
+not on the hook for it (#177).** It calls `useReducedMotion()` like every other
+motion primitive in `@elabs-ai/components-charts` (`DrawPath`, `Gauge`,
+`ShimmeringText`, `useGridShimmer`, `useAnimatedYDomains`, `GanttBar`): a
+reduced-motion reveal renders the finished, full-width `<rect>` with no
+`motion.rect` in the DOM and no in-view hold, and a reduced-motion conceal
+renders its finished, zero-width `<rect>` and fires `onComplete` immediately so
+a caller sequencing on that callback advances instead of stalling. `animating`
+stays the explicit caller override and is unchanged — a caller already passing
+`animating={!prefersReducedMotion}` keeps working. Reduced motion is a BRANCH,
+not a shorter duration: the animation machinery leaves the DOM entirely.
+
+**A replay affordance needs a keyboard half (#176).** `replayOnClick` is a
+pointer-only listener on `viewportRef`'s element — an element chosen for
+intersection observation, with no role, no accessible name and no tab stop, and
+usually wrapping an `aria-hidden` chart body where a `tabIndex` would trip the
+axe `aria-hidden-focus` rule. So the keyboard path is a real `<button>` the
+caller renders OUTSIDE the chart body, bumping `ChartRevealClip`'s
+`replayCount` (same replay epoch as a click, so it also releases an
+`revealOn="inView"` hold). Never ship `replayOnClick` without it — a
+mouse-only replay is a WCAG 2.1.1 failure. `Charts/Reveal/InView` →
+`ReplayOnClick` is the reference wiring, and its play function tabs to the
+control and activates it with Enter and Space.
 
 ## Theme default (requirement: per-theme enable/disable)
 
