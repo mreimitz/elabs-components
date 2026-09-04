@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T14:26:33.877Z",
+  "generatedAt": "2026-09-04T14:27:41.006Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23851,6 +23851,23 @@
           ]
         }
       }
+    },
+    "@elabs-ai/components-process": {
+      "path": "packages/process",
+      "peerDependencies": {
+        "@elabs-ai/components-charts": "workspace:*",
+        "@elabs-ai/components-data": "workspace:*",
+        "@elabs-ai/components-flow": "workspace:*",
+        "@elabs-ai/components-tokens": "workspace:*",
+        "@elabs-ai/components-ui": "workspace:*",
+        "@xyflow/react": "^12.11.1",
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0"
+      },
+      "components": [],
+      "hooks": [],
+      "types": [],
+      "otherExports": []
     },
     "@elabs-ai/components-terminal": {
       "path": "packages/terminal",

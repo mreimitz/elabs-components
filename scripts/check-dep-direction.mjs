@@ -112,6 +112,17 @@ export const ALLOWED = {
     "@elabs-ai/components-icons",
     "@elabs-ai/components-ui",
   ], // layer-2 leaf: NOTHING may depend on it, and it must never list -ai (sideways edge)
+  // LAYER 3 (ADR 0034) — the only package allowed to depend on layer-2 leaves. It is
+  // the terminal node of the DAG: no entry above may ever list it, which is what keeps
+  // the graph acyclic while letting one package compose flow + charts + data + ui.
+  "@elabs-ai/components-process": [
+    "@elabs-ai/components-tokens",
+    "@elabs-ai/components-icons",
+    "@elabs-ai/components-ui",
+    "@elabs-ai/components-flow",
+    "@elabs-ai/components-charts",
+    "@elabs-ai/components-data",
+  ],
 };
 
 /**

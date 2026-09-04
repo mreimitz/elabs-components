@@ -1,6 +1,6 @@
 ---
 name: brand-ui-component
-description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs-ai/components-ui, @elabs-ai/components-data, @elabs-ai/components-ai, @elabs-ai/components-flow, @elabs-ai/components-maps, @elabs-ai/components-charts, @elabs-ai/components-marketing, @elabs-ai/components-editor, @elabs-ai/components-viewer, or @elabs-ai/components-terminal, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
+description: Create or extend a component IN the brand-ui monorepo (maintainer workflow). Use when adding a new primitive or block to @elabs-ai/components-ui, @elabs-ai/components-data, @elabs-ai/components-ai, @elabs-ai/components-flow, @elabs-ai/components-maps, @elabs-ai/components-charts, @elabs-ai/components-marketing, @elabs-ai/components-editor, @elabs-ai/components-viewer, @elabs-ai/components-terminal, or @elabs-ai/components-process, when extending an existing component, or when the user says "new component", "add a component to the library", or "scaffold a <Name>". Enforces the dedupe gate (reuse before create), the component API rules, the quality gates, and re-generates the component manifest. For consuming a component in an app, use the `brand-ui` skill instead.
 user-invocable: true
 argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
@@ -34,7 +34,8 @@ displaying a file the app did not write (upload, signed URL, agent output) → `
 shell/agent terminal output or a coding-agent CLI look-alike → `@elabs-ai/components-terminal`
 (a leaf — nothing may depend on it, and `@elabs-ai/components-ai` must never import it).
 One direction of dependency:
-`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/terminal`.
+`tokens → ui/icons → data/ai/flow/maps/charts/marketing/editor/viewer/terminal → process`
+(`process` is the one layer-3 composite — ADR 0034; primitives go down, compositions go up).
 Import across packages via `@elabs-ai/components-*`, never relative paths.
 
 ## 3. Build to the rules
