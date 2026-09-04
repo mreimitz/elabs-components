@@ -374,3 +374,42 @@ export {
   shouldTweenYDomain,
   type YDomain,
 } from "./y-domain-utils";
+
+// Editorial marks — RM-017
+// The shared low-level drawing vocabulary (`packages/charts/src/marks/`): halo
+// text, dashed leaders, peak rings, marginalia, hairline floors, quiet dots,
+// countable unit stacks, seeded jitter, animation stagger and self-drawing
+// paths. Re-exported here so the package barrel carries them alongside the
+// composition primitives; see `../marks/index.ts` for the rules that hold
+// across all ten.
+export {
+  CHART_STAGGER_BAR_MS,
+  CHART_STAGGER_DOT_MS,
+  DrawPath,
+  type DrawPathProps,
+  HairlineFloor,
+  type HairlineFloorProps,
+  type HairlineScale,
+  HaloText,
+  type HaloTextProps,
+  Leader,
+  type LeaderDash,
+  type LeaderKind,
+  type LeaderPoint,
+  type LeaderProps,
+  leaderPath,
+  Marginalia,
+  type MarginaliaProps,
+  PeakRing,
+  type PeakRingProps,
+  type PeakRingShape,
+  QUIET_DOT_SIZE,
+  QuietDot,
+  type QuietDotProps,
+  seededRnd,
+  stagger,
+  UnitStack,
+  type UnitStackDirection,
+  type UnitStackKind,
+  type UnitStackProps,
+} from "../marks";
