@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:36:29.148Z",
+  "generatedAt": "2026-09-04T10:42:12.969Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16634,7 +16634,7 @@
               "name": "strokeWidth",
               "optional": true,
               "type": "number",
-              "description": "Stroke width. Default: 2.5"
+              "description": "Stroke width. Default: 2.5. Set to 1 for a lieflat-style \"hairline\" line."
             },
             {
               "name": "curve",
@@ -16671,6 +16671,18 @@
               "optional": true,
               "type": "SeriesPointMarkerStyle",
               "description": "Marker styling (same options as Scatter)."
+            },
+            {
+              "name": "markerStyle",
+              "optional": true,
+              "type": "(d: Record<string, unknown>, index: number) => MarkerVariant",
+              "description": "Per-point marker style — `\"filled\"` | `\"hollow\"` | `\"none\"`, decided per data point (RM-028). E.g. `(d) => (isWeekend(d.date) ? \"hollow\" : \"filled\")` — the lieflat \"hollow dot = weekend, filled = weekday\" idiom. Setting this renders a marker at every non-`\"none\"` point regardless of `showMarkers` — the per-point fill/stroke decision takes over from the shared marker style, while `markers.radius`/`ringGap`/`strokeWidth` still apply as the shared geometry. A hollow marker fills with `--chart-background` (the plot ground) so it stays theme-safe with no `dark:` override. Default: unset — no per-point styling, today's behaviour."
+            },
+            {
+              "name": "labelPeaks",
+              "optional": true,
+              "type": "number | { count: number; minGap?: number }",
+              "description": "Label the top-k highest points on the line (RM-028) — lieflat's \"top-2/top-3 peaks, enlarged and labelled\" rule (L3 Barcode Lollipop). A bare number is the peak count at the default {@link DEFAULT_PEAK_MIN_GAP} -sample spacing; pass `{ count, minGap }` to override spacing. A peak within `minGap` samples of an already-picked (necessarily higher — peaks are picked highest-first) peak is skipped — \"the barcode lesson: adjacent peaks must be forced apart\" — so two close peaks label only the taller one. Uses the exported {@link spacedTopK} helper. Default: unset — no peak labels, today's behaviour."
             },
             {
               "name": "dashFromIndex",
@@ -18360,6 +18372,12 @@
               "optional": true,
               "type": "Date[]",
               "description": "Render exactly these tick positions, bypassing tick generation AND the default label-collision de-dupe entirely — use when the default de-dupe would collapse the axis (e.g. dense data whose formatted labels collide). #357. **Time scale only** — see `tickFormat`. #352."
+            },
+            {
+              "name": "periodTicks",
+              "optional": true,
+              "type": "XAxisPeriodTicks | false",
+              "description": "Draw a `HairlineFloor` (RM-017) below the plot — one hairline tick per calendar period, whether or not a data row falls on it, with every `n`-th tick drawn longer (day → every 7th/weekly, week → every 4th/~monthly, month → every 12th/yearly). Lieflat provenance: the ruled foot of a ledger page gives a reader the passage of time with no labels and no axis. This is a SEPARATE visual layer from the labelled ticks above (`numTicks` / `tickMode`) — it never changes which labels render or where. `false` (default) draws nothing — today's behaviour."
             }
           ]
         },
