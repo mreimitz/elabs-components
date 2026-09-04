@@ -86,7 +86,9 @@ export type ChartFamilyName =
   | "RadarChart"
   | "ChoroplethChart"
   | "SankeyChart"
-  | "Gantt";
+  | "Gantt"
+  // Waterfall — RM-022
+  | "WaterfallChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -185,6 +187,14 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     itemRequiredKeys: ["id", "name", "start", "end"],
     dateItemKeys: ["start", "end"],
   },
+  // Waterfall — RM-022
+  WaterfallChart: {
+    dataKind: "array",
+    requiredProps: ["data"],
+    hasStatus: false,
+    itemRequiredKeys: ["label", "value"],
+    itemNumericKeys: ["value"],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -255,6 +265,8 @@ import type { RadarChartProps } from "../charts/radar-chart";
 import type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart";
 import type { SankeyChartProps } from "../charts/sankey/sankey-chart";
 import type { GanttProps } from "../gantt/gantt";
+// Waterfall — RM-022
+import type { WaterfallChartProps } from "../charts/waterfall-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -309,6 +321,11 @@ export const SankeyChart = createChartContainerDouble<SankeyChartProps>(
   CHART_CONTRACT_SPECS.SankeyChart,
 );
 export const Gantt = createChartContainerDouble<GanttProps>("Gantt", CHART_CONTRACT_SPECS.Gantt);
+// Waterfall — RM-022
+export const WaterfallChart = createChartContainerDouble<WaterfallChartProps>(
+  "WaterfallChart",
+  CHART_CONTRACT_SPECS.WaterfallChart,
+);
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────
 

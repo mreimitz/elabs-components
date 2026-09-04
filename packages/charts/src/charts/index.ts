@@ -421,3 +421,11 @@ export {
   type UnitStackKind,
   type UnitStackProps,
 } from "../marks";
+
+// Waterfall — RM-022
+export {
+  WaterfallChart,
+  type WaterfallChartProps,
+  type WaterfallDatum,
+  type WaterfallStep,
+} from "./waterfall-chart";

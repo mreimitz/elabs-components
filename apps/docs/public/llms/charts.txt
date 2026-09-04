@@ -242,6 +242,7 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
   - avoid: Reaching for Math.random to jitter — use seededRnd. Random jitter makes the chart a different picture on every render, so no snapshot, visual-regression shot or play-function assertion can ever agree with itself.
   - avoid: Giving every stack the same seed — neighbouring stacks then jitter in lockstep and the irregularity reads as a pattern, which is worse than no jitter at all. Vary the seed per series or per row.
   - avoid: Turning markEvery off on a long stack — without the every-fifth cue the reader counts one by one, which is exactly the cost this mark was chosen to avoid.
+- WaterfallChart
 - XAxis
 - Y_AXIS_DEFAULT_TICK_COUNT
 - Y_AXIS_MAX_TICK_COUNT

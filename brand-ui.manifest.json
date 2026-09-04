@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T10:03:26.102Z",
+  "generatedAt": "2026-09-04T10:46:48.169Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13120,6 +13120,11 @@
           "module": "packages/charts/src/marks/index.ts"
         },
         {
+          "name": "WaterfallChart",
+          "kind": "value",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
           "name": "XAxis",
           "kind": "value",
           "module": "packages/charts/src/charts/x-axis.tsx"
@@ -14103,6 +14108,18 @@
         {
           "name": "ValueFormat",
           "module": "packages/charts/src/auto-chart/chart-spec.ts"
+        },
+        {
+          "name": "WaterfallChartProps",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallDatum",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
+        },
+        {
+          "name": "WaterfallStep",
+          "module": "packages/charts/src/charts/waterfall-chart.tsx"
         },
         {
           "name": "XAxisProps",
@@ -18289,6 +18306,97 @@
               "name": "height",
               "optional": true,
               "type": "number"
+            }
+          ]
+        },
+        "WaterfallChart": {
+          "extends": [
+            "ChartInteractionProps<WaterfallStep>"
+          ],
+          "props": [
+            {
+              "name": "data",
+              "optional": false,
+              "type": "WaterfallDatum[]",
+              "description": "Steps from gross to net — one row per bar."
+            },
+            {
+              "name": "orientation",
+              "optional": true,
+              "type": "BarOrientation",
+              "description": "Default `\"vertical\"`."
+            },
+            {
+              "name": "showValues",
+              "optional": true,
+              "type": "boolean",
+              "description": "Signed value label on each step (`HaloText`, 800 weight). Default `true`."
+            },
+            {
+              "name": "connectors",
+              "optional": true,
+              "type": "boolean",
+              "description": "Dashed hand-off hairline between each step's end and the next step's start. Default `true`."
+            },
+            {
+              "name": "positiveFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for an increasing step. Default `var(--chart-seq-6)`."
+            },
+            {
+              "name": "negativeFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for a decreasing step. Default `var(--chart-seq-3)`."
+            },
+            {
+              "name": "totalFill",
+              "optional": true,
+              "type": "string",
+              "description": "Fill for a `\"total\"` row. Default `var(--chart-foreground)`."
+            },
+            {
+              "name": "unit",
+              "optional": true,
+              "type": "number",
+              "description": "When set, render each bar as a counted `UnitStack` of rungs (the F9 look) instead of a solid capsule — one rung per `unit` of value. Off by default."
+            },
+            {
+              "name": "valueFormat",
+              "optional": true,
+              "type": "ChartValueFormat",
+              "description": "Value/label format. Default: locale number."
+            },
+            {
+              "name": "height",
+              "optional": true,
+              "type": "number",
+              "description": "Fixed pixel height. Omit to size by `aspectRatio` (2 / 1), like the rest of the bar family."
+            },
+            {
+              "name": "margin",
+              "optional": true,
+              "type": "Partial<Margin>",
+              "description": "Chart margins."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Additional class name for the container."
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleLabel\"]",
+              "description": "Accessible name for the chart region."
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "ChartA11yProps[\"accessibleDescription\"]",
+              "description": "Supplemental description read by AT."
             }
           ]
         },
