@@ -75,13 +75,17 @@ or **extend** (modify the existing component + add its story/test coverage). For
 ## Step 2 — Pick the package
 
 Choose the target package under `packages/` (ui, data, ai, flow, maps, charts,
-marketing, editor, viewer, terminal). If unclear from the name/purpose, ask which package. Keep app
+marketing, editor, viewer, terminal, process). If unclear from the name/purpose, ask which package. Keep app
 UI in `@elabs-ai/components-ui`, marketing in `@elabs-ai/components-marketing`, code-editor surfaces
 (Monaco) in `@elabs-ai/components-editor`, surfaces that display a file the app did not
 write (uploads, signed URLs, agent output) in `@elabs-ai/components-viewer`,
 terminal surfaces — shell/agent output and coding-agent CLI look-alikes — in
 `@elabs-ai/components-terminal` (a leaf: nothing may depend on it, and
 `@elabs-ai/components-ai` must never import it),
+process-mining / event-log analysis surfaces — process map, variants, cases,
+conformance — in `@elabs-ai/components-process` (the one **layer-3** package, ADR 0034:
+it composes `flow`/`charts`/`data`/`ui`, nothing depends on it, and a missing generic
+primitive goes DOWN into the base package that owns it rather than being authored there),
 and geospatial/MapLibre surfaces in `@elabs-ai/components-maps`.
 
 ## Step 3 — Scaffold the files
