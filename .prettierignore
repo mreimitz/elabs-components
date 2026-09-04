@@ -26,3 +26,7 @@ apps/e2e/reports/theme-aa-audit.md
 # reformatting it is harmless to the test but breaks the "verbatim artifact"
 # claim, so it stays byte-for-byte.
 scripts/fixtures/comment-attribution/adj-26-unmarked.md
+# Review evidence (#288-#307) — the six contact sheets are captured browser output
+# accompanying 166 screenshots. They are artifacts of a review run, not source, and
+# their value is being exactly what was rendered, so Prettier must not rewrite them.
+apps/e2e/reports/screenshots/
