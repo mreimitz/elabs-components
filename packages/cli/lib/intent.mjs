@@ -1566,6 +1566,30 @@ export const INTENT = {
     ],
   },
 
+  WaterfallChart: {
+    purpose:
+      "Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way.",
+    category: "chart",
+    relationships: {
+      contains: ["Grid", "BarXAxis", "BarYAxis", "ChartTooltip"],
+      usedInside: ["ChartFrame", "ChartCard"],
+    },
+    stateTokens: {
+      connector:
+        "var(--chart-foreground-muted), 0.6px, dashed (furniture, not data — Leader's default)",
+      decrease: "var(--chart-seq-3) (default negativeFill)",
+      increase: "var(--chart-seq-6) (default positiveFill)",
+      total: "var(--chart-foreground) (default totalFill)",
+      valueLabel: "var(--chart-foreground) on a var(--chart-background) halo (HaloText)",
+    },
+    antiPatterns: [
+      "A `total` row whose value does not actually equal the running total at that point — the connector into it visibly plunges/jumps instead of landing flat, which is the bridge silently telling you the reconciliation is wrong.",
+      "Reading the dashed connector as if it carries a value — it is furniture that hands off between steps, never a series; the story is the bar heights, not the connector's slope.",
+      "Entering a reduction as a positive `value` (or otherwise fighting the sign convention) — color and the +/− label are derived from the actual before/after delta, not from caller intent, so a flipped sign silently mislabels the step.",
+      "More than ~6-8 steps in one bridge — past that the running total stops being followable and the connectors turn into visual noise; split into a top-level bridge plus a drill-down instead.",
+    ],
+  },
+
   RadarChart: {
     purpose: "Multi-metric profile comparison on a shared radial axis.",
     category: "chart",

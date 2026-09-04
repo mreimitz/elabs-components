@@ -1208,7 +1208,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useSankey | hook |  | `@elabs-ai/components-charts` |  |
 | useStaticChartPreview | hook |  | `@elabs-ai/components-charts` |  |
 | useYScale | hook |  | `@elabs-ai/components-charts` |  |
-| WaterfallChart | component |  | `@elabs-ai/components-charts` |  |
+| WaterfallChart | component |  | `@elabs-ai/components-charts` | Gross-to-net bridge: running-total steps and subtotal bars showing what added and subtracted along the way. |
 | XAxis | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_DEFAULT_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
 | Y_AXIS_MAX_TICK_COUNT | component |  | `@elabs-ai/components-charts` |  |
