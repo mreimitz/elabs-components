@@ -92,7 +92,9 @@ export type ChartFamilyName =
   | "HeatmapChart"
   | "UnitChart"
   // Treemap — RM-025
-  | "TreemapChart";
+  | "TreemapChart"
+  // DistributionChart — RM-026
+  | "DistributionChart";
 
 export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = {
   AreaChart: {
@@ -226,6 +228,23 @@ export const CHART_CONTRACT_SPECS: Record<ChartFamilyName, ChartContractSpec> = 
     dataKind: "hierarchy",
     requiredProps: ["data"],
   },
+  // DistributionChart — RM-026
+  // The real container reads exactly two columns off every row and puts one of
+  // them on a NUMERIC scale, so those are the two things a mocked test must
+  // still fail on: a `valueKey` whose column is missing (`itemRequiredKeys`) or
+  // non-numeric (`itemNumericKeys`), and a declared `groupKey` whose column is
+  // absent. Both are driven by PROP-NAMED keys, which is why they use the
+  // `keyProps` form rather than a fixed key list — see `contract.ts`.
+  // Deliberately NOT `hasStatus`: this family has no `status` prop, so an empty
+  // `data` array is a violation here rather than a legitimate loading state.
+  DistributionChart: {
+    dataKind: "array",
+    requiredProps: ["data", "valueKey", "kind"],
+    keyProps: [
+      { prop: "valueKey", numeric: true },
+      { prop: "groupKey", numeric: false },
+    ],
+  },
 };
 
 // ── The container factory ────────────────────────────────────────────────────
@@ -301,6 +320,8 @@ import type { HeatmapChartProps } from "../charts/heatmap/heatmap-chart";
 import type { UnitChartProps } from "../charts/unit-chart";
 // Treemap — RM-025
 import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
+// DistributionChart — RM-026
+import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 
 export const AreaChart = createChartContainerDouble<AreaChartProps>(
   "AreaChart",
@@ -379,6 +400,12 @@ export const UnitChart = createChartContainerDouble<UnitChartProps>(
 export const TreemapChart = createChartContainerDouble<TreemapChartProps>(
   "TreemapChart",
   CHART_CONTRACT_SPECS.TreemapChart,
+);
+
+// DistributionChart — RM-026
+export const DistributionChart = createChartContainerDouble<DistributionChartProps>(
+  "DistributionChart",
+  CHART_CONTRACT_SPECS.DistributionChart,
 );
 
 // ── AutoChart (a special shape: `spec`, not `data`) ──────────────────────────

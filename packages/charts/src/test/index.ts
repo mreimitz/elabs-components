@@ -77,6 +77,7 @@ export {
   ChoroplethChart,
   ComposedChart,
   DumbbellChart,
+  DistributionChart,
   FunnelChart,
   Gantt,
   // Heatmap — RM-021
@@ -211,6 +212,7 @@ export type { ChoroplethChartProps } from "../charts/choropleth/choropleth-chart
 export type { ChoroplethFeatureProperties } from "../charts/choropleth/choropleth-context";
 export type { ComposedChartProps } from "../charts/composed-chart";
 export type { DumbbellChartProps } from "../charts/dumbbell-chart";
+export type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 export type { FunnelChartProps, FunnelStage } from "../charts/funnel-chart";
 export type { GanttProps, GanttTask } from "../gantt/gantt";
 export type { LineChartProps } from "../charts/line-chart";

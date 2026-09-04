@@ -42,7 +42,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-157 exported components — including `Area`, `AreaChart`, `AreaChartLoading`, `AutoChart`, `Bar`.
+161 exported components — including `Area`, `AreaChart`, `AreaChartLoading`, `AutoChart`, `Bar`.
 
 Don't guess the API — ask the CLI:
 

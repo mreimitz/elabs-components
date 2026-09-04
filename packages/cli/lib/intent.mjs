@@ -3029,6 +3029,34 @@ export const INTENT = {
       "Submitting the composer on Enter while the palette is open — Enter selects the command; the textarea's own onKeyDown-before-submit order is what makes that possible.",
     ],
   },
+
+  // DistributionChart — RM-026
+  DistributionChart: {
+    purpose:
+      "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
+    category: "chart",
+    relationships: {
+      usedInside: ["ChartFrame", "ChartCard"],
+      pairsWith: ["ChartLegend", "DataTable"],
+    },
+    stateTokens: {
+      group:
+        '--chart-1 … --chart-12 via resolvePalette; palette="sequential" shades a box/violin by MEDIAN RANK, not by group order',
+      median:
+        "cut in the paper colour (--chart-background) through a box/violin waist; a dashed --chart-foreground flag + text-meta label on a histogram",
+      outlier: "hollow past 1.5 × IQR — fill=none with the group's own stroke, never a filled dot",
+      axis: "--chart-grid gridlines, --chart-label value ticks, --chart-foreground group labels, all text-meta",
+      focus:
+        "on a strip every record is a real button in ChartDatapointLayer: focus-visible:ring-2 ring-ring",
+    },
+    antiPatterns: [
+      'kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.',
+      "Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge, and the estimate loses ~2% of its mass off the grid (measured: 0.980 vs 0.997 with bandwidth passed). Pass `bandwidth` when the shape is the point.",
+      'kind="box" where the reader needs the individual records — the five-number summary hides bimodality completely, which is exactly what a box plot cannot warn you about. Under ~150 per group, kind="strip" shows the same numbers without discarding them.',
+      "Comparing a violin's axis against another kind's as if it were the same scale — violin is the one kind that widens the domain (by 1.6 bandwidths, so the silhouette is not clipped into a bar); histogram, box and strip share the data's own extent.",
+      "Passing `bins` as an edge list that does not cover the data — an explicit array is the FULL edge list, and a value outside it is DROPPED (with a dev warning), never absorbed into an end bucket. Pass a bin COUNT unless the edges carry business meaning.",
+    ],
+  },
 };
 
 /**
