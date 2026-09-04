@@ -123,6 +123,10 @@
     "$type": "color",
     "$value": "var(--primary)"
   },
+  "ring-contour": {
+    "$type": "color",
+    "$value": "var(--background)"
+  },
   "surface": {
     "$type": "color",
     "$value": "oklch(0.23 0.012 257)"

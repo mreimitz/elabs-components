@@ -153,8 +153,10 @@ const StaticFeatureLayer = memo(function StaticFeatureLayer({
 }) {
   const isDimmed = hoveredIndex !== null;
 
-  // Focused feature (from keyboard nav) — rendered as a separate top-level
-  // path with a ring-ring stroke so it satisfies WCAG 2.4.11 focus appearance.
+  // Focused feature (from keyboard nav) — rendered as a separate top-level pair
+  // of paths: the compound indicator (#67) in SVG, a wider `--ring-contour`
+  // stroke under the `--ring` one, so one edge clears 3:1 whatever the feature
+  // underneath is filled with. WCAG 2.4.11 focus appearance.
   const focusedRecord =
     focusedIndex !== null ? records.find((r) => r.index === focusedIndex) : null;
 
@@ -176,14 +178,15 @@ const StaticFeatureLayer = memo(function StaticFeatureLayer({
           ))}
         </g>
         {focusedRecord ? (
-          <path
-            d={focusedRecord.path}
-            fill="none"
-            key={`focus-ring-${focusedRecord.index}`}
-            pointerEvents="none"
-            stroke="var(--ring)"
-            strokeWidth={2.5}
-          />
+          <g key={`focus-ring-${focusedRecord.index}`} pointerEvents="none">
+            <path
+              d={focusedRecord.path}
+              fill="none"
+              stroke="var(--ring-contour)"
+              strokeWidth={4.5}
+            />
+            <path d={focusedRecord.path} fill="none" stroke="var(--ring)" strokeWidth={2.5} />
+          </g>
         ) : null}
       </>
     );
@@ -224,14 +227,10 @@ const StaticFeatureLayer = memo(function StaticFeatureLayer({
         />
       ) : null}
       {focusedRecord ? (
-        <path
-          d={focusedRecord.path}
-          fill="none"
-          key={`focus-ring-${focusedRecord.index}`}
-          pointerEvents="none"
-          stroke="var(--ring)"
-          strokeWidth={2.5}
-        />
+        <g key={`focus-ring-${focusedRecord.index}`} pointerEvents="none">
+          <path d={focusedRecord.path} fill="none" stroke="var(--ring-contour)" strokeWidth={4.5} />
+          <path d={focusedRecord.path} fill="none" stroke="var(--ring)" strokeWidth={2.5} />
+        </g>
       ) : null}
     </>
   );

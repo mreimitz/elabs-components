@@ -679,48 +679,123 @@ describe("themes.css — WCAG AA token contrast (all themes)", () => {
     // does to the status fills above. Value-independent on purpose — it survives
     // any future retune of the ring.
     //
-    // EXEMPTED FOR `light` SINCE 2026-08-16 — and the exemption is a record of a
-    // known failure, not a statement that the theme is fine.
+    // #67 — THE COMPOUND FOCUS INDICATOR. The `light` exemption that used to sit
+    // here is GONE, and so is the failure it recorded.
     //
-    // The reference themes now declare `--ring: var(--primary)`, an explicit
+    // The reference themes declare `--ring: var(--primary)` — an explicit
     // maintainer decision that the focus indicator IS the brand plate
-    // (superseding ADR 0027 clauses 1 and 3). On `dark` that alias is sound:
-    // the lime measures 10.26-12.46:1 on the mark surfaces and the assertion
-    // below still runs there, unweakened. On `light` the same lime measures
-    // 1.23-1.42:1 — a focus indicator a keyboard user cannot see, failing WCAG
-    // 2.4.7 (Focus Visible) and 1.4.11 (Non-text Contrast).
+    // (superseding ADR 0027 clauses 1 and 3), which is unchanged and NOT what
+    // this row is about. On `light` that lime measures 1.23-1.42:1 against the
+    // mark surfaces on its own, and between 2026-08-16 and this fix the suite
+    // carried a `RING_1411_EXEMPT` carve-out saying so out loud.
     //
-    // The exemption is scoped to the one theme that fails, and the test asserts
-    // the failure is still the one we signed off on: if `light`'s ring ever
-    // clears 3:1, the row below fails and this whole block should be deleted
-    // rather than adjusted. That is what stops the exemption from silently
-    // outliving the decision. The compliant repair is a COMPOUND indicator (a
-    // dark contour layer under the lime), which is a call-site sweep, not a
-    // token change — see the long note on `--ring` in `themes/light.css`.
-    const RING_1411_EXEMPT = new Set(["light"]);
-    if (RING_1411_EXEMPT.has(theme)) {
-      it("ring is KNOWINGLY below 3:1 on the mark surfaces (accepted 2.4.7/1.4.11 failure)", () => {
-        const ratios = MARK_SURFACES.map((surface) =>
-          contrast(token(theme, "--ring"), token(theme, surface)),
-        );
-        expect(
-          Math.max(...ratios),
-          `--ring in ${theme} now clears 3:1 on a mark surface — delete this exemption ` +
-            `and restore the assertion, plus the two MUST_DIFFER rows in ` +
-            `scripts/check-role-distinctness.mjs`,
-        ).toBeLessThan(AA_NONTEXT);
-      });
-    } else {
-      it("ring ≥ 3:1 on every mark surface (WCAG 1.4.11 — the focus indicator)", () => {
-        for (const surface of MARK_SURFACES) {
-          const ratio = contrast(token(theme, "--ring"), token(theme, surface));
+    // The repair the ADR's Amendment prescribed is a COMPOUND indicator: the
+    // ring PLUS a `--ring-contour` hairline drawn immediately outside it (the
+    // `focus-ring` utility in themes.css). So the 1.4.11 obligation belongs to
+    // the INDICATOR, not to either layer alone: at least one of the two must
+    // clear 3:1 against whatever the indicator lands on. Asserting `--ring`
+    // alone would demand the very retune the maintainer rejected; asserting
+    // only `--ring-contour` would let a theme ship a contour that vanishes
+    // against a surface its ring also cannot carry.
+    //
+    // `--primary` is in the surface list on purpose and is NOT a mark surface:
+    // a focused primary button's own fill sits directly under the ring, and on
+    // both reference themes the ring IS that fill — so without this row the
+    // indicator around the one control the alias affects most would be
+    // unmeasured (issue #67's first acceptance criterion).
+    //
+    // THE INVERSE-INK GROUNDS ARE IN THE LIST TOO (#67 fix round 2). A focus
+    // indicator is not confined to the mark surfaces: a sidebar nav button, a
+    // terminal composer, a chat bubble and a flow node are all Tab stops, and on
+    // `light` several of those grounds are DARK (`--sidebar` is 0.30,
+    // `--terminal-background` 0.24). There the deep contour vanishes and the
+    // brand ring alone carries the indicator — which is correct and comfortable
+    // today, and was measured before this row was written. The gap this closes
+    // is that nothing asserted it: a future `--primary` retune that kept the
+    // five mark surfaces green could go quiet on the sidebar and no gate would
+    // notice. `max(ring, contour)` is exactly the right shape for these grounds,
+    // because which layer does the work is the per-theme answer the token is
+    // there to carry.
+    const INDICATOR_SURFACES = [
+      ...MARK_SURFACES,
+      "--primary",
+      "--sidebar",
+      "--terminal-background",
+      "--chat-user",
+      "--chat-assistant",
+      "--flow-node",
+      "--canvas",
+    ] as const;
+    //
+    // ONE DECLARED, MEASURED CARVE-OUT — `:root` on the terminal ground.
+    // `:root` is the neutral light fallback a consumer who imports no theme
+    // stylesheet inherits. Its ring is a mid blue (`oklch(0.45 0.21 264)`) and
+    // its contour is a near-black blue (`oklch(0.22 0.02 264)`), both tuned for
+    // a white page; against `:root`'s very dark terminal ground
+    // (`oklch(0.15 0.018 264)`) they measure 2.49:1 and 1.14:1. So on that ONE
+    // pairing the indicator has no layer that clears 3:1.
+    //
+    // This is PRE-EXISTING and is not something #67 introduced — before the
+    // compound indicator the same ring measured the same 2.49:1 there, with no
+    // second layer at all. It is carried here rather than silently dropped from
+    // the surface list, and it is not a licence: the repair is either a `:root`
+    // ring retune (a fallback-wide token-value change that needs its own
+    // cross-theme sweep) or the terminal region retargeting its ring through
+    // the sanctioned `[--focus-ring-color:…]` seam. Both reference themes pass
+    // this surface, so nothing that ships a theme is affected.
+    const INDICATOR_SURFACE_EXEMPT: Record<string, readonly string[]> = {
+      root: ["--terminal-background"],
+    };
+    const exempt = (surface: string) => (INDICATOR_SURFACE_EXEMPT[theme] ?? []).includes(surface);
+
+    it.each(INDICATOR_SURFACES)(
+      "compound focus indicator ≥ 3:1 on %s (WCAG 1.4.11 / 2.4.7)",
+      (surface) => {
+        const ring = contrast(token(theme, "--ring"), token(theme, surface));
+        const contour = contrast(token(theme, "--ring-contour"), token(theme, surface));
+        const best = Math.max(ring, contour);
+        if (exempt(surface)) {
+          // The carve-out is asserted in the INVERSE, the shape
+          // `CHART_1411_EXEMPT` already uses: it fails the day it stops
+          // excusing anything, so a retune that fixes the pairing cannot leave
+          // a stale exemption behind claiming a failure that no longer exists.
           expect(
-            ratio,
-            `--ring vs ${surface} in ${theme} = ${ratio.toFixed(2)}`,
-          ).toBeGreaterThanOrEqual(AA_NONTEXT);
+            best,
+            `focus indicator vs ${surface} in ${theme} now measures ` +
+              `${best.toFixed(2)} — it clears 3:1, so the declared carve-out is ` +
+              `stale. Delete this theme/surface pair from ` +
+              `INDICATOR_SURFACE_EXEMPT.`,
+          ).toBeLessThan(AA_NONTEXT);
+          return;
         }
-      });
-    }
+        expect(
+          best,
+          `focus indicator vs ${surface} in ${theme}: ring = ${ring.toFixed(2)}, ` +
+            `contour = ${contour.toFixed(2)} — neither layer clears 3:1, so the ` +
+            `indicator has no visible edge on this surface`,
+        ).toBeGreaterThanOrEqual(AA_NONTEXT);
+      },
+    );
+
+    // #67 — the contour has to be a SECOND layer, not a repaint of the first.
+    // Two layers the same colour are one layer: the theme whose ring cannot
+    // carry the indicator must give the contour a value that can. Scoped to the
+    // themes where the ring actually fails, because a theme whose ring already
+    // clears 3:1 everywhere is free to collapse the contour into its own ground
+    // (which is exactly what `dark` does — see its `--ring-contour` comment).
+    it("a ring that cannot carry the indicator has a contour that can", () => {
+      const ringCarries = MARK_SURFACES.every(
+        (surface) => contrast(token(theme, "--ring"), token(theme, surface)) >= AA_NONTEXT,
+      );
+      if (ringCarries) return;
+      const ratio = contrast(token(theme, "--ring-contour"), token(theme, "--ring"));
+      expect(
+        ratio,
+        `--ring-contour vs --ring in ${theme} = ${ratio.toFixed(2)} — this theme's ` +
+          `ring is below 3:1 on at least one mark surface, so the contour is the ` +
+          `layer carrying the indicator and must be distinguishable from the ring`,
+      ).toBeGreaterThanOrEqual(AA_NONTEXT);
+    });
 
     // #282 — WCAG 1.4.11: the flow-edge value RAMP as a colour-only graphical
     // mark. `--flow-edge-weak`/`--flow-edge-strong` shipped (RM-043) with NO

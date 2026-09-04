@@ -60,7 +60,7 @@ export const CollapseMorph: Story = {
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className="rounded-md border bg-background px-3 py-1.5 text-body font-medium hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-md border bg-background px-3 py-1.5 text-body font-medium hover:bg-surface-muted focus-ring"
           >
             {collapsed ? "Expand" : "Collapse"} sidebar
           </button>

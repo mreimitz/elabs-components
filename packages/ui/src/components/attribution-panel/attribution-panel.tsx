@@ -74,7 +74,7 @@ function AttributionItem({ item, requiredLabel }: { item: Attribution; requiredL
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-body font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
+            className="text-body font-medium underline underline-offset-2 focus-ring rounded-xs"
           >
             {item.name}
           </a>

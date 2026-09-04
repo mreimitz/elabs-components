@@ -23,7 +23,7 @@ export const cardVariants = cva("rounded-lg border bg-card text-card-foreground 
     // duration-* utility; the transform is neutralized under OS reduced-motion
     // (the shadow/border still respond — "reduced != none").
     interactive: {
-      true: "cursor-pointer transition-[translate,box-shadow,border-color] duration-base ease-standard hover:-translate-y-1 hover:border-ring/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0",
+      true: "cursor-pointer transition-[translate,box-shadow,border-color] duration-base ease-standard hover:-translate-y-1 hover:border-ring/40 hover:shadow-md focus-ring motion-reduce:hover:translate-y-0",
       false: "",
     },
   },

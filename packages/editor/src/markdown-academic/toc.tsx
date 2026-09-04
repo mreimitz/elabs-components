@@ -75,7 +75,7 @@ export const TableOfContents = forwardRef<HTMLElement, TableOfContentsProps>(
             <li key={it.id} className={INDENT[Math.min(it.level - minLevel, INDENT.length - 1)]}>
               <a
                 href={`#${it.id}`}
-                className="text-muted-foreground underline hover:text-foreground hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground underline hover:text-foreground hover:underline focus-visible:rounded-sm focus-ring"
               >
                 {it.text}
               </a>

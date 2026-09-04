@@ -114,6 +114,58 @@ describe("Plan decision contract (#108)", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText("Approve")).not.toBeInTheDocument();
   });
+
+  it.each([
+    ["approved", "Approved"],
+    ["changes-requested", "Changes requested"],
+  ] as const)(
+    "does not re-announce the settled outcome on a redundant re-render with an unchanged status (%s)",
+    (status, label) => {
+      // A helper that returns a FRESH element tree on every call — mirrors a
+      // real parent re-rendering for an unrelated reason (new element objects,
+      // identical prop VALUES). Passing the exact same element object to
+      // `rerender` would let React bail out of calling `Plan` at all (a
+      // referential-props short-circuit), which would make this lock vacuous.
+      const renderPlan = () => (
+        <Plan status={status}>
+          <PlanFooter>
+            <PlanStatusLine />
+          </PlanFooter>
+        </Plan>
+      );
+      const { rerender } = render(renderPlan());
+
+      const alertBefore = screen.getByRole("alert");
+      expect(alertBefore).toHaveTextContent(label);
+
+      // A settled `role="alert"` is an assertive live region: it is announced
+      // when it is FIRST INSERTED, or when its observable content changes — an
+      // AT re-announces it if either happens again. Watch the region for both
+      // via a real MutationObserver (jsdom implements it), so this is an
+      // observable-effect assertion, not a guess about React internals.
+      const observer = new MutationObserver(() => {});
+      observer.observe(alertBefore, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+      });
+
+      // A parent re-rendering for an unrelated reason, passing the SAME
+      // status again with a freshly-built element tree, must be a no-op for
+      // the settled region.
+      rerender(renderPlan());
+
+      const mutations = observer.takeRecords();
+      observer.disconnect();
+
+      expect(mutations).toHaveLength(0);
+      // Same DOM node — not unmounted/remounted, which would itself be a
+      // fresh live-region insertion and would re-trigger the announcement.
+      expect(screen.getByRole("alert")).toBe(alertBefore);
+      expect(screen.getAllByRole("alert")).toHaveLength(1);
+    },
+  );
 });
 
 describe("Plan legacy (no `status`) API stays byte-compatible (#108)", () => {

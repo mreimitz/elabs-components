@@ -413,7 +413,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                 return (
                   <button
                     aria-label={`Zoom into ${group.name}`}
-                    className="pointer-events-auto absolute rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="pointer-events-auto absolute rounded-sm focus-ring"
                     data-slot="treemap-zoom-target"
                     key={group.id}
                     onClick={() => setActiveGroupIndex(index)}
@@ -429,7 +429,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
               <button> so it is reachable without a mouse. */}
           {drilldownEnabled && activeGroupIndex != null && (
             <button
-              className="absolute top-2 left-2 z-10 rounded-md bg-card px-2.5 py-1 text-chart-source text-foreground shadow-ring-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute top-2 left-2 z-10 rounded-md bg-card px-2.5 py-1 text-chart-source text-foreground shadow-ring-sm focus-ring"
               data-slot="treemap-back"
               onClick={() => setActiveGroupIndex(null)}
               type="button"

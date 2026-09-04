@@ -239,6 +239,17 @@
      override reaches sidebar focus for free — never re-declare it with a literal. */
   --ring: var(--primary);
 
+  /* #67 — the CONTOUR layer that makes the alias above compliant. The lime plate
+     measures 1.23-1.42:1 on this theme's five mark surfaces; a deep olive of the
+     SAME brand hue drawn as a 1px hairline just outside the ring measures
+     7.85-9.08:1 against those surfaces and 6.39:1 against the lime itself, so the
+     compound indicator always has one edge past WCAG 1.4.11 (>=3:1) — including
+     around a focused `--primary` button, where the ring merges into the fill.
+     This is the repair ADR 0027's Amendment prescribed; it is an ADDITIVE layer,
+     so `--ring: var(--primary)` above is untouched and the brand is not retuned.
+     Only the `focus-ring` utility (themes.css) may reach for this token. */
+  --ring-contour: oklch(0.4 0.06 116.5);
+
   --surface: oklch(0.985 0.002 257);
   --surface-muted: oklch(0.96 0.003 257);
   /* #59 — pure white; the same lightness-ceiling collision as --card/--popover

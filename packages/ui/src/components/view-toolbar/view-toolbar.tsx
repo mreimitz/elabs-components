@@ -234,7 +234,7 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
         "transition-colors duration-fast ease-standard hover:bg-secondary/70",
         // Badge's own `focus:` ring is dead weight on a <span> but would fire on
         // every MOUSE click here; neutralise it and keep the focus-visible ring.
-        "focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "focus:ring-0 focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "disabled:pointer-events-none disabled:opacity-50",
         className,
       )}

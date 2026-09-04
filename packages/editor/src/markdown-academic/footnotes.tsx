@@ -165,7 +165,7 @@ export function FootnoteRef({ node: _n, children: _c, ...rest }: TagProps) {
         data-footnote-ref=""
         aria-label={`Footnote ${n}`}
         // #399 — a footnote marker is superscript body text: `-text` rung.
-        className="px-0.5 font-medium text-primary-text underline tabular-nums hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="px-0.5 font-medium text-primary-text underline tabular-nums hover:underline focus-visible:rounded-sm focus-ring"
       >
         {n}
       </a>
@@ -196,7 +196,7 @@ export function FootnoteItem({ node: _n, children, ...rest }: TagProps) {
               ? `Back to reference ${n}, mention ${i + 1}`
               : `Back to reference ${n}`
           }
-          className="ms-0.5 inline-flex items-center text-muted-foreground no-underline hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="ms-0.5 inline-flex items-center text-muted-foreground no-underline hover:text-foreground focus-visible:rounded-sm focus-ring"
         >
           <span aria-hidden="true">↩</span>
           {refList.length > 1 ? (

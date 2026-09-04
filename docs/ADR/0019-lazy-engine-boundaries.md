@@ -97,6 +97,45 @@ measurement but is far too slow per-PR, and the static edge is the actual cause.
 The ten pre-existing eager sites (React Flow ×6, xterm, media-chrome, Rive) are
 the baseline and may only go down.
 
+## Amendment (2026-09-04) — a lazy engine boundary is a TYPE boundary too, not only a runtime one (issue #101)
+
+The runtime half of this ADR — an engine reached only through `lazy(() =>
+import(...))`, never statically imported into the barrel — turned out not to
+be sufficient on its own. TypeScript's declaration-emission reachability is a
+_separate_ graph from the bundler's import graph: a peer's own TYPE, referenced
+anywhere in the barrel-reachable export surface (e.g. `ComponentProps<typeof
+MediaController>` on a PUBLIC prop type), is inlined or import-specifier-
+referenced into the package's generated root `.d.ts` even when every VALUE
+import of that peer is safely behind `lazy()`. A `skipLibCheck: false`
+consumer who correctly omitted an optional peer then got `TS2307` from
+`import { Message } from "@elabs-ai/components-ai"` alone — not from using the
+one feature (`AudioPlayer`, `Persona`) that actually needed the peer.
+
+**The fix: a lazy engine boundary owns its public types locally, not just its
+public values.** The public-facing sibling module (`audio-player.tsx`,
+`persona.tsx`) declares a structurally-compatible MIRROR of whatever shape of
+the peer's types it needs (`AudioPlayerPartProps`, `PersonaRiveEventCallback`)
+instead of importing the peer's own type. The `@lazy-boundary` module (still
+reached only through `lazy()`, never statically imported into the barrel) is
+free to import the REAL peer type, and carries a compile-time conformance
+assertion (`type AssertAssignable<_TOwned extends TReal, TReal> = true;`)
+proving the owned mirror stays assignable to it — so a peer version bump that
+narrows a prop incompatibly fails `pnpm --filter @elabs-ai/components-ai
+typecheck` locally instead of reaching a consumer as silent drift.
+
+`packages/terminal/src/interactive-terminal.tsx` established this pattern
+first (`TerminalColorTheme` owned locally instead of re-exporting xterm's own
+`ITheme`); `packages/ai/src/persona.tsx` + `_persona-rive.tsx` and
+`packages/ai/src/audio-player.tsx` + `_audio-player-media-chrome.tsx` are the
+two siblings issue #101 added. `pnpm optional-peer-types:check`
+(`scripts/check-optional-peer-types.mjs`, self-tested, wired in CI) reads the
+BUILT `.d.ts` for every `@elabs-ai/components-*` package with at least one
+optional peer and fails the day a NEW leak reaches the generated declaration
+file — the same ratchet-baseline shape as `pnpm heavy-deps:check` above, with
+the one deliberate difference that it reads compiled output rather than
+source, because declaration-emission reachability is a property of what the
+compiler decided to keep, not of what a source file merely mentions.
+
 ## Alternatives rejected
 
 - **Fence-sniffing + plugin swap** — flash, layout jump, three-site state seam,

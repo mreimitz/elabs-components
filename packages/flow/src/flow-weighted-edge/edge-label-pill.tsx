@@ -46,7 +46,7 @@ export function EdgeLabelPill({ label, secondaryLabel, x, y, selected }: EdgeLab
             "pointer-events-auto flex items-center gap-1 rounded-full border bg-flow-node px-2 py-0.5",
             "text-meta font-medium text-flow-node-foreground shadow-sm",
             "transition-colors duration-fast ease-standard",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "focus-ring",
             selected ? "border-ring" : "border-flow-group-border",
           )}
         >

@@ -391,7 +391,7 @@ function Palette({ onAdd }: { onAdd: (preset: PalettePreset) => void }) {
             className={cn(
               "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-body",
               "hover:bg-accent hover:text-accent-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "focus-ring",
             )}
           >
             <preset.Icon className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -540,7 +540,7 @@ function NodeInspector({
   onChange: (patch: Partial<FlowNodeData>) => void;
 }) {
   const fieldClass =
-    "w-full rounded-md border border-input bg-background px-2 py-1.5 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "w-full rounded-md border border-input bg-background px-2 py-1.5 text-body focus-ring";
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">

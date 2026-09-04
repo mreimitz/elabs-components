@@ -2,6 +2,133 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-ai`'s `Composer` gains opt-in shortcut hints
+  (`ComposerShortcut`, `ComposerProps.shortcuts`, `ComposerProps.cancelShortcut`)
+  that change with a busy state (#107) — a `shortcuts` row renders as plain
+  sibling text beside the composer, and `cancelShortcut` joins it only while
+  `sendStatus` is `submitted`/`streaming` AND a real `onStop` is set,
+  mirroring `TerminalComposer`'s shape. Nothing renders unless a consumer
+  supplies `shortcuts`/`cancelShortcut`; existing `Composer` usage is
+  unaffected. Fixed: `SessionStatusBar`'s connections live region now
+  announces real text content (previously its only text was
+  `aria-hidden`, so it announced nothing) (#155).
+
+- Fixed: `@elabs-ai/components-ai`'s built type declarations no longer leak
+  `media-chrome`'s or `@rive-app/react-webgl2`'s own module specifiers (issue
+  #101). A `skipLibCheck: false` consumer who correctly omits one of these
+  optional peers used to get `TS2307` from `import { Message } from
+"@elabs-ai/components-ai"` alone — not from using `AudioPlayer`/`Persona`,
+  the only two features that actually need them. `AudioPlayerPartProps` and
+  `PersonaRiveEventCallback` (and their siblings) are now locally owned,
+  structurally-compatible mirrors of the peer's shape rather than re-exports
+  of it, with a compile-time conformance assertion in each feature's
+  lazy-loaded module proving the mirror stays assignable to the real peer
+  type. A new `pnpm optional-peer-types:check` gate (self-tested, wired in
+  CI) reads every `@elabs-ai/components-*` package's BUILT `.d.ts` output and
+  fails on a NEW optional-peer type leak; `@elabs-ai/components-ai`'s own `ai`
+  (Vercel AI SDK) peer leak is a separately tracked, already-known gap and
+  stays baselined. No public API name removed, but the owned types are
+  **narrower** than the peer types they replace — see the breaking entry
+  immediately below.
+
+- **Breaking (types), `@elabs-ai/components-ai`: `AudioPlayer`'s and
+  `Persona`'s prop types narrowed as a consequence of the fix above; nothing
+  narrowed at runtime.** Three concrete surfaces, in decreasing likelihood of
+  hitting a real consumer:
+  - `PersonaRiveEventCallback`'s `event.data` is now typed `unknown` (was
+    Rive's own `string | string[] | LoopEvent | number | RiveEventPayload |
+RiveFile` union). An inline handler (`onLoad={(event) => …}`, the normal
+    way to use `Persona`) still type-checks fine via contextual inference; a
+    handler pre-typed against `@rive-app/webgl2`'s own `EventCallback` is no
+    longer directly assignable to `onLoad`/`onLoadError`/`onPause`/`onPlay`/
+    `onStop`, because `unknown` narrows in one direction only. Replicating
+    Rive's real union without importing it would mean hand-mirroring
+    `LoopEvent`/`RiveEventPayload`/`RiveFile` too — exactly the fragile,
+    deep-peer-type mirror this fix exists to avoid — so `unknown` is kept, not
+    treated as a bug to chase.
+  - `AudioPlayer`'s ten exported part-prop types (`AudioPlayerProps`,
+    `AudioPlayerControlBarProps`, …) type only ordinary HTML attributes, plus —
+    for the two parts the round-2 validation actually measured,
+    `AudioPlayerProps` (`<media-controller>`) and
+    `AudioPlayerSeekForwardButtonProps` (`<media-seek-forward-button>`) — every
+    PRIMITIVE-typed (`string`/`boolean`/`number`) extra instance property the
+    real element declares: 20 on `AudioPlayerProps`
+    (`autohide`/`breakpoints`/`keyboardControl`/`noHotkeys`/`userInteractive`/
+    …) and 5 new ones on `AudioPlayerSeekForwardButtonProps`
+    (`disabled`/`mediaController`/`mediaCurrentTime`/`noTooltip`/
+    `preventClick`, alongside the existing `seekOffset`). Real
+    `media-chrome/react` parts additionally accept every PEER/COMPLEX-typed
+    instance property of their underlying custom element — `mediaStore`,
+    `hotkeys` (an `AttributeTokenList`), DOM-element members
+    (`media`/`fullscreenElement`), `HTMLMediaElement` callbacks, and every
+    method — and, for the other eight parts (`AudioPlayerControlBarProps`,
+    `AudioPlayerPlayButtonProps`, `AudioPlayerSeekBackwardButtonProps`
+    (unmeasured; still `seekOffset`-only), `AudioPlayerTimeDisplayProps`,
+    `AudioPlayerTimeRangeProps`, `AudioPlayerDurationDisplayProps`,
+    `AudioPlayerMuteButtonProps`, `AudioPlayerVolumeRangeProps`), their entire
+    extra surface, primitive or not. Passing one of those now fails to
+    typecheck even though `AudioPlayerImpl` still spreads it onto the
+    underlying custom element at runtime, so it still takes effect — the loss
+    is compile-time coverage, not behavior.
+  - Every `AudioPlayer*` part type also drops `ref`. `RefObject`'s mutable
+    `current` makes ref types INVARIANT, so keeping the real
+    `RefObject<MediaController>` (etc.) would have made every owned type fail
+    its own conformance assertion — that half is unchanged. **This IS a
+    real-world break for a React 19 consumer**, unlike an earlier draft of
+    this entry claimed: none of the ten parts this package renders is wrapped
+    in `forwardRef`, but `media-chrome/react`'s `MediaController` (and its
+    nine siblings) are genuine `forwardRef` components
+    (`$typeof: Symbol(react.forward_ref)`), and React 19's ref-as-prop carries
+    a `ref` straight through an ordinary function component's `{...props}`
+    spread to the real underlying custom element — measured on this repo's
+    own React (19.2.7): a `ref` passed to `<AudioPlayer>` really does resolve
+    to the live `<media-controller>` DOM node. The break is **inert only
+    under React 18** (where a plain function component drops an unforwarded
+    `ref` on the floor); this package's peer range (`^18.2.0 || ^19.0.0`)
+    covers both, so a consumer's own React version decides whether they ever
+    notice.
+
+- Fixed (**accessibility, WCAG 2.4.7 + 1.4.11**): the focus indicator is now
+  **compound** — the brand ring plus a 1px contour drawn outside it — so keyboard
+  focus is visible on the `light` reference theme, where `--ring` aliases the
+  brand plate and measured 1.23–1.42:1 against every surface it lands on (and
+  1.00:1 on a focused primary button's own fill). `@elabs-ai/components-tokens`
+  adds one token, **`--ring-contour`**, declared in `:root` and both reference
+  themes, and three utilities in `themes.css` that every package and every
+  copy-own block can reach with no import: **`focus-ring`** (the default,
+  `:focus-visible`), **`focus-ring-within`** (compound controls),
+  **`focus-ring-inset`** (controls clipped by an overflow container),
+  **`focus-ring-static`** (a control whose focus is proxied — an OTP slot over a
+  hidden input, a `has-[…:focus-visible]:` wrapper, a `focus-visible:after:`
+  seam) and **`focus-ring-static-inset`** (proxied and clipped). A call site whose
+  ring belongs to a different token retargets one variable —
+  `focus-ring [--focus-ring-color:var(--sidebar-ring)]`, which is how `Sidebar`
+  keeps consuming `--sidebar-ring`. **125 call sites in 93 modules** across `ui` (55), `editor` (16), `charts` (12), `flow`
+  (10), `data` (7), `terminal` (6), `viewer` (3), `maps` (3), `icons` (1), the
+  docs stories (3) and one registry block (2) moved from
+  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring` to
+  the utility. Measured `max(ring, contour)` per surface: `light` 6.39–9.08,
+  `dark` 10.26–12.46, `:root` 3.45–17.32 — all ≥ 3:1, and
+  `themes-contrast.test.ts`'s `light`-only `RING_1411_EXEMPT` carve-out is
+  deleted in favour of that assertion. **The ring token is unchanged**:
+  `--ring: var(--primary)` still ships, the repair adds a layer rather than
+  retuning the brand. `dark` is a deliberate visual no-op
+  (`--ring-contour: var(--background)`). Three behaviour notes: three sites that
+  drew a 1px ring now draw 2px; `Select`'s and `Badge`'s focus styling moved from
+  `:focus` to `:focus-visible`; and `packages/ai` is **not** swept (nine call sites
+  in eight modules keep the one-layer shape, tracked separately). Twelve further
+  indicators that the first pass missed — because it grepped for `ring-ring` and
+  these spell the ring another way — are swept too: the five `Sidebar` sites
+  (`ring-sidebar-ring`), the `InputOTP` active slot and the `InputGroup` wrapper
+  (JS/`:has()`-driven, not a CSS focus state), the `DataTable` resize grip and
+  clickable row (`after:` pseudo-element and `outline-ring`), the `Gantt` bar
+  (`outline-ring`), and the two SVG indicators that no CSS utility can reach —
+  `CanvasLayer`'s focus rect and `ChoroplethChart`'s focused feature — which now
+  stack a wider `--ring-contour` stroke under the `--ring` one. Monaco's
+  `focusBorder` (a single-colour theme key that cannot carry two layers) now takes
+  whichever layer clears 3:1 against that editor's own ground, measured at runtime.
+  See ADR 0027 Amendment 2 (#67).
+
 - Changed: `@elabs-ai/components-cli`'s per-component intent sidecar now names the
   look-alike a reader is most likely to reach for by mistake, so `brand-ui docs
 <Component>` (and the `brand-ui` MCP `docs` tool, and the per-package `llms`

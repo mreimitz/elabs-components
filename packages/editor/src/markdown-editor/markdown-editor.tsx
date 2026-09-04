@@ -530,7 +530,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           // A 1px hairline focus ring (not a heavy 2px ring) — the editable is a
           // large surface, so a thinner edit-mode ring reads calmer while still
           // meeting the visible-focus requirement (same `ring` token). (A7)
-          "milkdown-host overflow-auto rounded-md border border-border bg-background text-foreground focus-within:ring-1 focus-within:ring-ring",
+          "milkdown-host overflow-auto rounded-md border border-border bg-background text-foreground focus-ring-within",
           className,
         )}
         // Publish the shared markdown scale as CSS vars the editor CSS reads, so the

@@ -506,6 +506,19 @@ const overrides = deriveTheme({ primary: tenant.brandColor }); // e.g. "oklch(0.
   `@xyflow/react` (the agent-canvas set) stays a **required** peer, not
   optional — install it whenever you import from this package.
 
+  **`media-chrome` and `@rive-app/react-webgl2` never appear in the package's
+  generated type declarations either (issue #101)** — the same guarantee
+  named above for `@xterm/xterm` in `@elabs-ai/components-terminal`. Public
+  types like `AudioPlayerPartProps` and `PersonaRiveEventCallback` are locally
+  **owned** structural mirrors of the peer's own shape, not re-exports of it,
+  so a `skipLibCheck: false` build never needs either peer installed just to
+  `import` something else out of the barrel — only actually rendering
+  `AudioPlayer`/`Persona` needs the peer present at runtime. A compile-time
+  conformance assertion in each feature's lazy-loaded module keeps the owned
+  type assignable to the real peer type, so a peer version bump that narrows
+  a prop incompatibly fails `pnpm --filter @elabs-ai/components-ai typecheck`
+  locally instead of reaching you as silent drift.
+
   **Known limitation:** `mermaid`'s bytes are always installed, even when you
   skip the peer — **two** of `@elabs-ai/components-ai`'s own plain
   `dependencies` (not of your app), `streamdown` and `@streamdown/mermaid`,

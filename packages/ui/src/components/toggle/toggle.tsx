@@ -21,7 +21,7 @@ export const toggleVariants = cva(
   // asChild wrapper overwrites data-state="on" with "closed" — aria-pressed
   // (Toggle) and aria-checked (ToggleGroupItem) are set by the toggle primitive
   // alone and survive the merge. (#214)
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors duration-fast ease-standard hover:bg-muted hover:text-muted-foreground focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground data-[state=on]:font-semibold aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:font-semibold aria-checked:bg-accent aria-checked:text-accent-foreground aria-checked:font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {

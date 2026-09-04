@@ -289,7 +289,7 @@ function PptxSlideView({
         aria-label={t("viewer.pptx.slide", {
           slide: formatNumber(slideNumber),
         })}
-        className="border-border bg-card focus-visible:ring-ring mx-auto flex aspect-video w-full max-w-3xl flex-col gap-3 overflow-auto rounded-md border p-6 shadow-sm focus-visible:outline-none focus-visible:ring-2"
+        className="border-border bg-card focus-ring mx-auto flex aspect-video w-full max-w-3xl flex-col gap-3 overflow-auto rounded-md border p-6 shadow-sm"
       >
         {/* A slide title is the deck's top rung, so it sits at the host's base.
             The stand-in for an untitled slide is OUR text, not the deck's, so

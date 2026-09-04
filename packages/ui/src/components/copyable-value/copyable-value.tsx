@@ -72,7 +72,7 @@ export const CopyableValue = forwardRef<HTMLButtonElement, CopyableValueProps>(
             // only resting affordance, so a value inside a heading or a KPI
             // still looks like a value, not a link.
             "inline-flex items-baseline gap-1 rounded-sm underline decoration-dotted decoration-muted-foreground underline-offset-4",
-            "hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "hover:decoration-foreground focus-ring",
             "transition-colors duration-fast ease-standard motion-reduce:transition-none",
             className,
           )}

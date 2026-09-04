@@ -170,10 +170,7 @@ function InlineEdit({ value, onCommit, ariaLabel, placeholder, className }: Inli
       spellCheck={false}
       onBlur={commit}
       onKeyDown={onKeyDown}
-      className={cn(
-        "brand-inline-edit rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        className,
-      )}
+      className={cn("brand-inline-edit rounded-sm focus-ring", className)}
     />
   );
 }
@@ -644,7 +641,7 @@ function IterationDirectiveView() {
               data-directive-chrome=""
               aria-label="Iteration actions"
               title="Iteration actions…"
-              className="ms-auto inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="ms-auto inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground focus-ring"
             >
               <MoreHorizontal className="size-4" aria-hidden="true" />
             </button>
