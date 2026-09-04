@@ -140,6 +140,50 @@ example and the default registry, not the menu.
   - **The committed evidence records it rather than hiding it**:
     `apps/e2e/reports/theme-aa-audit.md` measures every exempt pairing, renders it
     `⚠️` (distinct from a gate-failing `❌`), and names the decision in its header.
+- **The chart ACCENT inherits that same exemption — decided 2026-09-04 (#179), extending
+  it rather than opening a second one.** `--chart-accent` is declared `var(--chart-1)`
+  (`themes/light.css`, `themes/dark.css`), so it is not a new token with a contrast
+  problem of its own; it is `--chart-1` — already inside `CHART_1411_EXEMPT` — reached
+  through a second name. What is new is the SURFACE: the accent palette
+  (`ChartPalette: "accent"`, `packages/charts/src/charts/chart-context.tsx`) is a "wire"
+  look — the neutral `--chart-mono-*` ladder with one hero colour drawn over it — whose
+  entire design premise is that the hero reads as the loudest mark on the plot. That
+  premise is exactly what the light-theme regression defeats:
+  - **Measured** (re-derived from the shipped tokens, not copied from the issue): the
+    accent measures **1.42:1** against `--chart-background`/`--card` in `light` (11.25:1
+    in `dark`, no problem there). Its usual companions in the same "wire" composition —
+    `--chart-mono-2`/`-4`/`-6`, the three context steps `chart-ramps.stories.tsx` pairs it
+    with — measure **3.10 / 5.70 / 10.21:1** in `light`. The sequential ramp's own
+    declared _quiet_ step (`--chart-seq-1`) measures **1.62:1** — so in `light` the hero
+    is quieter than its own context colours AND quieter than the ramp's deliberately-quiet
+    floor. Practical consequence: on `light`, hierarchy inverts — the hero series reads as
+    background beside the series it is supposed to lead.
+  - **The systemic repair under consideration is the same one, not a new one:** darken
+    `--chart-background` in the light theme (the ramp exemption above already prescribes
+    this). A second route — deriving a per-theme accent, lime on dark / a darker
+    lime-family colour on light — was also weighed and declined here: it breaks the "one
+    palette, both themes" property the categorical ramp already keeps, and the ramp's own
+    olive rejection (above) suggests the acceptable light-theme lime is narrow. Both are
+    declined as **too wide a reach for this track**, not as wrong ideas; reach for either
+    before proposing a third route. See issue #179 for the full decision record.
+  - **No new gate asserts a bar this exemption knowingly does not meet.** A gate checking
+    "the accent is not the lowest-contrast member of its palette" would fail by design on
+    `light` — that is the property that inverted. If a gate is ever wanted here, it is the
+    inverse (fails if the exemption ever stops excusing anything), matching the shape
+    `CHART_1411_EXEMPT` already uses in `scripts/check-audit-artifact.mjs`; a matching
+    comment sits beside `CHART_1411_EXEMPT` in `packages/tokens/src/charts-contrast.test.ts`,
+    not a new assertion.
+  - **Recorded in the committed evidence**, same as the ramp: `apps/e2e/reports/theme-aa-audit.md`
+    names the accent pairing in a hand-recorded addendum. The generator
+    (`scripts/check-audit-artifact.mjs`) walks the twelve-series categorical ramp only, not
+    the ordinal ramps (`--chart-seq-*`/`--chart-mono-*`/`--chart-div-*`/`--chart-accent`), so
+    this one pairing is not yet auto-derived the way the categorical rows above it are —
+    teaching the generator about the ordinal ramps is a follow-up, not done here.
+  - **What this does not settle:** wave-1 chart containers built against this accent on
+    `light` inherit a hero colour that is now a known, accepted property rather than an
+    open defect — but a container whose design depends on the accent reading as the hero
+    on `light` needs a second channel of its own (shape, label, position), the same way a
+    diverging ramp does not rely on hue alone.
 - **`--ring` is brand-derived — the focus-indicator contract (`docs/ADR/0027-focus-ring-token-contract.md`, #427),
   AMENDED 2026-08-16: the reference themes now alias `--ring: var(--primary)`.**
   `--ring` had no stated contract, only a negative comment ("distinct from the
