@@ -12,6 +12,17 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import type { RefObject } from "react";
 import { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// One mutable switch instead of a module reset (the `marks.test.tsx` pattern):
+// re-importing the component after `vi.resetModules()` would also re-import
+// React, and a component from a second React instance cannot use the
+// renderer's hooks. Defaults to `false`, so every test written before the #177
+// neutralizer landed still runs on the animating path.
+const motionState = vi.hoisted(() => ({ reduced: false as boolean | null }));
+vi.mock("motion/react", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
+
 import { ChartRevealClip, isRevealHeldForView, type RevealGateState } from "./chart-reveal-clip";
 
 // ---------------------------------------------------------------------------
@@ -369,6 +380,235 @@ describe('<ChartRevealClip> revealOn="inView" / replayOnClick (RM-020)', () => {
         fireEvent.click(viewportRef.current);
       }
     });
+    expect(onEnterPlay).toHaveBeenCalledTimes(2);
+  });
+});
+describe("<ChartRevealClip> under prefers-reduced-motion (#177)", () => {
+  let originalIO: typeof IntersectionObserver | undefined;
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    originalIO = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = FakeIntersectionObserver;
+    motionState.reduced = true;
+  });
+
+  afterEach(() => {
+    cleanup();
+    motionState.reduced = false;
+    globalThis.IntersectionObserver = originalIO as typeof IntersectionObserver;
+  });
+
+  function renderClip(overrides: Partial<Parameters<typeof ChartRevealClip>[0]> = {}) {
+    return render(
+      <svg>
+        <defs>
+          <ChartRevealClip
+            clipPathId="test-clip"
+            height={100}
+            revealEpoch={0}
+            targetWidth={200}
+            {...overrides}
+          />
+        </defs>
+      </svg>,
+    );
+  }
+
+  it("renders the finished, full-width plain <rect> with default props — the caller passes nothing", () => {
+    const { container } = renderClip();
+
+    // A bare `<rect>` writes the number through verbatim ("200"); the
+    // animating `motion.rect` branch paints `initial` with a unit suffix
+    // ("0px"). So the missing suffix IS the assertion that no `motion.rect`
+    // (and no `initial={{ width: 0 }}`) is in the DOM at all.
+    const rect = container.querySelector("clipPath > rect");
+    expect(rect).not.toBeNull();
+    expect(rect?.getAttribute("width")).toBe("200");
+  });
+
+  it("is the ONLY difference from the animating path — the same props with no preference start at 0px", () => {
+    motionState.reduced = false;
+    const { container } = renderClip();
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("0px");
+  });
+
+  it('ignores the revealOn="inView" hold — the series is visible without ever scrolling in', () => {
+    const viewportRef = createRef<HTMLDivElement>();
+    const onEnterPlay = vi.fn();
+    const { container } = render(
+      <div ref={viewportRef}>
+        <svg>
+          <defs>
+            <ChartRevealClip
+              clipPathId="test-clip"
+              height={100}
+              onEnterPlay={onEnterPlay}
+              revealEpoch={0}
+              revealOn="inView"
+              targetWidth={200}
+              viewportRef={viewportRef as RefObject<Element | null>}
+            />
+          </defs>
+        </svg>
+      </div>,
+    );
+
+    // Never held at 0: reduced motion means less MOTION, not less data.
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("200");
+    // The reveal still "played" (instantly), so the observability contract is
+    // the same on both motion paths.
+    expect(onEnterPlay).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves animating={false} byte-identical — same full-width rect, and onEnterPlay still does not fire", () => {
+    const onEnterPlay = vi.fn();
+    const { container } = renderClip({ animating: false, onEnterPlay });
+
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("200");
+    expect(onEnterPlay).not.toHaveBeenCalled();
+  });
+
+  it('mode="conceal" renders its finished (zero-width) rect and fires onComplete, so a caller sequencing on it cannot stall', () => {
+    const onComplete = vi.fn();
+    const { container } = renderClip({ mode: "conceal", onComplete });
+
+    // Bare "0", not the animating conceal's "200px" start state.
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("0");
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("still replays on a replayCount bump (a keyboard replay is honoured, it just lands instantly)", () => {
+    const onEnterPlay = vi.fn();
+    const { rerender } = render(
+      <svg>
+        <defs>
+          <ChartRevealClip
+            clipPathId="test-clip"
+            height={100}
+            onEnterPlay={onEnterPlay}
+            replayCount={0}
+            revealEpoch={0}
+            targetWidth={200}
+          />
+        </defs>
+      </svg>,
+    );
+    expect(onEnterPlay).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <svg>
+        <defs>
+          <ChartRevealClip
+            clipPathId="test-clip"
+            height={100}
+            onEnterPlay={onEnterPlay}
+            replayCount={1}
+            revealEpoch={0}
+            targetWidth={200}
+          />
+        </defs>
+      </svg>,
+    );
+    expect(onEnterPlay).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("<ChartRevealClip> replayCount — the keyboard replay path (#176)", () => {
+  let originalIO: typeof IntersectionObserver | undefined;
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    originalIO = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = FakeIntersectionObserver;
+  });
+
+  afterEach(() => {
+    cleanup();
+    globalThis.IntersectionObserver = originalIO as typeof IntersectionObserver;
+  });
+
+  function renderHeldClip(
+    props: {
+      replayCount: number;
+      onEnterPlay?: () => void;
+      shouldReplayOnClick?: () => boolean;
+    },
+    viewportRef: RefObject<HTMLDivElement | null>,
+  ) {
+    return (
+      <div ref={viewportRef}>
+        <svg>
+          <defs>
+            <ChartRevealClip
+              clipPathId="test-clip"
+              height={100}
+              onEnterPlay={props.onEnterPlay}
+              replayCount={props.replayCount}
+              revealEpoch={0}
+              revealOn="inView"
+              shouldReplayOnClick={props.shouldReplayOnClick}
+              targetWidth={200}
+              viewportRef={viewportRef as RefObject<Element | null>}
+            />
+          </defs>
+        </svg>
+      </div>
+    );
+  }
+
+  it("bumping replayCount replays the reveal and releases the in-view hold — exactly like a pointer click", () => {
+    const viewportRef = createRef<HTMLDivElement>();
+    const onEnterPlay = vi.fn();
+    const { container, rerender } = render(
+      renderHeldClip({ onEnterPlay, replayCount: 0 }, viewportRef),
+    );
+
+    // Held: bare, unanimated "0" — and nothing has played.
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("0");
+    expect(onEnterPlay).not.toHaveBeenCalled();
+
+    rerender(renderHeldClip({ onEnterPlay, replayCount: 1 }, viewportRef));
+
+    // Released and remounted into the animating `motion.rect` — its first
+    // paint is `initial` ("0px", unit-suffixed), the same observable the
+    // click-replay test asserts.
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("0px");
+    expect(onEnterPlay).toHaveBeenCalledTimes(1);
+  });
+
+  it("is not filtered by shouldReplayOnClick — that predicate guards the chart body's clicks, not a dedicated control", () => {
+    const viewportRef = createRef<HTMLDivElement>();
+    const shouldReplayOnClick = vi.fn().mockReturnValue(false);
+    const { container, rerender } = render(
+      renderHeldClip({ replayCount: 0, shouldReplayOnClick }, viewportRef),
+    );
+
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("0");
+
+    rerender(renderHeldClip({ replayCount: 1, shouldReplayOnClick }, viewportRef));
+
+    expect(container.querySelector("clipPath > rect")?.getAttribute("width")).toBe("0px");
+    expect(shouldReplayOnClick).not.toHaveBeenCalled();
+  });
+
+  it("replays again on each further bump, and adds to (never fights) a pointer replay", () => {
+    const viewportRef = createRef<HTMLDivElement>();
+    const onEnterPlay = vi.fn();
+    const { rerender } = render(renderHeldClip({ onEnterPlay, replayCount: 1 }, viewportRef));
+    expect(onEnterPlay).toHaveBeenCalledTimes(1);
+
+    rerender(renderHeldClip({ onEnterPlay, replayCount: 2 }, viewportRef));
+    expect(onEnterPlay).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      if (viewportRef.current) {
+        fireEvent.click(viewportRef.current);
+      }
+    });
+    // `replayOnClick` is off here, so the click is ignored and the keyboard
+    // counter is untouched — the two paths share one counter without either
+    // one resetting the other.
     expect(onEnterPlay).toHaveBeenCalledTimes(2);
   });
 });
