@@ -51,7 +51,7 @@
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "generate:fixtures": "tsx src/core/fixtures/generate-bpi-2012-subset-cli.ts",
+    "generate:fixtures": "vitest run --config vitest.fixtures.config.ts",
     "clean": "rm -rf dist .turbo coverage"
   },
   "dependencies": {
@@ -88,7 +88,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.3.5",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.2"
   }

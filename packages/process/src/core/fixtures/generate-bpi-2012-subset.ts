@@ -42,9 +42,10 @@
  * ```
  *
  * which writes `bpi-2012-subset.json` next to this file (git-ignored — see the package's
- * `.gitignore`), via `generate-bpi-2012-subset-cli.ts`. A consumer of the generated JSON
- * should treat it as a build artifact, not a checked-in fixture; import
- * {@link generateBpi2012Subset} directly wherever possible instead of reading the file.
+ * `.gitignore`), via `generate-bpi-2012-subset.write.ts` (run through `vitest`, not `tsx` —
+ * see that file's docblock for why). A consumer of the generated JSON should treat it as a
+ * build artifact, not a checked-in fixture; import {@link generateBpi2012Subset} directly
+ * wherever possible instead of reading the file.
  */
 import type { EventLog, EventRow } from "../types";
 
