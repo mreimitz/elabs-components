@@ -15,6 +15,7 @@ import {
   processEdgeId,
   processGraphStructureKey,
   resolveActivityFrequencyMode,
+  resolveSelectionState,
   resolveTransitionFrequencyMode,
   selectionNeighbourhood,
   transitionAriaLabel,
@@ -182,7 +183,7 @@ describe("selection", () => {
     }
   });
 
-  it("marks everything outside the neighbourhood excluded AND aria-disabled", () => {
+  it("marks everything outside the neighbourhood excluded, and NEVER aria-disabled", () => {
     const model = buildProcessMapModel({
       graph,
       metric: { node: "absolute", edge: "absolute" },
@@ -191,13 +192,66 @@ describe("selection", () => {
     const selected = model.nodes.find((n) => n.id === focus)!;
     expect(selected.data.selectionState).toBe("selected");
     const excluded = model.nodes.filter((n) => n.data.selectionState === "excluded");
+    expect(excluded.length).toBeGreaterThan(0);
     for (const node of excluded) {
-      expect(node.domAttributes).toMatchObject({ "aria-disabled": "true" });
+      // An excluded node stays fully operable — clicking it is how a reader re-selects
+      // it — so it must never be aria-disabled (RM-052 round 2, #227).
+      expect(node.domAttributes).not.toHaveProperty("aria-disabled");
+      // The exclusion still reaches assistive technology, through real text.
+      expect(node.ariaLabel).toContain("excluded");
     }
   });
 
   it("answers null when nothing is selected", () => {
     expect(selectionNeighbourhood(graph, null)).toBeNull();
+  });
+});
+
+describe("resolveSelectionState — the five-rule precedence (RM-052 round 2, #227)", () => {
+  const a = graph.activities[0]!.id;
+  const b = graph.activities[1]!.id;
+  const neighbourhood = selectionNeighbourhood(graph, { kind: "activity", id: a })!;
+
+  it("rule 1: the element IS the click target -> selected, even when nothing else applies", () => {
+    expect(resolveSelectionState(a, "activity", { kind: "activity", id: a }, null)).toBe(
+      "selected",
+    );
+  });
+
+  it("rule 1 beats rule 2: clicking an element the filter excluded re-selects it", () => {
+    const states = { activities: { [a]: "excluded" as const } };
+    expect(
+      resolveSelectionState(a, "activity", { kind: "activity", id: a }, neighbourhood, states),
+    ).toBe("selected");
+  });
+
+  it("rule 2 beats rule 3: a filter-excluded element stays excluded even inside the clicked neighbourhood", () => {
+    // b is inside a's neighbourhood (kept by rule 3's own test), but the filter marks it
+    // excluded directly — rule 2 must win.
+    expect(neighbourhood.activities.has(b)).toBe(true);
+    const states = { activities: { [b]: "excluded" as const } };
+    expect(
+      resolveSelectionState(b, "activity", { kind: "activity", id: a }, neighbourhood, states),
+    ).toBe("excluded");
+  });
+
+  it("rule 3: outside the click target's neighbourhood -> excluded, with no filter states at all", () => {
+    const outsider = graph.activities.find(
+      (activity) => !neighbourhood.activities.has(activity.id),
+    );
+    if (!outsider) return; // every activity happens to be reachable on this fixture
+    expect(
+      resolveSelectionState(outsider.id, "activity", { kind: "activity", id: a }, neighbourhood),
+    ).toBe("excluded");
+  });
+
+  it("rule 4: an explicit non-excluded filter state is honoured when nothing is click-selected", () => {
+    const states = { activities: { [b]: "associated" as const } };
+    expect(resolveSelectionState(b, "activity", null, null, states)).toBe("associated");
+  });
+
+  it("rule 5: the default is associated — no click selection, no filter state", () => {
+    expect(resolveSelectionState(a, "activity", null, null)).toBe("associated");
   });
 });
 

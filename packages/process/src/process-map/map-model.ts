@@ -106,14 +106,34 @@ export const PROCESS_FILTER_INTENT_LABELS: Readonly<Record<ProcessFilterIntent["
   });
 
 /**
- * How an element relates to the current selection.
+ * How an element relates to the current selection AND the active filter.
  *
  * - `"selected"` — the element the reader picked.
  * - `"associated"` — ordinary; either nothing is selected, or this element touches the
- *   selection.
- * - `"excluded"` — outside the selection's neighbourhood; dimmed and `aria-disabled`.
+ *   selection, and no active filter excludes it.
+ * - `"excluded"` — outside the selection's neighbourhood, or dropped by the active filter;
+ *   dimmed, but still fully operable. Clicking an excluded element is how a reader filters
+ *   it back in, so it is never `aria-disabled` — see {@link resolveSelectionState}. The
+ *   dimming is a REDUNDANT cue: `activityAriaLabel`/`transitionAriaLabel` already append the
+ *   word "excluded" to the element's accessible name, so the state reaches assistive
+ *   technology through real text, not only through opacity.
  */
 export type ProcessSelectionState = "selected" | "associated" | "excluded";
+
+/**
+ * Per-element selection/filter states, sparse — an id with no entry defaults through
+ * {@link resolveSelectionState}'s own rules. Keyed exactly like {@link ProcessSelection}:
+ * activity name for `activities`, {@link processEdgeId} for `transitions`.
+ *
+ * `variants` is carried here for API symmetry with the other two namespaces even though
+ * `ProcessMap` does not read it (the variant LIST narrows rather than ghosts — decision
+ * `RM-052-tristate-decision.md` §3); a future variant-explorer view may.
+ */
+export interface ProcessSelectionStates {
+  activities?: Readonly<Record<string, ProcessSelectionState>>;
+  transitions?: Readonly<Record<string, ProcessSelectionState>>;
+  variants?: Readonly<Record<string, ProcessSelectionState>>;
+}
 
 // ── Node / edge data ─────────────────────────────────────────────────────────
 
@@ -462,8 +482,8 @@ export interface ProcessSelectionNeighbourhood {
  *
  * Selecting an ACTIVITY keeps that activity, every activity directly connected to it, and
  * every edge incident to it. Selecting a TRANSITION keeps its two endpoints and itself.
- * Everything else becomes `"excluded"` — dimmed AND `aria-disabled`, so the state reaches
- * assistive technology as more than an opacity.
+ * Everything else becomes `"excluded"` — dimmed, but never `aria-disabled` (see
+ * {@link resolveSelectionState}).
  */
 export function selectionNeighbourhood(
   graph: ProcessGraph,
@@ -491,16 +511,48 @@ export function selectionNeighbourhood(
   return { activities, transitions };
 }
 
-function stateFor(
+/**
+ * Resolve one element's tri-state {@link ProcessSelectionState} from BOTH the coordinated
+ * click selection and the active filter's per-element states — the two channels
+ * `ProcessMap` renders together. Five rules, in precedence order (RM-052 round 2, #227):
+ *
+ * 1. **The element IS the click target** → `"selected"`. This wins over everything else,
+ *    including an active filter's own `"excluded"` — clicking an excluded element is how a
+ *    reader re-focuses it, so the click must always win.
+ * 2. **`states` already says `"excluded"`** → `"excluded"`. This must be checked BEFORE
+ *    rule 3: a filter-excluded element stays excluded even when it happens to sit inside
+ *    the neighbourhood of whatever is currently click-selected — the filter's exclusion is
+ *    not something a click's neighbourhood should be able to override.
+ * 3. **A click target exists and this element sits outside its neighbourhood** →
+ *    `"excluded"`.
+ * 4. **`states` carries an entry for this element** → that entry (`"associated"` or
+ *    `"selected"` from a filter's own point of view — reserved for a future filter shape
+ *    that can name a "primary" match; today filters only ever produce `"excluded"`
+ *    entries, which rule 2 already handles).
+ * 5. **Otherwise** → `"associated"`, the default.
+ */
+export function resolveSelectionState(
   id: string,
-  selection: ProcessSelection | null | undefined,
   kind: ProcessSelectionKind,
+  selection: ProcessSelection | null | undefined,
   neighbourhood: ProcessSelectionNeighbourhood | null,
+  states?: ProcessSelectionStates,
 ): ProcessSelectionState {
-  if (!selection || !neighbourhood) return "associated";
-  if (selection.kind === kind && selection.id === id) return "selected";
-  const kept = kind === "activity" ? neighbourhood.activities : neighbourhood.transitions;
-  return kept.has(id) ? "associated" : "excluded";
+  if (selection && selection.kind === kind && selection.id === id) return "selected";
+
+  const namespace = kind === "activity" ? states?.activities : states?.transitions;
+  const filterState = namespace?.[id];
+
+  if (filterState === "excluded") return "excluded";
+
+  if (selection && neighbourhood) {
+    const kept = kind === "activity" ? neighbourhood.activities : neighbourhood.transitions;
+    if (!kept.has(id)) return "excluded";
+  }
+
+  if (filterState !== undefined) return filterState;
+
+  return "associated";
 }
 
 // ── The model ────────────────────────────────────────────────────────────────
@@ -512,6 +564,12 @@ export interface BuildProcessMapModelOptions {
   /** Optional rework tallies (from `/core`'s `detectRework`) for the node badge. */
   rework?: ReworkStats;
   selection?: ProcessSelection | null;
+  /**
+   * Per-element states an active filter contributes (RM-052 round 2, #227) — merged with
+   * the click `selection` by {@link resolveSelectionState}. Omitting it reproduces the
+   * pre-filter behaviour exactly: every element resolves through rules 1/3/5 alone.
+   */
+  selectionStates?: ProcessSelectionStates;
   /**
    * Edge ids `layoutFlow` reported as running against the layout direction. Supplied on
    * the SECOND pass, after a layout exists — the first pass has no ranks to read, so
@@ -529,6 +587,7 @@ export function buildProcessMapModel({
   metric,
   rework,
   selection,
+  selectionStates,
   backEdgeIds,
 }: BuildProcessMapModelOptions): ProcessMapModel {
   const neighbourhood = selectionNeighbourhood(graph, selection);
@@ -557,7 +616,13 @@ export function buildProcessMapModel({
     const reworkEntry = rework?.perActivity[activity.id];
     const reworkCount =
       reworkEntry === undefined ? undefined : reworkEntry.selfLoops + reworkEntry.loops;
-    const selectionState = stateFor(activity.id, selection, "activity", neighbourhood);
+    const selectionState = resolveSelectionState(
+      activity.id,
+      "activity",
+      selection,
+      neighbourhood,
+      selectionStates,
+    );
     const data: ProcessActivityNodeData = {
       title: activity.label || activity.id,
       metricLabel: resolvedNodeMetricLabel,
@@ -584,10 +649,14 @@ export function buildProcessMapModel({
       // (#285). Without this the node announces only its id and the metric the map
       // exists to show reaches no assistive technology.
       ariaLabel: activityAriaLabel(data),
+      // No `aria-disabled` here even when `selectionState === "excluded"` — an excluded
+      // node stays fully operable (clicking it is how a reader filters it back in), and
+      // `activityAriaLabel` already appends the word "excluded" to its accessible name, so
+      // assistive technology gets the state as real text rather than a lie about
+      // disablement. See `ProcessSelectionState`'s own doc comment.
       domAttributes: {
         "data-selection": selectionState,
         "data-activity": activity.id,
-        ...(selectionState === "excluded" ? { "aria-disabled": "true" } : {}),
       } as ProcessMapNode["domAttributes"],
     };
   });
@@ -602,7 +671,13 @@ export function buildProcessMapModel({
             transitionMetricValue(transition, metric.secondary, graph.totals, denominators),
             metric.secondary,
           );
-    const selectionState = stateFor(id, selection, "transition", neighbourhood);
+    const selectionState = resolveSelectionState(
+      id,
+      "transition",
+      selection,
+      neighbourhood,
+      selectionStates,
+    );
     const data: ProcessTransitionEdgeData = {
       source: transition.source,
       target: transition.target,

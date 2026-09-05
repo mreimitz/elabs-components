@@ -111,22 +111,72 @@ describe("useProcessExplorer — selection", () => {
 });
 
 describe("useProcessExplorer — filter intents (the RM-052 acceptance criterion)", () => {
-  it("applying an intent then clearIntent(0) restores the unfiltered graph exactly (deep equality)", () => {
+  const ALL_ACTIVITIES = [
+    "Amend Order",
+    "Approve Order",
+    "Check Credit",
+    "Create Order",
+    "Receive Payment",
+    "Reject Order",
+    "Send Invoice",
+    "Ship Order",
+  ];
+  const SURVIVING = ["Check Credit", "Create Order", "Reject Order"];
+  const EXCLUDED = ALL_ACTIVITIES.filter((id) => !SURVIVING.includes(id));
+
+  it("applying an intent RE-INKS the excluded activities rather than removing them (Invariant F, #227)", () => {
     const { result } = renderHook(() => useProcessExplorer(orderToCash));
     const before = result.current.graph;
+    expect(before.activities).toHaveLength(8);
 
     // "Reject Order" only occurs in case-3 of the fixture — a real, non-trivial filter.
     act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
     expect(result.current.intents).toEqual([{ kind: "with", activity: "Reject Order" }]);
     // Sanity: the intent actually changed the graph — this test would be vacuous otherwise.
     expect(result.current.graph).not.toEqual(before);
+
+    // Invariant F: every one of the eight activities is STILL in the rendered graph — the
+    // filter never shrinks the node set, it only re-inks the five it dropped.
     expect(result.current.graph.activities.map((a) => a.id).sort()).toEqual(
-      ["Check Credit", "Create Order", "Reject Order"].sort(),
+      [...ALL_ACTIVITIES].sort(),
     );
+    expect(Object.keys(result.current.selectionStates.activities ?? {}).sort()).toEqual(
+      [...EXCLUDED].sort(),
+    );
+    for (const id of EXCLUDED) {
+      expect(result.current.selectionStates.activities?.[id]).toBe("excluded");
+      const ghost = result.current.graph.activities.find((a) => a.id === id)!;
+      expect(ghost.instances).toBe(0);
+      expect(ghost.cases).toBe(0);
+    }
+    for (const id of SURVIVING) {
+      expect(result.current.selectionStates.activities?.[id]).toBeUndefined();
+      const survivor = result.current.graph.activities.find((a) => a.id === id)!;
+      expect(survivor.instances).toBeGreaterThan(0);
+    }
+
+    // `excludedCounts` — disjoint from `hiddenCounts` (abstraction is untouched, at identity).
+    expect(result.current.excludedCounts).toEqual({
+      activities: EXCLUDED.length,
+      paths: expect.any(Number),
+    });
+    expect(result.current.excludedCounts.paths).toBeGreaterThan(0);
+    expect(result.current.hiddenCounts).toEqual({ activities: 0, paths: 0 });
+  });
+
+  it("clearIntent(0) restores the unfiltered graph exactly (deep equality) and clears selectionStates", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    const before = result.current.graph;
+
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    expect(result.current.graph).not.toEqual(before);
 
     act(() => result.current.clearIntent(0));
     expect(result.current.intents).toEqual([]);
     expect(result.current.graph).toEqual(before);
+    expect(result.current.selectionStates.activities).toEqual({});
+    expect(result.current.selectionStates.transitions).toEqual({});
+    expect(result.current.excludedCounts).toEqual({ activities: 0, paths: 0 });
   });
 
   it("clearIntent removes by index, leaving the others in place", () => {
@@ -155,6 +205,32 @@ describe("useProcessExplorer — hiddenCounts sourced from abstractGraph's own `
     expect(result.current.hiddenCounts.activities).toBeLessThanOrEqual(total - naiveKept);
     // Sanity: some abstraction is actually happening at 50%, not a total no-op.
     expect(result.current.hiddenCounts.activities).toBeGreaterThan(0);
+  });
+
+  it("stays UNMOVED by a filter intent — abstraction and filtering are disjoint (#227)", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    act(() => result.current.setAbstraction({ activities: 0.5 }));
+    const hiddenBeforeFilter = result.current.hiddenCounts;
+
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    // The filter changed what is EXCLUDED (re-inked), never what abstraction HID.
+    expect(result.current.hiddenCounts).toEqual(hiddenBeforeFilter);
+    expect(result.current.excludedCounts.activities).toBeGreaterThan(0);
+  });
+});
+
+describe("useProcessExplorer — layer (RM-052 round 2, #227, F6)", () => {
+  it("defaults to frequency, honours an initial option, and setLayer is a plain setter", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    expect(result.current.layer).toBe("frequency");
+    act(() => result.current.setLayer("performance"));
+    expect(result.current.layer).toBe("performance");
+    // A plain setter — it does not touch `metric` on its own; `MetricLayerSwitch` owns the
+    // frequency/performance coercion.
+    expect(result.current.metric).toEqual({ node: "absolute", edge: "absolute" });
+
+    const initial = renderHook(() => useProcessExplorer(orderToCash, { layer: "rework" }));
+    expect(initial.result.current.layer).toBe("rework");
   });
 });
 

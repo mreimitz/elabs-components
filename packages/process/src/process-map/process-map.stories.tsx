@@ -7,6 +7,7 @@ import { detectRework } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import type { ActivityStats, DurationStats, ProcessGraph, TransitionStats } from "../core/types";
+import { useProcessExplorer } from "../use-process-explorer";
 import { ProcessMap } from "./process-map";
 import type { ProcessSelection } from "./map-model";
 
@@ -84,10 +85,11 @@ const meta = {
           "carries its metric as stroke WIDTH and as a printed label pill before it " +
           "carries it as hue, and a node prints its value above a meter bar whose LENGTH " +
           "encodes the same number. Self-loops are a closed arc, back-edges are dashed, " +
-          "and an excluded element is dimmed AND `aria-disabled` — so nothing on this " +
-          "canvas is legible only in colour. `tableView` renders the identical numbers " +
-          "as two tables, sharing one formatter with the canvas so the two can never " +
-          "disagree.",
+          "and a filter-excluded element is dimmed — never removed, never " +
+          "`aria-disabled` — so nothing on this canvas is legible only in colour, and " +
+          "clicking a dimmed element is how a reader filters it back in. `tableView` " +
+          "renders the identical numbers as two tables, sharing one formatter with the " +
+          "canvas so the two can never disagree.",
       },
     },
   },
@@ -174,6 +176,12 @@ export const Abstracted: Story = {
  * than a synthetic `focus()` call: `Tab` reaches every activity in layout order, `Enter`
  * selects the one it is standing on, `F` opens the filter-intent menu for it, and
  * `Escape` puts focus back on the activity instead of on the Filter button.
+ *
+ * Wired through `useProcessExplorer` (RM-052 round 2, #227) rather than a bare `useState`,
+ * so `onFilterIntent` is the hook's real `applyIntent` — choosing an intent from the menu
+ * this story already opens does not shrink the canvas. The tail of the play function
+ * proves it: applying a real filter dims the activities it drops but leaves every one of
+ * them in the DOM (Invariant F).
  */
 export const Selection: Story = {
   args: {
@@ -181,11 +189,21 @@ export const Selection: Story = {
     metric: { node: "absolute_case", edge: "absolute" },
   },
   render: function SelectionStory(args) {
+    const explorer = useProcessExplorer(log);
     const [selection, setSelection] = useState<ProcessSelection | null>({
       kind: "activity",
       id: graph.activities[0]!.id,
     });
-    return <ProcessMap {...args} selection={selection} onSelect={setSelection} />;
+    return (
+      <ProcessMap
+        {...args}
+        graph={explorer.graph}
+        selection={selection}
+        onSelect={setSelection}
+        selectionStates={explorer.selectionStates}
+        onFilterIntent={explorer.applyIntent}
+      />
+    );
   },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
@@ -308,6 +326,26 @@ export const Selection: Story = {
         ),
       ).toBe(pillIndex);
     });
+
+    // ── Filtering re-inks, it never removes (Invariant F, RM-052 round 2, #227) ──────
+    // `onFilterIntent` is wired straight into `useProcessExplorer`'s own `applyIntent` —
+    // choosing a real intent from the menu this story already knows how to open must dim
+    // the activities it drops, never delete them from the canvas.
+    const totalNodesBeforeFilter = wrappers.length;
+    await userEvent.keyboard("f");
+    const filterMenu = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[role="menu"]');
+      expect(found).toBeTruthy();
+      return found!;
+    });
+    await userEvent.click(within(filterMenu).getAllByRole("menuitem")[0]!);
+
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-selection="excluded"]')).toBeTruthy(),
+    );
+    expect(canvasElement.querySelectorAll('[data-slot="process-activity-node"]').length).toBe(
+      totalNodesBeforeFilter,
+    );
   },
 };
 
