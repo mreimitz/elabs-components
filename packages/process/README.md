@@ -38,7 +38,7 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 
 ## What's in it
 
-11 exported components — including `DEFAULT_LAYOUT_DEBOUNCE_MS`, `EMPTY_PROCESS_MAP_HOVER`, `PROCESS_FILTER_INTENT_KINDS`, `PROCESS_FILTER_INTENT_LABELS`, `PROCESS_MAP_EDGE_SCALE_GROUP`.
+14 exported components — including `AbstractionControls`, `DEFAULT_LAYOUT_DEBOUNCE_MS`, `EMPTY_PROCESS_MAP_HOVER`, `MetricLayerSwitch`, `PROCESS_FILTER_INTENT_KINDS`.
 
 Don't guess the API — ask the CLI:
 
