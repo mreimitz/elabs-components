@@ -211,6 +211,7 @@ function discoverInline(log: EventLog): DiscoveryResult {
 interface DiscoveryState {
   result: DiscoveryResult;
   loading: boolean;
+  settled: boolean;
 }
 
 /**
@@ -218,14 +219,18 @@ interface DiscoveryState {
  * it, its OWN request-id ref so it can be superseded independently of any other log this
  * hook is also discovering (RM-052 round 2, #227 — the full log and the filtered log each
  * get one of these; see the module docblock's "Race safety").
- */
-/**
+ *
  * `targetLog === null` means "skip — a sibling {@link useLogDiscovery} instance already
  * covers this role" (RM-052 round 3, #227, G1). It exists so the full-log and
  * filtered-log derivations can share one discovery when `filteredLog === log` (no intent
  * active) without calling this hook conditionally, which the Rules of Hooks forbid. A
- * skipped instance runs no memo and posts no request — it is a plain `{ loading: false }`
- * placeholder the caller is expected to ignore in favour of the sibling it reuses.
+ * skipped instance runs no memo and posts no request, and its `result` stays the
+ * `EMPTY_GRAPH` placeholder for as long as it is skipped — but the caller must NOT read
+ * that placeholder as real data the moment the skip ends. `settled` (RM-052 round 4, #227,
+ * H1) is `false` until this instance has produced a result of its own — synchronously, in
+ * the same render, for a log at or under `workerThreshold`; only once the worker request
+ * resolves, above it — so a caller that keeps reusing the sibling discovery while
+ * `!settled` never shows this instance's empty placeholder as if it were a settled answer.
  */
 function useLogDiscovery(
   targetLog: EventLog | null,
@@ -275,7 +280,11 @@ function useLogDiscovery(
     // reactive state; including it would re-run this effect on every render.
   }, [targetLog, useWorkerPath]);
 
-  return { result: syncResult ?? asyncResult ?? { graph: EMPTY_GRAPH, variants: [] }, loading };
+  return {
+    result: syncResult ?? asyncResult ?? { graph: EMPTY_GRAPH, variants: [] },
+    loading,
+    settled: syncResult !== null || asyncResult !== null,
+  };
 }
 
 /**
@@ -366,8 +375,21 @@ export function useProcessExplorer(
     workerThreshold,
     getHandle,
   );
-  const filteredDiscovery = sameLog ? fullDiscovery : filteredOwnDiscovery;
-  const loading = fullDiscovery.loading || filteredDiscovery.loading;
+  // Keep reading the full discovery until the filtered instance has settled a result of
+  // its OWN — not just until the skip ends (RM-052 round 4, #227, H1). The moment the
+  // first intent makes `filteredLog !== log`, `filteredOwnDiscovery` starts running but
+  // has not resolved yet on a worker-path log; reading it immediately would paint its
+  // still-`EMPTY_GRAPH` placeholder (all-ghosted, all-zero) for the whole round-trip.
+  const filteredDiscovery =
+    sameLog || !filteredOwnDiscovery.settled ? fullDiscovery : filteredOwnDiscovery;
+  // `loading` ORs the two RAW instances, not the substituted `filteredDiscovery` above —
+  // reading `filteredDiscovery.loading` here would silently drop the real in-flight signal
+  // during exactly the window this fix targets: while `filteredOwnDiscovery` is unsettled,
+  // `filteredDiscovery` reads as `fullDiscovery` (already resolved, `loading: false`), so
+  // ORing its `.loading` would report `false` even though `filteredOwnDiscovery.loading` is
+  // genuinely `true`. `filteredOwnDiscovery.loading` is always `false` while skipped
+  // (`sameLog`), so this is a no-op change there.
+  const loading = fullDiscovery.loading || filteredOwnDiscovery.loading;
 
   const presented = useMemo(
     () => abstractGraph(fullDiscovery.result.graph, abstraction),

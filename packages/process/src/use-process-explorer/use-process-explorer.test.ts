@@ -50,6 +50,43 @@ class FakeWorker implements ProcessWorkerLike {
   }
 }
 
+/**
+ * Like `FakeWorker`, but answers only when explicitly told to. The RM-052 round 4 H1 lock
+ * below needs to observe the hook's state WHILE a worker request is genuinely in flight —
+ * `FakeWorker`'s always-resolve-on-a-microtask behaviour settles too fast to inspect that
+ * window at all.
+ */
+class ManualWorker implements ProcessWorkerLike {
+  private readonly listeners: ((event: unknown) => void)[] = [];
+  private readonly pendingRequests: ProcessWorkerRequest[] = [];
+
+  postMessage(message: unknown): void {
+    this.pendingRequests.push(message as ProcessWorkerRequest);
+  }
+
+  /**
+   * Answer every request queued so far — a single discovery round-trip posts TWO
+   * (`discover` and `variants`), and both must resolve together for `Promise.all` to
+   * settle — then clear the queue.
+   */
+  resolvePending(): void {
+    const requests = this.pendingRequests.splice(0, this.pendingRequests.length);
+    for (const request of requests) {
+      const response = handleProcessRequest(request);
+      for (const listener of this.listeners) listener({ data: response });
+    }
+  }
+
+  terminate(): void {}
+
+  addEventListener(
+    type: "message" | "error" | "messageerror",
+    listener: (event: unknown) => void,
+  ): void {
+    if (type === "message") this.listeners.push(listener);
+  }
+}
+
 describe("useProcessExplorer — defaults", () => {
   it("starts at identity abstraction, the default metric, no selection and no intents", () => {
     const { result } = renderHook(() => useProcessExplorer(orderToCash));
@@ -350,5 +387,41 @@ describe("useProcessExplorer — the async gap (`loading`)", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     // The settled graph reflects the LATEST log, never the superseded first request.
     expect(result.current.graph.totals).toEqual(discoverGraph(other).totals);
+  });
+});
+
+describe("useProcessExplorer — the first filter on a worker-path log (RM-052 round 4, #227, H1)", () => {
+  it("keeps showing the full discovery's graph/counts until the filtered instance settles its own result", async () => {
+    const worker = new ManualWorker();
+    const { result } = renderHook(() =>
+      useProcessExplorer(orderToCash, {
+        workerThreshold: 0,
+        worker: { createWorker: () => worker },
+      }),
+    );
+    // Mount's own full-log discovery is also worker-path at `workerThreshold: 0` — settle
+    // it first so this test isolates the FILTER transition, not the mount gap RM-050 owns.
+    worker.resolvePending();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const fullTotals = result.current.graph.totals;
+    expect(fullTotals).toEqual(discoverGraph(orderToCash).totals);
+
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    // The filtered instance is now running (loading flips back to true) but has not
+    // settled — its worker request sits unresolved in `worker`'s queue, deliberately.
+    expect(result.current.loading).toBe(true);
+
+    // H1: before the fix, the caller read the filtered instance's still-`EMPTY_GRAPH`
+    // result the moment `filteredLog !== log`, painting every activity/path excluded and
+    // zeroing every total for the whole worker round-trip.
+    expect(result.current.graph.totals).not.toEqual({ cases: 0, events: 0, variants: 0 });
+    expect(result.current.graph.totals).toEqual(fullTotals);
+    expect(result.current.excludedCounts).not.toEqual({ activities: 8, paths: 11 });
+    expect(result.current.excludedCounts).toEqual({ activities: 0, paths: 0 });
+
+    worker.resolvePending();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    // Once the filtered instance settles, the real filter effect is visible again.
+    expect(result.current.excludedCounts.activities).toBeGreaterThan(0);
   });
 });
