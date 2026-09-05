@@ -342,14 +342,19 @@ export const Selection: Story = {
     // strictly grow, so the assertion actually depends on the filter's effect rather than
     // on the pre-existing selection.
     //
-    // Menu item [1] ("Keep cases without" `standingOn`), not [0] ("Keep cases containing"
-    // `standingOn`): `standingOn` is the last node the Tab walk above lands on, which in
-    // this fixture is common to (or the only end activity of) effectively every case, so
-    // "containing" is a no-op filter that changes nothing — confirmed by running this
-    // fixture with item [0] and observing the excluded count stay flat at 29 before and
-    // after the click, i.e. exactly the false pass this fix exists to prevent. "without"
-    // instead drops the cases through `standingOn`, so other activities lose their
-    // statistics and the excluded count measurably grows.
+    // Menu item [1] ("Keep cases without" <activity>), not [0] ("Keep cases containing"
+    // <activity>) — and NOT `standingOn` (RM-052 round 4, #227, H2, correcting round 3's
+    // G6 comment). The `f` press right above this block fires while focus sits on the
+    // edge's label pill (restored by the Escape at line ~319), so `targetOfEvent` resolves
+    // a TRANSITION, and `menuActivities` returns `[edge.source, edge.target]` for one —
+    // this is the 8-item EDGE menu, not the 4-item activity menu `standingOn` would open.
+    // Menu item [1] belongs to the FIRST group, i.e. `edge.source`: measured directly by
+    // dumping the open menu in a real browser, that edge's source is common to (or the
+    // only start activity of) effectively every case, so "containing" it is a no-op filter
+    // — confirmed by running this fixture with item [0] and observing the excluded count
+    // stay flat at 29 before and after the click, i.e. exactly the false pass this lock
+    // exists to prevent. "without" instead drops the cases through `edge.source`, so other
+    // activities lose their statistics and the excluded count measurably grows (29 → 35).
     const totalNodesBeforeFilter = wrappers.length;
     const excludedCountBeforeFilter = canvasElement.querySelectorAll(
       '[data-selection="excluded"]',
