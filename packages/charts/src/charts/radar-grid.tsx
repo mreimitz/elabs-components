@@ -5,6 +5,7 @@ import { LineRadial } from "@visx/shape";
 import { motion } from "motion/react";
 import { transitionWithDelay } from "./motion-utils";
 import { radarCssVars, useRadarStable } from "./radar-context";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
 export interface RadarGridProps {
   /** Show level value labels. Default: true */
@@ -70,10 +71,9 @@ export function RadarGrid({ showLabels = true, className = "" }: RadarGridProps)
               data={angles}
               fill="none"
               radius={targetRadius}
-              stroke={radarCssVars.border}
+              stroke={radarCssVars.grid}
               strokeLinecap="round"
-              strokeOpacity={0.6}
-              strokeWidth={1}
+              strokeWidth={CHART_HAIRLINE_WIDTH}
             />
           </motion.g>
         );

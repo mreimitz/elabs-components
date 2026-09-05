@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { radarCssVars, useRadarStable } from "./radar-context";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
 export interface RadarAxisProps {
   /** Additional class name */
@@ -26,9 +27,8 @@ export function RadarAxis({ className = "" }: RadarAxisProps) {
             animate={{ x2: targetX, y2: targetY }}
             initial={animate ? { x2: 0, y2: 0 } : { x2: targetX, y2: targetY }}
             key={`axis-${metric.key}`}
-            stroke={radarCssVars.border}
-            strokeOpacity={0.6}
-            strokeWidth={1}
+            stroke={radarCssVars.grid}
+            strokeWidth={CHART_HAIRLINE_WIDTH}
             transition={{
               type: "spring",
               stiffness: 80,

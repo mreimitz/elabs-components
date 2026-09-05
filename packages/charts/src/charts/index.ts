@@ -60,6 +60,7 @@ export {
   type SpringConfig,
   useChartConfig,
 } from "./chart-config-context";
+export { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 export {
   type ChartContextValue,
   type ChartHoverContextValue,
