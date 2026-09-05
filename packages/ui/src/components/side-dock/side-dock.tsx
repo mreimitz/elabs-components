@@ -60,6 +60,13 @@ export interface SideDockProps extends Omit<ComponentProps<"aside">, "title"> {
   /** Which edge it docks to. Default `"right"`. */
   side?: "left" | "right";
 
+  /**
+   * `width`, `defaultWidth`, `minWidth`, `maxWidth`, `minContentWidth` and
+   * `resizable` (below) govern the COLUMN presentation only — viewport at or
+   * above `overlayBreakpoint`. Below that breakpoint the dock renders as an
+   * overlay `Sheet` sized by the viewport (`Sheet`'s own `w-3/4 max-w-sm`),
+   * so none of these props have any effect there.
+   */
   /** Controlled width in px. */
   width?: number;
   /** Uncontrolled initial width in px. Default `400`. */
@@ -82,6 +89,8 @@ export interface SideDockProps extends Omit<ComponentProps<"aside">, "title"> {
    * Viewport width in px below which the dock renders as an overlay `Sheet`
    * instead of a column. Default `1100`. Deliberately ABOVE the library's
    * 768px mobile breakpoint: a 400px dock at 768px leaves ~360px of content.
+   * This is the switch point for the column-only sizing props above — the
+   * overlay presentation ignores them entirely.
    */
   overlayBreakpoint?: number;
 }
