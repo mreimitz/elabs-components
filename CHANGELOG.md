@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fixed: `Table` (`@elabs-ai/components-ui`) — a table whose contents overflow now
+  offers a keyboard-reachable scroll region with an accessible name, so keyboard
+  and screen-reader users can reach content that only scrolling reveals; a table
+  that already fits its container is unchanged. This is automatic for every
+  existing `Table` call site and needs no new prop (#366).
 - Fixed: `ProcessMap` (`@elabs-ai/components-process`) rendered as a zero-height,
   unstyled canvas in the docs app — `packages/process` was missing from Tailwind's
   `@source` scan list in `apps/docs/.storybook/preview.css`, so its canvas-height

@@ -157,6 +157,15 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.navNotifications.label": "Notifications",
   "ui.teamSwitcher.label": "Teams",
   "ui.teamSwitcher.addTeam": "Add team",
+  // Table's own scroll wrapper (#366). Rendered ONLY when the wrapper actually
+  // overflows, so it is never announced for a table that fits — see
+  // `packages/ui/src/components/table/table.tsx`. Deliberately a `ui.*`
+  // sibling of `data.table.scrollRegion` rather than a shared cross-package
+  // key: `Table` is a `@elabs-ai/components-ui` component and each package
+  // keeps its own namespace even where the English string coincides (compare
+  // `viewer.content` vs this), so a translator can phrase either
+  // independently and neither package depends on a string owned by another.
+  "ui.table.scrollRegion": "Table contents, scrollable",
 
   // ── @elabs-ai/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
