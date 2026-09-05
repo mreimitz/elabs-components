@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T09:42:35.780Z",
+  "generatedAt": "2026-09-05T13:42:46.860Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25621,6 +25621,11 @@
       },
       "components": [
         {
+          "name": "AbstractionControls",
+          "kind": "value",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
           "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -25629,6 +25634,11 @@
           "name": "EMPTY_PROCESS_MAP_HOVER",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "MetricLayerSwitch",
+          "kind": "value",
+          "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
           "name": "PROCESS_FILTER_INTENT_KINDS",
@@ -25656,6 +25666,11 @@
           "module": "packages/process/src/process-map/process-activity-node.tsx"
         },
         {
+          "name": "ProcessKpiStrip",
+          "kind": "value",
+          "module": "packages/process/src/process-kpi-strip/process-kpi-strip.tsx"
+        },
+        {
           "name": "ProcessMap",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map.tsx"
@@ -25678,6 +25693,11 @@
       ],
       "hooks": [
         {
+          "name": "useProcessExplorer",
+          "kind": "value",
+          "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
           "name": "useProcessLayout",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
@@ -25695,12 +25715,40 @@
       ],
       "types": [
         {
+          "name": "AbstractionControlsProps",
+          "module": "packages/process/src/abstraction-controls/abstraction-controls.tsx"
+        },
+        {
           "name": "ActivityFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "AutoAbstractionOptions",
+          "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
+          "name": "AutoAbstractionResult",
+          "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
+        },
+        {
           "name": "BuildProcessMapModelOptions",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "FilterIntent",
+          "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
+          "name": "MetricLayer",
+          "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
+        },
+        {
+          "name": "MetricLayerSwitchMetric",
+          "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
+        },
+        {
+          "name": "MetricLayerSwitchProps",
+          "module": "packages/process/src/metric-layer-switch/metric-layer-switch.tsx"
         },
         {
           "name": "ProcessActivityNodeData",
@@ -25715,8 +25763,32 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "ProcessExplorerMetric",
+          "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
+          "name": "ProcessExplorerMetricSpec",
+          "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
+          "name": "ProcessExplorerOptions",
+          "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
+        },
+        {
           "name": "ProcessFilterIntent",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessKpiStripKpis",
+          "module": "packages/process/src/process-kpi-strip/process-kpi-strip.tsx"
+        },
+        {
+          "name": "ProcessKpiStripProps",
+          "module": "packages/process/src/process-kpi-strip/process-kpi-strip.tsx"
+        },
+        {
+          "name": "ProcessKpiStripTrendKey",
+          "module": "packages/process/src/process-kpi-strip/process-kpi-strip.tsx"
         },
         {
           "name": "ProcessLayoutSnapshot",
@@ -25771,6 +25843,10 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "ProcessSelectionStates",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "ProcessTransitionEdgeData",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -25781,6 +25857,10 @@
         {
           "name": "TransitionFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "UseProcessExplorerResult",
+          "module": "packages/process/src/use-process-explorer/use-process-explorer.ts"
         },
         {
           "name": "UseProcessLayoutOptions",
@@ -25811,6 +25891,10 @@
         {
           "name": "buildProcessMapModel",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "computeAutoAbstraction",
+          "module": "packages/process/src/abstraction-controls/auto-abstraction.ts"
         },
         {
           "name": "edgeMetricLabel",
@@ -25849,6 +25933,10 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "resolveSelectionState",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "resolveTransitionFrequencyMode",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -25870,6 +25958,106 @@
         }
       ],
       "props": {
+        "AbstractionControls": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "abstraction",
+              "optional": false,
+              "type": "AbstractionOptions",
+              "description": "The current abstraction — both fractions, `invert`, and (read-only here) `keepConnected`."
+            },
+            {
+              "name": "graph",
+              "optional": false,
+              "type": "Pick<ProcessGraph, \"activities\">",
+              "description": "The CURRENT (already-abstracted) graph — only `activities.length` is read."
+            },
+            {
+              "name": "hiddenCounts",
+              "optional": false,
+              "type": "{ activities: number; paths: number }",
+              "description": "What the current abstraction hides, straight from `AbstractedGraph.hidden`."
+            },
+            {
+              "name": "autoMaxActivities",
+              "optional": true,
+              "type": "number",
+              "description": "Node budget the \"Auto\" button searches for. Default `25`."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the control group. Default from locale."
+            }
+          ]
+        },
+        "MetricLayerSwitch": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onChange\">"
+          ],
+          "props": [
+            {
+              "name": "layer",
+              "optional": false,
+              "type": "MetricLayer"
+            },
+            {
+              "name": "metric",
+              "optional": false,
+              "type": "MetricLayerSwitchMetric"
+            },
+            {
+              "name": "locked",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled lock state. Omit to let the component manage it (`defaultLocked`)."
+            },
+            {
+              "name": "defaultLocked",
+              "optional": true,
+              "type": "boolean",
+              "description": "Initial lock state when uncontrolled. Default `true`."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string"
+            }
+          ]
+        },
+        "ProcessKpiStrip": {
+          "extends": [
+            "HTMLAttributes<HTMLDivElement>"
+          ],
+          "props": [
+            {
+              "name": "kpis",
+              "optional": false,
+              "type": "ProcessKpiStripKpis"
+            },
+            {
+              "name": "conformance",
+              "optional": true,
+              "type": "number | null",
+              "description": "`0..1`, or `null`/`undefined` when no conformance model has been fitted."
+            },
+            {
+              "name": "trends",
+              "optional": true,
+              "type": "Partial<Record<ProcessKpiStripTrendKey, number[]>>",
+              "description": "Optional per-tile trend series (oldest -> newest), keyed by KPI."
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean"
+            }
+          ]
+        },
         "ProcessMap": {
           "extends": [
             "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
@@ -25910,6 +26098,12 @@
               "optional": true,
               "type": "ProcessSelection | null",
               "description": "Controlled selection. Omit for an uncontrolled map that owns its own."
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ProcessSelectionStates",
+              "description": "Per-element states an active filter contributes (RM-052 round 2, #227) — e.g. from `useProcessExplorer`'s own `selectionStates`. Applying or clearing a filter never adds or removes a node or an edge (Invariant F): it only re-inks the elements a filter dropped as `\"excluded\"` (dimmed, never `aria-disabled`). Omit for a map with no filtering, which reproduces today's selection-only behaviour exactly."
             },
             {
               "name": "onSelect",
@@ -26228,6 +26422,10 @@
               "module": "packages/process/src/core/worker/process-worker.ts"
             },
             {
+              "name": "ReconciledGraph",
+              "module": "packages/process/src/core/reconcile-graph.ts"
+            },
+            {
               "name": "ReworkStats",
               "module": "packages/process/src/core/detect-rework.ts"
             },
@@ -26352,6 +26550,10 @@
             {
               "name": "quantileSorted",
               "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "reconcileGraph",
+              "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
               "name": "toEpochMs",

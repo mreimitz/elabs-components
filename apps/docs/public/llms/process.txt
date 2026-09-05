@@ -6,8 +6,10 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 
 ## Components
 
+- AbstractionControls
 - DEFAULT_LAYOUT_DEBOUNCE_MS
 - EMPTY_PROCESS_MAP_HOVER
+- MetricLayerSwitch
 - PROCESS_FILTER_INTENT_KINDS
 - PROCESS_FILTER_INTENT_LABELS
 - PROCESS_MAP_EDGE_SCALE_GROUP
@@ -16,6 +18,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
   - avoid: Registering it directly as a React Flow node type outside `ProcessMap` — it reads the map's hover/selection context and expects `buildProcessMapModel`'s node data.
   - avoid: Dropping the printed value and keeping only the fill saturation — saturation is the third channel, never the first.
   - avoid: Hand-rolling a focus ring on it — it composes `FlowNode`, which already owns the compound indicator and the `ring-2 ring-ring` selection ring.
+- ProcessKpiStrip
 - ProcessMap — Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin.
   - avoid: Encoding the metric in colour alone — an edge carries its reading as stroke WIDTH and a printed label pill before it carries it as hue, and a node prints its value beside the meter bar. A greyscale render must still be readable (WCAG 1.4.1).
   - avoid: Reaching for raw `ReactFlow`/`Panel`/`Handle` to add canvas furniture — the map is a composition of flow's CanvasShell; an overlay is an absolutely-positioned sibling, and a missing primitive is a `@elabs-ai/components-flow` change.
@@ -30,6 +33,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 
 ## Hooks
 
+- useProcessExplorer
 - useProcessLayout
 - useProcessMapEdgeKeys
 - useProcessMapHover

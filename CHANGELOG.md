@@ -1746,6 +1746,27 @@ work alongside `@elabs-ai/components-ai`.
   transcript unreachable). The compositions also pin the transcript to its
   newest line on mount, which is the caller's job by contract — this package
   owns no scroll container.
+- Added: `AbstractionControls`, `MetricLayerSwitch`, `ProcessKpiStrip` and the
+  `useProcessExplorer` hook (`@elabs-ai/components-process`, #227) — the
+  controls every process-mining session opens with. `AbstractionControls`
+  pairs two `Slider`s (activities/paths) with clickable percentage ticks, an
+  invert switch, and a bounded "Auto" search that converges on the largest
+  activities fraction that still fits a node budget without ever spinning
+  unboundedly. `MetricLayerSwitch` is a Frequency/Performance/Rework
+  `ToggleGroup` over two `Select`s (node and edge metric) with a lock that
+  keeps them in sync — while locked, the edge `Select` narrows to the
+  4-value domain both sides can share, rather than only visually mirroring
+  a wider one. `ProcessKpiStrip` is six `MetricCard` tiles built on
+  `MetricGrid` (cases, events, variants, median throughput, rework rate,
+  conformance); its conformance tile renders a genuine "Not available"
+  state — never a fabricated 0% — until a conformance model has actually
+  been fitted. `useProcessExplorer` is the coordinating hook: it owns
+  abstraction/metric state, turns filter intents into a recomputed graph via
+  `filterLog`/`discoverGraph` while keeping excluded elements `excluded`
+  rather than removed, and exposes `selection`/`onFilterIntent` so
+  `ProcessMap` and future views never call the log-filtering primitives
+  themselves — the same hook can be swapped for a host's own associative
+  selection engine without changing any component.
 
 ## v4.0.0 — 2026-08-17
 

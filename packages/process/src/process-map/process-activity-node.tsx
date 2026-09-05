@@ -29,9 +29,13 @@
  * unfixed.
  *
  * Start and end are a glyph PLUS a word in the accessible name (never a colour); rework is
- * a counted badge; the tri-state selection is an opacity and an `aria-disabled`, both set
- * on React Flow's own node element from `map-model`'s `domAttributes`, so a consumer can
- * select on `[data-selection="excluded"]` without reaching into this component.
+ * a counted badge; the tri-state selection is an opacity, driven by the `data-selection`
+ * attribute `map-model`'s `domAttributes` sets on React Flow's own node element, so a
+ * consumer can select on `[data-selection="excluded"]` without reaching into this
+ * component. An excluded node is deliberately NOT `aria-disabled`: it stays fully
+ * operable (clicking it is how a reader filters it back in), and `activityAriaLabel`
+ * already appends the word "excluded" to its accessible name, so the state reaches
+ * assistive technology through real text rather than a lie about disablement.
  */
 import { useMemo } from "react";
 import { CircleDot, Flag, Play, RefreshCw } from "lucide-react";

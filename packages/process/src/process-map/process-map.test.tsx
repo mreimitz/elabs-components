@@ -93,6 +93,36 @@ describe("ProcessMap — the accessible table twin", () => {
   });
 });
 
+describe("ProcessMap — filter exclusion re-inks, never removes (RM-052 round 2, #227, Invariant F)", () => {
+  it("keeps an excluded activity's row, marked excluded, rather than dropping it", () => {
+    const excludedId = graph.activities[graph.activities.length - 1]!.id;
+    render(
+      <ProcessMap
+        graph={graph}
+        metric={metric}
+        tableView
+        selectionStates={{ activities: { [excludedId]: "excluded" } }}
+      />,
+    );
+    const table = screen.getByRole("table", { name: /Activities/ });
+    // Invariant F: the row count is unchanged — nothing was removed from the render.
+    expect(within(table).getAllByRole("row")).toHaveLength(graph.activities.length + 1);
+    const row = within(table).getByRole("row", { name: new RegExp(escapeRe(excludedId)) });
+    expect(row).toHaveAttribute("data-selection", "excluded");
+    // An excluded row stays fully operable — never aria-disabled.
+    expect(row).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("omitting selectionStates reproduces today's model exactly (regression lock)", () => {
+    render(<ProcessMap graph={graph} metric={metric} tableView />);
+    const table = screen.getByRole("table", { name: /Activities/ });
+    for (const row of model.activityRows) {
+      const cell = within(table).getByRole("row", { name: new RegExp(escapeRe(row.title)) });
+      expect(cell).toHaveAttribute("data-selection", row.selectionState);
+    }
+  });
+});
+
 describe("ProcessMap — the filter-intent menu", () => {
   it("offers the four intents and emits the one that was chosen", async () => {
     const user = userEvent.setup();
