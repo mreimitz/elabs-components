@@ -1432,6 +1432,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | ProcessTransitionEdge | component |  | `@elabs-ai/components-process` | One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric. |
 | useProcessLayout | hook |  | `@elabs-ai/components-process` |  |
 | useProcessMapHover | hook |  | `@elabs-ai/components-process` |  |
+| BPI_2012_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
+| BPI_2012_SUBSET_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
 | DEFAULT_LIFECYCLE_VALUES | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_SAMPLE_CAP | component |  | `@elabs-ai/components-process/core` |  |
 | DURATION_UNIT_MS | component |  | `@elabs-ai/components-process/core` |  |

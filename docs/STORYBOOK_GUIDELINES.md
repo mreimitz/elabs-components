@@ -66,8 +66,11 @@ Editorial — …`, built entirely from the package's public `marks` layer.
 19. **Flow** — `@elabs-ai/components-flow` canvas.
 20. **Maps** — `@elabs-ai/components-maps`.
 21. **Marketing** — `@elabs-ai/components-marketing`.
-22. **Process** — `@elabs-ai/components-process`: the process-mining views (the one
-    layer-3 package — ADR 0034), composed from Flow, Charts, Data and Core.
+22. **Process** — `@elabs-ai/components-process`, the one layer-3 package (ADR 0034):
+    process-mining views composed from `flow`/`charts`/`data`/`ui` primitives. Sorts
+    after every layer-2 domain package and before `Patterns` because it composes them.
+    Opened in wave 1 by RM-053's placeholder story and first filled by RM-051's
+    `ProcessMap`; RM-057's remaining views land in wave 2.
 23. **Patterns** — full composed demos, in that order: `Patterns/Templates` (whole
     screens) → `Patterns/Scenarios` (multi-screen journeys) → `Patterns/Blocks`
     (copy-own building blocks). Alphabetical would interleave the three.

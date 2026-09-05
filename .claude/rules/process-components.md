@@ -97,6 +97,30 @@ and it fails on:
 `// process-reuse-exempt: <reason>` comment on the offending line. Use it for a real
 exception, not to silence a finding you should have routed down.
 
+## What `pnpm process:test-double:check` enforces
+
+`scripts/check-process-test-double.mjs` (self-tested by
+`check-process-test-double.test.mjs`, wired into `.github/workflows/gates.yml`) — a FORK of
+`check-charts-test-double.mjs` (RM-053, issue #228; see that script's own header for why a
+fork rather than a generalised, package-parameterised version). It guards
+`@elabs-ai/components-process/test`, the jsdom-safe double namespace, on four rungs:
+
+1. **Double namespace completeness** — every value `doubles.tsx` exports has a same-named
+   export from `test/index.ts` (a `vi.mock` factory proxy throws on any omitted export the
+   moment consumer code reads the binding). Deliberately narrower than the charts original:
+   this rung checks completeness WITHIN `src/test/`, not parity against the real `.` barrel,
+   because `packages/process/src/index.ts` ships zero components today — the day a real
+   component lands with the same name as a double (dropping its `Double` suffix), this rung
+   should widen to match.
+2. **Engine isolation** — no runtime import under `src/test/**` reaches `@xyflow/react`,
+   `@visx/`, `d3-`, `motion`, `@tanstack/react-virtual`, `react-use-measure`, or a
+   package/family barrel (`@elabs-ai/components-process`, `-flow`, `-charts`, `-data`) — any
+   of those pulls a real rendering engine back into a jsdom test.
+3. **Wiring** — the `./test` key exists in `package.json`'s `exports`, in
+   `publishConfig.exports`, and as a `tsup.config.ts` entry.
+4. **Manifest exclusion** — no `…/test` subpath is crawled into `brand-ui.manifest.json`; a
+   jsdom test double must never appear in the agent-facing build-with catalogue.
+
 ## Everything else still applies
 
 The cross-cutting rules bind in full — semantic tokens only, `forwardRef` + `className` +
@@ -106,8 +130,8 @@ co-located story and test. Loading and streaming use the `loading` / `isStreamin
 vocabulary from `.claude/rules/loading-states.md`; colour is never the only channel for a
 conformance or status signal (`.claude/rules/accessibility.md`).
 
-**Storybook group.** The package ships no story yet, so it has no
-`options.storySort.order` entry — `pnpm storybook-groups:check`'s stale-group rung fails on
-a listed group nothing titles into. The FIRST item to add a story registers the group in
-`apps/docs/.storybook/preview.tsx` **and** in `docs/STORYBOOK_GUIDELINES.md`'s numbered
-list, in the same change.
+**Storybook group.** RM-053 added the package's first story
+(`process-explorer.stories.tsx`), registering the `Process` group in
+`options.storySort.order` (`apps/docs/.storybook/preview.tsx`) and in the numbered list
+in `docs/STORYBOOK_GUIDELINES.md` — the next item to add a story reuses that group
+rather than adding a second one.

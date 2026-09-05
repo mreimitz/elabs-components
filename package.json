@@ -151,6 +151,8 @@
     "playbooks:check": "node scripts/check-playbooks.mjs",
     "process:reuse:check": "node scripts/check-process-reuse.mjs",
     "process:reuse:check:test": "node --test scripts/check-process-reuse.test.mjs",
+    "process:test-double:check": "node scripts/check-process-test-double.mjs",
+    "process:test-double:check:test": "node --test scripts/check-process-test-double.test.mjs",
     "playbooks:check:test": "node --test scripts/check-playbooks.test.mjs",
     "plugin:agents": "node scripts/gen-plugin-agents.mjs",
     "plugin:agents:check": "node scripts/gen-plugin-agents.mjs --check",
