@@ -170,8 +170,10 @@ export const Abstracted: Story = {
 };
 
 /**
- * A controlled selection, plus the keyboard path: `Tab` reaches the nodes React Flow makes
- * focusable, `Enter` selects the focused one, and `F` opens the filter-intent menu for it.
+ * A controlled selection, plus the keyboard path, asserted by a REAL `Tab` walk rather
+ * than a synthetic `focus()` call: `Tab` reaches every activity in layout order, `Enter`
+ * selects the one it is standing on, `F` opens the filter-intent menu for it, and
+ * `Escape` puts focus back on the activity instead of on the Filter button.
  */
 export const Selection: Story = {
   args: {
@@ -190,20 +192,66 @@ export const Selection: Story = {
       expect(canvasElement.querySelector('[data-selection="selected"]')).toBeTruthy(),
     );
 
-    // Keyboard: React Flow owns the focus order and the Enter/Space selection; this
-    // asserts the map inherits both rather than re-implementing them.
-    const wrappers = canvasElement.querySelectorAll<HTMLElement>(".react-flow__node");
-    const second = wrappers[1]!;
-    second.focus();
-    await waitFor(() => expect(document.activeElement).toBe(second));
+    const wrappers = [...canvasElement.querySelectorAll<HTMLElement>(".react-flow__node")];
+    expect(wrappers.length).toBeGreaterThan(1);
+
+    // ── DOM order IS layout order ────────────────────────────────────────────────────
+    // Measured BEFORE anything is focused: React Flow pans the viewport when a node takes
+    // focus (`autoPanOnNodeFocus`), which would move these rectangles mid-walk. The map is
+    // laid out `TB`, so reading order is top-to-bottom and then left-to-right — exactly
+    // what `applyPositions` sorts by, and therefore what the tab order below inherits.
+    const boxes = wrappers.map((wrapper) => wrapper.getBoundingClientRect());
+    for (let i = 1; i < boxes.length; i += 1) {
+      const previous = boxes[i - 1]!;
+      const current = boxes[i]!;
+      const sameRow = Math.abs(previous.top - current.top) < 1;
+      expect({
+        index: i,
+        top: [previous.top, current.top],
+        left: [previous.left, current.left],
+        ordered: sameRow ? previous.left <= current.left + 1 : previous.top < current.top,
+      }).toMatchObject({ ordered: true });
+    }
+
+    // ── A real Tab walk ─────────────────────────────────────────────────────────────
+    // From the top of the document, so this measures the traversal a keyboard user
+    // actually performs. A synthetic `.focus()` would prove the element is focusable and
+    // nothing about reachability or order.
+    (document.activeElement as HTMLElement | null)?.blur();
+    const visited: HTMLElement[] = [];
+    const visitedNodes: HTMLElement[] = [];
+    for (let i = 0; i < 80 && visitedNodes.length < wrappers.length; i += 1) {
+      await userEvent.tab();
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || active === document.body) break;
+      visited.push(active);
+      if (active.classList.contains("react-flow__node")) visitedNodes.push(active);
+    }
+
+    // Every activity is reached, and in the same order the DOM (and so the layout) has
+    // them — this is the acceptance criterion, asserted against the real traversal.
+    expect(visitedNodes.map((node) => node.dataset.id)).toEqual(
+      wrappers.map((wrapper) => wrapper.dataset.id),
+    );
+
+    // An arrow is ONE tab stop (its label pill), never two: the edge `<g>` itself is not
+    // focusable, so the activities are not buried behind a second stop per edge.
+    expect(visited.filter((element) => element.classList.contains("react-flow__edge"))).toEqual([]);
+    const pills = canvasElement.querySelectorAll('[data-slot="edge-label-pill"]');
+    expect(visited.indexOf(visitedNodes[0]!)).toBe(pills.length);
+
+    // ── Enter selects, F opens the menu, Escape comes back ───────────────────────────
+    const standingOn = visitedNodes.at(-1)!;
+    expect(document.activeElement).toBe(standingOn);
     await userEvent.keyboard("{Enter}");
     await waitFor(() =>
       expect(
-        second.querySelector('[data-slot="process-activity-node"]')?.getAttribute("data-selection"),
+        standingOn
+          .querySelector('[data-slot="process-activity-node"]')
+          ?.getAttribute("data-selection"),
       ).toBe("selected"),
     );
 
-    // `F` opens the filter-intent menu for whatever is focused.
     await userEvent.keyboard("f");
     const menu = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[role="menu"]');
@@ -211,7 +259,55 @@ export const Selection: Story = {
       return found!;
     });
     expect(within(menu).getAllByRole("menuitem")).toHaveLength(4);
+
+    // Escape returns focus to the activity the user was standing on — not to the Filter
+    // trigger, which is Radix's default and would drop a keyboard user out of the graph.
     await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(document.activeElement).toBe(standingOn));
+
+    // ── The same two keys, on an ARROW ───────────────────────────────────────────────
+    // An edge's label pill is portalled out of the edge's own `<g>` by
+    // `EdgeLabelRenderer`, so it has no `[data-id]` ancestor to read; the map recovers the
+    // edge id by catching the key on the edge component itself, where portal events bubble
+    // in the React tree. A transition offers BOTH endpoints, so eight menu items rather
+    // than a node's four is the observable proof the right target was resolved.
+    const shapes = [
+      ...canvasElement.querySelectorAll<SVGGElement>('[data-slot="process-transition-edge"]'),
+    ];
+    const forward = shapes.findIndex((shape) => shape.dataset.shape !== "self-loop");
+    expect(forward).toBeGreaterThanOrEqual(0);
+
+    (document.activeElement as HTMLElement | null)?.blur();
+    for (let i = 0; i <= forward; i += 1) await userEvent.tab();
+    const pill = document.activeElement as HTMLElement;
+    expect(pill).toHaveAttribute("data-slot", "edge-label-pill");
+
+    const pillIndex = [
+      ...canvasElement.querySelectorAll<HTMLElement>('[data-slot="edge-label-pill"]'),
+    ].indexOf(pill);
+
+    await userEvent.keyboard("f");
+    const edgeMenu = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[role="menu"]');
+      expect(found).toBeTruthy();
+      return found!;
+    });
+    expect(within(edgeMenu).getAllByRole("menuitem")).toHaveLength(8);
+
+    // Escape comes back to the ARROW too. Compared by position rather than by node
+    // identity: React Flow re-creates every portalled label pill on a re-render, so the
+    // button the user was standing on is a different DOM node by the time the menu closes
+    // — which is exactly what `focusRestorer` exists to survive.
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => {
+      const active = document.activeElement as HTMLElement;
+      expect(active.dataset.slot).toBe("edge-label-pill");
+      expect(
+        [...canvasElement.querySelectorAll<HTMLElement>('[data-slot="edge-label-pill"]')].indexOf(
+          active,
+        ),
+      ).toBe(pillIndex);
+    });
   },
 };
 

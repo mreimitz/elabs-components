@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T08:25:11.076Z",
+  "generatedAt": "2026-09-05T09:42:35.780Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25656,6 +25656,11 @@
           "module": "packages/process/src/process-map/process-map.tsx"
         },
         {
+          "name": "ProcessMapEdgeKeyContext",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
           "name": "ProcessMapHoverContext",
           "kind": "value",
           "module": "packages/process/src/process-map/process-map-context.ts"
@@ -25671,6 +25676,11 @@
           "name": "useProcessLayout",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "useProcessMapEdgeKeys",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map-context.ts"
         },
         {
           "name": "useProcessMapHover",
@@ -25710,6 +25720,10 @@
         {
           "name": "ProcessMapEdge",
           "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessMapEdgeKeyHandler",
+          "module": "packages/process/src/process-map/process-map-context.ts"
         },
         {
           "name": "ProcessMapHoverState",

@@ -39,7 +39,7 @@ stale-gated — never hand-edit between the markers.
 
 **Themes (2):** dark, light (default) · **Radius:** `calc(var(--radius-base) * (1 - var(--decoration-factor)))` · **Tokens:** 231 · **Registry blocks:** 26
 
-**Exported surface:** 1185 components · 84 hooks across 13 packages.
+**Exported surface:** 1186 components · 85 hooks across 13 packages.
 
 | Package                          | Components | Hooks | Use it for                                                                                                    |
 | -------------------------------- | ---------: | ----: | ------------------------------------------------------------------------------------------------------------- |
@@ -55,7 +55,7 @@ stale-gated — never hand-edit between the markers.
 | `@elabs-ai/components-editor`    |          8 |     1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace.                                            |
 | `@elabs-ai/components-viewer`    |         19 |     2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry.                              |
 | `@elabs-ai/components-terminal`  |         31 |     1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes.                                       |
-| `@elabs-ai/components-process`   |         10 |     2 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process`   |         11 |     3 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 _Counts are exact, from the manifest. Confirm component names/props with `brand-ui search <q>` / `brand-ui docs <Component>` — never guess the API._
 

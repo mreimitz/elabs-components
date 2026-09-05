@@ -49,7 +49,7 @@ ACTIVE_HIGHLIGHT_SELECTOR, DEFAULT_ZOOM, FileViewer, FileViewerContent, FileView
 DEFAULT_TERMINAL_GUTTER, InteractiveTerminal, Terminal, TERMINAL_TOOL_CALL_STATUSES, TERMINAL_TRANSCRIPT_ROW_KINDS, TERMINAL_VARIANTS, TERMINAL_WORKING_ACTIVE_GLYPH, TERMINAL_WORKING_SPINNER_FRAMES, TerminalActions, TerminalBanner, TerminalClearButton, TerminalComposer, TerminalConsole, TerminalContent, TerminalCopyButton, TerminalDiffHunk, TerminalEventLine, TerminalFrameContext, TerminalHeader, TerminalOverlay, TerminalPermission, TerminalRow, TerminalSlashMenu, TerminalStatus, TerminalStatusBar, TerminalSurface, TerminalTitle, TerminalTodoList, TerminalToolCall, TerminalTranscriptRow, TerminalWorking, useTerminalVariant
 
 ### @elabs-ai/components-process — Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data.
-DEFAULT_LAYOUT_DEBOUNCE_MS, EMPTY_PROCESS_MAP_HOVER, PROCESS_FILTER_INTENT_KINDS, PROCESS_FILTER_INTENT_LABELS, PROCESS_MAP_EDGE_SCALE_GROUP, PROCESS_MAP_NODE_MOTION_CLASS, ProcessActivityNode, ProcessMap, ProcessMapHoverContext, ProcessTransitionEdge, useProcessLayout, useProcessMapHover
+DEFAULT_LAYOUT_DEBOUNCE_MS, EMPTY_PROCESS_MAP_HOVER, PROCESS_FILTER_INTENT_KINDS, PROCESS_FILTER_INTENT_LABELS, PROCESS_MAP_EDGE_SCALE_GROUP, PROCESS_MAP_NODE_MOTION_CLASS, ProcessActivityNode, ProcessMap, ProcessMapEdgeKeyContext, ProcessMapHoverContext, ProcessTransitionEdge, useProcessLayout, useProcessMapEdgeKeys, useProcessMapHover
 
 ## Playbooks (intent → archetype)
 

@@ -30,9 +30,17 @@
  *
  * ## Accessibility
  *
- * - Nodes and edges are React Flow's own focusable elements, so `Tab` walks them in DOM
- *   order (which `layoutFlow` emits in layout order) and `Enter`/`Space` selects — React
- *   Flow's `elementSelectionKeys` handling, not a re-implementation.
+ * - Nodes are React Flow's own focusable elements, and `applyPositions` emits them SORTED
+ *   BY THEIR LAID-OUT POSITION (top-to-bottom then left-to-right for `TB`, the transpose
+ *   for `LR`) rather than in model order — so DOM order, and therefore `Tab` order, is
+ *   layout order. `Enter`/`Space` selects via React Flow's `elementSelectionKeys`
+ *   handling, not a re-implementation.
+ * - Edges are NOT separate tab stops (`edgesFocusable={false}`). Every edge already
+ *   carries a focusable, named label pill, so leaving the edge `<g>` focusable too put
+ *   two stops on every arrow and buried the activities behind them. Keys pressed on a
+ *   pill still reach the map: `EdgeLabelRenderer` is a React portal, so its events bubble
+ *   up the REACT tree through `ProcessTransitionEdge`, which knows its own edge id and
+ *   hands it to `onEdgeKey` (`ProcessMapEdgeKeyContext`).
  * - `F` opens the filter-intent menu for whatever is focused, falling back to the current
  *   selection. The same menu is reachable with the mouse by right-clicking a node or an
  *   edge, and with neither by the always-present "Filter…" button — a keyboard shortcut
@@ -96,6 +104,7 @@ import { ProcessActivityNode } from "./process-activity-node";
 import { ProcessTransitionEdge } from "./process-transition-edge";
 import {
   EMPTY_PROCESS_MAP_HOVER,
+  ProcessMapEdgeKeyContext,
   ProcessMapHoverContext,
   type ProcessMapHoverState,
 } from "./process-map-context";
@@ -265,8 +274,8 @@ export function ProcessMap({
   );
 
   const positionedNodes = useMemo(
-    () => (model ? applyPositions(model, layout) : EMPTY_NODES),
-    [model, layout],
+    () => (model ? applyPositions(model, layout, direction) : EMPTY_NODES),
+    [model, layout, direction],
   );
 
   // ── Hover ─────────────────────────────────────────────────────────────────
@@ -287,10 +296,26 @@ export function ProcessMap({
   const [menuTarget, setMenuTarget] = useState<ProcessSelection | null>(null);
   const menuOpen = menuTarget !== null;
 
-  const openMenuFor = useCallback((target: ProcessSelection | null) => {
-    if (!target) return;
-    setMenuTarget(target);
-  }, []);
+  /**
+   * How to put focus back when the menu closes (F5).
+   *
+   * Radix returns focus to the TRIGGER by default, which is correct for a menu the user
+   * opened from the trigger and wrong for one opened with `f` while standing on a node or
+   * an arrow — that drops a keyboard user out of the graph and makes them tab back in.
+   * Holds a {@link focusRestorer} rather than an element, because a portalled edge label
+   * does not survive the re-render. Set only on the keyboard path; `null` means "let Radix
+   * do its usual thing".
+   */
+  const returnFocusRef = useRef<(() => void) | null>(null);
+
+  const openMenuFor = useCallback(
+    (target: ProcessSelection | null, restoreFocus: (() => void) | null = null) => {
+      if (!target) return;
+      returnFocusRef.current = restoreFocus;
+      setMenuTarget(target);
+    },
+    [],
+  );
 
   // The menu filters by ACTIVITY, so a transition offers both of its endpoints.
   const menuActivities = useMemo(() => {
@@ -315,11 +340,19 @@ export function ProcessMap({
     [activeSelection, model],
   );
 
-  const handleKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      const element = event.target as HTMLElement | null;
-      // Never steal a letter someone is typing.
-      if (element?.closest("input, textarea, [contenteditable='true']")) return;
+  /**
+   * The two element keys, for a target the caller already resolved.
+   *
+   * Shared by the root handler (which resolves the target from the focused DOM element)
+   * and by `ProcessTransitionEdge`, which resolves it from its own `id` because an edge's
+   * label pill is portalled out of the edge's DOM subtree and so has no `[data-id]`
+   * ancestor to read. Returns whether it handled the key, so the edge can stop the event
+   * rather than let the root re-handle it against the wrong target.
+   */
+  const handleElementKey = useCallback(
+    (event: ReactKeyboardEvent, target: ProcessSelection | null): boolean => {
+      if (!target) return false;
+      if (event.metaKey || event.ctrlKey || event.altKey) return false;
 
       // Enter / Space: React Flow's `elementSelectionKeys` handling marks its OWN
       // selection on the focused element — which is a different thing from this map's
@@ -327,25 +360,49 @@ export function ProcessMap({
       // Flow still runs (no `preventDefault`), and the domain selection follows the same
       // toggle a click performs.
       if (event.key === "Enter" || event.key === " ") {
-        if (event.metaKey || event.ctrlKey || event.altKey) return;
-        const owner = element?.closest<HTMLElement>("[data-id]");
-        if (!owner) return;
-        const target = targetOfEvent(element);
-        if (!target) return;
         applySelection(
           activeSelection?.kind === target.kind && activeSelection.id === target.id ? null : target,
         );
-        return;
+        return true;
       }
 
-      if (event.key !== "f" && event.key !== "F") return;
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      const target = targetOfEvent(element);
-      if (!target) return;
+      if (event.key !== "f" && event.key !== "F") return false;
       event.preventDefault();
-      openMenuFor(target);
+      // Remember where the user was standing, so Escape puts them back there (F5).
+      const active = (event.target as HTMLElement | null)?.ownerDocument.activeElement;
+      openMenuFor(target, active instanceof HTMLElement ? focusRestorer(active) : null);
+      return true;
     },
-    [activeSelection, applySelection, openMenuFor, targetOfEvent],
+    [activeSelection, applySelection, openMenuFor],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      const element = event.target as HTMLElement | null;
+      // Never steal a letter someone is typing.
+      if (element?.closest("input, textarea, [contenteditable='true']")) return;
+      // Enter/Space only means "select" while standing ON a React Flow element; anywhere
+      // else it is the button/menu-item activation the browser already owns.
+      const onFlowElement = Boolean(element?.closest<HTMLElement>("[data-id]"));
+      if ((event.key === "Enter" || event.key === " ") && !onFlowElement) return;
+      handleElementKey(event, targetOfEvent(element));
+    },
+    [handleElementKey, targetOfEvent],
+  );
+
+  /**
+   * The edge half of {@link handleElementKey}, handed to every `ProcessTransitionEdge`.
+   *
+   * `stopPropagation` matters: without it the same event reaches the root handler, whose
+   * `targetOfEvent` finds no `[data-id]` ancestor above a portalled pill and would fall
+   * back to the current SELECTION — i.e. `f` on one arrow's pill would open the menu for
+   * a different element entirely.
+   */
+  const handleEdgeKey = useCallback(
+    (edgeId: string, event: ReactKeyboardEvent) => {
+      if (handleElementKey(event, { kind: "transition", id: edgeId })) event.stopPropagation();
+    },
+    [handleElementKey],
   );
 
   const emitIntent = useCallback(
@@ -425,7 +482,21 @@ export function ProcessMap({
           {t("process.map.filter")}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" data-slot="process-map-filter-menu">
+      <DropdownMenuContent
+        align="end"
+        data-slot="process-map-filter-menu"
+        // Put a keyboard user back where they were standing (F5). Radix's default is to
+        // focus the TRIGGER, which is right for a menu opened FROM the trigger and wrong
+        // for one opened with `f` from a node — that drops the user out of the graph and
+        // makes them tab all the way back in.
+        onCloseAutoFocus={(event) => {
+          const restore = returnFocusRef.current;
+          returnFocusRef.current = null;
+          if (!restore) return;
+          event.preventDefault();
+          restore();
+        }}
+      >
         {menuActivities.map((activity, index) => (
           <div key={activity}>
             {index > 0 ? <DropdownMenuSeparator /> : null}
@@ -520,44 +591,52 @@ export function ProcessMap({
       {...props}
     >
       <ProcessMapHoverContext value={hover}>
-        <CanvasShell
-          nodes={positionedNodes}
-          edges={model.edges}
-          nodeTypes={NODE_TYPES}
-          edgeTypes={EDGE_TYPES}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          className={PROCESS_MAP_NODE_MOTION_CLASS}
-          aria-label={mapLabel}
-          onNodeClick={(_event, node) =>
-            applySelection(
-              activeSelection?.kind === "activity" && activeSelection.id === node.id
-                ? null
-                : { kind: "activity", id: node.id },
-            )
-          }
-          onEdgeClick={(_event, edge) =>
-            applySelection(
-              activeSelection?.kind === "transition" && activeSelection.id === edge.id
-                ? null
-                : { kind: "transition", id: edge.id },
-            )
-          }
-          onNodeMouseEnter={handleNodeEnter}
-          onNodeMouseLeave={handleNodeLeave}
-          onNodeContextMenu={(event, node) => {
-            event.preventDefault();
-            openMenuFor({ kind: "activity", id: node.id });
-          }}
-          onEdgeContextMenu={(event, edge) => {
-            event.preventDefault();
-            openMenuFor({ kind: "transition", id: edge.id });
-          }}
-          onPaneClick={() => applySelection(null)}
-        >
-          <ZoomControls />
-          {showMiniMap ? <FlowMiniMap pannable zoomable /> : null}
-        </CanvasShell>
+        <ProcessMapEdgeKeyContext value={handleEdgeKey}>
+          <CanvasShell
+            nodes={positionedNodes}
+            edges={model.edges}
+            nodeTypes={NODE_TYPES}
+            edgeTypes={EDGE_TYPES}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            // One tab stop per arrow, not two. Every edge already renders a focusable,
+            // named label pill (`EdgeLabelPill`), so leaving React Flow's edge `<g>`
+            // focusable as well doubled the stops in front of the activities — 28 of them
+            // before the first node in the shipped fixture. Keys pressed on the pill still
+            // reach this component through `ProcessMapEdgeKeyContext`.
+            edgesFocusable={false}
+            className={PROCESS_MAP_NODE_MOTION_CLASS}
+            aria-label={mapLabel}
+            onNodeClick={(_event, node) =>
+              applySelection(
+                activeSelection?.kind === "activity" && activeSelection.id === node.id
+                  ? null
+                  : { kind: "activity", id: node.id },
+              )
+            }
+            onEdgeClick={(_event, edge) =>
+              applySelection(
+                activeSelection?.kind === "transition" && activeSelection.id === edge.id
+                  ? null
+                  : { kind: "transition", id: edge.id },
+              )
+            }
+            onNodeMouseEnter={handleNodeEnter}
+            onNodeMouseLeave={handleNodeLeave}
+            onNodeContextMenu={(event, node) => {
+              event.preventDefault();
+              openMenuFor({ kind: "activity", id: node.id });
+            }}
+            onEdgeContextMenu={(event, edge) => {
+              event.preventDefault();
+              openMenuFor({ kind: "transition", id: edge.id });
+            }}
+            onPaneClick={() => applySelection(null)}
+          >
+            <ZoomControls />
+            {showMiniMap ? <FlowMiniMap pannable zoomable /> : null}
+          </CanvasShell>
+        </ProcessMapEdgeKeyContext>
       </ProcessMapHoverContext>
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3">
@@ -579,27 +658,90 @@ export function ProcessMap({
   );
 }
 
+/**
+ * Remember how to FIND the element focus should come back to — not the element itself.
+ *
+ * An edge's label pill is rendered through React Flow's `EdgeLabelRenderer`, a portal
+ * whose children are RE-CREATED on a re-render (measured: opening the filter menu replaces
+ * all fifteen pill buttons in the shipped fixture). By the time the menu closes, the
+ * button the user was standing on is detached and focusing it does nothing. A node wrapper
+ * does survive, so it is found again by its `data-id`; a portalled label is found by its
+ * position among its siblings in the label layer, which is stable because React reconciles
+ * the portals in edge order.
+ */
+function focusRestorer(element: HTMLElement): () => void {
+  const flowId = element.closest<HTMLElement>("[data-id]")?.dataset.id;
+  const slot = element.dataset.slot;
+  const layer = element.closest<HTMLElement>(".react-flow__edgelabel-renderer");
+  const peers =
+    slot && layer ? [...layer.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]`)] : [];
+  const index = peers.indexOf(element);
+  const root = element.closest<HTMLElement>('[data-slot="process-map"]');
+
+  return () => {
+    if (element.isConnected) {
+      element.focus();
+      return;
+    }
+    if (flowId && root) {
+      root.querySelector<HTMLElement>(`[data-id="${CSS.escape(flowId)}"]`)?.focus();
+      return;
+    }
+    if (slot && index >= 0 && layer?.isConnected) {
+      layer.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]`)[index]?.focus();
+    }
+  };
+}
+
 /** Stable empty arrays, so a graph-less render does not churn the layout hook's inputs. */
 const EMPTY_NODES: ProcessMapModel["nodes"] = [];
 const EMPTY_EDGES: ProcessMapModel["edges"] = [];
 
 /**
- * Re-apply the laid-out positions onto the second-pass model.
+ * Re-apply the laid-out positions onto the second-pass model, IN LAID-OUT ORDER.
  *
  * The layout hook positions the FIRST-pass nodes; the second pass rebuilds them with
  * back-edge knowledge, which produces new objects at the origin again. Matching on id is
  * the same trick `applyLayoutSnapshot` uses, one level up.
+ *
+ * The sort is the other half, and it is load-bearing for the keyboard: React Flow renders
+ * node wrappers in array order, and each wrapper is a tab stop, so the array order IS the
+ * tab order. Mapping over `model.nodes` made that MODEL order — which is discovery order,
+ * so `Tab` could reach a mid-process activity before the start one. Reading down the graph
+ * (`TB`: ascending `y`, then `x`; `LR`: the transpose) is what a sighted user's eye does,
+ * so it is what `Tab` should do. Ties break on id so the order is total and stable — dagre
+ * gives whole ranks the same coordinate.
+ *
+ * This runs AFTER `useProcessLayout`, on its output; the hook's inputs and its cache key
+ * are untouched, so re-ordering here cannot make the layout re-run.
  */
-function applyPositions(model: ProcessMapModel, layout: UseProcessLayoutResult) {
+function applyPositions(
+  model: ProcessMapModel,
+  layout: UseProcessLayoutResult,
+  direction: FlowLayoutDirection,
+) {
   const byId = new Map(layout.nodes.map((node) => [node.id, node]));
-  return model.nodes.map((node) => {
-    const positioned = byId.get(node.id);
-    if (!positioned) return node;
+  const positioned = model.nodes.map((node) => {
+    const laidOut = byId.get(node.id);
+    if (!laidOut) return node;
     return {
       ...node,
-      position: positioned.position,
-      sourcePosition: positioned.sourcePosition,
-      targetPosition: positioned.targetPosition,
+      position: laidOut.position,
+      sourcePosition: laidOut.sourcePosition,
+      targetPosition: laidOut.targetPosition,
     };
+  });
+
+  const alongFlow = direction === "LR" || direction === "RL" ? "x" : "y";
+  const acrossFlow = alongFlow === "x" ? "y" : "x";
+  // `BT`/`RL` lay rank 0 out at the HIGH end of the flow axis, so reading order down the
+  // process is descending there — the sign, not a different axis.
+  const sign = direction === "BT" || direction === "RL" ? -1 : 1;
+  return positioned.sort((a, b) => {
+    const along = sign * (a.position[alongFlow] - b.position[alongFlow]);
+    if (along !== 0) return along;
+    const across = a.position[acrossFlow] - b.position[acrossFlow];
+    if (across !== 0) return across;
+    return a.id.localeCompare(b.id);
   });
 }

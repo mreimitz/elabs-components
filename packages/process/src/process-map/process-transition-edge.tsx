@@ -40,7 +40,7 @@ import {
   type FlowSelfLoopEdgeData,
   type FlowWeightedEdgeData,
 } from "@elabs-ai/components-flow";
-import { useProcessMapHover } from "./process-map-context";
+import { useProcessMapEdgeKeys, useProcessMapHover } from "./process-map-context";
 import type { ProcessMapEdge } from "./map-model";
 
 /**
@@ -65,6 +65,7 @@ const UNRELATED_OPACITY = 0.25;
 export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
   const { data } = props;
   const hover = useProcessMapHover();
+  const onEdgeKey = useProcessMapEdgeKeys();
 
   const weightedData = useMemo<FlowWeightedEdgeData>(
     () => ({
@@ -111,6 +112,12 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       data-incident={hover.incidentEdgeIds.has(props.id) ? "true" : undefined}
       className="transition-opacity duration-fast ease-standard motion-reduce:transition-none"
       style={{ opacity }}
+      // The label pill is portalled out of this `<g>` by `EdgeLabelRenderer`, so it has no
+      // `[data-id]` ancestor the map's root handler could read — but a portal's events
+      // still bubble up the REACT tree, through here, where the edge id is known. This is
+      // what keeps `Enter` (select) and `f` (filter menu) working on a transition now that
+      // the edge itself is not a tab stop and the pill is the only stop on the arrow.
+      onKeyDown={(event) => onEdgeKey(props.id, event)}
     >
       {data?.isSelfLoop ? (
         <FlowSelfLoopEdge {...props} type="self-loop" data={selfLoopData} />

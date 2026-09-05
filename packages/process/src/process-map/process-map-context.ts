@@ -15,7 +15,7 @@
  * both read it without either importing the other, and without a cycle back through the
  * component that provides it.
  */
-import { createContext, use } from "react";
+import { createContext, use, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 /** What the node and edge components read while something is hovered. */
 export interface ProcessMapHoverState {
@@ -41,4 +41,31 @@ export const ProcessMapHoverContext = createContext<ProcessMapHoverState>(EMPTY_
 /** Read the current hover state. `use()` per the repo's new-context-read convention. */
 export function useProcessMapHover(): ProcessMapHoverState {
   return use(ProcessMapHoverContext);
+}
+
+/**
+ * How an edge hands a key press back to the map (RM-051).
+ *
+ * An edge's label pill is rendered through React Flow's `EdgeLabelRenderer`, which is a
+ * PORTAL: the button lands in `.react-flow__edgelabel-renderer`, outside the edge's own
+ * `<g>`, so it has no `[data-id]` ancestor for the map's root key handler to read. React
+ * portal events still bubble up the REACT tree, though — so `ProcessTransitionEdge`, which
+ * knows its own `id`, catches the key on its wrapper `<g>` and calls this. It is the ONLY
+ * way `Enter` and `f` stay usable on a transition now that the edge `<g>` itself is not a
+ * tab stop.
+ *
+ * The default is a no-op, so `ProcessTransitionEdge` renders standalone (a story, a unit
+ * test) without a provider.
+ */
+export type ProcessMapEdgeKeyHandler = (edgeId: string, event: ReactKeyboardEvent) => void;
+
+const NOOP_EDGE_KEY_HANDLER: ProcessMapEdgeKeyHandler = () => {};
+
+/** Provided by `ProcessMap`; consumed by `ProcessTransitionEdge`. */
+export const ProcessMapEdgeKeyContext =
+  createContext<ProcessMapEdgeKeyHandler>(NOOP_EDGE_KEY_HANDLER);
+
+/** Read the map's edge key handler. `use()` per the repo's new-context-read convention. */
+export function useProcessMapEdgeKeys(): ProcessMapEdgeKeyHandler {
+  return use(ProcessMapEdgeKeyContext);
 }

@@ -21,7 +21,10 @@
   or an edge selects it and dims everything it does not touch; right-clicking it
   or pressing `F` opens a filter menu whose four intents are exactly the shapes
   `/core`'s `filterLog` accepts, so an app can act on one without translating
-  it. `tableView` renders the same graph as two tables built from the same
+  it. Keyboard order follows the picture: `Tab` visits the activities in the
+  order they are laid out (down the process, then across), each arrow is a
+  single stop rather than two, and closing the filter menu puts you back on the
+  activity or arrow you opened it from instead of on the toolbar button. `tableView` renders the same graph as two tables built from the same
   formatter as the canvas, so the accessible twin cannot drift from the picture.
   Switching the metric, selecting, or hovering never re-runs the layout: dagre's
   output is cached on the graph's structure alone, re-layouts are debounced, and

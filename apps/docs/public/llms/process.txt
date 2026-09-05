@@ -21,6 +21,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
   - avoid: Reaching for raw `ReactFlow`/`Panel`/`Handle` to add canvas furniture — the map is a composition of flow's CanvasShell; an overlay is an absolutely-positioned sibling, and a missing primitive is a `@elabs-ai/components-flow` change.
   - avoid: Re-deriving the numbers for a table, an export or a tooltip — `tableView` and the canvas render from the SAME model, which is what stops the two from disagreeing.
   - avoid: Passing a raw event log on every render — pass `graph` from `discoverGraph` (or memoize the log) so a metric switch never re-runs discovery or the dagre layout.
+- ProcessMapEdgeKeyContext
 - ProcessMapHoverContext
 - ProcessTransitionEdge — One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric.
   - avoid: Writing a pixel width into `data.weight` — it is the RAW metric value, and `@elabs-ai/components-flow`'s `computeEdgeWeightScale` owns the min-max into `DEFAULT_EDGE_WIDTH_RANGE`.
@@ -30,6 +31,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 ## Hooks
 
 - useProcessLayout
+- useProcessMapEdgeKeys
 - useProcessMapHover
 
 ## Subpath exports

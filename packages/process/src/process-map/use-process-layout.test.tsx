@@ -88,8 +88,15 @@ describe("useProcessLayout", () => {
 
   it("does NOT re-run layoutFlow for a metric-only change (the cache-hit criterion)", async () => {
     const first = modelFor("absolute");
+    // A short debounce, so the wait below is real rather than nominal. With the shipped
+    // 80 ms default, `layoutRuns` is read BEFORE an invalidated re-layout could have fired
+    // and would still read 1 with the cache key broken — the assertion looks stronger than
+    // it is. Shortening the debounce and then waiting past it is what makes BOTH halves of
+    // this test load-bearing rather than just the byte-identical positions.
+    const debounceMs = 10;
     const { result, rerender } = renderHook(
-      ({ nodes, edges }) => useProcessLayout({ nodes, edges, structureKey, direction: "TB" }),
+      ({ nodes, edges }) =>
+        useProcessLayout({ nodes, edges, structureKey, direction: "TB", debounceMs }),
       { initialProps: { nodes: first.nodes, edges: first.edges } },
     );
     await waitFor(() => expect(result.current.layoutRuns).toBe(1));
@@ -105,6 +112,7 @@ describe("useProcessLayout", () => {
     await waitFor(() =>
       expect(result.current.nodes[0]!.data.metricLabel).toBe(second.nodes[0]!.data.metricLabel),
     );
+    await new Promise((resolve) => setTimeout(resolve, debounceMs * 6));
     expect(result.current.layoutRuns).toBe(1);
     expect(result.current.nodes.map((n) => `${n.id}:${n.position.x},${n.position.y}`)).toEqual(
       positionsBefore,
