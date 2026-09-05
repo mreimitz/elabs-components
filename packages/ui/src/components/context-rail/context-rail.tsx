@@ -442,21 +442,32 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
   // the `light` reference theme `--surface` reads as a near-white rectangle
   // against the rail's own dark ground. Fixed at this call site only (never
   // in `state-panel.tsx`, which stays canvas-tuned for its other consumers):
-  // `bg-sidebar-accent`/`border-sidebar-border` move the panel onto a
-  // sidebar-family surface (no new token minted), and the `--foreground` /
-  // `--muted-foreground` custom-property retarget makes `StatePanel`'s own
-  // (unexported) `text-foreground`/`text-muted-foreground` title and
-  // description ink resolve against the RAIL's ink instead of the page's —
-  // in `light`, `--foreground` and `--sidebar` are the same colour, so
-  // without this the title would render at ~1.3:1 against its own
-  // background. Same idiom as `focus-ring [--focus-ring-color:…]` elsewhere
-  // in this package: retarget the variable the shared component already
-  // reads, don't fork the component.
+  // `bg-sidebar-accent` moves the panel onto a sidebar-family surface (no new
+  // token minted), and the `--foreground` / `--muted-foreground` custom-
+  // property retarget makes `StatePanel`'s own (unexported)
+  // `text-foreground`/`text-muted-foreground` title and description ink
+  // resolve against the RAIL's ink instead of the page's — in `light`,
+  // `--foreground` and `--sidebar` are the same colour, so without this the
+  // title would render at ~1.3:1 against its own background. Same idiom as
+  // `focus-ring [--focus-ring-color:…]` elsewhere in this package: retarget
+  // the variable the shared component already reads, don't fork the
+  // component.
+  //
+  // Fix round 1 (task-11f-fix-1.md, Moderate M1): this block used to also add
+  // `border-sidebar-border`. Measured against the `bg-sidebar-accent` fill
+  // above, that border read at 1.09:1 (light) / 1.07:1 (dark) — effectively
+  // invisible, and a pairing no other Sidebar-family surface uses (every
+  // other use of `--sidebar-border` sits on the ambient `--sidebar` chrome,
+  // not on this fill). Dropped rather than swapped for a louder border token:
+  // the fill plus the title text already separate the panel from the rail
+  // (see "Surface separation" in styling-and-tokens.md — a non-default fill
+  // doesn't also need a bare border unless the border is the sole structural
+  // cue).
   const emptyContent = empty ?? (
     <StatePanel
       kind="empty"
       title={t("ui.contextRail.empty")}
-      className="border-sidebar-border bg-sidebar-accent [--foreground:var(--sidebar-foreground)] [--muted-foreground:var(--sidebar-muted-foreground)]"
+      className="bg-sidebar-accent [--foreground:var(--sidebar-foreground)] [--muted-foreground:var(--sidebar-muted-foreground)]"
     />
   );
   const emptySlot = <div data-slot="context-rail-empty">{emptyContent}</div>;
