@@ -326,3 +326,87 @@ export const CollapsedGroupLabel: Story = {
     await expect(label.getBoundingClientRect().height).toBe(0);
   },
 };
+
+/**
+ * `SidebarProvider frame="nested"` (ADR 0035 §4, Task 9A) is the shared
+ * primitive a compound component (e.g. the future `ContextRail`) mounts to
+ * give a second `Sidebar` its own `useSidebar()` state without behaving like
+ * a second app frame — the smallest real composition that proves it in a
+ * browser rather than in jsdom: an ordinary left-hand app frame whose inset
+ * content nests a `frame="nested"` provider around a right-hand icon rail.
+ */
+export const NestedFrameProvider: Story = {
+  render: () => (
+    <div className="h-[480px]">
+      <SidebarProvider>
+        <Sidebar collapsible="icon">
+          <SidebarHeader className="px-3 py-2 font-semibold">Brand UI</SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton isActive tooltip="Home">
+                      <Home />
+                      <span>Home</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-14 items-center gap-2 border-b px-4">
+            <SidebarTrigger />
+            <span className="text-body font-medium">Dashboard</span>
+          </header>
+          <div className="flex h-[calc(100%-3.5rem)]">
+            <div className="flex-1 p-6 text-body text-muted-foreground">Main content.</div>
+            <SidebarProvider frame="nested" data-testid="nested-provider">
+              <Sidebar side="right" collapsible="icon">
+                <SidebarContent>
+                  <SidebarGroup>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton tooltip="Details">
+                            <Inbox />
+                            <span>Details</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton tooltip="Settings">
+                            <Settings />
+                            <span>Settings</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                </SidebarContent>
+              </Sidebar>
+            </SidebarProvider>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // Exactly one frame in the whole composition — the nested provider does
+    // not duplicate the "sidebar wrapper" slot.
+    await expect(canvasElement.querySelectorAll('[data-slot="sidebar-wrapper"]')).toHaveLength(1);
+    const nestedProviderEl = canvasElement.querySelector(
+      '[data-testid="nested-provider"]',
+    ) as HTMLElement;
+    await expect(nestedProviderEl).not.toBeNull();
+    // `display: contents` — resolved from the story's own DOM, not a guessed
+    // ancestor.
+    await expect(getComputedStyle(nestedProviderEl).display).toBe("contents");
+    // The custom property survives `display: contents`, which is how the
+    // nested provider publishes its width to the `Sidebar` beneath it.
+    await expect(getComputedStyle(nestedProviderEl).getPropertyValue("--sidebar-width")).not.toBe(
+      "",
+    );
+  },
+};

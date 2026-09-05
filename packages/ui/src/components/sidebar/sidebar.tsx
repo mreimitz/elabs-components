@@ -66,6 +66,18 @@ export const SidebarProvider = forwardRef<
      * is unaffected.
      */
     variant?: "sidebar" | "floating" | "inset";
+    /**
+     * Default `"app"` — today's behaviour, byte-identical. `"nested"` is for
+     * a `SidebarProvider` a compound component (e.g. `ContextRail`, ADR 0035
+     * §4) mounts internally so `useSidebar()` reports ITS OWN state to its
+     * own parts: it still provides `SidebarContext` and the two
+     * `--sidebar-width*` custom properties (which survive `display:
+     * contents`), but renders no frame box, no `data-slot`/`data-variant`/
+     * `data-state`, registers no global `⌘B`/`Ctrl+B` listener, and writes no
+     * `sidebar_state` cookie — so a nested rail can never be mistaken for a
+     * second app frame. See the emission table in ADR 0035 §4.
+     */
+    frame?: "app" | "nested";
   }
 >(function SidebarProvider(
   {
@@ -73,6 +85,7 @@ export const SidebarProvider = forwardRef<
     open: openProp,
     onOpenChange: setOpenProp,
     variant,
+    frame = "app",
     className,
     style,
     children,
@@ -80,6 +93,7 @@ export const SidebarProvider = forwardRef<
   },
   ref,
 ) {
+  const isNested = frame === "nested";
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = useState(false);
 
@@ -90,11 +104,14 @@ export const SidebarProvider = forwardRef<
       const openState = typeof value === "function" ? value(open) : value;
       if (setOpenProp) setOpenProp(openState);
       else _setOpen(openState);
-      if (typeof document !== "undefined") {
+      // A nested provider (ADR 0035 §4) is not the app frame, so it must not
+      // persist ITS state as if it were — only `frame="app"` (the default)
+      // owns the `sidebar_state` cookie.
+      if (!isNested && typeof document !== "undefined") {
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       }
     },
-    [setOpenProp, open],
+    [setOpenProp, open, isNested],
   );
 
   const toggleSidebar = useCallback(() => {
@@ -102,6 +119,10 @@ export const SidebarProvider = forwardRef<
   }, [isMobile, setOpen]);
 
   useEffect(() => {
+    // Same reasoning as the cookie write above: the global keyboard shortcut
+    // belongs to the ONE app frame, not to every nested provider a compound
+    // component happens to mount.
+    if (isNested) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -110,7 +131,7 @@ export const SidebarProvider = forwardRef<
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
+  }, [isNested, toggleSidebar]);
 
   const state = open ? "expanded" : "collapsed";
 
@@ -124,18 +145,26 @@ export const SidebarProvider = forwardRef<
       <TooltipProvider delayDuration={0}>
         <div
           ref={ref}
-          data-slot="sidebar-wrapper"
-          // `data-variant`/`data-state`/`group/sidebar-wrapper` (this class list)
-          // are ADR 0035 §8 refinement 3's `frame="app"` surface — a future
-          // `frame="nested"` provider (arriving with the task that introduces
-          // `frame`) must omit all three, or a nested rail's own state would
-          // silently drive the outer frame's geometry through the same group
-          // name. `SidebarProvider` has no `frame` prop yet, so that omission
-          // is deliberately NOT implemented here; this comment is the marker.
-          data-variant={variant}
-          data-state={state}
+          // `data-slot`/`data-variant`/`data-state`/`group/sidebar-wrapper`
+          // (in the class list below) are ADR 0035 §8 refinement 3's
+          // `frame="app"` surface. `frame="nested"` (ADR 0035 §4, Task 9A)
+          // omits all four: a nested rail's own state must never drive the
+          // outer frame's geometry through the same group name or be mistaken
+          // for a second "sidebar wrapper" by a selector/test targeting the
+          // slot. The literal string "sidebar-wrapper" stays below (as a
+          // conditional value) so `pnpm data-slot:check` still sees this
+          // module's declaration.
+          data-slot={isNested ? undefined : "sidebar-wrapper"}
+          data-variant={isNested ? undefined : variant}
+          data-state={isNested ? undefined : state}
           style={
             {
+              // These two custom properties are the ONE thing a nested
+              // provider still emits (ADR 0035 §4) — they survive `display:
+              // contents` because custom properties inherit down the DOM
+              // tree regardless of the box an element generates, which is
+              // exactly how a nested rail publishes its width to whatever it
+              // wraps. Never move them onto a child.
               "--sidebar-width": SIDEBAR_WIDTH,
               "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
               ...style,
@@ -152,7 +181,9 @@ export const SidebarProvider = forwardRef<
             // for every element that inherits its colour (outline Buttons, list
             // rows). See the chrome<canvas elevation invariant in
             // .claude/rules/styling-and-tokens.md.
-            "group/sidebar-wrapper flex min-h-svh w-full text-foreground",
+            // Omitted under `frame="nested"` — a nested provider is a pure
+            // context + custom-property carrier, not a second frame box.
+            !isNested && "group/sidebar-wrapper flex min-h-svh w-full text-foreground",
             // The frame's OWN `variant` is authoritative once set (ADR 0035 §8
             // refinement 4): resolved in JS, not by a CSS descendant match, so
             // a nested rail three levels down that happens to render
@@ -161,9 +192,17 @@ export const SidebarProvider = forwardRef<
             // stays as the fallback ONLY while this provider's own `variant`
             // is unset, which is exactly every existing caller (this prop
             // didn't exist before #342) — so they render exactly as today.
-            variant === undefined
-              ? "has-data-[variant=inset]:bg-sidebar"
-              : variant === "inset" && "bg-sidebar",
+            // Also omitted under `frame="nested"`, same reasoning as above.
+            !isNested &&
+              (variant === undefined
+                ? "has-data-[variant=inset]:bg-sidebar"
+                : variant === "inset" && "bg-sidebar"),
+            // `frame="nested"` renders no box of its own: `display: contents`
+            // (the literal Tailwind class, never an inline style or a
+            // concatenated name) removes this element from layout while
+            // keeping its children — and the custom properties above —
+            // reachable.
+            isNested && "contents",
             className,
           )}
           {...props}
