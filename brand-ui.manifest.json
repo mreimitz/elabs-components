@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T22:48:04.778Z",
+  "generatedAt": "2026-09-05T08:11:03.208Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25614,10 +25614,402 @@
         "react": "^18.2.0 || ^19.0.0",
         "react-dom": "^18.2.0 || ^19.0.0"
       },
-      "components": [],
-      "hooks": [],
-      "types": [],
-      "otherExports": [],
+      "components": [
+        {
+          "name": "DEFAULT_LAYOUT_DEBOUNCE_MS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "EMPTY_PROCESS_MAP_HOVER",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "PROCESS_FILTER_INTENT_KINDS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "PROCESS_FILTER_INTENT_LABELS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "PROCESS_MAP_EDGE_SCALE_GROUP",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        },
+        {
+          "name": "PROCESS_MAP_NODE_MOTION_CLASS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "ProcessActivityNode",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-activity-node.tsx"
+        },
+        {
+          "name": "ProcessMap",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map.tsx"
+        },
+        {
+          "name": "ProcessMapHoverContext",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "ProcessTransitionEdge",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        }
+      ],
+      "hooks": [
+        {
+          "name": "useProcessLayout",
+          "kind": "value",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "useProcessMapHover",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map-context.ts"
+        }
+      ],
+      "types": [
+        {
+          "name": "ActivityFrequencyMode",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "BuildProcessMapModelOptions",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessActivityNodeData",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessActivityRow",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessEdgeDenominators",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessFilterIntent",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessLayoutSnapshot",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "ProcessMapEdge",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessMapHoverState",
+          "module": "packages/process/src/process-map/process-map-context.ts"
+        },
+        {
+          "name": "ProcessMapModel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessMapNode",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessMapProps",
+          "module": "packages/process/src/process-map/process-map.tsx"
+        },
+        {
+          "name": "ProcessMetric",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessMetricSpec",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessSelection",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessSelectionKind",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessSelectionNeighbourhood",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessSelectionState",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessTransitionEdgeData",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "ProcessTransitionRow",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "TransitionFrequencyMode",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "UseProcessLayoutOptions",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "UseProcessLayoutResult",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        }
+      ],
+      "otherExports": [
+        {
+          "name": "activityAriaLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "activityMetricValue",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "activityRole",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "applyLayoutSnapshot",
+          "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "buildProcessMapModel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "edgeMetricLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "formatDurationMs",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "formatMetricValue",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "isPerformanceMetric",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "nodeMetricLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "processEdgeDenominators",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "processEdgeId",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "processGraphStructureKey",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "resolveActivityFrequencyMode",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "resolveTransitionFrequencyMode",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "selectionNeighbourhood",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "transitionAriaLabel",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "transitionMetricValue",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "transitionShape",
+          "module": "packages/process/src/process-map/map-model.ts"
+        }
+      ],
+      "props": {
+        "ProcessMap": {
+          "extends": [
+            "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\">"
+          ],
+          "props": [
+            {
+              "name": "graph",
+              "optional": true,
+              "type": "ProcessGraph",
+              "description": "A discovered graph. Takes precedence over {@link log} when both are given."
+            },
+            {
+              "name": "log",
+              "optional": true,
+              "type": "EventLog",
+              "description": "An event log to discover from, for a surface with no explorer around it. Runs `/core`'s `discoverGraph` and `detectRework` internally, memoized on the log."
+            },
+            {
+              "name": "abstraction",
+              "optional": true,
+              "type": "Pick<AbstractionOptions, \"activities\" | \"paths\">",
+              "description": "Fractions of activities / paths to KEEP, as `/core`'s `abstractGraph` reads them."
+            },
+            {
+              "name": "metric",
+              "optional": false,
+              "type": "ProcessMetricSpec",
+              "description": "Which readings the nodes and edges paint."
+            },
+            {
+              "name": "rework",
+              "optional": true,
+              "type": "ReworkStats",
+              "description": "Rework tallies for the node badge. Derived from {@link log} when that is given."
+            },
+            {
+              "name": "selection",
+              "optional": true,
+              "type": "ProcessSelection | null",
+              "description": "Controlled selection. Omit for an uncontrolled map that owns its own."
+            },
+            {
+              "name": "onSelect",
+              "optional": true,
+              "type": "(target: ProcessSelection | null) => void",
+              "description": "Fires with the new selection, or `null` when the reader deselects."
+            },
+            {
+              "name": "onFilterIntent",
+              "optional": true,
+              "type": "(intent: ProcessFilterIntent) => void",
+              "description": "Fires with an intent from the filter menu — hand it straight to `filterLog`."
+            },
+            {
+              "name": "direction",
+              "optional": true,
+              "type": "FlowLayoutDirection",
+              "description": "@default \"TB\""
+            },
+            {
+              "name": "showMiniMap",
+              "optional": true,
+              "type": "boolean",
+              "description": "@default true"
+            },
+            {
+              "name": "showLegend",
+              "optional": true,
+              "type": "boolean",
+              "description": "@default true"
+            },
+            {
+              "name": "tableView",
+              "optional": true,
+              "type": "boolean",
+              "description": "Render the accessible table twin instead of the canvas. @default false"
+            },
+            {
+              "name": "loading",
+              "optional": true,
+              "type": "boolean",
+              "description": "No graph yet. Renders the loading panel rather than an empty canvas."
+            },
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the canvas region. Defaults to the localized `process.map.label` message."
+            }
+          ]
+        }
+      },
+      "intent": {
+        "ProcessActivityNode": {
+          "purpose": "One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally.",
+          "category": "flow",
+          "relationships": {
+            "usedInside": [
+              "ProcessMap"
+            ],
+            "contains": [
+              "FlowNode",
+              "Badge"
+            ]
+          },
+          "stateTokens": {
+            "meter": "bg-surface-muted (the meter track; the fill length IS the metric's second channel)"
+          },
+          "antiPatterns": [
+            "Registering it directly as a React Flow node type outside `ProcessMap` — it reads the map's hover/selection context and expects `buildProcessMapModel`'s node data.",
+            "Dropping the printed value and keeping only the fill saturation — saturation is the third channel, never the first.",
+            "Hand-rolling a focus ring on it — it composes `FlowNode`, which already owns the compound indicator and the `ring-2 ring-ring` selection ring."
+          ]
+        },
+        "ProcessMap": {
+          "purpose": "Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin.",
+          "category": "flow",
+          "relationships": {
+            "usedInside": [
+              "CanvasShell"
+            ],
+            "contains": [
+              "ProcessActivityNode",
+              "ProcessTransitionEdge",
+              "ZoomControls",
+              "FlowMiniMap",
+              "Legend"
+            ],
+            "pairsWith": [
+              "FilterBar",
+              "DataTable"
+            ]
+          },
+          "antiPatterns": [
+            "Encoding the metric in colour alone — an edge carries its reading as stroke WIDTH and a printed label pill before it carries it as hue, and a node prints its value beside the meter bar. A greyscale render must still be readable (WCAG 1.4.1).",
+            "Reaching for raw `ReactFlow`/`Panel`/`Handle` to add canvas furniture — the map is a composition of flow's CanvasShell; an overlay is an absolutely-positioned sibling, and a missing primitive is a `@elabs-ai/components-flow` change.",
+            "Re-deriving the numbers for a table, an export or a tooltip — `tableView` and the canvas render from the SAME model, which is what stops the two from disagreeing.",
+            "Passing a raw event log on every render — pass `graph` from `discoverGraph` (or memoize the log) so a metric switch never re-runs discovery or the dagre layout."
+          ]
+        },
+        "ProcessTransitionEdge": {
+          "purpose": "One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric.",
+          "category": "flow",
+          "relationships": {
+            "usedInside": [
+              "ProcessMap"
+            ],
+            "contains": [
+              "FlowWeightedEdge",
+              "FlowSelfLoopEdge"
+            ]
+          },
+          "antiPatterns": [
+            "Writing a pixel width into `data.weight` — it is the RAW metric value, and `@elabs-ai/components-flow`'s `computeEdgeWeightScale` owns the min-max into `DEFAULT_EDGE_WIDTH_RANGE`.",
+            "Suppressing the label pill on a dense map — width alone is a colour-adjacent single channel, and the pill is what makes the reading recoverable.",
+            "Distinguishing a back-edge or a self-loop by hue — the shape (dash pattern, closed arc) is the cue that survives greyscale."
+          ]
+        }
+      },
       "subpaths": {
         "@elabs-ai/components-process/core": {
           "components": [

@@ -18,3 +18,6 @@
 // (empty — the wave-0 scaffold ships no components on purpose; RM-049 onward append here)
 
 export {};
+
+// ProcessMap — RM-051
+export * from "./process-map";

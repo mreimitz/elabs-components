@@ -3266,6 +3266,60 @@ export const INTENT = {
       "Passing thousands of nodes because `maxNodes` is only a warning — the force solve is synchronous, so past a few hundred nodes it blocks the frame that renders it. Aggregate into hubs before the chart, not inside it.",
     ],
   },
+  // ProcessMap — RM-051
+  ProcessMap: {
+    purpose:
+      "Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin.",
+    category: "flow",
+    relationships: {
+      usedInside: ["CanvasShell"],
+      contains: [
+        "ProcessActivityNode",
+        "ProcessTransitionEdge",
+        "ZoomControls",
+        "FlowMiniMap",
+        "Legend",
+      ],
+      pairsWith: ["FilterBar", "DataTable"],
+    },
+    antiPatterns: [
+      "Encoding the metric in colour alone — an edge carries its reading as stroke WIDTH and a printed label pill before it carries it as hue, and a node prints its value beside the meter bar. A greyscale render must still be readable (WCAG 1.4.1).",
+      "Reaching for raw `ReactFlow`/`Panel`/`Handle` to add canvas furniture — the map is a composition of flow's CanvasShell; an overlay is an absolutely-positioned sibling, and a missing primitive is a `@elabs-ai/components-flow` change.",
+      "Re-deriving the numbers for a table, an export or a tooltip — `tableView` and the canvas render from the SAME model, which is what stops the two from disagreeing.",
+      "Passing a raw event log on every render — pass `graph` from `discoverGraph` (or memoize the log) so a metric switch never re-runs discovery or the dagre layout.",
+    ],
+  },
+  ProcessActivityNode: {
+    purpose:
+      "One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally.",
+    category: "flow",
+    relationships: {
+      usedInside: ["ProcessMap"],
+      contains: ["FlowNode", "Badge"],
+    },
+    stateTokens: {
+      meter: "bg-surface-muted (the meter track; the fill length IS the metric's second channel)",
+    },
+    antiPatterns: [
+      "Registering it directly as a React Flow node type outside `ProcessMap` — it reads the map's hover/selection context and expects `buildProcessMapModel`'s node data.",
+      "Dropping the printed value and keeping only the fill saturation — saturation is the third channel, never the first.",
+      "Hand-rolling a focus ring on it — it composes `FlowNode`, which already owns the compound indicator and the `ring-2 ring-ring` selection ring.",
+    ],
+  },
+  ProcessTransitionEdge: {
+    purpose:
+      "One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric.",
+    category: "flow",
+    relationships: {
+      usedInside: ["ProcessMap"],
+      contains: ["FlowWeightedEdge", "FlowSelfLoopEdge"],
+    },
+    antiPatterns: [
+      "Writing a pixel width into `data.weight` — it is the RAW metric value, and `@elabs-ai/components-flow`'s `computeEdgeWeightScale` owns the min-max into `DEFAULT_EDGE_WIDTH_RANGE`.",
+      "Suppressing the label pill on a dense map — width alone is a colour-adjacent single channel, and the pill is what makes the reading recoverable.",
+      "Distinguishing a back-edge or a self-loop by hue — the shape (dash pattern, closed arc) is the cue that survives greyscale.",
+    ],
+  },
 };
 
 /**

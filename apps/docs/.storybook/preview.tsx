@@ -369,6 +369,7 @@ const preview: Preview = {
           "Flow",
           "Maps",
           "Marketing",
+          "Process",
           "Patterns",
           ["Templates", "Scenarios", "Blocks"],
         ],
