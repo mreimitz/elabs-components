@@ -214,20 +214,41 @@ export const Selection: Story = {
     expect(wrappers.length).toBeGreaterThan(1);
 
     // ── DOM order IS layout order ────────────────────────────────────────────────────
-    // Measured BEFORE anything is focused: React Flow pans the viewport when a node takes
-    // focus (`autoPanOnNodeFocus`), which would move these rectangles mid-walk. The map is
-    // laid out `TB`, so reading order is top-to-bottom and then left-to-right — exactly
-    // what `applyPositions` sorts by, and therefore what the tab order below inherits.
-    const boxes = wrappers.map((wrapper) => wrapper.getBoundingClientRect());
-    for (let i = 1; i < boxes.length; i += 1) {
-      const previous = boxes[i - 1]!;
-      const current = boxes[i]!;
-      const sameRow = Math.abs(previous.top - current.top) < 1;
+    // Read each node's own `translate(Xpx, Ypx)` out of `wrapper.style.transform` —
+    // React Flow's authoritative, un-animated position (written straight from
+    // `node.position` — see `applyPositions`, `process-map.tsx`) — rather than calling
+    // `getBoundingClientRect()`. A measured rectangle is wrong here for TWO independent
+    // reasons, not one: (1) focusing a node pans the viewport (`autoPanOnNodeFocus`),
+    // which this still runs before, and (2) every node also carries the map's own 260ms
+    // entry transition, sliding it in from the model's mount position `{x:0, y:0}`
+    // (`PROCESS_MAP_NODE_MOTION_CLASS`, `use-process-layout.ts`) — so a rectangle sampled
+    // this early can be a mid-flight animation frame rather than the laid-out position
+    // (#365). The inline `transform` is a value a CSS transition never touches, so it
+    // reads the final, laid-out coordinate on the very first commit that has it, whatever
+    // frame the animation itself is on. The map is laid out `TB`, so reading order is
+    // top-to-bottom and then left-to-right — exactly what `applyPositions` sorts by, and
+    // therefore what the tab order below inherits.
+    const positions = wrappers.map((wrapper) => {
+      const match = /translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)/.exec(
+        wrapper.style.transform,
+      );
+      expect(
+        match,
+        `expected a translate() transform on node "${wrapper.dataset.id}"`,
+      ).toBeTruthy();
+      return { x: Number(match![1]), y: Number(match![2]) };
+    });
+    for (let i = 1; i < positions.length; i += 1) {
+      const previous = positions[i - 1]!;
+      const current = positions[i]!;
+      // dagre gives an entire rank the SAME y — an exact tie, not a 1px tolerance, because
+      // this is the laid-out coordinate rather than a painted, sub-pixel rectangle.
+      const sameRow = previous.y === current.y;
       expect({
         index: i,
-        top: [previous.top, current.top],
-        left: [previous.left, current.left],
-        ordered: sameRow ? previous.left <= current.left + 1 : previous.top < current.top,
+        y: [previous.y, current.y],
+        x: [previous.x, current.x],
+        ordered: sameRow ? previous.x <= current.x : previous.y < current.y,
       }).toMatchObject({ ordered: true });
     }
 
