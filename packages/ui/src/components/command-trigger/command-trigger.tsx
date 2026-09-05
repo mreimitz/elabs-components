@@ -23,9 +23,16 @@ function platformShortcut(): string {
 
 /**
  * The command-palette opener, shaped like a search field: label left, shortcut
- * pinned right, collapsing to the icon alone under `sm`. The visible label and the
- * Kbd are BOTH aria-hidden and the name is authored on the button — a Kbd inside a
- * control otherwise concatenates into its accessible name (#117).
+ * pinned right, collapsing to the icon alone under `sm`.
+ *
+ * The button’s accessible name comes entirely from `aria-label` — that is what
+ * stops the `Kbd`’s shortcut glyph from concatenating into it (#117); a
+ * non-empty `aria-label` short-circuits accessible-name computation before the
+ * DOM is ever consulted. The visible label and the `Kbd` are ALSO marked
+ * `aria-hidden`, per `accessibility.md`, as defence in depth: if `aria-label`
+ * is ever dropped, that turns a silent regression into a loud one — an empty
+ * accessible name rather than a plausible wrong one. They do not do the work
+ * themselves.
  *
  * `shortcut` reads `navigator` at render time when omitted, which can differ
  * between server and client — a consumer that server-renders this component
