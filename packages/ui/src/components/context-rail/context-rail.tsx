@@ -4,6 +4,8 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ComponentProps,
   type CSSProperties,
@@ -11,6 +13,7 @@ import {
 } from "react";
 
 import { cn } from "../../lib/cn";
+import { mergeRefs } from "../../lib/merge-refs";
 import { useIsMobile } from "../../lib/use-mobile";
 import { useLocale } from "../locale-provider/locale-provider";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../sheet";
@@ -85,6 +88,12 @@ export interface ContextRailProps extends Omit<
 
 const DEFAULT_WIDTH = "20rem";
 const DEFAULT_OVERLAY_BREAKPOINT = 768;
+// Mirrors sidebar.tsx's private `SIDEBAR_WIDTH_ICON` — the value the nested
+// `SidebarProvider` actually publishes as `--sidebar-width-icon` (ContextRail
+// never overrides that key in its own `style` prop). ADR 0035 §3: "The
+// collapsed strip is 3rem (48px) … Retuning it is a fork, not a prop" — so
+// this is a fixed constant, not something derived from a prop.
+const NARROW_STRIP_WIDTH = "3rem";
 
 function resolveActiveId(
   sections: ContextRailSection[],
@@ -187,6 +196,21 @@ interface ContextRailBranchProps extends Omit<ComponentProps<"div">, "onSelect">
   hasSections: boolean;
 }
 
+interface ContextRailNarrowProps extends ContextRailBranchProps {
+  /**
+   * The rail's expanded width (`ContextRailProps.width`), forwarded here
+   * because the Sheet's content is portalled to `document.body` and is
+   * therefore NOT a DOM descendant of the nested `SidebarProvider` that
+   * declares `--sidebar-width` on its own element — custom properties
+   * inherit down the real DOM tree, not the React tree, so a portal never
+   * sees an ancestor's declaration. Redeclared inline on `SheetContent`
+   * itself, mirroring the library's own precedent for the same problem
+   * (`sidebar.tsx`'s mobile `Sheet`, `style={{ "--sidebar-width":
+   * SIDEBAR_WIDTH_MOBILE }}`).
+   */
+  width: string;
+}
+
 const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(function ContextRailWide(
   { sections, activeId, activeSection, onSelect, empty, hasSections, className, ...props },
   ref,
@@ -226,17 +250,34 @@ const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(funct
   );
 });
 
-const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailBranchProps>(
+const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
   function ContextRailNarrow(
-    { sections, activeId, activeSection, onSelect, empty, hasSections, className, ...props },
+    { sections, activeId, activeSection, onSelect, empty, hasSections, width, className, ...props },
     ref,
   ) {
     const { open, setOpen } = useSidebar();
+    // The strip is the sheet's own persistent companion control (ADR 0035
+    // §3), not something genuinely "outside" it — but it IS a DOM sibling
+    // outside the Sheet's portalled content, so Radix's DismissableLayer
+    // (active even with `modal={false}`; see the comment on `<Sheet>` below)
+    // treats a pointerdown on the strip as an outside interaction and calls
+    // `onOpenChange(false)` on POINTERDOWN, before this component's own
+    // `onClick` runs. MEASURED (fix round 1, task-9b-fix-1.md): that race
+    // flips `open` to `false` a tick before `ContextRailSwitcher`'s
+    // `handleClick` reads it, so clicking the ACTIVE entry (meant to CLOSE
+    // the sheet via `setOpen(!open)`) instead read `open` as already-false
+    // and REOPENED it — the sheet never actually closed. `onPointerDownOutside`
+    // is the sanctioned Radix escape hatch for exactly this: suppress the
+    // auto-dismiss for pointerdowns that land on the strip, and let this
+    // component's own click handler keep owning open/close for it — a
+    // genuine outside click (the canvas, anywhere else) still dismisses.
+    const stripRef = useRef<HTMLDivElement>(null);
+    const mergedStripRef = useMemo(() => mergeRefs<HTMLDivElement>(ref, stripRef), [ref]);
 
     return (
       <>
         <div
-          ref={ref}
+          ref={mergedStripRef}
           data-slot="context-rail"
           className={cn(
             "flex h-full w-(--sidebar-width-icon) flex-col bg-sidebar text-sidebar-foreground",
@@ -256,11 +297,46 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailBranchProps>(
             every body sibling from assistive tech and traps focus inside
             the dialog while open, which would make the always-visible
             switcher strip unreachable to a screen reader the moment the
-            sheet opens. Non-modal keeps the strip operable throughout. */}
+            sheet opens. Non-modal keeps the strip operable throughout (and,
+            per Radix, means DialogOverlay renders nothing — the panel itself
+            is the only thing that can be occluding the strip). */}
         <Sheet open={open} onOpenChange={setOpen} modal={false}>
           <SheetContent
             side="right"
-            className="flex w-(--sidebar-width) flex-col bg-sidebar p-0 text-sidebar-foreground"
+            onPointerDownOutside={(event) => {
+              if (event.target instanceof Node && stripRef.current?.contains(event.target)) {
+                event.preventDefault();
+              }
+            }}
+            // The strip is a REAL, non-portalled DOM descendant of the nested
+            // provider, so `right-0`/`w-3/4`/`max-w-sm` from `sheetVariants`
+            // would seat this portalled panel directly on top of it (both
+            // anchored to the same right edge, panel wider than the strip).
+            // Inset by exactly the strip width so both stay hittable — never
+            // hide the strip, never move the switcher into the sheet (ADR
+            // 0035 §3: "The collapsed icon strip survives at every viewport
+            // width"). MEASURED (fix round 1, task-9b-fix-1.md): this repo's
+            // pinned `tailwind-merge@^2.6.0` predates Tailwind v4's `(--var)`
+            // parens shorthand and does not recognize it as an arbitrary
+            // value for the `right`/`w` groups — `right-(--sidebar-width-icon)`
+            // and `w-(--sidebar-width)` were silently left UN-deduped against
+            // `sheetVariants`' own `right-0`/`w-3/4` (both ended up in the
+            // merged class list, letting the ORIGINAL literal win the
+            // cascade — the exact bug this fix exists to close). The bracket
+            // form with an explicit `var()` call — already proven to merge
+            // correctly two tokens later in this same string, where
+            // `max-w-[calc(100vw-var(--sidebar-width-icon))]` DOES dedupe
+            // against `max-w-sm` — is what tailwind-merge v2 actually
+            // recognizes, so `right`/`w` use that form too.
+            className="right-[var(--sidebar-width-icon)] flex w-[var(--sidebar-width)] max-w-[calc(100vw-var(--sidebar-width-icon))] flex-col bg-sidebar p-0 text-sidebar-foreground"
+            style={
+              {
+                // Redeclared here, not inherited — see `ContextRailNarrowProps.width`'s
+                // doc comment above for why a portal needs its own copy.
+                "--sidebar-width": width,
+                "--sidebar-width-icon": NARROW_STRIP_WIDTH,
+              } as CSSProperties
+            }
           >
             <SheetHeader className="sr-only">
               <SheetTitle>{activeSection?.label ?? ""}</SheetTitle>
@@ -370,6 +446,7 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
           onSelect={handleSelect}
           empty={emptySlot}
           hasSections={hasSections}
+          width={width}
           className={className}
           style={style}
           {...props}

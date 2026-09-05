@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { FileText, History, MessageSquare } from "lucide-react";
-import { expect } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 
 import { ContextRail, type ContextRailSection } from "./context-rail";
 
@@ -132,10 +132,88 @@ export const Narrow: Story = {
       <ContextRail sections={sections} defaultActiveSectionId="sources" overlayBreakpoint={2000} />
     </div>
   ),
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
     await expect(canvas.getByRole("button", { name: "Sources 4 items" })).toBeInTheDocument();
     await expect(canvas.getByRole("button", { name: "Comments 2 items" })).toBeInTheDocument();
     await expect(canvasElement.querySelector('[data-slot="sidebar"]')).toBeNull();
     await expect(canvasElement.querySelector('[data-slot="context-rail"]')).not.toBeNull();
+
+    // `ContextRail` has no `open`/`defaultOpen` here, so `SidebarProvider`'s
+    // own default (`true`) drives the Sheet `ContextRailNarrow` wires to that
+    // same `open` state — the panel renders OPEN at the same time as the
+    // persistent 48px strip, which is exactly the configuration the
+    // panel-occludes-the-strip regression (fix round 1, task-9b-fix-1.md)
+    // needs to reproduce. `userEvent.click` only checks `pointer-events:
+    // none` — it does NOT hit-test — so an occluded-but-visible button would
+    // still report a passing click. Assert the browser's REAL hit-test
+    // (`document.elementFromPoint`) instead, for an INACTIVE entry and for
+    // the ACTIVE/toggle entry — the reviewer's raw-coordinate repro landed
+    // on the sheet's own close button from exactly the active entry's
+    // position, so both are asserted, not just the easy one.
+    async function assertHitTestable(name: string) {
+      const button = canvas.getByRole("button", { name });
+      // The sheet's own entrance/exit transition (`duration-slow`, 380ms —
+      // `themes.css`) animates the panel in via `slide-in-from-right`. The
+      // panel is `position: fixed`, so mid-transition it sits translated by
+      // roughly its own width — a hit-test taken the instant after the click
+      // that opened it would see that IN-FLIGHT position (measured: right
+      // edge past the viewport, not its resting inset-by-the-strip-width
+      // position) and fail for a reason that has nothing to do with the
+      // Blocker this lock exists to catch. Wait for the REAL, settled
+      // hit-test to succeed instead of sleeping a fixed amount — this reads
+      // as fast as the animation actually is, and still fails for real
+      // (after timing out) if the panel keeps covering the strip once
+      // settled, which is the only case task-9b-fix-1.md's regression is.
+      await waitFor(
+        () => {
+          const rect = button.getBoundingClientRect();
+          if (rect.width === 0) {
+            throw new Error(`"${name}" has not been laid out yet (zero width)`);
+          }
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          const hit = document.elementFromPoint(x, y);
+          const hitDescription =
+            hit == null
+              ? "nothing"
+              : `<${hit.tagName.toLowerCase()}${
+                  hit.getAttribute("data-slot")
+                    ? ` data-slot="${hit.getAttribute("data-slot")}"`
+                    : ""
+                }>`;
+          expect(
+            hit != null && button.contains(hit),
+            `expected the centre of "${name}" (${x}, ${y}) to hit-test to that button, but it ` +
+              `hit ${hitDescription} instead — the sheet panel is likely covering the strip`,
+          ).toBe(true);
+        },
+        { timeout: 1000 },
+      );
+      return button;
+    }
+
+    // The switched-to section's content renders inside `SheetContent`, which
+    // Radix portals to `document.body` — a real DOM sibling of
+    // `canvasElement`, not a descendant of it — so it must be queried via
+    // `screen` (bound to `document.body`), not `canvas` (scoped to
+    // `canvasElement`).
+
+    // Inactive entry: clicking it changes the active section.
+    const commentsEntry = await assertHitTestable("Comments 2 items");
+    await userEvent.click(commentsEntry);
+    await expect(screen.getByText("“Looks good, shipping.” — Sam")).toBeVisible();
+
+    // Active/toggle entry: clicking it collapses the rail (closes the Sheet)
+    // rather than changing the section. Radix flips the panel's own
+    // `data-state` synchronously with the click (the exit ANIMATION, and the
+    // eventual unmount, follow after) — asserting that attribute is the
+    // immediate, non-flaky signal that the toggle actually fired, rather
+    // than racing the animation to observe visibility.
+    const commentsToggleEntry = await assertHitTestable("Comments 2 items");
+    await userEvent.click(commentsToggleEntry);
+    await expect(screen.getByRole("dialog", { hidden: true })).toHaveAttribute(
+      "data-state",
+      "closed",
+    );
   },
 };
