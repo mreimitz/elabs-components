@@ -69,6 +69,15 @@ export {
 } from "./fixtures/synthetic-log";
 export type { SyntheticActivity, SyntheticLogOptions } from "./fixtures/synthetic-log";
 
+// generateBpi2012Subset — RM-053 (#228 F2 — restores the same reachability
+// generateSyntheticLog already has; see generate-bpi-2012-subset.ts's own docblock)
+export {
+  BPI_2012_ACTIVITIES,
+  BPI_2012_SUBSET_EPOCH,
+  generateBpi2012Subset,
+} from "./fixtures/generate-bpi-2012-subset";
+export type { Bpi2012Activity, Bpi2012SubsetOptions } from "./fixtures/generate-bpi-2012-subset";
+
 // abstractGraph — RM-050
 export { abstractGraph } from "./abstract-graph";
 export type { AbstractedGraph, AbstractionOptions } from "./abstract-graph";

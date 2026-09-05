@@ -224,6 +224,8 @@ pnpm charts:honesty:check       # if packages/charts/src/{charts,marks}/** touch
 pnpm charts:honesty:check:test  # self-test for the charts honesty gate
 pnpm process:reuse:check        # if @elabs-ai/components-process touched — the layer-3 package must not redefine a flow/charts/data/ui component name, author a raw SVG mark, import an unwrapped @xyflow/react primitive, reach a layer-2 sibling sideways, or pull an engine into /core (ADR 0034)
 pnpm process:reuse:check:test   # self-test for the process reuse-audit gate
+pnpm process:test-double:check       # if packages/process/src/test/** or its wiring touched — the ./test double stays in parity with the real components, pulls no react-flow/visx/d3/motion engine, and exports/publishConfig/tsup.config.ts agree (RM-053, #228)
+pnpm process:test-double:check:test  # self-test for the process test-double gate
 pnpm dep-direction:check        # if any packages/*/package.json touched — @elabs-ai/components-* deps follow the one-way DAG (tokens/icons → ui → domain, #184)
 pnpm dep-direction:check:test   # self-test for the dependency-direction gate
 pnpm agents:check               # if .claude/agents/ touched — agent names plugin-scoped, unique, name↔filename

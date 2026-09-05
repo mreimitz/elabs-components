@@ -7,8 +7,8 @@
  * log (van Dongen, 2012) — a Dutch financial institution's loan-application process, whose
  * activity vocabulary follows the dataset's own three-lifecycle-prefix convention
  * (`A_` application state, `O_` offer state, `W_` work item). The BPI Challenge datasets are
- * a public academic research corpus; naming them is not naming a commercial vendor (see
- * `.claude/rules/process-components.md` and the RM-053 brief's naming constraint).
+ * a public academic research corpus published for the annual Business Process Intelligence
+ * Challenge; naming one here names a published research artifact, not a commercial vendor.
  *
  * This is what analysis §4 R21 asks for: a ~13,000-case fixture large enough to exercise
  * `discoverGraph`'s performance budget (already covered by RM-049's own
@@ -27,8 +27,8 @@
  * Storybook's story tests run in a real browser (`@storybook/addon-vitest`'s Playwright
  * provider) where `node:fs`/`node:path`/`node:url` are externalized and throw on access. So
  * this file exports the PURE generator only — no filesystem write, no `import.meta.url`
- * resolution, no `process.argv` read. The CLI entry point that writes the on-disk fixture
- * lives in the sibling `generate-bpi-2012-subset-cli.ts`, which is the only place those
+ * resolution, no `process.argv` read. The file that writes the on-disk fixture is the
+ * sibling `generate-bpi-2012-subset.write.ts` (see below), which is the only place those
  * Node-only imports appear.
  *
  * ## Producing the on-disk fixture
@@ -41,7 +41,7 @@
  * pnpm --filter @elabs-ai/components-process generate:fixtures
  * ```
  *
- * which writes `bpi-2012-subset.json` next to this file (git-ignored — see the package's
+ * which writes `bpi-2012-subset.json` next to this file (git-ignored — see the repo root
  * `.gitignore`), via `generate-bpi-2012-subset.write.ts` (run through `vitest`, not `tsx` —
  * see that file's docblock for why). A consumer of the generated JSON should treat it as a
  * build artifact, not a checked-in fixture; import {@link generateBpi2012Subset} directly
@@ -156,9 +156,17 @@ function buildTrace(random: () => number): Bpi2012Activity[] {
   // About a quarter of offers are sent back at least once before acceptance.
   if (random() < 0.25) trace.push("O_SENT_BACK", "O_SENT", "W_Nabellen offertes");
 
+  // About 1 in 10 offers ends without acceptance: most are declined outright, a smaller
+  // share are withdrawn (O_CANCELLED) while still outstanding — both close the case, one
+  // via A_CANCELLED and the other via either terminal state, mirroring the public BPI 2012
+  // log's own O_CANCELLED lifecycle event (#228 — this branch is what makes it reachable;
+  // see generate-bpi-2012-subset.test.ts's vocabulary set-equality test).
   if (random() < 0.1) {
-    trace.push("O_DECLINED");
-    trace.push(random() < 0.5 ? "A_CANCELLED" : "A_DECLINED");
+    if (random() < 0.3) {
+      trace.push("O_CANCELLED", "A_CANCELLED");
+    } else {
+      trace.push("O_DECLINED", random() < 0.5 ? "A_CANCELLED" : "A_DECLINED");
+    }
     return trace;
   }
 

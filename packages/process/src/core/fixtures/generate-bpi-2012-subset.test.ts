@@ -24,10 +24,16 @@ describe("generateBpi2012Subset", () => {
     for (const activity of firstByCase.values()) expect(activity).toBe("A_SUBMITTED");
   });
 
-  it("only emits activities from the declared BPI-2012 vocabulary", () => {
-    const log = generateBpi2012Subset({ cases: 100, seed: 5 });
-    const allowed = new Set<string>(BPI_2012_ACTIVITIES);
-    for (const event of log.events) expect(allowed.has(event.activity)).toBe(true);
+  it("emits exactly the declared BPI-2012 vocabulary — set equality in both directions (#228)", () => {
+    // A large case count so every branch of buildTrace() — including the low-probability
+    // O_CANCELLED path — has run at least once. Checking BOTH directions (declared ⊆
+    // emitted AND emitted ⊆ declared) is the point: a subset-only check in either direction
+    // cannot catch the constant and the generator silently drifting apart.
+    const log = generateBpi2012Subset({ cases: 5_000, seed: 5 });
+    const declared = new Set<string>(BPI_2012_ACTIVITIES);
+    const emitted = new Set<string>(log.events.map((event) => event.activity));
+    for (const activity of emitted) expect(declared.has(activity)).toBe(true);
+    for (const activity of declared) expect(emitted.has(activity)).toBe(true);
   });
 
   it("cases below 1 yield an empty log", () => {
