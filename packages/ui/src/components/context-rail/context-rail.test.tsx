@@ -81,6 +81,23 @@ describe("ContextRail", () => {
     );
   });
 
+  // Finding 1 (task-11f-brief.md, BLOCKER): `isActive` was computed but never
+  // passed to `SidebarMenuButton`, so `data-active` defaulted to `false` on
+  // every entry and the ENTIRE active-state stylesheet (fill, label weight,
+  // icon colour, accent bar — all gated on `data-[active=true]:…` in
+  // `sidebarMenuButtonVariants`) never applied. Assert BOTH halves: the
+  // active entry carries `data-active="true"` AND an inactive one does not —
+  // asserting only the first half would pass against code that marks every
+  // entry active.
+  it("5b. gives the active entry data-active=true and an inactive one data-active=false", () => {
+    render(<ContextRail sections={sections} activeSectionId="quotes" />);
+    expect(screen.getByRole("button", { name: "Quotes" })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("button", { name: "Sources 3 items" })).toHaveAttribute(
+      "data-active",
+      "false",
+    );
+  });
+
   it("6. clicking the active entry toggles open; clicking an inactive entry opens and reports the new section", () => {
     const onOpenChange = vi.fn();
     const { rerender } = render(

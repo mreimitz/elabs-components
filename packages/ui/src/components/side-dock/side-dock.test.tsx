@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SideDock } from "./side-dock";
 
@@ -226,5 +227,47 @@ describe("SideDock", () => {
     fireEvent.keyDown(handle, { key: "ArrowRight" });
     expect(onWidthChange).toHaveBeenCalledTimes(1);
     expect(onWidthChange.mock.calls[0]![0] as number).toBeGreaterThan(400);
+  });
+
+  // 12. Finding 2 (task-11f-brief.md): `inert={!panel.open}` on the column
+  // `<aside>` means, per the HTML focus-fixup rule, that a focused
+  // descendant (the close button) loses focus the instant the close click
+  // makes the container inert — the browser's default is to drop focus to
+  // `<body>`. This asserts the repair: closing via keyboard/click restores
+  // focus to whatever opened the dock, and explicitly never to `<body>`.
+  it("restores focus to the opener when the close button closes the dock", () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Open dock
+          </button>
+          <SideDock
+            title="Assistant"
+            open={open}
+            onOpenChange={setOpen}
+            overlayBreakpoint={COLUMN_BREAKPOINT}
+          >
+            Body
+          </SideDock>
+        </>
+      );
+    }
+    render(<Harness />);
+
+    const trigger = screen.getByRole("button", { name: "Open dock" });
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.click(trigger);
+    const closeButton = screen.getByRole("button", { name: "Close" });
+    closeButton.focus();
+    expect(document.activeElement).toBe(closeButton);
+
+    fireEvent.click(closeButton);
+
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(trigger);
   });
 });

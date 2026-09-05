@@ -155,6 +155,7 @@ function ContextRailSwitcher({
             <SidebarMenuButton
               data-slot="context-rail-switcher-item"
               tooltip={section.label}
+              isActive={isActive}
               aria-current={isActive ? "true" : undefined}
               disabled={section.disabled}
               onClick={() => handleClick(section)}
@@ -375,6 +376,15 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
  * controlled/uncontrolled. Below `overlayBreakpoint` it renders its own
  * strip plus a `Sheet` instead of mounting `Sidebar`. See
  * `docs/ADR/0035-context-rail-and-side-dock.md` §3.
+ *
+ * Known constraint (task-11f-brief.md Finding 5): below `overlayBreakpoint`
+ * the expanded body is a `Sheet`, which always spans the full browser
+ * viewport, while the persistent 48px strip is bounded by whatever container
+ * the host gives the rail. In a host container shorter than the viewport
+ * (any app shell with a toolbar above the rail), the strip stops mid-screen
+ * while the sheet keeps going — the two read as unrelated surfaces. Give
+ * `ContextRail` a full-viewport-height host container below the breakpoint
+ * to avoid this seam.
  */
 export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function ContextRail(
   {
@@ -426,7 +436,29 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
 
   const isNarrow = useIsMobile(overlayBreakpoint);
 
-  const emptyContent = empty ?? <StatePanel kind="empty" title={t("ui.contextRail.empty")} />;
+  // Finding 4 (task-11f-brief.md): `StatePanel`'s `empty` variant paints
+  // `bg-surface` — a CONTENT-canvas token — which is correct for every other
+  // consumer but wrong here: this slot sits inside `--sidebar` CHROME, and in
+  // the `light` reference theme `--surface` reads as a near-white rectangle
+  // against the rail's own dark ground. Fixed at this call site only (never
+  // in `state-panel.tsx`, which stays canvas-tuned for its other consumers):
+  // `bg-sidebar-accent`/`border-sidebar-border` move the panel onto a
+  // sidebar-family surface (no new token minted), and the `--foreground` /
+  // `--muted-foreground` custom-property retarget makes `StatePanel`'s own
+  // (unexported) `text-foreground`/`text-muted-foreground` title and
+  // description ink resolve against the RAIL's ink instead of the page's —
+  // in `light`, `--foreground` and `--sidebar` are the same colour, so
+  // without this the title would render at ~1.3:1 against its own
+  // background. Same idiom as `focus-ring [--focus-ring-color:…]` elsewhere
+  // in this package: retarget the variable the shared component already
+  // reads, don't fork the component.
+  const emptyContent = empty ?? (
+    <StatePanel
+      kind="empty"
+      title={t("ui.contextRail.empty")}
+      className="border-sidebar-border bg-sidebar-accent [--foreground:var(--sidebar-foreground)] [--muted-foreground:var(--sidebar-muted-foreground)]"
+    />
+  );
   const emptySlot = <div data-slot="context-rail-empty">{emptyContent}</div>;
 
   return (

@@ -124,6 +124,12 @@ export const Empty: Story = {
  * doesn't track the addon's viewport there), so this story forces it
  * deterministically with a very high `overlayBreakpoint` instead — reliable
  * both interactively and under `vitest --project storybook`.
+ *
+ * Known constraint (task-11f-brief.md Finding 5): this story's own fixed
+ * `h-[560px]` host is shorter than the browser viewport, so the expanded
+ * body's `Sheet` (always viewport-height) visibly outruns the persistent
+ * strip below it — see the seam this reproduces in `ContextRail`'s own doc
+ * comment.
  */
 export const Narrow: Story = {
   render: () => (

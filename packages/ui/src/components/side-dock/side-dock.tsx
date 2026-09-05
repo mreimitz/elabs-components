@@ -17,6 +17,7 @@ import {
   forwardRef,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type ComponentProps,
@@ -28,6 +29,7 @@ import {
 } from "react";
 import { X } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { mergeRefs } from "../../lib/merge-refs";
 import { useIsMobile } from "../../lib/use-mobile";
 import { useCollapsiblePanel } from "../collapsible-panel";
 import { useLocale } from "../locale-provider/locale-provider";
@@ -155,6 +157,58 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
 
   const panel = useCollapsiblePanel({ side, open, defaultOpen, onOpenChange });
   const isOverlay = useIsMobile(overlayBreakpoint);
+
+  // Focus restoration for the COLUMN presentation only (Finding 2,
+  // task-11f-brief.md). The overlay presentation is a Radix `Dialog` and
+  // already restores focus to its opener on close; the column `<aside>`
+  // has no such mechanism, and marking it `inert` while closed makes the
+  // browser's own HTML focus-fixup rule drop focus to `<body>` the instant
+  // a focused descendant becomes inert — the exact stranding this repairs
+  // (see `.claude/rules/interaction-guidelines.md`'s identical note about
+  // the native `disabled` attribute).
+  //
+  // `containerRef` is an internal mirror of the forwarded `ref` (merged
+  // below) so this effect can ask "was focus inside the dock?" regardless
+  // of what the caller's own `ref` points at. `groupRef` targets the outer
+  // wrapper, which never becomes `inert`, as the in-page fallback when the
+  // recorded opener is no longer usable.
+  const containerRef = useRef<HTMLElement | null>(null);
+  const mergedContainerRef = useMemo(() => mergeRefs<HTMLElement>(ref, containerRef), [ref]);
+  const groupRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<Element | null>(null);
+  const wasOpenRef = useRef(panel.open);
+
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current;
+    const isOpen = panel.open;
+    wasOpenRef.current = isOpen;
+
+    if (isOpen && !wasOpen) {
+      // Closed → open: remember whatever summoned the dock, so a later
+      // close can hand focus back to it.
+      openerRef.current = document.activeElement;
+      return;
+    }
+
+    if (!isOpen && wasOpen) {
+      // Open → closed: only act if focus was actually inside the dock —
+      // never steal focus the user had already moved elsewhere.
+      const container = containerRef.current;
+      const active = document.activeElement;
+      const focusWasInside = container != null && active != null && container.contains(active);
+      if (!focusWasInside) return;
+
+      const opener = openerRef.current;
+      if (opener instanceof HTMLElement && opener.isConnected && opener !== document.body) {
+        opener.focus();
+      } else {
+        // The recorded opener unmounted (or there wasn't one) — land on
+        // the outer wrapper rather than let focus fall through to
+        // `<body>`. It never joins the tab order (`tabIndex={-1}`).
+        groupRef.current?.focus();
+      }
+    }
+  }, [panel.open]);
 
   // The live viewport width the clamp reads — `useIsMobile` only exposes a
   // boolean threshold, not the pixel value clamping needs.
@@ -367,13 +421,20 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
       // `group`: the ancestor `group-data-[state=collapsed]:…` selectors in
       // `panel.spacerClassName`/`panel.containerClassName` resolve against
       // THIS element (Mechanism §1 — mirrors Sidebar's outer `group` div).
+      // `ref={groupRef}` + `tabIndex={-1}`: the focus-restoration fallback
+      // target (Finding 2) — this wrapper is never `inert`, unlike the
+      // `<aside>` below, so it is always a safe place to land focus. -1
+      // keeps it out of the normal tab order; it is only ever focused
+      // programmatically.
+      ref={groupRef}
+      tabIndex={-1}
       className="group"
       {...panel.attrs}
       style={{ "--collapsible-panel-width": `${clampedWidth}px` } as CSSProperties}
     >
       <div data-slot="side-dock-spacer" className={panel.spacerClassName} />
       <aside
-        ref={ref}
+        ref={mergedContainerRef}
         data-slot="side-dock-container"
         aria-labelledby={titleId}
         // The collapsed container stays mounted (for the closing transition)
