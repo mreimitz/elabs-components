@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T22:48:04.778Z",
+  "generatedAt": "2026-09-05T07:39:37.490Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25622,6 +25622,16 @@
         "@elabs-ai/components-process/core": {
           "components": [
             {
+              "name": "BPI_2012_ACTIVITIES",
+              "kind": "value",
+              "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
+            },
+            {
+              "name": "BPI_2012_SUBSET_EPOCH",
+              "kind": "value",
+              "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
+            },
+            {
               "name": "DEFAULT_LIFECYCLE_VALUES",
               "kind": "value",
               "module": "packages/process/src/core/adapters/flat.ts"
@@ -25693,6 +25703,14 @@
             {
               "name": "AnyLog",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "Bpi2012Activity",
+              "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
+            },
+            {
+              "name": "Bpi2012SubsetOptions",
+              "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
             },
             {
               "name": "CreateProcessWorkerOptions",
@@ -25879,6 +25897,10 @@
             {
               "name": "fromFlatRows",
               "module": "packages/process/src/core/adapters/flat.ts"
+            },
+            {
+              "name": "generateBpi2012Subset",
+              "module": "packages/process/src/core/fixtures/generate-bpi-2012-subset.ts"
             },
             {
               "name": "generateSyntheticLog",

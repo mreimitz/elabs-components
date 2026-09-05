@@ -96,4 +96,16 @@ export default defineConfig([
     clean: false,
     external: ["react", "react-dom"],
   },
+  {
+    // The `./test` jsdom-safe double subpath (RM-053, mirrors `@elabs-ai/components-charts`'s
+    // identical third pass) — React-based (the doubles are `forwardRef` components), so it
+    // DOES carry the "use client" banner, unlike the core pass above.
+    entry: { "test/index": "src/test/index.ts" },
+    format: ["esm"],
+    dts: true,
+    sourcemap: true,
+    clean: false,
+    banner: { js: '"use client";' },
+    external: ["react", "react-dom"],
+  },
 ]);

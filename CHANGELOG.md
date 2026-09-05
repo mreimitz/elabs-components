@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-process` gains its first Storybook presence and
+  test-authoring surface (#228). A new `./test` subpath (mirroring
+  `@elabs-ai/components-charts`'s identical pattern) ships contract-checked
+  test doubles (`ProcessMapDouble`, `VariantExplorerDouble`,
+  `ProcessKpiStripDouble`) plus a `withProcessFixture` helper, for consumers
+  and future wave-1/wave-2 items to write component tests against before the
+  real views land. A seeded fixture generator
+  (`pnpm --filter @elabs-ai/components-process generate:fixtures`) produces a
+  deterministic, BPI-2012-shaped ~13k-case event log for performance and
+  discovery testing; the output is git-ignored, not committed as a binary. A
+  new "Process" Storybook group and a placeholder
+  `Process/ProcessExplorer` story give the package a sidebar presence from
+  wave 1 onward, ahead of the real process map / variant explorer / KPI strip
+  views.
+
 - Added: `@elabs-ai/components-process`'s framework-free `/core` gains the
   analysis layer the process views are built on (#225) — `abstractGraph`
   (activity/path abstraction sliders that hide elements without recomputing a

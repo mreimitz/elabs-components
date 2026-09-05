@@ -228,6 +228,22 @@ sqrt(value / max)`, so drawn AREA — not radius — is proportional to value);
   whole-block "one … = …" regex by punctuation accident, a story-block
   splitter that bled a later story's trailing text into an earlier story's
   block, and the rule-1 call-site vacuity above).
+- **`process:test-double:check` (RM-053, #228)** —
+  `scripts/check-process-test-double.mjs` (self-tested by
+  `scripts/check-process-test-double.test.mjs`, both wired into `.github/workflows/gates.yml`'s
+  "Component and package contracts" and "Gate self-tests" steps). A FORK of
+  `check-charts-test-double.mjs` one layer up, guarding `@elabs-ai/components-process/test` —
+  the package's jsdom-safe double namespace — on four rungs: (1) every value
+  `doubles.tsx` exports has a same-named export from `test/index.ts`, checked WITHIN
+  `src/test/` rather than against the real `.` barrel (the package ships zero real
+  components yet, so there is nothing to diff against); (2) no runtime import under
+  `src/test/**` reaches `@xyflow/react`, `@visx/`, `d3-`, `motion`,
+  `@tanstack/react-virtual`, `react-use-measure`, or a package/family barrel — a real
+  rendering engine has no business in a jsdom test double; (3) the `./test` subpath is
+  wired in `exports`, `publishConfig.exports`, and `tsup.config.ts`; (4) no `…/test`
+  subpath is crawled into `brand-ui.manifest.json` — a test double must never surface in
+  the agent-facing build-with catalogue. See `.claude/rules/process-components.md` for
+  the full per-rung detail.
 - **Nothing is published from a commit the battery has not passed (#103) — but the
   release path no longer RE-RUNS it (2026-08-10).** Every blocking gate lives once,
   in the reusable `.github/workflows/gates.yml`, which `ci.yml` calls on every PR
