@@ -20,6 +20,18 @@
  * alarming measurement — when the honest state is "not measured". The unavailable
  * state renders a muted icon + word instead of a number, and carries its own
  * `description` explaining why.
+ *
+ * ## The conformance tile never reflows across states (RM-052 round 2, #227, F3)
+ *
+ * `MetricCard` only reserves a description line when it is GIVEN a `description` — so
+ * passing `description={hasConformance ? undefined : hint}` (the naive reading) made the
+ * tile's own box height depend on the very state it's rendering: measured shorter with a
+ * conformance score, taller in the "not available" state. The fix keeps the description
+ * SLOT present in every state — loading, measured, and unavailable all pass a `description`
+ * — but only the unavailable state's text is visible; the measured state's copy of the same
+ * string is rendered `invisible` (`visibility: hidden` + `aria-hidden`), which reserves the
+ * identical line height without showing misleading or duplicated copy to a sighted or
+ * screen-reader user.
  */
 import { type HTMLAttributes } from "react";
 import { CircleSlash2 } from "lucide-react";
@@ -64,6 +76,7 @@ export function ProcessKpiStrip({
   const { t } = useLocale();
 
   const hasConformance = conformance !== null && conformance !== undefined;
+  const conformanceHint = t("process.kpiStrip.conformanceUnavailableHint");
 
   return (
     <div data-slot="process-kpi-strip" className={className} {...props}>
@@ -116,7 +129,15 @@ export function ProcessKpiStrip({
           }
           valueFormat={hasConformance ? "percent" : undefined}
           description={
-            hasConformance ? undefined : t("process.kpiStrip.conformanceUnavailableHint")
+            hasConformance ? (
+              // Same slot, same height, every state (F3) — invisible rather than absent, so
+              // the tile's box never reflows depending on whether conformance was measured.
+              <span aria-hidden="true" className="invisible">
+                {conformanceHint}
+              </span>
+            ) : (
+              conformanceHint
+            )
           }
           announceLoading={false}
           visual={
