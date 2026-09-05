@@ -12,6 +12,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
 } from "./sidebar";
@@ -104,6 +107,54 @@ export const ActiveIndicator: Story = {
     const bar = getComputedStyle(active, "::before");
     const none = getComputedStyle(resting, "::before");
     // Geometry, not hue: the bar has real width on the active item and none on the resting one.
+    await expect(parseFloat(bar.width)).toBeGreaterThan(0);
+    await expect(parseFloat(none.width) || 0).toBe(0);
+    await expect(getComputedStyle(active).fontWeight).not.toBe(
+      getComputedStyle(resting).fontWeight,
+    );
+  },
+};
+
+/**
+ * The same non-colour cue one level down, at the sub-item: `SidebarMenuSubButton`
+ * renders an anchor rather than a button, so the `::before` bar's containing block
+ * is the anchor's own (relatively positioned) box, not `SidebarMenuSubItem`'s `<li>`.
+ */
+export const ActiveSubItemIndicator: Story = {
+  render: () => (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton>Platform</SidebarMenuButton>
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href="#overview" isActive data-testid="sub-active">
+                    Overview
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href="#reports" data-testid="sub-resting">
+                    Reports
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const active = canvasElement.querySelector('[data-testid="sub-active"]') as HTMLElement;
+    const resting = canvasElement.querySelector('[data-testid="sub-resting"]') as HTMLElement;
+    // Still a real link with a real accessible name, not just a styled div.
+    await expect(active).toHaveAccessibleName("Overview");
+    await expect(resting).toHaveAccessibleName("Reports");
+    const bar = getComputedStyle(active, "::before");
+    const none = getComputedStyle(resting, "::before");
+    // Geometry, not hue: the bar has real width on the active sub-item and none on the resting one.
     await expect(parseFloat(bar.width)).toBeGreaterThan(0);
     await expect(parseFloat(none.width) || 0).toBe(0);
     await expect(getComputedStyle(active).fontWeight).not.toBe(
