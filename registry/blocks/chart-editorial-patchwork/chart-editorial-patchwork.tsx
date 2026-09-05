@@ -26,7 +26,7 @@
  * Copy-own it: `npx shadcn add chart-editorial-patchwork`.
  */
 
-import { HairlineFloor } from "@elabs-ai/components-charts";
+import { CHART_HAIRLINE_WIDTH, HairlineFloor } from "@elabs-ai/components-charts";
 import { categoryTokenIndex, DAILY_EVENTS, type PatchworkEvent } from "./data/daily-events";
 
 export interface ChartEditorialPatchworkProps {
@@ -121,7 +121,7 @@ export function ChartEditorialPatchwork({
           fill="none"
           r={outerR}
           stroke="var(--chart-grid)"
-          strokeWidth={0.6}
+          strokeWidth={CHART_HAIRLINE_WIDTH}
         />
         <circle
           cx={cx}
@@ -129,7 +129,7 @@ export function ChartEditorialPatchwork({
           fill="none"
           r={innerR}
           stroke="var(--chart-grid)"
-          strokeWidth={0.6}
+          strokeWidth={CHART_HAIRLINE_WIDTH}
         />
 
         {data.map((event, i) => {

@@ -12744,6 +12744,11 @@
           "module": "packages/charts/src/charts/chart-child-passthrough.ts"
         },
         {
+          "name": "CHART_HAIRLINE_WIDTH",
+          "kind": "value",
+          "module": "packages/charts/src/chart-hairline.ts"
+        },
+        {
           "name": "CHART_STAGGER_BAR_MS",
           "kind": "value",
           "module": "packages/charts/src/marks/index.ts"
@@ -18099,7 +18104,7 @@
               "name": "strokeWidth",
               "optional": true,
               "type": "number",
-              "description": "Grid line stroke width. Default: 1"
+              "description": "Grid line stroke width. Default: `CHART_HAIRLINE_WIDTH` — the one furniture weight."
             },
             {
               "name": "strokeDasharray",

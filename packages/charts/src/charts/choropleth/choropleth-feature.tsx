@@ -462,6 +462,10 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
                 fill="none"
                 stroke="var(--chart-grid)"
                 strokeLinecap="square"
+                // chart-hairline-exempt: this is a texture FILL standing in for a
+                // colour on a no-data region, not a rule the data is read against.
+                // Thinning it to the furniture weight would make the hatch read as
+                // an empty region rather than a deliberately-unfilled one.
                 strokeWidth={1}
               />
             </pattern>

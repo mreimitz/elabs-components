@@ -38,6 +38,7 @@ import { cn } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import type {
   ChartDatapointClickHandler,
   ChartDatapointLabel,
@@ -127,7 +128,7 @@ const SLOPE_MARGIN: Margin = { top: 24, right: 120, bottom: 24, left: 120 };
 const MARKER_RADIUS = 5;
 const HOLLOW_MARKER_STROKE = 2;
 const CONNECTOR_STROKE_WIDTH = 2;
-const TRACK_STROKE_WIDTH = 0.6;
+const TRACK_STROKE_WIDTH = CHART_HAIRLINE_WIDTH;
 const BEAD_OFFSET = MARKER_RADIUS + 3;
 const BEAD_STEP = 4;
 const BEAD_LENGTH = 3;

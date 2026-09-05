@@ -45,6 +45,7 @@ import {
   resolveNodeWeight,
 } from "./network-layout";
 import type { NetworkLinkDatum, NetworkNodeDatum } from "./network-types";
+import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -478,8 +479,11 @@ describe("weight and size", () => {
   });
 
   it("draws a hairline for an unweighted edge and widens with value", () => {
-    expect(linkWidth(undefined, 10)).toBeCloseTo(0.6, 10);
-    expect(linkWidth(0, 10)).toBeCloseTo(0.6, 10);
+    // The floor is the SHARED furniture weight, not a number local to this
+    // chart — an unweighted network edge and a line chart's gridline are the
+    // same kind of mark and must draw at the same weight.
+    expect(linkWidth(undefined, 10)).toBeCloseTo(CHART_HAIRLINE_WIDTH, 10);
+    expect(linkWidth(0, 10)).toBeCloseTo(CHART_HAIRLINE_WIDTH, 10);
     expect(linkWidth(10, 10)).toBeCloseTo(3, 10);
   });
 

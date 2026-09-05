@@ -9,6 +9,7 @@
  */
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { forwardRef, useMemo, type SVGAttributes } from "react";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
 export interface SparklineProps extends Omit<SVGAttributes<SVGSVGElement>, "children" | "values"> {
   /** The series, oldest → newest. */
@@ -72,8 +73,8 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
           y1={height - 0.5}
           x2={width}
           y2={height - 0.5}
-          stroke="currentColor"
-          strokeOpacity={0.3}
+          stroke="var(--chart-grid)"
+          strokeWidth={CHART_HAIRLINE_WIDTH}
         />
       </svg>
     );

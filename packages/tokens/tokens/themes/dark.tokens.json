@@ -233,7 +233,7 @@
   },
   "chart-grid": {
     "$type": "color",
-    "$value": "var(--border)"
+    "$value": "oklch(0.52 0.012 257)"
   },
   "chart-foreground": {
     "$type": "color",
