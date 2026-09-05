@@ -25,7 +25,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
 | `@elabs-ai/components-terminal` | packages/terminal | 31 | 1 | Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. |
-| `@elabs-ai/components-process` | packages/process | 0 | 0 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
+| `@elabs-ai/components-process` | packages/process | 11 | 3 | Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. |
 
 ## @elabs-ai/components-tokens
 
@@ -1420,6 +1420,20 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 
 | Name | Kind | Variants | Import | Notes |
 | --- | --- | --- | --- | --- |
+| DEFAULT_LAYOUT_DEBOUNCE_MS | component |  | `@elabs-ai/components-process` |  |
+| EMPTY_PROCESS_MAP_HOVER | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_FILTER_INTENT_KINDS | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_FILTER_INTENT_LABELS | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_MAP_EDGE_SCALE_GROUP | component |  | `@elabs-ai/components-process` |  |
+| PROCESS_MAP_NODE_MOTION_CLASS | component |  | `@elabs-ai/components-process` |  |
+| ProcessActivityNode | component |  | `@elabs-ai/components-process` | One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally. |
+| ProcessMap | component |  | `@elabs-ai/components-process` | Directly-follows process map: activities as nodes, transitions as edges, both painted from one metric choice, with an accessible table twin. |
+| ProcessMapEdgeKeyContext | component |  | `@elabs-ai/components-process` |  |
+| ProcessMapHoverContext | component |  | `@elabs-ai/components-process` |  |
+| ProcessTransitionEdge | component |  | `@elabs-ai/components-process` | One directly-follows relation on the process map: a weighted edge whose width, printed pill and SHAPE (dashed back-edge, closed self-loop) carry the metric. |
+| useProcessLayout | hook |  | `@elabs-ai/components-process` |  |
+| useProcessMapEdgeKeys | hook |  | `@elabs-ai/components-process` |  |
+| useProcessMapHover | hook |  | `@elabs-ai/components-process` |  |
 | BPI_2012_ACTIVITIES | component |  | `@elabs-ai/components-process/core` |  |
 | BPI_2012_SUBSET_EPOCH | component |  | `@elabs-ai/components-process/core` |  |
 | DEFAULT_LIFECYCLE_VALUES | component |  | `@elabs-ai/components-process/core` |  |

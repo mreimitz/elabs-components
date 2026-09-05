@@ -36,6 +36,18 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 <ThemeProvider defaultTheme="light">{children}</ThemeProvider>;
 ```
 
+## What's in it
+
+11 exported components — including `DEFAULT_LAYOUT_DEBOUNCE_MS`, `EMPTY_PROCESS_MAP_HOVER`, `PROCESS_FILTER_INTENT_KINDS`, `PROCESS_FILTER_INTENT_LABELS`, `PROCESS_MAP_EDGE_SCALE_GROUP`.
+
+Don't guess the API — ask the CLI:
+
+```bash
+pnpm add -D @elabs-ai/components-cli
+pnpm exec brand-ui search <query>   # find a component
+pnpm exec brand-ui docs <Name>      # its real props, from source
+```
+
 ## Using an AI coding agent?
 
 For Claude Code, install the plugin from this repo's checkout:

@@ -30,7 +30,7 @@ dark, light (default)
 - [@elabs-ai/components-editor](./llms/editor.txt) — Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. (8 components, 1 hooks)
 - [@elabs-ai/components-viewer](./llms/viewer.txt) — FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. (19 components, 2 hooks)
 - [@elabs-ai/components-terminal](./llms/terminal.txt) — Terminal surfaces: shell/agent output and coding-agent CLI look-alikes. (31 components, 1 hooks)
-- [@elabs-ai/components-process](./llms/process.txt) — Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. (0 components, 0 hooks)
+- [@elabs-ai/components-process](./llms/process.txt) — Process mining and event-log analysis: process map, variants, cases, conformance — composes flow/charts/data. (11 components, 3 hooks)
 
 ## Entry points
 
