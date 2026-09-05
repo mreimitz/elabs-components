@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { discoverGraph } from "./discover-graph";
 import { DURATION_SAMPLE_CAP } from "./duration-stats";
-import { normalizeLog } from "./event-log";
+import { asNormalizedLog, normalizeLog } from "./event-log";
 import { generateSyntheticLog } from "./fixtures/synthetic-log";
 import fixture from "./fixtures/order-to-cash-small.json";
 import type { ActivityStats, EventLog, TransitionStats } from "./types";
@@ -257,16 +257,25 @@ describe("discoverGraph determinism past the duration-sample cap (RM-052 round 2
   const bigLog = generateSyntheticLog({ cases: 5_000, seed: 11 });
 
   it("proves the reservoir-replacement branch actually ran, by observed sample count — not log size", () => {
-    const graph = discoverGraph(bigLog);
+    // Non-vacuity check, corrected (RM-052 round 3, #227, G3): `instances`/`count` below
+    // are the number of EVENTS/TRANSITIONS `discoverGraph` walked for that activity/edge —
+    // not a read of `DurationSampler`'s own state. They only stand in for "samples offered
+    // to the sampler" because every walked event/transition unconditionally calls
+    // `duration.add(...)` (see `discover-graph.ts`) with a FINITE duration. Assert that
+    // premise directly: every case in `bigLog`, once normalized the same way
+    // `discoverGraph` normalizes its input, has a finite `duration`/`start`/`end` on every
+    // event — so no event is silently dropped by `DurationSampler.add`'s
+    // `Number.isFinite` guard, and the instances/count tallies below really do equal the
+    // sampler's offered-sample count.
+    for (const normalizedCase of asNormalizedLog(bigLog).cases) {
+      for (const event of normalizedCase.events) {
+        expect(Number.isFinite(event.duration)).toBe(true);
+        expect(Number.isFinite(event.start)).toBe(true);
+        expect(Number.isFinite(event.end)).toBe(true);
+      }
+    }
 
-    // Non-vacuity check: OBSERVE the true offered-sample count on the accumulators the
-    // determinism assertion below exercises, rather than inferring it from the log's case
-    // count. `instances`/`count` on a discovered graph are exactly the number of times
-    // `DurationSampler.add()` was called for that activity/edge (see `discover-graph.ts`),
-    // which is the same counter the sampler's own `size` getter reports — so this is a
-    // direct read of the sampler's state, not a guess. If a future change to the synthetic
-    // fixture ever drops either count back to or below the cap, this assertion fails loudly
-    // instead of leaving the determinism check below silently vacuous again.
+    const graph = discoverGraph(bigLog);
     const createOrder = graph.activities.find((activity) => activity.id === "Create Order");
     expect(createOrder?.instances).toBeGreaterThan(DURATION_SAMPLE_CAP);
 
