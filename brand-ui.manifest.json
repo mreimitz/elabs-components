@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T14:29:49.365Z",
+  "generatedAt": "2026-09-05T15:00:53.194Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -34094,7 +34094,9 @@
           ]
         },
         "PageShell": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -34118,6 +34120,18 @@
               "optional": true,
               "type": "\"md\" | \"lg\" | \"xl\" | \"full\"",
               "description": "Constrain content width. Defaults to \"xl\"."
+            },
+            {
+              "name": "scroll",
+              "optional": true,
+              "type": "\"body\" | \"content\" | \"fill\"",
+              "description": "\"body\" (default) — the page scrolls with the document. Byte-identical to the pre-#R6 behaviour; existing callers are unaffected. \"content\" — this container is the scroll port. Use inside a `SidebarInset` whose height is already bounded, so the top bar stays put. Defaults its own `tabIndex` to `0` (a scroll container must be keyboard-operable — WCAG 2.1.1, axe `scrollable-region-focusable`), following the `DialogBody` precedent; pass `tabIndex={-1}` to opt out when the content already supplies its own focusable child. \"fill\" — fills its parent and scrolls nothing itself; a child (a table, a canvas) owns the scrolling — and owns that child's keyboard reachability too, the same way."
+            },
+            {
+              "name": "headerGutter",
+              "optional": true,
+              "type": "boolean",
+              "description": "Reserve a fixed header row so a page title lands at identical coordinates on every route, whether or not that route has a header. Default `false`. The row's height is a component-local CSS variable — `--page-shell-header-gutter`, declared on the root, default `--spacing(12)` (3rem / 48px at a 16px root — the height a one-line title already occupies inside the `headerVariant=\"toolbar\"` bar's own `py-3`). It is NOT a theme token (`pnpm theme-parity:check` does not see it); retune it per surface the same way `--focus-ring-color` is retargeted elsewhere in this package: `<PageShell headerGutter className=\"[--page-shell-header-gutter:--spacing(16)]\" />`. When `true` the header row renders **even if `header` is omitted** — that empty row is the whole mechanism, and it is what `headerGutter={false}` must never produce."
             },
             {
               "name": "className",
