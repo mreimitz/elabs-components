@@ -9,8 +9,19 @@
       "type": "registry:block",
       "title": "App shell",
       "description": "Sidebar + top nav + page layout scaffold for an internal app.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "files": [
+        {
+          "path": "registry/blocks/app-shell/app-list-column.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/app-list-column.tsx"
+        },
         {
           "path": "registry/blocks/app-shell/app-nav-rail.tsx",
           "type": "registry:component",
@@ -20,6 +31,16 @@
           "path": "registry/blocks/app-shell/app-shell-page.tsx",
           "type": "registry:page",
           "target": "app/(app)/page.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/app-top-bar.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/app-top-bar.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/console-overview.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/console-overview.tsx"
         },
         {
           "path": "registry/blocks/app-shell/nav-items.ts",

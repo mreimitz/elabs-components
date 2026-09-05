@@ -65,11 +65,17 @@ function renderNavItem(item: NavItem, activePath: string) {
   // (sidebar.tsx), so a sub-item's own route would otherwise be unreachable once the rail
   // collapses to its 48px icon strip. Mirror each sub-item as its own top-level icon
   // button, visible ONLY in the collapsed state, so the route stays one click away.
+  //
+  // Exactly ONE of the two copies is ever displayed — the sub-menu list is hidden under
+  // `collapsible=icon`, this mirror everywhere else — so the duplicate `href` never
+  // reaches assistive tech twice. The `data-slot` is what lets a test target THIS copy:
+  // both anchors share an `href`, and the hidden one wins `querySelector` by DOM order.
   for (const sub of subItems) {
     const SubIcon = sub.icon;
     nodes.push(
       <SidebarMenuItem
         key={`${sub.id}-collapsed`}
+        data-slot="app-nav-rail-collapsed-item"
         className="hidden group-data-[collapsible=icon]:block"
       >
         <SidebarMenuButton
@@ -100,12 +106,14 @@ export function AppNavRail({
   return (
     <Sidebar
       collapsible="icon"
-      // Pinned, not decorative: the rail's collapsed icon buttons size off
-      // `--spacing`, and under `compact` density that shrinks the icon strip
-      // below the fixed 3rem rail width the collapsed layout assumes.
-      data-density="comfortable"
       className={className}
       {...props}
+      // Pinned, not decorative: the rail's collapsed icon buttons size off
+      // `--spacing`, and under `compact` density that shrinks the icon strip
+      // below the fixed 3rem rail width the collapsed layout assumes. Written
+      // AFTER `{...props}` on purpose — a caller who spreads `data-density`
+      // would otherwise silently defeat the pin (last JSX attribute wins).
+      data-density="comfortable"
     >
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:justify-center">
@@ -121,7 +129,7 @@ export function AppNavRail({
 
       {/* `display: contents` keeps the landmark in the a11y tree without adding a
           layout box that would break `SidebarContent`'s own flex/scroll sizing. */}
-      <nav aria-label="Main" className="contents">
+      <nav aria-label="Primary" className="contents">
         <SidebarContent className="min-h-0 overflow-y-auto">
           {NAV_GROUPS.map((group) => (
             <SidebarGroup key={group.label}>
