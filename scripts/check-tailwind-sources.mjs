@@ -65,6 +65,26 @@
  *   the package is named by a resolvable `@source` pattern in every CSS file
  *   that has any `@source` directives at all.
  *
+ * ## Two known limits — declared, not bugs to fix quietly
+ *
+ * - **Over-strict base-directory matching.** `matchesSrc()` demands the
+ *   resolved `@source` base directory equal `packages/<name>/src` EXACTLY. A
+ *   broader but genuinely-covering directive — e.g.
+ *   `@source "../../../packages/process/**\/*.{ts,tsx}";`, which
+ *   `@tailwindcss/oxide` would happily scan — is REJECTED (verified: exits 1,
+ *   prints the canonical suggested line). This is a false positive, not a
+ *   hole: it fails loudly rather than silently under-covering, so tightening
+ *   `matchesSrc()` to accept it is a nice-to-have, not a fix for a bypass.
+ * - **Two blind spots in `tailwindScopedPackages()`'s "does this package need
+ *   coverage" heuristic.** It only walks `.tsx` files and explicitly excludes
+ *   `*.stories.tsx`. So a package whose Tailwind classes live ONLY in
+ *   `*.stories.tsx` (which the `@source` glob's `{ts,tsx}` DOES compile) or
+ *   ONLY in `.ts` files would be judged out-of-scope and skipped with no
+ *   violation raised — the exact class of silence #348 was. No package in
+ *   this repo is in that position today (every in-scope package has non-test,
+ *   non-story `.tsx` source), but that is a fact about today's tree, not a
+ *   property this gate enforces.
+ *
  * Run via `pnpm tailwind-sources:check`; self-tested via
  * `pnpm tailwind-sources:check:test` (plants bad fixtures and asserts the
  * gate FAILS — a gate that can silently stop firing is worse than none,

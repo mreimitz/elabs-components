@@ -135,9 +135,13 @@ agent/skill path can discover it. Register it everywhere packages are enumerated
   the new package's source, **if** it ships real Tailwind class strings. Tailwind v4 does
   not auto-scan workspace packages resolved via `node_modules`; a package missing here
   compiles no styles for its own classes and silently renders unstyled (#348). This is
-  **gated**, not just documented: `pnpm tailwind-sources:check` fails CI if a package with
-  `.tsx` source containing real class strings is absent from every `@source`-bearing CSS
-  file in the repo.
+  **gated**, not just documented: `pnpm tailwind-sources:check` fails CI if a package
+  that ships at least one non-test, non-story `.tsx` file is absent from every
+  `@source`-bearing CSS file in the repo. That "ships a `.tsx` file" test is a PROXY for
+  "ships real Tailwind class strings", not the same thing — it does not inspect file
+  contents — which is exactly why `packages/tokens` needs a named exemption
+  (`EXEMPT_PACKAGES` in the script): it ships two non-test `.tsx` files but no real class
+  strings anywhere in its source, so the proxy alone would false-fail on it.
 - Run `pnpm manifest` to regenerate `brand-ui.manifest.json`.
 
 **This manual list is now belt-and-suspenders for the common case, not the only
