@@ -148,6 +148,7 @@ export * from "./components/collapsible-panel";
 export * from "./components/color-picker";
 export * from "./components/combobox";
 export * from "./components/command";
+export * from "./components/command-trigger";
 export * from "./components/confirm-dialog";
 export * from "./components/context-menu";
 export * from "./components/copyable-value";

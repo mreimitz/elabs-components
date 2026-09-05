@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 383 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 384 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 31 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -182,6 +182,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | CommandList | component |  | `@elabs-ai/components-ui` |  |
 | CommandSeparator | component |  | `@elabs-ai/components-ui` |  |
 | CommandShortcut | component |  | `@elabs-ai/components-ui` |  |
+| CommandTrigger | component |  | `@elabs-ai/components-ui` |  |
 | ConfirmDialog | component |  | `@elabs-ai/components-ui` |  |
 | ContextMenu | component |  | `@elabs-ai/components-ui` |  |
 | ContextMenuCheckboxItem | component |  | `@elabs-ai/components-ui` |  |

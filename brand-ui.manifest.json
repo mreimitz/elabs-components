@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T14:09:07.679Z",
+  "generatedAt": "2026-09-05T14:29:49.365Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28753,6 +28753,11 @@
           "module": "packages/ui/src/components/command/command.tsx"
         },
         {
+          "name": "CommandTrigger",
+          "kind": "value",
+          "module": "packages/ui/src/components/command-trigger/command-trigger.tsx"
+        },
+        {
           "name": "ConfirmDialog",
           "kind": "value",
           "module": "packages/ui/src/components/confirm-dialog/confirm-dialog.tsx"
@@ -30543,6 +30548,10 @@
         {
           "name": "CommandProps",
           "module": "packages/ui/src/components/command/command.tsx"
+        },
+        {
+          "name": "CommandTriggerProps",
+          "module": "packages/ui/src/components/command-trigger/command-trigger.tsx"
         },
         {
           "name": "ConfirmDialogProps",
@@ -32705,6 +32714,25 @@
               "optional": true,
               "type": "ReactNode",
               "description": "The dialog's accessible name, rendered `sr-only`. OPTIONAL, and deliberately so: callers that already render their own `DialogTitle` in `children` must not be forced to move it, and `@elabs-ai/components-ai`'s `VoiceSelectorDialog` passes this whole prop type straight through. Supply it when you have no visible title — a `Dialog` with no accessible name is a Radix warning and an axe violation."
+            }
+          ]
+        },
+        "CommandTrigger": {
+          "extends": [
+            "ComponentProps<\"button\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "The visible and announced label. Defaults to \"Search\"."
+            },
+            {
+              "name": "shortcut",
+              "optional": true,
+              "type": "string",
+              "description": "The shortcut hint. Defaults to the platform-correct ⌘ K / Ctrl K."
             }
           ]
         },

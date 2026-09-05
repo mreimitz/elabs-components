@@ -105,6 +105,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CommandList
 - CommandSeparator
 - CommandShortcut
+- CommandTrigger
 - ConfirmDialog
 - ContextMenu
 - ContextMenuCheckboxItem
