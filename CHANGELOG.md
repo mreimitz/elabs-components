@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Changed: every piece of chart _furniture_ — grid rows and columns, axis
+  rules, scatter drop lines, dumbbell tracks, tree links, radar rings,
+  network edges, a sparkline's empty baseline — now paints one ink at one
+  weight, exported as `CHART_HAIRLINE_WIDTH` from
+  `@elabs-ai/components-charts`. Before this, each mark picked its own
+  stroke width and two of them additionally dimmed the shared ink with an
+  opacity of their own, so one token rendered at five weights and three
+  inks and a network chart's edges measured 1.07:1 against a white card —
+  effectively invisible. `--chart-grid` also stops aliasing `--border`
+  (a UI region hairline, not a sub-pixel stroke over a plot ground) and
+  carries its own darker rung. A new `pnpm chart-hairline:check` gate, with
+  its own self-test, keeps it that way.
+
 - Added: `@elabs-ai/components-process` gains its first Storybook presence and
   test-authoring surface (#228). A new `./test` subpath (mirroring
   `@elabs-ai/components-charts`'s identical pattern) ships contract-checked
