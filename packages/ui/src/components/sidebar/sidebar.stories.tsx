@@ -162,3 +162,31 @@ export const ActiveSubItemIndicator: Story = {
     );
   },
 };
+
+/** Collapsed to the icon rail, a group label takes no space at all — not an invisible box. */
+export const CollapsedGroupLabel: Story = {
+  render: () => (
+    <SidebarProvider defaultOpen={false}>
+      <Sidebar collapsible="icon">
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel data-testid="label">Platform</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Overview">Overview</SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const label = canvasElement.querySelector('[data-testid="label"]') as HTMLElement;
+    // `opacity: 0` leaves the box in flow — the gap users see. `display: none` does not.
+    await expect(getComputedStyle(label).display).toBe("none");
+    await expect(label.getBoundingClientRect().height).toBe(0);
+  },
+};

@@ -418,8 +418,8 @@ export const SidebarGroupLabel = forwardRef<
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        "flex h-8 shrink-0 items-center rounded-md px-2 text-meta font-medium text-sidebar-muted-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[margin,opacity] duration-base ease-linear [&>svg]:size-4 [&>svg]:shrink-0",
-        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+        "flex h-8 shrink-0 items-center rounded-md px-2 text-meta font-medium text-sidebar-muted-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[opacity] duration-base ease-linear [&>svg]:size-4 [&>svg]:shrink-0",
+        "group-data-[collapsible=icon]:hidden",
         className,
       )}
       {...props}
