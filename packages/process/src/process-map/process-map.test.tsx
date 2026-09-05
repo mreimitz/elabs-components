@@ -14,7 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
-import { buildProcessMapModel } from "./map-model";
+import { buildProcessMapModel, GHOST_OPACITY } from "./map-model";
 import { ProcessMap } from "./process-map";
 
 // jsdom ships no `DOMMatrixReadOnly`/`DOMMatrix` at all, which `@xyflow/react`'s internal
@@ -238,6 +238,92 @@ describe("ProcessMap — canvas node ordering is DOM order (blocking-CI lock, #3
       }).toMatchObject({ ordered: true });
     }
   });
+});
+
+// ── The ghosting-rung locks (#351, #352) ─────────────────────────────────────────────────
+//
+// Both render the real canvas (same `DOMMatrixReadOnly` polyfill as the #365 block above)
+// rather than asserting on class-string presence, because the bug both issues describe is
+// a COMPOSITING one: a class string can look right while the rendered opacity chain still
+// dims text (opacity on an ancestor flattens its whole subtree — `getComputedStyle` on a
+// descendant never reflects that). The primary lock below asserts the specific structural
+// property that regressed: the activity node's border-carrying element (`FlowNode`'s own
+// root) and its text stay untouched by ghosting, while the frame's retargeted custom
+// properties and the meter's opacity are the only things that move.
+describe("ProcessMap — ghosted marks keep their border/text, ghosting reaches only non-text channels (#351, #352)", () => {
+  it("retints an excluded node's frame and dims its meter, without touching FlowNode's own card or text", async () => {
+    const excludedId = graph.activities[graph.activities.length - 1]!.id;
+    const includedId = graph.activities[0]!.id;
+    render(
+      <ProcessMap
+        graph={graph}
+        metric={metric}
+        selectionStates={{ activities: { [excludedId]: "excluded" } }}
+      />,
+    );
+
+    const excludedWrapper = await waitFor(() => {
+      const node = document.querySelector<HTMLElement>(
+        `.react-flow__node[data-id="${excludedId}"]`,
+      );
+      expect(node).toBeTruthy();
+      return node!;
+    });
+    const includedWrapper = document.querySelector<HTMLElement>(
+      `.react-flow__node[data-id="${includedId}"]`,
+    )!;
+
+    // Only the excluded node's frame carries the two ghost-rung custom-property overrides.
+    const excludedFrame = excludedWrapper.querySelector<HTMLElement>(
+      '[data-slot="process-activity-node-frame"]',
+    )!;
+    const includedFrame = includedWrapper.querySelector<HTMLElement>(
+      '[data-slot="process-activity-node-frame"]',
+    )!;
+    expect(excludedFrame.style.getPropertyValue("--border")).toBe("var(--border-strong)");
+    expect(excludedFrame.style.getPropertyValue("--flow-node")).toContain("color-mix");
+    expect(includedFrame.style.getPropertyValue("--border")).toBe("");
+    expect(includedFrame.style.getPropertyValue("--flow-node")).toBe("");
+
+    // `FlowNode`'s own root — the border-carrying card — is untouched by this component on
+    // EITHER node: no inline opacity, no `opacity-*` utility class. This is the primary lock:
+    // a ghosted node's boundary must survive ghosting, where a single `opacity-35` on the
+    // whole subtree used to fade the border along with everything else.
+    const excludedCard = excludedFrame.firstElementChild as HTMLElement;
+    const includedCard = includedFrame.firstElementChild as HTMLElement;
+    for (const card of [excludedCard, includedCard]) {
+      expect(card.style.opacity).toBe("");
+      expect(card.className).not.toMatch(/\bopacity-/);
+    }
+
+    // The card's own text (eyebrow/title) is likewise never dimmed — same reasoning, and the
+    // same element a screen reader/contrast checker actually reads.
+    const excludedTitle = excludedCard.querySelector(
+      ".truncate.text-sm.font-medium",
+    ) as HTMLElement;
+    expect(excludedTitle.style.opacity).toBe("");
+    expect(excludedTitle.className).not.toMatch(/\bopacity-/);
+
+    // The meter fill — a redundant, `aria-hidden` mark, never text — IS the shared ghost
+    // rung: dimmed on the excluded node, full-strength on the included one.
+    const excludedMeter = excludedWrapper.querySelector<HTMLElement>(
+      '[data-slot="process-activity-node-meter"]',
+    )!;
+    const includedMeter = includedWrapper.querySelector<HTMLElement>(
+      '[data-slot="process-activity-node-meter"]',
+    )!;
+    expect(excludedMeter.style.opacity).toBe(String(GHOST_OPACITY));
+    expect(includedMeter.style.opacity).toBe("");
+  });
+
+  // The label-pill-reaches-ghosting lock for #351 lives in
+  // `process-transition-edge.test.tsx` instead of here: React Flow renders no
+  // edges at all under jsdom (`.react-flow__edges`/`.react-flow__edgelabel-renderer`
+  // stay empty even with the DOMMatrixReadOnly polyfill this file's node-ordering
+  // lock relies on), so asserting the pill through a full `<ProcessMap>` mount
+  // cannot pass here — only node POSITIONS are computed synchronously by dagre.
+  // `ProcessTransitionEdge`'s own context module documents standalone rendering
+  // as the intended test strategy for exactly this component.
 });
 
 function escapeRe(value: string): string {

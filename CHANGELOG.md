@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Fixed: an excluded (filtered-out) element on `ProcessMap`
+  (`@elabs-ai/components-process`) used to fade its whole card or arrow to one
+  flat opacity — which dimmed the activity's own card border along with its
+  text (#352), and left an excluded transition's frequency/duration pill at
+  full strength because React Flow portals that pill out from under the arrow
+  it belongs to, so the arrow's dimming never reached it at all (#351). A
+  ghosted element now keeps a visible boundary and full-contrast text — only
+  its non-text meter fill and the pill's frame pick up the quieter treatment
+  (a retinted card edge, a dimmed meter bar, a dashed pill border with a
+  `data-selection="excluded"` attribute) — so an excluded element still reads
+  clearly rather than disappearing into the canvas. `EdgeLabelPill`
+  (`@elabs-ai/components-flow`) gained `className`/`...props` on its root
+  button as the seam this reaches through; existing callers are unaffected.
 - Fixed: `Table` (`@elabs-ai/components-ui`) — a table whose contents overflow now
   offers a keyboard-reachable scroll region with an accessible name, so keyboard
   and screen-reader users can reach content that only scrolling reveals; a table

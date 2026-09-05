@@ -121,6 +121,25 @@ export const PROCESS_FILTER_INTENT_LABELS: Readonly<Record<ProcessFilterIntent["
 export type ProcessSelectionState = "selected" | "associated" | "excluded";
 
 /**
+ * The ONE ghosting rung a filter-excluded element dims against, shared by every call site
+ * that owns a non-text mark: the activity node's meter fill, the transition edge's stroke
+ * (`ProcessTransitionEdge`'s wrapping `<g>`), and — via `labelProps.className` — the
+ * transition's own label pill's frame (`FlowWeightedEdge`/`FlowSelfLoopEdge`). Before #351/
+ * #352 this was TWO separate literals (`opacity-35` on the activity node's whole subtree,
+ * `EXCLUDED_OPACITY` on the edge) and the pill had no ghost treatment at all.
+ *
+ * **This value dims marks, never text ink.** `ProcessActivityNode` and the pill's own label
+ * text are deliberately excluded from it — measured (see #352's follow-up), a `0.35` alpha
+ * over EITHER's own already-modest undimmed contrast (5.97:1–6.08:1 for the eyebrow, higher
+ * for the title/label) composites well under the WCAG 4.5:1 floor in both reference themes.
+ * Ghosted TEXT stays at full ink; the excluded state instead reaches the reader through the
+ * activity node's `border-strong` boundary swap and the pill's dashed frame — non-opacity,
+ * non-colour-alone channels (WCAG 1.4.1) — plus the accessible name's own appended
+ * "excluded" word, same as before.
+ */
+export const GHOST_OPACITY = 0.35;
+
+/**
  * Per-element selection/filter states, sparse — an id with no entry defaults through
  * {@link resolveSelectionState}'s own rules. Keyed exactly like {@link ProcessSelection}:
  * activity name for `activities`, {@link processEdgeId} for `transitions`.

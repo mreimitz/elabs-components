@@ -31,6 +31,22 @@
  * rest; the selection tri-state dims an excluded edge. Both are opacity changes on a
  * wrapper `<g>` — never a hue swap — and both leave the delegate's own `selected` ring
  * alone.
+ *
+ * ## The label pill does not inherit this `<g>`'s opacity (#351)
+ *
+ * `EdgeLabelRenderer` portals the pill out from under this `<g>` into a sibling HTML layer,
+ * so CSS `opacity` on the `<g>` never reaches it — an excluded edge used to fade to
+ * {@link GHOST_OPACITY} while its own label pill stayed at full strength, the one part of
+ * the ghosting rung a filter could never actually dim. Rather than matching the pill's
+ * OWN opacity to the edge's (which would dim the pill's TEXT the same way #352 found
+ * failing 4.5:1 on the activity node — the pill's label sits on `bg-flow-node` at the same
+ * high-contrast rung as a node's title), the pill is reached explicitly, by DATA, with a
+ * non-opacity treatment: `labelProps` (a generic pass-through on
+ * `FlowWeightedEdgeData`/`FlowSelfLoopEdgeData`, mirroring `EdgeLabelPill`'s own new
+ * `className`/`...props`) carries a dashed border and a `data-selection="excluded"`
+ * attribute straight onto the pill's root button — visible, non-text, reachable by a
+ * `[data-selection="excluded"]` selector same as the node and the edge, and never lower
+ * than 4.5:1 because the label text itself is untouched.
  */
 import { useMemo } from "react";
 import type { EdgeProps } from "@xyflow/react";
@@ -41,7 +57,7 @@ import {
   type FlowWeightedEdgeData,
 } from "@elabs-ai/components-flow";
 import { useProcessMapEdgeKeys, useProcessMapHover } from "./process-map-context";
-import type { ProcessMapEdge } from "./map-model";
+import { GHOST_OPACITY, type ProcessMapEdge } from "./map-model";
 
 /**
  * The `scaleGroup` every process-map edge shares, so `computeEdgeWeightScale` min-maxes
@@ -52,10 +68,12 @@ export const PROCESS_MAP_EDGE_SCALE_GROUP = "process-map";
 
 /** Opacity of an edge that is neither hovered-incident nor selection-excluded. */
 const RESTING_OPACITY = 1;
-/** Opacity of an edge outside the current selection's neighbourhood. */
-const EXCLUDED_OPACITY = 0.35;
 /** Opacity of an edge that is not incident to the hovered activity. */
 const UNRELATED_OPACITY = 0.25;
+
+/** The pill's own ghost treatment — a dashed frame + a reachable `data-selection`, never an
+ * opacity (see this file's own docblock, and {@link GHOST_OPACITY}'s, for why). */
+const EXCLUDED_LABEL_PROPS = { className: "border-dashed", "data-selection": "excluded" } as const;
 
 /**
  * Branded process-map transition edge. Register it in
@@ -66,6 +84,8 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
   const { data } = props;
   const hover = useProcessMapHover();
   const onEdgeKey = useProcessMapEdgeKeys();
+  const isExcluded = data?.selectionState === "excluded";
+  const labelProps = isExcluded ? EXCLUDED_LABEL_PROPS : undefined;
 
   const weightedData = useMemo<FlowWeightedEdgeData>(
     () => ({
@@ -76,6 +96,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       label: data?.label,
       secondaryLabel: data?.secondaryLabel,
       variant: data?.isBackEdge ? "back" : "forward",
+      labelProps,
     }),
     [
       data?.weight,
@@ -84,6 +105,7 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       data?.label,
       data?.secondaryLabel,
       data?.isBackEdge,
+      labelProps,
     ],
   );
 
@@ -93,16 +115,16 @@ export function ProcessTransitionEdge(props: EdgeProps<ProcessMapEdge>) {
       scaleGroup: PROCESS_MAP_EDGE_SCALE_GROUP,
       label: data?.label,
       secondaryLabel: data?.secondaryLabel,
+      labelProps,
     }),
-    [data?.weight, data?.label, data?.secondaryLabel],
+    [data?.weight, data?.label, data?.secondaryLabel, labelProps],
   );
 
-  const opacity =
-    data?.selectionState === "excluded"
-      ? EXCLUDED_OPACITY
-      : hover.activityId !== null && !hover.incidentEdgeIds.has(props.id)
-        ? UNRELATED_OPACITY
-        : RESTING_OPACITY;
+  const opacity = isExcluded
+    ? GHOST_OPACITY
+    : hover.activityId !== null && !hover.incidentEdgeIds.has(props.id)
+      ? UNRELATED_OPACITY
+      : RESTING_OPACITY;
 
   return (
     <g
