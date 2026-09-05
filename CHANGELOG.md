@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-process`'s framework-free `/core` gains the
+  analysis layer the process views are built on (#225) — `abstractGraph`
+  (activity/path abstraction sliders that hide elements without recomputing a
+  single statistic, and keep every surviving activity on a path from a start to
+  an end), `aggregatePerformance` (a duration layer over a discovered graph in
+  ms/s/min/h/d, optionally re-derived from the full log at a chosen flow time so
+  a reduced view still describes everything that happened), `detectRework`
+  (self-loops vs longer loops, per activity and as a case rate), `filterLog` /
+  `filterNormalizedLog` / `caseMatchesFilters` (case-level filtering on
+  activity, position, followers, attributes, throughput time, variant or case
+  id), and `createProcessWorker` (off-thread discovery and variant extraction
+  that degrades to the calling thread whenever a worker is unavailable, so the
+  answer is the same in a browser, a server render and a test).
+
 - Added: `@elabs-ai/components-process/core` — the process-mining package's
   framework-free half now ships a real event-log model and derivation layer,
   where before it was an empty scaffold. A consumer can read a log in
