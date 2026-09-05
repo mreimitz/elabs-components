@@ -1,18 +1,42 @@
 /**
  * Unit coverage for the parts of `ProcessMap` that render with no engine behind them —
  * the loading and empty panels, the accessible `tableView` twin, and the filter-intent
- * menu. The CANVAS is deliberately not asserted here: React Flow needs real layout and
- * measurement, and a mocked stand-in would prove nothing about the surface that ships.
- * The canvas, the keyboard path and the axe pass are covered by `process-map.stories.tsx`,
- * which runs in a real browser.
+ * menu. The keyboard path and the axe pass are still NOT asserted here: React Flow needs
+ * real interaction/measurement for those, and a mocked stand-in would prove nothing about
+ * the surface that ships — that coverage stays in `process-map.stories.tsx`, which runs in
+ * a real browser. The one exception is the canvas NODE-ORDERING invariant at the bottom of
+ * this file (#365): it renders the real canvas (see the `DOMMatrixReadOnly` polyfill below)
+ * because that invariant is reproducible under jsdom with no interaction/measurement at all
+ * — see that describe block's own comment for why.
  */
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import { buildProcessMapModel } from "./map-model";
 import { ProcessMap } from "./process-map";
+
+// jsdom ships no `DOMMatrixReadOnly`/`DOMMatrix` at all, which `@xyflow/react`'s internal
+// transform math calls unconditionally — with neither stubbed, mounting `ProcessMap`'s
+// canvas throws `window.DOMMatrixReadOnly is not a constructor` before a single node
+// renders (confirmed against this exact fixture while building the #365 lock below). This
+// is a MISSING BROWSER API, not React Flow's rendering logic — filling it in lets the real
+// engine run for real under jsdom, which is a different thing from `canvas-shell.test.tsx`
+// mocking `@xyflow/react` itself out. Scoped to this file (not the package's shared
+// `vitest.setup.ts`) since only the one describe block below needs it.
+if (typeof globalThis.DOMMatrixReadOnly === "undefined") {
+  class DOMMatrixReadOnlyPolyfill {
+    // The only field React Flow's viewport/position math reads off this type for a canvas
+    // with no zoom/pan applied (this suite never zooms or pans).
+    m22 = 1;
+    constructor(_init?: unknown) {}
+  }
+  globalThis.DOMMatrixReadOnly = DOMMatrixReadOnlyPolyfill as unknown as typeof DOMMatrixReadOnly;
+}
+if (typeof globalThis.DOMMatrix === "undefined") {
+  globalThis.DOMMatrix = globalThis.DOMMatrixReadOnly as unknown as typeof DOMMatrix;
+}
 
 afterEach(cleanup);
 
@@ -152,6 +176,67 @@ describe("ProcessMap — the filter-intent menu", () => {
       "aria-keyshortcuts",
       "f",
     );
+  });
+});
+
+// ── The cheap jsdom lock (#365, "Test to add" item 3) ────────────────────────────────────
+//
+// `process-map.stories.tsx`'s `Selection` story asserts this SAME invariant against a real
+// browser, but that story runs in the Storybook `addon-vitest` project — the NON-BLOCKING
+// CI job. This test asserts it here too, in the package's own jsdom suite, which IS the
+// blocking job, so a regression in `applyPositions`' sort (`process-map.tsx`) actually fails
+// a check that gates a merge. It is deliberately independent of the story: it renders the
+// real `ProcessMap` canvas itself, off the same fixture used above, rather than importing
+// anything from the story file — a change to the story can never mask a regression here, and
+// a regression here is never masked by the story either.
+//
+// Dagre computes every node's `position` synchronously off the graph's STRUCTURE (see
+// `useProcessLayout`) using FIXED default node dimensions — it never measures the DOM — so
+// the sort order is reproducible under jsdom exactly as it is in a real browser, with no
+// `ResizeObserver`/`getBoundingClientRect` dependency to fake. What jsdom canNOT reproduce is
+// the map's 260ms CSS entry transition (`PROCESS_MAP_NODE_MOTION_CLASS`) actually PLAYING —
+// jsdom has no compositor — so this lock does not need the story's "read the transform
+// instead of a measured rectangle" workaround for ITS OWN sake. It reads `style.transform`
+// anyway, for two independent reasons: (1) it is the exact mechanism `applyPositions` and
+// this lock both care about, so a regression there is caught the same way in both places, and
+// (2) `getBoundingClientRect` is always `{0,0,0,0}` under jsdom regardless of animation, so it
+// could never distinguish laid-out nodes from un-laid-out ones anyway.
+describe("ProcessMap — canvas node ordering is DOM order (blocking-CI lock, #365)", () => {
+  it("orders .react-flow__node wrappers by their laid-out position, not model order", async () => {
+    render(<ProcessMap graph={graph} metric={metric} />);
+
+    // The first layout run is not debounced (`useProcessLayout`), but it still lands after
+    // mount via an effect — wait for it rather than asserting on the pre-layout frame.
+    const wrappers = await waitFor(() => {
+      const nodes = [...document.querySelectorAll<HTMLElement>(".react-flow__node")];
+      expect(nodes.length).toBe(graph.activities.length);
+      return nodes;
+    });
+
+    const positions = wrappers.map((wrapper) => {
+      const match = /translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)/.exec(
+        wrapper.style.transform,
+      );
+      expect(
+        match,
+        `expected a translate() transform on node "${wrapper.dataset.id}"`,
+      ).toBeTruthy();
+      return { x: Number(match![1]), y: Number(match![2]) };
+    });
+
+    for (let i = 1; i < positions.length; i += 1) {
+      const previous = positions[i - 1]!;
+      const current = positions[i]!;
+      // dagre gives an entire rank the SAME y — an exact tie, not a 1px tolerance, because
+      // this is the laid-out coordinate rather than a painted, sub-pixel rectangle.
+      const sameRow = previous.y === current.y;
+      expect({
+        index: i,
+        y: [previous.y, current.y],
+        x: [previous.x, current.x],
+        ordered: sameRow ? previous.x <= current.x : previous.y < current.y,
+      }).toMatchObject({ ordered: true });
+    }
   });
 });
 
