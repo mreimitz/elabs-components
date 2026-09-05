@@ -8,11 +8,12 @@ vi.mock("@xyflow/react", () => ({
 
 import {
   handlePoint,
+  pickClosestAnchors,
   pickClosestHandles,
-  rectCenter,
+  positionToSide,
   sideToPosition,
-  slideAnchor,
   HANDLE_SIDES,
+  type HandleAnchor,
   type NodeRect,
 } from "./smart-edge-geometry";
 
@@ -22,6 +23,13 @@ const rect = (x: number, y: number, width = 100, height = 60): NodeRect => ({
   width,
   height,
 });
+
+const anchor = (
+  id: HandleAnchor["id"],
+  x: number,
+  y: number,
+  side: HandleAnchor["side"],
+): HandleAnchor => ({ id, x, y, side });
 
 describe("handlePoint", () => {
   it("returns the midpoint of each side", () => {
@@ -33,20 +41,81 @@ describe("handlePoint", () => {
   });
 });
 
-describe("sideToPosition", () => {
+describe("sideToPosition / positionToSide", () => {
   it("maps every side to the matching Position value", () => {
     expect(sideToPosition.top).toBe("top");
     expect(sideToPosition.right).toBe("right");
     expect(sideToPosition.bottom).toBe("bottom");
     expect(sideToPosition.left).toBe("left");
   });
+
+  it("round-trips every side", () => {
+    for (const side of HANDLE_SIDES) {
+      expect(positionToSide[sideToPosition[side]]).toBe(side);
+    }
+  });
 });
 
-describe("pickClosestHandles", () => {
+describe("pickClosestAnchors", () => {
+  // A node at (0,0,100,60) with all-side handles, and one 300px to its right.
+  const leftNode: HandleAnchor[] = [
+    anchor("top", 50, 0, "top"),
+    anchor("right", 100, 30, "right"),
+    anchor("bottom", 50, 60, "bottom"),
+    anchor("left", 0, 30, "left"),
+  ];
+  const rightNode: HandleAnchor[] = [
+    anchor("top", 350, 0, "top"),
+    anchor("right", 400, 30, "right"),
+    anchor("bottom", 350, 60, "bottom"),
+    anchor("left", 300, 30, "left"),
+  ];
+
+  it("returns the closest facing pair", () => {
+    const picked = pickClosestAnchors(leftNode, rightNode);
+    expect(picked?.source.id).toBe("right");
+    expect(picked?.target.id).toBe("left");
+  });
+
+  it("returns the anchor coordinates VERBATIM — never a derived point", () => {
+    // This is the whole contract: the edge terminates exactly where the dot was
+    // measured, so no arithmetic may sit between the two.
+    const picked = pickClosestAnchors(leftNode, rightNode);
+    expect(picked?.source).toEqual(anchor("right", 100, 30, "right"));
+    expect(picked?.target).toEqual(anchor("left", 300, 30, "left"));
+  });
+
+  it("picks a stacked pair when the other node is below", () => {
+    const below = rightNode.map((a) => ({ ...a, x: a.x - 300, y: a.y + 300 }));
+    const picked = pickClosestAnchors(leftNode, below);
+    expect(picked?.source.id).toBe("bottom");
+    expect(picked?.target.id).toBe("top");
+  });
+
+  it("uses the only handle a node has, whatever side it faces", () => {
+    // A default FlowNode: one bottom source, one top target. It must never be
+    // routed to a left/right anchor it does not render.
+    const picked = pickClosestAnchors(
+      [anchor(null, 50, 60, "bottom")],
+      [anchor(null, 350, 0, "top")],
+    );
+    expect(picked?.source.side).toBe("bottom");
+    expect(picked?.target.side).toBe("top");
+    expect(picked?.source).toEqual({ id: null, x: 50, y: 60, side: "bottom" });
+  });
+
+  it("returns undefined when either end has no measured handle", () => {
+    expect(pickClosestAnchors([], rightNode)).toBeUndefined();
+    expect(pickClosestAnchors(leftNode, [])).toBeUndefined();
+  });
+});
+
+describe("pickClosestHandles (pre-measurement fallback)", () => {
   it("target to the right → source uses its right handle, target its left", () => {
-    const source = rect(0, 0);
-    const target = rect(300, 0);
-    const picked = pickClosestHandles(source, ["right", "left"], target, ["left", "right"]);
+    const picked = pickClosestHandles(rect(0, 0), ["right", "left"], rect(300, 0), [
+      "left",
+      "right",
+    ]);
 
     expect(picked.sourceSide).toBe("right");
     expect(picked.targetSide).toBe("left");
@@ -70,51 +139,23 @@ describe("pickClosestHandles", () => {
     expect(["bottom", "right"]).toContain(picked.targetSide);
   });
 
+  it("honours a single declared side instead of widening to all four", () => {
+    // A default FlowNode declares bottom-out / top-in only. Even with the other
+    // node straight to the right, the anchor stays on a side that has a handle.
+    const picked = pickClosestHandles(rect(0, 0), ["bottom"], rect(300, 0), ["top"]);
+    expect(picked.sourceSide).toBe("bottom");
+    expect(picked.targetSide).toBe("top");
+  });
+
   it("falls back to all four sides when a side list is empty", () => {
     const picked = pickClosestHandles(rect(0, 0), [], rect(300, 0), []);
     expect(picked.sourceSide).toBe("right");
     expect(picked.targetSide).toBe("left");
   });
-});
 
-describe("rectCenter", () => {
-  it("returns the node's centre", () => {
-    expect(rectCenter(rect(0, 0, 100, 60))).toEqual({ x: 50, y: 30 });
-  });
-});
-
-describe("slideAnchor", () => {
-  const r = rect(0, 0, 100, 60); // usable right/left span [12, 48], top/bottom span [12, 88]
-
-  it("stays on the chosen side's axis", () => {
-    expect(slideAnchor(r, "right", { x: 999, y: 30 }).x).toBe(100);
-    expect(slideAnchor(r, "left", { x: -999, y: 30 }).x).toBe(0);
-    expect(slideAnchor(r, "top", { x: 30, y: -999 }).y).toBe(0);
-    expect(slideAnchor(r, "bottom", { x: 30, y: 999 }).y).toBe(60);
-  });
-
-  it("slides toward the target and clamps within the inset", () => {
-    // Target far above → clamp to the top of the usable range (inset 12).
-    expect(slideAnchor(r, "right", { x: 100, y: -500 }).y).toBe(12);
-    // Target far below → clamp to the bottom of the usable range.
-    expect(slideAnchor(r, "right", { x: 100, y: 500 }).y).toBe(48);
-    // Target within range → follows it.
-    expect(slideAnchor(r, "right", { x: 100, y: 30 }).y).toBe(30);
-  });
-
-  it("fans two edges on the same side to distinct anchors", () => {
-    // The Ingest→Transform (up) vs Ingest→Publish (down) case, both leaving right.
-    const up = slideAnchor(r, "right", { x: 400, y: -200 });
-    const down = slideAnchor(r, "right", { x: 400, y: 200 });
-    expect(up.y).toBeLessThan(down.y);
-    expect(up.y).not.toBe(down.y);
-  });
-
-  it("never inverts the range on a tiny node", () => {
-    const tiny = rect(0, 0, 10, 10); // inset (12) capped to width/2 = 5
-    const p = slideAnchor(tiny, "right", { x: 100, y: -100 });
-    expect(p.x).toBe(10);
-    expect(p.y).toBeGreaterThanOrEqual(0);
-    expect(p.y).toBeLessThanOrEqual(10);
+  it("anchors on side midpoints, never a slid point", () => {
+    const picked = pickClosestHandles(rect(0, 0), ["right"], rect(300, -500), ["left"]);
+    // The target is far above; the anchor stays on the side's midpoint.
+    expect(picked.sy).toBe(30);
   });
 });

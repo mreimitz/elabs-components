@@ -20,40 +20,71 @@ export const sideToPosition: Record<FlowHandleSide, Position> = {
   left: Position.Left,
 };
 
-/** Center point of a node rectangle. */
-export function rectCenter(rect: NodeRect): { x: number; y: number } {
-  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+/** Maps a React Flow `Position` back to the handle side it names. */
+export const positionToSide: Record<Position, FlowHandleSide> = {
+  [Position.Top]: "top",
+  [Position.Right]: "right",
+  [Position.Bottom]: "bottom",
+  [Position.Left]: "left",
+};
+
+/**
+ * One candidate connection point: the **measured centre of a rendered handle
+ * dot**, in absolute flow coordinates, plus the side it sits on.
+ *
+ * This is the unit `FlowSmartEdge` routes between. Anchoring on a measured
+ * handle — rather than on a point derived from the node's rectangle — is what
+ * guarantees the drawn path terminates exactly on the dot the user sees,
+ * whatever the handle's size, offset or CSS. See {@link pickClosestAnchors}.
+ */
+export interface HandleAnchor {
+  /** The handle's `id`, when it has one (`FlowNode` uses the side name). */
+  id: string | null;
+  /** Absolute x of the handle dot's centre. */
+  x: number;
+  /** Absolute y of the handle dot's centre. */
+  y: number;
+  /** The node side the handle sits on — the bezier's control direction. */
+  side: FlowHandleSide;
+}
+
+/** The chosen source/target anchor pair. */
+export interface ClosestAnchors {
+  source: HandleAnchor;
+  target: HandleAnchor;
 }
 
 /**
- * The connection point on `side` of `rect`, slid along that side toward
- * `toward` and clamped `inset` px from the corners. This is what stops two
- * edges that both leave the same side (e.g. both targets sit to the right)
- * from piling onto the side's midpoint: each edge's anchor slides toward its
- * own target, so an up-going edge exits the upper part of the side and a
- * down-going edge the lower part — each visibly meeting the node on the side
- * that faces its target instead of stacking in the middle.
+ * Picks the source/target pair of **rendered handles** with the shortest
+ * straight-line distance between them.
+ *
+ * Returns `undefined` when either side has no candidates, so the caller can
+ * fall back to rectangle geometry for a node whose handles have not been
+ * measured yet (React Flow populates `handleBounds` on its first measurement
+ * pass; before that there is nothing to anchor to).
  */
-export function slideAnchor(
-  rect: NodeRect,
-  side: FlowHandleSide,
-  toward: { x: number; y: number },
-  inset = 12,
-): { x: number; y: number } {
-  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-  // Never let the inset invert the usable range on a small node.
-  const ix = Math.min(inset, rect.width / 2);
-  const iy = Math.min(inset, rect.height / 2);
-  switch (side) {
-    case "top":
-      return { x: clamp(toward.x, rect.x + ix, rect.x + rect.width - ix), y: rect.y };
-    case "bottom":
-      return { x: clamp(toward.x, rect.x + ix, rect.x + rect.width - ix), y: rect.y + rect.height };
-    case "left":
-      return { x: rect.x, y: clamp(toward.y, rect.y + iy, rect.y + rect.height - iy) };
-    case "right":
-      return { x: rect.x + rect.width, y: clamp(toward.y, rect.y + iy, rect.y + rect.height - iy) };
+export function pickClosestAnchors(
+  sources: HandleAnchor[],
+  targets: HandleAnchor[],
+): ClosestAnchors | undefined {
+  if (!sources.length || !targets.length) return undefined;
+
+  let best: ClosestAnchors | undefined;
+  let bestDist = Infinity;
+
+  for (const source of sources) {
+    for (const target of targets) {
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = { source, target };
+      }
+    }
   }
+
+  return best;
 }
 
 /** Absolute coordinate of a handle on the given side (the side's midpoint). */
@@ -70,7 +101,7 @@ export function handlePoint(rect: NodeRect, side: FlowHandleSide): { x: number; 
   }
 }
 
-/** The chosen source/target handle pair plus their absolute anchor points. */
+/** The side pair picked by {@link pickClosestHandles}, with both anchor points. */
 export interface ClosestHandles {
   sourceSide: FlowHandleSide;
   targetSide: FlowHandleSide;
@@ -81,9 +112,14 @@ export interface ClosestHandles {
 }
 
 /**
- * Picks the source/target handle pair (one handle per node) with the shortest
- * straight-line distance between their anchor points. Empty side lists fall
- * back to all four sides so an edge always resolves to a pair.
+ * Rectangle-only fallback: picks the closest pair of **side midpoints** from the
+ * candidate sides of each node.
+ *
+ * `FlowSmartEdge` prefers {@link pickClosestAnchors} (measured handle centres)
+ * and only reaches for this before React Flow has measured the nodes. Pass the
+ * sides each node genuinely renders a handle on — passing sides that carry no
+ * handle produces an anchor floating on a bare border, which is the defect this
+ * module exists to avoid.
  */
 export function pickClosestHandles(
   source: NodeRect,

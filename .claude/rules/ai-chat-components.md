@@ -120,6 +120,22 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   for an author-built diagram screen use `@elabs-ai/components-flow`'s `CanvasShell`
   instead — see [ADR 0018](../../docs/ADR/0018-dual-react-flow-canvas-surfaces.md) and
   @.claude/rules/react-flow-components.md.
+  - **`Edge.Animated` anchors on a MEASURED handle, and never on `[0, 0]`.**
+    `getHandleAnchor` (`_flow-boundary.tsx`) prefers a handle at the requested
+    side, falls back to any handle of that type, and finally to the node's own
+    border midpoint. The hard-coded `Right`/`Left` lookup it replaced returned
+    `[0, 0]` — the CANVAS ORIGIN — whenever it found nothing, and there are two
+    ordinary ways to find nothing: `nodeTypes` is an open prop, so a consumer
+    node may put its handles on the top and bottom (measured at **498.8px** off
+    every node in the `VerticalHandles` story), and `handleBounds` is empty until
+    React Flow's first measurement pass, which here is a real window because the
+    engine arrives in a lazy chunk (ADR 0019). The shipped `Node`'s left/right
+    handle pair is a convenience, not a constraint — never re-introduce a
+    fixed-position lookup with an origin fallback. Locked by the `VerticalHandles`
+    story, which is deliberately positioned CLEAR of the flow origin: with a node
+    over `(0, 0)` an origin anchor lands inside that node's own box and the
+    assertion passes vacuously. The sibling contract for the other canvas is in
+    @.claude/rules/react-flow-components.md.
 
 ## Rules
 
