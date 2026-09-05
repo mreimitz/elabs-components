@@ -348,6 +348,15 @@ export const SidebarRail = forwardRef<HTMLButtonElement, ComponentProps<"button"
  *   "flush rail" geometry: a leading + bottom gutter only, no top, no
  *   trailing, because the trailing edge sits flush against a rail — a tab
  *   must touch the page it belongs to.
+ *
+ * PRECEDENCE (fix round 1, #342): a caller composing BOTH mechanisms at once
+ * — `SidebarProvider variant="inset"` AND a LEFT `Sidebar variant="inset"`,
+ * the shape a left-hand shell (e.g. the sidebar-02 rebuild) uses — never hits
+ * a class-order race, because the ancestor-scoped and legacy peer-scoped
+ * margin classes are BOTH derived from this same `gutter` value, so whenever
+ * both selectors match they emit identical declarations instead of competing
+ * ones; the resolved geometry is always exactly what `gutter` says, decided
+ * by this prop, never by the generated stylesheet's rule order.
  */
 export type SidebarInsetGutter =
   | "auto"
@@ -358,31 +367,56 @@ export interface SidebarInsetProps extends ComponentProps<"main"> {
   gutter?: SidebarInsetGutter;
 }
 
-// Each side is a COMPLETE literal utility string. Tailwind's content scanner
-// only recognises literal class text in source — never a name assembled by
-// concatenation/interpolation (.claude/rules/styling-and-tokens.md) — so the
-// object form below picks among these literals, it never builds one.
+// Each side is a COMPLETE literal utility string, one per SELECTOR SCOPE:
+// `ancestor` (`group-data-…/sidebar-wrapper:`, reaches a `SidebarProvider
+// variant="inset"` regardless of DOM order — the #342 fix) and `legacy`
+// (`peer-data-…:`, reaches a `Sidebar variant="inset"` that immediately
+// precedes this element — every caller before #342). Both scopes read the
+// SAME `gutter` value below, which is what keeps them from ever disagreeing.
+// Tailwind's content scanner only recognises literal class text in source —
+// never a name assembled by concatenation/interpolation
+// (.claude/rules/styling-and-tokens.md) — so the object form below picks
+// among these literals, it never builds one.
 const SIDEBAR_INSET_GUTTER_SIDE_CLASS = {
-  top: "md:group-data-[variant=inset]/sidebar-wrapper:mt-2",
-  bottom: "md:group-data-[variant=inset]/sidebar-wrapper:mb-2",
-  start: "md:group-data-[variant=inset]/sidebar-wrapper:ms-2",
-  end: "md:group-data-[variant=inset]/sidebar-wrapper:me-2",
+  top: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:mt-2",
+    legacy: "md:peer-data-[variant=inset]:mt-2",
+  },
+  bottom: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:mb-2",
+    legacy: "md:peer-data-[variant=inset]:mb-2",
+  },
+  start: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:ms-2",
+    legacy: "md:peer-data-[variant=inset]:ms-2",
+  },
+  end: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:me-2",
+    legacy: "md:peer-data-[variant=inset]:me-2",
+  },
 } as const;
 
-// "auto" is its own complete literal, not composed from the map above,
+// "auto" is its own complete literal pair, not composed from the map above,
 // because it also carries the collapsed-state clause: the sidebar's own gap
 // closes on collapse, so the inset's leading margin has to come back.
-const SIDEBAR_INSET_GUTTER_AUTO_CLASS =
-  "md:group-data-[variant=inset]/sidebar-wrapper:m-2 md:group-data-[variant=inset]/sidebar-wrapper:ms-0 md:group-data-[variant=inset]/sidebar-wrapper:group-data-[state=collapsed]/sidebar-wrapper:ms-2";
+const SIDEBAR_INSET_GUTTER_AUTO_CLASS = {
+  ancestor:
+    "md:group-data-[variant=inset]/sidebar-wrapper:m-2 md:group-data-[variant=inset]/sidebar-wrapper:ms-0 md:group-data-[variant=inset]/sidebar-wrapper:group-data-[state=collapsed]/sidebar-wrapper:ms-2",
+  legacy:
+    "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2",
+} as const;
 
-function sidebarInsetGutterClassName(gutter: SidebarInsetGutter): string {
-  if (gutter === "auto") return SIDEBAR_INSET_GUTTER_AUTO_CLASS;
+function sidebarInsetGutterClassName(
+  gutter: SidebarInsetGutter,
+  scope: "ancestor" | "legacy",
+): string {
+  if (gutter === "auto") return SIDEBAR_INSET_GUTTER_AUTO_CLASS[scope];
   if (gutter === "none") return "";
   return cn(
-    gutter.top && SIDEBAR_INSET_GUTTER_SIDE_CLASS.top,
-    gutter.bottom && SIDEBAR_INSET_GUTTER_SIDE_CLASS.bottom,
-    gutter.start && SIDEBAR_INSET_GUTTER_SIDE_CLASS.start,
-    gutter.end && SIDEBAR_INSET_GUTTER_SIDE_CLASS.end,
+    gutter.top && SIDEBAR_INSET_GUTTER_SIDE_CLASS.top[scope],
+    gutter.bottom && SIDEBAR_INSET_GUTTER_SIDE_CLASS.bottom[scope],
+    gutter.start && SIDEBAR_INSET_GUTTER_SIDE_CLASS.start[scope],
+    gutter.end && SIDEBAR_INSET_GUTTER_SIDE_CLASS.end[scope],
   );
 }
 
@@ -400,12 +434,17 @@ export const SidebarInset = forwardRef<HTMLDivElement, SidebarInsetProps>(functi
         // frame, so this reaches a right-hand or reordered `Sidebar` the old
         // peer-* combinator could not (it only matches a sibling that comes
         // AFTER). Reads `SidebarProvider`'s own `data-variant`/`data-state`.
+        // Radius/shadow are unconditional here — not gated by `gutter`.
         "md:group-data-[variant=inset]/sidebar-wrapper:rounded-xl md:group-data-[variant=inset]/sidebar-wrapper:shadow-sm",
-        sidebarInsetGutterClassName(gutter),
-        // Legacy peer rule — kept so a shell that sets `variant` only on
-        // `Sidebar` (every caller before #342; `SidebarProvider` had no
-        // `variant` prop) renders exactly as before.
-        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2",
+        sidebarInsetGutterClassName(gutter, "ancestor"),
+        // Legacy peer rule — reaches a shell that sets `variant` only on
+        // `Sidebar` (every caller before #342). Radius/shadow unconditional
+        // here too; the margin is driven by the SAME `gutter` value as the
+        // ancestor rule above (fix round 1, #342), so a caller composing both
+        // mechanisms at once never hits a stylesheet-order race — whichever
+        // selector matches emits the identical declaration.
+        "md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
+        sidebarInsetGutterClassName(gutter, "legacy"),
         className,
       )}
       {...props}

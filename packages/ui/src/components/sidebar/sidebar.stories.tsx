@@ -194,6 +194,40 @@ export const RightHandInset: Story = {
 };
 
 /**
+ * A LEFT sidebar composing BOTH inset mechanisms at once — `SidebarProvider
+ * variant="inset"` AND the legacy `Sidebar variant="inset"` on the same
+ * frame, the exact shape a left-hand shell (e.g. the sidebar-02 rebuild)
+ * uses — must resolve to the explicit `gutter`'s geometry, deterministically
+ * (fix round 1, #342, Ruling 18). Unlike `RightHandInset`, DOM order here
+ * lets BOTH the ancestor-scoped and the legacy peer-scoped selectors match
+ * simultaneously, so this is the one shape that could have produced a
+ * class-order race; the pinning assertion below is what proves it doesn't.
+ */
+export const LeftHandDualVariantInset: Story = {
+  render: () => (
+    <SidebarProvider variant="inset">
+      <Sidebar variant="inset">
+        <SidebarContent />
+      </Sidebar>
+      <SidebarInset data-testid="inset" gutter={{ start: true, bottom: true }}>
+        <div className="p-6 text-body">content</div>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const inset = canvasElement.querySelector('[data-testid="inset"]') as HTMLElement;
+    const s = getComputedStyle(inset);
+    // The explicit gutter's geometry: leading + bottom only.
+    await expect(parseFloat(s.marginInlineStart)).toBeGreaterThan(0);
+    await expect(parseFloat(s.marginBottom)).toBeGreaterThan(0);
+    // NOT the legacy rule's hardcoded "auto" shape, which would set marginTop
+    // > 0 and marginInlineStart === 0 — the opposite signature.
+    await expect(parseFloat(s.marginTop)).toBe(0);
+    await expect(parseFloat(s.marginInlineEnd)).toBe(0);
+  },
+};
+
+/**
  * `SidebarInset`'s default gutter ("auto") recovers its leading margin once
  * the sidebar collapses — driven purely by `SidebarProvider`'s own
  * `data-state` on the ancestor wrapper (ADR 0035 §8 refinement 2), with NO
