@@ -141,6 +141,9 @@ export interface UseProcessExplorerResult {
    * Per-element states the active filter contributes — pass straight into `ProcessMap`'s
    * `selectionStates` prop (RM-052 round 2, #227, Invariant F). Every activity/transition an
    * intent excluded is marked `"excluded"` here; nothing is ever removed from `graph` itself.
+   * `variants` (RM-052 round 3, #227, G2) marks every id named by an active
+   * `{ kind: "variant" }` intent `"selected"` — read by `VariantExplorer` (RM-054), not by
+   * `ProcessMap`, which has no variant nodes.
    */
   selectionStates: ProcessSelectionStates;
   /** Activities/paths abstraction is currently hiding — sourced from `abstractGraph`'s own `hidden` field. */
@@ -386,8 +389,18 @@ export function useProcessExplorer(
       transitions: Object.fromEntries(
         reconciled.excludedTransitions.map((key) => [key, "excluded" as const]),
       ),
+      // Decision §1.4 step 5 (RM-052 round 3, #227, G2): there is no click channel for a
+      // variant, so `"selected"` here is intent-derived — every id named by an active
+      // `{ kind: "variant" }` intent, read by `VariantExplorer` (RM-054), not by
+      // `ProcessMap`. This namespace was declared on `ProcessSelectionStates` from round 2
+      // onward and never populated until this fix.
+      variants: Object.fromEntries(
+        intents
+          .flatMap((intent) => (intent.kind === "variant" ? intent.ids : []))
+          .map((id) => [id, "selected" as const]),
+      ),
     }),
-    [reconciled],
+    [reconciled, intents],
   );
 
   const excludedCounts = useMemo(

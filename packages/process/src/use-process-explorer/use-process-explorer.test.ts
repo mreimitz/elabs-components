@@ -219,6 +219,25 @@ describe("useProcessExplorer — filter intents (the RM-052 acceptance criterion
   });
 });
 
+describe("useProcessExplorer — selectionStates.variants (RM-052 round 3, #227, G2)", () => {
+  it('marks each id of an active "variant" intent "selected"', () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    act(() => result.current.applyIntent({ kind: "variant", ids: ["variant-a", "variant-b"] }));
+    // Decision §1.4 step 5. Before this fix `selectionStates.variants` was `undefined` —
+    // the namespace was declared on `ProcessSelectionStates` and never populated.
+    expect(result.current.selectionStates.variants).toEqual({
+      "variant-a": "selected",
+      "variant-b": "selected",
+    });
+  });
+
+  it("leaves variants EMPTY (not absent) when the active intent is unrelated to variants", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    expect(result.current.selectionStates.variants).toEqual({});
+  });
+});
+
 describe("useProcessExplorer — hiddenCounts sourced from abstractGraph's own `hidden` field", () => {
   it("reflects the current abstraction, not the intents", () => {
     const { result } = renderHook(() => useProcessExplorer(orderToCash));
