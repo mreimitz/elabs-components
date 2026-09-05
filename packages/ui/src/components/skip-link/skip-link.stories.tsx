@@ -97,6 +97,10 @@ export const RealisticShell: Story = {
     // right id, and that id is programmatically focusable.
     const main = canvasElement.querySelector("#main-content") as HTMLElement;
     await expect(link.getAttribute("href")).toBe(`#${main.id}`);
-    await expect(main.tabIndex).toBe(-1);
+    // Assert the ATTRIBUTE, not the `tabIndex` IDL property: for a
+    // non-interactive element the property getter returns -1 whether or not
+    // the attribute is present, so it cannot detect a missing attribute —
+    // the one thing this precondition exists to catch.
+    await expect(main.getAttribute("tabindex")).toBe("-1");
   },
 };

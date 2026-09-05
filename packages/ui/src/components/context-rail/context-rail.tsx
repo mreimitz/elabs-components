@@ -458,16 +458,26 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
   // above, that border read at 1.09:1 (light) / 1.07:1 (dark) — effectively
   // invisible, and a pairing no other Sidebar-family surface uses (every
   // other use of `--sidebar-border` sits on the ambient `--sidebar` chrome,
-  // not on this fill). Dropped rather than swapped for a louder border token:
-  // the fill plus the title text already separate the panel from the rail
-  // (see "Surface separation" in styling-and-tokens.md — a non-default fill
-  // doesn't also need a bare border unless the border is the sole structural
-  // cue).
+  // not on this fill).
+  //
+  // Fix round 2 (task-11f-fix-2.md, Finding B): dropping the colour class
+  // wasn't enough — `StatePanel`'s OWN `border border-dashed` still rendered,
+  // falling through to the base `--border` token instead of a sidebar one.
+  // Measured: 7.56:1 (light) — a canvas-tuned border drawing inside sidebar
+  // chrome, a semantic mismatch — and 1.15:1 (dark) — still effectively
+  // invisible, M1's original problem reached through a different token. Fixed
+  // by removing the border ELEMENT itself, not just its colour: `border-0`
+  // here (call-site `className`, merged last by `cn()`) beats `StatePanel`'s
+  // own `border border-dashed` with no edit to the shared component and no
+  // effect on any other consumer. The fill (`bg-sidebar-accent`) plus the
+  // title/description ink retargets are left exactly as they were — verified
+  // by eye in both `layout-context-rail--empty` theme slugs that the panel
+  // still reads as a bounded region on fill and title alone.
   const emptyContent = empty ?? (
     <StatePanel
       kind="empty"
       title={t("ui.contextRail.empty")}
-      className="bg-sidebar-accent [--foreground:var(--sidebar-foreground)] [--muted-foreground:var(--sidebar-muted-foreground)]"
+      className="border-0 bg-sidebar-accent [--foreground:var(--sidebar-foreground)] [--muted-foreground:var(--sidebar-muted-foreground)]"
     />
   );
   const emptySlot = <div data-slot="context-rail-empty">{emptyContent}</div>;
