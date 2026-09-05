@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T16:44:44.886Z",
+  "generatedAt": "2026-09-05T18:38:31.108Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29963,6 +29963,11 @@
           "module": "packages/ui/src/components/sidebar/sidebar.tsx"
         },
         {
+          "name": "SideDock",
+          "kind": "value",
+          "module": "packages/ui/src/components/side-dock/side-dock.tsx"
+        },
+        {
           "name": "Skeleton",
           "kind": "value",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
@@ -31173,6 +31178,10 @@
         {
           "name": "SidebarInsetProps",
           "module": "packages/ui/src/components/sidebar/sidebar.tsx"
+        },
+        {
+          "name": "SideDockProps",
+          "module": "packages/ui/src/components/side-dock/side-dock.tsx"
         },
         {
           "name": "SkeletonProps",
@@ -34848,6 +34857,109 @@
               "name": "gutter",
               "optional": true,
               "type": "SidebarInsetGutter"
+            }
+          ]
+        },
+        "SideDock": {
+          "extends": [
+            "Omit<ComponentProps<\"aside\">, \"title\">"
+          ],
+          "props": [
+            {
+              "name": "title",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "The dock's name. Rendered as its header heading, and as the `SheetTitle` of the overlay presentation. REQUIRED: the overlay cannot be accessible without it, and an optional prop with a generic default would ship a meaningless announced name into real apps."
+            },
+            {
+              "name": "description",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Optional longer description. Visible under the title in the column presentation; `sr-only` in the overlay presentation (the compact sheet header has no room for it, but it still reaches assistive tech)."
+            },
+            {
+              "name": "headerActions",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Optional controls placed in the header row beside the built-in close button."
+            },
+            {
+              "name": "open",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled open state. Closed means zero width (content stays mounted, inert)."
+            },
+            {
+              "name": "defaultOpen",
+              "optional": true,
+              "type": "boolean",
+              "description": "Uncontrolled initial open state. Default `false` — a dock is summoned."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void",
+              "description": "Called with the next open state."
+            },
+            {
+              "name": "side",
+              "optional": true,
+              "type": "\"left\" | \"right\"",
+              "description": "Which edge it docks to. Default `\"right\"`."
+            },
+            {
+              "name": "width",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled width in px."
+            },
+            {
+              "name": "defaultWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Uncontrolled initial width in px. Default `400`."
+            },
+            {
+              "name": "onWidthChange",
+              "optional": true,
+              "type": "(width: number) => void",
+              "description": "Fires continuously during a resize — drive layout from this."
+            },
+            {
+              "name": "onWidthCommit",
+              "optional": true,
+              "type": "(width: number) => void",
+              "description": "Fires once when an interaction ends — PERSIST from this."
+            },
+            {
+              "name": "minWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Lower bound in px. Default `320`."
+            },
+            {
+              "name": "maxWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Upper bound in px. Default `640`."
+            },
+            {
+              "name": "minContentWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Content width preserved when clamping against the live viewport, px. Default `480`."
+            },
+            {
+              "name": "resizable",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the resize handle renders. Default `true`."
+            },
+            {
+              "name": "overlayBreakpoint",
+              "optional": true,
+              "type": "number",
+              "description": "Viewport width in px below which the dock renders as an overlay `Sheet` instead of a column. Default `1100`. Deliberately ABOVE the library's 768px mobile breakpoint: a 400px dock at 768px leaves ~360px of content."
             }
           ]
         },

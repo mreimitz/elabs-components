@@ -204,6 +204,7 @@ export * from "./components/segmented-field";
 export * from "./components/select";
 export * from "./components/separator";
 export * from "./components/sheet";
+export * from "./components/side-dock";
 export * from "./components/sidebar";
 export * from "./components/skeleton";
 export * from "./components/skip-link";
