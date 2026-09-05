@@ -29,7 +29,12 @@ shell matching the design already shipped in the elabs AI Workbench.
 Two shipped apps were read as references. **Neither repository is modified by this
 work** — see the cross-repo rule in `~/.claude/CLAUDE.md`.
 
-### 2.1 elabs AI Workbench — `/Users/czq/Documents/DEV/elabs/elabs-ai-workbench`
+### 2.1 elabs AI Workbench — a sibling web app (path omitted)
+
+> `pnpm machine-paths:check` forbids a machine-specific absolute home path in
+> any tracked file, so the checkout location is not recorded here. It sits
+> beside this repository under `DEV/elabs/`; every file cited below is relative
+> to that repository's root.
 
 `apps/web/src/components/AppShell.tsx` (1,102 lines) and `PageShell.tsx` (254 lines).
 Already consumes `@elabs-ai/components-*`. What it carries that this library does not:
