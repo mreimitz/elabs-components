@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { SidebarInset, SidebarProvider } from "@elabs-ai/components-ui";
-import { DashboardSidebar } from "./app-sidebar";
+import { DashboardSidebar } from "@/components/sidebar-02/app-sidebar";
 
 const meta = {
   title: "Layout/App Shell/Dashboard",

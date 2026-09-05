@@ -199,27 +199,27 @@
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
-          "path": "packages/ui/src/blocks/sidebar-02/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-02/app-sidebar.tsx",
           "type": "registry:component",
           "target": "components/sidebar-02/app-sidebar.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/logo.tsx",
+          "path": "registry/blocks/sidebar-02/logo.tsx",
           "type": "registry:component",
           "target": "components/sidebar-02/logo.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/nav-main.tsx",
+          "path": "registry/blocks/sidebar-02/nav-main.tsx",
           "type": "registry:component",
           "target": "components/sidebar-02/nav-main.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/nav-notifications.tsx",
+          "path": "registry/blocks/sidebar-02/nav-notifications.tsx",
           "type": "registry:component",
           "target": "components/sidebar-02/nav-notifications.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/team-switcher.tsx",
+          "path": "registry/blocks/sidebar-02/team-switcher.tsx",
           "type": "registry:component",
           "target": "components/sidebar-02/team-switcher.tsx"
         }
@@ -235,17 +235,17 @@
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
-          "path": "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-04/app-sidebar.tsx",
           "type": "registry:component",
           "target": "components/sidebar-04/app-sidebar.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-04/mail-context.tsx",
+          "path": "registry/blocks/sidebar-04/mail-context.tsx",
           "type": "registry:component",
           "target": "components/sidebar-04/mail-context.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-04/nav-user.tsx",
+          "path": "registry/blocks/sidebar-04/nav-user.tsx",
           "type": "registry:component",
           "target": "components/sidebar-04/nav-user.tsx"
         }
@@ -261,12 +261,12 @@
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
-          "path": "packages/ui/src/blocks/sidebar-05/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-05/app-sidebar.tsx",
           "type": "registry:component",
           "target": "components/sidebar-05/app-sidebar.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-05/team-switcher.tsx",
+          "path": "registry/blocks/sidebar-05/team-switcher.tsx",
           "type": "registry:component",
           "target": "components/sidebar-05/team-switcher.tsx"
         }

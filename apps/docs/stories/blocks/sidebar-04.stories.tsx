@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Mail } from "lucide-react";
 import { SidebarInset, SidebarProvider, StatePanel } from "@elabs-ai/components-ui";
-import { AppSidebar } from "./app-sidebar";
-import { MailProvider, useMail } from "./mail-context";
+import { AppSidebar } from "@/components/sidebar-04/app-sidebar";
+import { MailProvider, useMail } from "@/components/sidebar-04/mail-context";
 
 /**
  * WCAG contrast ratio between two CSS color strings, computed by rasterizing

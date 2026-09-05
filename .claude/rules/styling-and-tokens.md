@@ -119,10 +119,13 @@
     `text-sm`/`text-xs` reads Tailwind's own `--text-sm`/`--text-xs`, which the
     dial does not touch. So density coverage on a real screen == role adoption
     on that screen, and adoption is partial: `pnpm text-scale:check` still
-    counts **309 raw font-size uses across 111 files** — 112 in
-    `@elabs-ai/components-ui` (mostly `src/blocks/**` copy-own
-    blocks, `context-menu`, `menubar`), 109 in
-    `@elabs-ai/components-ai`, 50 in
+    counts **272 raw font-size uses across 96 files** (post-move figures —
+    the three ported app-shell blocks left `@elabs-ai/components-ui` for the
+    copy-own registry, which is warn-only for this gate) — 102 in
+    `@elabs-ai/components-ui` (topped by `context-menu` and `menubar`, 6 each,
+    spread thereafter across 44 files; no longer `src/blocks/**`, which is
+    the registry move just named), 106 in
+    `@elabs-ai/components-ai`, 41 in
     `@elabs-ai/components-charts`. Every one of those is a string of
     text a compact surface will NOT tighten. Measured on real screens after the
     Sidebar/Button/Badge/Table/DataTable migration (elements whose computed
@@ -131,7 +134,12 @@
     `patterns-templates-data-app--default` **27/31**,
     `patterns-templates-enterprise-admin-console--default` **47/52**, but
     `layout-app-shell-mail--default` only **10/49** — its remaining 39 are raw
-    utilities inside `packages/ui/src/blocks/sidebar-04/**`. **Do not describe
+    utilities inside `registry/blocks/sidebar-04/**` (moved from
+    `packages/ui/src/blocks/sidebar-04/**`; the DOM-measurement figure itself
+    is unverified here — a re-render pass, not `pnpm text-scale:check`, would
+    confirm it, and a static grep of the moved file now finds 0 raw
+    font-size utilities, so this count may already be stale independent of
+    the move). **Do not describe
     the dial as scaling "the type on a screen"; it scales the type that reaches
     for a role.** Closing the gap is ordinary text-scale ratchet work, not a
     change to the dial.

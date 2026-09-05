@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { SidebarProvider } from "@elabs-ai/components-ui";
-import { AppSidebar } from "./app-sidebar";
+import { AppSidebar } from "@/components/sidebar-05/app-sidebar";
 
 /**
  * WCAG contrast ratio between two CSS color strings, computed by rasterizing
