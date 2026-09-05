@@ -1,5 +1,5 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { asNormalizedLog } from "../core/event-log";
 import { detectRework } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
@@ -10,6 +10,14 @@ import type { ProcessWorkerLike } from "../core/worker/create-process-worker";
 import type { EventLog } from "../core/types";
 import fixture from "../core/fixtures/order-to-cash-small.json";
 import { useProcessExplorer } from "./use-process-explorer";
+
+// Spies on the REAL `discoverGraph`, so every existing `discoverGraph(orderToCash)` call
+// used elsewhere in this file to compute an "expected" value keeps its real behaviour —
+// this only makes the call COUNTABLE for the G1 lock below (#227).
+vi.mock("../core/discover-graph", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../core/discover-graph")>();
+  return { ...actual, discoverGraph: vi.fn(actual.discoverGraph) };
+});
 
 afterEach(cleanup);
 
@@ -60,6 +68,26 @@ describe("useProcessExplorer — defaults", () => {
     expect(result.current.graph.activities).toHaveLength(
       discoverGraph(orderToCash).activities.length,
     );
+  });
+});
+
+describe("useProcessExplorer — exactly one discovery when no intent is active (RM-052 round 3, #227, G1)", () => {
+  it("discovers the log exactly once at mount — filteredLog === log must reuse the full discovery, not recompute it", () => {
+    vi.mocked(discoverGraph).mockClear();
+    renderHook(() => useProcessExplorer(orderToCash));
+    // Decision §1.4 step 3 / §4: "with no intents active `filteredLog === log`, so the
+    // pipeline reuses `fullRaw` for both roles and runs exactly one discovery — identical
+    // to today." Before the G1 fix this read 2 (see RM-052-result-round3.md).
+    expect(discoverGraph).toHaveBeenCalledTimes(1);
+  });
+
+  it("discovers the filtered log exactly once more after applyIntent, without re-discovering the unchanged full log", () => {
+    const { result } = renderHook(() => useProcessExplorer(orderToCash));
+    vi.mocked(discoverGraph).mockClear();
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    // `log` did not change, so the full derivation's memo must not re-fire; only the new
+    // `filteredLog` reference is genuinely discovered.
+    expect(discoverGraph).toHaveBeenCalledTimes(1);
   });
 });
 

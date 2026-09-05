@@ -16,10 +16,14 @@
  *
  * - `filteredLog` — `filterLog(log, intents)`, always synchronous (a linear scan; nothing
  *   here is expensive enough to move off-thread).
- * - **Two independent discoveries, not one** (RM-052 round 2, #227, Invariant F — filtering
- *   re-inks, it never removes): the FULL `log` and the `filteredLog` are each discovered
- *   separately, on their own sync-or-worker path with their own `loading` flag and request-id
- *   ref, because either one can independently cross `workerThreshold`.
+ * - **Two independent discoveries when they genuinely differ, one when they don't**
+ *   (RM-052 round 2, #227, Invariant F — filtering re-inks, it never removes): the FULL
+ *   `log` and the `filteredLog` are each discovered on their own sync-or-worker path with
+ *   their own `loading` flag and request-id ref, because either one can independently
+ *   cross `workerThreshold`. With no intent active `filteredLog === log`, and the
+ *   filtered role REUSES the full discovery instead of recomputing it — running two
+ *   identical discoveries in that state was a round-2 regression against `4a1a244`, fixed
+ *   in round 3 (G1); see `useLogDiscovery`'s own docblock for the skip mechanism.
  * - `graph` (the PUBLIC field) — abstraction runs on the FULL graph FIRST
  *   (`abstractGraph(fullGraph, abstraction)`), and the FILTERED graph is reconciled onto that
  *   result SECOND (`reconcileGraph`). This order is load-bearing, not incidental: reversing
@@ -212,17 +216,25 @@ interface DiscoveryState {
  * hook is also discovering (RM-052 round 2, #227 — the full log and the filtered log each
  * get one of these; see the module docblock's "Race safety").
  */
+/**
+ * `targetLog === null` means "skip — a sibling {@link useLogDiscovery} instance already
+ * covers this role" (RM-052 round 3, #227, G1). It exists so the full-log and
+ * filtered-log derivations can share one discovery when `filteredLog === log` (no intent
+ * active) without calling this hook conditionally, which the Rules of Hooks forbid. A
+ * skipped instance runs no memo and posts no request — it is a plain `{ loading: false }`
+ * placeholder the caller is expected to ignore in favour of the sibling it reuses.
+ */
 function useLogDiscovery(
-  targetLog: EventLog,
+  targetLog: EventLog | null,
   workerThreshold: number,
   getHandle: () => ReturnType<typeof createProcessWorker>,
 ): DiscoveryState {
-  const useWorkerPath = targetLog.events.length > workerThreshold;
+  const useWorkerPath = targetLog !== null && targetLog.events.length > workerThreshold;
 
   // Synchronous path: computed directly during render, so a caller never observes a
   // `loading` gap for a log that never crosses the threshold.
   const syncResult = useMemo<DiscoveryResult | null>(
-    () => (useWorkerPath ? null : discoverInline(targetLog)),
+    () => (targetLog === null || useWorkerPath ? null : discoverInline(targetLog)),
     [targetLog, useWorkerPath],
   );
 
@@ -231,9 +243,10 @@ function useLogDiscovery(
   const requestIdRef = useRef(0);
 
   useEffect(() => {
-    if (!useWorkerPath) {
-      // Superseded by (or never needed) the async path — never leave a stale `true`
-      // behind from a request that crossed the threshold before this one didn't.
+    if (targetLog === null || !useWorkerPath) {
+      // Skipped, or superseded by (or never needed) the async path — never leave a stale
+      // `true` behind from a request that crossed the threshold before this one didn't,
+      // or from a filtered request the caller stopped needing when the filter cleared.
       setLoading(false);
       return;
     }
@@ -333,8 +346,24 @@ export function useProcessExplorer(
   // Two independent discoveries — see the module docblock. `variants`, `kpis` and `rework`
   // read the FILTERED one; `graph` reads BOTH, full first through abstraction, then
   // reconciled against filtered (Invariant F: filtering re-inks, never removes).
+  //
+  // With no intent active, `filteredLog === log` (see `filteredLog` above), and the
+  // filtered role REUSES the full discovery rather than recomputing it from scratch —
+  // decision §1.4 step 3 / §4's whole cost argument rests on this: "the pipeline reuses
+  // `fullRaw` for both roles and runs exactly one discovery — identical to today" (RM-052
+  // round 3, #227, G1). `useLogDiscovery` cannot be called conditionally (Rules of
+  // Hooks), so the second instance is always called, but is told to SKIP (`null`) exactly
+  // when its sibling already covers the same log; its own request-id ref never fires in
+  // that state, so the two derivations still supersede independently the moment the logs
+  // genuinely diverge again.
+  const sameLog = filteredLog === log;
   const fullDiscovery = useLogDiscovery(log, workerThreshold, getHandle);
-  const filteredDiscovery = useLogDiscovery(filteredLog, workerThreshold, getHandle);
+  const filteredOwnDiscovery = useLogDiscovery(
+    sameLog ? null : filteredLog,
+    workerThreshold,
+    getHandle,
+  );
+  const filteredDiscovery = sameLog ? fullDiscovery : filteredOwnDiscovery;
   const loading = fullDiscovery.loading || filteredDiscovery.loading;
 
   const presented = useMemo(
