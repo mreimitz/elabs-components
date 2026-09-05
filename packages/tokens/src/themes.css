@@ -593,7 +593,7 @@
      semantic tokens so every theme inherits the correct palette automatically.
      Components from @elabs-ai/components-charts reference these via var(--…) or Tailwind
      utilities (bg-chart-grid, text-legend-foreground, etc.). */
-  --chart-grid: var(--border);
+  --chart-grid: oklch(0.74 0.01 264); /* hairline furniture — its own rung, NOT var(--border). */
   --chart-foreground: var(--foreground);
   --chart-foreground-muted: var(--muted-foreground);
   --chart-background: var(--card);

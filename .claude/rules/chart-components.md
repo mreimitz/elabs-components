@@ -331,6 +331,57 @@ theme (`light`, `dark`) via `mcp__storybook__run-story-tests` + `mcp__storybook_
 (`globals=theme:<slug>`). Otherwise run `pnpm --filter @elabs-ai/components-docs test-storybook`.
 See @.claude/rules/storybook-mcp.md.
 
+## Hairline furniture — one ink, one weight (#chart-grid)
+
+Chart **furniture** is every rule the data is read against but that is not itself
+data: grid rows and columns, axis rules, scatter drop lines, dumbbell tracks,
+tree links, radar rings and axes, parallel-coordinates axes, network edges, a
+sparkline's empty baseline. All of it paints **one ink at one weight**:
+
+- **Ink: `--chart-grid`, at FULL opacity.** Never `strokeOpacity`/`opacity`
+  below 1, and never a Tailwind `opacity-[0.n]` class. Furniture recedes by
+  being a quiet TOKEN, not by being a fraction of a louder one. If a mark must
+  sit further back than the grid does, that is a different token, not a
+  multiplier.
+- **Weight: `CHART_HAIRLINE_WIDTH`** (`packages/charts/src/chart-hairline.ts`,
+  0.65, re-exported from the package barrel). Import it; never restate the
+  number. The one legitimate variation is a width that encodes **data** — a
+  network edge's value scales UP from this floor.
+- **`--chart-grid` is its own rung and must NOT be `var(--border)`.** A UI
+  hairline is tuned to separate two regions at 1px; furniture is drawn
+  sub-pixel over a plot ground and needs more ink to survive it. The token is
+  2.31:1 against a white card in `light` (2.91:1 in `dark`), which lands at
+  ~1.67:1 / ~1.98:1 as actually drawn at 0.65px.
+
+**The incident this encodes.** Every mark used to pick its own weight (0.55 /
+0.6 / 0.65 / 1 / 1.4) and two of them additionally dimmed the shared ink —
+network edges by 0.35, radar rings and axes by 0.6 (which also read `--border`
+directly rather than the chart token). One token therefore rendered at five
+weights and three inks: a line chart's gridlines read as furniture while a
+network chart's edges measured **1.07:1** against a white card, i.e. invisible.
+Darkening the token alone would not have fixed it — the multiplier was doing
+most of the damage — and removing the multipliers alone would not have fixed it
+either, because `var(--border)` is too light to draw sub-pixel. Both halves are
+load-bearing.
+
+**Sub-pixel strokes cost ink, and the token pays for it.** A 0.65px stroke
+deposits roughly 65% of its colour, so thinning a rule and darkening it are the
+same decision, not two. Do not "restore" a 1px gridline to make it more legible
+— that reintroduces the weight inconsistency the constant exists to remove.
+
+**Enforced, not remembered:** `pnpm chart-hairline:check`
+(`scripts/check-chart-hairline.mjs`, self-tested via
+`pnpm chart-hairline:check:test`, blocking in `gates.yml`) fails a grid-ink
+stroke that carries an opacity multiplier or a numeric `strokeWidth` other than
+the shared constant, and fails any theme that aliases `--chart-grid` back to
+`--border`. A stroke that paints the furniture ink without being a rule opts out
+in place with `// chart-hairline-exempt: <reason>` on the marker's own line — the
+only such case today is the choropleth no-data hatch, which is a texture fill
+standing in for a colour. **Declared gap:** the Tailwind CLASS spelling of a
+multiplier is not machine-checked (the class sits on the element while the ink
+sits in an attribute); `network-link.tsx`'s resting rung is pinned by its own
+unit test instead.
+
 ## Tokens only
 
 Use semantic token utilities (`bg-card`, `text-card-foreground`, `border`,

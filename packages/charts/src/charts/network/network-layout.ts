@@ -7,6 +7,7 @@
  * jsdom, a size or a browser — see `network-layout.test.ts`.
  */
 
+import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { type ChartPalette, CATEGORICAL_SOFT_CAP, resolvePalette } from "../chart-context";
 import { arcLinkPath, arcPositions, partitionBipartite } from "./layouts/arc";
 import {
@@ -128,10 +129,20 @@ export function nodeRadius(weight: number, maxWeight: number): number {
   return NETWORK_MIN_NODE_RADIUS + (NETWORK_MAX_NODE_RADIUS - NETWORK_MIN_NODE_RADIUS) * t;
 }
 
-/** Stroke width for a link weight. Hairline by default; ≤ 3px at the top. */
+/**
+ * Stroke width for a link weight.
+ *
+ * The FLOOR is `CHART_HAIRLINE_WIDTH` — a weightless edge is ordinary chart
+ * furniture and must draw at exactly the weight every other rule in the system
+ * draws at. From there the width is DATA: it scales up to ~3px at the heaviest
+ * edge, which is the one sanctioned reason a furniture stroke varies at all.
+ */
 export function linkWidth(value: number | undefined, maxValue: number): number {
-  if (!Number.isFinite(value) || !(maxValue > 0)) return 0.6;
-  return 0.6 + 2.4 * Math.sqrt(Math.max(0, value as number) / maxValue);
+  if (!Number.isFinite(value) || !(maxValue > 0)) return CHART_HAIRLINE_WIDTH;
+  return (
+    CHART_HAIRLINE_WIDTH +
+    (3 - CHART_HAIRLINE_WIDTH) * Math.sqrt(Math.max(0, value as number) / maxValue)
+  );
 }
 
 /**

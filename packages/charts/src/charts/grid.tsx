@@ -6,6 +6,7 @@ import { useId } from "react";
 import { chartCssVars, useChartStable, useYScale } from "./chart-context";
 import { useGridShimmer } from "./use-grid-shimmer";
 import { isLoadingChromePhase, isLoadingGridChromePhase } from "./y-domain-utils";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
 const DEFAULT_SHIMMER_LENGTH_PX = 140;
 const DEFAULT_SHIMMER_SPEED = 1;
@@ -28,7 +29,7 @@ export interface GridProps {
   loadingStroke?: string;
   /** Grid line stroke opacity. Default: 1 */
   strokeOpacity?: number;
-  /** Grid line stroke width. Default: 1 */
+  /** Grid line stroke width. Default: `CHART_HAIRLINE_WIDTH` — the one furniture weight. */
   strokeWidth?: number;
   /** Grid line dash array. Default: "4,4" for dashed lines */
   strokeDasharray?: string;
@@ -70,7 +71,7 @@ export function Grid({
   stroke = chartCssVars.grid,
   loadingStroke,
   strokeOpacity = 1,
-  strokeWidth = 1,
+  strokeWidth = CHART_HAIRLINE_WIDTH,
   strokeDasharray = "4,4",
   highlightRowValues,
   highlightRowStroke = chartCssVars.foregroundMuted,

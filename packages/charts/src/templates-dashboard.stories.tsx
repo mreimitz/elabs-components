@@ -66,18 +66,34 @@ const metrics = [
   },
 ];
 
-/** A simple tokenized bar chart used as a placeholder child — no charting lib needed. */
+/**
+ * A simple tokenized bar chart used as a placeholder child — no charting lib needed.
+ *
+ * **Every bar needs a definite-height ancestor to size against.** A percentage
+ * height resolves against the parent's height, and a flex item is only given one
+ * when the cross-axis stretches it. The first version of this put the columns in
+ * an `items-end` row, which sizes each column to its CONTENT instead — so
+ * `height: 55%` had nothing to resolve against, computed to 0, and both chart
+ * cards on this screen rendered completely blank in every theme.
+ *
+ * The fix keeps the columns stretched (`items-stretch` + `h-full`) and moves the
+ * bottom-anchoring down one level, onto a `flex-1` track that the flex algorithm
+ * gives a definite height. The bar sizes against that track, so its percentage is
+ * measured against the plot area alone and the label below never eats into it.
+ */
 function PlaceholderBars({ bars }: { bars: { label: string; pct: number; colorClass: string }[] }) {
   return (
-    <div className="flex h-full items-end gap-2 pb-4">
+    <div className="flex h-full items-stretch gap-2 pb-4">
       {bars.map(({ label, pct, colorClass }) => (
-        <div key={label} className="flex flex-1 flex-col items-center gap-1">
-          <div
-            role="img"
-            className={`w-full rounded-sm ${colorClass}`}
-            style={{ height: `${pct}%` }}
-            aria-label={`${label}: ${pct}%`}
-          />
+        <div key={label} className="flex h-full flex-1 flex-col items-center gap-1">
+          <div className="flex w-full flex-1 items-end">
+            <div
+              role="img"
+              className={`w-full rounded-sm ${colorClass}`}
+              style={{ height: `${pct}%` }}
+              aria-label={`${label}: ${pct}%`}
+            />
+          </div>
           <span className="text-meta text-muted-foreground">{label}</span>
         </div>
       ))}

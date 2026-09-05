@@ -242,7 +242,9 @@
   --chart-11: oklch(0.539 0.054 254.3); /* slate — #434C57, lifted for 3:1 */
   --chart-12: oklch(0.843 0.004 248.4); /* grey — #D9DDE1 */
 
-  --chart-grid: var(--border);
+  --chart-grid: oklch(
+    0.52 0.012 257
+  ); /* hairline furniture — see light.css. 2.91:1 flat, ~1.98:1 as drawn. */
   --chart-foreground: var(--foreground);
   --chart-foreground-muted: var(--muted-foreground);
   --chart-background: var(--card);

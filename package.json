@@ -46,6 +46,8 @@
     "changelog-entry:check:test": "node --test scripts/check-changelog-entry.test.mjs",
     "changelog:check": "node scripts/check-release-notes.mjs",
     "changelog:check:test": "node --test scripts/check-release-notes.test.mjs",
+    "chart-hairline:check": "node scripts/check-chart-hairline.mjs",
+    "chart-hairline:check:test": "node --test scripts/check-chart-hairline.test.mjs",
     "charts:honesty:check": "node scripts/check-charts-honesty.mjs",
     "charts:honesty:check:test": "node --test scripts/check-charts-honesty.test.mjs",
     "charts:reuse:check": "node scripts/check-charts-reuse.mjs",

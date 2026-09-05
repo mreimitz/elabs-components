@@ -17,6 +17,7 @@
 import { chartCssVars } from "../chart-context";
 import type { DistributionGeometry } from "./distribution-geometry";
 import type { DistributionGroup } from "./distribution-groups";
+import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 
 export interface DistributionValueAxisProps {
   geometry: DistributionGeometry;
@@ -45,7 +46,7 @@ export function DistributionValueAxis({
                 band is read against the same reference. */}
             <line
               stroke={chartCssVars.grid}
-              strokeWidth={1}
+              strokeWidth={CHART_HAIRLINE_WIDTH}
               x1={horizontal ? position : 0}
               x2={horizontal ? position : geometry.plotWidth}
               y1={horizontal ? 0 : position}

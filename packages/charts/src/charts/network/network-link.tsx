@@ -20,10 +20,21 @@ import type { NetworkLinkLayout } from "./network-types";
  *
  * Both rungs are CLASSES rather than an `opacity` presentation attribute so the
  * two never fight for the cascade, and so the emphasis transition is a pure
- * compositor job. `0.35` at rest keeps edges as context rather than subject;
- * `0.03` is lieflat B1's blur floor — present, but not competing.
+ * compositor job.
+ *
+ * **The resting rung is FULL opacity, and that is the contract, not a tuning
+ * choice.** Edges paint `--chart-grid`, the one furniture ink, which is already
+ * tuned to survive being drawn as a sub-pixel stroke. Multiplying it here is
+ * what made this chart's edges invisible: at the old `0.35` a 0.6px edge
+ * deposited ~21% of the token and measured 1.07:1 against a white card. Chart
+ * furniture recedes by being a quiet TOKEN, never by being a fraction of a
+ * louder one — see `chart-hairline.ts`.
+ *
+ * `0.03` is the blur floor, and it is the one sanctioned exception because it is
+ * a TRANSIENT emphasis state, not a resting appearance: present, but not
+ * competing with the adjacency the user is inspecting.
  */
-export const NETWORK_LINK_OPACITY_CLASS = "opacity-[0.35]";
+export const NETWORK_LINK_OPACITY_CLASS = "opacity-100";
 export const NETWORK_LINK_DIM_CLASS = "opacity-[0.03]";
 
 export interface NetworkLinkProps {
@@ -38,6 +49,10 @@ export interface NetworkLinkProps {
  * The blur is `opacity-[0.03]` — a CLASS, so the browser transitions it on the
  * compositor and no React state is recomputed per frame. `motion-reduce:` drops
  * the transition entirely (the end state is unchanged; only the fade goes).
+ *
+ * `link.width` scales UP from `CHART_HAIRLINE_WIDTH` with the edge's value: the
+ * weight is DATA here, so it is the one furniture stroke allowed to vary. The
+ * ink is not — every edge paints the same `--chart-grid` at full opacity.
  */
 export const NetworkLink = memo(function NetworkLink({ link, dimmed }: NetworkLinkProps) {
   return (
