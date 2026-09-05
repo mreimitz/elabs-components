@@ -204,6 +204,7 @@ export * from "./components/separator";
 export * from "./components/sheet";
 export * from "./components/sidebar";
 export * from "./components/skeleton";
+export * from "./components/skip-link";
 export * from "./components/slider";
 export * from "./components/slider-number";
 export * from "./components/sonner";

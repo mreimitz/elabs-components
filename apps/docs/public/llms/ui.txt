@@ -374,6 +374,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SidebarSeparator
 - SidebarTrigger
 - Skeleton
+- SkipLink
 - Slider
 - SliderNumber
 - Spinner

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T09:42:35.780Z",
+  "generatedAt": "2026-09-05T14:09:07.679Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -29958,6 +29958,11 @@
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
         },
         {
+          "name": "SkipLink",
+          "kind": "value",
+          "module": "packages/ui/src/components/skip-link/skip-link.tsx"
+        },
+        {
           "name": "Slider",
           "kind": "value",
           "module": "packages/ui/src/components/slider/slider.tsx"
@@ -31142,6 +31147,10 @@
         {
           "name": "SkeletonProps",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
+        },
+        {
+          "name": "SkipLinkProps",
+          "module": "packages/ui/src/components/skip-link/skip-link.tsx"
         },
         {
           "name": "SlashCommand",
@@ -34706,6 +34715,19 @@
             "HTMLAttributes<HTMLDivElement>"
           ],
           "props": []
+        },
+        "SkipLink": {
+          "extends": [
+            "ComponentProps<\"a\">"
+          ],
+          "props": [
+            {
+              "name": "targetId",
+              "optional": true,
+              "type": "string",
+              "description": "The id of the landmark to jump to. Defaults to \"main-content\"."
+            }
+          ]
         },
         "Slider": {
           "extends": [
