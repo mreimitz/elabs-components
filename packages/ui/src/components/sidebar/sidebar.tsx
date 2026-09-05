@@ -56,12 +56,23 @@ export const SidebarProvider = forwardRef<
     defaultOpen?: boolean;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    /**
+     * Drives the frame's inset treatment from an ANCESTOR the whole frame can
+     * see — `SidebarInset` (#342 fix) reads it as `data-variant` on this
+     * wrapper via `group-data-[variant=inset]/sidebar-wrapper:`, which reaches
+     * regardless of DOM order (unlike the legacy `peer-*` combinator, which
+     * only matches a Sidebar that comes AFTER). Optional and unset by
+     * default, so an existing caller that only sets `variant` on `Sidebar`
+     * is unaffected.
+     */
+    variant?: "sidebar" | "floating" | "inset";
   }
 >(function SidebarProvider(
   {
     defaultOpen = true,
     open: openProp,
     onOpenChange: setOpenProp,
+    variant,
     className,
     style,
     children,
@@ -114,6 +125,15 @@ export const SidebarProvider = forwardRef<
         <div
           ref={ref}
           data-slot="sidebar-wrapper"
+          // `data-variant`/`data-state`/`group/sidebar-wrapper` (this class list)
+          // are ADR 0035 §8 refinement 3's `frame="app"` surface — a future
+          // `frame="nested"` provider (arriving with the task that introduces
+          // `frame`) must omit all three, or a nested rail's own state would
+          // silently drive the outer frame's geometry through the same group
+          // name. `SidebarProvider` has no `frame` prop yet, so that omission
+          // is deliberately NOT implemented here; this comment is the marker.
+          data-variant={variant}
+          data-state={state}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH,
@@ -132,7 +152,18 @@ export const SidebarProvider = forwardRef<
             // for every element that inherits its colour (outline Buttons, list
             // rows). See the chrome<canvas elevation invariant in
             // .claude/rules/styling-and-tokens.md.
-            "group/sidebar-wrapper flex min-h-svh w-full text-foreground has-data-[variant=inset]:bg-sidebar",
+            "group/sidebar-wrapper flex min-h-svh w-full text-foreground",
+            // The frame's OWN `variant` is authoritative once set (ADR 0035 §8
+            // refinement 4): resolved in JS, not by a CSS descendant match, so
+            // a nested rail three levels down that happens to render
+            // `variant="inset"` can never repaint THIS frame's ground merely
+            // because `:has()` is depth-unlimited. `has-data-[variant=inset]`
+            // stays as the fallback ONLY while this provider's own `variant`
+            // is unset, which is exactly every existing caller (this prop
+            // didn't exist before #342) — so they render exactly as today.
+            variant === undefined
+              ? "has-data-[variant=inset]:bg-sidebar"
+              : variant === "inset" && "bg-sidebar",
             className,
           )}
           {...props}
@@ -302,22 +333,85 @@ export const SidebarRail = forwardRef<HTMLButtonElement, ComponentProps<"button"
   },
 );
 
-export const SidebarInset = forwardRef<HTMLDivElement, ComponentProps<"main">>(
-  function SidebarInset({ className, ...props }, ref) {
-    return (
-      <main
-        ref={ref}
-        data-slot="sidebar-inset"
-        className={cn(
-          "relative flex w-full flex-1 flex-col bg-background",
-          "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2",
-          className,
-        )}
-        {...props}
-      />
-    );
-  },
-);
+/**
+ * Which sides of the floating "inset" surface get a gutter, once an ancestor
+ * drives the treatment (`SidebarProvider variant="inset"`, or the legacy
+ * immediately-preceding `Sidebar variant="inset"`).
+ *
+ * - `"auto"` (default) — today's rule, unchanged: a gutter on every side
+ *   except the leading edge (`m-2 ms-0`, because the classic layout puts the
+ *   sidebar there), plus the leading edge's gutter returns (`ms-2`) once that
+ *   sidebar collapses and its own gap closes.
+ * - `"none"` — no gutter margin (the unconditional radius/shadow below still
+ *   apply).
+ * - An object — pick sides explicitly. `{ start: true, bottom: true }` is the
+ *   "flush rail" geometry: a leading + bottom gutter only, no top, no
+ *   trailing, because the trailing edge sits flush against a rail — a tab
+ *   must touch the page it belongs to.
+ */
+export type SidebarInsetGutter =
+  | "auto"
+  | "none"
+  | { top?: boolean; bottom?: boolean; start?: boolean; end?: boolean };
+
+export interface SidebarInsetProps extends ComponentProps<"main"> {
+  gutter?: SidebarInsetGutter;
+}
+
+// Each side is a COMPLETE literal utility string. Tailwind's content scanner
+// only recognises literal class text in source — never a name assembled by
+// concatenation/interpolation (.claude/rules/styling-and-tokens.md) — so the
+// object form below picks among these literals, it never builds one.
+const SIDEBAR_INSET_GUTTER_SIDE_CLASS = {
+  top: "md:group-data-[variant=inset]/sidebar-wrapper:mt-2",
+  bottom: "md:group-data-[variant=inset]/sidebar-wrapper:mb-2",
+  start: "md:group-data-[variant=inset]/sidebar-wrapper:ms-2",
+  end: "md:group-data-[variant=inset]/sidebar-wrapper:me-2",
+} as const;
+
+// "auto" is its own complete literal, not composed from the map above,
+// because it also carries the collapsed-state clause: the sidebar's own gap
+// closes on collapse, so the inset's leading margin has to come back.
+const SIDEBAR_INSET_GUTTER_AUTO_CLASS =
+  "md:group-data-[variant=inset]/sidebar-wrapper:m-2 md:group-data-[variant=inset]/sidebar-wrapper:ms-0 md:group-data-[variant=inset]/sidebar-wrapper:group-data-[state=collapsed]/sidebar-wrapper:ms-2";
+
+function sidebarInsetGutterClassName(gutter: SidebarInsetGutter): string {
+  if (gutter === "auto") return SIDEBAR_INSET_GUTTER_AUTO_CLASS;
+  if (gutter === "none") return "";
+  return cn(
+    gutter.top && SIDEBAR_INSET_GUTTER_SIDE_CLASS.top,
+    gutter.bottom && SIDEBAR_INSET_GUTTER_SIDE_CLASS.bottom,
+    gutter.start && SIDEBAR_INSET_GUTTER_SIDE_CLASS.start,
+    gutter.end && SIDEBAR_INSET_GUTTER_SIDE_CLASS.end,
+  );
+}
+
+export const SidebarInset = forwardRef<HTMLDivElement, SidebarInsetProps>(function SidebarInset(
+  { className, gutter = "auto", ...props },
+  ref,
+) {
+  return (
+    <main
+      ref={ref}
+      data-slot="sidebar-inset"
+      className={cn(
+        "relative flex w-full flex-1 flex-col bg-background",
+        // Ancestor-scoped (#342 fix): `group/sidebar-wrapper` spans the whole
+        // frame, so this reaches a right-hand or reordered `Sidebar` the old
+        // peer-* combinator could not (it only matches a sibling that comes
+        // AFTER). Reads `SidebarProvider`'s own `data-variant`/`data-state`.
+        "md:group-data-[variant=inset]/sidebar-wrapper:rounded-xl md:group-data-[variant=inset]/sidebar-wrapper:shadow-sm",
+        sidebarInsetGutterClassName(gutter),
+        // Legacy peer rule — kept so a shell that sets `variant` only on
+        // `Sidebar` (every caller before #342; `SidebarProvider` had no
+        // `variant` prop) renders exactly as before.
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 
 export const SidebarInput = forwardRef<HTMLInputElement, ComponentProps<typeof Input>>(
   function SidebarInput({ className, ...props }, ref) {

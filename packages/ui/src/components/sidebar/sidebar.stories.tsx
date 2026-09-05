@@ -163,6 +163,108 @@ export const ActiveSubItemIndicator: Story = {
   },
 };
 
+/**
+ * A right-hand panel can drive the floating inset surface — sibling order must
+ * not decide it (#342). `SidebarProvider variant="inset"` writes `data-variant`
+ * on the frame wrapper, an ANCESTOR of both `SidebarInset` and the right-hand
+ * `Sidebar`, so `SidebarInset` reaches it regardless of where the rail sits in
+ * the DOM — unlike the old `peer-*` combinator, which only matches a sibling
+ * that comes AFTER.
+ */
+export const RightHandInset: Story = {
+  render: () => (
+    <SidebarProvider variant="inset">
+      <SidebarInset data-testid="inset" gutter={{ start: true, bottom: true }}>
+        <div className="p-6 text-body">content</div>
+      </SidebarInset>
+      <Sidebar side="right" variant="inset">
+        <SidebarContent />
+      </Sidebar>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const inset = canvasElement.querySelector('[data-testid="inset"]') as HTMLElement;
+    const s = getComputedStyle(inset);
+    await expect(parseFloat(s.borderTopLeftRadius)).toBeGreaterThan(0);
+    await expect(parseFloat(s.marginInlineStart)).toBeGreaterThan(0);
+    // The §2.2 geometry: leading + bottom only. A tab must touch the page it belongs to.
+    await expect(parseFloat(s.marginTop)).toBe(0);
+    await expect(parseFloat(s.marginInlineEnd)).toBe(0);
+  },
+};
+
+/**
+ * `SidebarInset`'s default gutter ("auto") recovers its leading margin once
+ * the sidebar collapses — driven purely by `SidebarProvider`'s own
+ * `data-state` on the ancestor wrapper (ADR 0035 §8 refinement 2), with NO
+ * `variant` set on `Sidebar` itself (so the legacy peer rule cannot be what
+ * produces this margin — only the ancestor path can).
+ */
+export const AutoGutterRecoversOnCollapse: Story = {
+  render: () => (
+    <SidebarProvider variant="inset" defaultOpen={false}>
+      <Sidebar collapsible="icon">
+        <SidebarContent />
+      </Sidebar>
+      <SidebarInset data-testid="inset">
+        <div className="p-6 text-body">content</div>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const inset = canvasElement.querySelector('[data-testid="inset"]') as HTMLElement;
+    const s = getComputedStyle(inset);
+    await expect(parseFloat(s.marginInlineStart)).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * A nested rail's own `variant="inset"` must never repaint the FRAME's ground
+ * once the frame declares its own `variant` (ADR 0035 §8 refinement 4) — the
+ * old rule read `has-data-[variant=inset]:bg-sidebar`, and `:has()` is
+ * depth-unlimited, so a descendant's variant used to leak up through it.
+ */
+export const FrameVariantWinsOverNestedInset: Story = {
+  render: () => (
+    <SidebarProvider variant="sidebar">
+      <Sidebar variant="inset">
+        <SidebarContent />
+      </Sidebar>
+      <SidebarInset>
+        <div className="p-6 text-body">content</div>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const wrapper = canvasElement.querySelector('[data-slot="sidebar-wrapper"]') as HTMLElement;
+    // The frame explicitly says "sidebar", so the ground must stay
+    // transparent even though a nested `Sidebar` renders `variant="inset"`.
+    await expect(getComputedStyle(wrapper).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  },
+};
+
+/**
+ * The control for `FrameVariantWinsOverNestedInset`: when the frame's own
+ * `variant` is UNSET (every caller before #342), the descendant `:has()`
+ * fallback still applies — so existing callers render exactly as today.
+ */
+export const UnsetFrameVariantFallsBackToDescendant: Story = {
+  render: () => (
+    <SidebarProvider>
+      <Sidebar variant="inset">
+        <SidebarContent />
+      </Sidebar>
+      <SidebarInset>
+        <div className="p-6 text-body">content</div>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const wrapper = canvasElement.querySelector('[data-slot="sidebar-wrapper"]') as HTMLElement;
+    await expect(getComputedStyle(wrapper).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+  },
+};
+
 /** Collapsed to the icon rail, a group label takes no space at all — not an invisible box. */
 export const CollapsedGroupLabel: Story = {
   render: () => (

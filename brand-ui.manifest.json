@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T15:00:53.194Z",
+  "generatedAt": "2026-09-05T15:24:46.448Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -31154,6 +31154,14 @@
           "module": "packages/ui/src/components/keyboard-shortcuts/keyboard-shortcuts.tsx"
         },
         {
+          "name": "SidebarInsetGutter",
+          "module": "packages/ui/src/components/sidebar/sidebar.tsx"
+        },
+        {
+          "name": "SidebarInsetProps",
+          "module": "packages/ui/src/components/sidebar/sidebar.tsx"
+        },
+        {
           "name": "SkeletonProps",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
         },
@@ -34751,6 +34759,18 @@
             "VariantProps<typeof sheetVariants>"
           ],
           "props": []
+        },
+        "SidebarInset": {
+          "extends": [
+            "ComponentProps<\"main\">"
+          ],
+          "props": [
+            {
+              "name": "gutter",
+              "optional": true,
+              "type": "SidebarInsetGutter"
+            }
+          ]
         },
         "Skeleton": {
           "extends": [
