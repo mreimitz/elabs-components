@@ -29,6 +29,7 @@
 @source "../../../packages/editor/src/**/*.{ts,tsx}";
 @source "../../../packages/viewer/src/**/*.{ts,tsx}";
 @source "../../../packages/terminal/src/**/*.{ts,tsx}";
+@source "../../../packages/process/src/**/*.{ts,tsx}";
 /* Cross-package composition demos live in apps/docs/stories — scan them too. */
 @source "../stories/**/*.{ts,tsx}";
 /* Registry blocks are rendered by the Blocks stories straight from their shipped

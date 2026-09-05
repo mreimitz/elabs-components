@@ -181,6 +181,8 @@ pnpm docs-links:check           # every Storybook `?path=` cross-link in a docs 
 pnpm docs-links:check:test      # self-test for the docs cross-link gate
 pnpm storybook-groups:check     # every story's top-level group is listed in preview.tsx's `storySort.order` (an unlisted one sorts to the bottom in import order), no listed group is stale, the component segment carries no spaces outside the sanctioned prose surfaces, and docs/STORYBOOK_GUIDELINES.md's numbered list names the same groups in the same order (#151)
 pnpm storybook-groups:check:test # self-test for the Storybook taxonomy gate
+pnpm tailwind-sources:check     # every workspace package with real Tailwind class strings is named by a resolvable @source directive in every app CSS file that has any — Tailwind v4 does not auto-scan workspace packages (#348)
+pnpm tailwind-sources:check:test # self-test for the @source coverage gate
 pnpm story-descriptions:check   # every indexed *.stories.tsx carries a `parameters.docs.description.component` — the sentence a reader needs to tell two look-alike components apart, and the hook the `Docs/Choosing between similar components` index hangs off (#152; ratchet, so the 163 files still without one are a todo list that only shrinks)
 pnpm story-descriptions:check:test # self-test for the story-description gate
 pnpm docs:check                 # docs match reality (theme count, workflow refs, @elabs-ai/components-* component names, CI-gate contract, version literals #266, dual-canvas decision #183)
