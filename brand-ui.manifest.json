@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T11:20:49.215Z",
+  "generatedAt": "2026-09-05T13:42:46.860Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25838,6 +25838,10 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "ProcessSelectionStates",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "ProcessTransitionEdgeData",
           "module": "packages/process/src/process-map/map-model.ts"
         },
@@ -25921,6 +25925,10 @@
         },
         {
           "name": "resolveActivityFrequencyMode",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "resolveSelectionState",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
@@ -26085,6 +26093,12 @@
               "optional": true,
               "type": "ProcessSelection | null",
               "description": "Controlled selection. Omit for an uncontrolled map that owns its own."
+            },
+            {
+              "name": "selectionStates",
+              "optional": true,
+              "type": "ProcessSelectionStates",
+              "description": "Per-element states an active filter contributes (RM-052 round 2, #227) — e.g. from `useProcessExplorer`'s own `selectionStates`. Applying or clearing a filter never adds or removes a node or an edge (Invariant F): it only re-inks the elements a filter dropped as `\"excluded\"` (dimmed, never `aria-disabled`). Omit for a map with no filtering, which reproduces today's selection-only behaviour exactly."
             },
             {
               "name": "onSelect",
@@ -26403,6 +26417,10 @@
               "module": "packages/process/src/core/worker/process-worker.ts"
             },
             {
+              "name": "ReconciledGraph",
+              "module": "packages/process/src/core/reconcile-graph.ts"
+            },
+            {
               "name": "ReworkStats",
               "module": "packages/process/src/core/detect-rework.ts"
             },
@@ -26527,6 +26545,10 @@
             {
               "name": "quantileSorted",
               "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "reconcileGraph",
+              "module": "packages/process/src/core/reconcile-graph.ts"
             },
             {
               "name": "toEpochMs",
