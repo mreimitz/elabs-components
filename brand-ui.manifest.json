@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T15:24:46.448Z",
+  "generatedAt": "2026-09-05T16:44:44.886Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -28833,6 +28833,11 @@
           "module": "packages/ui/src/components/context-menu/context-menu.tsx"
         },
         {
+          "name": "ContextRail",
+          "kind": "value",
+          "module": "packages/ui/src/components/context-rail/context-rail.tsx"
+        },
+        {
           "name": "COPY_FEEDBACK_MS",
           "kind": "value",
           "module": "packages/ui/src/lib/use-copy-to-clipboard.ts"
@@ -30556,6 +30561,14 @@
         {
           "name": "ConfirmDialogProps",
           "module": "packages/ui/src/components/confirm-dialog/confirm-dialog.tsx"
+        },
+        {
+          "name": "ContextRailProps",
+          "module": "packages/ui/src/components/context-rail/context-rail.tsx"
+        },
+        {
+          "name": "ContextRailSection",
+          "module": "packages/ui/src/components/context-rail/context-rail.tsx"
         },
         {
           "name": "CopyableValueProps",
@@ -32817,6 +32830,72 @@
               "name": "className",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "ContextRail": {
+          "extends": [
+            "Omit<\n  ComponentProps<typeof Sidebar>,\n  // `onSelect` is the native div text-selection event on `ComponentProps<typeof\n  // Sidebar>` — omitted so it can't collide with this component's own\n  // `onSelect`-shaped internals (`ContextRailBranchProps`) when `props` is\n  // spread onto `ContextRailWide`/`ContextRailNarrow` below.\n  \"side\" | \"collapsible\" | \"children\" | \"onSelect\"\n>"
+          ],
+          "props": [
+            {
+              "name": "sections",
+              "optional": false,
+              "type": "ContextRailSection[]",
+              "description": "The sections the switcher can pick between. An empty array renders the `empty` slot instead of a switcher."
+            },
+            {
+              "name": "activeSectionId",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled active section id."
+            },
+            {
+              "name": "defaultActiveSectionId",
+              "optional": true,
+              "type": "string",
+              "description": "Initial active section id (uncontrolled). Defaults to `sections[0]`."
+            },
+            {
+              "name": "onActiveSectionChange",
+              "optional": true,
+              "type": "(sectionId: string) => void",
+              "description": "Fires with the clicked section's id — including a re-click of the already-active section (open/close is a separate concern, see `open`)."
+            },
+            {
+              "name": "open",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled expanded/collapsed state. Clicking the ACTIVE switcher entry toggles this; clicking an INACTIVE entry sets it `true`."
+            },
+            {
+              "name": "defaultOpen",
+              "optional": true,
+              "type": "boolean",
+              "description": "Initial expanded/collapsed state (uncontrolled). Defaults to `true`."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void"
+            },
+            {
+              "name": "width",
+              "optional": true,
+              "type": "string",
+              "description": "Expanded width, published as `--sidebar-width`. @default \"20rem\""
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Replaces the default localized empty state when `sections` is empty."
+            },
+            {
+              "name": "overlayBreakpoint",
+              "optional": true,
+              "type": "number",
+              "description": "Below this viewport width the rail renders its own 48px strip plus a `Sheet` for the expanded body instead of mounting `Sidebar` — dev-only warns if set below 768. @default 768"
             }
           ]
         },

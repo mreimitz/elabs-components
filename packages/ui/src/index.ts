@@ -151,6 +151,7 @@ export * from "./components/command";
 export * from "./components/command-trigger";
 export * from "./components/confirm-dialog";
 export * from "./components/context-menu";
+export * from "./components/context-rail";
 export * from "./components/copyable-value";
 export * from "./components/date-picker";
 export * from "./components/date-range-picker";
