@@ -28,7 +28,7 @@ sheet rather than a column.
 The **answers desktop client** (§2.2) has a _permanent_ evidence rail: it never reaches
 zero. It collapses to a 48 px icon strip, and that strip **is** the section switcher —
 one menu serves both states, icon plus tooltip in both, the label kept in the DOM as
-`sr-only` so it is the switcher button's accessible name, counts on a badge. Its section
+`sr-only` so it is the switcher button’s accessible name, counts on a badge. Its section
 set is data.
 
 Design decision **D4** already settled that both ship. What was left open, and what this
@@ -146,15 +146,57 @@ export interface ContextRailProps extends Omit<
 
   /** Rendered in the body when `sections` is empty. Default: a localized `StatePanel kind="empty"`. */
   empty?: ReactNode;
+
+  /**
+   * Viewport width in px below which the EXPANDED panel is presented as an
+   * overlay `Sheet` instead of a column. Default `768`. The 48 px icon strip
+   * stays in the layout at every width — it is never the thing that goes away.
+   * Must be ≥ 768; see “Narrow viewports” below.
+   */
+  overlayBreakpoint?: number;
 }
 ```
 
+**Narrow viewports — decided, not inherited (Finding 1).** `Sidebar` branches to a
+mobile `Sheet` at `isMobile` (`sidebar.tsx:193`) driven by `openMobile`/`setOpenMobile`,
+which sit **outside** the `open`/`onOpenChange` seam declared above. Inheriting that
+branch would turn “a permanent rail that never reaches zero” into an off-canvas sheet
+with no documented opener, and would give the rail two disjoint open seams. So
+`ContextRail` **does not mount `Sidebar` at all below `overlayBreakpoint`.** It renders
+its own 48 px strip plus a `Sheet side="right"` for the expanded body, both driven by the
+same `open` / `onOpenChange`. Consequences, stated so the implementer does not guess:
+
+- `Sidebar`’s `isMobile` branch is unreachable from `ContextRail`, and
+  `openMobile` / `setOpenMobile` never participate. One seam, at every width.
+- **The collapsed icon strip survives at every viewport width**, so the “never reaches
+  zero” promise is unconditional rather than desktop-only. Tapping a section still
+  opens that section — as a sheet rather than a column.
+- `overlayBreakpoint` must be **≥ 768**. Below that the component would mount `Sidebar`
+  under the library’s own mobile threshold and re-expose the branch this decision
+  removes; a dev-only warning is the guard.
+- The asymmetry with `SideDock`’s `1100` is deliberate, not an oversight: a 320 px rail
+  whose collapsed cost is 48 px can stay a column right down to the ordinary mobile
+  breakpoint, while a 400 px dock at 768 px would leave ~360 px of content.
+
 Inherited from `ComponentProps<typeof Sidebar>` and therefore **not** re-declared:
-`variant?: "sidebar" | "floating" | "inset"` (default `"sidebar"` — flush, which is the
-geometry §2.2 wants for a rail), `className`, `style`, `id` and the rest of the div
-props, all spread onto the rail’s container. `side` and `collapsible` are omitted on
-purpose: pinning them to `"right"` and `"icon"` is what makes this a pattern rather than
-a re-export of `Sidebar` with defaults.
+`className`, `style`, `id` and the rest of the div props, all spread onto the rail’s
+container. `side` and `collapsible` are omitted on purpose: pinning them to `"right"` and
+`"icon"` is what makes this a pattern rather than a re-export of `Sidebar` with defaults.
+
+**`variant` stays in the type, and it is NOT inert (Finding 3).** The review asked
+whether `variant?: "sidebar" | "floating" | "inset"` should be added to the `Omit`,
+since decision 4 refinement 3 forbids a `frame="nested"` provider from emitting
+`data-variant`. It should not, because the premise does not hold: `Sidebar`’s **own**
+root element writes `data-variant={variant}`, and every consequence of the variant that
+belongs to the rail is scoped to that element — the gap/container branch is plain JS
+(`variant === "floating" || variant === "inset"` selects the `p-2` padding and the
+`calc(var(--sidebar-width-icon) + …)` collapsed width), and the inner surface reads
+`group-data-[variant=floating]:rounded-lg` / `:border` / `:shadow-sm` from the same
+element. So on `ContextRail` the prop still does what it does on any other `Sidebar`.
+What refinement 3 withholds is different and belongs to a different element: the
+**content column’s** inset geometry, which is a frame-level decision owned by the
+`frame="app"` provider. Documented default remains `"sidebar"` (flush), the geometry
+§2.2 wants for a rail.
 
 Fixed decisions that are part of the contract and must not become props:
 
@@ -196,14 +238,40 @@ second app frame. One additive prop suppresses all three collisions from Context
 frame?: "app" | "nested";
 ```
 
-- `"app"` — unchanged: the full-frame wrapper box, `group/sidebar-wrapper`, the
-  `has-data-[variant=inset]` ground, the global `⌘B` listener, the `sidebar_state`
-  cookie write.
-- `"nested"` — `display: contents` (so the provider contributes **no box**), no group
-  class, **no global keyboard listener**, **no cookie write**. It keeps the context
-  value, `data-slot="sidebar-wrapper"`, and the `--sidebar-width` /
-  `--sidebar-width-icon` custom properties, which still inherit through a
-  `display: contents` element and are exactly how `ContextRail` publishes its `width`.
+**A prop is required here; CSS alone cannot express it.** Two of the three collisions
+are unreachable from a stylesheet: the `document.cookie` write (`sidebar.tsx:83`) and
+the `window.addEventListener("keydown", …)` registration are unconditional JavaScript.
+The third is reachable but not by a caller: `group/sidebar-wrapper` is a Tailwind group
+name, not a `tailwind-merge` conflict group, so a caller-passed `className="contents"`
+overrides the display and leaves the group name in place — a nested rail would still be
+matched by every `group-data-[…]/sidebar-wrapper:` selector on the page. Hence a prop,
+and hence a prop that gates emission rather than merely restyling.
+
+What each value emits:
+
+| Emitted by the provider’s root                          | `frame="app"` (default) | `frame="nested"`             |
+| ------------------------------------------------------- | ----------------------- | ---------------------------- |
+| Frame box (`flex min-h-svh w-full`) + `text-foreground` | yes                     | **no** — `display: contents` |
+| `group/sidebar-wrapper`                                 | yes                     | **no**                       |
+| `has-data-[variant=inset]:bg-sidebar` ground            | yes                     | **no**                       |
+| `data-variant` (Task 8, decision 8 refinement 1)        | yes                     | **no**                       |
+| `data-state` (Task 8, decision 8 refinement 2)          | yes                     | **no**                       |
+| `data-slot="sidebar-wrapper"`                           | yes                     | **no** (see below)           |
+| Global `⌘B` / `Ctrl+B` listener (`sidebar.tsx:95`)      | yes                     | **no**                       |
+| `sidebar_state` cookie write (`sidebar.tsx:83`)         | yes                     | **no**                       |
+| `--sidebar-width` / `--sidebar-width-icon`              | yes                     | **yes**                      |
+| The `SidebarContext` value (`useSidebar()`)             | yes                     | **yes**                      |
+
+The two custom properties survive `display: contents` because custom properties inherit
+down the DOM tree regardless of the box the element generates — which is exactly how
+`ContextRail` publishes its `width` to the `Sidebar` beneath it.
+
+**`frame="nested"` emits no `data-slot` either** (the review’s first minor point). A
+`display: contents` element that is deliberately not a frame is not a “sidebar wrapper”,
+and duplicating that selector in one document is the same collision class as duplicating
+the group name — a consumer or test selecting `[data-slot="sidebar-wrapper"]` would match
+two elements, one of which has no box. The nested provider is a pure context +
+custom-property carrier and is invisible to selectors.
 
 The rail’s public seam stays `open` / `onOpenChange`; the provider is an implementation
 detail. A toggle that lives elsewhere in the chrome (the flagship’s top bar) is the
@@ -283,6 +351,19 @@ Fixed decisions that are part of the contract:
   (`.claude/rules/loading-states.md`’s prop-driven stance, and D5).
 - **A close control is always present** in the header — a summoned panel that can only be
   dismissed from outside itself is an overlay trap. It is not a prop.
+- **Clamping is unconditional — a controlled `width` is clamped too** (the review’s
+  second minor point). `minWidth` / `maxWidth` / `minContentWidth` against the live
+  viewport are a **layout invariant**, not a piece of state, so they are not something
+  control transfers to the caller: a controlled dock that honoured an out-of-range value
+  literally would render over the content it is supposed to sit beside, and the caller
+  cannot clamp for itself without duplicating the component’s own viewport arithmetic.
+  Control is over the VALUE, not over the geometry. When a controlled `width` falls
+  outside the clamp the dock renders the clamped number **and emits `onWidthChange`
+  followed by `onWidthCommit` with it, once** — on mount and again on a viewport resize
+  that moves the bound — so the caller’s persisted value converges instead of silently
+  disagreeing with the pixels. This is not a mode flip (`.claude/rules/component-api.md`
+  § Controlled/uncontrolled): the component never becomes the owner of `width`, it
+  reports the value it could actually use.
 - **`px` numbers here, a CSS-length `string` on `ContextRail`.** Not an inconsistency:
   the dock does arithmetic (clamping against `window.innerWidth`, honouring
   `minContentWidth`), the rail’s width is a static declaration. Recorded so a reviewer
@@ -297,9 +378,9 @@ Fixed decisions that are part of the contract:
   state.
 
 `useIsMobile` gains an **optional** breakpoint argument —
-`useIsMobile(breakpoint = 768)` — so `SideDock` can ask about its own 1100 px threshold
-without a second hook and without a new public export. Additive; every existing call site
-is unchanged. Cost, named: `useIsMobile(1100)` reads oddly, because 1100 px is not
+`useIsMobile(breakpoint = 768)` — so each panel can ask about its own threshold
+(`SideDock`’s 1100, `ContextRail`’s `overlayBreakpoint`) without a second hook and
+without a new public export. Additive; every existing call site is unchanged. Cost, named: `useIsMobile(1100)` reads oddly, because 1100 px is not
 “mobile”. The alternative was a new `useBelowBreakpoint` export, which costs a new public
 API plus its registration in every discovery surface; the wart is cheaper than the
 surface.
@@ -332,17 +413,28 @@ headerGutter?: boolean;
 ```
 
 The gutter’s **height** is a local CSS custom property, `--page-shell-header-gutter`,
-declared by the component with a scale-backed default and retunable per surface through
-the root `className` (`[--page-shell-header-gutter:--spacing(16)]`). This is the seam
-idiom the repo already uses for `--focus-ring-color` and `--shadow-ring-color`, and it is
-a **component-local variable in the `--sidebar-width` / `--context-panel-width` family**
-— deliberately not a theme token, so `pnpm theme-parity:check` is not engaged.
+declared by the component and retunable per surface through the root `className`
+(`[--page-shell-header-gutter:--spacing(16)]`). This is the seam idiom the repo already
+uses for `--focus-ring-color` and `--shadow-ring-color`, and it is a **component-local
+variable in the `--sidebar-width` / `--context-panel-width` family** — deliberately not a
+theme token, so `pnpm theme-parity:check` is not engaged.
+
+**Its default is `--spacing(12)` — `3rem`, 48 px at a 16 px root** (Tailwind spacing step
+12, i.e. `h-12`). Chosen to match the height a one-line page title with the toolbar
+header’s existing `py-3` padding already occupies, so switching `headerGutter` on for a
+route that _has_ a header changes nothing and switching it on for a route that does not
+lands the content where the header would have ended. It is applied as
+`min-h-(--page-shell-header-gutter)` on a header row that renders **even when `header` is
+absent** — that empty row is the whole mechanism, and it is what `headerGutter: false`
+must not produce.
 
 Two hard requirements on the implementation, both to be locked by tests:
 
 - **`scroll: "body"` with `headerGutter: false` must produce a byte-identical class string
-  to today**, for every combination of the existing `header` / `headerVariant` / `width`
-  props.
+  AND a byte-identical DOM to today**, for every combination of the existing `header` /
+  `headerVariant` / `width` props — no `min-h-*` class anywhere, and no empty header row.
+  The gutter is expressible only through props that default off, so “unset” is literally
+  today’s render, not an approximation of it.
 - While the file is open, `PageShell` is brought onto the component-API baseline it
   currently misses: `forwardRef`, `...props` spread, and `data-slot="page-shell"` on the
   root (plus `page-shell-content`, `page-shell-header`; the existing
@@ -385,7 +477,7 @@ work and gets its own architect review.
 
 ### 8. Endorsement of the inset repair (Task 8)
 
-**Endorsed**, with three refinements.
+**Endorsed**, with four refinements.
 
 1. **`variant` on `SidebarProvider`, written as `data-variant` on the frame wrapper — yes.**
    It is the smallest change and it is consistent with what is already there: the wrapper
@@ -403,6 +495,16 @@ work and gets its own architect review.
    satisfies the condition — a nested rail’s state would silently drive the content
    column’s geometry. Inset geometry is a frame-level decision; the nested provider only
    supplies a second `open` boolean.
+4. **The frame’s ground must read the frame’s OWN `variant`, not any descendant’s.** The
+   wrapper class at `sidebar.tsx:135` carries `has-data-[variant=inset]:bg-sidebar`, and
+   `:has()` is descendant-scoped with no depth limit — it does not stop at a
+   `frame="nested"` boundary, because that boundary exists in the provider’s emission
+   logic, not in the selector. So a `ContextRail` rendered with `variant="inset"` would
+   repaint the whole app frame’s chrome ground from three levels down, which is the same
+   class of bug as issue #342 read in the opposite direction. When Task 8 adds `variant`
+   to `SidebarProvider`, the ground condition moves onto that prop. Keep the descendant
+   `:has()` as the fallback for when the prop is unset, so every existing caller — who
+   sets the variant on `Sidebar` and nothing else — renders exactly as today.
 
 **`gutter` on `SidebarInset` — endorsed as an explicit prop, and it should be a named
 geometry rather than a boolean**, because the two shells want opposite gutters: today’s
@@ -497,9 +599,15 @@ shared need down, not sideways.
   section needs a non-colour cue that survives greyscale (`.claude/rules/accessibility.md`
   § 1.4.1), and it must reach AT as `aria-current` or a pressed state — not only as a
   `data-*` attribute.
-- **`overlayBreakpoint` below 768 would invert the presentation** (a column where the
-  library already shows a sheet). It is a number, not an enum, so nothing stops a caller;
-  a dev warning is the cheap guard.
+- **`overlayBreakpoint` below 768 is wrong on both components, for different reasons.**
+  On `SideDock` it inverts the presentation (a column where the library already shows a
+  sheet); on `ContextRail` it re-exposes `Sidebar`’s own `isMobile` branch and with it
+  the second `openMobile` seam decision 3 exists to remove. Both take a number, not an
+  enum, so nothing stops a caller — a dev-only warning is the cheap guard on each.
+- **The two `overlayBreakpoint` defaults differ on purpose (768 rail, 1100 dock).** A
+  later “harmonisation” that gives them one value breaks one of the two patterns: at 768
+  the dock leaves ~360 px of content, and at 1100 the rail becomes a sheet on an ordinary
+  laptop where a 48 px strip plus a 320 px panel fits comfortably.
 - **`scroll: "content"` and `"fill"` both require a bounded parent.** Inside a
   body-scrolling page they collapse to nothing visible. This is the caller’s contract,
   and the story set should show it in a real shell rather than in isolation.
