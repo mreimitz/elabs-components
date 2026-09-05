@@ -17,6 +17,54 @@
   wave 1 onward, ahead of the real process map / variant explorer / KPI strip
   views.
 
+- Added: `@elabs-ai/components-process`'s framework-free `/core` gains the
+  analysis layer the process views are built on (#225) — `abstractGraph`
+  (activity/path abstraction sliders that hide elements without recomputing a
+  single statistic, and keep every surviving activity on a path from a start to
+  an end), `aggregatePerformance` (a duration layer over a discovered graph in
+  ms/s/min/h/d, optionally re-derived from the full log at a chosen flow time so
+  a reduced view still describes everything that happened), `detectRework`
+  (self-loops vs longer loops, per activity and as a case rate), `filterLog` /
+  `filterNormalizedLog` / `caseMatchesFilters` (case-level filtering on
+  activity, position, followers, attributes, throughput time, variant or case
+  id), and `createProcessWorker` (off-thread discovery and variant extraction
+  that degrades to the calling thread whenever a worker is unavailable, so the
+  answer is the same in a browser, a server render and a test).
+
+- Added: `@elabs-ai/components-process/core` — the process-mining package's
+  framework-free half now ships a real event-log model and derivation layer,
+  where before it was an empty scaffold. A consumer can read a log in
+  (`fromCsv` for delimited text, `fromFlatRows` for the rows a warehouse query
+  or a spreadsheet export already produces), normalize it (`normalizeLog`
+  groups by case, orders each case in time, and pairs `lifecycle`
+  start/complete rows into single activity instances even when the two halves
+  are interleaved or arrive out of order), and derive the two standard views
+  from it: `discoverGraph` returns a directly-follows `ProcessGraph` carrying
+  per-activity and per-edge frequency and duration aggregates plus start/end
+  tallies, and `extractVariants` groups traces into frequency-ranked
+  `Variant`s whose ids are hashes of the sequence, so a selection survives a
+  re-run, a worker boundary and a URL. `durationStats` and the
+  `minMax`/`quantile`/`clampWidth` scales are exported too, so a view reads
+  the same numbers the derivation computed instead of re-deriving them and
+  disagreeing. Everything is deterministic — the same log always produces the
+  same output, with no wall clock and no unseeded randomness — and the subpath
+  pulls in no React, React Flow or visx, so it imports cleanly into a server
+  route, a web worker or a DOM-free test.
+  `generateSyntheticLog({ cases, seed })` ships alongside as a seeded
+  order-to-cash log generator for demos and benchmarks. No new runtime
+  dependency: the minimal RFC 4180 reader behind `fromCsv` is part of the
+  package. Algorithm provenance for the directly-follows and variant
+  derivations is credited to the BSD-3-licensed pm4js in `ATTRIBUTION.md`
+  (#224).
+
+- Fixed: `@elabs-ai/components-flow`'s `FlowNode` now shows a visible keyboard-focus
+  indicator. Previously its only ring fired on `selected` (a click/marquee
+  selection state), so tabbing to a node with the keyboard left no visual cue
+  of where focus was — the node looked identical to an unfocused one. Focus
+  now renders the shared compound focus ring, stays visually distinct from
+  the selection ring when both apply at once, and is verified in both `light`
+  and `dark` themes (#312).
+
 - Fixed: `ChartFrame`'s “Export as SVG” and “Export as PNG” actions are now
   translatable — both the icon buttons' accessible names and their tooltips read
   from `charts.chartFrame.exportSvg` / `charts.chartFrame.exportPng`, so an app

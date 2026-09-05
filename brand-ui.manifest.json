@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T23:18:18.907Z",
+  "generatedAt": "2026-09-05T06:58:49.899Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25632,9 +25632,19 @@
               "module": "packages/process/src/core/duration-stats.ts"
             },
             {
+              "name": "DURATION_UNIT_MS",
+              "kind": "value",
+              "module": "packages/process/src/core/aggregate-performance.ts"
+            },
+            {
               "name": "DurationSampler",
               "kind": "value",
               "module": "packages/process/src/core/duration-stats.ts"
+            },
+            {
+              "name": "EDGE_KEY_SEPARATOR",
+              "kind": "value",
+              "module": "packages/process/src/core/discover-graph.ts"
             },
             {
               "name": "EMPTY_DURATION_STATS",
@@ -25665,12 +25675,28 @@
           "hooks": [],
           "types": [
             {
+              "name": "AbstractedGraph",
+              "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "AbstractionOptions",
+              "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "ActivityRework",
+              "module": "packages/process/src/core/detect-rework.ts"
+            },
+            {
               "name": "ActivityStats",
               "module": "packages/process/src/core/types.ts"
             },
             {
               "name": "AnyLog",
               "module": "packages/process/src/core/event-log.ts"
+            },
+            {
+              "name": "CreateProcessWorkerOptions",
+              "module": "packages/process/src/core/worker/create-process-worker.ts"
             },
             {
               "name": "CsvMapping",
@@ -25689,12 +25715,20 @@
               "module": "packages/process/src/core/types.ts"
             },
             {
+              "name": "DurationUnit",
+              "module": "packages/process/src/core/aggregate-performance.ts"
+            },
+            {
               "name": "EventLog",
               "module": "packages/process/src/core/types.ts"
             },
             {
               "name": "EventRow",
               "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "FilterSpec",
+              "module": "packages/process/src/core/filter-log.ts"
             },
             {
               "name": "FlatRow",
@@ -25733,8 +25767,40 @@
               "module": "packages/process/src/core/types.ts"
             },
             {
+              "name": "PerformanceGraph",
+              "module": "packages/process/src/core/aggregate-performance.ts"
+            },
+            {
+              "name": "PerformanceLayer",
+              "module": "packages/process/src/core/aggregate-performance.ts"
+            },
+            {
+              "name": "PerformanceOptions",
+              "module": "packages/process/src/core/aggregate-performance.ts"
+            },
+            {
               "name": "ProcessGraph",
               "module": "packages/process/src/core/types.ts"
+            },
+            {
+              "name": "ProcessWorkerHandle",
+              "module": "packages/process/src/core/worker/create-process-worker.ts"
+            },
+            {
+              "name": "ProcessWorkerLike",
+              "module": "packages/process/src/core/worker/create-process-worker.ts"
+            },
+            {
+              "name": "ProcessWorkerRequest",
+              "module": "packages/process/src/core/worker/process-worker.ts"
+            },
+            {
+              "name": "ProcessWorkerResponse",
+              "module": "packages/process/src/core/worker/process-worker.ts"
+            },
+            {
+              "name": "ReworkStats",
+              "module": "packages/process/src/core/detect-rework.ts"
             },
             {
               "name": "SyntheticActivity",
@@ -25755,12 +25821,32 @@
           ],
           "otherExports": [
             {
+              "name": "abstractGraph",
+              "module": "packages/process/src/core/abstract-graph.ts"
+            },
+            {
+              "name": "aggregatePerformance",
+              "module": "packages/process/src/core/aggregate-performance.ts"
+            },
+            {
               "name": "asNormalizedLog",
               "module": "packages/process/src/core/event-log.ts"
             },
             {
+              "name": "caseMatchesFilters",
+              "module": "packages/process/src/core/filter-log.ts"
+            },
+            {
               "name": "clampWidth",
               "module": "packages/process/src/core/scale.ts"
+            },
+            {
+              "name": "createProcessWorker",
+              "module": "packages/process/src/core/worker/create-process-worker.ts"
+            },
+            {
+              "name": "detectRework",
+              "module": "packages/process/src/core/detect-rework.ts"
             },
             {
               "name": "discoverGraph",
@@ -25779,6 +25865,14 @@
               "module": "packages/process/src/core/extract-variants.ts"
             },
             {
+              "name": "filterLog",
+              "module": "packages/process/src/core/filter-log.ts"
+            },
+            {
+              "name": "filterNormalizedLog",
+              "module": "packages/process/src/core/filter-log.ts"
+            },
+            {
               "name": "fromCsv",
               "module": "packages/process/src/core/adapters/csv.ts"
             },
@@ -25789,6 +25883,10 @@
             {
               "name": "generateSyntheticLog",
               "module": "packages/process/src/core/fixtures/synthetic-log.ts"
+            },
+            {
+              "name": "handleProcessRequest",
+              "module": "packages/process/src/core/worker/process-worker.ts"
             },
             {
               "name": "isNormalizedLog",
@@ -25809,6 +25907,10 @@
             {
               "name": "parseDelimited",
               "module": "packages/process/src/core/adapters/csv.ts"
+            },
+            {
+              "name": "performanceValue",
+              "module": "packages/process/src/core/aggregate-performance.ts"
             },
             {
               "name": "quantile",

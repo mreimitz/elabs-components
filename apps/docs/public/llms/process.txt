@@ -8,7 +8,9 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 
 - DEFAULT_LIFECYCLE_VALUES (`@elabs-ai/components-process/core` · component)
 - DURATION_SAMPLE_CAP (`@elabs-ai/components-process/core` · component)
+- DURATION_UNIT_MS (`@elabs-ai/components-process/core` · component)
 - DurationSampler (`@elabs-ai/components-process/core` · component)
+- EDGE_KEY_SEPARATOR (`@elabs-ai/components-process/core` · component)
 - EMPTY_DURATION_STATS (`@elabs-ai/components-process/core` · component)
 - SYNTHETIC_ACTIVITIES (`@elabs-ai/components-process/core` · component)
 - SYNTHETIC_LOG_EPOCH (`@elabs-ai/components-process/core` · component)
