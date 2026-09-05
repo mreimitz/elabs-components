@@ -17,7 +17,12 @@ function cssColorToRgb(color: string): [number, number, number] {
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, 1, 1);
-  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  const data = ctx.getImageData(0, 0, 1, 1).data;
+  // A 1×1 getImageData always yields exactly four RGBA bytes; noUncheckedIndexedAccess
+  // cannot express that, so read the three channels explicitly.
+  const r = data[0] ?? 0;
+  const g = data[1] ?? 0;
+  const b = data[2] ?? 0;
   return [r / 255, g / 255, b / 255];
 }
 function relativeLuminance([r, g, b]: [number, number, number]): number {
