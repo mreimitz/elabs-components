@@ -331,17 +331,41 @@ export const Selection: Story = {
     // `onFilterIntent` is wired straight into `useProcessExplorer`'s own `applyIntent` —
     // choosing a real intent from the menu this story already knows how to open must dim
     // the activities it drops, never delete them from the canvas.
+    //
+    // Non-vacuity fix (RM-052 round 3, #227, G6): `standingOn` was selected via `Enter`
+    // earlier in this same play function and stays selected here, so
+    // `resolveSelectionState`'s neighbourhood rule (an activity outside the selection's
+    // one-hop neighbourhood reads "excluded" once something else is "selected") already
+    // paints excluded nodes BEFORE the filter click below ever runs — a bare
+    // `toBeTruthy()` on "some excluded node exists" would pass even if the filter click
+    // changed nothing. Capture the excluded count before the click and require it to
+    // strictly grow, so the assertion actually depends on the filter's effect rather than
+    // on the pre-existing selection.
+    //
+    // Menu item [1] ("Keep cases without" `standingOn`), not [0] ("Keep cases containing"
+    // `standingOn`): `standingOn` is the last node the Tab walk above lands on, which in
+    // this fixture is common to (or the only end activity of) effectively every case, so
+    // "containing" is a no-op filter that changes nothing — confirmed by running this
+    // fixture with item [0] and observing the excluded count stay flat at 29 before and
+    // after the click, i.e. exactly the false pass this fix exists to prevent. "without"
+    // instead drops the cases through `standingOn`, so other activities lose their
+    // statistics and the excluded count measurably grows.
     const totalNodesBeforeFilter = wrappers.length;
+    const excludedCountBeforeFilter = canvasElement.querySelectorAll(
+      '[data-selection="excluded"]',
+    ).length;
     await userEvent.keyboard("f");
     const filterMenu = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[role="menu"]');
       expect(found).toBeTruthy();
       return found!;
     });
-    await userEvent.click(within(filterMenu).getAllByRole("menuitem")[0]!);
+    await userEvent.click(within(filterMenu).getAllByRole("menuitem")[1]!);
 
     await waitFor(() =>
-      expect(canvasElement.querySelector('[data-selection="excluded"]')).toBeTruthy(),
+      expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(
+        excludedCountBeforeFilter,
+      ),
     );
     expect(canvasElement.querySelectorAll('[data-slot="process-activity-node"]').length).toBe(
       totalNodesBeforeFilter,
