@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import { Sidebar, SidebarInset, SidebarProvider } from "./sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "./sidebar";
 
 function renderFrame() {
   return render(
@@ -39,5 +47,32 @@ describe("SidebarProvider", () => {
     // still correct without the wrapper carrying it.
     const chrome = screen.getByText("chrome").closest('[class*="text-sidebar-foreground"]');
     expect(chrome).not.toBeNull();
+  });
+
+  it("marks the active menu button with a non-colour cue, not hue alone", () => {
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive>Active item</SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>Resting item</SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+    const active = screen.getByRole("button", { name: "Active item" });
+    const resting = screen.getByRole("button", { name: "Resting item" });
+    // Asserting the two class strings merely DIFFER passes on colour-only code and
+    // is not sufficient (.claude/rules/accessibility.md §1.4.1). Assert the cues
+    // that survive greyscale: a drawn bar, and a heavier weight.
+    expect(active.className).toContain("data-[active=true]:before:w-1");
+    expect(active.className).toContain("data-[active=true]:font-semibold");
+    expect(resting).toHaveAttribute("data-active", "false");
   });
 });

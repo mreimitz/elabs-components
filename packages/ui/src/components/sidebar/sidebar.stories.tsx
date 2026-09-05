@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Home, Inbox, Search, Settings } from "lucide-react";
+import { expect } from "storybook/test";
 import { Sidebar } from "./sidebar";
 import {
   SidebarContent,
@@ -38,6 +39,7 @@ const items = [
   { title: "Settings", icon: Settings },
 ];
 
+/** A collapsible icon-rail sidebar assembled from the primitive parts, with one active nav item. */
 export const Default: Story = {
   render: () => (
     <div className="h-[480px]">
@@ -74,4 +76,38 @@ export const Default: Story = {
       </SidebarProvider>
     </div>
   ),
+};
+
+/** The active item is distinguishable without colour: an accent bar plus a heavier label. */
+export const ActiveIndicator: Story = {
+  render: () => (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive data-testid="active">
+                Overview
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton data-testid="resting">Reports</SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const active = canvasElement.querySelector('[data-testid="active"]') as HTMLElement;
+    const resting = canvasElement.querySelector('[data-testid="resting"]') as HTMLElement;
+    const bar = getComputedStyle(active, "::before");
+    const none = getComputedStyle(resting, "::before");
+    // Geometry, not hue: the bar has real width on the active item and none on the resting one.
+    await expect(parseFloat(bar.width)).toBeGreaterThan(0);
+    await expect(parseFloat(none.width) || 0).toBe(0);
+    await expect(getComputedStyle(active).fontWeight).not.toBe(
+      getComputedStyle(resting).fontWeight,
+    );
+  },
 };
