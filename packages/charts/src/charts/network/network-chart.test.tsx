@@ -17,6 +17,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { NetworkChart } from "./network-chart";
 import type { NetworkLinkDatum, NetworkNodeDatum } from "./network-types";
 
@@ -99,6 +100,27 @@ describe("NetworkChart — structure and a11y", () => {
     const { container } = render(<NetworkChart layout="circular" links={LINKS} nodes={NODES} />);
     expect(container.querySelectorAll('[data-slot="network-node"]')).toHaveLength(4);
     expect(container.querySelectorAll('[data-slot="network-link"]')).toHaveLength(4);
+  });
+
+  it("draws resting edges at the shared furniture ink, undimmed", () => {
+    // The regression this locks: edges painted `--chart-grid` through a 0.35
+    // opacity multiplier, which put a 0.6px stroke at ~1.07:1 against a white
+    // card — invisible. `pnpm chart-hairline:check` catches the ATTRIBUTE
+    // spelling of that multiplier; the class spelling used here is not
+    // statically checkable, so it is pinned by this test instead.
+    const { container } = render(<NetworkChart layout="circular" links={LINKS} nodes={NODES} />);
+    const paths = [...container.querySelectorAll('[data-slot="network-link"]')];
+    expect(paths.length).toBeGreaterThan(0);
+    for (const path of paths) {
+      expect(path.getAttribute("stroke")).toBe("var(--chart-grid)");
+      const cls = path.getAttribute("class") ?? "";
+      expect(cls).toContain("opacity-100");
+      expect(cls).not.toMatch(/opacity-\[0\.[1-9]/);
+      // The furniture floor, not this chart's own number.
+      expect(Number(path.getAttribute("stroke-width"))).toBeGreaterThanOrEqual(
+        CHART_HAIRLINE_WIDTH,
+      );
+    }
   });
 
   it("keeps the SVG body aria-hidden and free of anything focusable", () => {

@@ -60,6 +60,7 @@ import { cn } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { resolvePalette } from "./chart-context";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import type { ChartInteractionProps } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
@@ -132,7 +133,7 @@ const MIN_PILL_WIDTH = 24;
 const TREE_ROOT_COLOR = "var(--chart-mono-4)";
 /** The one link stroke colour, whatever the palette — links are furniture, not data (like the treemap band). */
 const TREE_LINK_COLOR = "var(--chart-grid)";
-const TREE_LINK_WIDTH = 1.4;
+const TREE_LINK_WIDTH = CHART_HAIRLINE_WIDTH;
 
 // ── Internal render tree (post `collapseDepth` truncation) ──────────────────
 

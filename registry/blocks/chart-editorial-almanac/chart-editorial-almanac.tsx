@@ -21,7 +21,14 @@
  * Copy-own it: `npx shadcn add chart-editorial-almanac`.
  */
 
-import { HaloText, Marginalia, PeakRing, QuietDot, seededRnd } from "@elabs-ai/components-charts";
+import {
+  CHART_HAIRLINE_WIDTH,
+  HaloText,
+  Marginalia,
+  PeakRing,
+  QuietDot,
+  seededRnd,
+} from "@elabs-ai/components-charts";
 import { ACTIVITY_MATRIX, type AlmanacCell } from "./data/activity-matrix";
 
 export interface ChartEditorialAlmanacProps {
@@ -141,7 +148,7 @@ export function ChartEditorialAlmanac({
               <line
                 data-slot="chart-editorial-almanac-ledger-rule"
                 stroke="var(--chart-grid)"
-                strokeWidth={0.55}
+                strokeWidth={CHART_HAIRLINE_WIDTH}
                 x1={MARGIN_LEFT - 8}
                 x2={MARGIN_LEFT + columns.length * CELL_WIDTH}
                 y1={ruleY}

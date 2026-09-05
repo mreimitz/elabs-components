@@ -4,6 +4,7 @@ import { scaleBand } from "@visx/scale";
 import { useId, useMemo } from "react";
 import { HaloText, PeakRing, seededRnd } from "../marks";
 import { defaultScatterColors, useChartStable, useYScale } from "./chart-context";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { SeriesMarkers, type SeriesMarkersProps } from "./series-markers";
 import { StaticSeriesPointMarker } from "./series-point-marker";
 import { isPaletteFill, type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
@@ -77,7 +78,7 @@ const DEFAULT_Y_GRADIENT_FROM = "var(--color-red-500)";
 const DEFAULT_Y_GRADIENT_TO = "var(--color-emerald-500)";
 
 /** Hairline weight for `dropLines` — the lieflat "0.55px plumb line" value. */
-const DROP_LINE_WIDTH = 0.55;
+const DROP_LINE_WIDTH = CHART_HAIRLINE_WIDTH;
 
 /**
  * Seed for `jitter`'s `seededRnd(index, JITTER_SEED)` draw. A fixed constant

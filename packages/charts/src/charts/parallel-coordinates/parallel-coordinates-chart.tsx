@@ -58,6 +58,7 @@ import { cn, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { type ChartPalette, type Margin, resolvePalette } from "../chart-context";
+import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { makeValueFmt } from "../chart-formatters";
 import type {
   ChartDatapointClickHandler,
@@ -539,7 +540,7 @@ function ParallelCoordinatesPlot({
               <g data-slot="parallel-coordinates-axis" key={axis.key}>
                 <line
                   stroke="var(--chart-grid)"
-                  strokeWidth={0.65}
+                  strokeWidth={CHART_HAIRLINE_WIDTH}
                   x1={x}
                   x2={x}
                   y1={0}
@@ -547,7 +548,7 @@ function ParallelCoordinatesPlot({
                 />
                 <line
                   stroke="var(--chart-grid)"
-                  strokeWidth={0.65}
+                  strokeWidth={CHART_HAIRLINE_WIDTH}
                   x1={x - AXIS_TICK_LENGTH / 2}
                   x2={x + AXIS_TICK_LENGTH / 2}
                   y1={0}
@@ -555,7 +556,7 @@ function ParallelCoordinatesPlot({
                 />
                 <line
                   stroke="var(--chart-grid)"
-                  strokeWidth={0.65}
+                  strokeWidth={CHART_HAIRLINE_WIDTH}
                   x1={x - AXIS_TICK_LENGTH / 2}
                   x2={x + AXIS_TICK_LENGTH / 2}
                   y1={innerHeight}

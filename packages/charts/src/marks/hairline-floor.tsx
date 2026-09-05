@@ -1,6 +1,7 @@
 "use client";
 
 import type { SVGProps } from "react";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
 /**
  * A positional scale: one calendar period in, one x (or y) coordinate out.
@@ -72,7 +73,7 @@ export function HairlineFloor<T>({
       aria-hidden="true"
       data-slot="hairline-floor"
       stroke={stroke ?? "var(--chart-grid)"}
-      strokeWidth={strokeWidth ?? 0.55}
+      strokeWidth={strokeWidth ?? CHART_HAIRLINE_WIDTH}
       {...props}
     >
       {periods.map((period, i) => {

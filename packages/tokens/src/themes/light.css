@@ -382,7 +382,12 @@
   --chart-11: oklch(0.539 0.054 254.3); /* slate — #434C57, lifted for 3:1 */
   --chart-12: oklch(0.843 0.004 248.4); /* grey — #D9DDE1 */
 
-  --chart-grid: var(--border);
+  --chart-grid: oklch(
+    0.74 0.006 257
+  ); /* hairline furniture — its own rung, NOT var(--border): grid rows,
+     axis rules, drop lines, network edges and tree links all render as sub-pixel
+     strokes, so the UI hairline (1.44:1 here) disappeared at 0.65px. 2.31:1 flat,
+     ~1.67:1 as drawn. See .claude/rules/chart-components.md § Hairline furniture. */
   --chart-foreground: var(--foreground);
   --chart-foreground-muted: var(--muted-foreground);
   --chart-background: var(--card);

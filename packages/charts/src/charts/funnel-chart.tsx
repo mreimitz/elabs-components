@@ -168,6 +168,7 @@ export interface FunnelChartProps {
 // ─── Defaults ───────────────────────────────────────────────────────
 
 import { intFmt } from "./chart-formatters";
+import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 
 const fmtPct = (p: number) => `${Math.round(p)}%`;
 const fmtVal = intFmt;
@@ -926,7 +927,7 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
   const showGridLines = gridEnabled && (gridCfg.lines ?? true);
   const gridLineColor = gridCfg.lineColor ?? "var(--chart-grid)";
   const gridLineOpacity = gridCfg.lineOpacity ?? 1;
-  const gridLineWidth = gridCfg.lineWidth ?? 1;
+  const gridLineWidth = gridCfg.lineWidth ?? CHART_HAIRLINE_WIDTH;
 
   // Stage-to-stage conversion — % of the PREVIOUS stage's value. `null` at
   // index 0 (no previous stage). Distinct from `pct` below (% of the FIRST

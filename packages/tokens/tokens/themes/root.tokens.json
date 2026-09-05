@@ -290,8 +290,8 @@
   },
   "chart-grid": {
     "$type": "color",
-    "$value": "var(--border)",
-    "$description": "Chart gridlines (alias)."
+    "$value": "oklch(0.74 0.01 264)",
+    "$description": "Chart hairline furniture — grid rows/columns, axis rules, drop lines, network edges, tree links. Its own rung, deliberately NOT var(--border): a UI hairline separates regions, this one has to stay legible as a sub-pixel stroke over a plot ground."
   },
   "chart-foreground": {
     "$type": "color",
