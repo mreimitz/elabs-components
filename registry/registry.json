@@ -12,9 +12,24 @@
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
+          "path": "registry/blocks/app-shell/app-nav-rail.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/app-nav-rail.tsx"
+        },
+        {
           "path": "registry/blocks/app-shell/app-shell-page.tsx",
           "type": "registry:page",
           "target": "app/(app)/page.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/nav-items.ts",
+          "type": "registry:component",
+          "target": "components/app-shell/nav-items.ts"
+        },
+        {
+          "path": "registry/blocks/app-shell/shell-metrics.ts",
+          "type": "registry:component",
+          "target": "components/app-shell/shell-metrics.ts"
         }
       ]
     },
