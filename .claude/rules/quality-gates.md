@@ -130,6 +130,14 @@ agent/skill path can discover it. Register it everywhere packages are enumerated
   `skills/brand-ui-component/SKILL.md` (routing) — and their `description` package lists.
 - `apps/docs/.storybook/preview.tsx` — add its story-title group to `storySort.order`,
   and to the numbered list in `docs/STORYBOOK_GUIDELINES.md` (the two must match).
+- **`apps/docs/.storybook/preview.css`** (and any other app CSS with `@source` lines,
+  e.g. `fixtures/consumer-smoke/src/index.css`) — add an `@source` directive pointing at
+  the new package's source, **if** it ships real Tailwind class strings. Tailwind v4 does
+  not auto-scan workspace packages resolved via `node_modules`; a package missing here
+  compiles no styles for its own classes and silently renders unstyled (#348). This is
+  **gated**, not just documented: `pnpm tailwind-sources:check` fails CI if a package with
+  `.tsx` source containing real class strings is absent from every `@source`-bearing CSS
+  file in the repo.
 - Run `pnpm manifest` to regenerate `brand-ui.manifest.json`.
 
 **This manual list is now belt-and-suspenders for the common case, not the only

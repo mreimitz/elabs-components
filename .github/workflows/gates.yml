@@ -221,6 +221,7 @@ jobs:
           pnpm docs:check
           pnpm docs-links:check
           pnpm storybook-groups:check
+          pnpm tailwind-sources:check
           pnpm story-descriptions:check
           pnpm paused-surfaces-drift:check
           pnpm skills:currency:check
@@ -346,6 +347,7 @@ jobs:
           pnpm storybook-groups:check:test
           pnpm surface-elevation:check:test
           pnpm surface:preview:test
+          pnpm tailwind-sources:check:test
           pnpm templates:check:test
           pnpm test-concurrency:check:test
           pnpm text-scale:check:test

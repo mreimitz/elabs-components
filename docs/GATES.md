@@ -386,3 +386,37 @@ request` — which is why a release now lands through a PR (see
   `*.test.mjs` self-test (`node --test`) that plants a bad fixture and asserts the gate
   fails — wired as `pnpm <x>:check:test` in CI (see `check-charts-reuse`,
   `check-agent-names`, `check-ai-sdk-types-only`, `check-anti-slop`).
+- **Tailwind `@source` coverage (`pnpm tailwind-sources:check`, #348).** Tailwind v4 does
+  not auto-scan workspace packages resolved via `node_modules` — each must be named by an
+  explicit `@source` directive in the consuming app's CSS, and a package silently missing
+  from that list compiles no styles for its own classes. `packages/process` shipped for a
+  full wave missing from `apps/docs/.storybook/preview.css`'s `@source` list: its canvas
+  height utility, its excluded-node ghosting opacity, and its overlay-rail inset utility
+  were never compiled, so the map rendered as a zero-height canvas with unghosted excluded
+  nodes and a flush overlay rail — and nothing caught it, because `pnpm build`/`test`/
+  `typecheck` all pass regardless (missing Tailwind output is not a type error or a test
+  failure). `scripts/check-tailwind-sources.mjs` walks every `packages/*/src/**/*.tsx`
+  (excluding `*.test.tsx`/`*.stories.tsx`) to find packages that ship real component
+  source, walks every `apps/**/*.css` and `fixtures/**/*.css` to find every CSS file that
+  declares at least one `@source`, and asserts each such package is covered by at least
+  one `@source` directive in each such CSS file — resolving the directive's glob BASE
+  DIRECTORY (the path segment before the first glob-magic character) with `path.resolve`
+  against the CSS file's own location, so a wrong relative depth (`../../` where `../../../`
+  is needed) fails even though it looks like coverage as a string. Both the SRC shape
+  (`@source "../../../packages/<name>/src/**/*.{ts,tsx}"`, used by `apps/docs`) and the DIST
+  shape (`@source "../node_modules/@elabs-ai/components-<name>/dist"`, used by
+  `fixtures/consumer-smoke` to mimic a real external install) are recognised. `packages/tokens`
+  is a named, commented exemption (`EXEMPT_PACKAGES` in the script) — it ships two non-test
+  `.tsx` files but carries no real Tailwind class strings anywhere in its source, so requiring
+  `@source` coverage for it would be a false positive with no CSS to compile. The CSS-comment
+  stripper used to find `@source` lines is a character-by-character state machine, not a
+  regex — a naive regex-based stripper reads a `@source` glob's own recursive-directory marker
+  (an asterisk-asterisk segment between slashes, inside the quoted string) as an EMPTY comment
+  and deletes it, truncating the glob; the state machine tracks quote-string state so it only
+  recognises a comment opener outside a string literal. Self-tested via
+  `pnpm tailwind-sources:check:test`, which plants fixture trees for a missing package, a
+  `.ts`-only package with no class strings, and a wrong-relative-depth `@source` line, and
+  additionally asserts the real repo tree passes with no false positive for `packages/tokens`.
+  Wired into the **blocking** "Docs and governance" step in `gates.yml` (not the
+  `continue-on-error` Storybook job) and into `AGENTS.md`'s command contract, so `pnpm
+docs:check`'s CI-gate cross-check catches a future drop of either wiring line.

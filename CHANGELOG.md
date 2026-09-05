@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fixed: `ProcessMap` (`@elabs-ai/components-process`) rendered as a zero-height,
+  unstyled canvas in the docs app and in a real consumer install — `packages/process`
+  was missing from Tailwind's `@source` scan list, so its canvas-height utility, its
+  excluded-activity ghosting opacity, and its overlay-rail inset utility were never
+  compiled (#348). A new `pnpm tailwind-sources:check` gate, with its own self-test,
+  now fails CI whenever a workspace package with real Tailwind class strings is
+  missing from an app's `@source` coverage, so this class of bug cannot recur silently.
+
 - Changed: every piece of chart _furniture_ — grid rows and columns, axis
   rules, scatter drop lines, dumbbell tracks, tree links, radar rings,
   network edges, a sparkline's empty baseline — now paints one ink at one

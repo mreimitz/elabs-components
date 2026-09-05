@@ -221,6 +221,8 @@
     "surface-elevation:check:test": "node --test scripts/check-surface-elevation.test.mjs",
     "surface:preview": "node scripts/build-surface-preview.mjs",
     "surface:preview:test": "node --test scripts/build-surface-preview.test.mjs",
+    "tailwind-sources:check": "node scripts/check-tailwind-sources.mjs",
+    "tailwind-sources:check:test": "node --test scripts/check-tailwind-sources.test.mjs",
     "templates:check": "node scripts/check-templates-fresh.mjs",
     "templates:check:test": "node --test scripts/check-templates-fresh.test.mjs",
     "test": "turbo run test --concurrency=1",
