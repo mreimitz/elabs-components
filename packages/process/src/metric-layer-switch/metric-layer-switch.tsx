@@ -16,7 +16,7 @@
  *   at this activity"; that overlay is `ProcessMap`'s own `rework` prop, driven by
  *   `detectRework`, not a `ProcessMetric`. Selecting this layer disables both `Select`s
  *   (and the lock, which has nothing to lock) rather than inventing a metric value that
- *   does not exist — see RM-052-result.md for this interpretation call.
+ *   does not exist.
  *
  * ## The lock keeps node and edge metrics in sync — and keeps the domain honest
  *

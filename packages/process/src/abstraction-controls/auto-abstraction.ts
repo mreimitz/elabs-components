@@ -13,7 +13,7 @@
  * fits any budget, so the "smallest fraction" reading is trivially satisfied by hiding
  * almost everything. What a reader actually wants from "Auto" is the OPPOSITE end of
  * that: the LARGEST fraction — the most detail — that still fits the budget. This module
- * implements that reading; see RM-052-result.md for the interpretation call.
+ * implements that reading.
  *
  * ## Bounded and terminating, by construction
  *
@@ -23,6 +23,30 @@
  * not of the input: `computeAutoAbstraction` always does at most `maxSteps` probes of
  * `keptAt(fraction)`, regardless of how many activities the graph has. See
  * `auto-abstraction.test.ts` for the explicit bound assertion.
+ *
+ * ## Known limitation: this heuristic is topology-blind (RM-052 round 2, #227, F2)
+ *
+ * `keptActivityCount` predicts how many activities a fraction keeps from the COUNT alone —
+ * `round(total * fraction)`. It has no visibility into which activities `abstractGraph`
+ * would actually drop, or how they connect. `abstractGraph`'s default `keepConnected: true`
+ * adds activities back in to restore reachability to a start/end activity that truncation
+ * would otherwise strand — and on a graph with no bypass edges (a strict, unbranched chain,
+ * where every activity's only path to the end activity runs through every activity after
+ * it), dropping ANY suffix forces the ENTIRE remainder back in. The naive prediction and the
+ * real, reconnected result can then diverge by the graph's full size: a 30-activity chain
+ * with `maxActivities: 10` predicts a fraction that keeps 10 activities, but
+ * `abstractGraph(graph, { activities: fraction, keepConnected: true })` actually keeps all
+ * 30 — see `auto-abstraction.test.ts`'s "known limitation" describe block, which measures
+ * this exact case and isolates `keepConnected` as the sole cause (turning it off makes the
+ * real result match the naive prediction exactly).
+ *
+ * This is accepted as a best-effort gap, not fixed here: fixing it precisely would mean this
+ * module accepting a real `ProcessGraph` and searching against `abstractGraph`'s actual
+ * output rather than a plain count — a signature change that would also require updating
+ * `AbstractionControls`'s call site (`handleAuto`), which sits outside this round's write-set
+ * (RM-052-fix-brief.md / RM-052-tristate-decision.md §10). A future round that wants an exact
+ * search should route that signature change through `brand-ui-design-system-architect` (it
+ * changes this module's public contract) rather than patching around it here.
  */
 export interface AutoAbstractionOptions {
   /** Largest number of activities the resulting view should keep. Default `25`. */
