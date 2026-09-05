@@ -85,9 +85,26 @@ async function pointCoreBundleAtBuiltWorker(): Promise<void> {
  * Point the built ROOT bundle at the built worker, when it reaches one.
  *
  * `requireOccurrence: false` — the root barrel only bundles `createProcessWorker`
- * transitively, via whichever exports happen to import it (today: `useProcessExplorer`).
- * A future barrel that no longer reaches the worker is not a build error, so 0
- * occurrences is tolerated silently; `> 1` still throws (see `rewriteWorkerSpecifier`).
+ * transitively, via whichever exports happen to import it (today: `useProcessExplorer`),
+ * so 0 occurrences legitimately means "not reached" rather than being an error; `> 1`
+ * still throws unconditionally (see `rewriteWorkerSpecifier`).
+ *
+ * RM-052 round 2 (#227, F4): the reason that 0-occurrence tolerance is actually SAFE
+ * today — not merely convenient — is structural, not about import reachability. All
+ * four passes above declare exactly one entry each, and esbuild only emits a separate
+ * shared `chunk-*.js` file for code shared BETWEEN entries or reached through a dynamic
+ * `import()` — this package has neither (measured: `find dist -name 'chunk-*'` returns
+ * zero files). So whatever this pass bundles lands wholesale in `dist/index.js` itself;
+ * there is no other file the worker-creation code could have been split into instead.
+ * Without that guarantee, "0 occurrences in `dist/index.js`" would be ambiguous between
+ * "legitimately unreached" and "moved to a chunk file this rewrite never inspects", and
+ * the silent tolerance would risk masking a real, un-rewritten specifier rather than
+ * confirming a genuine absence.
+ *
+ * What would open that gap: a second entry added to the root pass, or a real dynamic
+ * `import()` reachable from it — either lets esbuild start emitting shared chunks, at
+ * which point this reasoning (and the silent 0-occurrence tolerance) needs re-checking,
+ * not assumed to still hold.
  */
 async function pointRootBundleAtBuiltWorker(): Promise<void> {
   await rewriteWorkerSpecifier("dist/index.js", "./core/process-worker.js", {
