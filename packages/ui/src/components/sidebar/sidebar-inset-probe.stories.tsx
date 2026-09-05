@@ -56,6 +56,54 @@ export const RightInsetProbe: Story = {
   },
 };
 
+/**
+ * Isolates ORDER from `side` — deleted once R8 lands. Same `side="right"` as
+ * `RightInsetProbe`, but the `Sidebar` is placed BEFORE `SidebarInset` (order
+ * flipped). `RightInsetProbe` (right, after) vs this story (right, before)
+ * differ ONLY in sibling order, so whatever changes between the two IS the
+ * pure order effect, with `side` held constant — the earlier `RightInsetProbe`
+ * vs `LeftInsetControl` pair confounded order with `side` and could not make
+ * this isolation claim on its own.
+ */
+export const RightSidebarFirstProbe: Story = {
+  render: () => (
+    <SidebarProvider>
+      <Sidebar side="right" variant="inset" data-testid="right-rail">
+        <SidebarContent />
+      </Sidebar>
+      <SidebarInset data-testid="inset">
+        <div className="p-6 text-body">content</div>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const inset = canvasElement.querySelector('[data-testid="inset"]') as HTMLElement;
+    const styles = getComputedStyle(inset);
+    console.log(
+      "R8 probe RightSidebarFirstProbe — marginTop:",
+      styles.marginTop,
+      "marginRight:",
+      styles.marginRight,
+      "marginInlineStart:",
+      styles.marginInlineStart,
+      "borderRadius:",
+      styles.borderTopLeftRadius,
+    );
+    await expect(inset).toBeInTheDocument();
+    // Isolated order effect: with `side="right"` held constant, moving the
+    // Sidebar BEFORE the Inset reproduces `LeftInsetControl`'s values exactly
+    // (8px/8px/0px/8px) — sidebar.tsx:313 has no `data-side` clause, so the
+    // rule matches identically regardless of which side the sidebar is on.
+    // This CONFIRMS Claim 1 as an order effect, isolated from `side`, and
+    // additionally demonstrates Claim 2 directly: a right-hand rail that DOES
+    // compose still gets the left-authored `ms-0` gutter, not a mirrored one.
+    expect(styles.marginTop).toBe("8px");
+    expect(styles.marginRight).toBe("8px");
+    expect(styles.marginInlineStart).toBe("0px");
+    expect(styles.borderTopLeftRadius).toBe("8px");
+  },
+};
+
 /** Control — deleted once R8 lands. Same measurement with the sidebar BEFORE the inset, the composing order `peer-*` actually supports. */
 export const LeftInsetControl: Story = {
   render: () => (
