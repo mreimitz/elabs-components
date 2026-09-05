@@ -29,22 +29,64 @@
  * unfixed.
  *
  * Start and end are a glyph PLUS a word in the accessible name (never a colour); rework is
- * a counted badge; the tri-state selection is an opacity, driven by the `data-selection`
- * attribute `map-model`'s `domAttributes` sets on React Flow's own node element, so a
- * consumer can select on `[data-selection="excluded"]` without reaching into this
- * component. An excluded node is deliberately NOT `aria-disabled`: it stays fully
- * operable (clicking it is how a reader filters it back in), and `activityAriaLabel`
- * already appends the word "excluded" to its accessible name, so the state reaches
- * assistive technology through real text rather than a lie about disablement.
+ * a counted badge; the tri-state selection is driven by the `data-selection` attribute
+ * `map-model`'s `domAttributes` sets on React Flow's own node element, so a consumer can
+ * select on `[data-selection="excluded"]` without reaching into this component. An
+ * excluded node is deliberately NOT `aria-disabled`: it stays fully operable (clicking it
+ * is how a reader filters it back in), and `activityAriaLabel` already appends the word
+ * "excluded" to its accessible name, so the state reaches assistive technology through
+ * real text rather than a lie about disablement.
+ *
+ * ## Ghosting an excluded node without erasing its boundary (#352)
+ *
+ * A single `opacity-35` on this whole subtree used to dim the card, its border AND its
+ * text together — since the card's fill barely differs from the canvas
+ * (white-on-near-white in the light theme), the 1px border was the ONLY structural cue
+ * telling a reader "there is still a card here", and dimming it along with everything else
+ * measured under WCAG's own 3:1 non-text floor, while the eyebrow/title text measured as
+ * low as 1.64:1/1.97:1 against 4.5:1 — a real axe-caught 1.4.3 failure, not a cosmetic one.
+ * This component now composes `FlowNode` UNCHANGED (no fork, no new prop on it) and reaches
+ * the ghost treatment from outside on two channels that never touch text:
+ *
+ * - **The card's border-colour token is locally overridden** (`--border` → `--border-strong`
+ *   on the wrapping frame div) so `FlowNode`'s own `border-border` utility resolves to the
+ *   stronger rung automatically — a plain CSS custom-property cascade trick, not a fork.
+ * - **The card's fill token is locally re-tinted** (`--flow-node` → a `card`/`surface-muted`
+ *   mix) so `FlowNode`'s `bg-flow-node` utility reads as visibly quieter. This is a
+ *   background-COLOUR change, not an opacity change — it cannot wash out the text painted
+ *   on top of it the way a translucent scrim would (a scrim was tried and rejected for
+ *   exactly this reason: it sits in the same paint layer as the text it was meant to spare).
+ *
+ * Eyebrow/title/subtitle text is never dimmed and never overlaid — see {@link GHOST_OPACITY}'s
+ * own docblock for why (0.35 over that text's already-modest contrast fails 4.5:1 in both
+ * themes). The meter's fill (a redundant, `aria-hidden`, non-text channel) still dims at the
+ * shared rung.
  */
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { CircleDot, Flag, Play, RefreshCw } from "lucide-react";
 import { Badge } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { FlowNode, type FlowNodeData } from "@elabs-ai/components-flow";
 import type { NodeProps } from "@xyflow/react";
 import { useProcessMapHover } from "./process-map-context";
-import { activityRole, type ProcessMapNode } from "./map-model";
+import { activityRole, GHOST_OPACITY, type ProcessMapNode } from "./map-model";
+
+/**
+ * Local override for the ghost frame: retargets `--border` (what `FlowNode`'s own
+ * `border-border` utility resolves through) to the stronger rung, and `--flow-node` (what
+ * `bg-flow-node` resolves through) to a quieter fill blended from two OTHER tokens
+ * (`--card`, `--surface-muted` — never `--flow-node` itself, which would be a
+ * self-referencing custom property and silently fail to apply) — WITHOUT touching
+ * `FlowNode`'s source or props. Both values cascade to `FlowNode`'s root div through the
+ * plain CSS custom-property lookup at the point each `var()` is used, same as any other
+ * theme override in this codebase (`.claude/rules/theming.md` §5). `--card` stands in for
+ * `--flow-node`'s own usual value here (the two are near-identical in both reference
+ * themes) so the blend reads as "quieter", not as a hue shift.
+ */
+const GHOST_FRAME_STYLE = {
+  "--border": "var(--border-strong)",
+  "--flow-node": "color-mix(in oklab, var(--card) 60%, var(--surface-muted) 40%)",
+} as CSSProperties;
 
 /**
  * The meter's fill as a mix of the recessed surface and the brand plate.
@@ -103,12 +145,7 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       data-selection={data.selectionState}
       data-role={activityRole(data).toLowerCase()}
       data-hover={isHovered ? "true" : undefined}
-      className={cn(
-        "relative flex flex-col gap-1 transition-opacity duration-fast ease-standard",
-        "motion-reduce:transition-none",
-        isDimmed && "opacity-35",
-        isHovered && "z-10",
-      )}
+      className={cn("relative flex flex-col gap-1", isHovered && "z-10")}
     >
       {data.reworkCount ? (
         <Badge
@@ -122,16 +159,20 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
         </Badge>
       ) : null}
 
-      <FlowNode {...props} type="brand" data={flowData} />
+      <div data-slot="process-activity-node-frame" style={isDimmed ? GHOST_FRAME_STYLE : undefined}>
+        <FlowNode {...props} type="brand" data={flowData} />
+      </div>
 
       {/* The metric's second, colour-free channel: bar LENGTH. `aria-hidden` because the
           same number is already printed in the subtitle above and repeated in the node's
-          accessible name — a third announcement would be noise, not access. */}
+          accessible name — a third announcement would be noise, not access. The fill (not
+          the text) is the one thing here that still dims at the shared ghost rung. */}
       <div
         aria-hidden="true"
         data-slot="process-activity-node-meter"
         data-percent={percent}
-        className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted"
+        className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted transition-opacity duration-fast ease-standard motion-reduce:transition-none"
+        style={isDimmed ? { opacity: GHOST_OPACITY } : undefined}
       >
         <div
           className="h-full rounded-full transition-[width] duration-base ease-standard motion-reduce:transition-none"
