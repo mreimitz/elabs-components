@@ -349,7 +349,7 @@ export function main(argv) {
   if (violations.length > 0) {
     console.error(
       `\n✖ tailwind-sources: ${violations.length} package/CSS-file gap(s) — a package with ` +
-        "Tailwind class strings is not named by a resolvable @source directive:\n",
+        "non-test, non-story .tsx source is not named by a resolvable @source directive:\n",
     );
     for (const v of violations) {
       console.error(`  - packages/${v.package} is missing from ${v.file}`);
@@ -364,7 +364,7 @@ export function main(argv) {
   }
 
   console.log(
-    `✔ tailwind-sources: every package with Tailwind class strings is covered across ` +
+    `✔ tailwind-sources: every package with non-test, non-story .tsx source is covered across ` +
       `${cssPaths.length} @source-bearing CSS file(s).`,
   );
   return 0;
