@@ -108,7 +108,7 @@ describe("AbstractionControls — Auto (the RM-052 acceptance criterion)", () =>
     expect(Math.round(60 * requested.activities)).toBeLessThanOrEqual(25);
   });
 
-  it("is a no-op fraction (1) when the graph is already within budget", async () => {
+  it("is a no-op fraction (1) when the graph is already within budget — and paths caps at 1 too", async () => {
     const user = userEvent.setup();
     const { onAbstractionChange } = renderControls({
       graph: { activities: fakeActivities(10) },
@@ -116,6 +116,25 @@ describe("AbstractionControls — Auto (the RM-052 acceptance criterion)", () =>
       autoMaxActivities: 25,
     });
     await user.click(screen.getByRole("button", { name: "Auto" }));
-    expect(onAbstractionChange).toHaveBeenCalledWith({ activities: 1 });
+    // activities: 1 would put the offset ("0.2 above") at 1.2 — proves the cap actually
+    // clamps rather than merely never being exercised.
+    expect(onAbstractionChange).toHaveBeenCalledWith({ activities: 1, paths: 1 });
+  });
+
+  it("sets paths 0.2 above the requested activities fraction — the roadmap's spec (RM-052 round 2, #227, F2 third piece)", async () => {
+    const user = userEvent.setup();
+    // Same over-budget shape as the first Auto test: 20 kept + 40 hidden, budget 25, so the
+    // heuristic requests an activities fraction well under 0.8 — the offset stays additive
+    // here rather than immediately hitting the cap tested above.
+    const { onAbstractionChange } = renderControls({
+      graph: { activities: fakeActivities(20) },
+      hiddenCounts: { activities: 40, paths: 0 },
+      autoMaxActivities: 25,
+    });
+    await user.click(screen.getByRole("button", { name: "Auto" }));
+    const [call] = onAbstractionChange.mock.calls;
+    const requested = call![0] as { activities: number; paths: number };
+    expect(requested.activities).toBeLessThan(0.8);
+    expect(requested.paths).toBeCloseTo(requested.activities + 0.2, 10);
   });
 });

@@ -34,6 +34,17 @@ import { computeAutoAbstraction } from "./auto-abstraction";
 
 const TICKS = [25, 50, 75, 100] as const;
 
+/**
+ * How far above the "Auto" activities fraction the paths fraction is set — the roadmap's
+ * "paths % = 0.2 above the activities %" (RM-052 round 2, #227, F2 third piece). `abstractGraph`
+ * only considers an edge a candidate to keep once BOTH its endpoints survive the activities
+ * cut (`core/abstract-graph.ts`'s `candidateEdges` filter), so that candidate pool is already
+ * thinner than the full edge set once activities are cut — applying the SAME fraction to it
+ * would keep noticeably fewer edges than activities were kept. The offset compensates for
+ * that, without a second search over the real graph.
+ */
+const AUTO_PATHS_OFFSET = 0.2;
+
 function toPercent(fraction: number): number {
   return Math.round(fraction * 100);
 }
@@ -118,7 +129,10 @@ export const AbstractionControls = forwardRef<HTMLDivElement, AbstractionControl
       const result = computeAutoAbstraction(totalActivities, {
         maxActivities: autoMaxActivities,
       });
-      onAbstractionChange({ activities: result.activities });
+      onAbstractionChange({
+        activities: result.activities,
+        paths: Math.min(1, result.activities + AUTO_PATHS_OFFSET),
+      });
     }, [graph.activities.length, hiddenCounts.activities, autoMaxActivities, onAbstractionChange]);
 
     // Two independently-pluralized fragments, joined — `t()` selects its plural category
