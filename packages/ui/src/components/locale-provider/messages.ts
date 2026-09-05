@@ -656,4 +656,24 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // means promotion). The empty state reuses the generic `noResults` key
   // rather than minting a second one.
   "terminal.slashMenu.listLabel": "Commands",
+  // ── @elabs-ai/components-process ──────────────────────────────────────────────────────────
+  // ProcessMap (RM-051). Namespaced `process.<area>.<key>` like every other
+  // package; a sibling package's keys are never reused across the boundary.
+  // The table twin's column headers are here because that table IS the
+  // accessible reading of the canvas — an untranslated header would leave a
+  // screen-reader user with numbers and no measure name.
+  "process.map.loading": "Discovering the process…",
+  "process.map.empty": "No activities to map",
+  "process.map.emptyBody":
+    "This log has no events, or the abstraction hid every activity. Widen the abstraction or load a different log.",
+  "process.map.label": "Process map",
+  "process.map.filter": "Filter…",
+  "process.map.activityCaption": "Activities — {metric} per activity",
+  "process.map.transitionCaption": "Transitions — {metric} per directly-follows pair",
+  "process.map.columnActivity": "Activity",
+  "process.map.columnRole": "Role",
+  "process.map.columnRework": "Rework",
+  "process.map.columnFrom": "From",
+  "process.map.columnTo": "To",
+  "process.map.columnShape": "Shape",
 };

@@ -59,7 +59,14 @@ export default defineConfig([
     format: ["esm"],
     dts: true,
     sourcemap: true,
-    clean: true,
+    // NOTE: no pass cleans. tsup runs the four configs concurrently, so a
+    // `clean: true` here races the other passes' output and non-deterministically
+    // wipes their .d.ts — tsup's declaration build has its own unscoped clean that
+    // the outer clean (which deliberately excludes *.d.ts) does not share, so
+    // whichever pass rolls its declarations up LAST deletes every one written
+    // before it. The build script does `rm -rf dist` up front instead. Passing an
+    // array to `clean` does not help: the dts-side clean only tests it for truthiness.
+    clean: false,
     // esbuild strips per-module "use client" directives when it bundles, so the
     // directives in src/ never reach dist/. Re-assert it for the whole bundle.
     banner: { js: '"use client";' },
@@ -73,9 +80,7 @@ export default defineConfig([
     format: ["esm"],
     dts: true,
     sourcemap: true,
-    clean: false, // the other pass already cleaned; a second clean:true here would
-    // race it (both passes run concurrently) and non-deterministically wipe the
-    // other's output.
+    clean: false, // see the NOTE on the first pass — no pass cleans.
     external: ["react", "react-dom"],
     onSuccess: pointCoreBundleAtBuiltWorker,
   },

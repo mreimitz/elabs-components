@@ -15,6 +15,34 @@
   carries its own darker rung. A new `pnpm chart-hairline:check` gate, with
   its own self-test, keeps it that way.
 
+- Added: `ProcessMap` — the directly-follows process map, the first React view
+  in `@elabs-ai/components-process` (#226). Hand it a discovered `ProcessGraph`
+  or just an event log and it discovers one for you, then paints activities as
+  nodes and directly-follows relations as edges from a single metric choice
+  (any frequency reading or duration aggregate, with an optional second reading
+  printed beside the first). It is composed entirely from
+  `@elabs-ai/components-flow` — the canvas, the dagre layout, the zoom controls,
+  the minimap and the continuous legend are all that package's, and the two new
+  pieces here (`ProcessActivityNode`, `ProcessTransitionEdge`) are thin
+  process-shaped wrappers over `FlowNode`, `FlowWeightedEdge` and
+  `FlowSelfLoopEdge` rather than new drawing code. Every reading reaches the
+  reader through at least two channels, so nothing is legible in colour alone:
+  an edge carries its value as stroke width AND as a printed pill, a node prints
+  its value above a meter bar whose length encodes the same number, self-loops
+  are a closed arc, back-edges are dashed, and an element outside the current
+  selection is dimmed AND `aria-disabled`. Clicking or pressing Enter on a node
+  or an edge selects it and dims everything it does not touch; right-clicking it
+  or pressing `F` opens a filter menu whose four intents are exactly the shapes
+  `/core`'s `filterLog` accepts, so an app can act on one without translating
+  it. Keyboard order follows the picture: `Tab` visits the activities in the
+  order they are laid out (down the process, then across), each arrow is a
+  single stop rather than two, and closing the filter menu puts you back on the
+  activity or arrow you opened it from instead of on the toolbar button. `tableView` renders the same graph as two tables built from the same
+  formatter as the canvas, so the accessible twin cannot drift from the picture.
+  Switching the metric, selecting, or hovering never re-runs the layout: dagre's
+  output is cached on the graph's structure alone, re-layouts are debounced, and
+  node positions slide with a motion-reduce-aware CSS transition instead of
+  remounting.
 - Added: `@elabs-ai/components-process` gains its first Storybook presence and
   test-authoring surface (#228). A new `./test` subpath (mirroring
   `@elabs-ai/components-charts`'s identical pattern) ships contract-checked
