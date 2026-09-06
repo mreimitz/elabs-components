@@ -37,10 +37,34 @@
   (#340). Group labels inside the collapsed icon rail are now actually
   removed from layout instead of merely faded to zero opacity, closing the
   unexplained gaps that used to open up between icon groups (#341). And
-  composing a `SidebarProvider variant="inset"` together with a `Sidebar
-variant="inset"` now resolves the inset's margin/radius/shadow treatment
-  deterministically from the sidebar's own state instead of racing on
-  stylesheet order (#342).
+  composing a `SidebarProvider variant="inset"` together with a
+  `Sidebar variant="inset"` now resolves the inset's margin/radius/shadow
+  treatment deterministically from the sidebar's own state instead of racing
+  on stylesheet order (#342).
+
+- Changed: the four app-shell registry blocks are now designed, believable
+  starting points rather than primitive demos — each ships a real screen
+  (working top bar, populated nav, real content) alongside a bare-frame
+  story to build from. `app-shell` (registry title "App shell") is the
+  `Layout/App Shell/Flagship` story; `sidebar-02`
+  ("App shell — dashboard inset") is `Layout/App Shell/Dashboard`;
+  `sidebar-04` ("App shell — mail") is `Layout/App Shell/Mail`; and
+  `sidebar-05` ("App shell — dual rail") is `Layout/App Shell/Double-Sided`
+  — all four now sit beside the `@elabs-ai/components-ui` `AppShell`
+  primitive's own `Layout/App Shell/Minimal` story in one Storybook group.
+  `sidebar-02`, `sidebar-04` and `sidebar-05` also moved: they no longer
+  live under `packages/ui/src/blocks/`, which is gone, but under
+  `registry/blocks/`, consumed copy-own exactly as before. They were never
+  exported from the `@elabs-ai/components-ui` barrel, so this removes no
+  public export — only a source-location change for anyone who deep-imported
+  the block files directly. Five component stories were also retitled to the
+  PascalCase convention the `storybook-groups` gate enforces, which changes
+  their story ids: `Navigation/Command Trigger` →
+  `Navigation/CommandTrigger`, `Navigation/Nav Notifications` →
+  `Navigation/NavNotifications`, `Navigation/Skip Link` →
+  `Navigation/SkipLink`, `Layout/Context Rail` → `Layout/ContextRail`, and
+  `Layout/Side Dock` → `Layout/SideDock` — a consumer with bookmarked
+  Storybook URLs or story-id references needs to update them.
 
 - Changed: every piece of chart _furniture_ — grid rows and columns, axis
   rules, scatter drop lines, dumbbell tracks, tree links, radar rings,
