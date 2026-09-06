@@ -53,18 +53,22 @@ export const Default: Story = {
 };
 
 /**
- * The top-bar placement. `side="bottom" align="end"` puts the menu under the
- * bell and flush with its outer edge; `my-0` drops the rail inset that would
- * otherwise push it 24px clear of the bar. Asserted on Radix's own resolved
- * `data-side`, which reports where the menu ACTUALLY landed after collision
- * handling — a class-name assertion would pass on a menu that flipped.
+ * The top-bar placement: `side="bottom" align="end"` puts the menu under the
+ * bell and flush with its outer edge. The caller passes NOTHING else — the
+ * rail's 24px vertical inset is derived from `side` inside the component, so a
+ * bottom-side menu drops it on its own and there is no inset to cancel here.
+ * (`className` styles the bell TRIGGER, not the portalled menu, so a `my-0`
+ * override would land on the wrong element anyway.)
+ *
+ * Asserted on Radix's own resolved `data-side`/`data-align`, which report where
+ * the menu ACTUALLY landed after collision handling — a class-name assertion
+ * would pass on a menu that flipped back across the controls beside it.
  */
 export const TopBarPlacement: Story = {
   args: {
     notifications: NOTIFICATIONS,
     side: "bottom",
     align: "end",
-    className: "my-0",
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
