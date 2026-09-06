@@ -1,23 +1,233 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { SidebarInset, SidebarProvider } from "@elabs-ai/components-ui";
-import { DashboardSidebar } from "@/components/sidebar-02/app-sidebar";
+import { expect, waitFor } from "storybook/test";
+import { ThemeProvider } from "@elabs-ai/components-tokens";
+import DashboardShell from "@/components/sidebar-02/dashboard-shell";
 
 const meta = {
   title: "Layout/App Shell/Dashboard",
-  parameters: { layout: "fullscreen" },
-} satisfies Meta;
+  tags: ["autodocs"],
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "The classic left-sidebar dashboard: one collapsible nav rail beside a floating inset content surface. Reach for it when the whole product fits in one navigation tree and the screen is a briefing — figures, a trend, and what changed. When a screen needs a second column of records between the nav and the content (a mail-style list, a queue), reach for `Layout/App Shell/Flagship` instead; it carries four zones and a details rail.",
+      },
+    },
+  },
+  // The top bar's <ThemeSwitcher /> reads the @elabs-ai/components-tokens React
+  // context, so the screen needs a real provider — the global preview decorator
+  // only writes the `data-theme` attribute. It mounts DEEPER than the preview's
+  // own theme boundary, so a `STORYBOOK_THEME=<slug>` sweep still wins.
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+} satisfies Meta<typeof DashboardShell>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/**
+ * The believable screen: the store’s own navigation on the left, and the three
+ * answers a morning check-in needs — the day’s figures, the revenue trend, and
+ * what happened since the last look.
+ */
 export const Default: Story = {
-  render: () => (
-    <SidebarProvider>
-      <div className="relative flex h-dvh w-full">
-        <DashboardSidebar />
-        <SidebarInset className="flex flex-col p-6 text-body text-muted-foreground">
-          Dashboard content area (collapsible icon sidebar — press ⌘/Ctrl+B).
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
-  ),
+  render: () => <DashboardShell activePath="/" />,
+  play: async ({ canvasElement }) => {
+    // The three content regions the screen exists to hold.
+    await expect(canvasElement.querySelector('section[aria-label="Key figures"]')).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="dashboard-revenue"]')).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="dashboard-activity"]')).toBeVisible();
+    // R1 active state: the current route is lit, an unrelated one is not.
+    await expect(canvasElement.querySelector('a[href="/"]')).toHaveAttribute("data-active", "true");
+    await expect(canvasElement.querySelector('a[href="/orders"]')).toHaveAttribute(
+      "data-active",
+      "false",
+    );
+    // The collapsed-rail mirror is the OTHER half of `Collapsed`'s lock: with
+    // the rail expanded it must be off screen, so exactly one copy of a
+    // sub-route anchor is ever presented. Asserted here rather than there
+    // because a one-sided visibility check passes on code that never hides it.
+    await expect(
+      canvasElement.querySelector(
+        '[data-slot="dashboard-nav-collapsed-item"] a[href="/orders/open"]',
+      ),
+    ).not.toBeVisible();
+  },
+};
+
+/**
+ * A nested route lights its PARENT nav entry, and the root entry stays dark —
+ * the guard in `isPathActive` that stops `/` matching every route.
+ */
+export const NestedRoute: Story = {
+  render: () => <DashboardShell activePath="/orders/open" />,
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('a[href="/orders"]')).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    await expect(canvasElement.querySelector('a[href="/"]')).toHaveAttribute(
+      "data-active",
+      "false",
+    );
+    // Depth 2, so the trail earns its row — one crumb would be a page title
+    // wearing a separator.
+    await expect(canvasElement.querySelector('nav[aria-label="breadcrumb"]')).toBeInTheDocument();
+  },
+};
+
+/**
+ * Chrome only: the frame with an empty content slot. The lock is the shell’s
+ * standards — a skip link, one `<main id="main-content">` focus target, the
+ * named primary nav and the command trigger — so a later refactor that quietly
+ * drops one fails here rather than in review.
+ */
+export const Frame: Story = {
+  render: () => <DashboardShell activePath="/" emptyContent />,
+  play: async ({ canvasElement }) => {
+    await expect(
+      canvasElement.querySelector('[data-slot="dashboard-top-bar"]'),
+    ).toBeInTheDocument();
+    await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeInTheDocument();
+    await expect(canvasElement.querySelector('[data-slot="sidebar"]')).toBeInTheDocument();
+    // The command palette opener lives in the bar at every width.
+    await expect(canvasElement.querySelector('[data-slot="command-trigger"]')).toBeVisible();
+    // The skip link points at the one main landmark, and that landmark is a
+    // real focus target. `toHaveAttribute` reads the ATTRIBUTE — the tabIndex
+    // IDL getter answers -1 for a plain <main> whether or not it is set.
+    const skip = canvasElement.querySelector('[data-slot="skip-link"]');
+    await expect(skip).toBeInTheDocument();
+    await expect(skip).toHaveAttribute("href", "#main-content");
+    await expect(canvasElement.querySelectorAll("main")).toHaveLength(1);
+    const main = canvasElement.querySelector("main#main-content");
+    await expect(main).toBeInTheDocument();
+    await expect(main).toHaveAttribute("tabindex", "-1");
+    // `emptyContent` hands the screen slot back to the consumer: the shell
+    // still paints its own scroll port, but nothing is inside it.
+    await expect(
+      canvasElement.querySelector('[data-slot="dashboard-content"]'),
+    ).toBeEmptyDOMElement();
+  },
+};
+
+/**
+ * The icon rail: labels clipped away, accessible names and sub-routes intact.
+ */
+export const Collapsed: Story = {
+  render: () => <DashboardShell activePath="/" defaultSidebarOpen={false} />,
+  play: async ({ canvasElement }) => {
+    // Assert the rail is ACTUALLY collapsed first — `data-collapsible` is only
+    // written while collapsed, so it is a real discriminator rather than an
+    // attribute that reads the same in both states.
+    const rail = canvasElement.querySelector('[data-slot="sidebar"]');
+    await expect(rail).toHaveAttribute("data-state", "collapsed");
+    await expect(rail).toHaveAttribute("data-collapsible", "icon");
+    // Still fully navigable by name — a collapsed rail must not become a
+    // column of unnamed icons.
+    await expect(canvasElement.querySelector('a[href="/"]')).toHaveAccessibleName("Overview");
+    await expect(canvasElement.querySelector('a[href="/orders"]')).toHaveAccessibleName("Orders");
+    await expect(canvasElement.querySelector('a[href="/analytics"]')).toHaveAccessibleName(
+      "Analytics",
+    );
+    // …including a sub-route, which the collapsed-rail mirror keeps one click
+    // away. Targeted by its own slot: the expanded sub-menu anchor shares the
+    // href and wins `querySelector` by DOM order.
+    const mirror = canvasElement.querySelector(
+      '[data-slot="dashboard-nav-collapsed-item"] a[href="/orders/open"]',
+    );
+    await expect(mirror).toBeVisible();
+    await expect(mirror).toHaveAccessibleName("Open");
+  },
+};
+
+/**
+ * A phone: the rail hands itself to a drawer, the content surface takes the
+ * whole width, and the page name survives beside the control cluster.
+ */
+export const Narrow: Story = {
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: () => <DashboardShell activePath="/" />,
+  play: async ({ canvasElement }) => {
+    // Measured under this story's own viewport global: `window.innerWidth` is
+    // 320, so the shell takes its real small-screen branch.
+    // The rail handed itself to a closed `Sheet`, which is portalled and
+    // unmounted while closed: the docked rail is gone from the canvas.
+    await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeNull();
+    await expect(canvasElement.querySelector('[data-slot="sidebar"]')).toBeNull();
+    // …but the control that opens it is still there.
+    await expect(canvasElement.querySelector('[data-slot="sidebar-trigger"]')).toBeVisible();
+    // The page NAME survives the phone — the bar never becomes a row of icons
+    // naming nothing.
+    const title = canvasElement.querySelector('[data-slot="dashboard-top-bar-title"]');
+    await expect(title).toBeVisible();
+    // What stands down at this width is the pure convenience: appearance. What
+    // does not is search — the one control a phone user still needs to get
+    // anywhere. Asserted as rendered visibility rather than a class name, so a
+    // breakpoint edit that silently reverses the pair fails here.
+    await expect(canvasElement.querySelector('[data-slot="command-trigger"]')).toBeVisible();
+    // `ThemeSwitcher` declares no `data-slot`, so it is addressed by the one
+    // stable thing it does declare — its control's accessible name, which both
+    // of its modes prefix with "Theme".
+    await expect(canvasElement.querySelector('[aria-label^="Theme"]')).not.toBeVisible();
+  },
+};
+
+/**
+ * Nothing has arrived yet. Every region renders its own layout-shaped skeleton
+ * at the size the real content will occupy, announced once per region.
+ */
+export const Loading: Story = {
+  render: () => <DashboardShell activePath="/" loading />,
+  play: async ({ canvasElement }) => {
+    const activityStatus = canvasElement
+      .querySelector('[data-slot="dashboard-activity"]')
+      ?.querySelector('[role="status"]');
+    await expect(activityStatus).toBeInTheDocument();
+    await expect(activityStatus).toHaveTextContent("Loading activity…");
+    // ONE loading treatment on the screen: no real figure may be legible while
+    // the rest of the page is a skeleton.
+    await expect(canvasElement).not.toHaveTextContent("Meridian Goods refund approved");
+  },
+};
+
+/**
+ * A first day, or a filter that matched nothing: each region answers for itself
+ * with a real empty state — a glyph, a title, one sentence and one way onward.
+ */
+export const Empty: Story = {
+  render: () => <DashboardShell activePath="/" metrics={[]} revenue={[]} activity={[]} />,
+  play: async ({ canvas, canvasElement }) => {
+    // `waitFor`, because `StatePanel` enters on `animate-in fade-in`: for the
+    // first frames of its entrance the panel really is at opacity 0, so a
+    // synchronous `toBeVisible()` races the animation and fails on correct
+    // code. Asserting `toBeInTheDocument()` instead would dodge the race by
+    // giving up the property worth locking — `getByText` already throws when
+    // the node is absent, so that assertion can never fail on its own.
+    await waitFor(() => expect(canvas.getByText("No activity yet")).toBeVisible());
+    // An empty state that only reports absence leaves the reader on a dead end
+    // — the anatomy includes exactly one way onward.
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelector('[data-slot="dashboard-activity"] a[href="/orders"]'),
+      ).toBeVisible(),
+    );
+    // A metric row with no tiles renders no landmark at all: an empty region
+    // announces a section that has nothing to say.
+    await expect(canvasElement.querySelector('section[aria-label="Key figures"]')).toBeNull();
+    // The outline must not skip a level. `StatePanel`'s title is a hard-coded
+    // <h3>, and `ChartCard` renders its own title through a `CardTitle` that is
+    // a <div> unless the block hands it a heading element — so the empty screen
+    // is exactly where an h1 -> h3 jump appears. axe's `heading-order` catches
+    // it in the a11y pass; this asserts the shape directly, so a regression
+    // names its cause instead of pointing at a CSS selector.
+    const levels = Array.from(canvasElement.querySelectorAll("h1, h2, h3, h4, h5, h6")).map(
+      (heading) => Number(heading.tagName.slice(1)),
+    );
+    await expect(levels).toEqual([1, 2, 3, 2, 3]);
+  },
 };

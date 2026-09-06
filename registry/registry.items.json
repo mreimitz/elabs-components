@@ -76,7 +76,7 @@
       "type": "registry:block",
       "root": "registry/blocks/sidebar-02",
       "title": "App shell — dashboard inset",
-      "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so.",
+      "description": "The classic left-sidebar dashboard: a collapsible-icon nav rail with a tenant switcher and nav groups beside a floating inset surface carrying a metric row, a revenue trend and an overnight activity feed. Skip link, one main landmark, active-route indicator and command trigger included.",
       "categories": ["sidebar", "app-shell"]
     },
     {

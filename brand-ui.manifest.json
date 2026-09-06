@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T19:10:13.183Z",
+  "generatedAt": "2026-09-06T01:26:06.616Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -330,7 +330,7 @@
       "name": "sidebar-02",
       "type": "registry:block",
       "title": "App shell — dashboard inset",
-      "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so."
+      "description": "The classic left-sidebar dashboard: a collapsible-icon nav rail with a tenant switcher and nav groups beside a floating inset surface carrying a metric row, a revenue trend and an overnight activity feed. Skip link, one main landmark, active-route indicator and command trigger included."
     },
     {
       "name": "sidebar-04",
