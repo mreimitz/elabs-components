@@ -326,7 +326,12 @@ export const Sidebar = forwardRef<
 
 export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function SidebarTrigger({ className, onClick, ...props }, ref) {
-    const { toggleSidebar } = useSidebar();
+    const { isMobile, open, openMobile, toggleSidebar } = useSidebar();
+    // `toggleSidebar` flips `openMobile` below the mobile breakpoint and `open`
+    // above it, so the state this button EXPOSES has to be read the same way —
+    // reporting the desktop `open` on a mobile viewport would announce the
+    // opposite of what the button does.
+    const expanded = isMobile ? openMobile : open;
     return (
       <Button
         ref={ref}
@@ -334,6 +339,18 @@ export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeo
         data-slot="sidebar-trigger"
         variant="ghost"
         size="icon"
+        // A disclosure control must EXPOSE the state it toggles (WCAG 4.1.2).
+        // This button's whole accessible name is the static "Toggle Sidebar"
+        // below, so without this attribute nothing tells a screen-reader user
+        // whether the rail is currently open — and no axe rule catches it,
+        // because a <button> has no REQUIRED expanded state.
+        //
+        // `aria-controls` is deliberately omitted, not forgotten: on mobile the
+        // sidebar renders into a `Sheet` that is not in the document while
+        // closed, so the attribute would point at an absent id — worse than
+        // leaving it off. Spread last, so a caller that really does own a
+        // stable target can still supply both.
+        aria-expanded={expanded}
         className={cn("size-7", className)}
         onClick={(event) => {
           onClick?.(event);
@@ -791,9 +808,21 @@ export function SidebarMenuSkeleton({
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
       {...props}
     >
-      {showIcon && <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
+      {/* `bg-sidebar-accent`, overriding `Skeleton`'s own `bg-muted`. `--muted`
+          is a CANVAS token: in the light theme it is a near-white
+          `oklch(0.968 …)` sitting on this sidebar's dark `oklch(0.3 …)` ground,
+          which measures 12.42:1 — the placeholder becomes the loudest thing on
+          a screen that has nothing loaded yet. The sidebar's own quiet rung
+          measures 1.26:1 on light and 1.29:1 on dark, i.e. a placeholder in
+          both themes instead of an inversion in one. */}
+      {showIcon && (
+        <Skeleton
+          className="size-4 rounded-md bg-sidebar-accent"
+          data-sidebar="menu-skeleton-icon"
+        />
+      )}
       <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1"
+        className="h-4 max-w-(--skeleton-width) flex-1 bg-sidebar-accent"
         data-sidebar="menu-skeleton-text"
         style={{ "--skeleton-width": width } as CSSProperties}
       />

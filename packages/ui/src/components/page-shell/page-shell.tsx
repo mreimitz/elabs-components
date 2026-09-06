@@ -111,7 +111,14 @@ export const PageShell = forwardRef<HTMLDivElement, PageShellProps>(function Pag
       className={cn(
         "w-full px-4 py-6 sm:px-6 lg:px-8",
         scrollMap[scroll],
-        scroll === "content" && "focus-ring",
+        // `focus-ring-inset`, NOT `focus-ring`: `scroll="content"`'s own doc
+        // above tells the caller to use it inside a `SidebarInset`, whose
+        // `overflow-hidden` clips both layers of the plain rung — they are
+        // drawn OUTSIDE the element's box. A consumer following that
+        // instruction would get a focusable scroll port with no visible focus
+        // indicator at all. Same reasoning, verbatim, as the app-shell blocks'
+        // own scroll ports.
+        scroll === "content" && "focus-ring-inset",
         headerGutter && "[--page-shell-header-gutter:--spacing(12)]",
         className,
       )}

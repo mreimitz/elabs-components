@@ -166,9 +166,28 @@ export const MetricCard = forwardRef<HTMLDivElement, MetricCardProps>(function M
           {loading ? (
             <Skeleton className="h-4 w-24" />
           ) : (
-            <span className="text-body font-medium text-muted-foreground">{label}</span>
+            /* `min-w-0` + `truncate`, not just the text utility: a flex child's
+               default `min-width: auto` refuses to shrink below its content, so
+               without it the label OVERFLOWS the row and `Card`'s own
+               `overflow-hidden` hard-clips it — characters lost mid-word, no
+               ellipsis, no title. Measured on a 230px pane: "Awaiting approval"
+               rendered as "Awaiting approva". See interaction-guidelines.md
+               § Content handling ("flex children need `min-w-0`"). `title` only
+               when the label is a string — there is nothing to put in the
+               attribute otherwise, and the ellipsis needs a way back to the
+               full words. */
+            <span
+              className="min-w-0 truncate text-body font-medium text-muted-foreground"
+              title={typeof label === "string" ? label : undefined}
+            >
+              {label}
+            </span>
           )}
-          {icon ? <span className="text-muted-foreground [&_svg]:size-4">{icon}</span> : null}
+          {/* `shrink-0`: the icon is a fixed 16px mark, so the LABEL is what
+              gives way when the row runs out of width. */}
+          {icon ? (
+            <span className="shrink-0 text-muted-foreground [&_svg]:size-4">{icon}</span>
+          ) : null}
         </div>
         <div className="flex items-baseline gap-2">
           {loading ? (

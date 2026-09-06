@@ -186,8 +186,22 @@ describe("PageShell", () => {
     it('scroll="content" defaults to keyboard-operable (WCAG 2.1.1 / axe scrollable-region-focusable)', () => {
       const { container } = render(<PageShell scroll="content">body</PageShell>);
       const root = container.firstElementChild as HTMLElement;
-      expect(root.tabIndex).toBe(0);
-      expect(root.className).toContain("focus-ring");
+      // `getAttribute`, never the `tabIndex` IDL getter: that getter answers a
+      // DEFAULT (-1 here, 0 for natively focusable elements) whether or not the
+      // attribute was ever written, so `expect(root.tabIndex).toBe(-1)` and the
+      // "gains no tab stop" cases below would pass on a component that emits
+      // nothing at all.
+      expect(root.getAttribute("tabindex")).toBe("0");
+      // `classList.contains` is an EXACT token match. `toContain("focus-ring")`
+      // is a substring test that `focus-ring-inset` satisfies, so it could not
+      // tell the two rungs apart — it passed before this fix and would pass
+      // after it, proving nothing either way.
+      expect(root.classList.contains("focus-ring-inset")).toBe(true);
+      // The plain rung must be ABSENT, not merely accompanied: both of its
+      // layers are drawn outside the element's box, and `scroll="content"`'s
+      // own doc sends callers to put this inside a `SidebarInset`, whose
+      // `overflow-hidden` clips exactly that.
+      expect(root.classList.contains("focus-ring")).toBe(false);
     });
 
     it('scroll="content" lets a caller opt out of the default tab stop', () => {
@@ -197,14 +211,15 @@ describe("PageShell", () => {
         </PageShell>,
       );
       const root = container.firstElementChild as HTMLElement;
-      expect(root.tabIndex).toBe(-1);
+      expect(root.getAttribute("tabindex")).toBe("-1");
     });
 
     it('scroll="fill" does not gain a default tab stop — the child scroll region owns it', () => {
       const { container } = render(<PageShell scroll="fill">body</PageShell>);
       const root = container.firstElementChild as HTMLElement;
       expect(root.getAttribute("tabindex")).toBeNull();
-      expect(root.className).not.toContain("focus-ring");
+      expect(root.classList.contains("focus-ring")).toBe(false);
+      expect(root.classList.contains("focus-ring-inset")).toBe(false);
     });
 
     it('scroll="body" (default) gains no tabIndex attribute — byte-identical', () => {

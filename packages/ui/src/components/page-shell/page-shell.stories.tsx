@@ -147,8 +147,16 @@ export const ScrollContent: Story = {
     await expect(getComputedStyle(shell!).overflowY).toBe("auto");
 
     // scroll="content" makes this element the scroll port, so it defaults to
-    // keyboard-operable (WCAG 2.1.1, axe `scrollable-region-focusable`).
-    await expect(shell!.tabIndex).toBe(0);
+    // keyboard-operable (WCAG 2.1.1, axe `scrollable-region-focusable`). Read
+    // the ATTRIBUTE, not the `tabIndex` IDL getter — the getter reports a
+    // default for an element that carries no attribute at all.
+    await expect(shell!.getAttribute("tabindex")).toBe("0");
+    // And the rung is the inset one: `scroll="content"` is documented for use
+    // inside a `SidebarInset`, whose `overflow-hidden` clips both layers of the
+    // plain rung. `classList` is an exact token match, so this cannot be
+    // satisfied by `focus-ring-inset` being a superstring of `focus-ring`.
+    await expect(shell!.classList.contains("focus-ring-inset")).toBe(true);
+    await expect(shell!.classList.contains("focus-ring")).toBe(false);
 
     const topbarTopBefore = topbar!.getBoundingClientRect().top;
     const markerTopBefore = marker!.getBoundingClientRect().top;

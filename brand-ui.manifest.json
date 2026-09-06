@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T06:38:27.957Z",
+  "generatedAt": "2026-09-06T10:16:37.936Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -32270,6 +32270,12 @@
               "optional": true,
               "type": "string",
               "description": "Class for the scrolling main content region."
+            },
+            {
+              "name": "mainId",
+              "optional": true,
+              "type": "string",
+              "description": "The `<main>` region's id, and the skip link's target. Override it when a page mounts more than one shell — two elements sharing `main-content` would make the skip link ambiguous. @default \"main-content\""
             }
           ]
         },
@@ -34771,6 +34777,12 @@
               "optional": true,
               "type": "ReactNode",
               "description": "Optional element rendered above the title (eyebrow / breadcrumbs)."
+            },
+            {
+              "name": "as",
+              "optional": true,
+              "type": "\"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\"",
+              "description": "The heading LEVEL the title contributes to the document outline. The visual (`text-title`) is identical for every value — pick the level the page's structure calls for, not the size you want (WCAG 1.3.1). Use `as=\"h1\"` when this header titles the PAGE (a screen whose route it names); leave it at the default when it titles a section INSIDE a page that already has an `<h1>` elsewhere. @default \"h2\""
             },
             {
               "name": "className",

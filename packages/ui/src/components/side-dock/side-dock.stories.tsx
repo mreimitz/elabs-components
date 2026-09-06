@@ -47,6 +47,23 @@ export const Default: Story = {
 
     await userEvent.tab();
     await expect(closeButton).toHaveFocus();
+
+    /* The scroll port sits BETWEEN the two, and that is the point: a dock's
+     * children are caller-supplied and routinely have no focusable descendant,
+     * so before this stop existed a keyboard user could reach the close button
+     * and the resize handle but never the region that actually scrolls (WCAG
+     * 2.1.1, axe `scrollable-region-focusable`). `getAttribute`, not the
+     * `tabIndex` IDL getter, which reads -1 whether or not the attribute is
+     * there; and `classList`, because `toHaveClass` is a subset check that
+     * would pass with BOTH rungs applied — the inset rung is required here
+     * because the dock container clips anything drawn outside this box. */
+    const body = canvasElement.querySelector('[data-slot="side-dock-body"]') as HTMLElement;
+    await userEvent.tab();
+    await expect(body).toHaveFocus();
+    await expect(body.getAttribute("tabindex")).toBe("0");
+    await expect(body.classList.contains("focus-ring-inset")).toBe(true);
+    await expect(body.classList.contains("focus-ring")).toBe(false);
+
     await userEvent.tab();
     await expect(handle).toHaveFocus();
 

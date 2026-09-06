@@ -4,12 +4,14 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   type ComponentProps,
   type CSSProperties,
   type ReactNode,
+  type Ref,
 } from "react";
 
 import { cn } from "../../lib/cn";
@@ -112,6 +114,26 @@ interface ContextRailSwitcherProps {
   orientation: "row" | "column";
 }
 
+// The count badge's own positioning, kept out of the JSX because it differs on
+// two axes (orientation × collapsed) and is the whole subject of the fix below.
+//
+// It is rendered as a SIBLING of `SidebarMenuButton`, not a child.
+// `sidebarMenuButtonVariants`' base class string carries `overflow-hidden`
+// (sidebar.tsx), so a child at a negative offset (`-end-1 -top-1`) is clipped
+// by its own parent — which contradicted `ContextRailSection.count`'s promise
+// that the count stays visible in the collapsed 48px strip, the state the badge
+// exists for. `SidebarMenuItem` is already `relative` and does not clip, so the
+// same offsets resolve against the item box instead and paint in full.
+const COUNT_BADGE_BASE =
+  "pointer-events-none absolute inline-flex items-center justify-center rounded-full bg-sidebar-accent text-meta text-sidebar-accent-foreground tabular-nums";
+// Row orientation, expanded: the badge sits at the end of the full-width row,
+// vertically centred — visually where `ms-auto` used to place it inside the
+// button, without depending on the button's own box.
+const COUNT_BADGE_ROW =
+  "end-2 top-1/2 h-5 min-w-5 -translate-y-1/2 px-1 group-data-[collapsible=icon]:end-auto group-data-[collapsible=icon]:top-auto group-data-[collapsible=icon]:-end-1 group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:translate-y-0 group-data-[collapsible=icon]:px-0.5";
+// Column orientation (the narrow strip) is always the icon-sized corner badge.
+const COUNT_BADGE_COLUMN = "-end-1 -top-1 h-4 min-w-4 px-0.5";
+
 function ContextRailSwitcher({
   sections,
   activeId,
@@ -167,20 +189,19 @@ function ContextRailSwitcher({
                 {section.icon}
               </span>
               <span className="sr-only">{accessibleName}</span>
-              {section.count != null && (
-                <span
-                  data-slot="context-rail-count"
-                  aria-hidden="true"
-                  className={
-                    orientation === "row"
-                      ? "ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-accent px-1 text-meta text-sidebar-accent-foreground tabular-nums group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-end-1 group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:px-0.5"
-                      : "absolute -end-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-sidebar-accent px-0.5 text-meta text-sidebar-accent-foreground tabular-nums"
-                  }
-                >
-                  {section.count}
-                </span>
-              )}
             </SidebarMenuButton>
+            {section.count != null && (
+              <span
+                data-slot="context-rail-count"
+                aria-hidden="true"
+                className={cn(
+                  COUNT_BADGE_BASE,
+                  orientation === "row" ? COUNT_BADGE_ROW : COUNT_BADGE_COLUMN,
+                )}
+              >
+                {section.count}
+              </span>
+            )}
           </SidebarMenuItem>
         );
       })}
@@ -216,10 +237,29 @@ const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(funct
   { sections, activeId, activeSection, onSelect, empty, hasSections, className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
+  const headingId = useId();
+  const hasHeading = hasSections && activeSection != null;
+
   return (
-    <div
-      ref={ref}
+    // A landmark, not a bare `<div>`: this is the THIRD region of a three-region
+    // shell and it sits OUTSIDE `<main>`, so without one its content belongs to
+    // no region a screen-reader user can navigate to. Same shape and same
+    // reasoning as `SideDock`'s own root (`side-dock.tsx`, `<aside
+    // aria-labelledby={titleId}>`) and as the blocks' list columns
+    // (`app-list-column.tsx`, `mail-list-column.tsx`). Named by the section
+    // heading below, so the name tracks the section actually on screen; with no
+    // sections there is no heading to point at, so the localized empty-state
+    // string names it instead — a landmark with no name is barely better than
+    // no landmark.
+    <aside
+      // Runtime-safe: the ref target is a real element either way; only the TS
+      // element type differs, and `ContextRailProps` keeps the `HTMLDivElement`
+      // ref it has always published rather than making this a breaking change.
+      ref={ref as Ref<HTMLElement>}
       data-slot="context-rail"
+      aria-labelledby={hasHeading ? headingId : undefined}
+      aria-label={hasHeading ? undefined : t("ui.contextRail.empty")}
       className={cn("flex h-full min-h-0 w-full flex-col", className)}
       {...props}
     >
@@ -229,17 +269,29 @@ const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(funct
         onSelect={onSelect}
         orientation="row"
       />
-      {hasSections && activeSection ? (
+      {hasHeading ? (
         <>
-          <div
+          {/* A real heading, not a `text-title` div: the body content sits under
+              it, so heading navigation has to be able to reach it (WCAG 1.3.1).
+              `h2` is the rung under the host page's own `h1`. */}
+          <h2
+            id={headingId}
             data-slot="context-rail-heading"
             className="border-b border-border-strong px-4 py-3 text-title group-data-[collapsible=icon]:hidden"
           >
             {activeSection.label}
-          </div>
+          </h2>
           <div
             data-slot="context-rail-body"
-            className="min-h-0 flex-1 overflow-y-auto p-4 group-data-[collapsible=icon]:hidden"
+            // Focusable because it scrolls; `focus-ring-inset` because
+            // `Sidebar`'s own frame clips anything drawn outside this box, and
+            // both layers of the plain rung are drawn outside it. The content
+            // this rail mounts is caller-supplied and routinely has no
+            // focusable descendant at all, so without a tab stop there is no
+            // keyboard route into the region once it overflows (WCAG 2.1.1,
+            // axe `scrollable-region-focusable`).
+            tabIndex={0}
+            className="min-h-0 flex-1 overflow-y-auto p-4 focus-ring-inset group-data-[collapsible=icon]:hidden"
           >
             {activeSection.content}
           </div>
@@ -247,7 +299,7 @@ const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(funct
       ) : (
         <div className="min-h-0 flex-1 group-data-[collapsible=icon]:hidden">{empty}</div>
       )}
-    </div>
+    </aside>
   );
 });
 
@@ -274,12 +326,22 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
     // genuine outside click (the canvas, anywhere else) still dismisses.
     const stripRef = useRef<HTMLDivElement>(null);
     const mergedStripRef = useMemo(() => mergeRefs<HTMLDivElement>(ref, stripRef), [ref]);
+    const { t } = useLocale();
 
     return (
       <>
-        <div
-          ref={mergedStripRef}
+        {/* The same landmark the wide branch gets, for the same reason — but
+            named with `aria-label`, not `aria-labelledby`. The heading here
+            lives inside the Sheet, which is PORTALLED to `document.body` and
+            unmounted while the sheet is closed, so an id reference would point
+            at nothing in the rail's resting state. The computed name is
+            identical either way. */}
+        <aside
+          // Runtime-safe cast; see the wide branch for why the published ref
+          // type stays `HTMLDivElement`.
+          ref={mergedStripRef as Ref<HTMLElement>}
           data-slot="context-rail"
+          aria-label={activeSection?.label ?? t("ui.contextRail.empty")}
           className={cn(
             "flex h-full w-(--sidebar-width-icon) flex-col bg-sidebar text-sidebar-foreground",
             className,
@@ -292,7 +354,7 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
             onSelect={onSelect}
             orientation="column"
           />
-        </div>
+        </aside>
         {/* `modal={false}`: the 48px strip is a PERSISTENT sibling of this
             sheet, not part of it — Radix's default modal behaviour hides
             every body sibling from assistive tech and traps focus inside
@@ -347,13 +409,23 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
             </SheetHeader>
             {hasSections && activeSection ? (
               <>
-                <div
+                {/* A real heading for the same reason as the wide branch. The
+                    Sheet's own name comes from the `sr-only` `SheetTitle`
+                    above; this is the visible heading the body sits under. */}
+                <h2
                   data-slot="context-rail-heading"
                   className="border-b border-border-strong px-4 py-3 text-title"
                 >
                   {activeSection.label}
-                </div>
-                <div data-slot="context-rail-body" className="min-h-0 flex-1 overflow-y-auto p-4">
+                </h2>
+                <div
+                  data-slot="context-rail-body"
+                  // Focusable because it scrolls; `focus-ring-inset` because the
+                  // Sheet panel clips anything drawn outside this box. See the
+                  // wide branch for the full rationale.
+                  tabIndex={0}
+                  className="min-h-0 flex-1 overflow-y-auto p-4 focus-ring-inset"
+                >
                   {activeSection.content}
                 </div>
               </>

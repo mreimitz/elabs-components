@@ -407,7 +407,18 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
             {headerActions}
           </SheetHeader>
           {description && <SheetDescription className="sr-only">{description}</SheetDescription>}
-          <div data-slot="side-dock-body" className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div
+            data-slot="side-dock-body"
+            // Focusable because it scrolls; `focus-ring-inset` because the Sheet
+            // panel clips anything drawn outside this box, and both layers of
+            // the plain rung are drawn outside it. A dock's children are
+            // caller-supplied and routinely have no focusable descendant (a
+            // change log, a read-only detail panel), so without a tab stop
+            // there is no keyboard route into the region once it overflows
+            // (WCAG 2.1.1, axe `scrollable-region-focusable`).
+            tabIndex={0}
+            className="min-h-0 flex-1 overflow-y-auto p-4 focus-ring-inset"
+          >
             {children}
           </div>
         </SheetContent>
@@ -470,7 +481,18 @@ export const SideDock = forwardRef<HTMLElement, SideDockProps>(function SideDock
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <div data-slot="side-dock-body" className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div
+          data-slot="side-dock-body"
+          // Focusable because it scrolls; `focus-ring-inset` because the dock's
+          // own container clips anything drawn outside this box (the collapse
+          // tween animates its width). Worse here than in the overlay branch:
+          // the column is user-resizable, so narrowing it re-wraps every child
+          // taller — overflow is one keyboard gesture on the resize handle
+          // away, not a hypothetical viewport (WCAG 2.1.1, axe
+          // `scrollable-region-focusable`).
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto p-4 focus-ring-inset"
+        >
           {children}
         </div>
         {resizeHandle}
