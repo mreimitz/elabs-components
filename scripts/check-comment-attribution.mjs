@@ -1617,9 +1617,15 @@ export function matchBashPostingShape(tokens) {
 export function markerHelp() {
   return [
     "",
-    "The marker — BOTH halves are required; append them to the body verbatim:",
+    "The marker — BOTH halves are required. Copy the two lines below, and NAME THE",
+    "COMMAND that is actually posting in place of the placeholder: `hasMarker()`",
+    "checks only for the HTML comment and the bold phrase, so the command name is",
+    "free text — and a banner that names the wrong run is a false statement about",
+    "provenance, which is the exact thing #78 exists to prevent. This help used to",
+    'print `close-issues` and say "verbatim", and callers duly pasted that claim',
+    "onto pull requests no close-issues run had ever touched (measured 2026-09-06).",
     "",
-    render(),
+    render("<the command that is posting>"),
     "",
     "Or let the helper add it for you (it writes the file and posts with --body-file):",
     "  node scripts/post-issue-comment.mjs <issue> --command <name> --body-file <path>",

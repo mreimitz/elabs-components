@@ -171,3 +171,41 @@ test("ALLOW_UNVERIFIED_MERGE=1 opens the gate, loudly", () => {
   assert.equal(r.status, 0);
   assert.match(r.stderr, /OVERRIDDEN by ALLOW_UNVERIFIED_MERGE=1/);
 });
+
+/*
+ * The inline form of the override — the one an agent can actually write.
+ *
+ * A PreToolUse hook runs in its OWN process, BEFORE the gated command executes,
+ * so it inherits the SESSION environment and never sees a shell assignment
+ * prefix or an `export` issued in the same tool call. The test above passes the
+ * variable through `env`, which is a human's already-exported shell; it cannot
+ * catch a hook that only reads that channel. That gap was real: the documented
+ * escape hatch was unreachable from inside a Bash tool call, which is not a
+ * softer gate but a gate with no override at all — and the next thing reached
+ * for is a channel this hook cannot see (a direct API merge).
+ */
+test("an INLINE ALLOW_UNVERIFIED_MERGE=1 on the command opens the gate, loudly", () => {
+  const r = runHook("ALLOW_UNVERIFIED_MERGE=1 gh pr merge 375 --squash --delete-branch");
+  assert.equal(r.status, 0, "the inline assignment must be honoured, not only the environment");
+  assert.match(r.stderr, /OVERRIDDEN by ALLOW_UNVERIFIED_MERGE=1/);
+  // The warning says WHICH channel lifted the gate, so the log distinguishes a
+  // human's exported shell from an agent's inline override.
+  assert.match(r.stderr, /inline override on this command/);
+});
+
+test("the environment form still names itself distinctly", () => {
+  const r = runHook("gh pr merge 375 --squash", { ALLOW_UNVERIFIED_MERGE: "1" });
+  assert.equal(r.status, 0);
+  assert.match(r.stderr, /session environment/);
+});
+
+test("a DIFFERENT value of the override variable does not open the gate", () => {
+  // Only `=1` opens it. This is the honest scope of the assertion: the inline
+  // match is a substring test, so a command that literally contains
+  // `ALLOW_UNVERIFIED_MERGE=1` in prose WOULD open the gate. That limit is
+  // declared beside the match in the hook rather than papered over here — do
+  // not "fix" it by reverting to an environment-only read, which is the bug
+  // this test exists because of.
+  const r = runHook('gh pr merge 375 --squash --subject "document ALLOW_UNVERIFIED_MERGE=0 usage"');
+  assert.equal(r.status, 2, "a non-matching value must still block");
+});
