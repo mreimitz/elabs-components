@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { type Edge } from "@xyflow/react";
+import { expect, waitFor } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
+import { edgePaths, endpointsOffHandles } from "../testing/edge-anchors";
 import { FlowEdge } from "./flow-edge";
 
 const nodeTypes = { brand: FlowNode };
@@ -16,6 +18,18 @@ const meta = {
 } satisfies Meta<typeof FlowEdge>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+/**
+ * Every edge must terminate ON a handle dot — see `testing/edge-anchors`. React
+ * Flow's native anchors land on the dot's outer rim; the assertion allows
+ * anywhere on the dot, and fails on a line that meets a bare stretch of border.
+ */
+async function expectAnchoredToHandles(canvasElement: HTMLElement, edgeCount: number) {
+  await waitFor(() => {
+    expect(edgePaths(canvasElement, "flow-edge")).toHaveLength(edgeCount);
+    expect(endpointsOffHandles(canvasElement, "flow-edge")).toEqual([]);
+  });
+}
 
 /** Two nodes connected by a single branded bezier edge. */
 export const Default: Story = {
@@ -40,6 +54,9 @@ export const Default: Story = {
         <CanvasShell nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
       </div>
     );
+  },
+  play: async ({ canvasElement }) => {
+    await expectAnchoredToHandles(canvasElement, 1);
   },
 };
 
@@ -75,5 +92,8 @@ export const Pipeline: Story = {
         <CanvasShell nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
       </div>
     );
+  },
+  play: async ({ canvasElement }) => {
+    await expectAnchoredToHandles(canvasElement, 2);
   },
 };

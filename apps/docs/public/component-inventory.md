@@ -15,7 +15,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | --- | --- | --: | --: | --- |
 | `@elabs-ai/components-tokens` | packages/tokens | 19 | 6 | Semantic CSS-variable themes + ThemeProvider/useTheme. |
 | `@elabs-ai/components-icons` | packages/icons | 32 | 0 | Brand/product-vocabulary icons + BrandLogo (generic glyphs use lucide-react). |
-| `@elabs-ai/components-ui` | packages/ui | 386 | 15 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
+| `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
 | `@elabs-ai/components-flow` | packages/flow | 31 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
@@ -264,13 +264,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FileUploadList | component |  | `@elabs-ai/components-ui` |  |
 | FilterChip | component |  | `@elabs-ai/components-ui` |  |
 | FirstRunIllustration | component |  | `@elabs-ai/components-ui` |  |
-| Form | component |  | `@elabs-ai/components-ui` | Validated form scaffold (Field/Label/Control/Message) wiring inputs to a schema. |
-| FormControl | component |  | `@elabs-ai/components-ui` |  |
-| FormDescription | component |  | `@elabs-ai/components-ui` |  |
-| FormField | component |  | `@elabs-ai/components-ui` |  |
-| FormItem | component |  | `@elabs-ai/components-ui` |  |
-| FormLabel | component |  | `@elabs-ai/components-ui` |  |
-| FormMessage | component |  | `@elabs-ai/components-ui` |  |
 | Heading | component | size=display\|title*\|subtitle | `@elabs-ai/components-ui` |  |
 | HoverCard | component |  | `@elabs-ai/components-ui` |  |
 | HoverCardContent | component |  | `@elabs-ai/components-ui` |  |
@@ -488,7 +481,6 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | useDialogDismissGuard | hook |  | `@elabs-ai/components-ui` |  |
 | useDiffRows | hook |  | `@elabs-ai/components-ui` |  |
 | useFileUpload | hook |  | `@elabs-ai/components-ui` |  |
-| useFormField | hook |  | `@elabs-ai/components-ui` |  |
 | useIsMobile | hook |  | `@elabs-ai/components-ui` |  |
 | useLocale | hook |  | `@elabs-ai/components-ui` |  |
 | useMentionInput | hook |  | `@elabs-ai/components-ui` |  |
@@ -505,6 +497,14 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | WizardStep | component |  | `@elabs-ai/components-ui` |  |
 | WizardSteps | component |  | `@elabs-ai/components-ui` |  |
 | WorkspacePicker | component |  | `@elabs-ai/components-ui` | Choose the workspace or project directory a session runs against, from recents or a typed path. |
+| Form | component |  | `@elabs-ai/components-ui/form` |  |
+| FormControl | component |  | `@elabs-ai/components-ui/form` |  |
+| FormDescription | component |  | `@elabs-ai/components-ui/form` |  |
+| FormField | component |  | `@elabs-ai/components-ui/form` |  |
+| FormItem | component |  | `@elabs-ai/components-ui/form` |  |
+| FormLabel | component |  | `@elabs-ai/components-ui/form` |  |
+| FormMessage | component |  | `@elabs-ai/components-ui/form` |  |
+| useFormField | hook |  | `@elabs-ai/components-ui/form` |  |
 
 ## @elabs-ai/components-data
 

@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### ⚠️ BREAKING (`@elabs-ai/components-ui`): `Form` moved off the main barrel; react-hook-form is now an optional peer (#26)
+
+- `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`,
+  `FormMessage` and `useFormField` are no longer exported from
+  `@elabs-ai/components-ui`. Import them from the new subpath instead:
+  `import { Form, FormField, … } from "@elabs-ai/components-ui/form"`.
+- `react-hook-form` and `@hookform/resolvers` moved from `dependencies` to
+  **optional** `peerDependencies` — a consumer who uses `Form` now installs
+  them itself; a consumer who doesn't (e.g. one using only `FieldRow`, the
+  headless, non-RHF field primitive) no longer installs or bundles either.
+  `zod` moved to `devDependencies` (it was only ever used by the `Form` story's
+  `zodResolver` demo, never by shipped runtime source).
+- Why the subpath, not just the peer-dependency change: `packages/ui`'s single
+  bundled entry (`dist/index.js`) carried a top-level static import of
+  `react-hook-form` merely because `Form` was re-exported from the barrel — a
+  bundler must resolve every static import to build its module graph, even one
+  whose binding is never used, so any consumer importing anything from
+  `@elabs-ai/components-ui` was forced to have `react-hook-form` resolvable,
+  regardless of whether they used `Form`. Verified empirically: an isolated
+  Vite build importing only `Button`/`FieldRow`, with `react-hook-form` absent
+  from `node_modules`, failed with `"FormProvider" is not exported by
+"__vite-optional-peer-dep:react-hook-form:@elabs-ai/components-ui"` before
+  this split, and succeeds after it.
+- `FieldRow` (`@elabs-ai/components-ui`, unchanged) remains the headless,
+  react-hook-form-free field primitive — label/description/error/
+  `aria-describedby` wiring driven entirely by plain props. See
+  `docs/ADR/0006-subpath-exports.md`.
+
 - Added: `@elabs-ai/components-ui` gains four new app-shell primitives.
   `SkipLink` is the first focusable element of an application shell —
   invisible until focused, then a token-styled pill that jumps keyboard and

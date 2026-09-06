@@ -14,6 +14,8 @@ no token required. See `docs/CONSUMING.md`.
 
 ```bash
 pnpm add @elabs-ai/components-tokens @elabs-ai/components-ui
+pnpm add @hookform/resolvers@"^3.9.1"  # optional peer
+pnpm add react-hook-form@"^7.54.2"  # optional peer
 ```
 
 ## Set up styling (do not skip)
@@ -39,10 +41,11 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 ## This package specifically
 
 - The class-merge helper is at `.../lib/cn` — a pure, server-safe entry point.
+- `react-hook-form` / `@hookform/resolvers` are **optional peers** — install them only if you use `Form` (import it from `.../form`, not the main barrel). `FieldRow` is the headless, react-hook-form-free field primitive and needs neither.
 
 ## What's in it
 
-386 exported components — including `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger`, `AdvancedGroup`.
+379 exported components — including `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger`, `AdvancedGroup`.
 
 Don't guess the API — ask the CLI:
 

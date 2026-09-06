@@ -21,6 +21,10 @@
     "./lib/cn": {
       "types": "./src/lib/cn.ts",
       "default": "./src/lib/cn.ts"
+    },
+    "./form": {
+      "types": "./src/components/form/index.ts",
+      "default": "./src/components/form/index.ts"
     }
   },
   "publishConfig": {
@@ -34,6 +38,10 @@
       "./lib/cn": {
         "types": "./dist/lib/cn.d.ts",
         "default": "./dist/lib/cn.js"
+      },
+      "./form": {
+        "types": "./dist/form.d.ts",
+        "default": "./dist/form.js"
       }
     }
   },
@@ -46,7 +54,6 @@
     "clean": "rm -rf dist .turbo coverage"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -83,22 +90,31 @@
     "input-otp": "^1.4.1",
     "lucide-react": "^0.577.0",
     "react-day-picker": "^9.4.4",
-    "react-hook-form": "^7.54.2",
     "react-resizable-panels": "^2.1.7",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
-    "vaul": "^1.1.2",
-    "zod": "^3.24.1"
+    "vaul": "^1.1.2"
   },
   "peerDependencies": {
     "@elabs-ai/components-tokens": "workspace:*",
+    "@hookform/resolvers": "^3.9.1",
     "react": "^18.2.0 || ^19.0.0",
-    "react-dom": "^18.2.0 || ^19.0.0"
+    "react-dom": "^18.2.0 || ^19.0.0",
+    "react-hook-form": "^7.54.2"
+  },
+  "peerDependenciesMeta": {
+    "@hookform/resolvers": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@elabs-ai/components-eslint-config": "workspace:*",
     "@elabs-ai/components-tokens": "workspace:*",
     "@elabs-ai/components-typescript-config": "workspace:*",
+    "@hookform/resolvers": "^3.9.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
@@ -109,8 +125,10 @@
     "jsdom": "^25.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.2"
+    "vitest": "^3.0.2",
+    "zod": "^3.24.1"
   }
 }
