@@ -5,7 +5,7 @@ import { expect, screen, waitFor } from "storybook/test";
 import { ContextRail, type ContextRailSection } from "./context-rail";
 
 const meta = {
-  title: "Layout/Context Rail",
+  title: "Layout/ContextRail",
   component: ContextRail,
   tags: ["autodocs"],
   parameters: {

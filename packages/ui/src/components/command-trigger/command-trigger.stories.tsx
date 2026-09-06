@@ -3,7 +3,7 @@ import { expect, within } from "storybook/test";
 import { CommandTrigger } from "./command-trigger";
 
 const meta = {
-  title: "Navigation/Command Trigger",
+  title: "Navigation/CommandTrigger",
   component: CommandTrigger,
   parameters: {
     docs: {

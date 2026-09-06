@@ -3,7 +3,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import { NavNotifications } from "./nav-notifications";
 
 const meta = {
-  title: "Navigation/Nav Notifications",
+  title: "Navigation/NavNotifications",
   component: NavNotifications,
   tags: ["autodocs"],
   parameters: {

@@ -4,7 +4,7 @@ import { CommandTrigger } from "../command-trigger";
 import { SkipLink } from "./skip-link";
 
 const meta = {
-  title: "Navigation/Skip Link",
+  title: "Navigation/SkipLink",
   component: SkipLink,
   parameters: {
     docs: {

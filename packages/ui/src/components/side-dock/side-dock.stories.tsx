@@ -4,7 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import { SideDock } from "./side-dock";
 
 const meta = {
-  title: "Layout/Side Dock",
+  title: "Layout/SideDock",
   component: SideDock,
   tags: ["autodocs"],
   parameters: {

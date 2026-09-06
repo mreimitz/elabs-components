@@ -2,7 +2,7 @@
  * Enterprise Admin Console — the baseline-complete archetype-B shell.
  *
  * This scenario exists to be COPIED as the starting point for a professional
- * brand-ui app. Unlike `Layout/App Shell/Basic` (which shows the bare AppShell),
+ * brand-ui app. Unlike `Layout/App Shell/Minimal` (which shows the bare AppShell),
  * it wires the *entire* mandatory enterprise baseline in one screen so an
  * end-user (or the new-app scaffolder) starts on-baseline instead of bolting the
  * chrome on later:
