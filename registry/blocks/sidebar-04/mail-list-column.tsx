@@ -69,14 +69,22 @@ export function MailListColumn({
       aria-labelledby={headingId}
       // Below `md` the shell is a drill-down rather than two columns: this zone
       // takes the whole width until a message is open, and hands it over when
-      // one is. `md:` wins over the group variant in the cascade, so from `md`
-      // up both zones are always on screen.
+      // one is. The hide is scoped INSIDE `max-md:` rather than left to fight
+      // `md:flex` in the cascade — an earlier revision wrote
+      // `group-data-[reading=open]/mail:hidden md:flex` and asserted that `md:`
+      // won. It does not: measured at a 1200px viewport with a message open,
+      // this element computed `display: none`, i.e. the desktop three-zone
+      // layout silently lost its middle zone. Tailwind v4 sorts the
+      // `group-data-*` variant AFTER the `md` breakpoint, so the two rules have
+      // equal specificity and the LAST one wins. Nesting the hide in a
+      // `max-md:` media query removes the contest: above `md` the rule does not
+      // exist at all.
       //
       // The trailing rule is the SOLE structural cue between two same-ground
       // zones, so it takes the strong rung (WCAG 1.4.11).
       className={cn(
         "flex min-w-0 flex-1 flex-col border-e border-border-strong bg-background",
-        "group-data-[reading=open]/mail:hidden md:flex md:w-80 md:flex-none",
+        "max-md:group-data-[reading=open]/mail:hidden md:w-80 md:flex-none",
         className,
       )}
       {...props}
@@ -222,11 +230,17 @@ export function MailListColumn({
                   >
                     {message.subject}
                   </span>
-                  {/* `font-normal` deliberately overrides the `meta` role's own
-                      weight 500: this line is a fragment of the message itself,
-                      not a label, and at 500 it competed with the subject above
-                      it. The role still supplies the size, leading and tracking. */}
-                  <span className="line-clamp-2 ps-4 text-meta font-normal text-muted-foreground">
+                  {/* `caption`, not `meta`. This line is a fragment of the
+                      message itself — prose, not a label — and the scale
+                      already has a rung for exactly that: `caption` is 13px /
+                      18px at weight 400 with no tracking, where `meta` is 12px
+                      / 16px at weight 500 with 0.01em. Reaching for
+                      `text-meta font-normal` invented a fourth rung the scale
+                      does not have (12/16/400/0.01em) and put a hand-rolled
+                      weight in front of the role. Reading it beside the 12px
+                      `meta` timestamp is also the right hierarchy: the preview
+                      is content, the timestamp is metadata. */}
+                  <span className="line-clamp-2 ps-4 text-caption text-muted-foreground">
                     {message.preview}
                   </span>
                   {message.unread ? <span className="sr-only">Unread</span> : null}

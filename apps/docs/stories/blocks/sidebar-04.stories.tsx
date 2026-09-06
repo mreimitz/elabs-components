@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import MailShell from "@/components/sidebar-04/mail-shell";
-import { DEMO_MESSAGES, messageHref } from "@/components/sidebar-04/messages";
+import { DEMO_MESSAGES, messageHref, type MailMessage } from "@/components/sidebar-04/messages";
 
 /**
  * WCAG contrast ratio between two CSS color strings, computed by rasterizing
@@ -117,6 +117,25 @@ export const Default: Story = {
      * than by role; the hrefs must match the message route pattern; they
      * must be unique; and the SET of them must equal the fixture's own ids,
      * so a row that silently stops rendering fails here too.
+     *
+     * REACHABILITY is a fourth, separate property, added after a review
+     * mutation (`tabIndex={-1}` on every row) left all of the above green
+     * and axe silent: a link nobody can Tab to is not a link. It is checked
+     * on two independent channels, because each one alone has a known
+     * failure mode:
+     *   (a) the DOM ATTRIBUTE — `getAttribute("tabindex")` must be absent.
+     *       Read the IDL property instead and you learn nothing: `.tabIndex`
+     *       answers -1 on plenty of elements that were never given the
+     *       attribute, so the assertion would be about the getter, not the
+     *       markup.
+     *   (b) a REAL Tab press — from the search input, which is the row
+     *       list's immediate predecessor in the focus order (the clear
+     *       button renders only for a non-empty query, and this story's
+     *       query is empty). Focus must land on the first row. That is the
+     *       outcome the attribute is a proxy for, asserted directly.
+     * `row.focus()` is deliberately NOT used: programmatic focus succeeds on
+     * a `tabindex="-1"` element, so it would pass on the very mutation this
+     * exists to catch.
      * ------------------------------------------------------------------ */
     const list = canvasElement.querySelector('[data-slot="mail-list-column"] ul');
     await expect(list).toBeInTheDocument();
@@ -130,10 +149,24 @@ export const Default: Story = {
       await expect(href).toMatch(/^\/mail\/[a-z0-9-]+$/);
       // A resolved, different document — `href="#"` and `href=""` both fail.
       await expect((row as HTMLAnchorElement).href).not.toBe(document.location.href);
+      // Channel (a): nothing pulled the row out of the sequential focus order.
+      await expect(row.getAttribute("tabindex")).toBeNull();
     }
     const hrefs = rows.map((row) => row.getAttribute("href"));
     await expect(new Set(hrefs).size).toBe(hrefs.length);
     await expect([...hrefs].sort()).toEqual(DEMO_MESSAGES.map((m) => messageHref(m.id)).sort());
+
+    // Channel (b): the keyboard really gets there. One Tab from the search
+    // field lands on the first row — not on whatever comes after the list.
+    // `userEvent.click` rather than `search.focus()`: in the headless runner
+    // the document itself is not focused, so a bare `.focus()` call leaves
+    // `document.activeElement` on `<body>` and the Tab that follows would
+    // start from nowhere (measured — the assertion failed against `<body>`).
+    const search = canvas.getByPlaceholderText("Search messages…");
+    await userEvent.click(search);
+    await expect(search).toHaveFocus();
+    await userEvent.tab();
+    await expect(rows[0]).toHaveFocus();
 
     // …and the row that is open says so through a channel that survives
     // greyscale: `aria-current`, not the tint.
@@ -245,7 +278,11 @@ export const Loading: Story = {
   render: () => <MailShell activePath="/inbox" defaultSelectedId={FIRST.id} loading />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // One live region per zone, carrying a real sentence.
+    // One live region per zone, carrying a real sentence. These two are
+    // asserted PRESENT rather than visible on purpose: both are `sr-only`,
+    // which this runner correctly reports as NOT visible — a visibility
+    // assertion here would be demanding that the announcement be painted,
+    // which is the opposite of what an `sr-only` line is for.
     await expect(canvas.getByText("Loading messages…")).toBeInTheDocument();
     await expect(canvas.getByText("Loading the message…")).toBeInTheDocument();
     // Skeletons are layout-shaped AND decorative: the boxes live inside the
@@ -255,14 +292,30 @@ export const Loading: Story = {
     const listStatus = canvasElement.querySelector(
       '[data-slot="mail-list-column"] [role="status"]',
     ) as HTMLElement;
+    const paneStatus = canvasElement.querySelector(
+      '[data-slot="mail-reading-pane"] [role="status"]',
+    ) as HTMLElement;
     // Asserted present FIRST: without this the next line reports a null-deref
     // rather than the missing live region, which reads like a broken test
     // instead of a real regression.
     await expect(listStatus).toBeInTheDocument();
+    await expect(paneStatus).toBeInTheDocument();
+    // The REGIONS carry the visibility assertion, because they are the parts
+    // that are supposed to be painted. A review mutation put an inline
+    // `display: none` on the whole loading region and left this story green:
+    // `getByText`, `querySelector`, `toBeInTheDocument` and attribute reads
+    // ALL survive `display: none`, so the entire skeleton state could vanish
+    // unnoticed. These two lines are what actually ask the browser.
+    await expect(listStatus).toBeVisible();
+    await expect(paneStatus).toBeVisible();
     await expect(listStatus).toHaveAttribute("aria-live", "polite");
-    await expect(listStatus.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThanOrEqual(
-      7,
-    );
+    const boxes = listStatus.querySelectorAll('[aria-hidden="true"]');
+    await expect(boxes.length).toBeGreaterThanOrEqual(7);
+    // A placeholder that reserves no space is not a layout-shaped skeleton —
+    // the real row is supposed to land in the box that is already there (the
+    // CLS half of the loading-states rule). Measured, so a collapsed region
+    // fails on the geometry as well as on visibility.
+    await expect((boxes[0] as HTMLElement).getBoundingClientRect().height).toBeGreaterThan(0);
     // No rows are pretending to exist yet.
     await expect(canvasElement.querySelectorAll('[data-slot="mail-list-column"] li')).toHaveLength(
       0,
@@ -389,5 +442,122 @@ export const CompactDensity: Story = {
       (gap as HTMLElement).getBoundingClientRect().width;
     await expect(delta).toBeGreaterThanOrEqual(1.5);
     await expect(delta).toBeLessThanOrEqual(2.5);
+  },
+};
+
+/**
+ * Content that does not fit — the state a real inbox reaches within a week and
+ * a fixture never does. Every zone gets its worst realistic case at once: a
+ * sender name with a title and a job description in it, a subject carrying an
+ * unbroken 130-character tracking URL, a preview several lines long, and a body
+ * paragraph carrying a 128-character artifact digest with no break opportunity
+ * anywhere in it. The list column is the narrowest zone in the shell at a fixed
+ * `md:w-80`, so it is where a missing `min-w-0` or a missing wrap rule shows
+ * first.
+ *
+ * The lock is geometric rather than visual: a container that overflows
+ * horizontally has `scrollWidth > clientWidth`, and that is true whether the
+ * spill is a long word, a long name or a flex child that refused to shrink.
+ * Nothing here trims the content to fit — if a zone cannot hold it, the
+ * assertion is supposed to say so.
+ */
+const OVERFLOW_MESSAGES: MailMessage[] = [
+  {
+    id: "overflow",
+    from: {
+      name: "Dr. Annabelle Featherstonehaugh-Wolsey, Deputy Director of Platform Reliability",
+      email: "annabelle.featherstonehaugh-wolsey@platform-reliability.northwind.example",
+    },
+    subject:
+      "Re: Fwd: incident review follow-up — https://northwind.example/incidents/2026-09-05/postmortem?utm_source=digest&utm_campaign=weekly-reliability-roundup",
+    preview:
+      "Circling back on the action items from the review: the retry budget change is merged, the alert threshold is still under discussion, and the runbook needs a second pair of eyes before Friday.",
+    body: [
+      "Circling back on the action items from the review. The retry budget change is merged and deployed to the two smallest regions; the rollout to the rest waits on the alert threshold discussion below.",
+      "Reproduction is pinned at artifact digest a94f1c7e8b2d5f60c31ae47b9d02f8635c1e7a49b83d06f2e5c9147ab6d3820f7c4e19b8a05d63f2e8471cb90a5d3e67f24b81c05a9e37d6b2f480ce13a95d7b, which is the last build before the regression.",
+      "Everything else from the review is either done or has an owner. The runbook still needs a second pair of eyes before Friday.",
+    ].join("\n\n"),
+    receivedAt: FIRST.receivedAt,
+    unread: true,
+    labels: FIRST.labels,
+  },
+  ...DEMO_MESSAGES.slice(1),
+];
+
+export const OverflowingContent: Story = {
+  render: () => (
+    <MailShell activePath="/inbox" messages={OVERFLOW_MESSAGES} defaultSelectedId="overflow" />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const noOverflow = (el: Element, label: string) => {
+      const node = el as HTMLElement;
+      // 1px of tolerance: a sub-pixel layout width rounds up into `scrollWidth`
+      // on a fractional device ratio, which is not a spill.
+      return { label, spill: node.scrollWidth - node.clientWidth };
+    };
+
+    const zones = [
+      ['[data-slot="mail-list-column"]', "list column"],
+      ['[data-slot="mail-reading-pane"]', "reading pane"],
+      ['[data-slot="mail-reading-pane-body"]', "reading pane body"],
+      ['[data-slot="mail-top-bar"]', "top bar"],
+    ] as const;
+    for (const [selector, label] of zones) {
+      const zone = canvasElement.querySelector(selector);
+      await expect(zone).toBeInTheDocument();
+      // Visible FIRST, and only then measured. A `display: none` element
+      // reports `scrollWidth === clientWidth === 0`, so every spill assertion
+      // below would pass vacuously on a zone that had vanished — which is
+      // exactly how the desktop three-zone regression survived the rest of
+      // this file.
+      await expect(zone).toBeVisible();
+      await expect((zone as HTMLElement).clientWidth).toBeGreaterThan(0);
+      const { spill } = noOverflow(zone!, label);
+      await expect(`${label} spill=${Math.max(0, Math.round(spill))}`).toBe(`${label} spill=0`);
+    }
+
+    // The row itself, not just its column: a row that spills paints over the
+    // scrollbar and the column's own border.
+    const rows = Array.from(
+      canvasElement.querySelectorAll('[data-slot="mail-list-column"] a[href^="/mail/"]'),
+    );
+    await expect(rows.length).toBeGreaterThan(1);
+    for (const row of rows) {
+      await expect((row as HTMLElement).clientWidth).toBeGreaterThan(0);
+      const { spill } = noOverflow(row, "row");
+      await expect(`row spill=${Math.max(0, Math.round(spill))}`).toBe("row spill=0");
+    }
+
+    // The preview really is clamped rather than merely narrow. Two lines of
+    // `caption` leading, plus a line of slack for the browser's own rounding.
+    // Found by its TEXT, not by the `line-clamp-2` class — a class selector
+    // would make the mutation that deletes the clamp fail as a missing element
+    // rather than as an unclamped one, which proves nothing about geometry.
+    const preview = canvas.getByText(OVERFLOW_MESSAGES[0]!.preview);
+    const leading = parseFloat(getComputedStyle(preview).lineHeight);
+    const previewHeight = preview.getBoundingClientRect().height;
+    // Both ends: a clamp assertion alone is satisfied by a preview that is not
+    // rendered at all.
+    await expect(previewHeight).toBeGreaterThan(leading);
+    await expect(previewHeight).toBeLessThanOrEqual(leading * 2 + 1);
+
+    // The reading pane's own two spill risks, asserted separately from the
+    // zone above so a failure names which one moved: the subject heading and
+    // the prose column that holds the unbreakable hash.
+    const subject = canvasElement.querySelector(
+      '[data-slot="mail-reading-pane"] h1',
+    ) as HTMLElement;
+    await expect(subject).toBeInTheDocument();
+    await expect(`subject spill=${Math.max(0, Math.round(noOverflow(subject, "s").spill))}`).toBe(
+      "subject spill=0",
+    );
+    const paragraph = canvasElement.querySelector(
+      '[data-slot="mail-reading-pane-body"] p',
+    ) as HTMLElement;
+    await expect(paragraph).toBeInTheDocument();
+    await expect(`body spill=${Math.max(0, Math.round(noOverflow(paragraph, "b").spill))}`).toBe(
+      "body spill=0",
+    );
   },
 };

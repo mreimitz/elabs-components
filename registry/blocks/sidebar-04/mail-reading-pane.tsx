@@ -101,7 +101,18 @@ export function MailReadingPane({
         <>
           <div className="flex shrink-0 flex-col gap-3 border-b border-border-strong px-6 py-4">
             <div className="flex items-start gap-2">
-              <h1 id={headingId} className="min-w-0 flex-1 text-title text-balance text-foreground">
+              {/* `break-words`, not only `min-w-0`. A subject line is user
+                  content and routinely carries an unbroken token — a tracking
+                  URL, a build hash, a ticket key. `min-w-0` lets the flex child
+                  shrink; it does not let the WORD break, so without this the
+                  heading spilled 71px past the pane on a 1200px viewport
+                  (measured by the overflow story). `text-balance` stays: it
+                  evens the wrapped lines, it does not create a break
+                  opportunity. */}
+              <h1
+                id={headingId}
+                className="min-w-0 flex-1 text-title text-balance break-words text-foreground"
+              >
                 {message.subject}
               </h1>
               <div className="flex shrink-0 items-center gap-1">
@@ -133,9 +144,7 @@ export function MailReadingPane({
                 <div className="truncate text-body font-medium text-foreground">
                   {message.from.name}
                 </div>
-                <div className="truncate text-meta font-normal text-muted-foreground">
-                  {message.from.email}
-                </div>
+                <div className="truncate text-meta text-muted-foreground">{message.from.email}</div>
               </div>
               <time
                 dateTime={message.receivedAt}
@@ -171,7 +180,10 @@ export function MailReadingPane({
           >
             {/* `max-w-prose` because this really is multi-paragraph prose in a
                 wide container — the case the `measure` convention exists for. */}
-            <div className="flex max-w-prose flex-col gap-4 text-body text-foreground">
+            {/* `break-words` for the same reason as the subject: a pasted URL
+                or a commit hash in a paragraph has no break opportunity of its
+                own, and `max-w-prose` caps the column without wrapping it. */}
+            <div className="flex max-w-prose flex-col gap-4 break-words text-body text-foreground">
               {message.body.split("\n\n").map((paragraph, index) => (
                 // eslint-disable-next-line react/no-array-index-key -- paragraphs have no id; order IS their identity
                 <p key={index}>{paragraph}</p>

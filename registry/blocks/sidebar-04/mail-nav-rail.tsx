@@ -58,9 +58,7 @@ export function MailNavRail({
             {/* Sidebar ink, not canvas ink: `--muted-foreground` on the sidebar
                 ground measures ~2.3:1 in `light`. The sidebar pair is the one
                 tuned for this surface. */}
-            <div className="truncate text-meta font-normal text-sidebar-muted-foreground">
-              {accountEmail}
-            </div>
+            <div className="truncate text-meta text-sidebar-muted-foreground">{accountEmail}</div>
           </div>
           {/* The one action a mail client must never hide. It keeps its icon in
               the collapsed rail (the label folds away with the rest of the
