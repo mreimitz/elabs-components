@@ -18,7 +18,15 @@ const meta = {
       </ThemeProvider>
     ),
   ],
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "The four-zone flagship shell: a collapsible nav rail, a records column, the content pane and a details rail that rests collapsed. Reach for it when a screen needs a second column of records between navigation and content — a mail-style list, a work queue, a review pipeline. When the whole product fits in one navigation tree and the screen is a briefing rather than a queue, reach for `Layout/App Shell/Dashboard` instead.",
+      },
+    },
+  },
 } satisfies Meta<typeof AppShellPage>;
 export default meta;
 type Story = StoryObj<typeof meta>;

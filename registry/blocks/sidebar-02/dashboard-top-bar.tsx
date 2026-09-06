@@ -50,6 +50,17 @@ export const DEMO_NOTIFICATIONS: NavNotification[] = [
   { id: "n3", fallback: "CS", text: "Three customers asked about delivery.", time: "2h ago" },
 ];
 
+/*
+ * `NAV_LABELS`, `humanize` and `breadcrumbTrail` below are a DELIBERATE copy of
+ * the flagship `app-shell` block's `app-top-bar.tsx`, for the same reason its
+ * `isPathActive` twin is copied into `nav-items.ts`: registry blocks are
+ * copy-own, and `npx shadcn add sidebar-02` must install a block that works on
+ * its own. An import from `@/components/app-shell/…` would resolve here in the
+ * source tree and then break for anyone who did not also install the flagship.
+ * The duplication is the price of an item that installs alone; keep the two
+ * copies in step by hand.
+ */
+
 /** `href` -> label for every route the nav rail knows about. */
 const NAV_LABELS: Record<string, string> = (() => {
   const labels: Record<string, string> = { "/settings": "Settings" };
@@ -167,7 +178,17 @@ export function DashboardTopBar({
           what's-new stay at every width. */}
       <div className="flex shrink-0 items-center gap-1">
         <CommandTrigger onClick={onSearch} />
-        <NavNotifications notifications={notifications} />
+        {/* `side="bottom" align="end"`, not the component's rail defaults. From a
+            trigger at the END of a top bar, `side="right"` has nowhere to go:
+            Radix collision-handling flips the menu back across the trigger and
+            it covers the search control beside it. `my-0` drops the `my-6`
+            inset that belongs to the side-opening rail placement. */}
+        <NavNotifications
+          notifications={notifications}
+          side="bottom"
+          align="end"
+          className="my-0"
+        />
         <ThemeSwitcher className="hidden sm:inline-flex" />
       </div>
     </header>

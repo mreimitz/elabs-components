@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T01:26:06.616Z",
+  "generatedAt": "2026-09-06T02:00:32.060Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -34091,6 +34091,24 @@
               "optional": true,
               "type": "string",
               "description": "Label for the \"view all\" footer item. @default \"View all notifications\""
+            },
+            {
+              "name": "side",
+              "optional": true,
+              "type": "ComponentProps<typeof DropdownMenuContent>[\"side\"]",
+              "description": "Which side of the trigger the menu opens on. The default is `\"right\"`, which is right for the surface this component was extracted from — a bell sitting in a left-hand nav rail. It is WRONG for a trigger at the end of a top bar: Radix collision-handling then flips the menu back across the trigger and it covers the controls beside it. Set `side=\"bottom\"` (usually with `align=\"end\"`) for a top-bar bell. @default \"right\""
+            },
+            {
+              "name": "align",
+              "optional": true,
+              "type": "ComponentProps<typeof DropdownMenuContent>[\"align\"]",
+              "description": "How the menu aligns along that side. Radix's own default is `\"center\"`; pass `\"end\"` so a top-bar menu hangs from the trigger's outer edge instead of straddling it."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Extra classes for the menu surface, merged OVER the default `my-6 w-80`. The `my-6` inset belongs to the side-opening rail placement, so a top-bar caller passes `my-0` (later utilities win through `cn`)."
             }
           ]
         },

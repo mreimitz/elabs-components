@@ -142,6 +142,10 @@ export const DEMO_REVENUE: RevenuePoint[] = [
   { date: new Date("2026-09-05"), value: 18_420 },
 ];
 
+/**
+ * Newest first. A feed titled "Overnight" that is not in time order reads as
+ * unsorted data, and this fixture is the shape every copy-owner starts from.
+ */
 export const DEMO_ACTIVITY: ActivityEntry[] = [
   {
     id: "stock-hold",
@@ -151,18 +155,18 @@ export const DEMO_ACTIVITY: ActivityEntry[] = [
     timestamp: "06:12",
   },
   {
-    id: "refund-approval",
-    title: "Meridian Goods refund approved",
-    description: "Above the $500 threshold, so it waited for a person.",
-    status: "awaiting-approval",
-    timestamp: "05:48",
-  },
-  {
     id: "picking",
     title: "Morning picking run started",
     description: "34 orders queued for the warehouse.",
     status: "running",
     timestamp: "06:04",
+  },
+  {
+    id: "refund-approval",
+    title: "Meridian Goods refund approved",
+    description: "Above the $500 threshold, so it waited for a person.",
+    status: "awaiting-approval",
+    timestamp: "05:48",
   },
   {
     id: "payout",
@@ -190,6 +194,31 @@ export const DEMO_ACTIVITY: ActivityEntry[] = [
 /* -------------------------------------------------------------------------- */
 /*  Screen                                                                     */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * The revenue card's headline, derived from the series it is plotting.
+ *
+ * A conclusion may only be stated when the card is actually showing the
+ * evidence for it. While `loading` the plot is a skeleton, and with fewer than
+ * two points there is no trend to compare against — both cases fall back to the
+ * neutral noun, so the card never announces a figure it is not displaying.
+ *
+ * The comparison is the latest day against the mean of the rest of the window,
+ * which is what "running ahead" means on a seven-day trend; change the
+ * comparison here rather than writing a sentence beside it.
+ */
+export function revenueHeadline(revenue: RevenuePoint[], loading: boolean): string {
+  if (loading || revenue.length < 2) return "Revenue";
+  const latest = revenue[revenue.length - 1];
+  const earlier = revenue.slice(0, -1);
+  const mean = earlier.reduce((total, point) => total + point.value, 0) / earlier.length;
+  if (!latest || mean <= 0) return "Revenue";
+  const percent = Math.round(((latest.value - mean) / mean) * 100);
+  if (percent === 0) return "Revenue is level with the rest of the week";
+  return `Revenue is running ${Math.abs(percent)}% ${
+    percent > 0 ? "ahead of" : "behind"
+  } the rest of the week`;
+}
 
 export interface StorefrontOverviewProps extends ComponentProps<"div"> {
   /** Name of the tenant this screen is scoped to, shown in the standfirst. */
@@ -243,19 +272,24 @@ export function StorefrontOverview({
       ) : null}
 
       <ChartCard
-        data-slot="dashboard-revenue"
+        data-slot="storefront-overview-revenue"
         // The title is the CONCLUSION, not the chart type — a reader who only
-        // reads headings still leaves with the answer.
-        // The title is handed over as a real `<h2>`, not a string, because
-        // `ChartCard` renders it through `CardTitle` WITHOUT forwarding that
-        // part's `as` prop — so a plain string lands in a `<div>` and the card
+        // reads headings still leaves with the answer. It is DERIVED from the
+        // series being plotted (see `revenueHeadline`), never written as a
+        // literal: a hardcoded figure renders at full opacity over the loading
+        // skeleton and above the empty state, asserting a number the card is
+        // not showing.
+        //
+        // It is handed over as a real `<h2>`, not a string, because `ChartCard`
+        // renders its title through `CardTitle` WITHOUT forwarding that part's
+        // `as` prop — so a plain string lands in a `<div>` and the card
         // contributes nothing to the document outline. That matters here rather
         // than in the abstract: the empty branch below renders a `StatePanel`,
         // whose title is a hard-coded `<h3>`, so with no `<h2>` between it and
         // the page `<h1>` axe fails the screen on `heading-order`. Preflight
         // resets heading size/weight to `inherit`, so the element swap is
         // visually identical.
-        title={<h2>Revenue is running 6% ahead of last week</h2>}
+        title={<h2>{revenueHeadline(revenue, loading)}</h2>}
         description="Daily gross revenue across every channel for the last seven days, before refunds."
         source="Source: store ledger, refreshed hourly"
         height={240}
@@ -295,7 +329,7 @@ export function StorefrontOverview({
         )}
       </ChartCard>
 
-      <Card data-slot="dashboard-activity">
+      <Card data-slot="storefront-overview-activity">
         <CardHeader>
           <CardTitle as="h2">Overnight</CardTitle>
           <CardDescription>What changed while the store was closed.</CardDescription>

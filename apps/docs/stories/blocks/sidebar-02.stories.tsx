@@ -40,8 +40,12 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     // The three content regions the screen exists to hold.
     await expect(canvasElement.querySelector('section[aria-label="Key figures"]')).toBeVisible();
-    await expect(canvasElement.querySelector('[data-slot="dashboard-revenue"]')).toBeVisible();
-    await expect(canvasElement.querySelector('[data-slot="dashboard-activity"]')).toBeVisible();
+    await expect(
+      canvasElement.querySelector('[data-slot="storefront-overview-revenue"]'),
+    ).toBeVisible();
+    await expect(
+      canvasElement.querySelector('[data-slot="storefront-overview-activity"]'),
+    ).toBeVisible();
     // R1 active state: the current route is lit, an unrelated one is not.
     await expect(canvasElement.querySelector('a[href="/"]')).toHaveAttribute("data-active", "true");
     await expect(canvasElement.querySelector('a[href="/orders"]')).toHaveAttribute(
@@ -54,7 +58,7 @@ export const Default: Story = {
     // because a one-sided visibility check passes on code that never hides it.
     await expect(
       canvasElement.querySelector(
-        '[data-slot="dashboard-nav-collapsed-item"] a[href="/orders/open"]',
+        '[data-slot="dashboard-sidebar-collapsed-item"] a[href="/orders/open"]',
       ),
     ).not.toBeVisible();
   },
@@ -110,7 +114,7 @@ export const Frame: Story = {
     // `emptyContent` hands the screen slot back to the consumer: the shell
     // still paints its own scroll port, but nothing is inside it.
     await expect(
-      canvasElement.querySelector('[data-slot="dashboard-content"]'),
+      canvasElement.querySelector('[data-slot="dashboard-shell-content"]'),
     ).toBeEmptyDOMElement();
   },
 };
@@ -138,7 +142,7 @@ export const Collapsed: Story = {
     // away. Targeted by its own slot: the expanded sub-menu anchor shares the
     // href and wins `querySelector` by DOM order.
     const mirror = canvasElement.querySelector(
-      '[data-slot="dashboard-nav-collapsed-item"] a[href="/orders/open"]',
+      '[data-slot="dashboard-sidebar-collapsed-item"] a[href="/orders/open"]',
     );
     await expect(mirror).toBeVisible();
     await expect(mirror).toHaveAccessibleName("Open");
@@ -185,12 +189,19 @@ export const Loading: Story = {
   render: () => <DashboardShell activePath="/" loading />,
   play: async ({ canvasElement }) => {
     const activityStatus = canvasElement
-      .querySelector('[data-slot="dashboard-activity"]')
+      .querySelector('[data-slot="storefront-overview-activity"]')
       ?.querySelector('[role="status"]');
     await expect(activityStatus).toBeInTheDocument();
     await expect(activityStatus).toHaveTextContent("Loading activity…");
     // ONE loading treatment on the screen: no real figure may be legible while
-    // the rest of the page is a skeleton.
+    // the rest of the page is a skeleton. Asserted as "the revenue region
+    // contains no DIGIT at all" rather than as one absent fixture string — a
+    // single-string check passes on a card whose heading states a percentage
+    // the card is not showing, which is exactly what it used to do.
+    const revenueRegion = canvasElement.querySelector('[data-slot="storefront-overview-revenue"]');
+    await expect(revenueRegion).toBeInTheDocument();
+    await expect(revenueRegion?.textContent ?? "").not.toMatch(/\d/);
+    // …and the activity feed states no settled fact either.
     await expect(canvasElement).not.toHaveTextContent("Meridian Goods refund approved");
   },
 };
@@ -213,7 +224,7 @@ export const Empty: Story = {
     // — the anatomy includes exactly one way onward.
     await waitFor(() =>
       expect(
-        canvasElement.querySelector('[data-slot="dashboard-activity"] a[href="/orders"]'),
+        canvasElement.querySelector('[data-slot="storefront-overview-activity"] a[href="/orders"]'),
       ).toBeVisible(),
     );
     // A metric row with no tiles renders no landmark at all: an empty region
@@ -229,5 +240,56 @@ export const Empty: Story = {
       (heading) => Number(heading.tagName.slice(1)),
     );
     await expect(levels).toEqual([1, 2, 3, 2, 3]);
+  },
+};
+
+/**
+ * Compact density. The rail simply renders narrower — the point of the lock is
+ * that its width SPACER and its fixed container still agree, because nothing in
+ * the block pins a density of its own.
+ */
+export const CompactDensity: Story = {
+  render: () => (
+    // `data-density` on a wrapper, i.e. exactly how an app sets it: the
+    // attribute overrides `--spacing` for the whole subtree.
+    <div data-density="compact">
+      <DashboardShell activePath="/" defaultSidebarOpen={false} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const rail = canvasElement.querySelector('[data-slot="sidebar"]');
+    await expect(rail).toHaveAttribute("data-state", "collapsed");
+    // `Sidebar` spreads `...props` onto its CONTAINER only, so a
+    // `data-density` pinned on the component desynchronises the container from
+    // the sibling SPACER that still reads the document density. Under
+    // `collapsible=icon` + `variant=inset` the two widths differ by a designed
+    // 2px and by nothing else; a pin turns that into ~4px. Measured, not
+    // inferred from a class name.
+    const gap = canvasElement.querySelector('[data-slot="sidebar-gap"]');
+    const container = canvasElement.querySelector('[data-slot="sidebar-container"]');
+    await expect(gap).toBeInTheDocument();
+    await expect(container).toBeInTheDocument();
+    const delta =
+      (container as HTMLElement).getBoundingClientRect().width -
+      (gap as HTMLElement).getBoundingClientRect().width;
+    await expect(delta).toBeGreaterThanOrEqual(1.5);
+    await expect(delta).toBeLessThanOrEqual(2.5);
+  },
+};
+
+/**
+ * The collapsed rail keeps the structure the expanded one teaches: a divider
+ * stands where each group label used to be.
+ */
+export const CollapsedGroups: Story = {
+  render: () => <DashboardShell activePath="/" defaultSidebarOpen={false} />,
+  play: async ({ canvasElement }) => {
+    const nav = canvasElement.querySelector('nav[aria-label="Primary"]');
+    // NAV_GROUPS has two groups ("Store", "Insight"), so exactly one divider
+    // stands between them — asserted as VISIBLE, since the same node is in the
+    // DOM (and hidden) whenever the rail is expanded.
+    const dividers = Array.from(nav?.querySelectorAll('[data-slot="sidebar-separator"]') ?? []);
+    await expect(dividers).toHaveLength(1);
+    for (const divider of dividers) await expect(divider).toBeVisible();
   },
 };

@@ -67,7 +67,18 @@ export default function DashboardShell({
     // `bg-sidebar` ground and `group/sidebar-wrapper`, and it already carries
     // `flex min-h-svh w-full`. `h-svh` pins it to the viewport so the scroll
     // port below owns the overflow instead of the page.
-    <SidebarProvider variant="inset" defaultOpen={defaultSidebarOpen} className="h-svh">
+    <SidebarProvider
+      // The shell's own root seam. It REPLACES the provider's base
+      // `data-slot="sidebar-wrapper"` on this one instance (the prop spread
+      // lands last), which is safe here and nowhere near as broad as it reads:
+      // the provider's own geometry keys off the `group/sidebar-wrapper` CLASS
+      // and off `data-variant`/`data-state`, none of which this touches. A
+      // copy-owner who wants the base name back drops this line.
+      data-slot="dashboard-shell"
+      variant="inset"
+      defaultOpen={defaultSidebarOpen}
+      className="h-svh"
+    >
       <SkipLink />
 
       <DashboardSidebar activePath={activePath} />
@@ -79,7 +90,7 @@ export default function DashboardShell({
         <DashboardTopBar activePath={activePath} />
 
         <div
-          data-slot="dashboard-content"
+          data-slot="dashboard-shell-content"
           tabIndex={0}
           // `focus-ring-inset`, not `focus-ring`: both of the plain rung's layers
           // are drawn OUTSIDE the element's box, and this port's parent carries

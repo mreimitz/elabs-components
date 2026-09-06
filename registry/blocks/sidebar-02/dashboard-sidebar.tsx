@@ -12,7 +12,7 @@
  */
 "use client";
 
-import type { ComponentProps } from "react";
+import { Fragment, type ComponentProps } from "react";
 import { Settings, Ship, Store, Warehouse } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +28,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarSeparator,
   TeamSwitcher,
   type TeamSwitcherTeam,
 } from "@elabs-ai/components-ui";
@@ -98,13 +99,18 @@ function renderNavItem(item: NavItem, activePath: string) {
     nodes.push(
       <SidebarMenuItem
         key={`${sub.id}-collapsed`}
-        data-slot="dashboard-nav-collapsed-item"
+        data-slot="dashboard-sidebar-collapsed-item"
         className="hidden group-data-[collapsible=icon]:block"
       >
+        {/* The tooltip is the only TEXT a collapsed rail shows, so it names the
+            parent too — without it the mirror reads as a seventh top-level
+            destination rather than as a child of the entry above it. The
+            anchor's accessible name still comes from the <span> and stays the
+            sub-route's own label. */}
         <SidebarMenuButton
           asChild
           isActive={isPathActive(sub.href, activePath)}
-          tooltip={sub.label}
+          tooltip={`${item.label} · ${sub.label}`}
         >
           <a href={sub.href}>
             <SubIcon />
@@ -131,12 +137,15 @@ export function DashboardSidebar({
       collapsible="icon"
       className={className}
       {...props}
-      // Pinned, not decorative: the rail's collapsed icon buttons size off
-      // `--spacing`, and under `compact` density that shrinks the icon strip
-      // below the fixed rail width the collapsed layout assumes. Written AFTER
-      // `{...props}` on purpose — a caller who spreads `data-density` would
-      // otherwise silently defeat the pin (last JSX attribute wins).
-      data-density="comfortable"
+      // NO `data-density` pin here, and that is deliberate (measured
+      // 2026-09-06). `Sidebar` spreads `...props` onto its `sidebar-container`
+      // only — its width SPACER (`sidebar-gap`) is a sibling that keeps reading
+      // the document's density. Pinning the container therefore desynchronises
+      // the pair: under a document `data-density="compact"` the spacer stays at
+      // the compact width while the container renders at the comfortable one,
+      // opening a seam twice the designed inset offset. Unpinned, compact
+      // simply renders a narrower rail — smaller, not broken. Locked by the
+      // `CompactDensity` story.
     >
       <SidebarHeader>
         <TeamSwitcher teams={teams} />
@@ -146,15 +155,27 @@ export function DashboardSidebar({
           adding a layout box that would break `SidebarContent`'s flex/scroll sizing. */}
       <nav aria-label="Primary" className="contents">
         <SidebarContent className="min-h-0 overflow-y-auto">
-          {NAV_GROUPS.map((group) => (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items.flatMap((item) => renderNavItem(item, activePath))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+          {NAV_GROUPS.map((group, index) => (
+            <Fragment key={group.label}>
+              {/* Collapsed, `SidebarGroupLabel` is clipped away and the rail
+                  would otherwise be one undifferentiated strip of glyphs. The
+                  rule is `border-strong` when a line is the SOLE structural cue
+                  — but this one is not: it only appears in the state where the
+                  labels are gone, and the group gap is still there, so the
+                  subtle sidebar rung is right. Expanded, the labels do the job
+                  and the line is redundant, so it is hidden. */}
+              {index > 0 ? (
+                <SidebarSeparator className="hidden group-data-[collapsible=icon]:block" />
+              ) : null}
+              <SidebarGroup>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.flatMap((item) => renderNavItem(item, activePath))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </Fragment>
           ))}
         </SidebarContent>
       </nav>

@@ -104,17 +104,7 @@ export function AppNavRail({
   ...props
 }: AppNavRailProps) {
   return (
-    <Sidebar
-      collapsible="icon"
-      className={className}
-      {...props}
-      // Pinned, not decorative: the rail's collapsed icon buttons size off
-      // `--spacing`, and under `compact` density that shrinks the icon strip
-      // below the fixed 3rem rail width the collapsed layout assumes. Written
-      // AFTER `{...props}` on purpose — a caller who spreads `data-density`
-      // would otherwise silently defeat the pin (last JSX attribute wins).
-      data-density="comfortable"
-    >
+    <Sidebar collapsible="icon" className={className} {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:justify-center">
           <Blocks aria-hidden="true" className="size-6 shrink-0 text-sidebar-primary" />
