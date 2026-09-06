@@ -16,7 +16,10 @@
 # policy, so GitHub still merges over a red or pending X. This hook stays the
 # enforcement until the blocking `CI` job is added as a required check.
 #
-# Escape hatch: ALLOW_UNVERIFIED_MERGE=1 (loud, documented, shows up in the log).
+# Escape hatch: ALLOW_UNVERIFIED_MERGE=1 (loud, documented, shows up in the log),
+# accepted BOTH from the session environment and as an inline assignment on the
+# command itself — see the block that reads it below for why the second form is
+# load-bearing rather than a convenience.
 # See .claude/rules/quality-gates.md ▸ "Merge discipline" and issue #386.
 set -u
 
@@ -38,8 +41,39 @@ case "$norm" in
   *) exit 0 ;;
 esac
 
+# The override is read from TWO places, and the second one is the whole fix
+# (measured 2026-09-06). This hook runs in its OWN process, BEFORE the command
+# executes, so it inherits the session environment and can never observe a shell
+# assignment prefix or an `export` written in the same tool call — which are the
+# only two forms an agent inside a Bash tool call can write. An override that
+# only a human's already-exported shell can reach is, for an agent, no override
+# at all; and the next thing an agent reaches for is a channel this gate cannot
+# see (a direct API merge). So the INLINE ASSIGNMENT is honoured too, read out
+# of the command text exactly the way `gate-comment-attribution.sh` reads its
+# own. Both forms print the same loud warning, and the warning names WHICH form
+# was used — so the log still says whether a human or an agent lifted the gate.
+# Neither form is silent, and the gate's default is unchanged.
+#
+# KNOWN LIMIT, stated rather than hidden: the inline match is a substring test,
+# so a command that merely MENTIONS `ALLOW_UNVERIFIED_MERGE=1` in prose (a
+# commit subject describing this gate, say) would also open it. That is the
+# same class of imprecision `gate-comment-attribution.sh` documents at length
+# for its own override, and the cost is asymmetric in the opposite direction
+# here: a false OPEN costs one unverified merge by someone who was already
+# typing the words, while a false BLOCK costs the operator their only usable
+# escape hatch. Tightening it to a leading-assignment parse is a fair follow-up;
+# do not tighten it back to environment-only, which is the bug this replaced.
+override=""
 if [ "${ALLOW_UNVERIFIED_MERGE:-}" = "1" ]; then
-  echo "⚠ merge-readiness gate OVERRIDDEN by ALLOW_UNVERIFIED_MERGE=1 — merging without proof that the blocking battery passed (#386)." >&2
+  override="the session environment"
+else
+  case "$norm" in
+    *"ALLOW_UNVERIFIED_MERGE=1"*) override="an inline override on this command" ;;
+  esac
+fi
+
+if [ -n "$override" ]; then
+  echo "⚠ merge-readiness gate OVERRIDDEN by ALLOW_UNVERIFIED_MERGE=1 ($override) — merging without proof that the blocking battery passed (#386)." >&2
   exit 0
 fi
 
