@@ -214,6 +214,16 @@ export const Default: Story = {
     await expect(
       canvasElement.querySelectorAll('[data-slot="mail-list-column"] [aria-current]'),
     ).toHaveLength(1);
+
+    /* A6 — the rail toggle exposes the state it toggles. Its whole accessible
+     * name is the static "Toggle Sidebar", so without this attribute nothing
+     * tells a screen-reader user whether the rail is open, and no axe rule
+     * fires. Read as a string: attribute-absent and `"false"` are different
+     * states. `Collapsed` locks the other value.
+     */
+    await expect(
+      canvasElement.querySelector('[data-slot="sidebar-trigger"]')?.getAttribute("aria-expanded"),
+    ).toBe("true");
   },
 };
 
@@ -225,6 +235,12 @@ export const Default: Story = {
  * nobody there.
  */
 export const UnreadChannels: Story = {
+  /* A pure REGRESSION LOCK: its `render` is byte-identical to the story named
+   * above it, so in the sidebar it was a second entry showing the same screen
+   * under a different name. `!dev` keeps it out of the sidebar and the docs
+   * page while leaving it in the test run — the assertions below are the whole
+   * point of it, and they still run in CI. */
+  tags: ["!dev"],
   render: () => <MailShell activePath="/inbox" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -264,6 +280,12 @@ export const UnreadChannels: Story = {
  * subject to name it after.
  */
 export const NoSelection: Story = {
+  /* A pure REGRESSION LOCK: its `render` is byte-identical to the story named
+   * above it, so in the sidebar it was a second entry showing the same screen
+   * under a different name. `!dev` keeps it out of the sidebar and the docs
+   * page while leaving it in the test run — the assertions below are the whole
+   * point of it, and they still run in CI. */
+  tags: ["!dev"],
   render: () => <MailShell activePath="/inbox" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -400,15 +422,52 @@ export const FilteredEmpty: Story = {
       expect(canvas.getByText("Nothing matches that search")).toBeVisible(),
     );
 
-    // The escape hatch is not decoration: pressing it restores every row. Its
-    // name is deliberately NOT "Clear search" — `SearchInput`'s own clear
-    // button already owns that name in this same view.
+    // The list really is empty behind the panel — a state panel drawn OVER a
+    // still-populated list would satisfy the text assertion above on its own.
+    await expect(canvasElement.querySelectorAll('[data-slot="mail-list-column"] li')).toHaveLength(
+      0,
+    );
+    // The escape hatch is present and is a real, enabled control. Its name is
+    // deliberately NOT "Clear search" — `SearchInput`'s own clear button
+    // already owns that name in this same view. PRESSING it belongs to
+    // `FilteredEmptyRecovered` below, not here: a story called `FilteredEmpty`
+    // that ends by refilling the list documents the full list under the empty
+    // name, and every screenshot taken from it shows the wrong screen.
+    const escapeHatch = canvas.getByRole("button", { name: "Show every message" });
+    await expect(escapeHatch).toBeVisible();
+    await expect(escapeHatch).toBeEnabled();
+  },
+};
+
+/**
+ * The way out, taken — the second half of the no-results round trip.
+ *
+ * Split from `FilteredEmpty` so each story's FINAL PAINT matches its own name.
+ * The claim here is the one that matters about an escape hatch: it is not
+ * decoration. Pressing it clears the query AND brings every row back.
+ */
+export const FilteredEmptyRecovered: Story = {
+  render: () => <MailShell activePath="/inbox" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const search = canvas.getByPlaceholderText("Search messages…");
+    await userEvent.type(search, "zzz-no-such-message-zzz");
+    await waitFor(async () =>
+      expect(canvas.getByText("Nothing matches that search")).toBeVisible(),
+    );
+
     await userEvent.click(canvas.getByRole("button", { name: "Show every message" }));
     await waitFor(async () =>
       expect(canvasElement.querySelectorAll('[data-slot="mail-list-column"] li')).toHaveLength(
         DEMO_MESSAGES.length,
       ),
     );
+    // The FIELD was cleared too, not just the list. A reset that leaves the
+    // query sitting in the box shows a full list under a search that matches
+    // nothing — and the next keystroke re-empties it.
+    await expect((search as HTMLInputElement).value).toBe("");
+    // …and the panel is gone, rather than sitting above a restored list.
+    await expect(canvas.queryByText("Nothing matches that search")).toBeNull();
   },
 };
 
@@ -435,6 +494,10 @@ export const Collapsed: Story = {
     await expect(canvas.getByRole("link", { name: "Inbox, 4 unread" })).toBeVisible();
     // The one action a mail client must not hide keeps its name.
     await expect(canvas.getByRole("button", { name: "Compose" })).toBeVisible();
+    // A6's closed branch, from a real collapsed render rather than a click.
+    await expect(
+      canvasElement.querySelector('[data-slot="sidebar-trigger"]')?.getAttribute("aria-expanded"),
+    ).toBe("false");
   },
 };
 
@@ -445,6 +508,12 @@ export const Collapsed: Story = {
  * name, so a token retune that breaks it fails here too.
  */
 export const SidebarInkContrast: Story = {
+  /* A pure REGRESSION LOCK: its `render` is byte-identical to the story named
+   * above it, so in the sidebar it was a second entry showing the same screen
+   * under a different name. `!dev` keeps it out of the sidebar and the docs
+   * page while leaving it in the test run — the assertions below are the whole
+   * point of it, and they still run in CI. */
+  tags: ["!dev"],
   render: () => <MailShell activePath="/inbox" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import DashboardShell from "@/components/sidebar-02/dashboard-shell";
+import { DEMO_ACTIVITY, type ActivityEntry } from "@/components/sidebar-02/storefront-overview";
 
 const meta = {
   title: "Layout/App Shell/Dashboard",
@@ -79,6 +80,18 @@ export const Default: Story = {
     );
     await expect(expandedDividers).toHaveLength(1);
     for (const divider of expandedDividers) await expect(divider).not.toBeVisible();
+
+    /* A6 — the rail toggle exposes the state it toggles. Its whole accessible
+     * name is the static "Toggle Sidebar", so before this attribute existed
+     * NOTHING told a screen-reader user whether the rail was open, and no axe
+     * rule fires (a <button> has no REQUIRED expanded state). Read as a string
+     * with `getAttribute`: absent and `"false"` are different states, and
+     * `toHaveAttribute("aria-expanded")` alone cannot tell them apart.
+     * `Collapsed` locks the other value, `Narrow` the mobile branch.
+     */
+    await expect(
+      canvasElement.querySelector('[data-slot="sidebar-trigger"]')?.getAttribute("aria-expanded"),
+    ).toBe("true");
   },
 };
 
@@ -200,6 +213,10 @@ export const Collapsed: Story = {
     );
     await expect(mirror).toBeVisible();
     await expect(mirror).toHaveAccessibleName("Open");
+    // A6's closed branch, from a real collapsed render rather than a click.
+    await expect(
+      canvasElement.querySelector('[data-slot="sidebar-trigger"]')?.getAttribute("aria-expanded"),
+    ).toBe("false");
   },
 };
 
@@ -232,6 +249,27 @@ export const Narrow: Story = {
     // stable thing it does declare — its control's accessible name, which both
     // of its modes prefix with "Theme".
     await expect(canvasElement.querySelector('[aria-label^="Theme"]')).not.toBeVisible();
+
+    /* A6 on the MOBILE branch, which is the one that discriminates. Below the
+     * breakpoint the trigger flips `openMobile`, while the desktop `open` stays
+     * true underneath — so a trigger that reported `open` would announce
+     * "expanded" here, with the drawer shut and the rail not even mounted (the
+     * two assertions at the top of this play). The state it reports has to be
+     * read the same way the click writes it.
+     */
+    const trigger = canvasElement.querySelector('[data-slot="sidebar-trigger"]') as HTMLElement;
+    await expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    // …and "true" is genuinely reachable here, not just the desktop value being
+    // suppressed. Opened, then closed again, so the story's final paint is the
+    // phone at rest that its name promises.
+    await userEvent.click(trigger);
+    await waitFor(async () => {
+      await expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    });
+    await userEvent.keyboard("{Escape}");
+    await waitFor(async () => {
+      await expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    });
   },
 };
 
@@ -348,6 +386,12 @@ export const CompactDensity: Story = {
  * stands where each group label used to be.
  */
 export const CollapsedGroups: Story = {
+  /* A pure REGRESSION LOCK: its `render` is byte-identical to the story named
+   * above it, so in the sidebar it was a second entry showing the same screen
+   * under a different name. `!dev` keeps it out of the sidebar and the docs
+   * page while leaving it in the test run — the assertions below are the whole
+   * point of it, and they still run in CI. */
+  tags: ["!dev"],
   render: () => <DashboardShell activePath="/" defaultSidebarOpen={false} />,
   play: async ({ canvasElement }) => {
     const nav = canvasElement.querySelector('nav[aria-label="Primary"]');
@@ -357,5 +401,66 @@ export const CollapsedGroups: Story = {
     const dividers = Array.from(nav?.querySelectorAll('[data-slot="sidebar-separator"]') ?? []);
     await expect(dividers).toHaveLength(1);
     for (const divider of dividers) await expect(divider).toBeVisible();
+  },
+};
+
+/**
+ * More than fits. Every shell in this family ships a scroll port that a fixture
+ * small enough to fit never exercises — and axe's `scrollable-region-focusable`
+ * only fires on a region that ACTUALLY overflows, so a shell with no overflowing
+ * story has no standing check on its ports at all. That is what this story is
+ * for: it is the enforcement for the whole "a scrollable region must be
+ * keyboard-operable" class, and it keeps working for ports added later.
+ *
+ * The feed is stretched rather than the copy: 40 entries, each carrying a
+ * description long enough to wrap, plus one unbroken 96-character digest with no
+ * break opportunity in it — the string that finds a missing `min-w-0` or a
+ * missing wrap rule.
+ */
+const OVERFLOW_ACTIVITY: ActivityEntry[] = Array.from({ length: 40 }, (_, index) => {
+  const seed = DEMO_ACTIVITY[index % DEMO_ACTIVITY.length]!;
+  return {
+    ...seed,
+    id: `overflow-${index}`,
+    title: `${seed.title} — batch ${index + 1}`,
+    description:
+      index === 0
+        ? "Reconciliation artifact a94f1c7e8b2d5f60c31ae47b9d02f8635c1e7a49b83d06f2e5c9147ab6d3820f is the last build before the discrepancy, and it has no break opportunity anywhere in it."
+        : `${seed.description ?? "Automatic reconciliation run"} — recorded ${index + 1} events, all of which need a sentence long enough to wrap onto a second line in this column.`,
+  };
+});
+
+export const OverflowingContent: Story = {
+  render: () => <DashboardShell activePath="/" activity={OVERFLOW_ACTIVITY} />,
+  play: async ({ canvasElement }) => {
+    const port = canvasElement.querySelector(
+      '[data-slot="dashboard-shell-content"]',
+    ) as HTMLElement;
+    await expect(port).toBeVisible();
+
+    /* The PREMISE, measured. Everything below — and the axe rule this story
+     * exists to arm — is meaningless unless the port really overflows. A
+     * fixture that quietly shrinks back under the fold would leave a green
+     * story documenting nothing, which is the failure mode this whole file has
+     * been bitten by. Asserted as a gap, not as a boolean, so the message names
+     * how far short it fell.
+     */
+    await expect(port.clientHeight).toBeGreaterThan(0);
+    await expect(
+      `content overflows by ${Math.max(0, port.scrollHeight - port.clientHeight)}px`,
+    ).not.toBe("content overflows by 0px");
+
+    // …and it is reachable with a keyboard. The port has focusable descendants
+    // today, so axe would stay quiet either way — the explicit lock is what
+    // survives a refactor that leaves the region without one.
+    await expect(port.getAttribute("tabindex")).toBe("0");
+    await expect(port.classList.contains("focus-ring-inset")).toBe(true);
+    await expect(port.classList.contains("focus-ring")).toBe(false);
+    port.focus();
+    await expect(document.activeElement).toBe(port);
+
+    // Vertically it scrolls; horizontally nothing may spill. 1px of tolerance
+    // for a fractional device ratio rounding a layout width up.
+    await expect(`spill=${Math.max(0, port.scrollWidth - port.clientWidth - 1)}`).toBe("spill=0");
   },
 };

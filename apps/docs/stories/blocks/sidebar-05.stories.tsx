@@ -132,6 +132,24 @@ export const Default: Story = {
     await expect(canvas.getByRole("navigation", { name: "Settings areas" })).toBeVisible();
     await expect(canvas.getByRole("navigation", { name: "Access settings" })).toBeVisible();
 
+    // The document outline has a ROOT. This shell shipped with an <h2> as its
+    // highest heading, which axe cannot catch: `page-has-heading-one` is a
+    // best-practice rule outside the wcag2a/wcag2aa tag set the runner uses,
+    // and `heading-order` passes on contiguous levels that simply start at 2.
+    // So the level is asserted here by hand — and the LEVELS BELOW it are
+    // asserted too, because moving the screen title to <h1> without moving the
+    // card titles with it would leave an h1 -> h3 skip that IS a real
+    // `heading-order` failure.
+    const headings = Array.from(
+      canvasElement.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6"),
+    );
+    const levels = headings.map((h) => Number(h.tagName.slice(1)));
+    await expect(levels.filter((level) => level === 1).length).toBe(1);
+    await expect(Math.min(...levels)).toBe(1);
+    // Contiguous: sorted unique levels are 1, 2, 3, … with no gap.
+    const rungs = [...new Set(levels)].sort((a, b) => a - b);
+    await expect(rungs).toEqual(rungs.map((_, index) => index + 1));
+
     // The attention mark carries TWO channels. The word first — colour alone
     // would be a 1.4.1 failure, and a bare dot is exactly that.
     const marks = canvas.getAllByText("Needs a decision");
@@ -204,6 +222,12 @@ export const Default: Story = {
  * three columns, and what is actually under the pointer at x=28.
  */
 export const DualRailGeometry: Story = {
+  /* A pure REGRESSION LOCK: its `render` is byte-identical to the story named
+   * above it, so in the sidebar it was a second entry showing the same screen
+   * under a different name. `!dev` keeps it out of the sidebar and the docs
+   * page while leaving it in the test run — the assertions below are the whole
+   * point of it, and they still run in CI. */
+  tags: ["!dev"],
   render: () => <SettingsShell activePath={SIGN_IN} />,
   play: async ({ canvasElement }) => {
     await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
@@ -333,7 +357,7 @@ export const AreaSwitching: Story = {
     await expect(accessButton).toHaveAttribute("aria-expanded", "false");
     // …and it did NOT navigate. Browsing an area is not opening a section, so
     // the content pane still holds the route the shell was given.
-    await expect(canvas.getByRole("heading", { level: 2, name: "Sign-in" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { level: 1, name: "Sign-in" })).toBeVisible();
     await expect(sidebar).toHaveAttribute("data-state", "expanded");
 
     // 2. Re-clicking the SAME area closes the panel. This is the switcher half
@@ -380,7 +404,7 @@ export const SectionSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Where it starts: the sign-in screen, and the row that says so.
-    await expect(canvas.getByRole("heading", { level: 2, name: "Sign-in" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { level: 1, name: "Sign-in" })).toBeVisible();
     await expect(canvas.getByText("Single sign-on")).toBeVisible();
     const signInRow = canvas.getByRole("link", {
       name: "Sign-in. How people prove who they are. 2 settings waiting on a decision.",
@@ -394,11 +418,11 @@ export const SectionSelection: Story = {
 
     // The DETAIL PANE really changed — heading, and the section's own content.
     await waitFor(async () => {
-      await expect(canvas.getByRole("heading", { level: 2, name: "Roles" })).toBeVisible();
+      await expect(canvas.getByRole("heading", { level: 1, name: "Roles" })).toBeVisible();
     });
     await expect(canvas.getByText("Role for new members")).toBeVisible();
     await expect(canvas.queryByText("Single sign-on")).toBeNull();
-    await expect(canvas.queryByRole("heading", { level: 2, name: "Sign-in" })).toBeNull();
+    await expect(canvas.queryByRole("heading", { level: 1, name: "Sign-in" })).toBeNull();
     // …and the panel moved its current marker with it.
     await expect(rolesRow).toHaveAttribute("aria-current", "page");
     await expect(signInRow).not.toHaveAttribute("aria-current");
@@ -512,12 +536,67 @@ export const DockOpen: Story = {
     await expect(dockWidthCommits.map((width) => Math.round(width))).toEqual([during]);
     await expect(dockWidthChanges.map((width) => Math.round(width))).toEqual([during]);
 
-    // The top bar control is a disclosure for it, and closing works.
+    // The top bar control is a disclosure FOR this dock, and it reports the
+    // state the story is in. Closing is exercised by `DockDismissed` below —
+    // deliberately not here, because a story called `DockOpen` whose last act
+    // is to close the dock leaves a screenshot, a docs page and a visual diff
+    // showing the opposite of its name.
     const trigger = canvas.getByRole("button", { name: "Change history" });
-    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  },
+};
+
+/**
+ * The same dock, dismissed — the second half of the disclosure round trip.
+ *
+ * It is a story of its own rather than the tail of `DockOpen` so that each
+ * one's FINAL PAINT matches its own name. A play function that opens a thing,
+ * asserts it, then closes it again documents the CLOSED state under an OPEN
+ * name — every screenshot, docs frame and visual diff taken from it shows the
+ * state the story says it is not showing.
+ */
+export const DockDismissed: Story = {
+  render: () => <SettingsShell activePath={SIGN_IN} defaultHistoryOpen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const user = userEvent.setup();
+    await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
+
+    // Read as a STRING: `toHaveAttribute("aria-expanded")` alone cannot tell an
+    // absent attribute from a `"false"` one, which is the whole state this
+    // story turns on.
+    const trigger = canvas.getByRole("button", { name: "Change history" });
+    await expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    await expect(canvas.getByRole("complementary", { name: "Change history" })).toBeVisible();
+
     await user.click(trigger);
     await waitFor(async () => {
-      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    });
+    /* "Closed" here is NOT "unmounted". `SideDock`'s column branch keeps its
+     * `<aside>` in the DOM for the closing transition, marks it `inert`, and
+     * slides it off-screen while the in-flow SPACER collapses to zero. So the
+     * dismissal is two separate facts and both are asserted:
+     *   1. the panel is `inert` — what actually removes it from the tab order
+     *      and the a11y tree (Testing Library's role query does not honour
+     *      `inert`, so a `queryByRole(…)).toBeNull()` here would fail against
+     *      correct code, and asserting it alone would prove nothing anyway);
+     *   2. the spacer it occupies in the layout is gone — the content pane
+     *      really did take the width back.
+     */
+    const panel = canvasElement.querySelector(
+      'aside[data-slot="side-dock-container"]',
+    ) as HTMLElement;
+    const spacer = canvasElement.querySelector('[data-slot="side-dock-spacer"]') as HTMLElement;
+    await waitFor(async () => {
+      await expect(panel.hasAttribute("inert")).toBe(true);
+    });
+    // `waitFor` because the spacer tweens its width — the number lands a frame
+    // or two after the attribute does.
+    await waitFor(async () => {
+      await expect(`spacer ${Math.round(spacer.getBoundingClientRect().width)}px`).toBe(
+        "spacer 0px",
+      );
     });
   },
 };
@@ -560,9 +639,34 @@ export const Loading: Story = {
     // the screen half is found by the `animate-pulse` utility the primitive
     // owns — the same property the loading-states rule requires it to carry.
     const panel = canvasElement.querySelector('[data-slot="sidebar-container"]') as HTMLElement;
-    await expect(
-      panel.querySelectorAll('[data-slot="sidebar-menu-skeleton"]').length,
-    ).toBeGreaterThan(0);
+    const menuSkeletons = panel.querySelectorAll('[data-slot="sidebar-menu-skeleton"]');
+    await expect(menuSkeletons.length).toBeGreaterThan(0);
+    // The nav placeholder is painted in CHROME ink on CHROME ground. `Skeleton`
+    // defaults to `bg-muted`, a CANVAS token: in the light theme that is a
+    // near-white on this panel's dark sidebar ground, so the thing standing in
+    // for absent content became the loudest element on the screen (12.42:1
+    // measured against `--sidebar`). MEASURED, not asserted from the class
+    // name — and measured against the ground the browser actually resolves,
+    // since the bar is painted on it.
+    //
+    // Honest scope: the ratio half of this lock BITES IN `light` ONLY. In dark
+    // `--muted` sits at 1.25:1 on `--sidebar` and would satisfy it either way,
+    // so the token half below is what carries the dark theme. CI runs `light`.
+    for (const box of Array.from(menuSkeletons)) {
+      const bars = box.querySelectorAll(".animate-pulse");
+      await expect(bars.length).toBeGreaterThan(0);
+      for (const bar of Array.from(bars)) {
+        const fill = getComputedStyle(bar).backgroundColor;
+        const ground = resolvedBackgroundColor(bar.parentElement ?? bar);
+        // A placeholder is a quiet surface tone, not a graphical mark: it must
+        // NOT clear the 3:1 mark bar against the chrome it sits on.
+        await expect(wcagContrast(fill, ground)).toBeLessThan(3);
+        await expect(bar.classList.contains("bg-sidebar-accent")).toBe(true);
+        // `cn`'s tailwind-merge drops the losing `bg-*`, so the canvas token is
+        // gone from the class string entirely rather than merely overridden.
+        await expect(bar.classList.contains("bg-muted")).toBe(false);
+      }
+    }
     const boxes = screen.querySelectorAll(".animate-pulse");
     await expect(boxes.length).toBeGreaterThan(5);
     // Decorative, every one of them: a skeleton per box in the a11y tree would
@@ -647,13 +751,47 @@ export const Narrow: Story = {
       await expect(doc.queryByRole("dialog", { name: "Sidebar" })).toBeNull();
     });
 
-    // And the dock is an overlay at this width, not a column: the column
-    // branch is not in the document at all, and what opens is a modal.
+    // The dock is an OVERLAY at this width, not a column — asserted here as the
+    // absence of the column branch, which is a property of the resting shell.
+    // Opening it belongs to `NarrowDockOpen` below: the overlay covers roughly
+    // three quarters of a 414px viewport, so a story called `Narrow` that ends
+    // with it open documents the dock instead of the narrow shell it is named
+    // for.
+    await expect(document.querySelector('[data-slot="side-dock"]')).toBeNull();
+    await expect(canvas.getByRole("button", { name: "Change history" })).toBeVisible();
+  },
+};
+
+/**
+ * The narrow shell with the change-history dock summoned.
+ *
+ * Split from `Narrow` so each story's FINAL PAINT is the one its name promises.
+ * The claim is the branch itself: below `SideDock`'s own breakpoint there is no
+ * resizable column anywhere in the document — what opens is a modal dialog over
+ * the shell, and it is dismissible from the keyboard like any other.
+ */
+export const NarrowDockOpen: Story = {
+  globals: { viewport: { value: "mobile2", isRotated: false } },
+  render: () => <SettingsShell activePath={SIGN_IN} />,
+  play: async ({ canvasElement }) => {
+    // Premise first: this whole story is about the sub-breakpoint branch.
+    await expect(window.innerWidth).toBeLessThan(768);
+    const canvas = within(canvasElement);
+    // Radix portals the overlay to `document.body`, OUTSIDE the story root.
+    const doc = within(document.body);
+
     await expect(document.querySelector('[data-slot="side-dock"]')).toBeNull();
     await userEvent.click(canvas.getByRole("button", { name: "Change history" }));
     const overlay = await doc.findByRole("dialog", { name: "Change history" });
     await expect(overlay).toBeVisible();
+    // A `dialog` here rather than the desktop `complementary` landmark, and no
+    // resizable column mounted behind it.
     await expect(document.querySelector('[data-slot="side-dock-container"]')).toBeNull();
+    // The dock's own content really rendered — an empty modal with the right
+    // name would satisfy every assertion above.
+    await expect(
+      within(overlay).getByText("Renamed the workspace to Northwind Analytics."),
+    ).toBeVisible();
   },
 };
 
