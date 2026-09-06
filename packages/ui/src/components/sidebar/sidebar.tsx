@@ -56,12 +56,36 @@ export const SidebarProvider = forwardRef<
     defaultOpen?: boolean;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    /**
+     * Drives the frame's inset treatment from an ANCESTOR the whole frame can
+     * see — `SidebarInset` (#342 fix) reads it as `data-variant` on this
+     * wrapper via `group-data-[variant=inset]/sidebar-wrapper:`, which reaches
+     * regardless of DOM order (unlike the legacy `peer-*` combinator, which
+     * only matches a Sidebar that comes AFTER). Optional and unset by
+     * default, so an existing caller that only sets `variant` on `Sidebar`
+     * is unaffected.
+     */
+    variant?: "sidebar" | "floating" | "inset";
+    /**
+     * Default `"app"` — today's behaviour, byte-identical. `"nested"` is for
+     * a `SidebarProvider` a compound component (e.g. `ContextRail`, ADR 0035
+     * §4) mounts internally so `useSidebar()` reports ITS OWN state to its
+     * own parts: it still provides `SidebarContext` and the two
+     * `--sidebar-width*` custom properties (which survive `display:
+     * contents`), but renders no frame box, no `data-slot`/`data-variant`/
+     * `data-state`, registers no global `⌘B`/`Ctrl+B` listener, and writes no
+     * `sidebar_state` cookie — so a nested rail can never be mistaken for a
+     * second app frame. See the emission table in ADR 0035 §4.
+     */
+    frame?: "app" | "nested";
   }
 >(function SidebarProvider(
   {
     defaultOpen = true,
     open: openProp,
     onOpenChange: setOpenProp,
+    variant,
+    frame = "app",
     className,
     style,
     children,
@@ -69,6 +93,7 @@ export const SidebarProvider = forwardRef<
   },
   ref,
 ) {
+  const isNested = frame === "nested";
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = useState(false);
 
@@ -79,11 +104,14 @@ export const SidebarProvider = forwardRef<
       const openState = typeof value === "function" ? value(open) : value;
       if (setOpenProp) setOpenProp(openState);
       else _setOpen(openState);
-      if (typeof document !== "undefined") {
+      // A nested provider (ADR 0035 §4) is not the app frame, so it must not
+      // persist ITS state as if it were — only `frame="app"` (the default)
+      // owns the `sidebar_state` cookie.
+      if (!isNested && typeof document !== "undefined") {
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       }
     },
-    [setOpenProp, open],
+    [setOpenProp, open, isNested],
   );
 
   const toggleSidebar = useCallback(() => {
@@ -91,6 +119,10 @@ export const SidebarProvider = forwardRef<
   }, [isMobile, setOpen]);
 
   useEffect(() => {
+    // Same reasoning as the cookie write above: the global keyboard shortcut
+    // belongs to the ONE app frame, not to every nested provider a compound
+    // component happens to mount.
+    if (isNested) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -99,7 +131,7 @@ export const SidebarProvider = forwardRef<
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
+  }, [isNested, toggleSidebar]);
 
   const state = open ? "expanded" : "collapsed";
 
@@ -113,9 +145,26 @@ export const SidebarProvider = forwardRef<
       <TooltipProvider delayDuration={0}>
         <div
           ref={ref}
-          data-slot="sidebar-wrapper"
+          // `data-slot`/`data-variant`/`data-state`/`group/sidebar-wrapper`
+          // (in the class list below) are ADR 0035 §8 refinement 3's
+          // `frame="app"` surface. `frame="nested"` (ADR 0035 §4, Task 9A)
+          // omits all four: a nested rail's own state must never drive the
+          // outer frame's geometry through the same group name or be mistaken
+          // for a second "sidebar wrapper" by a selector/test targeting the
+          // slot. The literal string "sidebar-wrapper" stays below (as a
+          // conditional value) so `pnpm data-slot:check` still sees this
+          // module's declaration.
+          data-slot={isNested ? undefined : "sidebar-wrapper"}
+          data-variant={isNested ? undefined : variant}
+          data-state={isNested ? undefined : state}
           style={
             {
+              // These two custom properties are the ONE thing a nested
+              // provider still emits (ADR 0035 §4) — they survive `display:
+              // contents` because custom properties inherit down the DOM
+              // tree regardless of the box an element generates, which is
+              // exactly how a nested rail publishes its width to whatever it
+              // wraps. Never move them onto a child.
               "--sidebar-width": SIDEBAR_WIDTH,
               "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
               ...style,
@@ -132,7 +181,28 @@ export const SidebarProvider = forwardRef<
             // for every element that inherits its colour (outline Buttons, list
             // rows). See the chrome<canvas elevation invariant in
             // .claude/rules/styling-and-tokens.md.
-            "group/sidebar-wrapper flex min-h-svh w-full text-foreground has-data-[variant=inset]:bg-sidebar",
+            // Omitted under `frame="nested"` — a nested provider is a pure
+            // context + custom-property carrier, not a second frame box.
+            !isNested && "group/sidebar-wrapper flex min-h-svh w-full text-foreground",
+            // The frame's OWN `variant` is authoritative once set (ADR 0035 §8
+            // refinement 4): resolved in JS, not by a CSS descendant match, so
+            // a nested rail three levels down that happens to render
+            // `variant="inset"` can never repaint THIS frame's ground merely
+            // because `:has()` is depth-unlimited. `has-data-[variant=inset]`
+            // stays as the fallback ONLY while this provider's own `variant`
+            // is unset, which is exactly every existing caller (this prop
+            // didn't exist before #342) — so they render exactly as today.
+            // Also omitted under `frame="nested"`, same reasoning as above.
+            !isNested &&
+              (variant === undefined
+                ? "has-data-[variant=inset]:bg-sidebar"
+                : variant === "inset" && "bg-sidebar"),
+            // `frame="nested"` renders no box of its own: `display: contents`
+            // (the literal Tailwind class, never an inline style or a
+            // concatenated name) removes this element from layout while
+            // keeping its children — and the custom properties above —
+            // reachable.
+            isNested && "contents",
             className,
           )}
           {...props}
@@ -256,7 +326,12 @@ export const Sidebar = forwardRef<
 
 export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function SidebarTrigger({ className, onClick, ...props }, ref) {
-    const { toggleSidebar } = useSidebar();
+    const { isMobile, open, openMobile, toggleSidebar } = useSidebar();
+    // `toggleSidebar` flips `openMobile` below the mobile breakpoint and `open`
+    // above it, so the state this button EXPOSES has to be read the same way —
+    // reporting the desktop `open` on a mobile viewport would announce the
+    // opposite of what the button does.
+    const expanded = isMobile ? openMobile : open;
     return (
       <Button
         ref={ref}
@@ -264,6 +339,18 @@ export const SidebarTrigger = forwardRef<HTMLButtonElement, ComponentProps<typeo
         data-slot="sidebar-trigger"
         variant="ghost"
         size="icon"
+        // A disclosure control must EXPOSE the state it toggles (WCAG 4.1.2).
+        // This button's whole accessible name is the static "Toggle Sidebar"
+        // below, so without this attribute nothing tells a screen-reader user
+        // whether the rail is currently open — and no axe rule catches it,
+        // because a <button> has no REQUIRED expanded state.
+        //
+        // `aria-controls` is deliberately omitted, not forgotten: on mobile the
+        // sidebar renders into a `Sheet` that is not in the document while
+        // closed, so the attribute would point at an absent id — worse than
+        // leaving it off. Spread last, so a caller that really does own a
+        // stable target can still supply both.
+        aria-expanded={expanded}
         className={cn("size-7", className)}
         onClick={(event) => {
           onClick?.(event);
@@ -302,22 +389,124 @@ export const SidebarRail = forwardRef<HTMLButtonElement, ComponentProps<"button"
   },
 );
 
-export const SidebarInset = forwardRef<HTMLDivElement, ComponentProps<"main">>(
-  function SidebarInset({ className, ...props }, ref) {
-    return (
-      <main
-        ref={ref}
-        data-slot="sidebar-inset"
-        className={cn(
-          "relative flex w-full flex-1 flex-col bg-background",
-          "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2",
-          className,
-        )}
-        {...props}
-      />
-    );
+/**
+ * Which sides of the floating "inset" surface get a gutter, once an ancestor
+ * drives the treatment (`SidebarProvider variant="inset"`, or the legacy
+ * immediately-preceding `Sidebar variant="inset"`).
+ *
+ * - `"auto"` (default) — today's rule, unchanged: a gutter on every side
+ *   except the leading edge (`m-2 ms-0`, because the classic layout puts the
+ *   sidebar there), plus the leading edge's gutter returns (`ms-2`) once that
+ *   sidebar collapses and its own gap closes.
+ * - `"none"` — no gutter margin (the unconditional radius/shadow below still
+ *   apply).
+ * - An object — pick sides explicitly. `{ start: true, bottom: true }` is the
+ *   "flush rail" geometry: a leading + bottom gutter only, no top, no
+ *   trailing, because the trailing edge sits flush against a rail — a tab
+ *   must touch the page it belongs to.
+ *
+ * PRECEDENCE (fix round 1, #342): a caller composing BOTH mechanisms at once
+ * — `SidebarProvider variant="inset"` AND a LEFT `Sidebar variant="inset"`,
+ * the shape a left-hand shell (e.g. the sidebar-02 rebuild) uses — never hits
+ * a class-order race, because the ancestor-scoped and legacy peer-scoped
+ * margin classes are BOTH derived from this same `gutter` value, so whenever
+ * both selectors match they emit identical declarations instead of competing
+ * ones; the resolved geometry is always exactly what `gutter` says, decided
+ * by this prop, never by the generated stylesheet's rule order.
+ */
+export type SidebarInsetGutter =
+  | "auto"
+  | "none"
+  | { top?: boolean; bottom?: boolean; start?: boolean; end?: boolean };
+
+export interface SidebarInsetProps extends ComponentProps<"main"> {
+  gutter?: SidebarInsetGutter;
+}
+
+// Each side is a COMPLETE literal utility string, one per SELECTOR SCOPE:
+// `ancestor` (`group-data-…/sidebar-wrapper:`, reaches a `SidebarProvider
+// variant="inset"` regardless of DOM order — the #342 fix) and `legacy`
+// (`peer-data-…:`, reaches a `Sidebar variant="inset"` that immediately
+// precedes this element — every caller before #342). Both scopes read the
+// SAME `gutter` value below, which is what keeps them from ever disagreeing.
+// Tailwind's content scanner only recognises literal class text in source —
+// never a name assembled by concatenation/interpolation
+// (.claude/rules/styling-and-tokens.md) — so the object form below picks
+// among these literals, it never builds one.
+const SIDEBAR_INSET_GUTTER_SIDE_CLASS = {
+  top: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:mt-2",
+    legacy: "md:peer-data-[variant=inset]:mt-2",
   },
-);
+  bottom: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:mb-2",
+    legacy: "md:peer-data-[variant=inset]:mb-2",
+  },
+  start: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:ms-2",
+    legacy: "md:peer-data-[variant=inset]:ms-2",
+  },
+  end: {
+    ancestor: "md:group-data-[variant=inset]/sidebar-wrapper:me-2",
+    legacy: "md:peer-data-[variant=inset]:me-2",
+  },
+} as const;
+
+// "auto" is its own complete literal pair, not composed from the map above,
+// because it also carries the collapsed-state clause: the sidebar's own gap
+// closes on collapse, so the inset's leading margin has to come back.
+const SIDEBAR_INSET_GUTTER_AUTO_CLASS = {
+  ancestor:
+    "md:group-data-[variant=inset]/sidebar-wrapper:m-2 md:group-data-[variant=inset]/sidebar-wrapper:ms-0 md:group-data-[variant=inset]/sidebar-wrapper:group-data-[state=collapsed]/sidebar-wrapper:ms-2",
+  legacy:
+    "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2",
+} as const;
+
+function sidebarInsetGutterClassName(
+  gutter: SidebarInsetGutter,
+  scope: "ancestor" | "legacy",
+): string {
+  if (gutter === "auto") return SIDEBAR_INSET_GUTTER_AUTO_CLASS[scope];
+  if (gutter === "none") return "";
+  return cn(
+    gutter.top && SIDEBAR_INSET_GUTTER_SIDE_CLASS.top[scope],
+    gutter.bottom && SIDEBAR_INSET_GUTTER_SIDE_CLASS.bottom[scope],
+    gutter.start && SIDEBAR_INSET_GUTTER_SIDE_CLASS.start[scope],
+    gutter.end && SIDEBAR_INSET_GUTTER_SIDE_CLASS.end[scope],
+  );
+}
+
+export const SidebarInset = forwardRef<HTMLDivElement, SidebarInsetProps>(function SidebarInset(
+  { className, gutter = "auto", ...props },
+  ref,
+) {
+  return (
+    <main
+      ref={ref}
+      data-slot="sidebar-inset"
+      className={cn(
+        "relative flex w-full flex-1 flex-col bg-background",
+        // Ancestor-scoped (#342 fix): `group/sidebar-wrapper` spans the whole
+        // frame, so this reaches a right-hand or reordered `Sidebar` the old
+        // peer-* combinator could not (it only matches a sibling that comes
+        // AFTER). Reads `SidebarProvider`'s own `data-variant`/`data-state`.
+        // Radius/shadow are unconditional here — not gated by `gutter`.
+        "md:group-data-[variant=inset]/sidebar-wrapper:rounded-xl md:group-data-[variant=inset]/sidebar-wrapper:shadow-sm",
+        sidebarInsetGutterClassName(gutter, "ancestor"),
+        // Legacy peer rule — reaches a shell that sets `variant` only on
+        // `Sidebar` (every caller before #342). Radius/shadow unconditional
+        // here too; the margin is driven by the SAME `gutter` value as the
+        // ancestor rule above (fix round 1, #342), so a caller composing both
+        // mechanisms at once never hits a stylesheet-order race — whichever
+        // selector matches emits the identical declaration.
+        "md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
+        sidebarInsetGutterClassName(gutter, "legacy"),
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 
 export const SidebarInput = forwardRef<HTMLInputElement, ComponentProps<typeof Input>>(
   function SidebarInput({ className, ...props }, ref) {
@@ -418,8 +607,8 @@ export const SidebarGroupLabel = forwardRef<
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        "flex h-8 shrink-0 items-center rounded-md px-2 text-meta font-medium text-sidebar-muted-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[margin,opacity] duration-base ease-linear [&>svg]:size-4 [&>svg]:shrink-0",
-        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+        "flex h-8 shrink-0 items-center rounded-md px-2 text-meta font-medium text-sidebar-muted-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[opacity] duration-base ease-linear [&>svg]:size-4 [&>svg]:shrink-0",
+        "group-data-[collapsible=icon]:hidden",
         className,
       )}
       {...props}
@@ -491,7 +680,7 @@ export const SidebarMenuItem = forwardRef<HTMLLIElement, ComponentProps<"li">>(
 );
 
 export const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-start text-body text-sidebar-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pe-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[active=true]:[&>svg]:text-sidebar-primary data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  "peer/menu-button relative flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-start text-body text-sidebar-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pe-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:[&>svg]:text-sidebar-primary data-[active=true]:before:pointer-events-none data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:start-0 data-[active=true]:before:w-1 data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -619,9 +808,21 @@ export function SidebarMenuSkeleton({
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
       {...props}
     >
-      {showIcon && <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
+      {/* `bg-sidebar-accent`, overriding `Skeleton`'s own `bg-muted`. `--muted`
+          is a CANVAS token: in the light theme it is a near-white
+          `oklch(0.968 …)` sitting on this sidebar's dark `oklch(0.3 …)` ground,
+          which measures 12.42:1 — the placeholder becomes the loudest thing on
+          a screen that has nothing loaded yet. The sidebar's own quiet rung
+          measures 1.26:1 on light and 1.29:1 on dark, i.e. a placeholder in
+          both themes instead of an inversion in one. */}
+      {showIcon && (
+        <Skeleton
+          className="size-4 rounded-md bg-sidebar-accent"
+          data-sidebar="menu-skeleton-icon"
+        />
+      )}
       <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1"
+        className="h-4 max-w-(--skeleton-width) flex-1 bg-sidebar-accent"
         data-sidebar="menu-skeleton-text"
         style={{ "--skeleton-width": width } as CSSProperties}
       />
@@ -677,8 +878,8 @@ export const SidebarMenuSubButton = forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
-        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+        "relative flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground focus-ring [--focus-ring-color:var(--sidebar-ring)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+        "data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:pointer-events-none data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:start-0 data-[active=true]:before:w-1 data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary",
         size === "sm" && "text-meta",
         size === "md" && "text-body",
         "group-data-[collapsible=icon]:hidden",

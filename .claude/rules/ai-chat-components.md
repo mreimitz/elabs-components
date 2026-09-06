@@ -101,6 +101,22 @@ app still owns model calls (e.g. `useChat`). Source lives as flat files in
   Raw mode is never intercepted. Same shape as `ChartFrame`'s `renderTable`
   (ADR 0024 §6). `ContextAsset` carries `source?: FileSource` + `mediaType?` so an
   asset can BE a file rather than a string.
+- **`ContextPanel` vs `ContextRail` — pick by what the panel must DO, not by
+  package proximity (ADR [0035](../../docs/ADR/0035-context-rail-and-side-dock.md)
+  §7).** A right-hand panel that needs a **permanent icon strip that is also the
+  section switcher** (one menu serves both the collapsed and expanded state) is
+  **`ContextRail`** (`@elabs-ai/components-ui`) — `ContextPanel` cannot express an
+  icon state at all (its collapsed state is a zero-width spacer). A **chat
+  asset/context panel with a `root`/`detail` drill-down** over `ContextAsset`s
+  stays **`ContextPanel`** (`@elabs-ai/components-ai`), as documented above. This
+  is a **known, recorded divergence, not an oversight**: the two panels
+  deliberately ship different vocabularies for this wave, and `ContextPanel` is
+  kept rather than re-based onto `ContextRail` because it is not the same
+  component (a chat-context domain surface vs. a generic section switcher) and
+  re-basing it is its own piece of design work, not a swap. The follow-up shape
+  is already decided — `ContextPanel` eventually becomes a composition **over**
+  `ContextRail`, preserving every current export — but it is deferred and gets
+  its own architect review; don't reach for it today.
 - Plus: `Suggestion(s)`, `Task`, `Snippet`, `TokenUsage` (token usage),
   `CodeBlock` (Shiki), `InlineCitation` (sources need **not** be URLs — pass an
   opaque id or `{ id, label, url }`; a non-URL string renders verbatim rather

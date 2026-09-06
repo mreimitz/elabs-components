@@ -150,6 +150,13 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // Sidebar's mobile Sheet title (sr-only header — the sheet itself has no
   // visible chrome, so this is only ever read by assistive tech).
   "ui.sidebar.title": "Sidebar",
+  // ContextRail's switcher count phrase (composed into the accessible name,
+  // e.g. "Sources 3 items") and its default empty-state copy.
+  "ui.contextRail.sectionCount": { one: "{count} item", other: "{count} items" },
+  "ui.contextRail.empty": "No sections",
+  // SideDock's resize handle — its sr-only label and its live width readout.
+  "ui.sideDock.resize": "Resize",
+  "ui.sideDock.widthValue": { one: "{size} pixel", other: "{size} pixels" },
   // Tree's error row — shared by the virtualized and non-virtualized branches.
   "ui.tree.failedToLoad": "Failed to load",
   // ThemeSwitcher's "follow the OS" option, in both dropdown and toggle modes.

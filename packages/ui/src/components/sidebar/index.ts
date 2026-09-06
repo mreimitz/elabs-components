@@ -1,3 +1,4 @@
+export type { SidebarInsetGutter, SidebarInsetProps } from "./sidebar";
 export {
   Sidebar,
   SidebarProvider,

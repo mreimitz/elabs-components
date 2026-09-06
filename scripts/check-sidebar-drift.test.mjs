@@ -2,11 +2,23 @@
  * check-sidebar-drift.test.mjs — locks the #99 sidebar drift-guard gate.
  * Run in CI: `node --test scripts/check-sidebar-drift.test.mjs`.
  *
- * All fixtures are INLINE strings (hermetic — never real files).
+ * Most fixtures are INLINE strings (hermetic — never real files); the
+ * "real filesystem lookup" section below is a deliberate exception (see the
+ * comment there) — it is the case that let a self-tested gate go dark after
+ * the app-shell-blocks move silently blinded it (task-12 fix round 2).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findSidebarDriftViolations, GUARDED } from "./check-sidebar-drift.mjs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  findSidebarDriftViolations,
+  GUARDED,
+  BLOCKS_DIR,
+  listSidebarBlockFiles,
+  scanSidebarBlocksOrThrow,
+} from "./check-sidebar-drift.mjs";
 
 const isClean = (src) => findSidebarDriftViolations(src).length === 0;
 const hasViolation = (src) => findSidebarDriftViolations(src).length > 0;
@@ -142,4 +154,61 @@ test("DOES NOT FLAG: comments mentioning a guarded primitive", () => {
 
 test("DOES NOT FLAG: a guarded name used only as a JSX tag / call site", () => {
   assert.ok(isClean(`const el = <NavNotifications notifications={[]} />;`));
+});
+
+// ── Real filesystem lookup — the gate's actual blind spot ────────────────────
+//
+// Every test above drives findSidebarDriftViolations() against an INLINE
+// string — it never touches disk, so it could never have caught the #99 gate
+// silently scanning zero files after BLOCKS_DIR went stale (the app-shell-
+// blocks move ported the blocks from packages/ui/src/blocks into
+// registry/blocks, and listSidebarBlockFiles() swallowed the resulting
+// readdirSync failure and returned []). These tests exercise the REAL
+// filesystem lookup so that class of regression fails the suite again.
+
+test("REAL FS: listSidebarBlockFiles() finds a non-zero number of real registry blocks", () => {
+  const files = listSidebarBlockFiles();
+  assert.ok(
+    files.length > 0,
+    `expected at least one sidebar block file under ${BLOCKS_DIR} — an empty result here is ` +
+      `exactly how the gate went blind after a blocks-directory move`,
+  );
+  for (const f of files) {
+    assert.match(f, /\.(ts|tsx)$/);
+  }
+});
+
+test("REAL FS: scanSidebarBlocksOrThrow() does not throw against the real BLOCKS_DIR", () => {
+  const files = scanSidebarBlocksOrThrow();
+  assert.ok(files.length > 0);
+});
+
+test("REAL FS: scanSidebarBlocksOrThrow() FAILS LOUDLY when the directory does not exist", () => {
+  const missing = join(tmpdir(), "sidebar-drift-check-does-not-exist-" + Date.now());
+  assert.throws(
+    () => scanSidebarBlocksOrThrow(missing),
+    (err) => {
+      assert.ok(err instanceof Error);
+      assert.match(err.message, /found no sidebar block files to scan/);
+      assert.ok(
+        err.message.includes(missing),
+        "error message should name the directory it looked in",
+      );
+      return true;
+    },
+  );
+});
+
+test("REAL FS: scanSidebarBlocksOrThrow() FAILS LOUDLY on an existing directory with no sidebar-* blocks", () => {
+  const emptyDir = mkdtempSync(join(tmpdir(), "sidebar-drift-check-empty-"));
+  try {
+    assert.throws(() => scanSidebarBlocksOrThrow(emptyDir), /found no sidebar block files to scan/);
+  } finally {
+    rmSync(emptyDir, { recursive: true, force: true });
+  }
+});
+
+test("REAL FS: listSidebarBlockFiles() returns [] (not a throw) for a missing directory — scanSidebarBlocksOrThrow is the loud wrapper", () => {
+  const missing = join(tmpdir(), "sidebar-drift-check-does-not-exist-" + Date.now());
+  assert.deepEqual(listSidebarBlockFiles(missing), []);
 });

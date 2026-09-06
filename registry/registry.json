@@ -9,12 +9,48 @@
       "type": "registry:block",
       "title": "App shell",
       "description": "Sidebar + top nav + page layout scaffold for an internal app.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "files": [
+        {
+          "path": "registry/blocks/app-shell/app-list-column.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/app-list-column.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/app-nav-rail.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/app-nav-rail.tsx"
+        },
         {
           "path": "registry/blocks/app-shell/app-shell-page.tsx",
           "type": "registry:page",
           "target": "app/(app)/page.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/app-top-bar.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/app-top-bar.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/console-overview.tsx",
+          "type": "registry:component",
+          "target": "components/app-shell/console-overview.tsx"
+        },
+        {
+          "path": "registry/blocks/app-shell/nav-items.ts",
+          "type": "registry:component",
+          "target": "components/app-shell/nav-items.ts"
+        },
+        {
+          "path": "registry/blocks/app-shell/shell-metrics.ts",
+          "type": "registry:component",
+          "target": "components/app-shell/shell-metrics.ts"
         }
       ]
     },
@@ -195,33 +231,39 @@
       "name": "sidebar-02",
       "type": "registry:block",
       "title": "App shell — dashboard inset",
-      "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "description": "The classic left-sidebar dashboard: a collapsible-icon nav rail with a tenant switcher and nav groups beside a floating inset surface carrying a metric row, a revenue trend and an overnight activity feed. Skip link, one main landmark, active-route indicator and command trigger included.",
+      "dependencies": [
+        "@elabs-ai/components-charts",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "@visx/curve",
+        "lucide-react"
+      ],
       "files": [
         {
-          "path": "packages/ui/src/blocks/sidebar-02/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-02/dashboard-shell.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-02/app-sidebar.tsx"
+          "target": "components/sidebar-02/dashboard-shell.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/logo.tsx",
+          "path": "registry/blocks/sidebar-02/dashboard-sidebar.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-02/logo.tsx"
+          "target": "components/sidebar-02/dashboard-sidebar.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/nav-main.tsx",
+          "path": "registry/blocks/sidebar-02/dashboard-top-bar.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-02/nav-main.tsx"
+          "target": "components/sidebar-02/dashboard-top-bar.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/nav-notifications.tsx",
+          "path": "registry/blocks/sidebar-02/nav-items.ts",
           "type": "registry:component",
-          "target": "components/sidebar-02/nav-notifications.tsx"
+          "target": "components/sidebar-02/nav-items.ts"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-02/team-switcher.tsx",
+          "path": "registry/blocks/sidebar-02/storefront-overview.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-02/team-switcher.tsx"
+          "target": "components/sidebar-02/storefront-overview.tsx"
         }
       ],
       "categories": ["sidebar", "app-shell"]
@@ -230,24 +272,50 @@
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "sidebar-04",
       "type": "registry:block",
-      "title": "App shell — mail (double-sided)",
-      "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "title": "App shell — mail",
+      "description": "Three-zone mail shell: the collapsible icon rail, a searchable message list, and a reading pane sharing one floating inset surface. A variation on the dashboard shell, not a separate idea; below md the two content zones become a drill-down.",
+      "dependencies": [
+        "@elabs-ai/components-data",
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "files": [
         {
-          "path": "packages/ui/src/blocks/sidebar-04/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-04/mail-list-column.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-04/app-sidebar.tsx"
+          "target": "components/sidebar-04/mail-list-column.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-04/mail-context.tsx",
+          "path": "registry/blocks/sidebar-04/mail-nav-rail.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-04/mail-context.tsx"
+          "target": "components/sidebar-04/mail-nav-rail.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-04/nav-user.tsx",
+          "path": "registry/blocks/sidebar-04/mail-reading-pane.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-04/nav-user.tsx"
+          "target": "components/sidebar-04/mail-reading-pane.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-04/mail-shell.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-04/mail-shell.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-04/mail-top-bar.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-04/mail-top-bar.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-04/messages.ts",
+          "type": "registry:component",
+          "target": "components/sidebar-04/messages.ts"
+        },
+        {
+          "path": "registry/blocks/sidebar-04/nav-items.ts",
+          "type": "registry:component",
+          "target": "components/sidebar-04/nav-items.ts"
         }
       ],
       "categories": ["sidebar", "app-shell"]
@@ -256,19 +324,49 @@
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "sidebar-05",
       "type": "registry:block",
-      "title": "App shell — double-sided nav",
-      "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
+      "title": "App shell — dual rail",
+      "description": "Two navigation levels plus a summoned third surface: a permanent 56px icon rail picks the area, a collapsible second panel lists that area's sections, and the floating inset carries the settings screen. A resizable right-hand SideDock holds the change history — a column above 1100px, an overlay below it. The icon rail is deliberately not a Sidebar, so it survives every breakpoint while the section panel becomes a sheet.",
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
-          "path": "packages/ui/src/blocks/sidebar-05/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-05/change-history.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-05/app-sidebar.tsx"
+          "target": "components/sidebar-05/change-history.tsx"
         },
         {
-          "path": "packages/ui/src/blocks/sidebar-05/team-switcher.tsx",
+          "path": "registry/blocks/sidebar-05/nav-items.ts",
           "type": "registry:component",
-          "target": "components/sidebar-05/team-switcher.tsx"
+          "target": "components/sidebar-05/nav-items.ts"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-content.ts",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-content.ts"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-icon-rail.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-icon-rail.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-screen.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-screen.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-section-panel.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-section-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-shell.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-shell.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-top-bar.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-top-bar.tsx"
         }
       ],
       "categories": ["sidebar", "app-shell"]

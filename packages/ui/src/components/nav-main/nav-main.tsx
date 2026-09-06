@@ -1,6 +1,6 @@
 /**
  * Shared collapsible sidebar navigation primitive (issue #99).
- * Promoted from `packages/ui/src/blocks/sidebar-02/nav-main.tsx`.
+ * Promoted from `registry/blocks/sidebar-02/nav-main.tsx`.
  *
  * Renders a `SidebarMenu` of routes; each route with sub-items uses a
  * `Collapsible` expand/collapse affordance. Collapses icon-only when the

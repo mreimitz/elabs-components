@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T20:39:49.029Z",
+  "generatedAt": "2026-09-06T12:09:01.976Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -330,19 +330,19 @@
       "name": "sidebar-02",
       "type": "registry:block",
       "title": "App shell — dashboard inset",
-      "description": "Collapsible-icon dashboard sidebar with inset content, team switcher and collapsible nav groups. Adapted from blocks.so."
+      "description": "The classic left-sidebar dashboard: a collapsible-icon nav rail with a tenant switcher and nav groups beside a floating inset surface carrying a metric row, a revenue trend and an overnight activity feed. Skip link, one main landmark, active-route indicator and command trigger included."
     },
     {
       "name": "sidebar-04",
       "type": "registry:block",
-      "title": "App shell — mail (double-sided)",
-      "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so."
+      "title": "App shell — mail",
+      "description": "Three-zone mail shell: the collapsible icon rail, a searchable message list, and a reading pane sharing one floating inset surface. A variation on the dashboard shell, not a separate idea; below md the two content zones become a drill-down."
     },
     {
       "name": "sidebar-05",
       "type": "registry:block",
-      "title": "App shell — double-sided nav",
-      "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so."
+      "title": "App shell — dual rail",
+      "description": "Two navigation levels plus a summoned third surface: a permanent 56px icon rail picks the area, a collapsible second panel lists that area's sections, and the floating inset carries the settings screen. A resizable right-hand SideDock holds the change history — a column above 1100px, an overlay below it. The icon rail is deliberately not a Sidebar, so it survives every breakpoint while the section panel becomes a sheet."
     },
     {
       "name": "stat-card-parts",
@@ -28962,6 +28962,11 @@
           "module": "packages/ui/src/components/command/command.tsx"
         },
         {
+          "name": "CommandTrigger",
+          "kind": "value",
+          "module": "packages/ui/src/components/command-trigger/command-trigger.tsx"
+        },
+        {
           "name": "ConfirmDialog",
           "kind": "value",
           "module": "packages/ui/src/components/confirm-dialog/confirm-dialog.tsx"
@@ -29035,6 +29040,11 @@
           "name": "ContextMenuTrigger",
           "kind": "value",
           "module": "packages/ui/src/components/context-menu/context-menu.tsx"
+        },
+        {
+          "name": "ContextRail",
+          "kind": "value",
+          "module": "packages/ui/src/components/context-rail/context-rail.tsx"
         },
         {
           "name": "COPY_FEEDBACK_MS",
@@ -30162,9 +30172,19 @@
           "module": "packages/ui/src/components/sidebar/sidebar.tsx"
         },
         {
+          "name": "SideDock",
+          "kind": "value",
+          "module": "packages/ui/src/components/side-dock/side-dock.tsx"
+        },
+        {
           "name": "Skeleton",
           "kind": "value",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
+        },
+        {
+          "name": "SkipLink",
+          "kind": "value",
+          "module": "packages/ui/src/components/skip-link/skip-link.tsx"
         },
         {
           "name": "Slider",
@@ -30749,8 +30769,20 @@
           "module": "packages/ui/src/components/command/command.tsx"
         },
         {
+          "name": "CommandTriggerProps",
+          "module": "packages/ui/src/components/command-trigger/command-trigger.tsx"
+        },
+        {
           "name": "ConfirmDialogProps",
           "module": "packages/ui/src/components/confirm-dialog/confirm-dialog.tsx"
+        },
+        {
+          "name": "ContextRailProps",
+          "module": "packages/ui/src/components/context-rail/context-rail.tsx"
+        },
+        {
+          "name": "ContextRailSection",
+          "module": "packages/ui/src/components/context-rail/context-rail.tsx"
         },
         {
           "name": "CopyableValueProps",
@@ -31349,8 +31381,24 @@
           "module": "packages/ui/src/components/keyboard-shortcuts/keyboard-shortcuts.tsx"
         },
         {
+          "name": "SidebarInsetGutter",
+          "module": "packages/ui/src/components/sidebar/sidebar.tsx"
+        },
+        {
+          "name": "SidebarInsetProps",
+          "module": "packages/ui/src/components/sidebar/sidebar.tsx"
+        },
+        {
+          "name": "SideDockProps",
+          "module": "packages/ui/src/components/side-dock/side-dock.tsx"
+        },
+        {
           "name": "SkeletonProps",
           "module": "packages/ui/src/components/skeleton/skeleton.tsx"
+        },
+        {
+          "name": "SkipLinkProps",
+          "module": "packages/ui/src/components/skip-link/skip-link.tsx"
         },
         {
           "name": "SlashCommand",
@@ -32431,6 +32479,12 @@
               "optional": true,
               "type": "string",
               "description": "Class for the scrolling main content region."
+            },
+            {
+              "name": "mainId",
+              "optional": true,
+              "type": "string",
+              "description": "The `<main>` region's id, and the skip link's target. Override it when a page mounts more than one shell — two elements sharing `main-content` would make the skip link ambiguous. @default \"main-content\""
             }
           ]
         },
@@ -32908,6 +32962,25 @@
             }
           ]
         },
+        "CommandTrigger": {
+          "extends": [
+            "ComponentProps<\"button\">"
+          ],
+          "props": [
+            {
+              "name": "label",
+              "optional": true,
+              "type": "string",
+              "description": "The visible and announced label. Defaults to \"Search\"."
+            },
+            {
+              "name": "shortcut",
+              "optional": true,
+              "type": "string",
+              "description": "The shortcut hint. Defaults to the platform-correct ⌘ K / Ctrl K."
+            }
+          ]
+        },
         "ConfirmDialog": {
           "extends": [],
           "props": [
@@ -32981,6 +33054,72 @@
               "name": "className",
               "optional": true,
               "type": "string"
+            }
+          ]
+        },
+        "ContextRail": {
+          "extends": [
+            "Omit<\n  ComponentProps<typeof Sidebar>,\n  // `onSelect` is the native div text-selection event on `ComponentProps<typeof\n  // Sidebar>` — omitted so it can't collide with this component's own\n  // `onSelect`-shaped internals (`ContextRailBranchProps`) when `props` is\n  // spread onto `ContextRailWide`/`ContextRailNarrow` below.\n  \"side\" | \"collapsible\" | \"children\" | \"onSelect\"\n>"
+          ],
+          "props": [
+            {
+              "name": "sections",
+              "optional": false,
+              "type": "ContextRailSection[]",
+              "description": "The sections the switcher can pick between. An empty array renders the `empty` slot instead of a switcher."
+            },
+            {
+              "name": "activeSectionId",
+              "optional": true,
+              "type": "string",
+              "description": "Controlled active section id."
+            },
+            {
+              "name": "defaultActiveSectionId",
+              "optional": true,
+              "type": "string",
+              "description": "Initial active section id (uncontrolled). Defaults to `sections[0]`."
+            },
+            {
+              "name": "onActiveSectionChange",
+              "optional": true,
+              "type": "(sectionId: string) => void",
+              "description": "Fires with the clicked section's id — including a re-click of the already-active section (open/close is a separate concern, see `open`)."
+            },
+            {
+              "name": "open",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled expanded/collapsed state. Clicking the ACTIVE switcher entry toggles this; clicking an INACTIVE entry sets it `true`."
+            },
+            {
+              "name": "defaultOpen",
+              "optional": true,
+              "type": "boolean",
+              "description": "Initial expanded/collapsed state (uncontrolled). Defaults to `true`."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void"
+            },
+            {
+              "name": "width",
+              "optional": true,
+              "type": "string",
+              "description": "Expanded width, published as `--sidebar-width`. @default \"20rem\""
+            },
+            {
+              "name": "empty",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Replaces the default localized empty state when `sections` is empty."
+            },
+            {
+              "name": "overlayBreakpoint",
+              "optional": true,
+              "type": "number",
+              "description": "Below this viewport width the rail renders its own 48px strip plus a `Sheet` for the expanded body instead of mounting `Sidebar` — dev-only warns if set below 768. @default 768"
             }
           ]
         },
@@ -34167,6 +34306,24 @@
               "optional": true,
               "type": "string",
               "description": "Label for the \"view all\" footer item. @default \"View all notifications\""
+            },
+            {
+              "name": "side",
+              "optional": true,
+              "type": "ComponentProps<typeof DropdownMenuContent>[\"side\"]",
+              "description": "Which side of the trigger the menu opens on. The default is `\"right\"`, which is right for the surface this component was extracted from — a bell sitting in a left-hand nav rail. It is WRONG for a trigger at the end of a top bar: Radix collision-handling then flips the menu back across the trigger and it covers the controls beside it. Set `side=\"bottom\"` (usually with `align=\"end\"`) for a top-bar bell. @default \"right\""
+            },
+            {
+              "name": "align",
+              "optional": true,
+              "type": "ComponentProps<typeof DropdownMenuContent>[\"align\"]",
+              "description": "How the menu aligns along that side. Radix's own default is `\"center\"`; pass `\"end\"` so a top-bar menu hangs from the trigger's outer edge instead of straddling it."
+            },
+            {
+              "name": "className",
+              "optional": true,
+              "type": "string",
+              "description": "Extra classes for the component ROOT — the bell trigger — merged last, so a caller can override the shipped `rounded-full` (`component-api.md`). There is deliberately NO seam for the portalled menu surface: nothing needs one today, and an unused prop is a worse API than a missing one. The one thing a caller used to reach for it (dropping the rail's vertical inset for a top-bar menu) is now derived from `side` instead — see below."
             }
           ]
         },
@@ -34266,7 +34423,9 @@
           ]
         },
         "PageShell": {
-          "extends": [],
+          "extends": [
+            "ComponentProps<\"div\">"
+          ],
           "props": [
             {
               "name": "children",
@@ -34290,6 +34449,18 @@
               "optional": true,
               "type": "\"md\" | \"lg\" | \"xl\" | \"full\"",
               "description": "Constrain content width. Defaults to \"xl\"."
+            },
+            {
+              "name": "scroll",
+              "optional": true,
+              "type": "\"body\" | \"content\" | \"fill\"",
+              "description": "\"body\" (default) — the page scrolls with the document. Byte-identical to the pre-#R6 behaviour; existing callers are unaffected. \"content\" — this container is the scroll port. Use inside a `SidebarInset` whose height is already bounded, so the top bar stays put. Defaults its own `tabIndex` to `0` (a scroll container must be keyboard-operable — WCAG 2.1.1, axe `scrollable-region-focusable`), following the `DialogBody` precedent; pass `tabIndex={-1}` to opt out when the content already supplies its own focusable child. \"fill\" — fills its parent and scrolls nothing itself; a child (a table, a canvas) owns the scrolling — and owns that child's keyboard reachability too, the same way."
+            },
+            {
+              "name": "headerGutter",
+              "optional": true,
+              "type": "boolean",
+              "description": "Reserve a fixed header row so a page title lands at identical coordinates on every route, whether or not that route has a header. Default `false`. The row's height is a component-local CSS variable — `--page-shell-header-gutter`, declared on the root, default `--spacing(12)` (3rem / 48px at a 16px root — the height a one-line title already occupies inside the `headerVariant=\"toolbar\"` bar's own `py-3`). It is NOT a theme token (`pnpm theme-parity:check` does not see it); retune it per surface the same way `--focus-ring-color` is retargeted elsewhere in this package: `<PageShell headerGutter className=\"[--page-shell-header-gutter:--spacing(16)]\" />`. When `true` the header row renders **even if `header` is omitted** — that empty row is the whole mechanism, and it is what `headerGutter={false}` must never produce."
             },
             {
               "name": "className",
@@ -34817,6 +34988,12 @@
               "description": "Optional element rendered above the title (eyebrow / breadcrumbs)."
             },
             {
+              "name": "as",
+              "optional": true,
+              "type": "\"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\"",
+              "description": "The heading LEVEL the title contributes to the document outline. The visual (`text-title`) is identical for every value — pick the level the page's structure calls for, not the size you want (WCAG 1.3.1). Use `as=\"h1\"` when this header titles the PAGE (a screen whose route it names); leave it at the default when it titles a section INSIDE a page that already has an `<h1>` elsewhere. @default \"h2\""
+            },
+            {
               "name": "className",
               "optional": true,
               "type": "string"
@@ -34910,11 +35087,139 @@
           ],
           "props": []
         },
+        "SidebarInset": {
+          "extends": [
+            "ComponentProps<\"main\">"
+          ],
+          "props": [
+            {
+              "name": "gutter",
+              "optional": true,
+              "type": "SidebarInsetGutter"
+            }
+          ]
+        },
+        "SideDock": {
+          "extends": [
+            "Omit<ComponentProps<\"aside\">, \"title\">"
+          ],
+          "props": [
+            {
+              "name": "title",
+              "optional": false,
+              "type": "ReactNode",
+              "description": "The dock's name. Rendered as its header heading, and as the `SheetTitle` of the overlay presentation. REQUIRED: the overlay cannot be accessible without it, and an optional prop with a generic default would ship a meaningless announced name into real apps."
+            },
+            {
+              "name": "description",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Optional longer description. Visible under the title in the column presentation; `sr-only` in the overlay presentation (the compact sheet header has no room for it, but it still reaches assistive tech)."
+            },
+            {
+              "name": "headerActions",
+              "optional": true,
+              "type": "ReactNode",
+              "description": "Optional controls placed in the header row beside the built-in close button."
+            },
+            {
+              "name": "open",
+              "optional": true,
+              "type": "boolean",
+              "description": "Controlled open state. Closed means zero width (content stays mounted, inert)."
+            },
+            {
+              "name": "defaultOpen",
+              "optional": true,
+              "type": "boolean",
+              "description": "Uncontrolled initial open state. Default `false` — a dock is summoned."
+            },
+            {
+              "name": "onOpenChange",
+              "optional": true,
+              "type": "(open: boolean) => void",
+              "description": "Called with the next open state."
+            },
+            {
+              "name": "side",
+              "optional": true,
+              "type": "\"left\" | \"right\"",
+              "description": "Which edge it docks to. Default `\"right\"`."
+            },
+            {
+              "name": "width",
+              "optional": true,
+              "type": "number",
+              "description": "Controlled width in px."
+            },
+            {
+              "name": "defaultWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Uncontrolled initial width in px. Default `400`."
+            },
+            {
+              "name": "onWidthChange",
+              "optional": true,
+              "type": "(width: number) => void",
+              "description": "Fires continuously during a resize — drive layout from this."
+            },
+            {
+              "name": "onWidthCommit",
+              "optional": true,
+              "type": "(width: number) => void",
+              "description": "Fires once when an interaction ends — PERSIST from this."
+            },
+            {
+              "name": "minWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Lower bound in px. Default `320`."
+            },
+            {
+              "name": "maxWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Upper bound in px. Default `640`."
+            },
+            {
+              "name": "minContentWidth",
+              "optional": true,
+              "type": "number",
+              "description": "Content width preserved when clamping against the live viewport, px. Default `480`."
+            },
+            {
+              "name": "resizable",
+              "optional": true,
+              "type": "boolean",
+              "description": "Whether the resize handle renders. Default `true`."
+            },
+            {
+              "name": "overlayBreakpoint",
+              "optional": true,
+              "type": "number",
+              "description": "Viewport width in px below which the dock renders as an overlay `Sheet` instead of a column. Default `1100`. Deliberately ABOVE the library's 768px mobile breakpoint: a 400px dock at 768px leaves ~360px of content. This is the switch point for the column-only sizing props above — the overlay presentation ignores them entirely."
+            }
+          ]
+        },
         "Skeleton": {
           "extends": [
             "HTMLAttributes<HTMLDivElement>"
           ],
           "props": []
+        },
+        "SkipLink": {
+          "extends": [
+            "ComponentProps<\"a\">"
+          ],
+          "props": [
+            {
+              "name": "targetId",
+              "optional": true,
+              "type": "string",
+              "description": "The id of the landmark to jump to. Defaults to \"main-content\"."
+            }
+          ]
         },
         "Slider": {
           "extends": [

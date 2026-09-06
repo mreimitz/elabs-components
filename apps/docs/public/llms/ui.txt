@@ -105,6 +105,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - CommandList
 - CommandSeparator
 - CommandShortcut
+- CommandTrigger
 - ConfirmDialog
 - ContextMenu
 - ContextMenuCheckboxItem
@@ -120,6 +121,7 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - ContextMenuSubContent
 - ContextMenuSubTrigger
 - ContextMenuTrigger
+- ContextRail
 - COPY_FEEDBACK_MS
 - CopyableValue
 - DatePicker
@@ -373,7 +375,9 @@ Import from `@elabs-ai/components-ui`. Part of brand-ui — see the root `llms.t
 - SidebarRail
 - SidebarSeparator
 - SidebarTrigger
+- SideDock
 - Skeleton
+- SkipLink
 - Slider
 - SliderNumber
 - Spinner

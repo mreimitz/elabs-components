@@ -30,7 +30,7 @@
  *     export { NavMain as DashboardNavigation } from "@elabs-ai/components-ui" — aliased re-export
  *     export type { TeamSwitcherProps } from "@elabs-ai/components-ui"       — types only
  *
- * Scope: packages/ui/src/blocks/sidebar-*\/**\/*.{ts,tsx} excluding *.test.* and
+ * Scope: registry/blocks/sidebar-*\/**\/*.{ts,tsx} excluding *.test.* and
  * *.stories.*, dist, node_modules.
  *
  * Flags:
@@ -45,7 +45,7 @@ import { dirname, join, relative } from "node:path";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR); // scripts/ → repo root
-const BLOCKS_DIR = join(REPO_ROOT, "packages", "ui", "src", "blocks");
+export const BLOCKS_DIR = join(REPO_ROOT, "registry", "blocks");
 
 /**
  * Shared nav primitives that now live in `@elabs-ai/components-ui` (issue #99). A registry
@@ -76,7 +76,7 @@ function lineOf(src, index) {
 }
 
 /**
- * Locate the sidebar block files: packages/ui/src/blocks/sidebar-*\/**.
+ * Locate the sidebar block files: registry/blocks/sidebar-*\/**.
  * Skips *.test.*, *.stories.*, dist/, node_modules/.
  * Returns absolute paths.
  */
@@ -93,6 +93,32 @@ export function listSidebarBlockFiles(blocksDir = BLOCKS_DIR) {
     walk(join(blocksDir, e.name), out);
   }
   return out;
+}
+
+/**
+ * Scan `blocksDir` for sidebar block files and enforce that the scan actually
+ * found something to guard. A missing directory or a directory with no
+ * sidebar-* blocks both come back from listSidebarBlockFiles() as an empty
+ * array — which is indistinguishable from "nothing to report" unless this
+ * wrapper turns it into a loud failure. This is the fix for the #99 gate
+ * having silently scanned zero files after the app-shell-blocks move (task-12
+ * fix round 2): a swallowed `readdirSync` failure must never read as "the
+ * thing I guard is fine".
+ *
+ * @param {string} blocksDir
+ * @returns {string[]} the non-empty file list
+ * @throws {Error} when the scan finds no candidate files
+ */
+export function scanSidebarBlocksOrThrow(blocksDir = BLOCKS_DIR) {
+  const files = listSidebarBlockFiles(blocksDir);
+  if (files.length === 0) {
+    throw new Error(
+      `found no sidebar block files to scan in ${blocksDir} — the gate cannot verify ` +
+        `anything against an empty file list (a missing/renamed blocks directory must ` +
+        `fail loudly, never silently pass)`,
+    );
+  }
+  return files;
 }
 
 function walk(dir, acc) {
@@ -217,9 +243,19 @@ function main(argv) {
     if (args[i] === "--file" && args[i + 1]) fileArgs.push(args[++i]);
   }
 
-  const files = fileArgs.length
-    ? fileArgs.filter((f) => existsSync(f) && statSync(f).isFile())
-    : listSidebarBlockFiles();
+  let files;
+  if (fileArgs.length) {
+    files = fileArgs.filter((f) => existsSync(f) && statSync(f).isFile());
+  } else {
+    try {
+      files = scanSidebarBlocksOrThrow();
+    } catch (err) {
+      const label = warnOnly ? "⚠ sidebar-drift" : "✘ sidebar-drift gate FAILED";
+      console.error(`\n${label}: ${err.message}`);
+      if (!warnOnly) process.exit(1);
+      return;
+    }
+  }
 
   const findings = [];
   for (const f of files) {
@@ -257,7 +293,9 @@ function main(argv) {
   }
 
   if (!warnOnly) {
-    console.log(`✔ sidebar-drift: no shared nav primitive is re-declared in a registry block`);
+    console.log(
+      `✔ sidebar-drift: no shared nav primitive is re-declared in a registry block (scanned ${files.length} file${files.length === 1 ? "" : "s"})`,
+    );
   }
 }
 

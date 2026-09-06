@@ -119,19 +119,33 @@
     `text-sm`/`text-xs` reads Tailwind's own `--text-sm`/`--text-xs`, which the
     dial does not touch. So density coverage on a real screen == role adoption
     on that screen, and adoption is partial: `pnpm text-scale:check` still
-    counts **309 raw font-size uses across 111 files** — 112 in
-    `@elabs-ai/components-ui` (mostly `src/blocks/**` copy-own
-    blocks, `context-menu`, `menubar`), 109 in
-    `@elabs-ai/components-ai`, 50 in
+    counts **272 raw font-size uses across 96 files** (post-move figures —
+    the three ported app-shell blocks left `@elabs-ai/components-ui` for the
+    copy-own registry, which is warn-only for this gate) — 102 in
+    `@elabs-ai/components-ui` (topped by `context-menu` and `menubar`, 6 each,
+    spread thereafter across 44 files; no longer `src/blocks/**`, which is
+    the registry move just named), 106 in
+    `@elabs-ai/components-ai`, 41 in
     `@elabs-ai/components-charts`. Every one of those is a string of
     text a compact surface will NOT tighten. Measured on real screens after the
     Sidebar/Button/Badge/Table/DataTable migration (elements whose computed
     `font-size` actually changes between comfortable and compact, story root,
-    1440×900): `data-datatable--with-toolbar` **10/11**,
+    1440×900) — **all four figures below predate this branch's shell
+    rebuilds and need a re-render pass to confirm; nothing on this branch
+    re-measured them, and no replacement number is asserted here**:
+    `data-datatable--with-toolbar` **10/11**,
     `patterns-templates-data-app--default` **27/31**,
-    `patterns-templates-enterprise-admin-console--default` **47/52**, but
-    `layout-app-shell-mail--default` only **10/49** — its remaining 39 are raw
-    utilities inside `packages/ui/src/blocks/sidebar-04/**`. **Do not describe
+    `patterns-templates-enterprise-admin-console--default` **47/52**, and
+    `layout-app-shell-mail--default` **10/49**. The `layout-app-shell-mail--default`
+    figure was originally explained by raw utilities inside
+    `registry/blocks/sidebar-04/**` (moved from
+    `packages/ui/src/blocks/sidebar-04/**`); that block was **rebuilt on this
+    branch and now contains zero raw font-size utilities** (confirmed by a
+    static grep), so that explanation no longer holds and the 10/49 count is
+    unconfirmed rather than merely stale. The whole registry tree currently
+    holds 8 raw font-size uses: `marketing-hero` (4), `stat-card-parts` (2),
+    `stat-card-choropleth-01` (1), `ai-chart` (1) — `sidebar-05`'s one use was
+    cleared by a later rebuild. **Do not describe
     the dial as scaling "the type on a screen"; it scales the type that reaches
     for a role.** Closing the gap is ordinary text-scale ratchet work, not a
     change to the dial.

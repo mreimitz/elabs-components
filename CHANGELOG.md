@@ -2,6 +2,69 @@
 
 ## Unreleased
 
+- Added: `@elabs-ai/components-ui` gains four new app-shell primitives.
+  `SkipLink` is the first focusable element of an application shell —
+  invisible until focused, then a token-styled pill that jumps keyboard and
+  screen-reader users straight past repeated navigation to the main
+  landmark. `CommandTrigger` is a search-shaped button that opens a command
+  palette, showing a platform-correct `⌘ K`/`Ctrl K` hint while keeping an
+  accessible name that survives the shortcut glyph next to it (#117).
+  `ContextRail` is a persistent right-hand rail that collapses to a 48px
+  icon strip which is itself the section switcher: hand it a `sections`
+  array (icon, label, optional count, panel body) and it renders the
+  collapsed strip, the expanded panel and the switcher from that one data
+  shape, with the section name reaching assistive tech as the switcher
+  button's accessible name in both states. `SideDock` is a summoned,
+  resizable dock — closed by default, animated open, drag- and
+  keyboard-resizable, its width persisted and re-clamped against the live
+  viewport — that automatically becomes an overlay sheet below a
+  configurable breakpoint instead of squeezing the content column on a
+  narrow screen. A new `SidebarProvider frame="nested"` mode lets a second
+  collapsible zone such as `ContextRail` carry its own sidebar context
+  without claiming the whole application frame the primary sidebar already
+  owns.
+
+- Added: `PageShell` gains two additive props with no change to its default
+  render. `scroll="body" | "content" | "fill"` picks who owns the page's
+  scrolling — the page itself (today's behaviour, still the default), the
+  shell's own body, or the child content. `headerGutter` reserves a
+  constant-height header row so a page title lands at the same vertical
+  position on every route, whether or not that route supplies a header.
+
+- Fixed: three sidebar repairs. The active navigation item now carries a
+  leading bar indicator and a bolder label weight alongside its existing
+  colour change, so which page is current no longer depends on colour alone
+  (#340). Group labels inside the collapsed icon rail are now actually
+  removed from layout instead of merely faded to zero opacity, closing the
+  unexplained gaps that used to open up between icon groups (#341). And
+  composing a `SidebarProvider variant="inset"` together with a
+  `Sidebar variant="inset"` now resolves the inset's margin/radius/shadow
+  treatment deterministically from the sidebar's own state instead of racing
+  on stylesheet order (#342).
+
+- Changed: the four app-shell registry blocks are now designed, believable
+  starting points rather than primitive demos — each ships a real screen
+  (working top bar, populated nav, real content) alongside a bare-frame
+  story to build from. `app-shell` (registry title "App shell") is the
+  `Layout/App Shell/Flagship` story; `sidebar-02`
+  ("App shell — dashboard inset") is `Layout/App Shell/Dashboard`;
+  `sidebar-04` ("App shell — mail") is `Layout/App Shell/Mail`; and
+  `sidebar-05` ("App shell — dual rail") is `Layout/App Shell/Double-Sided`
+  — all four now sit beside the `@elabs-ai/components-ui` `AppShell`
+  primitive's own `Layout/App Shell/Minimal` story in one Storybook group.
+  `sidebar-02`, `sidebar-04` and `sidebar-05` also moved: they no longer
+  live under `packages/ui/src/blocks/`, which is gone, but under
+  `registry/blocks/`, consumed copy-own exactly as before. They were never
+  exported from the `@elabs-ai/components-ui` barrel, so this removes no
+  public export — only a source-location change for anyone who deep-imported
+  the block files directly. Five component stories were also retitled to the
+  PascalCase convention the `storybook-groups` gate enforces, which changes
+  their story ids: `Navigation/Command Trigger` →
+  `Navigation/CommandTrigger`, `Navigation/Nav Notifications` →
+  `Navigation/NavNotifications`, `Navigation/Skip Link` →
+  `Navigation/SkipLink`, `Layout/Context Rail` → `Layout/ContextRail`, and
+  `Layout/Side Dock` → `Layout/SideDock` — a consumer with bookmarked
+  Storybook URLs or story-id references needs to update them.
 - Fixed: an excluded (filtered-out) element on `ProcessMap`
   (`@elabs-ai/components-process`) used to fade its whole card or arrow to one
   flat opacity — which dimmed the activity's own card border along with its

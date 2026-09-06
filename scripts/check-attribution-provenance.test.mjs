@@ -166,7 +166,12 @@ test("SCOPE: tests are excluded — they describe fixtures, not what ships", () 
 test("REAL: the committed dataset credits the upstreams shipped source names", () => {
   const aliases = creditedAliases(REPO_ROOT);
   // A representative slice — if the sweep is ever reverted, these go missing.
-  for (const expected of ["blocks.so", "assistant-ui", "milkdown", "anyview", "mapcn"]) {
+  // blocks.so is deliberately NOT in this list: the borrowing genuinely ended
+  // on this branch (the three upstream-derived app-sidebar.tsx files —
+  // sidebar-02/-04/-05 — are deleted, and no shipped source still claims its
+  // provenance), so the dataset is right to have dropped the entry. Do not
+  // re-add it here.
+  for (const expected of ["assistant-ui", "milkdown", "anyview", "mapcn"]) {
     assert.ok(aliases.has(expected), `dataset lost the alias: ${expected}`);
   }
 });
