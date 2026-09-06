@@ -130,16 +130,22 @@
     text a compact surface will NOT tighten. Measured on real screens after the
     Sidebar/Button/Badge/Table/DataTable migration (elements whose computed
     `font-size` actually changes between comfortable and compact, story root,
-    1440×900): `data-datatable--with-toolbar` **10/11**,
+    1440×900) — **all four figures below predate this branch's shell
+    rebuilds and need a re-render pass to confirm; nothing on this branch
+    re-measured them, and no replacement number is asserted here**:
+    `data-datatable--with-toolbar` **10/11**,
     `patterns-templates-data-app--default` **27/31**,
-    `patterns-templates-enterprise-admin-console--default` **47/52**, but
-    `layout-app-shell-mail--default` only **10/49** — its remaining 39 are raw
-    utilities inside `registry/blocks/sidebar-04/**` (moved from
-    `packages/ui/src/blocks/sidebar-04/**`; the DOM-measurement figure itself
-    is unverified here — a re-render pass, not `pnpm text-scale:check`, would
-    confirm it, and a static grep of the moved file now finds 0 raw
-    font-size utilities, so this count may already be stale independent of
-    the move). **Do not describe
+    `patterns-templates-enterprise-admin-console--default` **47/52**, and
+    `layout-app-shell-mail--default` **10/49**. The `layout-app-shell-mail--default`
+    figure was originally explained by raw utilities inside
+    `registry/blocks/sidebar-04/**` (moved from
+    `packages/ui/src/blocks/sidebar-04/**`); that block was **rebuilt on this
+    branch and now contains zero raw font-size utilities** (confirmed by a
+    static grep), so that explanation no longer holds and the 10/49 count is
+    unconfirmed rather than merely stale. The whole registry tree currently
+    holds 8 raw font-size uses: `marketing-hero` (4), `stat-card-parts` (2),
+    `stat-card-choropleth-01` (1), `ai-chart` (1) — `sidebar-05`'s one use was
+    cleared by a later rebuild. **Do not describe
     the dial as scaling "the type on a screen"; it scales the type that reaches
     for a role.** Closing the gap is ordinary text-scale ratchet work, not a
     change to the dial.

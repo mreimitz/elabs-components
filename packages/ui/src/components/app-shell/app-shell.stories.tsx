@@ -6,7 +6,7 @@ import { SectionHeader } from "../section-header";
 import { Button } from "../button";
 
 const meta = {
-  title: "Layout/App Shell/Basic",
+  title: "Layout/App Shell/Minimal",
   component: AppShell,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof AppShell>;
@@ -47,7 +47,7 @@ export const Default: Story = {
           header={
             <SectionHeader
               title="Overview"
-              description="A lightweight generic shell. For full sidebar behavior use the Sidebar primitive."
+              description="A minimal, unstyled two-region shell — the honest answer for a simple layout. For full sidebar behavior use the Sidebar primitive; for a fully wired enterprise console see Layout/App Shell/Flagship."
             />
           }
         >
