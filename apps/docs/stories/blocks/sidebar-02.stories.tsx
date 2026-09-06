@@ -141,11 +141,18 @@ export const NestedRoute: Story = {
 export const Frame: Story = {
   render: () => <DashboardShell activePath="/" emptyContent />,
   play: async ({ canvasElement }) => {
-    await expect(
-      canvasElement.querySelector('[data-slot="dashboard-top-bar"]'),
-    ).toBeInTheDocument();
-    await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeInTheDocument();
-    await expect(canvasElement.querySelector('[data-slot="sidebar"]')).toBeInTheDocument();
+    // `toBeVisible()`, not `toBeInTheDocument()`. These three lines carry the
+    // whole promise of the story — "a later refactor that quietly drops one
+    // fails here" — and as presence checks they did not: hiding
+    // `nav[aria-label="Primary"]` outright left THIS story passing. An element
+    // hidden by a CSS class still matches `querySelector`.
+    for (const selector of [
+      '[data-slot="dashboard-top-bar"]',
+      'nav[aria-label="Primary"]',
+      '[data-slot="sidebar"]',
+    ]) {
+      await expect(canvasElement.querySelector(selector)).toBeVisible();
+    }
     // The command palette opener lives in the bar at every width.
     await expect(canvasElement.querySelector('[data-slot="command-trigger"]')).toBeVisible();
     // The skip link points at the one main landmark, and that landmark is a
@@ -239,6 +246,18 @@ export const Loading: Story = {
       .querySelector('[data-slot="storefront-overview-activity"]')
       ?.querySelector('[role="status"]');
     await expect(activityStatus).toBeInTheDocument();
+    // …and PAINTED. `toHaveTextContent` reads `textContent`, which CSS does not
+    // touch, so the line below stayed green with the whole loading region set
+    // to `display: none` — the skeleton state could vanish entirely and this
+    // story would not notice.
+    await expect(activityStatus).toBeVisible();
+    await expect(activityStatus).toHaveAttribute("aria-live", "polite");
+    // A placeholder that reserves no space is not a layout-shaped skeleton.
+    const activityBoxes = (activityStatus as HTMLElement).querySelectorAll('[aria-hidden="true"]');
+    await expect(activityBoxes.length).toBeGreaterThan(0);
+    await expect((activityBoxes[0] as HTMLElement).getBoundingClientRect().height).toBeGreaterThan(
+      0,
+    );
     await expect(activityStatus).toHaveTextContent("Loading activity…");
     // ONE loading treatment on the screen: no real figure may be legible while
     // the rest of the page is a skeleton. Asserted as "the revenue region

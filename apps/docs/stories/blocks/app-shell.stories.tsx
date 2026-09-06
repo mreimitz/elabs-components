@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import AppShellPage from "@/components/app-shell/app-shell-page";
 
@@ -37,6 +37,41 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => <AppShellPage activePath="/" />,
+  play: async ({ canvasElement }) => {
+    /* The zone census, and the only place in this file that asserts the
+     * flagship's whole frame is PAINTED. It had no play function at all, which
+     * meant the block every consumer copies had its headline story assert
+     * nothing whatsoever.
+     *
+     * `toBeVisible()` on every zone, never `toBeInTheDocument()`: an element
+     * hidden by a CSS class still matches `querySelector` and still resolves
+     * through `getByRole`, so a presence assertion survives the whole zone
+     * being switched off. That is not hypothetical here — the sibling mail
+     * shell shipped with its middle zone computing `display: none` past a file
+     * full of presence assertions.
+     */
+    for (const [selector, zone] of [
+      ['[data-slot="app-top-bar"]', "top bar"],
+      ['nav[aria-label="Primary"]', "nav rail"],
+      ['[data-slot="app-list-column"]', "list column"],
+      ['[data-slot="context-rail"]', "context rail"],
+      ['[data-slot="app-shell-content"]', "content pane"],
+    ] as const) {
+      const el = canvasElement.querySelector(selector);
+      await expect(el, `${zone} is missing`).toBeInTheDocument();
+      await expect(el, `${zone} is not painted`).toBeVisible();
+    }
+    // A zone can also be present, painted, and squeezed to nothing — the
+    // failure mode the phone story already measures on the title. The list
+    // column is the zone with a fixed width to lose.
+    const list = canvasElement.querySelector('[data-slot="app-list-column"]') as HTMLElement;
+    await expect(list.getBoundingClientRect().width).toBeGreaterThan(120);
+    // And the content pane really holds the console, rather than the frame
+    // rendering around an empty slot.
+    await expect(
+      canvasElement.querySelector('[data-slot="app-shell-content"]'),
+    ).not.toBeEmptyDOMElement();
+  },
 };
 
 /** A nested route lights its parent nav entry; an unrelated one stays dark. */
@@ -45,12 +80,16 @@ export const ActivePathMatching: Story = {
   play: async ({ canvasElement }) => {
     const runs = canvasElement.querySelector('a[href="/runs"]') as HTMLElement;
     const overview = canvasElement.querySelector('a[href="/"]') as HTMLElement;
+    // Painted first. `data-active` on an entry nobody can see is a lit lamp in
+    // a closed room, and the attribute reads identically either way.
+    await expect(runs).toBeVisible();
+    await expect(overview).toBeVisible();
     // A nested route keeps its parent lit; an unrelated one does not.
     await expect(runs).toHaveAttribute("data-active", "true");
     await expect(overview).toHaveAttribute("data-active", "false");
     // Depth 2, so the trail earns its row — one crumb would be a page title
     // wearing a separator.
-    await expect(canvasElement.querySelector('nav[aria-label="breadcrumb"]')).toBeInTheDocument();
+    await expect(canvasElement.querySelector('nav[aria-label="breadcrumb"]')).toBeVisible();
   },
 };
 
@@ -62,10 +101,18 @@ export const ActivePathMatching: Story = {
 export const Frame: Story = {
   render: () => <AppShellPage activePath="/" emptyContent />,
   play: async ({ canvasElement }) => {
-    await expect(canvasElement.querySelector('[data-slot="app-top-bar"]')).toBeInTheDocument();
-    await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeInTheDocument();
-    await expect(canvasElement.querySelector('[data-slot="app-list-column"]')).toBeInTheDocument();
-    await expect(canvasElement.querySelector('[data-slot="context-rail"]')).toBeInTheDocument();
+    // `toBeVisible()`, not `toBeInTheDocument()`. These four lines are the
+    // whole point of the story — "a later refactor that quietly drops a zone
+    // fails here" — and as presence checks they did not do it: hiding the
+    // entire list zone left this file `8 passed (8)`.
+    for (const selector of [
+      '[data-slot="app-top-bar"]',
+      'nav[aria-label="Primary"]',
+      '[data-slot="app-list-column"]',
+      '[data-slot="context-rail"]',
+    ]) {
+      await expect(canvasElement.querySelector(selector)).toBeVisible();
+    }
     // `emptyContent` hands the screen slot back to the consumer: the shell
     // still paints its own scroll port, but nothing is inside it.
     await expect(
@@ -169,6 +216,24 @@ export const Loading: Story = {
       .querySelector('[data-slot="app-list-column"]')
       ?.querySelector('[role="status"]');
     await expect(listStatus).toBeInTheDocument();
+    // …and PAINTED. `toHaveTextContent` reads `textContent`, which CSS does not
+    // touch, so the line below passed with the whole loading region set to
+    // `display: none` — the entire skeleton state could vanish and this story
+    // stayed green. This is the assertion that asks the browser.
+    await expect(listStatus).toBeVisible();
+    await expect(listStatus).toHaveAttribute("aria-live", "polite");
+    // A skeleton that reserves no space is not a layout-shaped skeleton: the
+    // real row is meant to land in the box that is already there.
+    const listBoxes = (listStatus as HTMLElement).querySelectorAll('[aria-hidden="true"]');
+    await expect(listBoxes.length).toBeGreaterThan(0);
+    await expect((listBoxes[0] as HTMLElement).getBoundingClientRect().height).toBeGreaterThan(0);
+    // The content pane announces its own wait, in its own region — one live
+    // region per zone rather than one for the screen.
+    const activityStatus = canvasElement
+      .querySelector('[data-slot="app-shell-content"]')
+      ?.querySelector('[role="status"]');
+    await expect(activityStatus).toBeInTheDocument();
+    await expect(activityStatus).toBeVisible();
     // Announced once per region, not once per skeleton box.
     await expect(listStatus).toHaveTextContent("Loading pipelines…");
     // ONE loading treatment on the screen. `DataTable` draws skeleton rows only
@@ -187,7 +252,15 @@ export const Loading: Story = {
 export const Empty: Story = {
   render: () => <AppShellPage activePath="/" pipelines={[]} metrics={[]} runs={[]} activity={[]} />,
   play: async ({ canvas }) => {
-    await expect(canvas.getByText("No pipelines yet")).toBeInTheDocument();
-    await expect(canvas.getByText("Nothing happened overnight")).toBeInTheDocument();
+    // `waitFor` because `StatePanel` fades in — mid-animation it is genuinely
+    // part-transparent, so a bare `toBeVisible()` races the first frame.
+    // Visible rather than merely present: an empty state nobody can see is the
+    // "broken chunk of UI for `[]`" this story exists to forbid.
+    await waitFor(async () => {
+      await expect(canvas.getByText("No pipelines yet")).toBeVisible();
+    });
+    await waitFor(async () => {
+      await expect(canvas.getByText("Nothing happened overnight")).toBeVisible();
+    });
   },
 };

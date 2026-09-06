@@ -151,6 +151,18 @@ export const Default: Story = {
       await expect((row as HTMLAnchorElement).href).not.toBe(document.location.href);
       // Channel (a): nothing pulled the row out of the sequential focus order.
       await expect(row.getAttribute("tabindex")).toBeNull();
+      // …and when focus lands, it is visible. The row sits inside the list's
+      // own `overflow-y-auto` scroll port, itself inside `SidebarInset`'s
+      // `overflow-hidden`, so a ring drawn OUTSIDE the element's box is clipped
+      // away entirely — `focus-ring-inset` is the rung that survives.
+      //
+      // This one is asserted as a CLASS on purpose, against the usual rule.
+      // The two rungs differ only in the CSS they emit, and the thing that goes
+      // wrong — a ring painted outside a clipping ancestor — has no box left to
+      // measure once it is clipped, so there is no rendered quantity to read
+      // back. The assertion is about the CLIPPING, not about a name; if a later
+      // reader finds a way to measure the painted ring, prefer that.
+      await expect(row).toHaveClass("focus-ring-inset");
     }
     const hrefs = rows.map((row) => row.getAttribute("href"));
     await expect(new Set(hrefs).size).toBe(hrefs.length);
@@ -167,6 +179,24 @@ export const Default: Story = {
     await expect(search).toHaveFocus();
     await userEvent.tab();
     await expect(rows[0]).toHaveFocus();
+
+    /* --- LOCK 3: the drill-down switch, at the runner's desktop width ----
+     * `data-slot="mail-shell-panes"` carries ONE attribute that both zones
+     * read through `group-data-[reading=…]/mail:` variants. Pinning it to
+     * `"closed"` used to leave this file green, which means the switch that
+     * decides which zone owns a phone screen was unasserted.
+     *
+     * All three halves are load-bearing and each catches a different edit:
+     * the attribute catches the switch being pinned or inverted; the pane
+     * catches the reading zone failing to open; and the LIST catches the bug
+     * this shell actually shipped — a specificity contest that hid the middle
+     * zone at every width, which every text and attribute assertion in this
+     * file passed straight through.
+     * ------------------------------------------------------------------ */
+    const panes = canvasElement.querySelector('[data-slot="mail-shell-panes"]');
+    await expect(panes).toHaveAttribute("data-reading", "open");
+    await expect(canvasElement.querySelector('[data-slot="mail-reading-pane"]')).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="mail-list-column"]')).toBeVisible();
 
     // …and the row that is open says so through a channel that survives
     // greyscale: `aria-current`, not the tint.
@@ -238,7 +268,19 @@ export const NoSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const pane = canvasElement.querySelector('[data-slot="mail-reading-pane"]');
+    // Visible with NOTHING selected — which is the `md:flex` half of the pane's
+    // class list doing its job, and the only assertion in the file that reaches
+    // it. The pane's base class is `hidden`; with `data-reading="closed"` the
+    // `group-data-[reading=open]/mail:flex` rule does not match, so `md:flex`
+    // is the sole reason this zone is painted. Both are single-class selectors
+    // at equal specificity, so the tie is broken by SOURCE ORDER alone — the
+    // most fragile arrangement in the block. Deleting `md:flex`, or moving
+    // `hidden` after it, reds this line.
     await expect(pane).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="mail-shell-panes"]')).toHaveAttribute(
+      "data-reading",
+      "closed",
+    );
     await expect(pane).toHaveAccessibleName("Reading pane");
     // `waitFor` for `StatePanel`'s own fade-in — see the note in `Empty`.
     await waitFor(async () => expect(canvas.getByText("No message selected")).toBeVisible());
@@ -559,5 +601,74 @@ export const OverflowingContent: Story = {
     await expect(`body spill=${Math.max(0, Math.round(noOverflow(paragraph, "b").spill))}`).toBe(
       "body spill=0",
     );
+  },
+};
+
+/**
+ * The phone branch — the half of this shell that a 1200px test runner has never
+ * rendered. Below `md` the two content zones stop being columns and become a
+ * drill-down: the list owns the screen until a message is opened, then hands it
+ * over and the top bar grows a back control.
+ *
+ * The viewport really changes here. `md:` and `max-md:` are VIEWPORT media
+ * queries, so constraining a wrapper's width would prove nothing — the story
+ * would render the desktop branch under a mobile name, and (because a hidden
+ * element measures zero) it would pass. Measured inside this play function:
+ * `window.innerWidth` is 414 and `matchMedia("(min-width: 48rem)")` is false,
+ * against 1200 / true everywhere else in this file. The global is per-story and
+ * restores afterwards, so no sibling story inherits it.
+ */
+export const NarrowDrillDown: Story = {
+  globals: { viewport: { value: "mobile2", isRotated: false } },
+  render: () => <MailShell activePath="/inbox" />,
+  play: async ({ canvasElement }) => {
+    // The premise, asserted rather than assumed: if this is still a desktop
+    // viewport then everything below is testing the wrong branch.
+    await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(false);
+
+    const list = canvasElement.querySelector('[data-slot="mail-list-column"]') as HTMLElement;
+    const pane = canvasElement.querySelector('[data-slot="mail-reading-pane"]') as HTMLElement;
+    const panes = canvasElement.querySelector('[data-slot="mail-shell-panes"]') as HTMLElement;
+    await expect(list).toBeInTheDocument();
+    await expect(pane).toBeInTheDocument();
+
+    // Nothing open: the list owns the screen and the pane is not merely
+    // off-screen, it is not painted. This is the `hidden` base class with
+    // neither `md:flex` nor the group rule matching — the one arrangement no
+    // other story in this file can reach.
+    await expect(panes).toHaveAttribute("data-reading", "closed");
+    await expect(list).toBeVisible();
+    await expect(pane).not.toBeVisible();
+
+    // Open one. The switch flips, and the two zones trade places.
+    const first = canvasElement.querySelector(
+      `a[href="${messageHref(FIRST.id)}"]`,
+    ) as HTMLAnchorElement;
+    await expect(first).toBeVisible();
+    await userEvent.click(first);
+
+    await waitFor(async () => {
+      await expect(panes).toHaveAttribute("data-reading", "open");
+    });
+    // `max-md:group-data-[reading=open]/mail:hidden` — the rule the desktop fix
+    // scoped. Below `md` it must still hide the list, or the drill-down is two
+    // columns crushed into 414px.
+    await expect(list).not.toBeVisible();
+    // …and `group-data-[reading=open]/mail:flex` is what paints the pane here.
+    // `md:flex` cannot help at this width, so this is the only assertion in the
+    // file that holds that rule to account.
+    await expect(pane).toBeVisible();
+
+    // The way BACK exists. `md:hidden` on the back control means it is present
+    // only on this branch, so a phone user is never stranded in the message.
+    const canvas = within(canvasElement);
+    const back = canvas.getByRole("button", { name: "Back to the message list" });
+    await expect(back).toBeVisible();
+    await userEvent.click(back);
+    await waitFor(async () => {
+      await expect(panes).toHaveAttribute("data-reading", "closed");
+    });
+    await expect(list).toBeVisible();
+    await expect(pane).not.toBeVisible();
   },
 };
