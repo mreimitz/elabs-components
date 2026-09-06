@@ -161,6 +161,29 @@ export const Default: Story = {
     await expect(port.classList.contains("focus-ring-inset")).toBe(true);
     await expect(port.classList.contains("focus-ring")).toBe(false);
 
+    // The frame is the INSET variant, read as a PAINTED property rather than as
+    // the prop that set it or the class name that carries it. Only
+    // `SidebarProvider variant="inset"` grounds the whole wrapper on chrome
+    // (`bg-sidebar`), which is what makes the floating `SidebarInset` card read
+    // as raised above it; `variant="sidebar"` leaves the wrapper transparent and
+    // the frame goes flat. Geometry cannot see that difference: the inset's
+    // radius, shadow and margin also come from a SECOND, legacy `peer-` rule
+    // that the section panel's own `Sidebar variant="inset"` keeps firing, so
+    // swapping the PROVIDER's variant moves the ground and nothing else.
+    const wrapper = canvasElement.querySelector('[data-slot="sidebar-wrapper"]') as HTMLElement;
+    await expect(wrapper).toBeVisible();
+    const wrapperGround = getComputedStyle(wrapper).backgroundColor;
+    await expect(wrapperGround).not.toBe("rgba(0, 0, 0, 0)");
+    // …and it is the CHROME ground specifically — the same token the icon rail
+    // paints — not merely "some colour", which a transparent wrapper inheriting
+    // a page background would also satisfy.
+    const railZone = zones(canvasElement).rail;
+    await expect(wrapperGround).toBe(getComputedStyle(railZone).backgroundColor);
+    // The canvas is the brighter, separate ground: chrome < canvas is the
+    // elevation hierarchy this variant exists to express.
+    const insetZone = zones(canvasElement).inset;
+    await expect(wrapperGround).not.toBe(getComputedStyle(insetZone).backgroundColor);
+
     // The dock is a COLUMN at this width, even while closed: above
     // `overlayBreakpoint` the column branch is always mounted, below it the
     // overlay branch renders nothing until it opens. `JustAboveTheBreakpoint`
@@ -264,18 +287,164 @@ export const PanelCollapsed: Story = {
 };
 
 /**
- * The dock, summoned — the reason this shell exists.
+ * Switching AREAS from the icon rail, driven the way a person drives it.
  *
- * Two claims, and neither is a presence check: the dock reaches assistive tech
- * as a NAMED `complementary` landmark, and its resize handle is genuinely
- * operable from the keyboard. "Operable" is measured by pressing a key and
- * watching `aria-valuenow` move, because a handle that is focusable and inert
- * passes every attribute assertion anyone would think to write.
+ * The rail is a switcher, not four links: a different area re-points the second
+ * panel WITHOUT navigating, and re-clicking the area already showing closes the
+ * panel. Both halves live in one handler in the shell, and neither is
+ * observable from any prop this story passes — the only way to see them is to
+ * click the rail and read what the panel became.
  */
-export const DockOpen: Story = {
-  render: () => <SettingsShell activePath={SIGN_IN} defaultHistoryOpen />,
+export const AreaSwitching: Story = {
+  render: () => <SettingsShell activePath={SIGN_IN} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const sidebar = canvasElement.querySelector('[data-slot="sidebar"]') as HTMLElement;
+
+    // It opens on the route's own area, with that area's rows under it.
+    await expect(canvas.getByRole("navigation", { name: "Access settings" })).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: "Roles. What each role is allowed to do." }),
+    ).toBeVisible();
+
+    // The rail entries are BUTTONS; the breadcrumb above uses the same words as
+    // links, so the role is what keeps these queries pointed at the rail.
+    const dataButton = canvas.getByRole("button", { name: "Data" });
+    const accessButton = canvas.getByRole("button", { name: "Access" });
+    await expect(accessButton).toHaveAttribute("aria-expanded", "true");
+
+    // 1. A DIFFERENT area re-points the panel.
+    await userEvent.click(dataButton);
+    await waitFor(async () => {
+      await expect(canvas.getByRole("navigation", { name: "Data settings" })).toBeVisible();
+    });
+    // The landmark is not merely relabelled — the rows underneath are the new
+    // area's, and the old area's are gone.
+    await expect(
+      canvas.getByRole("link", {
+        name: "Audit log. What is recorded, and for how long. 1 setting waiting on a decision.",
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("link", { name: "Roles. What each role is allowed to do." }),
+    ).toBeNull();
+    await expect(canvas.queryByRole("navigation", { name: "Access settings" })).toBeNull();
+    await expect(dataButton).toHaveAttribute("aria-expanded", "true");
+    await expect(accessButton).toHaveAttribute("aria-expanded", "false");
+    // …and it did NOT navigate. Browsing an area is not opening a section, so
+    // the content pane still holds the route the shell was given.
+    await expect(canvas.getByRole("heading", { level: 2, name: "Sign-in" })).toBeVisible();
+    await expect(sidebar).toHaveAttribute("data-state", "expanded");
+
+    // 2. Re-clicking the SAME area closes the panel. This is the switcher half
+    // of the handler and has no other entry point in the UI.
+    await userEvent.click(dataButton);
+    await waitFor(async () => {
+      await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+    });
+    await expect(dataButton).toHaveAttribute("aria-expanded", "false");
+    // Closed means off screen, not merely re-flagged: the panel slides entirely
+    // to the left of the rail, which is also the `ms-0` claim from
+    // `PanelCollapsed` reached through a different control.
+    await waitFor(async () => {
+      const { rail, panel } = zones(canvasElement);
+      await expect(panel.getBoundingClientRect().right).toBeLessThanOrEqual(
+        rail.getBoundingClientRect().left + 1,
+      );
+    });
+
+    // 3. …and clicking it once more brings it back.
+    await userEvent.click(dataButton);
+    await waitFor(async () => {
+      await expect(sidebar).toHaveAttribute("data-state", "expanded");
+    });
+    await expect(dataButton).toHaveAttribute("aria-expanded", "true");
+    await waitFor(async () => {
+      await expect(zones(canvasElement).panel.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+        0,
+      );
+    });
+  },
+};
+
+/**
+ * Choosing a SECTION from the second panel.
+ *
+ * The row is a plain `<a href>` whose click is intercepted, so "it navigated"
+ * cannot be read from the URL — it has to be read from the content pane. The
+ * assertion is therefore what the detail pane now says, not which prop the
+ * story passed in.
+ */
+export const SectionSelection: Story = {
+  render: () => <SettingsShell activePath={SIGN_IN} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Where it starts: the sign-in screen, and the row that says so.
+    await expect(canvas.getByRole("heading", { level: 2, name: "Sign-in" })).toBeVisible();
+    await expect(canvas.getByText("Single sign-on")).toBeVisible();
+    const signInRow = canvas.getByRole("link", {
+      name: "Sign-in. How people prove who they are. 2 settings waiting on a decision.",
+    });
+    await expect(signInRow).toHaveAttribute("aria-current", "page");
+
+    const rolesRow = canvas.getByRole("link", { name: "Roles. What each role is allowed to do." });
+    await expect(rolesRow).not.toHaveAttribute("aria-current");
+
+    await userEvent.click(rolesRow);
+
+    // The DETAIL PANE really changed — heading, and the section's own content.
+    await waitFor(async () => {
+      await expect(canvas.getByRole("heading", { level: 2, name: "Roles" })).toBeVisible();
+    });
+    await expect(canvas.getByText("Role for new members")).toBeVisible();
+    await expect(canvas.queryByText("Single sign-on")).toBeNull();
+    await expect(canvas.queryByRole("heading", { level: 2, name: "Sign-in" })).toBeNull();
+    // …and the panel moved its current marker with it.
+    await expect(rolesRow).toHaveAttribute("aria-current", "page");
+    await expect(signInRow).not.toHaveAttribute("aria-current");
+  },
+};
+
+/**
+ * The two halves of one resize gesture, recorded as they arrive. `SideDock`
+ * streams `onWidthChange` on every keydown and commits `onWidthCommit` once on
+ * keyup; the story reads the two lists to tell the seams apart, because with
+ * both wired to one setter the DOM cannot.
+ */
+const dockWidthChanges: number[] = [];
+const dockWidthCommits: number[] = [];
+
+/**
+ * The dock, summoned — the reason this shell exists.
+ *
+ * Three claims, and none is a presence check: the dock reaches assistive tech
+ * as a NAMED `complementary` landmark, its resize handle is genuinely operable
+ * from the keyboard, and the live stream and the end-of-gesture commit are two
+ * separate seams. "Operable" is measured by pressing a key and watching
+ * `aria-valuenow` move, because a handle that is focusable and inert passes
+ * every attribute assertion anyone would think to write.
+ */
+export const DockOpen: Story = {
+  render: () => (
+    <SettingsShell
+      activePath={SIGN_IN}
+      defaultHistoryOpen
+      onDockWidthChange={(width) => dockWidthChanges.push(width)}
+      onDockWidthCommit={(width) => dockWidthCommits.push(width)}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // ONE `userEvent` session for the whole story. The bare `userEvent.keyboard`
+    // helper builds a fresh keyboard state per call, so a `{Key>}` press in one
+    // call and the matching `{/Key}` release in the next never meet: the second
+    // call has nothing recorded as held and the keyup is simply not dispatched.
+    // A held gesture therefore has to share one session.
+    const user = userEvent.setup();
+    // Module-scope lists survive a re-render, so the gesture below counts from
+    // zero rather than from whatever mounting happened to do.
+    dockWidthChanges.length = 0;
+    dockWidthCommits.length = 0;
     // `SideDock`'s own breakpoint is 1100, so the column branch only exists
     // above it. Assert the premise before asserting the landmark.
     await expect(window.innerWidth).toBeGreaterThanOrEqual(1100);
@@ -301,23 +470,52 @@ export const DockOpen: Story = {
 
     const before = Number(handle.getAttribute("aria-valuenow"));
     await expect(Number.isFinite(before)).toBe(true);
+    const paintedBefore = dock.getBoundingClientRect().width;
     handle.focus();
     await expect(document.activeElement).toBe(handle);
     // On a right-hand dock ArrowLeft widens. Without the key handler the
     // element is still focusable, still a separator, still labelled — and the
     // dock can no longer be resized by anyone who does not use a mouse.
-    await userEvent.keyboard("{ArrowLeft}");
+    //
+    // The gesture is driven in two HALVES on purpose. `SideDock` fires two
+    // different callbacks — `onWidthChange` on every keydown, `onWidthCommit`
+    // once on keyup — and the shell wires both. Press-and-release in one call
+    // therefore says nothing about WHICH of them moved the dock: with
+    // `onWidthChange` gone the keyup commit still pushes the same number back
+    // through `onWidthCommit`, so a single after-the-fact `aria-valuenow` read
+    // is green either way. Only the DURING half distinguishes them.
+    await user.keyboard("{ArrowLeft>}");
     await waitFor(async () => {
       await expect(Number(handle.getAttribute("aria-valuenow"))).toBeGreaterThan(before);
     });
+    const during = Number(handle.getAttribute("aria-valuenow"));
+    // The live half must reach the PAINTED column, not just the attribute — the
+    // width the dock is actually laid out at. `waitFor` because the container
+    // tweens its width, so the new number arrives a frame or two after the
+    // custom property does.
     await waitFor(async () => {
-      await expect(dock.getBoundingClientRect().width).toBeGreaterThan(200);
+      await expect(dock.getBoundingClientRect().width).toBeGreaterThan(paintedBefore);
     });
+    // The two seams, mid-gesture: the live stream has fired once, for the step
+    // the keydown asked for, and the commit has not fired at all.
+    await expect(dockWidthChanges.map((width) => Math.round(width))).toEqual([during]);
+    await expect(dockWidthCommits).toEqual([]);
+
+    await user.keyboard("{/ArrowLeft}");
+    // Releasing settles on the width the gesture reached; it neither snaps back
+    // nor takes a second step.
+    await expect(Number(handle.getAttribute("aria-valuenow"))).toBe(during);
+    // …and the commit fires exactly ONCE, with that same width, while the live
+    // stream does not fire again. These two lists are the only place the two
+    // seams are distinguishable: the shell wires both to one setter, so the
+    // second write is a no-op and no rendered property moves for it.
+    await expect(dockWidthCommits.map((width) => Math.round(width))).toEqual([during]);
+    await expect(dockWidthChanges.map((width) => Math.round(width))).toEqual([during]);
 
     // The top bar control is a disclosure for it, and closing works.
     const trigger = canvas.getByRole("button", { name: "Change history" });
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await userEvent.click(trigger);
+    await user.click(trigger);
     await waitFor(async () => {
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
     });
@@ -377,6 +575,16 @@ export const Loading: Story = {
     const port = screen.querySelector('[data-slot="settings-screen-scroll"]') as HTMLElement;
     await expect(port).toBeVisible();
     await expect(port.getBoundingClientRect().height).toBeGreaterThan(200);
+    // The port scrolls in this state too, so it owes the same focus treatment
+    // the loaded branch carries — a keyboard user must be able to reach and
+    // scroll a skeleton screen, not only a settled one. Attribute, not the IDL
+    // getter: `el.tabIndex` answers -1 for any non-focusable element whether or
+    // not anyone set it. And `focus-ring-inset` must be the ONLY rung: the
+    // plain `focus-ring` draws both its layers outside the box `SidebarInset`
+    // clips, so if both classes were present the clipped one would paint.
+    await expect(port).toHaveAttribute("tabindex", "0");
+    await expect(port.classList.contains("focus-ring-inset")).toBe(true);
+    await expect(port.classList.contains("focus-ring")).toBe(false);
     // …and no settings rows are pretending to be real while it loads.
     await expect(screen.querySelectorAll('[data-slot="settings-row"]').length).toBe(0);
   },

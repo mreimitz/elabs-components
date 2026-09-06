@@ -84,6 +84,25 @@ export interface SettingsShellProps extends Omit<ComponentProps<"div">, "onSelec
    * default is tuned so a 400px dock never squeezes the content below ~480px).
    */
   dockOverlayBreakpoint?: number;
+  /**
+   * Notified on every frame of a dock resize gesture, beside this block's own
+   * live width.
+   *
+   * `SideDock` exposes the live stream and the end-of-gesture commit as TWO
+   * callbacks, and the block wires both to one setter — which makes them
+   * indistinguishable from the outside: with `width` controlled, deleting the
+   * commit changes nothing anyone can observe, because the live callback has
+   * already pushed the same number through. Surfacing both seams is what lets
+   * a consumer (or the story) tell them apart, and it is also how a real app
+   * drives layout from the live stream while persisting only the commit.
+   */
+  onDockWidthChange?: (width: number) => void;
+  /**
+   * Notified ONCE when a resize gesture ends — the persistence seam described
+   * on `onWidthCommit` below, surfaced so it can be observed rather than only
+   * documented. See `onDockWidthChange`.
+   */
+  onDockWidthCommit?: (width: number) => void;
 }
 
 export default function SettingsShell({
@@ -94,6 +113,8 @@ export default function SettingsShell({
   defaultDockWidth = 400,
   loading = false,
   dockOverlayBreakpoint,
+  onDockWidthChange,
+  onDockWidthCommit,
   className,
   ...props
 }: SettingsShellProps) {
@@ -182,13 +203,19 @@ export default function SettingsShell({
         onOpenChange={setHistoryOpen}
         width={dockWidth}
         // Fires on every frame of a drag — drive layout from it.
-        onWidthChange={setDockWidth}
+        onWidthChange={(next) => {
+          setDockWidth(next);
+          onDockWidthChange?.(next);
+        }}
         // Fires ONCE when a gesture ends. This is the persistence seam: a real
         // app writes the number here, e.g.
         //   onWidthCommit={(w) => localStorage.setItem("settings.dockWidth", String(w))}
         // and seeds `defaultDockWidth` from the same key on mount. The block
         // keeps it in state so it stays storage-free.
-        onWidthCommit={setDockWidth}
+        onWidthCommit={(next) => {
+          setDockWidth(next);
+          onDockWidthCommit?.(next);
+        }}
         overlayBreakpoint={dockOverlayBreakpoint}
       >
         <ChangeHistory />

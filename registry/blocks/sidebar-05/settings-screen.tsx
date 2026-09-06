@@ -164,7 +164,12 @@ export function SettingsScreen({
       <div data-slot="settings-screen" className={cn("flex min-h-0 flex-1 flex-col", className)}>
         <div
           data-slot="settings-screen-scroll"
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
+          // Same treatment as the loaded branch below: focusable because it
+          // scrolls, `focus-ring-inset` because `SidebarInset` clips anything
+          // drawn outside this box. A keyboard user must be able to scroll the
+          // skeleton for the same reason they can scroll the real content.
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
         >
           {/* ONE live region for the whole not-ready screen — the skeleton
               boxes inside it are each `aria-hidden`, so AT hears the sentence
