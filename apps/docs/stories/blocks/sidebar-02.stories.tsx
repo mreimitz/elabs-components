@@ -12,7 +12,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The classic left-sidebar dashboard: one collapsible nav rail beside a floating inset content surface. Reach for it when the whole product fits in one navigation tree and the screen is a briefing — figures, a trend, and what changed. When a screen needs a second column of records between the nav and the content (a mail-style list, a queue), reach for `Layout/App Shell/Flagship` instead; it carries four zones and a details rail.",
+          "The classic left-sidebar dashboard: one collapsible nav rail, a flush content column, and a permanent details rail on the right. Reach for it when the whole product fits in one navigation tree and the screen is a briefing — figures, a trend, and what changed. The right-hand panel here is a `ContextRail`: it never leaves, resting as a 48px icon strip that is also its own section switcher. When the panel should instead be something you SUMMON and dismiss to nothing, reach for `Layout/App Shell/Flagship`, which uses `SideDock`.",
       },
     },
   },
@@ -343,7 +343,10 @@ export const Empty: Story = {
     const levels = Array.from(canvasElement.querySelectorAll("h1, h2, h3, h4, h5, h6")).map(
       (heading) => Number(heading.tagName.slice(1)),
     );
-    await expect(levels).toEqual([1, 2, 3, 2, 3]);
+    // The trailing 2 is the DETAILS RAIL's own section heading (`ContextRail`
+    // renders an <h2> for the open section, the rung under the screen's h1) —
+    // a sibling landmark's heading, not a level this screen skipped into.
+    await expect(levels).toEqual([1, 2, 3, 2, 3, 2]);
   },
 };
 
@@ -365,19 +368,19 @@ export const CompactDensity: Story = {
     await expect(rail).toHaveAttribute("data-state", "collapsed");
     // `Sidebar` spreads `...props` onto its CONTAINER only, so a
     // `data-density` pinned on the component desynchronises the container from
-    // the sibling SPACER that still reads the document density. Under
-    // `collapsible=icon` + `variant=inset` the two widths differ by a designed
-    // 2px and by nothing else; a pin turns that into ~4px. Measured, not
-    // inferred from a class name.
+    // the sibling SPACER that still reads the document density. This shell is
+    // FLUSH (no `variant="inset"` anywhere), so the designed offset is zero and
+    // the two widths must AGREE exactly; a disagreeing pin drives them apart by
+    // whole pixels. Measured, not inferred from a class name.
     const gap = canvasElement.querySelector('[data-slot="sidebar-gap"]');
     const container = canvasElement.querySelector('[data-slot="sidebar-container"]');
     await expect(gap).toBeInTheDocument();
     await expect(container).toBeInTheDocument();
-    const delta =
+    const delta = Math.abs(
       (container as HTMLElement).getBoundingClientRect().width -
-      (gap as HTMLElement).getBoundingClientRect().width;
-    await expect(delta).toBeGreaterThanOrEqual(1.5);
-    await expect(delta).toBeLessThanOrEqual(2.5);
+        (gap as HTMLElement).getBoundingClientRect().width,
+    );
+    await expect(delta).toBeLessThanOrEqual(0.5);
   },
 };
 
@@ -462,5 +465,81 @@ export const OverflowingContent: Story = {
     // Vertically it scrolls; horizontally nothing may spill. 1px of tolerance
     // for a fractional device ratio rounding a layout width up.
     await expect(`spill=${Math.max(0, port.scrollWidth - port.clientWidth - 1)}`).toBe("spill=0");
+  },
+};
+
+/**
+ * The details rail OPEN — the interaction this shell exists for, and the state
+ * two real defects only appear in.
+ *
+ * `!dev` keeps it out of the sidebar (`Default` already shows the rail; this
+ * story exists for its assertions), while leaving it in the test run.
+ */
+export const DetailsOpen: Story = {
+  tags: ["!dev"],
+  render: () => <DashboardShell activePath="/" defaultDetailsOpen />,
+  play: async ({ canvasElement }) => {
+    const rail = canvasElement.querySelector('[data-slot="context-rail"]');
+    await expect(rail).toBeInTheDocument();
+
+    /* The KPI row gives room back when the rail takes it. `MetricGrid`'s own
+     * column classes are VIEWPORT media queries, so at a 1440px browser width a
+     * four-wide grid survives the rail's ~280px and every tile title clips
+     * mid-word ("Revenue to…", "Median fulf…"). The shell passes `metricColumns`
+     * instead. Read as the COMPUTED track count, not as the prop that set it:
+     * the prop is the easy half, and the defect rendered four tracks while the
+     * markup looked correct.
+     */
+    const grid = canvasElement.querySelector(
+      'section[aria-label="Key figures"] > *',
+    ) as HTMLElement;
+    await expect(grid).toBeVisible();
+    await waitFor(async () => {
+      const tracks = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
+      await expect(`tracks=${tracks}`).toBe("tracks=2");
+    });
+
+    /* …and no tile title is truncated at that width. `scrollWidth > clientWidth`
+     * is the truncation itself, measured — a class-name check would pass on the
+     * clipped render, since the clipping utility is correct and only the width
+     * was wrong.
+     */
+    // `span[title]` IS the label: `MetricCard` sets `title` on it precisely so a
+    // truncated label has a way back to the full words, and nothing else in the
+    // tile carries the attribute.
+    for (const title of canvasElement.querySelectorAll(
+      'section[aria-label="Key figures"] span[title]',
+    )) {
+      const el = title as HTMLElement;
+      await expect(
+        `${el.textContent}: ${el.scrollWidth > el.clientWidth ? "clipped" : "full"}`,
+      ).toBe(`${el.textContent}: full`);
+    }
+  },
+};
+
+/**
+ * The rail's unread-count badge stays ON SCREEN.
+ *
+ * `ContextRail` is the OUTERMOST column of a flush shell, so its end edge is the
+ * viewport edge — and the ordinary corner-badge overhang (`-end-1`) put the
+ * count 4px past `window.innerWidth`, where the browser clipped it in half. The
+ * assertion is geometric because the bug is: the markup, the token and the
+ * accessible name were all already correct.
+ */
+export const CountBadgeOnScreen: Story = {
+  tags: ["!dev"],
+  render: () => <DashboardShell activePath="/" />,
+  play: async ({ canvasElement }) => {
+    const badge = canvasElement.querySelector('[data-slot="context-rail-count"]') as HTMLElement;
+    await expect(badge).toBeInTheDocument();
+    const right = badge.getBoundingClientRect().right;
+    await expect(`badge right ${right <= window.innerWidth ? "within" : "past"} viewport`).toBe(
+      "badge right within viewport",
+    );
+    // The count is aria-hidden decoration, so the SWITCHER carries the number in
+    // its own accessible name — otherwise a clipped badge would be the only
+    // place the count exists.
+    await expect(badge).toHaveAttribute("aria-hidden", "true");
   },
 };

@@ -18,11 +18,6 @@
       ],
       "files": [
         {
-          "path": "registry/blocks/app-shell/app-list-column.tsx",
-          "type": "registry:component",
-          "target": "components/app-shell/app-list-column.tsx"
-        },
-        {
           "path": "registry/blocks/app-shell/app-nav-rail.tsx",
           "type": "registry:component",
           "target": "components/app-shell/app-nav-rail.tsx"
@@ -46,11 +41,6 @@
           "path": "registry/blocks/app-shell/nav-items.ts",
           "type": "registry:component",
           "target": "components/app-shell/nav-items.ts"
-        },
-        {
-          "path": "registry/blocks/app-shell/shell-metrics.ts",
-          "type": "registry:component",
-          "target": "components/app-shell/shell-metrics.ts"
         }
       ]
     },
@@ -234,6 +224,7 @@
       "description": "The classic left-sidebar dashboard: a collapsible-icon nav rail with a tenant switcher and nav groups beside a floating inset surface carrying a metric row, a revenue trend and an overnight activity feed. Skip link, one main landmark, active-route indicator and command trigger included.",
       "dependencies": [
         "@elabs-ai/components-charts",
+        "@elabs-ai/components-icons",
         "@elabs-ai/components-tokens",
         "@elabs-ai/components-ui",
         "@visx/curve",
@@ -326,7 +317,12 @@
       "type": "registry:block",
       "title": "App shell — dual rail",
       "description": "Two navigation levels plus a summoned third surface: a permanent 56px icon rail picks the area, a collapsible second panel lists that area's sections, and the floating inset carries the settings screen. A resizable right-hand SideDock holds the change history — a column above 1100px, an overlay below it. The icon rail is deliberately not a Sidebar, so it survives every breakpoint while the section panel becomes a sheet.",
-      "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
+      "dependencies": [
+        "@elabs-ai/components-icons",
+        "@elabs-ai/components-tokens",
+        "@elabs-ai/components-ui",
+        "lucide-react"
+      ],
       "files": [
         {
           "path": "registry/blocks/sidebar-05/change-history.tsx",

@@ -5,7 +5,8 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { Blocks, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
+import { AppIcon } from "@elabs-ai/components-icons";
 import {
   Sidebar,
   SidebarContent,
@@ -106,16 +107,28 @@ export function AppNavRail({
   ...props
 }: AppNavRailProps) {
   return (
-    <Sidebar collapsible="icon" className={className} {...props}>
+    // `data-density="comfortable"` pins the rail to the identity spacing scale
+    // regardless of the app-wide density. The collapsed icon buttons are sized
+    // `size-8`/`p-2`, which scale with `--spacing` — under `compact` they shrink
+    // below the fixed 3rem icon rail and sit visibly off-centre.
+    <Sidebar collapsible="icon" data-density="comfortable" className={className} {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:justify-center">
-          <Blocks aria-hidden="true" className="size-6 shrink-0 text-sidebar-primary" />
-          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-body font-semibold text-sidebar-foreground">
-              {productName}
-            </span>
-            <span className="truncate text-meta text-sidebar-muted-foreground">{orgName}</span>
-          </div>
+          {/* `AppIcon` is the library's own app-chrome brand mark — never a stock
+              glyph, and never a hand-rolled `BrandLogo`. It is theme-correct on
+              its own (it reads the per-theme brand-mark tokens) and `morph="auto"`
+              renders the full lockup — glyph + the `title` as its wordmark — that
+              crossfades to the glyph alone when this rail collapses to its icon
+              width. Replace `title` with your product's name; swap the mark itself
+              by re-pointing the brand tokens, not by editing this block. */}
+          <AppIcon morph="auto" title={productName} height={22} className="shrink-0" />
+          {/* The lockup above already carries the product name, so this line is
+              the org / environment only. Sidebar ink, not page ink: the rail is a
+              `--sidebar` ground, and in the light reference theme page ink on it
+              is a real contrast failure. */}
+          <span className="min-w-0 truncate text-meta text-sidebar-muted-foreground group-data-[collapsible=icon]:hidden">
+            {orgName}
+          </span>
         </div>
       </SidebarHeader>
 

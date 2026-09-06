@@ -58,7 +58,12 @@ export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIco
   // Fixed variants: a single BrandLogo carries its own accessible name + <title>.
   if (morph === "mark" || morph === "lockup") {
     return (
-      <span ref={ref} className={cx("inline-flex shrink-0 items-center", className)} {...props}>
+      <span
+        ref={ref}
+        data-slot="app-icon"
+        className={cx("inline-flex shrink-0 items-center", className)}
+        {...props}
+      >
         <BrandLogo variant={morph} height={height} tone={tone} title={title} />
       </span>
     );
@@ -78,6 +83,7 @@ export const AppIcon = forwardRef<HTMLSpanElement, AppIconProps>(function AppIco
   return (
     <span
       ref={ref}
+      data-slot="app-icon"
       role="img"
       aria-label={title}
       className={cx(

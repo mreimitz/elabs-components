@@ -9,11 +9,12 @@
  * drive exactly this panel, because the shell has exactly one
  * `SidebarProvider`.
  *
- * `variant="inset"` here pairs with `SidebarProvider variant="inset"` in the
- * shell: the panel container carries the 8px padding, `SidebarInset` carries
- * the matching floating card, and both margins are derived from one `gutter`
- * value inside the library (ADR 0035 / #342) rather than racing in the
- * stylesheet.
+ * The panel is FLUSH, like every zone in this family — no `variant="inset"`
+ * here and none on the shell's provider. The rounded floating card is an
+ * alternative look, not the house style; turning it on means setting the
+ * variant in BOTH places, since `SidebarInset` derives its margins from one
+ * `gutter` value inside the library (ADR 0035 / #342) precisely so the two
+ * selectors cannot race in the stylesheet.
  *
  * Ink is CHROME ink throughout (`text-sidebar-foreground` /
  * `text-sidebar-muted-foreground`), never canvas ink: `bg-sidebar` is a DARK
@@ -75,7 +76,7 @@ export function SettingsSectionPanel({
   ...props
 }: SettingsSectionPanelProps) {
   return (
-    <Sidebar collapsible="offcanvas" variant="inset" className={className} {...props}>
+    <Sidebar collapsible="offcanvas" className={className} {...props}>
       <SidebarHeader className="gap-0.5 px-4 py-3">
         <span className="text-title text-sidebar-foreground">{area.label}</span>
         <span className="text-meta text-sidebar-muted-foreground">

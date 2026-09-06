@@ -6,12 +6,11 @@
  *
  * Two deliberate shapes, both easy to get wrong when copying this block:
  *
- * 1. The zone toggles are plain `IconButton`s wired to the shell's own state,
- *    NOT `SidebarTrigger`. `SidebarTrigger` calls `useSidebar()`, which resolves
- *    to the NEAREST `SidebarProvider` — and this bar renders inside
- *    `SidebarInset`, i.e. inside the CONTEXT zone's provider. A `SidebarTrigger`
- *    here would toggle the right-hand rail while looking like a nav control.
- *    See `app-shell-page.tsx` for the three-provider arrangement.
+ * 1. The nav toggle is a plain `IconButton` wired to the shell's own state, NOT
+ *    a `SidebarTrigger`. The shell drives the rail CONTROLLED (one `open` state
+ *    the bar and the rail both read), and the dock toggle next to it drives a
+ *    surface that is not a `Sidebar` at all — so both controls are the same kind
+ *    of thing, and neither reaches into a provider. See `app-shell-page.tsx`.
  *
  * 2. Breadcrumbs appear only at drill depth >= 2. One crumb is not a trail — it
  *    is a page title wearing a separator, and it costs a landmark and a row of
@@ -93,16 +92,16 @@ export interface AppTopBarProps extends ComponentProps<"header"> {
   /** Nav-rail zone state (owned by `AppShellPage`). */
   navOpen: boolean;
   onNavOpenChange: (open: boolean) => void;
-  /** Context-rail zone state (owned by `AppShellPage`). */
-  contextOpen: boolean;
+  /** Assistant-dock state (owned by `AppShellPage`). */
+  dockOpen: boolean;
   /**
-   * Render the details-rail disclosure at all. Set it `false` at widths where
-   * the shell does not mount the rail — a toggle for a zone that is not there
-   * takes focus, shows a pointer cursor and does nothing, which is the same
-   * defect the dead Help button was. @default true
+   * Render the dock disclosure at all. Set it `false` where the shell mounts no
+   * dock — a toggle for a surface that is not there takes focus, shows a
+   * pointer cursor and does nothing, which is the same defect the dead Help
+   * button was. @default true
    */
-  showContextToggle?: boolean;
-  onContextOpenChange: (open: boolean) => void;
+  showDockToggle?: boolean;
+  onDockOpenChange: (open: boolean) => void;
   /** Opens the app's command palette. Wire it to your own `CommandDialog`. */
   onSearch?: () => void;
   /**
@@ -119,9 +118,9 @@ export function AppTopBar({
   activePath,
   navOpen,
   onNavOpenChange,
-  contextOpen,
-  showContextToggle = true,
-  onContextOpenChange,
+  dockOpen,
+  showDockToggle = true,
+  onDockOpenChange,
   onSearch,
   onHelp,
   notifications = DEMO_NOTIFICATIONS,
@@ -209,7 +208,7 @@ export function AppTopBar({
           `shrink-0` plus a `flex-1` title fixes the priority; the two controls
           that are pure convenience (help, appearance) also stand down below
           `sm`, because on a phone the row is the scarcest space on screen.
-          What stays at every width: navigation, search, notifications, details. */}
+          What stays at every width: navigation, search, notifications, assistant. */}
       <div className="flex shrink-0 items-center gap-1">
         <CommandTrigger onClick={onSearch} />
         {/* Rendered only when the consumer supplies a handler — see `onHelp`. */}
@@ -235,16 +234,16 @@ export function AppTopBar({
             component that all four shells would share — not a per-block edit. */}
         <NavNotifications notifications={notifications} side="bottom" align="end" />
         <ThemeSwitcher className="hidden sm:inline-flex" />
-        {/* Absent, not disabled, where the shell mounts no rail — see
-            `showContextToggle`. */}
-        {showContextToggle ? (
+        {/* Absent, not disabled, where the shell mounts no dock — see
+            `showDockToggle`. */}
+        {showDockToggle ? (
           <IconButton
-            label={contextOpen ? "Hide the details rail" : "Show the details rail"}
+            label={dockOpen ? "Hide the assistant" : "Show the assistant"}
             icon={<PanelRight />}
             // Same disclosure contract as the nav toggle above, and the same
             // reason for omitting `aria-controls`.
-            aria-expanded={contextOpen}
-            onClick={() => onContextOpenChange(!contextOpen)}
+            aria-expanded={dockOpen}
+            onClick={() => onDockOpenChange(!dockOpen)}
           />
         ) : null}
       </div>

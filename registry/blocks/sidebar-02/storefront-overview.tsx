@@ -228,6 +228,17 @@ export interface StorefrontOverviewProps extends ComponentProps<"div"> {
   activity?: ActivityEntry[];
   /** No renderable content yet — every region renders its layout-shaped skeleton. */
   loading?: boolean;
+  /**
+   * Columns in the KPI row. @default 4
+   *
+   * The CALLER decides, because only the shell knows how much room this screen
+   * actually has. `MetricGrid`'s own column classes are VIEWPORT media queries
+   * (`sm:` / `lg:`), so they cannot see the details rail opening beside the
+   * content column and taking ~280px from it — at a 1440px browser width the
+   * grid stays four-wide and every tile title clips mid-word ("Revenue to…").
+   * The shell passes 2 while the rail is open. See `dashboard-shell.tsx`.
+   */
+  metricColumns?: 2 | 3 | 4;
 }
 
 export function StorefrontOverview({
@@ -236,6 +247,7 @@ export function StorefrontOverview({
   revenue = DEMO_REVENUE,
   activity = DEMO_ACTIVITY,
   loading = false,
+  metricColumns = 4,
   className,
   ...props
 }: StorefrontOverviewProps) {
@@ -254,7 +266,7 @@ export function StorefrontOverview({
           answer for themselves instead. */}
       {metrics.length > 0 ? (
         <section aria-label="Key figures">
-          <MetricGrid columns={4} loading={loading}>
+          <MetricGrid columns={metricColumns} loading={loading}>
             {metrics.map((metric) => (
               <MetricCard
                 key={metric.id}
