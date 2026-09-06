@@ -30,10 +30,12 @@
 # that skipped the workflow would make every docs commit unmergeable AND
 # unreleasable. Only the job's CONTENTS shrink.
 #
-# The gate steps stay textually present either way, so `pnpm release-gates:check`
-# rung 2 still sees the whole recorded set. What that ratchet cannot see is a
-# step being CONDITIONALLY skipped — which is why the condition is one shared
-# expression sourced from one self-tested script, and never hand-written per step.
+# The gate steps stay textually present either way (the runner step expands to
+# its discovered gates in `pnpm release-gates:check` rung 2), so the ratchet
+# still sees the whole recorded set. What it cannot see is a step or gate being
+# CONDITIONALLY skipped — which is why the condition is one shared expression
+# sourced from one self-tested script, and the `--docs-only` skip set is one
+# named constant in `scripts/run-gates.mjs`, never hand-written per step.
 name: Quality gates
 
 on:
@@ -119,248 +121,50 @@ jobs:
         if: steps.scope.outputs.docs_only != 'true'
         run: pnpm build
 
-      # ── tokens, themes, styling ────────────────────────────────────────────
-      - name: Tokens and themes
-        if: steps.scope.outputs.docs_only != 'true'
-        run: |
-          pnpm tokens:check
-          pnpm tokens:dup-blocks:check
-          pnpm token-contract:check
-          pnpm theme-parity:check
-          pnpm roles:check
-          pnpm palette:check
-          pnpm decoration:check
-          pnpm decoration-collapse:check
-          pnpm surface-elevation:check
-          pnpm elevation:check
-          pnpm separation:check
-          pnpm rung:check
-          pnpm text-scale:check
-          pnpm motion:check
-
-      # ── component API, packages, structure ─────────────────────────────────
-      - name: Component and package contracts
-        if: steps.scope.outputs.docs_only != 'true'
-        run: |
-          pnpm components:check
-          pnpm data-slot:check
-          pnpm variants:check
-          pnpm states:check
-          pnpm loading-states:check
-          pnpm use-client:check
-          pnpm dep-direction:check
-          pnpm heavy-deps:check
-          pnpm optional-peers:check
-          pnpm optional-peer-types:check
-          pnpm lucide:check
-          pnpm charts:reuse:check
-          pnpm charts:test-double:check
-          pnpm chart-hairline:check
-          pnpm process:reuse:check
-          pnpm process:test-double:check
-          pnpm charts:honesty:check
-          pnpm timeline-fork:check
-          pnpm collapse-fork:check
-          pnpm sidebar-drift:check
-          pnpm viewer-highlight:check
-          pnpm microcopy:check
-          pnpm microtypography:check
-          pnpm intent:check
-
-      # ── security, network, shipped assets ──────────────────────────────────
-      - name: Security and shipped assets
-        run: |
-          pnpm csp:check
-          pnpm csp-sinks:check
-          pnpm sanitizer-passthrough:check
-          pnpm origins:check
-          pnpm tt-aliases:check
-          pnpm css-assets:check
-          pnpm machine-paths:check
-          pnpm biome-ignore:check
-          pnpm lockfile:check
-
-      # ── derived artifacts: generated, never hand-kept ──────────────────────
-      - name: Derived artifacts are fresh
-        # GH_TOKEN (#60): `registry:published:check`'s `isPagesConfigured()`
-        # shells out to `gh api repos/:owner/:repo/pages`; `gh` reads this env
-        # var automatically. Scoped to this ONE step, not the job or workflow
-        # — no other step here touches the GitHub API. `secrets.GITHUB_TOKEN`
-        # is always populated for a workflow run, no repo configuration
-        # needed; if it or the `pages` permission above were ever absent, the
-        # `gh api` call fails non-404 and `isPagesConfigured()` returns
-        # "unknown" (see its doc comment in check-registry-published.mjs),
-        # which falls back to the pre-existing `everPublished` behaviour
-        # rather than fabricating a new failure.
+      # ── the battery: every root gate, in PARALLEL, never stopping early ────
+      # One step runs `scripts/run-gates.mjs` (#326). The battery used to be ~90
+      # sequential `pnpm <gate>` lines in grouped `run: |` blocks, and a `run:`
+      # block aborts at its first non-zero exit — so ONE red gate hid every gate
+      # after it, and clearing k red gates cost k CI round trips. The runner
+      # discovers the gates from package.json (`*:check` + `registry:validate` +
+      # `ai:types-only`, minus composites and the slow ones that keep their own
+      # steps below), runs them concurrently with captured output, and reports
+      # EVERY failure before exiting 1. `node scripts/run-gates.mjs --list` prints
+      # the exact set; `pnpm release-gates:check` rung 2 expands this step into
+      # those names, so `scripts/release-gates-baseline.json` still records
+      # individual gates and still notices one going missing.
+      #
+      # `--docs-only` (the fast path) skips exactly the two former source-only
+      # groups — "Tokens and themes" and "Component and package contracts" —
+      # which read token CSS, component source and package manifests that prose
+      # cannot change; the set is a named constant in the runner. Security,
+      # derived-artifact, docs/governance and release-machinery gates still run
+      # on the fast path because prose CAN break those.
+      #
+      # GH_TOKEN (#60): `registry:published:check`'s `isPagesConfigured()` shells
+      # out to `gh api repos/:owner/:repo/pages`; `gh` reads this env var
+      # automatically. `secrets.GITHUB_TOKEN` is always populated for a workflow
+      # run; if it or the `pages` permission above were ever absent, the `gh api`
+      # call fails non-404 and `isPagesConfigured()` returns "unknown" (see its
+      # doc comment in check-registry-published.mjs), which falls back to the
+      # pre-existing `everPublished` behaviour rather than fabricating a failure.
+      - name: Gates
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pnpm manifest:check
-          pnpm inventory:check
-          pnpm llms:check
-          pnpm context:check
-          pnpm gen:check
-          pnpm gen:readmes:check
-          pnpm gen:registry:check
-          pnpm templates:check
-          pnpm test-concurrency:check
-          pnpm playbooks:check
-          pnpm agent-output:check
-          pnpm audit-artifact:check
-          pnpm plugin:check
-          pnpm plugin:agents:check
-          pnpm plugin:consumer-clean:check
-          pnpm registry:validate
-          pnpm registry:resolve:check
-          pnpm registry:published:check
-          pnpm skills:build:check:test
-
-      # ── docs, governance, process ──────────────────────────────────────────
-      - name: Docs and governance
-        run: |
-          pnpm docs:check
-          pnpm docs-links:check
-          pnpm storybook-groups:check
-          pnpm tailwind-sources:check
-          pnpm story-descriptions:check
-          pnpm paused-surfaces-drift:check
-          pnpm skills:currency:check
-          pnpm source-theme-count:check
-          pnpm agents:check
-          pnpm rules:scoping:check
-          pnpm slop:check
-          pnpm app-spec:check
-          pnpm attributions:check
-          pnpm attribution:provenance:check
-          pnpm attribution:comments:check
-          pnpm issue-citations:check
-          pnpm ai:types-only
-          pnpm a11y:baseline:check
-          pnpm worktree-branch:check
-
-      # ── release machinery ──────────────────────────────────────────────────
-      - name: Release machinery
-        run: |
-          pnpm version:check
-          pnpm changelog-entry:check
-          pnpm publish-ready:check
-          pnpm baseline-provenance:check
-          pnpm release-gates:check
+        run: pnpm gates ${{ steps.scope.outputs.docs_only == 'true' && '--docs-only' || '' }}
 
       # ── every gate's own self-test: a gate that stops firing is worse than
       #    none, so the fixtures that prove each one still fails are gates too ─
       #
-      #    `ci-scope:test` is deliberately NOT in this list — it guards the fast
-      #    path, so it runs in its own always-on step above rather than inside
-      #    the one group the fast path skips.
+      #    Same runner, `--selftests`: every `*:test` script of the shape
+      #    `node --test scripts/<x>.test.mjs`, run as ONE `node:test` invocation
+      #    instead of ~107 pnpm spawns, reported per file. `ci-scope:test` is
+      #    deliberately NOT in this set — it guards the fast path, so it runs in
+      #    its own always-on step above rather than inside the one step the fast
+      #    path skips.
       - name: Gate self-tests
         if: steps.scope.outputs.docs_only != 'true'
-        run: |
-          pnpm a11y:baseline:check:test
-          pnpm agent-docs-cascade:check:test
-          pnpm agent-output:check:test
-          pnpm agents:check:test
-          pnpm ai:types-only:test
-          pnpm app-spec:check:test
-          pnpm attribution:comments:check:test
-          pnpm attribution:provenance:check:test
-          pnpm attributions:check:test
-          pnpm audit-artifact:check:test
-          pnpm baseline-provenance:check:test
-          pnpm bash-output:check:test
-          pnpm biome-ignore:check:test
-          pnpm cadence:check:test
-          pnpm changelog:check:test
-          pnpm changelog-entry:check:test
-          pnpm charts:honesty:check:test
-          pnpm charts:reuse:check:test
-          pnpm charts:test-double:check:test
-          pnpm chart-hairline:check:test
-          pnpm close-issues:check:test
-          pnpm collapse-fork:check:test
-          pnpm components:check:test
-          pnpm conflict-markers:check:test
-          pnpm consultation-claims:check:test
-          pnpm consumer:check:test
-          pnpm csp:check:test
-          pnpm csp-sinks:check:test
-          pnpm css-assets:check:test
-          pnpm data-slot:check:test
-          pnpm debrand:check:test
-          pnpm decoration:check:test
-          pnpm decoration-collapse:check:test
-          pnpm dep-direction:check:test
-          pnpm dep-field-move:check:test
-          pnpm deps-sync:test
-          pnpm dispatch:check:test
-          pnpm docs:check:test
-          pnpm docs-links:check:test
-          pnpm elevation:check:test
-          pnpm format:check:test
-          pnpm gen:check:test
-          pnpm gen:readmes:check:test
-          pnpm gen:registry:check:test
-          pnpm heavy-deps:check:test
-          pnpm intent:check:test
-          pnpm issue-citations:check:test
-          pnpm loading-states:check:test
-          pnpm lockfile:check:test
-          pnpm machine-paths:check:test
-          pnpm manifest:check:test
-          pnpm merge:check:test
-          pnpm microcopy:check:test
-          pnpm microtypography:check:test
-          pnpm motion:check:test
-          pnpm optional-peer-types:check:test
-          pnpm optional-peers:check:test
-          pnpm origins:check:test
-          pnpm palette:check:test
-          pnpm paused-surfaces-drift:check:test
-          pnpm playbooks:check:test
-          pnpm plugin:agents:check:test
-          pnpm plugin:check:test
-          pnpm plugin:consumer-clean:check:test
-          pnpm process:reuse:check:test
-          pnpm process:test-double:check:test
-          pnpm publish-ready:check:test
-          pnpm registry:publish:test
-          pnpm registry:published:check:test
-          pnpm registry:resolve:check:test
-          pnpm registry:validate:test
-          pnpm release-gates:check:test
-          pnpm release-report:test
-          pnpm release-tag-target:test
-          pnpm release-verdict:check:test
-          pnpm release:smoke:test
-          pnpm release:snapshot:test
-          pnpm roles:check:test
-          pnpm rules:scoping:check:test
-          pnpm rung:check:test
-          pnpm sanitizer-passthrough:check:test
-          pnpm separation:check:test
-          pnpm sidebar-drift:check:test
-          pnpm skills:currency:check:test
-          pnpm slop:check:test
-          pnpm source-theme-count:check:test
-          pnpm states:check:test
-          pnpm story-descriptions:check:test
-          pnpm storybook-groups:check:test
-          pnpm surface-elevation:check:test
-          pnpm surface:preview:test
-          pnpm tailwind-sources:check:test
-          pnpm templates:check:test
-          pnpm test-concurrency:check:test
-          pnpm text-scale:check:test
-          pnpm theme-parity:check:test
-          pnpm timeline-fork:check:test
-          pnpm tokens:check:test
-          pnpm tokens:dup-blocks:check:test
-          pnpm tt-aliases:check:test
-          pnpm use-client:check:test
-          pnpm variants:check:test
-          pnpm version:check:test
-          pnpm viewer-highlight:check:test
-          pnpm worktree-branch:check:test
+        run: pnpm gates:selftests
 
       # ── the shipped tarballs, installed like a real consumer would ──────────
       - name: Consumer install smoke

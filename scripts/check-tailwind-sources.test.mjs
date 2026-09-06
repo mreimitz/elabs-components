@@ -36,6 +36,7 @@ import {
   tailwindScopedPackages,
   tailwindSourceCssFiles,
 } from "./check-tailwind-sources.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GATE = path.join(HERE, "check-tailwind-sources.mjs");
@@ -312,16 +313,22 @@ test("package.json declares both the gate and its self-test", () => {
   );
 });
 
+// gates.yml runs the battery as ONE `pnpm gates` / `pnpm gates:selftests` step
+// (#326), so "wired into gates.yml" means REACHABLE through the runner's
+// discovery, not a literal `pnpm <name>` line: `collectGates` expands the runner
+// from package.json and skips `continue-on-error` jobs.
 test("gates.yml runs the gate in the BLOCKING job, and its self-test too", () => {
   const yml = readFileSync(path.join(REPO_ROOT, ".github/workflows/gates.yml"), "utf8");
-  const secondJob = /^ {2}storybook:$/m.exec(yml);
-  assert.ok(secondJob, "expected gates.yml to still declare the second, non-blocking job");
-  const blocking = yml.slice(0, secondJob.index);
   assert.ok(
-    blocking.includes("pnpm tailwind-sources:check\n"),
+    /^ {2}storybook:$/m.test(yml),
+    "expected gates.yml to still declare the second, non-blocking job",
+  );
+  const blocking = collectGates(yml); // skips the continue-on-error job by itself
+  assert.ok(
+    blocking.has("tailwind-sources:check"),
     "gates.yml's blocking job must run `pnpm tailwind-sources:check`",
   );
-  assert.ok(blocking.includes("pnpm tailwind-sources:check:test"));
+  assert.ok(blocking.has("tailwind-sources:check:test"));
 });
 
 test("AGENTS.md's command contract names the gate (docs:check cross-checks this against ci.yml)", () => {

@@ -10,10 +10,15 @@
 # This nudges ONCE when the session edited >= THRESHOLD distinct PRODUCT files and
 # the agent never actually DISPATCHED a self-review (see the evidence rules below —
 # neither raw transcript bytes nor the agent's own prose count; both silently
-# disabled earlier revisions of this hook). It is a NUDGE, never a hard block:
-# `stop_hook_active` bounds it to a single fire per stop chain, exactly like
-# gate-completion-claims.sh (same exit contract — 2 so the message reaches the
-# agent). Silent + exit 0 on the happy path.
+# disabled earlier revisions of this hook).
+#
+# It is ADVISORY (2026-09-06): it prints the battery to stderr and ALWAYS exits 0,
+# so it never blocks the stop. It used to share gate-completion-claims.sh's exit-2
+# contract, which fed the message back to the agent and forced it to dispatch the
+# reviewer subagents (each a full ~100k-token context) before it was allowed to
+# stop — a measured driver of subagent cost. The detection is unchanged;
+# `stop_hook_active` still bounds it to a single fire per stop chain. Silent +
+# exit 0 on the happy path; nudge on stderr + exit 0 otherwise. Never exit 2 here.
 #
 # Self-tested by scripts/check-session-cadence.test.mjs (`pnpm cadence:check:test`).
 set -u
@@ -113,6 +118,8 @@ Per .claude/rules/quality-gates.md ("Session cadence — review your own work"),
   • /review-component <path>  — for every new/changed component
   • /session-retro        — at session completion, so the process gaps get filed
 Findings route through /file-issue (finders report, builders fix) — do not silently patch.
-Run what applies (or say why it does not), then finish.
+Run what applies (or say why it does not). Advisory only — this hook never blocks the stop.
 MSG
-exit 2
+# Advisory contract: the nudge has been printed; never exit 2 (that would block the
+# stop and force reviewer-subagent dispatches — see the header).
+exit 0

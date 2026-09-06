@@ -1,39 +1,36 @@
 # Decision routing (pick the right paradigm before you build)
 
-The operational "how to apply" for **D1** (which paradigm) and **D2** (how to render agent
-output). Canonical decisions: [`docs/DECISIONS.md`](../../docs/DECISIONS.md) — this rule is the
-checklist; the tables live there.
+Checklist for **D1** (which paradigm) and **D2** (rendering agent output). Canonical
+tables: [`docs/DECISIONS.md`](../../docs/DECISIONS.md).
 
-## D1 — Start here: are you _building with_ components, or _emitting_ UI?
+## D1 — building _with_ components, or _emitting_ UI?
 
-Run this before reaching for anything in `@elabs-ai/components-ai`'s generative surfaces:
+Run before any generative surface in `@elabs-ai/components-ai`:
 
-1. **Are you (or the agent) writing the screen's code?** → **Build-with.** Import `@elabs-ai/components-*`
-   primitives or copy-own a registry block. This is the default — **~99% of work.** Stop here.
-2. **Must the agent _design and emit_ the UI at runtime** (the layout isn't known until the
-   model produces it)? → **Generative UI** (D2). This is **rare and phase-gated (WP-11)** — do
-   not reach here just because the app has a chatbox. A chat that shows messages is still
-   Build-with.
+1. **You (or the agent) write the screen's code?** → **Build-with**: import
+   `@elabs-ai/components-*` or copy-own a registry block. Default (**~99%**). Stop here.
+2. **The agent must _design and emit_ the UI at runtime?** → **Generative UI** (D2). **Rare,
+   phase-gated (WP-11).** A chat that shows messages is still Build-with.
 
-> Default bias: **Build-with.** "There's an AI in the app" is _not_ a reason to emit UI. You
-> emit UI only when the _agent_ owns the screen's composition.
+Default bias: **Build-with**. An AI in the app is _not_ a reason to emit UI — emit only when
+the _agent_ owns the screen's composition.
 
-## D2 — Rendering agent output: message vs surface vs ad-hoc
+## D2 — rendering agent output
 
-Once you're rendering what an agent produced, pick by **what the agent is producing**:
+Pick by **what the agent produces**:
 
-1. **A conversation** — text, tool calls, reasoning, sources, files? → render the AI SDK
-   **`UIMessage`** with `@elabs-ai/components-ui`/`@elabs-ai/components-ai` chat components (`Conversation`, `Message`,
-   `Tool`, `Reasoning`, …). **The default.** The agent produces _content_; your app owns the look.
-2. **A rich, agent-designed surface inside the chat** — the agent is describing a _screen_
-   (a form, a dashboard fragment) as data? → **A2UI**, validated against the catalog. This is
-   the _safe_ generative-UI path (UI as data, not code). **Not yet shipped — WP-11**; until
-   then, compose the surface yourself (Build-with) from `@elabs-ai/components-*`.
-3. **Ad-hoc agent JSX** — the agent emits markup _strings_ and you need maximum flexibility,
-   accepting less safety? → **`JSXPreview`** (`@elabs-ai/components-ai`, shipped). It is the escape hatch —
-   **prefer A2UI** once it lands; don't make `JSXPreview` the default generative path.
+1. **A conversation** (text, tool calls, reasoning, sources, files) → AI SDK **`UIMessage`**
+   via `@elabs-ai/components-ui`/`-ai` chat components (`Conversation`, `Message`, `Tool`,
+   `Reasoning`, …). **Default.**
+2. **An agent-designed surface inside the chat** (a screen as data) → **A2UI**, validated
+   against the catalog. **Not shipped — WP-11**; until then Build-with from
+   `@elabs-ai/components-*`.
+3. **Ad-hoc agent JSX** (markup strings, max flexibility, less safety) → **`JSXPreview`**
+   (`@elabs-ai/components-ai`, shipped). Escape hatch: **prefer A2UI** once it lands; never
+   the default generative path.
 
-Mental model and the AI-SDK-vs-A2UI-vs-JSXPreview distinction:
-[`ai-sdk-vs-a2ui.md`](./ai-sdk-vs-a2ui.md). Never wire model calls into a component while doing
-any of this — see [`scope-and-non-goals.md`](./scope-and-non-goals.md) (D5) and
-[`ai-chat-components.md`](./ai-chat-components.md) (presentational + runtime-agnostic).
+Mental model: [`ai-sdk-vs-a2ui.md`](./ai-sdk-vs-a2ui.md). **Never wire model calls into a
+component** — [`scope-and-non-goals.md`](./scope-and-non-goals.md) (D5),
+[`ai-chat-components.md`](./ai-chat-components.md).
+
+History and measurements: docs/rules-history/decision-routing.md

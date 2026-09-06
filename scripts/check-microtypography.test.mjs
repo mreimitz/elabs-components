@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectFindings, findMicrotypography, findRegressions } from "./check-microtypography.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(HERE);
@@ -160,33 +161,16 @@ test("CLI: --root scans a fixture tree end to end — planted violation fails, f
 
 // ── The gate is registered in gates.yml's BLOCKING job (#70's "no gate exists" fix
 //    must have teeth: wired into the battery, not only its own :test) ─────────────
+// gates.yml runs the battery as ONE `pnpm gates` / `pnpm gates:selftests` step
+// (#326), so "wired into gates.yml" means REACHABLE through the runner's
+// discovery, not a literal `pnpm <name>` line: `collectGates` expands the runner
+// from package.json and skips `continue-on-error` jobs.
 test("microtypography:check and its :test are wired into gates.yml's blocking job", async () => {
   const { readFileSync } = await import("node:fs");
   const gatesYml = readFileSync(join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-
-  // Must appear inside a blocking step (this repo's blocking steps are the
-  // ordinary `run:` blocks — non-blocking jobs are marked `continue-on-error:
-  // true` further down in a separate job). A crude but effective check: the
-  // command appears at all in gates.yml (the only reusable workflow ci.yml
-  // calls for the blocking battery) AND not only inside a `continue-on-error`
-  // job block.
-  assert.match(
-    gatesYml,
-    /pnpm microtypography:check\b(?!:test)/,
-    "gate step missing from gates.yml",
-  );
-  assert.match(
-    gatesYml,
-    /pnpm microtypography:check:test\b/,
-    "self-test step missing from gates.yml",
-  );
-
-  // The self-test step must not live inside a `continue-on-error: true` job —
-  // approximate by requiring the gate line appears before the storybook job
-  // (which is where this repo's non-blocking jobs are declared).
-  const storybookJobIdx = gatesYml.indexOf("\n  storybook:");
-  const gateIdx = gatesYml.indexOf("pnpm microtypography:check\n");
-  assert.ok(storybookJobIdx === -1 || (gateIdx !== -1 && gateIdx < storybookJobIdx));
+  const blocking = collectGates(gatesYml);
+  assert.ok(blocking.has("microtypography:check"), "gate step missing from gates.yml");
+  assert.ok(blocking.has("microtypography:check:test"), "self-test step missing from gates.yml");
 });
 
 test("microtypography:check is registered in AGENTS.md's Validate-before-you-finish contract", async () => {

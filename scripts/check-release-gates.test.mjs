@@ -29,6 +29,7 @@ import {
   jobNeeds,
   pnpmGates,
   runCommands,
+  runnerExpansionFor,
 } from "./lib/workflow-gates.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -377,6 +378,132 @@ test("PASSES: an intact gates.yml satisfies its baseline, and --update ratchets"
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// ── The parallel runner (#326): a `pnpm gates` step EXPANDS to its gates ──────
+// gates.yml now runs the battery as one `pnpm gates` step instead of ~90 lines,
+// so the parser has to expand the runner or the ratchet would record one name
+// and never notice a gate the runner stopped discovering.
+
+const GATES_YML_RUNNER = `
+on:
+  workflow_call:
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pnpm install --frozen-lockfile
+      - name: typecheck
+        run: pnpm typecheck
+      - name: Gates
+        run: pnpm gates \${{ steps.scope.outputs.docs_only == 'true' && '--docs-only' || '' }}
+      - name: Gate self-tests
+        run: pnpm gates:selftests
+`;
+
+const readRunnerGates = (rel) => (rel === ".github/workflows/gates.yml" ? GATES_YML_RUNNER : null);
+
+test("PURE: a `pnpm gates` step expands through an injected map, runner name kept", () => {
+  const expand = {
+    gates: ["a:check", "b:check"],
+    "gates:selftests": ["a:check:test"],
+    "gates:all": ["a:check", "b:check", "format:check"],
+  };
+  const got = [...collectGates(CI_CALLING_GATES, { readWorkflow: readRunnerGates, expand })].sort();
+  assert.deepEqual(got, [
+    "a:check",
+    "a:check:test",
+    "b:check",
+    "gates",
+    "gates:selftests",
+    "typecheck",
+  ]);
+  assert.ok(
+    !got.includes("format:check"),
+    "`gates:all` was not invoked, so its extras are not gates",
+  );
+  // The `${{ … || '' }}` expression on the same line must not hide the runner.
+  assert.ok(got.includes("gates"));
+});
+
+test("PURE: with an empty map a runner step is just its own name (no fabrication)", () => {
+  const got = [...collectGates(CI_CALLING_GATES, { readWorkflow: readRunnerGates, expand: {} })];
+  assert.deepEqual(got.sort(), ["gates", "gates:selftests", "typecheck"]);
+});
+
+test("runnerExpansionFor reads a root's package.json, and is {} when there is none", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "brand-ui-gates-exp-"));
+  try {
+    assert.deepEqual(runnerExpansionFor(root), {});
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        scripts: { "a:check": "node a.mjs", "a:check:test": "node --test scripts/a.test.mjs" },
+      }),
+    );
+    const exp = runnerExpansionFor(root);
+    assert.deepEqual(exp.gates, ["a:check"]);
+    assert.deepEqual(exp["gates:selftests"], ["a:check:test"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("FLAGS: a gate deleted from package.json vanishes from the runner — ratchet red (the CLI)", async () => {
+  const root = fixtureRepo({
+    ci: CI_CALLING_GATES,
+    release: RELEASE_WITH_VERDICT,
+    gates: GATES_YML_RUNNER,
+  });
+  const pkg = (scripts) =>
+    writeFileSync(path.join(root, "package.json"), JSON.stringify({ scripts }, null, 2));
+  try {
+    mkdirSync(path.join(root, "scripts"), { recursive: true }); // where --update writes
+    pkg({
+      "a:check": "node scripts/check-a.mjs",
+      "b:check": "node scripts/check-b.mjs",
+      "a:check:test": "node --test scripts/check-a.test.mjs",
+    });
+    // Ratchet the baseline from the expanded set: individual names, not the runner alone.
+    const updated = await runGate(["--root", root, "--update"]);
+    assert.equal(updated.code, 0, updated.stderr);
+    assert.deepEqual(readBaseline(root), [
+      "a:check",
+      "a:check:test",
+      "b:check",
+      "gates",
+      "gates:selftests",
+      "typecheck",
+    ]);
+    const ok = await runGate(["--root", root]);
+    assert.equal(ok.code, 0, ok.stderr);
+
+    // gates.yml is untouched; only package.json lost `b:check`.
+    pkg({
+      "a:check": "node scripts/check-a.mjs",
+      "a:check:test": "node --test scripts/check-a.test.mjs",
+    });
+    const { code, stderr } = await runGate(["--root", root]);
+    assert.equal(code, 1, "a gate the runner no longer discovers must exit non-zero");
+    assert.match(stderr, /no longer reachable from the PR path/);
+    assert.match(stderr, /pnpm b:check/);
+    assert.ok(!/pnpm a:check/.test(stderr), "the surviving gate is not reported");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("the REAL ci.yml reaches individual gates THROUGH the runner step", () => {
+  const ciGates = ciGateSteps({
+    ciYml: readWorkflowFile("ci.yml"),
+    readWorkflow: (rel) => readWorkflowFile(path.basename(rel)),
+  });
+  assert.ok(ciGates.includes("gates"), "the runner step itself is recorded");
+  assert.ok(ciGates.includes("gates:selftests"));
+  for (const g of ["docs:check", "manifest:check", "csp:check", "docs:check:test", "gates:test"]) {
+    assert.ok(ciGates.includes(g), `${g} must be reachable through the runner`);
+  }
+  assert.ok(ciGates.length > 150, `expected the whole expanded battery, got ${ciGates.length}`);
 });
 
 // ── The REAL repo ─────────────────────────────────────────────────────────────

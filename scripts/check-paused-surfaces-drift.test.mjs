@@ -28,6 +28,7 @@ import {
   main,
   RULE_FILE,
 } from "./check-paused-surfaces-drift.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -220,10 +221,15 @@ test("the gate is wired in package.json", () => {
   );
 });
 
+// gates.yml runs the battery as ONE `pnpm gates` / `pnpm gates:selftests` step
+// (#326), so "wired into gates.yml" means REACHABLE through the runner's
+// discovery, not a literal `pnpm <name>` line: `collectGates` expands the runner
+// from package.json and skips `continue-on-error` jobs.
 test("the gate and its self-test are reachable from gates.yml", () => {
   const workflow = readFileSync(join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-  assert.match(workflow, /^\s*pnpm paused-surfaces-drift:check\s*$/m);
-  assert.match(workflow, /^\s*pnpm paused-surfaces-drift:check:test\s*$/m);
+  const blocking = collectGates(workflow);
+  assert.ok(blocking.has("paused-surfaces-drift:check"));
+  assert.ok(blocking.has("paused-surfaces-drift:check:test"));
 });
 
 test("RULE_FILE points at the doc this gate is about", () => {

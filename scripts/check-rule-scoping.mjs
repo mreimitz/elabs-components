@@ -19,6 +19,20 @@
  *       session"; the repo-architect-* agents Read it explicitly).
  *   (d) Every `.claude/rules/*.md` on disk is classified by exactly one list (no orphan
  *       rule escapes the budget), and no list names a rule that doesn't exist.
+ *   (e) CLAUDE.md's "cross-cutting rules" bullet names exactly the CROSS_CUTTING set
+ *       (prose ↔ list parity — see `crossCuttingProseNames`).
+ *   (f) BYTE BUDGET. The always-on governance a session pays for before it touches any
+ *       file — CLAUDE.md plus every cross-cutting rule — must total at most
+ *       ALWAYS_ON_BUDGET_BYTES, and no single cross-cutting rule may exceed
+ *       PER_RULE_BUDGET_BYTES. Why: the always-on floor was measured at ~120 k tokens
+ *       per request, with ~183 KB of it always-on governance prose — and the loop that
+ *       grows it is `/session-retro`, which hardens a rule after every session and never
+ *       shrinks one. The classification checks (a)–(e) cannot see that (a rule stays
+ *       "cross-cutting" however long it gets); the byte budget does, and it stops the
+ *       retro from regrowing the floor. On failure the gate prints the measured bytes
+ *       per file, largest first, so the message names WHICH file to condense; the fix is
+ *       to move detail out to `docs/` (history, measurements, incident narrative), never
+ *       to raise the budget. On success it prints one summary line with the same numbers.
  *
  * The cross-cutting vs scoped lists are ENCODED here, so adding/renaming/moving a rule
  * without updating the classification fails CI.
@@ -258,6 +272,97 @@ export function checkRuleScoping({
   return findings;
 }
 
+// ── (f) The byte budget: always-on governance = CLAUDE.md + every cross-cutting rule ──
+// Measured before the 2026-09 condensation: ~183 KB of always-on governance put the
+// per-request floor at ~120 k tokens. These are the ceilings the condensed set must stay
+// under; a failure names the file to condense. Raising either number is not a fix.
+export const ALWAYS_ON_BUDGET_BYTES = 72_000;
+export const PER_RULE_BUDGET_BYTES = 8_000;
+export const DEFAULT_BUDGETS = Object.freeze({
+  total: ALWAYS_ON_BUDGET_BYTES,
+  perRule: PER_RULE_BUDGET_BYTES,
+});
+
+const bytesOf = (text) => Buffer.byteLength(text ?? "", "utf8");
+const fmt = (n) => n.toLocaleString("en-US");
+
+/**
+ * Measure the always-on set: CLAUDE.md plus every cross-cutting rule present on disk
+ * (bytes, UTF-8 — what the file weighs, not a character count). Pure; the self-test
+ * drives it with in-memory fixtures. A cross-cutting rule missing from `rules` is skipped
+ * here — `checkRuleScoping` (d.2) already reports it.
+ *
+ * @param {{ rules: { name: string, text: string }[], claudeText: string | null,
+ *           crossCutting?: string[] }} input
+ * @returns {{ total: number, files: { label: string, bytes: number, rule: boolean }[] }}
+ *   `files` is sorted largest first; `rule` is false only for CLAUDE.md.
+ */
+export function measureAlwaysOnBytes({ rules, claudeText, crossCutting = CROSS_CUTTING }) {
+  const byName = new Map(rules.map((r) => [r.name, r.text]));
+  const files = [{ label: "CLAUDE.md", bytes: bytesOf(claudeText), rule: false }];
+  for (const n of crossCutting) {
+    const text = byName.get(n);
+    if (text == null) continue;
+    files.push({ label: `.claude/rules/${n}.md`, bytes: bytesOf(text), rule: true });
+  }
+  files.sort((a, b) => b.bytes - a.bytes || a.label.localeCompare(b.label));
+  return { total: files.reduce((sum, f) => sum + f.bytes, 0), files };
+}
+
+/**
+ * (f) The budget check. Pure; returns findings (empty = pass). CLAUDE.md counts toward
+ * the TOTAL but is exempt from the per-rule cap — it is the entry point, not a rule.
+ *
+ * @param {{ rules: { name: string, text: string }[], claudeText: string | null,
+ *           crossCutting?: string[], budgets?: { total?: number, perRule?: number } }} input
+ * @returns {string[]} findings (empty = pass)
+ */
+export function checkGovernanceBudget({
+  rules,
+  claudeText,
+  crossCutting = CROSS_CUTTING,
+  budgets = DEFAULT_BUDGETS,
+}) {
+  const totalBudget = budgets.total ?? ALWAYS_ON_BUDGET_BYTES;
+  const perRule = budgets.perRule ?? PER_RULE_BUDGET_BYTES;
+  const findings = [];
+  const { total, files } = measureAlwaysOnBytes({ rules, claudeText, crossCutting });
+
+  for (const f of files) {
+    if (f.rule && f.bytes > perRule)
+      findings.push(
+        `${f.label} is ${fmt(f.bytes)} B — over the ${fmt(perRule)} B per-rule cap by ` +
+          `${fmt(f.bytes - perRule)} B; move history/measurements/incident detail out to docs/ ` +
+          `(a rule is the always-on contract, not its narrative), never raise the cap`,
+      );
+  }
+  if (total > totalBudget)
+    findings.push(
+      `always-on governance (CLAUDE.md + ${files.length - 1} cross-cutting rules) totals ` +
+        `${fmt(total)} B — over the ${fmt(totalBudget)} B budget by ${fmt(total - totalBudget)} B; ` +
+        `condense the largest files first (measured below), never raise the budget`,
+    );
+  return findings;
+}
+
+/** The per-file breakdown, largest first, plus the total — one string per line. */
+export function renderBudgetTable({ total, files }, budgets = DEFAULT_BUDGETS) {
+  const perRule = budgets.perRule ?? PER_RULE_BUDGET_BYTES;
+  const totalBudget = budgets.total ?? ALWAYS_ON_BUDGET_BYTES;
+  const width = Math.max(...files.map((f) => fmt(f.bytes).length), fmt(total).length);
+  const lines = files.map(
+    (f) =>
+      `${fmt(f.bytes).padStart(width)} B  ${f.label}` +
+      (f.rule && f.bytes > perRule ? `  ← over the ${fmt(perRule)} B per-rule cap` : ""),
+  );
+  lines.push(
+    `${fmt(total).padStart(width)} B  total (budget ${fmt(totalBudget)} B, ` +
+      `${total > totalBudget ? "over by " + fmt(total - totalBudget) : fmt(totalBudget - total) + " B headroom"}` +
+      `${total > totalBudget ? " B" : ""})`,
+  );
+  return lines;
+}
+
 function loadRules() {
   if (!existsSync(RULES_DIR)) return [];
   return readdirSync(RULES_DIR)
@@ -271,25 +376,45 @@ if (invokedDirectly) {
   const rules = loadRules();
   const claudeText = existsSync(CLAUDE_MD) ? readFileSync(CLAUDE_MD, "utf8") : null;
   const claudeImports = claudeText ? claudeMdImports(claudeText) : new Set();
-  const findings = checkRuleScoping({
+  const scopingFindings = checkRuleScoping({
     rules,
     claudeImports,
     // Only assert the prose when CLAUDE.md exists; a missing file is a different problem.
     proseCrossCutting: claudeText ? crossCuttingProseNames(claudeText) : undefined,
   });
+  const budgetFindings = checkGovernanceBudget({ rules, claudeText });
+  const findings = [...scopingFindings, ...budgetFindings];
+  const measured = measureAlwaysOnBytes({ rules, claudeText });
   if (findings.length) {
     console.error(`✖ rule-scoping (${findings.length}):`);
     for (const f of findings) console.error("  - " + f);
-    console.error(
-      "\n  Fix: cross-cutting rules load on every session (no `paths:`); package/area rules\n" +
-        "  are `paths:`-scoped and NOT @-imported by CLAUDE.md. Edit the CROSS_CUTTING /\n" +
-        "  PATH_SCOPED lists in scripts/check-rule-scoping.mjs when the rule set changes.",
-    );
+    console.error("\n  always-on governance, measured (largest first):");
+    for (const line of renderBudgetTable(measured)) console.error("    " + line);
+    if (scopingFindings.length)
+      console.error(
+        "\n  Fix: cross-cutting rules load on every session (no `paths:`); package/area rules\n" +
+          "  are `paths:`-scoped and NOT @-imported by CLAUDE.md. Edit the CROSS_CUTTING /\n" +
+          "  PATH_SCOPED lists in scripts/check-rule-scoping.mjs when the rule set changes.",
+      );
+    if (budgetFindings.length)
+      console.error(
+        "\n  Fix: condense the files marked above — move history, measurements and incident\n" +
+          "  narrative out to docs/ and keep the rule to its contract. Do NOT raise\n" +
+          "  ALWAYS_ON_BUDGET_BYTES / PER_RULE_BUDGET_BYTES; the budget exists so the always-on\n" +
+          "  floor cannot regrow.",
+      );
     if (!WARN) process.exit(1);
   } else {
+    const largest = measured.files.find((f) => f.rule);
     console.log(
       `✔ rule-scoping: ${CROSS_CUTTING.length} cross-cutting (always-on) + ` +
         `${PATH_SCOPED.length} path-scoped rules; architecture-review off the always-on budget.`,
+    );
+    console.log(
+      `✔ always-on budget: ${fmt(measured.total)} B of ${fmt(ALWAYS_ON_BUDGET_BYTES)} B ` +
+        `(CLAUDE.md ${fmt(measured.files.find((f) => !f.rule).bytes)} B + ` +
+        `${measured.files.length - 1} rules; largest rule ${largest ? largest.label : "—"} ` +
+        `${largest ? fmt(largest.bytes) : "0"} B of the ${fmt(PER_RULE_BUDGET_BYTES)} B cap).`,
     );
   }
 }

@@ -8,437 +8,66 @@ paths:
 
 # Chart components (@elabs-ai/components-charts)
 
-`@elabs-ai/components-charts` wraps visx/d3 compositional charts with token-driven styling.
-`ChartFrame` is the standard opt-in chart wrapper that adds expand / flip-to-table /
-download-CSV to any chart child.
+Semantic tokens only, no raw hex, no new tokens; motion via gated `duration-*`/`ease-*` + `motion-reduce:`.
 
-## Choosing a chart (RM-040)
+## Choosing (RM-040)
 
-Judge the data's SHAPE before reaching for a container name: how many measures,
-how many categorical axes, ordered or not, a range or a hierarchy. The full
-25-container data-shape table, the four chart-selection rules (shape first, ≥ 3
-candidates compared, ≤ 6 charts per page, no repeated silhouette on one page) and
-palette-by-cardinality guidance live in
-`skills/brand-ui/reference/chart-selection.md` — read it before hand-picking a
-container, and before hardcoding `AutoChart`'s inference logic instead of letting
-it run. Query it directly instead of re-deriving it: `brand-ui chart-for "<data
-shape>"` (CLI) or the `chart_for` MCP tool (`brand-ui mcp`) rank chart containers
-by matching your query against each container's own `@dataShape` JSDoc tag.
+- Judge data SHAPE first. Container table, four rules (shape first; 3+ candidates; max 6 charts/page; no repeated silhouette/page), palette-by-cardinality: `skills/brand-ui/reference/chart-selection.md`; read it before hand-picking a container or hardcoding `AutoChart` inference.
+- Query: `brand-ui chart-for "<data shape>"` / `chart_for` MCP tool (ranked by `@dataShape` JSDoc).
 
 ## ChartFrame
 
-### Why `data`/`columns` are primary inputs (not context)
+- `data`/`columns` are props, not context: pass the same data to chart AND frame; `data` drives table + CSV; `columns` = order/labels (omit = `Object.keys(data[0])`).
+- `ChartFrameProvider` + `useChartFrame()`: one lifted, NOT-exported context; no prop-drilling.
+- **charts -> ui ONLY; never import `@elabs-ai/components-data`.** Flip = ui `Table`; CSV = local RFC-4180 serializer in `chart-frame.tsx`, never `toCsv`. Interactive flip = `chart-frame-data` registry block via `renderTable`/`onDownload`.
+- Expand: `DialogContent size="full"` with a `flex-1 min-h-0` region around `SplitPanel` (`min-h-0` required); chart `start`, detail `end`, `startSize="1fr"`.
+- Toolbar: one root `<TooltipProvider>`; flip toggle = ui `Toggle` with `pressed`. No/empty `data` hides `table` + `download`; `export-svg`/`export-png` key on runtime `state.hasSvg`, not `hasData`.
+- `export-svg.ts`: resolved styles go onto BOTH inline `style` AND presentation attribute; strip `transition`/`animation`; PNG at fixed 2x, card background painted.
+- Stories (`chart-frame.stories.tsx`): Default, Expanded, TableFlipped, NoData, FeaturesSubset, DownloadCallback.
 
-`useChart` (and `useChartStable` / `useChartHover`) throw when called outside a
-`ChartProvider`. `ChartFrame` is the **parent** of the chart — it renders above
-the chart's own provider — so it is structurally unreachable from that context
-(see `packages/charts/src/charts/chart-context.tsx:356-388`). Therefore:
+## Test double (#364)
 
-- Pass the same data to **both** the chart and `ChartFrame` via props.
-- `data` drives the table view and CSV download.
-- `columns` controls column order and labels; omit to derive from `Object.keys(data[0])`.
+- jsdom double: `vi.mock("@elabs-ai/components-charts", async () => import("@elabs-ai/components-charts/test"))`; never mock the barrel as a no-op.
+- It VALIDATES (`assertChartContract`): throws `ChartContractError` on missing/invalid required prop, unparsable date x, absent series `dataKey`.
+- Scope = every COMPONENT the barrel exports (containers validated, visx-free parts verbatim, inert stand-ins for every primitive/provider: required). Constants/hooks/utils/markup are out: spread `importOriginal()` then `import(pkg + "/test")`.
+- Diagnostics: `readChartDoubleProps`, `configureChartTestDouble({ onViolation })` (default `"throw"`).
+- Gate `pnpm charts:test-double:check` (parity; `src/test/**` never imports `@visx/*`/`d3-*`/`motion`/any barrel). Kept out of `brand-ui.manifest.json`.
 
-### Architecture (v1 — single-component lifted-state provider)
+## Drill-down (#349)
 
-`ChartFrameProvider` + `useChartFrame()` hold all state and actions in one
-context (doc-13 compliant: lifted state, not co-located per-subpart). The context
-is **not exported publicly** — it is an implementation detail. Toolbar, inline
-body, and modal body all read the same context; no prop-drilling.
+- ONE contract per container: `onDatapointClick?: (point: ChartDatapoint, event) => void`, payload one object (`datum`, `index`, `seriesKey?`, `seriesLabel?`, `value`, `category`, `source`), never positional. `datapointLabel?` = accessible name; `maxInteractiveDatapoints?` = dev warning, NOT a cap. `ChartLegend` takes `onItemClick`.
+- **Keyboard targets live OUTSIDE the `<svg>`** (body is `aria-hidden`): never `tabIndex`/`role="button"` on an SVG shape; keyboard path = `ChartDatapointLayer`, a positioned sibling of real `<button>`s, kept `pointer-events: none`. One tab stop per chart (roving; arrows, Home/End). Targets 24x24+, whole-column on cartesian. Geometry from scale numbers, never `getBBox()`/`getBoundingClientRect()` in render.
+- New family: `useRegisterDatapointTargets(groupId, memoizedTargets)`, `useActivateDatapoint()`, `<ChartDatapointLayer />` when `useChartDatapointsEnabled()`; `ChartDatapointProvider` above registrants, mounted only when `onDatapointClick` is set.
 
-### Dependency rule: charts → ui ONLY
+## x-scales (#352)
 
-`@elabs-ai/components-charts` must not import from `@elabs-ai/components-data` (sibling dependency). This
-means:
+- `LineChart`/`AreaChart`/`ComposedChart` `xScale?: "time" | "band" | "linear"`; `band`/`linear` change encoding + label only (`xAccessor` = synthetic instant, `dateLabels` = caller's x). When `xScaleType !== "time"` read labels from `dateLabels[index]`, never format `xAccessor(d)` (`x-scale-mode.ts`).
+- `Date`-shaped props are inert off the time scale (`XAxis` `tickFormat`/`tickValues` ignored + dev warning); any future `Date`-typed seam refuses the synthetic value.
 
-- **Flip-to-table** uses the `@elabs-ai/components-ui` `Table` primitive, not `@elabs-ai/components-data`
-  `DataTable` — the in-package default is a static, dependency-free table (charts
-  ↛ data). For the **interactive** flip (sortable `@elabs-ai/components-data` `DataTable` +
-  `downloadCsv`), use the **`chart-frame-data` registry block** (`npx shadcn add
-chart-frame-data`), which composes both siblings in copy-owned app code via the
-  `renderTable` / `onDownload` seams. That block is the sanctioned way to "use the
-  real data component on flip" without giving `@elabs-ai/components-charts` a sibling dependency.
-- **CSV download** uses a minimal local RFC-4180 serializer inside
-  `chart-frame.tsx` (injection-guarded, SSR-safe), not `@elabs-ai/components-data`'s `toCsv`;
-  the `chart-frame-data` block swaps in `@elabs-ai/components-data`'s `downloadCsv` via `onDownload`.
+## Gantt (#360)
 
-### Expand layout coupling
+- `pixelsPerDay` = pixels per 86 400 000 ms at EVERY granularity; never "per current unit".
+- `GanttViewMode` = four calendar presets; `GanttTimeUnit` (`millisecond`..`quarter`) is the superset tick vocabulary all inputs (incl. `onViewModeChange`) take.
+- Never rewrite `startOf`/`addUnit` calendar branches as ms arithmetic; sub-day arms stay ms. `GANTT_UNIT_MS` `month`/`quarter` = stride/bound maths only, never tick stepping.
+- `computeDomain`'s one-day pad floor applies only at/above day scale; `generateTicks` strides under `MAX_TICKS`.
 
-`DialogContent size="full"` gives `h-[90vh] max-h-[90vh] overflow-hidden`. Inside:
-a `flex flex-col` wrapper with a `flex-1 min-h-0` region containing `SplitPanel`.
-The `min-h-0` is required so `SplitPanel`'s `h-full` can resolve — without it the
-panel collapses. Chart is in the `start` pane (left), detail is in the `end` pane
-(right), `startSize="1fr"`.
+## Mark colour
 
-### Toolbar accessibility
+- Canvas (#283): `CanvasLayer` `draw` ink is the caller's compliance. Series tokens (`--chart-1`..`--chart-12`, `--chart-accent`) are 1.4.11-exempt only AS A RAMP (@.claude/rules/theming.md), never as a dataset's whole ink; full-density ink = neutral wire rung (`--chart-mono-7` loudest), series/accent only for a highlighted subset (`canvas-layer.tsx` §4).
+- Diverging (#178c): `--chart-div-neg-2`..`--chart-div-pos-2` carries sign by hue alone; never re-tune `--chart-div-*` to break the symmetry. Every signed-data consumer adds a non-hue channel (`+`/`-` glyph, hatch, value label); apply the greyscale test in @.claude/rules/accessibility.md.
 
-- All icon-only controls carry `aria-label`.
-- Icons get `aria-hidden="true"` (the control label is sufficient).
-- All tooltip triggers are wrapped in a single `<TooltipProvider>` at the toolbar root.
-- The flip toggle uses `@elabs-ai/components-ui` `Toggle` with `pressed` state so AT announces
-  the active/inactive state correctly.
+## Hairline furniture
 
-### Feature degradation
+Furniture (grid, axis rules, drop lines, dumbbell tracks, tree links, radar rings/axes, parallel axes, network edges, sparkline baseline) paints one ink at one weight:
 
-When `data` is absent or empty, `table` and `download` controls are
-automatically hidden — only `expand` remains. This prevents broken UX when a
-chart has no associated tabular data.
+- Ink `--chart-grid` at FULL opacity; never `strokeOpacity`/`opacity` < 1 or an `opacity-[0.n]` class. `--chart-grid` is its own rung, never `var(--border)`.
+- Weight: import `CHART_HAIRLINE_WIDTH` (`chart-hairline.ts`); never restate the number; only a DATA-encoding width scales UP from it. Never "restore" a 1px gridline.
+- Gate `pnpm chart-hairline:check`; opt out in place with `// chart-hairline-exempt: <reason>` on the marker's line.
 
-`export-svg`/`export-png` degrade on a **different** signal — `state.hasSvg`,
-detected at runtime (a `MutationObserver` on the chart body, since the chart's
-`<svg>` isn't guaranteed synchronously present) rather than `hasData` — so a
-chart with a rendered `<svg>` but no `data`/`columns` can still export, and a
-non-SVG chart body (or the flipped table view) hides both controls. See
-`export-svg.ts` (RM-042): the exported SVG is made self-contained by reading
-`getComputedStyle` on the source tree at export time and writing every
-resolved value onto BOTH the clone's inline `style` and its presentation
-ATTRIBUTE (`cloneNode` copies attribute text verbatim, so patching only
-`style` leaves a literal `var(--…)` in the serialized string even though it
-would paint correctly) — `transition`/`animation` are stripped outright, not
-inlined, since motion tokens have no place in a static export. PNG export
-rasterizes the same built SVG onto a canvas at a fixed 2× pixel ratio
-(deliberately not the exporting device's own `devicePixelRatio`, for
-deterministic output) with the card's resolved background painted in.
+## Lint & SVG type
 
-## Test double (issue #364)
+- `// eslint-disable-next-line <rule> -- <reason>` (#185); fix the dependency array first, suppress only when deliberate. No Biome: `biome-ignore` is inert and fails `pnpm biome-ignore:check`; no ESLint equivalent = delete the directive, keep the rationale as a comment.
+- `react-hooks/exhaustive-deps` + `@typescript-eslint/no-explicit-any` are ERRORS here (`eslint.config.js`); `--max-warnings=0` is deliberately NOT used (#319).
+- SVG `<text>` sizes (numeric `fontSize` / arbitrary classes in `radar-labels`, `radar-grid`, `live-line`, `marker-group`, `sankey-node`) stay OUT of the density type scale; never round them to a role; route the fix through `brand-ui-design-system-architect` (#394/#319).
 
-`@visx/*` (SVG measurement — `ParentSize`/`ResizeObserver`, `getTotalLength()`, …)
-does not render meaningfully under jsdom, so consumers were mocking the whole
-`@elabs-ai/components-charts` barrel as a no-op — hiding real chart-prop bugs (a fully
-green suite shipped the `RangeError: Invalid time value` crash) from their
-quality gate. The **official, source-owned answer** is the
-`@elabs-ai/components-charts/test` subpath (`packages/charts/src/test/`):
-
-```ts
-// vitest.setup.ts
-vi.mock("@elabs-ai/components-charts", async () => import("@elabs-ai/components-charts/test"));
-```
-
-- **Not a no-op stub — a contract VALIDATOR.** Every double re-declares the real
-  component's runtime value-contract (`assertChartContract` in
-  `packages/charts/src/test/contract.ts`) and **throws** a `ChartContractError`
-  on a missing/invalid required prop, an unparsable date x-value, or a declared
-  series `dataKey` absent from the rows — so a test that would crash the real
-  chart still fails, at the same input.
-- **Scope: every COMPONENT the real barrel exports.** Contract-validated
-  doubles for each chart CONTAINER (`AreaChart` … `SankeyChart`, `Gantt`,
-  `AutoChart`), `MetricCard`/`MetricGrid`/`ChartCard`/`ChartFrame`/`Sparkline`
-  re-exported **verbatim** (their import graphs are already visx-free, so there
-  is nothing to fake), and **inert stand-ins for every composition primitive and
-  provider** (`Line`, `Area`, `Grid`, `XAxis`, legend/tooltip/pattern parts,
-  `ChartProvider`, … — they render nothing; a `*Provider` renders its
-  `children`).
-  **The primitives are load-bearing, not padding.** `vi.mock`'s factory result is
-  wrapped in a proxy that throws `[vitest] No "Line" export is defined on the …`
-  the moment the consumer's module READS the binding — long before React would
-  decide whether to mount it. "A container double never mounts `children`, so a
-  missing `Line` never throws" is FALSE for the wiring above; without the
-  stand-ins the canonical `<LineChart><Line .../></LineChart>` fails on import.
-  Locked by `packages/charts/src/test/mock-namespace.test.tsx`.
-- **Out of scope, with an escape hatch:** the screaming-snake constants
-  (`DEFAULT_HOVER_OFFSET`, the `PROFIT_LOSS` colours — they live in `@visx`-backed
-  modules), hooks (`useChart`, …) and utility functions (`chartCssVars`, …), plus
-  any assertion on a primitive's real MARKUP. Compose the two modules instead —
-  `vi.mock(pkg, async (importOriginal) => ({ ...(await importOriginal()), ...(await import(pkg + "/test")) }))`
-  — importing `@visx` under jsdom is safe (only RENDERING is not), so this works;
-  it is just slower. See the doc comment atop `packages/charts/src/test/index.ts`.
-- **Diagnostics:** `readChartDoubleProps(el)` round-trips a double's received
-  props back out of its `data-chart-props` DOM attribute.
-  `configureChartTestDouble({ onViolation: "warn" })` downgrades violations to
-  `console.error` for a consumer mid-migration (default: `"throw"`).
-- **Anti-drift gate:** `pnpm charts:test-double:check` (self-tested) — COMPONENT
-  parity (every PascalCase component the real barrel exports has a same-named
-  export from `src/test/index.ts`; the screaming-snake constants, hooks and utils
-  are deliberately out, see above), engine isolation (no runtime edge from
-  `src/test/**` to `@visx/*`/`d3-*`/`motion`/a package barrel — including the
-  package's OWN name, which resolves back to `src/index.ts` via the `exports`
-  map), and exports/publishConfig.exports/tsup.config.ts wiring. A gate you build
-  against your OWN new gate is worth re-running once the files exist — building
-  this one caught a real regex false-positive (a `from`-less `export const`
-  bleeding a later, unrelated `from` clause) before it ever shipped.
-- **Deliberately excluded from `brand-ui.manifest.json`** (`readSubpathBarrels`
-  in `packages/cli/lib/core.mjs`, any subpath ending `/test`) — the manifest is
-  the agent-facing BUILD-WITH catalogue; a second `LineChart` under a `/test`
-  import path would cause exactly the hallucination it exists to prevent.
-
-## Interaction / drill-down (#349)
-
-A chart that can't be clicked is a dead end for an analytics product, so every
-family exposes ONE contract — and it is the same contract everywhere:
-
-- **`onDatapointClick?: (point: ChartDatapoint, event) => void`** on the chart
-  container (bar / line / area / composed / pie / ring / funnel). The payload is
-  a single object (`datum`, `index`, `seriesKey?`, `seriesLabel?`, `value`,
-  `category`, `source`) — **never** a positional `(datum, series, event)`: the
-  families disagree on what a "series" is (pie/ring/funnel have none), and a
-  positional signature can't grow a field without breaking.
-- **`datapointLabel?`** overrides the accessible name of a target;
-  **`maxInteractiveDatapoints?`** is a dev-warning threshold, NOT a cap — every
-  plotted point stays reachable so a keyboard user reaches exactly what a mouse
-  user can click (2.1.1 parity).
-- **`ChartLegend` takes `onItemClick`**, not the container. The legend is a
-  separately-placed composition primitive, so a callback on the chart container
-  would be a prop the container cannot honour.
-
-### The one rule you must not break
-
-**Keyboard targets live OUTSIDE the `<svg>`.** Every chart body is
-`aria-hidden="true"` (see `chart-a11y.tsx`), and a focusable element inside an
-`aria-hidden` subtree is the axe `aria-hidden-focus` violation — which is a RED
-BUILD here (axe is blocking on a ratchet, see quality-gates). So:
-
-- `tabIndex` / `role="button"` on an SVG `<rect>` or `<path>` is **not an
-  option**, ever. The pointer click may live on the shape; the keyboard path is
-  `ChartDatapointLayer`, a positioned **sibling** of the `<svg>` holding real
-  `<button>`s.
-- The layer is **`pointer-events: none`**. Removing that silently kills hover
-  tooltips on line/area — the highest-probability way to break this feature, and
-  the reason `chart-datapoint-layer.test.tsx` asserts a mousemove still resolves
-  a tooltip while the layer is mounted.
-- **One tab stop per chart** (roving tabindex; arrows traverse, Home/End jump).
-  A 500-point series must not add 500 tab stops.
-- Targets are padded to **≥24×24** (WCAG 2.5.8) and, on cartesian families,
-  widened to the whole column — a 2px line stroke is not a hit target.
-- Geometry comes from numbers the shapes ALREADY computed from the scales.
-  Never `getBBox()` / `getBoundingClientRect()` in render.
-
-Wiring a new family: publish targets with `useRegisterDatapointTargets(groupId,
-memoizedTargets)`, attach the pointer click via `useActivateDatapoint()`, and
-render `<ChartDatapointLayer />` as a positioned sibling of the SVG when
-`useChartDatapointsEnabled()`. The provider (`ChartDatapointProvider`) must sit
-ABOVE whatever registers, and is mounted only when `onDatapointClick` is set —
-with it unset a chart's DOM is byte-identical to before.
-
-## Non-temporal x-scales (#352)
-
-`LineChart` / `AreaChart` / `ComposedChart` accept
-`xScale?: "time" | "band" | "linear"`. `"band"`/`"linear"` change the
-**positional encoding** and the **label**, not the scale type: `xAccessor`
-projects onto a monotonic synthetic instant and `dateLabels` carries the
-caller's own x value. So **read an x label from `dateLabels[index]`, never by
-formatting `xAccessor(d)`**, whenever `xScaleType !== "time"` (`XAxis` and
-`ChartTooltip` already do). Rationale in `x-scale-mode.ts`.
-
-**Corollary — a `Date`-shaped prop is inert on a non-time scale.** The synthetic
-instant must never reach consumer code either: `XAxis`'s `tickFormat`
-(`(value: Date) => string`) and `tickValues` (`Date[]`) are ignored, with a dev
-warning, when `xScaleType !== "time"` — honouring them printed
-`1970-01-01T00:00:00.001Z` as the tick label. Any future `Date`-typed seam
-(a brush domain, a marker position) must make the same choice: refuse the
-synthetic value rather than hand it out. Locked by
-`time-series-chart-shell.test.tsx` ("never see the synthetic instant").
-
-## Gantt time units (#360)
-
-`Gantt` spans a 12-second agent run and a two-year programme plan with ONE model.
-The three facts that keep it that way:
-
-- **`pixelsPerDay` means _pixels per 86 400 000 ms_ — at EVERY granularity.**
-  It is a scale factor, not a granularity: `computeCanvasWidth` divides by a ms
-  constant and `dateToX` is purely proportional, so both were already
-  unit-agnostic. Do **not** redefine it as "pixels per current unit" — the prop's
-  type would be unchanged (`number`), so a consumer passing `pixelsPerDay={48}`
-  would get **no compile error and different rendering**, which
-  `docs/DEPRECATION.md` §1 cannot express (a deprecation must name a
-  replacement) and §2 forbids landing in a minor.
-- **`GanttViewMode` stays the four calendar presets; `GanttTimeUnit` is the tick
-  vocabulary.** `GanttTimeUnit` is a **superset** (`millisecond` … `quarter`), so
-  every `GanttViewMode` value still assigns. Input positions (`viewMode`,
-  `defaultViewMode`, `GanttScale.unit`, `viewModes`) take the superset;
-  `onViewModeChange` widened too, which is the one documented compile-time delta
-  (an _explicitly_ annotated `(mode: GanttViewMode) => void` handler stops
-  assigning under `strictFunctionTypes`; the inferred form does not).
-- **Never rewrite the calendar branches of `startOf`/`addUnit` as millisecond
-  arithmetic.** `setHours(0,0,0,0)` / `setDate` / `setMonth` are DST- and
-  month-length-correct; `+ n * 86_400_000` is not (a 23-hour DST Sunday shifts
-  every later day tick off midnight, and `Jan 31 + 1 month` is `Mar 2`, not
-  `Mar 1`). The sub-day arms are ms-based because for them that is exactly
-  right. `GANTT_UNIT_MS`' `month`/`quarter` entries (30 d / 90 d) are for
-  **stride and bound maths only** — never for tick stepping.
-
-Two adjacent invariants a change here must not undo:
-
-- **`computeDomain` must not pad a sub-day domain by a whole day.** The one-day
-  pad floor is what collapsed a 12-second timeline to ~0.04 px bars. The floor
-  now applies only **at or above day scale**, so the 5 %-per-side rule governs
-  everywhere else and padding is proportionally consistent across scales (a
-  200-day and a 12-second domain both spend ~9 % of the canvas on context). It
-  is byte-identical to v1 for `span ≥ 1 day` and for `span === 0`; only
-  `0 < span < 1 day` — the case that could not render at all — moves.
-- **`generateTicks` strides.** Without the `MAX_TICKS` cap a `millisecond` unit
-  over a one-year domain is ~3.15e10 iterations — a hung tab. 5 000 is picked so
-  every realistic calendar domain still strides by 1 and yields an identical
-  array.
-
-Locked by `gantt-timescale.test.ts` (calendar tick freeze, DST/month-length,
-stride guard) and the `#360` blocks in `gantt.test.tsx` (a 220-day domain's
-canvas width per preset is the executable form of the pixel-identity guarantee).
-
-## Canvas mark ink is the caller's own compliance (#283)
-
-`CanvasLayer`'s `draw` paints raw pixels into a bitmap that nothing downstream —
-not the layer, not any gate — can inspect. That makes contrast a call-site
-decision, not a checkable one: a categorical series token (`--chart-1`…
-`--chart-12`, `--chart-accent`) is exempt from the 1.4.11 3:1 mark bar only **as
-a ramp**, with other series around it for context (see `.claude/rules/theming.md`
-`CHART_1411_EXEMPT`). Painting one of those tokens as 100% of a dataset's ink —
-the whole plot, no other series in sight — is not covered by that exemption, and
-composites even lower once `globalAlpha` is applied (measured: `--chart-1` at
-α=0.65 is 1.26:1 on `light`, below its own 1.42:1 opaque floor). Reach for a
-neutral "wire" rung (`--chart-mono-7` is the loudest, and flips correctly per
-theme with no `dark:` branch) for full-density canvas ink, and reserve a
-series/accent colour for a genuinely highlighted subset drawn over the neutral
-pass — see `canvas-layer.stories.tsx` and `canvas-layer.tsx`'s docblock §4.
-
-## Diverging ramp: sign needs a second channel (#178c)
-
-`--chart-div-neg-2 … --chart-div-pos-2` (`Foundations/ChartRamps`, the
-"Diverging" ramp) carries **sign by hue alone** — the negative arm rides the
-blue family, the positive arm the brand lime, meeting at a neutral mid. Measured
-greyscale lightness delta between mirrored steps: `neg-1` vs `pos-1` = **0.003**;
-`neg-2` vs `pos-2` = **0.002**. In greyscale, in print, or for any reader going by
-lightness only, a `+1` cell and a `-1` cell are indistinguishable.
-
-- **This is inherent to a diverging ramp, not a token defect.** Two arms meeting
-  at a shared mid by construction have to be lightness-symmetric around it — that
-  symmetry is what makes the ramp read as "signed" in the first place. Do not
-  "fix" this by re-tuning `--chart-div-*` in `packages/tokens/` to break the
-  symmetry; that would defeat the ramp's own premise. It is also **not** a
-  colour-vision-deficiency problem — deuteranopia (ΔE 0.183-0.202) and
-  protanopia (ΔE 0.173-0.190) simulations both stay well separated; only
-  greyscale/print collapses it.
-- **It IS a constraint every consumer of this ramp for signed data must honour.**
-  RM-021's correlation-matrix layout (and any future signed choropleth/signed-bar
-  container built on this ramp) needs a **second, non-hue channel** carrying
-  sign: a `+`/`−` glyph, a texture/hatch, or a value label rendered on or beside
-  the cell. Apply the greyscale decision test from
-  @.claude/rules/accessibility.md ("if I rendered this in greyscale, could a
-  user still tell these two states apart?") to any new diverging-ramp
-  consumer before shipping it — the answer here is no by construction, so the
-  second channel is not optional.
-- **Reference:** `Foundations/ChartRamps` → `Default` story documents the
-  measured delta in its `Diverging` ramp entry (source docblock + rendered
-  blurb) so it is legible both to someone reading the tokens and to someone
-  reading the rendered story.
-
-## Story coverage & verification
-
-Stories live in `packages/charts/src/chart-frame/chart-frame.stories.tsx` and
-should exercise: Default (toolbar visible), Expanded (dialog opened), TableFlipped
-(table visible), NoData (degraded toolbar), FeaturesSubset, DownloadCallback.
-
-When the Storybook dev server is running, verify interaction + a11y across every
-theme (`light`, `dark`) via `mcp__storybook__run-story-tests` + `mcp__storybook__preview-stories`
-(`globals=theme:<slug>`). Otherwise run `pnpm --filter @elabs-ai/components-docs test-storybook`.
-See @.claude/rules/storybook-mcp.md.
-
-## Hairline furniture — one ink, one weight (#chart-grid)
-
-Chart **furniture** is every rule the data is read against but that is not itself
-data: grid rows and columns, axis rules, scatter drop lines, dumbbell tracks,
-tree links, radar rings and axes, parallel-coordinates axes, network edges, a
-sparkline's empty baseline. All of it paints **one ink at one weight**:
-
-- **Ink: `--chart-grid`, at FULL opacity.** Never `strokeOpacity`/`opacity`
-  below 1, and never a Tailwind `opacity-[0.n]` class. Furniture recedes by
-  being a quiet TOKEN, not by being a fraction of a louder one. If a mark must
-  sit further back than the grid does, that is a different token, not a
-  multiplier.
-- **Weight: `CHART_HAIRLINE_WIDTH`** (`packages/charts/src/chart-hairline.ts`,
-  0.65, re-exported from the package barrel). Import it; never restate the
-  number. The one legitimate variation is a width that encodes **data** — a
-  network edge's value scales UP from this floor.
-- **`--chart-grid` is its own rung and must NOT be `var(--border)`.** A UI
-  hairline is tuned to separate two regions at 1px; furniture is drawn
-  sub-pixel over a plot ground and needs more ink to survive it. The token is
-  2.31:1 against a white card in `light` (2.91:1 in `dark`), which lands at
-  ~1.67:1 / ~1.98:1 as actually drawn at 0.65px.
-
-**The incident this encodes.** Every mark used to pick its own weight (0.55 /
-0.6 / 0.65 / 1 / 1.4) and two of them additionally dimmed the shared ink —
-network edges by 0.35, radar rings and axes by 0.6 (which also read `--border`
-directly rather than the chart token). One token therefore rendered at five
-weights and three inks: a line chart's gridlines read as furniture while a
-network chart's edges measured **1.07:1** against a white card, i.e. invisible.
-Darkening the token alone would not have fixed it — the multiplier was doing
-most of the damage — and removing the multipliers alone would not have fixed it
-either, because `var(--border)` is too light to draw sub-pixel. Both halves are
-load-bearing.
-
-**Sub-pixel strokes cost ink, and the token pays for it.** A 0.65px stroke
-deposits roughly 65% of its colour, so thinning a rule and darkening it are the
-same decision, not two. Do not "restore" a 1px gridline to make it more legible
-— that reintroduces the weight inconsistency the constant exists to remove.
-
-**Enforced, not remembered:** `pnpm chart-hairline:check`
-(`scripts/check-chart-hairline.mjs`, self-tested via
-`pnpm chart-hairline:check:test`, blocking in `gates.yml`) fails a grid-ink
-stroke that carries an opacity multiplier or a numeric `strokeWidth` other than
-the shared constant, and fails any theme that aliases `--chart-grid` back to
-`--border`. A stroke that paints the furniture ink without being a rule opts out
-in place with `// chart-hairline-exempt: <reason>` on the marker's own line — the
-only such case today is the choropleth no-data hatch, which is a texture fill
-standing in for a colour. **Declared gap:** the Tailwind CLASS spelling of a
-multiplier is not machine-checked (the class sits on the element while the ink
-sits in an attribute); `network-link.tsx`'s resting rung is pinned by its own
-unit test instead.
-
-## Tokens only
-
-Use semantic token utilities (`bg-card`, `text-card-foreground`, `border`,
-`bg-surface-muted`, `text-muted-foreground`, `ring-ring`). No raw hex. No new
-tokens. Motion via `duration-*`/`ease-*` gated utilities with `motion-reduce:`
-neutralizers.
-
-## Lint suppressions (#185)
-
-Suppress with `// eslint-disable-next-line <rule> -- <reason>`. This repo has NO
-Biome — a `biome-ignore` comment is inert and fails `pnpm biome-ignore:check`. If
-the Biome rule you were silencing has no enabled ESLint equivalent (e.g.
-`noArrayIndexKey`, `noStaticElementInteractions`), delete the directive and keep
-the rationale as a plain comment.
-
-**Two rules are ERRORS in this package**, not warnings:
-`react-hooks/exhaustive-deps` and `@typescript-eslint/no-explicit-any`
-(`packages/charts/eslint.config.js`). CI runs a bare `pnpm lint` with no
-`--max-warnings`, so at the shared preset's `warn` level a re-introduced violation
-would land silently — the severity override is what makes `pnpm lint` fail instead.
-The blanket `--max-warnings=0` is deliberately NOT used: the package still carries
-39 pre-existing `brand/no-raw-font-size` + `brand/no-raw-color` warnings that are
-already governed by `pnpm text-scale:check` / `pnpm palette:check`. That residual is
-a separate debt class postdating #185, tracked in **#319** (which owns the
-`--max-warnings=0` flip as its last step); #185's AC#1 was amended on the issue to
-name the rule classes it actually diagnosed rather than a bare warning count.
-
-Fixing a dependency array is the first resort; suppress only when the omission is
-deliberate, and say why in the `-- <reason>`.
-
-## SVG-rendered type does not participate in the density-type scale yet (#394/#319)
-
-`#394` converted the 8 HTML-rendered axis/legend/auto-legend labels from the raw
-`text-xs` utility to the `text-meta` **role**, so they now scale with
-`data-density` (#340) like every other role-typed text. Six sibling sites are
-**consciously scoped OUT** of that fix and remain raw, density-blind numbers:
-
-- `packages/charts/src/charts/radar-labels.tsx:19,59` — `fontSize = 11` (default
-  prop, applied via `fontSize={fontSize}`).
-- `packages/charts/src/charts/radar-grid.tsx:99` — `fontSize={9}`.
-- `packages/charts/src/charts/live-line.tsx:286` — `fontSize={11}`.
-- `packages/charts/src/charts/markers/marker-group.tsx:273` — `fontSize={11}`.
-- `packages/charts/src/charts/sankey/sankey-node.tsx:110,122` — Tailwind
-  arbitrary-value classes on SVG `<text>` (`text-[13px]`/`text-[11px]`), not a
-  JS `fontSize` prop.
-
-**Why they're different from the 8 that were fixed:** these are numeric
-`fontSize` props / arbitrary-value classes on SVG `<text>` elements, not a
-Tailwind utility class a role swap can replace — SVG `<text>` also ignores
-`line-height`, so only size/weight/tracking would move even if it could read a
-role. Three of the six sizes (9px, 11px, 13px) have **no matching role at all**
-in the 8-role scale (`--text-meta`'s base is 12px, the smallest rung) — shrinking
-or rounding one to fit is a design-system decision, not a mechanical swap. The
-practical fix would be a runtime read of the resolved `--text-meta` custom
-property (`getComputedStyle(rootEl).getPropertyValue('--text-meta')`, parsed to
-px) rather than a static class, which is materially more invasive than the
-static-class conversion #394 shipped. Resolving the sub-11px/13px cases is
-tracked as residual scope on **#394/#319**, routed through
-`brand-ui-design-system-architect` before implementation — do not silently round
-these to the nearest role.
+History and measurements: docs/rules-history/chart-components.md

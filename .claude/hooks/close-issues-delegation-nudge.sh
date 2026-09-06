@@ -37,9 +37,10 @@
 #                    report must then say so rather than omit it.
 #
 # It is a NUDGE, never a hard block: `stop_hook_active` bounds it to one fire per
-# stop chain, exactly like gate-completion-claims.sh and session-cadence-nudge.sh
-# (same exit contract — 2, so the message reaches the agent). Silent + exit 0 on the
-# happy path, and silent on every session that did not run /close-issues.
+# stop chain, exactly like gate-completion-claims.sh (same exit contract — 2, so the
+# message reaches the agent; session-cadence-nudge.sh, by contrast, is advisory and
+# exits 0 since 2026-09-06). Silent + exit 0 on the happy path, and silent on every
+# session that did not run /close-issues.
 #
 # `--ledger <transcript.jsonl>` prints the same numbers and exits 0. That mode is
 # what the command's report section calls, so the ledger in the report and the
