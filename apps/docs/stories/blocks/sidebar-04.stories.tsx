@@ -672,3 +672,66 @@ export const NarrowDrillDown: Story = {
     await expect(pane).not.toBeVisible();
   },
 };
+
+/**
+ * Just above the `md` boundary — the width band this file could not see. Every
+ * other story here renders at 1200px or, for the drill-down, at 414px: both far
+ * from 768px and on opposite sides of it. So sliding the shell's layout
+ * breakpoint one step, `md:` to `lg:`, silently switched every reader between
+ * 768px and 1023px to the phone layout — two zones collapsed to one — and the
+ * file stayed green.
+ *
+ * 800px sits inside that band. The claim asserted here is the same one the
+ * 1200px stories make: with a message open, all three zones are on screen at
+ * once. That is what makes it a breakpoint lock rather than a second desktop
+ * story — it is the identical claim, measured on the other side of a line
+ * nothing else in the file crosses.
+ */
+export const JustAboveTheBreakpoint: Story = {
+  parameters: {
+    viewport: {
+      options: {
+        justAboveMd: { name: "Just above md (800px)", styles: { width: "800px", height: "900px" } },
+      },
+    },
+  },
+  globals: { viewport: { value: "justAboveMd", isRotated: false } },
+  render: () => <MailShell activePath="/inbox" defaultSelectedId={FIRST.id} />,
+  play: async ({ canvasElement }) => {
+    // The premise, measured. A viewport global that silently stopped applying
+    // would leave this re-measuring the 1200px branch under a name that says
+    // otherwise, which is precisely the failure the story exists to prevent.
+    await expect(window.innerWidth).toBeGreaterThanOrEqual(768);
+    await expect(window.innerWidth).toBeLessThan(1024);
+    await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(true);
+    await expect(window.matchMedia("(min-width: 64rem)").matches).toBe(false);
+
+    // Three zones, all painted, with a message open — the desktop claim.
+    const rail = canvasElement.querySelector('[data-slot="sidebar"]');
+    const list = canvasElement.querySelector('[data-slot="mail-list-column"]') as HTMLElement;
+    const pane = canvasElement.querySelector('[data-slot="mail-reading-pane"]') as HTMLElement;
+    await expect(canvasElement.querySelector('[data-slot="mail-shell-panes"]')).toHaveAttribute(
+      "data-reading",
+      "open",
+    );
+    await expect(rail).toBeVisible();
+    await expect(list).toBeVisible();
+    await expect(pane).toBeVisible();
+    // Both content zones hold real width — a "visible" column crushed to a
+    // hairline is the mobile layout wearing the desktop layout's assertions.
+    await expect(list.getBoundingClientRect().width).toBeGreaterThan(120);
+    await expect(pane.getBoundingClientRect().width).toBeGreaterThan(120);
+    // …and the drill-down's back control is NOT on screen. It is rendered
+    // whenever a message is open, but carries `md:hidden`, so it is a second,
+    // independent read of which branch is in force: if it is painted here, the
+    // phone layout is running at 800px even should the zones happen to look
+    // right.
+    // Found by attribute rather than by role: `getByRole` skips hidden elements
+    // by default, so it would throw here instead of returning the node this
+    // assertion is about — and a lock that depends on a query THROWING cannot
+    // tell "correctly hidden" apart from "deleted".
+    const back = canvasElement.querySelector('[aria-label="Back to the message list"]');
+    await expect(back).toBeInTheDocument();
+    await expect(back).not.toBeVisible();
+  },
+};

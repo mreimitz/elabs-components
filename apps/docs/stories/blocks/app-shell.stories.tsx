@@ -118,6 +118,34 @@ export const Frame: Story = {
     await expect(
       canvasElement.querySelector('[data-slot="app-shell-content"]'),
     ).toBeEmptyDOMElement();
+    /* The skip link and the landmark it claims. The dashboard shell has locked
+     * this since it was written; the flagship — the block every consumer copies
+     * — did not, so deleting BOTH `<SkipLink />` and `id="main-content"` left
+     * this whole file green.
+     *
+     * Modelled on `sidebar-02`'s `Frame`, with one deliberate difference. The
+     * sibling hard-codes `"#main-content"` on the link and `"main#main-content"`
+     * on the landmark, which locks a STRING in two places; this resolves the
+     * fragment the link actually carries and asserts that the single `<main>`
+     * is the element it points at. The relationship is the accessibility
+     * property — a consumer who renames the id on both sides has broken
+     * nothing, and should not have to edit a test to say so.
+     */
+    const skip = canvasElement.querySelector('[data-slot="skip-link"]');
+    await expect(skip).toBeInTheDocument();
+    // No visibility assertion: a skip link is `sr-only` until focused, which
+    // this runner correctly reports as not visible.
+    const target = (skip?.getAttribute("href") ?? "").replace(/^#/, "");
+    await expect(target).not.toBe("");
+    // Exactly one main landmark. Two would make "skip to main content"
+    // ambiguous; zero would make it a dead link.
+    await expect(canvasElement.querySelectorAll("main")).toHaveLength(1);
+    const main = canvasElement.querySelector("main") as HTMLElement;
+    await expect(main.id).toBe(target);
+    // …and focus can actually land there. `toHaveAttribute`, not the `tabIndex`
+    // IDL getter, which answers -1 for a plain <main> either way.
+    await expect(main).toHaveAttribute("tabindex", "-1");
+
     // Depth 1 — the bar shows a page name, not a one-item trail.
     await expect(canvasElement.querySelector('nav[aria-label="breadcrumb"]')).toBeNull();
   },
@@ -262,5 +290,46 @@ export const Empty: Story = {
     await waitFor(async () => {
       await expect(canvas.getByText("Nothing happened overnight")).toBeVisible();
     });
+  },
+};
+
+/**
+ * Just above the `md` boundary. The flagship's list zone is painted by a single
+ * `md:flex` (its base class is `hidden`), and until now every story in this file
+ * sat at 320px or 1200px — both far from 768px, and on opposite sides of it. So
+ * sliding that one breakpoint to `lg:` would have folded the list zone away for
+ * every reader between 768px and 1023px with nothing here noticing.
+ *
+ * 800px is inside the window the slide would break, and close enough to the
+ * boundary that a breakpoint moved by one step lands on the wrong side of it.
+ */
+export const JustAboveTheBreakpoint: Story = {
+  parameters: {
+    viewport: {
+      options: {
+        justAboveMd: { name: "Just above md (800px)", styles: { width: "800px", height: "900px" } },
+      },
+    },
+  },
+  globals: { viewport: { value: "justAboveMd", isRotated: false } },
+  render: () => <AppShellPage activePath="/" />,
+  play: async ({ canvasElement }) => {
+    // The premise, measured. If the viewport global silently stopped applying,
+    // every assertion below would be re-measuring the 1200px branch under a
+    // name that says otherwise — so the width is asserted, not assumed.
+    await expect(window.innerWidth).toBeGreaterThanOrEqual(768);
+    await expect(window.innerWidth).toBeLessThan(1024);
+    await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(true);
+    await expect(window.matchMedia("(min-width: 64rem)").matches).toBe(false);
+
+    // The desktop claim, at the width nothing else in this file covers: the
+    // list zone is painted and has real width here, exactly as it does at
+    // 1200px.
+    const list = canvasElement.querySelector('[data-slot="app-list-column"]') as HTMLElement;
+    await expect(list).toBeVisible();
+    await expect(list.getBoundingClientRect().width).toBeGreaterThan(120);
+    await expect(canvasElement.querySelector('[data-slot="app-top-bar"]')).toBeVisible();
+    await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="app-shell-content"]')).toBeVisible();
   },
 };
