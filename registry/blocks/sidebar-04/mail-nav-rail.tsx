@@ -26,6 +26,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@elabs-ai/components-ui";
+import { AppIcon } from "@elabs-ai/components-icons";
 import { isPathActive, NAV_GROUPS } from "./nav-items";
 
 export interface MailNavRailProps extends Omit<ComponentProps<typeof Sidebar>, "collapsible"> {
@@ -35,6 +36,8 @@ export interface MailNavRailProps extends Omit<ComponentProps<typeof Sidebar>, "
   accountName?: string;
   /** Address under the owner's name (hidden when the rail is collapsed). */
   accountEmail?: string;
+  /** Product name — the wordmark half of the brand lockup. @default "Northwind Mail" */
+  productName?: string;
   /** Starts a new message. Wire it to your own composer. */
   onCompose?: () => void;
 }
@@ -43,14 +46,22 @@ export function MailNavRail({
   activePath,
   accountName = "Ada Okonkwo",
   accountEmail = "ada@northwind.example",
+  productName = "Northwind Mail",
   onCompose,
   className,
   ...props
 }: MailNavRailProps) {
   return (
-    <Sidebar collapsible="icon" variant="inset" className={className} {...props}>
+    <Sidebar collapsible="icon" className={className} {...props}>
       <SidebarHeader>
         <div className="flex min-w-0 flex-col gap-2 px-1 py-1">
+          {/* The product mark, above the account block. `AppIcon` is the
+              library's own brand component — theme-correct on its own, and
+              `morph="auto"` folds the lockup down to the glyph when this rail
+              collapses. Re-brand by re-pointing the brand tokens. */}
+          <div className="flex items-center group-data-[collapsible=icon]:justify-center">
+            <AppIcon morph="auto" title={productName} height={22} />
+          </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="truncate text-body font-semibold text-sidebar-foreground">
               {accountName}

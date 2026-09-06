@@ -179,28 +179,28 @@ export const Default: Story = {
     await expect(port.classList.contains("focus-ring-inset")).toBe(true);
     await expect(port.classList.contains("focus-ring")).toBe(false);
 
-    // The frame is the INSET variant, read as a PAINTED property rather than as
-    // the prop that set it or the class name that carries it. Only
-    // `SidebarProvider variant="inset"` grounds the whole wrapper on chrome
-    // (`bg-sidebar`), which is what makes the floating `SidebarInset` card read
-    // as raised above it; `variant="sidebar"` leaves the wrapper transparent and
-    // the frame goes flat. Geometry cannot see that difference: the inset's
-    // radius, shadow and margin also come from a SECOND, legacy `peer-` rule
-    // that the section panel's own `Sidebar variant="inset"` keeps firing, so
-    // swapping the PROVIDER's variant moves the ground and nothing else.
+    // The frame is FLUSH, read as a PAINTED property rather than as the prop
+    // that set it or the class name that carries it. `variant="inset"` on the
+    // provider would ground the whole WRAPPER on chrome (`bg-sidebar`) so the
+    // content column could float above it as a rounded card; this family does
+    // not do that, so the wrapper paints nothing of its own and the content
+    // column meets the rail edge to edge.
     const wrapper = canvasElement.querySelector('[data-slot="sidebar-wrapper"]') as HTMLElement;
     await expect(wrapper).toBeVisible();
-    const wrapperGround = getComputedStyle(wrapper).backgroundColor;
-    await expect(wrapperGround).not.toBe("rgba(0, 0, 0, 0)");
-    // …and it is the CHROME ground specifically — the same token the icon rail
-    // paints — not merely "some colour", which a transparent wrapper inheriting
-    // a page background would also satisfy.
+    await expect(getComputedStyle(wrapper).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    // The elevation hierarchy still reads, and it is carried by the ZONES
+    // themselves rather than by a wrapper behind them: chrome (the icon rail)
+    // is the recessed ground, the content canvas is the brighter one.
     const railZone = zones(canvasElement).rail;
-    await expect(wrapperGround).toBe(getComputedStyle(railZone).backgroundColor);
-    // The canvas is the brighter, separate ground: chrome < canvas is the
-    // elevation hierarchy this variant exists to express.
     const insetZone = zones(canvasElement).inset;
-    await expect(wrapperGround).not.toBe(getComputedStyle(insetZone).backgroundColor);
+    const railGround = getComputedStyle(railZone).backgroundColor;
+    await expect(railGround).not.toBe("rgba(0, 0, 0, 0)");
+    await expect(railGround).not.toBe(getComputedStyle(insetZone).backgroundColor);
+    // And the content column carries no rounded corner — the tell of the
+    // floating-card look this family rejected.
+    await expect(
+      parseFloat(getComputedStyle(insetZone).borderTopLeftRadius) > 0 ? "rounded" : "square",
+    ).toBe("square");
 
     // The dock is a COLUMN at this width, even while closed: above
     // `overlayBreakpoint` the column branch is always mounted, below it the

@@ -153,7 +153,6 @@ export default function SettingsShell({
     <SidebarProvider
       open={panelOpen}
       onOpenChange={setPanelOpen}
-      variant="inset"
       // `h-svh overflow-hidden`: the shell is viewport-locked, which is what
       // makes the content pane's `min-h-0 flex-1 overflow-y-auto` scroll port
       // bounded. Without it the pane grows and the page scrolls instead.

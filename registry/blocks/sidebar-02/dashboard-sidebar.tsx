@@ -32,6 +32,7 @@ import {
   TeamSwitcher,
   type TeamSwitcherTeam,
 } from "@elabs-ai/components-ui";
+import { AppIcon } from "@elabs-ai/components-icons";
 import { isPathActive, NAV_GROUPS, type NavItem } from "./nav-items";
 
 /** Demo tenants — replace with your own. */
@@ -46,6 +47,8 @@ export interface DashboardSidebarProps extends Omit<ComponentProps<typeof Sideba
   activePath: string;
   /** Tenants offered by the switcher in the rail's header. @default DEMO_TEAMS */
   teams?: TeamSwitcherTeam[];
+  /** Product name — the wordmark half of the brand lockup. @default "Northwind" */
+  productName?: string;
   /** Short environment label rendered in the footer meta line. */
   environment?: string;
 }
@@ -128,13 +131,13 @@ function renderNavItem(item: NavItem, activePath: string) {
 export function DashboardSidebar({
   activePath,
   teams = DEMO_TEAMS,
+  productName = "Northwind",
   environment = "Production",
   className,
   ...props
 }: DashboardSidebarProps) {
   return (
     <Sidebar
-      variant="inset"
       collapsible="icon"
       className={className}
       {...props}
@@ -149,6 +152,14 @@ export function DashboardSidebar({
       // `CompactDensity` story.
     >
       <SidebarHeader>
+        {/* The PRODUCT mark, above the TENANT switcher — two different things,
+            and a shell needs both. `AppIcon` is the library's own brand
+            component: theme-correct on its own, and `morph="auto"` crossfades
+            the lockup down to the glyph when this rail collapses. Re-brand by
+            re-pointing the brand tokens, never by editing this block. */}
+        <div className="flex items-center px-1 py-1 group-data-[collapsible=icon]:justify-center">
+          <AppIcon morph="auto" title={productName} height={22} />
+        </div>
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
 

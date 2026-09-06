@@ -7,23 +7,21 @@
  * Reach for it when a screen's job is "pick one of many, then read the whole of
  * it" — mail, a review queue, an alert inbox, a document tray. When there is
  * nothing to pick between, `sidebar-02` (one nav, one content surface) is the
- * smaller shell. When the screen also needs a details rail on the RIGHT, the
- * flagship `app-shell` carries four zones.
+ * smaller shell. When the screen needs a panel on the RIGHT instead of a list on
+ * the left, the flagship `app-shell` carries a summoned assistant dock and
+ * `sidebar-02` carries a permanent details rail.
  *
- * ONE `SidebarProvider`, not three. The flagship runs a provider per collapsible
- * zone because it has three of them; here the rail is the only one, so a single
- * `variant="inset"` provider owns the state — which is what makes
- * `SidebarTrigger` in the top bar and the frame's ⌘B/Ctrl+B shortcut the same
- * control instead of two things that can disagree.
+ * ONE `SidebarProvider`. The rail is the only collapsible `Sidebar` here, so a
+ * single provider owns the state — which is what makes `SidebarTrigger` in the
+ * top bar and the frame's ⌘B/Ctrl+B shortcut the same control instead of two
+ * things that can disagree.
  *
- * The floating surface comes from composing BOTH inset mechanisms:
- * `variant="inset"` on the provider (which paints the `bg-sidebar` frame ground)
- * and on the left `Sidebar`. `SidebarInset` derives its ancestor-scoped and
- * peer-scoped margins from the same `gutter` value, so the two selectors emit
- * identical declarations and there is no stylesheet-order race (sidebar.tsx,
- * `SidebarInsetGutter`). The default `gutter="auto"` is exactly the geometry
- * this layout wants — a margin on every side that reopens the leading edge when
- * the rail collapses — so no `gutter` prop is passed.
+ * The content surface is FLUSH, like every shell in this family: no
+ * `variant="inset"` on the provider or the rail. The rounded floating card is an
+ * alternative look, not the house style — turning it on is a one-prop change on
+ * both, and `SidebarInset` derives its margins from one `gutter` value inside
+ * the library (sidebar.tsx, `SidebarInsetGutter`) so the two selectors cannot
+ * race in the stylesheet.
  *
  * There is deliberately NO `shell-metrics.ts` here, unlike the flagship. That
  * file exists to publish widths as custom properties because the flagship's
@@ -76,15 +74,13 @@ export default function MailShell({
   const selected = messages.find((message) => message.id === selectedId);
 
   return (
-    // The provider IS the frame here: `variant="inset"` gives it the
-    // `bg-sidebar` ground and `group/sidebar-wrapper`, and it already carries
-    // `flex min-h-svh w-full`. `h-svh` pins it to the viewport so the scroll
-    // ports below own the overflow instead of the page.
+    // `h-svh` pins the frame to the viewport so the scroll ports below own the
+    // overflow instead of the page.
     // No `data-slot` of the shell's own here. `SidebarProvider` declares
     // `data-slot="sidebar-wrapper"` and spreads `...props` LAST, so passing one
     // in would DELETE the library's slot on this instance — and a copy-own
     // block is the thing people copy, so it must not teach that.
-    <SidebarProvider variant="inset" defaultOpen={defaultSidebarOpen} className="h-svh">
+    <SidebarProvider defaultOpen={defaultSidebarOpen} className="h-svh">
       <SkipLink />
 
       <MailNavRail activePath={activePath} />

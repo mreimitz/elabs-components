@@ -540,19 +540,20 @@ export const CompactDensity: Story = {
   play: async ({ canvasElement }) => {
     const rail = canvasElement.querySelector('[data-slot="sidebar"]');
     await expect(rail).toHaveAttribute("data-state", "collapsed");
-    // Under `collapsible=icon` + `variant=inset` the two widths differ by a
-    // designed 2px and by nothing else. Measured, not inferred from a class
-    // name: pinning `data-density="spacious"` on the rail inside this compact
-    // wrapper drives the delta to 5.70px, which is what this window catches.
+    // This shell is FLUSH (no `variant="inset"` anywhere), so there is no
+    // designed offset between the rail's fixed container and its width spacer —
+    // they must AGREE exactly. Measured, not inferred from a class name:
+    // pinning `data-density="spacious"` on the rail inside this compact wrapper
+    // drives the delta to whole pixels, which is what this window catches.
     const gap = canvasElement.querySelector('[data-slot="sidebar-gap"]');
     const container = canvasElement.querySelector('[data-slot="sidebar-container"]');
     await expect(gap).toBeInTheDocument();
     await expect(container).toBeInTheDocument();
-    const delta =
+    const delta = Math.abs(
       (container as HTMLElement).getBoundingClientRect().width -
-      (gap as HTMLElement).getBoundingClientRect().width;
-    await expect(delta).toBeGreaterThanOrEqual(1.5);
-    await expect(delta).toBeLessThanOrEqual(2.5);
+        (gap as HTMLElement).getBoundingClientRect().width,
+    );
+    await expect(delta).toBeLessThanOrEqual(0.5);
   },
 };
 

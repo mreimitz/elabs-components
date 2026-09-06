@@ -129,10 +129,18 @@ const COUNT_BADGE_BASE =
 // Row orientation, expanded: the badge sits at the end of the full-width row,
 // vertically centred — visually where `ms-auto` used to place it inside the
 // button, without depending on the button's own box.
+//
+// Collapsed, the badge hugs the item's own END EDGE (`end-0`) rather than
+// overhanging it (`-end-1`), which is the ordinary corner-badge convention.
+// The reason is this rail's POSITION, not its look: `ContextRail` is the
+// outermost column of a flush shell, so its end edge IS the viewport edge —
+// a 4px overhang lands past `window.innerWidth` and the count is clipped in
+// half by the browser, measured at 1440px on the dashboard shell. The
+// vertical `-top-1` overhang is kept: nothing clips it.
 const COUNT_BADGE_ROW =
-  "end-2 top-1/2 h-5 min-w-5 -translate-y-1/2 px-1 group-data-[collapsible=icon]:end-auto group-data-[collapsible=icon]:top-auto group-data-[collapsible=icon]:-end-1 group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:translate-y-0 group-data-[collapsible=icon]:px-0.5";
+  "end-2 top-1/2 h-5 min-w-5 -translate-y-1/2 px-1 group-data-[collapsible=icon]:end-auto group-data-[collapsible=icon]:top-auto group-data-[collapsible=icon]:end-0 group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:translate-y-0 group-data-[collapsible=icon]:px-0.5";
 // Column orientation (the narrow strip) is always the icon-sized corner badge.
-const COUNT_BADGE_COLUMN = "-end-1 -top-1 h-4 min-w-4 px-0.5";
+const COUNT_BADGE_COLUMN = "end-0 -top-1 h-4 min-w-4 px-0.5";
 
 function ContextRailSwitcher({
   sections,

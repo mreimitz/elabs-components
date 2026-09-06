@@ -25,7 +25,8 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { ArrowLeft, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { AppIcon } from "@elabs-ai/components-icons";
 import {
   cn,
   SidebarMenu,
@@ -52,6 +53,8 @@ export interface SettingsIconRailProps extends ComponentProps<"div"> {
   onAreaSelect: (areaId: string) => void;
   /** Route out of settings, back into the app. @default "/" */
   exitHref?: string;
+  /** Product name — the brand mark's accessible name. @default "Northwind" */
+  productName?: string;
 }
 
 export function SettingsIconRail({
@@ -60,6 +63,7 @@ export function SettingsIconRail({
   panelOpen,
   onAreaSelect,
   exitHref = "/",
+  productName = "Northwind",
   className,
   ...props
 }: SettingsIconRailProps) {
@@ -74,13 +78,15 @@ export function SettingsIconRail({
       )}
       {...props}
     >
-      {/* Decorative: the word "Settings" is already the page's heading and the
-          first breadcrumb, so a second announcement here is noise. */}
-      <span
-        aria-hidden="true"
-        className="flex size-8 shrink-0 items-center justify-center rounded-md text-sidebar-primary"
-      >
-        <SlidersHorizontal className="size-5" />
+      {/* The brand mark — this rail's topmost square is the "logo in the corner"
+          slot, so it carries the library's own `AppIcon` rather than a stock
+          glyph. `morph="mark"` pins it to the GLYPH: this rail is icon-only in
+          every state, so there is never room for the lockup's wordmark.
+          `aria-hidden` because the product name is not this control's job — the
+          word "Settings" is already the page heading and the first breadcrumb,
+          and a second announcement here is noise. */}
+      <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center">
+        <AppIcon morph="mark" title={productName} height={22} />
       </span>
 
       <nav aria-label="Settings areas" className="flex min-h-0 flex-1 flex-col">

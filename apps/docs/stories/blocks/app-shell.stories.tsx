@@ -3,7 +3,6 @@ import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import AppShellPage from "@/components/app-shell/app-shell-page";
 import { AppTopBar } from "@/components/app-shell/app-top-bar";
-import { DEMO_PIPELINES, type PipelineSummary } from "@/components/app-shell/app-list-column";
 import {
   DEMO_ACTIVITY,
   DEMO_RUNS,
@@ -31,7 +30,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "The four-zone flagship shell: a collapsible nav rail, a records column, the content pane and a details rail that rests collapsed. Reach for it when a screen needs a second column of records between navigation and content — a mail-style list, a work queue, a review pipeline. When the whole product fits in one navigation tree and the screen is a briefing rather than a queue, reach for `Layout/App Shell/Dashboard` instead.",
+          "The default shape this library recommends, and a direct port of the shell the elabs AI Workbench ships: a collapsible navigation rail, a flush full-bleed content column, and a summoned assistant dock on the right. Reach for it for almost any internal app. When a screen needs a second column of records between navigation and content — a mail-style list, a work queue — reach for `Layout/App Shell/Mail`, which is built for that. When the right-hand panel should be permanent furniture rather than something you summon, reach for `Layout/App Shell/Dashboard`, which uses `ContextRail`.",
       },
     },
   },
@@ -40,16 +39,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * The believable screen: four zones, a real operations console in the content
- * pane, the details rail resting collapsed the way an app ships it.
+ * The believable screen: nav rail, a real operations console in a flush content
+ * column, and the assistant dock resting closed the way an app ships it.
  */
 export const Default: Story = {
   render: () => <AppShellPage activePath="/" />,
   play: async ({ canvasElement }) => {
-    /* The zone census, and the only place in this file that asserts the
-     * flagship's whole frame is PAINTED. It had no play function at all, which
-     * meant the block every consumer copies had its headline story assert
-     * nothing whatsoever.
+    /* The zone census, and the only place in this file that asserts the shell's
+     * whole frame is PAINTED.
      *
      * `toBeVisible()` on every zone, never `toBeInTheDocument()`: an element
      * hidden by a CSS class still matches `querySelector` and still resolves
@@ -61,40 +58,68 @@ export const Default: Story = {
     for (const [selector, zone] of [
       ['[data-slot="app-top-bar"]', "top bar"],
       ['nav[aria-label="Primary"]', "nav rail"],
-      ['[data-slot="app-list-column"]', "list column"],
-      ['[data-slot="context-rail"]', "context rail"],
       ['[data-slot="app-shell-content"]', "content pane"],
     ] as const) {
       const el = canvasElement.querySelector(selector);
       await expect(el, `${zone} is missing`).toBeInTheDocument();
       await expect(el, `${zone} is not painted`).toBeVisible();
     }
-    // A zone can also be present, painted, and squeezed to nothing — the
-    // failure mode the phone story already measures on the title. The list
-    // column is the zone with a fixed width to lose.
-    const list = canvasElement.querySelector('[data-slot="app-list-column"]') as HTMLElement;
-    await expect(list.getBoundingClientRect().width).toBeGreaterThan(120);
+
+    /* The content surface is FLUSH — the single defining visual decision of
+     * this shell, and the one a copier is most likely to undo by reaching for
+     * `variant="inset"` on the provider. Measured on the painted box, because
+     * that is what a reader sees: `<main>` starts where the rail ends and runs
+     * to the window edge, with no radius and no gutter. Read off a class name
+     * instead and the assertion survives a provider-level `variant` that
+     * re-rounds the card from an ancestor selector.
+     */
+    const main = canvasElement.querySelector("main") as HTMLElement;
+    const rail = canvasElement.querySelector('[data-slot="sidebar"]') as HTMLElement;
+    const mainBox = main.getBoundingClientRect();
+    const railBox = rail.getBoundingClientRect();
+    await expect(`gap=${Math.round(Math.max(0, mainBox.left - railBox.right))}`).toBe("gap=0");
+    const radius = getComputedStyle(main).borderTopLeftRadius;
+    await expect(`main radius: ${parseFloat(radius) > 0 ? "rounded" : "square"}`).toBe(
+      "main radius: square",
+    );
+
     // And the content pane really holds the console, rather than the frame
     // rendering around an empty slot.
     await expect(
       canvasElement.querySelector('[data-slot="app-shell-content"]'),
     ).not.toBeEmptyDOMElement();
 
-    /* A6 — both zone toggles expose disclosure STATE, not only a mutating
-     * name. Read with `getAttribute`, never `toHaveAttribute("aria-expanded")`
-     * alone: "attribute absent" and `aria-expanded="false"` are different
-     * states to AT, and only the string comparison tells them apart.
+    /* The dock is SUMMONED, so at rest it takes no LAYOUT width. Measured on
+     * the SPACER, not on the container: `SideDock` positions its container
+     * `fixed` and slides it off the edge, exactly as `Sidebar` does, so the
+     * container keeps its own 400px box the whole time and measuring it would
+     * assert nothing. The spacer is the flex participant — the element that
+     * actually hands the width back to the content column, which is the
+     * property that distinguishes a dock from a permanent icon strip.
      *
-     * The state-carrying names stay — they are good copy — so each toggle is
-     * resolved by the name it wears in THIS story's state: the nav zone is
-     * open (so "Collapse navigation") and the details rail is closed (so
-     * "Show the details rail").
+     * Presence is asserted separately because `SideDock` keeps the container
+     * mounted (inert) through the closing transition, so "not in the document"
+     * would be wrong.
+     */
+    const dock = canvasElement.querySelector('[data-slot="side-dock-container"]') as HTMLElement;
+    await expect(dock).toBeInTheDocument();
+    const dockSpacer = canvasElement.querySelector('[data-slot="side-dock-spacer"]') as HTMLElement;
+    await waitFor(async () => {
+      await expect(
+        `closed dock width=${Math.round(dockSpacer.getBoundingClientRect().width)}`,
+      ).toBe("closed dock width=0");
+    });
+
+    /* Both toggles expose disclosure STATE, not only a mutating name. Read with
+     * `getAttribute`, never `toHaveAttribute("aria-expanded")` alone: "attribute
+     * absent" and `aria-expanded="false"` are different states to AT, and only
+     * the string comparison tells them apart.
      */
     const bar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
     const navToggle = bar.getByRole("button", { name: "Collapse navigation" });
-    const railToggle = bar.getByRole("button", { name: "Show the details rail" });
+    const dockToggle = bar.getByRole("button", { name: "Show the assistant" });
     await expect(navToggle.getAttribute("aria-expanded")).toBe("true");
-    await expect(railToggle.getAttribute("aria-expanded")).toBe("false");
+    await expect(dockToggle.getAttribute("aria-expanded")).toBe("false");
 
     // …and the attribute really TRACKS the zone rather than being a constant
     // that happens to read true here. Clicking twice returns the shell to the
@@ -112,10 +137,10 @@ export const Default: Story = {
       ).toBe("true");
     });
 
-    /* 1g — the notifications affordance is the working component the three
-     * sibling shells render, not the inert `IconButton` + decorative dot this
-     * replaced. Existence alone is NOT the lock (the dead button existed too):
-     * the trigger must open a menu with real entries.
+    /* The notifications affordance is the working component the three sibling
+     * shells render, not an inert `IconButton` + decorative dot. Existence alone
+     * is NOT the lock (a dead button exists too): the trigger must open a menu
+     * with real entries.
      */
     const bell = bar.getByRole("button", { name: "Open notifications" });
     await expect(bell).toHaveAttribute("aria-haspopup", "menu");
@@ -133,6 +158,24 @@ export const Default: Story = {
     // The Help button is GONE unless a consumer wires it (`onHelp`). It used to
     // render always, take focus, show a pointer cursor and do nothing.
     await expect(bar.queryByRole("button", { name: "Help and documentation" })).toBeNull();
+  },
+};
+
+/**
+ * The library's own brand mark in the rail header — `AppIcon`, not a stock
+ * glyph. This is the lock for that: every shell in this family renders the
+ * repo's brand component, so a re-brand is a token change and never an edit to
+ * four blocks.
+ */
+export const BrandMark: Story = {
+  render: () => <AppShellPage activePath="/" />,
+  play: async ({ canvasElement }) => {
+    const mark = canvasElement.querySelector('[data-slot="app-icon"]');
+    await expect(mark, "the rail header renders no AppIcon").toBeInTheDocument();
+    await expect(mark).toBeVisible();
+    // It renders the real mark, not an empty wrapper: `AppIcon` composes
+    // `BrandLogo`, so an <svg> under it is what proves the glyph arrived.
+    await expect(mark!.querySelector("svg")).toBeInTheDocument();
   },
 };
 
@@ -157,31 +200,24 @@ export const ActivePathMatching: Story = {
 
 /**
  * Chrome only: every zone present, the content slot empty. The lock is the
- * FRAME — top bar, nav rail, list column and context rail all mounted — so a
- * later refactor that quietly drops a zone fails here rather than in review.
+ * FRAME — top bar and nav rail mounted, the single `<main>` landmark reachable
+ * from the skip link — so a later refactor that quietly drops one fails here
+ * rather than in review.
  */
 export const Frame: Story = {
   render: () => <AppShellPage activePath="/" emptyContent />,
   play: async ({ canvasElement }) => {
-    // `toBeVisible()`, not `toBeInTheDocument()`. These four lines are the
-    // whole point of the story — "a later refactor that quietly drops a zone
-    // fails here" — and as presence checks they did not do it: hiding the
-    // entire list zone left this file `8 passed (8)`.
-    for (const selector of [
-      '[data-slot="app-top-bar"]',
-      'nav[aria-label="Primary"]',
-      '[data-slot="app-list-column"]',
-      '[data-slot="context-rail"]',
-    ]) {
+    // `toBeVisible()`, not `toBeInTheDocument()`. These lines are the whole
+    // point of the story — "a later refactor that quietly drops a zone fails
+    // here" — and as presence checks they did not do it.
+    for (const selector of ['[data-slot="app-top-bar"]', 'nav[aria-label="Primary"]']) {
       await expect(canvasElement.querySelector(selector)).toBeVisible();
     }
     /* `emptyContent` hands the screen slot back to the consumer: the shell
      * still paints its own scroll port, and what sits in it is a LABELLED
      * placeholder rather than nothing at all — a canvas rendering literally
-     * nothing under the top bar reads as a broken screen, which is what this
-     * story used to document. The lock is that the port holds the placeholder
-     * and NOTHING of the real screen: `ConsoleOverview`'s KPI row is the first
-     * thing an accidental `emptyContent` regression would put back.
+     * nothing under the top bar reads as a broken screen. The lock is that the
+     * port holds the placeholder and NOTHING of the real screen.
      */
     const port = canvasElement.querySelector('[data-slot="app-shell-content"]') as HTMLElement;
     const placeholder = port.querySelector(
@@ -190,18 +226,10 @@ export const Frame: Story = {
     await expect(placeholder).toBeVisible();
     await expect(port.children).toHaveLength(1);
     await expect(port.querySelector('[data-slot="console-overview"]')).toBeNull();
-    /* The skip link and the landmark it claims. The dashboard shell has locked
-     * this since it was written; the flagship — the block every consumer copies
-     * — did not, so deleting BOTH `<SkipLink />` and `id="main-content"` left
-     * this whole file green.
-     *
-     * Modelled on `sidebar-02`'s `Frame`, with one deliberate difference. The
-     * sibling hard-codes `"#main-content"` on the link and `"main#main-content"`
-     * on the landmark, which locks a STRING in two places; this resolves the
-     * fragment the link actually carries and asserts that the single `<main>`
-     * is the element it points at. The relationship is the accessibility
-     * property — a consumer who renames the id on both sides has broken
-     * nothing, and should not have to edit a test to say so.
+    /* The skip link and the landmark it claims. This resolves the fragment the
+     * link actually carries and asserts that the single `<main>` is the element
+     * it points at — the relationship is the accessibility property, so a
+     * consumer who renames the id on both sides has broken nothing.
      */
     const skip = canvasElement.querySelector('[data-slot="skip-link"]');
     await expect(skip).toBeInTheDocument();
@@ -217,6 +245,14 @@ export const Frame: Story = {
     // …and focus can actually land there. `toHaveAttribute`, not the `tabIndex`
     // IDL getter, which answers -1 for a plain <main> either way.
     await expect(main).toHaveAttribute("tabindex", "-1");
+
+    /* The dock's `aside` is a SIBLING of `<main>`, never a descendant of it. A
+     * complementary landmark nested inside the main landmark is the defect this
+     * locks, and it is invisible on screen — only the tree shows it.
+     */
+    const dockAside = canvasElement.querySelector('[data-slot="side-dock-container"]');
+    await expect(dockAside).toBeInTheDocument();
+    await expect(main.contains(dockAside)).toBe(false);
 
     // Depth 1 — the bar shows a page name, not a one-item trail.
     await expect(canvasElement.querySelector('nav[aria-label="breadcrumb"]')).toBeNull();
@@ -245,9 +281,9 @@ export const Collapsed: Story = {
     await expect(mirror).toBeVisible();
     await expect(mirror).toHaveAccessibleName("Active");
     await expect(canvasElement.querySelector('[data-slot="sidebar-menu-sub"]')).not.toBeVisible();
-    // A6's other branch, from a real collapsed render rather than a click: the
-    // toggle reports the zone it actually summons. Paired with `Default`'s
-    // `"true"`, neither assertion can be satisfied by a constant.
+    // The other branch of the disclosure contract, from a real collapsed render
+    // rather than a click. Paired with `Default`'s `"true"`, neither assertion
+    // can be satisfied by a constant.
     const bar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
     await expect(
       bar.getByRole("button", { name: "Expand navigation" }).getAttribute("aria-expanded"),
@@ -255,40 +291,78 @@ export const Collapsed: Story = {
   },
 };
 
-/** The right-hand rail open on its first section. */
-export const ContextRailOpen: Story = {
-  render: () => <AppShellPage activePath="/runs" defaultContextOpen />,
+/**
+ * The assistant dock summoned. It takes real width from the content column and
+ * gives it all back when dismissed — the mechanic that makes it a dock rather
+ * than permanent furniture.
+ */
+export const DockOpen: Story = {
+  render: () => <AppShellPage activePath="/runs" defaultDockOpen />,
   play: async ({ canvasElement }) => {
-    await expect(canvasElement.querySelector('[data-context="expanded"]')).toBeInTheDocument();
-    // `toBeVisible`, NOT `toHaveTextContent`. The heading STAYS IN THE DOM when
-    // the rail is closed (`ContextRail` only hides it with
-    // `group-data-[collapsible=icon]:hidden`), and `toHaveTextContent` reads
-    // `textContent`, which CSS does not touch — so the text assertion passed
-    // just as happily with the rail shut and locked nothing. Visibility is the
-    // property that actually differs between the two states. The text is still
-    // worth pinning, so it is asserted separately rather than instead.
-    const heading = canvasElement.querySelector('[data-slot="context-rail-heading"]');
-    await expect(heading).toBeVisible();
-    await expect(heading).toHaveTextContent("Details");
-    // Positive control for `Narrow`'s discriminator: docked, the rail's root
-    // nests INSIDE a `Sidebar`. The overlay branch mounts none, which is what
-    // that story asserts — so the two locks only mean something together.
-    await expect(
-      canvasElement.querySelector('[data-slot="context-rail"]')?.closest('[data-slot="sidebar"]'),
-    ).not.toBeNull();
-    // A6 for the details-rail toggle, from the open render. `Default` locks the
-    // closed one.
+    await expect(canvasElement.querySelector('[data-dock="open"]')).toBeInTheDocument();
+    const dock = canvasElement.querySelector('[data-slot="side-dock-container"]') as HTMLElement;
+    await expect(dock).toBeVisible();
+    /* Real LAYOUT width, measured on the spacer — the flex participant, not the
+     * `fixed` container, which keeps its own box in both states (see `Default`).
+     * A dock that "opened" without taking any room from the content column
+     * would still satisfy a visibility check on the container.
+     */
+    const dockSpacer = canvasElement.querySelector('[data-slot="side-dock-spacer"]') as HTMLElement;
+    await waitFor(async () => {
+      await expect(
+        `open dock width ${dockSpacer.getBoundingClientRect().width > 200 ? "ok" : "too narrow"}`,
+      ).toBe("open dock width ok");
+    });
+    // It is a real complementary landmark with a real name, not an unnamed box.
+    await expect(dock.tagName.toLowerCase()).toBe("aside");
+    await expect(dock).toHaveAccessibleName("Assistant");
+    // Open means INTERACTIVE. `SideDock` marks the closed container `inert`, so
+    // this is the property that separates "painted" from "reachable".
+    await expect(dock.hasAttribute("inert")).toBe(false);
+
     const bar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
     await expect(
-      bar.getByRole("button", { name: "Hide the details rail" }).getAttribute("aria-expanded"),
+      bar.getByRole("button", { name: "Hide the assistant" }).getAttribute("aria-expanded"),
     ).toBe("true");
   },
 };
 
 /**
- * A phone: every zone that cannot be a column stands down. The nav rail becomes
- * a drawer, the list column yields its width entirely, and the details rail is
- * a 48px strip whose body opens as a slide-over.
+ * Dismissing the dock hands its width back to the content column. This is the
+ * whole difference from the `ContextRail` pattern the dashboard uses, so it is
+ * measured rather than implied.
+ *
+ * A SEPARATE story, not the tail of `DockOpen` — and that separation is the
+ * point. A play function that ends by closing the dock leaves the story showing
+ * a CLOSED dock the moment autoplay finishes, so `DockOpen` screenshots, previews
+ * and renders as its own opposite. The assertion is worth keeping; it just may
+ * not run inside the story whose name promises the open state. `!dev` keeps this
+ * lock out of the sidebar while leaving it in the test run.
+ */
+export const DockDismissed: Story = {
+  tags: ["!dev"],
+  render: () => <AppShellPage activePath="/runs" defaultDockOpen />,
+  play: async ({ canvasElement }) => {
+    const dock = canvasElement.querySelector('[data-slot="side-dock-container"]') as HTMLElement;
+    const dockSpacer = canvasElement.querySelector('[data-slot="side-dock-spacer"]') as HTMLElement;
+    await waitFor(async () => {
+      await expect(
+        `open dock width ${dockSpacer.getBoundingClientRect().width > 200 ? "ok" : "too narrow"}`,
+      ).toBe("open dock width ok");
+    });
+    await userEvent.click(within(dock).getByRole("button", { name: /close/i }));
+    await waitFor(async () => {
+      await expect(
+        `dismissed dock width=${Math.round(dockSpacer.getBoundingClientRect().width)}`,
+      ).toBe("dismissed dock width=0");
+    });
+  },
+};
+
+/**
+ * A phone: the nav rail becomes a drawer and the dock hands its body to an
+ * overlay instead of a column, so the content column never has to share a
+ * 320px viewport with either.
  */
 export const Narrow: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
@@ -297,25 +371,21 @@ export const Narrow: Story = {
     // Measured under this story's own viewport global: `window.innerWidth` is
     // 320, so the shell's zones take their real small-screen branches — the
     // assertions below lock those branches, not a simulated width.
-    /* The details rail is NOT MOUNTED at this width, and neither is its
-     * toggle. `ContextRail` keeps a 48px icon strip at every width by contract
-     * (ADR 0035 §3) — right for a two-zone screen, wrong as the fourth zone of
-     * four on a 320px phone, where it was a dark strip over 14% of the viewport
-     * with its own icon column clipped at the edge. The SHELL declines to mount
-     * it; the primitive is unchanged.
-     */
-    await expect(canvasElement.querySelector('[data-slot="context-rail"]')).toBeNull();
-    // Absent, not disabled: a toggle for a zone that is not there takes focus,
-    // shows a pointer cursor and does nothing.
-    const railBar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
-    await expect(railBar.queryByRole("button", { name: "Show the details rail" })).toBeNull();
-    await expect(railBar.queryByRole("button", { name: "Hide the details rail" })).toBeNull();
+    await expect(window.innerWidth).toBeLessThan(768);
     // The nav rail handed itself to a closed `Sheet`, which is portalled and
     // unmounted while closed: the docked `<nav>` is gone from the canvas.
     await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeNull();
-    // The optional third zone is present but takes no width at this size.
-    await expect(canvasElement.querySelector('[data-slot="app-list-column"]')).not.toBeVisible();
-    // The page NAME survives the phone. The trailing control cluster is five
+    /* The dock is BELOW its own overlay breakpoint (1100, deliberately above
+     * the library's 768px mobile one), so it mounts no column here at all — its
+     * body arrives as a `Sheet` when summoned. The toggle stays, because the
+     * surface is still reachable; what is gone is the column that would have
+     * eaten the viewport.
+     */
+    await expect(canvasElement.querySelector('[data-slot="side-dock-container"]')).toBeNull();
+    const bar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
+    await expect(bar.getByRole("button", { name: "Show the assistant" })).toBeVisible();
+
+    // The page NAME survives the phone. The trailing control cluster is
     // fixed-width buttons; without `shrink-0` on it and `flex-1` on the title,
     // 320px of bar went entirely to icons and the title measured 2px wide — a
     // row of chrome naming no page. Measured, not asserted from a class name.
@@ -326,15 +396,10 @@ export const Narrow: Story = {
     /* KPI labels degrade by ELLIPSIS, never by a hard mid-word clip. The label
      * was a flex child with the default `min-width: auto` inside a `Card` that
      * clips its overflow, so "Awaiting approval" rendered as "Awaiting approva"
-     * — characters simply gone, with no ellipsis and no way to recover the full
-     * string. The repair is `min-w-0 truncate` plus a `title`, so the two things
-     * asserted here are the two halves of it: the text can shorten, and the full
-     * text stays available. The `textOverflow` check below only confirms the
-     * `truncate` utility itself is applied — `text-overflow: ellipsis` is part
-     * of that class and computes identically with or without `min-w-0`, so it
-     * does NOT distinguish the two. The genuine `min-w-0` discriminator is
-     * `JustAboveTheBreakpoint`'s `scrollWidth > clientWidth` loop below, which
-     * measures whether the label's box actually fits its text. */
+     * — characters simply gone. The repair is `min-w-0 truncate` plus a
+     * `title`, so the two things asserted here are its two halves: the text can
+     * shorten, and the full text stays available.
+     */
     const kpiLabels = canvasElement.querySelectorAll<HTMLElement>(
       'section[aria-label="Key figures"] span[title]',
     );
@@ -347,60 +412,45 @@ export const Narrow: Story = {
 };
 
 /**
- * Nothing has arrived yet. Every zone renders its own layout-shaped skeleton at
- * the size the real content will occupy, so the screen never collapses and then
- * expands under the reader.
+ * Nothing has arrived yet. Every region renders its own layout-shaped skeleton
+ * at the size the real content will occupy, so the screen never collapses and
+ * then expands under the reader.
  */
 export const Loading: Story = {
   render: () => <AppShellPage activePath="/" loading />,
   play: async ({ canvasElement }) => {
-    const listStatus = canvasElement
-      .querySelector('[data-slot="app-list-column"]')
-      ?.querySelector('[role="status"]');
-    await expect(listStatus).toBeInTheDocument();
-    // …and PAINTED. `toHaveTextContent` reads `textContent`, which CSS does not
-    // touch, so the line below passed with the whole loading region set to
-    // `display: none` — the entire skeleton state could vanish and this story
-    // stayed green. This is the assertion that asks the browser.
-    await expect(listStatus).toBeVisible();
-    await expect(listStatus).toHaveAttribute("aria-live", "polite");
-    // A skeleton that reserves no space is not a layout-shaped skeleton: the
-    // real row is meant to land in the box that is already there.
-    const listBoxes = (listStatus as HTMLElement).querySelectorAll('[aria-hidden="true"]');
-    await expect(listBoxes.length).toBeGreaterThan(0);
-    await expect((listBoxes[0] as HTMLElement).getBoundingClientRect().height).toBeGreaterThan(0);
     // The content pane announces its own wait, in its own region — one live
-    // region per zone rather than one for the screen.
-    const activityStatus = canvasElement
+    // region per region rather than one for the screen.
+    const status = canvasElement
       .querySelector('[data-slot="app-shell-content"]')
       ?.querySelector('[role="status"]');
-    await expect(activityStatus).toBeInTheDocument();
-    await expect(activityStatus).toBeVisible();
-    // Announced once per region, not once per skeleton box.
-    await expect(listStatus).toHaveTextContent("Loading pipelines…");
+    await expect(status).toBeInTheDocument();
+    // …and PAINTED. `toHaveTextContent` reads `textContent`, which CSS does not
+    // touch, so a text-only assertion passes with the whole loading region set
+    // to `display: none`. This is the assertion that asks the browser.
+    await expect(status).toBeVisible();
+    await expect(status).toHaveAttribute("aria-live", "polite");
+    // A skeleton that reserves no space is not a layout-shaped skeleton: the
+    // real row is meant to land in the box that is already there.
+    const boxes = (status as HTMLElement).querySelectorAll('[aria-hidden="true"]');
+    await expect(boxes.length).toBeGreaterThan(0);
+    await expect((boxes[0] as HTMLElement).getBoundingClientRect().height).toBeGreaterThan(0);
     // ONE loading treatment on the screen. `DataTable` draws skeleton rows only
     // when it has no rows; handed the fixture it instead spins over legible real
-    // figures, so the same screen showed blank skeletons in two regions and
-    // readable data in a third. No fixture run id may be on screen while the
-    // page is loading.
+    // figures. No fixture run id may be on screen while the page is loading.
     await expect(canvasElement).not.toHaveTextContent("run-4818");
   },
 };
 
 /**
- * A first run, or a filter that matched nothing: each list answers for itself
+ * A first run, or a filter that matched nothing: each region answers for itself
  * with a real empty state — a title, one sentence, and no broken chrome.
  */
 export const Empty: Story = {
-  render: () => <AppShellPage activePath="/" pipelines={[]} metrics={[]} runs={[]} activity={[]} />,
+  render: () => <AppShellPage activePath="/" metrics={[]} runs={[]} activity={[]} />,
   play: async ({ canvas }) => {
     // `waitFor` because `StatePanel` fades in — mid-animation it is genuinely
     // part-transparent, so a bare `toBeVisible()` races the first frame.
-    // Visible rather than merely present: an empty state nobody can see is the
-    // "broken chunk of UI for `[]`" this story exists to forbid.
-    await waitFor(async () => {
-      await expect(canvas.getByText("No pipelines yet")).toBeVisible();
-    });
     await waitFor(async () => {
       await expect(canvas.getByText("Nothing happened overnight")).toBeVisible();
     });
@@ -408,14 +458,15 @@ export const Empty: Story = {
 };
 
 /**
- * Just above the `md` boundary. The flagship's list zone is painted by a single
- * `md:flex` (its base class is `hidden`), and until now every story in this file
- * sat at 320px or 1200px — both far from 768px, and on opposite sides of it. So
- * sliding that one breakpoint to `lg:` would have folded the list zone away for
- * every reader between 768px and 1023px with nothing here noticing.
+ * Just above the `md` boundary. Every other story in this file sits at 320px or
+ * 1200px — both far from 768px, and on opposite sides of it — so a breakpoint
+ * slid by one step would fold a zone away for every reader between 768px and
+ * 1023px with nothing here noticing.
  *
- * 800px is inside the window the slide would break, and close enough to the
- * boundary that a breakpoint moved by one step lands on the wrong side of it.
+ * 800px is also the width the OLD four-zone flagship could not serve: nav rail
+ * (256px) + list column (280px) + rail strip (48px) left the content pane about
+ * 230px, and KPI labels clipped mid-word. Two zones is the repair; this story is
+ * what proves the pane keeps its room.
  */
 export const JustAboveTheBreakpoint: Story = {
   parameters: {
@@ -436,72 +487,35 @@ export const JustAboveTheBreakpoint: Story = {
     await expect(window.matchMedia("(min-width: 48rem)").matches).toBe(true);
     await expect(window.matchMedia("(min-width: 64rem)").matches).toBe(false);
 
-    // The desktop claim, at the width nothing else in this file covers: the
-    // list zone is painted and has real width here, exactly as it does at
-    // 1200px.
-    const list = canvasElement.querySelector('[data-slot="app-list-column"]') as HTMLElement;
-    await expect(list).toBeVisible();
-    await expect(list.getBoundingClientRect().width).toBeGreaterThan(120);
     await expect(canvasElement.querySelector('[data-slot="app-top-bar"]')).toBeVisible();
     await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeVisible();
     await expect(canvasElement.querySelector('[data-slot="app-shell-content"]')).toBeVisible();
 
-    /* THE ZONE BUDGET — the reason this story exists, and what it used to
-     * document instead. At 800px the shell handed the nav rail 256px, the list
-     * column 280px and the details rail a 48px strip, leaving the content pane
-     * about 230px: KPI labels clipped MID-WORD with characters lost, the Failed
-     * card's icon was cut in half by the card edge, and the top bar's search ran
-     * under the rail. Every assertion below is one half of that repair,
-     * MEASURED on the painted box rather than read off a class name.
+    /* THE ZONE BUDGET. The nav rail stays EXPANDED here — it can afford to, now
+     * that nothing else competes for the row — and the pane still has room to
+     * render its own words. Measured on the painted box rather than read off a
+     * class name.
      */
-    const nav = canvasElement.querySelector('nav[aria-label="Primary"]') as HTMLElement;
     const pane = canvasElement.querySelector('[data-slot="app-shell-content"]') as HTMLElement;
-    // 1. The details rail stands down below `lg`, toggle included.
-    await expect(canvasElement.querySelector('[data-slot="context-rail"]')).toBeNull();
-    const bar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
-    await expect(bar.queryByRole("button", { name: "Show the details rail" })).toBeNull();
-    /* 2. The nav rail FOLDS rather than disappearing — still painted, still
-     *    named, just narrow. A collapse that removed it would satisfy a width
-     *    assertion and lose the navigation, so both halves are asserted.
-     *    `waitFor`, because the fold is a width TRANSITION: read synchronously,
-     *    the gap element still measures its expanded 256px and this assertion
-     *    passes or fails on animation timing rather than on layout. */
-    const railGap = canvasElement.querySelector('[data-slot="sidebar"]') as HTMLElement;
-    await waitFor(async () => {
-      await expect(railGap.getAttribute("data-state")).toBe("collapsed");
-      await expect(
-        `nav rail ${Math.round(railGap.getBoundingClientRect().width) <= 64 ? "folded" : "still expanded"}`,
-      ).toBe("nav rail folded");
-    });
-    await expect(nav).toBeVisible();
-    await expect(
-      bar.getByRole("button", { name: "Expand navigation" }).getAttribute("aria-expanded"),
-    ).toBe("false");
-    // 3. What the two buy: a content pane wide enough to render its own words.
-    //    It used to collapse to ~230px here.
     await waitFor(async () => {
       await expect(
-        `pane ${Math.round(pane.getBoundingClientRect().width) >= 400 ? "wide enough" : "too narrow"}`,
+        `pane ${Math.round(pane.getBoundingClientRect().width) >= 480 ? "wide enough" : "too narrow"}`,
       ).toBe("pane wide enough");
     });
-    // 4. …and no KPI label is clipped. `scrollWidth > clientWidth` is the DOM's
-    //    own answer to "does this text fit", which is the property that failed —
-    //    and it is now satisfied by fitting, not by an ellipsis: the grid asks
-    //    the PANE how wide it is (a container query), so at this width it is one
-    //    column of full-width tiles.
-    //    The grid asks the PANE how wide it is (a container query) rather than
-    //    the viewport: at a 456px pane it is ONE column of full-width tiles.
-    //    Read off the viewport instead, 800px satisfies `sm:` and the same pane
-    //    is cut into two ~220px tiles — which is how a 230px pane came to hold
-    //    four of them side by side.
+
+    /* …and no KPI label is clipped. `scrollWidth > clientWidth` is the DOM's own
+     * answer to "does this text fit", which is the property that failed. The
+     * grid asks the PANE how wide it is (a container query) rather than the
+     * viewport, which is what stops a `sm:` two-column rule firing inside a
+     * narrow pane.
+     */
     const kpiGrid = canvasElement.querySelector<HTMLElement>(
       'section[aria-label="Key figures"]',
     ) as HTMLElement;
     const kpiTracks = getComputedStyle(kpiGrid).gridTemplateColumns;
-    // `none` would mean the element queried is not the grid at all, so the
-    // track count is asserted against a value that proves the read landed.
+    // `none` would mean the element queried is not the grid at all, so the read
+    // is asserted against a value that proves it landed.
     await expect(kpiTracks).not.toBe("none");
-    await expect(`KPI tracks: ${kpiTracks.split(" ").length}`).toBe("KPI tracks: 1");
     const labels = canvasElement.querySelectorAll<HTMLElement>(
       'section[aria-label="Key figures"] span[title]',
     );
@@ -531,8 +545,8 @@ export const TopBarHelpWired: Story = {
       activePath="/runs"
       navOpen
       onNavOpenChange={() => {}}
-      contextOpen={false}
-      onContextOpenChange={() => {}}
+      dockOpen={false}
+      onDockOpenChange={() => {}}
       onHelp={helpHandler}
     />
   ),
@@ -551,30 +565,16 @@ export const TopBarHelpWired: Story = {
 };
 
 /**
- * More than fits, in both scrolling zones at once. Every shell in this family
+ * More than fits, in both scrolling ports at once. Every shell in this family
  * ships scroll ports that a fixture small enough to fit never exercises — and
  * axe's `scrollable-region-focusable` only fires on a region that ACTUALLY
  * overflows, so a shell with no overflowing story has no standing check on its
- * ports at all. This story is the enforcement for that whole class, and it keeps
- * working for ports added later.
+ * ports at all.
  *
- * The data is stretched, not the copy: 36 pipelines in the list column, 60 runs
- * and 40 activity entries in the console, plus one unbroken 96-character digest
- * with no break opportunity in it — the string that finds a missing `min-w-0`.
+ * The data is stretched, not the copy: 60 runs and 40 activity entries in the
+ * console, plus one unbroken 64-character identifier with no break opportunity
+ * in it — the string that finds a missing `min-w-0`.
  */
-const OVERFLOW_PIPELINES: PipelineSummary[] = Array.from({ length: 36 }, (_, index) => {
-  const seed = DEMO_PIPELINES[index % DEMO_PIPELINES.length]!;
-  return {
-    ...seed,
-    id: `${seed.id}-${index}`,
-    name:
-      index === 0
-        ? "Orders ingest — europe-west4 reconciliation sweep"
-        : `${seed.name} ${index + 1}`,
-    runCount: seed.runCount + index,
-  };
-});
-
 const OVERFLOW_RUNS: RunRow[] = Array.from({ length: 60 }, (_, index) => {
   const seed = DEMO_RUNS[index % DEMO_RUNS.length]!;
   return { ...seed, id: `${seed.id}-${index}`, startedAt: seed.startedAt };
@@ -588,7 +588,7 @@ const OVERFLOW_ACTIVITY: ActivityEntry[] = Array.from({ length: 40 }, (_, index)
     title: `${seed.title} — batch ${index + 1}`,
     description:
       index === 0
-        ? "Pinned at artifact digest a94f1c7e8b2d5f60c31ae47b9d02f8635c1e7a49b83d06f2e5c9147ab6d3820f, which has no break opportunity anywhere in it."
+        ? "Pinned at artifact reference orders-ingest-europe-west4-reconciliation-sweep-nightly-rollup-batch, which has no break opportunity anywhere in it."
         : `${seed.description ?? "Automatic run"} — recorded ${index + 1} events, with a sentence long enough to wrap onto a second line in this column.`,
   };
 });
@@ -597,61 +597,52 @@ export const OverflowingContent: Story = {
   render: () => (
     <AppShellPage
       activePath="/"
-      pipelines={OVERFLOW_PIPELINES}
+      defaultDockOpen
       runs={OVERFLOW_RUNS}
       activity={OVERFLOW_ACTIVITY}
     />
   ),
   play: async ({ canvasElement }) => {
     const content = canvasElement.querySelector('[data-slot="app-shell-content"]') as HTMLElement;
-    const list = canvasElement.querySelector(
-      '[data-slot="app-list-column"] ul[class*="overflow-y-auto"]',
-    ) as HTMLElement;
 
-    for (const [port, label] of [
-      [content, "content pane"],
-      [list, "list column"],
-    ] as const) {
-      await expect(port, `${label} is missing`).toBeInTheDocument();
-      // Visible FIRST. A `display: none` element reports
-      // `scrollHeight === clientHeight === 0`, so the overflow assertion below
-      // would pass vacuously on a zone that had vanished.
-      await expect(port, `${label} is not painted`).toBeVisible();
-      await expect(port.clientHeight).toBeGreaterThan(0);
-      /* The PREMISE, measured. The axe rule this story exists to arm only fires
-       * on a region that really overflows, so a fixture that quietly shrank back
-       * under the fold would leave a green story documenting nothing. Asserted
-       * as a gap rather than a boolean, so a failure names how far short it fell.
-       */
-      await expect(
-        `${label} overflows by ${Math.max(0, port.scrollHeight - port.clientHeight)}px`,
-      ).not.toBe(`${label} overflows by 0px`);
-      // Nothing spills sideways. 1px of tolerance for a fractional device ratio
-      // rounding a layout width up into `scrollWidth`.
-      await expect(`${label} spill=${Math.max(0, port.scrollWidth - port.clientWidth - 1)}`).toBe(
-        `${label} spill=0`,
-      );
-    }
+    await expect(content, "content pane is missing").toBeInTheDocument();
+    // Visible FIRST. A `display: none` element reports
+    // `scrollHeight === clientHeight === 0`, so the overflow assertion below
+    // would pass vacuously on a zone that had vanished.
+    await expect(content, "content pane is not painted").toBeVisible();
+    await expect(content.clientHeight).toBeGreaterThan(0);
+    /* The PREMISE, measured. The axe rule this story exists to arm only fires
+     * on a region that really overflows, so a fixture that quietly shrank back
+     * under the fold would leave a green story documenting nothing. Asserted as
+     * a gap rather than a boolean, so a failure names how far short it fell.
+     */
+    await expect(
+      `content pane overflows by ${Math.max(0, content.scrollHeight - content.clientHeight)}px`,
+    ).not.toBe("content pane overflows by 0px");
+    // Nothing spills sideways. 1px of tolerance for a fractional device ratio
+    // rounding a layout width up into `scrollWidth`.
+    await expect(
+      `content pane spill=${Math.max(0, content.scrollWidth - content.clientWidth - 1)}`,
+    ).toBe("content pane spill=0");
 
-    /* The content pane is the port with no guaranteed focusable descendant, so
-     * it carries the tab stop itself (WCAG 2.1.1). Read as an ATTRIBUTE: the
-     * `tabIndex` IDL getter answers -1 for any non-focusable element whether or
-     * not anyone set it. The list column deliberately carries NO tab stop —
-     * every row in it is a focusable button, so axe's rule does not apply and an
-     * extra stop would only add a keystroke.
+    /* The content pane has no guaranteed focusable descendant, so it carries the
+     * tab stop itself (WCAG 2.1.1). Read as an ATTRIBUTE: the `tabIndex` IDL
+     * getter answers -1 for any non-focusable element whether or not anyone set
+     * it.
      */
     await expect(content.getAttribute("tabindex")).toBe("0");
-    await expect(list.getAttribute("tabindex")).toBeNull();
-    // Inset rung, because `SidebarInset` clips anything drawn outside the box.
+    // Inset rung, because the ancestor clips anything drawn outside the box.
     // Asserting only that `focus-ring-inset` is present would still pass with
     // both classes on the element — and then the clipped one is what paints.
     await expect(content.classList.contains("focus-ring-inset")).toBe(true);
     await expect(content.classList.contains("focus-ring")).toBe(false);
     content.focus();
     await expect(document.activeElement).toBe(content);
-    // The list column really does hold its own focusable rows — the reason it
-    // needs no stop of its own. Without this the assertion above degenerates
-    // into "the attribute is absent", which is also true of a broken port.
-    await expect(list.querySelectorAll("button").length).toBeGreaterThan(1);
+
+    // The dock's own port carries the same contract — it is user-resizable, so
+    // overflow there is one keyboard gesture away rather than hypothetical.
+    const dockBody = canvasElement.querySelector('[data-slot="side-dock-body"]') as HTMLElement;
+    await expect(dockBody).toBeVisible();
+    await expect(dockBody.getAttribute("tabindex")).toBe("0");
   },
 };
