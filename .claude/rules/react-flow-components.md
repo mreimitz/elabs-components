@@ -58,6 +58,45 @@ paths:
     let it be the only thing between a keyboard user and a visible indicator.
   - Enforced by `packages/flow/src/flow-edge-path/no-raw-base-edge.test.ts`: a
     shipped module that imports `BaseEdge` from `@xyflow/react` fails the suite.
+- **An edge terminates ON a handle dot — anchor from `handleBounds`, never from the
+  node rectangle.** A custom edge that computes its own endpoints must read React
+  Flow's **measured** `node.internals.handleBounds[kind]` (node-relative boxes;
+  add `internals.positionAbsolute` back, and take the box centre) rather than
+  deriving a point from the node's width/height. `FlowSmartEdge` did the latter:
+  it picked a side from a four-way fallback list and then _slid_ the anchor along
+  that side toward the other node, so a line met the node up to half a side away
+  from any dot — measured at **~22px** on all-side nodes and **~124px** on nodes
+  carrying only the default top/bottom handles, where a left/right side with no
+  handle at all could be chosen. Anchoring on the measured handle is the only
+  formulation that survives a change of handle size, offset or CSS, and it
+  removes the need to know which sides a node "should" have.
+  - **Two edges leaving the same handle share a point and diverge** — that is
+    what React Flow's own edges do. Do NOT re-introduce a fan-out that displaces
+    an anchor off its dot to separate them; separate them in the curve, not at
+    the endpoint.
+  - **An explicitly wired edge is never re-routed.** Honour `sourceHandleId` /
+    `targetHandleId` by filtering the candidates before picking.
+  - **Fallback before measurement** (React Flow fills `handleBounds` on its first
+    measurement pass) uses side midpoints of the sides the node genuinely
+    declares — `data.handles`, else its `targetPosition`/`sourcePosition`, else
+    top-in/bottom-out. Never widen to all four sides: that is what invented an
+    anchor on a bare border.
+  - **Two edge types deliberately do NOT anchor to handles, and that is not this
+    defect.** `FlowFloatingEdge` attaches to the node _border_ facing the other
+    node and draws its own anchor dot (that is its whole purpose);
+    `FlowSelfLoopEdge` draws an arc above the node's top edge, because a
+    same-node loop has no meaningful handle pair.
+  - **Enforced in a real browser, because jsdom cannot see it.** jsdom measures
+    nothing, so `handleBounds` is empty there and any unit assertion about where
+    an edge lands is vacuous. `packages/flow/src/testing/edge-anchors.ts` reads
+    both sides in SCREEN coordinates — handles via `getBoundingClientRect()`,
+    the path via its own `getScreenCTM()` so the viewport transform is accounted
+    for — and `endpointsOffHandles()` returns one line per endpoint that misses
+    every dot, with the distance. Story play functions on `FlowEdge`,
+    `FlowButtonEdge`, `FlowWeightedEdge` and `FlowSmartEdge` assert it is empty.
+    The tolerance is the dot's own radius: React Flow's native anchors land on
+    the dot's outer rim, `FlowSmartEdge`'s on its centre, and both read as
+    connected.
 - **A custom edge that encodes a measure (stroke width, colour) owns its
   `ariaLabel` (#285).** React Flow's `EdgeWrapper` sources an edge's accessible
   name from `edge.ariaLabel` on the edge OBJECT, not from anything the edge

@@ -2,10 +2,12 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useRef } from "react";
 import { useEdgesState, useNodesState } from "@xyflow/react";
+import { expect, waitFor } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
 import { useFlowLayout } from "../flow-layout";
 import { ZoomControls } from "../zoom-controls";
+import { edgePaths, endpointsOffHandles } from "../testing/edge-anchors";
 import { FlowButtonEdge, type BrandFlowButtonEdge } from "./flow-button-edge";
 
 const nodeTypes = { brand: FlowNode };
@@ -19,6 +21,14 @@ const meta = {
 } satisfies Meta<typeof FlowButtonEdge>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+/** Every edge must terminate ON a handle dot — see `testing/edge-anchors`. */
+async function expectAnchoredToHandles(canvasElement: HTMLElement, edgeCount: number) {
+  await waitFor(() => {
+    expect(edgePaths(canvasElement, "flow-button-edge")).toHaveLength(edgeCount);
+    expect(endpointsOffHandles(canvasElement, "flow-button-edge")).toEqual([]);
+  });
+}
 
 /** Two nodes joined by a button edge — hover/focus the "+" to see it. */
 export const Default: Story = {
@@ -45,6 +55,9 @@ export const Default: Story = {
         <CanvasShell nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} />
       </div>
     );
+  },
+  play: async ({ canvasElement }) => {
+    await expectAnchoredToHandles(canvasElement, 1);
   },
 };
 

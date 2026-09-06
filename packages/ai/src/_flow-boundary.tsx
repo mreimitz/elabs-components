@@ -119,65 +119,84 @@ export const EdgeTemporary = ({
   );
 };
 
-const getHandleCoordsByPosition = (node: InternalNode<FlowNode>, handlePosition: Position) => {
-  // Choose the handle type based on position - Left is for target, Right is for source
-  const handleType = handlePosition === Position.Left ? "target" : "source";
+/**
+ * The point on `node` where an edge of `handleType` should attach, plus the side
+ * it leaves from.
+ *
+ * Read from React Flow's **measured** `handleBounds` — the DOM box of the
+ * painted dot — and taken at the box's OUTER edge, which is React Flow's own
+ * convention (the anchor lands on the dot's rim, which keeps a `markerEnd`
+ * visible).
+ *
+ * The two fallbacks matter as much as the happy path. `preferred` is only a
+ * preference: `nodeTypes` is an open prop, so a consumer node may legitimately
+ * put its handles on the top and bottom, and the shipped `Node`'s left/right
+ * pair is a convenience rather than a constraint. And `handleBounds` is empty
+ * until React Flow's first measurement pass, which on this canvas is a real
+ * window because the engine arrives in a lazy chunk (ADR 0019). Both used to
+ * resolve to `[0, 0]` — the CANVAS ORIGIN — so the edge was drawn hundreds of
+ * pixels from either node (measured at 498.8px in the `VerticalHandles` story).
+ * Falling back to any handle of the right type, and then to the node's own
+ * border, keeps the line on the node in every case.
+ */
+const getHandleAnchor = (
+  node: InternalNode<FlowNode>,
+  handleType: "source" | "target",
+  preferred: Position,
+) => {
+  const bounds = node.internals.handleBounds?.[handleType] ?? [];
+  const handle = bounds.find((h) => h.position === preferred) ?? bounds[0];
+  const origin = node.internals.positionAbsolute;
 
-  const handle = node.internals.handleBounds?.[handleType]?.find(
-    (h) => h.position === handlePosition,
-  );
+  if (handle) {
+    // Offset to the handle box's outer edge on its own side; the other axis is
+    // centred.
+    const offsetX =
+      handle.position === Position.Left
+        ? 0
+        : handle.position === Position.Right
+          ? handle.width
+          : handle.width / 2;
+    const offsetY =
+      handle.position === Position.Top
+        ? 0
+        : handle.position === Position.Bottom
+          ? handle.height
+          : handle.height / 2;
 
-  if (!handle) {
-    return [0, 0] as const;
+    return {
+      position: handle.position,
+      x: origin.x + handle.x + offsetX,
+      y: origin.y + handle.y + offsetY,
+    };
   }
 
-  let offsetX = handle.width / 2;
-  let offsetY = handle.height / 2;
-
-  // this is a tiny detail to make the markerEnd of an edge visible.
-  // The handle position that gets calculated has the origin top-left, so depending which side we are using, we add a little offset
-  // when the handlePosition is Position.Right for example, we need to add an offset as big as the handle itself in order to get the correct position
-  switch (handlePosition) {
-    case Position.Left: {
-      offsetX = 0;
-      break;
-    }
-    case Position.Right: {
-      offsetX = handle.width;
-      break;
-    }
-    case Position.Top: {
-      offsetY = 0;
-      break;
-    }
-    case Position.Bottom: {
-      offsetY = handle.height;
-      break;
-    }
-    default: {
-      throw new Error(`Invalid handle position: ${handlePosition}`);
-    }
+  // No measured handle at all — anchor on the node's own border midpoint.
+  const width = node.measured.width ?? 0;
+  const height = node.measured.height ?? 0;
+  switch (preferred) {
+    case Position.Left:
+      return { position: preferred, x: origin.x, y: origin.y + height / 2 };
+    case Position.Right:
+      return { position: preferred, x: origin.x + width, y: origin.y + height / 2 };
+    case Position.Top:
+      return { position: preferred, x: origin.x + width / 2, y: origin.y };
+    default:
+      return { position: preferred, x: origin.x + width / 2, y: origin.y + height };
   }
-
-  const x = node.internals.positionAbsolute.x + handle.x + offsetX;
-  const y = node.internals.positionAbsolute.y + handle.y + offsetY;
-
-  return [x, y] as const;
 };
 
 const getEdgeParams = (source: InternalNode<FlowNode>, target: InternalNode<FlowNode>) => {
-  const sourcePos = Position.Right;
-  const [sx, sy] = getHandleCoordsByPosition(source, sourcePos);
-  const targetPos = Position.Left;
-  const [tx, ty] = getHandleCoordsByPosition(target, targetPos);
+  const from = getHandleAnchor(source, "source", Position.Right);
+  const to = getHandleAnchor(target, "target", Position.Left);
 
   return {
-    sourcePos,
-    sx,
-    sy,
-    targetPos,
-    tx,
-    ty,
+    sourcePos: from.position,
+    sx: from.x,
+    sy: from.y,
+    targetPos: to.position,
+    tx: to.x,
+    ty: to.y,
   };
 };
 

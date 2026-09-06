@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { useEdgesState } from "@xyflow/react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { edgePaths, endpointsOffHandles } from "../testing/edge-anchors";
 import { CanvasShell } from "../canvas-shell";
 import { FlowNode, type BrandFlowNode } from "../flow-node";
 import { withWeightedEdgeAria } from "./edge-aria";
@@ -34,6 +35,14 @@ const meta = {
 } satisfies Meta<typeof FlowWeightedEdge>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+/** Every edge must terminate ON a handle dot — see `testing/edge-anchors`. */
+async function expectAnchoredToHandles(canvasElement: HTMLElement, edgeCount: number) {
+  await waitFor(() => {
+    expect(edgePaths(canvasElement, "flow-weighted-edge")).toHaveLength(edgeCount);
+    expect(endpointsOffHandles(canvasElement, "flow-weighted-edge")).toEqual([]);
+  });
+}
 
 /**
  * A chain of five nodes, edges weighted 1/4/8/2/6 — stroke width scales per edge,
@@ -84,6 +93,8 @@ export const Weighted: Story = {
     );
   },
   play: async ({ canvasElement }) => {
+    await expectAnchoredToHandles(canvasElement, 4);
+
     // Regression lock for #285: every edge's accessible name states its
     // weight, by exact string — a regex would happily match a wrong name.
     const expected: Record<string, string> = {

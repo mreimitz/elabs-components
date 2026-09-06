@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T12:09:01.976Z",
+  "generatedAt": "2026-09-06T13:41:15.674Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23428,6 +23428,10 @@
           "module": "packages/flow/src/canvas-shell/canvas-shell.tsx"
         },
         {
+          "name": "ClosestAnchors",
+          "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
           "name": "ClosestHandles",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
@@ -23534,6 +23538,10 @@
         {
           "name": "GroupOptions",
           "module": "packages/flow/src/use-flow-groups/use-flow-groups.ts"
+        },
+        {
+          "name": "HandleAnchor",
+          "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
         {
           "name": "HelperLineRect",
@@ -23678,7 +23686,15 @@
           "module": "packages/flow/src/flow-layout/layout-graph.ts"
         },
         {
+          "name": "pickClosestAnchors",
+          "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
           "name": "pickClosestHandles",
+          "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
+        },
+        {
+          "name": "positionToSide",
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
         {
