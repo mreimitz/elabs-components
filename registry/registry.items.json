@@ -83,8 +83,8 @@
       "name": "sidebar-04",
       "type": "registry:block",
       "root": "registry/blocks/sidebar-04",
-      "title": "App shell — mail (double-sided)",
-      "description": "Two-column mail shell: icon rail + searchable message list + reading pane. Adapted from blocks.so.",
+      "title": "App shell — mail",
+      "description": "Three-zone mail shell: the collapsible icon rail, a searchable message list, and a reading pane sharing one floating inset surface. A variation on the dashboard shell, not a separate idea; below md the two content zones become a drill-down.",
       "categories": ["sidebar", "app-shell"]
     },
     {

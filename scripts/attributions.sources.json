@@ -142,7 +142,7 @@
       "url": "https://github.com/ephraimduncan/blocks",
       "usedBy": ["@elabs-ai/components-ui"],
       "required": false,
-      "note": "The sidebar-02 / sidebar-04 / sidebar-05 copy-owned blocks, re-tokenized with Tabler icons mapped to Lucide."
+      "note": "The sidebar-05 copy-owned block, re-tokenized with Tabler icons mapped to Lucide."
     },
     {
       "id": "shadow-plugin",

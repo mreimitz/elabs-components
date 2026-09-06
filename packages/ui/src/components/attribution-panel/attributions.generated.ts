@@ -93,7 +93,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
   },
   {
     version: null,
-    note: "The sidebar-02 / sidebar-04 / sidebar-05 copy-owned blocks, re-tokenized with Tabler icons mapped to Lucide.",
+    note: "The sidebar-05 copy-owned block, re-tokenized with Tabler icons mapped to Lucide.",
     id: "blocks-so",
     category: "source",
     name: "blocks.so",
