@@ -52,6 +52,19 @@
   without claiming the whole application frame the primary sidebar already
   owns.
 
+- Fixed: `ContextRail`'s collapsed count badge no longer runs off the end of
+  the screen. The badge used the ordinary corner-badge overhang, which assumes
+  the element it hangs off has room beside it — but this rail is the outermost
+  column of a flush shell, so its end edge IS the viewport edge and about 4px
+  of every count badge landed past it and was clipped in half by the browser.
+  Collapsed, the badge now sits inside the strip; the expanded row badge is
+  unchanged.
+
+- Fixed: `AppIcon` (`@elabs-ai/components-icons`) now emits
+  `data-slot="app-icon"` on its root in every morph mode, so a consumer, a
+  test or an agent can target it without depending on class names or wrapper
+  depth. Previously neither of its two render paths carried the marker.
+
 - Added: `PageShell` gains two additive props with no change to its default
   render. `scroll="body" | "content" | "fill"` picks who owns the page's
   scrolling — the page itself (today's behaviour, still the default), the
