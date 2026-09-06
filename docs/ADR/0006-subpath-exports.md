@@ -9,7 +9,7 @@ A few packages already ship public **subpath exports** in addition to their
 barrel:
 
 - `@elabs-ai/components-editor` — `./markdown`, `./markdown/frontmatter`, `./monaco-environment`
-- `@elabs-ai/components-ui` — `./lib/cn`
+- `@elabs-ai/components-ui` — `./lib/cn`, `./form`
 - `@elabs-ai/components-tokens` — `./styles.css`
 
 Each was added ad hoc, with no written convention. Without a rule the next

@@ -9,7 +9,8 @@
  * components require their own peer libs (declared in package.json), e.g.
  * Drawer (vaul), Command (cmdk), Toast (sonner), Calendar (react-day-picker),
  * Carousel (embla-carousel-react), Resizable (react-resizable-panels),
- * Form (react-hook-form + zod), InputOTP (input-otp).
+ * InputOTP (input-otp). Form (react-hook-form + zod) is NOT on this barrel —
+ * it lives on the "@elabs-ai/components-ui/form" subpath (issue #26).
  */
 
 // Utilities
@@ -165,7 +166,14 @@ export * from "./components/expand-dialog";
 export * from "./components/field";
 export * from "./components/field-row";
 export * from "./components/file-upload";
-export * from "./components/form";
+// `Form`/`FormField`/… are NOT re-exported from the main barrel — they are the
+// ONLY module in this package that imports `react-hook-form`/`@hookform/resolvers`
+// (peer, optional per issue #26). Re-exporting them here would pull that static
+// import into every consumer's bundled `dist/index.js` (bundlers must resolve a
+// top-level ESM import to build the module graph, even if the binding is never
+// used), forcing react-hook-form on every consumer regardless of whether they
+// use Form. Import the RHF-bound family from the dedicated subpath instead:
+// `import { Form, FormField, … } from "@elabs-ai/components-ui/form"`.
 export * from "./components/hover-card";
 export * from "./components/icon-button";
 export * from "./components/input";

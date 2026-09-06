@@ -15,6 +15,15 @@ defects lived there undetected:
   the components shipped unstyled
 - `@elabs-ai/components-editor`'s `./monaco-environment` subpath pointing at raw `.ts`
 
+It also proves the inverse of a defect: this fixture's `package.json` deliberately
+does NOT depend on `react-hook-form` / `@hookform/resolvers` (optional peers of
+`@elabs-ai/components-ui`, issue #26) or the viewer's parser engines (optional
+peers, ADR 0024). `src/main.tsx` imports `FieldRow`/`Button` from the main
+`@elabs-ai/components-ui` barrel and `FileViewer` from `@elabs-ai/components-viewer` —
+never `Form` (which lives on the separate `@elabs-ai/components-ui/form` subpath) —
+so a green build here is the proof that skipping an optional peer doesn't
+break a consumer who never needed it.
+
 This fixture is not run directly. `pnpm consumer:check`
 (`scripts/check-consumer-install.mjs`) copies it to a temp directory outside the
 workspace, rewrites each `@elabs-ai/components-*` placeholder version to a freshly packed
