@@ -8,7 +8,7 @@ import {
 } from "@xyflow/react";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { FlowEdgePath } from "../flow-edge-path";
-import { EdgeLabelPill } from "./edge-label-pill";
+import { EdgeLabelPill, type EdgeLabelPillProps } from "./edge-label-pill";
 import {
   computeEdgeWeightScale,
   DEFAULT_EDGE_WIDTH_RANGE,
@@ -49,6 +49,13 @@ export interface FlowWeightedEdgeData extends Record<string, unknown> {
    * to "Back edge — runs against the process direction".
    */
   variantLabel?: string;
+  /**
+   * Passed straight through to the rendered `EdgeLabelPill`'s `className`/`...props`
+   * (see `EdgeLabelPillProps`) — the seam a composing package (e.g.
+   * `@elabs-ai/components-process`'s `ProcessTransitionEdge`) uses to reach the pill's
+   * own root button from outside this component, without a new semantic prop here.
+   */
+  labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
 }
 
 export type BrandFlowWeightedEdge = Edge<FlowWeightedEdgeData, "weighted">;
@@ -244,6 +251,7 @@ export function FlowWeightedEdge({
         x={labelX}
         y={labelY}
         selected={selected}
+        {...data?.labelProps}
       />
     </>
   );

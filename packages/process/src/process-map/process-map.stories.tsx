@@ -7,6 +7,7 @@ import { detectRework } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import type { ActivityStats, DurationStats, ProcessGraph, TransitionStats } from "../core/types";
+import { useProcessExplorer } from "../use-process-explorer";
 import { ProcessMap } from "./process-map";
 import type { ProcessSelection } from "./map-model";
 
@@ -84,10 +85,11 @@ const meta = {
           "carries its metric as stroke WIDTH and as a printed label pill before it " +
           "carries it as hue, and a node prints its value above a meter bar whose LENGTH " +
           "encodes the same number. Self-loops are a closed arc, back-edges are dashed, " +
-          "and an excluded element is dimmed AND `aria-disabled` — so nothing on this " +
-          "canvas is legible only in colour. `tableView` renders the identical numbers " +
-          "as two tables, sharing one formatter with the canvas so the two can never " +
-          "disagree.",
+          "and a filter-excluded element is dimmed — never removed, never " +
+          "`aria-disabled` — so nothing on this canvas is legible only in colour, and " +
+          "clicking a dimmed element is how a reader filters it back in. `tableView` " +
+          "renders the identical numbers as two tables, sharing one formatter with the " +
+          "canvas so the two can never disagree.",
       },
     },
   },
@@ -174,6 +176,12 @@ export const Abstracted: Story = {
  * than a synthetic `focus()` call: `Tab` reaches every activity in layout order, `Enter`
  * selects the one it is standing on, `F` opens the filter-intent menu for it, and
  * `Escape` puts focus back on the activity instead of on the Filter button.
+ *
+ * Wired through `useProcessExplorer` (RM-052 round 2, #227) rather than a bare `useState`,
+ * so `onFilterIntent` is the hook's real `applyIntent` — choosing an intent from the menu
+ * this story already opens does not shrink the canvas. The tail of the play function
+ * proves it: applying a real filter dims the activities it drops but leaves every one of
+ * them in the DOM (Invariant F).
  */
 export const Selection: Story = {
   args: {
@@ -181,11 +189,21 @@ export const Selection: Story = {
     metric: { node: "absolute_case", edge: "absolute" },
   },
   render: function SelectionStory(args) {
+    const explorer = useProcessExplorer(log);
     const [selection, setSelection] = useState<ProcessSelection | null>({
       kind: "activity",
       id: graph.activities[0]!.id,
     });
-    return <ProcessMap {...args} selection={selection} onSelect={setSelection} />;
+    return (
+      <ProcessMap
+        {...args}
+        graph={explorer.graph}
+        selection={selection}
+        onSelect={setSelection}
+        selectionStates={explorer.selectionStates}
+        onFilterIntent={explorer.applyIntent}
+      />
+    );
   },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
@@ -196,20 +214,41 @@ export const Selection: Story = {
     expect(wrappers.length).toBeGreaterThan(1);
 
     // ── DOM order IS layout order ────────────────────────────────────────────────────
-    // Measured BEFORE anything is focused: React Flow pans the viewport when a node takes
-    // focus (`autoPanOnNodeFocus`), which would move these rectangles mid-walk. The map is
-    // laid out `TB`, so reading order is top-to-bottom and then left-to-right — exactly
-    // what `applyPositions` sorts by, and therefore what the tab order below inherits.
-    const boxes = wrappers.map((wrapper) => wrapper.getBoundingClientRect());
-    for (let i = 1; i < boxes.length; i += 1) {
-      const previous = boxes[i - 1]!;
-      const current = boxes[i]!;
-      const sameRow = Math.abs(previous.top - current.top) < 1;
+    // Read each node's own `translate(Xpx, Ypx)` out of `wrapper.style.transform` —
+    // React Flow's authoritative, un-animated position (written straight from
+    // `node.position` — see `applyPositions`, `process-map.tsx`) — rather than calling
+    // `getBoundingClientRect()`. A measured rectangle is wrong here for TWO independent
+    // reasons, not one: (1) focusing a node pans the viewport (`autoPanOnNodeFocus`),
+    // which this still runs before, and (2) every node also carries the map's own 260ms
+    // entry transition, sliding it in from the model's mount position `{x:0, y:0}`
+    // (`PROCESS_MAP_NODE_MOTION_CLASS`, `use-process-layout.ts`) — so a rectangle sampled
+    // this early can be a mid-flight animation frame rather than the laid-out position
+    // (#365). The inline `transform` is a value a CSS transition never touches, so it
+    // reads the final, laid-out coordinate on the very first commit that has it, whatever
+    // frame the animation itself is on. The map is laid out `TB`, so reading order is
+    // top-to-bottom and then left-to-right — exactly what `applyPositions` sorts by, and
+    // therefore what the tab order below inherits.
+    const positions = wrappers.map((wrapper) => {
+      const match = /translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)/.exec(
+        wrapper.style.transform,
+      );
+      expect(
+        match,
+        `expected a translate() transform on node "${wrapper.dataset.id}"`,
+      ).toBeTruthy();
+      return { x: Number(match![1]), y: Number(match![2]) };
+    });
+    for (let i = 1; i < positions.length; i += 1) {
+      const previous = positions[i - 1]!;
+      const current = positions[i]!;
+      // dagre gives an entire rank the SAME y — an exact tie, not a 1px tolerance, because
+      // this is the laid-out coordinate rather than a painted, sub-pixel rectangle.
+      const sameRow = previous.y === current.y;
       expect({
         index: i,
-        top: [previous.top, current.top],
-        left: [previous.left, current.left],
-        ordered: sameRow ? previous.left <= current.left + 1 : previous.top < current.top,
+        y: [previous.y, current.y],
+        x: [previous.x, current.x],
+        ordered: sameRow ? previous.x <= current.x : previous.y < current.y,
       }).toMatchObject({ ordered: true });
     }
 
@@ -308,6 +347,55 @@ export const Selection: Story = {
         ),
       ).toBe(pillIndex);
     });
+
+    // ── Filtering re-inks, it never removes (Invariant F, RM-052 round 2, #227) ──────
+    // `onFilterIntent` is wired straight into `useProcessExplorer`'s own `applyIntent` —
+    // choosing a real intent from the menu this story already knows how to open must dim
+    // the activities it drops, never delete them from the canvas.
+    //
+    // Non-vacuity fix (RM-052 round 3, #227, G6): `standingOn` was selected via `Enter`
+    // earlier in this same play function and stays selected here, so
+    // `resolveSelectionState`'s neighbourhood rule (an activity outside the selection's
+    // one-hop neighbourhood reads "excluded" once something else is "selected") already
+    // paints excluded nodes BEFORE the filter click below ever runs — a bare
+    // `toBeTruthy()` on "some excluded node exists" would pass even if the filter click
+    // changed nothing. Capture the excluded count before the click and require it to
+    // strictly grow, so the assertion actually depends on the filter's effect rather than
+    // on the pre-existing selection.
+    //
+    // Menu item [1] ("Keep cases without" <activity>), not [0] ("Keep cases containing"
+    // <activity>) — and NOT `standingOn` (RM-052 round 4, #227, H2, correcting round 3's
+    // G6 comment). The `f` press right above this block fires while focus sits on the
+    // edge's label pill (restored by the Escape at line ~319), so `targetOfEvent` resolves
+    // a TRANSITION, and `menuActivities` returns `[edge.source, edge.target]` for one —
+    // this is the 8-item EDGE menu, not the 4-item activity menu `standingOn` would open.
+    // Menu item [1] belongs to the FIRST group, i.e. `edge.source`: measured directly by
+    // dumping the open menu in a real browser, that edge's source is common to (or the
+    // only start activity of) effectively every case, so "containing" it is a no-op filter
+    // — confirmed by running this fixture with item [0] and observing the excluded count
+    // stay flat at 29 before and after the click, i.e. exactly the false pass this lock
+    // exists to prevent. "without" instead drops the cases through `edge.source`, so other
+    // activities lose their statistics and the excluded count measurably grows (29 → 35).
+    const totalNodesBeforeFilter = wrappers.length;
+    const excludedCountBeforeFilter = canvasElement.querySelectorAll(
+      '[data-selection="excluded"]',
+    ).length;
+    await userEvent.keyboard("f");
+    const filterMenu = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[role="menu"]');
+      expect(found).toBeTruthy();
+      return found!;
+    });
+    await userEvent.click(within(filterMenu).getAllByRole("menuitem")[1]!);
+
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBeGreaterThan(
+        excludedCountBeforeFilter,
+      ),
+    );
+    expect(canvasElement.querySelectorAll('[data-slot="process-activity-node"]').length).toBe(
+      totalNodesBeforeFilter,
+    );
   },
 };
 

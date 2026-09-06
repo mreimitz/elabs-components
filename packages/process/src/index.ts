@@ -21,3 +21,9 @@ export {};
 
 // ProcessMap — RM-051
 export * from "./process-map";
+
+// AbstractionControls/MetricLayerSwitch/ProcessKpiStrip/useProcessExplorer — RM-052
+export * from "./abstraction-controls";
+export * from "./metric-layer-switch";
+export * from "./process-kpi-strip";
+export * from "./use-process-explorer";

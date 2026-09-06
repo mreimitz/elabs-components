@@ -65,6 +65,35 @@
   `Navigation/SkipLink`, `Layout/Context Rail` → `Layout/ContextRail`, and
   `Layout/Side Dock` → `Layout/SideDock` — a consumer with bookmarked
   Storybook URLs or story-id references needs to update them.
+- Fixed: an excluded (filtered-out) element on `ProcessMap`
+  (`@elabs-ai/components-process`) used to fade its whole card or arrow to one
+  flat opacity — which dimmed the activity's own card border along with its
+  text (#352), and left an excluded transition's frequency/duration pill at
+  full strength because React Flow portals that pill out from under the arrow
+  it belongs to, so the arrow's dimming never reached it at all (#351). A
+  ghosted element now keeps a visible boundary and full-contrast text — only
+  its non-text meter fill and the pill's frame pick up the quieter treatment
+  (a retinted card edge, a dimmed meter bar, a dashed pill border with a
+  `data-selection="excluded"` attribute) — so an excluded element still reads
+  clearly rather than disappearing into the canvas. `EdgeLabelPill`
+  (`@elabs-ai/components-flow`) gained `className`/`...props` on its root
+  button as the seam this reaches through; existing callers are unaffected.
+- Fixed: `Table` (`@elabs-ai/components-ui`) — a table whose contents overflow now
+  offers a keyboard-reachable scroll region with an accessible name, so keyboard
+  and screen-reader users can reach content that only scrolling reveals; a table
+  that already fits its container is unchanged. This is automatic for every
+  existing `Table` call site and needs no new prop (#366).
+- Fixed: `ProcessMap` (`@elabs-ai/components-process`) rendered as a zero-height,
+  unstyled canvas in the docs app — `packages/process` was missing from Tailwind's
+  `@source` scan list in `apps/docs/.storybook/preview.css`, so its canvas-height
+  utility, its excluded-activity ghosting opacity, and its overlay-rail inset
+  utility were never compiled (#348). This was Storybook-only, not a defect a real
+  consumer install would have hit: `fixtures/consumer-smoke/src/index.css` already
+  carried its own `@source` line for `@elabs-ai/components-process` before this fix,
+  untouched by this change. A new `pnpm tailwind-sources:check` gate, with its own
+  self-test, now fails CI whenever a workspace package that ships non-test,
+  non-story `.tsx` source is missing from an app's `@source` coverage, so this class
+  of bug cannot recur silently.
 
 - Changed: every piece of chart _furniture_ — grid rows and columns, axis
   rules, scatter drop lines, dumbbell tracks, tree links, radar rings,
@@ -1810,6 +1839,27 @@ work alongside `@elabs-ai/components-ai`.
   transcript unreachable). The compositions also pin the transcript to its
   newest line on mount, which is the caller's job by contract — this package
   owns no scroll container.
+- Added: `AbstractionControls`, `MetricLayerSwitch`, `ProcessKpiStrip` and the
+  `useProcessExplorer` hook (`@elabs-ai/components-process`, #227) — the
+  controls every process-mining session opens with. `AbstractionControls`
+  pairs two `Slider`s (activities/paths) with clickable percentage ticks, an
+  invert switch, and a bounded "Auto" search that converges on the largest
+  activities fraction that still fits a node budget without ever spinning
+  unboundedly. `MetricLayerSwitch` is a Frequency/Performance/Rework
+  `ToggleGroup` over two `Select`s (node and edge metric) with a lock that
+  keeps them in sync — while locked, the edge `Select` narrows to the
+  4-value domain both sides can share, rather than only visually mirroring
+  a wider one. `ProcessKpiStrip` is six `MetricCard` tiles built on
+  `MetricGrid` (cases, events, variants, median throughput, rework rate,
+  conformance); its conformance tile renders a genuine "Not available"
+  state — never a fabricated 0% — until a conformance model has actually
+  been fitted. `useProcessExplorer` is the coordinating hook: it owns
+  abstraction/metric state, turns filter intents into a recomputed graph via
+  `filterLog`/`discoverGraph` while keeping excluded elements `excluded`
+  rather than removed, and exposes `selection`/`onFilterIntent` so
+  `ProcessMap` and future views never call the log-filtering primitives
+  themselves — the same hook can be swapped for a host's own associative
+  selection engine without changing any component.
 
 ## v4.0.0 — 2026-08-17
 

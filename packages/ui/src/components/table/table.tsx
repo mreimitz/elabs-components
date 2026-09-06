@@ -1,17 +1,76 @@
 import {
   forwardRef,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
   type HTMLAttributes,
   type TdHTMLAttributes,
   type ThHTMLAttributes,
 } from "react";
 import { cn } from "../../lib/cn";
+import { useLocale } from "../locale-provider";
 
+/**
+ * `Table`'s own scroll wrapper, gated on MEASURED overflow (#366).
+ *
+ * `className`/`ref`/`...props` all land on the `<table>` — unchanged, no new
+ * prop — so this wrapper is internal plumbing, not a new public surface. It
+ * follows `DataTable`'s non-virtualized branch verbatim
+ * (`packages/data/src/data-table/data-table.tsx:1658-1695`, #330), the
+ * closest precedent: a plain `overflow-auto` box with no pinned columns, no
+ * loading overlay and no edge fade to carry along, just the keyboard
+ * affordance itself.
+ *
+ * A table that FITS must stay a byte-identical no-op: no `tabIndex`, no
+ * `aria-label`, no ring — an unconditional stop would announce "scrollable"
+ * on content that never scrolls. Only a table that measurably overflows
+ * gets the tab stop, its accessible name (WCAG 4.1.2) and the compound focus
+ * ring (`focus-ring-inset` — the wrapper's own edge is the scroll clip, so an
+ * outside ring would be cut, `.claude/rules/theming.md`). No `role="region"`:
+ * both existing precedents (`DataTable`, `SheetTable`) decided against a
+ * redundant landmark over a real `<table>`, and this wrapper adds none either.
+ */
 export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(function Table(
   { className, ...props },
   ref,
 ) {
+  const { t } = useLocale();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollOverflows, setScrollOverflows] = useState(false);
+
+  const updateScrollAffordance = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // 1px tolerance absorbs sub-pixel layout rounding, which would otherwise
+    // report a permanent 0.5px overflow on a table that visually fits.
+    setScrollOverflows(
+      el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1,
+    );
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollAffordance();
+    if (typeof ResizeObserver === "undefined") return;
+    // Observe the CONTAINER (viewport changes) and the <table> inside it
+    // (content changes its intrinsic size without resizing the container).
+    const observer = new ResizeObserver(updateScrollAffordance);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    return () => observer.disconnect();
+  }, [updateScrollAffordance]);
+
   return (
-    <div className="relative w-full overflow-auto">
+    <div
+      ref={scrollRef}
+      data-slot="table-scroll-region"
+      tabIndex={scrollOverflows ? 0 : undefined}
+      aria-label={scrollOverflows ? t("ui.table.scrollRegion") : undefined}
+      onScroll={updateScrollAffordance}
+      className="relative w-full overflow-auto focus-ring-inset"
+    >
       <table ref={ref} className={cn("w-full caption-bottom text-body", className)} {...props} />
     </div>
   );

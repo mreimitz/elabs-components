@@ -99,6 +99,7 @@ import {
   type ProcessMapModel,
   type ProcessMetricSpec,
   type ProcessSelection,
+  type ProcessSelectionStates,
 } from "./map-model";
 import { ProcessActivityNode } from "./process-activity-node";
 import { ProcessTransitionEdge } from "./process-transition-edge";
@@ -138,6 +139,14 @@ export interface ProcessMapProps extends Omit<HTMLAttributes<HTMLDivElement>, "o
   rework?: ReworkStats;
   /** Controlled selection. Omit for an uncontrolled map that owns its own. */
   selection?: ProcessSelection | null;
+  /**
+   * Per-element states an active filter contributes (RM-052 round 2, #227) — e.g. from
+   * `useProcessExplorer`'s own `selectionStates`. Applying or clearing a filter never adds
+   * or removes a node or an edge (Invariant F): it only re-inks the elements a filter
+   * dropped as `"excluded"` (dimmed, never `aria-disabled`). Omit for a map with no
+   * filtering, which reproduces today's selection-only behaviour exactly.
+   */
+  selectionStates?: ProcessSelectionStates;
   /** Fires with the new selection, or `null` when the reader deselects. */
   onSelect?: (target: ProcessSelection | null) => void;
   /** Fires with an intent from the filter menu — hand it straight to `filterLog`. */
@@ -194,6 +203,7 @@ export function ProcessMap({
   metric,
   rework,
   selection,
+  selectionStates,
   onSelect,
   onFilterIntent,
   direction = "TB",
@@ -244,9 +254,10 @@ export function ProcessMap({
             metric,
             rework: activeRework,
             selection: activeSelection,
+            selectionStates,
           })
         : null,
-    [resolved, metric, activeRework, activeSelection],
+    [resolved, metric, activeRework, activeSelection, selectionStates],
   );
 
   const layout: UseProcessLayoutResult = useProcessLayout({
@@ -267,10 +278,11 @@ export function ProcessMap({
             metric,
             rework: activeRework,
             selection: activeSelection,
+            selectionStates,
             backEdgeIds: layout.backEdgeIds,
           })
         : null,
-    [resolved, metric, activeRework, activeSelection, layout.backEdgeIds],
+    [resolved, metric, activeRework, activeSelection, selectionStates, layout.backEdgeIds],
   );
 
   const positionedNodes = useMemo(

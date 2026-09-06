@@ -82,6 +82,10 @@ export type { Bpi2012Activity, Bpi2012SubsetOptions } from "./fixtures/generate-
 export { abstractGraph } from "./abstract-graph";
 export type { AbstractedGraph, AbstractionOptions } from "./abstract-graph";
 
+// reconcileGraph — RM-052 round 2 (#227, Invariant F)
+export { reconcileGraph } from "./reconcile-graph";
+export type { ReconciledGraph } from "./reconcile-graph";
+
 // aggregatePerformance — RM-050
 export { aggregatePerformance, DURATION_UNIT_MS, performanceValue } from "./aggregate-performance";
 export type {

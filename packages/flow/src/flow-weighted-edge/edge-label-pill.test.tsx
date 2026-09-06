@@ -45,4 +45,21 @@ describe("EdgeLabelPill", () => {
     const button = screen.getByRole("button");
     expect(button.className).toContain("pointer-events-auto");
   });
+
+  // #351 — `className`/`...props` is the seam a composing package (e.g.
+  // `@elabs-ai/components-process`'s `ProcessTransitionEdge`) reaches this
+  // pill's root button through from outside `@elabs-ai/components-flow`,
+  // without a new semantic prop on this component.
+  it("merges a caller className onto the root button, after its own utility classes", () => {
+    render(<EdgeLabelPill x={0} y={0} label="128×" className="border-dashed" />);
+    const button = screen.getByRole("button");
+    expect(button.className).toContain("border-dashed");
+    // The pill's own classes are still present — className extends, not replaces.
+    expect(button.className).toContain("pointer-events-auto");
+  });
+
+  it("spreads arbitrary props (e.g. data-selection) onto the root button", () => {
+    render(<EdgeLabelPill x={0} y={0} label="128×" data-selection="excluded" />);
+    expect(screen.getByRole("button")).toHaveAttribute("data-selection", "excluded");
+  });
 });

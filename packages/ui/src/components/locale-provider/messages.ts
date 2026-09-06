@@ -164,6 +164,15 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "ui.navNotifications.label": "Notifications",
   "ui.teamSwitcher.label": "Teams",
   "ui.teamSwitcher.addTeam": "Add team",
+  // Table's own scroll wrapper (#366). Rendered ONLY when the wrapper actually
+  // overflows, so it is never announced for a table that fits — see
+  // `packages/ui/src/components/table/table.tsx`. Deliberately a `ui.*`
+  // sibling of `data.table.scrollRegion` rather than a shared cross-package
+  // key: `Table` is a `@elabs-ai/components-ui` component and each package
+  // keeps its own namespace even where the English string coincides (compare
+  // `viewer.content` vs this), so a translator can phrase either
+  // independently and neither package depends on a string owned by another.
+  "ui.table.scrollRegion": "Table contents, scrollable",
 
   // ── @elabs-ai/components-data ─────────────────────────────────────────────────────────────
   // The scroll region's accessible name is rendered ONLY when the table actually
@@ -683,4 +692,53 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "process.map.columnFrom": "From",
   "process.map.columnTo": "To",
   "process.map.columnShape": "Shape",
+  // AbstractionControls (RM-052, issue #227). The two sliders' own labels,
+  // the invert switch, the "Auto" heuristic button, and the hidden-count
+  // status line. `hiddenActivities`/`hiddenPaths` are separate `PluralMessage`s
+  // (not one combined key) because `t()` selects its plural category from a
+  // SINGLE `count` var — see `resolveMessage` in `locale-provider.tsx` — so
+  // the two independently-pluralizable counts are composed as two `t()` calls
+  // joined at the call site (`abstraction-controls.tsx`), not one key with two
+  // numbers.
+  "process.abstractionControls.label": "Abstraction",
+  "process.abstractionControls.activities": "Activities",
+  "process.abstractionControls.paths": "Paths",
+  "process.abstractionControls.invert": "Invert",
+  "process.abstractionControls.auto": "Auto",
+  "process.abstractionControls.hiddenActivities": {
+    one: "{count} activity hidden",
+    other: "{count} activities hidden",
+  },
+  "process.abstractionControls.hiddenPaths": {
+    one: "{count} path hidden",
+    other: "{count} paths hidden",
+  },
+  // MetricLayerSwitch (RM-052, issue #227). The Frequency/Performance/Rework
+  // toggle group, the node/edge metric selects' field labels, and the lock
+  // toggle's two accessible-name states. The per-VALUE metric labels
+  // ("Occurrences", "Share of transitions", …) are deliberately NOT
+  // duplicated here — they are read straight from `nodeMetricLabel`/
+  // `edgeMetricLabel` (`process-map/map-model.ts`), which already resolve
+  // each `ProcessMetric` to its correct, audience-specific text; see
+  // `metric-layer-switch.tsx`'s module docblock.
+  "process.metricLayerSwitch.label": "Metric",
+  "process.metricLayerSwitch.layer": "Metric layer",
+  "process.metricLayerSwitch.frequency": "Frequency",
+  "process.metricLayerSwitch.performance": "Performance",
+  "process.metricLayerSwitch.rework": "Rework",
+  "process.metricLayerSwitch.node": "Activity",
+  "process.metricLayerSwitch.edge": "Transition",
+  "process.metricLayerSwitch.lockOn": "Unlock activity and transition metrics",
+  "process.metricLayerSwitch.lockOff": "Lock activity and transition metrics together",
+  // ProcessKpiStrip (RM-052, issue #227). Six tiles' labels, plus the
+  // conformance tile's genuine "not available" state (no conformance model
+  // has run yet) — a real state, not a fabricated 0%.
+  "process.kpiStrip.cases": "Cases",
+  "process.kpiStrip.events": "Events",
+  "process.kpiStrip.variants": "Variants",
+  "process.kpiStrip.medianThroughput": "Median throughput",
+  "process.kpiStrip.reworkRate": "Rework rate",
+  "process.kpiStrip.conformance": "Conformance",
+  "process.kpiStrip.conformanceUnavailable": "Not available",
+  "process.kpiStrip.conformanceUnavailableHint": "Run conformance checking to see this metric.",
 };

@@ -5,6 +5,7 @@ import {
   computeEdgeWeightScale,
   DEFAULT_EDGE_WIDTH_RANGE,
   EdgeLabelPill,
+  type EdgeLabelPillProps,
   type WeightedEdgeLike,
 } from "../flow-weighted-edge";
 import { DEFAULT_LOOP_RADIUS, selfLoopPath } from "./self-loop-geometry";
@@ -29,6 +30,13 @@ export interface FlowSelfLoopEdgeData extends Record<string, unknown> {
    * "Self-loop on <node> — this step repeats".
    */
   loopLabel?: string;
+  /**
+   * Passed straight through to the rendered `EdgeLabelPill`'s `className`/`...props`
+   * (see `EdgeLabelPillProps`) — the seam a composing package (e.g.
+   * `@elabs-ai/components-process`'s `ProcessTransitionEdge`) uses to reach the pill's
+   * own root button from outside this component, without a new semantic prop here.
+   */
+  labelProps?: Omit<EdgeLabelPillProps, "label" | "secondaryLabel" | "x" | "y" | "selected">;
 }
 
 export type BrandFlowSelfLoopEdge = Edge<FlowSelfLoopEdgeData, "self-loop">;
@@ -132,6 +140,7 @@ export function FlowSelfLoopEdge({
         x={labelX}
         y={labelY}
         selected={selected}
+        {...data?.labelProps}
       />
     </>
   );
