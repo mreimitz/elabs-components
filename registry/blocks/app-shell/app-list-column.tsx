@@ -14,7 +14,9 @@
 "use client";
 
 import { useId, useMemo, useState, type ComponentProps } from "react";
+import { Plus, SearchX, Workflow } from "lucide-react";
 import {
+  Button,
   cn,
   Skeleton,
   StatePanel,
@@ -97,6 +99,13 @@ export interface AppListColumnProps extends Omit<ComponentProps<"aside">, "onSel
   loading?: boolean;
   /** Zone heading. @default "Pipelines" */
   heading?: string;
+  /**
+   * Where the first-run empty state sends someone with no pipelines yet.
+   * A plain `href` on purpose — the block is router-agnostic; swap the anchor
+   * for your framework's `<Link>` when you copy it.
+   * @default "/pipelines/new"
+   */
+  createHref?: string;
 }
 
 export function AppListColumn({
@@ -105,6 +114,7 @@ export function AppListColumn({
   onSelect,
   loading = false,
   heading = "Pipelines",
+  createHref = "/pipelines/new",
   className,
   ...props
 }: AppListColumnProps) {
@@ -170,15 +180,42 @@ export function AppListColumn({
         </div>
       ) : filtered.length === 0 ? (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <StatePanel
-            kind="empty"
-            title={query ? "Nothing matches that filter" : "No pipelines yet"}
-            description={
-              query
-                ? "Try a shorter word, or clear the filter to see every pipeline."
-                : "Pipelines you create or are given access to show up here."
-            }
-          />
+          {/* Two different empties, two different ways OUT — an empty state that
+              names the absence and stops there leaves the reader stuck in the
+              state it is describing. Filtered: the way out is the filter, so
+              the action clears it (and really does, in-block). First run: the
+              way out is creating the first pipeline, so the action is the route
+              that does it. Each also carries its own glyph, because "your
+              filter is too narrow" and "you own nothing yet" are different
+              news and should not look identical. */}
+          {query ? (
+            <StatePanel
+              kind="empty"
+              icon={<SearchX aria-hidden="true" />}
+              title="Nothing matches that filter"
+              description="Try a shorter word, or clear the filter to see every pipeline."
+              actions={
+                <Button variant="outline" size="sm" onClick={() => setQuery("")}>
+                  Clear filter
+                </Button>
+              }
+            />
+          ) : (
+            <StatePanel
+              kind="empty"
+              icon={<Workflow aria-hidden="true" />}
+              title="No pipelines yet"
+              description="Pipelines you create or are given access to show up here."
+              actions={
+                <Button asChild size="sm">
+                  <a href={createHref}>
+                    <Plus aria-hidden="true" />
+                    New pipeline
+                  </a>
+                </Button>
+              }
+            />
+          )}
         </div>
       ) : (
         <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-2">

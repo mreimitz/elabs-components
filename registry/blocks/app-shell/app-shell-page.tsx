@@ -29,7 +29,6 @@ import {
   SidebarProvider,
   SkipLink,
   type ContextRailSection,
-  type TimelineEntry,
 } from "@elabs-ai/components-ui";
 // This file installs at `app/(app)/page.tsx` (see the `fileOverrides` entry in
 // registry.items.json) — outside `components/app-shell/`, so a relative import to a
@@ -44,6 +43,7 @@ import {
 } from "@/components/app-shell/app-list-column";
 import {
   ConsoleOverview,
+  type ActivityEntry,
   type ConsoleMetric,
   type RunRow,
 } from "@/components/app-shell/console-overview";
@@ -134,7 +134,7 @@ export interface AppShellPageProps {
   /** Rows of the console's runs table. @default DEMO_RUNS */
   runs?: RunRow[];
   /** Entries of the console's activity timeline. @default DEMO_ACTIVITY */
-  activity?: TimelineEntry[];
+  activity?: ActivityEntry[];
   /**
    * Below this viewport width the context rail mounts a 48px strip plus a
    * `Sheet` instead of a `Sidebar`. Forwarded verbatim to `ContextRail`; the
@@ -229,7 +229,13 @@ export default function AppShellPage({
             <div
               data-slot="app-shell-content"
               tabIndex={0}
-              className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring sm:px-6 lg:px-8"
+              // `focus-ring-inset`, not `focus-ring`: both of the plain rung's
+              // layers are drawn OUTSIDE the element's box, and this port's
+              // ancestor `SidebarInset` carries `overflow-hidden` — so the ring
+              // and its contour were clipped away and a keyboard user got no
+              // indicator at all on a deliberately focusable region. The inset
+              // rung is the one the theming rule specifies for exactly this.
+              className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
             >
               {emptyContent ? null : (
                 <ConsoleOverview

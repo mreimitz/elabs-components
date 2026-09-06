@@ -134,7 +134,7 @@ export function AppTopBar({
       />
 
       {showBreadcrumbs ? (
-        <Breadcrumb className="min-w-0">
+        <Breadcrumb className="min-w-0 flex-1">
           <BreadcrumbList className="flex-nowrap">
             {crumbs.map((crumb, index) => {
               const isLast = index === crumbs.length - 1;
@@ -159,12 +159,28 @@ export function AppTopBar({
           </BreadcrumbList>
         </Breadcrumb>
       ) : (
-        <span className="truncate text-body font-semibold text-foreground">{currentLabel}</span>
+        <span
+          data-slot="app-top-bar-title"
+          className="min-w-0 flex-1 truncate text-body font-semibold text-foreground"
+        >
+          {currentLabel}
+        </span>
       )}
 
-      <div className="ms-auto flex items-center gap-1">
+      {/* The cluster never competes with the page name for room. Its five
+          controls are fixed-width, so on a 320px phone they used to consume the
+          whole row and crush the title to 2px — a top bar of six icons naming no
+          page. `shrink-0` plus a `flex-1` title fixes the priority; the two
+          controls that are pure convenience (help, appearance) also stand down
+          below `sm`, because on a phone the row is the scarcest space on screen.
+          What stays at every width: navigation, search, notifications, details. */}
+      <div className="flex shrink-0 items-center gap-1">
         <CommandTrigger onClick={onSearch} />
-        <IconButton label="Help and documentation" icon={<CircleHelp />} />
+        <IconButton
+          label="Help and documentation"
+          icon={<CircleHelp />}
+          className="hidden sm:inline-flex"
+        />
         <span className="relative inline-flex">
           <IconButton
             // The count is part of the NAME on purpose: a bare "Notifications"
@@ -178,13 +194,23 @@ export function AppTopBar({
             // button's own name — announcing it twice is noise, and a dot has
             // no reading of its own. Presence/absence of the shape is the cue,
             // so it does not rest on hue alone.
+            //
+            // The tone is `info`, not `primary`. A dot is a colour-only MARK,
+            // so its fill must clear 3:1 against every surface it can land on —
+            // and only the STATUS tones carry that guarantee
+            // (`themes-contrast.test.ts`, "≥ 3:1 on every mark surface").
+            // `--primary` carries no such promise and measures 1.36:1 against
+            // `--background` in `light`; `--info` measures 4.66:1 there and
+            // 6.40:1 in `dark`. The `ring-2 ring-background` is NOT the edge
+            // that makes it visible (it is the page ground) — it only keeps the
+            // dot off the bell glyph underneath it.
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute end-1.5 top-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+              className="pointer-events-none absolute end-1.5 top-1.5 size-2 rounded-full bg-info ring-2 ring-background"
             />
           ) : null}
         </span>
-        <ThemeSwitcher />
+        <ThemeSwitcher className="hidden sm:inline-flex" />
         <IconButton
           label={contextOpen ? "Hide the details rail" : "Show the details rail"}
           icon={<PanelRight />}

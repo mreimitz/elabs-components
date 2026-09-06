@@ -7,7 +7,7 @@
  * `isPathActive` is exported so the semantics survive the swap.
  */
 import type { LucideIcon } from "lucide-react";
-import { Activity, BookOpen, Home, ListChecks, Plug } from "lucide-react";
+import { Activity, BookOpen, CircleCheck, Home, ListChecks, Play, Plug } from "lucide-react";
 
 export interface NavItem {
   id: string;
@@ -34,8 +34,12 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         href: "/runs",
         icon: ListChecks,
         items: [
-          { id: "runs-active", label: "Active", href: "/runs/active", icon: ListChecks },
-          { id: "runs-completed", label: "Completed", href: "/runs/completed", icon: ListChecks },
+          // Every entry carries a DISTINCT glyph. In the collapsed rail the icon is
+          // the whole entry — three identical `ListChecks` made the sub-routes
+          // indistinguishable to a sighted scan even though their tooltips and
+          // accessible names were correct.
+          { id: "runs-active", label: "Active", href: "/runs/active", icon: Play },
+          { id: "runs-completed", label: "Completed", href: "/runs/completed", icon: CircleCheck },
         ],
       },
       { id: "activity", label: "Activity", href: "/activity", icon: Activity },

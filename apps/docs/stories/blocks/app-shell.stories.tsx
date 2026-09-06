@@ -98,12 +98,16 @@ export const ContextRailOpen: Story = {
   render: () => <AppShellPage activePath="/runs" defaultContextOpen />,
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('[data-context="expanded"]')).toBeInTheDocument();
-    // The attribute alone cannot fail while the shell defaults the rail open,
-    // so the lock also demands the rail's own expanded body — its first
-    // section's heading — which only exists once the rail is really mounted.
-    await expect(
-      canvasElement.querySelector('[data-slot="context-rail-heading"]'),
-    ).toHaveTextContent("Details");
+    // `toBeVisible`, NOT `toHaveTextContent`. The heading STAYS IN THE DOM when
+    // the rail is closed (`ContextRail` only hides it with
+    // `group-data-[collapsible=icon]:hidden`), and `toHaveTextContent` reads
+    // `textContent`, which CSS does not touch — so the text assertion passed
+    // just as happily with the rail shut and locked nothing. Visibility is the
+    // property that actually differs between the two states. The text is still
+    // worth pinning, so it is asserted separately rather than instead.
+    const heading = canvasElement.querySelector('[data-slot="context-rail-heading"]');
+    await expect(heading).toBeVisible();
+    await expect(heading).toHaveTextContent("Details");
     // Positive control for `Narrow`'s discriminator: docked, the rail's root
     // nests INSIDE a `Sidebar`. The overlay branch mounts none, which is what
     // that story asserts — so the two locks only mean something together.
@@ -135,6 +139,13 @@ export const Narrow: Story = {
     await expect(canvasElement.querySelector('nav[aria-label="Primary"]')).toBeNull();
     // The optional third zone is present but takes no width at this size.
     await expect(canvasElement.querySelector('[data-slot="app-list-column"]')).not.toBeVisible();
+    // The page NAME survives the phone. The trailing control cluster is five
+    // fixed-width buttons; without `shrink-0` on it and `flex-1` on the title,
+    // 320px of bar went entirely to icons and the title measured 2px wide — a
+    // row of chrome naming no page. Measured, not asserted from a class name.
+    const title = canvasElement.querySelector('[data-slot="app-top-bar-title"]');
+    await expect(title).toBeVisible();
+    await expect(title!.getBoundingClientRect().width).toBeGreaterThan(40);
   },
 };
 
@@ -152,6 +163,12 @@ export const Loading: Story = {
     await expect(listStatus).toBeInTheDocument();
     // Announced once per region, not once per skeleton box.
     await expect(listStatus).toHaveTextContent("Loading pipelines…");
+    // ONE loading treatment on the screen. `DataTable` draws skeleton rows only
+    // when it has no rows; handed the fixture it instead spins over legible real
+    // figures, so the same screen showed blank skeletons in two regions and
+    // readable data in a third. No fixture run id may be on screen while the
+    // page is loading.
+    await expect(canvasElement).not.toHaveTextContent("run-4818");
   },
 };
 
