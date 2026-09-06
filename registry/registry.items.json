@@ -91,8 +91,8 @@
       "name": "sidebar-05",
       "type": "registry:block",
       "root": "registry/blocks/sidebar-05",
-      "title": "App shell — double-sided nav",
-      "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
+      "title": "App shell — dual rail",
+      "description": "Two navigation levels plus a summoned third surface: a permanent 56px icon rail picks the area, a collapsible second panel lists that area's sections, and the floating inset carries the settings screen. A resizable right-hand SideDock holds the change history — a column above 1100px, an overlay below it. The icon rail is deliberately not a Sidebar, so it survives every breakpoint while the section panel becomes a sheet.",
       "categories": ["sidebar", "app-shell"]
     },
     {

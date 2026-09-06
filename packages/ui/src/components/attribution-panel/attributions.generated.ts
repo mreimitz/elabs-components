@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 119 entries (data: 2, source: 19, font: 2, dependency: 96).
+// 118 entries (data: 2, source: 18, font: 2, dependency: 96).
 
 import type { Attribution } from "./attribution-types";
 
@@ -89,18 +89,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Copyright (c) 2026 uixmat",
     url: "https://github.com/bklit/bklit-ui",
     usedBy: ["@elabs-ai/components-charts"],
-    required: false,
-  },
-  {
-    version: null,
-    note: "The sidebar-05 copy-owned block, re-tokenized with Tabler icons mapped to Lucide.",
-    id: "blocks-so",
-    category: "source",
-    name: "blocks.so",
-    license: "MIT",
-    copyright: "Copyright (c) 2025 Ephraim Duncan",
-    url: "https://github.com/ephraimduncan/blocks",
-    usedBy: ["@elabs-ai/components-ui"],
     required: false,
   },
   {

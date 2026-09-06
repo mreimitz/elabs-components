@@ -134,17 +134,6 @@
       "note": "The view-state seam and chrome-part inversion the viewer adopted (ADR 0026). Its LICENSE.md carries two copyright lines; both are reproduced."
     },
     {
-      "id": "blocks-so",
-      "category": "source",
-      "name": "blocks.so",
-      "license": "MIT",
-      "copyright": "Copyright (c) 2025 Ephraim Duncan",
-      "url": "https://github.com/ephraimduncan/blocks",
-      "usedBy": ["@elabs-ai/components-ui"],
-      "required": false,
-      "note": "The sidebar-05 copy-owned block, re-tokenized with Tabler icons mapped to Lucide."
-    },
-    {
       "id": "shadow-plugin",
       "category": "source",
       "name": "shadow-plugin",

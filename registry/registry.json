@@ -324,19 +324,49 @@
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
       "name": "sidebar-05",
       "type": "registry:block",
-      "title": "App shell — double-sided nav",
-      "description": "Primary nav rail that expands a contextual second panel of sub-items. Adapted from blocks.so.",
+      "title": "App shell — dual rail",
+      "description": "Two navigation levels plus a summoned third surface: a permanent 56px icon rail picks the area, a collapsible second panel lists that area's sections, and the floating inset carries the settings screen. A resizable right-hand SideDock holds the change history — a column above 1100px, an overlay below it. The icon rail is deliberately not a Sidebar, so it survives every breakpoint while the section panel becomes a sheet.",
       "dependencies": ["@elabs-ai/components-tokens", "@elabs-ai/components-ui", "lucide-react"],
       "files": [
         {
-          "path": "registry/blocks/sidebar-05/app-sidebar.tsx",
+          "path": "registry/blocks/sidebar-05/change-history.tsx",
           "type": "registry:component",
-          "target": "components/sidebar-05/app-sidebar.tsx"
+          "target": "components/sidebar-05/change-history.tsx"
         },
         {
-          "path": "registry/blocks/sidebar-05/team-switcher.tsx",
+          "path": "registry/blocks/sidebar-05/nav-items.ts",
           "type": "registry:component",
-          "target": "components/sidebar-05/team-switcher.tsx"
+          "target": "components/sidebar-05/nav-items.ts"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-content.ts",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-content.ts"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-icon-rail.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-icon-rail.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-screen.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-screen.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-section-panel.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-section-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-shell.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-shell.tsx"
+        },
+        {
+          "path": "registry/blocks/sidebar-05/settings-top-bar.tsx",
+          "type": "registry:component",
+          "target": "components/sidebar-05/settings-top-bar.tsx"
         }
       ],
       "categories": ["sidebar", "app-shell"]

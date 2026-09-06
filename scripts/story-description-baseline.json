@@ -1,6 +1,4 @@
 [
-  "apps/docs/stories/blocks/sidebar-04.stories.tsx",
-  "apps/docs/stories/blocks/sidebar-05.stories.tsx",
   "apps/docs/stories/mention-input-in-composer.stories.tsx",
   "apps/docs/stories/metric-card-sparkline.stories.tsx",
   "packages/ai/src/artifact.stories.tsx",
