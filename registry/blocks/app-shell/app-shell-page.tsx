@@ -20,7 +20,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookOpen, Info, TriangleAlert } from "lucide-react";
 import {
   ContextRail,
@@ -28,6 +28,7 @@ import {
   SidebarInset,
   SidebarProvider,
   SkipLink,
+  useIsMobile,
   type ContextRailSection,
 } from "@elabs-ai/components-ui";
 // This file installs at `app/(app)/page.tsx` (see the `fileOverrides` entry in
@@ -111,6 +112,20 @@ function contextSections(alertCount: number): ContextRailSection[] {
   ];
 }
 
+/**
+ * Below this viewport width the shell mounts NO details rail and renders no
+ * toggle for it — 1024px, Tailwind's `lg`.
+ *
+ * This is a COMPOSITION decision, not a `ContextRail` one: the primitive keeps
+ * its 48px icon strip at every width by contract (ADR 0035 §3), and that is
+ * right for a two-zone screen. Here it is the fourth zone of four, so below
+ * `lg` it was 48px of dark strip pinned over a pane that had already collapsed
+ * to ~230px — the rail overlapped the content and its own icon column was
+ * clipped at the viewport edge. A screen this narrow has room for navigation,
+ * records and content, and that is what it keeps.
+ */
+const CONTEXT_RAIL_MIN_WIDTH = 1024;
+
 export interface AppShellPageProps {
   /** Current route, forwarded to the nav rail for the active-state indicator. */
   activePath?: string;
@@ -161,17 +176,42 @@ export default function AppShellPage({
   const [contextOpen, setContextOpen] = useState(defaultContextOpen);
   const [selectedId, setSelectedId] = useState<string | undefined>(pipelines[0]?.id);
 
+  /* Zone budget by width. Four zones do not fit under `lg`: at 800px the nav
+     rail (256px), the list column (280px) and the rail strip (48px) left the
+     content pane ~230px, where KPI labels clipped mid-word and the top bar's
+     search ran under the rail.
+     - The details rail is not mounted at all (see `CONTEXT_RAIL_MIN_WIDTH`).
+     - The nav rail folds to its icon width, which is a COLLAPSE, not a
+       removal: every entry keeps its accessible name and the top bar's toggle
+       still opens it, so nothing becomes unreachable.
+     Both are driven off one measured breakpoint rather than a CSS class,
+     because the nav's open state is React state the top bar also reads. */
+  const isBelowRailWidth = useIsMobile(CONTEXT_RAIL_MIN_WIDTH);
+  useEffect(() => {
+    // Runs on a CROSSING, not on every render — so a reader who re-opens the
+    // rail at 900px keeps it open until the width itself changes.
+    setNavOpen(isBelowRailWidth ? false : defaultNavOpen);
+  }, [isBelowRailWidth, defaultNavOpen]);
+  const showContextRail = !isBelowRailWidth;
+
   // The list zone is presence, not a collapse: it either exists for this screen
   // or it doesn't. Keeping it in `ShellState` is what makes `--shell-list-w`
   // (and every offset derived from it) close up on its own when it doesn't.
-  const state: ShellState = { nav: navOpen, list: showList, context: contextOpen };
+  // `context: false` whenever the rail is not mounted, so every offset derived
+  // from `--shell-context-w` closes up instead of reserving a strip that is not
+  // there.
+  const state: ShellState = {
+    nav: navOpen,
+    list: showList,
+    context: contextOpen && showContextRail,
+  };
   const selected = pipelines.find((item) => item.id === selectedId);
 
   return (
     <div
       data-nav={navOpen ? "expanded" : "collapsed"}
       data-list={showList ? "expanded" : "collapsed"}
-      data-context={contextOpen ? "expanded" : "collapsed"}
+      data-context={state.context ? "expanded" : "collapsed"}
       style={shellStyle(state)}
       className="flex h-svh w-full bg-sidebar text-foreground"
     >
@@ -214,7 +254,7 @@ export default function AppShellPage({
             onNavOpenChange={setNavOpen}
             contextOpen={contextOpen}
             onContextOpenChange={setContextOpen}
-            unreadCount={2}
+            showContextToggle={showContextRail}
           />
 
           {/* `scroll="fill"` means PageShell owns no overflow of its own — the
@@ -237,7 +277,21 @@ export default function AppShellPage({
               // rung is the one the theming rule specifies for exactly this.
               className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
             >
-              {emptyContent ? null : (
+              {emptyContent ? (
+                /* A LABELLED slot, not a blank canvas. `emptyContent` exists to
+                 * show what the shell contributes on its own — but rendering
+                 * literally nothing under the top bar reads as a broken screen
+                 * rather than as an empty one, and the copier cannot see where
+                 * their own screen is meant to go. The dashed outline is the
+                 * only place in this block that is deliberately not a resting
+                 * surface: it marks a hole, so it must not look like a card. */
+                <div
+                  data-slot="app-shell-content-placeholder"
+                  className="flex h-full min-h-40 items-center justify-center rounded-xl border border-dashed border-border-strong p-6 text-center text-body text-muted-foreground"
+                >
+                  Your screen renders here.
+                </div>
+              ) : (
                 <ConsoleOverview
                   scope={selected?.name}
                   loading={loading}
@@ -250,12 +304,14 @@ export default function AppShellPage({
           </PageShell>
         </SidebarInset>
 
-        <ContextRail
-          sections={contextSections(2)}
-          open={contextOpen}
-          onOpenChange={setContextOpen}
-          overlayBreakpoint={contextOverlayBreakpoint}
-        />
+        {showContextRail ? (
+          <ContextRail
+            sections={contextSections(2)}
+            open={contextOpen}
+            onOpenChange={setContextOpen}
+            overlayBreakpoint={contextOverlayBreakpoint}
+          />
+        ) : null}
       </SidebarProvider>
     </div>
   );

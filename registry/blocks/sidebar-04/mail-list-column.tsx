@@ -122,7 +122,17 @@ export function MailListColumn({
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div
+          // Focusable because it scrolls; `focus-ring-inset` because the shell
+          // clips anything drawn outside this box. The un-filtered branch below
+          // deliberately ships NO action (see the comment), so this region can
+          // have zero focusable descendants — which is exactly when a scroll
+          // port with no tab stop becomes unreachable (WCAG 2.1.1, axe
+          // `scrollable-region-focusable`). Same shape as the reading pane's
+          // port in this block.
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto p-3 focus-ring-inset"
+        >
           {/* Two different empties, two different ways OUT — an empty state that
               names the absence and stops there leaves the reader stuck in the
               state it is describing. Filtered: the way out is the search box, so

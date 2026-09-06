@@ -1,7 +1,8 @@
 /**
  * The flagship shell's top bar — the one row that says WHERE you are and gives
- * you the four things an operator reaches for from any screen (search, help,
- * notifications, appearance), plus the two zone toggles the shell owns.
+ * you the things an operator reaches for from any screen (search, notifications,
+ * appearance, and help when the consumer wires it), plus the two zone toggles
+ * the shell owns.
  *
  * Two deliberate shapes, both easy to get wrong when copying this block:
  *
@@ -20,7 +21,7 @@
 "use client";
 
 import { Fragment, type ComponentProps } from "react";
-import { Bell, CircleHelp, PanelLeft, PanelRight } from "lucide-react";
+import { CircleHelp, PanelLeft, PanelRight } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,11 +32,20 @@ import {
   CommandTrigger,
   cn,
   IconButton,
+  NavNotifications,
+  type NavNotification,
   ThemeSwitcher,
 } from "@elabs-ai/components-ui";
 // Installed at `app/(app)/page.tsx`'s sibling depth via the consumer alias —
 // see the note in `app-shell-page.tsx`.
 import { NAV_GROUPS } from "@/components/app-shell/nav-items";
+
+/** Demo notifications — replace with your own feed. */
+export const DEMO_NOTIFICATIONS: NavNotification[] = [
+  { id: "1", fallback: "AR", text: "Ava Reyes assigned you “Q3 forecast”", time: "12m ago" },
+  { id: "2", fallback: "SM", text: "Sam Mori commented on “Pipeline health”", time: "1h ago" },
+  { id: "3", fallback: "JT", text: "Jordan Tam shared a report with you", time: "Yesterday" },
+];
 
 /** One step of the trail: the route it points at and the word shown for it. */
 export interface Crumb {
@@ -85,11 +95,24 @@ export interface AppTopBarProps extends ComponentProps<"header"> {
   onNavOpenChange: (open: boolean) => void;
   /** Context-rail zone state (owned by `AppShellPage`). */
   contextOpen: boolean;
+  /**
+   * Render the details-rail disclosure at all. Set it `false` at widths where
+   * the shell does not mount the rail — a toggle for a zone that is not there
+   * takes focus, shows a pointer cursor and does nothing, which is the same
+   * defect the dead Help button was. @default true
+   */
+  showContextToggle?: boolean;
   onContextOpenChange: (open: boolean) => void;
   /** Opens the app's command palette. Wire it to your own `CommandDialog`. */
   onSearch?: () => void;
-  /** Unread count folded into the notifications button's accessible name. */
-  unreadCount?: number;
+  /**
+   * Opens your help surface. The button renders ONLY when this is supplied —
+   * a control that takes focus, shows a pointer cursor and does nothing is
+   * worse than no control, and this block is a copy-own exemplar.
+   */
+  onHelp?: () => void;
+  /** Entries in the notifications menu. @default DEMO_NOTIFICATIONS */
+  notifications?: NavNotification[];
 }
 
 export function AppTopBar({
@@ -97,9 +120,11 @@ export function AppTopBar({
   navOpen,
   onNavOpenChange,
   contextOpen,
+  showContextToggle = true,
   onContextOpenChange,
   onSearch,
-  unreadCount = 0,
+  onHelp,
+  notifications = DEMO_NOTIFICATIONS,
   className,
   ...props
 }: AppTopBarProps) {
@@ -125,6 +150,17 @@ export function AppTopBar({
       <IconButton
         label={navOpen ? "Collapse navigation" : "Expand navigation"}
         icon={<PanelLeft />}
+        // A disclosure control, so the state is exposed as STATE. The
+        // state-carrying name stays — it is good copy, and it complements the
+        // attribute rather than competing with it — but a name that mutates
+        // under the user is not reliably re-announced, and `aria-expanded` is
+        // what the platform provides for exactly this (WCAG 4.1.2).
+        //
+        // No `aria-controls`, deliberately: below the shell's own breakpoint the
+        // nav zone is an unmounted `Sheet`, and pointing `aria-controls` at an
+        // id that is not in the document is an axe `aria-valid-attr-value`
+        // failure. Do not "fix" this later into a dangling id.
+        aria-expanded={navOpen}
         onClick={() => onNavOpenChange(!navOpen)}
         // 44x44 is the touch floor, and ONLY the touch floor: on a mouse-driven
         // desktop the same square reads as oversized chrome. `pointer-coarse`
@@ -167,55 +203,50 @@ export function AppTopBar({
         </span>
       )}
 
-      {/* The cluster never competes with the page name for room. Its five
-          controls are fixed-width, so on a 320px phone they used to consume the
-          whole row and crush the title to 2px — a top bar of six icons naming no
-          page. `shrink-0` plus a `flex-1` title fixes the priority; the two
-          controls that are pure convenience (help, appearance) also stand down
-          below `sm`, because on a phone the row is the scarcest space on screen.
+      {/* The cluster never competes with the page name for room. Its controls
+          are fixed-width, so on a 320px phone they used to consume the whole row
+          and crush the title to 2px — a top bar of six icons naming no page.
+          `shrink-0` plus a `flex-1` title fixes the priority; the two controls
+          that are pure convenience (help, appearance) also stand down below
+          `sm`, because on a phone the row is the scarcest space on screen.
           What stays at every width: navigation, search, notifications, details. */}
       <div className="flex shrink-0 items-center gap-1">
         <CommandTrigger onClick={onSearch} />
-        <IconButton
-          label="Help and documentation"
-          icon={<CircleHelp />}
-          className="hidden sm:inline-flex"
-        />
-        <span className="relative inline-flex">
+        {/* Rendered only when the consumer supplies a handler — see `onHelp`. */}
+        {onHelp ? (
           <IconButton
-            // The count is part of the NAME on purpose: a bare "Notifications"
-            // hides the one thing that decides whether it is worth opening.
-            label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
-            icon={<Bell />}
+            label="Help and documentation"
+            icon={<CircleHelp />}
+            onClick={onHelp}
+            className="hidden sm:inline-flex"
           />
-          {unreadCount > 0 ? (
-            // The sighted channel for the same fact. It is `aria-hidden`
-            // because the count already reaches assistive tech through the
-            // button's own name — announcing it twice is noise, and a dot has
-            // no reading of its own. Presence/absence of the shape is the cue,
-            // so it does not rest on hue alone.
-            //
-            // The tone is `info`, not `primary`. A dot is a colour-only MARK,
-            // so its fill must clear 3:1 against every surface it can land on —
-            // and only the STATUS tones carry that guarantee
-            // (`themes-contrast.test.ts`, "≥ 3:1 on every mark surface").
-            // `--primary` carries no such promise and measures 1.36:1 against
-            // `--background` in `light`; `--info` measures 4.66:1 there and
-            // 6.40:1 in `dark`. The `ring-2 ring-background` is NOT the edge
-            // that makes it visible (it is the page ground) — it only keeps the
-            // dot off the bell glyph underneath it.
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute end-1.5 top-1.5 size-2 rounded-full bg-info ring-2 ring-background"
-            />
-          ) : null}
-        </span>
+        ) : null}
+        {/* The same working component all three sibling shells render, with the
+            same non-default placement: `side="bottom" align="end"`, because from
+            a trigger at the END of a top bar the component's rail default
+            (`side="right"`) has nowhere to go — Radix collision-handling flips
+            the menu back across the trigger and it covers the controls beside
+            it.
+
+            This replaces a hand-rolled `Bell` `IconButton` + unread dot that had
+            no `onClick` at all. What went with it: an unread COUNT folded into
+            the trigger's accessible name. `NavNotifications` has no unread seam,
+            and adding one is a change to a shipped `@elabs-ai/components-ui`
+            component that all four shells would share — not a per-block edit. */}
+        <NavNotifications notifications={notifications} side="bottom" align="end" />
         <ThemeSwitcher className="hidden sm:inline-flex" />
-        <IconButton
-          label={contextOpen ? "Hide the details rail" : "Show the details rail"}
-          icon={<PanelRight />}
-          onClick={() => onContextOpenChange(!contextOpen)}
-        />
+        {/* Absent, not disabled, where the shell mounts no rail — see
+            `showContextToggle`. */}
+        {showContextToggle ? (
+          <IconButton
+            label={contextOpen ? "Hide the details rail" : "Show the details rail"}
+            icon={<PanelRight />}
+            // Same disclosure contract as the nav toggle above, and the same
+            // reason for omitting `aria-controls`.
+            aria-expanded={contextOpen}
+            onClick={() => onContextOpenChange(!contextOpen)}
+          />
+        ) : null}
       </div>
     </header>
   );

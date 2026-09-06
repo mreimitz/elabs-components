@@ -271,7 +271,14 @@ export function ConsoleOverview({
   ...props
 }: ConsoleOverviewProps) {
   return (
-    <div data-slot="console-overview" className={cn("space-y-8", className)} {...props}>
+    /* `@container`: every breakpoint inside this screen is measured against THE
+       PANE, not the viewport. That distinction is the whole bug at 800px — the
+       shell hands this pane whatever is left after the nav rail and the list
+       column take theirs, so a `sm:` (640px VIEWPORT) two-column grid fired
+       inside a ~230px pane and gave each KPI tile ~110px to render a
+       three-word label in. A container query asks the only question that
+       matters here: how wide is the box these cards are actually in. */
+    <div data-slot="console-overview" className={cn("@container space-y-8", className)} {...props}>
       <div className="space-y-1">
         <h1 className="text-display text-foreground">Operations console</h1>
         <p className="text-body text-muted-foreground">
@@ -284,7 +291,13 @@ export function ConsoleOverview({
           it announces a section that has nothing to say. The lists below each
           answer for themselves instead (a table's empty message, a panel). */}
       {metrics.length > 0 ? (
-        <section aria-label="Key figures" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section
+          aria-label="Key figures"
+          // Container rungs, not viewport rungs — see the `@container` note on
+          // the root. One column until the PANE can hold two tiles side by
+          // side, four only once it is genuinely wide.
+          className="grid gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4"
+        >
           {metrics.map((metric) => (
             <MetricCard
               key={metric.id}

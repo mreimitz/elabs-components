@@ -214,7 +214,12 @@ export function SettingsScreen({
       <div data-slot="settings-screen" className={cn("flex min-h-0 flex-1 flex-col", className)}>
         <div
           data-slot="settings-screen-scroll"
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
+          // Focusable because it scrolls; `focus-ring-inset` because the shell's
+          // `SidebarInset` clips anything drawn outside this box. See the file
+          // header. This is the block's FIRST-RUN branch and its `StatePanel`
+          // ships no action, so it has zero focusable descendants.
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
         >
           <div className="mx-auto w-full max-w-3xl">
             <StatePanel
@@ -240,7 +245,17 @@ export function SettingsScreen({
         className="min-h-0 flex-1 overflow-y-auto px-4 py-6 focus-ring-inset sm:px-6 lg:px-8"
       >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-          <SectionHeader eyebrow={area.label} title={section.label} description={section.summary} />
+          {/* `as="h1"`: this screen IS the page — its route is the open
+              section — so its title is the document's outline root. Nothing
+              else in this shell owns an <h1>, and a screen whose highest
+              heading is an <h2> has no root at all (WCAG 1.3.1). The visual is
+              unchanged; `as` picks the level, never the size. */}
+          <SectionHeader
+            as="h1"
+            eyebrow={area.label}
+            title={section.label}
+            description={section.summary}
+          />
 
           {/* Always mounted, so the first change is announced rather than
               swallowed by a region that appears at the same moment. */}
@@ -259,9 +274,12 @@ export function SettingsScreen({
             resolved.map((group) => (
               <Card key={group.id} data-slot="settings-group">
                 <CardHeader>
-                  {/* `as="h3"`: `SectionHeader` above already owns the <h2>, so
-                      the card titles are its children in the outline. */}
-                  <CardTitle as="h3">{group.title}</CardTitle>
+                  {/* `as="h2"`: `SectionHeader` above owns the <h1>, so the
+                      card titles are the next rung down. They moved with it —
+                      leaving them at <h3> under an <h1> would skip a level and
+                      fail axe's `heading-order`, which DOES run in the default
+                      tag set (unlike `page-has-heading-one`). */}
+                  <CardTitle as="h2">{group.title}</CardTitle>
                   <CardDescription>{group.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
