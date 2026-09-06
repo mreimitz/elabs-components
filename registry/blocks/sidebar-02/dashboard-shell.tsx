@@ -67,18 +67,12 @@ export default function DashboardShell({
     // `bg-sidebar` ground and `group/sidebar-wrapper`, and it already carries
     // `flex min-h-svh w-full`. `h-svh` pins it to the viewport so the scroll
     // port below owns the overflow instead of the page.
-    <SidebarProvider
-      // The shell's own root seam. It REPLACES the provider's base
-      // `data-slot="sidebar-wrapper"` on this one instance (the prop spread
-      // lands last), which is safe here and nowhere near as broad as it reads:
-      // the provider's own geometry keys off the `group/sidebar-wrapper` CLASS
-      // and off `data-variant`/`data-state`, none of which this touches. A
-      // copy-owner who wants the base name back drops this line.
-      data-slot="dashboard-shell"
-      variant="inset"
-      defaultOpen={defaultSidebarOpen}
-      className="h-svh"
-    >
+    // No `data-slot` of the shell's own here. `SidebarProvider` declares
+    // `data-slot="sidebar-wrapper"` and spreads `...props` LAST, so passing one
+    // in would DELETE the library's slot on this instance — and a copy-own
+    // block is the thing people copy, so it must not teach that. The frame stays
+    // addressable through the base slot.
+    <SidebarProvider variant="inset" defaultOpen={defaultSidebarOpen} className="h-svh">
       <SkipLink />
 
       <DashboardSidebar activePath={activePath} />

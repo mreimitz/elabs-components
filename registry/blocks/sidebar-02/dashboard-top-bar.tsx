@@ -181,14 +181,10 @@ export function DashboardTopBar({
         {/* `side="bottom" align="end"`, not the component's rail defaults. From a
             trigger at the END of a top bar, `side="right"` has nowhere to go:
             Radix collision-handling flips the menu back across the trigger and
-            it covers the search control beside it. `my-0` drops the `my-6`
-            inset that belongs to the side-opening rail placement. */}
-        <NavNotifications
-          notifications={notifications}
-          side="bottom"
-          align="end"
-          className="my-0"
-        />
+            it covers the search control beside it. The rail's vertical inset
+            follows `side` inside the component, so there is nothing to undo
+            here. */}
+        <NavNotifications notifications={notifications} side="bottom" align="end" />
         <ThemeSwitcher className="hidden sm:inline-flex" />
       </div>
     </header>

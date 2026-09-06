@@ -81,3 +81,26 @@ export const TopBarPlacement: Story = {
     await waitFor(() => expect(document.querySelector('[role="menu"]')).toBeNull());
   },
 };
+
+/**
+ * `className` styles the component ROOT — the bell trigger — and merges LAST, so
+ * a caller-supplied radius replaces the shipped `rounded-full`.
+ */
+export const CustomTriggerClass: Story = {
+  args: { notifications: NOTIFICATIONS, className: "rounded-md" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "Open notifications" });
+    // WHERE it landed: on the trigger, not on the portalled menu.
+    await expect(trigger).toHaveClass("rounded-md");
+    // …and it WON. `cn`'s tailwind-merge drops the losing radius outright, so
+    // the shipped `rounded-full` is gone from the class list rather than merely
+    // ordered behind it.
+    await expect(trigger).not.toHaveClass("rounded-full");
+    // Asserted on the painted result too, because a class list says nothing
+    // about what the browser resolved. `rounded-full` computes to a huge radius
+    // (the pill); the token radius is single-digit px.
+    const radius = Number.parseFloat(getComputedStyle(trigger).borderTopLeftRadius);
+    await expect(radius).toBeLessThan(100);
+  },
+};

@@ -93,7 +93,7 @@ export const Collapsed: Story = {
     // So the lock targets the mirror by its own slot, and asserts the pair
     // really does swap: exactly one copy is on screen at a time.
     const mirror = canvasElement.querySelector(
-      '[data-slot="app-nav-rail-collapsed-item"] a[href="/runs/active"]',
+      'a[data-slot="sidebar-menu-button"][href="/runs/active"]',
     );
     await expect(mirror).toBeVisible();
     await expect(mirror).toHaveAccessibleName("Active");

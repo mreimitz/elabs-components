@@ -68,14 +68,16 @@ function renderNavItem(item: NavItem, activePath: string) {
   //
   // Exactly ONE of the two copies is ever displayed — the sub-menu list is hidden under
   // `collapsible=icon`, this mirror everywhere else — so the duplicate `href` never
-  // reaches assistive tech twice. The `data-slot` is what lets a test target THIS copy:
-  // both anchors share an `href`, and the hidden one wins `querySelector` by DOM order.
+  // reaches assistive tech twice. The two copies are told apart by the LIBRARY's own
+  // slots — this one is a `sidebar-menu-button`, the sub-menu copy a
+  // `sidebar-menu-sub-button` — so a test needs no marker of ours. NEVER pass a
+  // `data-slot` of your own to `SidebarMenuItem`: it spreads `...props` last, so it
+  // would delete the library's `sidebar-menu-item` here.
   for (const sub of subItems) {
     const SubIcon = sub.icon;
     nodes.push(
       <SidebarMenuItem
         key={`${sub.id}-collapsed`}
-        data-slot="app-nav-rail-collapsed-item"
         className="hidden group-data-[collapsible=icon]:block"
       >
         <SidebarMenuButton

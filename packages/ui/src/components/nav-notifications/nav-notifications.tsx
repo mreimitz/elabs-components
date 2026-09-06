@@ -46,9 +46,13 @@ export interface NavNotificationsProps {
    */
   align?: ComponentProps<typeof DropdownMenuContent>["align"];
   /**
-   * Extra classes for the menu surface, merged OVER the default `my-6 w-80`.
-   * The `my-6` inset belongs to the side-opening rail placement, so a top-bar
-   * caller passes `my-0` (later utilities win through `cn`).
+   * Extra classes for the component ROOT — the bell trigger — merged last, so a
+   * caller can override the shipped `rounded-full` (`component-api.md`).
+   *
+   * There is deliberately NO seam for the portalled menu surface: nothing needs
+   * one today, and an unused prop is a worse API than a missing one. The one
+   * thing a caller used to reach for it (dropping the rail's vertical inset for
+   * a top-bar menu) is now derived from `side` instead — see below.
    */
   className?: string;
 }
@@ -58,8 +62,9 @@ export interface NavNotificationsProps {
  * Renders a bell-icon ghost button that opens a dropdown listing recent
  * notifications.
  *
- * Placement is caller-owned via `side`/`align`/`className`; the defaults are the
- * original rail placement, so every existing call site renders unchanged.
+ * Placement is caller-owned via `side`/`align`; the defaults are the original
+ * rail placement, so every existing call site renders unchanged. `className`
+ * styles the trigger, not the menu.
  */
 export function NavNotifications({
   notifications,
@@ -75,13 +80,25 @@ export function NavNotifications({
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-full"
+          className={cn("rounded-full", className)}
           aria-label="Open notifications"
         >
           <BellIcon className="size-5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side={side} align={align} className={cn("my-6 w-80", className)}>
+      <DropdownMenuContent
+        side={side}
+        align={align}
+        className={cn(
+          // The vertical inset belongs to the SIDE-opening rail placement, where
+          // the menu runs alongside its trigger and needs clearance from it. A
+          // menu that opens above or below the trigger is already clear of it,
+          // and the inset would just hang it 24px off the bar. Derived from
+          // `side` rather than exposed as a second className seam.
+          (side === "left" || side === "right") && "my-6",
+          "w-80",
+        )}
+      >
         <DropdownMenuLabel>{t("ui.navNotifications.label")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.map(({ id, fallback, text, time }) => (

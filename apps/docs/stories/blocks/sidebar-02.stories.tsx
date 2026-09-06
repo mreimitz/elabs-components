@@ -57,10 +57,57 @@ export const Default: Story = {
     // sub-route anchor is ever presented. Asserted here rather than there
     // because a one-sided visibility check passes on code that never hides it.
     await expect(
-      canvasElement.querySelector(
-        '[data-slot="dashboard-sidebar-collapsed-item"] a[href="/orders/open"]',
-      ),
+      // The collapsed mirror is a top-level `sidebar-menu-button`; the expanded
+      // sub-menu copy is a `sidebar-menu-sub-button`. Both are the library's own
+      // slots, so the block needs no marker attribute of its own.
+      canvasElement.querySelector('a[data-slot="sidebar-menu-button"][href="/orders/open"]'),
     ).not.toBeVisible();
+    // The chart headline is DERIVED from the series, not a caption. Asserted as
+    // the exact sentence the shipped fixture produces (latest 18,420 against a
+    // 15,730 mean for the six days before it = +17%), so a headline that stops
+    // reading the data — the constant string the card used to carry — fails
+    // here. `RevenueDip` is the other half: a different series, a different
+    // sentence.
+    await expect(
+      canvasElement.querySelector('[data-slot="storefront-overview-revenue"] h2'),
+    ).toHaveTextContent("Revenue is running 17% ahead of the rest of the week");
+    // The group divider is the EXPANDED half of `CollapsedGroups`' lock. The
+    // node is in the DOM in both states, so asserting only the collapsed side
+    // passes on code that never hides it.
+    const expandedDividers = canvasElement.querySelectorAll(
+      'nav[aria-label="Primary"] [data-slot="sidebar-separator"]',
+    );
+    await expect(expandedDividers).toHaveLength(1);
+    for (const divider of expandedDividers) await expect(divider).not.toBeVisible();
+  },
+};
+
+/**
+ * The same screen on a week that went the other way. Its only job is to prove
+ * the revenue headline reads the series: a falling week must say so, in its own
+ * words, rather than repeating whatever `Default` says.
+ */
+export const RevenueDip: Story = {
+  render: () => (
+    <DashboardShell
+      activePath="/"
+      revenue={[
+        { date: new Date("2026-08-30"), value: 20_000 },
+        { date: new Date("2026-08-31"), value: 20_000 },
+        { date: new Date("2026-09-01"), value: 20_000 },
+        { date: new Date("2026-09-02"), value: 20_000 },
+        { date: new Date("2026-09-03"), value: 20_000 },
+        { date: new Date("2026-09-04"), value: 20_000 },
+        { date: new Date("2026-09-05"), value: 15_000 },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    // Latest 15,000 against a 20,000 mean = −25%, and the wording flips with the
+    // sign. Both the number and the direction word come from the data.
+    await expect(
+      canvasElement.querySelector('[data-slot="storefront-overview-revenue"] h2'),
+    ).toHaveTextContent("Revenue is running 25% behind the rest of the week");
   },
 };
 
@@ -142,7 +189,7 @@ export const Collapsed: Story = {
     // away. Targeted by its own slot: the expanded sub-menu anchor shares the
     // href and wins `querySelector` by DOM order.
     const mirror = canvasElement.querySelector(
-      '[data-slot="dashboard-sidebar-collapsed-item"] a[href="/orders/open"]',
+      'a[data-slot="sidebar-menu-button"][href="/orders/open"]',
     );
     await expect(mirror).toBeVisible();
     await expect(mirror).toHaveAccessibleName("Open");

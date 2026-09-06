@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T02:00:32.060Z",
+  "generatedAt": "2026-09-06T02:30:32.945Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -34108,7 +34108,7 @@
               "name": "className",
               "optional": true,
               "type": "string",
-              "description": "Extra classes for the menu surface, merged OVER the default `my-6 w-80`. The `my-6` inset belongs to the side-opening rail placement, so a top-bar caller passes `my-0` (later utilities win through `cn`)."
+              "description": "Extra classes for the component ROOT — the bell trigger — merged last, so a caller can override the shipped `rounded-full` (`component-api.md`). There is deliberately NO seam for the portalled menu surface: nothing needs one today, and an unused prop is a worse API than a missing one. The one thing a caller used to reach for it (dropping the rail's vertical inset for a top-bar menu) is now derived from `side` instead — see below."
             }
           ]
         },
