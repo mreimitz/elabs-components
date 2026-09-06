@@ -2,7 +2,7 @@
 // Run `pnpm gen:attributions` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm attributions:check` fails on a stale copy.
 //
-// 118 entries (data: 2, source: 18, font: 2, dependency: 96).
+// 116 entries (data: 2, source: 18, font: 2, dependency: 94).
 
 import type { Attribution } from "./attribution-types";
 
@@ -317,18 +317,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Claudéric Demers",
     url: "https://www.npmjs.com/package/@dnd-kit/utilities",
     usedBy: ["@elabs-ai/components-data"],
-    required: false,
-    note: null,
-  },
-  {
-    id: "@hookform/resolvers",
-    category: "dependency",
-    name: "@hookform/resolvers",
-    version: "3.10.0",
-    license: "MIT",
-    copyright: "bluebill1049",
-    url: "https://www.npmjs.com/package/@hookform/resolvers",
-    usedBy: ["@elabs-ai/components-ui"],
     required: false,
     note: null,
   },
@@ -1208,18 +1196,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     note: null,
   },
   {
-    id: "react-hook-form",
-    category: "dependency",
-    name: "react-hook-form",
-    version: "7.77.0",
-    license: "MIT",
-    copyright: "Beier(Bill) Luo",
-    url: "https://www.npmjs.com/package/react-hook-form",
-    usedBy: ["@elabs-ai/components-ui"],
-    required: false,
-    note: null,
-  },
-  {
     id: "react-jsx-parser",
     category: "dependency",
     name: "react-jsx-parser",
@@ -1443,7 +1419,7 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     license: "MIT",
     copyright: "Colin McDonnell",
     url: "https://www.npmjs.com/package/zod",
-    usedBy: ["@elabs-ai/components-ai", "@elabs-ai/components-ui"],
+    usedBy: ["@elabs-ai/components-ai"],
     required: false,
     note: null,
   },

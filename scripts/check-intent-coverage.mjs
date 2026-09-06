@@ -365,15 +365,29 @@ export function findIntentViolations({
   const violations = [];
 
   // name -> [pkg, …] over every package's exported components, and name -> module.
+  //
+  // A SUBPATH's components count as exported, exactly like the barrel's. A subpath
+  // (`@elabs-ai/components-ui/form`, ADR 0006) is a deliberate public export the
+  // manifest crawler already models as `packages[pkg].subpaths[specifier]`; walking
+  // only `packages[pkg].components` made every one of them invisible here, so moving
+  // a real component off the barrel onto a subpath turned its own intent entry into a
+  // "phantom" and every sibling's reference to it into a dangling name. That is what
+  // issue #26 hit when the react-hook-form-bound `Form` family moved to
+  // `@elabs-ai/components-ui/form`: `Form` still ships and is still the right thing to
+  // compose `Input`/`Select`/`Checkbox` inside, so the guidance was correct and the
+  // gate's notion of "exported" was the stale half.
   const byName = new Map();
   const moduleOf = new Map();
+  const record = (pkg, c) => {
+    if (!c?.name) return;
+    if (!byName.has(c.name)) byName.set(c.name, []);
+    if (!byName.get(c.name).includes(pkg)) byName.get(c.name).push(pkg);
+    if (c.module && !moduleOf.has(c.name)) moduleOf.set(c.name, c.module);
+  };
   for (const [pkg, info] of Object.entries(manifest.packages ?? {})) {
-    for (const c of info.components ?? []) {
-      if (!c?.name) continue;
-      if (!byName.has(c.name)) byName.set(c.name, []);
-      byName.get(c.name).push(pkg);
-      if (c.module && !moduleOf.has(c.name)) moduleOf.set(c.name, c.module);
-    }
+    for (const c of info.components ?? []) record(pkg, c);
+    for (const sub of Object.values(info.subpaths ?? {}))
+      for (const c of sub?.components ?? []) record(pkg, c);
   }
 
   /** Cache module sources so a shared parent is read once. */

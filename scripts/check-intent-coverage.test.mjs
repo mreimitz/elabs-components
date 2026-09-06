@@ -61,6 +61,49 @@ test("a phantom entry (not an exported component) fails", () => {
   assert.match(v[0], /MessageBubble.*not an exported component/);
 });
 
+// --- subpath exports count as exported (issue #26) -----------------------------
+// Moving a real component off the barrel onto a dedicated subpath must not turn its
+// intent entry into a "phantom", nor its siblings' references to it into dangling
+// names. The manifest already models subpaths; the gate has to read them too.
+const subpathManifest = {
+  packages: {
+    "@elabs-ai/components-ui": {
+      components: [{ name: "Button" }, { name: "Card" }],
+      subpaths: {
+        "@elabs-ai/components-ui/form": { components: [{ name: "Form" }, { name: "FormItem" }] },
+      },
+    },
+    "@elabs-ai/components-charts": { components: [{ name: "BarChart" }] },
+  },
+};
+
+test("a component exported only via a subpath is not a phantom entry", () => {
+  const intent = {
+    Button: okEntry("action", ["x"]),
+    BarChart: okEntry("chart", ["a", "b", "c"]),
+    Form: okEntry("input", ["a", "b", "c"]),
+  };
+  assert.deepEqual(findIntentViolations({ intent, manifest: subpathManifest }), []);
+});
+
+test("a relationship may name a component that lives on a subpath", () => {
+  const intent = {
+    Button: { ...okEntry("action", ["x"]), relationships: { usedInside: ["FormItem"] } },
+    BarChart: okEntry("chart", ["a", "b", "c"]),
+  };
+  assert.deepEqual(findIntentViolations({ intent, manifest: subpathManifest }), []);
+});
+
+test("a name absent from BOTH the barrel and every subpath still fails", () => {
+  const intent = {
+    Button: { ...okEntry("action", ["x"]), relationships: { usedInside: ["FormSection"] } },
+    BarChart: okEntry("chart", ["a", "b", "c"]),
+  };
+  const v = findIntentViolations({ intent, manifest: subpathManifest });
+  assert.equal(v.length, 1);
+  assert.match(v[0], /relationships\.usedInside names "FormSection"/);
+});
+
 test("a package with no intent at all fails (the empty-spoke case #60 records)", () => {
   const intent = { Button: okEntry("action", ["x"]) }; // charts uncovered
   const v = findIntentViolations({ intent, manifest });

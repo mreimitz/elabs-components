@@ -4,5 +4,11 @@
     "file": "packages/ai/dist/index.d.ts",
     "peer": "ai",
     "specifier": "ai"
+  },
+  {
+    "package": "@elabs-ai/components-ui",
+    "file": "packages/ui/dist/form.d.ts",
+    "peer": "react-hook-form",
+    "specifier": "react-hook-form"
   }
 ]

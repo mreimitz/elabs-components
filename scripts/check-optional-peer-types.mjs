@@ -53,6 +53,29 @@
  * (`media-chrome`, `@rive-app/react-webgl2`). Baselined entries may go stale
  * (a peer gets fixed) with no gate consequence — only a NEW leak fails.
  *
+ * ## The second entry is NOT a leak — it is this gate's own blind spot (issue #26)
+ *
+ * `@elabs-ai/components-ui` → `packages/ui/dist/form.d.ts` → `react-hook-form`
+ * is baselined, and it is a DIFFERENT kind of entry from the `ai` one above:
+ * `ai` is a real, still-open gap, this one is a correct design the gate cannot
+ * yet recognise. `form.d.ts` is the built declaration for the DEDICATED
+ * `@elabs-ai/components-ui/form` subpath (ADR 0006) that exists precisely to
+ * quarantine this peer. The harm this gate describes — "a `skipLibCheck: false`
+ * consumer gets TS2307 merely from importing ANYTHING out of the barrel" —
+ * cannot occur here: the package's `exports` map means TypeScript resolves
+ * `dist/form.d.ts` only when the consumer imports the `/form` subpath, i.e.
+ * exactly when they ARE using the component that needs the peer. Verified on
+ * the built output: `dist/index.d.ts` carries no import of `./form` and no
+ * import of `react-hook-form` (its three textual mentions are JSDoc prose,
+ * which this gate already strips before scanning).
+ *
+ * The gate scans every `dist/**\/*.d.ts` with no entry-point awareness, so it
+ * cannot tell a barrel-reachable declaration from a subpath-only one. Teaching
+ * it that distinction is the real fix and is deliberately NOT done here (it
+ * changes what a blocking gate protects); baselining is per-FILE, so a genuine
+ * `react-hook-form` leak into `dist/index.d.ts` still fails. Revisit this entry
+ * together with that fix, not by itself.
+ *
  * Flags:
  *   --warn     never exit non-zero (dev-hook mode); still prints findings.
  *   --update   rewrite the baseline (only accepts a same-or-lower count).
