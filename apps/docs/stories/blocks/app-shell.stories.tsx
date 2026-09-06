@@ -329,8 +329,12 @@ export const Narrow: Story = {
      * — characters simply gone, with no ellipsis and no way to recover the full
      * string. The repair is `min-w-0 truncate` plus a `title`, so the two things
      * asserted here are the two halves of it: the text can shorten, and the full
-     * text stays available. Computed style, not a class name — `truncate`
-     * without `min-w-0` compiles the same class and still hard-clips. */
+     * text stays available. The `textOverflow` check below only confirms the
+     * `truncate` utility itself is applied — `text-overflow: ellipsis` is part
+     * of that class and computes identically with or without `min-w-0`, so it
+     * does NOT distinguish the two. The genuine `min-w-0` discriminator is
+     * `JustAboveTheBreakpoint`'s `scrollWidth > clientWidth` loop below, which
+     * measures whether the label's box actually fits its text. */
     const kpiLabels = canvasElement.querySelectorAll<HTMLElement>(
       'section[aria-label="Key figures"] span[title]',
     );
@@ -456,15 +460,6 @@ export const JustAboveTheBreakpoint: Story = {
     await expect(canvasElement.querySelector('[data-slot="context-rail"]')).toBeNull();
     const bar = within(canvasElement.querySelector('[data-slot="app-top-bar"]') as HTMLElement);
     await expect(bar.queryByRole("button", { name: "Show the details rail" })).toBeNull();
-    // 2. The nav rail FOLDS rather than disappearing — still painted, still
-    //    named, just narrow. A collapse that removed it would pass a width
-    //    assertion and lose the navigation.
-    await expect(nav).toBeVisible();
-    await expect(nav.getBoundingClientRect().width).toBeLessThan(120);
-    await expect(
-      bar.getByRole("button", { name: "Expand navigation" }).getAttribute("aria-expanded"),
-    ).toBe("false");
-    // 3. What the two buy: a content pane wide enough to render its own words.
     /* 2. The nav rail FOLDS rather than disappearing — still painted, still
      *    named, just narrow. A collapse that removed it would satisfy a width
      *    assertion and lose the navigation, so both halves are asserted.
