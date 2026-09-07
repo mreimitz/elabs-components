@@ -17,7 +17,7 @@ import React, { forwardRef } from "react";
 import { cleanup, render, screen, fireEvent, within, act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GanttStatus, GanttTask, GanttTimeUnit, GanttViewMode, Status } from "./gantt";
-import { virtualizedTasks } from "./gantt-virtualized-fixture";
+import { buildVirtualizedTasks } from "./gantt-virtualized-fixture";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -1320,8 +1320,18 @@ describe("Gantt defaultViewMode=auto keeps the toolbar honest (#360 fix round 1)
 
 describe("Gantt virtualized story fixture is deterministic (#275)", () => {
   it("draws byte-identical progress fills across two separate mounts", () => {
+    // Each read calls buildVirtualizedTasks() FRESH — a genuinely independent
+    // recomputation, not a shared reference to one array built once. This is
+    // what makes the assertion below capable of failing: if the fixture
+    // reached for Math.random() instead of seededRnd, these two independently
+    // built task lists would carry different `progress` values and the
+    // widths would diverge. Reusing a single module-level constant across
+    // both "mounts" would prove only that React renders one object
+    // identically twice, which is never in question.
     const readProgressWidths = () => {
-      const { container } = render(<Gantt tasks={virtualizedTasks} style={{ height: 480 }} />);
+      const { container } = render(
+        <Gantt tasks={buildVirtualizedTasks()} style={{ height: 480 }} />,
+      );
       return Array.from(container.querySelectorAll('[data-slot="gantt-bar-progress"]')).map(
         (el) => (el as HTMLElement).style.width,
       );
