@@ -12,18 +12,30 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A simple tokenized bar chart used as a placeholder child — no charting lib needed. */
+/**
+ * A simple tokenized bar chart used as a placeholder child — no charting lib needed.
+ *
+ * Every bar needs a definite-height ancestor to size against: `height: 55%`
+ * only resolves if the column it sits in has a real (stretched) height, not
+ * one sized to its own content. Kept in sync by hand with the identical
+ * implementation in `templates-dashboard.stories.tsx` (#185) — a real shared
+ * import isn't possible here without either exporting it from the package's
+ * public barrel or tripping Storybook's CSF story auto-detection (every
+ * named export of a `*.stories.tsx` file is treated as its own story).
+ */
 function PlaceholderBars({ bars }: { bars: { label: string; pct: number; colorClass: string }[] }) {
   return (
-    <div className="flex h-full items-end gap-2 pb-4">
+    <div className="flex h-full items-stretch gap-2 pb-4">
       {bars.map(({ label, pct, colorClass }) => (
-        <div key={label} className="flex flex-1 flex-col items-center gap-1">
-          <div
-            role="img"
-            className={`w-full rounded-sm ${colorClass}`}
-            style={{ height: `${pct}%` }}
-            aria-label={`${label}: ${pct}%`}
-          />
+        <div key={label} className="flex h-full flex-1 flex-col items-center gap-1">
+          <div className="flex w-full flex-1 items-end">
+            <div
+              role="img"
+              className={`w-full rounded-sm ${colorClass}`}
+              style={{ height: `${pct}%` }}
+              aria-label={`${label}: ${pct}%`}
+            />
+          </div>
           <span className="text-meta text-muted-foreground">{label}</span>
         </div>
       ))}
@@ -133,6 +145,17 @@ export const WithSource: Story = {
       </ChartCard>
     </div>
   ),
+  play: async ({ canvas }) => {
+    // Locks #185: the row's `items-end` sized each bar's column to its
+    // CONTENT instead of stretching it, so `height: 55%` had no definite
+    // ancestor height to resolve against and computed to 0 — every bar
+    // still passes an existence check while rendering an empty plot.
+    // Assert measured geometry, not presence.
+    const shortBar = await canvas.findByLabelText("Jan: 55%");
+    const tallBar = await canvas.findByLabelText("Jun: 90%");
+    await expect(shortBar.offsetHeight).toBeGreaterThan(0);
+    await expect(tallBar.offsetHeight).toBeGreaterThan(shortBar.offsetHeight);
+  },
 };
 
 export const TitleOnly: Story = {
