@@ -12,6 +12,12 @@
   layout change). `ContextRailProps` now declares its own surface instead of deriving it
   from `Sidebar`; the desktop branch hardcodes `variant="sidebar"`, its already-effective
   default, so rendering is unchanged for every existing caller (#382).
+- `@elabs-ai/components-ui`: `ContextRail` no longer accepts a `children` prop. The
+  `#382` fix re-derived `ContextRailProps` from `ComponentProps<"div">` and omitted
+  `onSelect` but not `children`, so a caller could pass `children` and have it type-check
+  while both the wide and narrow branches silently discarded it after spreading `props`
+  onto their own JSX — the exact advertised-but-inert failure `#382` set out to close, for
+  a different prop.
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent

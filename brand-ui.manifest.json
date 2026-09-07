@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T12:03:25.085Z",
+  "generatedAt": "2026-09-07T13:04:02.898Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -33080,7 +33080,7 @@
         },
         "ContextRail": {
           "extends": [
-            "Omit<ComponentProps<\"div\">, \"onSelect\">"
+            "Omit<ComponentProps<\"div\">, \"onSelect\" | \"children\">"
           ],
           "props": [
             {
