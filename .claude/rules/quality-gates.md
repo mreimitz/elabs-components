@@ -9,7 +9,7 @@
 - **Theme-safe** - OBSERVED in both themes, never inferred from tokens; cite the slug. A theme/system-wide change: a real, unmodified app screen (`scenarios-*` story), never only a self-authored demo. A `themes.css`/token-VALUE edit: `brand-ui-visual-ux-reviewer` cross-theme sweep before merge; contrast tests do not suffice. CI measures `light` only: run the dark sweep by hand (`storybook-mcp.md`) before claiming cross-cutting theme-safety. An in-place `data-theme` flip proves it took: `el.closest("[data-theme]")`, assert the attribute AND a differing resolved ink. An anti-vacuity guard picks a token pair that differs in EVERY theme.
 - **Story** - a Default story with `tags: ["autodocs"]`, `run-story-tests` green, `preview-stories` in both themes (else `pnpm --filter @elabs-ai/components-docs test-storybook`); a smoke test (render + key behavior) where practical.
 - **Separation of concerns** - the D3 package; a missing primitive goes DOWN into its base package, never sideways between layer-2 leaves, never into `process` (ADR 0034).
-- **Green checks** - `pnpm --filter <pkg> typecheck test` (and `lint`). Audit: `/review-component <path>`.
+- **Green checks** - `pnpm --filter <pkg> typecheck && pnpm --filter <pkg> lint && pnpm --filter <pkg> test` (three separate invocations — pnpm chains only the first). Audit: `/review-component <path>`.
 
 ## Definition of done
 

@@ -21,6 +21,13 @@ export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    */
   title: ReactNode;
   /**
+   * Heading level for the card's title, forwarded to `CardTitle`'s own
+   * `as` prop (#328). Set this when the card titles a real page section so
+   * it contributes to the document outline.
+   * @default "div"
+   */
+  titleAs?: "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  /**
    * Prose that IS the legend — what a reader needs to read the chart
    * correctly (series, units, scope), written as a sentence, not a caption.
    */
@@ -52,6 +59,7 @@ export interface ChartCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
 export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function ChartCard(
   {
     title,
+    titleAs,
     description,
     actions,
     children,
@@ -68,7 +76,9 @@ export const ChartCard = forwardRef<HTMLDivElement, ChartCardProps>(function Cha
     <Card ref={ref} className={cn("flex flex-col", className)} {...props}>
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
         <div className="space-y-1">
-          <CardTitle className="text-base">{title}</CardTitle>
+          <CardTitle as={titleAs} className="text-base">
+            {title}
+          </CardTitle>
           {description ? <CardDescription>{description}</CardDescription> : null}
         </div>
         {actions ? <div className="flex items-center gap-1">{actions}</div> : null}

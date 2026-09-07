@@ -46,7 +46,7 @@ patterns and pass the quality gates.
       across both themes — or `pnpm --filter @elabs-ai/components-docs test-storybook` if the dev
       server is down (see @.claude/rules/storybook-mcp.md)
 - [ ] Exported from `src/index.ts`; types exported
-- [ ] `pnpm --filter <pkg> typecheck test` green
+- [ ] `pnpm --filter <pkg> typecheck && pnpm --filter <pkg> lint && pnpm --filter <pkg> test` green
 
 ## Constraints
 

@@ -4,6 +4,22 @@
 
 ### Fixed
 
+- `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
+  the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
+  text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
+  regression path where a future retune could pass the looser gate while silently dropping
+  prose below AA. `HaloText`'s docblock now states which rung an overriding `fill` must
+  clear (#183).
+- `@elabs-ai/components-ui`: the mobile `Sidebar` `Sheet` now renders at its declared 18rem
+  (288px) width instead of a viewport-dependent value governed by `Sheet`'s own default. The
+  width override used Tailwind v4's `w-(--var)` parenthesis shorthand, which the pinned
+  `tailwind-merge` version doesn't recognize as the same class group as `Sheet`'s hardcoded
+  `w-3/4`, so the override never deduped against it and the wrong class won (#387).
+- `@elabs-ai/components-process`: `ProcessMap`'s zoom controls (Fit view / Zoom in / Zoom
+  out) are clickable again. `ZoomControls` and `FlowMiniMap` both resolved to React Flow's
+  `bottom-right` panel slot, so the pannable/zoomable minimap's `<svg>` painted over the
+  buttons and took every click meant for them. The controls now render in the bottom-left
+  corner instead. (#350)
 - `@elabs-ai/components-process`: the process map's node-slide animation works again. The
   class that carries it was assembled by interpolating a constant, and Tailwind extracts
   classes from source text without evaluating JavaScript, so no CSS was emitted and nodes
@@ -14,6 +30,12 @@
 - `@elabs-ai/components-flow`: `CanvasShell`'s keyed re-fit (`fitViewKey`) stops printing
   React Flow's "Please use `getNodesBounds` from `useReactFlow`" warning in development,
   and measures nested nodes correctly.
+- `@elabs-ai/components-charts`, `@elabs-ai/components-ui`: `ChartCard` and `StatePanel` gain
+  a `titleAs` prop (`"div" | "h1" | … | "h6"`) so a `ChartCard` titling a real page section and
+  a `StatePanel` shown inside it can declare correct, adjacent heading levels instead of
+  producing an axe `heading-order` violation. `ChartCard`'s title still renders as a `<div>`
+  by default; `StatePanel`'s title still defaults to `<h3>` — both unchanged for every
+  existing caller that doesn't set `titleAs` (#385).
 
 ### ⚠️ BREAKING (`@elabs-ai/components-ui`): `Form` moved off the main barrel; react-hook-form is now an optional peer (#26)
 

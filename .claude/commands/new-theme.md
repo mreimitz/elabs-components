@@ -54,7 +54,7 @@ dist/themes`) — nothing to add, but confirm it still does.
    `docs/CONSUMING.md` §5.1. See `@.claude/rules/registry.md`.
 5. Verify: switch to the theme in the playground/Storybook and confirm contrast,
    focus rings, and that no component breaks. Run
-   `pnpm --filter @elabs-ai/components-tokens typecheck test`, then
+   `pnpm --filter @elabs-ai/components-tokens typecheck && pnpm --filter @elabs-ai/components-tokens lint && pnpm --filter @elabs-ai/components-tokens test`, then
    `pnpm theme-parity:check && pnpm roles:check && pnpm tokens:check`.
    **Read the COUNTS these gates print, not just their exit code** — a theme
    parser that silently reads fewer blocks passes green.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T07:06:52.612Z",
+  "generatedAt": "2026-09-07T10:45:45.647Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -16709,6 +16709,12 @@
               "optional": false,
               "type": "ReactNode",
               "description": "Write the title as the CONCLUSION, not the chart type — \"Revenue is up 8% QoQ\", not \"Revenue chart\". Put what each series means in prose in `description` (lieflat's card contract)."
+            },
+            {
+              "name": "titleAs",
+              "optional": true,
+              "type": "\"div\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\"",
+              "description": "Heading level for the card's title, forwarded to `CardTitle`'s own `as` prop (#328). Set this when the card titles a real page section so it contributes to the document outline. @default \"div\""
             },
             {
               "name": "description",
@@ -35427,6 +35433,12 @@
               "optional": true,
               "type": "ReactNode",
               "description": "A larger illustration (one of `@elabs-ai/components-ui`'s shipped `*Illustration` components, or a consumer's own `ReactNode`) shown above the title instead of `icon`. Unlike `icon`, it is **not** clamped to 40×40 — an illustration governs its own size (see each illustration's `size` prop, `rem`-based, ~64px–160px). Takes precedence over `icon` when both are given."
+            },
+            {
+              "name": "titleAs",
+              "optional": true,
+              "type": "\"div\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\"",
+              "description": "Heading level for the panel's title (#328 convention). Set this to the level that correctly follows whatever heading precedes this panel in the document outline — e.g. `\"h3\"` inside a `ChartCard` whose own title is an `<h2>`. @default \"h3\""
             },
             {
               "name": "loadingLabel",

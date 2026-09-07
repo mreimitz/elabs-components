@@ -55,7 +55,7 @@ pnpm workspaces + Turborepo · TypeScript · React 19 · Tailwind CSS v4 (CSS va
 ## Component creation workflow
 
 Use `/new-component <pkg> <Name> [purpose]`: `tsx`, `index.ts`, `*.stories.tsx`, `*.test.tsx`, tokens, barrel export,
-then `pnpm --filter @elabs-ai/components-<pkg> typecheck test`. Audit with `/review-component`.
+then `pnpm --filter @elabs-ai/components-<pkg> typecheck && pnpm --filter @elabs-ai/components-<pkg> lint && pnpm --filter @elabs-ai/components-<pkg> test`. Audit with `/review-component`.
 
 ## Storybook MCP (agent tooling)
 
