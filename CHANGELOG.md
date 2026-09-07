@@ -36,6 +36,13 @@
   descendants now delegate their indicator to the wrapper (the documented `themes.css`
   convention), so the wrapper's ring is the sole mark for the whole composite control
   (#322).
+- `@elabs-ai/components-charts`: `DumbbellChart`'s `sortBy="delta"` now ranks rows by `|delta|`
+  (magnitude, sign ignored) descending, biggest mover first — a large decrease now outranks a
+  small increase, matching its documented behaviour. It previously sorted ascending by signed
+  value, the opposite of "the biggest movers surface first." `sortBy="start"`/`"end"` are
+  unchanged (ascending, the signed value-axis read). This is a behaviour change on a shipped
+  prop, but it is the documented behaviour, so it is a bug fix rather than a breaking change
+  (#244).
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent

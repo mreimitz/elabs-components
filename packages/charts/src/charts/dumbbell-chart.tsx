@@ -62,6 +62,8 @@ import type { ChartValueFormat } from "./value-format";
 
 export type DumbbellOrientation = "horizontal" | "vertical";
 export type DumbbellVariant = "dumbbell" | "slope";
+/** `"delta"` sorts descending by `|delta|` (magnitude); `"start"`/`"end"` sort ascending
+ *  (signed value); `"none"` leaves data order. See `sortDumbbellRows`. */
 export type DumbbellSortBy = "start" | "end" | "delta" | "none";
 
 export interface DumbbellMarkerStyle {
@@ -101,7 +103,12 @@ export interface DumbbellChartProps extends ChartInteractionProps {
   extraKeys?: string[];
   /** Show a signed delta label (`HaloText`) at the end marker. Default `false`. */
   showDelta?: boolean;
-  /** Sort rows ascending by this key before rendering. Default `"none"` (data order). */
+  /**
+   * Sort rows before rendering. `"delta"` sorts **descending by `|delta|`**
+   * (magnitude, sign ignored — the biggest mover first, whether it's an
+   * increase or a decrease); `"start"`/`"end"` sort **ascending** on the
+   * (signed) value axis. Default `"none"` (data order).
+   */
   sortBy?: DumbbellSortBy;
   /** Which colour family rows draw from. Default `"categorical"`. */
   palette?: ChartPalette;
@@ -181,10 +188,20 @@ export function buildDumbbellRows(
   return rows;
 }
 
-/** Sorts a copy of `rows` ascending by `sortBy`. `"none"` returns the rows unchanged. */
+/**
+ * Sorts a copy of `rows` by `sortBy`. `"delta"` sorts **descending by
+ * `|delta|`** (magnitude, sign ignored) — the biggest mover surfaces first
+ * regardless of whether it's an increase or a decrease, matching `sortBy`'s
+ * prop doc and the `SortedByDelta` story. `"start"`/`"end"` sort
+ * **ascending** on the (signed) value axis. `"none"` returns the rows
+ * unchanged.
+ */
 export function sortDumbbellRows(rows: DumbbellRow[], sortBy: DumbbellSortBy): DumbbellRow[] {
   if (sortBy === "none") {
     return rows;
+  }
+  if (sortBy === "delta") {
+    return [...rows].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
   }
   const key = sortBy;
   return [...rows].sort((a, b) => a[key] - b[key]);

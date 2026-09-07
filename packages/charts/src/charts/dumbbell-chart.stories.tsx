@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, waitFor } from "storybook/test";
 import { DumbbellChart } from "./dumbbell-chart";
 
 const meta = {
@@ -146,15 +147,52 @@ export const SlopeOverflowWarning: Story = {
   ),
 };
 
-/** Sorted by delta — the biggest movers surface first. */
+// `onboardingSteps`' deltas (0, 12, 27, 27, 32) are already ascending with a
+// tie at 27, so an ascending-vs-descending sort bug can't show up against
+// them and this story rendered identically to `Default` (#244). This fixture
+// is tie-free, NOT already sorted either way, AND includes a decrease
+// ("Reactivate trial", delta -60) whose |magnitude| beats every increase —
+// sorting by |delta| puts it first; sorting by signed value would put it
+// last, so this fixture also demonstrates the sort ranks by magnitude, not
+// by signed value.
+const sortDemoSteps = [
+  { step: "Add payment method", before: 41, after: 68 }, // delta +27
+  { step: "Sign up", before: 100, after: 100 }, // delta 0
+  { step: "Ship first project", before: 19, after: 51 }, // delta +32
+  { step: "Invite a teammate", before: 12, after: 24 }, // delta +12
+  { step: "Verify email", before: 75, after: 94 }, // delta +19
+  { step: "Reactivate trial", before: 80, after: 20 }, // delta -60 (|60|, the biggest mover)
+];
+
+/** Sorted by delta — the biggest movers surface first, by |delta| (a big decrease outranks a small increase). */
 export const SortedByDelta: Story = {
   args: {
-    data: onboardingSteps,
+    data: sortDemoSteps,
     category: "step",
     startKey: "before",
     endKey: "after",
     sortBy: "delta",
     showDelta: true,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const svgEl = canvasElement.querySelector("svg");
+      expect(svgEl).not.toBeNull();
+      const labels = svgEl!.querySelectorAll('[data-slot="dumbbell-chart-category-label"]');
+      const order = Array.from(labels).map((l) => l.textContent);
+      // Descending by |delta|: Reactivate trial (|-60| = 60, a decrease —
+      // proves magnitude beats signed value), Ship first project (32), Add
+      // payment method (27), Verify email (19), Invite a teammate (12),
+      // Sign up (0).
+      expect(order).toEqual([
+        "Reactivate trial",
+        "Ship first project",
+        "Add payment method",
+        "Verify email",
+        "Invite a teammate",
+        "Sign up",
+      ]);
+    });
   },
   render: (args) => (
     <div className="h-80 w-[640px]">
