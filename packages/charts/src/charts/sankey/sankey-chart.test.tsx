@@ -34,11 +34,43 @@ vi.mock("./sankey-link", () => {
   return { SankeyLink, default: SankeyLink };
 });
 
-import { SankeyChart } from "./sankey-chart";
+import { resolveEffectiveNodePadding, SankeyChart } from "./sankey-chart";
 import { SankeyLink } from "./sankey-link";
 import { SankeyNode } from "./sankey-node";
 
 afterEach(cleanup);
+
+// #276 — a fixed `nodePadding` d3-sankey cannot afford collapses every node
+// rect in the tallest column to 0px (`350 - 39 * 24 < 0` for the Threads
+// story's 40-node processor column). `resolveEffectiveNodePadding` is the
+// pure clamp `SankeyChart` runs before handing padding to the layout engine.
+describe("resolveEffectiveNodePadding", () => {
+  it("clamps an infeasible padding so every node in the tallest column keeps a positive body budget", () => {
+    const innerHeight = 350;
+    const maxColumnNodes = 40;
+    const requestedPadding = 24;
+
+    // The raw requested value fails the inequality outright — this is the bug.
+    expect(innerHeight - (maxColumnNodes - 1) * requestedPadding).toBeLessThan(0);
+
+    const effective = resolveEffectiveNodePadding(innerHeight, maxColumnNodes, requestedPadding);
+
+    expect(effective).toBeLessThan(requestedPadding);
+    expect(innerHeight - (maxColumnNodes - 1) * effective).toBeGreaterThanOrEqual(
+      maxColumnNodes * 4, // MIN_NODE_HEIGHT
+    );
+  });
+
+  it("is a no-op when the caller's padding already fits — aggregate-mode byte-identical guarantee", () => {
+    const innerHeight = 400;
+    const maxColumnNodes = 5;
+    const requestedPadding = 24;
+
+    expect(resolveEffectiveNodePadding(innerHeight, maxColumnNodes, requestedPadding)).toBe(
+      requestedPadding,
+    );
+  });
+});
 
 const minimalData = {
   nodes: [{ name: "Source" }, { name: "Target" }],
