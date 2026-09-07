@@ -321,6 +321,38 @@ export const KeyboardRemoval: Story = {
   },
 };
 
+/**
+ * `FilterChip`'s `trailing` slot (#284) — a short, non-shrinking secondary
+ * text segment (a count) that CSS truncation can never reach, unlike `label`.
+ * In a narrow container the label truncates with an ellipsis; the count
+ * stays fully visible in its own element.
+ */
+export const FilterChipWithTrailing: Story = {
+  render: () => (
+    <div className="w-[220px]">
+      <FilterChip
+        label="Status: Awaiting downstream reconciliation review"
+        trailing="excluded 1,204"
+        onRemove={() => undefined}
+      />
+    </div>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const trailing = await canvas.findByText("excluded 1,204");
+    await expect(trailing).toBeInTheDocument();
+
+    const truncating = canvasElement.querySelector('[class*="truncate"]');
+    await expect(truncating).not.toBeNull();
+    await expect(truncating?.contains(trailing)).toBe(false);
+
+    await expect(
+      canvas.getByRole("button", {
+        name: "Remove filter: Status: Awaiting downstream reconciliation review · excluded 1,204",
+      }),
+    ).toBeInTheDocument();
+  },
+};
+
 /** The same row on `dark`. */
 export const DarkTheme: Story = {
   globals: { theme: "dark" },
