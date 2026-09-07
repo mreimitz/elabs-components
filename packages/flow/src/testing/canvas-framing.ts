@@ -275,7 +275,45 @@ export function canvasSignature(canvasElement: HTMLElement): string {
 }
 
 /**
- * Resolve once the canvas has finished laying itself out, or throw.
+ * Every animation or CSS transition still RUNNING inside the canvas that is
+ * going to stop on its own.
+ *
+ * Infinite ones are skipped on purpose: a shimmer or a pulsing skeleton never
+ * reaches `finished`, and waiting for it would turn "settled" into "timed out".
+ * What this is for is the finite kind that MOVES the picture — above all the
+ * node-position transition a canvas puts on React Flow's own node elements
+ * (`PROCESS_MAP_NODE_MOTION_CLASS` is one), which is exactly the thing a
+ * measurement must not land in the middle of.
+ */
+function unfinishedAnimations(canvasElement: HTMLElement): Animation[] {
+  return canvasElement.getAnimations({ subtree: true }).filter((animation) => {
+    if (animation.playState !== "running") return false;
+    const iterations = animation.effect?.getTiming().iterations ?? 1;
+    return Number.isFinite(iterations);
+  });
+}
+
+/**
+ * Resolve after the browser has PRODUCED a frame, or `false` once `deadline` passes.
+ *
+ * A bare `setTimeout` is not a frame: timers fire several times per frame, and a
+ * loaded machine can go many timer ticks without the renderer advancing anything.
+ * The pair is deliberate — the timer paces the poll, the frame is what guarantees
+ * the picture had a chance to change between two reads.
+ */
+async function nextFrame(interval: number, deadline: number): Promise<boolean> {
+  await new Promise((resolve) => setTimeout(resolve, interval));
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(false), Math.max(0, deadline - Date.now()));
+    requestAnimationFrame(() => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+  });
+}
+
+/**
+ * Resolve once the canvas has finished laying itself out AND finished moving, or throw.
  *
  * **Every framing assertion needs this, and none of them can detect its
  * absence.** A canvas that has mounted but not yet run its layout has all its
@@ -285,15 +323,33 @@ export function canvasSignature(canvasElement: HTMLElement): string {
  * measures too early does not fail; it PASSES, on a picture the reader never
  * sees. That is not hypothetical: it is how this helper came to exist.
  *
- * Two conditions, and the first is what excludes that trap:
+ * Three conditions, and the first is what excludes that trap:
  *
  * 1. **Distinct positions.** A layout pass gives every node its own coordinate;
  *    before it runs they share one, so a duplicate means it has not landed.
- * 2. **Stable across two consecutive polls** — positions AND zoom, so a
- *    mid-relayout frame or an in-flight re-fit is not mistaken for the result.
+ * 2. **Nothing is still animating.** A canvas that animates node deltas moves its
+ *    node elements for the whole of `duration-base` AFTER the coordinates are
+ *    final, while React Flow draws every edge at the FINAL coordinate straight
+ *    away — so mid-flight, edges genuinely end in mid-air, by as much as 142 px
+ *    (measured on the process map). Any finite animation still running is
+ *    awaited, rather than inferred from a rect that happens to look still.
+ * 3. **Stable across two consecutive polls, one produced FRAME apart** —
+ *    positions AND zoom, so a mid-relayout frame or an in-flight re-fit is not
+ *    mistaken for the result.
  *
- * A settled canvas satisfies both on the second poll, so the cost is one
- * `interval`, not the timeout.
+ * The frame in (3) is the load-bearing word, and the reason this helper was
+ * rewritten. A CSS transition advances on the frame clock: two reads taken inside
+ * ONE frame return the identical rect no matter how fast the picture is actually
+ * moving. Polling on a bare timer, a machine slow enough to render at 5 fps
+ * therefore gets two identical polls mid-animation and declares a moving canvas
+ * settled — which is how CI, and only CI, saw `endpointsOffHandles` report nine
+ * edges hanging off their dots on a canvas that is correct a fifth of a second
+ * later. Pacing the poll with `requestAnimationFrame` means a starved renderer
+ * makes this helper WAIT rather than lie; the assertions it guards are unchanged,
+ * and still fail if the picture settles wrong.
+ *
+ * A settled canvas satisfies all three on the second poll, so the cost is one
+ * `interval` plus one frame, not the timeout.
  */
 export async function waitForSettledCanvas(
   canvasElement: HTMLElement,
@@ -306,19 +362,35 @@ export async function waitForSettledCanvas(
     const placements = nodePlacements(canvasElement);
     const signature = canvasSignature(canvasElement);
     const distinct = new Set(placements.map((p) => `${p.x},${p.y}`)).size;
+    const animating = unfinishedAnimations(canvasElement);
     if (placements.length === 0) {
       reason = "no nodes rendered";
     } else if (distinct !== placements.length) {
       reason = `${placements.length - distinct} node(s) share a position — layout has not run`;
+    } else if (animating.length > 0) {
+      reason = `${animating.length} animation(s) still running`;
     } else if (signature !== previous) {
       reason = "positions or zoom still changing";
     } else {
       return;
     }
+    // A running animation is waited OUT, not polled around: `finished` resolves on the
+    // frame the movement actually ends, and rejects only when it is cancelled, which is
+    // itself a change worth re-reading after.
+    if (animating.length > 0) {
+      await Promise.race([
+        Promise.allSettled(animating.map((animation) => animation.finished)),
+        new Promise((resolve) => setTimeout(resolve, Math.max(0, deadline - Date.now()))),
+      ]);
+    }
     previous = signature;
     if (Date.now() >= deadline) {
       throw new Error(`canvas did not settle within ${timeout}ms: ${reason}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, interval));
+    if (!(await nextFrame(interval, deadline))) {
+      throw new Error(
+        `canvas did not settle within ${timeout}ms: the renderer produced no frame (${reason})`,
+      );
+    }
   }
 }
