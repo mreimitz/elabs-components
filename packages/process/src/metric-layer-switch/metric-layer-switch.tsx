@@ -209,8 +209,15 @@ export const MetricLayerSwitch = forwardRef<HTMLDivElement, MetricLayerSwitchPro
           <ToggleGroupItem value="rework">{t("process.metricLayerSwitch.rework")}</ToggleGroupItem>
         </ToggleGroup>
 
+        {/* `min-w-0` on both columns: without it a flex child refuses to shrink below its
+            content width, so in a narrow rail (a `SplitPanel` side, an inspector column)
+            this row overflows and the edge `Select` is clipped by the pane instead of the
+            two selects sharing what space there is. */}
         <div className="flex items-end gap-2">
-          <div data-slot="metric-layer-switch-node" className="flex flex-1 flex-col gap-1.5">
+          <div
+            data-slot="metric-layer-switch-node"
+            className="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
             <label htmlFor={nodeId} className="text-meta text-muted-foreground">
               {t("process.metricLayerSwitch.node")}
             </label>
@@ -242,7 +249,10 @@ export const MetricLayerSwitch = forwardRef<HTMLDivElement, MetricLayerSwitchPro
             {locked ? <Lock aria-hidden="true" /> : <LockOpen aria-hidden="true" />}
           </Toggle>
 
-          <div data-slot="metric-layer-switch-edge" className="flex flex-1 flex-col gap-1.5">
+          <div
+            data-slot="metric-layer-switch-edge"
+            className="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
             <label htmlFor={edgeId} className="text-meta text-muted-foreground">
               {t("process.metricLayerSwitch.edge")}
             </label>

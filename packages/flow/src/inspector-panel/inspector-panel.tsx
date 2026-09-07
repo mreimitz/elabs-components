@@ -108,17 +108,27 @@ export function InspectorPanel({
               </button>
             ) : null}
           </div>
+          {/*
+            `tabIndex={0}` on a scroll container, in both branches: a region that scrolls
+            but contains nothing focusable is unreachable by keyboard — a mouse user can
+            read the overflow and a keyboard user cannot (axe
+            `scrollable-region-focusable`). An inspector body is exactly that shape
+            whenever its content is plain text, a definition list or a chart, which is
+            most of the time. It carries `focus-ring` because anything that can take
+            focus has to show it.
+          */}
           {hasSelection ? (
             <Reveal
               key={selectionKey}
               appear="fade"
               speed="fast"
-              className="flex-1 overflow-y-auto p-4 text-body"
+              tabIndex={0}
+              className="focus-ring flex-1 overflow-y-auto p-4 text-body"
             >
               {children}
             </Reveal>
           ) : (
-            <div className="flex-1 overflow-y-auto p-4 text-body">
+            <div tabIndex={0} className="focus-ring flex-1 overflow-y-auto p-4 text-body">
               <p className="text-muted-foreground">{emptyMessage}</p>
             </div>
           )}

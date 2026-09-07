@@ -8,9 +8,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // `vi.mock`'s factory is hoisted above every import (and above ordinary
 // top-level `const`s) — `vi.hoisted` is the escape hatch so the mock fns
 // themselves survive the hoist without a TDZ ReferenceError.
-const { getBezierPathMock, getSmoothStepPathMock, edgesBox } = vi.hoisted(() => {
+const { getBezierPathMock, getSmoothStepPathMock, edgesBox, nodesBox } = vi.hoisted(() => {
   return {
     edgesBox: { current: [] as unknown[] },
+    nodesBox: { current: [] as unknown[] },
     getBezierPathMock: vi.fn(
       ({
         sourceX,
@@ -81,6 +82,7 @@ vi.mock("@xyflow/react", () => {
     getBezierPath: getBezierPathMock,
     getSmoothStepPath: getSmoothStepPathMock,
     useEdges: () => edgesBox.current,
+    useNodes: () => nodesBox.current,
     Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
   };
 });
@@ -92,6 +94,7 @@ import type { EdgeProps } from "@xyflow/react";
 afterEach(() => {
   cleanup();
   edgesBox.current = [];
+  nodesBox.current = [];
   getBezierPathMock.mockClear();
   getSmoothStepPathMock.mockClear();
 });
@@ -245,6 +248,35 @@ describe("FlowWeightedEdge", () => {
     render(<FlowWeightedEdge {...makeEdgeProps()} />);
     expect(getBezierPathMock).toHaveBeenCalled();
     expect(getSmoothStepPathMock).not.toHaveBeenCalled();
+  });
+
+  // The return leg of a back edge is placed past the cards it crosses, NOT at the
+  // handles' midpoint: at the midpoint it runs behind the very nodes it connects, and
+  // since edges paint under nodes the reader sees two dashed stubs and no loop.
+  it("routes a back edge's return leg clear of every card in the band", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    nodesBox.current = [
+      { id: "node-a", position: { x: 0, y: 0 }, measured: { width: 176, height: 83 } },
+      { id: "node-b", position: { x: 220, y: 200 }, measured: { width: 176, height: 83 } },
+      // A third card on the same rank, connected to neither end of this edge.
+      { id: "node-c", position: { x: 440, y: 200 }, measured: { width: 176, height: 83 } },
+    ];
+    render(
+      <FlowWeightedEdge
+        {...makeEdgeProps({ sourceY: 283, targetY: 200, data: { variant: "back" } })}
+      />,
+    );
+    // 440 + 176 (the far side of the outermost card) + 40 (clearance).
+    expect(getSmoothStepPathMock).toHaveBeenCalledWith(expect.objectContaining({ centerX: 656 }));
+  });
+
+  it("leaves a back edge on React Flow's own midpoint while nothing is measured", () => {
+    edgesBox.current = [{ id: "test-edge", data: {} }];
+    nodesBox.current = [];
+    render(<FlowWeightedEdge {...makeEdgeProps({ data: { variant: "back" } })} />);
+    const args = getSmoothStepPathMock.mock.calls[0]![0] as Record<string, unknown>;
+    expect(args).not.toHaveProperty("centerX");
+    expect(args).not.toHaveProperty("centerY");
   });
 });
 

@@ -42,6 +42,10 @@ paths:
   - Fallback before measurement: side midpoints of the sides the node declares
     (`data.handles`, else `targetPosition`/`sourcePosition`, else top-in/bottom-out). Never
     widen to all four sides.
+  - A `"back"` edge's return leg is placed past the FAR SIDE of every card whose extent
+    overlaps the span it crosses (`backEdgeDetour`), never at the handles' midpoint:
+    edges paint under nodes, so a midpoint leg hides behind the cards it connects and
+    reads as a stray dashed rectangle. Unmeasured nodes → React Flow's own midpoint.
   - Exempt by design: `FlowFloatingEdge` only (node border + its own anchor dot).
     `FlowSelfLoopEdge` is NOT exempt: source dot → target dot, bulging a quarter-turn from
     the source normal (no `direction` prop); apex clears the card by `loopRadius` (4/3

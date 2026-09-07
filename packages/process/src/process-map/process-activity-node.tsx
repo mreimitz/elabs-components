@@ -121,6 +121,8 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
   const isHovered = hover.activityId === props.id;
   const isDimmed = data.selectionState === "excluded";
 
+  const percent = Math.round(Math.min(1, Math.max(0, data.saturation)) * 100);
+
   const flowData = useMemo<FlowNodeData>(
     () => ({
       title: data.title,
@@ -133,11 +135,36 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       // metric — the fill would then be the only channel — so it stays default and the
       // role/rework signals are carried by the glyph, the badge and the accessible name.
       tone: "default",
+      // The metric's second, colour-free channel: bar LENGTH. `aria-hidden` because the
+      // same number is already printed in the subtitle above and repeated in the node's
+      // accessible name — a third announcement would be noise, not access. The fill (not
+      // the text) is the one thing here that still dims at the shared ghost rung.
+      footer: (
+        <div
+          aria-hidden="true"
+          data-slot="process-activity-node-meter"
+          data-percent={percent}
+          className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted transition-opacity duration-fast ease-standard motion-reduce:transition-none"
+          style={isDimmed ? { opacity: GHOST_OPACITY } : undefined}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-base ease-standard motion-reduce:transition-none"
+            style={{ width: `${percent}%`, background: meterFill(data.saturation) }}
+          />
+        </div>
+      ),
     }),
-    [data.title, data.metricLabel, data.primaryLabel, data.secondaryLabel, RoleIcon],
+    [
+      data.title,
+      data.metricLabel,
+      data.primaryLabel,
+      data.secondaryLabel,
+      data.saturation,
+      RoleIcon,
+      percent,
+      isDimmed,
+    ],
   );
-
-  const percent = Math.round(Math.min(1, Math.max(0, data.saturation)) * 100);
 
   return (
     <div
@@ -145,7 +172,13 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
       data-selection={data.selectionState}
       data-role={activityRole(data).toLowerCase()}
       data-hover={isHovered ? "true" : undefined}
-      className={cn("relative flex flex-col gap-1", isHovered && "z-10")}
+      // `relative` positions the rework badge — and, because the meter now lives INSIDE
+      // the card (`FlowNode`'s `footer` slot), this wrapper is exactly as tall as the
+      // card. That equality is load-bearing, not cosmetic: React Flow lays every
+      // `<Handle>` out against the nearest positioned ancestor, so any row rendered here
+      // as a sibling of the card pushes every connector dot off the card's border by its
+      // own height. The meter used to sit here and did exactly that.
+      className={cn("relative", isHovered && "z-10")}
     >
       {data.reworkCount ? (
         <Badge
@@ -161,23 +194,6 @@ export function ProcessActivityNode(props: NodeProps<ProcessMapNode>) {
 
       <div data-slot="process-activity-node-frame" style={isDimmed ? GHOST_FRAME_STYLE : undefined}>
         <FlowNode {...props} type="brand" data={flowData} />
-      </div>
-
-      {/* The metric's second, colour-free channel: bar LENGTH. `aria-hidden` because the
-          same number is already printed in the subtitle above and repeated in the node's
-          accessible name — a third announcement would be noise, not access. The fill (not
-          the text) is the one thing here that still dims at the shared ghost rung. */}
-      <div
-        aria-hidden="true"
-        data-slot="process-activity-node-meter"
-        data-percent={percent}
-        className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted transition-opacity duration-fast ease-standard motion-reduce:transition-none"
-        style={isDimmed ? { opacity: GHOST_OPACITY } : undefined}
-      >
-        <div
-          className="h-full rounded-full transition-[width] duration-base ease-standard motion-reduce:transition-none"
-          style={{ width: `${percent}%`, background: meterFill(data.saturation) }}
-        />
       </div>
     </div>
   );

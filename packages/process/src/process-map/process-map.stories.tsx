@@ -2,13 +2,21 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import {
+  endpointsOffHandles,
+  framingMisses,
+  handlesOffCard,
+  labelsOverNodes,
+  miniMapNodeCount,
+  waitForSettledCanvas,
+} from "@elabs-ai/components-flow/test";
 import { abstractGraph } from "../core/abstract-graph";
 import { detectRework } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import type { ActivityStats, DurationStats, ProcessGraph, TransitionStats } from "../core/types";
 import { useProcessExplorer } from "../use-process-explorer";
-import { ProcessMap } from "./process-map";
+import { PROCESS_MAP_LEGIBLE_ZOOM, ProcessMap } from "./process-map";
 import type { ProcessSelection } from "./map-model";
 
 const log = generateSyntheticLog({ cases: 240, seed: 42 });
@@ -67,6 +75,56 @@ function largeGraph(size = 60): ProcessGraph {
   };
 }
 
+/**
+ * The four things this canvas has to get right about its own picture, asserted in a REAL
+ * browser because none of them is visible to a typecheck and none is measurable in jsdom
+ * (which reports every box as 0×0, so every one of these assertions would pass vacuously).
+ *
+ * Each line locks one defect that actually shipped on this map:
+ *
+ * 1. **Framing** — the map opened at React Flow's `minZoom` floor of `0.5` with five of
+ *    eleven activities below the fold, because `fitView` fires once and fired before the
+ *    layout hook had positions.
+ * 2. **Connectors** — every handle dot sat 24 px (top-to-bottom) to 69 px (left-to-right)
+ *    off the card it belonged to: the metric meter was rendered as a SIBLING of the card,
+ *    and React Flow lays handles out against the nearest positioned ancestor.
+ * 3. **Edges** — an edge path that stops short of a dot reads as a broken graph. Both edge
+ *    types are checked, including the self-loop, which used to draw an unattached arc
+ *    floating above the node.
+ * 4. **Labels** — an edge's metric pill is portalled out of the SVG, so it contributes
+ *    nothing to the layout maths; three pills per direction printed on top of activity
+ *    names before the within-rank gap was widened.
+ *
+ * `waitForSettledCanvas` first, and it is not optional politeness about timing: an
+ * unlaid-out canvas has every node stacked on one point, where all four assertions below
+ * pass for the wrong reason. Measured — this helper passed in 129 ms against a picture in
+ * which eleven activities sat on top of each other.
+ */
+async function expectWellFramedCanvas(canvasElement: HTMLElement) {
+  await waitForSettledCanvas(canvasElement);
+
+  // 1. Everything in frame — or, once the graph outgrows the pane, the opening zoom
+  //    sitting on the legibility floor with the START of the process in frame. The map
+  //    is allowed to open partial; it is not allowed to open on the middle of nowhere.
+  expect(framingMisses(canvasElement, { legibleZoom: PROCESS_MAP_LEGIBLE_ZOOM })).toEqual([]);
+
+  // 2. Every connector dot on its own card's border.
+  expect(handlesOffCard(canvasElement)).toEqual([]);
+
+  // 3. Every edge — plain transition AND self-loop — terminating on a dot.
+  expect(endpointsOffHandles(canvasElement, "flow-weighted-edge")).toEqual([]);
+  expect(endpointsOffHandles(canvasElement, "flow-self-loop-edge")).toEqual([]);
+
+  // 4. No metric pill printed on top of an activity.
+  expect(labelsOverNodes(canvasElement)).toEqual([]);
+
+  // The overview thumbnail draws a rectangle per activity — it rendered blank while the
+  // measurements React Flow takes never reached the node objects the minimap reads.
+  expect(miniMapNodeCount(canvasElement)).toBe(
+    canvasElement.querySelectorAll(".react-flow__node").length,
+  );
+}
+
 const meta = {
   title: "Process/ProcessMap",
   component: ProcessMap,
@@ -116,11 +174,7 @@ export const Frequency: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await waitFor(() =>
-      expect(
-        canvasElement.querySelectorAll('[data-slot="process-activity-node"]').length,
-      ).toBeGreaterThan(0),
-    );
+    await expectWellFramedCanvas(canvasElement);
 
     // Click-to-select: a node picks itself, and the rest of the graph reads as excluded.
     const nodes = canvasElement.querySelectorAll<HTMLElement>(
@@ -209,6 +263,12 @@ export const Selection: Story = {
     await waitFor(() =>
       expect(canvasElement.querySelector('[data-selection="selected"]')).toBeTruthy(),
     );
+    // The selection lands before the layout does, so waiting on it is not enough: this
+    // snapshot of DOM order is only meaningful once the map has been laid out, because
+    // `applyPositions` re-sorts the nodes into reading order as part of that pass. Taken a
+    // frame early it captures the model's own alphabetical order instead, and the tab-order
+    // assertion below then compares a real traversal against a picture that never rendered.
+    await waitForSettledCanvas(canvasElement);
 
     const wrappers = [...canvasElement.querySelectorAll<HTMLElement>(".react-flow__node")];
     expect(wrappers.length).toBeGreaterThan(1);
@@ -399,12 +459,24 @@ export const Selection: Story = {
   },
 };
 
-/** Left-to-right layout. The same cached model; only the layout key changes. */
+/**
+ * Left-to-right layout. The same cached model; only the layout key changes.
+ *
+ * It repeats the whole framing check rather than trusting the top-to-bottom pass, because
+ * the two directions put the handles on different sides of the card and every one of the
+ * defects {@link expectWellFramedCanvas} locks behaved DIFFERENTLY here: the connector
+ * drift measured 69 px against top-to-bottom's 24 px, and it was the direction FLIP that
+ * triggered it — the node's motion transition was reaching React Flow's handle elements as
+ * well as the node body, so a dot animated to its new side while React Flow measured it.
+ */
 export const LeftToRight: Story = {
   args: {
     graph,
     metric: { node: "absolute_case", edge: "absolute" },
     direction: "LR",
+  },
+  play: async ({ canvasElement }) => {
+    await expectWellFramedCanvas(canvasElement);
   },
 };
 
@@ -456,11 +528,29 @@ export const Empty: Story = {
   },
 };
 
-/** Sixty activities with skip paths, self-loops and back-edges — the layout budget case. */
+/**
+ * Sixty activities with skip paths, self-loops and back-edges — the layout budget case,
+ * and the one where the overview thumbnail earns its place: at this size the reader
+ * navigates by the minimap, so a blank one is not a cosmetic loss.
+ *
+ * Only the thumbnail is asserted here. Label crowding at sixty activities is a real
+ * property of the graph rather than a layout defect, so the pill/card check belongs on the
+ * two eleven-activity stories, where a collision means the spacing is wrong.
+ */
 export const LargeGraph: Story = {
   args: {
     graph: largeGraph(60),
     metric: { node: "absolute_case", edge: "absolute" },
     showMiniMap: true,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(
+      () =>
+        expect(miniMapNodeCount(canvasElement)).toBe(
+          canvasElement.querySelectorAll(".react-flow__node").length,
+        ),
+      { timeout: 15_000 },
+    );
+    expect(miniMapNodeCount(canvasElement)).toBeGreaterThan(1);
   },
 };

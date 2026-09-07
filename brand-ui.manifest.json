@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T13:42:50.786Z",
+  "generatedAt": "2026-09-07T07:06:52.612Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23400,6 +23400,14 @@
       ],
       "types": [
         {
+          "name": "BackEdgeAxis",
+          "module": "packages/flow/src/flow-weighted-edge/back-edge-geometry.ts"
+        },
+        {
+          "name": "BackEdgeNodeRect",
+          "module": "packages/flow/src/flow-weighted-edge/back-edge-geometry.ts"
+        },
+        {
           "name": "BrandFlowButtonEdge",
           "module": "packages/flow/src/flow-button-edge/flow-button-edge.tsx"
         },
@@ -23604,6 +23612,10 @@
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
         {
+          "name": "SelfLoopHandleAnchor",
+          "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
+        },
+        {
           "name": "SelfLoopPath",
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
@@ -23640,6 +23652,10 @@
         {
           "name": "addEdge",
           "module": "packages/flow/src/index.ts"
+        },
+        {
+          "name": "backEdgeDetour",
+          "module": "packages/flow/src/flow-weighted-edge/back-edge-geometry.ts"
         },
         {
           "name": "buildWeightedEdgeAriaLabel",
@@ -23698,6 +23714,10 @@
           "module": "packages/flow/src/flow-smart-edge/smart-edge-geometry.ts"
         },
         {
+          "name": "selfLoopHandleArc",
+          "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
+        },
+        {
           "name": "selfLoopPath",
           "module": "packages/flow/src/flow-self-loop-edge/self-loop-geometry.ts"
         },
@@ -23738,6 +23758,18 @@
               "optional": true,
               "type": "boolean",
               "description": "Enable alignment guides + snapping while a single node is dragged. Off by default; when false, CanvasShell behaves exactly as before. When true, CanvasShell wires `useHelperLines` around your `onNodesChange` and renders the `<HelperLines>` overlay internally — pass `nodes` + `onNodesChange` (the standard controlled setup, e.g. via `useNodesState`). For full control use the exported `useHelperLines` + `<HelperLines>` directly."
+            },
+            {
+              "name": "fitViewKey",
+              "optional": true,
+              "type": "string | number",
+              "description": "Re-fit the viewport whenever this value changes. React Flow's own `fitView` prop fits ONCE, as soon as the nodes are first measured, and then never again. A canvas whose positions arrive AFTER that first paint — anything laid out asynchronously, e.g. a debounced `layoutFlow` pass — therefore gets fitted to the pre-layout positions (typically every node still stacked at the origin) and stays there. Measured on the process map: the viewport pinned at React Flow's `maxZoom` of 2 with 2 of 11 nodes on screen, while the layout underneath was correct the whole time. Pass the key the layout is cached on (structure + direction), NOT something that changes on every render and not a metric: a re-fit is a viewport jump, so it must happen when the picture genuinely moved and never while the reader is reading. The fit waits for `useNodesInitialized`, so it measures real node boxes rather than fitting a degenerate bounding box a second time."
+            },
+            {
+              "name": "fitViewKeyOptions",
+              "optional": true,
+              "type": "FitViewOptions",
+              "description": "Options for the {@link fitViewKey} re-fit. Ignored without one."
             },
             {
               "name": "children",
@@ -25677,6 +25709,11 @@
           "name": "PROCESS_MAP_EDGE_SCALE_GROUP",
           "kind": "value",
           "module": "packages/process/src/process-map/process-transition-edge.tsx"
+        },
+        {
+          "name": "PROCESS_MAP_LEGIBLE_ZOOM",
+          "kind": "value",
+          "module": "packages/process/src/process-map/process-map.tsx"
         },
         {
           "name": "PROCESS_MAP_NODE_MOTION_CLASS",

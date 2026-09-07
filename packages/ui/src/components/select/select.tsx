@@ -127,7 +127,11 @@ export const SelectTrigger = forwardRef<
         // No `disabled:cursor-*` override — disabled controls keep the arrow
         // automatically (interaction-guidelines.md), matching Combobox's
         // Button-based trigger (`disabled:pointer-events-none`) (#343).
-        "disabled:opacity-50 disabled:border-border [&>span]:line-clamp-1",
+        // `truncate`, not `line-clamp-1`: a clamp only prints its ellipsis when it has
+        // dropped a LINE, so a single-line value too wide for a narrow trigger was cut
+        // mid-word with no ellipsis at all ("Occurren"). `autoTitle` above puts the full
+        // text in the tooltip, so the ellipsis is the visible half of that pair.
+        "disabled:opacity-50 disabled:border-border [&>span]:truncate",
         className,
       )}
       {...props}
