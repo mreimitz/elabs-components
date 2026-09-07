@@ -63,6 +63,7 @@ import type { NetworkLinkDatum, NetworkNodeDatum } from "./charts/network/networ
 import { ParallelCoordinatesChart } from "./charts/parallel-coordinates/parallel-coordinates-chart";
 import type { ParallelCoordinatesDimension } from "./charts/parallel-coordinates/parallel-coordinates-chart";
 import { PieChart } from "./charts/pie-chart";
+import { PieSlice } from "./charts/pie-slice";
 import { RadarArea } from "./charts/radar-area";
 import { RadarAxis } from "./charts/radar-axis";
 import type { RadarData, RadarMetric } from "./charts/radar-context";
@@ -637,13 +638,20 @@ const worldFeatureCollection = feature(
   topology,
   topology.objects.countries as never,
 ) as unknown as FeatureCollection<Geometry, ChoroplethFeatureProperties>;
-const worldData: ChoroplethFeature[] = worldFeatureCollection.features.map((f) => ({
-  ...f,
-  properties: {
-    ...f.properties,
-    value: VALUE_MAP[String(f.id)] ?? 0,
-  },
-})) as ChoroplethFeature[];
+// ChoroplethChart takes the FeatureCollection itself (it reads `data.features`),
+// not a bare feature array: handing it an array made `data.features` undefined and
+// crashed @visx/geo's Projection with "Cannot read properties of undefined
+// (reading 'map')" during the story run.
+const worldData: FeatureCollection<Geometry, ChoroplethFeatureProperties> = {
+  type: "FeatureCollection",
+  features: worldFeatureCollection.features.map((f) => ({
+    ...f,
+    properties: {
+      ...f.properties,
+      value: VALUE_MAP[String(f.id)] ?? 0,
+    },
+  })) as ChoroplethFeature[],
+};
 
 export const RegionShading: Story = story(
   "Region shading",
@@ -672,7 +680,11 @@ export const WholeToPartShare: Story = story(
     'variant; `UnitChart layout="waffle"` when the reader should be able to COUNT the share ' +
     "rather than compare angles.",
   <div className="h-72 w-[560px]">
-    <PieChart data={trafficData} size={280} />
+    <PieChart data={trafficData} size={280}>
+      {trafficData.map((item, i) => (
+        <PieSlice index={i} key={item.label} />
+      ))}
+    </PieChart>
   </div>,
 );
 
