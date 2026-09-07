@@ -18,7 +18,17 @@ export interface ArcLayoutOptions {
   height: number;
   /** Distance kept between a column and the chart edge, in px. */
   padding: number;
+  /**
+   * Extra room reserved OUTSIDE each column for its labels, in px — on top of
+   * `padding`. Default `{ left: 0, right: 0 }`, which reproduces today's
+   * node-radius-only columns exactly (no label gutter concept). See
+   * `computeNetworkLayout`, which measures each side's longest label and fills
+   * this in.
+   */
+  labelGutter?: { left: number; right: number };
 }
+
+const ZERO_GUTTER = { left: 0, right: 0 };
 
 /**
  * Which column each node belongs to, as `sides[i]` for `nodes[i]`.
@@ -74,10 +84,10 @@ export function partitionBipartite(
  */
 export function arcPositions(
   sides: readonly NetworkSide[],
-  { width, height, padding }: ArcLayoutOptions,
+  { width, height, padding, labelGutter = ZERO_GUTTER }: ArcLayoutOptions,
 ): NetworkPoint[] {
-  const leftX = padding;
-  const rightX = Math.max(leftX, width - padding);
+  const leftX = padding + labelGutter.left;
+  const rightX = Math.max(leftX, width - padding - labelGutter.right);
   const counts = { left: 0, right: 0 };
   for (const side of sides) counts[side] += 1;
   const seen = { left: 0, right: 0 };

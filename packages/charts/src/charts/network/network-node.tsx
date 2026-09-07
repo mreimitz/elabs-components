@@ -18,14 +18,11 @@ import { memo } from "react";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText } from "../../marks/halo-text";
 import { useNetworkChart } from "./network-context";
-import { isLabelVisible, isNodeDimmed } from "./network-layout";
+import { isLabelVisible, isNodeDimmed, NETWORK_LABEL_GAP } from "./network-layout";
 import type { NetworkNodeLayout, NetworkPoint } from "./network-types";
 
 /** Blur floor for a node outside the emphasised neighbourhood (lieflat B1's `.12`). */
 export const NETWORK_NODE_DIM_CLASS = "opacity-[0.12]";
-
-/** Gap between a node's edge and its label. */
-export const NETWORK_LABEL_GAP = 5;
 
 export interface NetworkNodeProps {
   node: NetworkNodeLayout;
@@ -86,7 +83,7 @@ export const NetworkNode = memo(function NetworkNode({
           x={anchorSign * (node.r + NETWORK_LABEL_GAP)}
           y={0}
         >
-          {node.label ?? node.id}
+          {node.displayLabel ?? node.label ?? node.id}
         </HaloText>
       )}
     </g>

@@ -150,8 +150,13 @@ const HIDDEN: CategoryAxisPlan = {
   maxTextWidthPx: 0,
 };
 
-/** Largest prefix of `text` whose rendered width (plus `…`) fits `budget`. */
-function ellipsize(
+/**
+ * Largest prefix of `text` whose rendered width (plus `…`) fits `budget`.
+ * Exported for `network-layout.ts`'s `arc` label-gutter degrade — same
+ * technique (binary-searched prefix + a real ellipsis, never `...`), one
+ * implementation.
+ */
+export function ellipsize(
   text: string,
   budget: number,
   measure: (text: string) => number,

@@ -25,6 +25,14 @@
   with no halo, failing contrast against the coloured node fill underneath; labels now measure
   the real line height, drop per-node when their slot is too tight to read, and both paint as
   `HaloText` at full opacity (#276).
+- `@elabs-ai/components-charts`: `NetworkChart`'s `arc` layout now reserves real room
+  for its labels instead of drawing them into empty space that was not there. The two
+  columns used to sit at a node-radius-only padding, so every label — drawn outward
+  from its node — clipped at the chart's edge (all ten in the shipped `--ownership`
+  story, some by more than 80px). The layout now measures each column's longest label
+  and widens the gap it leaves at the chart edge to fit; a label that still cannot fit
+  a very narrow chart is shortened with a trailing "…" rather than cut off mid-word,
+  and the full name stays available to screen readers regardless (#277).
 - `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
   keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
   instead of suppressing the platform outline (`outline: none`) and relying on a wrapper
