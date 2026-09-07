@@ -4,6 +4,15 @@
 
 ### Fixed
 
+- `@elabs-ai/components-charts`: `useCanvasDraw`'s enter-ramp effect no longer mixes an
+  out-of-band `performance.now()` read with the `requestAnimationFrame` callback's own `now`
+  argument to compute elapsed time. The two do not share a time origin under Vitest's `jsdom`
+  test environment, so under CI contention the resulting "elapsed time" could go silently,
+  unboundedly negative and momentarily paint `CanvasLayer`'s enter animation mid-ramp instead
+  of at its start. `start` is now derived lazily from the first `requestAnimationFrame`
+  callback's own `now`, so both operands of the subtraction always share one clock, whatever
+  clock that is in whatever environment the code runs in (#396).
+
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls
   reading the same node rectangles — which two polls taken inside one rendered frame always
