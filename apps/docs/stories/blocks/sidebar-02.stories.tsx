@@ -369,18 +369,19 @@ export const CompactDensity: Story = {
     // `Sidebar` spreads `...props` onto its CONTAINER only, so a
     // `data-density` pinned on the component desynchronises the container from
     // the sibling SPACER that still reads the document density. This shell is
-    // FLUSH (no `variant="inset"` anywhere), so the designed offset is zero and
-    // the two widths must AGREE exactly; a disagreeing pin drives them apart by
-    // whole pixels. Measured, not inferred from a class name.
+    // INSET, whose collapsed container is exactly 2px wider than its spacer by
+    // design (`sidebar.tsx`: `…+(--spacing(4))+2px` against `…+(--spacing(4))`),
+    // so the invariant is that the two stay that 2px apart and no more — a
+    // disagreeing pin drives them apart by further whole pixels. Measured, not
+    // inferred from a class name.
     const gap = canvasElement.querySelector('[data-slot="sidebar-gap"]');
     const container = canvasElement.querySelector('[data-slot="sidebar-container"]');
     await expect(gap).toBeInTheDocument();
     await expect(container).toBeInTheDocument();
-    const delta = Math.abs(
+    const delta =
       (container as HTMLElement).getBoundingClientRect().width -
-        (gap as HTMLElement).getBoundingClientRect().width,
-    );
-    await expect(delta).toBeLessThanOrEqual(0.5);
+      (gap as HTMLElement).getBoundingClientRect().width;
+    await expect(Math.abs(delta - 2)).toBeLessThanOrEqual(0.5);
   },
 };
 

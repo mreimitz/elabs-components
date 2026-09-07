@@ -128,8 +128,8 @@ interface ContextRailSwitcherProps {
   orientation: "row" | "column";
 }
 
-// The count badge's own positioning, kept out of the JSX because it differs on
-// two axes (orientation × collapsed) and is the whole subject of the fix below.
+// The count badge's own positioning, kept out of the JSX because the reasoning
+// below is longer than the markup it belongs to.
 //
 // It is rendered as a SIBLING of `SidebarMenuButton`, not a child.
 // `sidebarMenuButtonVariants`' base class string carries `overflow-hidden`
@@ -140,21 +140,44 @@ interface ContextRailSwitcherProps {
 // same offsets resolve against the item box instead and paint in full.
 const COUNT_BADGE_BASE =
   "pointer-events-none absolute inline-flex items-center justify-center rounded-full bg-sidebar-accent text-meta text-sidebar-accent-foreground tabular-nums";
-// Row orientation, expanded: the badge sits at the end of the full-width row,
-// vertically centred — visually where `ms-auto` used to place it inside the
-// button, without depending on the button's own box.
+// ONE treatment, both orientations and both states: the icon-sized corner
+// badge. The switcher entry is icon-only everywhere — expanded, it is a fixed
+// cluster in the rail's header band, not a full-width labelled row — so the
+// end-anchored, vertically-centred pill the row used to get landed ON TOP of
+// the entry's own glyph and hid it (measured at 1440px on the dashboard shell:
+// a 20px pill over a 16px icon in a 32px button).
 //
-// Collapsed, the badge hugs the item's own END EDGE (`end-0`) rather than
-// overhanging it (`-end-1`), which is the ordinary corner-badge convention.
-// The reason is this rail's POSITION, not its look: `ContextRail` is the
-// outermost column of a flush shell, so its end edge IS the viewport edge —
-// a 4px overhang lands past `window.innerWidth` and the count is clipped in
-// half by the browser, measured at 1440px on the dashboard shell. The
-// vertical `-top-1` overhang is kept: nothing clips it.
-const COUNT_BADGE_ROW =
-  "end-2 top-1/2 h-5 min-w-5 -translate-y-1/2 px-1 group-data-[collapsible=icon]:end-auto group-data-[collapsible=icon]:top-auto group-data-[collapsible=icon]:end-0 group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:translate-y-0 group-data-[collapsible=icon]:px-0.5";
-// Column orientation (the narrow strip) is always the icon-sized corner badge.
-const COUNT_BADGE_COLUMN = "end-0 -top-1 h-4 min-w-4 px-0.5";
+// The badge hugs the item's own END EDGE (`end-0`) rather than overhanging it
+// (`-end-1`), which is the ordinary corner-badge convention. The reason is this
+// rail's POSITION, not its look: `ContextRail` is the outermost column of the
+// shell, so its end edge can BE the viewport edge — a 4px overhang then lands
+// past `window.innerWidth` and the count is clipped in half by the browser
+// (measured before the strip gained its own padding). `CONTEXT_RAIL_HEADER`'s
+// `px-2` now buys that margin back, so this is belt and braces rather than the
+// only guard — keep it: a host restyling the rail through `className` can put
+// the item back on the edge. The vertical `-top-1` overhang is kept: nothing
+// clips it.
+const COUNT_BADGE_POSITION = "end-0 -top-1 h-4 min-w-4 px-0.5";
+
+// The rail's own header band. Two jobs, and both are geometry the rail cannot
+// leave to its children:
+//
+// 1. EXPANDED it is `h-14` — the same 56px an app shell's top bar carries
+//    (`AppShell`, and both shipped shell blocks) — and it holds the section
+//    heading AND the switcher in ONE row. Before this, the switcher row (32px,
+//    flush at y=0) and a separately-bordered heading (53px) stacked to 85px, so
+//    the rail's header stood ~29px taller than the bar it sits beside and
+//    nothing in the two headers lined up.
+// 2. COLLAPSED it is the 48px icon strip's own padding. `p-2` is what every
+//    other Sidebar region uses (`SidebarHeader`/`SidebarGroup`/`SidebarFooter`),
+//    and it is load-bearing here rather than decorative: without it a 32px
+//    button sits flush at the strip's start edge, 8px off the strip's centre
+//    line and 8px off every icon in the left nav rail, and the active entry's
+//    `before:` accent bar paints ON the rail's own boundary. `pt-3` (not `pt-2`)
+//    centres the FIRST icon in the same 56px band as the top bar's controls, so
+//    the two rails' first rows agree.
+const CONTEXT_RAIL_HEADER =
+  "flex h-14 shrink-0 items-center gap-2 border-b border-border-strong px-2 group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-stretch group-data-[collapsible=icon]:border-b-0 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-3 group-data-[collapsible=icon]:pb-2";
 
 function ContextRailSwitcher({
   sections,
@@ -179,7 +202,13 @@ function ContextRailSwitcher({
     <SidebarMenu
       data-slot="context-rail-switcher"
       className={
-        orientation === "row" ? "flex-row group-data-[collapsible=icon]:flex-col" : "flex-col"
+        // Expanded, the switcher is a fixed-width cluster at the END of the
+        // header band, so it must NOT take the menu's default `w-full` — that
+        // would push the section heading out of the row. Collapsed (and in the
+        // narrow strip) it is the whole column again.
+        orientation === "row"
+          ? "w-auto shrink-0 flex-row group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-col"
+          : "flex-col"
       }
     >
       {sections.map((section) => {
@@ -216,10 +245,7 @@ function ContextRailSwitcher({
               <span
                 data-slot="context-rail-count"
                 aria-hidden="true"
-                className={cn(
-                  COUNT_BADGE_BASE,
-                  orientation === "row" ? COUNT_BADGE_ROW : COUNT_BADGE_COLUMN,
-                )}
+                className={cn(COUNT_BADGE_BASE, COUNT_BADGE_POSITION)}
               >
                 {section.count}
               </span>
@@ -285,24 +311,30 @@ const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(funct
       className={cn("flex h-full min-h-0 w-full flex-col", className)}
       {...props}
     >
-      <ContextRailSwitcher
-        sections={sections}
-        activeId={activeId}
-        onSelect={onSelect}
-        orientation="row"
-      />
       {hasHeading ? (
         <>
-          {/* A real heading, not a `text-title` div: the body content sits under
-              it, so heading navigation has to be able to reach it (WCAG 1.3.1).
-              `h2` is the rung under the host page's own `h1`. */}
-          <h2
-            id={headingId}
-            data-slot="context-rail-heading"
-            className="border-b border-border-strong px-4 py-3 text-title group-data-[collapsible=icon]:hidden"
-          >
-            {activeSection.label}
-          </h2>
+          {/* Heading and switcher share ONE band, sized to the app shell's own
+              top bar — see `CONTEXT_RAIL_HEADER`. With no sections there is no
+              switcher and no heading, so the band would be an empty ruled bar:
+              it goes with them. */}
+          <div data-slot="context-rail-header" className={CONTEXT_RAIL_HEADER}>
+            {/* A real heading, not a `text-title` div: the body content sits
+                under it, so heading navigation has to be able to reach it (WCAG
+                1.3.1). `h2` is the rung under the host page's own `h1`. */}
+            <h2
+              id={headingId}
+              data-slot="context-rail-heading"
+              className="min-w-0 flex-1 truncate px-2 text-title group-data-[collapsible=icon]:hidden"
+            >
+              {activeSection.label}
+            </h2>
+            <ContextRailSwitcher
+              sections={sections}
+              activeId={activeId}
+              onSelect={onSelect}
+              orientation="row"
+            />
+          </div>
           <div
             data-slot="context-rail-body"
             // Focusable because it scrolls; `focus-ring-inset` because
@@ -365,7 +397,11 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
           data-slot="context-rail"
           aria-label={activeSection?.label ?? t("ui.contextRail.empty")}
           className={cn(
-            "flex h-full w-(--sidebar-width-icon) flex-col bg-sidebar text-sidebar-foreground",
+            // `px-2 pt-3 pb-2`: the same strip padding the wide branch's
+            // collapsed header band carries, for the same reason — see
+            // `CONTEXT_RAIL_HEADER`. The two branches are one control at two
+            // widths, so their resting strip must not shift under the reader.
+            "flex h-full w-(--sidebar-width-icon) flex-col bg-sidebar px-2 pt-3 pb-2 text-sidebar-foreground",
             className,
           )}
           {...props}
@@ -436,7 +472,10 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
                     above; this is the visible heading the body sits under. */}
                 <h2
                   data-slot="context-rail-heading"
-                  className="border-b border-border-strong px-4 py-3 text-title"
+                  // `h-14`, matching the wide branch's header band and the app
+                  // shell's top bar — the sheet is the same rail at a narrower
+                  // width, so its header keeps the same height.
+                  className="flex h-14 shrink-0 items-center truncate border-b border-border-strong px-4 text-title"
                 >
                   {activeSection.label}
                 </h2>

@@ -24,6 +24,28 @@
   render paths. Both now carry `role="group"` alongside the label so the name actually reaches
   the accessibility tree; the `role="img"` status indicator elsewhere in `ChangeReview` was
   already correct and is unchanged (#159).
+- `@elabs-ai/components-ui`: a `Sidebar`'s own edge (`variant="sidebar"`) now uses the chrome
+  border token rather than the canvas one, matching what the `floating` variant's surface and
+  `SidebarSeparator` already use. As a near-white hairline it was invisible against the page
+  but turned into a bright line the moment the rail sat on a `bg-sidebar` ground — which is
+  what an `inset` frame puts behind it.
+- `@elabs-ai/components-ui`: `ContextRail`'s header is now one 56px band holding the
+  section heading and the icon switcher side by side, the same height an app shell's top
+  bar carries — the switcher row and a separately-ruled heading used to stack to 85px, so
+  the rail's header stood ~29px taller than the bar beside it and nothing in the two
+  headers lined up. The collapsed 48px strip also gained the padding every other Sidebar
+  region has: its buttons sat flush on the strip's leading edge, 8px off its own centre
+  line and 8px off the icons in the left nav rail, and the active entry's accent bar
+  painted on the rail's boundary. The count badge is now the corner badge in both
+  presentations; the end-anchored pill the expanded row used to get covered its own
+  entry's glyph.
+- `@elabs-ai/components-ui`: `TeamSwitcher` collapsed to a 48px icon rail now renders as
+  one glyph on the same centre line as every nav entry. Its 32px logo plate did not fit
+  the collapsed button's content box, so it overflowed and its glyph landed 8px to the
+  trailing side of every other icon in the rail. The trigger also carries an explicit
+  accessible name (team plus plan, exactly its visible label), because collapsed there is
+  no longer visible text for one to be computed from.
+
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls
   reading the same node rectangles — which two polls taken inside one rendered frame always

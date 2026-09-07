@@ -11,9 +11,16 @@
  *    uses the other pattern — a dock you summon, which slides fully to zero. Pick
  *    by whether the panel is something you SUMMON or something that is always
  *    there. Both ship; neither is the default answer.
- * 2. **The content surface is flush, like every shell in this family.** No
- *    `variant="inset"` on the provider or the rail — the rounded floating card is
- *    an alternative look, and turning it on is a one-prop change on both.
+ * 2. **The content surface is an INSET card**, not flush: `variant="inset"` on
+ *    the provider (which paints the `bg-sidebar` frame ground) AND on the left
+ *    `Sidebar`. `SidebarInset` derives its ancestor-scoped and peer-scoped
+ *    margins from the same `gutter` value, so the two selectors emit identical
+ *    declarations and there is no stylesheet-order race (sidebar.tsx,
+ *    `SidebarInsetGutter`). The default `gutter="auto"` is the geometry this
+ *    layout wants — a gutter on top, bottom and the trailing edge (against the
+ *    details rail), and the leading one reopening when the nav rail collapses.
+ *    The flagship shell is the FLUSH member of this family; this one is the
+ *    floating card. Going flush here is a one-prop change on both.
  *
  * ONE `SidebarProvider` for the nav rail, because it is the only collapsible
  * `Sidebar` here — which is what makes `SidebarTrigger` in the top bar and the
@@ -152,6 +159,7 @@ export default function DashboardShell({
     // `h-svh` pins the frame to the viewport so the scroll port below owns the
     // overflow instead of the page.
     <SidebarProvider
+      variant="inset"
       defaultOpen={defaultSidebarOpen}
       className="h-svh"
       data-details={detailsOpen ? "expanded" : "collapsed"}
@@ -204,6 +212,13 @@ export default function DashboardShell({
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
         overlayBreakpoint={detailsOverlayBreakpoint}
+        // The rail is full-bleed chrome while the content column is an INSET
+        // card, so the card's own top gutter (`mt-2`) starts its top bar 8px
+        // lower than the rail's header band. This pays that 8px back, so the two
+        // headers sit on one line. `md:`, because the gutter it answers to is
+        // `md:`-gated too (`SidebarInset`) — below that width there is no card
+        // and nothing to line up with.
+        className="md:pt-2"
       />
     </SidebarProvider>
   );

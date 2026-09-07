@@ -139,6 +139,11 @@ export function DashboardSidebar({
   return (
     <Sidebar
       collapsible="icon"
+      // The rail's half of the inset treatment — the provider carries the other
+      // half. Both are needed: the provider paints the frame ground and drives
+      // `SidebarInset`'s radius/shadow, this one gives the rail its own gutter
+      // so the floating content card is not flush against it.
+      variant="inset"
       className={className}
       {...props}
       // NO `data-density` pin here, and that is deliberate (measured
