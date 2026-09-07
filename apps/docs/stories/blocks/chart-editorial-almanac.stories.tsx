@@ -47,5 +47,33 @@ export const Default: Story = {
     const notes = canvasElement.querySelectorAll('[data-slot="marginalia"]');
     await expect(notes).toHaveLength(1);
     await expect(notes[0]?.textContent).toContain(String(trueMax));
+
+    // #294 — every value a blob encodes must also be reachable as text, with its
+    // row and column identifiable. Derive the expectation from the DOM, not a
+    // literal, so it cannot pass on a stale or partial table.
+    const table = canvasElement.querySelector("table");
+    await expect(table).not.toBeNull();
+    // Header cells, so a screen reader can announce "Support, W2, 47".
+    const columnCount = new Set(ACTIVITY_MATRIX.map((cell) => cell.x)).size;
+    const rowCount = new Set(ACTIVITY_MATRIX.map((cell) => cell.y)).size;
+    await expect(table!.querySelectorAll('th[scope="col"]').length).toBe(columnCount + 1);
+    await expect(table!.querySelectorAll('th[scope="row"]').length).toBe(rowCount);
+
+    const textValues = new Set(
+      Array.from(table!.querySelectorAll("td"))
+        .map((td) => td.textContent?.trim())
+        .filter(Boolean),
+    );
+    for (const blob of blobs) {
+      await expect(textValues.has(blob.getAttribute("data-value")!)).toBe(true);
+    }
+
+    // The digest stays the region's name — this fix must not lengthen it.
+    const figure = await canvas.findByRole("figure");
+    await expect(figure).toHaveAccessibleName("Weekly ticket volume by team");
+
+    // The table is sr-only, not interactive: no new focusable element enters
+    // the page from this fix.
+    await expect(canvasElement.querySelectorAll("button")).toHaveLength(0);
   },
 };
