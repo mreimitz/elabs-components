@@ -144,3 +144,21 @@ describe("CodeWorkspace — CodeWorkspaceHandle via ref", () => {
     expect(listener).not.toHaveBeenCalled(); // not called yet, only on selection change
   });
 });
+
+describe("CodeWorkspace — tab/panel a11y (#154)", () => {
+  it("gives every tab an aria-controls that resolves to a real element, for paths with '/', '.', a space and non-ASCII", () => {
+    const trickyFiles: EditorFile[] = [
+      { path: "src/hello.ts", value: "a" },
+      { path: "a b/c.d.json", value: "b" },
+      { path: "café/résumé.md", value: "c" },
+    ];
+    render(<CodeWorkspace files={trickyFiles} />);
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs).toHaveLength(trickyFiles.length);
+    for (const tab of tabs) {
+      const controls = tab.getAttribute("aria-controls");
+      expect(controls).toBeTruthy();
+      expect(document.getElementById(controls!)).not.toBeNull();
+    }
+  });
+});

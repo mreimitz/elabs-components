@@ -261,6 +261,12 @@ export const CommandSeparator = forwardRef<
     <CommandPrimitive.Separator
       ref={ref}
       data-slot="command-separator"
+      // `cmdk` renders this as a direct child of its `role="listbox"`
+      // (`CommandList`), which may only own `option`/`group` (WCAG 1.3.1,
+      // #157) — a purely visual divider between groups, so `aria-hidden`
+      // removes it from the accessibility tree instead of asking the listbox
+      // to own a role it can't. `{...props}` still lets a caller override it.
+      aria-hidden="true"
       className={cn("-mx-1 h-px bg-border", className)}
       {...props}
     />

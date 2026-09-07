@@ -9,6 +9,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
   useCommandActiveItemId,
 } from "./command";
 import { DialogTitle } from "../dialog";
@@ -320,5 +321,33 @@ describe("CommandDialog — optional title (RM-010)", () => {
     expect(screen.getByRole("dialog")).toHaveAccessibleName("Caller-owned title");
     // Exactly one heading — CommandDialog did not add a second, competing one.
     expect(screen.getAllByText(/title/i)).toHaveLength(1);
+  });
+});
+
+/** #157 — `CommandSeparator` is `cmdk`'s divider between groups, rendered as a
+ * direct child of `CommandList`'s `role="listbox"`. A listbox may only own
+ * `option`/`group` children (WCAG 1.3.1); a bare `role="separator"` there is
+ * neither. */
+describe("Command — CommandSeparator a11y (#157)", () => {
+  it("stays in the DOM for sighted users but is removed from the accessibility tree", () => {
+    render(
+      <Command>
+        <CommandList>
+          <CommandGroup heading="Fruit">
+            <CommandItem value="apple">Apple</CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="Veg">
+            <CommandItem value="carrot">Carrot</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+
+    // Still rendered — cmdk owns the visual divider.
+    expect(document.querySelector("[cmdk-separator]")).not.toBeNull();
+    // Never exposed with its `role="separator"` — a listbox can't own one.
+    expect(screen.queryByRole("separator")).toBeNull();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 });
