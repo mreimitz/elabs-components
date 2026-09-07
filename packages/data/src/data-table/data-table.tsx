@@ -2159,7 +2159,12 @@ function DataTableInner<TData, TValue>(
                 <button
                   type="button"
                   data-slot="data-table-row-action"
-                  className="sr-only"
+                  // #311: `sr-only` removes the box from the visual layout but
+                  // not the browser's own focus ring — the ROW paints the
+                  // deliberate compound indicator (via the `has-[…]` selector
+                  // above), so the proxy's own native ring must be suppressed
+                  // or it leaks as a stray dot at the row's edge.
+                  className="sr-only focus-visible:outline-none"
                   onClick={(event) => onRowClick?.(row, event)}
                 >
                   {rowActionName(row)}
