@@ -221,7 +221,11 @@ function main(argv) {
         "Each unit's work belongs in its OWN assigned worktree/branch, never on `main` — this is\n" +
         "exactly the #403 incident (an agent's shell landing in the primary checkout instead of\n" +
         "its assigned worktree). If this commit is the orchestrator's own deliberate merge or\n" +
-        `integration step, set ${MAIN_COMMIT_OVERRIDE_ENV}=1 and re-run the commit.`,
+        `integration step, set ${MAIN_COMMIT_OVERRIDE_ENV}=1 and re-run the commit.\n` +
+        "If no run is actually in flight, these are LEFTOVER worktrees from a wave that already\n" +
+        "landed — the marker outlives the work. `pnpm worktrees:check` names the ones that are\n" +
+        "safe to delete and prints their removal commands; tearing them down clears this block\n" +
+        "for good, which is the fix rather than the override.",
     );
     return 1;
   }

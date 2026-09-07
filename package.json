@@ -257,6 +257,8 @@
     "viewer-highlight:check:test": "node --test scripts/check-viewer-highlight-coverage.test.mjs",
     "worktree-branch:check": "node scripts/check-worktree-branch.mjs",
     "worktree-branch:check:test": "node --test scripts/check-worktree-branch.test.mjs",
+    "worktrees:check": "node scripts/check-stale-worktrees.mjs",
+    "worktrees:check:test": "node --test scripts/check-stale-worktrees.test.mjs",
     "token-contract:check": "pnpm --filter @elabs-ai/components-tokens tokens:names:check"
   },
   "devDependencies": {
