@@ -151,7 +151,7 @@ export const TimelineItem = forwardRef<HTMLLIElement, TimelineItemProps>(functio
           {children}
         </span>
         {timestamp ? (
-          <span className="shrink-0 text-meta text-muted-foreground">{timestamp}</span>
+          <span className="shrink-0 text-meta text-muted-foreground tabular-nums">{timestamp}</span>
         ) : null}
       </div>
       {description ? <p className="mt-0.5 text-body text-muted-foreground">{description}</p> : null}
