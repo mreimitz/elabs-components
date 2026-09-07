@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### ⚠️ BREAKING (`@elabs-ai/components-ai`, `@elabs-ai/components-ui`): `TokenUsage`'s locale message keys move from `ai.context.*` to `ai.tokenUsage.*` (#141)
+
+- The six locale keys `TokenUsage` reads (`usage`, `totalCost`, `input`, `output`, `reasoning`,
+  `cache`) were still spelled under the `ai.context.*` namespace after the `Context` →
+  `TokenUsage` rename (#132), left out of that rename as a separate breaking change to the
+  message dictionary. They are now `ai.tokenUsage.usage`, `ai.tokenUsage.totalCost`,
+  `ai.tokenUsage.input`, `ai.tokenUsage.output`, `ai.tokenUsage.reasoning` and
+  `ai.tokenUsage.cache` in `DEFAULT_MESSAGES` (`@elabs-ai/components-ui`). English defaults are
+  unchanged. A consumer overriding these keys via `LocaleProvider`'s `messages` prop or a
+  `translate` resolver updates the key names it targets; nothing else changes.
+
 ### Fixed
 
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
