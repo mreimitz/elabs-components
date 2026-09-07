@@ -15,6 +15,12 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ai`: `PromptInputEffort`'s ramp bars now each present a ≥24×24 CSS px
+  activation target. The bar itself used to double as its own `RadioGroupItem` hit box, so
+  three of the four rungs (10×10, 14×14, 20×20 px) fell under the WCAG 2.5.8 minimum. Each rung
+  is now a shared 24×24 frame: the radio is stretched to fill it (the real, focusable hit
+  target) while a sibling `aria-hidden` span paints the bar at its original, untouched size —
+  the visible ramp is pixel-unchanged (#161).
 - `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
   keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
   instead of suppressing the platform outline (`outline: none`) and relying on a wrapper
