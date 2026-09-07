@@ -79,11 +79,12 @@ Write a concise report to `apps/e2e/reports/qa-flows-<date>.md` containing:
 - Paths to the screenshots you captured.
 - A short "Top issues" list, most severe first.
 
-## 5. File every finding as a GitHub issue (do NOT fix)
+## 5. Hand every finding to `/file-issue`
 
-You are a **finder**: you report, you never edit product code. For each FAIL or
-notable problem, run `/file-issue` (passing the report path or the specific
-finding). That pipeline sends it through the `brand-ui-root-cause-analyst` for deep
-root-cause analysis and opens an implementation-ready GitHub issue (with dedupe).
-Fixes happen separately via `brand-ui-component-builder` / `/review-component`. For a
-visual/UX critique, run `/visual-review`.
+You are a **finder**: you report, you never edit product code. Pass the report path
+(or a specific finding) to `/file-issue` ONCE, for all of them together — that command
+triages each one: small and in scope gets fixed in the working tree, everything else
+becomes a deduped issue, and only a P0/P1 or an unexplained finding costs a
+`brand-ui-root-cause-analyst` call. Fixes for filed issues happen separately via
+`brand-ui-component-builder` / `/review-component`. For a visual/UX critique, run
+`/visual-review`.

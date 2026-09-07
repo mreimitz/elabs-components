@@ -1,8 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ActivityStats, DurationStats, ProcessGraph, TransitionStats } from "../core/types";
 import { buildProcessMapModel, processGraphStructureKey } from "./map-model";
-import { applyLayoutSnapshot, useProcessLayout } from "./use-process-layout";
+import {
+  applyLayoutSnapshot,
+  PROCESS_MAP_NODE_MOTION_CLASS,
+  useProcessLayout,
+} from "./use-process-layout";
 
 afterEach(cleanup);
 
@@ -226,5 +232,34 @@ describe("applyLayoutSnapshot", () => {
     // A node the snapshot does not know is returned untouched, not dropped.
     expect(applied).toHaveLength(model.nodes.length);
     expect(applied[1]).toBe(model.nodes[1]);
+  });
+});
+
+describe("PROCESS_MAP_NODE_MOTION_CLASS is scanner-visible", () => {
+  // Regression lock (#401 review): the class was once assembled by interpolating a
+  // `MOTION_TARGET` constant. Tailwind extracts candidates from source TEXT and never
+  // evaluates JavaScript, so no CSS was emitted and the node-slide animation silently
+  // stopped — with every test, story and typecheck still green. Asserting the runtime
+  // string is not enough; the SOURCE has to carry each full utility.
+  // The file's own TEXT, which is what Tailwind's scanner reads. `__dirname` is how the
+  // other source-reading tests in this repo reach a sibling file (see the tokens package).
+  const SOURCE = readFileSync(join(__dirname, "use-process-layout.ts"), "utf8");
+  const SELECTOR = "[&_div[data-id]:not([data-handlepos])]";
+
+  it.each([
+    `${SELECTOR}:transition-transform`,
+    `${SELECTOR}:duration-base`,
+    `${SELECTOR}:ease-standard`,
+    `motion-reduce:${SELECTOR}:transition-none`,
+  ])("%s appears verbatim in the source Tailwind scans", (utility) => {
+    expect(PROCESS_MAP_NODE_MOTION_CLASS).toContain(utility);
+    expect(SOURCE).toContain(utility);
+  });
+
+  it("builds the class from literals only — no interpolation in its definition", () => {
+    const definition = SOURCE.slice(
+      SOURCE.indexOf("export const PROCESS_MAP_NODE_MOTION_CLASS"),
+    ).split(";")[0];
+    expect(definition).not.toMatch(/\$\{/);
   });
 });

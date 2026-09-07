@@ -26,6 +26,7 @@ import {
   runnerExpansion,
   selectGates,
   selfTestFile,
+  SERIAL_SELFTESTS,
 } from "./run-gates.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -216,6 +217,51 @@ test("E2E: both gates run, the failing one is named, exit 1", async () => {
     assert.match(skipped.stdout, /✔ 1 passed/);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("E2E: the entry guard survives a repo path containing a space", async () => {
+  // Regression lock: `import.meta.url === `file://${argv[1]}`` is false as soon as the
+  // path needs percent-encoding, so `main()` never ran, the runner printed nothing and
+  // exited 0 — an all-green verdict from a battery that ran zero gates.
+  const root = mkdtempSync(path.join(tmpdir(), "brand-ui-run-gates-sp-"));
+  try {
+    const dir = path.join(root, "dir with space");
+    const { mkdirSync, copyFileSync } = await import("node:fs");
+    mkdirSync(dir);
+    const runner = path.join(dir, "run-gates.mjs");
+    copyFileSync(RUNNER, runner); // it imports only node: builtins
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "fixture",
+        private: true,
+        scripts: { "ok:check": "node -e \"console.log('fine')\"" },
+      }),
+    );
+    const listed = await new Promise((resolve) => {
+      execFile("node", [runner, "--root", root, "--list"], { cwd: root }, (err, stdout, stderr) =>
+        resolve({ code: err?.code ?? 0, stdout, stderr }),
+      );
+    });
+    assert.equal(listed.code, 0, listed.stderr);
+    assert.deepEqual(
+      listed.stdout.trim().split("\n").filter(Boolean),
+      ["ok:check"],
+      "the runner printed nothing — the entry guard did not match its own path",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("SERIAL_SELFTESTS names real, discoverable self-tests", async () => {
+  // A typo here would silently stop serialising the two files that stage into the REAL
+  // git index, and the flake it prevents is timing-dependent — invisible until CI is red.
+  const pkgJson = JSON.parse(readFileSync(path.join(HERE, "..", "package.json"), "utf8"));
+  const names = listGates({ pkgJson, kind: "selftests" });
+  for (const name of SERIAL_SELFTESTS) {
+    assert.ok(names.includes(name), `${name} is not a discovered self-test`);
   }
 });
 

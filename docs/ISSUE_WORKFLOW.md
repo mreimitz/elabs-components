@@ -1,28 +1,32 @@
 # Issue workflow
 
-Every problem — found by an automated test, a finder agent, or entered by a
-person as feedback — becomes a **fully-diagnosed GitHub issue** before anyone
-fixes it. This keeps fixes deliberate, traceable, and root-cause-driven.
+A problem is **fixed in the change that found it, or tracked as a GitHub issue** —
+never ad hoc and forgotten. What it is NOT is an issue for everything: a backlog
+nobody works is worse than no backlog, so the triage below decides per finding.
 
 ## The pipeline
 
 ```
-finding ──▶ /file-issue ──▶ brand-ui-root-cause-analyst ──▶ dedupe ──▶ GitHub issue ──▶ brand-ui-component-builder
-(test /     (orchestrates)   (deep RCA +            (search    (implementation-   (fixes from the
- agent /                      proposed solution)     existing)   ready spec)         issue + adds test)
- feedback)
+                    ┌─▶ small + in scope ──▶ fixed in the working tree, mentioned in the PR
+finding ──▶ /file-issue
+(test /   (triages)  └─▶ left behind ──▶ [P0/P1 or unknown cause: brand-ui-root-cause-analyst]
+ agent /                                  ──▶ dedupe ──▶ GitHub issue ──▶ brand-ui-component-builder
+ feedback)                                   (search)    (capped spec)    (fixes it + adds the test)
 ```
 
 Separation of duties:
 
 - **Finders report, never fix** — the Playwright/Vitest suites, `/qa-flows`,
   `brand-ui-visual-ux-reviewer`, `brand-ui-accessibility-reviewer`, and human feedback only surface
-  problems.
-- **`brand-ui-root-cause-analyst` (the architect/expert) diagnoses** — deep root-cause
-  analysis (sequential reasoning + 5-Whys + the `engineering:debug` method),
-  separates symptom from cause, and designs the fix. It does **not** edit code.
-- **`/file-issue` files** — dedupes against existing issues, then opens an
-  implementation-ready issue via the GitHub connector (or queues it locally).
+  problems. They end their run with ONE `/file-issue` call carrying all of them.
+- **`/file-issue` triages, then files** — a finding that is in scope of the current
+  task and small (roughly ≤30 changed lines, one package) is fixed on the spot and
+  filed nowhere. Everything else is deduped against open issues and opened as a
+  capped, implementation-ready issue.
+- **`brand-ui-root-cause-analyst` diagnoses the hard ones** — one BATCHED call per
+  `/file-issue` run, and only for P0/P1 findings or a cause nobody has located yet.
+  A P2 whose `file:line` the finder already gives is written up without it. It
+  separates symptom from cause and designs the fix; it does **not** edit code.
 - **`brand-ui-component-builder` / `/review-component` fix** — from the issue, and add the
   issue's "Test to add" so the bug can't regress. The PR uses `Closes #N`.
 

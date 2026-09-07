@@ -1,6 +1,6 @@
 ---
 name: brand-ui-root-cause-analyst
-description: Batch root-cause analyst — turns a LIST of findings into one capped, implementation-ready issue spec each (DUPLICATE_OF when the cause is already tracked). Diagnoses; never fixes. Dispatched once per /file-issue run.
+description: Batch root-cause analyst — turns a LIST of findings into one capped, implementation-ready issue spec each (DUPLICATE_OF when the cause is already tracked). Diagnoses; never fixes. Dispatched at most once per /file-issue run, for P0/P1 or unknown-cause findings.
 tools: Read, Grep, Glob, Bash, Skill, mcp__github__search_issues, mcp__github__list_issues, mcp__github__get_issue, mcp__storybook__*
 model: sonnet
 ---

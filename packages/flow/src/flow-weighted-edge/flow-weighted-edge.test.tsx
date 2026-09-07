@@ -82,7 +82,12 @@ vi.mock("@xyflow/react", () => {
     getBezierPath: getBezierPathMock,
     getSmoothStepPath: getSmoothStepPathMock,
     useEdges: () => edgesBox.current,
-    useNodes: () => nodesBox.current,
+    // The component reads nodes through `useStore(selector)` rather than `useNodes()`, so
+    // that a FORWARD edge subscribes to nothing that changes when a node moves. The mock
+    // hands the selector the one slice it reads, which keeps the back-edge tests below
+    // exercising the real selector rather than a stand-in for it.
+    useStore: (selector: (state: { nodes: unknown[] }) => unknown) =>
+      selector({ nodes: nodesBox.current }),
     Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
   };
 });

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Fixed
+
+- `@elabs-ai/components-process`: the process map's node-slide animation works again. The
+  class that carries it was assembled by interpolating a constant, and Tailwind extracts
+  classes from source text without evaluating JavaScript, so no CSS was emitted and nodes
+  jumped to their new positions instead of moving to them.
+- `@elabs-ai/components-flow`: a forward `FlowWeightedEdge` no longer re-renders whenever
+  any node on the canvas changes. Only a back edge subscribes to node positions now, which
+  is the only variant that reads them.
+- `@elabs-ai/components-flow`: `CanvasShell`'s keyed re-fit (`fitViewKey`) stops printing
+  React Flow's "Please use `getNodesBounds` from `useReactFlow`" warning in development,
+  and measures nested nodes correctly.
+
 ### ⚠️ BREAKING (`@elabs-ai/components-ui`): `Form` moved off the main barrel; react-hook-form is now an optional peer (#26)
 
 - `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`,

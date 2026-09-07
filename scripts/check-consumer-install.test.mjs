@@ -321,12 +321,19 @@ function writeConsumerAppFixture({ peerPackageName, declaredPeerRange, pinnedPee
 // still running 1.5 days later, and `pnpm gates:selftests` hung on this file.
 // So: (a) every child spawn carries a hard timeout + SIGKILL, and (b) when the
 // registry cannot be reached within 20 s the two tests SKIP with a reason
-// instead of hanging — CI (networked) still runs them for real.
+// instead of hanging — LOCALLY only: `CI` set means never skip, so a registry
+// failure there fails loudly on the timeouts instead of passing as a skip.
 const PEER_PIN_UNDER_TEST = "@xyflow/react@12.0.0";
 const INSTALL_TIMEOUT_MS = 90_000;
 const PREFLIGHT_TIMEOUT_MS = 20_000;
 
 function registryUnreachableReason() {
+  // CI is networked, and this pair is the ONLY proof that `strict-peer-dependencies`
+  // still catches a #30-shaped regression. A skip there would be reported as a pass
+  // (node:test emits `test:pass` for a skipped test, and the battery runner counts
+  // it as ✓), so a registry blip would silently retire the lock. Locally the skip
+  // stays: an offline shell should not fail a developer's run.
+  if (process.env.CI) return false;
   if (process.env.BRAND_UI_OFFLINE === "1") return "BRAND_UI_OFFLINE=1 set";
   try {
     execFileSync("pnpm", ["view", PEER_PIN_UNDER_TEST, "version"], {
