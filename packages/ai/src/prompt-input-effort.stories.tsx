@@ -78,3 +78,46 @@ export const TwoLevels: Story = {
     ],
   },
 };
+
+/**
+ * WCAG 2.5.8 (Target Size, Minimum) locking test (#161). The ramp bars'
+ * differing sizes ARE the meaning (the size ramp is the non-colour channel),
+ * so the fix must decouple the click/tap/focus target from the visible bar:
+ * every radio's own hit box is >=24x24 CSS px, while the visible bar
+ * (`[data-slot="prompt-input-effort-item-visual"]`) keeps its authored
+ * `effortRungForIndex` size (10, 14, 20, 24px for these 4 levels) — a fix
+ * that flattens the ramp to satisfy the target-size rule fails this test.
+ */
+export const TargetSize: Story = {
+  play: async ({ canvas }) => {
+    const radios = canvas.getAllByRole("radio");
+    expect(radios).toHaveLength(4);
+
+    for (const radio of radios) {
+      const rect = radio.getBoundingClientRect();
+      await expect(rect.width).toBeGreaterThanOrEqual(24);
+      await expect(rect.height).toBeGreaterThanOrEqual(24);
+    }
+
+    // Adjacent targets don't overlap.
+    for (let i = 1; i < radios.length; i++) {
+      const previous = radios[i - 1].getBoundingClientRect();
+      const current = radios[i].getBoundingClientRect();
+      await expect(current.left).toBeGreaterThanOrEqual(previous.right);
+    }
+
+    // The visible ramp is pixel-unchanged: the authored bar sizes still
+    // grow 10 -> 14 -> 20 -> 24px, low to high. The visible bar is a
+    // sibling of the (now enlarged) radio, both inside a shared frame.
+    const visibleWidths = radios.map((radio) => {
+      const visual = radio.parentElement?.querySelector(
+        '[data-slot="prompt-input-effort-item-visual"]',
+      );
+      if (!(visual instanceof HTMLElement)) {
+        throw new Error("expected a visible-bar element beside every radio");
+      }
+      return visual.getBoundingClientRect().width;
+    });
+    await expect(visibleWidths).toEqual([10, 14, 20, 24]);
+  },
+};
