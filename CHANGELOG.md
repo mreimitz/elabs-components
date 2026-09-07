@@ -4,6 +4,16 @@
 
 ### Fixed
 
+- `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
+  canvas settled while it is still animating. It inferred stillness from two timer polls
+  reading the same node rectangles — which two polls taken inside one rendered frame always
+  do, so on a runner slow enough to render at a few frames per second a canvas that animates
+  its nodes into place was measured mid-slide, with React Flow's edges already at their final
+  coordinates and the handle dots still moving towards them. It now paces its polls with
+  `requestAnimationFrame` and waits out every finite animation in the canvas, which makes a
+  starved renderer delay the measurement instead of falsifying it. The assertions it guards
+  are unchanged.
+
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
