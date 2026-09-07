@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T13:06:27.385Z",
+  "generatedAt": "2026-09-07T13:55:51.197Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22008,7 +22008,7 @@
         },
         "FilterChip": {
           "extends": [
-            "Omit<BaseFilterChipProps, \"label\">"
+            "Omit<BaseFilterChipProps, \"label\" | \"trailing\">"
           ],
           "props": [
             {
@@ -33663,6 +33663,12 @@
               "optional": false,
               "type": "string",
               "description": "Label-in-value text — `\"Status: Failed\"`, never `\"Status = failed\"` and never a bare `\"Failed\"`. The caller composes the string so the chip reads as a sentence fragment out of context (and in a screen reader)."
+            },
+            {
+              "name": "trailing",
+              "optional": true,
+              "type": "string",
+              "description": "Short, non-shrinking secondary text — a count, a unit (`\"excluded 1,204\"`). A second text slot rather than folding it into `label` (#284): `label` is the shrinkable, safe-to-truncate part; `trailing` is short and fixed-width and must never lose characters to the ellipsis. Same shape as `TurnStatus`'s and `TerminalWorking`'s `trailing` slot — a fixed-width companion beside a truncating label. Composed into the accessible name after `label` (`\"Remove filter: <label> · <trailing>\"`), so the byte- identical name from before this slot existed is unchanged. Trade-off: `trailing` is `shrink-0`, so an extremely narrow container now truncates `label` down to nothing before it touches `trailing`. That is the right default — the count is short and fixed, the label is the long, prose-shaped part — but it is a choice, not a free win."
             },
             {
               "name": "onRemove",

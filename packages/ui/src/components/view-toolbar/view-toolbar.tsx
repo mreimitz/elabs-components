@@ -200,6 +200,22 @@ export interface FilterChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
    * as a sentence fragment out of context (and in a screen reader).
    */
   label: string;
+  /**
+   * Short, non-shrinking secondary text — a count, a unit (`"excluded 1,204"`).
+   * A second text slot rather than folding it into `label` (#284): `label` is
+   * the shrinkable, safe-to-truncate part; `trailing` is short and fixed-width
+   * and must never lose characters to the ellipsis. Same shape as
+   * `TurnStatus`'s and `TerminalWorking`'s `trailing` slot — a fixed-width
+   * companion beside a truncating label. Composed into the accessible name
+   * after `label` (`"Remove filter: <label> · <trailing>"`), so the byte-
+   * identical name from before this slot existed is unchanged.
+   *
+   * Trade-off: `trailing` is `shrink-0`, so an extremely narrow container now
+   * truncates `label` down to nothing before it touches `trailing`. That is
+   * the right default — the count is short and fixed, the label is the long,
+   * prose-shaped part — but it is a choice, not a free win.
+   */
+  trailing?: string;
   /** Remove this filter. The WHOLE chip is the remove control — see below. */
   onRemove: () => void;
 }
@@ -217,7 +233,7 @@ export interface FilterChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
  * reach for `FacetFilter` (`@elabs-ai/components-data`), not a variant of this.
  */
 export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(function FilterChip(
-  { label, onRemove, className, onClick, ...props },
+  { label, trailing, onRemove, className, onClick, ...props },
   ref,
 ) {
   const { t } = useLocale();
@@ -227,7 +243,9 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
       ref={ref}
       type="button"
       data-slot="view-toolbar-filter-chip"
-      aria-label={t("ui.viewToolbar.removeFilter", { label })}
+      aria-label={t("ui.viewToolbar.removeFilter", {
+        label: trailing ? `${label} · ${trailing}` : label,
+      })}
       className={cn(
         badgeVariants({ variant: "secondary" }),
         "group min-h-6 max-w-full gap-1 ps-2.5 pe-1.5",
@@ -244,7 +262,22 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
       }}
       {...props}
     >
-      <span className="truncate">{label}</span>
+      <span data-slot="view-toolbar-filter-chip-label" className="min-w-0 truncate">
+        {label}
+      </span>
+      {trailing ? (
+        <>
+          <span aria-hidden="true" className="shrink-0 text-muted-foreground">
+            ·
+          </span>
+          <span
+            data-slot="view-toolbar-filter-chip-trailing"
+            className="shrink-0 whitespace-nowrap tabular-nums"
+          >
+            {trailing}
+          </span>
+        </>
+      ) : null}
       <X
         aria-hidden="true"
         className="size-3 shrink-0 opacity-60 transition-opacity duration-fast ease-standard group-hover:opacity-100"

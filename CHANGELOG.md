@@ -46,6 +46,19 @@
   unchanged (ascending, the signed value-axis read). This is a behaviour change on a shipped
   prop, but it is the documented behaviour, so it is a bug fix rather than a breaking change
   (#244).
+- `@elabs-ai/components-ui`, `@elabs-ai/components-data`: `FilterChip` no longer folds its
+  count into the same string as the label. The base `FilterChip` (`@elabs-ai/components-ui`)
+  gains a `trailing?: string` slot — a short, non-shrinking element rendered alongside the
+  truncatable `label` span rather than concatenated into it — so a long label truncates
+  visually without CSS `text-overflow: ellipsis` eating the count from the tail. The
+  composed accessible name (`"Remove filter: <label> · <trailing>"`) is unchanged.
+  `@elabs-ai/components-data`'s `FilterChip` now passes `count`/`countLabel` through
+  `trailing` instead of string-concatenating them into `label` (#284).
+- `@elabs-ai/components-data`: `FilterChip` no longer accepts a `trailing` prop. Its own
+  `FilterChipProps` re-derived from the base package's `FilterChipProps` and omitted only
+  `label`, so a caller could pass `trailing` and have it type-check while silently winning
+  the spread over the wrapper's own derived count text — the same advertised-but-inert
+  failure mode already closed for `ContextRail`'s `children`, for a different prop (#284).
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
