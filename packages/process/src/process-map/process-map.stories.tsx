@@ -125,6 +125,68 @@ async function expectWellFramedCanvas(canvasElement: HTMLElement) {
   );
 }
 
+/**
+ * Locks #350: `ZoomControls` and `FlowMiniMap` used to both resolve to the React Flow
+ * `bottom-right` panel slot, which is absolutely positioned — the pannable/zoomable
+ * minimap `<svg>` painted over the zoom buttons and took every pointer event meant for
+ * them.
+ *
+ * The hit test is the user-visible property: whatever `document.elementFromPoint` returns
+ * at a button's own centre is what a real click actually lands on, so a synthetic
+ * `.click()` (which fires regardless of what is drawn on top) would pass right through
+ * this exact bug — the reason the issue explicitly rules that approach out. The rect
+ * check is kept alongside it because it explains a hit-test failure with two numbers
+ * instead of a screen coordinate, and it also catches the two panels drifting back
+ * together at a size where they happen not to share a centre point.
+ *
+ * Also checked: neither panel overlaps the top rail (legend + filter trigger), which sits
+ * in its own `pointer-events-none` wrapper at the top of the canvas.
+ */
+function expectClickableZoomControls(canvasElement: HTMLElement) {
+  const rectsIntersect = (a: DOMRect, b: DOMRect) =>
+    a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+  for (const label of ["Zoom in", "Zoom out", "Fit view"]) {
+    const button = within(canvasElement).getByRole("button", { name: label });
+    const rect = button.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(cx, cy);
+    expect(hit, `expected "${label}" to be the topmost element at its own centre`).toBeTruthy();
+    expect(
+      hit === button || button.contains(hit),
+      `"${label}" is covered at its own centre by ${hit?.outerHTML ?? "nothing"}`,
+    ).toBe(true);
+  }
+
+  const zoomInButton = within(canvasElement).getByRole("button", { name: "Zoom in" });
+  const zoomPanel = zoomInButton.closest<HTMLElement>(".react-flow__panel");
+  const miniMap = canvasElement.querySelector<HTMLElement>(".react-flow__minimap");
+  const topRail = canvasElement.querySelector<HTMLElement>('[data-slot="process-map-top-rail"]');
+  expect(zoomPanel, "no .react-flow__panel around the zoom controls").toBeTruthy();
+
+  if (miniMap) {
+    expect(
+      rectsIntersect(zoomPanel!.getBoundingClientRect(), miniMap.getBoundingClientRect()),
+      "ZoomControls and FlowMiniMap bounding boxes intersect",
+    ).toBe(false);
+  }
+
+  if (topRail) {
+    const railRect = topRail.getBoundingClientRect();
+    expect(
+      rectsIntersect(zoomPanel!.getBoundingClientRect(), railRect),
+      "ZoomControls overlaps the top rail (legend + filter trigger)",
+    ).toBe(false);
+    if (miniMap) {
+      expect(
+        rectsIntersect(miniMap.getBoundingClientRect(), railRect),
+        "FlowMiniMap overlaps the top rail (legend + filter trigger)",
+      ).toBe(false);
+    }
+  }
+}
+
 const meta = {
   title: "Process/ProcessMap",
   component: ProcessMap,
@@ -175,6 +237,7 @@ export const Frequency: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expectWellFramedCanvas(canvasElement);
+    expectClickableZoomControls(canvasElement);
 
     // Click-to-select: a node picks itself, and the rest of the graph reads as excluded.
     const nodes = canvasElement.querySelectorAll<HTMLElement>(
