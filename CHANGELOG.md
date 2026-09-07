@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- `@elabs-ai/components-process`: `ProcessMap`'s zoom controls (Fit view / Zoom in / Zoom
+  out) are clickable again. `ZoomControls` and `FlowMiniMap` both resolved to React Flow's
+  `bottom-right` panel slot, so the pannable/zoomable minimap's `<svg>` painted over the
+  buttons and took every click meant for them. The controls now render in the bottom-left
+  corner instead. (#350)
 - `@elabs-ai/components-process`: the process map's node-slide animation works again. The
   class that carries it was assembled by interpolating a constant, and Tailwind extracts
   classes from source text without evaluating JavaScript, so no CSS was emitted and nodes

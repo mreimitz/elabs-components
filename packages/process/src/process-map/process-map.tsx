@@ -764,13 +764,19 @@ export function ProcessMap({
             onPaneClick={() => applySelection(null)}
             onNodesChange={handleNodesChange}
           >
-            <ZoomControls />
+            {/* `bottom-right` is the minimap's corner; the controls take the other
+                bottom corner so a pannable/zoomable minimap never sits on top of them
+                (#350). The top rail (legend + filter trigger) already owns the top. */}
+            <ZoomControls position="bottom-left" />
             {showMiniMap ? <FlowMiniMap pannable zoomable /> : null}
           </CanvasShell>
         </ProcessMapEdgeKeyContext>
       </ProcessMapHoverContext>
 
-      <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3">
+      <div
+        data-slot="process-map-top-rail"
+        className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3"
+      >
         {showLegend ? (
           <Legend
             variant="scale"
