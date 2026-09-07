@@ -24,7 +24,8 @@ describe("FilterChip", () => {
     render(
       <FilterChip label="Status: Failed" count={1204} countLabel="excluded" onRemove={vi.fn()} />,
     );
-    expect(screen.getByText("Status: Failed · excluded 1,204")).toBeInTheDocument();
+    expect(screen.getByText("Status: Failed")).toBeInTheDocument();
+    expect(screen.getByText("excluded 1,204")).toBeInTheDocument();
   });
 
   it("folds the count into the chip's ACCESSIBLE NAME, not only its visible text", () => {
@@ -38,7 +39,8 @@ describe("FilterChip", () => {
 
   it("renders a bare formatted count with no countLabel", () => {
     render(<FilterChip label="Status: Failed" count={1204} onRemove={vi.fn()} />);
-    expect(screen.getByText("Status: Failed · 1,204")).toBeInTheDocument();
+    expect(screen.getByText("Status: Failed")).toBeInTheDocument();
+    expect(screen.getByText("1,204")).toBeInTheDocument();
   });
 
   it("fires onRemove for the clicked chip only, leaving sibling chips untouched", async () => {
@@ -59,5 +61,52 @@ describe("FilterChip", () => {
   it("merges a caller className onto the root", () => {
     render(<FilterChip label="Status: Failed" onRemove={vi.fn()} className="extra" />);
     expect(screen.getByRole("button")).toHaveClass("extra");
+  });
+
+  it("keeps the count in a non-shrinking element so truncation can only reach the label", () => {
+    const { container } = render(
+      <FilterChip
+        label="Status: Awaiting downstream reconciliation review"
+        count={1204}
+        countLabel="excluded"
+        onRemove={vi.fn()}
+      />,
+    );
+    const truncating = container.querySelector('[class*="truncate"]');
+    expect(truncating).not.toBeNull();
+    expect(truncating).toHaveTextContent("Status: Awaiting downstream reconciliation review");
+    expect(truncating?.textContent).toBe("Status: Awaiting downstream reconciliation review");
+
+    // The count lives in its own, sibling element — never inside the truncating one.
+    const count = screen.getByText("excluded 1,204");
+    expect(count).not.toBe(truncating);
+    expect(truncating?.contains(count)).toBe(false);
+  });
+
+  // Type-level lock, same shape as ContextRail's `children` omission
+  // (context-rail.test.tsx #15): `FilterChipProps` is re-derived from the
+  // base package's `BaseFilterChipProps` and must omit `trailing` alongside
+  // `label`. The wrapper computes its OWN `trailing` from `count`/
+  // `countLabel` and passes it to the base component BEFORE spreading the
+  // rest of `props` (`trailing={countText} {...props}`), so a caller-
+  // supplied `trailing` that type-checked would win the spread and silently
+  // replace the formatted count at render — advertised by the type, inert
+  // (worse: wrong) at runtime. Fails to typecheck the moment `trailing` is
+  // dropped from the `Omit`.
+  it("(type-level) does not accept a `trailing` prop", () => {
+    function typeOnly() {
+      return (
+        <FilterChip
+          label="Status: Failed"
+          count={1204}
+          // @ts-expect-error — `trailing` is omitted from `FilterChipProps`;
+          // the wrapper derives its own `trailing` from `count`/`countLabel`
+          // and must not let a caller override it.
+          trailing="hijacked"
+          onRemove={vi.fn()}
+        />
+      );
+    }
+    expect(typeof typeOnly).toBe("function");
   });
 });

@@ -9,11 +9,12 @@
  * audit found the real, accessible, whole-chip-as-button `FilterChip` already
  * lives there (WCAG 2.5.8 target size, WCAG 2.5.3 "Remove filter: <label>"
  * accessible name). Building a second one in `packages/data` would duplicate
- * that work; this wrapper reuses it and folds `count`/`countLabel` into the
- * LABEL TEXT the base component both renders and names itself from — so the
- * count reaches the chip's ACCESSIBLE NAME automatically (screen readers hear
- * "Remove filter: Status: Failed · excluded 1,204"), not only its visible
- * text.
+ * that work; this wrapper reuses it and passes `count`/`countLabel` through
+ * the base component's `trailing` slot (#284) — a second, non-shrinking text
+ * element, distinct from the truncatable `label` — so the count reaches the
+ * chip's ACCESSIBLE NAME (screen readers hear "Remove filter: Status: Failed
+ * · excluded 1,204") AND survives truncation in the visible chip, instead of
+ * being folded into the one string CSS `truncate` can clip from the tail.
  */
 import { forwardRef } from "react";
 import {
@@ -22,7 +23,15 @@ import {
   useLocale,
 } from "@elabs-ai/components-ui";
 
-export interface FilterChipProps extends Omit<BaseFilterChipProps, "label"> {
+// `trailing` is omitted alongside `label`: this wrapper derives its OWN
+// `trailing` from `count`/`countLabel` and passes it to the base component
+// after spreading `props` (`trailing={countText} {...props}` below would
+// otherwise let a caller-supplied `trailing` win the spread and silently
+// replace the formatted count — the count would still type-check as
+// present but render (and get announced) as whatever the caller passed,
+// the same advertised-but-inert failure mode #382/#284-round-1 already
+// closed elsewhere in the repo (`ContextRail`'s `children` omission).
+export interface FilterChipProps extends Omit<BaseFilterChipProps, "label" | "trailing"> {
   /**
    * Label-in-value text — `"Status: Failed"`, never `"Status = failed"` and
    * never a bare `"Failed"`. Same contract as the base `FilterChip`.
@@ -65,7 +74,8 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
     <BaseFilterChip
       ref={ref}
       data-slot="filter-chip"
-      label={countText ? `${label} · ${countText}` : label}
+      label={label}
+      trailing={countText}
       {...props}
     />
   );
