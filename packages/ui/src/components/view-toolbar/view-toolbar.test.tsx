@@ -208,6 +208,39 @@ describe("FilterChip", () => {
     expect(chip).not.toBeNull();
     expect(ref.current).toBe(chip);
   });
+
+  describe("trailing slot", () => {
+    it("renders trailing in its own element, separate from the truncating label span (#284)", () => {
+      const { container } = render(
+        <FilterChip label="Status: Failed" trailing="excluded 1,204" onRemove={() => undefined} />,
+      );
+      const label = container.querySelector("[data-slot='view-toolbar-filter-chip-label']");
+      const trailing = container.querySelector("[data-slot='view-toolbar-filter-chip-trailing']");
+      expect(label).not.toBeNull();
+      expect(trailing).not.toBeNull();
+      expect(label?.textContent).toBe("Status: Failed");
+      expect(trailing?.textContent).toBe("excluded 1,204");
+      expect(label?.className).toContain("truncate");
+      expect(trailing?.contains(label)).toBe(false);
+      expect(label?.contains(trailing as Node)).toBe(false);
+    });
+
+    it("composes label and trailing into the accessible name", () => {
+      render(
+        <FilterChip label="Status: Failed" trailing="excluded 1,204" onRemove={() => undefined} />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Remove filter: Status: Failed · excluded 1,204" }),
+      ).toBeInTheDocument();
+    });
+
+    it("renders no trailing element when trailing is omitted", () => {
+      const { container } = render(
+        <FilterChip label="Status: Failed" onRemove={() => undefined} />,
+      );
+      expect(container.querySelector("[data-slot='view-toolbar-filter-chip-trailing']")).toBeNull();
+    });
+  });
 });
 
 describe("ResultCount", () => {

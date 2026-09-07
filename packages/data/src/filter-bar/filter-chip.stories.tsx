@@ -12,10 +12,12 @@ const meta = {
       description: {
         component:
           "The removable active-filter chip for `FilterBar`, with an optional secondary " +
-          'count ("excluded 1,204"). Composes `@elabs-ai/components-ui`\'s `FilterChip` — the ' +
-          "whole chip is a single button whose accessible name is " +
-          '"Remove filter: <label>" (WCAG 2.5.3), so the count folded into `label` reaches ' +
-          "the accessible name too, not only the visible text.",
+          'count ("excluded 1,204"), passed to the base `trailing` slot (#284) rather than ' +
+          "folded into `label` — a long label truncates on its own, the count never loses " +
+          "characters to the ellipsis. Composes `@elabs-ai/components-ui`'s `FilterChip` — the " +
+          'whole chip is a single button whose accessible name is "Remove filter: <label> · ' +
+          '<trailing>" (WCAG 2.5.3), so the count still reaches the accessible name, not only ' +
+          "the visible text.",
       },
     },
   },
@@ -42,7 +44,10 @@ export const WithCount: Story = {
   args: { count: 1204, countLabel: "excluded" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Status: Failed · excluded 1,204")).toBeInTheDocument();
+    // Label and count are separate elements (#284) — the count is never
+    // folded into the truncatable label string.
+    await expect(canvas.getByText("Status: Failed")).toBeInTheDocument();
+    await expect(canvas.getByText("excluded 1,204")).toBeInTheDocument();
     await expect(
       canvas.getByRole("button", { name: "Remove filter: Status: Failed · excluded 1,204" }),
     ).toBeInTheDocument();
@@ -54,7 +59,8 @@ export const BareCount: Story = {
   args: { count: 1204 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Status: Failed · 1,204")).toBeInTheDocument();
+    await expect(canvas.getByText("Status: Failed")).toBeInTheDocument();
+    await expect(canvas.getByText("1,204")).toBeInTheDocument();
   },
 };
 
@@ -90,6 +96,43 @@ export const MultipleChips: Story = {
     await userEvent.click(statusChip);
     await expect(statusChip).not.toBeInTheDocument();
     await expect(regionChip).toBeInTheDocument();
+  },
+};
+
+/**
+ * A label long enough to overflow a 280px container (#284). The label
+ * truncates with an ellipsis; the count stays fully visible — CSS
+ * `text-overflow: ellipsis` can only reach the label's own span, never the
+ * count's sibling element.
+ */
+export const LongLabelWithCount: Story = {
+  args: {
+    label: "Status: Awaiting downstream reconciliation review",
+    count: 1204,
+    countLabel: "excluded",
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[280px]">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const count = await canvas.findByText("excluded 1,204");
+    await expect(count).toBeInTheDocument();
+
+    const truncating = canvasElement.querySelector('[class*="truncate"]');
+    await expect(truncating).not.toBeNull();
+    // The count must never be a descendant of the truncating label span.
+    await expect(truncating?.contains(count)).toBe(false);
+
+    await expect(
+      canvas.getByRole("button", {
+        name: "Remove filter: Status: Awaiting downstream reconciliation review · excluded 1,204",
+      }),
+    ).toBeInTheDocument();
   },
 };
 
