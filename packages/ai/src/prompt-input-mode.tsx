@@ -113,27 +113,46 @@ export const PromptInputMode = forwardRef<HTMLDivElement, PromptInputModeProps>(
 
           <DropdownMenuContent align="start" data-slot="prompt-input-mode-content" className="w-72">
             <DropdownMenuRadioGroup value={selected} onValueChange={handleChange}>
-              {modes.map((mode) => (
-                <DropdownMenuRadioItem
-                  key={mode.id}
-                  value={mode.id}
-                  data-slot="prompt-input-mode-item"
-                  className="gap-2"
-                >
-                  {mode.icon}
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-body">{mode.label}</span>
-                    {mode.description === undefined ? null : (
-                      <span className="truncate text-meta text-muted-foreground">
-                        {mode.description}
-                      </span>
+              {modes.map((mode) => {
+                const descriptionId =
+                  mode.description === undefined
+                    ? undefined
+                    : `prompt-input-mode-description-${mode.id}`;
+                return (
+                  <DropdownMenuRadioItem
+                    key={mode.id}
+                    value={mode.id}
+                    data-slot="prompt-input-mode-item"
+                    className="gap-2"
+                    aria-describedby={descriptionId}
+                  >
+                    {mode.icon}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-body">{mode.label}</span>
+                      {mode.description === undefined ? null : (
+                        // Visible, but excluded from the item's accessible
+                        // name (aria-hidden) so the name stays exactly the
+                        // label; still exposed as the accessible DESCRIPTION
+                        // via aria-describedby above — a hidden node an
+                        // aria-describedby reference points to is still read
+                        // for the description computation.
+                        <span
+                          id={descriptionId}
+                          aria-hidden="true"
+                          className="truncate text-meta text-muted-foreground"
+                        >
+                          {mode.description}
+                        </span>
+                      )}
+                    </span>
+                    {mode.keyHint === undefined ? null : (
+                      <Kbd className="shrink-0" aria-hidden="true">
+                        {mode.keyHint}
+                      </Kbd>
                     )}
-                  </span>
-                  {mode.keyHint === undefined ? null : (
-                    <Kbd className="shrink-0">{mode.keyHint}</Kbd>
-                  )}
-                </DropdownMenuRadioItem>
-              ))}
+                  </DropdownMenuRadioItem>
+                );
+              })}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
