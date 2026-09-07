@@ -366,6 +366,7 @@ export const ChangeReviewProvenance = forwardRef<HTMLDivElement, ChangeReviewPro
             "flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted-foreground pb-3",
             className,
           )}
+          role="group"
           aria-label="Change provenance"
           {...props}
         >
@@ -397,6 +398,7 @@ export const ChangeReviewProvenance = forwardRef<HTMLDivElement, ChangeReviewPro
       <div
         ref={ref}
         className={cn("pb-3 text-caption text-muted-foreground", className)}
+        role="group"
         aria-label="Change provenance"
         {...props}
       >

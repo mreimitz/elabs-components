@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ui`: `ChangeReviewProvenance` no longer relies on `aria-label` alone
+  on a role-less `<div>` — assistive tech ignores that attribute pairing, so the "Change
+  provenance" label was silently discarded for both the structured-object and custom-`ReactNode`
+  render paths. Both now carry `role="group"` alongside the label so the name actually reaches
+  the accessibility tree; the `role="img"` status indicator elsewhere in `ChangeReview` was
+  already correct and is unchanged (#159).
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls
   reading the same node rectangles — which two polls taken inside one rendered frame always
