@@ -335,6 +335,8 @@ pnpm baseline-provenance:check  # every committed variant-coverage/loading-state
 pnpm baseline-provenance:check:test # self-test for the ratchet-baseline provenance meta-gate
 pnpm worktree-branch:check      # a worktree carrying an `.expected-branch` marker may only commit on that branch; ALSO blocks a commit on `main` in the PRIMARY checkout while another worktree is marked, unless `ALLOW_MAIN_COMMIT=1` — silent no-op with no orchestration in flight (#403)
 pnpm worktree-branch:check:test # self-test for the worktree-branch guard (drives the real .githooks/pre-commit end to end)
+pnpm worktrees:check            # a `/close-issues` worktree whose branch has LANDED and whose tree is clean must be torn down — a leftover copy is scanned as real TypeScript projects and its marker keeps blocking commits on `main`; deletes nothing, prints the removal commands
+pnpm worktrees:check:test       # self-test for the stale-worktree gate (builds real repos: a landed+clean unit must fail, live/dirty/unreadable ones must pass)
 pnpm slop:check                 # content anti-slop — the "Jane Doe effect" (John Doe / 99.99% / Acme) in shipped source is ratcheted (#107)
 pnpm slop:check:test            # self-test for the anti-slop ratchet
 pnpm collapse-fork:check        # one collapse mechanism — no gap-spacer + fixed-slide width tween outside useCollapsiblePanel (#190)

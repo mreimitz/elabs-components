@@ -12,5 +12,18 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
 
   // ESLint resolves each package's flat config from that package's own directory.
-  "eslint.workingDirectories": [{ "mode": "auto" }]
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+
+  // `/close-issues` checks each unit out into `.claude/worktrees/<unit>/` — a FULL
+  // copy of the repo, `tsconfig.json` in every package included. Git ignores those
+  // (.gitignore), but the editor does not: the TS server discovers each copy as its
+  // own project, so every package gets typechecked once per live worktree, and when
+  // the orchestrator removes a worktree the diagnostics it opened outlive the folder
+  // ("No inputs were found in config file '….claude/worktrees/<unit>/packages/ui/
+  // tsconfig.json'") until the window is reloaded. Excluding the directory outright
+  // is what stops both: the copies are transient and are never the source of truth.
+  "files.exclude": { "**/.claude/worktrees": true },
+  "files.watcherExclude": { "**/.claude/worktrees/**": true },
+  "search.exclude": { "**/.claude/worktrees": true },
+  "typescript.tsserver.watchOptions": { "excludeDirectories": ["**/.claude/worktrees"] }
 }

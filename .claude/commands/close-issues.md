@@ -109,6 +109,18 @@ rendered proof in both themes (screenshots + numeric contrast; own Storybook
 4. **No battery re-run after merge** — CI on `main` is the verdict. Verify each
    issue's state (`gh issue view N --json state`); reopen a wrongly closed one with a
    comment via `node scripts/post-issue-comment.mjs`.
+5. **Tear the wave's worktrees down — the run is not over until this is done.**
+   `git worktree remove .claude/worktrees/<unit>` for each merged unit, then
+   `git worktree prune` and `git branch -d agents/<unit>` (after the PR merged, so
+   `-d` sees it merged to `origin/main`). A left-behind worktree is a full copy of
+   the repo: its per-package `tsconfig.json` files get picked up as real TypeScript
+   projects by anything scanning the tree, and its `.expected-branch` marker keeps
+   `worktree-branch:check` blocking commits on `main` with "an orchestrated run is in
+   flight" long after this one landed. `pnpm worktrees:check` is the gate for this
+   step — it fails on any worktree whose work has landed (squash merges included)
+   and whose tree is clean, and prints the exact removal commands. It also runs
+   itself at the end of every session (`.claude/hooks/stale-worktree-nudge.sh`,
+   advisory), so a forgotten teardown surfaces without anyone remembering to look.
 
 ## Model routing
 

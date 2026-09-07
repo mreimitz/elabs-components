@@ -103,7 +103,29 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   is in flight elsewhere), unless the orchestrator's own loud override
   `ALLOW_MAIN_COMMIT=1` is set for its own merge/integration commits. An
   UNMARKED worktree with no orchestration running anywhere is a silent no-op
-  either way — see `scripts/check-worktree-branch.mjs`), and the
+  either way — see `scripts/check-worktree-branch.mjs`), the stale-worktree
+  gate (`pnpm worktrees:check` — the companion to the guard above, for the
+  OTHER half of a worktree's life. A wave's units were left on disk after
+  their branches landed, and a finished worktree is not free: it is a full
+  copy of the repo, so anything scanning the tree (a `tsc` project scan, the
+  editor's TypeScript server) picks up its per-package `tsconfig.json` as a
+  real project — the editor reported "No inputs were found in config file
+  '….claude/worktrees/<unit>/packages/ui/tsconfig.json'" against folders that
+  had already been deleted — and its `.expected-branch` marker keeps the guard
+  above blocking commits on `main`, saying an orchestrated run is "in flight"
+  long after the wave merged. A directory under `.claude/worktrees/` fails
+  when its branch is fully merged into `origin/main` (or local `main` when
+  there is no remote) AND its tree is clean, or when git no longer tracks it
+  as a worktree at all; unmerged commits, uncommitted changes and anything
+  unreadable pass silently, so a live wave never trips it. It deletes nothing —
+  it prints the `git worktree remove` / `git branch -d` lines, and an
+  unregistered leftover gets `rmdir`, which is the command that actually works
+  on one. Where it RUNS is the load-bearing half: the battery never sees this
+  state (Phase 3 runs inside a unit worktree, which has no sibling
+  `.claude/worktrees/`; Phase 4 forbids a post-merge battery; CI checks out
+  fresh), so `.claude/hooks/stale-worktree-nudge.sh` runs it on `Stop` in the
+  primary checkout — advisory, silent unless something is actually stale — see
+  `scripts/check-stale-worktrees.mjs`), and the
   ratchet-baseline PROVENANCE meta-gate (`pnpm baseline-provenance:check`,
   #400 — a ratchet-baseline gate (`variants:check`, `loading-states:check`,
   `states:check`) only ever asserted that the CONTENTS of its committed baseline
