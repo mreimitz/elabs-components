@@ -17,6 +17,7 @@ import React, { forwardRef } from "react";
 import { cleanup, render, screen, fireEvent, within, act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GanttStatus, GanttTask, GanttTimeUnit, GanttViewMode, Status } from "./gantt";
+import { virtualizedTasks } from "./gantt-virtualized-fixture";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -1314,5 +1315,24 @@ describe("Gantt defaultViewMode=auto keeps the toolbar honest (#360 fix round 1)
     // The scale re-derives to `day`; the toolbar must not keep claiming Second.
     expect(canvasWidthPx()).not.toBeCloseTo(secondCanvas, 3);
     expect(pressedLabel()).toBe("Day");
+  });
+});
+
+describe("Gantt virtualized story fixture is deterministic (#275)", () => {
+  it("draws byte-identical progress fills across two separate mounts", () => {
+    const readProgressWidths = () => {
+      const { container } = render(<Gantt tasks={virtualizedTasks} style={{ height: 480 }} />);
+      return Array.from(container.querySelectorAll('[data-slot="gantt-bar-progress"]')).map(
+        (el) => (el as HTMLElement).style.width,
+      );
+    };
+
+    const first = readProgressWidths();
+    cleanup();
+    const second = readProgressWidths();
+
+    // A real assertion, not a vacuous one — the fixture actually renders progress fills.
+    expect(first.length).toBeGreaterThan(0);
+    expect(second).toEqual(first);
   });
 });

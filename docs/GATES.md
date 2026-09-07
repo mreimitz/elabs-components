@@ -202,27 +202,21 @@ sqrt(value / max)`, so drawn AREA — not radius — is proportional to value);
   can only shrink it (a currently-failing key not already in the baseline is
   REJECTED, not silently added); rules 1-3 have no baseline and fail
   immediately on any new violation.
-  **Scope is `packages/charts/src/{charts,marks}/**` only — a DECLARED
-  limit, not a silent one.** For rules 1/2/4 this is a reasoned exclusion:
-  those rules police a value ENCODING (length/area/radius/unit), and the
-  sibling directories (`gantt/`, `metric-card/`, `metric-grid/`,
-  `sparkline/`, `chart-card/`, `chart-frame/`, `auto-chart/`) own none — a
-  Gantt bar draws a date range and a 0–100 progress fraction against a fixed
-  timeline, never a length pulled from an arbitrary y-domain, and has no
-  area/radius mark at all. For rule 3 (no `Math.random`) that reasoning does
-  **not** hold — the item's spec bans it package-wide with no encoding
-  caveat — and the narrowing hid a real, in-spec violation:
-  `gantt/gantt.stories.tsx:250`calls`Math.random()`in a story's fixture
-  data. This is **not** fixed by this gate: fixing it means editing
- `gantt.stories.tsx`, which is outside this item's write-set, and a ratchet
-  baseline for rule 3 is not authorized (RM-039's ratchet exception covers
-  only rule 4's story captions). The finding is reported for `/file-issue`   routing instead. Whoever fixes it should also decide whether to widen
-  `SCAN_DIRS`to`packages/charts/src` for rule 3 at the same time — see the
-  script's own header for the fuller reasoning. Self-tested
+  **Scope is per-rule, not shared (#275).** Rules 1/2/4 scan
+  `packages/charts/src/{charts,marks}/**` only — a reasoned exclusion: those
+  rules police a value ENCODING (length/area/radius/unit), and the sibling
+  directories (`gantt/`, `metric-card/`, `metric-grid/`, `sparkline/`,
+  `chart-card/`, `chart-frame/`, `auto-chart/`) own none — a Gantt bar draws a
+  date range and a 0–100 progress fraction against a fixed timeline, never a
+  length pulled from an arbitrary y-domain, and has no area/radius mark at
+  all. Rule 3 (no `Math.random`) scans the whole `packages/charts/src/**`,
+  because determinism is a property of every rendered file, not a value
+  encoding — see the script's own header for the fuller reasoning.
+  Self-tested
   (`scripts/check-charts-honesty.test.mjs`) including a dedicated regression
   for the union-vs-intersect baseline-update bug class (a naive
   `[...current, ...old].filter(current.includes)`always reduces to
- `current`, which would silently accept every new failure) and for the
+  `current`, which would silently accept every new failure) and for the
   real-tree false positives this gate hit during development (a JSX
   attribute like `fill="var(--chart-1)" … unit={2000}` satisfying a
   whole-block "one … = …" regex by punctuation accident, a story-block
