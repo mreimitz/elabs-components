@@ -18,7 +18,14 @@
  *     present.
  *  3. When an edge carries none of `weight`/`value`/`label`/`secondaryLabel`,
  *     return `undefined` so React Flow's own default
- *     ("Edge from <source> to <target>") survives untouched.
+ *     ("Edge from <source> to <target>") survives untouched. That quoted
+ *     string is `@xyflow/react`'s output, not ours — the `e-bare` edge in
+ *     `flow-weighted-edge.stories.tsx`'s `NamingContractEdges` story (#327)
+ *     is the browser lock for it: it renders a measure-less edge against a
+ *     real `CanvasShell` and asserts the default name via
+ *     `toHaveAccessibleName`. If that story goes red after a dependency
+ *     bump, read it as a signal that React Flow's default changed, not as a
+ *     flake to silence.
  */
 
 import type { BrandFlowWeightedEdge } from "./flow-weighted-edge";

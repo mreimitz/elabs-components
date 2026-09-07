@@ -66,6 +66,14 @@
   the other three rules — is not a value-encoding concern scoped to those two directories
   (#275).
 
+- `@elabs-ai/components-flow`: `FlowWeightedEdge`'s naming contract clause 3 — a measure-less
+  edge (no `weight`/`value`/`label`/`secondaryLabel`) keeps React Flow's own default accessible
+  name, `"Edge from <source> to <target>"` — now has a browser-level lock. That default is
+  produced entirely by `@xyflow/react`, not by this repo, and nothing previously rendered a
+  measure-less edge against a real `CanvasShell`: the new `NamingContractEdges` story
+  (`flow-weighted-edge.stories.tsx`) does, alongside the already-covered clauses for a composed
+  name and a caller-set `ariaLabel`. No behaviour changed; `edge-aria.ts`'s docblock now points
+  at the story that locks it (#327).
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls
   reading the same node rectangles — which two polls taken inside one rendered frame always
