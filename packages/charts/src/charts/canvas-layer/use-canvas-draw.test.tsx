@@ -43,9 +43,10 @@ function Harness({ animateIn }: { animateIn: boolean }) {
   const { canvasRef } = useCanvasDraw({
     animateIn,
     // A short ramp on purpose: the assertion is that it RAMPS, and a 480ms
-    // default takes ~30 rAF frames, which is slow enough to time out when the
-    // whole suite runs in parallel (it passed in isolation and failed in the
-    // full run — the co-residency trap in `.claude/rules/component-api.md`).
+    // default takes ~30 rAF frames, which is unnecessarily slow for a test.
+    // (This used to also mask a real clock-mixing bug, #396, that made the
+    // ramp jump load-dependently — fixed by deriving `start` from the first
+    // rAF callback's own `now` instead of an out-of-band `performance.now()`.)
     animationDuration: 60,
     draw: (_ctx, scales: ChartScales) => {
       progressSeen.push(scales.progress);
@@ -62,6 +63,50 @@ describe("useCanvasDraw", () => {
     await waitFor(() => expect(progressSeen.at(-1)).toBe(1), { timeout: 4000 });
     expect(progressSeen[0]).toBeLessThan(1);
     expect(progressSeen.length).toBeGreaterThan(1);
+  });
+
+  it("never ramps progress negative when the first rAF `now` disagrees with the ambient performance.now() clock", () => {
+    // Deterministic lock for the clock-mixing mechanism itself (#396): a real
+    // `performance.now()` reading taken OUTSIDE the rAF loop (as an eager
+    // `start` capture would) is made to read far ahead of the timestamps the
+    // rAF scheduler itself hands to callbacks — exactly the origin mismatch
+    // jsdom produces under contention. Every scheduled frame is driven by
+    // hand, including the re-scheduling `step` does from inside itself, so
+    // this reproduces the bug on every run rather than only under real load.
+    const pendingFrames: FrameRequestCallback[] = [];
+    let nextFrameId = 0;
+    const rafSpy = vi
+      .spyOn(globalThis, "requestAnimationFrame")
+      .mockImplementation((cb: FrameRequestCallback) => {
+        pendingFrames.push(cb);
+        return ++nextFrameId;
+      });
+    const cafSpy = vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(() => {});
+    // Ambient clock reads a huge value: the eager `performance.now()` this
+    // issue diagnoses would capture THIS as `start`, while the rAF callbacks
+    // below hand back timestamps from an entirely different, near-zero origin.
+    const nowSpy = vi.spyOn(performance, "now").mockReturnValue(999_999);
+
+    render(<Harness animateIn />);
+
+    // Drive every scheduled frame (including ones `step` re-schedules from
+    // inside itself) on a rAF-native clock that starts near zero.
+    let rafClock = 0;
+    let framesRun = 0;
+    while (pendingFrames.length > 0 && framesRun < 10) {
+      const callback = pendingFrames.shift();
+      framesRun += 1;
+      callback?.(rafClock);
+      rafClock += 60; // animationDuration in Harness
+    }
+
+    rafSpy.mockRestore();
+    cafSpy.mockRestore();
+    nowSpy.mockRestore();
+
+    expect(progressSeen.length).toBeGreaterThan(0);
+    expect(progressSeen.every((p) => p >= 0)).toBe(true);
+    expect(progressSeen.at(-1)).toBe(1);
   });
 
   it("draws the FINAL frame immediately under prefers-reduced-motion", async () => {
