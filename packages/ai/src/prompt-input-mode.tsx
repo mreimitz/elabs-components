@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, type HTMLAttributes } from "react";
+import { forwardRef, useId, type HTMLAttributes } from "react";
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import { ChevronDown } from "lucide-react";
 import {
@@ -77,6 +77,13 @@ export const PromptInputMode = forwardRef<HTMLDivElement, PromptInputModeProps>(
 
     const current = modes.find((mode) => mode.id === selected) ?? modes[0];
 
+    // `OperatingMode.id` is an unconstrained, consumer-owned string — it may
+    // contain whitespace or other characters that are invalid inside a
+    // single `aria-describedby` token (a space-separated ID list splits on
+    // whitespace). Derive a per-instance, DOM-safe id from `useId()` and the
+    // mode's index instead of embedding the raw value.
+    const descriptionIdBase = useId();
+
     return (
       <div
         ref={ref}
@@ -113,11 +120,11 @@ export const PromptInputMode = forwardRef<HTMLDivElement, PromptInputModeProps>(
 
           <DropdownMenuContent align="start" data-slot="prompt-input-mode-content" className="w-72">
             <DropdownMenuRadioGroup value={selected} onValueChange={handleChange}>
-              {modes.map((mode) => {
+              {modes.map((mode, index) => {
                 const descriptionId =
                   mode.description === undefined
                     ? undefined
-                    : `prompt-input-mode-description-${mode.id}`;
+                    : `${descriptionIdBase}-description-${index}`;
                 return (
                   <DropdownMenuRadioItem
                     key={mode.id}

@@ -77,4 +77,23 @@ describe("PromptInputMode", () => {
     // description, not folded into the name.
     expect(planOption).toHaveAccessibleDescription("Proposes a plan before acting");
   });
+
+  it("resolves the accessible description even when a consumer-supplied mode id contains whitespace (#153)", async () => {
+    const modesWithSpaceId: OperatingMode[] = [
+      { id: "auto", label: "Auto", description: "Acts without asking" },
+      {
+        id: "plan first",
+        label: "Plan first",
+        description: "Proposes a plan before acting",
+      },
+    ];
+    render(<PromptInputMode modes={modesWithSpaceId} />);
+    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
+
+    const planOption = await screen.findByRole("menuitemradio", { name: "Plan first" });
+    // `aria-describedby` is a space-separated token list of IDs — an id
+    // built from a raw mode value containing whitespace (e.g. "plan first")
+    // splits into two references, breaking the association.
+    expect(planOption).toHaveAccessibleDescription("Proposes a plan before acting");
+  });
 });
