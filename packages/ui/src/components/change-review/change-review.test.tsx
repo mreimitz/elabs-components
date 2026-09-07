@@ -65,6 +65,26 @@ describe("ChangeReview — render", () => {
     );
     expect(screen.getByTestId("custom-prov")).toBeInTheDocument();
   });
+
+  it("exposes structured provenance as a named group reachable by assistive tech", () => {
+    // aria-label on a role-less <div> is prohibited and silently discarded (#159) —
+    // assert the accessible name actually resolves via the ARIA role tree, not just
+    // that the attribute is present in the DOM.
+    render(
+      <ChangeReview
+        hunks={HUNKS}
+        provenance={{ author: "Atlas Agent", model: "claude-sonnet-4-6", timestamp: "14:02" }}
+      />,
+    );
+    expect(screen.getByRole("group", { name: "Change provenance" })).toBeInTheDocument();
+  });
+
+  it("exposes ReactNode provenance as a named group reachable by assistive tech", () => {
+    render(
+      <ChangeReview hunks={HUNKS} provenance={<span data-testid="custom-prov">Custom</span>} />,
+    );
+    expect(screen.getByRole("group", { name: "Change provenance" })).toBeInTheDocument();
+  });
 });
 
 // ─── Initial state with controlled approved set ───────────────────────────────
