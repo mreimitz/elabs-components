@@ -527,10 +527,13 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       <div
         data-testid="markdown-editor"
         className={cn(
-          // A 1px hairline focus ring (not a heavy 2px ring) — the editable is a
-          // large surface, so a thinner edit-mode ring reads calmer while still
-          // meeting the visible-focus requirement (same `ring` token). (A7)
-          "milkdown-host overflow-auto rounded-md border border-border bg-background text-foreground focus-ring-within",
+          // No focus-ring utility here (deliberately, #309): the editable
+          // `.ProseMirror` element owns the compound focus indicator itself
+          // (`markdown-editor.css`'s `:focus-visible` rule), so it renders
+          // even when a consumer `className` overrides this wrapper's
+          // classes (`MarkdownWorkspace` does exactly that via
+          // `className="border-0"`) and never doubles up with a wrapper ring.
+          "milkdown-host overflow-auto rounded-md border border-border bg-background text-foreground",
           className,
         )}
         // Publish the shared markdown scale as CSS vars the editor CSS reads, so the

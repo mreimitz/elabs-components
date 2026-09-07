@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
+  keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
+  instead of suppressing the platform outline (`outline: none`) and relying on a wrapper
+  `focus-ring-within` ring that measured 1.36:1 against the background on the `light` theme
+  (effectively invisible) and could be silently dropped by a consumer `className`
+  (`MarkdownWorkspace`'s wysiwyg pane already overrides the wrapper's classes). The indicator
+  now clears 3:1 in both themes, measured on the real rendered surface (#309).
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls
   reading the same node rectangles — which two polls taken inside one rendered frame always
