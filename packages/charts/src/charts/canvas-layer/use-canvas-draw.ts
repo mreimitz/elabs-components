@@ -254,8 +254,18 @@ export function useCanvasDraw({
       return;
     }
     let frame = 0;
-    const start = performance.now();
+    // `start` is derived from the FIRST rAF callback's own `now`, never from
+    // an out-of-band `performance.now()` read: both operands of the elapsed-
+    // time subtraction below then always share one clock source, whatever
+    // that clock happens to be in whatever environment this runs in (#396 —
+    // a bare `performance.now()` and an rAF `now` argument do not share a
+    // time origin under Vitest's jsdom, so mixing them let elapsed time go
+    // unboundedly negative under CI contention).
+    let start: number | null = null;
     const step = (now: number) => {
+      if (start === null) {
+        start = now;
+      }
       const t = Math.min(1, (now - start) / animationDuration);
       progressRef.current = t;
       redraw();

@@ -223,3 +223,55 @@ export const Narrow: Story = {
     );
   },
 };
+
+/**
+ * Eight sections in the default 20rem rail — the count at which the header's
+ * two occupants genuinely compete for the band. `sections` is caller-supplied
+ * and unbounded, and the switcher is a fixed-height row of 32px buttons, so
+ * left uncapped it reserves its full width before the heading gets any: the
+ * active section's label was measured down to roughly 20px of usable width
+ * (its own padding included), which is no label at all. The cap keeps the
+ * heading's half of the band and moves the overflow into the switcher, which
+ * scrolls.
+ */
+export const ManySections: Story = {
+  render: () => (
+    <div className="flex h-[560px] w-full">
+      <div className="flex-1 bg-background p-6 text-muted-foreground">Canvas content</div>
+      <ContextRail
+        sections={[
+          ...sections,
+          { id: "files", label: "Files", icon: <FileText />, content: <p>Files</p> },
+          { id: "notes", label: "Notes", icon: <MessageSquare />, content: <p>Notes</p> },
+          { id: "audit", label: "Audit", icon: <History />, content: <p>Audit</p> },
+          { id: "links", label: "Links", icon: <FileText />, content: <p>Links</p> },
+          { id: "tasks", label: "Tasks", icon: <MessageSquare />, content: <p>Tasks</p> },
+        ]}
+        defaultActiveSectionId="sources"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector<HTMLElement>('[data-slot="context-rail-header"]');
+    const heading = canvasElement.querySelector<HTMLElement>('[data-slot="context-rail-heading"]');
+    const switcher = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="context-rail-switcher"]',
+    );
+    await expect(header).not.toBeNull();
+    await expect(heading).not.toBeNull();
+    await expect(switcher).not.toBeNull();
+
+    const headerWidth = header!.getBoundingClientRect().width;
+    const switcherWidth = switcher!.getBoundingClientRect().width;
+    const headingWidth = heading!.getBoundingClientRect().width;
+
+    // The switcher never takes more than half the band…
+    await expect(switcherWidth).toBeLessThanOrEqual(headerWidth / 2 + 0.5);
+    // …so the heading keeps a width a label can actually render in. The
+    // regression this locks measured ~20px here.
+    await expect(headingWidth).toBeGreaterThan(80);
+    // And the header itself never outgrows the rail (the overflow lives
+    // inside the switcher, which scrolls).
+    await expect(switcher!.scrollWidth).toBeGreaterThan(switcher!.clientWidth);
+  },
+};

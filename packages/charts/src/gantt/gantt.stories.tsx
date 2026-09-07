@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent } from "storybook/test";
 import { Gantt } from "./gantt";
 import type { GanttColumn, GanttSort, GanttTask } from "./gantt";
+import { virtualizedTasks } from "./gantt-virtualized-fixture";
 
 const meta = {
   title: "Charts/Gantt",
@@ -240,16 +241,6 @@ const milestoneTasks: GanttTask[] = [
   { id: "7", name: "Final QA", start: d(40), end: d(46), progress: 0, status: "neutral" },
   { id: "8", name: "Launch", start: d(46), end: d(46), isMilestone: true, status: "neutral" },
 ];
-
-// 60 tasks for the virtualized story
-const virtualizedTasks: GanttTask[] = Array.from({ length: 60 }, (_, i) => ({
-  id: `task-${i}`,
-  name: `Task ${i + 1}`,
-  start: d(i * 2),
-  end: d(i * 2 + 5 + (i % 4)),
-  progress: Math.random(),
-  status: (["success", "info", "warning", "neutral"] as const)[i % 4],
-}));
 
 // ── Stories ───────────────────────────────────────────────────────────────────
 

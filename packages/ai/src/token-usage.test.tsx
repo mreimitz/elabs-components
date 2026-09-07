@@ -1,4 +1,5 @@
 import type { LanguageModelUsage } from "ai";
+import { DEFAULT_MESSAGES, LocaleProvider } from "@elabs-ai/components-ui";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TokenUsage, TokenUsageCache, TokenUsageReasoning } from "./token-usage";
@@ -57,5 +58,35 @@ describe("TokenUsage usage readouts (#30, ai@7 LanguageModelUsage shape)", () =>
       </TokenUsage>,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("TokenUsage locale keys (#141, ai.context.* renamed to ai.tokenUsage.*)", () => {
+  it("the shipped dictionary defines no ai.context.* key", () => {
+    const staleKeys = Object.keys(DEFAULT_MESSAGES).filter((key) => key.startsWith("ai.context."));
+    expect(staleKeys).toEqual([]);
+  });
+
+  it("renders its labels from the ai.tokenUsage.* namespace, not a stale fallback", () => {
+    render(
+      <LocaleProvider
+        messages={{
+          "ai.tokenUsage.reasoning": "Custom reasoning label",
+          "ai.tokenUsage.cache": "Custom cache label",
+        }}
+      >
+        <TokenUsage maxTokens={8000} usage={usage} usedTokens={1200}>
+          <TokenUsageReasoning />
+          <TokenUsageCache />
+        </TokenUsage>
+      </LocaleProvider>,
+    );
+    // A component still reading the old `ai.context.*` namespace would ignore
+    // this override and keep rendering the untranslated English default
+    // ("Reasoning" / "Cache") instead.
+    expect(screen.getByText("Custom reasoning label")).toBeInTheDocument();
+    expect(screen.getByText("Custom cache label")).toBeInTheDocument();
+    expect(screen.queryByText("Reasoning")).not.toBeInTheDocument();
+    expect(screen.queryByText("Cache")).not.toBeInTheDocument();
   });
 });
