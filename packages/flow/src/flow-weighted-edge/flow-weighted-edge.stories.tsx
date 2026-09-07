@@ -375,6 +375,125 @@ export const TenEdgesMixed: Story = {
 };
 
 /**
+ * Contract lock for `edge-aria.ts`'s three naming clauses (#327) — NOT a
+ * visual demo (all three edges render identically; nothing here scales with
+ * weight). Each edge locks a distinct clause:
+ *
+ *  - `e-composed` (clause 2) — weight only, name composed via `nameOf`.
+ *  - `e-custom` (clause 1) — a caller-set `ariaLabel` always wins, even
+ *    though the edge also carries `weight`/`value`. **Freebie, not a gap
+ *    closed**: this path is already covered transitively (15 edges' worth,
+ *    across `Weighted`/`WeightedWithLabels`/`TenEdgesMixed`) and by a
+ *    stronger pure identity assertion (`edge-aria.test.ts`, "an explicit
+ *    edge.ariaLabel always wins, untouched"). It rides along here only
+ *    because the mount already has to happen for `e-bare`.
+ *  - `e-bare` (clause 3 — THE LOCK) — carries none of
+ *    `weight`/`value`/`label`/`secondaryLabel`, so `withWeightedEdgeAria`
+ *    stamps nothing and the edge keeps whatever name React Flow's own
+ *    `EdgeWrapper` gives it by default: `"Edge from <source> to <target>"`,
+ *    interpolating the raw node ids. That string is produced entirely by
+ *    `@xyflow/react`, not by this repo — see `edge-aria.ts:19-21`.
+ *
+ * **Why `nameOf` is load-bearing, not decoration.** Every node title below
+ * is lexically disjoint from its id (`n3` → "Third", `n4` → "Fourth"). That
+ * makes `"Edge from n3 to n4"` — the string this play function asserts for
+ * `e-bare` — UNPRODUCIBLE by this repo's own composer: `nameOf` can only
+ * ever emit display titles, never raw ids. So the only thing that could put
+ * that exact string in the DOM is React Flow itself. Without this, deleting
+ * the clause-3 early return in `edge-aria.ts` would make the seam compose
+ * `"Edge from n3 to n4"` from the raw ids too (no measures to append), and
+ * the assertion would stay green for the wrong reason — see #327's "Test to
+ * add" for the full trap. Do not "simplify" `nameOf` away.
+ */
+export const NamingContractEdges: Story = {
+  render: function NamingContractEdgesStory() {
+    const nodes: BrandFlowNode[] = [
+      { id: "n1", type: "brand", position: { x: 0, y: 0 }, data: { kind: "Step", title: "Start" } },
+      {
+        id: "n2",
+        type: "brand",
+        position: { x: 280, y: 0 },
+        data: { kind: "Step", title: "Middle" },
+      },
+      {
+        id: "n3",
+        type: "brand",
+        position: { x: 560, y: 0 },
+        data: { kind: "Step", title: "Third" },
+      },
+      {
+        id: "n4",
+        type: "brand",
+        position: { x: 840, y: 0 },
+        data: { kind: "Step", title: "Fourth" },
+      },
+    ];
+    const nameOf = (nodeId: string) => nodes.find((n) => n.id === nodeId)?.data.title ?? nodeId;
+    const initialEdges = useMemo(
+      () =>
+        withWeightedEdgeAria(
+          [
+            {
+              id: "e-composed",
+              source: "n1",
+              target: "n2",
+              type: "weighted",
+              data: { weight: 4 },
+            },
+            {
+              id: "e-custom",
+              source: "n2",
+              target: "n3",
+              type: "weighted",
+              ariaLabel: "Custom edge name",
+              data: { weight: 9, value: 2, valueDomain: [0, 10] },
+            },
+            {
+              id: "e-bare",
+              source: "n3",
+              target: "n4",
+              type: "weighted",
+              data: {},
+            },
+          ] satisfies BrandFlowWeightedEdge[],
+          { nameOf },
+        ),
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial edges built once, deliberately mirroring useState's "lazy initial value" convention; nameOf is stable for the story's lifetime
+      [],
+    );
+    const [edges, , onEdgesChange] = useEdgesState<BrandFlowWeightedEdge>(initialEdges);
+    return (
+      <div className="h-[300px]">
+        <CanvasShell
+          nodes={nodes}
+          edges={edges}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    // Exact accessible names, one per clause — a regex would happily match a
+    // polluted name and let the bug survive the test.
+    const expected: Record<string, string> = {
+      "e-composed": "Edge from Start to Middle, weight 4",
+      "e-custom": "Custom edge name",
+      "e-bare": "Edge from n3 to n4",
+    };
+    for (const [id, name] of Object.entries(expected)) {
+      let group: Element | null = null;
+      await waitFor(() => {
+        group = canvasElement.querySelector(`[data-id="${id}"]`);
+        expect(group).not.toBe(null);
+      });
+      await expect(group as unknown as HTMLElement).toHaveAccessibleName(name);
+    }
+  },
+};
+
+/**
  * Keyboard focus (#286). Every edge is a real tab stop, so tabbing onto one has
  * to change what is drawn. The indicator is compound — a neutral `--foreground`
  * contour with the `--ring` band inside it — because `--ring` alone measures
