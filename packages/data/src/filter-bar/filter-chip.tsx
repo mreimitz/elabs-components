@@ -9,11 +9,12 @@
  * audit found the real, accessible, whole-chip-as-button `FilterChip` already
  * lives there (WCAG 2.5.8 target size, WCAG 2.5.3 "Remove filter: <label>"
  * accessible name). Building a second one in `packages/data` would duplicate
- * that work; this wrapper reuses it and folds `count`/`countLabel` into the
- * LABEL TEXT the base component both renders and names itself from — so the
- * count reaches the chip's ACCESSIBLE NAME automatically (screen readers hear
- * "Remove filter: Status: Failed · excluded 1,204"), not only its visible
- * text.
+ * that work; this wrapper reuses it and passes `count`/`countLabel` through
+ * the base component's `trailing` slot (#284) — a second, non-shrinking text
+ * element, distinct from the truncatable `label` — so the count reaches the
+ * chip's ACCESSIBLE NAME (screen readers hear "Remove filter: Status: Failed
+ * · excluded 1,204") AND survives truncation in the visible chip, instead of
+ * being folded into the one string CSS `truncate` can clip from the tail.
  */
 import { forwardRef } from "react";
 import {
@@ -65,7 +66,8 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
     <BaseFilterChip
       ref={ref}
       data-slot="filter-chip"
-      label={countText ? `${label} · ${countText}` : label}
+      label={label}
+      trailing={countText}
       {...props}
     />
   );

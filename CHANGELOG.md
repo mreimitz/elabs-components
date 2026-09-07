@@ -4,6 +4,14 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ui`, `@elabs-ai/components-data`: `FilterChip` no longer folds its
+  count into the same string as the label. The base `FilterChip` (`@elabs-ai/components-ui`)
+  gains a `trailing?: string` slot — a short, non-shrinking element rendered alongside the
+  truncatable `label` span rather than concatenated into it — so a long label truncates
+  visually without CSS `text-overflow: ellipsis` eating the count from the tail. The
+  composed accessible name (`"Remove filter: <label> · <trailing>"`) is unchanged.
+  `@elabs-ai/components-data`'s `FilterChip` now passes `count`/`countLabel` through
+  `trailing` instead of string-concatenating them into `label` (#284).
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
