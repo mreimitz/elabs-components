@@ -9,6 +9,12 @@
  */
 
 .milkdown-host .ProseMirror {
+  /* Suppresses the platform default outline — NOT a bare removal: the
+     `:focus-visible` rule below is the replacement, drawn on this same
+     element (#309). It owns the indicator unconditionally, so it can't be
+     clipped by an ancestor and can't be deleted by a consumer `className`
+     reaching `cn()` on the wrapper (`markdown-editor.tsx`'s root `div`
+     intentionally carries no focus-ring utility of its own — see #67/#309). */
   outline: none;
   padding: 1rem 1.1rem;
   min-height: 9rem;
@@ -23,8 +29,25 @@
   margin-inline: auto;
 }
 
-.milkdown-host .ProseMirror:focus {
-  outline: none;
+/* Focus indicator (#309) — a compound two-layer shape mirroring the
+   `focus-ring-inset` Tailwind utility (`packages/tokens/src/themes.css`,
+   ADR 0027), hand-written because this stylesheet is a plain side-effect CSS
+   import resolved by the CONSUMER's bundler — not guaranteed to run through
+   Tailwind, so `@apply`/utility classes aren't reachable here (verified:
+   `@apply` appears zero times in any .css file in this repo). Drawn INSIDE
+   the editable's own box (`outline-offset: -3px`, an inset `box-shadow`), so
+   it can't be clipped by an ancestor and survives a consumer `className`
+   deleting the wrapper's classes (`MarkdownWorkspace` already does this via
+   `className="border-0"`). Two layers of opposite value so at least one edge
+   clears 3:1 against the ground whatever `--ring` resolves to in a given
+   theme (`--ring-contour` is the dedicated contour token — `themes-contrast.
+   test.ts`'s `INDICATOR_SURFACES` locks `max(ring, contour) >= 3:1` at the
+   token level; `markdown-editor.stories.tsx`'s `FocusIndicator` play
+   re-measures it on this rendered surface, both themes). */
+.milkdown-host .ProseMirror:focus-visible {
+  outline: 1px solid var(--ring-contour);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 2px var(--ring);
 }
 
 /* ----------------------------------------------------------------------------
