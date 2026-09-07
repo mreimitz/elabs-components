@@ -198,13 +198,23 @@ export const JitterStrip: Story = {
             valueKey="minutes"
           />
         </div>
-        <p className="text-meta text-muted-foreground">
+        <output
+          className="rounded-md border border-border bg-card px-3 py-2 text-meta text-card-foreground"
+          data-testid="drill-detail"
+        >
           {picked ? `Picked ${picked}` : "Pick a reply — click one, or tab in and use the arrows."}
-        </p>
+        </output>
       </div>
     );
   },
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // The result must be a live region that ALREADY EXISTS — a region inserted at
+    // the same moment as its text is not reliably announced.
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent(/Pick a reply/i);
+
     await waitFor(() => {
       expect(
         canvasElement.querySelectorAll('[data-slot="distribution-chart-record"]').length,
@@ -225,6 +235,12 @@ export const JitterStrip: Story = {
     expect([...targets].filter((node) => (node as HTMLButtonElement).tabIndex === 0)).toHaveLength(
       1,
     );
+
+    fireEvent.click(targets[0] as HTMLElement);
+    await waitFor(() => {
+      expect(status).toHaveTextContent(/Picked/i);
+    });
+    expect(canvas.getByRole("status")).toBe(status); // same element instance
   },
 };
 
