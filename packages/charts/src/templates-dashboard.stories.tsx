@@ -6,6 +6,7 @@
  * Verify across every theme with globals=theme:<slug>.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { useState } from "react";
 import {
   Sidebar,
@@ -205,4 +206,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = { render: () => <DashboardTemplate /> };
+export const Default: Story = {
+  render: () => <DashboardTemplate />,
+  play: async ({ canvas }) => {
+    // Locks #185: a percentage-height bar resolving against an indefinite
+    // ancestor computes to 0 — invisible to an existence check, so assert
+    // real rendered geometry instead. The Jun bar (90%) must measurably
+    // outsize the Jan bar (55%) in the same chart.
+    const shortBar = await canvas.findByLabelText("Jan: 55%");
+    const tallBar = await canvas.findByLabelText("Jun: 90%");
+    await expect(shortBar.offsetHeight).toBeGreaterThan(0);
+    await expect(tallBar.offsetHeight).toBeGreaterThan(shortBar.offsetHeight);
+  },
+};

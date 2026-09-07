@@ -10,9 +10,10 @@
  * second copy to drift (the old `registry/templates/<name>/page.tsx` are dropped).
  *
  * The transform (verified against the historical registry pages):
- *   1. STRIP Storybook scaffolding — the `@storybook/react-vite` import, the
+ *   1. STRIP Storybook scaffolding — the `@storybook/react-vite` import, a
+ *      `storybook/test` import (play-function assertions), the
  *      `const meta = {…} satisfies Meta`, `export default meta`, `type Story = …`,
- *      and the `export const …: Story = { render: () => <X/> }` story exports.
+ *      and the `export const …: Story = { render: () => <X/>, play: … }` story exports.
  *   2. REWRITE same-package relative imports → the package alias. A story at
  *      `packages/<pkg>/src/…` importing `./foo` or `../foo` (i.e. another file in
  *      its OWN package) maps to `@elabs-ai/components-<pkg>`; cross-package imports are already
@@ -197,6 +198,12 @@ export function transformStory({ src, pkgName, name, relFile }) {
 
   // 1a. Drop the Storybook type import line(s).
   out = stripLine(out, /import\s+type\s+\{[^}]*\}\s+from\s+["']@storybook\/[^"']+["'];?/);
+
+  // 1a2. Drop the `storybook/test` value import (play-function assertions,
+  // e.g. `expect`) — every use lives inside an `export const …: Story = {…}`
+  // stripped by 1e below, so the import would otherwise be dead in the
+  // generated template (and the consumer has no `storybook` dependency).
+  out = stripLine(out, /import\s+\{[^}]*\}\s+from\s+["']storybook\/test["'];?/);
 
   // 1b. Strip `const meta = {…} satisfies Meta;`
   out = stripBracedStatement(out, /(?:^|\n)\s*const\s+meta\s*=\s*/);
