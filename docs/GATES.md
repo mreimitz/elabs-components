@@ -118,7 +118,13 @@ hook, or generator does not. So this is a standing rule, not a one-off:
   there is no remote) AND its tree is clean, or when git no longer tracks it
   as a worktree at all; unmerged commits, uncommitted changes and anything
   unreadable pass silently, so a live wave never trips it. It deletes nothing —
-  it prints the `git worktree remove` / `git branch -d` lines — see
+  it prints the `git worktree remove` / `git branch -d` lines, and an
+  unregistered leftover gets `rmdir`, which is the command that actually works
+  on one. Where it RUNS is the load-bearing half: the battery never sees this
+  state (Phase 3 runs inside a unit worktree, which has no sibling
+  `.claude/worktrees/`; Phase 4 forbids a post-merge battery; CI checks out
+  fresh), so `.claude/hooks/stale-worktree-nudge.sh` runs it on `Stop` in the
+  primary checkout — advisory, silent unless something is actually stale — see
   `scripts/check-stale-worktrees.mjs`), and the
   ratchet-baseline PROVENANCE meta-gate (`pnpm baseline-provenance:check`,
   #400 — a ratchet-baseline gate (`variants:check`, `loading-states:check`,

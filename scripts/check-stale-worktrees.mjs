@@ -28,15 +28,29 @@
  * step in .claude/commands/close-issues.md ships with this check, not as prose
  * alone.
  *
- * WHAT COUNTS AS STALE. A directory under `.claude/worktrees/` is stale when
- * BOTH hold:
- *   - its branch has no commits missing from the integration ref (it is fully
- *     merged — `origin/main` when that ref exists, else `main`), or git no
- *     longer knows it as a worktree at all (a leftover directory); AND
- *   - its tree is clean (nothing uncommitted to lose).
- * Anything else is live work and passes silently: unmerged commits, uncommitted
- * changes, or a worktree git cannot read. This gate only ever reports a
- * worktree it is safe to delete, so a wave in flight never trips it.
+ * WHAT COUNTS AS STALE. A registered worktree is stale when its tree is CLEAN
+ * and its work has LANDED. "Landed" is two shapes, because the wave PR is
+ * squash-merged (close-issues Phase 4):
+ *   - MERGE: the branch is behind the integration ref and ahead of it by
+ *     nothing. Being ahead by nothing is NOT enough on its own — a
+ *     freshly-created unit branch points exactly AT the ref and is ahead by
+ *     nothing too, and calling that stale would tell an orchestrator to delete
+ *     a unit it had just dispatched. Landing means the ref moved past it.
+ *   - SQUASH: the unit's commits are not ancestors of the ref at all (squash
+ *     rewrites them), so reachability answers "not merged" for every normally
+ *     completed unit. The branch's own tree is replayed onto the merge base as
+ *     a throwaway commit and `git cherry` asks whether that PATCH is already
+ *     upstream — the standard squash-detection trick, and the only one that
+ *     sees the path this repo actually merges through.
+ * An UNREGISTERED directory (git no longer tracks it) is stale only when it is
+ * EMPTY. `git -C <dir> status` inside one walks up to the primary repo and
+ * reports ITS cleanliness, and `.gitignore` hides `.claude/worktrees/` entirely,
+ * so a directory full of unsaved work reads as clean — proof of nothing. Its
+ * contents are checked directly instead.
+ * Everything else passes silently: unmerged commits, a fresh unit, uncommitted
+ * changes, a non-empty orphan, anything unreadable. This gate only ever reports
+ * a directory it can prove is safe to delete, so a wave in flight never trips
+ * it.
  *
  * Never removes anything: it prints the exact commands and exits 1.
  *
@@ -56,26 +70,41 @@ import { fileURLToPath } from "node:url";
 export const WORKTREES_DIRNAME = join(".claude", "worktrees");
 /** Preferred integration ref, then the fallback when the repo has no remote. */
 export const INTEGRATION_REFS = ["origin/main", "main"];
+/** The orchestrator's per-worktree marker (`check-worktree-branch.mjs`), never work. */
+export const MARKER_FILENAME = ".expected-branch";
 
 /**
  * Pure verdict for ONE worktree. Exported for the self-test.
  *
- * `registered` false means git no longer lists the directory as a worktree —
- * a leftover folder, which is stale as soon as it has nothing uncommitted in
- * it (there is no branch left to be unmerged).
+ * Every `null` means "could not be established", and every one of them resolves
+ * to NOT stale: this gate may only ever name a directory whose deletion it can
+ * prove is safe.
  *
- * @param {{ name: string, registered: boolean, merged: boolean|null, dirty: boolean|null }} w
- * @returns {{ stale: true, reason: string } | { stale: false }}
+ * @param {{ registered: boolean, landed: boolean|null, dirty: boolean|null,
+ *   empty: boolean|null }} w
+ * @returns {{ stale: true, reason: string, kind: "worktree"|"orphan" } | { stale: false }}
  */
-export function classifyWorktree({ registered, merged, dirty }) {
-  // Anything unreadable (either probe returned null) is left alone: this gate
-  // only ever asks for a deletion it can prove is safe.
-  if (dirty === null) return { stale: false };
-  if (dirty) return { stale: false };
-  if (!registered) return { stale: true, reason: "no longer a registered git worktree" };
-  if (merged === null) return { stale: false };
-  if (merged) return { stale: true, reason: "its branch is fully merged and its tree is clean" };
-  return { stale: false };
+export function classifyWorktree({ registered, landed, dirty, empty }) {
+  if (!registered) {
+    // An unregistered directory's cleanliness cannot be read from git: `status`
+    // run inside it answers for the PRIMARY repo, which ignores
+    // `.claude/worktrees/` wholesale — so a directory full of unsaved work
+    // reports clean. Only emptiness is real evidence here.
+    if (empty === true)
+      return {
+        stale: true,
+        kind: "orphan",
+        reason: "an empty directory git no longer tracks as a worktree",
+      };
+    return { stale: false };
+  }
+  if (dirty === null || dirty) return { stale: false };
+  if (landed !== true) return { stale: false };
+  return {
+    stale: true,
+    kind: "worktree",
+    reason: "its work has landed on the integration branch and its tree is clean",
+  };
 }
 
 function git(root, args) {
@@ -130,22 +159,95 @@ function canonical(p) {
 }
 
 /**
+ * Has this branch's work reached `integrationRef`? Two shapes, because a wave
+ * merges by SQUASH (close-issues Phase 4) and reachability cannot see that.
+ *
+ *  - Merged outright: nothing ahead of the ref, and the ref has moved PAST the
+ *    branch. The second half is what separates a landed unit from one that was
+ *    just created — a fresh unit branch points exactly at the ref, so it is
+ *    "ahead by nothing" from its first second of life.
+ *  - Squashed: the branch's whole diff exists upstream as one commit. Its tree
+ *    is replayed onto the merge base as a throwaway commit object and
+ *    `git cherry` reports `-` when an equivalent patch is already upstream.
+ *    The object is unreferenced and is collected by the next `git gc`.
+ *
+ * @returns {boolean|null} null when it cannot be established.
+ */
+export function hasLanded(root, branch, integrationRef) {
+  if (!branch || !integrationRef) return null;
+  const ahead = gitOrNull(root, ["rev-list", "--count", `${integrationRef}..${branch}`]);
+  const behind = gitOrNull(root, ["rev-list", "--count", `${branch}..${integrationRef}`]);
+  if (ahead === null || behind === null) return null;
+  if (Number(ahead) === 0) return Number(behind) > 0;
+
+  const base = gitOrNull(root, ["merge-base", integrationRef, branch]);
+  const tree = gitOrNull(root, ["rev-parse", `${branch}^{tree}`]);
+  if (base === null || tree === null) return null;
+  const squashed = gitOrNull(root, [
+    "commit-tree",
+    tree,
+    "-p",
+    base,
+    "-m",
+    "stale-worktrees probe",
+  ]);
+  if (squashed === null) return null;
+  const cherry = gitOrNull(root, ["cherry", integrationRef, squashed]);
+  if (cherry === null) return null;
+  return cherry.startsWith("-");
+}
+
+/** Does the directory hold anything at all (the marker file aside)? */
+export function isEffectivelyEmpty(dirPath) {
+  try {
+    const entries = readdirSync(dirPath).filter((e) => e !== ".expected-branch");
+    return entries.length === 0;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Probe one worktree directory on disk.
- * @returns {{ name: string, path: string, registered: boolean, merged: boolean|null,
- *   dirty: boolean|null, branch: string|null }}
+ * @returns {{ name: string, path: string, registered: boolean, landed: boolean|null,
+ *   dirty: boolean|null, empty: boolean|null, branch: string|null }}
  */
 export function probeWorktree(root, dirPath, name, registeredPaths, integrationRef) {
   const registered = registeredPaths.has(canonical(dirPath));
-  const status = gitOrNull(dirPath, ["status", "--porcelain"]);
-  const dirty = status === null ? (registered ? null : false) : status.length > 0;
-  const branch = registered ? gitOrNull(dirPath, ["rev-parse", "--abbrev-ref", "HEAD"]) : null;
-
-  let merged = null;
-  if (registered && branch && integrationRef) {
-    const ahead = gitOrNull(root, ["rev-list", "--count", `${integrationRef}..${branch}`]);
-    if (ahead !== null) merged = Number(ahead) === 0;
+  if (!registered) {
+    return {
+      name,
+      path: dirPath,
+      registered,
+      landed: null,
+      // Deliberately NOT `git status`: run inside an unregistered directory it
+      // answers for the primary repo, which ignores `.claude/worktrees/`.
+      dirty: null,
+      empty: isEffectivelyEmpty(dirPath),
+      branch: null,
+    };
   }
-  return { name, path: dirPath, registered, merged, dirty, branch };
+  const status = gitOrNull(dirPath, ["status", "--porcelain"]);
+  // The orchestrator's own `.expected-branch` marker is machine-local state, not
+  // work: this repo gitignores it, but a checkout that does not would otherwise
+  // report every unit worktree as dirty and the gate would never fire at all.
+  const dirty =
+    status === null
+      ? null
+      : status
+          .split("\n")
+          .filter((line) => line.trim().length > 0)
+          .some((line) => !line.endsWith(MARKER_FILENAME));
+  const branch = gitOrNull(dirPath, ["rev-parse", "--abbrev-ref", "HEAD"]);
+  return {
+    name,
+    path: dirPath,
+    registered,
+    landed: hasLanded(root, branch, integrationRef),
+    dirty,
+    empty: null,
+    branch,
+  };
 }
 
 /** Every directory directly under `.claude/worktrees/`. */
@@ -183,7 +285,7 @@ function main(argv) {
   for (const { name, path } of listWorktreeDirs(root)) {
     const probe = probeWorktree(root, path, name, registeredPaths, integrationRef);
     const verdict = classifyWorktree(probe);
-    if (verdict.stale) stale.push({ ...probe, reason: verdict.reason });
+    if (verdict.stale) stale.push({ ...probe, reason: verdict.reason, kind: verdict.kind });
   }
 
   if (stale.length === 0) return 0;
@@ -200,17 +302,27 @@ function main(argv) {
       'keeps `worktree-branch:check` blocking commits on `main` with "an orchestrated run is\n' +
       'in flight" long after the wave landed. Tear them down:\n',
   );
-  for (const w of stale) {
+  const registered = stale.filter((w) => w.kind === "worktree");
+  const orphans = stale.filter((w) => w.kind === "orphan");
+  for (const w of registered) {
     console.error(`  git worktree remove ${join(WORKTREES_DIRNAME, w.name)}`);
   }
-  console.error("  git worktree prune");
-  for (const w of stale) {
+  if (registered.length > 0) console.error("  git worktree prune");
+  for (const w of registered) {
     if (w.branch) console.error(`  git branch -d ${w.branch}`);
+  }
+  // `git worktree remove` refuses a path it does not know ("is not a working
+  // tree"), so an orphan needs the plain filesystem command instead. It is only
+  // ever reported when it is EMPTY, which is why `rmdir` is enough — and why
+  // the command cannot destroy anything.
+  for (const w of orphans) {
+    console.error(`  rmdir ${join(WORKTREES_DIRNAME, w.name)}`);
   }
   console.error(
     "\nNothing is deleted for you: each of these is a real directory, and the decision to\n" +
-      "remove it is the orchestrator's. This gate only reports worktrees whose branch has\n" +
-      "already landed AND whose tree is clean, so there is nothing in them left to lose.",
+      "remove it is the orchestrator's. Only two shapes are ever reported — a worktree whose\n" +
+      "work has landed AND whose tree is clean, and an EMPTY directory git no longer tracks —\n" +
+      "so there is nothing in either of them left to lose.",
   );
   return 1;
 }

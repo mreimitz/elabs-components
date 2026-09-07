@@ -117,8 +117,10 @@ rendered proof in both themes (screenshots + numeric contrast; own Storybook
    projects by anything scanning the tree, and its `.expected-branch` marker keeps
    `worktree-branch:check` blocking commits on `main` with "an orchestrated run is in
    flight" long after this one landed. `pnpm worktrees:check` is the gate for this
-   step — it fails on any worktree whose branch has landed and whose tree is clean,
-   and prints the exact removal commands.
+   step — it fails on any worktree whose work has landed (squash merges included)
+   and whose tree is clean, and prints the exact removal commands. It also runs
+   itself at the end of every session (`.claude/hooks/stale-worktree-nudge.sh`,
+   advisory), so a forgotten teardown surfaces without anyone remembering to look.
 
 ## Model routing
 

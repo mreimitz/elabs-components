@@ -156,6 +156,10 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/close-issues-delegation-nudge.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stale-worktree-nudge.sh"
           }
         ]
       }
