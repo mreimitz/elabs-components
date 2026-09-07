@@ -41,6 +41,32 @@ const room = (child: HTMLElement, box: HTMLElement) => {
   };
 };
 
+/**
+ * Presence is not visibility. `findByText` resolves the instant the node lands in
+ * the DOM — which is INSIDE the dialog's enter animation (`data-[state=open]:animate-in
+ * fade-in-0 zoom-in-95` on `DialogContent`), so the query can hand back an element
+ * still holding that animation's start value, `opacity: 0`. A one-shot
+ * `toBeVisible()` on the node the query just returned then fails.
+ *
+ * Reduced motion does NOT remove that window: the token backstop in `themes.css`
+ * (`@media (prefers-reduced-motion: reduce)`) clamps every animation to `0.01ms`,
+ * it does not cancel it — and by taking the enter animation's real duration out of
+ * the way it makes the play function reach the assertion sooner. That is why these
+ * stories only started failing in CI once the browser context asked for reduced
+ * motion (`apps/docs/vitest.config.ts`); the two stories below that already waited
+ * for the settled state kept passing in the same run.
+ *
+ * (The failure PRINTS as an empty element — `<th scope="col" />`. That is jest-dom's
+ * formatting, not the DOM: `toBeVisible` reports `element.cloneNode(false)`, a
+ * shallow clone, so children are never shown. The element was populated.)
+ *
+ * So assert the SETTLED end state: re-query inside `waitFor` and re-check visibility
+ * until it holds. Not a timeout bump — a stale node can never be asserted, and the
+ * text still has to become visible for the story to pass.
+ */
+const expectVisibleText = (scope: HTMLElement, text: string) =>
+  waitFor(() => expect(within(scope).getByText(text)).toBeVisible(), { timeout: 8000 });
+
 const meta = {
   title: "Editor/Iteration/BuilderDialog",
   component: IterationBuilderDialog,
@@ -105,14 +131,12 @@ export const PivotBuilder: Story = {
     // Each value string renders TWICE — once as a TagInput chip in the left
     // column, once in the live preview — so scope queries to the preview region
     // (the confirming pattern from PivotWithCalc / WithNestedCard below).
-    const preview = within(
-      await d.findByRole("region", { name: /live preview/i }, { timeout: 8000 }),
-    );
+    const preview = await d.findByRole("region", { name: /live preview/i }, { timeout: 8000 });
     // The live preview renders a populated matrix from the embedded value lists:
     // axis headers + an interpolated cell.
-    await expect(await preview.findByText("North", {}, { timeout: 8000 })).toBeVisible();
-    await expect(preview.getByText("Q1")).toBeVisible();
-    await expect(preview.getByText("Q1 · North")).toBeVisible();
+    await expectVisibleText(preview, "North");
+    await expectVisibleText(preview, "Q1");
+    await expectVisibleText(preview, "Q1 · North");
   },
 };
 
@@ -160,11 +184,13 @@ export const IterateBuilder: Story = {
     );
     // "Alice" renders TWICE — as a TagInput chip AND in the live preview — so
     // scope to the preview region (mirrors the PivotBuilder fix above).
-    const preview = within(
-      await within(dialog).findByRole("region", { name: /live preview/i }, { timeout: 8000 }),
+    const preview = await within(dialog).findByRole(
+      "region",
+      { name: /live preview/i },
+      { timeout: 8000 },
     );
     // The live preview renders one cell per embedded value.
-    await expect(await preview.findByText("Alice", {}, { timeout: 8000 })).toBeVisible();
+    await expectVisibleText(preview, "Alice");
 
     // #425 acceptance criterion: this dialog's `Bind name` field sits directly
     // against the (now real) `DialogBody` scrollport as its first child — the
@@ -253,23 +279,13 @@ export const WithNestedCard: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: /Edit iteration with card/i }));
     const dialog = await within(document.body).findByRole("dialog", {}, { timeout: 12000 });
-    const d = within(dialog);
-    // The nested card rendered as a real component (title + body interpolated)...
-    // `findByText` resolves on PRESENCE, which happens while the dialog's own
-    // enter transition (`animate-in`/`fade-in-0`) is still running — so a bare
-    // `toBeVisible()` on the result can catch it at `opacity: 0`. Observed as an
-    // intermittent failure under a loaded full-suite run, green in isolation.
-    // Wait the transition out here; once it holds the rest can assert directly.
-    await waitFor(
-      async () =>
-        await expect(
-          await d.findByText("Lead engineer for Ada", {}, { timeout: 8000 }),
-        ).toBeVisible(),
-      { timeout: 8000 },
-    );
+    // The nested card rendered as a real component (title + body interpolated) —
+    // waited out through `expectVisibleText` (see its note: presence ≠ visibility
+    // while the dialog's enter animation is on its first frame)...
+    await expectVisibleText(dialog, "Lead engineer for Ada");
     // ...and the content AFTER it survived (dropped before the fence-collision fix).
-    await expect(d.getByText("Notes for Ada")).toBeVisible();
-    await expect(d.getByText("Notes for Grace")).toBeVisible();
+    await expectVisibleText(dialog, "Notes for Ada");
+    await expectVisibleText(dialog, "Notes for Grace");
   },
 };
 
@@ -304,10 +320,12 @@ export const BentoBuilder: Story = {
     const dialog = await within(document.body).findByRole("dialog", {}, { timeout: 12000 });
     // "Alpha"/"Epsilon" render TWICE — as TagInput chips AND in the live
     // preview's BentoGrid tiles — so scope to the preview region.
-    const preview = within(
-      await within(dialog).findByRole("region", { name: /live preview/i }, { timeout: 8000 }),
+    const preview = await within(dialog).findByRole(
+      "region",
+      { name: /live preview/i },
+      { timeout: 8000 },
     );
-    await expect(await preview.findByText("Alpha", {}, { timeout: 8000 })).toBeVisible();
-    await expect(preview.getByText("Epsilon")).toBeVisible();
+    await expectVisibleText(preview, "Alpha");
+    await expectVisibleText(preview, "Epsilon");
   },
 };
