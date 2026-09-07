@@ -454,25 +454,36 @@ export const Mobile: Story = {
     }
     if (!browserContext) return;
 
+    // Vitest isolates every story FILE in its own iframe (reset to the
+    // configured default viewport before the file runs), so this resize
+    // cannot leak into another file's test. It CAN leak into a later story
+    // in this same file, though — restore it in `finally` so a throwing
+    // assertion still leaves the shared iframe how the next story expects it.
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
     await browserContext.page.viewport(375, 800);
 
-    const trigger = canvas.getByRole("button", { name: "Toggle Sidebar" });
-    // Below the mobile breakpoint the trigger flips from driving the
-    // desktop `open` state (default `true`) to the mobile `openMobile`
-    // state (default `false`) — this is the earliest observable signal that
-    // `useIsMobile()`'s `matchMedia` listener actually caught the resize.
-    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"), {
-      timeout: 3000,
-    });
-    await userEvent.click(trigger);
+    try {
+      const trigger = canvas.getByRole("button", { name: "Toggle Sidebar" });
+      // Below the mobile breakpoint the trigger flips from driving the
+      // desktop `open` state (default `true`) to the mobile `openMobile`
+      // state (default `false`) — this is the earliest observable signal that
+      // `useIsMobile()`'s `matchMedia` listener actually caught the resize.
+      await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"), {
+        timeout: 3000,
+      });
+      await userEvent.click(trigger);
 
-    // `SheetContent` portals to `document.body`, a sibling of
-    // `canvasElement`, not a descendant of it.
-    const sheet = await waitFor(() => {
-      const el = canvasElement.ownerDocument.querySelector('[data-mobile="true"]');
-      if (!el) throw new Error("mobile sheet not rendered yet");
-      return el as HTMLElement;
-    });
-    await waitFor(() => expect(sheet.getBoundingClientRect().width).toBe(288));
+      // `SheetContent` portals to `document.body`, a sibling of
+      // `canvasElement`, not a descendant of it.
+      const sheet = await waitFor(() => {
+        const el = canvasElement.ownerDocument.querySelector('[data-mobile="true"]');
+        if (!el) throw new Error("mobile sheet not rendered yet");
+        return el as HTMLElement;
+      });
+      await waitFor(() => expect(sheet.getBoundingClientRect().width).toBe(288));
+    } finally {
+      await browserContext.page.viewport(originalWidth, originalHeight);
+    }
   },
 };
