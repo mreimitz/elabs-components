@@ -384,12 +384,39 @@ function softensBrandTells(register) {
  * `stringQuote` true at EOF — the buffer is then over-blanked to the end of
  * the file. Rather than guess harder (no full lexing), the walk reports that
  * non-default end state so the caller can say so instead of trusting it.
+ *
+ * ONE GRAMMAR PER FILE TYPE (#140 PR review): the audit scans `.tsx`/`.jsx`,
+ * `.css` and `.html`, but this walk used to apply JS comment syntax to all
+ * three. CSS has NO `//` line comment, so `background: url(https://cdn/x);
+ * color: #ff0000` had the `//` of `https://` read as a comment opener and the
+ * rest of the LINE — including the raw hex — blanked, letting `--strict` pass
+ * invalid CSS. The fix is a grammar table (`SYNTAX`) rather than another
+ * special case: each flavour declares its own line-comment token (CSS/HTML:
+ * none), block-comment delimiters (HTML: `<!-- -->`), string quotes (only JS
+ * has template literals) and which of those may span a newline. `scanText`
+ * picks the flavour from `isCss` / a `.html` path; anything else stays `js`.
  * @param {string} text
+ * @param {"js"|"css"|"html"} [flavor] - which comment/string grammar to apply.
  * @returns {{ text: string, unterminated: boolean }}
  */
 const WORD_CHAR = /[A-Za-z0-9]/;
 
-function blankComments(text) {
+/**
+ * Comment + string grammar per scanned file type. `line: null` means the
+ * language has no line comment at all, which is the whole point for CSS and
+ * HTML: a `//` there is data (a URL), never a comment opener.
+ * `spansNewline` lists the quote characters whose strings may legally cross a
+ * newline — only JS template literals do, so an unterminated `'`/`"` can never
+ * swallow the rest of a file.
+ */
+const SYNTAX = {
+  js: { line: "//", blockOpen: "/*", blockClose: "*/", quotes: "'\"`", spansNewline: "`" },
+  css: { line: null, blockOpen: "/*", blockClose: "*/", quotes: "'\"", spansNewline: "" },
+  html: { line: null, blockOpen: "<!--", blockClose: "-->", quotes: "'\"", spansNewline: "" },
+};
+
+function blankComments(text, flavor = "js") {
+  const syn = SYNTAX[flavor] ?? SYNTAX.js;
   let out = "";
   let inBlock = false;
   let inLine = false;
@@ -408,9 +435,9 @@ function blankComments(text) {
     }
 
     if (inBlock) {
-      if (ch === "*" && text[i + 1] === "/") {
-        out += "  ";
-        i++;
+      if (text.startsWith(syn.blockClose, i)) {
+        out += " ".repeat(syn.blockClose.length);
+        i += syn.blockClose.length - 1;
         inBlock = false;
       } else {
         out += ch === "\n" ? "\n" : " ";
@@ -425,7 +452,7 @@ function blankComments(text) {
         i++;
         continue;
       }
-      if (ch === "\n" && stringQuote !== "`") {
+      if (ch === "\n" && !syn.spansNewline.includes(stringQuote)) {
         // an unescaped newline ends a '/" string in real syntax (else a parse
         // error) — fall back to code rather than let one unterminated string
         // swallow the rest of the file. A template literal may span lines.
@@ -439,14 +466,14 @@ function blankComments(text) {
     }
 
     // plain code: comment openers and string openers are both live here.
-    if (ch === "/" && text[i + 1] === "/") {
+    if (syn.line !== null && text.startsWith(syn.line, i)) {
       inLine = true;
-      out += "  ";
-      i++;
-    } else if (ch === "/" && text[i + 1] === "*") {
+      out += " ".repeat(syn.line.length);
+      i += syn.line.length - 1;
+    } else if (text.startsWith(syn.blockOpen, i)) {
       inBlock = true;
-      out += "  ";
-      i++;
+      out += " ".repeat(syn.blockOpen.length);
+      i += syn.blockOpen.length - 1;
     } else if (ch === "'" && WORD_CHAR.test(text[i - 1] ?? "")) {
       // An apostrophe glued to the end of a word is a CONTRACTION or
       // possessive in JSX prose ("Don't", "the users' data"), never a string
@@ -454,7 +481,7 @@ function blankComments(text) {
       // before an opening quote. Treating it as one swallowed the rest of the
       // line, hiding a real `{/* see #254 */}` comment after it (#140 review).
       out += ch;
-    } else if (ch === "'" || ch === '"' || ch === "`") {
+    } else if (syn.quotes.includes(ch)) {
       stringQuote = ch;
       out += ch;
     } else {
@@ -498,7 +525,10 @@ export function scanText(
   // Comment-blanked twin, only consulted for `colorRule` — a bare issue
   // reference (#254) in prose reads as a colour literal to the raw regex, but
   // never appears outside a comment in real code (#140).
-  const blanked = blankComments(text);
+  // CSS and HTML have no `//` line comment (and HTML's block comment is
+  // `<!-- -->`); applying JS grammar to them blanked real declarations (#140).
+  const flavor = isCss ? "css" : /\.html?$/i.test(path ?? "") ? "html" : "js";
+  const blanked = blankComments(text, flavor);
   const codeOnlyLines = blanked.text.split("\n");
   // Ended still inside a comment/string it never saw close — surface it
   // rather than silently trust an over-blanked buffer (#140 round 2).

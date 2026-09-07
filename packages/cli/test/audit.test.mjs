@@ -281,6 +281,73 @@ test("residue is LOUD: a possessive followed by a glob in the same JSX prose tri
   assert.equal(findings.filter((x) => x.rule === "unterminated-comment-or-string").length, 1);
 });
 
+// ── PR review round 2: CSS/HTML have no `//` line comment (#140) ──
+// The reported defect: an unquoted CSS url (`url(https://cdn/x)`) had its `//`
+// read as a JS line-comment opener, blanking the rest of the declaration — so
+// a raw hex after it on the same line was invisible and `--strict` passed
+// invalid CSS. Fixed by giving each scanned file type its own comment grammar.
+
+test("a CSS url's // is data, not a comment opener — the hex after it still fires", () => {
+  const src = [
+    ".hero {",
+    "  background: url(https://cdn.example/x.png); color: #ff0000;",
+    "}",
+  ].join("\n");
+  const hex = scanText(src, { isCss: true }).filter((x) => x.rule === "raw-hex");
+  assert.equal(hex.length, 1, "CSS has no // line comment — the declaration must stay visible");
+  assert.equal(hex[0].line, 2);
+});
+
+test("a CSS url's // does not hide an rgb() literal on the same line", () => {
+  const src = ".a { background: url(https://cdn.example/x.png); color: rgb(1, 2, 3); }";
+  const f = scanText(src, { isCss: true });
+  assert.equal(f.filter((x) => x.rule === "rgb-literal").length, 1);
+});
+
+test("CSS keeps /* */ block comments — an issue reference there is still exempt", () => {
+  const src = ["/* see #254 — token rule discussion */", ".a { color: var(--primary); }"].join(
+    "\n",
+  );
+  const f = scanText(src, { isCss: true });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 0, "/* */ is a real CSS comment");
+  assert.equal(f.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+test("CSS teeth intact: a plain raw hex and rgb() still fire", () => {
+  const f = scanText([".a { color: #ff0000; }", ".b { color: rgb(1, 2, 3); }"].join("\n"), {
+    isCss: true,
+  });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 1);
+  assert.equal(f.filter((x) => x.rule === "rgb-literal").length, 1);
+});
+
+test("JS/TSX keeps // as a line comment — the CSS grammar must not leak", () => {
+  const f = scanText('const a = 1; // tracked in #254\nconst bad = "#ff0000";', {});
+  const hex = f.filter((x) => x.rule === "raw-hex");
+  assert.equal(hex.length, 1, "only the genuine hex on line 2");
+  assert.equal(hex[0].line, 2);
+});
+
+test("HTML: an unquoted https:// href does not blank the rest of the line", () => {
+  const src = '<a href=https://x.dev>x</a> <span style="color: #ff0000">y</span>';
+  const f = scanText(src, { path: "index.html" });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 1, "HTML has no // line comment");
+});
+
+test("HTML: <!-- --> is the comment form, so an issue reference in one is exempt", () => {
+  const src = ["<!-- see #254 for why -->", '<div style="color: var(--primary)">ok</div>'].join(
+    "\n",
+  );
+  const f = scanText(src, { path: "index.html" });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 0);
+  assert.equal(f.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+test("HTML teeth intact: a raw hex in a style attribute still fires", () => {
+  const f = scanText('<div style="color: #ff0000">bad</div>', { path: "index.html" });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 1);
+});
+
 test(".css files skip copyRule (prose/content) checks", () => {
   const css = scanText("/* John Doe — seamless */", { isCss: true });
   assert.equal(css.filter((x) => x.rule === "slop-generic-name").length, 0, "no JSX copy in css");
