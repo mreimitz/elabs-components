@@ -166,6 +166,22 @@ const threadsData = {
   }),
 };
 
+/**
+ * IoU-over-the-smaller-box for two label bounding boxes — the same overlap
+ * metric #276's evidence measured ("worst pair … at 0.954"). `0` when the
+ * boxes don't touch at all.
+ */
+function boxOverlapRatio(a: DOMRect, b: DOMRect): number {
+  const xOverlap = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+  const yOverlap = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+  const overlapArea = xOverlap * yOverlap;
+  if (overlapArea === 0) {
+    return 0;
+  }
+  const smallerArea = Math.min(a.width * a.height, b.width * b.height);
+  return smallerArea === 0 ? 0 : overlapArea / smallerArea;
+}
+
 export const Threads: Story = {
   args: {
     data: threadsData,
@@ -258,5 +274,57 @@ export const Threads: Story = {
     await waitFor(() => {
       expect(firstGroup.getAttribute("data-pinned")).toBeNull();
     });
+
+    // #276 regression lock — node-layer geometry, read off the live DOM.
+    // Each assertion below fails on today's `main`: every one of the 76 node
+    // rects renders at 0px height, 305 label pairs overlap by more than 15%,
+    // and the value label paints with no halo (`stroke: none`). Run in both
+    // themes — `pnpm exec vitest --project storybook run sankey-chart` for
+    // light, `STORYBOOK_THEME=dark` prefixed for dark (CI pins light only).
+    //
+    // The rect-height check is wrapped in `waitFor`: each node's entrance
+    // animates from `scaleY: 0`, staggered by index (`AnimatedNode`'s
+    // `staggerDelaySec`), so the LAST node in a 76-node column is still
+    // mid-animation for a beat after mount — asserting immediately would
+    // catch that node between frames, not the #276 defect.
+    const nodeRects = Array.from(
+      canvasElement.querySelectorAll("g.sankey-nodes rect"),
+    ) as SVGRectElement[];
+    expect(nodeRects.length).toBeGreaterThan(0);
+    await waitFor(
+      () => {
+        for (const rect of nodeRects) {
+          expect(rect.getBoundingClientRect().height).toBeGreaterThan(0);
+        }
+      },
+      { timeout: 3000 },
+    );
+
+    const labelTexts = Array.from(
+      canvasElement.querySelectorAll("g.sankey-nodes text"),
+    ) as SVGTextElement[];
+    expect(labelTexts.length).toBeGreaterThan(0);
+    // Labels animate their `x` position in on the same stagger as the node
+    // rects (`nameEnter`/`valueEnter`, slightly later than `nodeEnter`) — poll
+    // fresh boxes each check rather than reading one frame that might still
+    // be mid-slide.
+    await waitFor(
+      () => {
+        const labelBoxes = labelTexts.map((text) => text.getBoundingClientRect());
+        for (let i = 0; i < labelBoxes.length; i++) {
+          for (let j = i + 1; j < labelBoxes.length; j++) {
+            const overlap = boxOverlapRatio(labelBoxes[i] as DOMRect, labelBoxes[j] as DOMRect);
+            expect(overlap).toBeLessThanOrEqual(0.15);
+          }
+        }
+      },
+      { timeout: 3000 },
+    );
+
+    for (const text of labelTexts) {
+      const style = getComputedStyle(text);
+      expect(style.stroke).not.toBe("none");
+      expect(Number.parseFloat(style.strokeWidth)).toBeGreaterThanOrEqual(1.5);
+    }
   },
 };

@@ -15,6 +15,16 @@
 
 ### Fixed
 
+- `@elabs-ai/components-charts`: `SankeyChart`'s `mode="threads"` node layer is fixed on three
+  fronts that all traced back to one infeasible `nodePadding`. A fixed padding that a dense
+  column (e.g. 40 nodes in 350px) cannot afford used to drive every node rect in that column to
+  0px height; `nodePadding` is now clamped (`Math.min` against the caller's value, so a graph
+  whose padding already fit is unaffected) to whatever the column's own height budget can
+  support. `SankeyNode`'s two labels used to overlap heavily at a tight pitch (a hard-coded 16px
+  offset that assumed much taller nodes) and the value label carried a permanent 60% opacity
+  with no halo, failing contrast against the coloured node fill underneath; labels now measure
+  the real line height, drop per-node when their slot is too tight to read, and both paint as
+  `HaloText` at full opacity (#276).
 - `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
   keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
   instead of suppressing the platform outline (`outline: none`) and relying on a wrapper

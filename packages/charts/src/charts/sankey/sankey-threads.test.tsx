@@ -378,16 +378,20 @@ describe("SankeyChart aggregate mode — unaffected by RM-037 (byte-identical)",
    * branch (as an earlier version of this test did) only proves the branch is
    * self-consistent; it moves in lockstep with any change to that branch and
    * cannot catch one. `EXPECTED_AGGREGATE_DOM` below is a literal capture of
-   * `container.innerHTML` from commit 3b05fa3 (the branch point), rendered
-   * with the exact same mocks (`ParentSize` fixed at 800×400, `SankeyLink`
-   * stubbed — see the file-level comment above) and the same `aggregateData`,
-   * so a change to the aggregate-mode branch — new prop, new wrapper, new
-   * attribute — fails here even though both sides of a self-comparison would
-   * still agree with each other. Recapture only for an INTENTIONAL aggregate
-   * DOM change (never to make this test pass).
+   * `container.innerHTML`, rendered with the exact same mocks (`ParentSize`
+   * fixed at 800×400, `SankeyLink` stubbed — see the file-level comment
+   * above) and the same `aggregateData`, so a change to the aggregate-mode
+   * branch — new prop, new wrapper, new attribute — fails here even though
+   * both sides of a self-comparison would still agree with each other.
+   * Recapture only for an INTENTIONAL aggregate DOM change (never to make
+   * this test pass). Recaptured for #276: `SankeyNode`'s labels are now
+   * `HaloText` (was a bare `<motion.text>`), which is an intentional part of
+   * that fix — the geometry this test exists to protect (node `x`/`y`/
+   * `width`/`height`, i.e. the padding clamp's `Math.min` no-op guarantee)
+   * is unchanged; only the label markup is.
    */
   const EXPECTED_AGGREGATE_DOM =
-    '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><div class="relative h-full w-full"><svg aria-hidden="true" height="400" width="800"><g transform="translate(180,40)"><g data-testid="sankey-link-mock"></g><g class="sankey-nodes"><g style="cursor: pointer;"><rect fill="var(--chart-1)" height="320" rx="4" ry="4" width="16" x="0" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text class="fill-foreground font-medium text-[13px]" dy="0.35em" text-anchor="end" y="160" opacity="0" style="transform: translateX(8px); transform-origin: 50% 50%; transform-box: fill-box;">A</text><text class="fill-foreground text-[11px]" dy="0.35em" text-anchor="end" y="176" opacity="0" style="transform: translateX(8px); transform-origin: 50% 50%; transform-box: fill-box;">0 sessions</text></g><g style="cursor: pointer;"><rect fill="var(--chart-2)" height="320" rx="4" ry="4" width="16" x="424" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text class="fill-foreground font-medium text-[13px]" dy="0.35em" text-anchor="start" y="160" opacity="0" style="transform: translateX(432px); transform-origin: 50% 50%; transform-box: fill-box;">B</text><text class="fill-foreground text-[11px]" dy="0.35em" text-anchor="start" y="176" opacity="0" style="transform: translateX(432px); transform-origin: 50% 50%; transform-box: fill-box;">42 sessions</text></g></g></g></svg></div></div></div>';
+    '<div class="relative w-full" style="aspect-ratio: 2 / 1;"><div data-testid="parent-size"><div class="relative h-full w-full"><svg aria-hidden="true" height="400" width="800"><g transform="translate(180,40)"><g data-testid="sankey-link-mock"></g><g class="sankey-nodes"><g style="cursor: pointer;"><rect fill="var(--chart-1)" height="320" rx="4" ry="4" width="16" x="0" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text data-slot="sankey-node-name" fill="var(--chart-label)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="font-medium text-[13px]" dy="0.35em" text-anchor="end" y="160" style="opacity: 0; transform: translateX(8px);">A</text><text data-slot="sankey-node-value" fill="var(--chart-foreground-muted)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="text-[11px]" dy="0.35em" text-anchor="end" y="176" style="opacity: 0; transform: translateX(8px);">0 sessions</text></g><g style="cursor: pointer;"><rect fill="var(--chart-2)" height="320" rx="4" ry="4" width="16" x="424" y="0" opacity="0" style="transform: scaleY(0); transform-origin: 50% 50% 0; transform-box: fill-box;"></rect><text data-slot="sankey-node-name" fill="var(--chart-label)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="font-medium text-[13px]" dy="0.35em" text-anchor="start" y="160" style="opacity: 0; transform: translateX(432px);">B</text><text data-slot="sankey-node-value" fill="var(--chart-foreground-muted)" paint-order="stroke" stroke="var(--chart-background)" stroke-linejoin="round" stroke-width="3" class="text-[11px]" dy="0.35em" text-anchor="start" y="176" style="opacity: 0; transform: translateX(432px);">42 sessions</text></g></g></g></svg></div></div></div>';
 
   it("omitting `mode` renders byte-identical DOM to `main` (pre-RM-037)", () => {
     const { container } = renderAggregate(undefined);

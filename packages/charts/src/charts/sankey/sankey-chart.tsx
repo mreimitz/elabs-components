@@ -76,8 +76,67 @@ export interface SankeyChartProps {
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 180, bottom: 40, left: 180 };
 
+/**
+ * Floor on a node rect's body height (px) below which it stops reading as a
+ * shape (#276). `resolveEffectiveNodePadding` guarantees every node in the
+ * tallest column keeps at least this many pixels.
+ */
+const MIN_NODE_HEIGHT = 4;
+
+/** Floor `resolveEffectiveNodePadding` will not clamp a padding below. */
+const MIN_NODE_PADDING = 1;
+
 /** Stable empty array — `SankeyContextValue.threads` in aggregate mode. */
 const EMPTY_THREADS: SankeyLinkDatum[] = [];
+
+/**
+ * Clamp `requestedPadding` (px) so the tallest column — `maxColumnNodes` nodes
+ * sharing `innerHeight` px — keeps a positive body budget: d3-sankey scales
+ * node height by `(innerHeight - (n-1) * padding) / totalValue`, and a padding
+ * that eats the whole extent (#276's 24px against a 40-node, 350px column)
+ * drives that numerator to <= 0, collapsing every rect in the column to 0px.
+ *
+ * Pure `Math.min` against the caller's value: a graph whose padding already
+ * fits (the affordable budget is >= requested) gets back the SAME number, so
+ * `SankeyChart`'s aggregate-mode byte-identical guarantee holds — see
+ * `sankey-chart.tsx:295-305` (the `mode !== "threads"` no-op branch this
+ * feeds).
+ */
+export function resolveEffectiveNodePadding(
+  innerHeight: number,
+  maxColumnNodes: number,
+  requestedPadding: number,
+): number {
+  const columns = Math.max(maxColumnNodes, 1);
+  const affordable = (innerHeight - columns * MIN_NODE_HEIGHT) / Math.max(columns - 1, 1);
+  return Math.max(MIN_NODE_PADDING, Math.min(requestedPadding, affordable));
+}
+
+// ─── Warn-once (dev only) ────────────────────────────────────────────────
+
+const warnedNodePaddings = new WeakSet<object>();
+
+/** Precedent: `warnSlopeRowCount` (`dumbbell-chart.tsx`) — same shape, same reason. */
+function warnNodePaddingReduced(
+  instanceKey: object,
+  requested: number,
+  effective: number,
+  maxColumnNodes: number,
+): void {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+  if (warnedNodePaddings.has(instanceKey)) {
+    return;
+  }
+  warnedNodePaddings.add(instanceKey);
+  console.warn(
+    `[SankeyChart] nodePadding={${requested}} does not fit ${maxColumnNodes} nodes in the ` +
+      `tallest column — reduced to ${effective.toFixed(2)}px so every node rect keeps a ` +
+      "positive height. Increase the chart's height, reduce the node count in a single " +
+      "column, or pass a smaller nodePadding to silence this warning.",
+  );
+}
 
 interface SankeyChartInnerProps {
   data: SankeyData;
@@ -156,17 +215,6 @@ const SankeyChartCore = memo(function SankeyChartCore({
     return () => clearTimeout(timeout);
   }, [animationDuration, revealSignature]);
 
-  const sankeyGenerator = useMemo(() => {
-    return sankey<SankeyNodeDatum, SankeyLinkDatum>()
-      .nodeWidth(nodeWidth)
-      .nodePadding(nodePadding)
-      .nodeAlign(sankeyCenter)
-      .extent([
-        [0, 0],
-        [innerWidth, innerHeight],
-      ]);
-  }, [innerWidth, innerHeight, nodeWidth, nodePadding]);
-
   // Threads mode (RM-037): the LAYOUT still runs on an aggregate hop-count of
   // every thread, so node x0/x1/y0/y1 are identical to what a plain aggregate
   // graph over the same routes would produce ("both modes share positions").
@@ -179,6 +227,59 @@ const SankeyChartCore = memo(function SankeyChartCore({
     }
     return deriveAggregateLinksForThreads(data.nodes, data.links);
   }, [data.nodes, data.links, mode]);
+
+  // Learn column occupancy (#276): d3-sankey assigns `node.depth` from the
+  // graph topology alone, never from `nodePadding` — so a throwaway layout
+  // pass with the CALLER's own padding tells us the widest column before we
+  // decide whether that padding is even feasible for this graph's height.
+  const maxColumnNodes = useMemo(() => {
+    const probeGenerator = sankey<SankeyNodeDatum, SankeyLinkDatum>()
+      .nodeWidth(nodeWidth)
+      .nodePadding(nodePadding)
+      .nodeAlign(sankeyCenter)
+      .extent([
+        [0, 0],
+        [innerWidth, innerHeight],
+      ]);
+    const clonedData = {
+      nodes: data.nodes.map((node) => ({ ...node })),
+      links: layoutLinks.map((link) => ({ ...link })),
+    };
+    const counts = new Map<number, number>();
+    for (const node of probeGenerator(clonedData).nodes) {
+      const depth = node.depth ?? 0;
+      counts.set(depth, (counts.get(depth) ?? 0) + 1);
+    }
+    return counts.size === 0 ? 1 : Math.max(...counts.values());
+  }, [data.nodes, layoutLinks, nodeWidth, nodePadding, innerWidth, innerHeight]);
+
+  const effectiveNodePadding = useMemo(
+    () => resolveEffectiveNodePadding(innerHeight, maxColumnNodes, nodePadding),
+    [innerHeight, maxColumnNodes, nodePadding],
+  );
+
+  // Dev-only: the caller learns their nodePadding got reduced instead of the
+  // chart silently rendering 0px node rects.
+  const instanceKeyRef = useRef({});
+  if (effectiveNodePadding < nodePadding) {
+    warnNodePaddingReduced(
+      instanceKeyRef.current,
+      nodePadding,
+      effectiveNodePadding,
+      maxColumnNodes,
+    );
+  }
+
+  const sankeyGenerator = useMemo(() => {
+    return sankey<SankeyNodeDatum, SankeyLinkDatum>()
+      .nodeWidth(nodeWidth)
+      .nodePadding(effectiveNodePadding)
+      .nodeAlign(sankeyCenter)
+      .extent([
+        [0, 0],
+        [innerWidth, innerHeight],
+      ]);
+  }, [innerWidth, innerHeight, nodeWidth, effectiveNodePadding]);
 
   const graph = useMemo(() => {
     const clonedData = {

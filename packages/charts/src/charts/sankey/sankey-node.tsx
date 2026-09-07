@@ -3,10 +3,12 @@
 import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
+import { HaloText } from "../../marks/halo-text";
 import { intFmt } from "../chart-formatters";
 import { transitionWithDelay } from "../motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
+import { useTextMeasurerOf } from "../use-text-measurer";
 import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
 
 // Helper to get node index from link source/target
@@ -18,6 +20,12 @@ function getNodeIndex(nodeOrIndex: NodeOrIndex): number | undefined {
   }
   return nodeOrIndex.index;
 }
+
+// Cache the motion-wrapped HaloText at module level — precedent
+// `packages/ai/src/shimmer.tsx`'s `getMotionComponent`: `motion.create()` mints a
+// new component type on every call, so calling it inside render would remount
+// (and re-animate) every label on every render instead of once per module.
+const MotionHaloText = motion.create(HaloText);
 
 export interface SankeyNodeProps {
   /** Fill color for nodes. Default: uses theme colors */
@@ -49,7 +57,14 @@ interface AnimatedNodeProps {
   name: string;
   value: number;
   isLeftSide: boolean;
+  /** Overall label gate — `SankeyNodeProps.showLabels` (unchanged meaning: false = no labels). */
   showLabels: boolean;
+  /** Per-node label policy (#276): is there room for a NAME label at this slot's pitch? */
+  nameVisible: boolean;
+  /** Per-node label policy (#276): is there room for a VALUE label at this slot's pitch? */
+  valueVisible: boolean;
+  /** Measured label line height (px) — the vertical gap between the name and value line. */
+  lineHeightPx: number;
 }
 
 function AnimatedNode({
@@ -70,6 +85,9 @@ function AnimatedNode({
   value,
   isLeftSide,
   showLabels,
+  nameVisible,
+  valueVisible,
+  lineHeightPx,
 }: AnimatedNodeProps) {
   const { enterTransition, revealEpoch } = useSankey();
 
@@ -84,8 +102,12 @@ function AnimatedNode({
   const nameLabelX = isLeftSide ? x - 12 : x + width + 12;
   const valueLabelX = isLeftSide ? x - 12 : x + width + 12;
   const nodeOpacity = isFaded ? fadedOpacity : 1;
+  // The value label used to sit at a permanent 0.6 alpha with no halo — the
+  // combination that fails contrast (#276). HaloText's stroke does the
+  // separation from the thread-coloured ground now, so both labels share the
+  // same faded/full opacity contract as the node itself.
   const nameOpacity = isFaded ? fadedOpacity : 1;
-  const valueOpacity = isFaded ? fadedOpacity * 0.8 : 0.6;
+  const valueOpacity = isFaded ? fadedOpacity * 0.8 : 1;
 
   return (
     <motion.g onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} style={{ cursor: "pointer" }}>
@@ -103,36 +125,74 @@ function AnimatedNode({
         x={x}
         y={y}
       />
-      {showLabels && (
-        <>
-          <motion.text
-            animate={{ opacity: nameOpacity, x: nameLabelX }}
-            className="fill-foreground font-medium text-[13px]"
-            dy="0.35em"
-            initial={{ opacity: 0, x: isLeftSide ? x + 8 : x + width - 8 }}
-            key={`name-${index}-${revealEpoch}`}
-            textAnchor={isLeftSide ? "end" : "start"}
-            transition={nameEnter}
-            y={y + height / 2}
-          >
-            {name}
-          </motion.text>
-          <motion.text
-            animate={{ opacity: valueOpacity, x: valueLabelX }}
-            className="fill-foreground text-[11px]"
-            dy="0.35em"
-            initial={{ opacity: 0, x: isLeftSide ? x + 8 : x + width - 8 }}
-            key={`value-${index}-${revealEpoch}`}
-            textAnchor={isLeftSide ? "end" : "start"}
-            transition={valueEnter}
-            y={y + height / 2 + 16}
-          >
-            {intFmt(value)} sessions
-          </motion.text>
-        </>
+      {showLabels && nameVisible && (
+        <MotionHaloText
+          animate={{ opacity: nameOpacity, x: nameLabelX }}
+          className="font-medium text-[13px]"
+          data-slot="sankey-node-name"
+          dy="0.35em"
+          fill="var(--chart-label)"
+          initial={{ opacity: 0, x: isLeftSide ? x + 8 : x + width - 8 }}
+          key={`name-${index}-${revealEpoch}`}
+          textAnchor={isLeftSide ? "end" : "start"}
+          transition={nameEnter}
+          y={y + height / 2}
+        >
+          {name}
+        </MotionHaloText>
+      )}
+      {showLabels && valueVisible && (
+        <MotionHaloText
+          animate={{ opacity: valueOpacity, x: valueLabelX }}
+          className="text-[11px]"
+          data-slot="sankey-node-value"
+          dy="0.35em"
+          fill="var(--chart-foreground-muted)"
+          initial={{ opacity: 0, x: isLeftSide ? x + 8 : x + width - 8 }}
+          key={`value-${index}-${revealEpoch}`}
+          textAnchor={isLeftSide ? "end" : "start"}
+          transition={valueEnter}
+          y={y + height / 2 + lineHeightPx}
+        >
+          {intFmt(value)} sessions
+        </MotionHaloText>
       )}
     </motion.g>
   );
+}
+
+/**
+ * Nearest same-column neighbour distance for every node, keyed by index — the
+ * real "slot pitch" a label has to fit in before it collides with the next
+ * node's own label (#276). Grouping by `x0` finds each layout column; a
+ * column of one node (or an empty graph) has no neighbour, so its pitch is
+ * unbounded and its labels are never dropped on this basis.
+ */
+function computeNodePitches(
+  nodes: SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum>[],
+): Map<number, number> {
+  const byColumn = new Map<number, { index: number; center: number }[]>();
+  nodes.forEach((node, index) => {
+    const x0 = node.x0 ?? 0;
+    const y0 = node.y0 ?? 0;
+    const y1 = node.y1 ?? 0;
+    const column = byColumn.get(x0) ?? [];
+    column.push({ index, center: (y0 + y1) / 2 });
+    byColumn.set(x0, column);
+  });
+
+  const pitches = new Map<number, number>();
+  for (const column of byColumn.values()) {
+    column.sort((a, b) => a.center - b.center);
+    column.forEach((entry, i) => {
+      const prev = column[i - 1];
+      const next = column[i + 1];
+      const prevGap = prev ? entry.center - prev.center : Number.POSITIVE_INFINITY;
+      const nextGap = next ? next.center - entry.center : Number.POSITIVE_INFINITY;
+      pitches.set(entry.index, Math.min(prevGap, nextGap));
+    });
+  }
+  return pitches;
 }
 
 export function SankeyNode({
@@ -158,6 +218,11 @@ export function SankeyNode({
   // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecorationOf(containerRef);
   const patternRawScope = useId().replace(/:/g, "");
+
+  // The label font as it actually resolves in this chart's inheritance context
+  // (theme/density/webfont) — replaces the old hard-coded `+ 16` value-label
+  // offset and drives the pitch-aware visibility policy below (#276).
+  const { lineHeightPx } = useTextMeasurerOf(containerRef);
 
   // Default colors using CSS variables
   const defaultColors = useMemo(
@@ -219,6 +284,8 @@ export function SankeyNode({
   const isAnyHovered = hoveredNodeIndex !== null || hoveredLinkIndex !== null;
   const innerWidth = width - margin.left - margin.right;
 
+  const nodePitches = useMemo(() => computeNodePitches(nodes), [nodes]);
+
   return (
     <g className="sankey-nodes">
       {/* Decoration pattern defs — one per node, injected when high decoration */}
@@ -240,6 +307,15 @@ export function SankeyNode({
         const isConnected = isNodeConnected(index);
         const isFaded = isAnyHovered && !isConnected;
         const isLeftSide = nodeX < innerWidth / 2;
+
+        // Pitch-aware label policy (#276): mirrors NetworkChart's
+        // `labelThreshold`/`isLabelVisible` concept — a value that needs two
+        // measured lines of clearance drops first, a name that needs only one
+        // drops last, so a dense column degrades to name-only before going
+        // fully unlabelled rather than overprinting.
+        const pitch = nodePitches.get(index) ?? Number.POSITIVE_INFINITY;
+        const nameVisible = pitch >= lineHeightPx;
+        const valueVisible = pitch >= lineHeightPx * 2;
 
         let displayValue = 0;
         for (const l of links) {
@@ -285,13 +361,16 @@ export function SankeyNode({
             isFaded={isFaded}
             isLeftSide={isLeftSide}
             key={`node-${node.name}`}
+            lineHeightPx={lineHeightPx}
             name={node.name}
+            nameVisible={nameVisible}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             rx={lineCap}
             showLabels={showLabels}
             totalNodes={nodes.length}
             value={displayValue}
+            valueVisible={valueVisible}
             width={nodeWidth}
             x={nodeX}
             y={nodeY}
