@@ -249,12 +249,29 @@ export function nodePlacements(canvasElement: HTMLElement): NodePlacement[] {
   return out;
 }
 
-/** Node placements plus the viewport zoom, as one comparable string. */
+/**
+ * Node placements plus the viewport zoom, as one comparable string.
+ *
+ * Carries BOTH coordinate systems on purpose. `nodePlacements` reads the inline
+ * `transform` React Flow writes, which jumps to its final value the instant the layout
+ * runs — so a canvas that ANIMATES its nodes into place looks settled to it while the
+ * cards are still sliding, and every measurement taken then is of a picture the reader
+ * never sees. The rendered rect is what actually moves during the transition, so
+ * including it is what makes `waitForSettledCanvas` wait for the animation as well as
+ * for the layout. Rounded to 0.1 px: sub-pixel jitter is not motion.
+ */
 export function canvasSignature(canvasElement: HTMLElement): string {
   const placements = nodePlacements(canvasElement)
     .map((p) => `${p.id}@${p.x},${p.y}`)
     .join("|");
-  return `${viewportZoom(canvasElement).toFixed(4)} ${placements}`;
+  const rendered = [...canvasElement.querySelectorAll<HTMLElement>(".react-flow__node")]
+    .map((node) => {
+      const { left, top, width, height } = node.getBoundingClientRect();
+      const at = (n: number) => n.toFixed(1);
+      return `${node.getAttribute("data-id") ?? "?"}@${at(left)},${at(top)},${at(width)}x${at(height)}`;
+    })
+    .join("|");
+  return `${viewportZoom(canvasElement).toFixed(4)} ${placements} ${rendered}`;
 }
 
 /**
