@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Home, Inbox, Search, Settings } from "lucide-react";
-import { expect } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 import { Sidebar } from "./sidebar";
 import {
   SidebarContent,
@@ -408,5 +408,71 @@ export const NestedFrameProvider: Story = {
     await expect(getComputedStyle(nestedProviderEl).getPropertyValue("--sidebar-width")).not.toBe(
       "",
     );
+  },
+};
+
+/**
+ * Below the mobile breakpoint, `Sidebar` renders its own `Sheet` at
+ * `SIDEBAR_WIDTH_MOBILE` (18rem = 288px), not `SheetContent`'s hardcoded
+ * `w-3/4 max-w-sm` default (#387). Unlike `ContextRail`'s `Narrow` story,
+ * `Sidebar` has no `overlayBreakpoint`-style prop to force the branch
+ * deterministically, and a display-only `parameters.viewport` global does
+ * not move `window.innerWidth` under a headless run (see `ContextRail`'s
+ * `Narrow` story comment) — `useIsMobile()` reads the real viewport, so this
+ * resizes the actual test browser instead, via `@vitest/browser/context`'s
+ * `page.viewport`.
+ */
+export const Mobile: Story = {
+  render: () => (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton>Overview</SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-2 border-b px-4">
+          <SidebarTrigger />
+        </header>
+      </SidebarInset>
+    </SidebarProvider>
+  ),
+  play: async ({ canvasElement, canvas }) => {
+    // `@vitest/browser/context` is a virtual module that only resolves
+    // inside Vitest's browser-mode test runner (`pnpm --filter
+    // @elabs-ai/components-docs test-storybook` / `vitest --project
+    // storybook run`) — see `slider.stories.tsx`'s identical guard.
+    let browserContext: typeof import("@vitest/browser/context") | undefined;
+    try {
+      browserContext = await import("@vitest/browser/context");
+    } catch {
+      browserContext = undefined;
+    }
+    if (!browserContext) return;
+
+    await browserContext.page.viewport(375, 800);
+
+    const trigger = canvas.getByRole("button", { name: "Toggle Sidebar" });
+    // Below the mobile breakpoint the trigger flips from driving the
+    // desktop `open` state (default `true`) to the mobile `openMobile`
+    // state (default `false`) — this is the earliest observable signal that
+    // `useIsMobile()`'s `matchMedia` listener actually caught the resize.
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"), {
+      timeout: 3000,
+    });
+    await userEvent.click(trigger);
+
+    // `SheetContent` portals to `document.body`, a sibling of
+    // `canvasElement`, not a descendant of it.
+    const sheet = await waitFor(() => {
+      const el = canvasElement.ownerDocument.querySelector('[data-mobile="true"]');
+      if (!el) throw new Error("mobile sheet not rendered yet");
+      return el as HTMLElement;
+    });
+    await waitFor(() => expect(sheet.getBoundingClientRect().width).toBe(288));
   },
 };

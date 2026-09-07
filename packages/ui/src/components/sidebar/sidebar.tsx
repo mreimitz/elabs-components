@@ -268,7 +268,7 @@ export const Sidebar = forwardRef<
           data-slot="sidebar"
           data-mobile="true"
           side={side}
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE } as CSSProperties}
         >
           <SheetHeader className="sr-only">
