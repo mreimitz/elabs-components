@@ -166,15 +166,14 @@ function DrilldownDemo() {
           onDatapointClick={(point) => setSelected(point)}
         />
       </div>
-      {selected ? (
-        <p data-testid="drill-detail" className="text-body text-muted-foreground">
-          Selected {String(selected.datum.product)} via {selected.source}.
-        </p>
-      ) : (
-        <p className="text-body text-muted-foreground">
-          Click or tab to an entity and press Enter.
-        </p>
-      )}
+      <output
+        className="rounded-md border border-border bg-card px-3 py-2 text-body text-card-foreground"
+        data-testid="drill-detail"
+      >
+        {selected
+          ? `Selected ${String(selected.datum.product)} via ${selected.source}.`
+          : "Click or tab to an entity and press Enter."}
+      </output>
     </div>
   );
 }
@@ -186,6 +185,12 @@ export const KeyboardCycling: Story = {
   render: () => <DrilldownDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+
+    // The result must be a live region that ALREADY EXISTS — a region inserted at
+    // the same moment as its text is not reliably announced.
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent(/press Enter/i);
+
     const group = await canvas.findByRole("group", { name: /chart data points/i });
     const targets = within(group).getAllByRole("button");
 
@@ -200,5 +205,7 @@ export const KeyboardCycling: Story = {
     await userEvent.keyboard("{Enter}");
 
     await expect(canvas.getByTestId("drill-detail")).toHaveTextContent(/via keyboard/);
+    await expect(canvas.getByRole("status")).toBe(status); // same element instance
+    await expect(status).toHaveTextContent(/via keyboard/);
   },
 };
