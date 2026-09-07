@@ -64,8 +64,11 @@ describe("fiveNumberSummary", () => {
     expect(summary?.q1).toBe(3);
     expect(summary?.q3).toBe(7);
     expect(summary?.iqr).toBe(4);
-    expect(summary?.lowerFence).toBe(3 - DEFAULT_WHISKER_MULTIPLIER * 4);
-    expect(summary?.upperFence).toBe(7 + DEFAULT_WHISKER_MULTIPLIER * 4);
+    // Tukey's convention, written out: q1 − 1.5 × IQR and q3 + 1.5 × IQR.
+    // Deliberately NOT derived from DEFAULT_WHISKER_MULTIPLIER — an expectation
+    // computed from the constant it is locking is satisfied by any value.
+    expect(summary?.lowerFence).toBe(-3);
+    expect(summary?.upperFence).toBe(13);
   });
 
   it("splits outliers out and stops the whiskers at the last value inside the fences", () => {
@@ -98,5 +101,32 @@ describe("fiveNumberSummary", () => {
     expect(summary?.outliers).toEqual([9]);
     expect(summary?.lowerWhisker).toBe(5);
     expect(summary?.upperWhisker).toBe(5);
+  });
+
+  it("uses Tukey's 1.5 × IQR — a value a 3× fence would reach is still an outlier", () => {
+    // [1..9, 16]: q1 = 3.25, q3 = 7.75, IQR = 4.5 (R-7 over ten values).
+    //   fence @1.5×  = 7.75 + 6.75  = 14.5   -> 16 is OUTSIDE  (shipped behaviour)
+    //   fence @2×    = 7.75 + 9     = 16.75  -> 16 is inside
+    //   fence @3×    = 7.75 + 13.5  = 21.25  -> 16 is inside
+    // 16 is therefore the datum the multiplier — and only the multiplier — decides.
+    // Expectations are written as literals ON PURPOSE: deriving them from
+    // DEFAULT_WHISKER_MULTIPLIER would make this test true for every value of it.
+    const summary = fiveNumberSummary([1, 2, 3, 4, 5, 6, 7, 8, 9, 16]);
+    expect(summary?.q1).toBeCloseTo(3.25, 12);
+    expect(summary?.q3).toBeCloseTo(7.75, 12);
+    expect(summary?.iqr).toBeCloseTo(4.5, 12);
+    expect(summary?.upperFence).toBeCloseTo(14.5, 12);
+    expect(summary?.lowerFence).toBeCloseTo(-3.5, 12);
+    expect(summary?.outliers).toEqual([16]);
+    expect(summary?.upperWhisker).toBe(9);
+
+    // Control: the SAME sample under a 3× fence reaches 16 instead of flagging it.
+    const loose = fiveNumberSummary([1, 2, 3, 4, 5, 6, 7, 8, 9, 16], 3);
+    expect(loose?.outliers).toEqual([]);
+    expect(loose?.upperWhisker).toBe(16);
+  });
+
+  it("ships Tukey's multiplier as the default", () => {
+    expect(DEFAULT_WHISKER_MULTIPLIER).toBe(1.5);
   });
 });
