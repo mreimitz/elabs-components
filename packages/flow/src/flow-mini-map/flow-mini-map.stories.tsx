@@ -104,11 +104,20 @@ export const Default: Story = {
       minimap = el!;
     });
 
-    const toSrgb = (colour: string): [number, number, number] => {
+    // `getImageData()` reports straight (non-premultiplied) RGBA — the alpha channel is
+    // real, but reading r/g/b alone discards it: a fully transparent fill (alpha 0) still
+    // returns SOME rgb triple (typically 0,0,0), which can measure as opaque black and pass
+    // contrast against a light panel while nothing is actually painted. Compositing the
+    // fill ON TOP OF the real panel background first — the same source-over the browser
+    // performs when it paints the rect — means a zero-alpha fill reads back AS the panel
+    // background, so it can never clear the threshold below (#409 review).
+    const toSrgbOverBackground = (colour: string, background: string): [number, number, number] => {
       const surface = document.createElement("canvas");
       surface.width = 1;
       surface.height = 1;
       const ctx = surface.getContext("2d")!;
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, 1, 1);
       ctx.fillStyle = colour;
       ctx.fillRect(0, 0, 1, 1);
       const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
@@ -118,19 +127,32 @@ export const Default: Story = {
       const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
       return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
     };
-    const contrast = (a: string, b: string) => {
-      const [hi, lo] = [luminance(toSrgb(a)), luminance(toSrgb(b))].sort((x, y) => y - x);
+    const contrastOverBackground = (fill: string, background: string) => {
+      const [hi, lo] = [
+        luminance(toSrgbOverBackground(fill, background)),
+        luminance(toSrgbOverBackground(background, background)),
+      ].sort((x, y) => y - x);
       return (hi! + 0.05) / (lo! + 0.05);
     };
 
     const panelBackground = getComputedStyle(minimap).backgroundColor;
+
+    // The whole point of this helper is that a blank minimap must FAIL the check — lock
+    // that directly: a fully transparent fill composites to the panel background itself,
+    // so it can never satisfy the ≥3 contrast assertion below (would incorrectly read as
+    // 21:1 "black on white" if alpha were discarded, per the #409 review finding).
+    expect(
+      contrastOverBackground("rgba(0, 0, 0, 0)", panelBackground),
+      "a fully transparent fill must not be able to satisfy the contrast check",
+    ).toBeLessThan(3);
+
     const rects = minimap.querySelectorAll<SVGRectElement>(".react-flow__minimap-node");
     for (const rect of rects) {
       expect(rect.width.baseVal.value, "minimap node rect has zero width").toBeGreaterThan(0);
       expect(rect.height.baseVal.value, "minimap node rect has zero height").toBeGreaterThan(0);
       const fill = getComputedStyle(rect).fill;
       expect(
-        contrast(fill, panelBackground),
+        contrastOverBackground(fill, panelBackground),
         `minimap node fill (${fill}) is not distinguishable from the panel background (${panelBackground})`,
       ).toBeGreaterThanOrEqual(3);
     }
