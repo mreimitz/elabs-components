@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- `@elabs-ai/components-data`: `DataTable`'s row-action proxy button (the visually-hidden
+  control that makes a whole clickable row keyboard-activatable) no longer leaks its own
+  native focus ring as a stray dot at the row's left edge. `sr-only` hides the button's box
+  but not the browser's outline painting, so the proxy now also carries
+  `focus-visible:outline-none`; the row's own deliberate compound indicator (driven off the
+  proxy's `:focus-visible` state) is unchanged (#311).
 - `@elabs-ai/components-process`: the process map's node-slide animation works again. The
   class that carries it was assembled by interpolating a constant, and Tailwind extracts
   classes from source text without evaluating JavaScript, so no CSS was emitted and nodes
