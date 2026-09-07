@@ -4,6 +4,14 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ui`: `ContextRail` no longer accepts a `variant` prop.
+  `ContextRailProps` derived its type from `Sidebar`'s full prop surface, so `variant`
+  showed up in the type hints, the manifest and Storybook controls even though it only
+  ever reached the desktop branch — below `overlayBreakpoint` the rail renders a `Sheet`
+  instead of a `Sidebar`, and the prop was silently inert there (no `data-variant`, no
+  layout change). `ContextRailProps` now declares its own surface instead of deriving it
+  from `Sidebar`; the desktop branch hardcodes `variant="sidebar"`, its already-effective
+  default, so rendering is unchanged for every existing caller (#382).
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent

@@ -209,4 +209,37 @@ describe("ContextRail", () => {
       ).not.toBeNull();
     }
   });
+
+  // #382 — `variant` used to be a derived (`Omit<ComponentProps<typeof
+  // Sidebar>, …>`) member of `ContextRailProps`, honoured only in the wide
+  // (`Sidebar`) branch and silently inert below `overlayBreakpoint` (the
+  // narrow branch has no `Sidebar` to forward it to). Fixed by declaring the
+  // props surface instead of deriving it — `variant` is no longer a public
+  // prop at all. This is a compile-time lock: it fails the moment someone
+  // re-derives `ContextRailProps` from `Sidebar`, which is the only way the
+  // prop returns.
+  it("13. (type-level) does not accept a `variant` prop", () => {
+    function typeOnly() {
+      // @ts-expect-error — `variant` was removed from `ContextRailProps`; a
+      // consumer can no longer pass it, and it can no longer be silently
+      // inert in the narrow branch.
+      return <ContextRail sections={[]} variant="floating" />;
+    }
+    expect(typeof typeOnly).toBe("function");
+  });
+
+  it("14. the wide branch renders data-variant=sidebar on the sidebar root; the narrow branch renders no data-variant at all", () => {
+    const wide = render(<ContextRail sections={sections} open={true} activeSectionId="sources" />);
+    const sidebarRoot = wide.container.querySelector('[data-slot="sidebar"]');
+    expect(sidebarRoot).not.toBeNull();
+    expect(sidebarRoot).toHaveAttribute("data-variant", "sidebar");
+    wide.unmount();
+
+    setViewportWidth(500);
+    const narrow = render(
+      <ContextRail sections={sections} open={true} activeSectionId="sources" />,
+    );
+    expect(narrow.container.querySelector("[data-variant]")).toBeNull();
+    narrow.unmount();
+  });
 });

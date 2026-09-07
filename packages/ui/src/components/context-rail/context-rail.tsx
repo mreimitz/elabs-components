@@ -52,14 +52,21 @@ export interface ContextRailSection {
   disabled?: boolean;
 }
 
-export interface ContextRailProps extends Omit<
-  ComponentProps<typeof Sidebar>,
-  // `onSelect` is the native div text-selection event on `ComponentProps<typeof
-  // Sidebar>` — omitted so it can't collide with this component's own
-  // `onSelect`-shaped internals (`ContextRailBranchProps`) when `props` is
-  // spread onto `ContextRailWide`/`ContextRailNarrow` below.
-  "side" | "collapsible" | "children" | "onSelect"
-> {
+// #382: this surface is DECLARED, not derived from `Sidebar`
+// (`Omit<ComponentProps<typeof Sidebar>, …>`), on purpose. `ContextRail` has
+// two rendering branches and only the wide one mounts a real `Sidebar` — the
+// narrow branch (`ContextRailNarrow`, below `overlayBreakpoint`) renders a
+// `Sheet` instead and has no `Sidebar` to forward a `Sidebar`-only prop to.
+// Deriving the type from `Sidebar` previously let `variant` leak into the
+// public API and stay silently inert in the narrow branch (no `data-variant`,
+// no layout change) — see #382. Re-deriving from `Sidebar` reintroduces that
+// bug; add members here explicitly instead.
+//
+// `onSelect` (the native div text-selection event) is omitted so it can't
+// collide with this component's own `onSelect`-shaped internals
+// (`ContextRailBranchProps`) when `props` is spread onto
+// `ContextRailWide`/`ContextRailNarrow` below.
+export interface ContextRailProps extends Omit<ComponentProps<"div">, "onSelect"> {
   /** The sections the switcher can pick between. An empty array renders
    * the `empty` slot instead of a switcher. */
   sections: ContextRailSection[];
@@ -478,7 +485,6 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
     width = DEFAULT_WIDTH,
     empty,
     overlayBreakpoint = DEFAULT_OVERLAY_BREAKPOINT,
-    variant = "sidebar",
     className,
     style,
     ...props
@@ -585,7 +591,9 @@ export const ContextRail = forwardRef<HTMLDivElement, ContextRailProps>(function
           {...props}
         />
       ) : (
-        <Sidebar side="right" collapsible="icon" variant={variant}>
+        // `variant` is hardcoded, not a public prop (#382) — see the doc
+        // comment on `ContextRailProps` above.
+        <Sidebar side="right" collapsible="icon" variant="sidebar">
           <ContextRailWide
             ref={ref}
             sections={sections}
