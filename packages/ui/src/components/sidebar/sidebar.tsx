@@ -307,7 +307,16 @@ export const Sidebar = forwardRef<
           panel.containerClassName,
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            : // `border-sidebar-border`, not the inherited canvas `--border`:
+              // this edge is CHROME, so it takes the chrome edge token — the
+              // same one the `floating` variant's inner surface and
+              // `SidebarSeparator` already use. Left to the canvas token it was
+              // a near-white hairline (light: L 0.88), invisible against the
+              // page but a bright line as soon as the rail sits on a
+              // `bg-sidebar` ground — which is exactly what an `inset` frame
+              // puts behind it, measured at the dashboard shell's right-hand
+              // `ContextRail`.
+              "group-data-[collapsible=icon]:w-(--sidebar-width-icon) border-sidebar-border group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className,
         )}
         {...props}
