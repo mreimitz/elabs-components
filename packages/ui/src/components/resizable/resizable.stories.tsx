@@ -31,7 +31,7 @@ export const Default: Story = {
       <ResizablePanel defaultSize={40} className="flex items-center justify-center p-4 text-body">
         List
       </ResizablePanel>
-      <ResizableHandle withHandle />
+      <ResizableHandle withHandle aria-label="Resize the list and detail panels" />
       <ResizablePanel
         defaultSize={60}
         className="flex items-center justify-center p-4 text-body text-muted-foreground"
@@ -40,6 +40,26 @@ export const Default: Story = {
       </ResizablePanel>
     </ResizablePanelGroup>
   ),
+  // #156 — the handle forwards `...props`, so `aria-label` reaches
+  // `PanelResizeHandle` and replaces the bare "separator, 50" announcement with a
+  // name that says which two regions it divides. Tabbing to it (rather than a
+  // direct `querySelector` focus call) exercises the same path a keyboard user
+  // takes, and the `ArrowRight` assertion locks that naming the handle didn't
+  // regress the keyboard resize behaviour that was already correct.
+  play: async ({ canvasElement }) => {
+    const handle = canvasElement.querySelector<HTMLElement>('[role="separator"]');
+    await expect(handle).not.toBeNull();
+
+    await userEvent.tab();
+    await expect(handle).toHaveFocus();
+    await expect(handle).toHaveAccessibleName("Resize the list and detail panels");
+
+    const panel = canvasElement.querySelector<HTMLElement>("[data-panel]");
+    const sizeBefore = panel!.getAttribute("data-panel-size");
+    await userEvent.keyboard("{ArrowRight}");
+    const sizeAfter = panel!.getAttribute("data-panel-size");
+    await expect(sizeAfter).not.toBe(sizeBefore);
+  },
 };
 
 /**
@@ -63,7 +83,7 @@ export const Tiered: Story = {
       >
         List
       </ResizablePanel>
-      <ResizableHandle withHandle />
+      <ResizableHandle withHandle aria-label="Resize the list and detail panels" />
       <ResizablePanel
         defaultSize={60}
         className={cn(
