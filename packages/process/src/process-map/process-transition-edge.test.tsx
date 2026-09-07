@@ -77,6 +77,9 @@ vi.mock("@xyflow/react", () => {
     // `FlowWeightedEdge` reads the laid-out cards to route a back edge's return leg
     // clear of them; nothing here is a back edge, so an empty canvas is enough.
     useNodes: () => [],
+    // `FlowWeightedEdge` reads nodes through `useStore(selector)` so a forward edge
+    // does not re-render on every node change; this map has no measured rects.
+    useStore: (selector: (state: { nodes: unknown[] }) => unknown) => selector({ nodes: [] }),
     Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
   };
 });

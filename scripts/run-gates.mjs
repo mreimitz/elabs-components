@@ -319,6 +319,26 @@ export function fileVerdicts(events) {
  * file. Failed files are re-run one at a time so the summary can show their
  * own output verbatim.
  */
+/**
+ * Self-tests that write to and stage files in the REAL repository, and therefore
+ * cannot share it with anything else.
+ *
+ * `agent-docs-cascade:check:test` appends a probe export to a shipped component,
+ * `git add`s it, runs the real pre-commit hook, then `git reset HEAD -- .`;
+ * `dep-field-move:check:test` rewrites a package.json, stages it and runs the
+ * checker `--staged`. Run concurrently they interleave: one test's blanket reset
+ * unstages the other's fixture mid-assertion (reproduced: `The input did not
+ * match /"prettier" moved devDependencies → dependencies/. Input: ''`), or the
+ * other's `git add` lands inside the first's revert check (`REAL cascade test
+ * failed to fully revert its own footprint`). The old sequential CI step could
+ * not produce either. They run last, one at a time; everything else still runs
+ * `concurrency` at a time.
+ */
+export const SERIAL_SELFTESTS = new Set([
+  "agent-docs-cascade:check:test",
+  "dep-field-move:check:test",
+]);
+
 export async function runSelfTests(
   entries,
   { root = REPO_ROOT, concurrency, log = console.log } = {},
@@ -338,8 +358,16 @@ export async function runSelfTests(
     /* keep the resolved path */
   }
   const files = entries.map((e) => resolve(realRoot, e.file));
+  const parallel = files.filter((_, i) => !SERIAL_SELFTESTS.has(entries[i].name));
+  const serial = files.filter((_, i) => SERIAL_SELFTESTS.has(entries[i].name));
   const events = [];
-  for await (const ev of run({ files, concurrency })) events.push(ev);
+  if (parallel.length > 0) {
+    for await (const ev of run({ files: parallel, concurrency })) events.push(ev);
+  }
+  // AFTER the concurrent batch has drained, one at a time — see SERIAL_SELFTESTS.
+  if (serial.length > 0) {
+    for await (const ev of run({ files: serial, concurrency: 1 })) events.push(ev);
+  }
   const verdicts = fileVerdicts(events);
   const results = entries.map((e, i) => {
     const v = verdicts.get(files[i]);
@@ -456,6 +484,28 @@ export async function main(argv = [], { log = console.log } = {}) {
   return results.some((r) => !r.ok) ? 1 : 0;
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+/**
+ * Is this module the entry point?
+ *
+ * NOT `import.meta.url === \`file://${process.argv[1]}\``: that comparison is false
+ * the moment the path needs percent-encoding (a space, a non-ASCII character), and a
+ * false answer here means `main()` never runs and the battery runner exits 0 having
+ * run zero gates — indistinguishable from all-green. Both sides are also passed
+ * through `realpathSync`, because Node resolves a module's own URL through symlinks
+ * while `argv[1]` keeps whatever the caller typed (on macOS `/var/…` vs `/private/var/…`).
+ */
+function isEntryPoint() {
+  if (!process.argv[1]) return false;
+  const real = (p) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return resolve(p);
+    }
+  };
+  return real(fileURLToPath(import.meta.url)) === real(process.argv[1]);
+}
+
+if (isEntryPoint()) {
   main(process.argv.slice(2)).then((code) => process.exit(code));
 }

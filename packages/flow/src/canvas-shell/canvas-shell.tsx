@@ -3,7 +3,6 @@ import {
   Background,
   ReactFlow,
   ReactFlowProvider,
-  getNodesBounds,
   useNodesInitialized,
   useReactFlow,
   useStoreApi,
@@ -157,18 +156,18 @@ function FitViewOnKey({
   fitViewKey: string | number;
   options?: FitViewOptions;
 }) {
-  const { fitView, getNodes, setViewport } = useReactFlow();
+  const { fitView, getNodes, getNodesBounds, setViewport } = useReactFlow();
   const store = useStoreApi();
   const nodesInitialized = useNodesInitialized();
   useEffect(() => {
     if (!nodesInitialized) return;
     void fitView(options).then(() =>
-      anchorToStartWhenClamped(store, setViewport, getNodes(), options),
+      anchorToStartWhenClamped(store, setViewport, getNodesBounds, getNodes(), options),
     );
     // `options` is deliberately absent: an inline object literal would re-fit on every
     // render, which is a viewport jump under the reader's cursor. The key is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fitViewKey, nodesInitialized, fitView, getNodes, setViewport, store]);
+  }, [fitViewKey, nodesInitialized, fitView, getNodes, getNodesBounds, setViewport, store]);
   return null;
 }
 
@@ -189,6 +188,12 @@ function FitViewOnKey({
 function anchorToStartWhenClamped(
   store: ReturnType<typeof useStoreApi>,
   setViewport: ReturnType<typeof useReactFlow>["setViewport"],
+  // The HOOK's `getNodesBounds`, never the top-level export: the standalone one warns in
+  // development when it is handed no `nodeLookup` ("Please use `getNodesBounds` from
+  // `useReactFlow`…") and measures a parent's own `position` instead of resolving a
+  // nested node's absolute one, so a keyed re-fit on a canvas with sub-flows anchors to
+  // the wrong corner.
+  getNodesBounds: ReturnType<typeof useReactFlow>["getNodesBounds"],
   nodes: Node[],
   options: FitViewOptions | undefined,
 ): void {

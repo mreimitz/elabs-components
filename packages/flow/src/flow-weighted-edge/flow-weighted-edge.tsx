@@ -1,12 +1,13 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   Position,
   getBezierPath,
   getSmoothStepPath,
   useEdges,
-  useNodes,
+  useStore,
   type Edge,
   type EdgeProps,
+  type ReactFlowState,
 } from "@xyflow/react";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { FlowEdgePath } from "../flow-edge-path";
@@ -17,6 +18,9 @@ import {
   DEFAULT_EDGE_WIDTH_RANGE,
   type WeightedEdgeLike,
 } from "./weight-scale";
+
+/** Stable empty array for the forward branch of the node subscription below. */
+const NO_NODES: ReactFlowState["nodes"] = [];
 
 export interface FlowWeightedEdgeData extends Record<string, unknown> {
   /** Frequency/volume this edge carries. Scaled into stroke width — see `computeEdgeWeightScale`. */
@@ -189,7 +193,6 @@ export function FlowWeightedEdge({
   data,
 }: EdgeProps<BrandFlowWeightedEdge>) {
   const edges = useEdges();
-  const nodes = useNodes();
   const widthByEdgeId = useMemo(
     () => computeEdgeWeightScale(edges as unknown as WeightedEdgeLike[]),
     [edges],
@@ -197,6 +200,14 @@ export function FlowWeightedEdge({
 
   const variant = data?.variant ?? "forward";
   const isBack = variant === "back";
+  // Only a BACK edge needs the node rects (to route its return leg around the cards it
+  // crosses). `useNodes()` would subscribe every edge to the whole nodes array, which the
+  // store replaces on each drag frame, selection and resize — so every forward edge on
+  // the canvas re-rendered on any node change anywhere. The forward branch hands back one
+  // frozen constant, which `useStore`'s default `Object.is` compares equal every time.
+  const nodes = useStore(
+    useCallback((s: ReactFlowState) => (isBack ? s.nodes : NO_NODES), [isBack]),
+  );
   const pathType = data?.path ?? "bezier";
 
   // Ranks advance vertically when the handles are on the top/bottom faces. Read from the

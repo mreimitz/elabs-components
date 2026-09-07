@@ -13,14 +13,18 @@ Split the input into distinct findings; drop trivially identical ones. For each:
 
 - **FIX NOW** — in scope of the current task AND small (≤30 changed lines, one
   package): fix it in the working tree, record `fixed` in the summary, file nothing.
-- **FILE** — everything else. A story-based finding must carry the exact story ID
-  and theme slug (`data-data-table--filtered`, `dark`) so it can be reproduced.
+- **FILE AS-IS** — P2 with a KNOWN cause: the finder already gives `file:line`, so
+  write the capped spec yourself (template in step 4). No analyst.
+- **FILE + ANALYSE** — P0/P1, or the cause is genuinely unknown (no `file:line`).
+  A story-based finding must carry the exact story ID and theme slug
+  (`data-data-table--filtered`, `dark`) so it can be reproduced.
 
 ## 2. One batched analysis
 
-ONE `Task` call to `brand-ui-root-cause-analyst` with the whole FILE list. It returns
-one spec per finding (TITLE / LABELS / DUPLICATE_OF / capped body, template below).
-Never one call per finding.
+ONE `Task` call to `brand-ui-root-cause-analyst` with the FILE + ANALYSE list —
+**skip the call entirely when that list is empty**. It returns one spec per finding
+(TITLE / LABELS / DUPLICATE_OF / capped body, template below). Never one call per
+finding, and never a call for a P2 whose cause the finder already located.
 
 ## 3. Dedupe against open issues
 

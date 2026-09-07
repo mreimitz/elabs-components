@@ -107,10 +107,19 @@ export const DEFAULT_LAYOUT_DEBOUNCE_MS = 80;
  * A handle is not a node position; it has no delta to animate, and it must be measurable
  * the instant it is placed. Excluding it is the fix, not a workaround.
  */
-const MOTION_TARGET = "div[data-id]:not([data-handlepos])";
+/*
+ * WRITTEN OUT IN FULL, deliberately. Tailwind extracts candidates from source TEXT and
+ * never evaluates JavaScript, so a class assembled by interpolating a `MOTION_TARGET`
+ * constant produces no CSS at all: `new Scanner().scanFiles()` returns only `["const",
+ * "export"]` for the interpolated form and all four utilities for this one. The selector
+ * therefore repeats instead of being factored into a constant — the duplication is what
+ * keeps the animation alive.
+ */
 export const PROCESS_MAP_NODE_MOTION_CLASS =
-  `[&_${MOTION_TARGET}]:transition-transform [&_${MOTION_TARGET}]:duration-base ` +
-  `[&_${MOTION_TARGET}]:ease-standard motion-reduce:[&_${MOTION_TARGET}]:transition-none`;
+  "[&_div[data-id]:not([data-handlepos])]:transition-transform " +
+  "[&_div[data-id]:not([data-handlepos])]:duration-base " +
+  "[&_div[data-id]:not([data-handlepos])]:ease-standard " +
+  "motion-reduce:[&_div[data-id]:not([data-handlepos])]:transition-none";
 
 /** One cached dagre result: where every node sits, plus the structure dagre reported. */
 export interface ProcessLayoutSnapshot {
