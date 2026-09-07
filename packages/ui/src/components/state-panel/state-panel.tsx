@@ -68,6 +68,14 @@ export interface StatePanelProps extends VariantProps<typeof statePanelVariants>
    * when both are given.
    */
   illustration?: ReactNode;
+  /**
+   * Heading level for the panel's title (#328 convention). Set this to the
+   * level that correctly follows whatever heading precedes this panel in
+   * the document outline — e.g. `"h3"` inside a `ChartCard` whose own title
+   * is an `<h2>`.
+   * @default "h3"
+   */
+  titleAs?: "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
   /** Accessible label for the spinner in loading state. @default "Loading…" */
   loadingLabel?: string;
   /** Spinner size (loading kind only). @default "md" */
@@ -114,6 +122,7 @@ export function StatePanel({
   description,
   icon,
   illustration,
+  titleAs: Tag = "h3",
   loadingLabel = "Loading…",
   size = "md",
   actions,
@@ -211,14 +220,14 @@ export function StatePanel({
         // read as.
         <div className={cn("space-y-1", illustration && "mt-2")}>
           {resolvedTitle && (
-            <h3
+            <Tag
               className={cn(
                 "font-semibold text-foreground",
                 illustration ? "text-subtitle" : "text-sm",
               )}
             >
               {resolvedTitle}
-            </h3>
+            </Tag>
           )}
           {resolvedDescription && (
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">{resolvedDescription}</p>

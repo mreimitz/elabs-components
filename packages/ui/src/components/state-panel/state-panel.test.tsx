@@ -174,4 +174,16 @@ describe("StatePanel", () => {
     );
     expect(screen.queryByTestId("custom-icon")).toBeNull();
   });
+
+  it("titleAs renders the requested heading level (#385)", () => {
+    render(<StatePanel kind="empty" title="No data" titleAs="h2" />);
+    const heading = screen.getByRole("heading", { level: 2, name: "No data" });
+    expect(heading.tagName).toBe("H2");
+  });
+
+  it("default titleAs is still h3 — unchanged output for every existing caller (#385)", () => {
+    render(<StatePanel kind="empty" title="No data" />);
+    const heading = screen.getByRole("heading", { level: 3, name: "No data" });
+    expect(heading.tagName).toBe("H3");
+  });
 });

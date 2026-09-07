@@ -25,6 +25,12 @@
 - `@elabs-ai/components-flow`: `CanvasShell`'s keyed re-fit (`fitViewKey`) stops printing
   React Flow's "Please use `getNodesBounds` from `useReactFlow`" warning in development,
   and measures nested nodes correctly.
+- `@elabs-ai/components-charts`, `@elabs-ai/components-ui`: `ChartCard` and `StatePanel` gain
+  a `titleAs` prop (`"div" | "h1" | … | "h6"`) so a `ChartCard` titling a real page section and
+  a `StatePanel` shown inside it can declare correct, adjacent heading levels instead of
+  producing an axe `heading-order` violation. `ChartCard`'s title still renders as a `<div>`
+  by default; `StatePanel`'s title still defaults to `<h3>` — both unchanged for every
+  existing caller that doesn't set `titleAs` (#385).
 
 ### ⚠️ BREAKING (`@elabs-ai/components-ui`): `Form` moved off the main barrel; react-hook-form is now an optional peer (#26)
 
