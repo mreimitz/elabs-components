@@ -120,10 +120,12 @@ export interface ContextRailSection {
   disabled?: boolean;
 }
 
-export interface ContextRailProps extends Omit<
-  ComponentProps<typeof Sidebar>,
-  "side" | "collapsible" | "children"
-> {
+// Declared, not derived from `Sidebar` — see the `variant` correction (issue
+// #382) below Finding 1. `side` and `collapsible` are pinned by the
+// component itself and never exposed as props (see below); `onSelect` is
+// omitted so it can't collide with the internal `onSelect`-shaped prop the
+// component spreads onto its own branches.
+export interface ContextRailProps extends Omit<ComponentProps<"div">, "onSelect"> {
   /** The sections, in switcher order. */
   sections: ContextRailSection[];
 
@@ -178,25 +180,31 @@ same `open` / `onOpenChange`. Consequences, stated so the implementer does not g
   whose collapsed cost is 48 px can stay a column right down to the ordinary mobile
   breakpoint, while a 400 px dock at 768 px would leave ~360 px of content.
 
-Inherited from `ComponentProps<typeof Sidebar>` and therefore **not** re-declared:
-`className`, `style`, `id` and the rest of the div props, all spread onto the rail’s
-container. `side` and `collapsible` are omitted on purpose: pinning them to `"right"` and
-`"icon"` is what makes this a pattern rather than a re-export of `Sidebar` with defaults.
+Inherited from `ComponentProps<"div">` and therefore **not** re-declared: `className`,
+`style`, `id` and the rest of the div props, all spread onto the rail’s container. `side`
+and `collapsible` are never part of `ContextRailProps` at all: pinning them to `"right"`
+and `"icon"` internally is what makes this a pattern rather than a re-export of `Sidebar`
+with defaults.
 
-**`variant` stays in the type, and it is NOT inert (Finding 3).** The review asked
-whether `variant?: "sidebar" | "floating" | "inset"` should be added to the `Omit`,
-since decision 4 refinement 3 forbids a `frame="nested"` provider from emitting
-`data-variant`. It should not, because the premise does not hold: `Sidebar`’s **own**
-root element writes `data-variant={variant}`, and every consequence of the variant that
-belongs to the rail is scoped to that element — the gap/container branch is plain JS
-(`variant === "floating" || variant === "inset"` selects the `p-2` padding and the
-`calc(var(--sidebar-width-icon) + …)` collapsed width), and the inner surface reads
-`group-data-[variant=floating]:rounded-lg` / `:border` / `:shadow-sm` from the same
-element. So on `ContextRail` the prop still does what it does on any other `Sidebar`.
-What refinement 3 withholds is different and belongs to a different element: the
-**content column’s** inset geometry, which is a frame-level decision owned by the
-`frame="app"` provider. Documented default remains `"sidebar"` (flush), the geometry
-§2.2 wants for a rail.
+**`variant` is NOT part of `ContextRailProps` — corrected, see issue #382.** Finding 3
+originally argued the opposite: that `variant` should stay in the type because
+`Sidebar`’s own root element writes `data-variant={variant}` and “the prop still does
+what it does on any other `Sidebar`”. That argument's premise was Finding 1’s decision
+read backwards. Finding 1 (above) decided `ContextRail` does **not** mount `Sidebar` at
+all below `overlayBreakpoint` — the narrow branch renders its own strip plus a `Sheet`,
+which has no `Sidebar` root to write `data-variant` onto. So the prop was inert in
+exactly the branch Finding 1 introduces, measured: byte-identical narrow-branch markup
+across all three `variant` values, no `data-variant` anywhere below the breakpoint. The
+type was still deriving from `ComponentProps<typeof Sidebar>` (rather than being
+declared per §3’s interface above, which had already dropped back to `Omit<…Sidebar…>`
+in the shipped code), so `variant` leaked into the public API and silently did nothing
+in half the component’s states. Fixed: `ContextRailProps` no longer derives from
+`Sidebar` and has no `variant` member; the wide branch hardcodes `variant="sidebar"` at
+its one `<Sidebar>` call site — the value this section always documented as the
+default, so the wide branch’s rendering is unchanged for every existing caller (none
+pass `variant`). A rail that genuinely needs `floating`/`inset` treatment on the column
+itself is a `frame="app"`-level geometry decision, per the content-column paragraph
+this replaces, not a per-instance prop on `ContextRail`.
 
 Fixed decisions that are part of the contract and must not become props:
 
