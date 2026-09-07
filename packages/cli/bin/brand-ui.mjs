@@ -112,6 +112,19 @@ function out(obj, text) {
 }
 
 function cmdInfo() {
+  // #142: `info` is the project/taste-profile verb — it takes no operand. Before
+  // this check, `brand-ui info <name>` silently discarded the argument and
+  // printed the byte-identical project-info block as bare `brand-ui info`, so an
+  // acceptance criterion written against it was never satisfiable and nothing
+  // said so. The component-lookup verbs are `docs <name>` and `search <query>`.
+  if (args.length) {
+    console.error(
+      `info: unexpected argument "${args[0]}" — info takes none.\n` +
+        `Did you mean 'brand-ui docs ${args[0]}' (a component's real props) or ` +
+        `'brand-ui search ${args[0]}' (find components/registry items)?`,
+    );
+    process.exit(1);
+  }
   const consumer = consumerContext();
   const manifest = loadManifest(root);
   // In the monorepo, the package set IS the manifest. Only fall back to a

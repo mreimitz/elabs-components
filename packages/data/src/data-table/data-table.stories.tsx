@@ -580,6 +580,12 @@ export const ClickableRows: Story = {
     const rowAction = canvas.getByRole("button", { name: "search" });
     rowAction.focus();
     await expect(rowAction).toHaveFocus();
+    // #311: the row paints the deliberate compound focus indicator via
+    // `has-[[data-slot=data-table-row-action]:focus-visible]:…` — the proxy
+    // button itself must suppress its OWN native ring, or it leaks as a
+    // stray dot at the row's edge. Real browser (Playwright), so this
+    // actually resolves the Tailwind cascade, unlike the jsdom unit test.
+    await expect(getComputedStyle(rowAction).outlineStyle).toBe("none");
     await userEvent.keyboard("{Enter}");
     await expect(clickableRowsOnRowClick).toHaveBeenCalledTimes(2);
     await expect(clickableRowsOnRowClick.mock.calls[1]![0].original.service).toBe("search");

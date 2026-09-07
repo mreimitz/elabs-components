@@ -1194,6 +1194,21 @@ describe("DataTable — #337 onRowClick + rowClassName", () => {
       /has-\[\[data-slot=data-table-row-action\]:focus-visible\]:focus-ring-static-inset/,
     );
   });
+
+  it("suppresses the proxy button's OWN native focus ring (#311) — the row paints the only indicator", () => {
+    const { container } = render(<DataTable columns={columns} data={data} onRowClick={vi.fn()} />);
+    const row = firstBodyRow(container);
+    const proxy = row.querySelector<HTMLElement>('[data-slot="data-table-row-action"]')!;
+    proxy.focus();
+    expect(document.activeElement).toBe(proxy);
+    // sr-only removes the proxy from the visual layout but NOT the platform's
+    // own outline painting — that must be suppressed explicitly, or it leaks
+    // as a stray dot next to the row's deliberate compound indicator above.
+    // (This package's vitest config sets `css: false`, so `getComputedStyle`
+    // never resolves Tailwind here — the real-browser assertion lives in the
+    // `ClickableRows` story's play function, which DOES run under real CSS.)
+    expect(proxy.className).toMatch(/focus-visible:outline-none/);
+  });
 });
 
 // ─── #333: column pinning ────────────────────────────────────────────────────
