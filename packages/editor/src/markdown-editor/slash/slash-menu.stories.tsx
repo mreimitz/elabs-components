@@ -95,7 +95,9 @@ export const Empty: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("No matching blocks")).toBeVisible();
+    // A `role="option"` (not a bare div), so it's reachable via an
+    // assistive-tech query and stays inside the listbox contract (#157).
+    await expect(canvas.getByRole("option", { name: "No matching blocks" })).toBeVisible();
   },
 };
 

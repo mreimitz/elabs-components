@@ -1,19 +1,11 @@
 {
   "$comment": "GENERATED — do not hand-edit. `pnpm a11y:baseline:run` measures, `pnpm a11y:baseline:check --update` writes. Every story listed here has a PRE-EXISTING axe violation and is downgraded to addon-a11y's report-only mode by apps/docs/.storybook/preview.tsx; every story NOT listed fails CI on any violation. `ratchet.maxStories` only ever goes DOWN (#316).",
-  "ratchet": { "maxStories": 89 },
+  "ratchet": { "maxStories": 75 },
   "stories": {
     "ai-changereview--default": ["color-contrast"],
     "ai-filetree--default": ["aria-required-parent", "button-name"],
-    "ai-jsxpreview--data-bindings": ["color-contrast"],
-    "ai-jsxpreview--default": ["color-contrast"],
-    "ai-jsxpreview--loading": ["color-contrast"],
-    "ai-jsxpreview--streaming": ["color-contrast"],
     "ai-snippet--default": ["label"],
     "ai-task--default": ["aria-allowed-attr"],
-    "charts-chartcard--default": ["aria-prohibited-attr"],
-    "charts-chartcard--tall-height": ["aria-prohibited-attr"],
-    "charts-chartcard--title-only": ["aria-prohibited-attr"],
-    "charts-chartcard--with-actions": ["aria-prohibited-attr"],
     "charts-chartframe--table-flipped": ["scrollable-region-focusable"],
     "core-card--detail-bottom-hover": ["aria-hidden-focus"],
     "core-card--detail-side-hover": ["aria-hidden-focus"],
@@ -21,7 +13,6 @@
     "display-progress--empty": ["aria-progressbar-name"],
     "display-progress--full": ["aria-progressbar-name"],
     "display-scrollarea--default": ["scrollable-region-focusable"],
-    "docs-ai-content-access--with-code-workspace": ["aria-valid-attr-value"],
     "docs-ai-content-access--with-markdown-workspace": ["scrollable-region-focusable"],
     "editor-calcblock--default": ["aria-prohibited-attr"],
     "editor-calcblock--total-override": ["aria-prohibited-attr"],
@@ -34,15 +25,12 @@
     "editor-codeeditor--default": ["color-contrast"],
     "editor-codeeditor--with-actions": ["color-contrast"],
     "editor-codeeditor--with-toolbar": ["color-contrast"],
-    "editor-codeworkspace--three-files": ["aria-valid-attr-value"],
     "editor-diffeditor--inline": ["aria-input-field-name"],
     "editor-diffeditor--side-by-side": ["aria-input-field-name"],
     "editor-iteration-builderdialog--bento-builder": ["scrollable-region-focusable"],
     "editor-markdowneditor--default": ["color-contrast"],
     "editor-markdowneditor--read-only": ["color-contrast"],
     "editor-markdowneditor-slashmenu--default": ["scrollable-region-focusable"],
-    "editor-markdowneditor-slashmenu--empty": ["aria-required-children"],
-    "editor-markdownpreview--unknown-block": ["color-contrast"],
     "editor-markdownpreview-academic--table-of-contents": ["heading-order"],
     "editor-markdowntoolbar--insert-parity": ["aria-hidden-focus"],
     "editor-markdownworkspace--focus-writing": ["color-contrast", "scrollable-region-focusable"],
@@ -78,7 +66,6 @@
     "forms-virtualselect--preselected": ["button-name"],
     "navigation-tree--reveal-selected-node": ["scrollable-region-focusable"],
     "navigation-wizard--default": ["button-name"],
-    "overlays-command--groups": ["aria-required-children"],
     "overlays-dropdownmenu--default": ["aria-hidden-focus"],
     "overlays-popover--default": ["aria-dialog-name"],
     "patterns-blocks-chartframe-datatable--default": ["scrollable-region-focusable"],
@@ -117,7 +104,6 @@
       "landmark-main-is-top-level",
       "landmark-no-duplicate-main",
       "landmark-unique"
-    ],
-    "states-alert--destructive": ["color-contrast"]
+    ]
   }
 }

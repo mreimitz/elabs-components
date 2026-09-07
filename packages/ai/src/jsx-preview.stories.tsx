@@ -18,7 +18,7 @@ function Stat({ label, value, delta }: { label: string; value: string; delta?: s
     <div className="rounded-lg border bg-card p-4 text-card-foreground">
       <div className="text-meta text-muted-foreground">{label}</div>
       <div className="text-title tabular-nums">{value}</div>
-      {delta ? <div className="text-caption text-primary">{delta}</div> : null}
+      {delta ? <div className="text-caption text-primary-text">{delta}</div> : null}
     </div>
   );
 }

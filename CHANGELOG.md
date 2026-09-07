@@ -15,6 +15,21 @@
 
 ### Fixed
 
+- `@elabs-ai/components-editor`: `CodeWorkspace`'s file tabs no longer emit a dangling
+  `aria-controls`. The Radix `Tabs` value used to be the raw file path, so a path containing
+  `/`, `.`, a space or a non-ASCII character leaked into the generated content id and the
+  editor pane had no `TabsContent` at all for it to resolve to — a screen-reader user could
+  not follow a tab to its panel. Each tab now gets a stable, DOM-id-safe id (the path stays
+  the display label and lookup key), and every file's pane is a real `TabsContent` element
+  (#154).
+- `@elabs-ai/components-editor`: the markdown editor's slash-menu "no matches" message is no
+  longer a bare, unannounced `<div>` inside its `role="listbox"`. It now renders as a
+  disabled, unselectable option, so a user who types a query matching nothing hears the
+  message instead of silence (#157).
+- `@elabs-ai/components-ui`: `CommandSeparator` (the divider `cmdk` renders between
+  `CommandGroup`s) is now `aria-hidden`. It used to reach assistive tech as an unauthorized
+  `role="separator"` child of the `Command` listbox, which only `option`/`group` may own
+  (#157).
 - `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
   keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
   instead of suppressing the platform outline (`outline: none`) and relying on a wrapper

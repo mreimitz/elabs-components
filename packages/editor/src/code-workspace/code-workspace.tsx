@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@elabs-ai/components-ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
@@ -74,6 +74,20 @@ const EXT_LANGUAGE: Record<string, string> = {
 
 const basename = (path: string) => path.split("/").pop() || path;
 
+/**
+ * Radix composes each `TabsContent`'s DOM id from the `Tabs`/`TabsTrigger`
+ * `value` (see #154): a raw `file.path` leaks `/`, `.`, spaces and non-ASCII
+ * characters straight into that id, which is what a screen reader gets back
+ * via `aria-controls`. `path` stays the display label and the lookup key in
+ * component state (`active`); this slug is only ever a DOM-id-safe Tabs
+ * value. Index-prefixed so two paths that sanitize to the same slug (e.g.
+ * "a/b" and "a.b") never collide.
+ */
+function tabIdForFile(path: string, index: number): string {
+  const slug = path.replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+  return slug ? `tab-${index}-${slug}` : `tab-${index}`;
+}
+
 function inferLanguage(file: EditorFile): string {
   if (file.language) return file.language;
   const ext = file.path.split(".").pop()?.toLowerCase() ?? "";
@@ -142,6 +156,10 @@ export const CodeWorkspace = forwardRef<CodeWorkspaceHandle, CodeWorkspaceProps>
     const requested = isControlled ? activePath : internalActive;
     const activeFile = files.find((f) => f.path === requested) ?? files[0];
     const active = activeFile?.path ?? "";
+
+    // DOM-id-safe Tabs value per file (#154); `path` stays the lookup key.
+    const tabs = files.map((file, index) => ({ file, id: tabIdForFile(file.path, index) }));
+    const activeTabId = tabs.find((t) => t.file.path === active)?.id ?? "";
 
     // The root div ref (getElement() preserves old HTMLDivElement access).
     const rootRef = useRef<HTMLDivElement | null>(null);
@@ -213,16 +231,19 @@ export const CodeWorkspace = forwardRef<CodeWorkspaceHandle, CodeWorkspaceProps>
         {...props}
       >
         <Tabs
-          value={active}
-          onValueChange={selectTab}
+          value={activeTabId}
+          onValueChange={(id) => {
+            const found = tabs.find((t) => t.id === id);
+            if (found) selectTab(found.file.path);
+          }}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="flex items-center border-b border-border bg-surface">
             <TabsList className="h-9 flex-1 justify-start gap-0 rounded-none bg-transparent p-0">
-              {files.map((file) => (
+              {tabs.map(({ file, id }) => (
                 <TabsTrigger
-                  key={file.path}
-                  value={file.path}
+                  key={id}
+                  value={id}
                   className="h-9 rounded-none border-e border-border px-3 text-xs data-[state=active]:bg-background data-[state=active]:shadow-none"
                 >
                   {basename(file.path)}
@@ -232,20 +253,26 @@ export const CodeWorkspace = forwardRef<CodeWorkspaceHandle, CodeWorkspaceProps>
             {activeFile ? <CopyButton value={activeFile.value} className="me-1.5" /> : null}
           </div>
 
-          <div className="min-h-0 flex-1">
-            {activeFile ? (
-              <CodeEditor
-                key={activeFile.path}
-                path={activeFile.path}
-                language={inferLanguage(activeFile)}
-                value={activeFile.value}
-                readOnly={readOnly}
-                onChange={(next) => onFileChange?.(activeFile.path, next)}
-                onMount={(editor) => setActiveEditor(editor)}
-                height="100%"
-              />
-            ) : null}
-          </div>
+          {tabs.map(({ file, id }) => (
+            // `forceMount` keeps every tab's content in the DOM (Radix applies
+            // its own `hidden` attribute when inactive, so it takes no layout
+            // space) — a real, resolvable id per tab, not only the active
+            // one. Only the active file mounts a (single) Monaco instance.
+            <TabsContent key={id} value={id} forceMount className="mt-0 min-h-0 flex-1">
+              {file.path === activeFile?.path ? (
+                <CodeEditor
+                  key={file.path}
+                  path={file.path}
+                  language={inferLanguage(file)}
+                  value={file.value}
+                  readOnly={readOnly}
+                  onChange={(next) => onFileChange?.(file.path, next)}
+                  onMount={(editor) => setActiveEditor(editor)}
+                  height="100%"
+                />
+              ) : null}
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
     );
