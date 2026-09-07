@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ui`: `BreadcrumbLink` now carries the library's own `focus-ring`
+  indicator. It previously set no `focus-visible` treatment at all, so Tab landed on the
+  browser's own default outline instead of the token-driven ring every other interactive
+  control in the package uses (#310).
 - `@elabs-ai/components-process`: the process map's node-slide animation works again. The
   class that carries it was assembled by interpolating a constant, and Tailwind extracts
   classes from source text without evaluating JavaScript, so no CSS was emitted and nodes
