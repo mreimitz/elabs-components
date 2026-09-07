@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
+import { StatePanel } from "@elabs-ai/components-ui";
 import { ChartCard } from "./chart-card";
 
 const meta = {
@@ -152,4 +154,40 @@ export const TitleOnly: Story = {
       </ChartCard>
     </div>
   ),
+};
+
+/**
+ * `ChartCard` titling a real page section (`titleAs="h2"`) whose body is a
+ * `StatePanel` empty state (`titleAs="h3"`) — the two components' outline
+ * levels compose correctly (#385): `<h2>` then `<h3>`, no skip, no
+ * un-headinged title `<div>` sitting between them. Locks the axe
+ * `heading-order` fix at the source (`ChartCard.titleAs` forwarded to
+ * `CardTitle`, `StatePanel.titleAs` replacing the old hardcoded `<h3>`).
+ */
+export const EmptyStateHeadingOrder: Story = {
+  args: {
+    title: "Revenue",
+    titleAs: "h2",
+  },
+  render: (args) => (
+    <div className="w-[480px]">
+      <ChartCard {...args}>
+        <StatePanel kind="empty" title="No data" titleAs="h3" />
+      </ChartCard>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const h2 = canvas.getByRole("heading", { level: 2, name: "Revenue" });
+    const h3 = canvas.getByRole("heading", { level: 3, name: "No data" });
+    await expect(h2.tagName).toBe("H2");
+    await expect(h3.tagName).toBe("H3");
+    // DOM order: h2 precedes h3, and nothing else claims a heading role in
+    // between — the exact shape axe's heading-order rule checks.
+    const headings = canvas.getAllByRole("heading");
+    await expect(headings).toEqual([h2, h3]);
+    await expect(Boolean(h2.compareDocumentPosition(h3) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(
+      true,
+    );
+  },
 };

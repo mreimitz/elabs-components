@@ -292,16 +292,13 @@ export function StorefrontOverview({
         // skeleton and above the empty state, asserting a number the card is
         // not showing.
         //
-        // It is handed over as a real `<h2>`, not a string, because `ChartCard`
-        // renders its title through `CardTitle` WITHOUT forwarding that part's
-        // `as` prop — so a plain string lands in a `<div>` and the card
-        // contributes nothing to the document outline. That matters here rather
-        // than in the abstract: the empty branch below renders a `StatePanel`,
-        // whose title is a hard-coded `<h3>`, so with no `<h2>` between it and
-        // the page `<h1>` axe fails the screen on `heading-order`. Preflight
-        // resets heading size/weight to `inherit`, so the element swap is
-        // visually identical.
-        title={<h2>{revenueHeadline(revenue, loading)}</h2>}
+        // `titleAs="h2"` (forwarded to `CardTitle`'s own `as` prop, #385) makes
+        // this a real heading contributing to the document outline — the empty
+        // branch below renders a `StatePanel` at `titleAs="h3"`, so the two
+        // compose as `<h2>` then `<h3>` with nothing between them and the page
+        // `<h1>`.
+        title={revenueHeadline(revenue, loading)}
+        titleAs="h2"
         description="Daily gross revenue across every channel for the last seven days, before refunds."
         source="Source: store ledger, refreshed hourly"
         height={240}
@@ -312,6 +309,10 @@ export function StorefrontOverview({
             kind="empty"
             icon={<TrendingUp aria-hidden="true" />}
             title="No sales in this window"
+            // Explicit even though "h3" is the new default (#385) — documents
+            // the outline relationship (follows the card's own h2 above) for
+            // the next reader and survives a future default change.
+            titleAs="h3"
             description="The trend appears once the store has taken its first order of the day."
             actions={
               <Button asChild variant="outline" size="sm">
