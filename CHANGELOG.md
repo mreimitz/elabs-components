@@ -28,6 +28,14 @@
   while both the wide and narrow branches silently discarded it after spreading `props`
   onto their own JSX — the exact advertised-but-inert failure `#382` set out to close, for
   a different prop.
+- `@elabs-ai/components-ui`, `@elabs-ai/components-terminal`: `FileUpload`'s dropzone and
+  `TerminalComposer`'s well no longer paint two complete compound focus indicators on one
+  tab stop. Both wrap `focus-ring-within`, but their inner focusable descendant (the
+  "Browse files" button; the submit `Button`) never dropped its own undelegated
+  `focus-ring`, so tabbing to it lit both the wrapper's ring and its own at once. Both
+  descendants now delegate their indicator to the wrapper (the documented `themes.css`
+  convention), so the wrapper's ring is the sole mark for the whole composite control
+  (#322).
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent

@@ -313,6 +313,10 @@ export const FileUploadDropzone = forwardRef<HTMLElement, FileUploadDropzoneProp
                   className={cn(
                     // #399 — inline text trigger inside a sentence → `-text` rung.
                     "text-primary-text underline-offset-2 hover:underline focus-ring rounded-sm",
+                    // #322 — the dropzone's `focus-ring-within` (above) is the
+                    // one compound indicator for this composite control; this
+                    // button delegates rather than painting a second one.
+                    "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
                     "disabled:pointer-events-none disabled:opacity-50",
                   )}
                 >

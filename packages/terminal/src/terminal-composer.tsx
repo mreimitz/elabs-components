@@ -568,6 +568,11 @@ export const TerminalComposer = forwardRef<HTMLDivElement, TerminalComposerProps
             size="icon-sm"
             className={cn(
               "shrink-0 rounded-full bg-terminal-accent text-terminal-accent-foreground hover:bg-terminal-accent/90",
+              // #322 — the well's `focus-ring-within` (on `TerminalSurface`,
+              // above) is the sole compound indicator for this composite
+              // control; the submit button delegates rather than painting a
+              // second one of its own (`buttonVariants` bakes in `focus-ring`).
+              "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
               action === "send" &&
                 !canSubmit &&
                 "cursor-not-allowed opacity-50 hover:bg-terminal-accent",
