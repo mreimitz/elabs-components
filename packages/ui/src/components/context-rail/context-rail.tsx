@@ -66,7 +66,14 @@ export interface ContextRailSection {
 // collide with this component's own `onSelect`-shaped internals
 // (`ContextRailBranchProps`) when `props` is spread onto
 // `ContextRailWide`/`ContextRailNarrow` below.
-export interface ContextRailProps extends Omit<ComponentProps<"div">, "onSelect"> {
+//
+// `children` is omitted for the same reason `variant` is declared out above:
+// both `ContextRailWide` and `ContextRailNarrow` supply their OWN JSX
+// children after spreading `props` onto their root element, so a caller's
+// `children` would be accepted by the type and then silently discarded at
+// render — another advertised-but-inert prop, the exact failure mode #382
+// fixed for `variant`.
+export interface ContextRailProps extends Omit<ComponentProps<"div">, "onSelect" | "children"> {
   /** The sections the switcher can pick between. An empty array renders
    * the `empty` slot instead of a switcher. */
   sections: ContextRailSection[];

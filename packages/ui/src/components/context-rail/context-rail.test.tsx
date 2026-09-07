@@ -228,6 +228,24 @@ describe("ContextRail", () => {
     expect(typeof typeOnly).toBe("function");
   });
 
+  // Companion to #13: the type was re-derived from `ComponentProps<"div">`
+  // and stopped omitting `children` alongside `onSelect`, unintentionally
+  // making `children` a public prop again even though both `ContextRailWide`
+  // and `ContextRailNarrow` supply their own JSX children after spreading
+  // `props` — a caller's `children` type-checks and is then silently
+  // discarded at render, the same advertised-but-inert failure #382 fixed
+  // for `variant`. Compile-time lock: fails the moment `children` is
+  // dropped from the `Omit` again.
+  it("15. (type-level) does not accept a `children` prop", () => {
+    function typeOnly() {
+      // @ts-expect-error — `children` is omitted from `ContextRailProps`;
+      // both render branches discard it after spreading `props`, so it
+      // must not be publicly accepted.
+      return <ContextRail sections={[]}>discarded</ContextRail>;
+    }
+    expect(typeof typeOnly).toBe("function");
+  });
+
   it("14. the wide branch renders data-variant=sidebar on the sidebar root; the narrow branch renders no data-variant at all", () => {
     const wide = render(<ContextRail sections={sections} open={true} activeSectionId="sources" />);
     const sidebarRoot = wide.container.querySelector('[data-slot="sidebar"]');
