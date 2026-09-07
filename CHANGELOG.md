@@ -49,7 +49,9 @@
   line and 8px off the icons in the left nav rail, and the active entry's accent bar
   painted on the rail's boundary. The count badge is now the corner badge in both
   presentations; the end-anchored pill the expanded row used to get covered its own
-  entry's glyph.
+  entry's glyph. In that one band the switcher is capped at half the width and
+  scrolls past it, so an unbounded `sections` list can no longer squeeze the active
+  section's heading down to nothing.
 - `@elabs-ai/components-ui`: `TeamSwitcher` collapsed to a 48px icon rail now renders as
   one glyph on the same centre line as every nav entry. Its 32px logo plate did not fit
   the collapsed button's content box, so it overflowed and its glyph landed 8px to the

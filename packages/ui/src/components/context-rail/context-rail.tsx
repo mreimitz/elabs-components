@@ -204,10 +204,19 @@ function ContextRailSwitcher({
       className={
         // Expanded, the switcher is a fixed-width cluster at the END of the
         // header band, so it must NOT take the menu's default `w-full` — that
-        // would push the section heading out of the row. Collapsed (and in the
-        // narrow strip) it is the whole column again.
+        // would push the section heading out of the row. It is also capped at
+        // HALF the band: `sections` is caller-supplied and unbounded, and an
+        // uncapped row of 32px buttons reserves its full width before the
+        // heading gets any, so at the default 20rem width eight sections left
+        // the active section's label about 20px to render in — effectively
+        // gone — and more than that overflowed the rail. Capped, the overflow
+        // moves into the cluster itself, which scrolls (its items are the
+        // buttons, so the region already has the focusable descendant WCAG
+        // 2.1.1 wants) while the heading keeps its half. Collapsed (and in the
+        // narrow strip) it is the whole column again, with no cap and no
+        // scroller.
         orientation === "row"
-          ? "w-auto shrink-0 flex-row group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-col"
+          ? "w-auto max-w-1/2 shrink-0 flex-row overflow-x-auto [&>li]:shrink-0 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:max-w-none group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:overflow-x-visible"
           : "flex-col"
       }
     >
@@ -306,6 +315,13 @@ const ContextRailWide = forwardRef<HTMLDivElement, ContextRailBranchProps>(funct
       // ref it has always published rather than making this a breaking change.
       ref={ref as Ref<HTMLElement>}
       data-slot="context-rail"
+      // Which of the two presentations is on screen, as a styling hook. A host
+      // that has to compensate for its OWN chrome (the dashboard block pays
+      // back an inset card's top gutter so the two headers share a line) needs
+      // a different offset per branch, and `className` lands on whichever one
+      // is mounted — so without this marker one branch always gets the other's
+      // number.
+      data-presentation="wide"
       aria-labelledby={hasHeading ? headingId : undefined}
       aria-label={hasHeading ? undefined : t("ui.contextRail.empty")}
       className={cn("flex h-full min-h-0 w-full flex-col", className)}
@@ -395,6 +411,9 @@ const ContextRailNarrow = forwardRef<HTMLDivElement, ContextRailNarrowProps>(
           // type stays `HTMLDivElement`.
           ref={mergedStripRef as Ref<HTMLElement>}
           data-slot="context-rail"
+          // See the wide branch: the marker is what lets a host target one
+          // presentation's padding without disturbing the other's.
+          data-presentation="narrow"
           aria-label={activeSection?.label ?? t("ui.contextRail.empty")}
           className={cn(
             // `px-2 pt-3 pb-2`: the same strip padding the wide branch's

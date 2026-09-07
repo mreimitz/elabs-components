@@ -218,7 +218,17 @@ export default function DashboardShell({
         // headers sit on one line. `md:`, because the gutter it answers to is
         // `md:`-gated too (`SidebarInset`) — below that width there is no card
         // and nothing to line up with.
-        className="md:pt-2"
+        //
+        // Per PRESENTATION, because the two branches start from different
+        // padding and `className` lands on whichever one is mounted. The wide
+        // branch's header band starts flush, so 8px puts its 56px band's centre
+        // line on the card's top bar. The narrow strip already carries `pt-3`
+        // for its own icon, and a `md:pt-2` would REPLACE that 12px with 8px
+        // rather than add to it — its first icon would centre at 24px against
+        // the bar's 36px. `pt-5` is that strip's own 12px plus the same 8px.
+        // Only reachable when a caller raises `detailsOverlayBreakpoint` above
+        // 768px, which is exactly why it is easy to get wrong.
+        className="md:data-[presentation=wide]:pt-2 md:data-[presentation=narrow]:pt-5"
       />
     </SidebarProvider>
   );

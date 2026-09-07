@@ -544,3 +544,34 @@ export const CountBadgeOnScreen: Story = {
     await expect(badge).toHaveAttribute("aria-hidden", "true");
   },
 };
+
+/**
+ * `detailsOverlayBreakpoint` raised above the `md` breakpoint the inset card's
+ * own gutter is gated on — the one configuration where the rail renders its
+ * NARROW strip while the content column is still a floating card. Both branches
+ * receive the shell's compensation class, and the two start from different
+ * padding, so a single value cannot serve both: the strip's own 12px would be
+ * replaced by the wide branch's 8px and its first icon would centre 12px above
+ * the top bar's. This locks the two centre lines together in that window.
+ */
+export const NarrowRailBesideInsetCard: Story = {
+  render: () => <DashboardShell activePath="/" detailsOverlayBreakpoint={2000} />,
+  play: async ({ canvasElement }) => {
+    const strip = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="context-rail"][data-presentation="narrow"]',
+    );
+    const topBar = canvasElement.querySelector<HTMLElement>('[data-slot="dashboard-top-bar"]');
+    await expect(strip).not.toBeNull();
+    await expect(topBar).not.toBeNull();
+
+    const firstIcon = strip!.querySelector<HTMLElement>('[data-slot="context-rail-switcher-item"]');
+    await expect(firstIcon).not.toBeNull();
+
+    const iconCentre = firstIcon!.getBoundingClientRect();
+    const barRect = topBar!.getBoundingClientRect();
+    const iconY = iconCentre.top + iconCentre.height / 2;
+    const barY = barRect.top + barRect.height / 2;
+    // One line, within a pixel of rounding.
+    await expect(Math.abs(iconY - barY)).toBeLessThanOrEqual(1);
+  },
+};
