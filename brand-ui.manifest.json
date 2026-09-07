@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T13:04:02.898Z",
+  "generatedAt": "2026-09-07T13:06:27.385Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17470,7 +17470,7 @@
               "name": "sortBy",
               "optional": true,
               "type": "DumbbellSortBy",
-              "description": "Sort rows ascending by this key before rendering. Default `\"none\"` (data order)."
+              "description": "Sort rows before rendering. `\"delta\"` sorts **descending by `|delta|`** (magnitude, sign ignored — the biggest mover first, whether it's an increase or a decrease); `\"start\"`/`\"end\"` sort **ascending** on the (signed) value axis. Default `\"none\"` (data order)."
             },
             {
               "name": "palette",
