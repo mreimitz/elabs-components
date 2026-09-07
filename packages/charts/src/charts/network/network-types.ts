@@ -67,6 +67,13 @@ export interface NetworkNodeLayout extends NetworkNodeDatum {
    * away from the gap in a colonnade) so a label never crosses its own drawing.
    */
   labelAnchor: "start" | "end";
+  /**
+   * `arc` only, and only when the label does not fit its measured gutter — an
+   * ellipsised prefix of `label`/`id` to PAINT. `label` itself is left whole:
+   * it is what the datapoint's accessible name is built from, so truncation
+   * never reaches AT (see `computeNetworkLayout`'s gutter degrade).
+   */
+  displayLabel?: string;
 }
 
 /** A link after layout: endpoints resolved, path built. */

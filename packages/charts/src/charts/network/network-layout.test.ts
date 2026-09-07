@@ -410,6 +410,30 @@ describe("arc layout", () => {
   it("leaves and arrives horizontally — both control points on the midline", () => {
     expect(arcLinkPath({ x: 20, y: 60 }, { x: 280, y: 140 })).toBe("M20,60C150,60 150,140 280,140");
   });
+
+  // #277 — labels drawn outward from the columns had zero reserved gutter and
+  // clipped at the SVG edge. `labelGutter` reserves that room; omitted, the
+  // columns must land exactly where they do today (the no-op guarantee).
+  it("honours an explicit label gutter on both sides", () => {
+    const positions = arcPositions(["left", "left", "right"], {
+      width: 720,
+      height: 405,
+      padding: 34,
+      labelGutter: { left: 90, right: 70 },
+    });
+    expect(positions[0]?.x).toBe(124);
+    expect(positions[2]?.x).toBe(616);
+  });
+
+  it("reproduces today's padding-only columns when no gutter is supplied", () => {
+    const positions = arcPositions(["left", "left", "right"], {
+      width: 720,
+      height: 405,
+      padding: 34,
+    });
+    expect(positions[0]?.x).toBe(34);
+    expect(positions[2]?.x).toBe(686);
+  });
 });
 
 // ── Adjacency emphasis ──────────────────────────────────────────────────────
@@ -566,6 +590,46 @@ describe("computeNetworkLayout", () => {
     expect(result.nodes.map((n) => n.labelAnchor)).toEqual(["end", "end", "start", "start"]);
     expect(new Set(result.nodes.map((n) => n.x)).size).toBe(2);
     expect(result.links.every((l) => l.path.includes("C"))).toBe(true);
+  });
+
+  // #277 — `computeNetworkLayout` measures each side's longest label and feeds
+  // it to `arcPositions` as a gutter; omitted, the two layouts that never had a
+  // gutter concept must not move a single pixel.
+  it("widens the arc columns when a label measurer is supplied", () => {
+    const measureLabel = (text: string) => text.length * 8;
+    const plain = computeNetworkLayout(NODES, LINKS, { ...box, layout: "arc" });
+    const measured = computeNetworkLayout(NODES, LINKS, { ...box, layout: "arc", measureLabel });
+    const plainLeftX = plain.nodes.find((n) => n.side === "left")?.x as number;
+    const measuredLeftX = measured.nodes.find((n) => n.side === "left")?.x as number;
+    expect(measuredLeftX).toBeGreaterThan(plainLeftX);
+    expect(measured.nodes.every((n) => n.displayLabel === undefined)).toBe(true);
+  });
+
+  it("degrades a gutter that would eat too much of the width by truncating with a real ellipsis", () => {
+    const measureLabel = (text: string) => text.length * 30;
+    const result = computeNetworkLayout(NODES, LINKS, {
+      width: 200,
+      height: 100,
+      layout: "arc",
+      measureLabel,
+    });
+    const truncated = result.nodes.filter((n) => n.displayLabel !== undefined);
+    expect(truncated.length).toBeGreaterThan(0);
+    for (const node of truncated) {
+      expect(node.displayLabel?.endsWith("…")).toBe(true);
+      expect(node.displayLabel).not.toContain("...");
+      // The full name is untouched — it is what the datapoint's accessible
+      // name is built from, so truncation never reaches assistive tech.
+      expect(node.label).not.toBe(node.displayLabel);
+    }
+  });
+
+  it("never sets `displayLabel` on `circular`/`force`, measurer or not", () => {
+    const measureLabel = (text: string) => text.length * 30;
+    for (const layout of ["circular", "force"] as const) {
+      const result = computeNetworkLayout(NODES, LINKS, { ...box, layout, measureLabel });
+      expect(result.nodes.every((n) => n.displayLabel === undefined)).toBe(true);
+    }
   });
 
   it("draws circular chords as quadratics and force edges as straight lines", () => {

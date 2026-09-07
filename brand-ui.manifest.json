@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T13:55:51.197Z",
+  "generatedAt": "2026-09-07T20:04:11.424Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13225,6 +13225,16 @@
         },
         {
           "name": "NETWORK_DEFAULT_NODE_RADIUS",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_LABEL_GAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_MAX_LABEL_GUTTER_FRACTION",
           "kind": "value",
           "module": "packages/charts/src/charts/network/index.ts"
         },

@@ -53,6 +53,7 @@ import {
 import { useChartValueFormatter } from "../chart-formatters";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
+import { useTextMeasurerOf } from "../use-text-measurer";
 import type { ChartValueFormat } from "../value-format";
 import { NetworkChartProvider, type NetworkEmphasis } from "./network-context";
 import {
@@ -261,6 +262,12 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
     return () => observer.disconnect();
   }, [measure]);
 
+  // `arc`'s label gutter (#277): the px width of a label, in the label's actual
+  // font, so the layout can reserve real room for it instead of a node-radius
+  // guess. Harmless to compute for `circular`/`force` too — `measureLabel` is
+  // only READ for `layout === "arc"`.
+  const { measure: measureLabel } = useTextMeasurerOf(internalRef);
+
   // ── Layout (pure, synchronous, memoised on data identity + size) ──────────
   const resolved = useMemo(
     () =>
@@ -272,8 +279,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
         palette,
         paletteExplicit: palette !== undefined,
         seed,
+        measureLabel,
       }),
-    [nodes, links, size.w, size.h, layout, nodeSize, palette, seed],
+    [nodes, links, size.w, size.h, layout, nodeSize, palette, seed, measureLabel],
   );
 
   // ── Emphasis + tooltip (ONE piece of state; the blur itself is CSS) ───────
