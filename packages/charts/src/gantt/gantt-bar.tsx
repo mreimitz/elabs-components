@@ -998,6 +998,7 @@ export function GanttBar({
                 {task.progress !== undefined && task.progress > 0 && (
                   <span
                     aria-hidden="true"
+                    data-slot="gantt-bar-progress"
                     className="absolute inset-y-0 start-0 rounded-s bg-black/20"
                     style={{ width: `${Math.min(task.progress * 100, 100)}%` }}
                   />

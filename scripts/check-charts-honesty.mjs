@@ -13,44 +13,24 @@
  * Provenance: `docs/review/2026-09-04-lieflat-charts-gap-analysis.md` §5 C5;
  * lieflat `SKILL.md` §2 "数据", §7, §8.
  *
- * ## Scope — a DECLARED limit, not an implicit one (orchestrator send-back, #265)
+ * ## Scope — per-rule, DECLARED, not implicit (#275)
  *
- * `SCAN_DIRS` is `packages/charts/src/charts/**` and `packages/charts/src/marks/**`
- * only — narrower than the item's literal spec ("`Math.random` banned in
- * `packages/charts/src/**`"). Sibling directories (`gantt/`, `metric-card/`,
- * `metric-grid/`, `sparkline/`, `chart-card/`, `chart-frame/`, `auto-chart/`)
- * are NOT SCANNED AT ALL, by any of the four rules — this is a real, stated
- * gap, not a claim that those directories are clean.
+ * `SCAN_DIRS_ENCODING` (rules 1, 2, 4) is `packages/charts/src/charts/**` and
+ * `packages/charts/src/marks/**` only — those rules police a VALUE ENCODING
+ * (a length/area/radius/unit scale), and sibling directories (`gantt/`,
+ * `metric-card/`, `metric-grid/`, `sparkline/`, `chart-card/`, `chart-frame/`,
+ * `auto-chart/`) own no such encoding — a Gantt bar draws a DATE RANGE and a
+ * 0–100 progress fraction against a fixed timeline, never a length pulled
+ * from an arbitrary y-domain, and has no area/radius mark at all; a
+ * MetricCard has no scale. `charts/` + `marks/` is also where RM-039 placed
+ * its two new files (`charts/y-domain-utils.ts`, `marks/area-radius.ts`).
  *
- * For rules 1, 2 and 4 the narrowing is a reasoned exclusion: those rules
- * police a VALUE ENCODING (a length/area/radius/unit scale), and `gantt/`,
- * `metric-card/` etc. own no such encoding — a Gantt bar draws a DATE RANGE
- * and a 0–100 progress fraction against a fixed timeline, never a length
- * pulled from an arbitrary y-domain, and has no area/radius mark at all; a
- * MetricCard has no scale. `charts/` + `marks/` is also where this item's own
- * roadmap entry (RM-039) placed its two new files (`charts/y-domain-utils.ts`,
- * `marks/area-radius.ts`).
- *
- * For rule 3 (no `Math.random`) that reasoning does NOT apply — the item's
- * spec bans it package-wide, with no encoding caveat, and a Gantt story can
- * be exactly as non-reproducible as a bar-chart story. The scope narrowing
- * hid a REAL, in-spec violation:
- * `packages/charts/src/gantt/gantt.stories.tsx:250` calls `Math.random()` in
- * a story's fixture data. This was found during RM-039 development, reported
- * to the orchestrator instead of fixed here (`gantt.stories.tsx` is outside
- * this item's `touches`), and is being routed to `/file-issue` by the
- * orchestrator. Widening `SCAN_DIRS` to fix it here was considered and
- * declined: it would mean editing `gantt.stories.tsx` (an inline
- * `honesty:allow`) or the file outside this item's write-set either way, and
- * a ratchet baseline for rule 3 is explicitly NOT authorized for this item
- * (RM-039's orchestrator amendments permit a ratchet baseline for rule 4's
- * story captions only). So the chosen resolution is the third option the
- * orchestrator offered: keep the narrower scope and STATE the limit here and
- * in `docs/GATES.md`, rather than widen the scan and immediately need an
- * exception this item isn't allowed to make. **Whoever fixes the Gantt
- * finding should also decide there whether to widen `SCAN_DIRS` to
- * `packages/charts/src` for rule 3** (dropping this whole paragraph) or add
- * the `honesty:allow` once the fix lands.
+ * `SCAN_DIRS_RANDOM` (rule 3, no `Math.random`) is the whole package
+ * (`packages/charts/src/**`): determinism is a property of every rendered
+ * file, not a value encoding, so a Gantt story can be exactly as
+ * non-reproducible as a bar-chart story — see
+ * `packages/charts/src/gantt/gantt.stories.tsx`'s virtualized-story fixture,
+ * fixed alongside this widening (#275).
  *
  * ## Escape hatch
  *
@@ -76,7 +56,11 @@ import { dirname, join, relative } from "node:path";
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR);
 const CHARTS_ROOT = join(REPO_ROOT, "packages", "charts", "src");
-const SCAN_DIRS = [join(CHARTS_ROOT, "charts"), join(CHARTS_ROOT, "marks")];
+// Rules 1, 2, 4 police a value ENCODING and stay scoped to the two directories
+// that own one. Rule 3 (no Math.random) is about determinism, a property of
+// every file in the package — see the header comment above.
+export const SCAN_DIRS_ENCODING = [join(CHARTS_ROOT, "charts"), join(CHARTS_ROOT, "marks")];
+export const SCAN_DIRS_RANDOM = [CHARTS_ROOT];
 const BASELINE_PATH = join(SCRIPT_DIR, "charts-honesty-caption-baseline.json");
 
 // ─────────────────────────────────────────── file discovery ──────────────────
@@ -101,9 +85,10 @@ function listAllFiles(dir, acc = []) {
   return acc;
 }
 
-function listScanFiles() {
+/** Collect every `.ts`/`.tsx` file under the given scan directories (exported for tests). */
+export function listScanFiles(dirs) {
   const acc = [];
-  for (const dir of SCAN_DIRS) {
+  for (const dir of dirs) {
     if (existsSync(dir)) listAllFiles(dir, acc);
   }
   return acc;
@@ -512,12 +497,18 @@ function main(argv) {
   const update = args.includes("--update");
   const force = args.includes("--force");
 
-  const files = listScanFiles();
-  const sourceFiles = files.filter((f) => !isTestFile(f) && !isStoryFile(f));
-  const storyFiles = files.filter(isStoryFile);
+  // Rules 1, 2, 4: charts/ + marks/ only (value-encoding scope).
+  const encodingFiles = listScanFiles(SCAN_DIRS_ENCODING);
+  const encodingSourceFiles = encodingFiles.filter((f) => !isTestFile(f) && !isStoryFile(f));
+  const encodingStoryFiles = encodingFiles.filter(isStoryFile);
+
+  // Rule 3: the whole package (determinism scope) — see the header comment above.
+  const randomFiles = listScanFiles(SCAN_DIRS_RANDOM);
+  const randomSourceFiles = randomFiles.filter((f) => !isTestFile(f) && !isStoryFile(f));
+  const randomStoryFiles = randomFiles.filter(isStoryFile);
 
   const findings = [];
-  for (const file of sourceFiles) {
+  for (const file of encodingSourceFiles) {
     let src;
     try {
       src = readFileSync(file, "utf8");
@@ -526,10 +517,18 @@ function main(argv) {
     }
     findings.push(...findZeroBasedBarViolations(file, src));
     findings.push(...findAreaRadiusViolations(file, src));
+  }
+  for (const file of randomSourceFiles) {
+    let src;
+    try {
+      src = readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
     findings.push(...findMathRandomViolations(file, src));
   }
   // Rule 3 also runs over story files (demo data is in scope; see rule-3 note above).
-  for (const file of storyFiles) {
+  for (const file of randomStoryFiles) {
     let src;
     try {
       src = readFileSync(file, "utf8");
@@ -539,7 +538,7 @@ function main(argv) {
     findings.push(...findMathRandomViolations(file, src));
   }
 
-  const currentFailingCaptions = findUnitCaptionFailures(storyFiles);
+  const currentFailingCaptions = findUnitCaptionFailures(encodingStoryFiles);
 
   if (update) {
     const { baseline, rejected } = computeUpdatedBaseline(currentFailingCaptions, loadBaseline(), {
@@ -598,7 +597,7 @@ function main(argv) {
   if (!warnOnly) {
     console.log(
       `✔ charts-honesty: zero-based bars, sqrt area radii, no Math.random, unit captions — ` +
-        `${sourceFiles.length + storyFiles.length} file(s) scanned, ` +
+        `${randomFiles.length} file(s) scanned, ` +
         `${baselineKeys.length} pre-existing caption gap(s) tracked in baseline.`,
     );
   }

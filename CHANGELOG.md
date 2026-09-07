@@ -56,6 +56,15 @@
   trailing side of every other icon in the rail. The trigger also carries an explicit
   accessible name (team plus plan, exactly its visible label), because collapsed there is
   no longer visible text for one to be computed from.
+- `@elabs-ai/components-charts`: the `Gantt` virtualized story's 60-task fixture built its
+  `progress` values with `Math.random()`, so `charts-gantt--virtualized` drew a different
+  picture on every mount — the one thing the package's own honesty rule bans. It now uses
+  the package's `seededRnd` helper (`packages/charts/src/marks/seeded-rnd.ts`), keyed on the
+  task index, so the fixture is deterministic across renders. The gate that should have
+  caught this (`pnpm charts:honesty:check`, #265) scanned only `charts/`/`marks/` for every
+  rule; its "no `Math.random`" rule now scans the whole package, since determinism — unlike
+  the other three rules — is not a value-encoding concern scoped to those two directories
+  (#275).
 
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls

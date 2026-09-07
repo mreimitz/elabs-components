@@ -2,12 +2,19 @@
  * check-charts-honesty.test.mjs — locks the RM-039 (#265) chart-honesty gate.
  * Run in CI: `node --test scripts/check-charts-honesty.test.mjs`.
  *
- * All fixtures are INLINE strings / hermetic in-memory story lists — never
- * real files, and never the real `packages/charts/src` tree (that tree is
- * exercised, and asserted clean, by `pnpm charts:honesty:check` itself).
+ * Every rule-function fixture is an INLINE string / hermetic in-memory story
+ * list — never a real file, and never the real `packages/charts/src` tree
+ * (that tree is exercised, and asserted clean, by `pnpm charts:honesty:check`
+ * itself). The one exception is the "scan scope" section below (#275): the
+ * bug under test is in the SCOPING (which directories get scanned), not in a
+ * rule function, so it needs a real, disposable filesystem fixture
+ * (`mkdtempSync`, torn down in the same test) rather than an inline string.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   compareUnitCaptionBaseline,
   computeUpdatedBaseline,
@@ -15,6 +22,7 @@ import {
   findMathRandomViolations,
   findUnitCaptionFailures,
   findZeroBasedBarViolations,
+  listScanFiles,
   stripCommentsPreservingLines,
 } from "./check-charts-honesty.mjs";
 
@@ -245,6 +253,54 @@ test("RULE 3 self-test sanity: mutating seededRnd back to Math.random turns gree
   assert.equal(findMathRandomViolations("/x/x.tsx", honest).length, 0);
   const mutated = honest.replace("seededRnd(i, seed)", "Math.random()");
   assert.equal(findMathRandomViolations("/x/x.tsx", mutated).length, 1);
+});
+
+// ═══════════════════ Scan scope — per-rule SCAN_DIRS (#275) ══════════════════
+//
+// #275: rule 3 (no Math.random) used to share `SCAN_DIRS` with rules 1/2/4,
+// so a sibling directory like `gantt/` was invisible to EVERY rule, including
+// rule 3 — which has no encoding-scope excuse to be narrow. These fixtures
+// build a disposable directory tree that mimics `packages/charts/src`
+// (`charts/`, `marks/`, and a sibling `gantt/`) and assert the two scan
+// scopes actually differ in the one place that matters.
+
+test("SCAN SCOPE: a sibling directory (gantt/) is invisible to the encoding scope but visible to the random scope", () => {
+  const root = mkdtempSync(join(tmpdir(), "charts-honesty-scope-"));
+  try {
+    mkdirSync(join(root, "charts"), { recursive: true });
+    mkdirSync(join(root, "marks"), { recursive: true });
+    mkdirSync(join(root, "gantt"), { recursive: true });
+    writeFileSync(join(root, "charts", "bar-chart.tsx"), `export const x = 1;`);
+    writeFileSync(join(root, "marks", "seeded-rnd.ts"), `export const y = 2;`);
+    // The planted violation: Math.random() under a directory NEITHER rules
+    // 1/2/4 nor (before the #275 fix) rule 3 ever scanned.
+    writeFileSync(
+      join(root, "gantt", "gantt.stories.tsx"),
+      `export const tasks = [{ progress: Math.random() }];`,
+    );
+
+    const encodingFiles = listScanFiles([join(root, "charts"), join(root, "marks")]);
+    const randomFiles = listScanFiles([root]);
+
+    // Rules 1/2/4's scope never sees the gantt/ file — the encoding-scope
+    // exclusion for gantt/, metric-card/ etc. survives (issue AC3).
+    assert.equal(
+      encodingFiles.some((f) => f.includes("gantt")),
+      false,
+      "encoding scope must not include gantt/",
+    );
+
+    // Rule 3's scope DOES see it — this is the file that was invisible
+    // before #275, and the gate must now flag it (issue AC2).
+    const gantFile = randomFiles.find((f) => f.includes("gantt"));
+    assert.ok(gantFile, "random scope must include gantt/gantt.stories.tsx");
+    const src = `export const tasks = [{ progress: Math.random() }];`;
+    const findings = findMathRandomViolations(gantFile, src);
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].rule, "no-math-random");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 // ═══════════════════════════ Rule 4 — unit captions ═══════════════════════════
