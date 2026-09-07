@@ -228,6 +228,69 @@ describe("ModelPicker", () => {
     });
   });
 
+  // Issue #121 — `CommandList` IS the ARIA listbox (cmdk hardcodes
+  // role="listbox" on it); ARIA only allows a listbox to own `option`/`group`.
+  // This asserts the CAUSE (no disallowed descendant), not axe's message, so
+  // it survives an axe-core upgrade — the story-level `play` functions run
+  // the actual blocking axe rule.
+  describe("CommandList owns only option/group content (ARIA listbox contract)", () => {
+    const disallowedSelector =
+      '[role]:not([role="option"]):not([role="group"]):not([role="presentation"])';
+
+    const assertListClean = () => {
+      const list = document.querySelector('[data-slot="command-list"]')!;
+      expect(list).not.toBeNull();
+      expect(list.querySelector(disallowedSelector)).toBeNull();
+      return list as HTMLElement;
+    };
+
+    it("loading body: no role=status descendant inside the listbox", async () => {
+      render(<ModelPicker groups={[]} status="loading" triggerLabel="Pick" />);
+      await open();
+      // The list stays mounted (so CommandInput's aria-controls still
+      // resolves) but owns no option/group content while loading — the
+      // loading panel is a sibling, not a child.
+      assertListClean();
+      expect(document.querySelector('[data-slot="model-picker-loading"]')).not.toBeNull();
+    });
+
+    it("error body: the retry button is not a descendant of the listbox", async () => {
+      const onRetry = vi.fn();
+      render(<ModelPicker groups={[]} status="error" triggerLabel="Pick" onRetry={onRetry} />);
+      await open();
+      const list = assertListClean();
+      const retryButton = screen.getByRole("button", { name: "Retry" });
+      expect(list).not.toContainElement(retryButton);
+    });
+
+    it("empty body (with retry): the retry button is not a descendant of the listbox", async () => {
+      const onRetry = vi.fn();
+      render(<ModelPicker groups={[]} status="empty" triggerLabel="Pick" onRetry={onRetry} />);
+      await open();
+      const list = assertListClean();
+      const retryButton = screen.getByRole("button", { name: "Retry" });
+      expect(list).not.toContainElement(retryButton);
+    });
+
+    it("populated list with a non-matching search: CommandEmpty is not a descendant of the listbox", async () => {
+      render(<ModelPicker groups={groups} triggerLabel="Pick" />);
+      await open();
+      await userEvent.type(screen.getByPlaceholderText("Search…"), "zzzzzznomatch");
+      const noResults = await screen.findByText("No results.");
+      const list = assertListClean();
+      expect(list).not.toContainElement(noResults);
+    });
+
+    it("CommandInput's aria-controls still resolves to the mounted (empty) listbox", async () => {
+      render(<ModelPicker groups={[]} status="empty" triggerLabel="Pick" />);
+      await open();
+      const input = screen.getByPlaceholderText("Search…");
+      const controlsId = input.getAttribute("aria-controls");
+      expect(controlsId).toBeTruthy();
+      expect(document.getElementById(controlsId!)).not.toBeNull();
+    });
+  });
+
   it("uncontrolled mode: trigger click still opens and closes on its own (regression)", async () => {
     const onSelect = vi.fn();
     render(<ModelPicker groups={groups} triggerLabel="Pick" onSelect={onSelect} />);

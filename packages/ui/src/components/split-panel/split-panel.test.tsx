@@ -19,6 +19,26 @@ describe("SplitPanel", () => {
     expect(endPane.className).toMatch(/border-s/);
   });
 
+  // Issue #163 — WCAG 1.4.11: with both tones "plain" (the shipped default),
+  // the hairline is the ONLY cue between the two panes (no fill/elevation
+  // difference), so it must be the strong, ≥3:1 rung — `border-strong ≥ 3:1
+  // on --card/--background` is proven for every theme in
+  // `@elabs-ai/components-tokens`'s `themes-contrast.test.ts`; this test locks
+  // that `SplitPanel` actually reaches for that token in this configuration,
+  // not just the bare `border-s`/`border-t` class the previous assertion
+  // above already passed on the unfixed code.
+  it("plain/plain divider uses the strong (≥3:1) border rung, not the subtle default", () => {
+    const { getByText } = render(<SplitPanel start={<>List</>} end={<>Detail</>} />);
+    expect(getByText("Detail").className).toMatch(/border-border-strong/);
+  });
+
+  it("muted/card tones keep the subtle divider rung — the fill difference already carries the boundary", () => {
+    const { getByText } = render(
+      <SplitPanel startTone="muted" endTone="card" start={<>List</>} end={<>Detail</>} />,
+    );
+    expect(getByText("Detail").className).not.toMatch(/border-border-strong/);
+  });
+
   it("applies the ground-offset tones: muted well + raised card", () => {
     const { getByText } = render(
       <SplitPanel

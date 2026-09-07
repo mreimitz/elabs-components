@@ -76,17 +76,13 @@ export const NoCurrentWorkspace: Story = {
  * Nothing to show — `ModelPicker`'s own designed empty panel (reused, not
  * reimplemented) plus the free-text path entry, which always renders in the
  * footer regardless of body state and is this state's one action.
- *
- * No `play` function on purpose: opening the popover here renders
- * `ModelPicker`'s `CommandList` (`role="listbox"`, from cmdk) with zero
- * `option`/`group` children, which is a real, pre-existing
- * `aria-required-children` axe violation in `ModelPicker` itself — out of
- * this component's ownership to fix (reported separately). The empty-state
- * behavior (message + the free-text entry as its one action) is covered
- * instead by `workspace-picker.test.tsx`, which does not run axe.
  */
 export const Empty: Story = {
   args: { workspaces: [], currentId: undefined },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("combobox"));
+    await within(canvasElement.ownerDocument.body).findByRole("dialog");
+  },
 };
 
 /** A very long, deeply nested path truncates instead of overflowing the row. */
