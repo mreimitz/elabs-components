@@ -49,11 +49,13 @@ const metrics = [
     description: "30-day active",
   },
   {
+    // No `positiveIsGood` override: a shorter average session is a genuine
+    // decline (default `up = good` holds), so this renders as the one
+    // legitimately bad delta in the default view — see #187.
     label: "Avg. Session",
     value: "4m 32s",
     delta: "-0.4%",
     deltaDirection: "down" as const,
-    positiveIsGood: false,
     description: "last 7 days",
   },
   {
@@ -177,14 +179,14 @@ function DashboardTemplate() {
             <ChartCard
               title="Revenue is up 8% quarter over quarter"
               description="Monthly revenue, Jan – Jun 2025"
-              source="Source: Internal analytics, updated daily"
+              source="Source: Finance ledger, closed June 2025"
             >
               <PlaceholderBars bars={revenueBars} />
             </ChartCard>
             <ChartCard
               title="Sessions are steady week over week"
               description="Active sessions, last 5 weekdays"
-              source="Source: Internal analytics, updated daily"
+              source="Source: Product analytics, refreshed hourly"
             >
               <PlaceholderBars bars={sessionBars} />
             </ChartCard>

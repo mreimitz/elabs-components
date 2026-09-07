@@ -32,6 +32,322 @@ test("themes.css exemption: colorRule rules are skipped in theme files", () => {
   assert.ok(ids(plain).includes("raw-hex"), "raw-hex still fires outside themes.css");
 });
 
+// ── comment-span exemption for colorRule (#140) ──────────────────────────────
+// `raw-hex` (and its colorRule siblings) matched `#<hex digits>` ANYWHERE,
+// including a bare GitHub issue reference in prose (`#254`) — indistinguishable
+// from a colour literal by the pattern alone. The fix narrows colorRule
+// matching to skip `//` and `/* */` comment spans (including a `/** */`
+// docblock spanning MULTIPLE lines — brand-ui's own source cites issue numbers
+// that way, see this file's header) WITHOUT weakening the rule on real code.
+
+test("raw-hex ignores a bare issue reference in a line comment", () => {
+  assert.equal(
+    scanText("// see #254 for the discussion", {}).filter((x) => x.rule === "raw-hex").length,
+    0,
+    "a // comment citing an issue number is not a colour literal",
+  );
+});
+
+test("raw-hex ignores a bare issue reference in a single-line block comment", () => {
+  assert.equal(
+    scanText("/* #351's fix landed here */", {}).filter((x) => x.rule === "raw-hex").length,
+    0,
+    "a /* */ comment citing an issue number is not a colour literal",
+  );
+});
+
+test("the issue's own fixture: // see #254 plus a real bg-[#fff] — one finding, not two", () => {
+  const f = scanText('const x = "bg-[#fff]"; // see #254', {});
+  const rawHex = f.filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "only the real hex literal fires, not the issue reference");
+});
+
+test("raw-hex ignores an issue reference inside a MULTI-LINE docblock (the real repro)", () => {
+  // Mirrors packages/ai/src/composer.stories.tsx's own header: a `/** … */`
+  // JSDoc block where the issue number sits on its own line, with no `/*` or
+  // `*/` token on that line — a same-line-only check would still miss this.
+  const docblock = [
+    "/**",
+    ' * tone="card" (#254): the tinted-outer/distinct-inner "double card" — an',
+    " * outer bg-card frame (#351's P0 fix).",
+    " */",
+    'export const real = "bg-[#fff]";',
+  ].join("\n");
+  const f = scanText(docblock, {});
+  const rawHex = f.filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "only the real code line fires; both docblock lines stay quiet");
+  assert.equal(rawHex[0].line, 5, "the one finding is the real code line, not a docblock line");
+});
+
+test("raw-hex teeth are intact: every genuine raw-hex form still fires outside comments", () => {
+  const cases = [
+    ['className="bg-[#fff]"', "3-digit hex in a class string"],
+    ['style={{ color: "#ffffff" }}', "6-digit hex in a style object"],
+    ['const v = cva("", { variants: { tone: { brand: "text-[#FFF]" } } });', "hex in a cva map"],
+    ["color: #abcabc;", "hex in a plain CSS declaration"],
+  ];
+  for (const [line, label] of cases) {
+    assert.ok(ids(scanText(line, {})).includes("raw-hex"), `${label} still flags raw-hex`);
+  }
+});
+
+test("a hex literal BEFORE a trailing issue-reference comment on the same line still fires", () => {
+  const f = scanText("background: #ff00aa; // tracked in #254", {});
+  const rawHex = f.filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "the real literal before the comment is still caught");
+});
+
+// ── round 2: blankComments must be STRING-aware (validator FAIL, #140) ──────
+// `/*` inside an ORDINARY string (a MIME wildcard, a glob) is not a comment
+// opener. Without string awareness it opens a phantom block comment with no
+// matching `*/`, which silently blinds raw-hex for the REST OF THE FILE — a
+// real regression a validator caught using a real shipped file
+// (file-upload.stories.tsx's `accept="image/*,.pdf"`). These lock the fix in
+// both directions: the phantom-comment bug is closed, AND the original
+// comment-span exemption above still holds.
+
+test("a string containing an unmatched /* (a MIME wildcard) does not blind the rest of the file", () => {
+  // Mirrors the validator's real-file repro: file-upload.stories.tsx contains
+  // `accept="image/*,.pdf"` with no closing `*/` anywhere after it — a naive
+  // block-comment tracker never recovers, so every raw-hex after it vanishes.
+  const src = [
+    'export const Basic = { accept: "image/*,.pdf" };',
+    "",
+    'export const bad = "#ff0000";',
+  ].join("\n");
+  const rawHex = scanText(src, {}).filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "the real hex on line 3 must still fire");
+  assert.equal(rawHex[0].line, 3);
+});
+
+test("a string containing an unmatched /* (a glob) does not blind the rest of the file", () => {
+  const src = ['const pattern = "packages/*/src/index.ts";', 'export const bad = "#ff0000";'].join(
+    "\n",
+  );
+  const rawHex = scanText(src, {}).filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "the real hex on line 2 must still fire");
+});
+
+test("a URL string (containing //) on its own line does not blind a later line", () => {
+  const src = ['const u = "https://example.com";', 'export const bad = "#ff0000";'].join("\n");
+  const rawHex = scanText(src, {}).filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "the real hex on line 2 must still fire");
+});
+
+test('color: "#ff0000" // brand red — the hex before the trailing comment still fires', () => {
+  const rawHex = scanText('color: "#ff0000" // brand red', {}).filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "a hex INSIDE a string, before a later // comment, still fires");
+});
+
+test("a hex-looking fragment inside a string that also contains // is NOT suppressed — it is inside a STRING, not a comment", () => {
+  // Decision (asked for explicitly): once blankComments is string-aware, the
+  // whole `"https://x.dev/#ffffff"` literal is ONE string — its contents are
+  // copied through untouched, so raw-hex sees `#ffffff` exactly as it would
+  // in any other string. This is deliberate, not a regression: the mirror
+  // requirement is "a comment delimiter inside a string must not suppress
+  // detection" — a `//` that happens to sit inside a string is not a real
+  // comment, so it must not blank anything, including a hex-looking fragment
+  // later in the SAME string.
+  const rawHex = scanText('const link = "https://x.dev/#ffffff";', {}).filter(
+    (x) => x.rule === "raw-hex",
+  );
+  assert.equal(rawHex.length, 1, "the hex-looking fragment inside the string still fires");
+});
+
+test("a quote character INSIDE a genuine comment does not open a phantom string", () => {
+  // Mirror case: brand-ui's own docblock convention puts a JSX-attribute
+  // example like `tone="card"` inside a `/** */` block. The `"` there must
+  // stay comment content (blanked), never flip the tracker into string state
+  // and swallow real code after the comment closes.
+  const src = [
+    "/**",
+    ' * tone="card" (#254): the tinted-outer/distinct-inner "double card".',
+    " */",
+    'export const bad = "#ff0000";',
+  ].join("\n");
+  const rawHex = scanText(src, {}).filter((x) => x.rule === "raw-hex");
+  assert.equal(rawHex.length, 1, "the real hex after the docblock still fires");
+  assert.equal(rawHex[0].line, 4);
+});
+
+test("round 2 regression lock: reverting blankComments' string-awareness fails this test", () => {
+  // A second, maximally adversarial fixture combining an unmatched /* in a
+  // string with the ORIGINAL issue-reference case, so a partial revert (e.g.
+  // string-awareness for '"' but not the escape/newline handling) still gets
+  // caught: an unmatched-/* string, a genuine hex, AND a docblock issue ref,
+  // all in one file.
+  const src = [
+    'export const glob = "packages/*/src/**";',
+    "/**",
+    " * see #254 for context",
+    " */",
+    'export const bad = "#ff0000";',
+  ].join("\n");
+  const f = scanText(src, {});
+  const rawHex = f.filter((x) => x.rule === "raw-hex");
+  assert.equal(
+    rawHex.length,
+    1,
+    "the real hex still fires despite the unmatched /* and the docblock issue ref",
+  );
+  assert.equal(rawHex[0].line, 5);
+});
+
+// ── round 2 fix: loud on unterminated, not silent (#140 validator PASS-WITH-NOTES) ──
+// Three constructs the round-2 string-aware tokenizer still can't parse
+// correctly (no full lexing) — each walks it into `inBlock`/`stringQuote` with
+// no way back out before EOF. Rather than guess harder, `scanText` now says so.
+
+test("a regex character class containing /* leaves the file unterminated — the guard fires", () => {
+  const src = ["const re = /[/*]/;", 'export const bad = "#ff0000";'].join("\n");
+  const findings = scanText(src, {});
+  const guard = findings.filter((x) => x.rule === "unterminated-comment-or-string");
+  assert.equal(guard.length, 1, "the EOF-still-inside-a-comment guard must fire");
+  assert.equal(guard[0].advisory, false, "a blind file is a blocking finding, not advisory");
+});
+
+test("JSX prose containing a glob (src/*.ts) leaves the file unterminated — the guard fires", () => {
+  const src = ["const Help = () => <code>src/*.ts</code>;", 'export const bad = "#ff0000";'].join(
+    "\n",
+  );
+  const findings = scanText(src, {});
+  const guard = findings.filter((x) => x.rule === "unterminated-comment-or-string");
+  assert.equal(guard.length, 1, "the EOF-still-inside-a-comment guard must fire");
+});
+
+test("a genuinely unterminated /* block comment (no closing */) — the guard fires", () => {
+  const src = ["/* this docblock never closes", 'export const bad = "#ff0000";'].join("\n");
+  const findings = scanText(src, {});
+  const guard = findings.filter((x) => x.rule === "unterminated-comment-or-string");
+  assert.equal(guard.length, 1, "the EOF-still-inside-a-comment guard must fire");
+});
+
+test("a normal, fully-terminated file never trips the unterminated guard", () => {
+  const src = ['export const ok = "#ff0000"; // fine, closes normally'].join("\n");
+  const findings = scanText(src, {});
+  assert.equal(findings.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+// ── PR review round: a JSX prose apostrophe is not a string opener (#140) ──
+// The reported regression: a contraction before an inline JSX comment made the
+// tokenizer read the rest of the line as a string, so the real `/*` opener was
+// missed and the issue reference was flagged again — the issue's own symptom.
+
+test("a contraction before an inline JSX comment does not hide the comment", () => {
+  const src = [
+    "export function Panic() {",
+    "  return <p>Don't panic</p>; {/* see #254 */}",
+    "}",
+  ].join("\n");
+  const findings = scanText(src, {});
+  assert.equal(
+    findings.filter((x) => x.rule === "raw-hex").length,
+    0,
+    "#254 sits inside a real JSX comment — the apostrophe must not mask it",
+  );
+  assert.equal(findings.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+test("a possessive apostrophe on the same line as an issue-reference comment", () => {
+  const src = [
+    "const label = <p>the users' data</p>; // tracked in #254",
+    'const bad = "#ff0000";',
+  ].join("\n");
+  const findings = scanText(src, {});
+  const hex = findings.filter((x) => x.rule === "raw-hex");
+  assert.equal(hex.length, 1, "only the genuine hex on line 2 fires");
+  assert.equal(hex[0].line, 2);
+});
+
+test("an ordinary single-quoted string still opens a string (teeth intact)", () => {
+  // `'` after `=`/`(`/whitespace is a real opener — the heuristic only skips a
+  // `'` glued to a preceding letter or digit.
+  const src = ["const glob = 'packages/*/src/index.ts';", 'const bad = "#ff0000";'].join("\n");
+  const findings = scanText(src, {});
+  assert.equal(
+    findings.filter((x) => x.rule === "raw-hex").length,
+    1,
+    "the unmatched /* inside a single-quoted string must not blind line 2",
+  );
+  assert.equal(findings.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+test("residue is LOUD: a possessive followed by a glob in the same JSX prose trips the guard", () => {
+  // Known residue of the apostrophe heuristic — the `'` no longer opens a
+  // string, so the prose `/*` opens a block comment instead. Blind, but the
+  // EOF guard says so rather than reporting clean.
+  const src = ["const Help = () => <p>the user's src/*.ts files</p>;"].join("\n");
+  const findings = scanText(src, {});
+  assert.equal(findings.filter((x) => x.rule === "unterminated-comment-or-string").length, 1);
+});
+
+// ── PR review round 2: CSS/HTML have no `//` line comment (#140) ──
+// The reported defect: an unquoted CSS url (`url(https://cdn/x)`) had its `//`
+// read as a JS line-comment opener, blanking the rest of the declaration — so
+// a raw hex after it on the same line was invisible and `--strict` passed
+// invalid CSS. Fixed by giving each scanned file type its own comment grammar.
+
+test("a CSS url's // is data, not a comment opener — the hex after it still fires", () => {
+  const src = [
+    ".hero {",
+    "  background: url(https://cdn.example/x.png); color: #ff0000;",
+    "}",
+  ].join("\n");
+  const hex = scanText(src, { isCss: true }).filter((x) => x.rule === "raw-hex");
+  assert.equal(hex.length, 1, "CSS has no // line comment — the declaration must stay visible");
+  assert.equal(hex[0].line, 2);
+});
+
+test("a CSS url's // does not hide an rgb() literal on the same line", () => {
+  const src = ".a { background: url(https://cdn.example/x.png); color: rgb(1, 2, 3); }";
+  const f = scanText(src, { isCss: true });
+  assert.equal(f.filter((x) => x.rule === "rgb-literal").length, 1);
+});
+
+test("CSS keeps /* */ block comments — an issue reference there is still exempt", () => {
+  const src = ["/* see #254 — token rule discussion */", ".a { color: var(--primary); }"].join(
+    "\n",
+  );
+  const f = scanText(src, { isCss: true });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 0, "/* */ is a real CSS comment");
+  assert.equal(f.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+test("CSS teeth intact: a plain raw hex and rgb() still fire", () => {
+  const f = scanText([".a { color: #ff0000; }", ".b { color: rgb(1, 2, 3); }"].join("\n"), {
+    isCss: true,
+  });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 1);
+  assert.equal(f.filter((x) => x.rule === "rgb-literal").length, 1);
+});
+
+test("JS/TSX keeps // as a line comment — the CSS grammar must not leak", () => {
+  const f = scanText('const a = 1; // tracked in #254\nconst bad = "#ff0000";', {});
+  const hex = f.filter((x) => x.rule === "raw-hex");
+  assert.equal(hex.length, 1, "only the genuine hex on line 2");
+  assert.equal(hex[0].line, 2);
+});
+
+test("HTML: an unquoted https:// href does not blank the rest of the line", () => {
+  const src = '<a href=https://x.dev>x</a> <span style="color: #ff0000">y</span>';
+  const f = scanText(src, { path: "index.html" });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 1, "HTML has no // line comment");
+});
+
+test("HTML: <!-- --> is the comment form, so an issue reference in one is exempt", () => {
+  const src = ["<!-- see #254 for why -->", '<div style="color: var(--primary)">ok</div>'].join(
+    "\n",
+  );
+  const f = scanText(src, { path: "index.html" });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 0);
+  assert.equal(f.filter((x) => x.rule === "unterminated-comment-or-string").length, 0);
+});
+
+test("HTML teeth intact: a raw hex in a style attribute still fires", () => {
+  const f = scanText('<div style="color: #ff0000">bad</div>', { path: "index.html" });
+  assert.equal(f.filter((x) => x.rule === "raw-hex").length, 1);
+});
+
 test(".css files skip copyRule (prose/content) checks", () => {
   const css = scanText("/* John Doe — seamless */", { isCss: true });
   assert.equal(css.filter((x) => x.rule === "slop-generic-name").length, 0, "no JSX copy in css");

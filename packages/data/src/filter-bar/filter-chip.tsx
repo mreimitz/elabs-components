@@ -9,11 +9,12 @@
  * audit found the real, accessible, whole-chip-as-button `FilterChip` already
  * lives there (WCAG 2.5.8 target size, WCAG 2.5.3 "Remove filter: <label>"
  * accessible name). Building a second one in `packages/data` would duplicate
- * that work; this wrapper reuses it and folds `count`/`countLabel` into the
- * LABEL TEXT the base component both renders and names itself from — so the
- * count reaches the chip's ACCESSIBLE NAME automatically (screen readers hear
- * "Remove filter: Status: Failed · excluded 1,204"), not only its visible
- * text.
+ * that work; this wrapper reuses it and passes `count`/`countLabel` through
+ * the base component's `trailing` slot (#284) — a second, non-shrinking text
+ * element, distinct from the truncatable `label` — so the count reaches the
+ * chip's ACCESSIBLE NAME (screen readers hear "Remove filter: Status: Failed
+ * · excluded 1,204") AND survives truncation in the visible chip, instead of
+ * being folded into the one string CSS `truncate` can clip from the tail.
  */
 import { forwardRef } from "react";
 import {
@@ -22,7 +23,19 @@ import {
   useLocale,
 } from "@elabs-ai/components-ui";
 
-export interface FilterChipProps extends Omit<BaseFilterChipProps, "label"> {
+// `trailing` is omitted alongside `label`: this wrapper derives its OWN
+// `trailing` from `count`/`countLabel`. The `Omit` blocks `trailing` written
+// as an object LITERAL, but TypeScript's excess-property check does not
+// apply to a spread of an already-declared variable — `const extra = {
+// trailing: "x" }; <FilterChip {...extra} />` still type-checks, and the
+// value would land in `props` regardless of JSX attribute order (PR #408
+// review round 2). So the `Omit` is necessary but not sufficient: below,
+// `trailing` is also stripped from `props` at RUNTIME before it reaches the
+// base component, so a caller-supplied `trailing` — literal or
+// spread-smuggled — can never win at render, the same advertised-but-inert
+// failure mode #382/#284-round-1 already closed elsewhere in the repo
+// (`ContextRail`'s `children` omission).
+export interface FilterChipProps extends Omit<BaseFilterChipProps, "label" | "trailing"> {
   /**
    * Label-in-value text — `"Status: Failed"`, never `"Status = failed"` and
    * never a bare `"Failed"`. Same contract as the base `FilterChip`.
@@ -61,12 +74,19 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
         ? `${countLabel} ${formatNumber(count)}`
         : formatNumber(count);
 
+  // Runtime guard (belt and braces alongside the `Omit` above): a caller can
+  // still smuggle `trailing` into `props` through a spread of an
+  // already-declared variable, which the type system cannot catch. Strip it
+  // here so the derived count wins regardless of prop order.
+  const { trailing: _ignoredTrailing, ...restProps } = props as Omit<BaseFilterChipProps, "label">;
+
   return (
     <BaseFilterChip
       ref={ref}
       data-slot="filter-chip"
-      label={countText ? `${label} · ${countText}` : label}
-      {...props}
+      label={label}
+      {...restProps}
+      trailing={countText}
     />
   );
 });

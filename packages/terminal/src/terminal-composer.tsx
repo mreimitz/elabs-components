@@ -493,7 +493,18 @@ export const TerminalComposer = forwardRef<HTMLDivElement, TerminalComposerProps
         variant={variant}
         data-slot="terminal-composer"
         data-busy={busy || undefined}
-        className={cn("gap-0 overflow-hidden p-0 focus-ring-within", className)}
+        // #322 round 2 — the well's ring marks the TEXTAREA's focus, not "some
+        // descendant has focus". `focus-ring-within` fired on `:focus-within`,
+        // so it stayed lit unchanged while Tab moved on to the mode trigger and
+        // the submit button — a wrapper mark that identifies no control (WCAG
+        // 2.4.7). Scoped to the textarea, exactly as `InputGroup` scopes its
+        // well to `[data-slot=input-group-control]`, so every other tab stop in
+        // here keeps painting its own `focus-ring` and the mark MOVES.
+        className={cn(
+          "gap-0 overflow-hidden p-0",
+          "has-[[data-slot=terminal-composer-textarea]:focus-visible]:focus-ring-static",
+          className,
+        )}
         {...props}
       >
         <div data-slot="terminal-composer-well" className="p-3">

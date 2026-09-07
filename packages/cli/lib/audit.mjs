@@ -329,6 +329,172 @@ function softensBrandTells(register) {
 }
 
 /**
+ * Blank out comment spans — `// …` to end of line, and `/* … *\/` (including
+ * JSX's `{/* … *\/}`), the LATTER tracked across the whole file rather than
+ * one line at a time — before a `colorRule` regex runs (#140). A bare GitHub
+ * issue reference (`#254`, `#351`) is made of hex digits and is otherwise
+ * indistinguishable from a colour literal by pattern alone; this repo's own
+ * convention of citing the motivating issue in a `/** … *\/` docblock means
+ * the reference routinely sits on its own line, with no `/*`/`*\/` token on
+ * THAT line — a same-line-only check would still miss it, so this walks the
+ * text once carrying block-comment state across lines.
+ *
+ * STRING-AWARE (#140 round 2): a real shipped file
+ * (`packages/ui/src/components/file-upload/file-upload.stories.tsx`, via
+ * `accept="image/*,.pdf"`) proved that treating `/*`/`//` as comment openers
+ * with NO string awareness is a real regression, not a theoretical one — an
+ * unmatched `/*` inside an ordinary string (a MIME wildcard, a glob like
+ * `"packages/*\/src/index.ts"`) opened a phantom block comment with no closing
+ * `*\/` anywhere in the file, so `inBlock` stayed true for everything AFTER
+ * it, silently blinding raw-hex/rgb-literal/arbitrary-color for the rest of
+ * the file — the opposite of "narrowing a false positive", and exactly what
+ * this file's own header warns never to do to a detector.
+ *
+ * So `/'`/`"`/`` ` ``  open STRING state first, and `//`/`/*` are only
+ * recognised as comment openers OUTSIDE a string — a comment delimiter inside
+ * a string can never suppress a finding, and (mirror case) a quote character
+ * encountered INSIDE a genuine comment is just comment content (blanked like
+ * everything else there), never opens a string. Escaped quotes
+ * (`\"`/`\'`/`` \` ``) inside a string don't end it. An unescaped newline ends
+ * a `'`/`"` string (real JS/TS syntax: that's otherwise a parse error) so one
+ * unterminated single/double-quoted string can't swallow the rest of the
+ * file either; a template literal (`` ` ``) may legitimately span lines, so
+ * newlines inside one don't end it. `${…}` interpolation inside a template
+ * literal is NOT tokenized as code — out of scope for this narrow fix; it can
+ * only cost a false positive/negative inside the interpolation itself, never
+ * bleed past the closing backtick.
+ *
+ * Net effect: string CONTENTS are left untouched (copied through verbatim),
+ * so a genuine hex literal inside a string (`"#ffffff"`, `text-[#FFF]`) is
+ * still visible to the regex exactly as before — only the comment-openers'
+ * MEANING changes based on string context.
+ *
+ * Comment characters are replaced with spaces (not removed), so line count,
+ * `\n` positions and column offsets are unchanged; callers still report the
+ * ORIGINAL line text for a finding, this only changes what the regex sees.
+ *
+ * JSX PROSE APOSTROPHES (#140 review): a `'` immediately preceded by a letter
+ * or digit is treated as prose punctuation, not a string opener — see
+ * `WORD_CHAR` below. Residue: a `'` opening JSX prose (`'twas`, a quoted
+ * phrase) or a stray `"` in prose (`a 5" screen`) still opens a phantom
+ * string to end of line, so a comment later on THAT line stays unrecognised.
+ *
+ * LOUD ON UNTERMINATED (#140 round 2 validation): a regex char class, JSX
+ * prose or a genuinely unclosed comment can still leave `inBlock`/
+ * `stringQuote` true at EOF — the buffer is then over-blanked to the end of
+ * the file. Rather than guess harder (no full lexing), the walk reports that
+ * non-default end state so the caller can say so instead of trusting it.
+ *
+ * ONE GRAMMAR PER FILE TYPE (#140 PR review): the audit scans `.tsx`/`.jsx`,
+ * `.css` and `.html`, but this walk used to apply JS comment syntax to all
+ * three. CSS has NO `//` line comment, so `background: url(https://cdn/x);
+ * color: #ff0000` had the `//` of `https://` read as a comment opener and the
+ * rest of the LINE — including the raw hex — blanked, letting `--strict` pass
+ * invalid CSS. The fix is a grammar table (`SYNTAX`) rather than another
+ * special case: each flavour declares its own line-comment token (CSS/HTML:
+ * none), block-comment delimiters (HTML: `<!-- -->`), string quotes (only JS
+ * has template literals) and which of those may span a newline. `scanText`
+ * picks the flavour from `isCss` / a `.html` path; anything else stays `js`.
+ * @param {string} text
+ * @param {"js"|"css"|"html"} [flavor] - which comment/string grammar to apply.
+ * @returns {{ text: string, unterminated: boolean }}
+ */
+const WORD_CHAR = /[A-Za-z0-9]/;
+
+/**
+ * Comment + string grammar per scanned file type. `line: null` means the
+ * language has no line comment at all, which is the whole point for CSS and
+ * HTML: a `//` there is data (a URL), never a comment opener.
+ * `spansNewline` lists the quote characters whose strings may legally cross a
+ * newline — only JS template literals do, so an unterminated `'`/`"` can never
+ * swallow the rest of a file.
+ */
+const SYNTAX = {
+  js: { line: "//", blockOpen: "/*", blockClose: "*/", quotes: "'\"`", spansNewline: "`" },
+  css: { line: null, blockOpen: "/*", blockClose: "*/", quotes: "'\"", spansNewline: "" },
+  html: { line: null, blockOpen: "<!--", blockClose: "-->", quotes: "'\"", spansNewline: "" },
+};
+
+function blankComments(text, flavor = "js") {
+  const syn = SYNTAX[flavor] ?? SYNTAX.js;
+  let out = "";
+  let inBlock = false;
+  let inLine = false;
+  let stringQuote = null; // `'`, `"`, "`" while inside a string/template literal, else null
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inLine) {
+      if (ch === "\n") {
+        inLine = false;
+        out += ch;
+      } else {
+        out += " ";
+      }
+      continue;
+    }
+
+    if (inBlock) {
+      if (text.startsWith(syn.blockClose, i)) {
+        out += " ".repeat(syn.blockClose.length);
+        i += syn.blockClose.length - 1;
+        inBlock = false;
+      } else {
+        out += ch === "\n" ? "\n" : " ";
+      }
+      continue;
+    }
+
+    if (stringQuote !== null) {
+      if (ch === "\\" && text[i + 1] !== undefined) {
+        // an escaped char (\" \' \` \\ …) never ends the string — copy both through.
+        out += ch + text[i + 1];
+        i++;
+        continue;
+      }
+      if (ch === "\n" && !syn.spansNewline.includes(stringQuote)) {
+        // an unescaped newline ends a '/" string in real syntax (else a parse
+        // error) — fall back to code rather than let one unterminated string
+        // swallow the rest of the file. A template literal may span lines.
+        stringQuote = null;
+        out += ch;
+        continue;
+      }
+      out += ch;
+      if (ch === stringQuote) stringQuote = null;
+      continue;
+    }
+
+    // plain code: comment openers and string openers are both live here.
+    if (syn.line !== null && text.startsWith(syn.line, i)) {
+      inLine = true;
+      out += " ".repeat(syn.line.length);
+      i += syn.line.length - 1;
+    } else if (text.startsWith(syn.blockOpen, i)) {
+      inBlock = true;
+      out += " ".repeat(syn.blockOpen.length);
+      i += syn.blockOpen.length - 1;
+    } else if (ch === "'" && WORD_CHAR.test(text[i - 1] ?? "")) {
+      // An apostrophe glued to the end of a word is a CONTRACTION or
+      // possessive in JSX prose ("Don't", "the users' data"), never a string
+      // opener — no valid JS/TS puts an identifier or digit immediately
+      // before an opening quote. Treating it as one swallowed the rest of the
+      // line, hiding a real `{/* see #254 */}` comment after it (#140 review).
+      out += ch;
+    } else if (syn.quotes.includes(ch)) {
+      stringQuote = ch;
+      out += ch;
+    } else {
+      out += ch;
+    }
+  }
+  // `inLine` (a trailing `//` comment) is a safe, ordinary EOF — only an
+  // unclosed block comment or string/template means the walk above never
+  // regained certainty about the rest of the file.
+  return { text: out, unterminated: inBlock || stringQuote !== null };
+}
+
+/**
  * Scan one file's text against every applicable rule.
  * @param {string} text - the file contents.
  * @param {{ isCss?: boolean, isThemeFile?: boolean, register?: "product"|"brand", path?: string }} [opts]
@@ -355,13 +521,35 @@ export function scanText(
     ).map((r) => r.id),
   );
   const findings = [];
-  text.split("\n").forEach((line, i) => {
+  const lines = text.split("\n");
+  // Comment-blanked twin, only consulted for `colorRule` — a bare issue
+  // reference (#254) in prose reads as a colour literal to the raw regex, but
+  // never appears outside a comment in real code (#140).
+  // CSS and HTML have no `//` line comment (and HTML's block comment is
+  // `<!-- -->`); applying JS grammar to them blanked real declarations (#140).
+  const flavor = isCss ? "css" : /\.html?$/i.test(path ?? "") ? "html" : "js";
+  const blanked = blankComments(text, flavor);
+  const codeOnlyLines = blanked.text.split("\n");
+  // Ended still inside a comment/string it never saw close — surface it
+  // rather than silently trust an over-blanked buffer (#140 round 2).
+  if (blanked.unterminated) {
+    findings.push({
+      rule: "unterminated-comment-or-string",
+      advisory: false,
+      category: undefined,
+      line: lines.length,
+      msg: "File ends inside an unclosed comment or string — raw-hex/rgb-literal/arbitrary-color checks may have been blind for part of this file; re-check it by hand.",
+      text: (lines[lines.length - 1] ?? "").trim().slice(0, 100),
+    });
+  }
+  lines.forEach((line, i) => {
     for (const rule of RULES) {
       if (exempt.has(rule.id)) continue; // file-scoped exemption / opt-out marker
       if (isThemeFile && rule.colorRule) continue; // themes.css owns raw color
       if (rule.colorRule && SERVICE_LOGO_MARKER.test(line)) continue; // registered service mark — its own brand colour (icons.md)
       if (isCss && rule.copyRule) continue; // no JSX/prose copy in .css
-      if (rule.re.test(line)) {
+      const target = rule.colorRule ? codeOnlyLines[i] : line;
+      if (rule.re.test(target)) {
         findings.push({
           rule: rule.id,
           advisory: Boolean(rule.advisory) || (soften && Boolean(rule.brandTolerant)),

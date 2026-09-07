@@ -45,13 +45,39 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByPlaceholderText("Type your next instruction…")).toBeInTheDocument();
-    await expect(canvas.getByRole("button", { name: "Send" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    const textarea = canvas.getByPlaceholderText("Type your next instruction…");
+    const submit = canvas.getByRole("button", { name: "Send" });
+    await expect(textarea).toBeInTheDocument();
+    await expect(submit).toHaveAttribute("aria-disabled", "true");
     await expect(canvas.getByText("send")).toBeInTheDocument();
     await expect(canvas.getByText("newline")).toBeInTheDocument();
+
+    // #322 — EXACTLY ONE compound indicator per tab stop, and it MOVES with
+    // focus. Two ways to break this, both locked below: paint the well's ring
+    // AND the button's at once (the original defect), or leave the well's ring
+    // lit across both stops with nothing on the button (a wrapper mark that
+    // identifies no control — WCAG 2.4.7). `outlineStyle === "solid"` is the
+    // contour layer of the compound indicator; only the focused control's own
+    // indicator may show it.
+    const surface = submit.closest('[data-slot="terminal-composer"]');
+    await expect(surface).not.toBeNull();
+    const marked = (el: Element) => getComputedStyle(el as HTMLElement).outlineStyle === "solid";
+
+    // Stop 1 — the textarea. The well carries the mark (the field itself
+    // delegates); the submit button shows nothing.
+    await userEvent.tab();
+    await expect(textarea).toHaveFocus();
+    await expect(marked(surface as Element)).toBe(true);
+    await expect(marked(textarea)).toBe(false);
+    await expect(marked(submit)).toBe(false);
+
+    // Stop 2 — the submit button. The mark MOVED: the well goes dark and the
+    // button paints its own. If both of these ever read the same as stop 1, a
+    // keyboard user cannot tell which control Enter would fire.
+    await userEvent.tab();
+    await expect(submit).toHaveFocus();
+    await expect(marked(submit)).toBe(true);
+    await expect(marked(surface as Element)).toBe(false);
   },
 };
 

@@ -68,14 +68,41 @@ describe("sortDumbbellRows", () => {
     expect(sortDumbbellRows(rows, "none")).toBe(rows);
   });
 
-  it('sorts ascending by "delta"', () => {
-    const sorted = sortDumbbellRows(rows, "delta");
+  // onboardingData's deltas (0, 12, 27, 32) are already ascending, so an
+  // ascending-vs-descending sort bug can't show up against them (#244).
+  // This fixture is tie-free, deliberately NOT already sorted either way,
+  // and includes a negative delta (a decrease) whose |magnitude| beats every
+  // increase — a magnitude sort and a signed-value-descending sort put it in
+  // different places (first vs. last), so this fixture also catches a
+  // "descending by signed value" regression, not just "ascending".
+  const deltaData = [
+    { step: "Add payment", before: 41, after: 68 }, // delta +27
+    { step: "Sign up", before: 100, after: 100 }, // delta 0
+    { step: "First project", before: 19, after: 51 }, // delta +32
+    { step: "Verify email", before: 82, after: 94 }, // delta +12
+    { step: "Reactivate trial", before: 90, after: 50 }, // delta -40 (|40|, the biggest mover)
+  ];
+  const deltaRows = buildDumbbellRows(deltaData, "step", "before", "after");
+
+  it('sorts descending by "delta" (biggest |delta| first, sign ignored)', () => {
+    const sorted = sortDumbbellRows(deltaRows, "delta");
     expect(sorted.map((r) => r.category)).toEqual([
-      "Sign up",
-      "Verify email",
-      "Add payment",
-      "First project",
+      "Reactivate trial", // |−40| = 40 — the biggest mover, despite being a decrease
+      "First project", // 32
+      "Add payment", // 27
+      "Verify email", // 12
+      "Sign up", // 0
     ]);
+  });
+
+  it("ranks a decrease above a smaller increase — magnitude, not signed value", () => {
+    // If sortDumbbellRows sorted by SIGNED value descending instead of by
+    // |delta|, "Reactivate trial" (delta -40, the smallest signed value)
+    // would sort LAST, not first. This test fails under that interpretation
+    // even though the direction (ascending vs. descending) is correct.
+    const sorted = sortDumbbellRows(deltaRows, "delta");
+    expect(sorted[0]?.category).toBe("Reactivate trial");
+    expect(sorted.at(-1)?.category).toBe("Sign up");
   });
 
   it('sorts ascending by "start"', () => {

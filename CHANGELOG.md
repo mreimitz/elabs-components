@@ -28,6 +28,37 @@
   while both the wide and narrow branches silently discarded it after spreading `props`
   onto their own JSX — the exact advertised-but-inert failure `#382` set out to close, for
   a different prop.
+- `@elabs-ai/components-ui`, `@elabs-ai/components-terminal`: `FileUpload`'s dropzone and
+  `TerminalComposer`'s well no longer paint two complete compound focus indicators on one
+  tab stop. Both wrapped `focus-ring-within` while their inner focusable descendant (the
+  "Browse files" button; the submit `Button`) kept its own undelegated `focus-ring`, so
+  tabbing to it lit both rings at once. `FileUpload`'s dropzone holds exactly one tab stop,
+  so its button now delegates its indicator to the dropzone. `TerminalComposer`'s well
+  holds several (textarea, mode trigger, effort scale, submit), so delegation there would
+  have left one unchanging wrapper ring identifying no control: its ring is now scoped to
+  the textarea's own focus (`has-[[data-slot=terminal-composer-textarea]:focus-visible]`,
+  the same shape `InputGroup` uses), and every other control in the well keeps painting its
+  own indicator — so exactly one mark shows per tab stop and it moves with focus (#322).
+- `@elabs-ai/components-charts`: `DumbbellChart`'s `sortBy="delta"` now ranks rows by `|delta|`
+  (magnitude, sign ignored) descending, biggest mover first — a large decrease now outranks a
+  small increase, matching its documented behaviour. It previously sorted ascending by signed
+  value, the opposite of "the biggest movers surface first." `sortBy="start"`/`"end"` are
+  unchanged (ascending, the signed value-axis read). This is a behaviour change on a shipped
+  prop, but it is the documented behaviour, so it is a bug fix rather than a breaking change
+  (#244).
+- `@elabs-ai/components-ui`, `@elabs-ai/components-data`: `FilterChip` no longer folds its
+  count into the same string as the label. The base `FilterChip` (`@elabs-ai/components-ui`)
+  gains a `trailing?: string` slot — a short, non-shrinking element rendered alongside the
+  truncatable `label` span rather than concatenated into it — so a long label truncates
+  visually without CSS `text-overflow: ellipsis` eating the count from the tail. The
+  composed accessible name (`"Remove filter: <label> · <trailing>"`) is unchanged.
+  `@elabs-ai/components-data`'s `FilterChip` now passes `count`/`countLabel` through
+  `trailing` instead of string-concatenating them into `label` (#284).
+- `@elabs-ai/components-data`: `FilterChip` no longer accepts a `trailing` prop. Its own
+  `FilterChipProps` re-derived from the base package's `FilterChipProps` and omitted only
+  `label`, so a caller could pass `trailing` and have it type-check while silently winning
+  the spread over the wrapper's own derived count text — the same advertised-but-inert
+  failure mode already closed for `ContextRail`'s `children`, for a different prop (#284).
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
@@ -73,6 +104,24 @@
   producing an axe `heading-order` violation. `ChartCard`'s title still renders as a `<div>`
   by default; `StatePanel`'s title still defaults to `<h3>` — both unchanged for every
   existing caller that doesn't set `titleAs` (#385).
+- `@elabs-ai/components-cli`: `brand-ui audit`'s `raw-hex`/`rgb-literal`/`arbitrary-color`
+  checks no longer flag a bare GitHub issue reference (`#254`) sitting in a `//` or `/* */`
+  comment as a colour literal — including a multi-line `/** */` docblock, where this repo's
+  own convention puts the reference on its own line with no comment token to key off. The
+  scanner blanks comment spans before running colour regexes, and does so string-literal
+  aware: an unmatched `/*` inside an ordinary string (a MIME wildcard like
+  `accept="image/*,.pdf"`, a glob like `"packages/*/src/index.ts"`) no longer opens a
+  phantom, unclosed block comment that silently blinded these three rules for the rest of
+  the file — a real regression a validator caught with a shipped fixture. Every other rule's
+  matching is unchanged, and a genuine hex literal inside a comment or string (`"#ffffff"`,
+  `text-[#FFF]`) is still caught exactly as before. It also adds a new **blocking** finding,
+  `unterminated-comment-or-string`: three constructs no full lexer would confuse — a regex
+  character class (`/[/*]/`), JSX prose containing a glob, a genuinely unclosed `/*` — can
+  still walk the scanner to end of file still inside a comment or string, which previously
+  left it silently trusting an over-blanked buffer rather than saying so. `scanText` now
+  raises this finding instead, so a consumer's file that trips it newly fails `--strict`
+  where it previously reported clean; it fires on none of this repo's 1223 files today
+  (#140).
 
 ### ⚠️ BREAKING (`@elabs-ai/components-ui`): `Form` moved off the main barrel; react-hook-form is now an optional peer (#26)
 
