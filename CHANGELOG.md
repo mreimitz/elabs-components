@@ -15,6 +15,18 @@
 
 ### Fixed
 
+- `@elabs-ai/components-charts`: `FunnelChart`'s segment labels now honour reduced motion. The
+  value / percentage-pill / label group used to fade in from `opacity: 0` on a ~1 s staggered
+  Motion (rAF) timeline with no reduced-motion branch, so a user who had asked for reduced motion
+  still got up to a second of moving, briefly-unreadable text — the CSS `--motion-factor` gate
+  cannot reach a JS frame loop. Under reduced motion the group now MOUNTS at its resting opacity
+  (`initial={false}`, zero-duration transition) rather than fading faster, in both the `spread`
+  and `grouped` label layouts; the staggered entrance is unchanged for everyone else. This also
+  removes the CI artefact the defect produced: axe sampled those spans part-way up the opacity
+  ramp and reported a blended, ~1:1 ink for tokens that measure 13.10:1 and 5.71:1 at rest — and,
+  when it sampled earlier, skipped them entirely as `opacity: 0`, so the story's PASS never
+  measured the labels either (#125).
+
 - `@elabs-ai/components-charts`: `SankeyChart`'s `mode="threads"` node layer is fixed on three
   fronts that all traced back to one infeasible `nodePadding`. A fixed padding that a dense
   column (e.g. 40 nodes in 350px) cannot afford used to drive every node rect in that column to

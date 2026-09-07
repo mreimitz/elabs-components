@@ -235,6 +235,12 @@ export const GateFloorNeverZero: Story = {
  * additions, these resolve to defaults/none and this fails.
  */
 export const UtilitiesGenerated: Story = {
+  // The suite runs under `prefers-reduced-motion: reduce`
+  // (`apps/docs/vitest.config.ts`, #125), which collapses the CSS gate to its
+  // floor. This assertion is ABOUT the full-motion scale, so the story opts
+  // back in explicitly — `data-motion-pref="full"` is the documented
+  // informed-consent override that beats the OS rule.
+  globals: { motionPref: "full" },
   render: () => (
     <div>
       <span data-testid="util-fast" className="transition-opacity duration-fast ease-standard" />

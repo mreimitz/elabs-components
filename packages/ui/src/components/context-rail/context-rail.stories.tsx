@@ -132,6 +132,14 @@ export const Empty: Story = {
  * comment.
  */
 export const Narrow: Story = {
+  // The sheet's real entrance/exit transition is load-bearing here: the
+  // occlusion hit-test is taken against the SETTLED panel, and the final
+  // assertion reads the panel's `data-state="closed"` while its exit animation
+  // is still running (Radix unmounts only afterwards). The suite otherwise runs
+  // under `prefers-reduced-motion: reduce` (`apps/docs/vitest.config.ts`, #125),
+  // which removes that exit window entirely — so this story opts back into full
+  // motion rather than the lock being rewritten around a missing animation.
+  globals: { motionPref: "full" },
   render: () => (
     <div className="flex h-[560px] w-full">
       <div className="flex-1 bg-background p-6 text-muted-foreground">Canvas content</div>

@@ -186,3 +186,38 @@ function FunnelDrilldownDemo() {
 export const Drilldown: Story = {
   render: () => <FunnelDrilldownDemo />,
 };
+
+/**
+ * Regression lock for #125 — samples the story a third of a second after mount,
+ * i.e. squarely inside the window where the segment labels' entrance fade used
+ * to be in flight, and lets the a11y addon's axe pass run there.
+ *
+ * Before the reduced-motion gate in `SegmentLabel` this failed deterministically
+ * with ~1.1–1.5:1 `color-contrast` on the value / percentage / label spans —
+ * axe reading `--foreground` and `--muted-foreground` blended toward the page
+ * ground by the wrapper's mid-ramp opacity. The wait is the PROBE, never the
+ * fix: what makes it green is that under the test runner's
+ * `prefers-reduced-motion: reduce` the labels mount at their resting opacity,
+ * so there is no transient to sample. It also removes the vacuous half of the
+ * old behaviour — axe skips an `opacity: 0` node entirely, so the ordinary
+ * story's PASS never measured these labels at all.
+ */
+export const EntranceIsContrastSafe: Story = {
+  name: "labels are legible while the entrance would be running",
+  tags: ["!autodocs"],
+  args: {
+    data: conversionFunnel,
+    orientation: "horizontal",
+    showLabels: true,
+    showValues: true,
+    showPercentage: true,
+  },
+  render: (args) => (
+    <div className="h-72 w-[560px]">
+      <FunnelChart {...args} />
+    </div>
+  ),
+  play: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  },
+};
