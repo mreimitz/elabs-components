@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent, within } from "storybook/test";
 import {
   FileUpload,
   FileUploadDropzone,
@@ -106,6 +107,21 @@ export const Default: Story = {
       </FileUpload>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // #322 — the dropzone (`focus-ring-within`) is the sole compound focus
+    // indicator for this composite control; the inner "Browse files" button
+    // must delegate its own indicator to it, never paint a second one.
+    const browseButton = canvas.getByRole("button", { name: "Browse files" });
+    await userEvent.tab();
+    await expect(browseButton).toHaveFocus();
+    const dropzone = browseButton.closest('[data-slot="file-upload-dropzone"]');
+    await expect(dropzone).not.toBeNull();
+    const dropzoneStyle = getComputedStyle(dropzone as HTMLElement);
+    const buttonStyle = getComputedStyle(browseButton);
+    await expect(dropzoneStyle.outlineStyle).toBe("solid");
+    await expect(buttonStyle.outlineStyle).not.toBe("solid");
+  },
 };
 
 export const Uncontrolled: Story = {

@@ -45,13 +45,26 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByPlaceholderText("Type your next instruction…")).toBeInTheDocument();
-    await expect(canvas.getByRole("button", { name: "Send" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    const textarea = canvas.getByPlaceholderText("Type your next instruction…");
+    const submit = canvas.getByRole("button", { name: "Send" });
+    await expect(textarea).toBeInTheDocument();
+    await expect(submit).toHaveAttribute("aria-disabled", "true");
     await expect(canvas.getByText("send")).toBeInTheDocument();
     await expect(canvas.getByText("newline")).toBeInTheDocument();
+
+    // #322 — the well (`focus-ring-within` on `TerminalSurface`) is the sole
+    // compound focus indicator for this composite control; the submit button
+    // must delegate its own indicator to it, never paint a second one.
+    await userEvent.click(textarea);
+    await expect(textarea).toHaveFocus();
+    await userEvent.tab();
+    await expect(submit).toHaveFocus();
+    const surface = submit.closest('[data-slot="terminal-composer"]');
+    await expect(surface).not.toBeNull();
+    const surfaceStyle = getComputedStyle(surface as HTMLElement);
+    const submitStyle = getComputedStyle(submit);
+    await expect(surfaceStyle.outlineStyle).toBe("solid");
+    await expect(submitStyle.outlineStyle).not.toBe("solid");
   },
 };
 
