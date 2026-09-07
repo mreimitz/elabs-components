@@ -96,6 +96,24 @@
   producing an axe `heading-order` violation. `ChartCard`'s title still renders as a `<div>`
   by default; `StatePanel`'s title still defaults to `<h3>` — both unchanged for every
   existing caller that doesn't set `titleAs` (#385).
+- `@elabs-ai/components-cli`: `brand-ui audit`'s `raw-hex`/`rgb-literal`/`arbitrary-color`
+  checks no longer flag a bare GitHub issue reference (`#254`) sitting in a `//` or `/* */`
+  comment as a colour literal — including a multi-line `/** */` docblock, where this repo's
+  own convention puts the reference on its own line with no comment token to key off. The
+  scanner blanks comment spans before running colour regexes, and does so string-literal
+  aware: an unmatched `/*` inside an ordinary string (a MIME wildcard like
+  `accept="image/*,.pdf"`, a glob like `"packages/*/src/index.ts"`) no longer opens a
+  phantom, unclosed block comment that silently blinded these three rules for the rest of
+  the file — a real regression a validator caught with a shipped fixture. Every other rule's
+  matching is unchanged, and a genuine hex literal inside a comment or string (`"#ffffff"`,
+  `text-[#FFF]`) is still caught exactly as before. It also adds a new **blocking** finding,
+  `unterminated-comment-or-string`: three constructs no full lexer would confuse — a regex
+  character class (`/[/*]/`), JSX prose containing a glob, a genuinely unclosed `/*` — can
+  still walk the scanner to end of file still inside a comment or string, which previously
+  left it silently trusting an over-blanked buffer rather than saying so. `scanText` now
+  raises this finding instead, so a consumer's file that trips it newly fails `--strict`
+  where it previously reported clean; it fires on none of this repo's 1223 files today
+  (#140).
 
 ### ⚠️ BREAKING (`@elabs-ai/components-ui`): `Form` moved off the main barrel; react-hook-form is now an optional peer (#26)
 
