@@ -15,6 +15,35 @@
 
 ### Fixed
 
+- `@elabs-ai/components-flow`: connector dots no longer take their coordinates from a frame in
+  which they were still moving, so edges stay attached under `prefers-reduced-motion: reduce`.
+  React Flow measures a node's `handleBounds` from the DOM once per layout change and then draws
+  every edge endpoint from that stored number. The tokens reduced-motion backstop
+  (`themes.css`, MOTION GATE) forces `transition-duration: 0.01ms !important` on `*` while
+  leaving `transition-property` at its initial `all`, so under an OS reduce request that rule
+  does not remove a transition from a handle — it CREATES one, and a handle that changes side
+  (a `layoutFlow` `direction="LR"` pass, which runs in an effect after the first paint) is
+  therefore still in flight for the one frame in which React Flow measures it. Measured on
+  `ProcessMap direction="LR"`: the dot was stored at `(164, 45.5)` where the settled DOM has
+  `(172, 37.5)`, and fourteen arrows ended up to 67 px away from the dot they point at — for
+  reduced-motion readers only, permanently, because nothing measures again. Every `<Handle>`
+  `FlowNode`, `FlowGroupNode` and `FlowPlaceholderNode` render now carries the new
+  `FLOW_HANDLE_ANCHOR_CLASS` (`transition-none`), which is also exported for consumers writing
+  their own node types. Nothing changes under normal motion, where no rule animated a handle
+  anyway (#125).
+
+- `@elabs-ai/components-charts`: `FunnelChart`'s segment labels now honour reduced motion. The
+  value / percentage-pill / label group used to fade in from `opacity: 0` on a ~1 s staggered
+  Motion (rAF) timeline with no reduced-motion branch, so a user who had asked for reduced motion
+  still got up to a second of moving, briefly-unreadable text — the CSS `--motion-factor` gate
+  cannot reach a JS frame loop. Under reduced motion the group now MOUNTS at its resting opacity
+  (`initial={false}`, zero-duration transition) rather than fading faster, in both the `spread`
+  and `grouped` label layouts; the staggered entrance is unchanged for everyone else. This also
+  removes the CI artefact the defect produced: axe sampled those spans part-way up the opacity
+  ramp and reported a blended, ~1:1 ink for tokens that measure 13.10:1 and 5.71:1 at rest — and,
+  when it sampled earlier, skipped them entirely as `opacity: 0`, so the story's PASS never
+  measured the labels either (#125).
+
 - `@elabs-ai/components-charts`: `SankeyChart`'s `mode="threads"` node layer is fixed on three
   fronts that all traced back to one infeasible `nodePadding`. A fixed padding that a dense
   column (e.g. 40 nodes in 350px) cannot afford used to drive every node rect in that column to

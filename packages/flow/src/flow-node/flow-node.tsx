@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Star, type LucideIcon } from "lucide-react";
 import { STATUS_TONE_ICONS } from "@elabs-ai/components-ui";
+import { FLOW_HANDLE_ANCHOR_CLASS } from "../flow-handle/flow-handle-anchor";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 /** A node side that can carry a handle. Doubles as the handle's stable id. */
@@ -119,7 +120,9 @@ const sidePosition: Record<FlowHandleSide, Position> = {
   left: Position.Left,
 };
 
-const handleClassName = "!size-2 !border-2 !border-flow-edge !bg-flow-node";
+// `FLOW_HANDLE_ANCHOR_CLASS` last: a connector dot must never be in flight when React
+// Flow measures it. See `flow-handle/flow-handle-anchor.ts`.
+const handleClassName = `!size-2 !border-2 !border-flow-edge !bg-flow-node ${FLOW_HANDLE_ANCHOR_CLASS}`;
 
 /**
  * Branded custom node. Register it in `nodeTypes={{ brand: FlowNode }}` and

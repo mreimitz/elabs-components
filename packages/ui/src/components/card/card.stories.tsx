@@ -70,6 +70,11 @@ export const Default: Story = {
 
 /** Opt-in hover-lift for clickable cards (gated by the motion system). */
 export const Interactive: Story = {
+  // The suite runs under `prefers-reduced-motion: reduce`
+  // (`apps/docs/vitest.config.ts`, #125), so the gated `--t-base` this asserts
+  // would read as the floor. The lift is what this story exists to prove, so it
+  // opts back into full motion explicitly.
+  globals: { motionPref: "full" },
   render: () => (
     <Card interactive className="max-w-sm" tabIndex={0} role="button">
       <CardHeader>

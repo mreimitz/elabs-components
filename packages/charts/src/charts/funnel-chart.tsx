@@ -1,7 +1,7 @@
 "use client";
 
 import type { Transition } from "motion/react";
-import { motion, useTransform } from "motion/react";
+import { motion, useReducedMotion, useTransform } from "motion/react";
 import {
   type CSSProperties,
   type MutableRefObject,
@@ -665,6 +665,19 @@ function SegmentLabel({
 }) {
   const display = stage.displayValue ?? formatValue(stage.value);
 
+  // The label entrance is a JS (rAF-driven) fade, so the CSS `--motion-factor`
+  // gate never reaches it — it has to branch here, like every other motion
+  // primitive in this package (`DrawPath`, `Gauge`, `ChartRevealClip`).
+  // Reduced motion is a BRANCH, not a shorter duration: `initial={false}` mounts
+  // the group AT its resting opacity, so the value / percentage / label text is
+  // never painted part-way up an opacity ramp (#125 — a fade over HTML text is
+  // also what makes axe read a blended, illegible ink mid-entrance).
+  const prefersReducedMotion = useReducedMotion() === true;
+  const entranceInitial = prefersReducedMotion ? false : { opacity: 0 };
+  const entranceTransition: Transition = prefersReducedMotion
+    ? { duration: 0 }
+    : { delay: index * staggerDelay + 0.25, duration: 0.35, ease: "easeOut" };
+
   const valueEl = showValues && (
     <span className="whitespace-nowrap font-semibold text-foreground text-sm">{display}</span>
   );
@@ -688,12 +701,9 @@ function SegmentLabel({
           "absolute inset-0 flex",
           isHorizontal ? "flex-col items-center" : "flex-row items-center",
         )}
-        initial={{ opacity: 0 }}
-        transition={{
-          delay: index * staggerDelay + 0.25,
-          duration: 0.35,
-          ease: "easeOut",
-        }}
+        data-slot="funnel-chart-label"
+        initial={entranceInitial}
+        transition={entranceTransition}
       >
         {isHorizontal ? (
           <>
@@ -741,15 +751,12 @@ function SegmentLabel({
           ? cn("flex-col items-center", justifyMap[align])
           : cn("flex-row items-center", justifyMap[align]),
       )}
-      initial={{ opacity: 0 }}
+      data-slot="funnel-chart-label"
+      initial={entranceInitial}
       style={{
         padding: isHorizontal ? "8% 0" : "0 8%",
       }}
-      transition={{
-        delay: index * staggerDelay + 0.25,
-        duration: 0.35,
-        ease: "easeOut",
-      }}
+      transition={entranceTransition}
     >
       <div
         className={cn(

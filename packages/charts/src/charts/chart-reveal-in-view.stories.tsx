@@ -167,10 +167,34 @@ export const InView: Story = {
     const chart1 = canvas.getByTestId("reveal-chart-1");
     const chart2 = canvas.getByTestId("reveal-chart-2");
 
-    // Chart 1 is already in view on mount — plays immediately.
+    // Chart 1 is already in view on mount — plays immediately on BOTH motion paths.
     await waitFor(() => expect(Number(chart1.dataset.playCount)).toBeGreaterThan(0));
 
-    // Chart 2 starts below the fold — held at width 0, not yet played.
+    // `ChartRevealClip`'s reduced-motion neutralizer (#177) is a BRANCH, not a shorter
+    // duration: it renders the finished, full-width rect and deliberately does not hold
+    // for the in-view gate, because holding would hide the series outright from someone
+    // who asked for less motion, not less data. So "chart 2 sits at width 0 until it is
+    // scrolled to" is a property of the ANIMATED path only, and asserting it
+    // unconditionally asserts the bug the neutralizer exists to prevent. This story runs
+    // on both paths (the story-test browser is a reduced-motion context), so it locks the
+    // contract that actually holds on the path it is running on — never nothing, and
+    // never the other path's contract.
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      // Reduced motion: every chart is revealed from the first frame, whether or not it
+      // has ever been scrolled to, and the clip is the finished full-width rect — no
+      // `motion.rect`, nothing animating, no data withheld below the fold.
+      for (const chart of [chart1, chart2, canvas.getByTestId("reveal-chart-3")]) {
+        expect(Number(chart.dataset.playCount)).toBeGreaterThan(0);
+        const clip = chart.querySelector<SVGRectElement>("clipPath > rect");
+        expect(clip).not.toBeNull();
+        expect(clip?.width.baseVal.value).toBe(CHART_WIDTH);
+      }
+      return;
+    }
+
+    // Animated path: chart 2 starts below the fold — held at width 0, not yet played.
     expect(chart2.dataset.playCount).toBe("0");
 
     chart2.scrollIntoView({ block: "center" });

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T20:04:11.424Z",
+  "generatedAt": "2026-09-07T22:01:58.414Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23270,6 +23270,11 @@
           "name": "FLOW_GROUP_NODE_TYPE",
           "kind": "value",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "FLOW_HANDLE_ANCHOR_CLASS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-handle/flow-handle-anchor.ts"
         },
         {
           "name": "FlowButtonEdge",

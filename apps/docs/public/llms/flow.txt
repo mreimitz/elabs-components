@@ -22,6 +22,7 @@ Import from `@elabs-ai/components-flow`. Part of brand-ui — see the root `llms
 - FLOW_EDGE_FOCUS_CONTOUR_WIDTH
 - FLOW_EDGE_FOCUS_RING_WIDTH
 - FLOW_GROUP_NODE_TYPE
+- FLOW_HANDLE_ANCHOR_CLASS
 - FlowButtonEdge
 - FlowEdge
 - FlowEdgePath

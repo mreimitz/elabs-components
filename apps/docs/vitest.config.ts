@@ -44,7 +44,21 @@ export default defineConfig({
       // Don't litter the tree with PNGs when an assertion fails; the error
       // message is enough to diagnose.
       screenshotFailures: false,
-      instances: [{ browser: "chromium" }],
+      // Run the whole suite as a user who has asked for reduced motion.
+      // `@vitest/browser` spreads `context` into Playwright's `newContext()`, so
+      // this is what makes `matchMedia("(prefers-reduced-motion: reduce)")` true
+      // in the story runtime — without it the motion toolbar global writes
+      // `data-motion-pref` but nothing puts the RUNTIME into a reduced state, and
+      // every JS (Motion/rAF) entrance animation keeps running under the a11y
+      // pass. axe then samples text part-way up an opacity ramp and reports a
+      // blended, illegible ink (#125) — or, worse, skips the node entirely while
+      // it sits at `opacity: 0`, making the a11y assertion vacuous in BOTH
+      // directions. Reduced motion removes the transient, so contrast is measured
+      // on the resting colour every run. `storybook-motion-harness.stories.tsx`
+      // asserts this flip actually took, so it cannot silently stop working.
+      // A story that needs full motion opts back in per-story
+      // (`globals: { motionPref: "full" }` for the CSS gate).
+      instances: [{ browser: "chromium", context: { reducedMotion: "reduce" } }],
     },
   },
 });
