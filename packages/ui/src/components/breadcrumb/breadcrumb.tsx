@@ -38,7 +38,10 @@ export const BreadcrumbLink = forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors duration-fast hover:text-foreground", className)}
+      className={cn(
+        "rounded-sm transition-colors duration-fast hover:text-foreground focus-ring",
+        className,
+      )}
       {...props}
     />
   );
