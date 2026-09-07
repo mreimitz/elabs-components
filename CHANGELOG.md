@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ai`: `PromptInputMode`'s menu items now announce only their label.
+  The item's accessible name used to concatenate the label, the full description sentence and
+  the keyboard-shortcut glyph (e.g. "Plan first Proposes a plan and waits for approval before
+  acting. ⇧ Tab"), because the shortcut's `Kbd` carried no `aria-hidden` and the description
+  span had no separate role. The shortcut `Kbd` is now `aria-hidden`, matching the trigger's
+  own treatment of its chevron, and the description is exposed via `aria-describedby` instead
+  of being folded into the name — both stay visible on screen (#153).
 - `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
   canvas settled while it is still animating. It inferred stillness from two timer polls
   reading the same node rectangles — which two polls taken inside one rendered frame always

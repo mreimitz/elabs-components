@@ -17,21 +17,24 @@ const modes: OperatingMode[] = [
 describe("PromptInputMode", () => {
   it("defaults to the first mode and shows it on the trigger", () => {
     render(<PromptInputMode modes={modes} />);
-    expect(screen.getByRole("button", { name: /Auto/ })).toBeInTheDocument();
+    const trigger = screen.getByRole("button");
+    expect(trigger).toHaveAccessibleName("Auto");
   });
 
   it("is uncontrolled: opens the menu, lists every mode, and selects one on click", async () => {
     const onValueChange = vi.fn();
     render(<PromptInputMode modes={modes} onValueChange={onValueChange} />);
 
-    await userEvent.click(screen.getByRole("button", { name: /Auto/ }));
-    const planOption = await screen.findByRole("menuitemradio", { name: /Plan first/ });
+    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
+    const planOption = await screen.findByRole("menuitemradio", { name: "Plan first" });
+    expect(planOption).toHaveAccessibleName("Plan first");
     expect(planOption).toHaveAttribute("aria-checked", "false");
 
     await userEvent.click(planOption);
     expect(onValueChange).toHaveBeenCalledWith("plan");
     // The trigger's visible label updates to reflect the new selection.
-    expect(await screen.findByRole("button", { name: /Plan first/ })).toBeInTheDocument();
+    const trigger = await screen.findByRole("button");
+    expect(trigger).toHaveAccessibleName("Plan first");
   });
 
   it("is controlled via `value`: the app owns the selection, not the component", async () => {
@@ -39,26 +42,39 @@ describe("PromptInputMode", () => {
     const { rerender } = render(
       <PromptInputMode modes={modes} value="plan" onValueChange={onValueChange} />,
     );
-    expect(screen.getByRole("button", { name: /Plan first/ })).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAccessibleName("Plan first");
 
-    await userEvent.click(screen.getByRole("button", { name: /Plan first/ }));
-    const autoOption = await screen.findByRole("menuitemradio", { name: /Auto/ });
+    await userEvent.click(screen.getByRole("button", { name: "Plan first" }));
+    const autoOption = await screen.findByRole("menuitemradio", { name: "Auto" });
+    expect(autoOption).toHaveAccessibleName("Auto");
     await userEvent.click(autoOption);
 
     expect(onValueChange).toHaveBeenCalledWith("auto");
     // A controlled component does not move on its own — the trigger only
     // updates once the app feeds the new value back in.
-    expect(screen.getByRole("button", { name: /Plan first/ })).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAccessibleName("Plan first");
 
     rerender(<PromptInputMode modes={modes} value="auto" onValueChange={onValueChange} />);
-    expect(screen.getByRole("button", { name: /Auto/ })).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAccessibleName("Auto");
   });
 
   it("renders a mode's description and key hint inside the menu", async () => {
     render(<PromptInputMode modes={modes} />);
-    await userEvent.click(screen.getByRole("button", { name: /Auto/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
 
     expect(await screen.findByText("Proposes a plan before acting")).toBeInTheDocument();
     expect(screen.getByText("⇧ Tab")).toBeInTheDocument();
+  });
+
+  it("gives a menu item an accessible name that is exactly its label — the description and key hint never join it (#153)", async () => {
+    render(<PromptInputMode modes={modes} />);
+    await userEvent.click(screen.getByRole("button", { name: "Auto" }));
+
+    const planOption = await screen.findByRole("menuitemradio", { name: "Plan first" });
+    expect(planOption).toHaveAccessibleName("Plan first");
+
+    // The description is still associated for assistive tech — as a
+    // description, not folded into the name.
+    expect(planOption).toHaveAccessibleDescription("Proposes a plan before acting");
   });
 });
