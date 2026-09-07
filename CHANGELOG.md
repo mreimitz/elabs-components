@@ -4,6 +4,30 @@
 
 ### Fixed
 
+- `@elabs-ai/components-flow`: the story-test helper `waitForSettledCanvas` no longer calls a
+  canvas settled while it is still animating. It inferred stillness from two timer polls
+  reading the same node rectangles — which two polls taken inside one rendered frame always
+  do, so on a runner slow enough to render at a few frames per second a canvas that animates
+  its nodes into place was measured mid-slide, with React Flow's edges already at their final
+  coordinates and the handle dots still moving towards them. It now paces its polls with
+  `requestAnimationFrame` and waits out every finite animation in the canvas, which makes a
+  starved renderer delay the measurement instead of falsifying it. The assertions it guards
+  are unchanged.
+
+- `@elabs-ai/components-ui`: `ContextRail` no longer accepts a `variant` prop.
+  `ContextRailProps` derived its type from `Sidebar`'s full prop surface, so `variant`
+  showed up in the type hints, the manifest and Storybook controls even though it only
+  ever reached the desktop branch — below `overlayBreakpoint` the rail renders a `Sheet`
+  instead of a `Sidebar`, and the prop was silently inert there (no `data-variant`, no
+  layout change). `ContextRailProps` now declares its own surface instead of deriving it
+  from `Sidebar`; the desktop branch hardcodes `variant="sidebar"`, its already-effective
+  default, so rendering is unchanged for every existing caller (#382).
+- `@elabs-ai/components-ui`: `ContextRail` no longer accepts a `children` prop. The
+  `#382` fix re-derived `ContextRailProps` from `ComponentProps<"div">` and omitted
+  `onSelect` but not `children`, so a caller could pass `children` and have it type-check
+  while both the wide and narrow branches silently discarded it after spreading `props`
+  onto their own JSX — the exact advertised-but-inert failure `#382` set out to close, for
+  a different prop.
 - `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
   the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
   text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
@@ -40,6 +64,9 @@
 - `@elabs-ai/components-flow`: `CanvasShell`'s keyed re-fit (`fitViewKey`) stops printing
   React Flow's "Please use `getNodesBounds` from `useReactFlow`" warning in development,
   and measures nested nodes correctly.
+- `@elabs-ai/components-ui`: `TimelineItem`'s optional timestamp now renders with
+  `tabular-nums`, so a right-aligned column of numeric timestamps (e.g. `"09:14"`, `"11:47"`)
+  no longer jitters between rows as digit widths vary (#386).
 - `@elabs-ai/components-charts`, `@elabs-ai/components-ui`: `ChartCard` and `StatePanel` gain
   a `titleAs` prop (`"div" | "h1" | … | "h6"`) so a `ChartCard` titling a real page section and
   a `StatePanel` shown inside it can declare correct, adjacent heading levels instead of

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T10:45:45.647Z",
+  "generatedAt": "2026-09-07T13:04:02.898Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -33080,7 +33080,7 @@
         },
         "ContextRail": {
           "extends": [
-            "Omit<\n  ComponentProps<typeof Sidebar>,\n  // `onSelect` is the native div text-selection event on `ComponentProps<typeof\n  // Sidebar>` — omitted so it can't collide with this component's own\n  // `onSelect`-shaped internals (`ContextRailBranchProps`) when `props` is\n  // spread onto `ContextRailWide`/`ContextRailNarrow` below.\n  \"side\" | \"collapsible\" | \"children\" | \"onSelect\"\n>"
+            "Omit<ComponentProps<\"div\">, \"onSelect\" | \"children\">"
           ],
           "props": [
             {
