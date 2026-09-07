@@ -54,7 +54,7 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 
 ## 4. Quality gate + manifest
 
-- `pnpm --filter @elabs-ai/components-<pkg> typecheck test` (and `lint`) must pass.
+- `pnpm --filter @elabs-ai/components-<pkg> typecheck && pnpm --filter @elabs-ai/components-<pkg> lint && pnpm --filter @elabs-ai/components-<pkg> test` must pass (three separate invocations — pnpm chains only the first script).
 - Verify it renders in both themes (Storybook).
 - Run `pnpm agent-docs` so the new component lands in the manifest AND its 5
   downstream generators (inventory/llms/context/gen — `component-inventory.md`,

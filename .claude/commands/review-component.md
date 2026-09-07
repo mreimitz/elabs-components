@@ -33,8 +33,8 @@ the code; run `mcp__storybook__run-story-tests` scoped to this component (intera
   @.claude/rules/storybook-mcp.md.
 
 Output a short report: ✅ passes, ⚠️ issues (with file:line and a concrete fix),
-and any recommended follow-ups. Run `pnpm --filter <pkg> typecheck test` to back
-up your findings.
+and any recommended follow-ups. Run `pnpm --filter <pkg> typecheck && pnpm --filter <pkg> lint && pnpm --filter <pkg> test`
+to back up your findings.
 
 ## Interaction pass
 
