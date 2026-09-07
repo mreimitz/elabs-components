@@ -30,6 +30,9 @@
 - `@elabs-ai/components-flow`: `CanvasShell`'s keyed re-fit (`fitViewKey`) stops printing
   React Flow's "Please use `getNodesBounds` from `useReactFlow`" warning in development,
   and measures nested nodes correctly.
+- `@elabs-ai/components-ui`: `TimelineItem`'s optional timestamp now renders with
+  `tabular-nums`, so a right-aligned column of numeric timestamps (e.g. `"09:14"`, `"11:47"`)
+  no longer jitters between rows as digit widths vary (#386).
 - `@elabs-ai/components-charts`, `@elabs-ai/components-ui`: `ChartCard` and `StatePanel` gain
   a `titleAs` prop (`"div" | "h1" | … | "h6"`) so a `ChartCard` titling a real page section and
   a `StatePanel` shown inside it can declare correct, adjacent heading levels instead of

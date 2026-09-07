@@ -81,6 +81,30 @@ export const Compound: Story = {
   },
 };
 
+export const TabularTimestamps: Story = {
+  // #386 — a right-aligned timestamp column of differing digit widths
+  // ("09:14" vs "11:47" vs "9:02") must not jitter: the span needs
+  // `tabular-nums` so every digit occupies equal width.
+  args: { items: [] },
+  render: () => (
+    <TimelineRoot aria-label="Run with numeric timestamps">
+      <TimelineItem status="complete" timestamp="09:14">
+        Searched financial filings
+      </TimelineItem>
+      <TimelineItem status="complete" timestamp="11:47">
+        Queried finance.revenue
+      </TimelineItem>
+      <TimelineItem status="pending" timestamp="9:02">
+        Draft the board note
+      </TimelineItem>
+    </TimelineRoot>
+  ),
+  play: async ({ canvas }) => {
+    const timestamp = await waitFor(() => canvas.getByText("09:14"));
+    await expect(getComputedStyle(timestamp).fontVariantNumeric).toContain("tabular-nums");
+  },
+};
+
 export const CanonicalStatuses: Story = {
   args: { items: [] },
   render: () => (
