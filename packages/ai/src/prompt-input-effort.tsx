@@ -91,18 +91,39 @@ export const PromptInputEffort = forwardRef<HTMLDivElement, PromptInputEffortPro
           {levels.map((level, index) => {
             const filled = currentIndex >= 0 && index <= currentIndex;
             return (
-              <RadioGroupItem
+              // The visible bar (`-visual`) and the click/tap/focus target
+              // (the radio itself) are decoupled (WCAG 2.5.8, #161): the
+              // radio's authored size IS the ramp's meaning, so it can't
+              // simply grow to 24px without flattening the ramp. Instead the
+              // radio is stretched to fill this `size-6` (24px) frame —
+              // invisible, but a real >=24x24 hit box — while a separate,
+              // `aria-hidden` sibling paints the small bar at its authored
+              // `effortRungForIndex` size. Both are bottom-flush + centered
+              // so the radio's own checked-state indicator still lands on
+              // (and stays invisible against) the visible bar, exactly as
+              // when the radio painted the bar directly.
+              <span
                 key={level.id}
-                value={level.id}
-                aria-label={level.label}
-                data-slot="prompt-input-effort-item"
-                data-filled={filled ? "true" : "false"}
-                className={cn(
-                  effortRungForIndex(index, levels.length),
-                  "rounded-sm",
-                  filled ? "border-primary bg-primary" : "border-border-strong bg-transparent",
-                )}
-              />
+                data-slot="prompt-input-effort-item-frame"
+                className="relative inline-flex size-6 shrink-0 items-end justify-center"
+              >
+                <span
+                  aria-hidden="true"
+                  data-slot="prompt-input-effort-item-visual"
+                  className={cn(
+                    effortRungForIndex(index, levels.length),
+                    "rounded-sm border",
+                    filled ? "border-primary bg-primary" : "border-border-strong bg-transparent",
+                  )}
+                />
+                <RadioGroupItem
+                  value={level.id}
+                  aria-label={level.label}
+                  data-slot="prompt-input-effort-item"
+                  data-filled={filled ? "true" : "false"}
+                  className="absolute inset-0 flex size-full items-end justify-center rounded-sm border-0 bg-transparent p-0 shadow-none"
+                />
+              </span>
             );
           })}
         </RadioGroup>
