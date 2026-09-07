@@ -83,16 +83,41 @@ describe("FilterChip", () => {
     expect(truncating?.contains(count)).toBe(false);
   });
 
+  // Runtime lock (PR #408 review round 2): `Omit<BaseFilterChipProps, "trailing">`
+  // only stops a `trailing` prop written as an object LITERAL — TypeScript's
+  // excess-property check does not apply to a spread of an already-declared
+  // variable, so a typed caller can still get `trailing` into `props` this
+  // way and have it win at render. This must hold at runtime regardless of
+  // what the type system caught.
+  it("keeps the derived count even when a caller spreads a `trailing` override through a variable", () => {
+    const hijack = { trailing: "hijacked" } as { trailing: string };
+    render(
+      <FilterChip
+        label="Status: Failed"
+        count={1204}
+        countLabel="excluded"
+        onRemove={vi.fn()}
+        {...hijack}
+      />,
+    );
+    expect(screen.getByText("excluded 1,204")).toBeInTheDocument();
+    expect(screen.queryByText("hijacked")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove filter: Status: Failed · excluded 1,204" }),
+    ).toBeInTheDocument();
+  });
+
   // Type-level lock, same shape as ContextRail's `children` omission
   // (context-rail.test.tsx #15): `FilterChipProps` is re-derived from the
   // base package's `BaseFilterChipProps` and must omit `trailing` alongside
   // `label`. The wrapper computes its OWN `trailing` from `count`/
-  // `countLabel` and passes it to the base component BEFORE spreading the
-  // rest of `props` (`trailing={countText} {...props}`), so a caller-
-  // supplied `trailing` that type-checked would win the spread and silently
-  // replace the formatted count at render — advertised by the type, inert
-  // (worse: wrong) at runtime. Fails to typecheck the moment `trailing` is
-  // dropped from the `Omit`.
+  // `countLabel` and strips any caller-supplied `trailing` from `props` at
+  // RUNTIME before forwarding to the base component, so a caller-supplied
+  // `trailing` — whether it type-checks as an object literal (it doesn't,
+  // thanks to this Omit) or slips through a spread of an already-declared
+  // variable (it does; see the runtime lock above) — can never win at
+  // render. Fails to typecheck the moment `trailing` is dropped from the
+  // `Omit`.
   it("(type-level) does not accept a `trailing` prop", () => {
     function typeOnly() {
       return (

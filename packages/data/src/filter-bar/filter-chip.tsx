@@ -24,13 +24,17 @@ import {
 } from "@elabs-ai/components-ui";
 
 // `trailing` is omitted alongside `label`: this wrapper derives its OWN
-// `trailing` from `count`/`countLabel` and passes it to the base component
-// after spreading `props` (`trailing={countText} {...props}` below would
-// otherwise let a caller-supplied `trailing` win the spread and silently
-// replace the formatted count — the count would still type-check as
-// present but render (and get announced) as whatever the caller passed,
-// the same advertised-but-inert failure mode #382/#284-round-1 already
-// closed elsewhere in the repo (`ContextRail`'s `children` omission).
+// `trailing` from `count`/`countLabel`. The `Omit` blocks `trailing` written
+// as an object LITERAL, but TypeScript's excess-property check does not
+// apply to a spread of an already-declared variable — `const extra = {
+// trailing: "x" }; <FilterChip {...extra} />` still type-checks, and the
+// value would land in `props` regardless of JSX attribute order (PR #408
+// review round 2). So the `Omit` is necessary but not sufficient: below,
+// `trailing` is also stripped from `props` at RUNTIME before it reaches the
+// base component, so a caller-supplied `trailing` — literal or
+// spread-smuggled — can never win at render, the same advertised-but-inert
+// failure mode #382/#284-round-1 already closed elsewhere in the repo
+// (`ContextRail`'s `children` omission).
 export interface FilterChipProps extends Omit<BaseFilterChipProps, "label" | "trailing"> {
   /**
    * Label-in-value text — `"Status: Failed"`, never `"Status = failed"` and
@@ -70,13 +74,19 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(functio
         ? `${countLabel} ${formatNumber(count)}`
         : formatNumber(count);
 
+  // Runtime guard (belt and braces alongside the `Omit` above): a caller can
+  // still smuggle `trailing` into `props` through a spread of an
+  // already-declared variable, which the type system cannot catch. Strip it
+  // here so the derived count wins regardless of prop order.
+  const { trailing: _ignoredTrailing, ...restProps } = props as Omit<BaseFilterChipProps, "label">;
+
   return (
     <BaseFilterChip
       ref={ref}
       data-slot="filter-chip"
       label={label}
+      {...restProps}
       trailing={countText}
-      {...props}
     />
   );
 });
