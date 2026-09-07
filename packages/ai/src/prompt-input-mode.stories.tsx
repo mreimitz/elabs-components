@@ -68,14 +68,18 @@ export const Default: Story = {};
 /** Opening the trigger lists every mode with its description and key hint. */
 export const OpenMenu: Story = {
   play: async ({ canvas, userEvent }) => {
-    const trigger = canvas.getByRole("button", { name: /Auto/ });
+    const trigger = canvas.getByRole("button", { name: "Auto" });
     await userEvent.click(trigger);
 
     // Radix portals the menu to document.body, so it is OUTSIDE the story
     // canvas. jsdom is forgiving about this; a real browser is not.
     const menu = within(document.body);
-    const planOption = await menu.findByRole("menuitemradio", { name: /Plan first/ });
+    const planOption = await menu.findByRole("menuitemradio", { name: "Plan first" });
     await expect(planOption).toBeInTheDocument();
+    // The description and shortcut are visible but excluded from the
+    // accessible name (#153) — never let this drift back to a regex match,
+    // which would pass even with the extra text folded back in.
+    await expect(planOption).toHaveAccessibleName("Plan first");
     await expect(
       menu.getByText("Proposes a plan and waits for approval before acting."),
     ).toBeInTheDocument();
@@ -86,14 +90,15 @@ export const OpenMenu: Story = {
 /** Selecting a mode updates the trigger and fires `onValueChange` once. */
 export const SelectAMode: Story = {
   play: async ({ canvas, args, userEvent }) => {
-    await userEvent.click(canvas.getByRole("button", { name: /Auto/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Auto" }));
     const reviewOption = await within(document.body).findByRole("menuitemradio", {
-      name: /Review edits/,
+      name: "Review edits",
     });
     await userEvent.click(reviewOption);
 
     await expect(args.onValueChange).toHaveBeenCalledWith("review");
-    await expect(await canvas.findByRole("button", { name: /Review edits/ })).toBeInTheDocument();
+    const trigger = await canvas.findByRole("button");
+    await expect(trigger).toHaveAccessibleName("Review edits");
   },
 };
 

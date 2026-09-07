@@ -80,12 +80,81 @@ export const Default: Story = {
    * `onNodesChange` applying React Flow's own `dimensions` changes back, they always were.
    * `CanvasShell` now merges the measurements in (`useMeasuredNodes`), so the count below
    * is the honest proof — asserting the `<svg>` merely exists passes on the broken state.
+   *
+   * The count alone is not the whole issue (#363): its second hypothesis was a
+   * `nodeColor`/`nodeStrokeColor` token resolving to nothing, which paints the same
+   * rects INVISIBLY rather than omitting them — a count-only assertion would pass on
+   * that failure too. So this also resolves the rect's actual painted fill against the
+   * panel's actual painted background and demands real contrast, at the FILL-rung floor
+   * this repo already holds status marks to (`styling-and-tokens.md`). Same
+   * canvas-readback pattern `FlowNode`'s `FocusIndicator` / `FlowWeightedEdge`'s
+   * `KeyboardFocus` locks use to turn a CSS colour string (`oklch()` included) into a
+   * real measurement instead of an assumption.
    */
   play: async ({ canvasElement }) => {
+    let minimap!: HTMLElement;
     await waitFor(() => {
-      const minimap = canvasElement.querySelector(".react-flow__minimap");
-      expect(minimap).toBeTruthy();
-      expect(minimap!.querySelectorAll(".react-flow__minimap-node")).toHaveLength(nodes.length);
+      const el = canvasElement.querySelector<HTMLElement>(".react-flow__minimap");
+      expect(el).toBeTruthy();
+      expect(el!.querySelectorAll(".react-flow__minimap-node")).toHaveLength(nodes.length);
+      // The viewport mask is derived from the transform, not from node geometry — it
+      // never broke, but the fix for this issue touches nothing about it either, so
+      // this pins it as unchanged rather than leaving it unasserted.
+      expect(el!.querySelector(".react-flow__minimap-mask")).toBeTruthy();
+      minimap = el!;
     });
+
+    // `getImageData()` reports straight (non-premultiplied) RGBA — the alpha channel is
+    // real, but reading r/g/b alone discards it: a fully transparent fill (alpha 0) still
+    // returns SOME rgb triple (typically 0,0,0), which can measure as opaque black and pass
+    // contrast against a light panel while nothing is actually painted. Compositing the
+    // fill ON TOP OF the real panel background first — the same source-over the browser
+    // performs when it paints the rect — means a zero-alpha fill reads back AS the panel
+    // background, so it can never clear the threshold below (#409 review).
+    const toSrgbOverBackground = (colour: string, background: string): [number, number, number] => {
+      const surface = document.createElement("canvas");
+      surface.width = 1;
+      surface.height = 1;
+      const ctx = surface.getContext("2d")!;
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = colour;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r! / 255, g! / 255, b! / 255];
+    };
+    const luminance = ([r, g, b]: [number, number, number]) => {
+      const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    };
+    const contrastOverBackground = (fill: string, background: string) => {
+      const [hi, lo] = [
+        luminance(toSrgbOverBackground(fill, background)),
+        luminance(toSrgbOverBackground(background, background)),
+      ].sort((x, y) => y - x);
+      return (hi! + 0.05) / (lo! + 0.05);
+    };
+
+    const panelBackground = getComputedStyle(minimap).backgroundColor;
+
+    // The whole point of this helper is that a blank minimap must FAIL the check — lock
+    // that directly: a fully transparent fill composites to the panel background itself,
+    // so it can never satisfy the ≥3 contrast assertion below (would incorrectly read as
+    // 21:1 "black on white" if alpha were discarded, per the #409 review finding).
+    expect(
+      contrastOverBackground("rgba(0, 0, 0, 0)", panelBackground),
+      "a fully transparent fill must not be able to satisfy the contrast check",
+    ).toBeLessThan(3);
+
+    const rects = minimap.querySelectorAll<SVGRectElement>(".react-flow__minimap-node");
+    for (const rect of rects) {
+      expect(rect.width.baseVal.value, "minimap node rect has zero width").toBeGreaterThan(0);
+      expect(rect.height.baseVal.value, "minimap node rect has zero height").toBeGreaterThan(0);
+      const fill = getComputedStyle(rect).fill;
+      expect(
+        contrastOverBackground(fill, panelBackground),
+        `minimap node fill (${fill}) is not distinguishable from the panel background (${panelBackground})`,
+      ).toBeGreaterThanOrEqual(3);
+    }
   },
 };

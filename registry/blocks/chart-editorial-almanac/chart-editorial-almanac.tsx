@@ -115,7 +115,37 @@ export function ChartEditorialAlmanac({
       role="figure"
       tabIndex={0}
     >
-      <span className="sr-only">{summary}</span>
+      {/* #294 — the caption below is the digest: it names the region AND
+          introduces the table that follows, so assistive tech hits it once,
+          not as a duplicate standalone summary. The table itself is the
+          second channel: every cell's value, reachable with its row and
+          column, for assistive tech that can't compare blob radii. No new
+          focusable element (`sr-only`, no interactive parts) — same seam as
+          ChartFrame's flip-to-table (.claude/rules/chart-components.md). */}
+      <table className="sr-only">
+        <caption>{summary}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Row</th>
+            {columns.map((col) => (
+              <th key={col} scope="col">
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row}>
+              <th scope="row">{row}</th>
+              {columns.map((col) => {
+                const cell = data.find((c) => c.x === col && c.y === row);
+                return <td key={col}>{cell ? cell.value : ""}</td>;
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <svg
         aria-hidden="true"
         height={height}

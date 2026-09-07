@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { useRef, useState } from "react";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./markdown-editor";
@@ -560,4 +560,115 @@ export const IterationContextMenuHighDecoration: Story = {
   globals: { decoration: "10" },
   render: IterationContextMenu.render,
   play: IterationContextMenu.play,
+};
+
+/**
+ * #309 — the editable's own compound focus indicator. Resolves the governing
+ * theme element FROM THE SUBJECT (`el.closest("[data-theme]")`, never a
+ * guessed ancestor — quality-gates.md § Theme-safe), reads RESOLVED computed
+ * values (not the class string — a class-string assertion passed on the
+ * previous, invisible wrapper ring, which is exactly how this shipped), and
+ * asserts at least one of the indicator's two layers clears 3:1 against the
+ * ground the editable sits on. `markdown-editor.focus.test.ts` locks the
+ * stylesheet TEXT; this is the rendered-surface proof.
+ */
+export const FocusIndicator: Story = {
+  name: "Focus indicator (#309)",
+  render: () => (
+    <div className="mx-auto max-w-3xl p-6">
+      <MarkdownEditor
+        defaultValue={"# Focus indicator\n\nClick or Tab into the editable below."}
+        aria-label="Markdown editor"
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const editable = await canvas.findByRole(
+      "textbox",
+      { name: "Markdown editor" },
+      { timeout: 8000 },
+    );
+    await expect(editable).toBeVisible();
+    expect(editable.classList.contains("ProseMirror")).toBe(true);
+
+    const wrapper = canvasElement.querySelector<HTMLElement>('[data-testid="markdown-editor"]');
+    expect(wrapper).not.toBeNull();
+
+    // Resolve ANY CSS colour string down to sRGB so a contrast ratio is a
+    // measurement, not an assumption — same helper `FlowNode`'s
+    // `FocusIndicator` lock uses for the flow-canvas half of this same fix
+    // family (#286).
+    const toSrgb = (colour: string): [number, number, number] => {
+      const surface = document.createElement("canvas");
+      surface.width = 1;
+      surface.height = 1;
+      const ctx = surface.getContext("2d")!;
+      ctx.fillStyle = colour;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r! / 255, g! / 255, b! / 255];
+    };
+    const luminance = ([r, g, b]: [number, number, number]) => {
+      const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    };
+    const contrast = (a: string, b: string) => {
+      const [hi, lo] = [luminance(toSrgb(a)), luminance(toSrgb(b))].sort((x, y) => y - x);
+      return (hi! + 0.05) / (lo! + 0.05);
+    };
+
+    // Resting: no indicator on the editable, and the wrapper draws no ring of
+    // its own either (#309 — exactly one indicator, never a doubled one).
+    await expect(getComputedStyle(editable).outlineStyle).toBe("none");
+    await expect(getComputedStyle(wrapper!).boxShadow).toBe("none");
+
+    // Click into the editable. `:focus-visible` matches on pointer click for
+    // a contenteditable surface per spec (unlike a plain <input>/<button>),
+    // so this is a faithful proxy for the real "click to edit" path.
+    await userEvent.click(editable);
+    await waitFor(() => {
+      expect(getComputedStyle(editable).outlineStyle).toBe("solid");
+    });
+
+    // Exactly one indicator: the wrapper still draws nothing.
+    await expect(getComputedStyle(wrapper!).boxShadow).toBe("none");
+
+    const ground = getComputedStyle(wrapper!).backgroundColor;
+    const contourInk = getComputedStyle(editable).outlineColor;
+    const ringInk = getComputedStyle(editable).getPropertyValue("--ring").trim();
+    const contourRatio = contrast(contourInk, ground);
+    const ringRatio = contrast(ringInk, ground);
+    const bestRatio = Math.max(contourRatio, ringRatio);
+    await expect(
+      bestRatio,
+      `focus indicator vs editor ground: contour ${contourInk} = ${contourRatio.toFixed(2)}:1, ring ${ringInk} = ${ringRatio.toFixed(2)}:1`,
+    ).toBeGreaterThanOrEqual(3);
+
+    // Blur restores the resting state.
+    (editable as HTMLElement).blur();
+    await waitFor(() => {
+      expect(getComputedStyle(editable).outlineStyle).toBe("none");
+    });
+  },
+};
+
+export const FocusIndicatorDark: Story = {
+  name: "Focus indicator (#309) — dark",
+  decorators: [
+    (Story) => (
+      <ThemeProvider defaultTheme="dark" storageKey={null}>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+  render: FocusIndicator.render,
+  play: FocusIndicator.play,
+};
+
+export const FocusIndicatorHighDecoration: Story = {
+  name: "Focus indicator (#309) — high decoration",
+  globals: { decoration: "10" },
+  render: FocusIndicator.render,
+  play: FocusIndicator.play,
 };
