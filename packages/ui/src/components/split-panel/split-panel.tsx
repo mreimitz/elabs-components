@@ -93,7 +93,18 @@ export function SplitPanel({
       <div
         className={cn(
           splitPaneVariants({ tone: endTone }),
-          divider && (isHorizontal ? "border-s" : "border-t"),
+          divider &&
+            (isHorizontal ? "border-s" : "border-t") +
+              // #163 — with both panes "plain" there is no fill/elevation
+              // difference between them, so the hairline is the ONLY cue and
+              // must clear the 3:1 non-text bar (WCAG 1.4.11):
+              // `border-border-strong` (`border-strong ≥ 3:1 on --card/
+              // --background` is proven for every theme in
+              // @elabs-ai/components-tokens's themes-contrast.test.ts).
+              // With either tone "muted"/"card" the fill change already
+              // carries the boundary, so the subtle default rung stays —
+              // the redundant-cue exemption in styling-and-tokens.md.
+              (startTone === "plain" && endTone === "plain" ? " border-border-strong" : ""),
           endClassName,
         )}
       >

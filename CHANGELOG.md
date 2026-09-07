@@ -15,6 +15,20 @@
 
 ### Fixed
 
+- `@elabs-ai/components-ui`: `ModelPicker` (and its `WorkspacePicker` preset) no longer nests
+  its loading, error/empty and `CommandEmpty` bodies as children of `CommandList` — cmdk
+  hardcodes `role="listbox"` there, and ARIA only allows a listbox to own `option`/`group`, so
+  every one of those bodies (including the everyday "search matches nothing" path on a
+  fully-populated list) failed axe's `aria-required-children`, and in the error/empty bodies
+  the one `Retry` action was nested where assistive tech isn't required to expose it. Those
+  bodies now render as siblings of `CommandList`, which stays mounted in every state so
+  `CommandInput`'s `aria-controls` keeps resolving (#121).
+- `@elabs-ai/components-ui`: `SplitPanel`'s pane divider now uses the strong (`border-strong`,
+  ≥3:1) border rung when both panes share the default `plain` tone — with no fill or elevation
+  difference between them, the hairline was the only cue separating the panes and measured
+  ~1.38:1/1.39:1 in light/dark, below the WCAG 1.4.11 non-text-boundary bar. Either pane set to
+  `muted`/`card` keeps the previous subtle rung, since the fill difference already carries the
+  boundary (#163).
 - `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
   keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
   instead of suppressing the platform outline (`outline: none`) and relying on a wrapper

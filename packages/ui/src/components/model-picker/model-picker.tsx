@@ -214,37 +214,20 @@ export const ModelPicker = forwardRef<HTMLDivElement, ModelPickerProps>(function
               </div>
             ) : null}
 
+            {/*
+              #121 — `CommandList` IS the ARIA listbox (cmdk hardcodes
+              role="listbox" on it); ARIA only lets a listbox own `option`/
+              `group`. It stays MOUNTED in every body (never conditionally
+              removed — `CommandInput` hardcodes `aria-controls` to its id,
+              and axe's aria-valid-attr-value only tolerates a dangling
+              reference when aria-expanded="false"), but every non-option
+              body — loading, error/empty, and `CommandEmpty` — renders as a
+              SIBLING below it, in the same visual slot an empty `CommandList`
+              (which collapses to zero height) would otherwise occupy.
+            */}
             <CommandList>
-              {body === "loading" ? (
-                <div className="space-y-2 p-3" data-slot="model-picker-loading">
-                  <span className="sr-only" role="status">
-                    {t("loading")}
-                  </span>
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-4/5" />
-                  <Skeleton className="h-6 w-3/5" />
-                </div>
-              ) : null}
-
-              {body === "error" || body === "empty" ? (
-                <div className="space-y-2 p-4 text-center" data-slot="model-picker-state">
-                  <p className="text-body">
-                    {body === "error"
-                      ? t("ui.modelPicker.loadFailed")
-                      : t("ui.modelPicker.nothingYet")}
-                  </p>
-                  {onRetry ? (
-                    <Button variant="outline" size="sm" onClick={onRetry}>
-                      {t("ui.modelPicker.retry")}
-                    </Button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {body === "list" ? (
-                <>
-                  <CommandEmpty>{t("noResults")}</CommandEmpty>
-                  {groups.map((group) => (
+              {body === "list"
+                ? groups.map((group) => (
                     <CommandGroup key={group.key} heading={group.label}>
                       {group.items.map((item) => (
                         <Row
@@ -258,10 +241,42 @@ export const ModelPicker = forwardRef<HTMLDivElement, ModelPickerProps>(function
                         />
                       ))}
                     </CommandGroup>
-                  ))}
-                </>
-              ) : null}
+                  ))
+                : null}
             </CommandList>
+
+            {/*
+              cmdk's `Command.Empty` reads `filtered.count` off the `Command`
+              root store, not off a `CommandList` ancestor — it renders
+              correctly as a sibling of the list it used to nest inside.
+            */}
+            {body === "list" ? <CommandEmpty>{t("noResults")}</CommandEmpty> : null}
+
+            {body === "loading" ? (
+              <div className="space-y-2 p-3" data-slot="model-picker-loading">
+                <span className="sr-only" role="status">
+                  {t("loading")}
+                </span>
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-4/5" />
+                <Skeleton className="h-6 w-3/5" />
+              </div>
+            ) : null}
+
+            {body === "error" || body === "empty" ? (
+              <div className="space-y-2 p-4 text-center" data-slot="model-picker-state">
+                <p className="text-body">
+                  {body === "error"
+                    ? t("ui.modelPicker.loadFailed")
+                    : t("ui.modelPicker.nothingYet")}
+                </p>
+                {onRetry ? (
+                  <Button variant="outline" size="sm" onClick={onRetry}>
+                    {t("ui.modelPicker.retry")}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
 
             {footer}
           </Command>
