@@ -51,6 +51,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(SCRIPT_DIR);
@@ -150,7 +151,8 @@ export function findWiringViolations({ settings, gatesYml }) {
       `.claude/settings.json no longer registers ${HOOK_REL} — the merge guard would never fire.`,
     );
   }
-  if (!gatesYml.includes("merge:check:test")) {
+  // Reachable through the blocking battery's runner step (#326), not a literal line.
+  if (!collectGates(gatesYml).has("merge:check:test")) {
     out.push(
       `.github/workflows/gates.yml no longer runs \`pnpm merge:check:test\` — the guard could rot unnoticed.`,
     );

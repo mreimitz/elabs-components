@@ -453,6 +453,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { BLOCKQUOTE_PHRASE, MARKER, hasMarker, render } from "./lib/comment-attribution.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 import {
   basename,
   commandWordIndex,
@@ -1902,7 +1903,8 @@ export function findWiringViolations({ settings, gatesYml }) {
   if (typeof settings !== "string" || !settings.includes(HOOK_REL)) {
     violations.push(`${HOOK_REL} is not registered as a PreToolUse hook in .claude/settings.json`);
   }
-  if (typeof gatesYml !== "string" || !gatesYml.includes(SELF_TEST_STEP)) {
+  // Reachable through the blocking battery's runner step (#326), not a literal line.
+  if (typeof gatesYml !== "string" || !collectGates(gatesYml).has(SELF_TEST_STEP)) {
     violations.push(`pnpm ${SELF_TEST_STEP} is not wired into .github/workflows/gates.yml`);
   }
   return violations;

@@ -79,4 +79,24 @@ describe("InspectorPanel", () => {
     // Content stays mounted (the width tween needs a mounted node).
     expect(screen.getByText("Details")).toBeInTheDocument();
   });
+
+  it("keeps its scrollable body reachable by keyboard, selected or not", () => {
+    // A region that scrolls but holds nothing focusable is readable with a mouse and
+    // unreachable without one (axe `scrollable-region-focusable`). Inspector content is
+    // usually exactly that — text, a definition list, a chart — so the container itself
+    // has to take focus. Asserted in BOTH branches: the empty message scrolls too.
+    const { container, rerender } = render(
+      <InspectorPanel hasSelection={false} emptyMessage="Nothing selected.">
+        <p>Hidden while nothing is selected.</p>
+      </InspectorPanel>,
+    );
+    expect(container.querySelector(".overflow-y-auto")).toHaveAttribute("tabindex", "0");
+
+    rerender(
+      <InspectorPanel hasSelection>
+        <p>Plain text, nothing focusable.</p>
+      </InspectorPanel>,
+    );
+    expect(container.querySelector(".overflow-y-auto")).toHaveAttribute("tabindex", "0");
+  });
 });

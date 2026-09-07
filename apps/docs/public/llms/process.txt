@@ -14,6 +14,7 @@ Import from `@elabs-ai/components-process`. Part of brand-ui — see the root `l
 - PROCESS_FILTER_INTENT_KINDS
 - PROCESS_FILTER_INTENT_LABELS
 - PROCESS_MAP_EDGE_SCALE_GROUP
+- PROCESS_MAP_LEGIBLE_ZOOM
 - PROCESS_MAP_NODE_MOTION_CLASS
 - ProcessActivityNode — One activity on the process map: a FlowNode carrying the metric value, a meter bar, start/end role and a rework tally.
   - avoid: Registering it directly as a React Flow node type outside `ProcessMap` — it reads the map's hover/selection context and expects `buildProcessMapModel`'s node data.

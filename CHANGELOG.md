@@ -1902,6 +1902,30 @@ work alongside `@elabs-ai/components-ai`.
   themselves — the same hook can be swapped for a host's own associative
   selection engine without changing any component.
 
+### `@elabs-ai/components-flow` + `@elabs-ai/components-process`: measured layout, back-edge detours, self-loop handle arcs
+
+- `ProcessMap` measures its activity nodes before the dagre layout and lays them out
+  from the measured sizes (`CanvasShell` now runs `useMeasuredNodes` over its
+  `nodes`/`onNodesChange` pair), with wider node and rank spacing, so long labels no
+  longer overlap or hide behind a fixed box; it opens at a legible zoom
+  (`PROCESS_MAP_LEGIBLE_ZOOM`, 0.75) while the reader can still zoom out to 0.1.
+- `CanvasShell` accepts `fitViewKey` / `fitViewKeyOptions`: change the key and the
+  canvas re-fits the viewport to the current nodes.
+- `FlowWeightedEdge` with `direction="back"` routes its return leg past the far side
+  of every card its span crosses (`backEdgeDetour`, exported with `BackEdgeAxis` and
+  `BackEdgeNodeRect`) instead of a midpoint leg that hid behind the connected cards.
+- `FlowSelfLoopEdge` exports `selfLoopHandleArc` (+ `SelfLoopHandleAnchor`) so a
+  loop's arc anchors on the node's own handles.
+- `FlowNode` gains a `footer` data slot; `ProcessActivityNode` uses it for its
+  saturation meter (`data-slot="process-activity-node-meter"`).
+- `InspectorPanel`'s scrollable body is keyboard-reachable (`tabIndex={0}` +
+  `focus-ring`, axe `scrollable-region-focusable`); `MetricLayerSwitch` columns take
+  `min-w-0` so a narrow rail no longer clips the edge select.
+- `SelectTrigger` (`@elabs-ai/components-ui`) truncates its value on one line
+  (`truncate` instead of `line-clamp-1`).
+- Workspace-only: `@elabs-ai/components-flow/test` (source-only, not in the published
+  tarball) ships the canvas-framing measurement helpers story play functions use.
+
 ## v4.0.0 — 2026-08-17
 
 ### ⚠️ BREAKING: what a consumer has to change

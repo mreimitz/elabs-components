@@ -26,7 +26,55 @@
  *      their inter-token whitespace class is horizontal-only (`[^\S\r\n]`) so a
  *      match cannot span a line break. Belt and braces, because the artifact this
  *      feeds is attached to every GitHub Release as proof a version was validated.
+ *
+ * RUNNER EXPANSION (#326). Since the battery runs as ONE parallel step
+ * (`pnpm gates` / `pnpm gates:selftests` / `pnpm gates:all`, see
+ * `scripts/run-gates.mjs`), a workflow no longer spells out the gate names. The
+ * ratchet in `scripts/release-gates-baseline.json` must keep recording INDIVIDUAL
+ * gates — a runner name that "still runs" says nothing about the gates it quietly
+ * stopped discovering — so `collectGates` expands each runner invocation into the
+ * names the runner would run, read from the repo's package.json through the same
+ * pure `listGates` the runner uses. The runner name itself is kept as well, so a
+ * deleted runner step is noticed too. Callers pass `expand` (a map
+ * `runnerScript → [gate…]`) to override the default — the self-tests do.
  */
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { runnerExpansion } from "../run-gates.mjs";
+
+const REPO_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+
+/**
+ * The runner expansion map for the package.json under `root`:
+ * `{ gates: [...], "gates:selftests": [...], "gates:all": [...] }`.
+ * An absent or unreadable package.json yields `{}` (no expansion) rather than
+ * throwing, so a fixture root without one still parses.
+ */
+export function runnerExpansionFor(root = REPO_ROOT) {
+  const p = join(root, "package.json");
+  if (!existsSync(p)) return {};
+  try {
+    return runnerExpansion(JSON.parse(readFileSync(p, "utf8")));
+  } catch {
+    return {};
+  }
+}
+
+let defaultExpansionCache;
+function defaultExpansion() {
+  return (defaultExpansionCache ??= runnerExpansionFor(REPO_ROOT));
+}
+
+/** `gates` plus, for every runner script among them, the names it runs. */
+export function expandRunnerGates(gates, expand) {
+  const out = new Set();
+  for (const g of gates) {
+    out.add(g);
+    for (const inner of expand?.[g] ?? []) out.add(inner);
+  }
+  return out;
+}
 
 /** Shell verbs that are not gates: package management, not quality checks. */
 export const NON_GATE_COMMANDS = new Set([
@@ -325,27 +373,36 @@ export function gatesInCommand(cmd) {
 
 /**
  * Every gate step (`pnpm <gate>` and `pnpm --filter <pkg> <script>`) reachable
- * from a workflow, following local reusable workflows. Non-blocking jobs are
- * skipped unless `includeNonBlocking` is set.
+ * from a workflow, following local reusable workflows and expanding runner
+ * steps (`pnpm gates` → the gates it runs; see the header). Non-blocking jobs
+ * are skipped unless `includeNonBlocking` is set.
  *
  * `readWorkflow(relPath)` returns the referenced workflow's text, or null.
+ * `expand` is the runner map (`runnerScript → [gate…]`); omitted, it is read
+ * from the repo's own package.json.
  */
 export function collectGates(
   yamlText,
-  { readWorkflow = () => null, includeNonBlocking = false, seen = new Set() } = {},
+  { readWorkflow = () => null, includeNonBlocking = false, seen = new Set(), expand } = {},
 ) {
+  const expansion = expand ?? defaultExpansion();
   const gates = new Set();
   for (const job of splitJobs(yamlText)) {
     if (!includeNonBlocking && !isBlockingJob(job.body)) continue;
     for (const cmd of runCommands(job.body)) {
-      for (const g of gatesInCommand(cmd)) gates.add(g);
+      for (const g of expandRunnerGates(gatesInCommand(cmd), expansion)) gates.add(g);
     }
     for (const rel of reusableCalls(job.body)) {
       if (seen.has(rel)) continue;
       seen.add(rel);
       const text = readWorkflow(rel);
       if (!text) continue;
-      for (const g of collectGates(text, { readWorkflow, includeNonBlocking, seen })) {
+      for (const g of collectGates(text, {
+        readWorkflow,
+        includeNonBlocking,
+        seen,
+        expand: expansion,
+      })) {
         gates.add(g);
       }
     }

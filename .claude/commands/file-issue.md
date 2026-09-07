@@ -1,82 +1,59 @@
 ---
-description: Turn a finding or feedback into a fully-diagnosed GitHub issue (deep root-cause analysis first), with dedupe. Finders report; this files. No code is changed.
+description: Triage a finding — fix what is small and in scope in the working tree; batch-diagnose the rest and file each as a capped, deduped, machine-attributed GitHub issue.
 argument-hint: <a report path, failing test name, or a description of the problem>
 allowed-tools: Task, Skill, Read, Write, Grep, Glob, Bash(git remote:*), Bash(git config:*), Bash(pnpm:*), mcp__github__create_issue, mcp__github__search_issues, mcp__github__list_issues, mcp__github__add_issue_comment, mcp__github__get_issue
 ---
 
-Register one or more findings as **implementation-ready GitHub issues**. The
-input `$ARGUMENTS` may be: a path to a finder report (e.g.
-`apps/e2e/reports/qa-flows-*.md` or `visual-ux-*.md`), a failing test name, or a
-plain-language description of feedback/a bug.
+Input `$ARGUMENTS`: a finder report path, a failing test name, or a description.
+Goal: fewer, smaller issues. Fix what you can now; file only what is left behind.
 
-**Golden rule:** finders and this command **never fix code** — they diagnose and
-file. Implementation happens later from the issue.
+## 1. Split and triage
 
-## 1. Resolve the repository
+Split the input into distinct findings; drop trivially identical ones. For each:
 
-```bash
-git config --get remote.origin.url   # parse owner/repo (github.com/<owner>/<repo>)
+- **FIX NOW** — in scope of the current task AND small (≤30 changed lines, one
+  package): fix it in the working tree, record `fixed` in the summary, file nothing.
+- **FILE** — everything else. A story-based finding must carry the exact story ID
+  and theme slug (`data-data-table--filtered`, `dark`) so it can be reproduced.
+
+## 2. One batched analysis
+
+ONE `Task` call to `brand-ui-root-cause-analyst` with the whole FILE list. It returns
+one spec per finding (TITLE / LABELS / DUPLICATE_OF / capped body, template below).
+Never one call per finding.
+
+## 3. Dedupe against open issues
+
+`mcp__github__search_issues` (repo parsed from `git config --get remote.origin.url`)
+with root-cause keywords; honor `DUPLICATE_OF`. An open match gets the new evidence
+as a comment via `node scripts/post-issue-comment.mjs <n> --command file-issue
+--body-file <abs path>` (it renders the machine-attribution marker, #78) instead of
+a new issue; report that issue's URL.
+
+## 4. Create — body ≤ ~2,500 characters
+
+`mcp__github__create_issue` with `title`, `labels` (taxonomy: `.github/labels.md`;
+if rejected, retry without labels and keep the `Labels` line) and `body` =
+`render("file-issue")` from `scripts/lib/comment-attribution.mjs` prepended to:
+
+```
+## Summary       2 lines
+## Repro         story ID + theme slug, or the command / test name
+## Root cause    file:line, 2–4 lines
+## Fix           3–6 lines
+## Test to add   1–2 lines
+## Labels        type:… severity:… area:…
 ```
 
-If there is no GitHub remote, or the GitHub connector is not available, skip
-to the **fallback** (step 6) instead of failing.
+No Evidence / Risks / References essays — cut, never append.
 
-## 2. Split the input into distinct findings
+## 5. Fallback (no remote or connector)
 
-If the input is a report with several findings, treat each as its own issue
-(don't bundle unrelated problems). Deduplicate trivially-identical ones.
+Write each spec to `docs/issues/<severity>-<slug>.md` and say they are queued
+locally (re-run `/file-issue docs/issues` once a remote exists).
 
-For any finding from a story-based check (`/qa-flows`, `/visual-review`, or a
-Storybook MCP run), make sure the evidence carries the exact **story ID** (e.g.
-`data-data-table--filtered`) and **theme slug** (e.g. `dark`) — plus the
-`preview-stories` URL if available — so `brand-ui-root-cause-analyst` can reproduce it
-precisely. See @.claude/rules/storybook-mcp.md for the story-ID format and slugs.
+## 6. Summary
 
-## 3. Deep root-cause analysis (per finding)
-
-For each finding, launch the **brand-ui-root-cause-analyst** agent (Task tool) and pass it
-the finding text + any evidence (screenshots, console errors, failing test). It
-returns a complete issue spec (TITLE / LABELS / DUPLICATE_OF / structured body).
-Do not shortcut this — the analyst's job is the deep reasoning and the solution
-design.
-
-## 4. Dedupe against existing issues
-
-Use `mcp__github__search_issues` (repo-scoped, keywords from the root cause) and
-honor the analyst's `DUPLICATE_OF`. If a strong match exists and is open, add a
-comment (`mcp__github__add_issue_comment`) linking the new evidence INSTEAD of
-opening a duplicate, and report that issue's URL. **The `body` passed to
-`mcp__github__add_issue_comment` must carry the machine-attribution marker
-(#78)** — prepend the banner from `render()` in
-`scripts/lib/comment-attribution.mjs` (a `PreToolUse` hook enforces this; see
-`.claude/rules/issue-workflow.md`).
-
-## 5. Create the issue
-
-Call `mcp__github__create_issue` with:
-
-- `owner`, `repo` (from step 1)
-- `title` = the analyst's TITLE
-- `body` = the analyst's full structured spec (Summary → References), with the
-  machine-attribution marker (#78) appended — `render()` in
-  `scripts/lib/comment-attribution.mjs` — so the issue body itself is legible as
-  machine-drafted, never mistaken later for a maintainer's own report. Append a
-  trailing line: `Filed by /file-issue · source: <agent/test/feedback>`.
-- `labels` = the analyst's LABELS. If the connector rejects unknown labels,
-  retry creation WITHOUT labels and keep the `LABELS:` line inside the body.
-  (Standard taxonomy lives in `.github/labels.md`.)
-
-Report each created issue's number + URL.
-
-## 6. Fallback (no remote / connector)
-
-Write each spec to `docs/issues/<severity>-<slug>.md` and tell the user these are
-queued locally; they can push the repo / connect the GitHub connector and re-run
-`/file-issue docs/issues` to upload them.
-
-## 7. Summary
-
-Output a table: finding → action (created #/commented #/queued locally) → URL/path
-→ severity. Remind the user that fixes are done separately via
-`brand-ui-component-builder` / `/review-component`, and that the fix PR should add the
-"Test to add" from each issue.
+Table: finding → action (`fixed` / created #n / commented #n / queued) → URL or path
+→ severity. Filed issues are fixed later from the issue (`Closes #n` + its
+"Test to add").

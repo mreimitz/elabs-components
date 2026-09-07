@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import "@xyflow/react/dist/style.css";
+import { expect, waitFor } from "storybook/test";
 import { CanvasShell } from "../canvas-shell";
 import { FlowNode, FLOW_ALL_SIDE_HANDLES, type BrandFlowNode } from "../flow-node";
 import { FlowSmartEdge } from "../flow-smart-edge";
@@ -71,4 +72,20 @@ export const Default: Story = {
       </CanvasShell>
     </div>
   ),
+  /**
+   * The minimap must actually DRAW the nodes — this story rendered a blank white panel
+   * for as long as it has existed, and nothing caught it: React Flow's `<MiniMap>` reads
+   * each node's dimensions off the object the CONSUMER passed (`internals.userNode`), and
+   * bails out per node when they are absent. On a controlled canvas with no
+   * `onNodesChange` applying React Flow's own `dimensions` changes back, they always were.
+   * `CanvasShell` now merges the measurements in (`useMeasuredNodes`), so the count below
+   * is the honest proof — asserting the `<svg>` merely exists passes on the broken state.
+   */
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const minimap = canvasElement.querySelector(".react-flow__minimap");
+      expect(minimap).toBeTruthy();
+      expect(minimap!.querySelectorAll(".react-flow__minimap-node")).toHaveLength(nodes.length);
+    });
+  },
 };

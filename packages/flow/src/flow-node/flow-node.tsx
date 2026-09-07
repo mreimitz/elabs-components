@@ -45,6 +45,24 @@ export interface FlowNodeData extends Record<string, unknown> {
    * bottom-source (unchanged, backward-compatible).
    */
   handles?: FlowNodeHandles;
+  /**
+   * An extra row rendered INSIDE the card, below the text block — a meter bar, a
+   * sparkline, a chip row.
+   *
+   * It exists because content a composing package renders BESIDE `FlowNode` (as a sibling
+   * inside React Flow's node element) silently breaks the canvas's geometry: React Flow
+   * positions every `<Handle>` against the nearest positioned ancestor and measures the
+   * node box from its own wrapper, so a sibling row makes the node box taller than the
+   * visible card and the handles drift off the card's border by exactly that difference.
+   * Measured on the process map's activity node, whose 6px meter and 4px gap put every
+   * bottom dot 10px below the card it was supposed to sit on, and every left/right dot
+   * 5px below the card's own mid-line.
+   *
+   * Put the row here instead and the card IS the node box again, so the dots land on the
+   * card edge for free. Nothing is rendered when it is absent — existing nodes are
+   * byte-identical.
+   */
+  footer?: ReactNode;
 }
 
 export type BrandFlowNode = Node<FlowNodeData, "brand">;
@@ -143,6 +161,12 @@ export function FlowNode({
   const ToneIcon = toneIcon[tone];
   return (
     <div
+      // The PAINTED card, and the box every handle dot must sit on the border of.
+      // `.react-flow__node` (the wrapper React Flow positions) can legitimately be
+      // taller than this — a composing package may render a badge or a meter beside
+      // the card — so a test that wants "is the connector on the card?" measures
+      // against this slot, never against the wrapper. See `testing/canvas-framing`.
+      data-slot="flow-node"
       data-tone={tone}
       className={cn(
         "min-w-44 rounded-lg border bg-flow-node px-3 py-2 text-flow-node-foreground shadow-sm transition-[box-shadow,border-color] duration-fast ease-standard",
@@ -211,6 +235,7 @@ export function FlowNode({
           <ToneIcon aria-hidden="true" className={cn("size-3.5 shrink-0", toneIconColor[tone])} />
         ) : null}
       </div>
+      {data.footer ? <div className="mt-2">{data.footer}</div> : null}
       {toneLabel[tone] ? <span className="sr-only">{toneLabel[tone]}</span> : null}
     </div>
   );

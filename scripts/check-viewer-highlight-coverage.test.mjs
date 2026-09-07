@@ -20,6 +20,7 @@ import {
   readsRects,
   stripComments,
 } from "./check-viewer-highlight-coverage.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const KINDS = ["quote", "range", "rect"];
@@ -292,6 +293,8 @@ test("the gate is registered in package.json and gates.yml", () => {
     "node --test scripts/check-viewer-highlight-coverage.test.mjs",
   );
   const gates = readFileSync(join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-  assert.match(gates, /pnpm viewer-highlight:check\b/);
-  assert.match(gates, /pnpm viewer-highlight:check:test\b/);
+  // Reachable through the runner step (#326), not a literal `pnpm <name>` line.
+  const blocking = collectGates(gates);
+  assert.ok(blocking.has("viewer-highlight:check"));
+  assert.ok(blocking.has("viewer-highlight:check:test"));
 });

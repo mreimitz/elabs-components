@@ -1,54 +1,38 @@
-# Icons (Lucide is the default; `@elabs-ai/components-icons` is for brand vocabulary)
+# Icons
 
-- **Default icon library: Lucide (`lucide-react`).** Generic UI glyphs — chevrons, `X`,
-  search, bell, panel/menu toggles, status ticks, **nav-entry glyphs, and
-  formatting-toolbar glyphs (bold / italic / link / list / heading / quote / code …)** —
-  come from `lucide-react`. It is the documented standard and the value the vibe-coder
-  plugin scaffolds for end-users. Falling back to Lucide for nav + formatting is the
-  **sanctioned** path, not a workaround (issue #300); the repo's own `MarkdownToolbar`
-  does exactly this.
-- **`@elabs-ai/components-icons` is for brand / product-vocabulary icons** — the product's own concept
-  glyphs and `BrandLogo`, built on the `Icon`/`createIcon` primitives (24×24,
-  `stroke = currentColor`, so they theme with text color). The shipped `sample-icons` are
-  **placeholders** a product REPLACES with its own vocabulary — `@elabs-ai/components-icons` is
-  deliberately NOT a general nav/formatting icon set (that would duplicate Lucide and fight
-  the ESLint enforcement below). Add an icon here only when it is part of the product's
-  vocabulary; reach for Lucide for everything generic.
+- **Default icon library: Lucide (`lucide-react`)** for every generic UI glyph, nav-entry
+  and formatting-toolbar glyphs (bold, italic, link, list, heading, quote, code) included —
+  the **sanctioned** path (#300).
+- **`@elabs-ai/components-icons` = brand / product-vocabulary icons only** (+ `BrandLogo`),
+  built on `Icon`/`createIcon` (24×24, `stroke = currentColor`). The shipped `sample-icons`
+  are placeholders a product REPLACES. Add an icon there only when it is product
+  vocabulary — never a generic glyph.
 
-| You need…                                             | Use                                                                 |
-| ----------------------------------------------------- | ------------------------------------------------------------------- |
-| A generic UI glyph (chevron, close, search, menu, …)  | **`lucide-react`** — `import { ChevronDown }`                       |
-| A nav-entry or formatting-toolbar glyph (bold, list…) | **`lucide-react`** — generic, not brand vocabulary                  |
-| A brand / product-concept icon, or the logo           | **`@elabs-ai/components-icons`** (`Icon`/`createIcon`, `BrandLogo`) |
-| Any other third-party icon set                        | **No** — not heroicons/react-icons/tabler/etc.                      |
+| You need…                          | Use                              |
+| ---------------------------------- | -------------------------------- |
+| Generic UI glyph (chevron, close…) | **`lucide-react`**               |
+| Nav or formatting-toolbar glyph    | **`lucide-react`** (generic)     |
+| Brand / product icon or logo       | **`@elabs-ai/components-icons`** |
+| Any other third-party icon set     | **No** (heroicons, tabler, …)    |
 
-## Import convention
+## Usage
 
-- **Named imports only:** `import { Bell, Search } from "lucide-react";`. No barrel/wrapper
-  re-export of Lucide — it would only churn the 70+ call sites for no gain.
-- Icons inherit color via `currentColor`; size with the `size` prop. Tokens only — never a raw hex.
-
-## Versioning
-
-- **One `lucide-react` version across the whole monorepo** (currently `^0.577.0`), declared as a
-  normal `dependency` in each package/app whose source imports it (`@elabs-ai/components-ui`, `@elabs-ai/components-ai`,
-  `@elabs-ai/components-editor`, the apps). `@elabs-ai/components-icons` does **not** depend on Lucide — it ships its own icons.
+- **Named imports only** (`import { Bell } from "lucide-react";`), no barrel/wrapper re-export.
+- Color via `currentColor`, size via the `size` prop. Tokens only — never a raw hex.
+- **One `lucide-react` version monorepo-wide**, a normal `dependency` in each package/app
+  whose source imports it; `@elabs-ai/components-icons` never depends on it.
 
 ## Accessibility
 
-- **Decorative icon → hidden from AT.** `@elabs-ai/components-icons`' `Icon` does this automatically when no
-  `title` is set (`role="presentation"` + `aria-hidden`); for a Lucide glyph used decoratively,
-  add `aria-hidden="true"`.
-- **Icon conveys meaning / is the only label → name it.** A titled `Icon` (`title=…`) becomes
-  `role="img"` + `aria-label`; an **icon-only control** (button/link) needs an `aria-label` on the
-  control itself. See @.claude/rules/accessibility.md.
+- **Decorative → hidden from AT.** `Icon` does it automatically when no `title` is set
+  (`role="presentation"` + `aria-hidden`); a decorative Lucide glyph gets `aria-hidden="true"`.
+- **Conveys meaning / is the only label → name it.** `Icon title=…` becomes `role="img"` +
+  `aria-label`; an icon-only control carries `aria-label` itself. See @.claude/rules/accessibility.md.
 
-## Enforcement (over reminders)
+## Enforcement
 
-- **Other icon libraries are blocked by ESLint** (`no-restricted-imports` in
-  `@elabs-ai/components-eslint-config`): importing heroicons / react-icons / tabler / phosphor / font-awesome /
-  MUI-icons / ant-icons fails `pnpm lint`. Use `lucide-react` or `@elabs-ai/components-icons`.
-- **Version drift is blocked by CI** (`pnpm lucide:check` → `scripts/check-lucide-version.mjs`):
-  more than one `lucide-react` version across the package manifests fails the build.
+- Other icon sets fail `pnpm lint` (`no-restricted-imports`, `@elabs-ai/components-eslint-config`);
+  version drift fails `pnpm lucide:check`.
 
-Canonical decision home: this rule (linked from `CLAUDE.md`/`AGENTS.md`/`skills/brand-ui`).
+Canonical decision home: this rule.
+History and measurements: docs/rules-history/icons.md

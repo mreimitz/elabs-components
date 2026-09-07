@@ -6,6 +6,15 @@
 // behaviour on each branch: nudge, silence-because-reviewed, silence-because-small,
 // and the stop_hook_active loop guard.
 //
+// THE CONTRACT IS ADVISORY (2026-09-06). When the nudge fires it is printed to
+// stderr exactly once and the hook exits 0 — it never blocks the stop. The earlier
+// exit-2 contract fed the battery back to the agent and forced it to dispatch the
+// reviewer subagents (each a full ~100k-token context) before it was allowed to
+// stop, a measured driver of subagent cost. So the branches are told apart by
+// STDERR, not by exit status: a fired nudge is `stderr` carrying the nudge text with
+// exit 0; silence is empty `stderr` with exit 0; exit 2 is asserted NEVER to happen,
+// and a static lock below keeps `exit 2` out of the hook's source.
+//
 // The fixtures deliberately include the noise a synthetic transcript would
 // otherwise omit — the injected `type:"attachment"` agent/skill rosters, a
 // `tool_result` echoing quality-gates.md, a `<system-reminder>`, a `Write` payload
@@ -18,7 +27,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -86,7 +95,7 @@ const HARNESS_ATTACHMENTS = [
       names: ["review-component", "review-interface", "session-retro", "visual-review"],
       content:
         "- review-component: Review a component against the brand-ui quality gates\n" +
-        "- visual-review: Visually validate brand-ui across all three themes via brand-ui-visual-ux-reviewer\n" +
+        "- visual-review: Visually validate brand-ui across both themes via brand-ui-visual-ux-reviewer\n" +
         "- session-retro: Force an objective self-review via brand-ui-session-reviewer",
     },
   }),
@@ -119,6 +128,27 @@ function run(lines, { stopHookActive = false } = {}) {
   }
 }
 
+/**
+ * The advisory contract, asserted in one place: the nudge text is on stderr EXACTLY
+ * once, and the exit status is 0 — a fired nudge must never block the stop.
+ */
+function assertNudged(r, why) {
+  assert.equal(r.status, 0, `${why} — and advisory: a fired nudge must never block (exit 0)`);
+  assert.match(r.stderr, /session-cadence nudge/, why);
+  assert.match(r.stderr, /8 product files/, why);
+  assert.equal(
+    (r.stderr.match(/session-cadence nudge/g) ?? []).length,
+    1,
+    "the nudge is printed exactly once",
+  );
+}
+
+/** Silence: nothing on stderr, exit 0. */
+function assertSilent(r, why) {
+  assert.equal(r.status, 0, why);
+  assert.equal(r.stderr, "", why);
+}
+
 const EIGHT_FILES = [
   "/repo/packages/ui/src/components/button/button.tsx",
   "/repo/packages/ui/src/components/card/card.tsx",
@@ -130,31 +160,48 @@ const EIGHT_FILES = [
   "/repo/apps/playground/src/main.tsx",
 ];
 
-test("8 product-file edits with no reviewer → exactly one nudge (exit 2)", () => {
+test("8 product-file edits with no reviewer → exactly one nudge on stderr, exit 0", () => {
   const r = run([assistantEdits(EIGHT_FILES), assistantText("All done.")]);
-  assert.equal(r.status, 2);
-  assert.match(r.stderr, /session-cadence nudge/);
-  assert.match(r.stderr, /8 product files/);
+  assertNudged(r, "a large unreviewed session is nudged");
   assert.match(r.stderr, /\/visual-review/);
+  assert.match(r.stderr, /never blocks the stop/, "the nudge says it is advisory");
 });
 
-test("a human typing /visual-review counts as reviewed (exit 0)", () => {
+// ── The advisory contract itself ─────────────────────────────────────────────
+// The old exit-2 contract blocked the stop and forced reviewer-subagent dispatches.
+// Lock the new one at both layers: the observed exit status above, and the hook's
+// own source (so a later "let's make it reach the agent" edit fails here first).
+
+test("the hook never exits 2 — a fired nudge is advisory, not a block", () => {
+  const r = run([...HARNESS_ATTACHMENTS, assistantEdits(EIGHT_FILES), assistantText("Done.")]);
+  assert.notEqual(r.status, 2, "exit 2 would block the stop and force reviewer dispatches");
+  assert.equal(r.status, 0);
+});
+
+test("the hook's source carries no `exit 2` (static lock on the advisory contract)", () => {
+  const src = readFileSync(HOOK, "utf8");
+  assert.ok(
+    !/^\s*exit\s+2\b/m.test(src),
+    "session-cadence-nudge.sh must never `exit 2` — it is advisory (stderr + exit 0)",
+  );
+});
+
+test("a human typing /visual-review counts as reviewed (silent)", () => {
   const r = run([
     assistantEdits(EIGHT_FILES),
     userText("/visual-review packages/ui/src/components/button"),
   ]);
-  assert.equal(r.status, 0);
-  assert.equal(r.stderr, "");
+  assertSilent(r, "a human-requested review silences the nudge");
 });
 
 // ── The prose-silencing regression (the second reason this hook was rejected) ─
 // Assistant TEXT is not an action, and in the real transcripts the prose that
 // names a reviewer is overwhelmingly the prose that DECLINES it. Counting it
 // inverted the hook: two 18/19-product-file sessions with ZERO reviewer
-// dispatches exited 0 because the agent wrote "…is still owed" / "…you can run
+// dispatches went silent because the agent wrote "…is still owed" / "…you can run
 // /visual-review". Assistant prose must never silence the nudge.
 
-test("assistant prose saying the sweep is still OWED still nudges (exit 2)", () => {
+test("assistant prose saying the sweep is still OWED still nudges", () => {
   const r = run([
     assistantEdits(EIGHT_FILES),
     assistantText(
@@ -163,38 +210,34 @@ test("assistant prose saying the sweep is still OWED still nudges (exit 2)", () 
         "check, run /visual-review.",
     ),
   ]);
-  assert.equal(r.status, 2, "prose declining the review must not silence the nudge");
-  assert.match(r.stderr, /session-cadence nudge/);
-  assert.match(r.stderr, /8 product files/);
+  assertNudged(r, "prose declining the review must not silence the nudge");
 });
 
-test("assistant prose merely CLAIMING the battery ran still nudges (exit 2)", () => {
+test("assistant prose merely CLAIMING the battery ran still nudges", () => {
   const r = run([
     assistantEdits(EIGHT_FILES),
     assistantText("Running /visual-review and brand-ui-accessibility-reviewer over the surfaces."),
   ]);
-  assert.equal(r.status, 2, "a claim is not a dispatch — only Task/SlashCommand/Skill count");
+  assertNudged(r, "a claim is not a dispatch — only Task/SlashCommand/Skill count");
 });
 
-test("a BUILDER skill dispatch is not a review (exit 2)", () => {
+test("a BUILDER skill dispatch is not a review (still nudges)", () => {
   const r = run([
     ...HARNESS_ATTACHMENTS,
     assistantEdits(EIGHT_FILES),
     assistantDispatch("Skill", { skill: "brand-ui:brand-ui-component" }),
   ]);
-  assert.equal(r.status, 2, "building is not reviewing");
+  assertNudged(r, "building is not reviewing");
 });
 
 // ── The dead-on-arrival regression (the reason this hook was rejected once) ───
 // The harness injects the reviewer/skill rosters into EVERY session as
 // `type:"attachment"` lines. A whole-file grep matched them on line ~5 and the
-// hook exited 0 forever. Evidence must come from the agent's OWN actions.
+// hook went silent forever. Evidence must come from the agent's OWN actions.
 
 test("harness attachment lines naming the reviewers do NOT count as reviewed", () => {
   const r = run([...HARNESS_ATTACHMENTS, assistantEdits(EIGHT_FILES), assistantText("All done.")]);
-  assert.equal(r.status, 2, "injected agent/skill listings must not silence the nudge");
-  assert.match(r.stderr, /session-cadence nudge/);
-  assert.match(r.stderr, /8 product files/);
+  assertNudged(r, "injected agent/skill listings must not silence the nudge");
 });
 
 test("READING a rule that documents the battery does not count as running it", () => {
@@ -206,7 +249,7 @@ test("READING a rule that documents the battery does not count as running it", (
     ),
     assistantText("All done."),
   ]);
-  assert.equal(r.status, 2, "a tool_result echoing quality-gates.md is not a review");
+  assertNudged(r, "a tool_result echoing quality-gates.md is not a review");
 });
 
 test("a system-reminder injecting the rule text does not count as reviewed", () => {
@@ -225,7 +268,7 @@ test("a system-reminder injecting the rule text does not count as reviewed", () 
       },
     }),
   ]);
-  assert.equal(r.status, 2, "an injected system-reminder is not the agent running a review");
+  assertNudged(r, "an injected system-reminder is not the agent running a review");
 });
 
 test("writing a doc that quotes the battery does not count as running it", () => {
@@ -236,7 +279,7 @@ test("writing a doc that quotes the battery does not count as running it", () =>
       content: "Then run /review-component and the brand-ui-visual-ux-reviewer.",
     }),
   ]);
-  assert.equal(r.status, 2, "a Write payload quoting the battery is not a review");
+  assertNudged(r, "a Write payload quoting the battery is not a review");
 });
 
 // ── Real dispatches DO count, even with the harness noise present ─────────────
@@ -254,22 +297,20 @@ for (const [label, line] of [
   ],
   ["Skill → review-component", assistantDispatch("Skill", { skill: "review-component" })],
 ]) {
-  test(`a real dispatch counts as reviewed: ${label}`, () => {
+  test(`a real dispatch counts as reviewed (silent): ${label}`, () => {
     const r = run([...HARNESS_ATTACHMENTS, assistantEdits(EIGHT_FILES), line]);
-    assert.equal(r.status, 0);
-    assert.equal(r.stderr, "");
+    assertSilent(r, `a real ${label} dispatch silences the nudge`);
   });
 }
 
-test("stop_hook_active bounds it to one fire (exit 0, no loop)", () => {
+test("stop_hook_active bounds it to one fire (silent, no loop)", () => {
   const r = run([assistantEdits(EIGHT_FILES)], { stopHookActive: true });
-  assert.equal(r.status, 0);
-  assert.equal(r.stderr, "");
+  assertSilent(r, "the loop guard keeps the second stop of a chain silent");
 });
 
 test("a small session (under the threshold) is silent", () => {
   const r = run([assistantEdits(EIGHT_FILES.slice(0, 4))]);
-  assert.equal(r.status, 0);
+  assertSilent(r, "4 product files is below the threshold");
 });
 
 test("non-product edits (scripts, docs, rules) do not count", () => {
@@ -285,18 +326,18 @@ test("non-product edits (scripts, docs, rules) do not count", () => {
       "/repo/README.md",
     ]),
   ]);
-  assert.equal(r.status, 0);
+  assertSilent(r, "governance/docs edits are not product files");
 });
 
 test("test files do not count toward the threshold", () => {
   const r = run([assistantEdits(EIGHT_FILES.map((f) => f.replace(/\.tsx$/, ".test.tsx")))]);
-  assert.equal(r.status, 0);
+  assertSilent(r, "*.test.tsx edits are excluded");
 });
 
 test("the same file edited repeatedly counts once", () => {
   const one = "/repo/packages/ui/src/components/button/button.tsx";
   const r = run([assistantEdits([one, one, one, one, one, one, one, one])]);
-  assert.equal(r.status, 0);
+  assertSilent(r, "distinct files, not edit events");
 });
 
 test("a missing transcript path is silent (never blocks a stop)", () => {
@@ -308,8 +349,7 @@ test("a missing transcript path is silent (never blocks a stop)", () => {
   assert.equal(r.stderr ?? "", "");
 });
 
-test("the hook is registered on Stop in .claude/settings.json", async () => {
-  const { readFileSync } = await import("node:fs");
+test("the hook is registered on Stop in .claude/settings.json", () => {
   const settings = JSON.parse(readFileSync(path.resolve(HERE, "../.claude/settings.json"), "utf8"));
   const commands = (settings.hooks?.Stop ?? []).flatMap((e) =>
     (e.hooks ?? []).map((h) => h.command ?? ""),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LOOP_RADIUS, selfLoopPath } from "./self-loop-geometry";
+import { DEFAULT_LOOP_RADIUS, selfLoopHandleArc, selfLoopPath } from "./self-loop-geometry";
 
 const numbersIn = (path: string) =>
   (path.match(/-?\d+(\.\d+)?/g) ?? []).map((n) => Number.parseFloat(n));
@@ -49,5 +49,80 @@ describe("selfLoopPath", () => {
     expect(selfLoopPath({ centerX: 12.5, topY: -3 }, 28)).toEqual(
       selfLoopPath({ centerX: 12.5, topY: -3 }, 28),
     );
+  });
+});
+
+describe("selfLoopHandleArc", () => {
+  /** A 200×60 card at (100, 200): its two handle points, top-to-bottom. */
+  const topToBottom = {
+    sourceX: 200,
+    sourceY: 260,
+    targetX: 200,
+    targetY: 200,
+    centerX: 200,
+    centerY: 230,
+    width: 200,
+    height: 60,
+  };
+
+  it("starts on the source handle and ends on the target handle", () => {
+    const { path } = selfLoopHandleArc(topToBottom, 28);
+    expect(path).toMatch(/^M 200,260 C /);
+    expect(path).toMatch(/ 200,200$/);
+  });
+
+  it("bulges past the card, not across it", () => {
+    // The apex is the card's own half-width (100) plus the loop radius (28) clear of its
+    // centre — the number a cubic actually reaches, which is 3/4 of its control reach and
+    // not the control reach itself. Getting that factor wrong draws the loop ON the card.
+    const { labelX, labelY } = selfLoopHandleArc(topToBottom, 28);
+    expect(labelX).toBe(200 + 100 + 28);
+    expect(labelY).toBe(230);
+  });
+
+  it("turns with the handles: a left-to-right node loops over its top, not its side", () => {
+    // Same card, handles now on the right (source) and left (target).
+    const { labelX, labelY } = selfLoopHandleArc(
+      { ...topToBottom, sourceX: 300, sourceY: 230, targetX: 100, targetY: 230 },
+      28,
+    );
+    // Half the card's HEIGHT (30) plus the radius, above the centre — no direction prop
+    // was passed, and none exists: the bulge is derived from the handles themselves.
+    expect(labelX).toBe(200);
+    expect(labelY).toBe(230 - 30 - 28);
+  });
+
+  it("scales with loopRadius", () => {
+    const small = selfLoopHandleArc(topToBottom, 28);
+    const large = selfLoopHandleArc(topToBottom, 60);
+    expect(large.labelX - 200).toBeGreaterThan(small.labelX - 200);
+    expect(large.labelX).toBe(200 + 100 + 60);
+  });
+
+  it("never emits NaN — non-finite anchors fall back to 0, bad radii to the default", () => {
+    const { path, labelX, labelY } = selfLoopHandleArc(
+      {
+        sourceX: Number.NaN,
+        sourceY: Number.POSITIVE_INFINITY,
+        targetX: Number.NaN,
+        targetY: Number.NaN,
+        centerX: Number.NaN,
+        centerY: Number.NaN,
+        width: Number.NaN,
+        height: Number.NaN,
+      },
+      -5,
+    );
+    expect(path).not.toMatch(/NaN|Infinity/);
+    expect(Number.isFinite(labelX)).toBe(true);
+    expect(Number.isFinite(labelY)).toBe(true);
+  });
+
+  it("falls back to a downward normal when a handle sits on the node's centre", () => {
+    const degenerate = selfLoopHandleArc(
+      { ...topToBottom, sourceX: 200, sourceY: 230, targetX: 200, targetY: 230 },
+      28,
+    );
+    expect(degenerate.path).not.toMatch(/NaN/);
   });
 });

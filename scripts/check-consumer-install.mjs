@@ -50,12 +50,19 @@ const KEEP = argv.includes("--keep");
 const QUIET = argv.includes("--quiet");
 
 const log = (m) => console.log(m);
+// Hard ceiling on every child (2026-09-07): a synchronous spawn with no
+// `timeout` blocks the event loop and can never be interrupted from JS, so an
+// offline/sandboxed registry connect hung this gate — and its self-test —
+// indefinitely. 10 min is well above the measured ~40 s but finite.
+const CHILD_TIMEOUT_MS = 10 * 60_000;
 const run = (cmd, args, cwd, extraEnv) =>
   execFileSync(cmd, args, {
     cwd,
     stdio: QUIET ? "pipe" : "inherit",
     encoding: "utf8",
     env: { ...process.env, ...extraEnv },
+    timeout: CHILD_TIMEOUT_MS,
+    killSignal: "SIGKILL",
   });
 
 /**
@@ -150,6 +157,8 @@ function installApp(app) {
     cwd: app,
     stdio: [QUIET ? "ignore" : "inherit", "pipe", "pipe"],
     encoding: "utf8",
+    timeout: CHILD_TIMEOUT_MS,
+    killSignal: "SIGKILL",
   };
   try {
     const out = execFileSync("pnpm", args, opts);

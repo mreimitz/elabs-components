@@ -386,6 +386,9 @@ request` — which is why a release now lands through a PR (see
   `*.test.mjs` self-test (`node --test`) that plants a bad fixture and asserts the gate
   fails — wired as `pnpm <x>:check:test` in CI (see `check-charts-reuse`,
   `check-agent-names`, `check-ai-sdk-types-only`, `check-anti-slop`).
+- **Always-on governance byte budget (`pnpm rules:scoping:check`).** Besides the always-on /
+  path-scoped split, `scripts/check-rule-scoping.mjs` sums CLAUDE.md + every cross-cutting rule and
+  fails above 72,000 B in total or 8,000 B for any one rule, printing per-file bytes largest-first; the floor had reached ~183 KB (~120 k tokens per request) and the budget stops `/session-retro` from regrowing it — condense, never raise.
 - **Tailwind `@source` coverage (`pnpm tailwind-sources:check`, #348).** Tailwind v4 does
   not auto-scan workspace packages resolved via `node_modules` — each must be named by an
   explicit `@source` directive in the consuming app's CSS, and a package silently missing
@@ -435,3 +438,45 @@ request` — which is why a release now lands through a PR (see
   whose Tailwind classes live only in stories (which the `@source` glob DOES compile) or
   only in `.ts` files would be silently skipped; true of no package today, but a property
   of today's tree, not of the gate.
+- **The session-cadence Stop hook is ADVISORY (`.claude/hooks/session-cadence-nudge.sh`,
+  #67; changed 2026-09-06).** When a session edited ≥5 distinct product files and never
+  dispatched a reviewer, it prints the review battery to stderr once and exits 0 — it
+  never blocks the stop. The earlier exit-2 contract forced reviewer-subagent dispatches
+  (each a full ~100k-token context) before the agent could stop, a measured driver of
+  subagent cost; detection and the `stop_hook_active` guard are unchanged. Self-tested by
+  `pnpm cadence:check:test`, which also asserts the hook is still registered in
+  `.claude/settings.json` and that its source carries no `exit 2`.
+
+## Running the battery
+
+The whole root battery runs through one parallel, continue-on-failure runner,
+`scripts/run-gates.mjs` (#326). Before it, `gates.yml` listed ~90 `pnpm <gate>` lines in
+grouped `run: |` blocks plus ~107 self-test lines, and a shell block aborts at its first
+non-zero exit — so one red gate hid every gate after it, and clearing _k_ red gates cost
+_k_ CI round trips. The runner discovers the gates from `package.json`, runs them with a
+bounded concurrency, prints one line per gate as it finishes, and reports **every**
+failure (with the tail of its output) before exiting 1. A failing gate no longer hides the
+others.
+
+| Command                | What runs                                                                                                                                                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm gates`           | Every `*:check` script plus `registry:validate` and `ai:types-only`, minus composites (a script that only chains other root scripts, e.g. `agent-docs:check`), minus the slow pair `format:check` / `consumer:check`, minus the release-/hook-path checks the PR battery never ran. |
+| `pnpm gates:selftests` | Every `*:test` script of the shape `node --test scripts/<x>.test.mjs`, as ONE `node:test` run over all files, reported per file; a failed file is re-run alone so its output is shown. `ci-scope:test` keeps its own always-on CI step.                                             |
+| `pnpm gates:all`       | `pnpm gates` plus the slow pair.                                                                                                                                                                                                                                                    |
+| `pnpm check:changed`   | `typecheck` + `lint` + `test` for the workspace packages changed vs `origin/main` only (`turbo --filter=...[origin/main]`).                                                                                                                                                         |
+| `pnpm gates:test`      | The runner's own self-test: discovery from a fixture `package.json`, the `--docs-only` set, and an end-to-end run proving a red gate does not stop the others.                                                                                                                      |
+
+Useful flags: `--list` (names, one per line), `--only <substr[,substr]>`, `--skip <name[,name]>`,
+`--concurrency N` (default `min(8, availableParallelism())`), `--docs-only` (the fast-path set —
+the former "Tokens and themes" and "Component and package contracts" groups, a named constant
+in the runner).
+
+**CI runs the same runner.** `gates.yml` has one `Gates` step (`pnpm gates`, with
+`--docs-only` on a documentation-only change) and one `Gate self-tests` step
+(`pnpm gates:selftests`); typecheck / lint / format / unit tests / build / `consumer:check`
+keep their own steps so their time stays visible. **The release ratchet is not weakened:**
+`scripts/lib/workflow-gates.mjs` expands a `pnpm gates` step into the names the runner
+would run (through the same pure `listGates` the runner uses), so
+`scripts/release-gates-baseline.json` keeps recording individual gates, and a gate deleted
+from `package.json` is reported missing exactly as a line deleted from `gates.yml` was —
+`pnpm release-gates:check:test` plants both.

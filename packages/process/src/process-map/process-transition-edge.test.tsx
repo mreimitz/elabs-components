@@ -74,6 +74,9 @@ vi.mock("@xyflow/react", () => {
       (sourceY + targetY) / 2,
     ],
     useEdges: () => edgesBox.current,
+    // `FlowWeightedEdge` reads the laid-out cards to route a back edge's return leg
+    // clear of them; nothing here is a back edge, so an empty canvas is enough.
+    useNodes: () => [],
     Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
   };
 });

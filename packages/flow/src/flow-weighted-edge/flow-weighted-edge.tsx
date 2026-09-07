@@ -1,14 +1,17 @@
 import { useMemo } from "react";
 import {
+  Position,
   getBezierPath,
   getSmoothStepPath,
   useEdges,
+  useNodes,
   type Edge,
   type EdgeProps,
 } from "@xyflow/react";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { FlowEdgePath } from "../flow-edge-path";
 import { EdgeLabelPill, type EdgeLabelPillProps } from "./edge-label-pill";
+import { backEdgeDetour, type BackEdgeNodeRect } from "./back-edge-geometry";
 import {
   computeEdgeWeightScale,
   DEFAULT_EDGE_WIDTH_RANGE,
@@ -75,10 +78,13 @@ const FALLBACK_STRONG = "#496d89";
 const BACK_EDGE_DASHARRAY = "6 4";
 const BACK_EDGE_OPACITY = 0.7;
 /**
- * Horizontal clearance, in px, between a back edge and the forward edge
- * joining the same two nodes. Applied to `getSmoothStepPath`'s `offset` (how
- * far the path runs straight out of a handle) AND to `centerX` (where its
- * cross-segment sits), so the two never overlay each other.
+ * Clearance, in px, between a back edge and everything it must stay clear OF.
+ *
+ * Two uses. As `getSmoothStepPath`'s `offset` it is how far the path runs straight out of
+ * a handle before it turns, which is what keeps it off the forward edge joining the same
+ * two nodes. As the gap in {@link backEdgeDetour} it is how far past the outermost card
+ * the return leg sits — see that function for why a card-relative placement, rather than
+ * a nudge off the midpoint, is the only one that stays visible.
  */
 const BACK_EDGE_CLEARANCE = 40;
 
@@ -183,6 +189,7 @@ export function FlowWeightedEdge({
   data,
 }: EdgeProps<BrandFlowWeightedEdge>) {
   const edges = useEdges();
+  const nodes = useNodes();
   const widthByEdgeId = useMemo(
     () => computeEdgeWeightScale(edges as unknown as WeightedEdgeLike[]),
     [edges],
@@ -191,6 +198,38 @@ export function FlowWeightedEdge({
   const variant = data?.variant ?? "forward";
   const isBack = variant === "back";
   const pathType = data?.path ?? "bezier";
+
+  // Ranks advance vertically when the handles are on the top/bottom faces. Read from the
+  // TARGET side: `sourcePosition` on a self-connecting or hand-placed edge can disagree,
+  // and it is the incoming face that decides which way the last leg must approach from.
+  const axis =
+    targetPosition === Position.Top || targetPosition === Position.Bottom
+      ? "vertical"
+      : "horizontal";
+  const rects = useMemo<BackEdgeNodeRect[]>(() => {
+    if (!isBack) return [];
+    const out: BackEdgeNodeRect[] = [];
+    for (const node of nodes) {
+      // A child node's `position` is parent-relative, so it is not comparable with the
+      // absolute handle coordinates this edge is placed against. Skipping one only costs
+      // a little clearance; mixing coordinate spaces would move the leg somewhere wrong.
+      if (node.parentId) continue;
+      const width = node.measured?.width ?? node.width;
+      const height = node.measured?.height ?? node.height;
+      if (!width || !height) continue;
+      out.push({ x: node.position.x, y: node.position.y, width, height });
+    }
+    return out;
+  }, [isBack, nodes]);
+  const detour = isBack
+    ? backEdgeDetour(
+        rects,
+        axis,
+        axis === "vertical" ? [sourceY, targetY] : [sourceX, targetX],
+        BACK_EDGE_CLEARANCE,
+      )
+    : null;
+
   const [edgePath, labelX, labelY] = isBack
     ? getSmoothStepPath({
         sourceX,
@@ -200,7 +239,7 @@ export function FlowWeightedEdge({
         targetY,
         targetPosition,
         offset: BACK_EDGE_CLEARANCE,
-        centerX: (sourceX + targetX) / 2 + BACK_EDGE_CLEARANCE,
+        ...(detour === null ? {} : axis === "vertical" ? { centerX: detour } : { centerY: detour }),
       })
     : pathType === "smoothstep"
       ? getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })

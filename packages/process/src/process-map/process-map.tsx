@@ -59,6 +59,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { Filter } from "lucide-react";
+import type { NodeChange } from "@xyflow/react";
 import {
   Button,
   DropdownMenu,
@@ -97,6 +98,7 @@ import {
   type ProcessFilterIntent,
   type ProcessMapEdge,
   type ProcessMapModel,
+  type ProcessMapNode,
   type ProcessMetricSpec,
   type ProcessSelection,
   type ProcessSelectionStates,
@@ -121,6 +123,49 @@ import {
  */
 const NODE_TYPES = { "process-activity": ProcessActivityNode };
 const EDGE_TYPES = { "process-transition": ProcessTransitionEdge };
+
+/**
+ * The zoom the map refuses to open below, however big the process is.
+ *
+ * A discovered log is routinely wider than any pane, and a fit that shows ALL of it shows
+ * none of it: the 24-activity fixture frames at 0.28, where the activity name (14 px on
+ * the card) prints at 3.9 px and the card is a grey smudge. The floor is set from the
+ * card's own type rather than from a graph size: at 0.75 the name renders at 10.5 px and
+ * the secondary line (12 px) at 9 px, which is the smallest either stays a word.
+ *
+ * It is the OPENING zoom only — {@link MIN_ZOOM} still lets the reader pull all the way
+ * back to an overview, and the minimap says where in the process the pane is sitting. A
+ * fit clamped by this floor is anchored on the START of the process, not its middle;
+ * `CanvasShell` does that (see `anchorToStartWhenClamped`).
+ */
+export const PROCESS_MAP_LEGIBLE_ZOOM = 0.75;
+
+/**
+ * How the canvas re-frames itself after a layout.
+ *
+ * `padding` is generous because the edge label pills are portalled OUTSIDE the SVG and so
+ * contribute nothing to React Flow's fitted bounds — a tight fit clips the pills on the
+ * outermost transitions. `maxZoom: 1` stops a two-activity graph from being blown up to
+ * React Flow's default 2× ceiling, which is what the reader was seeing.
+ */
+const FIT_VIEW_OPTIONS = {
+  padding: 0.15,
+  maxZoom: 1,
+  minZoom: PROCESS_MAP_LEGIBLE_ZOOM,
+} as const;
+
+/**
+ * How far out the reader may zoom.
+ *
+ * React Flow's own floor is `0.5`, and `fitView` CLAMPS to it — so a process with more
+ * ranks than the pane is tall could not be framed at all: the fit stopped at 0.5 and left
+ * the last activities below the fold with no way to pull back. Measured on the 11-activity
+ * fixture in a 1200×576 pane, where the honest fit is 0.42. A discovered process routinely
+ * has three or four times that many activities, so the floor has to be a real overview
+ * zoom, not a legibility one — legibility at the far end of the dial is what the minimap
+ * and the table twin are for.
+ */
+const MIN_ZOOM = 0.1;
 
 /** Props for {@link ProcessMap}. `onSelect` shadows the DOM handler, so it is omitted. */
 export interface ProcessMapProps extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> {
@@ -260,10 +305,72 @@ export function ProcessMap({
     [resolved, metric, activeRework, activeSelection, selectionStates],
   );
 
+  // ── Measured node sizes ───────────────────────────────────────────────────
+  // dagre needs to know how big an activity card actually is, and React Flow only ever
+  // writes its measurements onto its OWN internal record — the node objects this
+  // component builds never learn them. Without this, `layoutFlow` fell back to React
+  // Flow's generic 172×40 default for a card that really renders ~176×85, so every rank
+  // was laid out about half a card too close and the edge label pills landed on the nodes
+  // below them. Collecting the dimensions here is what lets the SECOND layout pass use
+  // real sizes.
+  const [nodeSizes, setNodeSizes] = useState<Record<string, { width: number; height: number }>>({});
+  const handleNodesChange = useCallback((changes: NodeChange<ProcessMapNode>[]) => {
+    setNodeSizes((current) => {
+      let next: Record<string, { width: number; height: number }> | null = null;
+      for (const change of changes) {
+        if (change.type !== "dimensions" || !change.dimensions) continue;
+        const previous = current[change.id];
+        if (
+          previous?.width === change.dimensions.width &&
+          previous.height === change.dimensions.height
+        ) {
+          continue;
+        }
+        next ??= { ...current };
+        next[change.id] = { width: change.dimensions.width, height: change.dimensions.height };
+      }
+      return next ?? current;
+    });
+  }, []);
+
+  const layoutNodes = useMemo(() => {
+    const source = firstPass?.nodes ?? EMPTY_NODES;
+    let changed = false;
+    const next = source.map((node) => {
+      const measured = nodeSizes[node.id];
+      if (!measured) return node;
+      changed = true;
+      return { ...node, measured };
+    });
+    return changed ? next : source;
+  }, [firstPass, nodeSizes]);
+
+  /**
+   * The measured ENVELOPE, quantized — the layout cache key's size half.
+   *
+   * Deliberately not the per-node sizes: a metric switch rewrites every subtitle, which
+   * can nudge a card's width by a pixel, and keying on that would re-run dagre for a
+   * metric change — exactly the twitch `useProcessLayout`'s cache exists to prevent (and
+   * what `layoutRuns` asserts against). The envelope, rounded to 8px, moves when the card
+   * ANATOMY changes (a meter appears, a line wraps) and sits still otherwise.
+   */
+  const sizeKey = useMemo(() => {
+    let width = 0;
+    let height = 0;
+    for (const size of Object.values(nodeSizes)) {
+      if (size.width > width) width = size.width;
+      if (size.height > height) height = size.height;
+    }
+    if (width === 0 && height === 0) return "unmeasured";
+    return `${Math.round(width / 8)}x${Math.round(height / 8)}`;
+  }, [nodeSizes]);
+
+  const layoutKey = `${structureKey}::${sizeKey}`;
+
   const layout: UseProcessLayoutResult = useProcessLayout({
-    nodes: firstPass?.nodes ?? EMPTY_NODES,
+    nodes: layoutNodes,
     edges: firstPass?.edges ?? EMPTY_EDGES,
-    structureKey,
+    structureKey: layoutKey,
     direction,
   });
 
@@ -609,6 +716,17 @@ export function ProcessMap({
             edges={model.edges}
             nodeTypes={NODE_TYPES}
             edgeTypes={EDGE_TYPES}
+            // dagre runs in an EFFECT, so the first paint has every node stacked at the
+            // origin and React Flow's own one-shot `fitView` fits that degenerate box —
+            // it clamps at `maxZoom` (2) and never fires again, which is why this canvas
+            // used to open at 2× showing 2 of 11 activities with a perfectly good layout
+            // underneath. Re-fit on the key the layout itself is cached on: a structural
+            // change (or a direction flip) genuinely moves the picture and has to be
+            // re-framed; a metric switch is a cache hit, leaves this key alone, and must
+            // NOT yank the viewport out from under the reader.
+            fitViewKey={`${layoutKey}::${direction}::${layout.layoutRuns}`}
+            fitViewKeyOptions={FIT_VIEW_OPTIONS}
+            minZoom={MIN_ZOOM}
             nodesDraggable={false}
             nodesConnectable={false}
             // One tab stop per arrow, not two. Every edge already renders a focusable,
@@ -644,6 +762,7 @@ export function ProcessMap({
               openMenuFor({ kind: "transition", id: edge.id });
             }}
             onPaneClick={() => applySelection(null)}
+            onNodesChange={handleNodesChange}
           >
             <ZoomControls />
             {showMiniMap ? <FlowMiniMap pannable zoomable /> : null}

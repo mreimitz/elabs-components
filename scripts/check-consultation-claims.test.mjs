@@ -23,6 +23,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { extractEvents, findUnverifiedConsultationClaims } from "./check-consultation-claims.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..");
@@ -259,7 +260,11 @@ test("package.json wires the self-test script", () => {
   );
 });
 
+// gates.yml runs the battery as ONE `pnpm gates` / `pnpm gates:selftests` step
+// (#326), so "wired into gates.yml" means REACHABLE through the runner's
+// discovery, not a literal `pnpm <name>` line: `collectGates` expands the runner
+// from package.json and skips `continue-on-error` jobs.
 test("the self-test is wired into gates.yml's Gate self-tests step", () => {
   const gates = readFileSync(path.join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-  assert.match(gates, /pnpm consultation-claims:check:test/);
+  assert.ok(collectGates(gates).has("consultation-claims:check:test"));
 });

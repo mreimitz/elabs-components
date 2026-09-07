@@ -8,16 +8,21 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
   checkRuleScoping,
+  checkGovernanceBudget,
+  measureAlwaysOnBytes,
+  renderBudgetTable,
   hasPathsFrontmatter,
   claudeMdImports,
   crossCuttingProseNames,
   CROSS_CUTTING,
   PATH_SCOPED,
+  ALWAYS_ON_BUDGET_BYTES,
+  PER_RULE_BUDGET_BYTES,
 } from "./check-rule-scoping.mjs";
 
 const FM = (paths) =>
@@ -208,4 +213,112 @@ test("the REAL CLAUDE.md names every real cross-cutting rule", () => {
   for (const n of CROSS_CUTTING) {
     assert.ok(prose.has(n), `CLAUDE.md's cross-cutting list does not name ${n}`);
   }
+});
+
+// ── (f) the always-on BYTE budget ──────────────────────────────────────────────
+// The always-on floor was measured at ~120 k tokens per request with ~183 KB of
+// always-on governance; the classification rungs above cannot see a rule that merely
+// keeps growing. These lock the budget rung: it counts CLAUDE.md + cross-cutting rules
+// only, in bytes, and fails on the total OR on any one rule.
+
+/** `n` ASCII chars + newline = n+1 bytes. */
+const PAD = (n) => "x".repeat(n) + "\n";
+
+function budgetFixture() {
+  return {
+    crossCutting: CROSS,
+    claudeText: PAD(100), // 101 B
+    rules: [
+      { name: "design-system", text: PLAIN }, // 13 B
+      { name: "theming", text: PLAIN }, // 13 B
+      { name: "chart-components", text: FM(["packages/charts/**"]) }, // path-scoped: NOT counted
+    ],
+  };
+}
+
+test("measureAlwaysOnBytes: CLAUDE.md + cross-cutting only, in BYTES, largest first", () => {
+  const f = budgetFixture();
+  f.rules.find((r) => r.name === "theming").text = "é".repeat(10); // 10 chars, 20 bytes
+  const m = measureAlwaysOnBytes(f);
+  assert.deepEqual(
+    m.files.map((x) => x.label),
+    ["CLAUDE.md", ".claude/rules/theming.md", ".claude/rules/design-system.md"],
+  );
+  assert.equal(m.files[1].bytes, 20, "bytes, not characters");
+  assert.equal(m.files[0].rule, false);
+  assert.ok(!m.files.some((x) => x.label.includes("chart-components")), "scoped rule excluded");
+  assert.equal(m.total, 101 + 20 + 13);
+});
+
+test("PASSES: always-on governance under both budgets", () => {
+  assert.deepEqual(checkGovernanceBudget(budgetFixture()), []);
+});
+
+test("FLAGS: the TOTAL over ALWAYS_ON_BUDGET_BYTES (no single rule over its cap)", () => {
+  const f = budgetFixture();
+  f.claudeText = PAD(300); // 301 B; CLAUDE.md is exempt from the per-rule cap, so only the total trips
+  const findings = checkGovernanceBudget({ ...f, budgets: { total: 200, perRule: 8000 } });
+  assert.equal(findings.length, 1, findings.join(" | "));
+  assert.match(findings[0], /always-on governance/);
+  assert.match(findings[0], /totals 327 B/); // 301 + 13 + 13
+  assert.match(findings[0], /over the 200 B budget by 127 B/);
+  assert.match(findings[0], /never raise the budget/);
+});
+
+test("FLAGS: one cross-cutting rule over PER_RULE_BUDGET_BYTES (total under budget)", () => {
+  const f = budgetFixture();
+  f.rules.find((r) => r.name === "theming").text = PAD(120); // 121 B
+  const findings = checkGovernanceBudget({ ...f, budgets: { total: 72_000, perRule: 100 } });
+  assert.equal(findings.length, 1, findings.join(" | "));
+  assert.match(findings[0], /\.claude\/rules\/theming\.md is 121 B/);
+  assert.match(findings[0], /over the 100 B per-rule cap by 21 B/);
+  assert.match(findings[0], /never raise the cap/);
+  // the table marks the offender, so the human sees WHICH file to condense
+  const table = renderBudgetTable(measureAlwaysOnBytes(f), { total: 72_000, perRule: 100 });
+  assert.ok(
+    table.some((l) => /theming\.md.*over the 100 B per-rule cap/.test(l)),
+    table.join("\n"),
+  );
+  assert.match(table.at(-1), /total \(budget 72,000 B, .* headroom\)/);
+});
+
+test("CLAUDE.md counts toward the total but is exempt from the per-rule cap", () => {
+  const f = budgetFixture();
+  f.claudeText = PAD(500); // 501 B, far over a 100 B per-rule cap
+  assert.deepEqual(checkGovernanceBudget({ ...f, budgets: { total: 72_000, perRule: 100 } }), []);
+  assert.equal(measureAlwaysOnBytes(f).total, 501 + 13 + 13);
+});
+
+test("a cross-cutting rule missing from disk is skipped here (checkRuleScoping owns it)", () => {
+  const f = budgetFixture();
+  f.rules = f.rules.filter((r) => r.name !== "theming");
+  assert.deepEqual(checkGovernanceBudget(f), []);
+  assert.equal(measureAlwaysOnBytes(f).files.length, 2);
+});
+
+test("the shipped budgets are the documented numbers", () => {
+  assert.equal(ALWAYS_ON_BUDGET_BYTES, 72_000);
+  assert.equal(PER_RULE_BUDGET_BYTES, 8_000);
+});
+
+test("the REAL repo is measured: the budget function runs and reports numbers", () => {
+  const root = dirname(dirname(fileURLToPath(import.meta.url)));
+  const claudeText = readFileSync(join(root, "CLAUDE.md"), "utf8");
+  const rules = CROSS_CUTTING.filter((n) =>
+    existsSync(join(root, ".claude", "rules", `${n}.md`)),
+  ).map((n) => ({
+    name: n,
+    text: readFileSync(join(root, ".claude", "rules", `${n}.md`), "utf8"),
+  }));
+  const m = measureAlwaysOnBytes({ rules, claudeText });
+  assert.ok(Number.isInteger(m.total) && m.total > 0, "a total was measured");
+  assert.equal(m.files.length, rules.length + 1, "CLAUDE.md + every cross-cutting rule on disk");
+  for (const f of m.files) assert.ok(Number.isInteger(f.bytes) && f.bytes >= 0, f.label);
+  assert.equal(m.files[0].bytes, Math.max(...m.files.map((f) => f.bytes)), "sorted largest first");
+  const findings = checkGovernanceBudget({ rules, claudeText });
+  assert.ok(Array.isArray(findings));
+  for (const f of findings) assert.match(f, /\d/, "a finding always carries the measured bytes");
+  // Whether the real set is UNDER budget is the gate's own verdict (`pnpm rules:scoping:check`,
+  // blocking in CI) — deliberately not re-asserted here, so a rule mid-condensation reddens the
+  // gate that names the file, not a test that can only say "something is too big".
 });

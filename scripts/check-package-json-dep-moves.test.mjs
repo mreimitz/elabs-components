@@ -24,6 +24,7 @@ import {
   detectDependencyFieldMoves,
   resolveStagedExitCode,
 } from "./check-package-json-dep-moves.mjs";
+import { collectGates } from "./lib/workflow-gates.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..");
@@ -255,7 +256,9 @@ test("package.json wires both the plain and self-test scripts", () => {
   );
 });
 
+// gates.yml runs the self-tests as ONE `pnpm gates:selftests` step (#326), so
+// "wired" means reachable through the runner's discovery, not a literal line.
 test("the self-test is wired into gates.yml's Gate self-tests step", () => {
   const gates = readFileSync(path.join(REPO_ROOT, ".github", "workflows", "gates.yml"), "utf8");
-  assert.match(gates, /pnpm dep-field-move:check:test/);
+  assert.ok(collectGates(gates).has("dep-field-move:check:test"));
 });

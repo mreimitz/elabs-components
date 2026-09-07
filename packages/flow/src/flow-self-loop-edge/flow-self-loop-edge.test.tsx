@@ -42,7 +42,7 @@ vi.mock("@xyflow/react", () => {
 
 import type { EdgeProps } from "@xyflow/react";
 import { FlowSelfLoopEdge, type BrandFlowSelfLoopEdge } from "./flow-self-loop-edge";
-import { selfLoopPath } from "./self-loop-geometry";
+import { selfLoopHandleArc, selfLoopPath } from "./self-loop-geometry";
 
 afterEach(() => {
   cleanup();
@@ -83,12 +83,30 @@ function makeEdgeProps(
 
 const edgePath = () => screen.getByTestId("base-edge").querySelector("path")!;
 
+/**
+ * The arc the fixture should produce: the 200×60 card at (100, 200), entered and left at
+ * the two handle points `makeEdgeProps` supplies.
+ */
+const fixtureArc = (loopRadius = 28) =>
+  selfLoopHandleArc(
+    {
+      sourceX: 200,
+      sourceY: 260,
+      targetX: 200,
+      targetY: 200,
+      centerX: 200,
+      centerY: 230,
+      width: 200,
+      height: 60,
+    },
+    loopRadius,
+  );
+
 describe("FlowSelfLoopEdge", () => {
-  it("draws the arc from the node's own measured box, not from the handle points", () => {
+  it("starts and ends ON the two handle points, clearing the measured box between them", () => {
     internalNodeBox.current = measuredNode();
     render(<FlowSelfLoopEdge {...makeEdgeProps()} />);
-    // centre 100 + 200/2 = 200, top edge 200.
-    expect(edgePath()).toHaveAttribute("d", selfLoopPath({ centerX: 200, topY: 200 }, 28).path);
+    expect(edgePath()).toHaveAttribute("d", fixtureArc().path);
   });
 
   it("falls back to the handle midpoint before the node is measured — never NaN", () => {
@@ -102,7 +120,7 @@ describe("FlowSelfLoopEdge", () => {
   it("honours data.loopRadius", () => {
     internalNodeBox.current = measuredNode();
     render(<FlowSelfLoopEdge {...makeEdgeProps({ data: { loopRadius: 60 } })} />);
-    expect(edgePath()).toHaveAttribute("d", selfLoopPath({ centerX: 200, topY: 200 }, 60).path);
+    expect(edgePath()).toHaveAttribute("d", fixtureArc(60).path);
   });
 
   it("carries its meaning as real text for assistive tech, not only a data attribute", () => {
@@ -133,9 +151,10 @@ describe("FlowSelfLoopEdge", () => {
     internalNodeBox.current = measuredNode();
     render(<FlowSelfLoopEdge {...makeEdgeProps()} />);
     const path = edgePath();
-    // A cubic that returns to its own node: it ends left of where it started,
-    // and rises above the node's top edge. A forward edge does neither.
-    expect(path.getAttribute("d")).toMatch(/^M 228,200 C .* 172,200$/);
+    // A cubic that returns to its own node: it leaves the bottom handle (200, 260) and
+    // re-enters at the top one (200, 200) — the two ends bracket the card rather than
+    // spanning a gap, which is what no forward edge ever does.
+    expect(path.getAttribute("d")).toMatch(/^M 200,260 C .* 200,200$/);
     expect(path.style.stroke).toBe("var(--flow-edge)");
     expect(path.style.fill).toBe("none");
   });
@@ -168,8 +187,10 @@ describe("FlowSelfLoopEdge", () => {
       <FlowSelfLoopEdge {...makeEdgeProps({ data: { label: "12×", secondaryLabel: "2.1d" } })} />,
     );
     const pill = screen.getByRole("button", { name: "12× · 2.1d" });
-    // Apex of the arc: centreX 200, topY 200 − 1.8 × 28.
-    const { labelX, labelY } = selfLoopPath({ centerX: 200, topY: 200 }, 28);
+    // The arc's widest point: 328 is the card's right edge (300) plus the 28px loop
+    // radius, and 230 is the card's own vertical centre — i.e. beside the node, not on it.
+    const { labelX, labelY } = fixtureArc();
+    expect([labelX, labelY]).toEqual([328, 230]);
     expect(pill.parentElement!.style.transform).toContain(`translate(${labelX}px, ${labelY}px)`);
   });
 });

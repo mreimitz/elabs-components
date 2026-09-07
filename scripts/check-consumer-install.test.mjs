@@ -312,9 +312,39 @@ function writeConsumerAppFixture({ peerPackageName, declaredPeerRange, pinnedPee
   return { work, app };
 }
 
+// ── Network preflight + hard child timeout (2026-09-07). These two tests are the
+// only ones in the whole self-test battery that reach the npm registry, and a
+// synchronous `execFileSync` with no `timeout` can never be interrupted by
+// node:test's own timeout (the event loop is blocked). In a sandboxed or offline
+// shell the registry connect hangs forever — four orphaned
+// `pnpm install --ignore-workspace` children from earlier sessions were found
+// still running 1.5 days later, and `pnpm gates:selftests` hung on this file.
+// So: (a) every child spawn carries a hard timeout + SIGKILL, and (b) when the
+// registry cannot be reached within 20 s the two tests SKIP with a reason
+// instead of hanging — CI (networked) still runs them for real.
+const PEER_PIN_UNDER_TEST = "@xyflow/react@12.0.0";
+const INSTALL_TIMEOUT_MS = 90_000;
+const PREFLIGHT_TIMEOUT_MS = 20_000;
+
+function registryUnreachableReason() {
+  if (process.env.BRAND_UI_OFFLINE === "1") return "BRAND_UI_OFFLINE=1 set";
+  try {
+    execFileSync("pnpm", ["view", PEER_PIN_UNDER_TEST, "version"], {
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: PREFLIGHT_TIMEOUT_MS,
+      killSignal: "SIGKILL",
+      encoding: "utf8",
+    });
+    return false;
+  } catch (err) {
+    return `npm registry unreachable from this shell (${err.code ?? err.signal ?? "error"}); CI runs these`;
+  }
+}
+const REGISTRY_SKIP = registryUnreachableReason();
+
 test(
   "FAILS: pnpm install when an independently-pinned peer does not satisfy the declared peer range (#30-shaped regression)",
-  { timeout: 120_000 },
+  { timeout: 120_000, skip: REGISTRY_SKIP },
   () => {
     const { work, app } = writeConsumerAppFixture({
       peerPackageName: "@xyflow/react",
@@ -327,8 +357,10 @@ test(
       try {
         execFileSync("pnpm", ["install", "--ignore-workspace", "--no-frozen-lockfile"], {
           cwd: app,
-          stdio: "pipe",
+          stdio: ["ignore", "pipe", "pipe"],
           encoding: "utf8",
+          timeout: INSTALL_TIMEOUT_MS,
+          killSignal: "SIGKILL",
         });
       } catch (err) {
         failed = true;
@@ -344,7 +376,7 @@ test(
 
 test(
   "PASSES: pnpm install when the pinned peer satisfies the declared range",
-  { timeout: 120_000 },
+  { timeout: 120_000, skip: REGISTRY_SKIP },
   () => {
     const { work, app } = writeConsumerAppFixture({
       peerPackageName: "@xyflow/react",
@@ -354,7 +386,9 @@ test(
     try {
       execFileSync("pnpm", ["install", "--ignore-workspace", "--no-frozen-lockfile"], {
         cwd: app,
-        stdio: "pipe",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: INSTALL_TIMEOUT_MS,
+        killSignal: "SIGKILL",
       });
     } finally {
       rmSync(work, { recursive: true, force: true });

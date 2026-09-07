@@ -42,6 +42,43 @@ import type { XYPosition } from "@xyflow/react";
 import { layoutFlow, type FlowLayoutDirection } from "@elabs-ai/components-flow";
 import type { ProcessMapEdge, ProcessMapNode } from "./map-model";
 
+/**
+ * Within-rank spacing, wider than `layoutFlow`'s generic 48.
+ *
+ * Every transition on this canvas carries a label pill, and the pill is portalled OUTSIDE
+ * the SVG — it contributes nothing to dagre's routing and nothing to React Flow's fitted
+ * bounds, so a gap that reads fine for bare arrows is exactly one pill too narrow, and
+ * nothing in the layout maths notices. At 48 the shipped eleven-activity fixture printed
+ * three pills on top of activity cards in each direction; at 72, none.
+ */
+const NODE_SPACING = 72;
+
+/**
+ * Between-rank spacing, per direction — and the asymmetry is the point.
+ *
+ * The rank gap is the one a label pill sits IN: a transition's pill is anchored at its
+ * path's midpoint, which falls between two ranks. A pill is a wide, short shape (a number,
+ * sometimes a number and a duration), so the gap it needs is not a single number — it is
+ * the pill's extent ALONG the rank axis, and that axis turns with the layout:
+ *
+ * - **Top-to-bottom** ranks stack vertically, so the gap only has to clear the pill's
+ *   HEIGHT — one line of `text-meta`. `layoutFlow`'s default 72 already does.
+ * - **Left-to-right** ranks run horizontally, so the same gap has to clear the pill's
+ *   WIDTH, several times larger. Measured on the same fixture: at 72 and at 96 two pills
+ *   still printed over activity cards; at 120 none did.
+ *
+ * The two reversed directions take the number for their own axis: `BT` is vertical like
+ * `TB`, `RL` horizontal like `LR`. Neither is reachable from `ProcessMap`'s own
+ * `direction` prop today, and both are spelled out anyway rather than defaulted, so a
+ * future map that offers them inherits the reasoning instead of a silent fallback.
+ *
+ * Using the left-to-right number in both directions would be the tidier-looking constant
+ * and the wrong call — a top-to-bottom map is height-constrained, so it would spend 22% of
+ * the opening zoom (0.430 → 0.334 on the same fixture) buying clearance for an axis that
+ * never needed it.
+ */
+const RANK_SPACING: Record<FlowLayoutDirection, number> = { TB: 72, BT: 72, LR: 120, RL: 120 };
+
 /** How long a RE-layout waits for the structure to settle. */
 export const DEFAULT_LAYOUT_DEBOUNCE_MS = 80;
 
@@ -56,10 +93,24 @@ export const DEFAULT_LAYOUT_DEBOUNCE_MS = 80;
  * moment the class string passes through `cn()`. Nodes are `div`s and edges are `g`s, so
  * the attribute form is both simpler and correctly scoped. Same reasoning as the ancestor
  * selector in `FlowNode`'s focus indicator.
+ *
+ * ## The `:not([data-handlepos])` is load-bearing
+ *
+ * React Flow renders a `<Handle>` as a `<div>` carrying BOTH `data-id` and
+ * `data-handlepos`, so a bare `div[data-id]` also matched every connector dot — and a dot
+ * changes sides when the layout direction flips (bottom/top becomes right/left). The dot
+ * then ANIMATED to its new side, React Flow measured `handleBounds` while it was in
+ * flight, and never measured again: the stored bounds said `x: 164` where the DOM had
+ * settled at `172`, and every edge on the map terminated in mid-air. Measured at 69 px of
+ * drift left-to-right, 24 px top-to-bottom.
+ *
+ * A handle is not a node position; it has no delta to animate, and it must be measurable
+ * the instant it is placed. Excluding it is the fix, not a workaround.
  */
+const MOTION_TARGET = "div[data-id]:not([data-handlepos])";
 export const PROCESS_MAP_NODE_MOTION_CLASS =
-  "[&_div[data-id]]:transition-transform [&_div[data-id]]:duration-base " +
-  "[&_div[data-id]]:ease-standard motion-reduce:[&_div[data-id]]:transition-none";
+  `[&_${MOTION_TARGET}]:transition-transform [&_${MOTION_TARGET}]:duration-base ` +
+  `[&_${MOTION_TARGET}]:ease-standard motion-reduce:[&_${MOTION_TARGET}]:transition-none`;
 
 /** One cached dagre result: where every node sits, plus the structure dagre reported. */
 export interface ProcessLayoutSnapshot {
@@ -173,6 +224,8 @@ export function useProcessLayout({
       const started = performance.now();
       const result = layoutFlow<ProcessMapNode, ProcessMapEdge>(currentNodes, currentEdges, {
         direction,
+        nodeSpacing: NODE_SPACING,
+        rankSpacing: RANK_SPACING[direction],
       });
       const snapshot = toSnapshot(result, performance.now() - started);
       runs.current += 1;

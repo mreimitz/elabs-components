@@ -52,7 +52,12 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { VERDICT_GATE, checkPublishRequiresVerdict, collectGates } from "./lib/workflow-gates.mjs";
+import {
+  VERDICT_GATE,
+  checkPublishRequiresVerdict,
+  collectGates,
+  runnerExpansionFor,
+} from "./lib/workflow-gates.mjs";
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -64,8 +69,8 @@ export const BASELINE_REL = "scripts/release-gates-baseline.json";
  * `readWorkflow(relPath)` resolves a local reusable workflow's text.
  * Pure — exported for the self-test.
  */
-export function ciGateSteps({ ciYml, readWorkflow = () => null }) {
-  return [...collectGates(ciYml, { readWorkflow })].sort();
+export function ciGateSteps({ ciYml, readWorkflow = () => null, expand }) {
+  return [...collectGates(ciYml, { readWorkflow, expand })].sort();
 }
 
 /**
@@ -147,6 +152,10 @@ function main(argv = []) {
       const p = join(root, rel);
       return existsSync(p) ? readFileSync(p, "utf8") : null;
     },
+    // A `pnpm gates` step expands to the gates the runner discovers from THIS
+    // root's package.json (#326) — so a gate deleted from package.json is a gate
+    // this ratchet reports missing, exactly as a line deleted from gates.yml was.
+    expand: runnerExpansionFor(root),
   });
 
   if (ciGates.length === 0) {
