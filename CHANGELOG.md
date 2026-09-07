@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- `@elabs-ai/components-charts`: `--chart-foreground-muted` (the ink `Marginalia`'s note and
+  the chart source-row caption render sentence-length prose in) is now gated at the 4.5:1 AA
+  text bar rather than the 3:1 graphical-mark bar its furniture uses, closing a latent
+  regression path where a future retune could pass the looser gate while silently dropping
+  prose below AA. `HaloText`'s docblock now states which rung an overriding `fill` must
+  clear (#183).
 - `@elabs-ai/components-process`: the process map's node-slide animation works again. The
   class that carries it was assembled by interpolating a constant, and Tailwind extracts
   classes from source text without evaluating JavaScript, so no CSS was emitted and nodes

@@ -46,6 +46,18 @@ export interface HaloTextProps extends SVGProps<SVGTextElement> {
  * - DO NOT use it as a substitute for contrast. The halo separates text from
  *   BUSYNESS, not from a low-contrast ground — the fill still has to clear 4.5:1
  *   against the card, which is why it defaults to `--chart-foreground`.
+ *
+ * ## Which rung an overriding `fill` must clear
+ *
+ * `fill` accepts any override with no enforcement, so the choice is on the
+ * caller: pick a token gated at the AA **text** bar (≥4.5:1 against
+ * `--chart-background`), never one gated only at the 1.4.11 **mark** bar
+ * (≥3:1) — sentence-length prose (a `Marginalia` note, a caption) needs the
+ * text rung even if the token's name says "muted" or "foreground". Both
+ * `--chart-foreground` and `--chart-foreground-muted` are gated at ≥4.5:1
+ * (`packages/tokens/src/charts-contrast.test.ts`); `--chart-1..12` and other
+ * series/mark tokens are not — see the "Which status rung a graphical MARK
+ * reaches for" note in `.claude/rules/styling-and-tokens.md` (#183).
  */
 export const HaloText = forwardRef<SVGTextElement, HaloTextProps>(function HaloText(
   { halo = "var(--chart-background)", haloWidth = DEFAULT_HALO_WIDTH, fill, ...props },
