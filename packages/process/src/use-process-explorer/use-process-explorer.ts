@@ -36,10 +36,12 @@
  *   statistics" property, now paired with "intents never change the node set either").
  * - `variants` stays sourced from the FILTERED log alone (unlike `graph`, it narrows rather
  *   than ghosts — a variant list has no per-row "excluded but still there" concept to draw).
- * - `kpis`/`rework` — derived from `filteredLog` directly (case count, event count,
- *   `durationStats` over each case's own throughput time, `detectRework`), NOT from the
- *   abstracted/reconciled `graph` — abstraction and filtering both change what is DRAWN, never
- *   what the KPI strip reports for the cases actually in scope.
+ * - `kpis`/`rework` — derived from `filteredLog` directly (case count, event count, variant
+ *   count, `durationStats` over each case's own throughput time, `detectRework`), NOT from the
+ *   abstracted/reconciled `graph` and NOT from either `useLogDiscovery` instance (#347) — all
+ *   five figures are synchronous derivations of `filteredLog`, so they always agree with one
+ *   another and never lag behind a still-in-flight discovery. Abstraction and filtering both
+ *   change what is DRAWN, never what the KPI strip reports for the cases actually in scope.
  *
  * ## Race safety
  *
@@ -231,6 +233,19 @@ interface DiscoveryState {
  * the same render, for a log at or under `workerThreshold`; only once the worker request
  * resolves, above it — so a caller that keeps reusing the sibling discovery while
  * `!settled` never shows this instance's empty placeholder as if it were a settled answer.
+ *
+ * `settled` means settled **for the log this instance is currently targeting**, never "has
+ * ever produced a result" (#347). The async result is stored alongside the exact log it was
+ * computed for; the moment `targetLog` moves on — to a different log OR to `null` (skip) —
+ * a stored result for the log left behind stops counting as `settled` even though the state
+ * update that produced it already landed. And `requestIdRef` is bumped on EVERY effect run,
+ * skip included: a request that was in flight when this instance transitioned into skip is
+ * thereby superseded on the spot, so its response — however late it lands — can never be
+ * stored. Without both halves, a filter cleared while its worker request is still in flight
+ * can leave that filter's stale, ghosted result sitting in `asyncState` where a later,
+ * unrelated filter's own still-unsettled round-trip would read it back out as if it were a
+ * real (if outdated) answer for the WRONG log — see `use-process-explorer.test.ts`'s
+ * "settled means settled for the CURRENT target" lock.
  */
 function useLogDiscovery(
   targetLog: EventLog | null,
@@ -246,11 +261,22 @@ function useLogDiscovery(
     [targetLog, useWorkerPath],
   );
 
-  const [asyncResult, setAsyncResult] = useState<DiscoveryResult | null>(null);
+  // Tied to the exact `EventLog` it was computed for (#347) — never read back for a
+  // DIFFERENT `targetLog`, whether that is a new log or `null` (skip). Reference equality
+  // is enough: `targetLog` only ever changes when the caller hands this instance a new
+  // memoized reference (a fresh `filterLog(...)` result, or `log` itself).
+  const [asyncState, setAsyncState] = useState<{ log: EventLog; result: DiscoveryResult } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
+    // Bumped on EVERY run, skip included (#347): a request already in flight when this
+    // instance transitions into skip (or moves on to a different `targetLog`) is thereby
+    // superseded on the spot, so its response — however late it lands — fails the
+    // `requestIdRef.current !== requestId` check below and is never stored.
+    const requestId = (requestIdRef.current += 1);
     if (targetLog === null || !useWorkerPath) {
       // Skipped, or superseded by (or never needed) the async path — never leave a stale
       // `true` behind from a request that crossed the threshold before this one didn't,
@@ -258,13 +284,12 @@ function useLogDiscovery(
       setLoading(false);
       return;
     }
-    const requestId = (requestIdRef.current += 1);
     setLoading(true);
     const handle = getHandle();
     Promise.all([handle.discover(targetLog), handle.variants(targetLog)])
       .then(([graph, variants]) => {
         if (requestIdRef.current !== requestId) return; // a later request already answered
-        setAsyncResult({ graph, variants });
+        setAsyncState({ log: targetLog, result: { graph, variants } });
         setLoading(false);
       })
       .catch(() => {
@@ -273,12 +298,18 @@ function useLogDiscovery(
         // `createProcessWorker` already degrades internally; this catch is the belt for
         // an error the handle itself could not absorb (e.g. a `variants` call after a
         // `terminate()` this hook did not initiate).
-        setAsyncResult(discoverInline(targetLog));
+        setAsyncState({ log: targetLog, result: discoverInline(targetLog) });
         setLoading(false);
       });
     // `getHandle` is intentionally excluded — it is a stable ref-backed accessor, not
     // reactive state; including it would re-run this effect on every render.
   }, [targetLog, useWorkerPath]);
+
+  // A result stored for a log this instance is no longer targeting reads as absent, not as
+  // a stale answer (#347) — this is what makes `settled` mean "settled for the CURRENT
+  // target" rather than "has ever produced a result".
+  const asyncResult =
+    asyncState !== null && asyncState.log === targetLog ? asyncState.result : null;
 
   return {
     result: syncResult ?? asyncResult ?? { graph: EMPTY_GRAPH, variants: [] },
@@ -435,17 +466,21 @@ export function useProcessExplorer(
 
   const rework = useMemo(() => detectRework(filteredLog), [filteredLog]);
 
+  // `variants` used to read `filteredDiscovery.result.variants.length` — the substituted,
+  // possibly-still-settling discovery — so it could disagree with `cases`/`events` for the
+  // whole window a filtered discovery was in flight (#347). It is now, like the other four
+  // figures, a synchronous derivation of `filteredLog` alone: all three KPIs always agree.
   const kpis = useMemo(() => {
     const normalized = asNormalizedLog(filteredLog);
     const medianThroughput = durationStats(normalized.cases.map((kase) => kase.duration)).median;
     return {
       cases: normalized.totals.cases,
       events: normalized.totals.events,
-      variants: filteredDiscovery.result.variants.length,
+      variants: extractVariants(filteredLog).length,
       medianThroughput,
       reworkRate: rework.caseReworkRate,
     };
-  }, [filteredLog, filteredDiscovery.result.variants, rework]);
+  }, [filteredLog, rework]);
 
   return {
     graph,
