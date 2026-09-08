@@ -503,6 +503,10 @@ export const Selection: Story = {
     const excludedCountBeforeFilter = canvasElement.querySelectorAll(
       '[data-selection="excluded"]',
     ).length;
+    // #375: the live region's text is captured BEFORE the click too, so the assertion
+    // below proves the SAME click that re-inks the canvas also moves the announcement —
+    // not merely that some non-empty sentence happens to be present at rest.
+    const statusBeforeFilter = canvasElement.querySelector('[role="status"]')!.textContent;
     await userEvent.keyboard("f");
     const filterMenu = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[role="menu"]');
@@ -519,6 +523,14 @@ export const Selection: Story = {
     expect(canvasElement.querySelectorAll('[data-slot="process-activity-node"]').length).toBe(
       totalNodesBeforeFilter,
     );
+
+    // ── The live region announces what the click just did (#375) ────────────────────
+    // Filtering re-inks the canvas, but nothing narrated it outside the DOM — this is
+    // the exact gap #375 closes: the SAME real filter click above must also move the
+    // one `role="status"` region's text off its pre-click content.
+    const statusAfterFilter = canvasElement.querySelector('[role="status"]')!.textContent;
+    expect(statusAfterFilter).not.toBe(statusBeforeFilter);
+    expect(statusAfterFilter).not.toMatch(/^0 of \d+ activities? excluded/);
   },
 };
 
@@ -565,6 +577,48 @@ export const TableView: Story = {
     const canvas = within(canvasElement);
     const activities = await canvas.findByRole("table", { name: /Activities/ });
     await expect(within(activities).getAllByRole("row").length).toBeGreaterThan(1);
+  },
+};
+
+/**
+ * The accessible twin WITH an active selection AND an active filter exclusion (#373) — the
+ * cell of the story matrix that was missing before this fix. No shipped story combined
+ * `tableView` with a real `selection`/`selectionStates`, so the twin's state gap never
+ * reached the blocking interaction + axe job or autodocs. Locks that a selected row and an
+ * excluded row are each named for their real, perceivable state.
+ */
+export const TableViewSelection: Story = {
+  args: {
+    graph,
+    metric: { node: "absolute_case", edge: "absolute", secondary: "median" },
+    tableView: true,
+    rework,
+    selection: { kind: "activity", id: graph.activities[0]!.id },
+    selectionStates: {
+      activities: { [graph.activities[graph.activities.length - 1]!.id]: "excluded" },
+    },
+  },
+  decorators: [
+    (Story) => (
+      <div className="h-[36rem] w-full overflow-auto bg-background p-6">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const activities = await canvas.findByRole("table", { name: /Activities/ });
+    const selectedRow = within(activities).getByRole("row", {
+      name: new RegExp(graph.activities[0]!.id),
+    });
+    const excludedRow = within(activities).getByRole("row", {
+      name: new RegExp(graph.activities[graph.activities.length - 1]!.id),
+    });
+    await expect(selectedRow).toHaveAccessibleName(/Selected/);
+    await expect(excludedRow).toHaveAccessibleName(/Excluded/);
+    // The two rows' accessible names actually differ — not merely their `data-*`
+    // attributes, which the pre-fix markup already carried correctly.
+    await expect(selectedRow).not.toHaveAccessibleName(excludedRow.textContent ?? "");
   },
 };
 
