@@ -425,3 +425,69 @@ describe("useProcessExplorer — the first filter on a worker-path log (RM-052 r
     expect(result.current.excludedCounts.activities).toBeGreaterThan(0);
   });
 });
+
+describe("useProcessExplorer — settled means settled for the CURRENT target, not 'ever answered' (#347)", () => {
+  it("never surfaces filter A's stale ghosting during filter B's round-trip, even once A's late response lands", async () => {
+    const worker = new ManualWorker();
+    const { result } = renderHook(() =>
+      useProcessExplorer(orderToCash, {
+        workerThreshold: 0,
+        worker: { createWorker: () => worker },
+      }),
+    );
+    // Settle the mount's own full-log discovery first, isolating the race below.
+    worker.resolvePending();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const fullTotals = result.current.graph.totals;
+
+    // Step 1: apply filter A — its worker request is now queued, unresolved.
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    expect(result.current.loading).toBe(true);
+
+    // Step 2: clear filter A BEFORE its answer arrives — `filteredLog` is back to `log`
+    // itself, so this instance transitions into skip.
+    act(() => result.current.clearIntent(0));
+    expect(result.current.intents).toEqual([]);
+    expect(result.current.loading).toBe(false);
+
+    // Step 3: A's now-stale response lands anyway, while the instance sits skipped. The
+    // fix must supersede it on the skip transition (never store it); before the fix, it
+    // landed straight into `asyncState` because skip never bumped `requestIdRef`. Flush
+    // past every microtask hop between `resolvePending` and the state update it may cause
+    // (two chained async functions plus `Promise.all`) with a real macrotask tick, so the
+    // next step observes whatever A's response actually did, not a not-yet-landed promise.
+    await act(async () => {
+      worker.resolvePending();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // Skipped means `filteredLog === log` again — the graph must read exactly like the
+    // never-filtered full discovery, not like A's ghosted one.
+    expect(result.current.graph.totals).toEqual(fullTotals);
+    expect(result.current.excludedCounts).toEqual({ activities: 0, paths: 0 });
+
+    // Step 4: apply a DIFFERENT filter, B — its own worker request is now in flight.
+    act(() => result.current.applyIntent({ kind: "with", activity: "Ship Order" }));
+    expect(result.current.loading).toBe(true);
+
+    // The real race: while B is still unsettled, nothing here may show A's shape. Before
+    // the fix, A's stale result (wrongly stored in step 3) was still sitting in state and
+    // read back out as if it were a settled (if outdated) answer for B's round-trip —
+    // `settled` read `true` from A's leftover result, never re-checked against B's target.
+    expect(result.current.graph.totals).toEqual(fullTotals);
+    expect(result.current.excludedCounts).toEqual({ activities: 0, paths: 0 });
+    // The three KPIs must also agree with each other throughout — `variants` is a
+    // synchronous derivation of `filteredLog`, so it can never lag `cases`/`events` into
+    // reporting A's (or B's not-yet-settled) shape.
+    expect(result.current.kpis.variants).toBe(extractVariants(result.current.filteredLog).length);
+
+    // Step 5: B settles — its real filter effect becomes visible, and it must be B's
+    // shape, not A's (both filters exclude a disjoint, non-empty set of activities here).
+    worker.resolvePending();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.excludedCounts.activities).toBeGreaterThan(0);
+    // "Ship Order" is what B itself filters on — it must SURVIVE under B, even though it
+    // was one of the five activities A's filter excluded (a real A-vs-B shape check).
+    expect(result.current.selectionStates.activities?.["Ship Order"]).toBeUndefined();
+    expect(result.current.kpis.variants).toBe(extractVariants(result.current.filteredLog).length);
+  });
+});
