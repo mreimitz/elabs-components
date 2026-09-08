@@ -31,7 +31,7 @@ Tailwind v4 via `@theme inline`.
 - Reference themes: **light** (the default) and **dark**. A third theme,
   `blueprint` (cyanotype paper, white ink, full reprographic texture), was
   shipped and later fully removed — see `CHANGELOG.md` "The blueprint theme
-  and its drawing package are gone" (`v4.0.0`).
+  and its drawing package are gone", the 4.0.0 release.
 
 ## Consequences
 

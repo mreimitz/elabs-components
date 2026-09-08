@@ -417,7 +417,7 @@ assumed.
   needs no change. The `blueprint` theme, at the time of this ADR paused and
   excluded from `MUST_DIFFER`/`ROLE_PAIRS` evaluation as monochrome-by-contract,
   was itself fully removed six days later (`CHANGELOG.md` "The blueprint theme
-  and its drawing package are gone", `v4.0.0`) — no value was ever proposed for
+  and its drawing package are gone", the 4.0.0 release) — no value was ever proposed for
   it here or anywhere in issue #427, and the question is now moot.
 - **A consumer with a local `--ring` override keeps working**, but the
   `CHANGELOG.md` entry for the companion change tells them the patch can be

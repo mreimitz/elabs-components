@@ -2,6 +2,59 @@
 
 ## Unreleased
 
+## v4.1.0 — 2026-09-08
+
+### Added: two new packages ship to the registry for the first time
+
+- **`@elabs-ai/components-terminal`** — terminal surfaces for shell and agent output, and
+  coding-agent CLI look-alikes: `Terminal`, `TerminalSurface`, `TerminalConsole`,
+  `InteractiveTerminal`, plus the transcript vocabulary (`TerminalTranscriptRow`,
+  `TerminalToolCall`, `TerminalDiffHunk`, `TerminalTodoList`, `TerminalPermission`,
+  `TerminalStatusBar`, `TerminalBanner`, `TerminalComposer`, `TerminalSlashMenu`,
+  `TerminalOverlay`, `TerminalWorking`, `TerminalEventLine`, `TerminalRow`). A layer-2 leaf:
+  `@elabs-ai/components-ai` must never import it (#129). Peers: `@elabs-ai/components-tokens`,
+  `@elabs-ai/components-ui`, `@xterm/xterm`, `@xterm/addon-fit`, `react`, `react-dom`.
+  **This package is not purely new: `Terminal` and `InteractiveTerminal` MOVED here out of
+  `@elabs-ai/components-ai`, which no longer exports them.** See the BREAKING entry below.
+- **`@elabs-ai/components-process`** — process mining and event-log analysis, the one **layer-3**
+  package (`docs/ADR/0034-process-package-third-layer.md`): it composes `-flow`, `-charts`, `-data` and `-ui`,
+  and nothing depends on it. Ships `ProcessMap`, `ProcessKpiStrip`, `AbstractionControls` and
+  `useProcessExplorer`, with two extra entry points — `@elabs-ai/components-process/core`
+  (the engine, no React Flow) and `@elabs-ai/components-process/test` (fixtures and helpers).
+  **This one is purely additive**: nothing moved into it and no existing package's surface
+  changed because it exists.
+
+### ⚠️ BREAKING (`@elabs-ai/components-ai`): the terminal surfaces moved to `@elabs-ai/components-terminal` (#116, #129)
+
+- `@elabs-ai/components-ai` exported the terminal family through v4.0.0 and **no longer does**.
+  There is **no re-export and no compat shim**: the import path changes. Affected names —
+  `Terminal`, `TerminalProps`, `TerminalHeader`, `TerminalHeaderProps`, `TerminalTitle`,
+  `TerminalTitleProps`, `TerminalStatus`, `TerminalStatusProps`, `TerminalActions`,
+  `TerminalActionsProps`, `TerminalCopyButton`, `TerminalCopyButtonProps`,
+  `TerminalClearButton`, `TerminalClearButtonProps`, `TerminalContent`, `TerminalContentProps`,
+  `InteractiveTerminal`, `InteractiveTerminalProps`, `InteractiveTerminalHandle` and
+  `buildInteractiveTerminalTheme`.
+
+  ```diff
+  - import { Terminal, InteractiveTerminal } from "@elabs-ai/components-ai";
+  + import { Terminal, InteractiveTerminal } from "@elabs-ai/components-terminal";
+  ```
+
+  Add `@elabs-ai/components-terminal` as a dependency; the `@xterm/xterm` and
+  `@xterm/addon-fit` optional peers move with it, so a chat-only consumer can now drop them.
+  `buildInteractiveTerminalTheme` also returns `TerminalColorTheme` rather than xterm's own
+  `ITheme` (#101). The rationale for the split is in the Changed entry further down (#116).
+
+  **A consumer on `^4.0.0` will take 4.1.0 automatically and these imports will stop
+  resolving.**
+
+### Note on this release's number
+
+This release carries **three** breaking changes — the two `⚠️ BREAKING` headings below and the
+terminal move above — so semver would make it a major. It is numbered **4.1.0 deliberately**, a
+maintainer decision taken with the breaking entries in view. Pin an exact version, or read the
+three BREAKING sections before upgrading from 4.0.x.
+
 ### ⚠️ BREAKING (`@elabs-ai/components-ai`, `@elabs-ai/components-ui`): `TokenUsage`'s locale message keys move from `ai.context.*` to `ai.tokenUsage.*` (#141)
 
 - The six locale keys `TokenUsage` reads (`usage`, `totalCost`, `input`, `output`, `reasoning`,
