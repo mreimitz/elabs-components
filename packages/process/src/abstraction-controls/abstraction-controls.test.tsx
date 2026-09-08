@@ -1,9 +1,11 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AbstractionOptions } from "../core/abstract-graph";
+import { abstractGraph, type AbstractionOptions } from "../core/abstract-graph";
 import type { ActivityStats } from "../core/types";
 import { AbstractionControls } from "./abstraction-controls";
+import { backboneGraph } from "./abstraction-controls-fixtures";
+import { computeAutoAbstraction } from "./auto-abstraction";
 
 afterEach(cleanup);
 
@@ -81,6 +83,69 @@ describe("AbstractionControls — a percentage tick", () => {
   });
 });
 
+describe("AbstractionControls — tick position (#355)", () => {
+  it("positions every tick at its own percent, derived from the slider's min/max — not spread evenly by flexbox", () => {
+    renderControls();
+    const ticks = screen.getAllByRole("button", { name: /^\d+%$/ });
+    expect(ticks).toHaveLength(8); // 4 ticks x 2 sliders
+    for (const tick of ticks) {
+      const percent = Number(tick.textContent?.replace("%", ""));
+      // The slider's own range is 0..100, so a tick's rail offset must equal its percent
+      // exactly — a `justify-between` flex row would instead land at 0/33.3/66.7/100 for
+      // this 4-tick set, never at 25/50/75/100.
+      expect(tick.style.left).toBe(`${percent}%`);
+    }
+  });
+
+  it("keeps the 100% tick anchored to the rail's right edge rather than centred past it", () => {
+    renderControls();
+    const tick100 = screen.getAllByRole("button", { name: "100%" })[0]!;
+    expect(tick100.style.left).toBe("100%");
+    expect(tick100.className).toContain("-translate-x-full");
+    expect(tick100.className).not.toContain("-translate-x-1/2");
+  });
+});
+
+describe("AbstractionControls — tick + group accessible names (#356)", () => {
+  it("names three groups — the outer control plus one per slider — reusing the slider's own localized label", () => {
+    renderControls();
+    const groups = screen.getAllByRole("group");
+    expect(groups).toHaveLength(3);
+    expect(screen.getByRole("group", { name: "Abstraction" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Activities" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Paths" })).toBeInTheDocument();
+  });
+
+  it("gives every tick button its own accessible name (toHaveAccessibleName, exact string, no regex)", () => {
+    renderControls();
+    for (const percent of [25, 50, 75, 100]) {
+      const [activitiesTick, pathsTick] = screen.getAllByRole("button", {
+        name: `${percent}%`,
+      });
+      expect(activitiesTick).toHaveAccessibleName(`${percent}%`);
+      expect(pathsTick).toHaveAccessibleName(`${percent}%`);
+    }
+  });
+
+  it("disambiguates all eight ticks via group name + own name — 8 distinct qualified entries", () => {
+    renderControls();
+    const activitiesGroup = screen.getByRole("group", { name: "Activities" });
+    const pathsGroup = screen.getByRole("group", { name: "Paths" });
+    const qualifiedNames = new Set<string>();
+    for (const [groupName, group] of [
+      ["Activities", activitiesGroup],
+      ["Paths", pathsGroup],
+    ] as const) {
+      const ticks = within(group).getAllByRole("button", { name: /^\d+%$/ });
+      expect(ticks).toHaveLength(4);
+      for (const tick of ticks) {
+        qualifiedNames.add(`${groupName} ${tick.textContent}`);
+      }
+    }
+    expect(qualifiedNames.size).toBe(8);
+  });
+});
+
 describe("AbstractionControls — invert", () => {
   it("toggles the invert switch", async () => {
     const user = userEvent.setup();
@@ -136,5 +201,26 @@ describe("AbstractionControls — Auto (the RM-052 acceptance criterion)", () =>
     const requested = call![0] as { activities: number; paths: number };
     expect(requested.activities).toBeLessThan(0.8);
     expect(requested.paths).toBeCloseTo(requested.activities + 0.2, 10);
+  });
+});
+
+describe("AbstractionControls — Interaction story fixture suitability (#376)", () => {
+  it("actually narrows under Auto's fraction, unlike the strict-chain topology auto-abstraction.test.ts locks as a known limitation", () => {
+    const graph = backboneGraph();
+    const totalActivities = graph.activities.length;
+    const { activities: autoFraction } = computeAutoAbstraction(totalActivities, {
+      maxActivities: 25,
+    });
+    const abstracted = abstractGraph(graph, {
+      activities: autoFraction,
+      paths: Math.min(1, autoFraction + 0.2),
+      keepConnected: true,
+    });
+    // The mirror image of auto-abstraction.test.ts:154-173's "known limitation" block: that
+    // test locks that a strict chain CANNOT narrow under keepConnected repair; this locks
+    // that this story's backbone-plus-detours fixture CAN — so a future fixture swap cannot
+    // silently reintroduce a non-narrowing graph without this test going red.
+    expect(abstracted.hidden.activities).toBeGreaterThan(0);
+    expect(abstracted.activities.length).toBeLessThanOrEqual(25);
   });
 });
