@@ -40,7 +40,10 @@ export const ConformanceUnavailable: Story = {
   args: { kpis, conformance: null },
 };
 
-/** Every tile carries a trend sparkline alongside its headline number. */
+/**
+ * Every tile carries a trend sparkline alongside its headline number (#359: all six, not
+ * five — a missing `medianThroughput` series used to leave that one tile with no mark).
+ */
 export const WithTrends: Story = {
   args: {
     kpis,
@@ -49,9 +52,34 @@ export const WithTrends: Story = {
       cases: [180, 190, 205, 198, 220, 232, 240],
       events: [1200, 1350, 1480, 1520, 1690, 1780, 1842],
       variants: [22, 25, 28, 30, 33, 35, 37],
+      medianThroughput: [
+        4 * 24 * 60 * 60 * 1000,
+        3.6 * 24 * 60 * 60 * 1000,
+        3.4 * 24 * 60 * 60 * 1000,
+        3.2 * 24 * 60 * 60 * 1000,
+        3.1 * 24 * 60 * 60 * 1000,
+        3.05 * 24 * 60 * 60 * 1000,
+        3 * 24 * 60 * 60 * 1000,
+      ],
       reworkRate: [0.24, 0.22, 0.21, 0.2, 0.19, 0.18, 0.18],
       conformance: [0.82, 0.84, 0.86, 0.87, 0.89, 0.9, 0.91],
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // #359 lock: every sparkline's accessible name describes the trend, never repeats the
+    // tile's own label.
+    for (const label of [
+      "Cases",
+      "Events",
+      "Variants",
+      "Median throughput",
+      "Rework rate",
+      "Conformance",
+    ]) {
+      const sparkline = canvas.getByRole("img", { name: new RegExp(`^${label}, `) });
+      await expect(sparkline).not.toHaveAccessibleName(label);
+    }
   },
 };
 
