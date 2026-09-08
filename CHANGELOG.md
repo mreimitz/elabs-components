@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+## v4.1.0 — 2026-09-08
+
+### Added: two new packages ship to the registry for the first time
+
+- **`@elabs-ai/components-terminal`** — terminal surfaces for shell and agent output, and
+  coding-agent CLI look-alikes: `Terminal`, `TerminalSurface`, `TerminalConsole`,
+  `InteractiveTerminal`, plus the transcript vocabulary (`TerminalTranscriptRow`,
+  `TerminalToolCall`, `TerminalDiffHunk`, `TerminalTodoList`, `TerminalPermission`,
+  `TerminalStatusBar`, `TerminalBanner`, `TerminalComposer`, `TerminalSlashMenu`,
+  `TerminalOverlay`, `TerminalWorking`, `TerminalEventLine`, `TerminalRow`). A layer-2 leaf:
+  `@elabs-ai/components-ai` must never import it (#129). Peers: `@elabs-ai/components-tokens`,
+  `@elabs-ai/components-ui`, `@xterm/xterm`, `@xterm/addon-fit`, `react`, `react-dom`.
+- **`@elabs-ai/components-process`** — process mining and event-log analysis, the one **layer-3**
+  package (`docs/ADR/0034-process-package-third-layer.md`): it composes `-flow`, `-charts`, `-data` and `-ui`,
+  and nothing depends on it. Ships `ProcessMap`, `ProcessKpiStrip`, `AbstractionControls` and
+  `useProcessExplorer`, with two extra entry points — `@elabs-ai/components-process/core`
+  (the engine, no React Flow) and `@elabs-ai/components-process/test` (fixtures and helpers).
+  Peers: `@elabs-ai/components-charts`, `@elabs-ai/components-data`,
+  `@elabs-ai/components-flow`, `@elabs-ai/components-tokens`, `@elabs-ai/components-ui`,
+  `@xyflow/react`, `react`, `react-dom`.
+
+Both are additive: no existing package's surface changes because they exist.
+
 ### ⚠️ BREAKING (`@elabs-ai/components-ai`, `@elabs-ai/components-ui`): `TokenUsage`'s locale message keys move from `ai.context.*` to `ai.tokenUsage.*` (#141)
 
 - The six locale keys `TokenUsage` reads (`usage`, `totalCost`, `input`, `output`, `reasoning`,

@@ -30,7 +30,7 @@ import { scanText } from "./audit.mjs";
 import { matchChartFor, renderChartForText } from "./chart-for.mjs";
 
 export const PROTOCOL_VERSION = "2024-11-05";
-export const SERVER_INFO = { name: "brand-ui", version: "4.0.0" };
+export const SERVER_INFO = { name: "brand-ui", version: "4.1.0" };
 
 /** The tool catalogue advertised over `tools/list`. */
 export const TOOLS = [

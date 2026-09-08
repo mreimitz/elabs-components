@@ -51,7 +51,7 @@ under a new definition: `THEMES` → `BUILT_IN_THEMES`, `THEME_META` →
 `BUILT_IN_THEME_META`, `ThemeMeta` → `ThemeDefinition`. (`PAUSED_THEMES` /
 `isPausedThemeName` and the paused-theme mechanism they described were
 themselves fully removed shortly after this ADR — see `CHANGELOG.md` "The
-blueprint theme and its drawing package are gone", `v4.0.0` — so neither
+blueprint theme and its drawing package are gone", the 4.0.0 release — so neither
 survives to be renamed or widened.)
 
 ### 2. The registry is a `ThemeProvider` prop
