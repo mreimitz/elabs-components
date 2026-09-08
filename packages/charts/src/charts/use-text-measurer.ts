@@ -33,6 +33,15 @@ const DEFAULT_FONT = "500 12px sans-serif";
 const DEFAULT_FONT_SIZE_PX = 12;
 const DEFAULT_LINE_HEIGHT_PX = 16;
 
+/**
+ * The probe's classes when the caller names none: the `text-meta` rung, which
+ * is what an axis tick is drawn in. A surface whose labels use a DIFFERENT type
+ * role passes its own (`NetworkChart` → `text-chart-source`) — measuring the
+ * wrong role under-reserves the space, and `text-chart-source` differs from
+ * `text-meta` by 0.07em of tracking, which is ~1px per character.
+ */
+const DEFAULT_PROBE_CLASS = "text-chart-label text-meta";
+
 /** `line-height: normal` resolves per-font; this is the usual sans-serif ratio. */
 const NORMAL_LINE_HEIGHT_RATIO = 1.35;
 
@@ -46,18 +55,32 @@ export interface TextMeasurer {
   lineHeightPx: number;
   /** Resolved font size, in px. */
   fontSizePx: number;
+  /** Resolved letter spacing of the label font, in px (0 when `normal`). */
+  letterSpacingPx: number;
+}
+
+export interface TextMeasurerOptions {
+  /**
+   * Classes the hidden probe carries, i.e. the typography the measured text is
+   * ACTUALLY painted in. Defaults to the `text-meta` axis-tick rung. Pass the
+   * label's own role when it differs — the reserved width is only honest if the
+   * probe and the `<text>` element resolve to the same font AND tracking.
+   */
+  className?: string;
 }
 
 interface FontMetrics {
   font: string;
   fontSizePx: number;
   lineHeightPx: number;
+  letterSpacingPx: number;
 }
 
 const DEFAULT_METRICS: FontMetrics = {
   font: DEFAULT_FONT,
   fontSizePx: DEFAULT_FONT_SIZE_PX,
   lineHeightPx: DEFAULT_LINE_HEIGHT_PX,
+  letterSpacingPx: 0,
 };
 
 /** Per-character width ratios for the no-canvas fallback. Deterministic. */
@@ -65,9 +88,11 @@ const NARROW_CHARS = new Set([...`ijltfrI.,:;'"!|()[]{}\` `]);
 const WIDE_CHARS = new Set([..."MWmw@%&"]);
 
 /** Pure width estimate used when no canvas 2d context exists (jsdom, SSR). */
-export function estimateTextWidth(text: string, fontSizePx: number): number {
+export function estimateTextWidth(text: string, fontSizePx: number, letterSpacingPx = 0): number {
   let ratio = 0;
+  let chars = 0;
   for (const char of text) {
+    chars += 1;
     if (NARROW_CHARS.has(char)) {
       ratio += 0.33;
     } else if (WIDE_CHARS.has(char)) {
@@ -76,7 +101,7 @@ export function estimateTextWidth(text: string, fontSizePx: number): number {
       ratio += 0.55;
     }
   }
-  return ratio * fontSizePx;
+  return ratio * fontSizePx + chars * letterSpacingPx;
 }
 
 let sharedCanvasContext: CanvasRenderingContext2D | null | undefined;
@@ -110,12 +135,12 @@ function getCanvasContext(): CanvasRenderingContext2D | null {
 }
 
 /** Read the label font as it resolves inside `host`'s inheritance context. */
-function resolveFontMetrics(host: Element | null): FontMetrics {
+function resolveFontMetrics(host: Element | null, probeClass: string): FontMetrics {
   if (!host || typeof window === "undefined" || typeof document === "undefined") {
     return DEFAULT_METRICS;
   }
   const probe = document.createElement("span");
-  probe.className = "text-chart-label text-meta";
+  probe.className = probeClass;
   probe.style.position = "absolute";
   probe.style.visibility = "hidden";
   probe.style.pointerEvents = "none";
@@ -125,6 +150,8 @@ function resolveFontMetrics(host: Element | null): FontMetrics {
   const style = window.getComputedStyle(probe);
   const fontSizePx = Number.parseFloat(style.fontSize);
   const rawLineHeight = Number.parseFloat(style.lineHeight);
+  // `normal` (and jsdom's empty string) parse to NaN — that IS zero tracking.
+  const rawLetterSpacing = Number.parseFloat(style.letterSpacing);
   const family = style.fontFamily || "sans-serif";
   const weight = style.fontWeight || "400";
   const fontStyle = style.fontStyle || "normal";
@@ -140,6 +167,7 @@ function resolveFontMetrics(host: Element | null): FontMetrics {
     font: `${fontStyle} ${weight} ${size}px ${family}`,
     fontSizePx: size,
     lineHeightPx,
+    letterSpacingPx: Number.isFinite(rawLetterSpacing) ? rawLetterSpacing : 0,
   };
 }
 
@@ -152,8 +180,14 @@ function resolveFontMetrics(host: Element | null): FontMetrics {
  * `BarChart` uses this form because it OWNS the container ref: it must reserve
  * axis space before it can publish a chart context for anything to read.
  */
-export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer {
+export function useTextMeasurerOf(
+  ref: RefObject<Element | null>,
+  options?: TextMeasurerOptions,
+): TextMeasurer {
   const containerRef = ref;
+  // A string, not the options object: callers pass an inline literal, and a
+  // fresh object identity every render would re-run the probe effect forever.
+  const probeClass = options?.className ?? DEFAULT_PROBE_CLASS;
   const [metrics, setMetrics] = useState<FontMetrics>(DEFAULT_METRICS);
   const cacheRef = useRef(new Map<string, number>());
 
@@ -169,7 +203,8 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
       setMetrics((prev) =>
         prev.font === next.font &&
         prev.fontSizePx === next.fontSizePx &&
-        prev.lineHeightPx === next.lineHeightPx
+        prev.lineHeightPx === next.lineHeightPx &&
+        prev.letterSpacingPx === next.letterSpacingPx
           ? prev
           : next,
       );
@@ -183,14 +218,14 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
         raf = requestAnimationFrame(update);
         return;
       }
-      apply(resolveFontMetrics(element));
+      apply(resolveFontMetrics(element, probeClass));
     };
 
     update();
 
     const observer = new MutationObserver(() => {
       const element = containerRef.current;
-      if (element) apply(resolveFontMetrics(element));
+      if (element) apply(resolveFontMetrics(element, probeClass));
     });
     observer.observe(document.documentElement, {
       attributes: true,
@@ -200,7 +235,7 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
     const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
     void fonts?.ready.then(() => {
       const element = containerRef.current;
-      if (element) apply(resolveFontMetrics(element));
+      if (element) apply(resolveFontMetrics(element, probeClass));
     });
 
     return () => {
@@ -208,7 +243,7 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
       cancelAnimationFrame(raf);
       observer.disconnect();
     };
-  }, [containerRef]);
+  }, [containerRef, probeClass]);
 
   // A new font invalidates every cached width, so the table is keyed to the
   // descriptor by being rebuilt with it.
@@ -216,12 +251,12 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
     cacheRef.current = new Map();
   }, []);
 
-  const { font, fontSizePx, lineHeightPx } = metrics;
+  const { font, fontSizePx, lineHeightPx, letterSpacingPx } = metrics;
 
   const measure = useCallback(
     (text: string): number => {
       const cache = cacheRef.current;
-      const key = `${font} ${text}`;
+      const key = `${font}/${letterSpacingPx} ${text}`;
       const hit = cache.get(key);
       if (hit !== undefined) {
         return hit;
@@ -233,10 +268,19 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
         width = context.measureText(text).width;
         if (!Number.isFinite(width) || width === 0) {
           // jsdom's canvas shim answers 0 for everything — treat as no context.
-          width = estimateTextWidth(text, fontSizePx);
+          width = estimateTextWidth(text, fontSizePx, letterSpacingPx);
+        } else if (letterSpacingPx !== 0) {
+          // `measureText` shapes the run with the font's own advances and knows
+          // nothing about CSS `letter-spacing` (canvas has its own
+          // `ctx.letterSpacing`, default `0px`, unevenly supported). CSS adds
+          // tracking after EVERY character, so the painted run is that much
+          // wider than the shaped one — without this the measurer under-reserves
+          // by ~1px per character on the 0.08em `text-chart-source` rung and a
+          // long label still spills past the gutter reserved for it.
+          width += [...text].length * letterSpacingPx;
         }
       } else {
-        width = estimateTextWidth(text, fontSizePx);
+        width = estimateTextWidth(text, fontSizePx, letterSpacingPx);
       }
       if (cache.size >= MEASURE_CACHE_LIMIT) {
         cache.clear();
@@ -244,17 +288,17 @@ export function useTextMeasurerOf(ref: RefObject<Element | null>): TextMeasurer 
       cache.set(key, width);
       return width;
     },
-    [font, fontSizePx],
+    [font, fontSizePx, letterSpacingPx],
   );
 
   return useMemo(
-    () => ({ measure, lineHeightPx, fontSizePx }),
-    [measure, lineHeightPx, fontSizePx],
+    () => ({ measure, lineHeightPx, fontSizePx, letterSpacingPx }),
+    [measure, lineHeightPx, fontSizePx, letterSpacingPx],
   );
 }
 
 /** Chart-context variant: measures in the chart container's own context. */
-export function useTextMeasurer(): TextMeasurer {
+export function useTextMeasurer(options?: TextMeasurerOptions): TextMeasurer {
   const { containerRef } = useChartStable();
-  return useTextMeasurerOf(containerRef);
+  return useTextMeasurerOf(containerRef, options);
 }
