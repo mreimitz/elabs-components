@@ -56,11 +56,11 @@ import {
   type AbstractedGraph,
   type AbstractionOptions,
 } from "../core/abstract-graph";
-import { asNormalizedLog } from "../core/event-log";
+import { asNormalizedLog, type NormalizedLog } from "../core/event-log";
 import { detectRework, type ReworkStats } from "../core/detect-rework";
 import { discoverGraph } from "../core/discover-graph";
 import { durationStats } from "../core/duration-stats";
-import { extractVariants } from "../core/extract-variants";
+import { extractVariants, variantKey } from "../core/extract-variants";
 import type { FilterSpec } from "../core/filter-log";
 import { filterLog } from "../core/filter-log";
 import { reconcileGraph } from "../core";
@@ -210,6 +210,26 @@ function discoverInline(log: EventLog): DiscoveryResult {
   return { graph: discoverGraph(log), variants: extractVariants(log) };
 }
 
+/**
+ * The KPI strip's own variant COUNT — the number of distinct activity sequences in
+ * `normalized`, without paying for `extractVariants`' full pipeline (a second
+ * normalization pass, sorting groups by frequency, hashing a `variantId` per group, and a
+ * `durationStats` call per group) that only a variant EXPLORER needs the shape of (PR #413
+ * review, P1). `kpis.variants` is a synchronous derivation of `filteredLog` alone, like
+ * every other KPI figure (see the module docblock), so above `workerThreshold` it must
+ * never re-run the exact extraction `handle.variants()` already dispatches off-thread —
+ * that was the main-thread block the worker path exists to avoid. `normalized` is the same
+ * value `kpis` already computed for `cases`/`events`/`medianThroughput`, so this adds no
+ * second normalization pass either.
+ */
+function countDistinctVariants(normalized: NormalizedLog): number {
+  const keys = new Set<string>();
+  for (const kase of normalized.cases) {
+    keys.add(variantKey(kase.events.map((event) => event.activity)));
+  }
+  return keys.size;
+}
+
 interface DiscoveryState {
   result: DiscoveryResult;
   loading: boolean;
@@ -311,9 +331,22 @@ function useLogDiscovery(
   const asyncResult =
     asyncState !== null && asyncState.log === targetLog ? asyncState.result : null;
 
+  // A worker-path target this instance has no async result FOR YET is loading, whether or
+  // not the passive effect above has had a chance to run (PR #413 review, P2): `targetLog`
+  // changes synchronously in render, but the `loading` STATE variable stays at whatever the
+  // PREVIOUS target left it — often `false`, once settled — until the effect's
+  // `setLoading(true)` commits. Without this, the render that first carries a NEW
+  // above-threshold target reports `loading: false` alongside the `EMPTY_GRAPH` placeholder
+  // (`asyncResult` above is `null` because `asyncState` still names the old target), which a
+  // consumer reads as a settled, genuinely empty answer for one paint. Deriving the extra bit
+  // from `asyncState`/`targetLog` themselves needs no effect round trip, so this render
+  // already reports `loading: true`. Always `false` while skipped (`useWorkerPath` requires
+  // `targetLog !== null`) and a no-op once `asyncState` catches up to `targetLog`.
+  const targetUnsettled = useWorkerPath && (asyncState === null || asyncState.log !== targetLog);
+
   return {
     result: syncResult ?? asyncResult ?? { graph: EMPTY_GRAPH, variants: [] },
-    loading,
+    loading: loading || targetUnsettled,
     settled: syncResult !== null || asyncResult !== null,
   };
 }
@@ -476,7 +509,7 @@ export function useProcessExplorer(
     return {
       cases: normalized.totals.cases,
       events: normalized.totals.events,
-      variants: extractVariants(filteredLog).length,
+      variants: countDistinctVariants(normalized),
       medianThroughput,
       reworkRate: rework.caseReworkRate,
     };

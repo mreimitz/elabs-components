@@ -19,6 +19,14 @@ vi.mock("../core/discover-graph", async (importOriginal) => {
   return { ...actual, discoverGraph: vi.fn(actual.discoverGraph) };
 });
 
+// Same shape, for `extractVariants` — every existing `extractVariants(orderToCash)` call
+// used elsewhere in this file to compute an "expected" value keeps its real behaviour; this
+// only makes the call COUNTABLE for the P1 lock below (PR #413 review).
+vi.mock("../core/extract-variants", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../core/extract-variants")>();
+  return { ...actual, extractVariants: vi.fn(actual.extractVariants) };
+});
+
 afterEach(cleanup);
 
 const orderToCash = fixture as EventLog;
@@ -489,5 +497,68 @@ describe("useProcessExplorer — settled means settled for the CURRENT target, n
     // was one of the five activities A's filter excluded (a real A-vs-B shape check).
     expect(result.current.selectionStates.activities?.["Ship Order"]).toBeUndefined();
     expect(result.current.kpis.variants).toBe(extractVariants(result.current.filteredLog).length);
+  });
+});
+
+describe("useProcessExplorer — kpis.variants stays off the render path above workerThreshold (PR #413 review, P1)", () => {
+  it("never runs the full extractVariants pipeline synchronously in render for a worker-path log", () => {
+    vi.mocked(extractVariants).mockClear();
+    const worker = new ManualWorker();
+    const { result } = renderHook(() =>
+      useProcessExplorer(orderToCash, {
+        workerThreshold: 0,
+        worker: { createWorker: () => worker },
+      }),
+    );
+    // Above `workerThreshold`, the ONLY place `extractVariants` may run is `handle.variants()`
+    // — queued on `worker`, deliberately not yet answered (`resolvePending` was never
+    // called). Before the fix, `kpis.variants` called `extractVariants(filteredLog)` directly
+    // during render, running the exact same full extraction (normalize, group, sort, hash,
+    // per-variant `durationStats`) the worker path exists to avoid.
+    expect(extractVariants).not.toHaveBeenCalled();
+    // The count itself must still be correct once the render has run.
+    expect(result.current.kpis.variants).toBe(extractVariants(orderToCash).length);
+  });
+});
+
+describe("useProcessExplorer — a log switch never flashes a settled-looking empty result (PR #413 review, P2)", () => {
+  it("reports loading on the very render the target moves to a new above-threshold log", async () => {
+    const worker = new ManualWorker();
+    const renders: { loading: boolean; cases: number; events: number }[] = [];
+    const { rerender } = renderHook(
+      ({ log }: { log: EventLog }) => {
+        const value = useProcessExplorer(log, {
+          workerThreshold: 0,
+          worker: { createWorker: () => worker },
+        });
+        renders.push({
+          loading: value.loading,
+          cases: value.graph.totals.cases,
+          events: value.graph.totals.events,
+        });
+        return value;
+      },
+      { initialProps: { log: orderToCash } },
+    );
+    worker.resolvePending();
+    await waitFor(() => expect(renders[renders.length - 1]?.loading).toBe(false));
+
+    const other: EventLog = { events: orderToCash.events.slice(0, 6) }; // case-1 and case-2 only
+    renders.length = 0;
+    rerender({ log: other });
+
+    // Every render produced for the NEW target — including the very first one, before its
+    // own worker request can resolve or `loading`'s passive effect can even run — must never
+    // claim settled-empty: `loading: false` paired with `EMPTY_GRAPH`'s zero totals. Before
+    // the fix, the FIRST such render did exactly that, because `asyncState` still held the
+    // OLD target's stale settled result and the `loading` STATE variable had not yet been
+    // flipped by the effect for the new target.
+    const flashed = renders.some(
+      (render) => !render.loading && render.cases === 0 && render.events === 0,
+    );
+    expect(flashed).toBe(false);
+
+    worker.resolvePending();
+    await waitFor(() => expect(renders[renders.length - 1]?.loading).toBe(false));
   });
 });
