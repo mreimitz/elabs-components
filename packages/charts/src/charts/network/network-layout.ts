@@ -8,6 +8,7 @@
  */
 
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
+import { ellipsize } from "../category-axis-plan";
 import { type ChartPalette, CATEGORICAL_SOFT_CAP, resolvePalette } from "../chart-context";
 import { arcLinkPath, arcPositions, partitionBipartite } from "./layouts/arc";
 import {
@@ -23,6 +24,7 @@ import type {
   NetworkLinkLayout,
   NetworkNodeDatum,
   NetworkNodeLayout,
+  NetworkSide,
 } from "./network-types";
 
 /** Legibility floor: below ~3px a node stops reading as a mark at all. */
@@ -35,6 +37,25 @@ export const NETWORK_DEFAULT_NODE_RADIUS = 6;
 export const NETWORK_PADDING = 16;
 /** Above this many nodes the container warns. Not a cap — see `NetworkChartProps.maxNodes`. */
 export const NETWORK_DEFAULT_MAX_NODES = 200;
+/** Gap between a node's edge and its label. */
+export const NETWORK_LABEL_GAP = 5;
+/**
+ * `arc` only. Past this fraction of the chart width, a per-side label gutter
+ * stops being reserved room and starts being most of the chart — scale both
+ * gutters down to fit inside it and truncate the labels that no longer do
+ * (`computeNetworkLayout`'s degrade), rather than let them clip.
+ */
+export const NETWORK_MAX_LABEL_GUTTER_FRACTION = 0.5;
+/**
+ * `arc` only. The horizontal span the two columns keep between them whatever
+ * the labels ask for. The gutter budget is capped against the width left AFTER
+ * both base paddings and this span — capping against the full width alone lets
+ * a narrow chart spend on gutters space the columns had already been charged
+ * for (at width 100 with ~34px padding a side, gutters totalling the "allowed"
+ * 50px leave `100 - 68 - 50 < 0`), which collapses both columns and every arc
+ * onto one x.
+ */
+export const NETWORK_MIN_COLUMN_SPAN = 24;
 
 export interface NetworkLayoutOptions {
   width: number;
@@ -52,6 +73,12 @@ export interface NetworkLayoutOptions {
   seed?: number;
   /** `circular` only — how far a chord bends toward the ring's centre. */
   curveness?: number;
+  /**
+   * `arc` only — the px width of a label string, in the label's actual font.
+   * Omitted → every label gutter stays `0`, reproducing today's node-radius-only
+   * columns exactly (`NetworkChart` passes `useTextMeasurerOf`'s `measure`).
+   */
+  measureLabel?: (text: string) => number;
 }
 
 export interface NetworkLayoutResult {
@@ -182,6 +209,67 @@ export function resolveLabelAnchor(
   return "start";
 }
 
+/**
+ * `arc`'s label gutter: how much room, past `padding`, each column reserves for
+ * its labels — and, when that would eat more than
+ * `NETWORK_MAX_LABEL_GUTTER_FRACTION` of the chart width, the ellipsised
+ * `displayLabel` that makes the SCALED-DOWN gutter honest again.
+ *
+ * `measureLabel` omitted (no text measurer yet — first paint, or a caller that
+ * never asked for one) → every gutter is `0`, which is exactly today's
+ * node-radius-only column: the no-op guarantee the unit tests pin.
+ */
+function computeArcLabelGutter(
+  nodes: readonly NetworkNodeDatum[],
+  sides: readonly NetworkSide[],
+  radii: readonly number[],
+  width: number,
+  padding: number,
+  measureLabel: ((text: string) => number) | undefined,
+): { gutter: { left: number; right: number }; displayLabels: (string | undefined)[] } {
+  const displayLabels: (string | undefined)[] = nodes.map(() => undefined);
+  if (!measureLabel) return { gutter: { left: 0, right: 0 }, displayLabels };
+
+  const raw = { left: 0, right: 0 };
+  nodes.forEach((node, i) => {
+    const side = sides[i];
+    if (!side) return;
+    const label = node.label ?? node.id;
+    const needed = measureLabel(label) + (radii[i] as number) + NETWORK_LABEL_GAP;
+    raw[side] = Math.max(raw[side], needed);
+  });
+
+  const total = raw.left + raw.right;
+  // Both caps at once: never more than half the chart, and never more than the
+  // width still unspent after `arcPositions` has taken `padding` off each edge
+  // and left the columns NETWORK_MIN_COLUMN_SPAN between them. The second cap
+  // is what keeps `rightX > leftX` on a narrow chart.
+  const maxTotal = Math.max(
+    0,
+    Math.min(
+      width * NETWORK_MAX_LABEL_GUTTER_FRACTION,
+      width - 2 * padding - NETWORK_MIN_COLUMN_SPAN,
+    ),
+  );
+  if (total <= maxTotal || total <= 0) {
+    return { gutter: raw, displayLabels };
+  }
+
+  // Degrade: scale both gutters down proportionally, then ellipsise every
+  // label that no longer fits its (now smaller) column — never clip mid-glyph.
+  const scale = maxTotal / total;
+  const gutter = { left: raw.left * scale, right: raw.right * scale };
+  nodes.forEach((node, i) => {
+    const side = sides[i];
+    if (!side) return;
+    const label = node.label ?? node.id;
+    const budget = gutter[side] - (radii[i] as number) - NETWORK_LABEL_GAP;
+    const { display, truncated } = ellipsize(label, Math.max(0, budget), measureLabel);
+    if (truncated) displayLabels[i] = display;
+  });
+  return { gutter, displayLabels };
+}
+
 /** Link endpoints that name a node the graph does not contain. Dev diagnostics. */
 export function danglingLinks(
   nodes: readonly NetworkNodeDatum[],
@@ -212,6 +300,7 @@ export function computeNetworkLayout(
     ticks = FORCE_TICK_BUDGET,
     seed,
     curveness = DEFAULT_CIRCULAR_CURVENESS,
+    measureLabel,
   } = options;
 
   const groups: string[] = [];
@@ -239,11 +328,15 @@ export function computeNetworkLayout(
   const padding = NETWORK_PADDING + maxRadius;
 
   const sides = layout === "arc" ? partitionBipartite(nodes, links) : undefined;
+  const { gutter: labelGutter, displayLabels } =
+    layout === "arc" && sides
+      ? computeArcLabelGutter(nodes, sides, radii, width, padding, measureLabel)
+      : { gutter: undefined, displayLabels: nodes.map(() => undefined) };
   const positions =
     layout === "circular"
       ? circularPositions(nodes.length, { width, height, padding })
       : layout === "arc"
-        ? arcPositions(sides as NonNullable<typeof sides>, { width, height, padding })
+        ? arcPositions(sides as NonNullable<typeof sides>, { width, height, padding, labelGutter })
         : computeForcePositions(
             nodes.map((n, i) => ({ id: n.id, r: radii[i] as number })),
             links,
@@ -272,6 +365,7 @@ export function computeNetworkLayout(
       groupIndex,
       side: sides?.[i],
       labelAnchor: resolveLabelAnchor(layout, positions[i]?.x ?? centre.x, centre.x, sides?.[i]),
+      displayLabel: displayLabels[i],
     };
   });
 

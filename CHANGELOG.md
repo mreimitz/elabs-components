@@ -15,6 +15,122 @@
 
 ### Fixed
 
+- `@elabs-ai/components-editor`: `CodeWorkspace` no longer splits the editor height across every
+  open file. The `forceMount` that #154 added to keep each tab panel's DOM id resolvable also
+  suppresses the `hidden` Radix would otherwise apply — `TabsContent` derives it from
+  `forceMount || isSelected`, so under `forceMount` it hides nothing and every inactive panel
+  stayed a visible `flex-1` child with an empty body and its own tab stop. The panels now carry an
+  explicit `hidden`/`tabIndex` (Radix spreads caller props after its own, so they win), keeping the
+  ids resolvable with only the active panel taking layout. Its tab value is also derived from the
+  file path alone now, through a reversible escape (every character outside `[A-Za-z0-9-]` becomes
+  `_<hex>_`, so two paths can never collide): the previous id mixed in the file's array index, so
+  inserting or reordering a file re-keyed the active panel and remounted Monaco, discarding its
+  selection, scroll position and undo history (#412 review).
+
+- `@elabs-ai/components-charts`: `SankeyChart` now measures the column its own layout draws, and
+  degrades below a one-pixel node gap when nothing else fits. The #276 padding clamp counted nodes
+  by `depth`, but the configured `sankeyCenter` alignment moves a node with no incoming links into
+  the column before its earliest target, so the busiest DRAWN column can hold more nodes than any
+  depth bucket (measured: 4 against 3) and the padding was computed from an undercount. It also
+  refused to go under 1px, which is not a floor a dense column in a short chart can afford — 100
+  nodes in a 70px extent left d3-sankey the numerator `70 − 99 × 1`, and every rect collapsed to
+  0px, exactly the failure the clamp exists to prevent. Padding now goes sub-pixel (to zero if it
+  must) so the bodies keep half the extent (#412 review).
+
+- `@elabs-ai/components-charts`: `NetworkChart`'s `arc` layout keeps its two columns apart and
+  reserves label room in the typography the labels are actually painted in. The gutter budget was
+  capped at half the chart width while `arcPositions` separately charged both edges their base
+  padding, so a narrow chart could spend the entire inter-column span on labels and stack both
+  columns and every arc on one x (at width 100: `100 − 68 − 50 < 0`); the cap is now taken against
+  the width left after both paddings and a minimum column span. The label measurer also probed the
+  `text-meta` rung while `NetworkNode` paints labels in `text-chart-source` (0.08em of tracking
+  against 0.01em) and ignored letter spacing entirely, since canvas `measureText` knows nothing
+  about it — it under-reserved by roughly a pixel per character, which is what let a long label
+  spill past its gutter. `useTextMeasurerOf` now takes the probe's class name and adds the resolved
+  tracking to every width (#412 review).
+
+- `@elabs-ai/components-flow`: connector dots no longer take their coordinates from a frame in
+  which they were still moving, so edges stay attached under `prefers-reduced-motion: reduce`.
+  React Flow measures a node's `handleBounds` from the DOM once per layout change and then draws
+  every edge endpoint from that stored number. The tokens reduced-motion backstop
+  (`themes.css`, MOTION GATE) forces `transition-duration: 0.01ms !important` on `*` while
+  leaving `transition-property` at its initial `all`, so under an OS reduce request that rule
+  does not remove a transition from a handle — it CREATES one, and a handle that changes side
+  (a `layoutFlow` `direction="LR"` pass, which runs in an effect after the first paint) is
+  therefore still in flight for the one frame in which React Flow measures it. Measured on
+  `ProcessMap direction="LR"`: the dot was stored at `(164, 45.5)` where the settled DOM has
+  `(172, 37.5)`, and fourteen arrows ended up to 67 px away from the dot they point at — for
+  reduced-motion readers only, permanently, because nothing measures again. Every `<Handle>`
+  `FlowNode`, `FlowGroupNode` and `FlowPlaceholderNode` render now carries the new
+  `FLOW_HANDLE_ANCHOR_CLASS` (`transition-none`), which is also exported for consumers writing
+  their own node types. Nothing changes under normal motion, where no rule animated a handle
+  anyway (#125).
+
+- `@elabs-ai/components-charts`: `FunnelChart`'s segment labels now honour reduced motion. The
+  value / percentage-pill / label group used to fade in from `opacity: 0` on a ~1 s staggered
+  Motion (rAF) timeline with no reduced-motion branch, so a user who had asked for reduced motion
+  still got up to a second of moving, briefly-unreadable text — the CSS `--motion-factor` gate
+  cannot reach a JS frame loop. Under reduced motion the group now MOUNTS at its resting opacity
+  (`initial={false}`, zero-duration transition) rather than fading faster, in both the `spread`
+  and `grouped` label layouts; the staggered entrance is unchanged for everyone else. This also
+  removes the CI artefact the defect produced: axe sampled those spans part-way up the opacity
+  ramp and reported a blended, ~1:1 ink for tokens that measure 13.10:1 and 5.71:1 at rest — and,
+  when it sampled earlier, skipped them entirely as `opacity: 0`, so the story's PASS never
+  measured the labels either (#125).
+
+- `@elabs-ai/components-charts`: `SankeyChart`'s `mode="threads"` node layer is fixed on three
+  fronts that all traced back to one infeasible `nodePadding`. A fixed padding that a dense
+  column (e.g. 40 nodes in 350px) cannot afford used to drive every node rect in that column to
+  0px height; `nodePadding` is now clamped (`Math.min` against the caller's value, so a graph
+  whose padding already fit is unaffected) to whatever the column's own height budget can
+  support. `SankeyNode`'s two labels used to overlap heavily at a tight pitch (a hard-coded 16px
+  offset that assumed much taller nodes) and the value label carried a permanent 60% opacity
+  with no halo, failing contrast against the coloured node fill underneath; labels now measure
+  the real line height, drop per-node when their slot is too tight to read, and both paint as
+  `HaloText` at full opacity (#276).
+- `@elabs-ai/components-charts`: `NetworkChart`'s `arc` layout now reserves real room
+  for its labels instead of drawing them into empty space that was not there. The two
+  columns used to sit at a node-radius-only padding, so every label — drawn outward
+  from its node — clipped at the chart's edge (all ten in the shipped `--ownership`
+  story, some by more than 80px). The layout now measures each column's longest label
+  and widens the gap it leaves at the chart edge to fit; a label that still cannot fit
+  a very narrow chart is shortened with a trailing "…" rather than cut off mid-word,
+  and the full name stays available to screen readers regardless (#277).
+- `@elabs-ai/components-editor`: `CodeWorkspace`'s file tabs no longer emit a dangling
+  `aria-controls`. The Radix `Tabs` value used to be the raw file path, so a path containing
+  `/`, `.`, a space or a non-ASCII character leaked into the generated content id and the
+  editor pane had no `TabsContent` at all for it to resolve to — a screen-reader user could
+  not follow a tab to its panel. Each tab now gets a stable, DOM-id-safe id (the path stays
+  the display label and lookup key), and every file's pane is a real `TabsContent` element
+  (#154).
+- `@elabs-ai/components-editor`: the markdown editor's slash-menu "no matches" message is no
+  longer a bare, unannounced `<div>` inside its `role="listbox"`. It now renders as a
+  disabled, unselectable option, so a user who types a query matching nothing hears the
+  message instead of silence (#157).
+- `@elabs-ai/components-ui`: `CommandSeparator` (the divider `cmdk` renders between
+  `CommandGroup`s) is now `aria-hidden`. It used to reach assistive tech as an unauthorized
+  `role="separator"` child of the `Command` listbox, which only `option`/`group` may own
+  (#157).
+- `@elabs-ai/components-ai`: `PromptInputEffort`'s ramp bars now each present a ≥24×24 CSS px
+  activation target. The bar itself used to double as its own `RadioGroupItem` hit box, so
+  three of the four rungs (10×10, 14×14, 20×20 px) fell under the WCAG 2.5.8 minimum. Each rung
+  is now a shared 24×24 frame: the radio is stretched to fill it (the real, focusable hit
+  target) while a sibling `aria-hidden` span paints the bar at its original, untouched size —
+  the visible ramp is pixel-unchanged (#161).
+- `@elabs-ai/components-ui`: `ModelPicker` (and its `WorkspacePicker` preset) no longer nests
+  its loading, error/empty and `CommandEmpty` bodies as children of `CommandList` — cmdk
+  hardcodes `role="listbox"` there, and ARIA only allows a listbox to own `option`/`group`, so
+  every one of those bodies (including the everyday "search matches nothing" path on a
+  fully-populated list) failed axe's `aria-required-children`, and in the error/empty bodies
+  the one `Retry` action was nested where assistive tech isn't required to expose it. Those
+  bodies now render as siblings of `CommandList`, which stays mounted in every state so
+  `CommandInput`'s `aria-controls` keeps resolving (#121).
+- `@elabs-ai/components-ui`: `SplitPanel`'s pane divider now uses the strong (`border-strong`,
+  ≥3:1) border rung when both panes share the default `plain` tone — with no fill or elevation
+  difference between them, the hairline was the only cue separating the panes and measured
+  ~1.38:1/1.39:1 in light/dark, below the WCAG 1.4.11 non-text-boundary bar. Either pane set to
+  `muted`/`card` keeps the previous subtle rung, since the fill difference already carries the
+  boundary (#163).
 - `@elabs-ai/components-editor`: `MarkdownEditor`'s editable region now carries its own
   keyboard-focus indicator — a compound outline + inset ring drawn on the element itself —
   instead of suppressing the platform outline (`outline: none`) and relying on a wrapper

@@ -243,6 +243,25 @@ export const Ownership: Story = {
       <NetworkChart {...args} />
     </div>
   ),
+  // #277 — every label used to be drawn outward from its column with zero
+  // reserved gutter, so all ten clipped at the SVG edge (up to 80.4px for
+  // "Core Platform"). `waitFor` because the label gutter is measured off a
+  // font probe that resolves asynchronously (`useTextMeasurerOf`) — the first
+  // paint can still be the old, gutter-less geometry.
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const svg = canvasElement.querySelector("svg");
+      expect(svg).toBeTruthy();
+      const svgBox = (svg as SVGSVGElement).getBoundingClientRect();
+      const labels = canvasElement.querySelectorAll('[data-slot="network-node-label"]');
+      expect(labels.length).toBe(10);
+      for (const label of Array.from(labels)) {
+        const box = label.getBoundingClientRect();
+        expect(box.left).toBeGreaterThanOrEqual(svgBox.left - 0.5);
+        expect(box.right).toBeLessThanOrEqual(svgBox.right + 0.5);
+      }
+    });
+  },
 };
 
 /**

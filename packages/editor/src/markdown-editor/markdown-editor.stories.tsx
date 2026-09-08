@@ -345,7 +345,14 @@ export const FillsContainer: Story = {
     await expect(editable).toBeVisible();
     // The 1-line doc's editable fills the 700px container (well past the ~144px
     // content floor) — clickable everywhere, with room for the `/` menu.
-    expect(editable.clientHeight).toBeGreaterThan(500);
+    //
+    // Waited for, not read once: the fill chain is `.milkdown-host .ProseMirror.editor
+    // { flex: 1 1 auto }`, and Milkdown adds the `editor` class in a later commit than
+    // the one that puts `role="textbox"` in the DOM. Between the two the editable sits at
+    // its own `min-height: 9rem` (144px) inside an already-700px host — measured, not
+    // guessed. Reading `clientHeight` on the frame `findByRole` resolves therefore samples
+    // a real but transient layout; the settled condition is the one this story is about.
+    await waitFor(() => expect(editable.clientHeight).toBeGreaterThan(500), { timeout: 8000 });
   },
 };
 

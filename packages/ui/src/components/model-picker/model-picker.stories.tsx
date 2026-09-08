@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { AppWindow, Bot, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { within } from "storybook/test";
 import { ModelPicker } from "./model-picker";
 import type { ModelPickerGroup } from "./model-picker-state";
 
@@ -86,9 +87,19 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-/** Skeleton rows while the first load is in flight. */
+/**
+ * Skeleton rows while the first load is in flight.
+ *
+ * The `play` opens the popover — issue #121: axe never rendered `CommandList`
+ * (cmdk's `role="listbox"`) until a story actually opened it, which is how a
+ * structural `aria-required-children` violation shipped unnoticed.
+ */
 export const Loading: Story = {
   args: { groups: [], status: "loading", triggerLabel: "Loading…", value: undefined },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("combobox"));
+    await within(canvasElement.ownerDocument.body).findByRole("dialog");
+  },
 };
 
 /**
@@ -109,11 +120,54 @@ export const ErrorState: Story = {
     value: undefined,
     onRetry: () => {},
   },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("combobox"));
+    await within(canvasElement.ownerDocument.body).findByRole("dialog");
+  },
 };
 
 /** Nothing to show, but nothing went wrong — a different message, deliberately. */
 export const Empty: Story = {
   args: { groups: [], status: "empty", triggerLabel: "No targets", value: undefined },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("combobox"));
+    await within(canvasElement.ownerDocument.body).findByRole("dialog");
+  },
+};
+
+/**
+ * Nothing to show, nothing went wrong, AND a retry is offered — the empty
+ * panel's `Retry` button, the specific case where the button previously
+ * landed inside `role="listbox"` (issue #121).
+ */
+export const EmptyWithRetry: Story = {
+  args: {
+    groups: [],
+    status: "empty",
+    triggerLabel: "No targets",
+    value: undefined,
+    onRetry: () => {},
+  },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("combobox"));
+    await within(canvasElement.ownerDocument.body).findByRole("dialog");
+  },
+};
+
+/**
+ * The everyday path issue #121 was really about: a fully-populated, working
+ * list where the search query happens to match nothing. `CommandEmpty`
+ * renders while the list itself stays mounted with zero options — the case
+ * that shipped broken because no story ever typed a non-matching query.
+ */
+export const ListNoSearchResults: Story = {
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("combobox"));
+    const body = within(canvasElement.ownerDocument.body);
+    await body.findByRole("dialog");
+    await userEvent.type(body.getByPlaceholderText("Search…"), "zzzzzznomatch");
+    await body.findByText("No results.");
+  },
 };
 
 export const Disabled: Story = { args: { disabled: true } };

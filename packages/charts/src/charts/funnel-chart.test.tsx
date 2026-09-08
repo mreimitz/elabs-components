@@ -13,7 +13,7 @@
  * precedent used for @elabs-ai/components-editor (Monaco) and @elabs-ai/components-flow (React Flow).
  */
 
-import { describe, expect, it, vi, beforeAll } from "vitest";
+import { afterEach, describe, expect, it, vi, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { FunnelChart } from "./funnel-chart";
@@ -29,6 +29,14 @@ beforeAll(() => {
   }
 });
 
+// One mutable switch instead of a module reset: Motion's own
+// `useReducedMotion` caches the media-query result in module state on its first
+// call, so a second render in the same file could never observe the other
+// branch — and `vi.resetModules()` would re-import React too, whose hooks a
+// component from a second instance cannot use. Same pattern as
+// `marks.test.tsx` / `chart-reveal-clip.test.tsx`.
+const motionState = vi.hoisted(() => ({ reduced: false }));
+
 // Silence motion/react animation warnings in jsdom (no requestAnimationFrame).
 vi.mock("motion/react", async (importOriginal) => {
   const actual = await importOriginal<typeof MotionReact>();
@@ -36,6 +44,7 @@ vi.mock("motion/react", async (importOriginal) => {
     ...actual,
     // Keep useMotionValue/useTransform but suppress animate side-effects.
     animate: vi.fn(() => ({ stop: vi.fn() })),
+    useReducedMotion: () => motionState.reduced,
   };
 });
 
@@ -175,4 +184,60 @@ describe("FunnelChart showConversion", () => {
       expect(overlay.getAttribute("title")).toBeNull();
     }
   });
+});
+
+// ---------------------------------------------------------------------------
+// Reduced motion (#125) — the segment labels are HTML text inside a Motion
+// entrance fade. Under reduced motion that fade must not exist at all: the
+// group has to MOUNT at its resting opacity, not fade in faster. A shortened
+// fade still paints legible-looking-but-blended ink for a moment, which is both
+// a motion-accessibility defect and what made axe read ~1:1 contrast on these
+// spans in CI.
+// ---------------------------------------------------------------------------
+describe("FunnelChart label entrance under reduced motion", () => {
+  function stubMeasurementForLabels() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 300,
+      height: 300,
+      left: 0,
+      right: 600,
+      toJSON: () => ({}),
+      top: 0,
+      width: 600,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  function renderLabels(layout: "spread" | "grouped") {
+    stubMeasurementForLabels();
+    const { container } = render(<FunnelChart data={sampleData} labelLayout={layout} />);
+    const groups = container.querySelectorAll<HTMLElement>('[data-slot="funnel-chart-label"]');
+    expect(groups).toHaveLength(sampleData.length);
+    return groups;
+  }
+
+  afterEach(() => {
+    motionState.reduced = false;
+    vi.restoreAllMocks();
+  });
+
+  for (const layout of ["spread", "grouped"] as const) {
+    it(`mounts every ${layout} label group at full opacity under reduced motion`, () => {
+      motionState.reduced = true;
+      for (const group of renderLabels(layout)) {
+        // No inline `opacity: 0` was ever written: `initial={false}` means the
+        // element's first painted frame is its resting one.
+        expect(group.style.opacity).not.toBe("0");
+      }
+    });
+
+    it(`still plays the staggered ${layout} entrance when motion is not reduced`, () => {
+      motionState.reduced = false;
+      for (const group of renderLabels(layout)) {
+        // The fix must not be "delete the animation".
+        expect(group.style.opacity).toBe("0");
+      }
+    });
+  }
 });

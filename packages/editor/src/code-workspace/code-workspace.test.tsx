@@ -144,3 +144,86 @@ describe("CodeWorkspace — CodeWorkspaceHandle via ref", () => {
     expect(listener).not.toHaveBeenCalled(); // not called yet, only on selection change
   });
 });
+
+describe("CodeWorkspace — tab/panel a11y (#154)", () => {
+  it("gives every tab an aria-controls that resolves to a real element, for paths with '/', '.', a space and non-ASCII", () => {
+    const trickyFiles: EditorFile[] = [
+      { path: "src/hello.ts", value: "a" },
+      { path: "a b/c.d.json", value: "b" },
+      { path: "café/résumé.md", value: "c" },
+    ];
+    render(<CodeWorkspace files={trickyFiles} />);
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs).toHaveLength(trickyFiles.length);
+    for (const tab of tabs) {
+      const controls = tab.getAttribute("aria-controls");
+      expect(controls).toBeTruthy();
+      expect(document.getElementById(controls!)).not.toBeNull();
+    }
+  });
+});
+
+describe("CodeWorkspace — force-mounted panels stay out of the layout", () => {
+  const threeFiles: EditorFile[] = [
+    { path: "a.ts", value: "A" },
+    { path: "b.ts", value: "B" },
+    { path: "c.ts", value: "C" },
+  ];
+
+  it("hides every inactive tabpanel so it takes no layout space and no tab stop", () => {
+    render(<CodeWorkspace files={threeFiles} />);
+    const panels = screen.getAllByRole("tabpanel", { hidden: true });
+    expect(panels).toHaveLength(3);
+    const active = panels.filter((p) => p.getAttribute("data-state") === "active");
+    const inactive = panels.filter((p) => p.getAttribute("data-state") !== "active");
+    expect(active).toHaveLength(1);
+    expect(active[0]!.hasAttribute("hidden")).toBe(false);
+    expect(active[0]!.getAttribute("tabindex")).toBe("0");
+    for (const panel of inactive) {
+      expect(panel.hasAttribute("hidden")).toBe(true);
+      expect(panel.getAttribute("tabindex")).toBe("-1");
+    }
+  });
+
+  it("keeps aria-controls resolvable while the inactive panels are hidden", () => {
+    render(<CodeWorkspace files={threeFiles} />);
+    for (const tab of screen.getAllByRole("tab")) {
+      const controls = tab.getAttribute("aria-controls");
+      expect(controls).toBeTruthy();
+      expect(document.getElementById(controls!)).not.toBeNull();
+    }
+  });
+});
+
+describe("CodeWorkspace — tab identity survives a file-list reorder (#412 review)", () => {
+  it("keeps the active panel's id stable and does not remount Monaco when a file is prepended", () => {
+    const initial: EditorFile[] = [
+      { path: "src/a.ts", value: "AAA" },
+      { path: "b.json", value: "{}" },
+    ];
+    const { rerender } = render(<CodeWorkspace files={initial} />);
+    const idBefore = screen
+      .getAllByRole("tabpanel", { hidden: true })
+      .find((p) => p.getAttribute("data-state") === "active")!.id;
+    const createdBefore = h.create.mock.calls.length;
+
+    rerender(<CodeWorkspace files={[{ path: "zz/new.ts", value: "N" }, ...initial]} />);
+
+    const idAfter = screen
+      .getAllByRole("tabpanel", { hidden: true })
+      .find((p) => p.getAttribute("data-state") === "active")!.id;
+    expect(idAfter).toBe(idBefore);
+    expect(h.create.mock.calls.length).toBe(createdBefore);
+  });
+
+  it("gives colliding paths distinct tab values", () => {
+    const colliding: EditorFile[] = [
+      { path: "a/b", value: "1" },
+      { path: "a.b", value: "2" },
+      { path: "a-b", value: "3" },
+    ];
+    render(<CodeWorkspace files={colliding} />);
+    const ids = screen.getAllByRole("tabpanel", { hidden: true }).map((p) => p.id);
+    expect(new Set(ids).size).toBe(colliding.length);
+  });
+});

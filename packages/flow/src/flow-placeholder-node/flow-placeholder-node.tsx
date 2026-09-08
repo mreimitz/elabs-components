@@ -1,5 +1,6 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
+import { FLOW_HANDLE_ANCHOR_CLASS } from "../flow-handle/flow-handle-anchor";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 
 export interface FlowPlaceholderNodeData extends Record<string, unknown> {
@@ -29,7 +30,9 @@ export function FlowPlaceholderNode({ data }: NodeProps<BrandFlowPlaceholderNode
       <Handle
         type="target"
         position={Position.Top}
-        className="!size-2 !border-2 !border-flow-edge !bg-flow-node"
+        // `FLOW_HANDLE_ANCHOR_CLASS`: a connector dot must never be in flight when
+        // React Flow measures it. See `flow-handle/flow-handle-anchor.ts`.
+        className={`!size-2 !border-2 !border-flow-edge !bg-flow-node ${FLOW_HANDLE_ANCHOR_CLASS}`}
       />
       <button
         type="button"

@@ -18,9 +18,9 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | `@elabs-ai/components-ui` | packages/ui | 379 | 14 | Foundation + app UI (Button, Card, Dialog, Tabs, AppShell, …). |
 | `@elabs-ai/components-data` | packages/data | 6 | 0 | TanStack DataTable, FilterBar, SearchInput, FacetFilter, ColumnPicker. |
 | `@elabs-ai/components-ai` | packages/ai | 442 | 14 | ChatShell, Conversation, Message, PromptInput, Tool, Reasoning, citations. |
-| `@elabs-ai/components-flow` | packages/flow | 31 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
+| `@elabs-ai/components-flow` | packages/flow | 32 | 7 | Branded React Flow canvas, nodes, edges, controls, inspector. |
 | `@elabs-ai/components-maps` | packages/maps | 12 | 1 | MapLibre GL maps: MapCanvas, markers, popups, controls, routes, arcs, GeoJSON, clusters. |
-| `@elabs-ai/components-charts` | packages/charts | 188 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
+| `@elabs-ai/components-charts` | packages/charts | 190 | 35 | MetricCard, MetricGrid, ChartCard, ChartFrame (expand/flip/download). |
 | `@elabs-ai/components-marketing` | packages/marketing | 6 | 0 | Hero, FeatureGrid, UseCaseCard, StatsBand, CTASection, LogoStrip. |
 | `@elabs-ai/components-editor` | packages/editor | 8 | 1 | Token-themed Monaco editor: CodeEditor, DiffEditor, CodeWorkspace. |
 | `@elabs-ai/components-viewer` | packages/viewer | 19 | 2 | FileViewer — any file (image, text, JSON, CSV) via a pluggable adapter registry. |
@@ -998,6 +998,7 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | FLOW_EDGE_FOCUS_CONTOUR_WIDTH | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_EDGE_FOCUS_RING_WIDTH | component |  | `@elabs-ai/components-flow` |  |
 | FLOW_GROUP_NODE_TYPE | component |  | `@elabs-ai/components-flow` |  |
+| FLOW_HANDLE_ANCHOR_CLASS | component |  | `@elabs-ai/components-flow` |  |
 | FlowButtonEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdge | component |  | `@elabs-ai/components-flow` |  |
 | FlowEdgePath | component |  | `@elabs-ai/components-flow` |  |
@@ -1169,6 +1170,8 @@ The full component/hook surface, generated from the manifest. `*` marks a cva de
 | MIN_DATAPOINT_TARGET_SIZE | component |  | `@elabs-ai/components-charts` |  |
 | NETWORK_DEFAULT_MAX_NODES | component |  | `@elabs-ai/components-charts` |  |
 | NETWORK_DEFAULT_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_LABEL_GAP | component |  | `@elabs-ai/components-charts` |  |
+| NETWORK_MAX_LABEL_GUTTER_FRACTION | component |  | `@elabs-ai/components-charts` |  |
 | NETWORK_MAX_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
 | NETWORK_MIN_NODE_RADIUS | component |  | `@elabs-ai/components-charts` |  |
 | NETWORK_PADDING | component |  | `@elabs-ai/components-charts` |  |

@@ -3,6 +3,7 @@ import { Handle, NodeResizer, Position, useNodes, type Node, type NodeProps } fr
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { useFlowGroups } from "../use-flow-groups";
+import { FLOW_HANDLE_ANCHOR_CLASS } from "../flow-handle/flow-handle-anchor";
 
 /** Visual accent for a group container. */
 export type FlowGroupTone = "default" | "accent" | "success" | "warning" | "destructive";
@@ -53,7 +54,9 @@ const toneInk: Record<FlowGroupTone, string> = {
   destructive: "text-destructive-text",
 };
 
-const handleClassName = "!size-2 !border-2 !border-flow-group-border !bg-flow-group";
+// `FLOW_HANDLE_ANCHOR_CLASS` last: a connector dot must never be in flight when React
+// Flow measures it. See `flow-handle/flow-handle-anchor.ts`.
+const handleClassName = `!size-2 !border-2 !border-flow-group-border !bg-flow-group ${FLOW_HANDLE_ANCHOR_CLASS}`;
 
 /**
  * Branded group container node. Register it as `nodeTypes={{ group: FlowGroupNode }}`

@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@elabs-ai/components-ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import {
   forwardRef,
@@ -74,6 +74,31 @@ const EXT_LANGUAGE: Record<string, string> = {
 
 const basename = (path: string) => path.split("/").pop() || path;
 
+/**
+ * Radix composes each `TabsContent`'s DOM id from the `Tabs`/`TabsTrigger`
+ * `value` (see #154): a raw `file.path` leaks `/`, `.`, spaces and non-ASCII
+ * characters straight into that id, which is what a screen reader gets back
+ * via `aria-controls`. `path` stays the display label and the lookup key in
+ * component state (`active`); this is only ever a DOM-id-safe Tabs value.
+ *
+ * The encoding is INJECTIVE and depends only on the path — never on the
+ * file's position in `files`. Every character outside `[A-Za-z0-9-]` becomes
+ * `_<hex code point>_`, and `_` itself is never emitted literally, so the
+ * mapping is reversible and two distinct paths can never produce the same
+ * value ("a/b" → `tab-a_2f_b`, "a.b" → `tab-a_2e_b`). An index-derived value
+ * would have been collision-safe too, but it changes when the list is
+ * reordered or a file is inserted, which re-keys the active `TabsContent` and
+ * throws away Monaco's selection, scroll position and undo history on an
+ * otherwise harmless `files` update.
+ */
+function tabIdForFile(path: string): string {
+  let out = "";
+  for (const char of path) {
+    out += /[A-Za-z0-9-]/.test(char) ? char : `_${char.codePointAt(0)!.toString(16)}_`;
+  }
+  return `tab-${out}`;
+}
+
 function inferLanguage(file: EditorFile): string {
   if (file.language) return file.language;
   const ext = file.path.split(".").pop()?.toLowerCase() ?? "";
@@ -142,6 +167,10 @@ export const CodeWorkspace = forwardRef<CodeWorkspaceHandle, CodeWorkspaceProps>
     const requested = isControlled ? activePath : internalActive;
     const activeFile = files.find((f) => f.path === requested) ?? files[0];
     const active = activeFile?.path ?? "";
+
+    // DOM-id-safe Tabs value per file (#154); `path` stays the lookup key.
+    const tabs = files.map((file) => ({ file, id: tabIdForFile(file.path) }));
+    const activeTabId = tabs.find((t) => t.file.path === active)?.id ?? "";
 
     // The root div ref (getElement() preserves old HTMLDivElement access).
     const rootRef = useRef<HTMLDivElement | null>(null);
@@ -213,16 +242,19 @@ export const CodeWorkspace = forwardRef<CodeWorkspaceHandle, CodeWorkspaceProps>
         {...props}
       >
         <Tabs
-          value={active}
-          onValueChange={selectTab}
+          value={activeTabId}
+          onValueChange={(id) => {
+            const found = tabs.find((t) => t.id === id);
+            if (found) selectTab(found.file.path);
+          }}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="flex items-center border-b border-border bg-surface">
             <TabsList className="h-9 flex-1 justify-start gap-0 rounded-none bg-transparent p-0">
-              {files.map((file) => (
+              {tabs.map(({ file, id }) => (
                 <TabsTrigger
-                  key={file.path}
-                  value={file.path}
+                  key={id}
+                  value={id}
                   className="h-9 rounded-none border-e border-border px-3 text-xs data-[state=active]:bg-background data-[state=active]:shadow-none"
                 >
                   {basename(file.path)}
@@ -232,20 +264,41 @@ export const CodeWorkspace = forwardRef<CodeWorkspaceHandle, CodeWorkspaceProps>
             {activeFile ? <CopyButton value={activeFile.value} className="me-1.5" /> : null}
           </div>
 
-          <div className="min-h-0 flex-1">
-            {activeFile ? (
-              <CodeEditor
-                key={activeFile.path}
-                path={activeFile.path}
-                language={inferLanguage(activeFile)}
-                value={activeFile.value}
-                readOnly={readOnly}
-                onChange={(next) => onFileChange?.(activeFile.path, next)}
-                onMount={(editor) => setActiveEditor(editor)}
-                height="100%"
-              />
-            ) : null}
-          </div>
+          {tabs.map(({ file, id }) => {
+            const isActive = file.path === activeFile?.path;
+            return (
+              // `forceMount` keeps every tab's content in the DOM so each
+              // trigger's `aria-controls` resolves to a real element, not only
+              // the active one (#154). Radix derives its own `hidden` from
+              // `forceMount || isSelected`, so under `forceMount` it hides
+              // NOTHING: without the explicit `hidden` below every inactive
+              // panel stays a visible `flex-1` child and the editor height is
+              // split across all of them. `tabIndex={-1}` keeps the empty
+              // panels out of the tab sequence for the same reason. Only the
+              // active file mounts a (single) Monaco instance.
+              <TabsContent
+                key={id}
+                value={id}
+                forceMount
+                hidden={!isActive}
+                tabIndex={isActive ? 0 : -1}
+                className="mt-0 min-h-0 flex-1"
+              >
+                {isActive ? (
+                  <CodeEditor
+                    key={file.path}
+                    path={file.path}
+                    language={inferLanguage(file)}
+                    value={file.value}
+                    readOnly={readOnly}
+                    onChange={(next) => onFileChange?.(file.path, next)}
+                    onMount={(editor) => setActiveEditor(editor)}
+                    height="100%"
+                  />
+                ) : null}
+              </TabsContent>
+            );
+          })}
         </Tabs>
       </div>
     );

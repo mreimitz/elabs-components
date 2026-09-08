@@ -65,7 +65,19 @@ export const SlashMenu = forwardRef<HTMLDivElement, SlashMenuProps>(function Sla
       {...props}
     >
       {commands.length === 0 ? (
-        <div className="px-2 py-6 text-center text-caption text-muted-foreground">{emptyLabel}</div>
+        // A `role="listbox"` may only own `option`/`group` children (WCAG 1.3.1,
+        // #157): a bare `<div>` here is an unannounced, dangling message — an
+        // AT user who types a query matching nothing gets silence. Shaping it
+        // as a disabled, unselectable option keeps the listbox contract AND
+        // makes the message reachable by an accessible-name query.
+        <div
+          role="option"
+          aria-disabled="true"
+          aria-selected="false"
+          className="cursor-default select-none px-2 py-6 text-center text-caption text-muted-foreground"
+        >
+          {emptyLabel}
+        </div>
       ) : (
         groups.map(({ group, commands: groupCommands }) => (
           <div key={group} role="group" aria-label={group} className="overflow-hidden p-1">

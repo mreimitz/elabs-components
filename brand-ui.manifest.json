@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T13:55:51.197Z",
+  "generatedAt": "2026-09-07T22:01:58.414Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -13229,6 +13229,16 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "NETWORK_LABEL_GAP",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
+          "name": "NETWORK_MAX_LABEL_GUTTER_FRACTION",
+          "kind": "value",
+          "module": "packages/charts/src/charts/network/index.ts"
+        },
+        {
           "name": "NETWORK_MAX_NODE_RADIUS",
           "kind": "value",
           "module": "packages/charts/src/charts/network/index.ts"
@@ -23260,6 +23270,11 @@
           "name": "FLOW_GROUP_NODE_TYPE",
           "kind": "value",
           "module": "packages/flow/src/use-flow-groups/group-operations.ts"
+        },
+        {
+          "name": "FLOW_HANDLE_ANCHOR_CLASS",
+          "kind": "value",
+          "module": "packages/flow/src/flow-handle/flow-handle-anchor.ts"
         },
         {
           "name": "FlowButtonEdge",
