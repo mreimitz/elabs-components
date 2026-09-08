@@ -35,7 +35,19 @@
   hook has moved on is discarded. A filter cleared while its request was in flight could leave the
   removed filter's ghosting visible through the next filter's whole round trip. `kpis.variants` is
   also derived synchronously, so it no longer lags `cases` and `events` (#347).
-
+- `@elabs-ai/components-process`: the `ProcessMap` table twin's State cells now print a localized
+  `Selected`/`Excluded` through the new `process.map.stateSelected`/`process.map.stateExcluded`
+  locale messages (`@elabs-ai/components-ui`) instead of a bare English literal. The column HEADER
+  already went through the locale seam; the CELL did not — and that cell doubles as the row's
+  accessible name, so a non-English `LocaleProvider` left both the visible and the accessible
+  content untranslated. The map's `role="status"` summary also names which activities and
+  transitions are excluded rather than only how many, so two different selections landing on the
+  same counts no longer produce a byte-identical summary that a polite live region never announces.
+- `@elabs-ai/components-process`: `useProcessExplorer` derives `kpis.variants` with a distinct-key
+  count over the log it already normalizes, instead of running full variant extraction (grouping,
+  sorting, per-variant duration statistics) in render on every above-threshold log. The count is
+  unchanged; the render-path work is not. A log switch between two above-threshold logs also keeps
+  reporting `loading` until the new log settles, so the strip no longer flashes a settled zero.
 - `@elabs-ai/components-editor`: `CodeWorkspace` no longer splits the editor height across every
   open file. The `forceMount` that #154 added to keep each tab panel's DOM id resolvable also
   suppresses the `hidden` Radix would otherwise apply — `TabsContent` derives it from

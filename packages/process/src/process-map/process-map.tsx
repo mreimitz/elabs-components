@@ -96,13 +96,14 @@ import {
   PROCESS_FILTER_INTENT_KINDS,
   PROCESS_FILTER_INTENT_LABELS,
   PROCESS_FILTER_INTENT_MESSAGE_KEYS,
-  selectionStateLabel,
+  PROCESS_SELECTION_STATE_MESSAGE_KEYS,
   type ProcessFilterIntent,
   type ProcessMapEdge,
   type ProcessMapModel,
   type ProcessMapNode,
   type ProcessMetricSpec,
   type ProcessSelection,
+  type ProcessSelectionState,
   type ProcessSelectionStates,
 } from "./map-model";
 import { ProcessActivityNode } from "./process-activity-node";
@@ -267,6 +268,18 @@ export function ProcessMap({
   // the canvas — an untranslated header leaves numbers with no measure name.
   const { t } = useLocale();
   const mapLabel = label ?? t("process.map.label");
+  // The State column's own cell text (#413 review, PRRT_kwDOT6D7ts6gJX2C) — `map-model.ts`
+  // has no locale seam of its own, so the render site resolves
+  // `PROCESS_SELECTION_STATE_MESSAGE_KEYS` through `t()` instead of printing
+  // `selectionStateLabel`'s bare English word. `"associated"` has no key and prints nothing,
+  // same as before.
+  const selectionStateText = useCallback(
+    (state: ProcessSelectionState): string => {
+      const key = PROCESS_SELECTION_STATE_MESSAGE_KEYS[state];
+      return key ? t(key) : "";
+    },
+    [t],
+  );
   const resolved = useResolvedGraph(graph, log, abstraction);
   const derivedRework = useMemo(
     () => (rework ? undefined : log ? detectRework(log) : undefined),
@@ -647,16 +660,40 @@ export function ProcessMap({
   // nothing else in the map derives. Two independently-pluralized fragments composed at the
   // call site (see the message's own comment) — never an empty string, even when nothing
   // is excluded, so the region is never silently blank on mount.
+  //
+  // #413 review (PRRT_kwDOT6D7ts6gJX2I): counts ALONE are not enough. Moving between two
+  // selections/filters that exclude DIFFERENT elements but land on the SAME activity and
+  // transition counts left this string byte-for-byte identical, so the region — which
+  // announces content CHANGES, not model changes — stayed silent even though the map
+  // re-inked. Fold in which elements are excluded (sorted, so the string is stable across a
+  // render that changed nothing else), not only how many — that tracks the actual affected
+  // set regardless of whether it moved via `selection` or via `selectionStates`.
+  const excludedActivityNames = model.activityRows
+    .filter((row) => row.selectionState === "excluded")
+    .map((row) => row.title)
+    .sort((a, b) => a.localeCompare(b));
+  const excludedTransitionNames = model.transitionRows
+    .filter((row) => row.selectionState === "excluded")
+    .map((row) => `${row.source} → ${row.target}`)
+    .sort((a, b) => a.localeCompare(b));
   const selectionSummary = [
     t("process.map.excludedActivities", {
       count: model.excludedCounts.activities,
       total: model.excludedCounts.totalActivities,
     }),
+    excludedActivityNames.length > 0
+      ? t("process.map.excludedActivityNames", { names: excludedActivityNames.join(", ") })
+      : null,
     t("process.map.excludedTransitions", {
       count: model.excludedCounts.transitions,
       total: model.excludedCounts.totalTransitions,
     }),
-  ].join(" · ");
+    excludedTransitionNames.length > 0
+      ? t("process.map.excludedTransitionNames", { names: excludedTransitionNames.join(", ") })
+      : null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(" · ");
 
   if (tableView) {
     return (
@@ -706,7 +743,7 @@ export function ProcessMap({
                     : row.primaryLabel}
                 </TableCell>
                 <TableCell className="tabular-nums">{row.reworkCount ?? 0}</TableCell>
-                <TableCell>{selectionStateLabel(row.selectionState)}</TableCell>
+                <TableCell>{selectionStateText(row.selectionState)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -741,7 +778,7 @@ export function ProcessMap({
                     ? `${row.primaryLabel} · ${row.secondaryLabel}`
                     : row.primaryLabel}
                 </TableCell>
-                <TableCell>{selectionStateLabel(row.selectionState)}</TableCell>
+                <TableCell>{selectionStateText(row.selectionState)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

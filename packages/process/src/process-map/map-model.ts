@@ -819,18 +819,35 @@ export function transitionShape(data: ProcessTransitionEdgeData): string {
 }
 
 /**
- * The word for a row's selection/filter state (#373) — the table twin's own channel for
- * what the canvas already says through {@link activityAriaLabel}/{@link transitionAriaLabel}
- * (which append this same word to the element's accessible name). Before this, the twin
- * carried the state only as `data-selection`, a `data-*` attribute that reaches no user.
- * `"associated"` is the ordinary case and prints nothing, so the column reads as a marker
- * for the two states that matter, not as noise repeated on every row.
+ * The CANONICAL (English, un-localized) word for a row's selection/filter state (#373) —
+ * this module is pure data shaping with no locale seam of its own, so it cannot resolve a
+ * translation. It stays exported for a non-React caller (tests, a console, a non-locale
+ * context). The State column's own rendered CELLS resolve the localized text instead, via
+ * {@link PROCESS_SELECTION_STATE_MESSAGE_KEYS} + `t()` at the render site
+ * (`process-map.tsx`) — see that key map's own comment (#413 review). `"associated"` is the
+ * ordinary case and prints nothing, so the column reads as a marker for the two states that
+ * matter, not as noise repeated on every row.
  */
 export function selectionStateLabel(state: ProcessSelectionState): string {
   if (state === "selected") return "Selected";
   if (state === "excluded") return "Excluded";
   return "";
 }
+
+/**
+ * The locale message key for each NON-ORDINARY selection/filter state (#413 review,
+ * PRRT_kwDOT6D7ts6gJX2C) — the State column's cells are the table twin's own
+ * screen-reader channel for row state (#373), so leaving them printing
+ * {@link selectionStateLabel}'s bare English word left a non-English `LocaleProvider`
+ * with untranslated visible AND accessible content. `"associated"` has no entry: it is the
+ * ordinary case and the column prints nothing for it, same as {@link selectionStateLabel}.
+ */
+export const PROCESS_SELECTION_STATE_MESSAGE_KEYS: Readonly<
+  Partial<Record<ProcessSelectionState, string>>
+> = Object.freeze({
+  selected: "process.map.stateSelected",
+  excluded: "process.map.stateExcluded",
+});
 
 /** The accessible name of one activity node. */
 export function activityAriaLabel(data: ProcessActivityNodeData): string {

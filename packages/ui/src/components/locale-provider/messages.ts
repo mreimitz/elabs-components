@@ -696,6 +696,15 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   // canvas already says through real text in its accessible names; the twin used to carry
   // it only as a `data-*` attribute, which reaches no user.
   "process.map.columnState": "State",
+  // The State column's own CELL values (#413 review, PRRT_kwDOT6D7ts6gJX2C). #373 localized
+  // the column HEADER but left every cell printing the literal English word — since that cell
+  // is also the row's screen-reader channel for its selection/filter state
+  // (`selectionStateLabel` below is the un-localized canonical word `process-map.tsx` maps
+  // through these keys at the render site), a non-English `LocaleProvider` left both the
+  // visible AND the accessible content untranslated. `"associated"` (the ordinary case) has
+  // no key: it prints nothing, by design.
+  "process.map.stateSelected": "Selected",
+  "process.map.stateExcluded": "Excluded",
   // Filter-intent menu item ACCESSIBLE names (#346). A transition's menu offers the same
   // four intents once per endpoint (eight items total); the visible text
   // (`PROCESS_FILTER_INTENT_LABELS` in map-model.ts) stays unsuffixed and compact, so these
@@ -717,6 +726,16 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
     one: "{count} of {total} transition excluded",
     other: "{count} of {total} transitions excluded",
   },
+  // The live region's AFFECTED-SET fragments (#413 review, PRRT_kwDOT6D7ts6gJX2I). Counts
+  // alone are not enough: two selections/filters that exclude DIFFERENT elements but land on
+  // the SAME counts produce byte-for-byte identical text, so the polite region — which
+  // announces content CHANGES, not model changes — stays silent even though the map
+  // re-inked. Naming which elements are excluded makes the string track the actual set, not
+  // only its size. Composed at the call site alongside the two counts above, and omitted
+  // entirely when nothing of that kind is excluded (so the common case stays as short as
+  // before this fix).
+  "process.map.excludedActivityNames": "excluding {names}",
+  "process.map.excludedTransitionNames": "excluding {names}",
   // AbstractionControls (RM-052, issue #227). The two sliders' own labels,
   // the invert switch, the "Auto" heuristic button, and the hidden-count
   // status line. `hiddenActivities`/`hiddenPaths` are separate `PluralMessage`s

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T07:11:02.459Z",
+  "generatedAt": "2026-09-08T08:14:40.514Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25745,6 +25745,11 @@
           "name": "PROCESS_MAP_NODE_MOTION_CLASS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "PROCESS_SELECTION_STATE_MESSAGE_KEYS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "ProcessActivityNode",
