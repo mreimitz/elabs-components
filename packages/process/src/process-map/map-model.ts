@@ -96,7 +96,7 @@ export type ProcessFilterIntent = Extract<
 /** The four intents the map's own menu offers, in menu order. */
 export const PROCESS_FILTER_INTENT_KINDS = ["with", "without", "startsWith", "endsWith"] as const;
 
-/** Human wording for each intent, used by the menu and by the intent's accessible name. */
+/** Human wording for each intent, used by the menu's VISIBLE item text. */
 export const PROCESS_FILTER_INTENT_LABELS: Readonly<Record<ProcessFilterIntent["kind"], string>> =
   Object.freeze({
     with: "Keep cases containing",
@@ -104,6 +104,23 @@ export const PROCESS_FILTER_INTENT_LABELS: Readonly<Record<ProcessFilterIntent["
     startsWith: "Keep cases starting with",
     endsWith: "Keep cases ending with",
   });
+
+/**
+ * The locale message key for each intent's ACCESSIBLE name (#346), one activity's block at
+ * a time — the visible text alone ({@link PROCESS_FILTER_INTENT_LABELS}) is not unique for
+ * a transition's menu, which offers the same four intents once per endpoint: eight items,
+ * four distinct visible strings, each doubled. Each message takes an `{activity}` var, so
+ * the accessible name states which activity the item filters by even though the visible
+ * text (kept unsuffixed, so the menu stays visually compact) does not.
+ */
+export const PROCESS_FILTER_INTENT_MESSAGE_KEYS: Readonly<
+  Record<ProcessFilterIntent["kind"], string>
+> = Object.freeze({
+  with: "process.map.filterIntentWith",
+  without: "process.map.filterIntentWithout",
+  startsWith: "process.map.filterIntentStartsWith",
+  endsWith: "process.map.filterIntentEndsWith",
+});
 
 /**
  * How an element relates to the current selection AND the active filter.
@@ -238,6 +255,21 @@ export interface ProcessMapModel {
   transitionRows: ProcessTransitionRow[];
   /** Format one edge-metric value the way the map prints it — used by the `Legend`. */
   formatEdgeValue: (value: number) => string;
+  /**
+   * How many activities/transitions the active selection or filter has excluded (#375) —
+   * derived once here so the canvas branch, the table branch and any future consumer read
+   * one number instead of recomputing it three times, and so the summary is unit-testable
+   * without a render.
+   */
+  excludedCounts: ProcessMapExcludedCounts;
+}
+
+/** See {@link ProcessMapModel.excludedCounts}. */
+export interface ProcessMapExcludedCounts {
+  activities: number;
+  totalActivities: number;
+  transitions: number;
+  totalTransitions: number;
 }
 
 // ── Metric resolution ────────────────────────────────────────────────────────
@@ -742,6 +774,17 @@ export function buildProcessMapModel({
     };
   });
 
+  const excludedCounts: ProcessMapExcludedCounts = {
+    activities: nodes.reduce((n, node) => n + (node.data.selectionState === "excluded" ? 1 : 0), 0),
+    totalActivities: nodes.length,
+    transitions: edges.reduce(
+      (n, edge) =>
+        n + ((edge.data as ProcessTransitionEdgeData).selectionState === "excluded" ? 1 : 0),
+      0,
+    ),
+    totalTransitions: edges.length,
+  };
+
   return {
     nodes,
     edges,
@@ -752,6 +795,7 @@ export function buildProcessMapModel({
     activityRows,
     transitionRows,
     formatEdgeValue: (value: number) => formatMetricValue(value, metric.edge),
+    excludedCounts,
   };
 }
 
@@ -772,6 +816,20 @@ export function transitionShape(data: ProcessTransitionEdgeData): string {
   if (data.isSelfLoop) return "Self-loop";
   if (data.isBackEdge) return "Back edge";
   return "Forward";
+}
+
+/**
+ * The word for a row's selection/filter state (#373) — the table twin's own channel for
+ * what the canvas already says through {@link activityAriaLabel}/{@link transitionAriaLabel}
+ * (which append this same word to the element's accessible name). Before this, the twin
+ * carried the state only as `data-selection`, a `data-*` attribute that reaches no user.
+ * `"associated"` is the ordinary case and prints nothing, so the column reads as a marker
+ * for the two states that matter, not as noise repeated on every row.
+ */
+export function selectionStateLabel(state: ProcessSelectionState): string {
+  if (state === "selected") return "Selected";
+  if (state === "excluded") return "Excluded";
+  return "";
 }
 
 /** The accessible name of one activity node. */

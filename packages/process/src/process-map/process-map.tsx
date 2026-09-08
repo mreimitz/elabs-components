@@ -95,6 +95,8 @@ import {
   processGraphStructureKey,
   PROCESS_FILTER_INTENT_KINDS,
   PROCESS_FILTER_INTENT_LABELS,
+  PROCESS_FILTER_INTENT_MESSAGE_KEYS,
+  selectionStateLabel,
   type ProcessFilterIntent,
   type ProcessMapEdge,
   type ProcessMapModel,
@@ -621,7 +623,15 @@ export function ProcessMap({
             {index > 0 ? <DropdownMenuSeparator /> : null}
             <DropdownMenuLabel>{activity}</DropdownMenuLabel>
             {PROCESS_FILTER_INTENT_KINDS.map((kind) => (
-              <DropdownMenuItem key={kind} onSelect={() => emitIntent(kind, activity)}>
+              <DropdownMenuItem
+                key={kind}
+                // #346: the visible text alone is not unique on a transition's menu (the
+                // same four intents render once per endpoint), so the accessible name
+                // states which activity this item filters by, via the locale seam — the
+                // visible text stays unsuffixed and compact.
+                aria-label={t(PROCESS_FILTER_INTENT_MESSAGE_KEYS[kind], { activity })}
+                onSelect={() => emitIntent(kind, activity)}
+              >
                 {PROCESS_FILTER_INTENT_LABELS[kind]}
               </DropdownMenuItem>
             ))}
@@ -631,6 +641,23 @@ export function ProcessMap({
     </DropdownMenu>
   );
 
+  // #375: one polite live region names what the active selection/filter just changed —
+  // every OTHER element's per-element "excluded" state (activityAriaLabel/
+  // transitionAriaLabel) is correct but unannounceable in aggregate; this is the summary
+  // nothing else in the map derives. Two independently-pluralized fragments composed at the
+  // call site (see the message's own comment) — never an empty string, even when nothing
+  // is excluded, so the region is never silently blank on mount.
+  const selectionSummary = [
+    t("process.map.excludedActivities", {
+      count: model.excludedCounts.activities,
+      total: model.excludedCounts.totalActivities,
+    }),
+    t("process.map.excludedTransitions", {
+      count: model.excludedCounts.transitions,
+      total: model.excludedCounts.totalTransitions,
+    }),
+  ].join(" · ");
+
   if (tableView) {
     return (
       <div
@@ -639,6 +666,14 @@ export function ProcessMap({
         className={cn("flex size-full flex-col gap-4", className)}
         {...props}
       >
+        <p
+          data-slot="process-map-selection-summary"
+          role="status"
+          aria-live="polite"
+          className="sr-only"
+        >
+          {selectionSummary}
+        </p>
         <div className="flex items-center justify-end">{filterMenu}</div>
         <Table data-slot="process-map-activity-table">
           <TableCaption>
@@ -650,11 +685,19 @@ export function ProcessMap({
               <TableHead scope="col">{t("process.map.columnRole")}</TableHead>
               <TableHead scope="col">{model.nodeMetricLabel}</TableHead>
               <TableHead scope="col">{t("process.map.columnRework")}</TableHead>
+              <TableHead scope="col">{t("process.map.columnState")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {model.activityRows.map((row) => (
-              <TableRow key={row.id} data-selection={row.selectionState}>
+              <TableRow
+                key={row.id}
+                data-selection={row.selectionState}
+                // Complementary, colour-only styling hook (step 4): the real channel is the
+                // State cell's text below, which fires for `selected` AND `excluded`; this
+                // only lights up `TableRow`'s existing `data-[state=selected]:bg-accent`.
+                data-state={row.selectionState === "selected" ? "selected" : undefined}
+              >
                 <TableCell>{row.title}</TableCell>
                 <TableCell>{row.role}</TableCell>
                 <TableCell className="tabular-nums">
@@ -663,6 +706,7 @@ export function ProcessMap({
                     : row.primaryLabel}
                 </TableCell>
                 <TableCell className="tabular-nums">{row.reworkCount ?? 0}</TableCell>
+                <TableCell>{selectionStateLabel(row.selectionState)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -679,11 +723,16 @@ export function ProcessMap({
               <TableHead scope="col">{t("process.map.columnTo")}</TableHead>
               <TableHead scope="col">{t("process.map.columnShape")}</TableHead>
               <TableHead scope="col">{model.edgeMetricLabel}</TableHead>
+              <TableHead scope="col">{t("process.map.columnState")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {model.transitionRows.map((row) => (
-              <TableRow key={row.id} data-selection={row.selectionState}>
+              <TableRow
+                key={row.id}
+                data-selection={row.selectionState}
+                data-state={row.selectionState === "selected" ? "selected" : undefined}
+              >
                 <TableCell>{row.source}</TableCell>
                 <TableCell>{row.target}</TableCell>
                 <TableCell>{row.shape}</TableCell>
@@ -692,6 +741,7 @@ export function ProcessMap({
                     ? `${row.primaryLabel} · ${row.secondaryLabel}`
                     : row.primaryLabel}
                 </TableCell>
+                <TableCell>{selectionStateLabel(row.selectionState)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -709,6 +759,14 @@ export function ProcessMap({
       onKeyDown={handleKeyDown}
       {...props}
     >
+      <p
+        data-slot="process-map-selection-summary"
+        role="status"
+        aria-live="polite"
+        className="sr-only"
+      >
+        {selectionSummary}
+      </p>
       <ProcessMapHoverContext value={hover}>
         <ProcessMapEdgeKeyContext value={handleEdgeKey}>
           <CanvasShell
