@@ -115,6 +115,7 @@ export const VALIDATION_REPORT_FILES = ["validation-report.json", "validation-re
  */
 export const RECORD_TOP_LEVEL_FILES = [
   "RELEASE_NOTES.md",
+  "RELEASE_BODY.md",
   "CHANGELOG.md",
   ...VALIDATION_REPORT_FILES,
 ];
@@ -128,6 +129,7 @@ export const RECORD_ARCHIVE_ENTRIES = [
   "ground-truth",
   "CHANGELOG.md",
   "RELEASE_NOTES.md",
+  "RELEASE_BODY.md",
   ...VALIDATION_REPORT_FILES,
 ];
 
@@ -192,6 +194,39 @@ export function extractReleaseNotes(changelog, version) {
 }
 
 /**
+ * GitHub's hard cap on a Release body (`POST /repos/{o}/{r}/releases`). Exceeding
+ * it fails the call with `HTTP 422 … body is too long (maximum is 125000
+ * characters)` — AFTER `pnpm -r publish` has already run, so the npm packages are
+ * out and immutable while the Release does not exist. v4.1.0 hit this at 170,178
+ * characters (2026-09-08): three weeks of accumulated `## Unreleased` entries.
+ */
+export const GITHUB_RELEASE_BODY_LIMIT = 125000;
+
+/**
+ * The BODY form of the release notes: `notes` when it already fits GitHub's cap,
+ * otherwise the longest whole-line prefix that leaves room for a footer pointing
+ * at the untruncated text. Pure.
+ *
+ * The full notes still ship — `RELEASE_NOTES.md` is hashed in the manifest and
+ * carried in `release-record-<version>.zip`, and `CHANGELOG.md` has them in the
+ * repo. This is the copy the Release page renders, and it is capped MECHANICALLY
+ * rather than by asking a release author to keep the changelog short.
+ */
+export function releaseBodyFromNotes(notes, version, limit = GITHUB_RELEASE_BODY_LIMIT) {
+  const text = String(notes);
+  if (text.length <= limit) return text;
+  const footer =
+    `\n\n---\n\n**These notes are truncated.** The full v${version} section is in ` +
+    `\`CHANGELOG.md\` in this repo, and verbatim in \`RELEASE_NOTES.md\` inside the ` +
+    `\`release-record-${version}.zip\` asset attached to this release. GitHub caps a ` +
+    `release body at ${limit.toLocaleString("en-US")} characters.\n`;
+  const room = limit - footer.length;
+  const cut = text.slice(0, room);
+  const lastBreak = cut.lastIndexOf("\n");
+  return (lastBreak > 0 ? cut.slice(0, lastBreak) : cut).trimEnd() + footer;
+}
+
+/**
  * Write the RECORD half of the snapshot: release notes, the changelog, and the
  * agent-facing ground truth for this exact version (#105). Returns
  * `{ written: string[], missing: string[] }` — snapshot-relative paths.
@@ -209,6 +244,8 @@ export function writeSnapshotRecords({ root = REPO_ROOT, outDir, version }) {
     if (notes) {
       writeFileSync(join(outDir, "RELEASE_NOTES.md"), notes);
       written.push("RELEASE_NOTES.md");
+      writeFileSync(join(outDir, "RELEASE_BODY.md"), releaseBodyFromNotes(notes, version));
+      written.push("RELEASE_BODY.md");
     } else {
       missing.push(`RELEASE_NOTES.md (CHANGELOG.md has no "## v${version}" heading yet)`);
     }

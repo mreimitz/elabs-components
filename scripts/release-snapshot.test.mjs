@@ -24,11 +24,13 @@ import {
   buildReleaseManifest,
   extractReleaseNotes,
   packDistributables,
+  releaseBodyFromNotes,
   recordArchiveName,
   writeReleaseManifest,
   writeSnapshotRecords,
   sha256File,
   ASSET_EXTENSIONS,
+  GITHUB_RELEASE_BODY_LIMIT,
   RECORD_TOP_LEVEL_FILES,
   VALIDATION_REPORT_FILES,
 } from "./release-snapshot.mjs";
@@ -519,4 +521,78 @@ test("every named asset release.yml attaches is checksummed (or is the manifest)
         "RECORD_TOP_LEVEL_FILES (and RECORD_ARCHIVE_ENTRIES) in release-snapshot.mjs",
     );
   }
+});
+
+// ---------------------------------------------------------------------------
+// RELEASE BODY CAP — the v4.1.0 failure: `gh release create` returned
+// `HTTP 422 … body is too long (maximum is 125000 characters)` on a 170,178-char
+// notes section, AFTER the npm publish had already succeeded. The packages were
+// out and immutable; the Release did not exist. These lock the cap.
+// ---------------------------------------------------------------------------
+
+test("releaseBodyFromNotes: notes that already fit are returned untouched", () => {
+  const notes = "## v9.9.9 — 2026-01-01\n\n- one small entry\n";
+  assert.equal(releaseBodyFromNotes(notes, "9.9.9"), notes);
+});
+
+test("releaseBodyFromNotes: oversize notes are capped UNDER GitHub's limit", () => {
+  const notes = "## v9.9.9\n" + "- a line of changelog prose\n".repeat(20000);
+  assert.ok(notes.length > GITHUB_RELEASE_BODY_LIMIT, "fixture must exceed the cap to be a test");
+  const body = releaseBodyFromNotes(notes, "9.9.9");
+  assert.ok(
+    body.length <= GITHUB_RELEASE_BODY_LIMIT,
+    `body is ${body.length} chars — gh release create would 422 at > ${GITHUB_RELEASE_BODY_LIMIT}`,
+  );
+});
+
+test("releaseBodyFromNotes: a truncated body says so and says where the rest is", () => {
+  const notes = "## v9.9.9\n" + "- a line of changelog prose\n".repeat(20000);
+  const body = releaseBodyFromNotes(notes, "9.9.9");
+  assert.match(body, /These notes are truncated/);
+  assert.match(body, /CHANGELOG\.md/);
+  assert.match(body, /release-record-9\.9\.9\.zip/);
+});
+
+test("releaseBodyFromNotes: truncation lands on a line boundary, never mid-line", () => {
+  const notes = "## v9.9.9\n" + "- a line of changelog prose\n".repeat(20000);
+  const body = releaseBodyFromNotes(notes, "9.9.9");
+  const kept = body.slice(0, body.indexOf("\n\n---\n\n"));
+  for (const line of kept.split("\n").slice(1).filter(Boolean)) {
+    assert.equal(line, "- a line of changelog prose", "a line was cut in half");
+  }
+});
+
+test("writeSnapshotRecords emits RELEASE_BODY.md beside RELEASE_NOTES.md", () => {
+  const root = mkdtempSync(join(tmpdir(), "release-body-"));
+  const outDir = join(root, "out");
+  mkdirSync(outDir, { recursive: true });
+  try {
+    writeFileSync(
+      join(root, "CHANGELOG.md"),
+      "# Changelog\n\n## v9.9.9 — 2026-01-01\n\n- one entry\n\n## v9.9.8 — 2025-01-01\n\n- older\n",
+    );
+    const { written } = writeSnapshotRecords({ root, outDir, version: "9.9.9" });
+    assert.ok(written.includes("RELEASE_BODY.md"), "RELEASE_BODY.md must be written");
+    assert.ok(written.includes("RELEASE_NOTES.md"), "RELEASE_NOTES.md must still be written");
+    assert.equal(
+      readFileSync(join(outDir, "RELEASE_BODY.md"), "utf8"),
+      readFileSync(join(outDir, "RELEASE_NOTES.md"), "utf8"),
+      "a short section's body and notes are identical",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("release.yml's --notes-file reads the CAPPED body, not the raw notes", () => {
+  const yml = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "..", ".github", "workflows", "release.yml"),
+    "utf8",
+  );
+  assert.match(
+    yml,
+    /--notes-file "release\/v\$version\/RELEASE_BODY\.md"/,
+    "release.yml must pass RELEASE_BODY.md to gh release create — RELEASE_NOTES.md can exceed " +
+      "GitHub's 125000-char body cap and 422s the call after the publish has already run",
+  );
 });
