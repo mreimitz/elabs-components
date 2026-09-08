@@ -162,12 +162,19 @@ jobs:
           pnpm release:plugin
           pnpm release:snapshot
 
+      # `--notes-file` reads RELEASE_BODY.md, not RELEASE_NOTES.md: GitHub rejects a
+      # release body over 125,000 characters with `HTTP 422 … body is too long`, and
+      # that rejection lands AFTER `pnpm -r publish` — the packages are out and
+      # immutable while the Release does not exist. v4.1.0 hit it at 170,178 chars.
+      # `releaseBodyFromNotes` (scripts/release-snapshot.mjs) caps the body at a line
+      # boundary and footers it with where to read the rest; the FULL notes still ship
+      # as RELEASE_NOTES.md inside release-record-<version>.zip and in CHANGELOG.md.
       - name: Create the GitHub Release
         run: |
           version="${GITHUB_REF_NAME#v}"
           gh release create "$GITHUB_REF_NAME" \
             --title "$GITHUB_REF_NAME" \
-            --notes-file "release/v$version/RELEASE_NOTES.md" \
+            --notes-file "release/v$version/RELEASE_BODY.md" \
             release/v$version/*.tgz \
             release/v$version/*.zip \
             release/v$version/release-manifest.json \
