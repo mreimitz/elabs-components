@@ -19,6 +19,14 @@ vi.mock("../core/discover-graph", async (importOriginal) => {
   return { ...actual, discoverGraph: vi.fn(actual.discoverGraph) };
 });
 
+// Same shape, for `extractVariants` — every existing `extractVariants(orderToCash)` call
+// used elsewhere in this file to compute an "expected" value keeps its real behaviour; this
+// only makes the call COUNTABLE for the P1 lock below (PR #413 review).
+vi.mock("../core/extract-variants", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../core/extract-variants")>();
+  return { ...actual, extractVariants: vi.fn(actual.extractVariants) };
+});
+
 afterEach(cleanup);
 
 const orderToCash = fixture as EventLog;
@@ -423,5 +431,134 @@ describe("useProcessExplorer — the first filter on a worker-path log (RM-052 r
     await waitFor(() => expect(result.current.loading).toBe(false));
     // Once the filtered instance settles, the real filter effect is visible again.
     expect(result.current.excludedCounts.activities).toBeGreaterThan(0);
+  });
+});
+
+describe("useProcessExplorer — settled means settled for the CURRENT target, not 'ever answered' (#347)", () => {
+  it("never surfaces filter A's stale ghosting during filter B's round-trip, even once A's late response lands", async () => {
+    const worker = new ManualWorker();
+    const { result } = renderHook(() =>
+      useProcessExplorer(orderToCash, {
+        workerThreshold: 0,
+        worker: { createWorker: () => worker },
+      }),
+    );
+    // Settle the mount's own full-log discovery first, isolating the race below.
+    worker.resolvePending();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const fullTotals = result.current.graph.totals;
+
+    // Step 1: apply filter A — its worker request is now queued, unresolved.
+    act(() => result.current.applyIntent({ kind: "with", activity: "Reject Order" }));
+    expect(result.current.loading).toBe(true);
+
+    // Step 2: clear filter A BEFORE its answer arrives — `filteredLog` is back to `log`
+    // itself, so this instance transitions into skip.
+    act(() => result.current.clearIntent(0));
+    expect(result.current.intents).toEqual([]);
+    expect(result.current.loading).toBe(false);
+
+    // Step 3: A's now-stale response lands anyway, while the instance sits skipped. The
+    // fix must supersede it on the skip transition (never store it); before the fix, it
+    // landed straight into `asyncState` because skip never bumped `requestIdRef`. Flush
+    // past every microtask hop between `resolvePending` and the state update it may cause
+    // (two chained async functions plus `Promise.all`) with a real macrotask tick, so the
+    // next step observes whatever A's response actually did, not a not-yet-landed promise.
+    await act(async () => {
+      worker.resolvePending();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // Skipped means `filteredLog === log` again — the graph must read exactly like the
+    // never-filtered full discovery, not like A's ghosted one.
+    expect(result.current.graph.totals).toEqual(fullTotals);
+    expect(result.current.excludedCounts).toEqual({ activities: 0, paths: 0 });
+
+    // Step 4: apply a DIFFERENT filter, B — its own worker request is now in flight.
+    act(() => result.current.applyIntent({ kind: "with", activity: "Ship Order" }));
+    expect(result.current.loading).toBe(true);
+
+    // The real race: while B is still unsettled, nothing here may show A's shape. Before
+    // the fix, A's stale result (wrongly stored in step 3) was still sitting in state and
+    // read back out as if it were a settled (if outdated) answer for B's round-trip —
+    // `settled` read `true` from A's leftover result, never re-checked against B's target.
+    expect(result.current.graph.totals).toEqual(fullTotals);
+    expect(result.current.excludedCounts).toEqual({ activities: 0, paths: 0 });
+    // The three KPIs must also agree with each other throughout — `variants` is a
+    // synchronous derivation of `filteredLog`, so it can never lag `cases`/`events` into
+    // reporting A's (or B's not-yet-settled) shape.
+    expect(result.current.kpis.variants).toBe(extractVariants(result.current.filteredLog).length);
+
+    // Step 5: B settles — its real filter effect becomes visible, and it must be B's
+    // shape, not A's (both filters exclude a disjoint, non-empty set of activities here).
+    worker.resolvePending();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.excludedCounts.activities).toBeGreaterThan(0);
+    // "Ship Order" is what B itself filters on — it must SURVIVE under B, even though it
+    // was one of the five activities A's filter excluded (a real A-vs-B shape check).
+    expect(result.current.selectionStates.activities?.["Ship Order"]).toBeUndefined();
+    expect(result.current.kpis.variants).toBe(extractVariants(result.current.filteredLog).length);
+  });
+});
+
+describe("useProcessExplorer — kpis.variants stays off the render path above workerThreshold (PR #413 review, P1)", () => {
+  it("never runs the full extractVariants pipeline synchronously in render for a worker-path log", () => {
+    vi.mocked(extractVariants).mockClear();
+    const worker = new ManualWorker();
+    const { result } = renderHook(() =>
+      useProcessExplorer(orderToCash, {
+        workerThreshold: 0,
+        worker: { createWorker: () => worker },
+      }),
+    );
+    // Above `workerThreshold`, the ONLY place `extractVariants` may run is `handle.variants()`
+    // — queued on `worker`, deliberately not yet answered (`resolvePending` was never
+    // called). Before the fix, `kpis.variants` called `extractVariants(filteredLog)` directly
+    // during render, running the exact same full extraction (normalize, group, sort, hash,
+    // per-variant `durationStats`) the worker path exists to avoid.
+    expect(extractVariants).not.toHaveBeenCalled();
+    // The count itself must still be correct once the render has run.
+    expect(result.current.kpis.variants).toBe(extractVariants(orderToCash).length);
+  });
+});
+
+describe("useProcessExplorer — a log switch never flashes a settled-looking empty result (PR #413 review, P2)", () => {
+  it("reports loading on the very render the target moves to a new above-threshold log", async () => {
+    const worker = new ManualWorker();
+    const renders: { loading: boolean; cases: number; events: number }[] = [];
+    const { rerender } = renderHook(
+      ({ log }: { log: EventLog }) => {
+        const value = useProcessExplorer(log, {
+          workerThreshold: 0,
+          worker: { createWorker: () => worker },
+        });
+        renders.push({
+          loading: value.loading,
+          cases: value.graph.totals.cases,
+          events: value.graph.totals.events,
+        });
+        return value;
+      },
+      { initialProps: { log: orderToCash } },
+    );
+    worker.resolvePending();
+    await waitFor(() => expect(renders[renders.length - 1]?.loading).toBe(false));
+
+    const other: EventLog = { events: orderToCash.events.slice(0, 6) }; // case-1 and case-2 only
+    renders.length = 0;
+    rerender({ log: other });
+
+    // Every render produced for the NEW target — including the very first one, before its
+    // own worker request can resolve or `loading`'s passive effect can even run — must never
+    // claim settled-empty: `loading: false` paired with `EMPTY_GRAPH`'s zero totals. Before
+    // the fix, the FIRST such render did exactly that, because `asyncState` still held the
+    // OLD target's stale settled result and the `loading` STATE variable had not yet been
+    // flipped by the effect for the new target.
+    const flashed = renders.some(
+      (render) => !render.loading && render.cases === 0 && render.events === 0,
+    );
+    expect(flashed).toBe(false);
+
+    worker.resolvePending();
+    await waitFor(() => expect(renders[renders.length - 1]?.loading).toBe(false));
   });
 });

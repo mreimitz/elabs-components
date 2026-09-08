@@ -35,6 +35,21 @@ import { computeAutoAbstraction } from "./auto-abstraction";
 const TICKS = [25, 50, 75, 100] as const;
 
 /**
+ * The range every tick's percent value is drawn from — the SAME `min`/`max` handed to both
+ * `Slider`s below (`min={SLIDER_MIN} max={SLIDER_MAX}`), so a tick's rail offset is always
+ * derived from the slider's own range rather than a second, independently hardcoded `0..100`
+ * (#355). Today they coincide numerically (percent === offset), but a future non-percent range
+ * stays correct because both read this one pair of constants.
+ */
+const SLIDER_MIN = 0;
+const SLIDER_MAX = 100;
+
+/** A tick's position along the rail, as a `0..100` offset — see {@link SLIDER_MIN}. */
+function tickOffsetPercent(percent: number): number {
+  return ((percent - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100;
+}
+
+/**
  * How far above the "Auto" activities fraction the paths fraction is set — the roadmap's
  * "paths % = 0.2 above the activities %" (RM-052 round 2, #227, F2 third piece). `abstractGraph`
  * only considers an edge a candidate to keep once BOTH its endpoints survive the activities
@@ -68,7 +83,13 @@ export interface AbstractionControlsProps extends Omit<HTMLAttributes<HTMLDivEle
   label?: string;
 }
 
-/** One clickable percentage tick — sets its slider directly rather than requiring a drag. */
+/**
+ * One clickable percentage tick — sets its slider directly rather than requiring a drag.
+ * Positioned on a `relative` rail (never spread by flexbox, #355): its centre sits at its own
+ * value's fraction of the rail, matching the `Slider` track's coordinate system directly below
+ * it. The interior ticks centre on their value (`-translate-x-1/2`); the `100%` tick right-aligns
+ * to the rail's own edge instead (`-translate-x-full`) so it is never clipped.
+ */
 function Tick({
   percent,
   active,
@@ -78,14 +99,21 @@ function Tick({
   active: boolean;
   onSelect(percent: number): void;
 }) {
+  const offsetPercent = tickOffsetPercent(percent);
   return (
     <button
       type="button"
       data-slot="abstraction-controls-tick"
       aria-pressed={active}
       onClick={() => onSelect(percent)}
+      style={{ left: `${offsetPercent}%` }}
       className={cn(
-        "focus-ring rounded-sm text-meta text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground",
+        "focus-ring absolute top-0 rounded-sm text-meta text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground",
+        offsetPercent <= 0
+          ? "translate-x-0"
+          : offsetPercent >= 100
+            ? "-translate-x-full"
+            : "-translate-x-1/2",
         active && "font-semibold text-foreground",
       )}
     >
@@ -152,9 +180,14 @@ export const AbstractionControls = forwardRef<HTMLDivElement, AbstractionControl
         className={cn("flex flex-col gap-4", className)}
         {...props}
       >
-        <div data-slot="abstraction-controls-activities" className="flex flex-col gap-1.5">
+        <div
+          data-slot="abstraction-controls-activities"
+          role="group"
+          aria-labelledby={`${activitiesId}-label`}
+          className="flex flex-col gap-1.5"
+        >
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor={activitiesId} className="text-body">
+            <Label id={`${activitiesId}-label`} htmlFor={activitiesId} className="text-body">
               {t("process.abstractionControls.activities")}
             </Label>
             <span className="text-meta text-muted-foreground tabular-nums">
@@ -163,14 +196,14 @@ export const AbstractionControls = forwardRef<HTMLDivElement, AbstractionControl
           </div>
           <Slider
             id={activitiesId}
-            min={0}
-            max={100}
+            min={SLIDER_MIN}
+            max={SLIDER_MAX}
             step={1}
             value={[activitiesPercent]}
             onValueChange={([next]) => setActivitiesPercent(next ?? activitiesPercent)}
             aria-label={t("process.abstractionControls.activities")}
           />
-          <div className="flex items-center justify-between px-0.5">
+          <div className="relative h-4">
             {TICKS.map((percent) => (
               <Tick
                 key={percent}
@@ -182,23 +215,28 @@ export const AbstractionControls = forwardRef<HTMLDivElement, AbstractionControl
           </div>
         </div>
 
-        <div data-slot="abstraction-controls-paths" className="flex flex-col gap-1.5">
+        <div
+          data-slot="abstraction-controls-paths"
+          role="group"
+          aria-labelledby={`${pathsId}-label`}
+          className="flex flex-col gap-1.5"
+        >
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor={pathsId} className="text-body">
+            <Label id={`${pathsId}-label`} htmlFor={pathsId} className="text-body">
               {t("process.abstractionControls.paths")}
             </Label>
             <span className="text-meta text-muted-foreground tabular-nums">{pathsPercent}%</span>
           </div>
           <Slider
             id={pathsId}
-            min={0}
-            max={100}
+            min={SLIDER_MIN}
+            max={SLIDER_MAX}
             step={1}
             value={[pathsPercent]}
             onValueChange={([next]) => setPathsPercent(next ?? pathsPercent)}
             aria-label={t("process.abstractionControls.paths")}
           />
-          <div className="flex items-center justify-between px-0.5">
+          <div className="relative h-4">
             {TICKS.map((percent) => (
               <Tick
                 key={percent}

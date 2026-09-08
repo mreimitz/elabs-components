@@ -35,7 +35,7 @@
  */
 import { type HTMLAttributes } from "react";
 import { CircleSlash2 } from "lucide-react";
-import { MetricCard } from "@elabs-ai/components-ui";
+import { MetricCard, type LocaleContextValue } from "@elabs-ai/components-ui";
 import { useLocale } from "@elabs-ai/components-ui";
 import { MetricGrid } from "@elabs-ai/components-charts";
 import { Sparkline } from "@elabs-ai/components-charts";
@@ -60,8 +60,63 @@ export interface ProcessKpiStripProps extends HTMLAttributes<HTMLDivElement> {
   loading?: boolean;
 }
 
-function trendVisual(values: number[] | undefined, label: string) {
+/** How a trend's two endpoints are formatted — mirrors each tile's own headline format. */
+type TrendValueFormat = "count" | "duration" | "percent";
+
+/** The trend's direction, as the locale key for its word ("rising"/"falling"/"steady"). */
+function trendDirectionKey(
+  first: number,
+  last: number,
+):
+  | "process.kpiStrip.trendRising"
+  | "process.kpiStrip.trendFalling"
+  | "process.kpiStrip.trendSteady" {
+  if (last > first) return "process.kpiStrip.trendRising";
+  if (last < first) return "process.kpiStrip.trendFalling";
+  return "process.kpiStrip.trendSteady";
+}
+
+/** Format one trend endpoint the same way the tile's own headline value is formatted. */
+function formatTrendValue(
+  formatNumber: LocaleContextValue["formatNumber"],
+  value: number,
+  format: TrendValueFormat,
+): string {
+  switch (format) {
+    case "duration":
+      return formatDurationMs(value);
+    case "percent":
+      return formatNumber(value, { style: "percent", maximumFractionDigits: 1 });
+    case "count":
+    default:
+      return formatNumber(value);
+  }
+}
+
+/**
+ * A sparkline's text alternative (#359): the subject plus what the picture shows, not the
+ * subject alone — the tile's own label already names the subject, and `Sparkline`'s own
+ * default (which describes the series) is strictly more informative than repeating it.
+ * Numbers are formatted the same way the tile's own headline value is, so the visible and
+ * accessible readings never disagree (a raw 0.18 beside a tile printing 18% would).
+ */
+function trendVisual(
+  values: number[] | undefined,
+  subject: string,
+  format: TrendValueFormat,
+  t: LocaleContextValue["t"],
+  formatNumber: LocaleContextValue["formatNumber"],
+) {
   if (!values || values.length === 0) return undefined;
+  const first = values[0]!;
+  const last = values[values.length - 1]!;
+  const label = t("process.kpiStrip.trendAlt", {
+    subject,
+    periods: values.length,
+    direction: t(trendDirectionKey(first, last)),
+    first: formatTrendValue(formatNumber, first, format),
+    last: formatTrendValue(formatNumber, last, format),
+  });
   return <Sparkline values={values} label={label} />;
 }
 
@@ -73,7 +128,7 @@ export function ProcessKpiStrip({
   className,
   ...props
 }: ProcessKpiStripProps) {
-  const { t } = useLocale();
+  const { t, formatNumber } = useLocale();
 
   const hasConformance = conformance !== null && conformance !== undefined;
   const conformanceHint = t("process.kpiStrip.conformanceUnavailableHint");
@@ -85,32 +140,56 @@ export function ProcessKpiStrip({
           label={t("process.kpiStrip.cases")}
           value={kpis.cases}
           announceLoading={false}
-          visual={trendVisual(trends?.cases, t("process.kpiStrip.cases"))}
+          visual={trendVisual(trends?.cases, t("process.kpiStrip.cases"), "count", t, formatNumber)}
         />
         <MetricCard
           label={t("process.kpiStrip.events")}
           value={kpis.events}
           announceLoading={false}
-          visual={trendVisual(trends?.events, t("process.kpiStrip.events"))}
+          visual={trendVisual(
+            trends?.events,
+            t("process.kpiStrip.events"),
+            "count",
+            t,
+            formatNumber,
+          )}
         />
         <MetricCard
           label={t("process.kpiStrip.variants")}
           value={kpis.variants}
           announceLoading={false}
-          visual={trendVisual(trends?.variants, t("process.kpiStrip.variants"))}
+          visual={trendVisual(
+            trends?.variants,
+            t("process.kpiStrip.variants"),
+            "count",
+            t,
+            formatNumber,
+          )}
         />
         <MetricCard
           label={t("process.kpiStrip.medianThroughput")}
           value={formatDurationMs(kpis.medianThroughput)}
           announceLoading={false}
-          visual={trendVisual(trends?.medianThroughput, t("process.kpiStrip.medianThroughput"))}
+          visual={trendVisual(
+            trends?.medianThroughput,
+            t("process.kpiStrip.medianThroughput"),
+            "duration",
+            t,
+            formatNumber,
+          )}
         />
         <MetricCard
           label={t("process.kpiStrip.reworkRate")}
           value={kpis.reworkRate}
           valueFormat="percent"
           announceLoading={false}
-          visual={trendVisual(trends?.reworkRate, t("process.kpiStrip.reworkRate"))}
+          visual={trendVisual(
+            trends?.reworkRate,
+            t("process.kpiStrip.reworkRate"),
+            "percent",
+            t,
+            formatNumber,
+          )}
         />
         <MetricCard
           label={t("process.kpiStrip.conformance")}
@@ -142,7 +221,13 @@ export function ProcessKpiStrip({
           announceLoading={false}
           visual={
             hasConformance
-              ? trendVisual(trends?.conformance, t("process.kpiStrip.conformance"))
+              ? trendVisual(
+                  trends?.conformance,
+                  t("process.kpiStrip.conformance"),
+                  "percent",
+                  t,
+                  formatNumber,
+                )
               : undefined
           }
         />

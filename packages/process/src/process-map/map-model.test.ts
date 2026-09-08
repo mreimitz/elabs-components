@@ -207,6 +207,47 @@ describe("selection", () => {
   });
 });
 
+// #375: the pure inputs to the map's own live-region summary, locked without a render —
+// derived once in buildProcessMapModel so the canvas branch, the table branch and this
+// test all read one number instead of three independent recomputations.
+describe("excludedCounts (#375) — the derived summary a live region announces", () => {
+  it("counts zero excluded, against the real totals, when nothing narrows the graph", () => {
+    const model = buildProcessMapModel({
+      graph,
+      metric: { node: "absolute", edge: "absolute" },
+    });
+    expect(model.excludedCounts).toEqual({
+      activities: 0,
+      totalActivities: graph.activities.length,
+      transitions: 0,
+      totalTransitions: graph.transitions.length,
+    });
+  });
+
+  it("counts exactly the nodes/edges the model itself marks excluded", () => {
+    const focus = graph.transitions[0]!.source;
+    const model = buildProcessMapModel({
+      graph,
+      metric: { node: "absolute", edge: "absolute" },
+      selection: { kind: "activity", id: focus },
+    });
+    const expectedActivities = model.nodes.filter(
+      (n) => n.data.selectionState === "excluded",
+    ).length;
+    const expectedTransitions = model.edges.filter(
+      (e) => (e.data as { selectionState: string }).selectionState === "excluded",
+    ).length;
+    // Non-vacuity: this selection genuinely excludes something on the shared fixture.
+    expect(expectedActivities).toBeGreaterThan(0);
+    expect(model.excludedCounts).toEqual({
+      activities: expectedActivities,
+      totalActivities: graph.activities.length,
+      transitions: expectedTransitions,
+      totalTransitions: graph.transitions.length,
+    });
+  });
+});
+
 describe("resolveSelectionState — the five-rule precedence (RM-052 round 2, #227)", () => {
   const a = graph.activities[0]!.id;
   const b = graph.activities[1]!.id;

@@ -96,7 +96,7 @@ export type ProcessFilterIntent = Extract<
 /** The four intents the map's own menu offers, in menu order. */
 export const PROCESS_FILTER_INTENT_KINDS = ["with", "without", "startsWith", "endsWith"] as const;
 
-/** Human wording for each intent, used by the menu and by the intent's accessible name. */
+/** Human wording for each intent, used by the menu's VISIBLE item text. */
 export const PROCESS_FILTER_INTENT_LABELS: Readonly<Record<ProcessFilterIntent["kind"], string>> =
   Object.freeze({
     with: "Keep cases containing",
@@ -104,6 +104,23 @@ export const PROCESS_FILTER_INTENT_LABELS: Readonly<Record<ProcessFilterIntent["
     startsWith: "Keep cases starting with",
     endsWith: "Keep cases ending with",
   });
+
+/**
+ * The locale message key for each intent's ACCESSIBLE name (#346), one activity's block at
+ * a time — the visible text alone ({@link PROCESS_FILTER_INTENT_LABELS}) is not unique for
+ * a transition's menu, which offers the same four intents once per endpoint: eight items,
+ * four distinct visible strings, each doubled. Each message takes an `{activity}` var, so
+ * the accessible name states which activity the item filters by even though the visible
+ * text (kept unsuffixed, so the menu stays visually compact) does not.
+ */
+export const PROCESS_FILTER_INTENT_MESSAGE_KEYS: Readonly<
+  Record<ProcessFilterIntent["kind"], string>
+> = Object.freeze({
+  with: "process.map.filterIntentWith",
+  without: "process.map.filterIntentWithout",
+  startsWith: "process.map.filterIntentStartsWith",
+  endsWith: "process.map.filterIntentEndsWith",
+});
 
 /**
  * How an element relates to the current selection AND the active filter.
@@ -238,6 +255,21 @@ export interface ProcessMapModel {
   transitionRows: ProcessTransitionRow[];
   /** Format one edge-metric value the way the map prints it — used by the `Legend`. */
   formatEdgeValue: (value: number) => string;
+  /**
+   * How many activities/transitions the active selection or filter has excluded (#375) —
+   * derived once here so the canvas branch, the table branch and any future consumer read
+   * one number instead of recomputing it three times, and so the summary is unit-testable
+   * without a render.
+   */
+  excludedCounts: ProcessMapExcludedCounts;
+}
+
+/** See {@link ProcessMapModel.excludedCounts}. */
+export interface ProcessMapExcludedCounts {
+  activities: number;
+  totalActivities: number;
+  transitions: number;
+  totalTransitions: number;
 }
 
 // ── Metric resolution ────────────────────────────────────────────────────────
@@ -742,6 +774,17 @@ export function buildProcessMapModel({
     };
   });
 
+  const excludedCounts: ProcessMapExcludedCounts = {
+    activities: nodes.reduce((n, node) => n + (node.data.selectionState === "excluded" ? 1 : 0), 0),
+    totalActivities: nodes.length,
+    transitions: edges.reduce(
+      (n, edge) =>
+        n + ((edge.data as ProcessTransitionEdgeData).selectionState === "excluded" ? 1 : 0),
+      0,
+    ),
+    totalTransitions: edges.length,
+  };
+
   return {
     nodes,
     edges,
@@ -752,6 +795,7 @@ export function buildProcessMapModel({
     activityRows,
     transitionRows,
     formatEdgeValue: (value: number) => formatMetricValue(value, metric.edge),
+    excludedCounts,
   };
 }
 
@@ -773,6 +817,37 @@ export function transitionShape(data: ProcessTransitionEdgeData): string {
   if (data.isBackEdge) return "Back edge";
   return "Forward";
 }
+
+/**
+ * The CANONICAL (English, un-localized) word for a row's selection/filter state (#373) —
+ * this module is pure data shaping with no locale seam of its own, so it cannot resolve a
+ * translation. It stays exported for a non-React caller (tests, a console, a non-locale
+ * context). The State column's own rendered CELLS resolve the localized text instead, via
+ * {@link PROCESS_SELECTION_STATE_MESSAGE_KEYS} + `t()` at the render site
+ * (`process-map.tsx`) — see that key map's own comment (#413 review). `"associated"` is the
+ * ordinary case and prints nothing, so the column reads as a marker for the two states that
+ * matter, not as noise repeated on every row.
+ */
+export function selectionStateLabel(state: ProcessSelectionState): string {
+  if (state === "selected") return "Selected";
+  if (state === "excluded") return "Excluded";
+  return "";
+}
+
+/**
+ * The locale message key for each NON-ORDINARY selection/filter state (#413 review,
+ * PRRT_kwDOT6D7ts6gJX2C) — the State column's cells are the table twin's own
+ * screen-reader channel for row state (#373), so leaving them printing
+ * {@link selectionStateLabel}'s bare English word left a non-English `LocaleProvider`
+ * with untranslated visible AND accessible content. `"associated"` has no entry: it is the
+ * ordinary case and the column prints nothing for it, same as {@link selectionStateLabel}.
+ */
+export const PROCESS_SELECTION_STATE_MESSAGE_KEYS: Readonly<
+  Partial<Record<ProcessSelectionState, string>>
+> = Object.freeze({
+  selected: "process.map.stateSelected",
+  excluded: "process.map.stateExcluded",
+});
 
 /** The accessible name of one activity node. */
 export function activityAriaLabel(data: ProcessActivityNodeData): string {

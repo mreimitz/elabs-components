@@ -692,6 +692,50 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "process.map.columnFrom": "From",
   "process.map.columnTo": "To",
   "process.map.columnShape": "Shape",
+  // State column (#373) — the table twin's own channel for the selection/filter state the
+  // canvas already says through real text in its accessible names; the twin used to carry
+  // it only as a `data-*` attribute, which reaches no user.
+  "process.map.columnState": "State",
+  // The State column's own CELL values (#413 review, PRRT_kwDOT6D7ts6gJX2C). #373 localized
+  // the column HEADER but left every cell printing the literal English word — since that cell
+  // is also the row's screen-reader channel for its selection/filter state
+  // (`selectionStateLabel` below is the un-localized canonical word `process-map.tsx` maps
+  // through these keys at the render site), a non-English `LocaleProvider` left both the
+  // visible AND the accessible content untranslated. `"associated"` (the ordinary case) has
+  // no key: it prints nothing, by design.
+  "process.map.stateSelected": "Selected",
+  "process.map.stateExcluded": "Excluded",
+  // Filter-intent menu item ACCESSIBLE names (#346). A transition's menu offers the same
+  // four intents once per endpoint (eight items total); the visible text
+  // (`PROCESS_FILTER_INTENT_LABELS` in map-model.ts) stays unsuffixed and compact, so these
+  // compose the activity into the item's real accessible name instead — the channel a
+  // screen-reader user actually hears, and the one the visible-only text left ambiguous.
+  "process.map.filterIntentWith": "Keep cases containing {activity}",
+  "process.map.filterIntentWithout": "Keep cases without {activity}",
+  "process.map.filterIntentStartsWith": "Keep cases starting with {activity}",
+  "process.map.filterIntentEndsWith": "Keep cases ending with {activity}",
+  // The map's own live-region summary (#375) — one polite `role="status"` announces what
+  // the active selection/filter just changed, mirroring `AbstractionControls`' hidden-count
+  // summary below: two independently-pluralized fragments, composed at the call site
+  // (`process-map.tsx`) rather than merged into one message, for the same reason.
+  "process.map.excludedActivities": {
+    one: "{count} of {total} activity excluded",
+    other: "{count} of {total} activities excluded",
+  },
+  "process.map.excludedTransitions": {
+    one: "{count} of {total} transition excluded",
+    other: "{count} of {total} transitions excluded",
+  },
+  // The live region's AFFECTED-SET fragments (#413 review, PRRT_kwDOT6D7ts6gJX2I). Counts
+  // alone are not enough: two selections/filters that exclude DIFFERENT elements but land on
+  // the SAME counts produce byte-for-byte identical text, so the polite region — which
+  // announces content CHANGES, not model changes — stays silent even though the map
+  // re-inked. Naming which elements are excluded makes the string track the actual set, not
+  // only its size. Composed at the call site alongside the two counts above, and omitted
+  // entirely when nothing of that kind is excluded (so the common case stays as short as
+  // before this fix).
+  "process.map.excludedActivityNames": "excluding {names}",
+  "process.map.excludedTransitionNames": "excluding {names}",
   // AbstractionControls (RM-052, issue #227). The two sliders' own labels,
   // the invert switch, the "Auto" heuristic button, and the hidden-count
   // status line. `hiddenActivities`/`hiddenPaths` are separate `PluralMessage`s
@@ -741,4 +785,15 @@ export const DEFAULT_MESSAGES: Record<string, MessageValue> = {
   "process.kpiStrip.conformance": "Conformance",
   "process.kpiStrip.conformanceUnavailable": "Not available",
   "process.kpiStrip.conformanceUnavailableHint": "Run conformance checking to see this metric.",
+  // Sparkline text alternative (#359). `Sparkline`'s own default alt text is more
+  // informative than the tile's own label — passing the label straight through
+  // overrode it and left a screen-reader user hearing the tile's name twice with no
+  // sense of the trend. `direction` is itself a resolved `t()` value (trendRising/
+  // Falling/Steady), composed into this template the same way `hiddenSummary`
+  // (abstraction-controls.tsx) composes two already-localized fragments.
+  "process.kpiStrip.trendAlt":
+    "{subject}, {periods}-period trend, {direction} from {first} to {last}",
+  "process.kpiStrip.trendRising": "rising",
+  "process.kpiStrip.trendFalling": "falling",
+  "process.kpiStrip.trendSteady": "steady",
 };

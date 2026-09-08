@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T22:01:58.414Z",
+  "generatedAt": "2026-09-08T08:14:40.514Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25727,6 +25727,11 @@
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
+          "name": "PROCESS_FILTER_INTENT_MESSAGE_KEYS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "PROCESS_MAP_EDGE_SCALE_GROUP",
           "kind": "value",
           "module": "packages/process/src/process-map/process-transition-edge.tsx"
@@ -25740,6 +25745,11 @@
           "name": "PROCESS_MAP_NODE_MOTION_CLASS",
           "kind": "value",
           "module": "packages/process/src/process-map/use-process-layout.ts"
+        },
+        {
+          "name": "PROCESS_SELECTION_STATE_MESSAGE_KEYS",
+          "kind": "value",
+          "module": "packages/process/src/process-map/map-model.ts"
         },
         {
           "name": "ProcessActivityNode",
@@ -25884,6 +25894,10 @@
           "module": "packages/process/src/process-map/process-map-context.ts"
         },
         {
+          "name": "ProcessMapExcludedCounts",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
           "name": "ProcessMapHoverState",
           "module": "packages/process/src/process-map/process-map-context.ts"
         },
@@ -26023,6 +26037,10 @@
         },
         {
           "name": "selectionNeighbourhood",
+          "module": "packages/process/src/process-map/map-model.ts"
+        },
+        {
+          "name": "selectionStateLabel",
           "module": "packages/process/src/process-map/map-model.ts"
         },
         {
