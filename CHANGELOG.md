@@ -15,6 +15,19 @@
 
 ### Fixed
 
+- `@elabs-ai/components-process`: `ProcessMap`'s `tableView` State column now prints a
+  localized `Selected`/`Excluded` through the new `process.map.stateSelected`/
+  `process.map.stateExcluded` locale messages (`@elabs-ai/components-ui`) instead of a bare
+  English literal. The column's HEADER already went through the locale seam (#373), but every
+  CELL still printed the raw English word — and since that cell doubles as the row's real
+  accessible name (the table twin's own screen-reader channel for selection/filter state), a
+  non-English `LocaleProvider` left both the visible and the accessible content untranslated.
+  Also: the map's `role="status"` live-region summary now names which activities/transitions
+  are excluded, not only how many — two selections or filters that exclude DIFFERENT elements
+  but land on the SAME counts used to leave the summary byte-for-byte identical, so a polite
+  live region (which announces content changes, not model changes) stayed silent even though
+  the map had re-inked (#413 review).
+
 - `@elabs-ai/components-editor`: `CodeWorkspace` no longer splits the editor height across every
   open file. The `forceMount` that #154 added to keep each tab panel's DOM id resolvable also
   suppresses the `hidden` Radix would otherwise apply — `TabsContent` derives it from

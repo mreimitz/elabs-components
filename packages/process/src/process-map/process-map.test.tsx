@@ -12,6 +12,7 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import { discoverGraph } from "../core/discover-graph";
 import { generateSyntheticLog } from "../core/fixtures/synthetic-log";
 import { buildProcessMapModel, GHOST_OPACITY } from "./map-model";
@@ -141,6 +142,46 @@ describe("ProcessMap — the accessible table twin", () => {
     for (const row of associatedRows) {
       expect(row).not.toHaveAccessibleName(/Selected|Excluded/);
     }
+  });
+
+  // #413 review (PRRT_kwDOT6D7ts6gJX2C): the State column's HEADER went through the locale
+  // seam (#373's "process.map.columnState"), but every CELL still printed the literal
+  // English word — and that cell is also the row's real accessible name (the assertion
+  // above), so a non-English `LocaleProvider` left both the visible AND the accessible
+  // content untranslated. Locks that a translated `stateSelected`/`stateExcluded` message
+  // reaches the cell text and the row's accessible name, in both states.
+  it("routes the State cell's text through the locale provider (#413 review)", () => {
+    const target = graph.activities[0]!.id;
+    const excludedId = graph.activities[graph.activities.length - 1]!.id;
+    render(
+      <LocaleProvider
+        messages={{
+          "process.map.stateSelected": "Ausgewählt",
+          "process.map.stateExcluded": "Ausgeschlossen",
+        }}
+      >
+        <ProcessMap
+          graph={graph}
+          metric={metric}
+          tableView
+          selection={{ kind: "activity", id: target }}
+          selectionStates={{ activities: { [excludedId]: "excluded" } }}
+        />
+      </LocaleProvider>,
+    );
+    const table = screen.getByRole("table", { name: /Activities/ });
+
+    const selectedRow = within(table).getByRole("row", { name: new RegExp(escapeRe(target)) });
+    expect(selectedRow).toHaveTextContent("Ausgewählt");
+    expect(selectedRow).not.toHaveTextContent("Selected");
+    expect(selectedRow).toHaveAccessibleName(/Ausgewählt/);
+
+    const excludedRow = within(table).getByRole("row", {
+      name: new RegExp(escapeRe(excludedId)),
+    });
+    expect(excludedRow).toHaveTextContent("Ausgeschlossen");
+    expect(excludedRow).not.toHaveTextContent("Excluded");
+    expect(excludedRow).toHaveAccessibleName(/Ausgeschlossen/);
   });
 });
 
@@ -287,6 +328,46 @@ describe("ProcessMap — the selection/filter summary live region (#375)", () =>
     expect(after).toContain(
       `${selectedModel.excludedCounts.activities} of ${graph.activities.length} activities excluded`,
     );
+  });
+
+  // #413 review (PRRT_kwDOT6D7ts6gJX2I): `selectionSummary` was built from counts alone, so
+  // moving between two states that exclude DIFFERENT elements but land on the SAME counts
+  // left the string byte-for-byte identical — a polite region announces content CHANGES, so
+  // that interaction announced nothing even though the map re-inked. Two single-activity
+  // exclusions on the same fixture: both exclude exactly one of N activities and zero
+  // transitions (equal counts), but a different activity each time.
+  it("still changes when two exclusion sets differ but land on the same counts", () => {
+    const first = graph.activities[0]!.id;
+    const second = graph.activities[1]!.id;
+    expect(first).not.toBe(second);
+
+    const { rerender } = render(
+      <ProcessMap
+        graph={graph}
+        metric={metric}
+        tableView
+        selectionStates={{ activities: { [first]: "excluded" } }}
+      />,
+    );
+    const before = screen.getByRole("status").textContent;
+    // Non-vacuity: both states really do land on the same excluded/total counts.
+    expect(before).toContain(`1 of ${graph.activities.length} activity excluded`);
+    expect(before).toContain(`0 of ${graph.transitions.length} transitions excluded`);
+
+    rerender(
+      <ProcessMap
+        graph={graph}
+        metric={metric}
+        tableView
+        selectionStates={{ activities: { [second]: "excluded" } }}
+      />,
+    );
+    const after = screen.getByRole("status").textContent;
+    expect(after).toContain(`1 of ${graph.activities.length} activity excluded`);
+    expect(after).toContain(`0 of ${graph.transitions.length} transitions excluded`);
+
+    // The lock: same counts, different affected element — the announced text must differ.
+    expect(after).not.toBe(before);
   });
 });
 
