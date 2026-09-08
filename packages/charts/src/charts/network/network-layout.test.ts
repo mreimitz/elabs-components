@@ -37,6 +37,7 @@ import {
   linkWidth,
   NETWORK_DEFAULT_NODE_RADIUS,
   NETWORK_MAX_NODE_RADIUS,
+  NETWORK_MIN_COLUMN_SPAN,
   NETWORK_MIN_NODE_RADIUS,
   networkSummary,
   nodeRadius,
@@ -622,6 +623,28 @@ describe("computeNetworkLayout", () => {
       // name is built from, so truncation never reaches assistive tech.
       expect(node.label).not.toBe(node.displayLabel);
     }
+  });
+
+  // #412 review — capping the gutters at half the width ignored the base
+  // padding both edges are charged separately, so a narrow chart could spend
+  // the whole inter-column span on labels and stack both columns on one x.
+  it("keeps the two arc columns apart on a narrow chart with long labels", () => {
+    const measureLabel = (text: string) => text.length * 30;
+    const result = computeNetworkLayout(NODES, LINKS, {
+      width: 100,
+      height: 100,
+      layout: "arc",
+      nodeSize: 18,
+      measureLabel,
+    });
+    const xs = result.nodes.map((n) => n.x);
+    const leftX = Math.min(...xs);
+    const rightX = Math.max(...xs);
+    expect(new Set(xs).size).toBe(2);
+    expect(rightX - leftX).toBeGreaterThanOrEqual(NETWORK_MIN_COLUMN_SPAN);
+    // Every node still sits inside the chart box.
+    expect(leftX).toBeGreaterThanOrEqual(0);
+    expect(rightX).toBeLessThanOrEqual(100);
   });
 
   it("never sets `displayLabel` on `circular`/`force`, measurer or not", () => {

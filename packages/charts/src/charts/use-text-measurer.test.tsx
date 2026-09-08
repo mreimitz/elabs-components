@@ -16,9 +16,29 @@ function stubProbeFont(style: Partial<CSSStyleDeclaration>) {
     fontFamily: "",
     fontWeight: "",
     fontStyle: "",
+    letterSpacing: "",
     ...style,
     getPropertyValue: () => "",
   } as unknown as CSSStyleDeclaration);
+}
+
+/** Same stub, but also records the classes each probe was measured with. */
+function stubProbeFontRecordingClasses(style: Partial<CSSStyleDeclaration>): string[] {
+  const seen: string[] = [];
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element: Element) => {
+    seen.push(element.className);
+    return {
+      fontSize: "",
+      lineHeight: "",
+      fontFamily: "",
+      fontWeight: "",
+      fontStyle: "",
+      letterSpacing: "",
+      ...style,
+      getPropertyValue: () => "",
+    } as unknown as CSSStyleDeclaration;
+  });
+  return seen;
 }
 
 function attachedRef() {
@@ -49,6 +69,15 @@ describe("estimateTextWidth", () => {
 
   it("grows monotonically with the string", () => {
     expect(estimateTextWidth("Region", 12)).toBeGreaterThan(estimateTextWidth("Regio", 12));
+  });
+
+  // #412 review — a label painted at 0.08em tracking is ~1px per character
+  // wider than the shaped run, and the gutter is only honest if that is in it.
+  it("charges the letter spacing once per character", () => {
+    expect(estimateTextWidth("Region", 12, 0.96)).toBeCloseTo(
+      estimateTextWidth("Region", 12) + 6 * 0.96,
+      5,
+    );
   });
 });
 
@@ -83,6 +112,38 @@ describe("useTextMeasurerOf", () => {
     const { result } = renderHook(() => useTextMeasurerOf(attachedRef()));
 
     expect(result.current.lineHeightPx).toBeGreaterThan(16);
+  });
+
+  // #412 review — `NetworkChart` paints its labels in `text-chart-source`, not
+  // in the `text-meta` rung the probe used to hardcode.
+  it("probes the type role the caller names", () => {
+    const seen = stubProbeFontRecordingClasses({ fontSize: "12px", lineHeight: "16px" });
+    renderHook(() => useTextMeasurerOf(attachedRef(), { className: "text-chart-source" }));
+
+    expect(seen).toContain("text-chart-source");
+    expect(seen.some((c) => c.includes("text-meta"))).toBe(false);
+  });
+
+  it("probes the meta rung when the caller names none", () => {
+    const seen = stubProbeFontRecordingClasses({ fontSize: "12px", lineHeight: "16px" });
+    renderHook(() => useTextMeasurerOf(attachedRef()));
+
+    expect(seen.some((c) => c.includes("text-meta"))).toBe(true);
+  });
+
+  it("includes the resolved letter spacing in every measured width", () => {
+    stubProbeFont({ fontSize: "12px", lineHeight: "16px", letterSpacing: "0.96px" });
+    const tracked = renderHook(() => useTextMeasurerOf(attachedRef()));
+    vi.restoreAllMocks();
+    stubProbeFont({ fontSize: "12px", lineHeight: "16px", letterSpacing: "normal" });
+    const untracked = renderHook(() => useTextMeasurerOf(attachedRef()));
+
+    expect(tracked.result.current.letterSpacingPx).toBeCloseTo(0.96, 5);
+    expect(untracked.result.current.letterSpacingPx).toBe(0);
+    expect(tracked.result.current.measure("Northwest")).toBeCloseTo(
+      untracked.result.current.measure("Northwest") + 9 * 0.96,
+      5,
+    );
   });
 
   it("measures wider text as wider, at whatever size resolves", () => {

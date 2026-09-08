@@ -83,8 +83,18 @@ const DEFAULT_MARGIN: Margin = { top: 40, right: 180, bottom: 40, left: 180 };
  */
 const MIN_NODE_HEIGHT = 4;
 
-/** Floor `resolveEffectiveNodePadding` will not clamp a padding below. */
+/**
+ * Floor `resolveEffectiveNodePadding` keeps whenever the column can afford it:
+ * a 1px gap is the least that still separates two rects.
+ */
 const MIN_NODE_PADDING = 1;
+
+/**
+ * Share of `innerHeight` the node BODIES keep when a column is so dense that
+ * even {@link MIN_NODE_PADDING} between every pair is unaffordable — the
+ * degradation path below the 1px floor. Gaps get the rest.
+ */
+const MIN_BODY_SHARE = 0.5;
 
 /** Stable empty array — `SankeyContextValue.threads` in aggregate mode. */
 const EMPTY_THREADS: SankeyLinkDatum[] = [];
@@ -108,8 +118,43 @@ export function resolveEffectiveNodePadding(
   requestedPadding: number,
 ): number {
   const columns = Math.max(maxColumnNodes, 1);
-  const affordable = (innerHeight - columns * MIN_NODE_HEIGHT) / Math.max(columns - 1, 1);
-  return Math.max(MIN_NODE_PADDING, Math.min(requestedPadding, affordable));
+  const gaps = Math.max(columns - 1, 1);
+  const affordable = (innerHeight - columns * MIN_NODE_HEIGHT) / gaps;
+  if (affordable >= MIN_NODE_PADDING) {
+    return Math.min(requestedPadding, affordable);
+  }
+  // Below the floor the column cannot give every node MIN_NODE_HEIGHT at ANY
+  // padding, so holding the floor at 1px is not a safety net — it is the bug:
+  // 100 nodes in a 70px extent leave d3-sankey the numerator `70 - 99 * 1`,
+  // which is negative and collapses every rect to 0px, the exact #276 failure
+  // this clamp exists to prevent. Sub-pixel (down to 0) padding is the honest
+  // degradation: the bodies keep MIN_BODY_SHARE of the extent, so the rects
+  // stay positive and proportional even when they are thinner than the floor.
+  const degraded = Math.max((innerHeight * (1 - MIN_BODY_SHARE)) / gaps, 0);
+  return Math.max(0, Math.min(requestedPadding, degraded));
+}
+
+/**
+ * How many nodes share the busiest RENDERED column of a laid-out graph.
+ *
+ * Grouped by `x0`, not by `depth`. `sankeyCenter` places a node with no
+ * incoming links one column BEFORE its earliest target, so a shortcut source
+ * lands in a column it shares with nodes of another depth — on the
+ * `P/Q/M1-3/X1-3/Y` graph in the unit test the busiest depth bucket holds 3
+ * nodes while the busiest drawn column holds 4. Counting by depth therefore
+ * under-counts the column {@link resolveEffectiveNodePadding} has to fit, and
+ * the padding it returns can still leave that column infeasible. d3-sankey
+ * derives `x0` from the aligned layer, giving every node in a column the
+ * identical double; `layer` itself is absent from `@types/d3-sankey`, and
+ * `x0` is what the layout actually draws with.
+ */
+export function maxColumnNodeCount(nodes: readonly { x0?: number | undefined }[]): number {
+  const counts = new Map<number, number>();
+  for (const node of nodes) {
+    const column = Math.round((node.x0 ?? 0) * 1000);
+    counts.set(column, (counts.get(column) ?? 0) + 1);
+  }
+  return counts.size === 0 ? 1 : Math.max(...counts.values());
 }
 
 // ─── Warn-once (dev only) ────────────────────────────────────────────────
@@ -245,12 +290,7 @@ const SankeyChartCore = memo(function SankeyChartCore({
       nodes: data.nodes.map((node) => ({ ...node })),
       links: layoutLinks.map((link) => ({ ...link })),
     };
-    const counts = new Map<number, number>();
-    for (const node of probeGenerator(clonedData).nodes) {
-      const depth = node.depth ?? 0;
-      counts.set(depth, (counts.get(depth) ?? 0) + 1);
-    }
-    return counts.size === 0 ? 1 : Math.max(...counts.values());
+    return maxColumnNodeCount(probeGenerator(clonedData).nodes);
   }, [data.nodes, layoutLinks, nodeWidth, nodePadding, innerWidth, innerHeight]);
 
   const effectiveNodePadding = useMemo(

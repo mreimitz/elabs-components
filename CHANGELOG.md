@@ -15,6 +15,40 @@
 
 ### Fixed
 
+- `@elabs-ai/components-editor`: `CodeWorkspace` no longer splits the editor height across every
+  open file. The `forceMount` that #154 added to keep each tab panel's DOM id resolvable also
+  suppresses the `hidden` Radix would otherwise apply — `TabsContent` derives it from
+  `forceMount || isSelected`, so under `forceMount` it hides nothing and every inactive panel
+  stayed a visible `flex-1` child with an empty body and its own tab stop. The panels now carry an
+  explicit `hidden`/`tabIndex` (Radix spreads caller props after its own, so they win), keeping the
+  ids resolvable with only the active panel taking layout. Its tab value is also derived from the
+  file path alone now, through a reversible escape (every character outside `[A-Za-z0-9-]` becomes
+  `_<hex>_`, so two paths can never collide): the previous id mixed in the file's array index, so
+  inserting or reordering a file re-keyed the active panel and remounted Monaco, discarding its
+  selection, scroll position and undo history (#412 review).
+
+- `@elabs-ai/components-charts`: `SankeyChart` now measures the column its own layout draws, and
+  degrades below a one-pixel node gap when nothing else fits. The #276 padding clamp counted nodes
+  by `depth`, but the configured `sankeyCenter` alignment moves a node with no incoming links into
+  the column before its earliest target, so the busiest DRAWN column can hold more nodes than any
+  depth bucket (measured: 4 against 3) and the padding was computed from an undercount. It also
+  refused to go under 1px, which is not a floor a dense column in a short chart can afford — 100
+  nodes in a 70px extent left d3-sankey the numerator `70 − 99 × 1`, and every rect collapsed to
+  0px, exactly the failure the clamp exists to prevent. Padding now goes sub-pixel (to zero if it
+  must) so the bodies keep half the extent (#412 review).
+
+- `@elabs-ai/components-charts`: `NetworkChart`'s `arc` layout keeps its two columns apart and
+  reserves label room in the typography the labels are actually painted in. The gutter budget was
+  capped at half the chart width while `arcPositions` separately charged both edges their base
+  padding, so a narrow chart could spend the entire inter-column span on labels and stack both
+  columns and every arc on one x (at width 100: `100 − 68 − 50 < 0`); the cap is now taken against
+  the width left after both paddings and a minimum column span. The label measurer also probed the
+  `text-meta` rung while `NetworkNode` paints labels in `text-chart-source` (0.08em of tracking
+  against 0.01em) and ignored letter spacing entirely, since canvas `measureText` knows nothing
+  about it — it under-reserved by roughly a pixel per character, which is what let a long label
+  spill past its gutter. `useTextMeasurerOf` now takes the probe's class name and adds the resolved
+  tracking to every width (#412 review).
+
 - `@elabs-ai/components-flow`: connector dots no longer take their coordinates from a frame in
   which they were still moving, so edges stay attached under `prefers-reduced-motion: reduce`.
   React Flow measures a node's `handleBounds` from the DOM once per layout change and then draws

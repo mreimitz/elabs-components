@@ -266,7 +266,16 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   // font, so the layout can reserve real room for it instead of a node-radius
   // guess. Harmless to compute for `circular`/`force` too — `measureLabel` is
   // only READ for `layout === "arc"`.
-  const { measure: measureLabel } = useTextMeasurerOf(internalRef);
+  //
+  // The probe carries `text-chart-source` because that is what `NetworkNode`
+  // paints a label in — NOT the measurer's default `text-meta` rung. The two
+  // share a size but not their tracking (0.08em against 0.01em), and the
+  // measurer's own canvas path now adds the resolved letter-spacing, so the
+  // gutter and the ellipsised prefixes are computed from the width that is
+  // actually painted rather than a systematically narrower one.
+  const { measure: measureLabel } = useTextMeasurerOf(internalRef, {
+    className: "text-chart-source",
+  });
 
   // ── Layout (pure, synchronous, memoised on data identity + size) ──────────
   const resolved = useMemo(

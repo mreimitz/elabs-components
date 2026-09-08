@@ -46,6 +46,16 @@ export const NETWORK_LABEL_GAP = 5;
  * (`computeNetworkLayout`'s degrade), rather than let them clip.
  */
 export const NETWORK_MAX_LABEL_GUTTER_FRACTION = 0.5;
+/**
+ * `arc` only. The horizontal span the two columns keep between them whatever
+ * the labels ask for. The gutter budget is capped against the width left AFTER
+ * both base paddings and this span — capping against the full width alone lets
+ * a narrow chart spend on gutters space the columns had already been charged
+ * for (at width 100 with ~34px padding a side, gutters totalling the "allowed"
+ * 50px leave `100 - 68 - 50 < 0`), which collapses both columns and every arc
+ * onto one x.
+ */
+export const NETWORK_MIN_COLUMN_SPAN = 24;
 
 export interface NetworkLayoutOptions {
   width: number;
@@ -214,6 +224,7 @@ function computeArcLabelGutter(
   sides: readonly NetworkSide[],
   radii: readonly number[],
   width: number,
+  padding: number,
   measureLabel: ((text: string) => number) | undefined,
 ): { gutter: { left: number; right: number }; displayLabels: (string | undefined)[] } {
   const displayLabels: (string | undefined)[] = nodes.map(() => undefined);
@@ -229,7 +240,17 @@ function computeArcLabelGutter(
   });
 
   const total = raw.left + raw.right;
-  const maxTotal = width * NETWORK_MAX_LABEL_GUTTER_FRACTION;
+  // Both caps at once: never more than half the chart, and never more than the
+  // width still unspent after `arcPositions` has taken `padding` off each edge
+  // and left the columns NETWORK_MIN_COLUMN_SPAN between them. The second cap
+  // is what keeps `rightX > leftX` on a narrow chart.
+  const maxTotal = Math.max(
+    0,
+    Math.min(
+      width * NETWORK_MAX_LABEL_GUTTER_FRACTION,
+      width - 2 * padding - NETWORK_MIN_COLUMN_SPAN,
+    ),
+  );
   if (total <= maxTotal || total <= 0) {
     return { gutter: raw, displayLabels };
   }
@@ -309,7 +330,7 @@ export function computeNetworkLayout(
   const sides = layout === "arc" ? partitionBipartite(nodes, links) : undefined;
   const { gutter: labelGutter, displayLabels } =
     layout === "arc" && sides
-      ? computeArcLabelGutter(nodes, sides, radii, width, measureLabel)
+      ? computeArcLabelGutter(nodes, sides, radii, width, padding, measureLabel)
       : { gutter: undefined, displayLabels: nodes.map(() => undefined) };
   const positions =
     layout === "circular"
