@@ -15,7 +15,7 @@
   group is hidden when a family ships only one scheme. With a single family it renders as
   before. New message keys: `ui.themeSwitcher.theme`, `.mode`, `.light` and `.dark`.
 - **Downloadable themes** — the repo's top-level `themes/` folder holds copy-in theme families,
-  starting with Ocean (light + dark). The recipe is in `docs/CONSUMING.md` §5.1.
+  starting with Ocean and Qlik (both light + dark). The recipe is in `docs/CONSUMING.md` §5.1.
 
 ## v4.1.0 — 2026-09-08
 
