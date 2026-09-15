@@ -1,0 +1,31 @@
+{
+  "agent": "S2-contract-tests",
+  "summary": "Generated per-component contract tests (jsdom: ref/className/data-slot; browser: axe + horizontal-overflow across every built-in theme x phone/tablet/desktop width). All jsdom suites (10 packages, 77 components, 231 test cases) and all browser suites (10 packages, 924 test cases) were executed locally and pass. The browser suite needs one new devDependency the integrator must add + lock.",
+  "addDevDependencies": {
+    "apps/docs": {
+      "axe-core": "^4.13.0"
+    }
+  },
+  "addDevDependenciesNotes": "Added + verified locally via `pnpm add -D axe-core --filter @elabs-ai/components-docs`, then reverted apps/docs/package.json + pnpm-lock.yaml before committing per the S2 brief. Without this dependency, `apps/docs/contract/*.contract.test.tsx` (generated) fail to resolve `import axe from \"axe-core\"` — run `pnpm add -D axe-core --filter @elabs-ai/components-docs` (or hand-edit + `pnpm install`) to unblock the new `contract` vitest project.",
+  "addScripts": {
+    "apps/docs/package.json": {
+      "test-contract": "vitest --project contract run"
+    },
+    "root package.json (suggested, alongside test-storybook's sibling)": {
+      "contract:test": "pnpm --filter @elabs-ai/components-docs test-contract"
+    }
+  },
+  "genStep": {
+    "request": "Wire scripts/gen-contract-tests.mjs into scripts/gen.mjs's cascade (the same list CLAUDE.md's `agent-docs`/`gen` scripts already drive), plus a `--check` invocation in whatever job verifies generated-artifact freshness (mirrors `pnpm registry:validate`-style checks already in `pnpm gates:all`).",
+    "commands": {
+      "generate": "node scripts/gen-contract-tests.mjs",
+      "check": "node scripts/gen-contract-tests.mjs --check"
+    }
+  },
+  "ciEdits": [
+    "Add a CI step running `pnpm --filter @elabs-ai/components-docs test-contract` (needs axe-core added first — see addDevDependencies) alongside the existing `test-storybook` job; both are Playwright/Chromium browser suites and can share that job's setup.",
+    "Add `node scripts/gen-contract-tests.mjs --check` to whatever step already checks generated-file freshness (e.g. the `pnpm gen:check` / manifest-freshness lane), so a component added without regenerating its contract test fails CI instead of silently drifting.",
+    "scripts/check/contract-known-failures.json now backs a `pnpm check` rule (contract-known-failures); no CI wiring needed beyond the existing `pnpm check` invocation, which already runs every scripts/check/rules/*.mjs rule."
+  ],
+  "notes": "apps/docs/vitest.config.ts was restructured from a single unnamed `test` block into `test.projects: [storybook, contract]` — additive: the existing `storybook` project's config (plugin, browser instances, timeouts) is unchanged, just nested; spot-checked `vitest --project storybook run <a few *.stories.tsx>` after the change and it still passes. A brand-new sibling `contract` project (real Chromium, no storybook CSF transform) runs the generated apps/docs/contract/*.contract.test.tsx files, with its own `apps/docs/contract/setup.ts` (imports the same token/Tailwind CSS Storybook's preview loads, plus an IS_REACT_ACT_ENVIRONMENT flag so React 19's act() warnings don't spam every mount). Real coverage numbers, all executed locally in this worktree: 77 of 1066 manifest-listed `kind:\"value\"` PascalCase exports across all 13 packages have their own `Default` story and got a generated probe (the rest are compound sub-parts sharing a parent's story, or use a custom `render:`, or have no story at all — recorded, not invented, in the generator's own console summary). jsdom suite: 10 packages, 231 tests (210 pass [187 real + 23 known-failure it.fails counted as passing-as-expected], 21 skip [not forwardRef], 23 pre-existing data-slot gaps tracked as known failures). Browser suite: 10 packages, 924 tests, all pass (39 real axe/overflow gaps found on first run — Combobox/TreeSelect/VirtualSelect `button-name`, NumberInput `label`, SchemaForm horizontal overflow at every width, three terminal components' light-theme `color-contrast` — now tracked as known failures, not silently muted). Nothing here is a guess: every known-failure entry came from an actual failing assertion's real message, captured via `--reporter=json` and mapped back through the generator's own storyId/kebab-slot helpers. Re-verified end to end after a later TypeScript-strictness fix to the generated probe templates (explicit casts for meta/Default/Component, typed KNOWN_FAILURES/contractIt/mountReact): `pnpm run typecheck` in every one of the 10 packages plus apps/docs shows zero errors originating from `__contract__`/`contract/` paths (the only typecheck failures present — carousel.tsx, number-input.tsx, tree.tsx, combobox/schema-form/tree-select/virtual-select stories, typography stories — are pre-existing and untouched by this change); `pnpm run lint` in every package plus `eslint contract/` in apps/docs is likewise clean of contract-caused problems (ui's 2 pre-existing lint errors are in carousel.tsx, not touched here); the full jsdom (231 tests) and browser (924 tests) suites were re-run after the type fix and are still 100% green, confirming the edits were compile-time-only."
+}
