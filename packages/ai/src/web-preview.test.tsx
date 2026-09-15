@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import {
   WebPreview,
   WebPreviewBody,
+  WebPreviewConsole,
   WebPreviewNavigation,
   WebPreviewNavigationButton,
   WebPreviewUrl,
@@ -113,5 +115,53 @@ describe("WebPreviewNavigationButton accessible name (#386)", () => {
       </WebPreview>,
     );
     expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
+  });
+});
+
+// 1.3 — `allow-same-origin` combined with `allow-scripts` lets a same-origin
+// previewed page break out of the sandbox entirely. It must be opt-in.
+describe("WebPreviewBody sandbox (#1.3)", () => {
+  it("never includes allow-same-origin by default", () => {
+    const { container } = render(
+      <WebPreview>
+        <WebPreviewBody />
+      </WebPreview>,
+    );
+    const iframe = container.querySelector("iframe");
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute("sandbox")).not.toContain("allow-same-origin");
+    // The other, non-origin-escaping permissions still apply.
+    expect(iframe?.getAttribute("sandbox")).toContain("allow-scripts");
+  });
+
+  it("adds allow-same-origin only when explicitly opted in", () => {
+    const { container } = render(
+      <WebPreview>
+        <WebPreviewBody allowSameOrigin />
+      </WebPreview>,
+    );
+    const iframe = container.querySelector("iframe");
+    expect(iframe?.getAttribute("sandbox")).toContain("allow-same-origin");
+  });
+});
+
+describe("WebPreviewConsole timestamp formatting (#1.3)", () => {
+  it("formats the log timestamp through the active locale, not the JS-engine default", () => {
+    const timestamp = new Date("2024-03-04T15:30:00Z");
+    render(
+      <LocaleProvider locale="de-DE">
+        <WebPreview>
+          <WebPreviewConsole logs={[{ level: "log", message: "started", timestamp }]} />
+        </WebPreview>
+      </LocaleProvider>,
+    );
+    // The console body is collapsed by default — open it before asserting.
+    fireEvent.click(screen.getByRole("button", { name: "Console" }));
+    const expected = new Intl.DateTimeFormat("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(timestamp);
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 });

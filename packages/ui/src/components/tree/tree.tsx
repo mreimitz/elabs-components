@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type HTMLAttributes,
@@ -149,7 +150,24 @@ function useControllableSet(
     () => new Set(controlled ?? defaultValue ?? []),
   );
 
-  const value: Set<string> = isControlled ? new Set(controlled) : internal;
+  // Stable controlled Set: build a new Set only when the controlled array's
+  // CONTENT actually changed, not merely its reference (many callers pass a
+  // freshly-computed array with the same ids on every render). Without this,
+  // `selectedIds`/`expandedIds` changed identity on every render, which made
+  // effects keyed on them (the scrollToId/scrollSelectionIntoView reveal
+  // effect) fire on every re-render instead of on a real selection change —
+  // the scroll-jump-while-scrolling bug.
+  const controlledSetRef = useRef<Set<string> | null>(null);
+  let value: Set<string>;
+  if (isControlled) {
+    const prev = controlledSetRef.current;
+    const sameContent =
+      !!prev && prev.size === controlled!.length && controlled!.every((id) => prev.has(id));
+    value = sameContent ? prev! : new Set(controlled);
+    controlledSetRef.current = value;
+  } else {
+    value = internal;
+  }
 
   const setValue = useCallback(
     (next: Set<string>) => {
@@ -160,6 +178,30 @@ function useControllableSet(
   );
 
   return [value, setValue];
+}
+
+/**
+ * Reconcile an incoming `nodes` prop against the previous internal tree,
+ * preserving any children merged in locally via `loadChildren` that the new
+ * prop doesn't (yet) carry. Without this, any parent re-render that hands
+ * down a new (even structurally-identical) `nodes` array wipes out every
+ * lazily-loaded subtree that isn't also present upstream.
+ */
+function reconcileNodes<T>(propNodes: TreeNode<T>[], prevNodes: TreeNode<T>[]): TreeNode<T>[] {
+  const prevById = new Map(prevNodes.map((n) => [n.id, n] as const));
+  return propNodes.map((n) => {
+    const prev = prevById.get(n.id);
+    if (!prev) return n;
+    if (!n.children?.length && prev.children?.length) {
+      // The prop still marks this node as lazily-expandable but doesn't (yet)
+      // carry the children we already fetched — keep what we loaded.
+      return { ...n, children: prev.children, hasChildren: n.hasChildren };
+    }
+    if (n.children?.length && prev.children?.length) {
+      return { ...n, children: reconcileNodes(n.children, prev.children) };
+    }
+    return n;
+  });
 }
 
 /** Merge resolved children into a tree, returning a new tree. */
@@ -771,9 +813,10 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
   // Internal mutable tree (supports lazy-loaded children merge)
   const [nodes, setNodes] = useState<TreeNode[]>(() => nodesProp as TreeNode[]);
 
-  // Keep internal tree in sync with nodesProp if it changes externally
+  // Keep internal tree in sync with nodesProp if it changes externally,
+  // preserving any children merged in locally via lazy `loadChildren`.
   useEffect(() => {
-    setNodes(nodesProp as TreeNode[]);
+    setNodes((prev) => reconcileNodes(nodesProp as TreeNode[], prev));
   }, [nodesProp]);
 
   const [expandedIds, setExpandedIds] = useControllableSet(
@@ -825,8 +868,18 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
   // Flattened visible rows (for virtualized path and keyboard hook)
   // ---------------------------------------------------------------------------
 
-  const flatRows = flattenVisibleWithMeta(nodes, expandedIds, lazyState);
-  const flatNodeIds = flatRows.map((r) => r.node.id);
+  const flatRows = useMemo(
+    () => flattenVisibleWithMeta(nodes, expandedIds, lazyState),
+    [nodes, expandedIds, lazyState],
+  );
+  const flatNodeIds = useMemo(() => flatRows.map((r) => r.node.id), [flatRows]);
+  // O(1) row lookup by id — `handleToggleExpand`/`handleSelectVirtual` run on
+  // every click/keypress and previously did an O(n) `Array.find` each time.
+  const flatRowIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    flatRows.forEach((r, i) => map.set(r.node.id, i));
+    return map;
+  }, [flatRows]);
 
   // ---------------------------------------------------------------------------
   // Keyboard hook
@@ -862,9 +915,9 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
 
   const handleToggleExpand = useCallback(
     (nodeId: string) => {
-      const flatRow = flatRows.find((r) => r.node.id === nodeId);
-      if (!flatRow) return;
-      const node = flatRow.node;
+      const index = flatRowIndexById.get(nodeId);
+      if (index === undefined) return;
+      const node = flatRows[index].node;
       const hasLoadedChildren = !!node.children?.length;
       const next = new Set(expandedIds);
       if (expandedIds.has(nodeId)) {
@@ -877,14 +930,14 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
       }
       setExpandedIds(next);
     },
-    [expandedIds, flatRows, setExpandedIds, loadChildren, handleExpandLazy],
+    [expandedIds, flatRows, flatRowIndexById, setExpandedIds, loadChildren, handleExpandLazy],
   );
 
   const handleSelectVirtual = useCallback(
     (nodeId: string) => {
-      const flatRow = flatRows.find((r) => r.node.id === nodeId);
-      if (!flatRow) return;
-      const node = flatRow.node;
+      const index = flatRowIndexById.get(nodeId);
+      if (index === undefined) return;
+      const node = flatRows[index].node;
       if (node.disabled || selectionMode === "none") return;
       if (selectionMode === "single") {
         setSelectedIds(new Set([nodeId]));
@@ -898,7 +951,7 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
         setSelectedIds(next);
       }
     },
-    [flatRows, selectionMode, selectedIds, setSelectedIds],
+    [flatRows, flatRowIndexById, selectionMode, selectedIds, setSelectedIds],
   );
 
   // ---------------------------------------------------------------------------
@@ -960,8 +1013,8 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
   // node (registered via registerAndFlush in both paths).
   const scrollNodeIntoView = useCallback(
     (id: string): boolean => {
-      const index = flatNodeIds.indexOf(id);
-      if (index < 0) return false;
+      const index = flatRowIndexById.get(id);
+      if (index === undefined) return false;
       if (virtualize) {
         virtualizerRef.current?.scrollToIndex(index, { align: "center" });
       } else {
@@ -970,7 +1023,7 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
       }
       return true;
     },
-    [flatNodeIds, virtualize],
+    [flatRowIndexById, virtualize],
   );
 
   // Reveal `id`: scroll it now if visible, else expand its (loaded) ancestors and

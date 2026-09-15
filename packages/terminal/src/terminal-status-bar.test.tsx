@@ -115,4 +115,21 @@ describe("TerminalStatusBar", () => {
     );
     expect(container.querySelector("[data-slot='terminal-status-bar-divider']")).not.toBeNull();
   });
+
+  it("wraps instead of overflowing when every fact is present on a narrow viewport", () => {
+    const { container } = render(
+      <TerminalStatusBar
+        branch="fix/currency-formatting"
+        workspace="~/projects/acme-web"
+        connections={{ connected: 2, total: 3, connecting: true }}
+        context={{ limit: "200K", used: "18K" }}
+        turn={{ current: 2, total: 4 }}
+      />,
+    );
+
+    const root = container.querySelector("[data-slot='terminal-status-bar']");
+    expect(root?.className).toContain("flex-wrap");
+    const rightCluster = root?.querySelector(":scope > div.ms-auto");
+    expect(rightCluster?.className).toContain("flex-wrap");
+  });
 });

@@ -4,15 +4,31 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ComponentProps,
+  type ElementRef,
   type HTMLAttributes,
   type KeyboardEvent,
 } from "react";
+import { useDirection } from "@radix-ui/react-direction";
 import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { Button } from "../button";
+
+/**
+ * True when the keyboard event's target already owns arrow-key semantics of
+ * its own (a text field's caret, a contenteditable's selection) — the
+ * carousel must not steal ArrowLeft/ArrowRight from a form control that
+ * happens to live inside the active slide.
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
 
 type CarouselApi = UseEmblaCarouselType[1];
 type CarouselOptions = NonNullable<Parameters<typeof useEmblaCarousel>[0]>;
@@ -73,6 +89,16 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
     );
     const [canScrollPrev, setCanScrollPrev] = useState(false);
     const [canScrollNext, setCanScrollNext] = useState(false);
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const setRootRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        rootRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) (ref as { current: HTMLDivElement | null }).current = node;
+      },
+      [ref],
+    );
+    const dir = useDirection();
 
     const onSelect = useCallback((a: CarouselApi) => {
       if (!a) return;
@@ -85,15 +111,34 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
 
     const onKeyDown = useCallback(
       (e: KeyboardEvent<HTMLDivElement>) => {
+        // Don't steal ArrowLeft/ArrowRight from a text field's caret or a
+        // contenteditable's selection inside the active slide.
+        if (isEditableTarget(e.target)) return;
+
+        if (orientation === "vertical") {
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            scrollPrev();
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            scrollNext();
+          }
+          return;
+        }
+
+        // Horizontal: the PHYSICAL key maps to the visually-adjacent slide,
+        // which flips with writing direction — in RTL, ArrowLeft moves toward
+        // the next slide (visually to the left of the current one), not prev.
+        const isRtl = dir === "rtl";
         if (e.key === "ArrowLeft") {
           e.preventDefault();
-          scrollPrev();
+          isRtl ? scrollNext() : scrollPrev();
         } else if (e.key === "ArrowRight") {
           e.preventDefault();
-          scrollNext();
+          isRtl ? scrollPrev() : scrollNext();
         }
       },
-      [scrollPrev, scrollNext],
+      [orientation, dir, scrollPrev, scrollNext],
     );
 
     useEffect(() => {
@@ -105,6 +150,7 @@ export const Carousel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
       api.on("reInit", onSelect);
       api.on("select", onSelect);
       return () => {
+        api.off("reInit", onSelect);
         api.off("select", onSelect);
       };
     }, [api, onSelect]);

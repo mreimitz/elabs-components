@@ -101,6 +101,21 @@ export const SpeechInput = ({
   const onTranscriptionChangeRef =
     useRef<SpeechInputProps["onTranscriptionChange"]>(onTranscriptionChange);
   const onAudioRecordedRef = useRef<SpeechInputProps["onAudioRecorded"]>(onAudioRecorded);
+  // Guards a pending `getUserMedia()` call against a second click/toggle
+  // firing before the first resolves (both see `isListening === false`, since
+  // that flips only once the stream is actually granted).
+  const isStartingMediaRecorderRef = useRef(false);
+  // Flips false on unmount so an in-flight `getUserMedia()` that resolves
+  // AFTER teardown stops its just-granted tracks immediately instead of
+  // leaving the microphone on with nothing listening.
+  const isMountedRef = useRef(true);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   // Keep refs in sync
   onTranscriptionChangeRef.current = onTranscriptionChange;
@@ -183,12 +198,23 @@ export const SpeechInput = ({
 
   // Start MediaRecorder recording
   const startMediaRecorder = useCallback(async () => {
-    if (!onAudioRecordedRef.current) {
+    if (!onAudioRecordedRef.current || isStartingMediaRecorderRef.current) {
       return;
     }
 
+    isStartingMediaRecorderRef.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Unmounted (or stopped) while getUserMedia was pending — the granted
+      // tracks have no listener left to stop them later, so stop them now.
+      if (!isMountedRef.current) {
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
+        return;
+      }
+
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
@@ -241,6 +267,8 @@ export const SpeechInput = ({
       setIsListening(true);
     } catch {
       setIsListening(false);
+    } finally {
+      isStartingMediaRecorderRef.current = false;
     }
   }, []);
 
@@ -281,7 +309,7 @@ export const SpeechInput = ({
       {isListening &&
         [0, 1, 2].map((index) => (
           <div
-            className="absolute inset-0 animate-ping rounded-full border-2 border-red-400/30"
+            className="absolute inset-0 animate-ping rounded-full border-2 border-destructive/30"
             key={index}
             style={{
               animationDelay: `${index * 0.3}s`,
@@ -295,7 +323,7 @@ export const SpeechInput = ({
         className={cn(
           "relative z-10 rounded-full transition-colors duration-slow ease-standard motion-reduce:transition-none",
           isListening
-            ? "bg-destructive text-white hover:bg-destructive/80 hover:text-white"
+            ? "bg-destructive text-destructive-foreground hover:bg-destructive/80 hover:text-destructive-foreground"
             : "bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground",
           className,
         )}

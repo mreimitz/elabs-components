@@ -89,6 +89,9 @@ export function NavNotifications({
       <DropdownMenuContent
         side={side}
         align={align}
+        // Keeps the menu clear of the viewport edge instead of sitting flush
+        // against it on a narrow phone screen.
+        collisionPadding={16}
         className={cn(
           // The vertical inset belongs to the SIDE-opening rail placement, where
           // the menu runs alongside its trigger and needs clearance from it. A
@@ -96,7 +99,10 @@ export function NavNotifications({
           // and the inset would just hang it 24px off the bar. Derived from
           // `side` rather than exposed as a second className seam.
           (side === "left" || side === "right") && "my-6",
-          "w-80",
+          // `w-80` (320px) is wider than some phone viewports once the 16px
+          // collision padding on both sides is subtracted — cap it so the menu
+          // shrinks instead of forcing horizontal overflow.
+          "w-80 max-w-[calc(100vw-2rem)]",
         )}
       >
         <DropdownMenuLabel>{t("ui.navNotifications.label")}</DropdownMenuLabel>

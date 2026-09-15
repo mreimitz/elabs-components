@@ -1,3 +1,4 @@
+import { LocaleProvider } from "@elabs-ai/components-ui";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { computeEdgeWeightScale, type WeightedEdgeLike } from "../flow-weighted-edge/weight-scale";
@@ -211,5 +212,15 @@ describe('Legend variant="scale", kind="color"', () => {
       name: "Edge color scale, 0 to 100, minimum to maximum",
     });
     expect(group).toHaveAttribute("tabindex", "0");
+  });
+
+  it("formats the default tick label with the active LocaleProvider locale, not the host locale", () => {
+    render(
+      <LocaleProvider locale="de-DE">
+        <Legend variant="scale" kind="color" domain={[0, 1000]} />
+      </LocaleProvider>,
+    );
+    // de-DE groups thousands with a period, never a comma.
+    expect(screen.getByText("1.000")).toBeInTheDocument();
   });
 });

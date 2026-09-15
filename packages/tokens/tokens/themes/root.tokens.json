@@ -370,8 +370,8 @@
   },
   "chart-ring-background": {
     "$type": "color",
-    "$value": "var(--chart-grid)",
-    "$description": "Chart ring/gauge track — the hairline furniture ink (alias of --chart-grid), never a surface colour."
+    "$value": "oklch(0.88 0.01 264)",
+    "$description": "Chart ring/gauge track — a WIDE band, so its own lighter rung between --chart-background and --chart-grid: the hairline ink reads far too heavy at 14px, and the page/card surface makes it vanish."
   },
   "chart-segment-background": {
     "$type": "color",

@@ -556,6 +556,10 @@ export const PromptInput = ({
   // Refs
   const inputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  // In-flight guard for handleSubmit (#1.9) — a ref, not state, so a second
+  // Enter/click during the same synchronous event-handling pass sees the
+  // updated value immediately (no waiting for a re-render).
+  const isSubmittingRef = useRef(false);
 
   // ----- Local attachments (only used when no provider)
   const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
@@ -887,6 +891,14 @@ export const PromptInput = ({
     async (event) => {
       event.preventDefault();
 
+      // In-flight guard (#1.9): a second Enter/click fired while the first
+      // submission is still being processed (mid blob conversion, mid async
+      // `onSubmit`) must not fire a second one — otherwise a double-Enter
+      // submits the same attachments twice.
+      if (isSubmittingRef.current) {
+        return;
+      }
+
       const form = event.currentTarget;
       const text = usingProvider
         ? controller.textInput.value
@@ -903,6 +915,23 @@ export const PromptInput = ({
       if (text.trim().length === 0 && files.length === 0) {
         return;
       }
+
+      isSubmittingRef.current = true;
+
+      // The uncontrolled textarea's DOM value is about to be wiped by
+      // `form.reset()` below, before `onSubmit` has even run. Snapshot it so a
+      // sync throw / rejected promise can restore exactly what the user typed
+      // instead of losing it.
+      const textarea = usingProvider
+        ? null
+        : form.querySelector<HTMLTextAreaElement>('textarea[name="message"]');
+
+      const restoreTextOnFailure = () => {
+        if (textarea) {
+          textarea.value = text;
+          setHasLocalText(text.trim().length > 0);
+        }
+      };
 
       // Reset form immediately after capturing text to avoid race condition
       // where user input during async blob conversion would be lost
@@ -939,7 +968,9 @@ export const PromptInput = ({
               controller.textInput.clear();
             }
           } catch {
-            // Don't clear on error - user may want to retry
+            // Don't clear on error - user may want to retry; restore the text
+            // the early reset above wiped.
+            restoreTextOnFailure();
           }
         } else {
           // Sync function completed without throwing, clear inputs
@@ -949,7 +980,11 @@ export const PromptInput = ({
           }
         }
       } catch {
-        // Don't clear on error - user may want to retry
+        // Don't clear on error - user may want to retry; restore the text the
+        // early reset above wiped.
+        restoreTextOnFailure();
+      } finally {
+        isSubmittingRef.current = false;
       }
     },
     [usingProvider, controller, files, onSubmit, clear],

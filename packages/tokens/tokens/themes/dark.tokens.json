@@ -297,7 +297,7 @@
   },
   "chart-ring-background": {
     "$type": "color",
-    "$value": "var(--chart-grid)"
+    "$value": "oklch(0.36 0.012 257)"
   },
   "chart-segment-background": {
     "$type": "color",

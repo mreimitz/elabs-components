@@ -1,3 +1,4 @@
+import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { computeEdgeWeightScale, type WeightedEdgeLike } from "../flow-weighted-edge/weight-scale";
 
@@ -33,7 +34,11 @@ export interface LegendScaleProps {
   kind: "width" | "color";
   /** `[min, max]` of the underlying value the ramp represents. */
   domain: [number, number];
-  /** Formats a domain value for display at a tick. @default `(v) => v.toLocaleString()` */
+  /**
+   * Formats a domain value for display at a tick.
+   * @default the active `LocaleProvider` locale's `formatNumber` (host locale
+   * when no provider is mounted) — never a hardcoded `toLocaleString()`.
+   */
   format?: (value: number) => string;
   /**
    * Sample count for `kind: "width"`: `"minmax"` draws a min/max pair of
@@ -50,8 +55,6 @@ export interface LegendScaleProps {
 }
 
 export type LegendProps = LegendCategoricalProps | LegendScaleProps;
-
-const defaultFormat = (value: number): string => value.toLocaleString();
 
 /**
  * Small legend mapping colors/types to labels for a canvas or chart
@@ -121,16 +124,21 @@ function scaleKindLabel(kind: "width" | "color"): string {
 function LegendScale({
   kind,
   domain,
-  format = defaultFormat,
+  format,
   ticks = "minmax",
   title,
   className,
 }: LegendScaleProps) {
+  // The active `LocaleProvider` locale, not a hardcoded `toLocaleString()` —
+  // otherwise a `de-DE`-configured app still reads the domain ticks in the
+  // browser's host locale.
+  const { formatNumber } = useLocale();
+  const format_ = format ?? formatNumber;
   const [min, max] = domain;
   // e.g. "Edge width scale, 2 to 48, minimum to maximum" — a single accessible
   // name for the whole reading key, since it is one keyboard tab stop, not one
   // per tick.
-  const ariaLabel = `Edge ${scaleKindLabel(kind)} scale, ${format(min)} to ${format(max)}, minimum to maximum`;
+  const ariaLabel = `Edge ${scaleKindLabel(kind)} scale, ${format_(min)} to ${format_(max)}, minimum to maximum`;
 
   return (
     <div
@@ -145,9 +153,9 @@ function LegendScale({
     >
       {title ? <div className="text-body font-medium text-foreground">{title}</div> : null}
       {kind === "width" ? (
-        <LegendScaleWidth domain={domain} format={format} ticks={ticks} />
+        <LegendScaleWidth domain={domain} format={format_} ticks={ticks} />
       ) : (
-        <LegendScaleColor domain={domain} format={format} />
+        <LegendScaleColor domain={domain} format={format_} />
       )}
     </div>
   );

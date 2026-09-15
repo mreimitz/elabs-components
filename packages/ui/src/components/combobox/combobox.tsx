@@ -2,6 +2,7 @@ import { forwardRef, useState, type ComponentPropsWithoutRef } from "react";
 import { defaultFilter } from "cmdk";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useControllableState } from "../../lib/use-controllable-state";
 import { Button } from "../button";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { useLocale } from "../locale-provider";
@@ -20,6 +21,12 @@ export interface ComboboxOption {
 }
 
 export interface ComboboxProps {
+  /**
+   * The option list — every option is mounted in the DOM (cmdk has no built-in
+   * windowing), so this is fine for typical form/menu-sized lists but not for
+   * open-ended data. For thousands of options, use `VirtualSelect` instead,
+   * which windows rendering via `@tanstack/react-virtual`.
+   */
   options: ComboboxOption[];
   value?: string;
   onValueChange?: (value: string) => void;
@@ -112,10 +119,8 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
 ) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
-  const [internal, setInternal] = useState("");
+  const [selected, setValue] = useControllableState(value, "", onValueChange);
   const [search, setSearch] = useState("");
-  const selected = value ?? internal;
-  const setValue = (v: string) => (onValueChange ? onValueChange(v) : setInternal(v));
   const current = options.find((o) => o.value === selected);
 
   const trimmedSearch = search.trim();
@@ -150,14 +155,14 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
           aria-expanded={open}
           disabled={disabled}
           data-slot="combobox"
-          className={cn("w-56 justify-between font-normal", triggerProps?.className, className)}
+          className={cn("w-full justify-between font-normal", triggerProps?.className, className)}
         >
           {current ? current.label : selected || placeholder}
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-56 p-0"
+        className="w-[var(--radix-popover-trigger-width)] min-w-56 p-0"
         data-slot="combobox-content"
         // Radix Popover.Content renders role="dialog"; without a name axe's
         // aria-dialog-name rule (rightly) flags it. Reuse the trigger's own
@@ -173,7 +178,8 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(function Co
               {options.map((o) => (
                 <CommandItem
                   key={o.value}
-                  value={o.label}
+                  value={o.value}
+                  keywords={[o.label]}
                   onSelect={() => {
                     setValue(o.value === selected ? "" : o.value);
                     setOpen(false);

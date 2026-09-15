@@ -68,7 +68,7 @@ function interpolateHex(color1: string, color2: string, factor: number): string 
 }
 
 const DEFAULT_ACTIVE_FILL_OPACITY = 1;
-// Track notches are hairline furniture: full-opacity --chart-grid ink (chart-components rule).
+// Track notches paint the ring-track rung (--chart-ring-background) at full opacity.
 const DEFAULT_INACTIVE_FILL_OPACITY = 1;
 
 const DEFAULT_NOTCH_ENTER_TRANSITION: Transition = {
@@ -124,7 +124,7 @@ export interface GaugeProps {
   activeFill?: string;
   /**
    * SVG `fill-opacity` for inactive / track notches (0–1).
-   * Default **1** — the track is full-opacity furniture ink.
+   * Default **1** — the track rung is already tuned lighter than the hairline ink.
    */
   inactiveFillOpacity?: number;
   /**
@@ -390,7 +390,7 @@ function GaugeInner({
     return `M ${p1a.x} ${p1a.y} Q ${x1} ${y1} ${p1b.x} ${p1b.y} L ${p2a.x} ${p2a.y} Q ${x2} ${y2} ${p2b.x} ${p2b.y} L ${p3a.x} ${p3a.y} Q ${x3} ${y3} ${p3b.x} ${p3b.y} L ${p4a.x} ${p4a.y} Q ${x4} ${y4} ${p4b.x} ${p4b.y} Z`;
   };
 
-  // The track paints the furniture ink (via --chart-ring-background), never the
+  // The track paints the ring-track rung (--chart-ring-background), never the
   // card colour: a --chart-background notch is invisible on the card it sits on.
   const bgFillSolid = "var(--chart-ring-background)";
   const activeFillSolid = "var(--chart-1)";

@@ -31,13 +31,23 @@ const SheetOverlay = forwardRef<
 });
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 overscroll-contain bg-card p-6 text-card-foreground shadow-ring-lg transition duration-slow ease-standard data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:[--tw-ease:var(--ease-entrance)] data-[state=closed]:[--tw-ease:var(--ease-exit)]",
+  // `overflow-y-auto` so content taller than the sheet scrolls INSIDE it
+  // instead of overflowing the fixed-position box (unreachable below the
+  // viewport edge).
+  "fixed z-50 gap-4 overflow-y-auto overscroll-contain bg-card p-6 text-card-foreground shadow-ring-lg transition duration-slow ease-standard data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:[--tw-ease:var(--ease-entrance)] data-[state=closed]:[--tw-ease:var(--ease-exit)]",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        // `top`/`bottom` have no inherent height ceiling, so long content grows
+        // past the viewport; cap it at 90dvh (matching Dialog's dvh unit — ADR
+        // on mobile browser chrome) so the scroll rule above actually engages.
+        top: "inset-x-0 top-0 max-h-[90dvh] border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
         bottom:
-          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+          "inset-x-0 bottom-0 max-h-[90dvh] border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        // `side` is an explicit physical edge of the screen (like Radix's own
+        // Popper `side`), not a logical start/end — a caller who picks `"left"`
+        // wants the panel on the physical left even in an RTL layout, so these
+        // stay physical `left-0`/`right-0` and `border-r`/`border-l` on purpose.
         left: "inset-y-0 left-0 h-full w-3/4 max-w-sm border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
         right:
           "inset-y-0 right-0 h-full w-3/4 max-w-sm border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",

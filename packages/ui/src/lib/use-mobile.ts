@@ -1,6 +1,24 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const MOBILE_BREAKPOINT = 768;
+
+function subscribe(breakpoint: number, onStoreChange: () => void) {
+  const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+  mql.addEventListener("change", onStoreChange);
+  return () => mql.removeEventListener("change", onStoreChange);
+}
+
+function getSnapshot(breakpoint: number) {
+  return window.innerWidth < breakpoint;
+}
+
+// SSR / first-paint snapshot: no viewport to measure yet, so report "not
+// mobile" rather than guessing — this must match what the server rendered to
+// avoid a hydration mismatch, and useSyncExternalStore re-syncs to the real
+// value on the client before paint (no desktop-layout flash).
+function getServerSnapshot() {
+  return false;
+}
 
 /**
  * Returns true when the viewport is below `breakpoint` (default 768px, the
@@ -10,13 +28,9 @@ const MOBILE_BREAKPOINT = 768;
  * second hook.
  */
 export function useIsMobile(breakpoint: number = MOBILE_BREAKPOINT): boolean {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const onChange = () => setIsMobile(window.innerWidth < breakpoint);
-    mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < breakpoint);
-    return () => mql.removeEventListener("change", onChange);
-  }, [breakpoint]);
-  return !!isMobile;
+  return useSyncExternalStore(
+    (onStoreChange) => subscribe(breakpoint, onStoreChange),
+    () => getSnapshot(breakpoint),
+    getServerSnapshot,
+  );
 }

@@ -66,6 +66,60 @@ describe("Combobox", () => {
     );
     expect(screen.getByRole("combobox")).toHaveTextContent("Custom Value");
   });
+
+  it("does not hard-fix the trigger width — fills its container by default", () => {
+    render(<Combobox options={[{ label: "A", value: "a" }]} />);
+    expect(screen.getByRole("combobox").className).not.toMatch(/\bw-56\b/);
+  });
+});
+
+// jsdom doesn't implement Element.scrollIntoView, which cmdk calls internally
+// to keep the auto-highlighted item visible — see the comment on the
+// `allowCustomValue` describe below for the full explanation.
+describe("Combobox (options interaction)", () => {
+  let originalScrollIntoView: typeof Element.prototype.scrollIntoView;
+
+  beforeEach(() => {
+    originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+  });
+
+  // #reviewed 1.7 — a hand-rolled `onValueChange ? onValueChange(v) : setInternal(v)`
+  // never updates internal state once a listener is attached, so an
+  // uncontrolled Combobox with an onValueChange handler never shows its own
+  // selection on the trigger.
+  it("updates the trigger's own displayed value when uncontrolled even with an onValueChange listener", async () => {
+    const onValueChange = vi.fn();
+    render(<Combobox options={[{ label: "Alpha", value: "a" }]} onValueChange={onValueChange} />);
+    await userEvent.click(screen.getByRole("combobox"));
+    await userEvent.click(await screen.findByRole("option", { name: "Alpha" }));
+    expect(onValueChange).toHaveBeenCalledWith("a");
+    expect(screen.getByRole("combobox")).toHaveTextContent("Alpha");
+  });
+
+  // Duplicate labels used to collide because CommandItem's `value` (cmdk's
+  // identity/scoring key) was the LABEL, not the unique option value.
+  it("distinguishes options that share the same label", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <Combobox
+        options={[
+          { label: "Production", value: "prod-us" },
+          { label: "Production", value: "prod-eu" },
+        ]}
+        onValueChange={onValueChange}
+      />,
+    );
+    await userEvent.click(screen.getByRole("combobox"));
+    const options = await screen.findAllByRole("option", { name: "Production" });
+    expect(options).toHaveLength(2);
+    await userEvent.click(options[1]);
+    expect(onValueChange).toHaveBeenCalledWith("prod-eu");
+  });
 });
 
 // #359 — allowCustomValue. A nested describe because these tests TYPE into the

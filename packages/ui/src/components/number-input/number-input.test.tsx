@@ -1,7 +1,9 @@
+import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NumberInput } from "./number-input";
+import { LocaleProvider } from "../locale-provider";
 
 describe("NumberInput", () => {
   it("renders a spinbutton input", () => {
@@ -92,5 +94,50 @@ describe("NumberInput", () => {
     expect(onValueChange).toHaveBeenLastCalledWith(6);
     await userEvent.keyboard("{ArrowDown}");
     expect(onValueChange).toHaveBeenLastCalledWith(5);
+  });
+
+  it("forwards the ref to the underlying <input>, not the wrapper", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<NumberInput aria-label="Qty" defaultValue={5} ref={ref} />);
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
+    expect(ref.current).toBe(screen.getByRole("spinbutton", { name: "Qty" }));
+  });
+
+  it("does not hard-fix a width — the caller's className is not fighting a default", () => {
+    render(<NumberInput aria-label="Qty" defaultValue={5} className="w-24" />);
+    const group = screen.getByRole("group");
+    expect(group.className).not.toMatch(/\bw-36\b/);
+    expect(group.className).toMatch(/\bw-24\b/);
+  });
+
+  it("rounds fp-noisy step increments to the step's precision (0.1 + 0.1 + 0.1)", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <NumberInput aria-label="Amount" defaultValue={0} step={0.1} onValueChange={onValueChange} />,
+    );
+    const increaseBtn = screen.getByRole("button", { name: "Increase" });
+    await userEvent.click(increaseBtn);
+    await userEvent.click(increaseBtn);
+    await userEvent.click(increaseBtn);
+    expect(onValueChange).toHaveBeenLastCalledWith(0.3);
+  });
+
+  it("parses a locale-formatted number using the active locale's separators (de-DE: comma decimal)", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <LocaleProvider locale="de-DE">
+        <NumberInput
+          aria-label="Betrag"
+          defaultValue={0}
+          step={0.1}
+          onValueChange={onValueChange}
+        />
+      </LocaleProvider>,
+    );
+    const input = screen.getByRole("spinbutton", { name: "Betrag" });
+    await userEvent.clear(input);
+    await userEvent.type(input, "1.234,5");
+    await userEvent.tab();
+    expect(onValueChange).toHaveBeenLastCalledWith(1234.5);
   });
 });

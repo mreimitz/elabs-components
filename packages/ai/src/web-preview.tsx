@@ -180,18 +180,43 @@ export type WebPreviewBodyProps = Omit<ComponentProps<"iframe">, "loading"> & {
    * @default false
    */
   loading?: boolean | ReactNode;
+  /**
+   * Adds `allow-same-origin` to the iframe sandbox. **Opt-in, off by
+   * default**: combined with `allow-scripts`, a same-origin previewed page
+   * can script its way out of the sandbox restrictions entirely (its own
+   * `<iframe>` reads as unsandboxed once it shares the origin). Only enable
+   * this for content you trust to be same-origin-safe.
+   * @default false
+   */
+  allowSameOrigin?: boolean;
 };
 
-export const WebPreviewBody = ({ className, loading, src, ...props }: WebPreviewBodyProps) => {
+export const WebPreviewBody = ({
+  className,
+  loading,
+  src,
+  allowSameOrigin = false,
+  ...props
+}: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
   const { t } = useLocale();
+
+  const sandbox = [
+    "allow-scripts",
+    "allow-forms",
+    "allow-popups",
+    "allow-presentation",
+    allowSameOrigin && "allow-same-origin",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="relative flex-1">
       <iframe
         className={cn("size-full", className)}
         // oxlint-disable-next-line eslint-plugin-react(iframe-missing-sandbox)
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+        sandbox={sandbox}
         src={(src ?? url) || undefined}
         title="Preview"
         {...props}
@@ -228,7 +253,7 @@ export const WebPreviewConsole = ({
   ...props
 }: WebPreviewConsoleProps) => {
   const { consoleOpen, setConsoleOpen } = useWebPreview();
-  const { t } = useLocale();
+  const { t, formatDate } = useLocale();
 
   return (
     <Collapsible
@@ -275,7 +300,13 @@ export const WebPreviewConsole = ({
                 )}
                 key={`${log.timestamp.getTime()}-${log.level}-${log.message}`}
               >
-                <span className="text-muted-foreground">{log.timestamp.toLocaleTimeString()}</span>{" "}
+                <span className="text-muted-foreground">
+                  {formatDate(log.timestamp, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </span>{" "}
                 {log.message}
               </div>
             ))

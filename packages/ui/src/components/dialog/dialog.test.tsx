@@ -47,11 +47,16 @@ describe("DialogContent size variants", () => {
     expect(content.className).toContain("max-w-3xl");
   });
 
-  it("size='full' renders max-w-[95vw] and h-[90vh]", () => {
+  it("size='full' renders max-w-[95vw] and h-[90dvh] — dvh, not vh (mobile browser chrome)", () => {
     render(<Wrapper size="full" />);
     const content = screen.getByRole("dialog");
     expect(content.className).toContain("max-w-[95vw]");
-    expect(content.className).toContain("h-[90vh]");
+    expect(content.className).toContain("h-[90dvh]");
+    expect(content.className).toContain("max-h-[90dvh]");
+    // `vh` on mobile Safari/Chrome is measured against the viewport with the
+    // browser chrome collapsed, so a plain `vh` value overflows past what is
+    // actually visible while the address bar is shown.
+    expect(content.className).not.toMatch(/(?<!d)vh\]/);
   });
 });
 
@@ -106,7 +111,7 @@ describe("DialogContent height/scroll regime (#341)", () => {
     // later variant utility, so `full` still lets its body own the scroll.
     expect(content.className).toContain("overflow-hidden");
     expect(content.className).not.toContain("overflow-y-auto");
-    expect(content.className).toContain("max-h-[90vh]");
+    expect(content.className).toContain("max-h-[90dvh]");
     expect(content.className).not.toContain("max-h-[calc(100dvh-2rem)]");
   });
 });

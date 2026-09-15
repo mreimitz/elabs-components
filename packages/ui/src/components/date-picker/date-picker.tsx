@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { forwardRef } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useControllableState } from "../../lib/use-controllable-state";
 import { Button } from "../button";
 import { Calendar } from "../calendar";
+import { useLocale } from "../locale-provider";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 
 export interface DatePickerProps {
@@ -13,26 +15,22 @@ export interface DatePickerProps {
 }
 
 /** Single-date picker (Popover + Calendar). Controlled or uncontrolled. */
-export function DatePicker({
-  value,
-  onValueChange,
-  placeholder = "Pick a date",
-  className,
-}: DatePickerProps) {
-  const [internal, setInternal] = useState<Date | undefined>(undefined);
-  const date = value ?? internal;
-  const setDate = (d?: Date) => (onValueChange ? onValueChange(d) : setInternal(d));
-  const label = date
-    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date)
-    : placeholder;
+export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(function DatePicker(
+  { value, onValueChange, placeholder = "Pick a date", className },
+  ref,
+) {
+  const { formatDate } = useLocale();
+  const [date, setDate] = useControllableState<Date | undefined>(value, undefined, onValueChange);
+  const label = date ? formatDate(date, { dateStyle: "medium" }) : placeholder;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          ref={ref}
           variant="outline"
           className={cn(
-            "w-56 justify-start gap-2 text-start font-normal",
+            "w-full justify-start gap-2 text-start font-normal",
             !date && "text-muted-foreground",
             className,
           )}
@@ -46,4 +44,4 @@ export function DatePicker({
       </PopoverContent>
     </Popover>
   );
-}
+});

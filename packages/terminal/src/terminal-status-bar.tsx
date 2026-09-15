@@ -168,7 +168,10 @@ export const TerminalStatusBar = forwardRef<HTMLDivElement, TerminalStatusBarPro
         aria-label={ariaLabelProp ?? t("terminal.statusBar.label")}
         aria-live="polite"
         className={cn(
-          "flex w-full items-center gap-4 border-t border-terminal-border bg-terminal-background px-3 py-1.5 font-mono text-meta text-terminal-muted",
+          // `flex-wrap` + a small row gap keeps the right cluster (connections,
+          // context, turn) from being pushed past the frame's edge on a narrow
+          // viewport (390px) — it drops to its own line instead of overflowing.
+          "flex w-full flex-wrap items-center gap-x-4 gap-y-1 border-t border-terminal-border bg-terminal-background px-3 py-1.5 font-mono text-meta text-terminal-muted",
           className,
         )}
         data-slot="terminal-status-bar"
@@ -188,7 +191,7 @@ export const TerminalStatusBar = forwardRef<HTMLDivElement, TerminalStatusBarPro
           />
         ) : null}
         {hasRightCluster ? (
-          <div className="ms-auto flex shrink-0 items-center gap-3">
+          <div className="ms-auto flex shrink-0 flex-wrap items-center gap-3">
             {connections ? (
               <span
                 className="inline-flex shrink-0 items-center gap-1.5"

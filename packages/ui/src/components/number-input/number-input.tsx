@@ -3,6 +3,7 @@ import { forwardRef, useCallback, useRef, useState, type HTMLAttributes } from "
 import { Minus, Plus } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { InputGroup, InputGroupButton, InputGroupInput } from "../input-group";
+import { useLocale } from "../locale-provider";
 
 export interface NumberInputProps extends Omit<
   HTMLAttributes<HTMLDivElement>,
@@ -56,11 +57,37 @@ function clampValue(val: number, min?: number, max?: number): number {
   return result;
 }
 
-function formatNum(value: number, formatOptions?: Intl.NumberFormatOptions): string {
-  if (formatOptions) {
-    return new Intl.NumberFormat(undefined, formatOptions).format(value);
-  }
-  return String(value);
+/** Number of decimal places implied by a step (e.g. 0.1 → 1, 1 → 0). */
+function stepDecimals(step: number): number {
+  if (!isFinite(step) || step === 0) return 0;
+  const s = String(step);
+  const i = s.indexOf(".");
+  return i === -1 ? 0 : s.length - i - 1;
+}
+
+/** Round `value` to the decimal precision implied by `step`, avoiding fp noise (0.1+0.2). */
+function roundToStep(value: number, step: number): number {
+  const decimals = stepDecimals(step);
+  if (decimals === 0) return Math.round(value);
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+/** The active locale's decimal and group separator characters (e.g. "," / "." in de-DE). */
+function getLocaleSeparators(locale: string): { decimal: string; group: string } {
+  const parts = new Intl.NumberFormat(locale).formatToParts(1234.5);
+  const decimal = parts.find((p) => p.type === "decimal")?.value ?? ".";
+  const group = parts.find((p) => p.type === "group")?.value ?? ",";
+  return { decimal, group };
+}
+
+/** Parse a locale-formatted numeric string (group + decimal separators) into a number. */
+function parseLocaleNumber(raw: string, locale: string): number {
+  const { decimal, group } = getLocaleSeparators(locale);
+  let normalized = raw.trim();
+  if (group) normalized = normalized.split(group).join("");
+  if (decimal !== ".") normalized = normalized.split(decimal).join(".");
+  return Number(normalized);
 }
 
 /**
@@ -69,7 +96,7 @@ function formatNum(value: number, formatOptions?: Intl.NumberFormatOptions): str
  * Controlled via `value`/`onValueChange`; uncontrolled via `defaultValue`.
  * Keyboard ↑/↓ = ±step; Shift+↑/↓ = ±step×10. Clamps on blur (not per keystroke).
  */
-export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function NumberInput(
+export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(function NumberInput(
   {
     value: valueProp,
     defaultValue,
@@ -94,14 +121,20 @@ export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function
   },
   ref,
 ) {
+  const { locale, formatNumber } = useLocale();
   const isControlled = valueProp !== undefined;
+
+  const formatValue = useCallback(
+    (n: number) => formatNumber(n, formatOptions),
+    [formatNumber, formatOptions],
+  );
 
   const [internalValue, setInternalValue] = useState<number | null>(
     defaultValue !== undefined ? defaultValue : null,
   );
   const [inputText, setInputText] = useState<string>(() => {
     const initial = isControlled ? valueProp : defaultValue;
-    return initial != null ? formatNum(initial, formatOptions) : "";
+    return initial != null ? formatValue(initial) : "";
   });
   // Track whether the user is actively editing to avoid overwriting their input
   const isEditing = useRef(false);
@@ -120,12 +153,12 @@ export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function
     (delta: number) => {
       if (disabled || readOnly) return;
       const base = currentValue ?? 0;
-      let next = base + delta;
+      let next = roundToStep(base + delta, step);
       if (clamp) next = clampValue(next, min, max);
-      setInputText(next != null ? formatNum(next, formatOptions) : "");
+      setInputText(formatValue(next));
       commit(next);
     },
-    [disabled, readOnly, currentValue, clamp, min, max, formatOptions, commit],
+    [disabled, readOnly, currentValue, step, clamp, min, max, formatValue, commit],
   );
 
   const handleKeyDown = useCallback(
@@ -152,22 +185,23 @@ export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function
       commit(null);
       return;
     }
-    const parsed = parseFloat(raw);
+    const parsed = parseLocaleNumber(raw, locale);
     if (isNaN(parsed)) {
       // Revert to last known good value
-      setInputText(currentValue != null ? formatNum(currentValue, formatOptions) : "");
+      setInputText(currentValue != null ? formatValue(currentValue) : "");
       return;
     }
-    const clamped = clamp ? clampValue(parsed, min, max) : parsed;
-    setInputText(formatNum(clamped, formatOptions));
+    const rounded = roundToStep(parsed, step);
+    const clamped = clamp ? clampValue(rounded, min, max) : rounded;
+    setInputText(formatValue(clamped));
     commit(clamped);
-  }, [inputText, currentValue, clamp, min, max, formatOptions, commit]);
+  }, [inputText, currentValue, clamp, min, max, step, locale, formatValue, commit]);
 
   // Keep display text in sync with controlled value changes (only when not editing)
   const prevControlledValue = useRef(valueProp);
   if (isControlled && valueProp !== prevControlledValue.current && !isEditing.current) {
     prevControlledValue.current = valueProp;
-    const nextText = valueProp != null ? formatNum(valueProp, formatOptions) : "";
+    const nextText = valueProp != null ? formatValue(valueProp) : "";
     if (nextText !== inputText) setInputText(nextText);
   }
 
@@ -177,18 +211,24 @@ export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function
     disabled || readOnly || (max !== undefined && (currentValue ?? 0) >= max);
 
   return (
-    <InputGroup ref={ref} className={cn("w-36", className)} {...props}>
+    <InputGroup className={className} {...props}>
       <InputGroupButton
         aria-label="Decrease"
         tabIndex={-1}
         disabled={decrementDisabled}
         onClick={() => applyStep(-step)}
-        className="rounded-r-none"
+        className="rounded-e-none"
       >
         <Minus aria-hidden="true" />
       </InputGroupButton>
       <InputGroupInput
-        type="number"
+        ref={ref}
+        type="text"
+        inputMode="decimal"
+        role="spinbutton"
+        aria-valuenow={currentValue ?? undefined}
+        aria-valuemin={min}
+        aria-valuemax={max}
         id={id}
         name={name}
         value={inputText}
@@ -200,7 +240,7 @@ export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function
         aria-describedby={ariaDescribedby}
         aria-invalid={ariaInvalid}
         aria-required={ariaRequired}
-        className="text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="text-center"
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
@@ -210,7 +250,7 @@ export const NumberInput = forwardRef<HTMLDivElement, NumberInputProps>(function
         tabIndex={-1}
         disabled={incrementDisabled}
         onClick={() => applyStep(step)}
-        className="rounded-l-none"
+        className="rounded-s-none"
       >
         <Plus aria-hidden="true" />
       </InputGroupButton>

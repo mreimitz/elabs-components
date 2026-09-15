@@ -55,7 +55,11 @@ export const dialogContentVariants = cva(
         sm: "max-w-sm",
         lg: "max-w-lg",
         xl: "max-w-3xl",
-        full: "max-w-[95vw] h-[90vh] max-h-[90vh] overflow-hidden",
+        // `dvh` (dynamic viewport height), not `vh`: on mobile Safari/Chrome
+        // `vh` is measured against the LARGEST viewport (browser chrome
+        // collapsed), so `size="full"` overflows past the visible viewport
+        // while the address bar is showing.
+        full: "max-w-[95vw] h-[90dvh] max-h-[90dvh] overflow-hidden",
       },
     },
     defaultVariants: { size: "lg" },

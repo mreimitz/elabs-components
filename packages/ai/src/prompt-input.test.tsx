@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import {
@@ -104,6 +104,61 @@ describe("PromptInput — empty submissions are blocked", () => {
       expect.objectContaining({ files: [], text: " hi " }),
       expect.anything(),
     );
+  });
+});
+
+describe("PromptInput — failed submit restores the composer (#1.9)", () => {
+  it("restores the typed text after a rejected async onSubmit", async () => {
+    const onSubmit = vi.fn(() => Promise.reject(new Error("network error")));
+    render(<Harness onSubmit={onSubmit} />);
+
+    const textarea = screen.getByPlaceholderText("Ask…") as HTMLTextAreaElement;
+    await userEvent.type(textarea, "hello{Enter}");
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    // form.reset() wipes the uncontrolled textarea before onSubmit even runs —
+    // a rejected promise must restore exactly what the user had typed.
+    await waitFor(() => expect(textarea.value).toBe("hello"));
+  });
+
+  it("restores the typed text after a synchronous onSubmit throw", async () => {
+    const onSubmit = vi.fn(() => {
+      throw new Error("boom");
+    });
+    render(<Harness onSubmit={onSubmit} />);
+
+    const textarea = screen.getByPlaceholderText("Ask…") as HTMLTextAreaElement;
+    await userEvent.type(textarea, "hello{Enter}");
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(textarea.value).toBe("hello"));
+  });
+});
+
+describe("PromptInput — in-flight guard blocks a duplicate submit (#1.9)", () => {
+  it("does not call onSubmit twice for a double Enter on an attachment-only message before the first submit settles", () => {
+    // Attachments are only cleared once onSubmit resolves, so the submit
+    // control stays enabled (canSubmit = files.length > 0) while the first
+    // call is still pending — an in-flight ref, not the affordance, must
+    // stop a second Enter from re-sending the same attachment.
+    let resolveSubmit: (() => void) | undefined;
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSubmit = resolve;
+        }),
+    );
+    render(<Harness onSubmit={onSubmit} />);
+
+    const file = new File(["hello"], "notes.txt", { type: "text/plain" });
+    fireEvent.change(screen.getByLabelText("Upload files"), { target: { files: [file] } });
+
+    const textarea = screen.getByPlaceholderText("Ask…");
+    fireEvent.keyDown(textarea, { key: "Enter" });
+    fireEvent.keyDown(textarea, { key: "Enter" });
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    resolveSubmit?.();
   });
 });
 

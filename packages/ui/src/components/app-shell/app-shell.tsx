@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { SkipLink } from "../skip-link";
 
@@ -22,17 +22,30 @@ export interface AppShellProps {
 /**
  * App-first layout: fixed-height viewport with an optional sidebar, a top bar,
  * and a scrollable main region. Pure layout — bring your own nav components.
+ *
+ * The `sidebar` slot is hidden below `md` with no fallback of its own: this
+ * shell does not know whether `sidebar` already manages its own responsive
+ * behavior. `<Sidebar>` (`../sidebar`) does — it renders as an offcanvas
+ * `Sheet` below the mobile breakpoint entirely on its own, through a Radix
+ * portal that is unaffected by this wrapper's `hidden md:flex` (a portal
+ * mounts into `document.body`, not into this DOM subtree) — pair it with a
+ * `<SidebarTrigger>` inside `topNav` for full mobile navigation. Wrapping an
+ * arbitrary `sidebar` node in a SECOND, shell-owned `Sheet` here would look
+ * like a fix but silently break that exact pattern: a Radix `Sheet`/`Dialog`
+ * only mounts its content while open, so `<Sidebar>` would be unmounted
+ * (not just hidden) whenever the shell's own drawer is closed — and with it,
+ * the very trigger a caller uses to open ITS mobile view. A bare nav node
+ * (no built-in responsive behavior of its own) has no such fallback; give it
+ * one explicitly, e.g. by rendering a `<Sheet>` alongside `topNav` in the
+ * consuming app.
  */
-export function AppShell({
-  sidebar,
-  topNav,
-  children,
-  className,
-  mainClassName,
-  mainId = "main-content",
-}: AppShellProps) {
+export const AppShell = forwardRef<HTMLDivElement, AppShellProps>(function AppShell(
+  { sidebar, topNav, children, className, mainClassName, mainId = "main-content" },
+  ref,
+) {
   return (
     <div
+      ref={ref}
       className={cn("flex h-dvh w-full overflow-hidden bg-background text-foreground", className)}
     >
       {/* The first focusable element of the shell, so a keyboard user can pass
@@ -61,4 +74,4 @@ export function AppShell({
       </div>
     </div>
   );
-}
+});

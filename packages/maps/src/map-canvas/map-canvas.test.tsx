@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // maplibre-gl requires WebGL — mock the engine and assert the brand wrapper's
@@ -89,5 +89,36 @@ describe("MapCanvas", () => {
       return null;
     }
     expect(() => render(<Bare />)).toThrow(/within a <MapCanvas>/);
+  });
+
+  it("applies the CURRENT projection prop on a later styledata event, not the value from mount", async () => {
+    const globe = { type: "globe" } as const;
+    const mercator = { type: "mercator" } as const;
+    const { rerender } = render(<MapCanvas projection={globe} />);
+    const map = MockMap.instances[0]!;
+    // Let the mount-time styledata's own 100ms timeout settle first.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+
+    const setProjectionSpy = vi.spyOn(map, "setProjection");
+    rerender(<MapCanvas projection={mercator} />);
+    // The dedicated "sync projection on prop change" effect also fires here —
+    // clear it so the assertion below isolates the `styledata` handler alone.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    setProjectionSpy.mockClear();
+
+    // A style reload (theme swap, `setStyle`) re-fires `styledata` on the SAME
+    // mount-only handler — it must read the current prop via a ref, not the
+    // value closed over when the handler was registered.
+    await act(async () => {
+      map.emit("styledata");
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+
+    expect(setProjectionSpy).toHaveBeenCalledWith(mercator);
+    expect(setProjectionSpy).not.toHaveBeenCalledWith(globe);
   });
 });

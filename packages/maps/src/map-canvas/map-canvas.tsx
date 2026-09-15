@@ -157,6 +157,11 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
   const onViewportChangeRef = useRef(onViewportChange);
   onViewportChangeRef.current = onViewportChange;
 
+  // Read from the mount-only `styledata` handler below so a `projection` prop
+  // change after mount isn't reapplied with the value captured at mount time.
+  const projectionRef = useRef(projection);
+  projectionRef.current = projection;
+
   const mapStyles = useMemo(() => {
     // Explicit styles win. Otherwise `blank` opts into the transparent
     // tile-less basemap; with neither, fall back to the Carto defaults.
@@ -221,8 +226,8 @@ export const MapCanvas = forwardRef<MapCanvasRef, MapCanvasProps>(function MapCa
       // race conditions on setStyle without force-updating every layer.
       styleTimeoutRef.current = setTimeout(() => {
         setIsStyleLoaded(true);
-        if (projection) {
-          map.setProjection(projection);
+        if (projectionRef.current) {
+          map.setProjection(projectionRef.current);
         }
       }, 100);
     };

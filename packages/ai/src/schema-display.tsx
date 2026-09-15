@@ -5,8 +5,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elabs-ai/c
 import { useLocale } from "@elabs-ai/components-ui";
 import { cn } from "@elabs-ai/components-ui/lib/cn";
 import { ChevronRightIcon } from "lucide-react";
-import type { ComponentProps, HTMLAttributes } from "react";
-import { createContext, useContext, useMemo } from "react";
+import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
+import { createContext, Fragment, useContext, useMemo } from "react";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -42,12 +42,35 @@ const SchemaDisplayContext = createContext<SchemaDisplayContextType>({
 });
 
 const methodStyles: Record<HttpMethod, string> = {
-  DELETE: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  GET: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  PATCH: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  POST: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  PUT: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  DELETE: "border-destructive/40 bg-destructive/10 text-destructive-text",
+  GET: "border-success/40 bg-success/10 text-success-text",
+  PATCH: "border-warning/40 bg-warning/10 text-warning-text",
+  POST: "border-info/40 bg-info/10 text-info-text",
+  PUT: "border-warning/40 bg-warning/10 text-warning-text",
 };
+
+/** Splits a `{param}` path into plain-text and parameter segments for safe rendering. */
+function splitSchemaPath(path: string): Array<{ text: string; isParam: boolean }> {
+  const parts: Array<{ text: string; isParam: boolean }> = [];
+  const regex = /\{([^}]+)\}/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null = regex.exec(path);
+
+  while (match !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ isParam: false, text: path.slice(lastIndex, match.index) });
+    }
+    parts.push({ isParam: true, text: match[0] });
+    lastIndex = match.index + match[0].length;
+    match = regex.exec(path);
+  }
+
+  if (lastIndex < path.length) {
+    parts.push({ isParam: false, text: path.slice(lastIndex) });
+  }
+
+  return parts;
+}
 
 export type SchemaDisplayHeaderProps = HTMLAttributes<HTMLDivElement>;
 
@@ -86,19 +109,26 @@ export type SchemaDisplayPathProps = HTMLAttributes<HTMLSpanElement>;
 export const SchemaDisplayPath = ({ className, children, ...props }: SchemaDisplayPathProps) => {
   const { path } = useContext(SchemaDisplayContext);
 
-  // Highlight path parameters
-  const highlightedPath = path.replaceAll(
-    /\{([^}]+)\}/g,
-    '<span class="text-blue-600 dark:text-blue-400">{$1}</span>',
+  // Highlight path parameters as real elements — the path is untrusted
+  // (tool/model output) and must never reach dangerouslySetInnerHTML.
+  const pathNodes = useMemo<ReactNode>(
+    () =>
+      splitSchemaPath(path).map((part, index) =>
+        part.isParam ? (
+          <span className="text-info-text" key={`${part.text}-${index}`}>
+            {part.text}
+          </span>
+        ) : (
+          <Fragment key={`${part.text}-${index}`}>{part.text}</Fragment>
+        ),
+      ),
+    [path],
   );
 
   return (
-    <span
-      className={cn("font-mono text-sm", className)}
-      // oxlint-disable-next-line eslint-plugin-react(no-danger)
-      dangerouslySetInnerHTML={{ __html: children ?? highlightedPath }}
-      {...props}
-    />
+    <span className={cn("font-mono text-sm", className)} {...props}>
+      {children ?? pathNodes}
+    </span>
   );
 };
 
@@ -154,7 +184,7 @@ export const SchemaDisplayParameter = ({
       )}
       {required && (
         <Badge
-          className="bg-red-100 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-400"
+          className="border-destructive/40 bg-destructive/10 text-destructive-text text-xs"
           variant="secondary"
         >
           required
@@ -230,7 +260,7 @@ export const SchemaDisplayProperty = ({
           </Badge>
           {required && (
             <Badge
-              className="bg-red-100 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-400"
+              className="border-destructive/40 bg-destructive/10 text-destructive-text text-xs"
               variant="secondary"
             >
               required
@@ -268,7 +298,7 @@ export const SchemaDisplayProperty = ({
         </Badge>
         {required && (
           <Badge
-            className="bg-red-100 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-400"
+            className="border-destructive/40 bg-destructive/10 text-destructive-text text-xs"
             variant="secondary"
           >
             required

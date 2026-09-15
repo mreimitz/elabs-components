@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TreeNode } from "./tree";
 
 /**
@@ -125,6 +125,31 @@ export function useTreeKeyboard<T>(options: UseTreeKeyboardOptions<T>): UseTreeK
     }
   }, []);
 
+  // Memoised O(1) lookups — rebuilt only when the tree shape / expansion
+  // actually changes, not on every keypress (a full re-flatten + `indexOf`/
+  // `findNode` walk per arrow key is O(n) on a large tree).
+  const visible = useMemo(
+    () => (virtualize && flatNodeIds ? flatNodeIds : flattenVisible(nodes, expandedIds)),
+    [virtualize, flatNodeIds, nodes, expandedIds],
+  );
+  const visibleIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    visible.forEach((id, i) => map.set(id, i));
+    return map;
+  }, [visible]);
+  const nodeById = useMemo(() => {
+    const map = new Map<string, TreeNode<T>>();
+    function walk(list: TreeNode<T>[]) {
+      for (const node of list) {
+        map.set(node.id, node);
+        if (node.children?.length) walk(node.children);
+      }
+    }
+    walk(nodes);
+    return map;
+  }, [nodes]);
+  const parentMapMemo = useMemo(() => buildParentMap(nodes), [nodes]);
+
   // Typeahead buffer
   const typeaheadBuffer = useRef<string>("");
   const typeaheadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,8 +181,7 @@ export function useTreeKeyboard<T>(options: UseTreeKeyboardOptions<T>): UseTreeK
 
       // Element not mounted — happens when it's scrolled out of the virtual window.
       if (virtualize && scrollToVirtualIndex && pendingFocusIdRef) {
-        const ids = flatNodeIds ?? [];
-        const index = ids.indexOf(id);
+        const index = visibleIndexById.get(id) ?? -1;
         if (index >= 0) {
           pendingFocusIdRef.current = id;
           scrollToVirtualIndex(index);
@@ -165,18 +189,16 @@ export function useTreeKeyboard<T>(options: UseTreeKeyboardOptions<T>): UseTreeK
         }
       }
     },
-    [virtualize, flatNodeIds, pendingFocusIdRef, scrollToVirtualIndex],
+    [virtualize, visibleIndexById, pendingFocusIdRef, scrollToVirtualIndex],
   );
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (!activeId) return;
 
-      // In virtual mode use the pre-computed flat list so we don't re-flatten
-      const visible = virtualize && flatNodeIds ? flatNodeIds : flattenVisible(nodes, expandedIds);
-      const currentIndex = visible.indexOf(activeId);
-      const currentNode = findNode(nodes, activeId);
-      const parentMap = buildParentMap(nodes);
+      const currentIndex = visibleIndexById.get(activeId) ?? -1;
+      const currentNode = nodeById.get(activeId);
+      const parentMap = parentMapMemo;
 
       const moveTo = (id: string) => {
         e.preventDefault();
@@ -185,7 +207,7 @@ export function useTreeKeyboard<T>(options: UseTreeKeyboardOptions<T>): UseTreeK
 
       const selectNode = (id: string) => {
         if (selectionMode === "none") return;
-        const node = findNode(nodes, id);
+        const node = nodeById.get(id);
         if (node?.disabled) return;
         if (selectionMode === "single") {
           onSelectionChange(new Set([id]));
@@ -282,7 +304,7 @@ export function useTreeKeyboard<T>(options: UseTreeKeyboardOptions<T>): UseTreeK
               ...visible.slice(0, currentIndex + 1),
             ];
             for (const id of searchList) {
-              const node = findNode(nodes, id);
+              const node = nodeById.get(id);
               if (!node) continue;
               // only string labels are searchable
               if (typeof node.label !== "string") continue;
@@ -298,15 +320,16 @@ export function useTreeKeyboard<T>(options: UseTreeKeyboardOptions<T>): UseTreeK
     },
     [
       activeId,
-      nodes,
+      visible,
+      visibleIndexById,
+      nodeById,
+      parentMapMemo,
       expandedIds,
       onExpandedChange,
       selectionMode,
       selectedIds,
       onSelectionChange,
       setActiveId,
-      virtualize,
-      flatNodeIds,
     ],
   );
 

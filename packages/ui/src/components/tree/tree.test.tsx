@@ -141,6 +141,29 @@ describe("Tree reveal-into-view (scrollToId / scrollSelectionIntoView)", () => {
     }
   });
 
+  it("does not re-scroll on an unrelated re-render with a same-content controlled selectedIds array", async () => {
+    const scrollSpy = vi.fn();
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollSpy;
+    try {
+      const { rerender } = render(<Tree nodes={nodes} scrollSelectionIntoView selectedIds={[]} />);
+      rerender(<Tree nodes={nodes} scrollSelectionIntoView selectedIds={["carrot"]} />);
+      await waitFor(() => expect(screen.getByText("Carrot")).toBeInTheDocument());
+      const callsAfterInitialReveal = scrollSpy.mock.calls.length;
+      expect(callsAfterInitialReveal).toBeGreaterThan(0);
+
+      // Same ids, but a FRESH array reference — a common pattern (parent
+      // recomputes `selectedIds` inline every render). Previously the
+      // controlled Set was rebuilt with a new identity every render, so the
+      // reveal effect saw a "changed" selection and re-scrolled on every
+      // unrelated re-render (scroll-jump-while-scrolling, #reviewed 1.6).
+      rerender(<Tree nodes={nodes} scrollSelectionIntoView selectedIds={["carrot"]} />);
+      expect(scrollSpy.mock.calls.length).toBe(callsAfterInitialReveal);
+    } finally {
+      Element.prototype.scrollIntoView = orig;
+    }
+  });
+
   it("scrollToId requests ancestor expansion in virtualize mode (controlled)", async () => {
     const onExpandedChange = vi.fn();
     const { rerender } = render(
@@ -393,6 +416,24 @@ describe("Tree (lazy loading)", () => {
 
     // aria-busy is NOT set in error state (it's cleared)
     expect(screen.getByRole("treeitem", { name: /Category A/ })).not.toHaveAttribute("aria-busy");
+  });
+
+  it("does not drop lazily-loaded children when the parent re-renders with a fresh (same-content) nodes prop", async () => {
+    const user = userEvent.setup();
+    const loadChildren = vi.fn().mockResolvedValue([{ id: "child-1", label: "Child 1" }]);
+
+    const { rerender } = render(<Tree nodes={makeLazyNodes()} loadChildren={loadChildren} />);
+    await user.click(screen.getByRole("treeitem", { name: /Category A/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("treeitem", { name: /Child 1/ })).toBeInTheDocument();
+    });
+
+    // Parent re-renders with a brand-new `nodes` array literal carrying the
+    // SAME data (no `children` on root-a — the caller doesn't know about the
+    // lazy-loaded subtree). This must not wipe out what we already fetched.
+    rerender(<Tree nodes={makeLazyNodes()} loadChildren={loadChildren} />);
+
+    expect(screen.getByRole("treeitem", { name: /Child 1/ })).toBeInTheDocument();
   });
 
   it("retries successfully after error", async () => {

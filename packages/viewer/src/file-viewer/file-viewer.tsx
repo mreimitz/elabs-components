@@ -721,13 +721,21 @@ export const FileViewerToolbar = forwardRef<HTMLDivElement, FileViewerToolbarPro
     const { t } = useLocale();
     const source = state.source;
     const Glyph = fileIconFor(source?.name ?? "", source?.mediaType);
+    const [downloadFailed, setDownloadFailed] = useState(false);
 
     if (!source) return null;
 
     const download = () => {
-      void source.bytes().then((bytes) => {
-        downloadBlob(new Blob([bytes], { type: source.mediaType }), source.name);
-      });
+      setDownloadFailed(false);
+      void source
+        .bytes()
+        .then((bytes) => {
+          downloadBlob(new Blob([bytes], { type: source.mediaType }), source.name);
+        })
+        .catch((error: unknown) => {
+          console.error("FileViewer: download failed", error);
+          setDownloadFailed(true);
+        });
     };
 
     return (
@@ -749,6 +757,11 @@ export const FileViewerToolbar = forwardRef<HTMLDivElement, FileViewerToolbarPro
         </Text>
         {children}
         {actions}
+        {downloadFailed ? (
+          <Text role="alert" className="text-destructive-text shrink-0 truncate">
+            {t("viewer.error.readFailedBody", { name: source.name, format: source.mediaType })}
+          </Text>
+        ) : null}
         <Separator orientation="vertical" className="h-4" />
         {/* `label` is IconButton's single source of truth — it becomes both the
             accessible name and the tooltip, so the two cannot drift. */}

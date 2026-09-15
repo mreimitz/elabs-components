@@ -609,7 +609,7 @@
   --chart-marker-border: var(--border);
   --chart-marker-badge-background: var(--primary);
   --chart-marker-badge-foreground: var(--primary-foreground);
-  --chart-ring-background: var(--chart-grid);
+  --chart-ring-background: oklch(0.88 0.01 264);
   --chart-segment-background: var(--muted);
   --chart-segment-line: var(--chart-grid);
   --chart-tooltip-background: var(--popover);

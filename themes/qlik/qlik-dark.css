@@ -87,9 +87,9 @@
   --chart-mono-5: oklch(0.767 0 0);
   --chart-mono-6: oklch(0.845 0 0);
   --chart-mono-7: oklch(0.925 0 0);
-  --chart-ring-background: var(--background);
+  --chart-ring-background: var(--chart-grid);
   --chart-segment-background: var(--muted);
-  --chart-segment-line: var(--border);
+  --chart-segment-line: var(--chart-grid);
   --chart-seq-1: oklch(0.315 0.121 258.8);
   --chart-seq-2: oklch(0.43 0.175 259.9);
   --chart-seq-3: oklch(0.488 0.163 255.5);

@@ -46,7 +46,23 @@ interface JSXPreviewContextValue {
 
 const JSXPreviewContext = createContext<JSXPreviewContextValue | null>(null);
 
-const TAG_REGEX = /<\/?([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*?)(\/)?>/;
+/**
+ * HTML elements that must never render from agent/model-authored JSX: script
+ * execution, style/link/meta/base injection, and embeddable third-party
+ * surfaces (iframe/object/embed) or a form that could post data out. Merged
+ * with `react-jsx-parser`'s own default (`script`) via `blacklistedTags`.
+ */
+const JSX_PREVIEW_BLACKLISTED_TAGS = [
+  "script",
+  "style",
+  "iframe",
+  "form",
+  "object",
+  "embed",
+  "link",
+  "meta",
+  "base",
+];
 
 export const useJSXPreview = () => {
   const context = useContext(JSXPreviewContext);
@@ -56,37 +72,101 @@ export const useJSXPreview = () => {
   return context;
 };
 
-const matchJsxTag = (code: string) => {
-  if (code.trim() === "") {
-    return null;
+const TAG_NAME_START = /[a-zA-Z]/;
+const TAG_NAME_CHAR = /[a-zA-Z0-9]/;
+
+interface JsxTagMatch {
+  tagName: string;
+  type: "opening" | "closing" | "self-closing";
+  endIndex: number;
+}
+
+/**
+ * Finds the next complete JSX tag at or after `fromIndex`, tracking brace
+ * depth and quoted strings so a `>` inside an attribute expression (e.g.
+ * `onClick={() => foo()}`) is never mistaken for the tag's own closing
+ * bracket (the previous plain regex did exactly that). Walks the ORIGINAL
+ * string by absolute index — no per-iteration substring slicing — so one
+ * pass over the whole input is linear.
+ */
+function findNextJsxTag(code: string, fromIndex: number): JsxTagMatch | null {
+  const len = code.length;
+  let i = fromIndex;
+
+  while (i < len) {
+    if (code[i] !== "<") {
+      i++;
+      continue;
+    }
+
+    let j = i + 1;
+    const closing = code[j] === "/";
+    if (closing) j++;
+
+    const nameStart = j;
+    if (!TAG_NAME_START.test(code[nameStart] ?? "")) {
+      i++;
+      continue;
+    }
+    j++;
+    while (j < len && TAG_NAME_CHAR.test(code[j] ?? "")) {
+      j++;
+    }
+    const tagName = code.slice(nameStart, j);
+
+    let depth = 0;
+    let quote: string | null = null;
+    let k = j;
+    let closedAt = -1;
+    let selfClosing = false;
+
+    while (k < len) {
+      const ch = code[k];
+      if (quote) {
+        if (ch === quote) quote = null;
+        k++;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        quote = ch;
+        k++;
+        continue;
+      }
+      if (ch === "{") {
+        depth++;
+        k++;
+        continue;
+      }
+      if (ch === "}") {
+        depth = Math.max(0, depth - 1);
+        k++;
+        continue;
+      }
+      if (depth === 0 && ch === ">") {
+        let p = k - 1;
+        while (p > j && code[p] === " ") p--;
+        selfClosing = code[p] === "/";
+        closedAt = k + 1;
+        break;
+      }
+      k++;
+    }
+
+    // No closing '>' yet for this tag at this depth — it is incomplete, not
+    // a match; the caller treats everything from here on as trailing text.
+    if (closedAt === -1) {
+      return null;
+    }
+
+    return {
+      endIndex: closedAt,
+      tagName,
+      type: closing ? "closing" : selfClosing ? "self-closing" : "opening",
+    };
   }
 
-  const match = code.match(TAG_REGEX);
-
-  if (!match || match.index === undefined) {
-    return null;
-  }
-
-  const [fullMatch = "", tagName = "", attributes = "", selfClosing] = match;
-
-  let type: "self-closing" | "closing" | "opening";
-  if (selfClosing) {
-    type = "self-closing";
-  } else if (fullMatch.startsWith("</")) {
-    type = "closing";
-  } else {
-    type = "opening";
-  }
-
-  return {
-    attributes: attributes.trim(),
-    endIndex: match.index + fullMatch.length,
-    startIndex: match.index,
-    tag: fullMatch,
-    tagName,
-    type,
-  };
-};
+  return null;
+}
 
 const stripIncompleteTag = (text: string) => {
   // Find the last '<' that isn't part of a complete tag
@@ -106,38 +186,63 @@ const stripIncompleteTag = (text: string) => {
 
 const completeJsxTag = (code: string) => {
   const stack: string[] = [];
-  let result = "";
-  let currentPosition = 0;
+  let position = 0;
 
-  while (currentPosition < code.length) {
-    const match = matchJsxTag(code.slice(currentPosition));
+  while (position < code.length) {
+    const match = findNextJsxTag(code, position);
     if (!match) {
-      // No more tags found, strip any trailing incomplete tag
-      result += stripIncompleteTag(code.slice(currentPosition));
+      // No more complete tags ahead; everything past `position` is trailing
+      // text (possibly a mid-typed tag), handled by stripIncompleteTag below.
       break;
     }
-    const { tagName, type, endIndex } = match;
 
-    // Include any text content before this tag
-    result += code.slice(currentPosition, currentPosition + endIndex);
-
-    if (type === "opening") {
-      stack.push(tagName);
-    } else if (type === "closing") {
+    if (match.type === "opening") {
+      stack.push(match.tagName);
+    } else if (match.type === "closing") {
       stack.pop();
     }
 
-    currentPosition += endIndex;
+    position = match.endIndex;
   }
 
   return (
-    result +
+    code.slice(0, position) +
+    stripIncompleteTag(code.slice(position)) +
     [...stack]
       .reverse()
       .map((tag) => `</${tag}>`)
       .join("")
   );
 };
+
+/** How often `completeJsxTag` may re-run while content is still streaming in. */
+const STREAM_RECOMPUTE_THROTTLE_MS = 80;
+
+/**
+ * Tag-balances `jsx` like `completeJsxTag`, but while `isStreaming` is true it
+ * skips a fresh (expensive, whole-string) recompute more often than once per
+ * `STREAM_RECOMPUTE_THROTTLE_MS` — otherwise every incoming token re-scans the
+ * entire accumulated string from scratch. Settled input (`isStreaming` false)
+ * always recomputes immediately so the final render is exact.
+ */
+function useCompletedJsx(jsx: string, isStreaming: boolean): string {
+  const cacheRef = useRef({ jsx, result: completeJsxTag(jsx), time: 0 });
+
+  return useMemo(() => {
+    const cache = cacheRef.current;
+    if (jsx === cache.jsx) return cache.result;
+
+    const now = Date.now();
+    if (isStreaming && now - cache.time < STREAM_RECOMPUTE_THROTTLE_MS) {
+      return cache.result;
+    }
+
+    const result = completeJsxTag(jsx);
+    cacheRef.current = { jsx, result, time: now };
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cacheRef is a stable ref, not reactive state
+  }, [jsx, isStreaming]);
+}
 
 export type JSXPreviewProps = ComponentProps<"div"> & {
   jsx: string;
@@ -177,8 +282,9 @@ export const JSXPreview = memo(
 
     // The tag-balanced best-effort of the current input. When it differs from the
     // raw jsx, the input ends mid-tag → it is INCOMPLETE (still streaming / being
-    // typed), not invalid. This is the timer-free "not-ready" signal.
-    const completed = useMemo(() => completeJsxTag(jsx), [jsx]);
+    // typed), not invalid. This is the timer-free "not-ready" signal. Throttled
+    // while streaming so every incoming token doesn't re-scan the whole string.
+    const completed = useCompletedJsx(jsx, isStreaming);
     const isIncomplete = jsx.trim() !== "" && completed !== jsx;
 
     const processedJsx = useMemo(() => {
@@ -293,7 +399,9 @@ export const JSXPreviewContent = memo(({ className, ...props }: JSXPreviewConten
   return (
     <div className={cn("jsx-preview-content", className)} {...props}>
       <JsxParser
+        allowUnknownElements={false}
         bindings={bindings}
+        blacklistedTags={JSX_PREVIEW_BLACKLISTED_TAGS}
         components={components}
         jsx={displayJsx}
         onError={handleError}

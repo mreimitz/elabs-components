@@ -55,6 +55,13 @@ export class MockMap {
     return this;
   }
 
+  /** Manually re-fire an event's handlers — e.g. a second `styledata` after a style reload. */
+  emit(event: string, layerId?: string, ...args: unknown[]) {
+    this.handlers.get(this.key(event, layerId))?.forEach((handler) => {
+      handler(...args);
+    });
+  }
+
   remove() {
     this.removed = true;
   }
