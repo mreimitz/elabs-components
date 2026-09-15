@@ -2,8 +2,12 @@
 [data-theme="qlik-light"] {
   color-scheme: light;
   --radius-base: 0.25rem;
-  --font-sans: "Source Sans Pro", "Source Sans 3", var(--font-cjk-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-display: "Source Sans Pro", "Source Sans 3", var(--font-cjk-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans:
+    "Source Sans Pro", "Source Sans 3", var(--font-cjk-sans), "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  --font-display:
+    "Source Sans Pro", "Source Sans 3", var(--font-cjk-sans), "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
   --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-family: var(--font-sans);
   --background: oklch(0.985 0 0);
@@ -85,11 +89,11 @@
   --chart-5: oklch(0.62 0.135 85);
   --chart-6: oklch(0.696 0.121 187.1);
   --chart-7: oklch(0.675 0.187 7.8);
-  --chart-8: oklch(0.641 0.058 227.0);
+  --chart-8: oklch(0.641 0.058 227);
   --chart-9: oklch(0.831 0.145 74.2);
   --chart-10: oklch(0.493 0.204 352.1);
   --chart-11: oklch(0.801 0.091 244.2);
-  --chart-12: oklch(0.640 0.216 353.6);
+  --chart-12: oklch(0.64 0.216 353.6);
   --chart-grid: var(--border);
   --chart-foreground: var(--foreground);
   --chart-foreground-muted: var(--muted-foreground);
