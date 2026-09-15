@@ -9,8 +9,7 @@ read/verify task — report fixes, don't rewrite unless asked.
 
 ## 1. Component gates
 
-Check against `@.claude/rules/quality-gates.md`, `@.claude/rules/component-api.md`,
-`@.claude/rules/styling-and-tokens.md` and `@.claude/rules/accessibility.md`:
+Check against `@.claude/rules/conventions.md` and the definition of done in `CONTRIBUTING.md`:
 
 - [ ] Public types exported; exported from the package barrel
 - [ ] `forwardRef` where a DOM ref is meaningful; spreads `...props`; `className` via `cn()`
@@ -22,7 +21,7 @@ Check against `@.claude/rules/quality-gates.md`, `@.claude/rules/component-api.m
 
 ## 2. Interaction hygiene (static, terse `file:line`)
 
-Per `@.claude/rules/interaction-guidelines.md`: `transition: all` · `outline-none` without a
+Per the interaction section of `@.claude/rules/conventions.md`: `transition: all` · `outline-none` without a
 focus-ring replacement · `<div onClick>` · icon button without `aria-label` · `<img>` without
 dimensions · input without label · hardcoded date/number format (use `Intl.*`) · `...`
 instead of `…` · truncating flex child without `min-w-0` · no real empty/loading/error state

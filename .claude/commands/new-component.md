@@ -104,8 +104,7 @@ and geospatial/MapLibre surfaces in `@elabs-ai/components-maps`.
 
 ## Step 4 — Implement
 
-Read `@.claude/rules/component-api.md`, `@.claude/rules/styling-and-tokens.md`,
-`@.claude/rules/accessibility.md`. Then:
+Read `@.claude/rules/conventions.md`. Then:
 
 - `forwardRef` + spread `...props` + accept `className`, merged with `cn()`
 - **semantic tokens only** (`bg-primary`, `text-muted-foreground`) — never raw hex
@@ -119,7 +118,7 @@ Read `@.claude/rules/component-api.md`, `@.claude/rules/styling-and-tokens.md`,
 ## Step 5 — Wire up & verify
 
 1. Add the export to the package barrel `packages/<pkg>/src/index.ts`.
-2. Verify against `@.claude/rules/quality-gates.md`.
+2. Verify against the definition of done in `CONTRIBUTING.md`.
 3. Run `pnpm --filter @elabs-ai/components-<pkg> typecheck` and the package tests; fix issues.
 4. **Verify the story.** If the Storybook dev server is running, run
    `mcp__storybook__run-story-tests` on the new story (fix until green) and

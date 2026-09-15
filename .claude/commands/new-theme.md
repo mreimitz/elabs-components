@@ -5,7 +5,7 @@ allowed-tools: Read, Edit, Write, Grep, Bash(pnpm:*)
 ---
 
 You are adding a **reference theme to this repo** — a third built-in, which is
-rare. Read `@.claude/rules/theming.md` and `docs/TOKEN_GUIDELINES.md` first.
+rare. Read `@.claude/rules/conventions.md` (Theming) and `docs/TOKEN_GUIDELINES.md` first.
 
 **Check this is the right job.** Theming is open (ADR
 `docs/ADR/0029-open-theme-registry.md`): a CONSUMER writing their own theme needs

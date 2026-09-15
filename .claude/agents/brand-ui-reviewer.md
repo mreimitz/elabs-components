@@ -28,8 +28,8 @@ report. Section 4 runs only when the caller is filing findings (e.g. `/file-issu
 - Rubrics live in the `brand-ui-audit` skill — use them, don't reinvent:
   `skills/brand-ui-audit/reference/ux-evaluation.md` (scorecard, Nielsen-10, 9-state
   inventory, WCAG 2.2, copy, ethics), `contrast-audit.md`, `anti-patterns.md`.
-- Rules you judge against: `.claude/rules/styling-and-tokens.md`, `theming.md`,
-  `accessibility.md`, `interaction-guidelines.md`, `component-api.md`, `loading-states.md`.
+- Rules you judge against: `.claude/rules/conventions.md` (tokens, theming, a11y, interaction, component API,
+  loading states).
 
 ## 1. Deterministic audit
 
