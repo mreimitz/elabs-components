@@ -10,4 +10,6 @@ export const COMMUNITY_THEME_DEFINITIONS: readonly ThemeDefinition[] = [
     familyLabel: "Ocean",
   },
   { value: "ocean-dark", label: "Ocean Dark", dark: true, family: "ocean" },
+  { value: "qlik-light", label: "Qlik Bright", dark: false, family: "qlik", familyLabel: "Qlik" },
+  { value: "qlik-dark", label: "Qlik Dark", dark: true, family: "qlik" },
 ];

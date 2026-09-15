@@ -10,6 +10,7 @@ your app.
 | Family            | Modes        |
 | ----------------- | ------------ |
 | [Ocean](./ocean/) | light + dark |
+| [Qlik](./qlik/)   | light + dark |
 
 ## Use a theme
 
