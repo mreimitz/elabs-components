@@ -197,4 +197,19 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 - Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
 
+### Packages
+
+- When shipped source says code was adapted/vendored/borrowed/forked/copied/ported from somewhere, credit that upstream in `scripts/attributions.sources.json` (then `pnpm gen:attributions`) in the same change. (`attribution-provenance`)
+- Declare every `https://` origin shipped source can reach (including upstream URLs in `attributions.generated.ts`) in `scripts/remote-origins-allowlist.json` with its kind, CSP directive and escape hatch, and name it in `docs/CSP-AND-NETWORK.md`. (`remote-origins`)
+- Wrap a safe-by-default renderer (Streamdown) only with `Omit<…, "rehypePlugins">` on every props type and `stripSanitizerOverrides(props)` before spreading props onto it; never set `rehypePlugins` outside the reviewed allowlist. (`sanitizer-passthrough`)
+- Keep `@radix-ui/react-scroll-area` and `@radix-ui/react-select` patched (registered in `pnpm.patchedDependencies`, installed dist free of HTML sinks); after a version bump re-apply the patch with `pnpm patch`. (`trusted-types-patches`)
+- Never assign HTML (`dangerouslySetInnerHTML`, `.innerHTML =`, `insertAdjacentHTML`, `document.write`) in package source or add a dependency that does — it blanks a Trusted-Types app; static markup belongs in CSS or JSX, and an unavoidable engine sink is baselined and documented in `docs/CSP-AND-NETWORK.md`. (`trusted-types-sinks`)
+
+### Repo
+
+- Resolve every Git merge conflict before committing: no line may start with a `<<<<<<<` / `=======` / `>>>>>>>` marker. (`conflict-markers`)
+- Keep `docs/csp-policy.json` and the `csp:published`/`csp:dev` blocks in `docs/CSP-AND-NETWORK.md` §2.7 identical, and justify every non-`'self'` relaxation with a carve-out whose `why` names the reason. (`csp-policy`)
+- Never commit a machine-specific absolute home path (`/Users/<name>/…`, `/home/<name>/…`); write it relative to the repo root. (`machine-paths`)
+- Suppress lint findings with `// eslint-disable-next-line <rule> -- <reason>`, never a `biome-ignore` comment (this repo has no Biome, so it is inert). (`no-biome-ignore`)
+
 <!-- brand-ui:gen:check-rules:end -->

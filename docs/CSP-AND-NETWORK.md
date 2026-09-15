@@ -17,10 +17,10 @@ repo now proves a browser can actually load a brand-ui surface under this policy
 Everything below was true when it was measured; treat it as reviewed, not as
 continuously re-proven, and verify against your own build.
 
-Three gates still keep the page internally honest: `pnpm origins:check` (every
+Three gates still keep the page internally honest: `pnpm check --rule remote-origins` (every
 `https://` origin in shipped source is allowlisted and listed here),
 `pnpm tt-aliases:check` (the §2.2 snippet still resolves to the DOM-free builds —
-this one does execute, against the real filesystem), and `pnpm csp:check` (§2.7
+this one does execute, against the real filesystem), and `pnpm check --rule csp-policy` (§2.7
 matches `docs/csp-policy.json` and every relaxation carries a named carve-out).
 
 ---
@@ -118,7 +118,8 @@ they are trivially reviewable. A version bump makes the patch fail to apply
 loudly, which is the right failure mode. (npm/yarn: use `patch-package`.)
 
 **Still fatal — avoid these components, or grant them a policy.** Recorded in
-`scripts/csp-sinks-baseline.json` and enforced by `pnpm csp-sinks:check`:
+the `trusted-types-sinks` entry of `scripts/check/baseline.json` and enforced by
+`pnpm check --rule trusted-types-sinks`:
 
 | Surface                                                                | Sink                                     | Escape hatch                                               |
 | ---------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
@@ -128,9 +129,9 @@ loudly, which is the right failure mode. (npm/yarn: use `patch-package`.)
 | `ChartStatFlow`, `Gauge` (`…-charts`)                                  | `@number-flow/react` assigns `innerHTML` | use `MetricCard` for the same figure                       |
 | streamed markdown (`streamdown`), `AudioPlayer`/media (`media-chrome`) | third-party                              | avoid the component                                        |
 
-`pnpm csp-sinks:check` fails on a NEW sink in our source or in a direct runtime
-dependency, and — the rung that matters most — if either Radix patch ever stops
-applying. **Limit:** it scans direct dependencies, not a full transitive fixpoint,
+`pnpm check --rule trusted-types-sinks` fails on a NEW sink in our source or in a direct
+runtime dependency, and — the rung that matters most — `trusted-types-patches` fails if
+either Radix patch ever stops applying. **Limit:** it scans direct dependencies, not a full transitive fixpoint,
 so a sink reached only through a transitive dependency is not caught yet.
 
 **`streamdown`'s sanitiser is a deletable prop default, not a merged pipeline
@@ -144,8 +145,8 @@ the prop surface: `rehypePlugins` is removed from their public types (`Omit`)
 so neither a TypeScript force-cast nor a plain-JS caller can reinstate the
 bypass. Consumers who need to widen what survives sanitisation use `allowedTags`
 / `literalTagContent` — both **merge** into the sanitize schema instead of
-replacing the pipeline. Enforced by `pnpm sanitizer-passthrough:check`
-(`scripts/check-sanitizer-passthrough.mjs`), which fails on any wrapper that
+replacing the pipeline. Enforced by `pnpm check --rule sanitizer-passthrough`
+(`scripts/check/rules/sanitizer-passthrough.mjs`), which fails on any wrapper that
 re-exposes a safe renderer's sanitiser-override prop without the matching `Omit` and the runtime strip.
 
 **State that guarantee in its exact scope: the sanitiser chain cannot be
@@ -174,7 +175,7 @@ seam is legitimate, and the locking tests in
 still reaches the DOM, so a future "hardening" that closes the slot fails loudly
 instead of silently breaking a real consumer.
 
-`pnpm sanitizer-passthrough:check` does **not** model the `plugins` prop —
+The `sanitizer-passthrough` check does **not** model the `plugins` prop —
 `dangerousProps` covers only props that _replace_ the sanitiser. The two slots
 above are a documented trust boundary, not a gate-able passthrough.
 
@@ -376,7 +377,7 @@ silently ignores `frame-ancestors`/`report-*`, and it is a second copy of the
 policy that drifts from what the deployment actually sends.
 
 The single source is [`docs/csp-policy.json`](./csp-policy.json), and
-`pnpm csp:check` (`scripts/check-csp-policy.mjs`) keeps the two blocks below equal
+`pnpm check --rule csp-policy` (`scripts/check/rules/csp-policy.mjs`) keeps the two blocks below equal
 to it in meaning, requires a named carve-out for every relaxation, and rejects any
 carve-out naming a source the policy no longer contains. So the policy and its
 published explanation cannot drift from each other.

@@ -68,7 +68,7 @@ export function globMatcher(patterns) {
  * Build the ctx API over two primitives: `listFiles()` and `readRaw(rel)`.
  * `eslint` is injected separately because the two backings lint differently.
  */
-function buildContext({ root, listFiles, readRaw, existsRaw, eslint }) {
+function buildContext({ root, listFiles, readRaw, existsRaw, dirFilesRaw, eslint }) {
   const textCache = new Map();
   const jsonCache = new Map();
   let files;
@@ -126,6 +126,11 @@ function buildContext({ root, listFiles, readRaw, existsRaw, eslint }) {
     themes,
     packages,
     json,
+    /**
+     * Names of the regular files directly inside `rel` (sorted; [] when absent). Reads the
+     * disk, so it also sees non-git paths such as `node_modules/<dep>/dist`.
+     */
+    dirFiles: (rel) => dirFilesRaw(rel.replace(/\/+$/, "")).sort(),
     /** Lint matching files with the given rules → findings. See eslint.mjs. */
     eslint: ({ rules, patterns, ignore }) => eslint({ rules, files: glob(patterns, { ignore }) }),
   };
@@ -180,6 +185,15 @@ export function createFsContext(root) {
       return existsSync(abs) ? readFileSync(abs, "utf8") : null;
     },
     existsRaw: (rel) => existsSync(join(root, rel)),
+    dirFilesRaw: (rel) => {
+      try {
+        return readdirSync(join(root, rel), { withFileTypes: true })
+          .filter((e) => e.isFile())
+          .map((e) => e.name);
+      } catch {
+        return [];
+      }
+    },
     eslint: ({ rules, files }) => lintFiles({ root, rules, files }),
   });
 }
@@ -193,6 +207,10 @@ export function createMemoryContext(fileMap = {}) {
     listFiles: () => Object.keys(fileMap),
     readRaw: (rel) => (Object.hasOwn(fileMap, rel) ? fileMap[rel] : null),
     existsRaw: (rel) => Object.hasOwn(fileMap, rel),
+    dirFilesRaw: (rel) =>
+      Object.keys(fileMap)
+        .filter((f) => f.startsWith(`${rel}/`) && !f.slice(rel.length + 1).includes("/"))
+        .map((f) => f.slice(rel.length + 1)),
     eslint: ({ rules, files }) =>
       lintTexts({ rules, texts: files.map((file) => ({ file, text: fileMap[file] })) }),
   });

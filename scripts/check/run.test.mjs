@@ -190,6 +190,10 @@ test("ctx: glob matcher and in-memory ESLint delegation", async () => {
   assert.ok(!m("packages/ui/other/a.tsx"));
   assert.ok(!m("packages/ui/src/a.css"));
 
+  const dirs = createMemoryContext({ "n/d/b.js": "", "n/d/a.mjs": "", "n/d/sub/c.js": "" });
+  assert.deepEqual(dirs.dirFiles("n/d"), ["a.mjs", "b.js"], "immediate files only");
+  assert.deepEqual(dirs.dirFiles("n/missing"), []);
+
   const ctx = createMemoryContext({
     "packages/ui/src/a.tsx": 'export const A = () => <div className="text-red-500" />;\n',
     "packages/ui/src/b.tsx": 'export const B = () => <div className="text-foreground" />;\n',

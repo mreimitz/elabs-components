@@ -1,0 +1,29 @@
+{
+  "removeScripts": [
+    "attribution:provenance:check",
+    "attribution:provenance:check:test",
+    "biome-ignore:check",
+    "biome-ignore:check:test",
+    "csp-sinks:check",
+    "csp-sinks:check:test",
+    "csp:check",
+    "csp:check:test",
+    "machine-paths:check",
+    "machine-paths:check:test",
+    "origins:check",
+    "origins:check:test",
+    "sanitizer-passthrough:check",
+    "sanitizer-passthrough:check:test"
+  ],
+  "keptScripts": [
+    {
+      "script": "conflict-markers:check",
+      "reason": "Runs in gates.yml BEFORE pnpm install and backs the .githooks/pre-commit --staged scan (index content). The full-tree scan is also the conflict-markers rule; the script now imports the rule's dependency-free detection, so there is one implementation."
+    },
+    {
+      "script": "conflict-markers:check:test",
+      "reason": "Covers the script's CLI file selection (tracked vs --staged index content) in throwaway git repos; pure detection cases moved to the rule fixtures."
+    }
+  ],
+  "notes": "Rules added: csp-policy, trusted-types-sinks (keys; old csp-sinks rungs 1+3), trusted-types-patches (none; old rung 2 plus the self-test's pnpm.patchedDependencies registration check, now fail-closed when the patched package is not installed), sanitizer-passthrough, machine-paths, conflict-markers, no-biome-ignore, attribution-provenance (keys file:line), remote-origins (also enforces the allowlist-entry validity the old self-test asserted: kind, escapeHatch, no TODO, fetch origins avoidable). Runner core change (additive): ctx.dirFiles(rel) lists regular files directly in a directory from disk (memory backing derives from fixture keys), needed to scan node_modules/<dep>/dist which is not git-listed; covered in run.test.mjs and README. Baseline ratcheted on seed: trusted-types-sinks 6 keys vs old csp-sinks-baseline 8 (schema-display.tsx and media-chrome no longer carry/reach a sink). Behaviour delta: machine-paths/conflict-markers/no-biome-ignore/attribution-provenance scan ctx.gitFiles() = tracked + untracked-not-ignored (old: tracked only). Core issue for integrator: writeBaseline's JSON.stringify expands short arrays that Prettier collapses, so a keys baseline written by --update-baseline fails prettier --check until formatted. References left for owners: package.json scripts; scripts/release-gates-baseline.json + scripts/check-release-gates.test.mjs (csp:check etc.); scripts/run-gates.test.mjs (csp script names as test data); .claude/rules/ai.md (sanitizer-passthrough:check); .claude/skills/repo-cleanup/tests/usage-forensics.test.mjs (comment); CONTRIBUTING.md (attribution:provenance:check); packages/cli/lib/intent.mjs origins:check string -> regenerates brand-ui.manifest.json and apps/docs/public/llms/ai.txt; scripts/gen-attributions.mjs/.test.mjs and scripts/resolve-ci-scope.mjs (comments); Historical mentions (CHANGELOG, docs/ADR, docs/rules-history, docs/superpowers) left as history. Doc drift found, not changed: docs/CSP-AND-NETWORK.md still-fatal table lists schema-display and media-chrome, which the scan no longer reports."
+}
