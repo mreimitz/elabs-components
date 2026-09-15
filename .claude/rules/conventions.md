@@ -191,10 +191,28 @@ Generated from `scripts/check/rules/*.mjs` (`pnpm check:docs`). Edit a rule's `d
 
 ### Themes
 
+- Ship each downloadable theme family in `themes/<slug>/` complete and readable: one `[data-theme]` block per `<slug>-<scheme>.css` with a matching `color-scheme`, every contract token and nothing else, AA ink pairs, and a `theme.ts` + README that agree. (`community-themes`)
+- Never let a high-decoration rule in decoration.css collapse two or more role fills (`.bg-primary`, `.bg-success`, …) to one appearance without a compensating `[data-status]` channel (≥2 values, same scope). (`decoration-collapse`)
+- Keep `background-attachment: fixed` inside `@media (hover: hover) and (pointer: fine)`; mask the `[data-decoration-fade]` fade on an inert `::before` layer, never the host; give `oklch(from …)` inks an `@supports not` fallback. (`decoration-css`)
+- Declare each theme selector's color tokens in exactly ONE block; a second color block wins the cascade but is invisible to every first-match tool (machinery-only blocks with no color token are fine). (`duplicate-theme-blocks`)
+- Use the one elevation ramp: `shadow-*` for resting surfaces, `shadow-ring-*` (no border) for floating ones, `shadow-hairline` for a bare edge — never a raw `box-shadow`, an arbitrary `shadow-[…]`, or `border` + `shadow-md`+ in one class string. (`elevation`)
+- Keep co-occurring roles (focus ring vs success/accent ink, current match vs destructive, every categorical chart series, adjacent sequential/mono steps, diverging steps, accent vs mono) ≥ 0.05 ΔE(OKLab) apart in every theme, after resolving `var()` aliases. (`role-distinctness`)
+- Keep app chrome recessed below the canvas in every theme: `L(--background) − L(--sidebar) ≥ 0.02` and `--card` never below `--background` — fix flatness in the theme's `--sidebar`, never in components. (`surface-elevation`)
 - Every theme block (`:root` and each `[data-theme]`) defines every semantic token; only `:root` machinery (`--decoration*`, `--deco-*`, `--paper-*`, `--duration-*`, `--t-*`, `--motion-*`, `--radius*`, `--font-*`) is exempt. (`theme-parity`)
 
 ### Components
 
+- Use motion tokens in charts/ai source: `duration-fast|base|slow|slower` and `ease-standard|entrance|exit`, never `duration-<N>`, `ease-in`/`ease-out`/`ease-in-out` or `transition-all` (docs/MOTION_GUIDELINES.md). (`motion-tokens`)
 - Use semantic color utilities (`text-info-text`, `bg-success/10`, `border-destructive`), never raw Tailwind palette utilities (`text-yellow-600`, `bg-red-500`) in package source. (`raw-palette`)
+- Say "every theme" (or "both themes"), never a hardcoded theme count that disagrees with `BUILT_IN_THEMES`, in package source comments and stories. (`source-theme-count`)
+- Set type with a role (`text-display|title|subtitle|body|caption|meta|kpi|code` or `<Heading>`/`<Text>`), never a raw size utility (`text-sm`, `text-xl`, `text-[17px]`) in package source or stories. (`text-scale`)
+
+### Packages
+
+- Name every package that ships Tailwind classes in each `@source`-bearing app CSS file with a pattern that resolves to `packages/<name>/src` (or `node_modules/<pkg>/dist`); an unlisted package renders unstyled. (`tailwind-sources`)
+
+### Registry
+
+- Import or re-export `TeamSwitcher`, `NavMain`, `NavUser` and `NavNotifications` from `@elabs-ai/components-ui` in registry sidebar blocks; never re-declare a local copy. (`sidebar-drift`)
 
 <!-- brand-ui:gen:check-rules:end -->

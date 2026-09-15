@@ -1,0 +1,51 @@
+{
+  "removeScripts": [
+    "community-themes:check",
+    "community-themes:check:test",
+    "decoration-collapse:check",
+    "decoration-collapse:check:test",
+    "decoration:check",
+    "decoration:check:test",
+    "elevation:check",
+    "elevation:check:test",
+    "motion:check",
+    "motion:check:test",
+    "palette:check",
+    "palette:check:test",
+    "source-theme-count:check",
+    "source-theme-count:check:test",
+    "surface-elevation:check",
+    "surface-elevation:check:test",
+    "tailwind-sources:check",
+    "tailwind-sources:check:test",
+    "text-scale:check",
+    "text-scale:check:test",
+    "theme-parity:check",
+    "theme-parity:check:test",
+    "tokens:dup-blocks:check",
+    "tokens:dup-blocks:check:test"
+  ],
+  "keptScripts": [
+    {
+      "script": "tokens:check",
+      "reason": "runs the Style Dictionary build (packages/tokens assembler) and diffs its output against the committed CSS; not a pure file read"
+    },
+    {
+      "script": "tokens:check:test",
+      "reason": "self-test of the kept tokens:check"
+    },
+    {
+      "script": "css-assets:check",
+      "reason": "release gate over emitted dist/ CSS (--require-dist); dist is gitignored and invisible to the check context, needs a build"
+    },
+    {
+      "script": "css-assets:check:test",
+      "reason": "self-test of the kept css-assets:check"
+    },
+    {
+      "script": "token-contract:check",
+      "reason": "pnpm --filter @elabs-ai/components-tokens tokens:names:check; package-scoped generator freshness, not a repo gate"
+    }
+  ],
+  "notes": "New rules: duplicate-theme-blocks, community-themes, decoration-css, decoration-collapse, elevation, surface-elevation, motion-tokens, text-scale (per-file, baseline moved from scripts/text-scale-baseline.json and ratcheted to 271), tailwind-sources, source-theme-count; restored from 2fa2ce6 as rules: role-distinctness, sidebar-drift (no npm scripts existed). theme-parity and raw-palette rules pre-existed; their old scripts, tests and scripts/raw-palette-baseline.json are deleted (raw-palette baseline ratcheted to 42). No runner core changes. Shared helpers added under scripts/check/lib (css.mjs, themes.mjs); scripts/lib/theme-count-prose.mjs moved to scripts/check/lib. scripts/lib/community-themes.mjs (shared with gen-community-themes and new-community-theme) got additive, backwards-compatible changes: blankComments now imported from scripts/check/lib/css.mjs (check-elevation.mjs is gone), text-based readers tokenNamesFrom/themeOverridableFrom/rootDeclarationsFrom, and an optional io/overridable injection on auditFamily/auditFontsFile. INTEGRATOR: the old community-themes:check also asserted Storybook wiring freshness via gen-community-themes staleOutputs (async + Prettier, cannot be a sync rule); wire `node scripts/gen-community-themes.mjs --check` into gen:check or the gate list to keep that coverage. Stale references to removed npm scripts outside my ownership: scripts/release-gates-baseline.json, scripts/run-gates.mjs, scripts/run-gates.test.mjs, .claude/rules/{theming,styling-and-tokens,quality-gates}.md, .claude/commands/{new-component,new-theme}.md, scripts/new-community-theme.mjs (prints `pnpm community-themes:check` as next step), scripts/gen-community-themes.mjs, scripts/lib/theme-sources.mjs, packages/cli/lib/intent.mjs, packages/charts/eslint.config.js, packages/tokens (themes.css, themes/light.css, decoration.css, scripts/gen-theme-token-names.mjs, scripts/lib/themes-io.mjs, src/_theme-css-source.ts, charts-contrast.test.ts), packages/eslint-config/rules/brand-tokens.js, hooks/check-raw-taxonomy.mjs, hooks/README.md, apps/docs/stories/foundations/theming.stories.tsx, brand-ui.manifest.json, docs/ADR/*, docs/*.md. theming.md also still names `pnpm roles:check` (now rule role-distinctness)."
+}

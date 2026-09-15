@@ -1,5 +1,5 @@
 /**
- * scripts/lib/theme-count-prose.mjs — shared "does this prose claim a stale theme
+ * scripts/check/lib/theme-count-prose.mjs — shared "does this prose claim a stale theme
  * count" detector.
  *
  * Extracted from check-docs-accuracy.mjs (#64) so a second gate scanning a
@@ -121,7 +121,7 @@ export function findThemeCountViolations(text, themeCount) {
  * theme-types.ts`'s `export const BUILT_IN_THEMES = [...]` — never hand-kept,
  * so a theme added/removed there changes what every currency gate allows
  * prose to claim (#29/#64). Originally lived in check-docs-accuracy.mjs;
- * moved here so check-source-theme-count.mjs (#29) can share the same
+ * moved here so the source-theme-count rule (#29) can share the same
  * derivation instead of re-parsing theme-types.ts with its own regex — two
  * independent parsers of the same source is exactly the kind of drift this
  * gate family exists to prevent. Returns `null` when the file's shape
