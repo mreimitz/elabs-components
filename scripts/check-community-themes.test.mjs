@@ -11,7 +11,12 @@ import assert from "node:assert/strict";
 
 import { runCheck } from "./check-community-themes.mjs";
 import { TOKENS_SRC } from "./lib/theme-sources.mjs";
-import { scaffoldCss, scaffoldReadme, scaffoldThemeTs } from "./new-community-theme.mjs";
+import {
+  scaffoldCss,
+  scaffoldReadme,
+  scaffoldThemeTs,
+  writeScaffold,
+} from "./new-community-theme.mjs";
 
 const dirs = [];
 after(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
@@ -129,6 +134,45 @@ describe("check-community-themes", () => {
       }),
       /must set family: "ocean"/,
     );
+  });
+
+  it("fails a translucent ink even when its opaque channels would pass", async () => {
+    assertFails(
+      await fixture((f) => {
+        f["ocean-light.css"] = f["ocean-light.css"].replace(
+          /--foreground: [^;]+;/,
+          "--foreground: oklch(0 0 0 / 1%);",
+        );
+      }),
+      /--foreground must be opaque/,
+    );
+  });
+
+  it("scaffolds a label with quotes into a theme.ts the gate still reads", async () => {
+    const result = await fixture((f) => {
+      f["theme.ts"] = scaffoldThemeTs({
+        slug: "ocean",
+        label: 'Ocean "Deep"',
+        schemes: ["light", "dark"],
+      });
+    });
+    assert.equal(result.ok, true, result.lines.join("\n"));
+  });
+
+  it("--force re-scaffold to one scheme removes the dropped stylesheet", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "community-themes-"));
+    dirs.push(dir);
+    const folder = join(dir, "ocean");
+    await writeScaffold({
+      folder,
+      slug: "ocean",
+      label: "Ocean",
+      hue: 235,
+      schemes: ["light", "dark"],
+    });
+    await writeScaffold({ folder, slug: "ocean", label: "Ocean", hue: 235, schemes: ["dark"] });
+    const result = await runCheck({ dir });
+    assert.equal(result.ok, true, result.lines.join("\n"));
   });
 
   it("fails a stray stylesheet and a missing README", async () => {

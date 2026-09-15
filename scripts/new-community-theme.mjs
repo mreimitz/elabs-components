@@ -16,7 +16,7 @@
  * and chroma are untouched. Then edit the values by hand and run
  * `pnpm community-themes:check`.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -57,7 +57,7 @@ export function scaffoldCss(referenceCss, { slug, scheme, label, hue }) {
       return `  ${decl[1]}: ${retint(decl[1], decl[2].replace(/\(\s+/g, "(").replace(/\s+\)/g, ")"), hue)};`;
     });
   return [
-    `/* ${label} — ${scheme}. Downloadable theme family "${slug}" (see ../README.md). */`,
+    `/* ${commentSafe(label)} — ${scheme}. Downloadable theme family "${slug}" (see ../README.md). */`,
     `[data-theme="${slug}-${scheme}"] {`,
     ...lines,
     "}",
@@ -65,21 +65,26 @@ export function scaffoldCss(referenceCss, { slug, scheme, label, hue }) {
   ].join("\n");
 }
 
+/** A label made safe inside a block comment and on one line. */
+function commentSafe(label) {
+  return label.replace(/\s+/g, " ").replace(/\*\//g, "*\\/");
+}
+
 export function scaffoldThemeTs({ slug, label, schemes }) {
   const constName = slug.replace(/-([a-z0-9])/g, (_, ch) => ch.toUpperCase());
   const entries = schemes.map((scheme, i) => {
-    const familyLabel = i === 0 ? `\n    familyLabel: "${label}",` : "";
+    const familyLabel = i === 0 ? `\n    familyLabel: ${JSON.stringify(label)},` : "";
     const schemeLabel = scheme === "dark" ? "Dark" : "Light";
     return `  defineTheme({
     value: "${slug}-${scheme}",
-    label: "${label} ${schemeLabel}",
+    label: ${JSON.stringify(`${label} ${schemeLabel}`)},
     dark: ${scheme === "dark"},
     family: "${slug}",${familyLabel}
   }),`;
   });
   return `import { defineTheme, type ThemeDefinition } from "@elabs-ai/components-tokens";
 
-/** The "${label}" theme family — register on <ThemeProvider themes={…}>. */
+/** The ${commentSafe(JSON.stringify(label))} theme family — register on <ThemeProvider themes={…}>. */
 export const ${constName}Themes: ThemeDefinition[] = [
 ${entries.join("\n")}
 ];
@@ -116,8 +121,32 @@ A downloadable theme family for brand-ui — ${modes}.
    Passing only this family REPLACES the default themes. To offer both, use
    \`themes={[...BUILT_IN_THEME_DEFINITIONS, ...${constName}Themes]}\`.
 
-See [the themes folder README](../README.md) for the \`dark:\` variant step.
+A dark variant also needs the required \`dark:\` variant line — see [the themes folder README](../README.md).
 `;
+}
+
+/** Write a family into `folder`, replacing an existing scaffold cleanly. */
+export async function writeScaffold({ folder, slug, label, hue, schemes }) {
+  // Render and format everything BEFORE touching the folder, so a formatter
+  // error can never leave a half-written scaffold behind.
+  const outputs = new Map();
+  for (const scheme of schemes) {
+    const reference = readFileSync(join(TOKENS_SRC, "themes", `${scheme}.css`), "utf8");
+    outputs.set(`${slug}-${scheme}.css`, scaffoldCss(reference, { slug, scheme, label, hue }));
+  }
+  outputs.set("theme.ts", scaffoldThemeTs({ slug, label, schemes }));
+  outputs.set("README.md", scaffoldReadme({ slug, label, schemes }));
+  for (const [name, content] of outputs) {
+    outputs.set(name, await formatForPath(join(folder, name), content));
+  }
+
+  mkdirSync(folder, { recursive: true });
+  // --force may drop a scheme: remove the stylesheet the new theme.ts no longer registers.
+  for (const scheme of SCHEMES) {
+    const stale = join(folder, `${slug}-${scheme}.css`);
+    if (!schemes.includes(scheme) && existsSync(stale)) rmSync(stale);
+  }
+  for (const [name, content] of outputs) writeFileSync(join(folder, name), content);
 }
 
 async function main(argv) {
@@ -157,17 +186,7 @@ async function main(argv) {
     return 1;
   }
 
-  mkdirSync(folder, { recursive: true });
-  const write = async (name, content) => {
-    const path = join(folder, name);
-    writeFileSync(path, await formatForPath(path, content));
-  };
-  for (const scheme of schemes) {
-    const reference = readFileSync(join(TOKENS_SRC, "themes", `${scheme}.css`), "utf8");
-    await write(`${slug}-${scheme}.css`, scaffoldCss(reference, { slug, scheme, label, hue }));
-  }
-  await write("theme.ts", scaffoldThemeTs({ slug, label, schemes }));
-  await write("README.md", scaffoldReadme({ slug, label, schemes }));
+  await writeScaffold({ folder, slug, label, hue, schemes });
   console.log(`new-community-theme: wrote themes/${slug}/ (${schemes.join(" + ")})`);
   console.log("next: edit the colours, then run `pnpm community-themes:check` and `pnpm gen`.");
   return 0;

@@ -35,14 +35,16 @@ your app.
    <ThemeProvider themes={[...BUILT_IN_THEME_DEFINITIONS, ...oceanThemes]}>
    ```
 
-4. **Dark variant (only if you use Tailwind `dark:` classes yourself).** The engine's
-   `dark:` variant knows only the built-in `dark` theme. Redeclare it in your own CSS:
+4. **Required for any dark variant: extend Tailwind's `dark:` variant.** The engine's
+   `dark:` variant knows only the built-in `dark` theme, and a few library components
+   still use `dark:` classes. Without this line they keep their light styling under
+   `ocean-dark`. Add it to your Tailwind CSS entry, after the token engine import:
 
    ```css
    @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="ocean-dark"], [data-theme="ocean-dark"] *));
    ```
 
-   Library components do not need this; they use semantic tokens.
+   List every dark variant you register. Storybook does this for you (`pnpm gen`).
 
 ## Families and modes
 

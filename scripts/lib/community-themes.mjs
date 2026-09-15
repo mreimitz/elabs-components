@@ -98,15 +98,28 @@ export function resolveColor(name, block, root, seen = new Set()) {
   return alias ? resolveColor(alias[1], block, root, seen) : null;
 }
 
-/** `oklch(L C H [/ A])` → { l, c, h }, or null. */
+/** `oklch(L C H [/ A])` → { l, c, h, alpha }, or null. */
 export function parseOklch(input) {
   const m = input.trim().match(/^oklch\(\s*([^)]+)\)$/i);
   if (!m) return null;
-  const parts = m[1].split("/")[0].trim().split(/\s+/);
+  const [channels, alphaRaw] = m[1].split("/");
+  const parts = channels.trim().split(/\s+/);
   if (parts.length < 3) return null;
   const [l, c, h] = parts.map((p) => (p === "none" ? 0 : Number(p.replace(/%$/, ""))));
   if (![l, c, h].every(Number.isFinite)) return null;
-  return { l: parts[0].endsWith("%") ? l / 100 : l, c, h };
+  let alpha = 1;
+  if (alphaRaw !== undefined) {
+    const a = alphaRaw.trim();
+    alpha = a.endsWith("%") ? Number(a.slice(0, -1)) / 100 : Number(a);
+    if (!Number.isFinite(alpha)) return null;
+  }
+  return { l: parts[0].endsWith("%") ? l / 100 : l, c, h, alpha };
+}
+
+/** True when an oklch literal carries an alpha below 1 (its rendered ink depends on what is behind it). */
+export function isTranslucent(raw) {
+  const p = parseOklch(raw);
+  return p !== null && p.alpha < 1;
 }
 
 /** WCAG contrast between two oklch literals — same math as `color-contrast.ts`. */
@@ -149,7 +162,18 @@ export function readThemeDefinitions(source) {
   const defs = [];
   for (const m of source.matchAll(/defineTheme\(\s*\{([\s\S]*?)\}\s*\)/g)) {
     const body = m[1];
-    const str = (key) => body.match(new RegExp(`\\b${key}\\s*:\\s*"([^"]*)"`))?.[1];
+    // A string literal in either quote style, escapes included — Prettier picks
+    // single quotes for a label that itself contains a double quote.
+    const str = (key) => {
+      const lit = body.match(
+        new RegExp(`\\b${key}\\s*:\\s*("(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.)*')`),
+      )?.[1];
+      if (lit === undefined) return undefined;
+      const inner = lit.slice(1, -1);
+      return JSON.parse(
+        `"${lit[0] === "'" ? inner.replace(/\\'/g, "'").replace(/"/g, '\\"') : inner}"`,
+      );
+    };
     const bool = body.match(/\bdark\s*:\s*(true|false)\b/)?.[1];
     defs.push({
       value: str("value"),
@@ -231,6 +255,15 @@ export function auditFamily(slug, { dir = COMMUNITY_THEMES_DIR, tokenNames, root
       if (fgRaw == null || bgRaw == null) {
         if (decls.has(fg) && decls.has(bg))
           errors.push(`${where}: ${fg} on ${bg} is not an oklch() colour`);
+        continue;
+      }
+      // The contrast math ignores alpha, so a translucent ink or ground would be
+      // measured as opaque and could pass while rendering unreadable. Refuse it.
+      const translucent = [fg, bg].filter((t, i) => isTranslucent(i === 0 ? fgRaw : bgRaw));
+      if (translucent.length > 0) {
+        errors.push(
+          `${where}: ${translucent.join(" and ")} must be opaque for the ${fg} on ${bg} readability check (drop the "/ alpha")`,
+        );
         continue;
       }
       const ratio = contrast(fgRaw, bgRaw);

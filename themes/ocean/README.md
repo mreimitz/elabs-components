@@ -25,4 +25,4 @@ A downloadable theme family for brand-ui — light and dark.
    Passing only this family REPLACES the default themes. To offer both, use
    `themes={[...BUILT_IN_THEME_DEFINITIONS, ...oceanThemes]}`.
 
-See [the themes folder README](../README.md) for the `dark:` variant step.
+A dark variant also needs the required `dark:` variant line — see [the themes folder README](../README.md).

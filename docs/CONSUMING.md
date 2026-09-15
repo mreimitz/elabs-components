@@ -272,9 +272,10 @@ A definition's `family` / `familyLabel` group variants: `useTheme()` exposes
 `families`, `family`, `colorScheme`, `setFamily` and `setColorScheme`, and
 `ThemeSwitcher` shows a **Theme** group plus a **Mode** group (hidden when the
 family ships one scheme) once two or more families are registered. Themes
-without `family` behave exactly as before. If you use Tailwind's `dark:`
-variant, redeclare `@custom-variant dark` to include the new dark variant —
-`themes/README.md` has the line.
+without `family` behave exactly as before. **Registering a dark variant also
+requires redeclaring `@custom-variant dark` to include it**: a few library
+components still use `dark:` classes, which otherwise match only the built-in
+`dark` theme. `themes/README.md` has the line.
 
 ### 5.2 Runtime token overrides (patch a color without a theme)
 

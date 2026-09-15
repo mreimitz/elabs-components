@@ -5,6 +5,7 @@ import { Check, Monitor, Moon, Sun } from "lucide-react";
 import {
   groupThemeFamilies,
   resolveThemeVariant,
+  themeFamilyIdOf,
   themeSchemeOf,
   useTheme,
   type ThemeDefinition,
@@ -152,10 +153,13 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
     // today's toggle byte-for-byte.
     const families = groupThemeFamilies(offered);
     const useFamilies = mode === "auto" && families.filter((f) => f.declared).length >= 2;
+    // Match by the active definition's declared family, not the retained
+    // light/dark slots: a second same-scheme variant is still reachable via
+    // `setTheme` but is not in either slot.
+    const activeDefinition = offered.find((d) => d.value === resolvedTheme);
     const activeFamily = useFamilies
-      ? (families.find(
-          (f) => f.light?.value === resolvedTheme || f.dark?.value === resolvedTheme,
-        ) ?? families[0])
+      ? ((activeDefinition && families.find((f) => f.id === themeFamilyIdOf(activeDefinition))) ??
+        families[0])
       : undefined;
     // "System" is scoped to the active family in the family layout.
     const scope: readonly ThemeDefinition[] = activeFamily
@@ -169,7 +173,11 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
 
     // The scheme the user last chose, so dark → a light-only family → a
     // two-scheme family lands on dark again (mirrors the provider's `setFamily`).
-    const intendedSchemeRef = useRef<ThemeScheme | undefined>(undefined);
+    // Remembered together with the theme it produced: once something else changes
+    // the theme (another control calling `setTheme`), the memory no longer applies.
+    const intendedSchemeRef = useRef<{ scheme: ThemeScheme; theme: ThemeName } | undefined>(
+      undefined,
+    );
 
     // Hydrate the "system" choice from localStorage and apply it on mount —
     // uncontrolled mode only. Controlled mode's "system" state comes from the
@@ -230,16 +238,21 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
 
     // ---- Family layout (≥2 declared families): family group + scheme group ----
     if (activeFamily) {
-      const activeScheme = offered.find((d) => d.value === resolvedTheme);
+      const activeScheme = activeDefinition;
+      const remembered = intendedSchemeRef.current;
       const intended =
-        intendedSchemeRef.current ?? (activeScheme ? themeSchemeOf(activeScheme) : "light");
+        remembered && remembered.theme === resolvedTheme
+          ? remembered.scheme
+          : activeScheme
+            ? themeSchemeOf(activeScheme)
+            : "light";
       const pickFamily = (familyId: string) => {
         // System re-resolves against the OS immediately on a family change
         // instead of waiting for the next `change` event.
         const scheme: ThemeScheme = isSystem ? (prefersDark() ? "dark" : "light") : intended;
         const next = resolveThemeVariant(families, familyId, scheme);
         if (next === undefined) return;
-        intendedSchemeRef.current = intended;
+        intendedSchemeRef.current = { scheme: intended, theme: next };
         if (isSystem) switchTheme(next);
         else pickTheme(next);
       };
@@ -251,7 +264,7 @@ export const ThemeSwitcher = forwardRef<HTMLButtonElement, ThemeSwitcherProps>(
         const scheme = value as ThemeScheme;
         const next = activeFamily[scheme]?.value;
         if (next === undefined) return;
-        intendedSchemeRef.current = scheme;
+        intendedSchemeRef.current = { scheme, theme: next };
         pickTheme(next);
       };
       const schemeValue = isSystem ? "system" : activeScheme ? themeSchemeOf(activeScheme) : "";

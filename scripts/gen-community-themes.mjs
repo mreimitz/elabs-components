@@ -43,11 +43,25 @@ export function collectVariants(dir = COMMUNITY_THEMES_DIR) {
   return listFamilies(dir).flatMap((slug) => auditFamily(slug, { dir, tokenNames, root }).variants);
 }
 
+/**
+ * The engine's `dark:` variant matches only `[data-theme="dark"]`. A later
+ * `@custom-variant dark` replaces it, so redeclare it to cover every downloaded
+ * dark variant too — the same line `themes/README.md` tells consumers to add.
+ */
+export function renderDarkVariant(variants) {
+  const names = [
+    "dark",
+    ...variants.filter((v) => v.definition?.dark).map((v) => v.definition.value),
+  ];
+  const selectors = names.flatMap((n) => [`[data-theme="${n}"]`, `[data-theme="${n}"] *`]);
+  return `@custom-variant dark (&:where(${selectors.join(", ")}));`;
+}
+
 export function renderCss(variants) {
   const imports = variants.map(
     (v) => `@import "${relative(STORYBOOK_DIR, v.file).split("\\").join("/")}";`,
   );
-  return [`/* ${HEADER} */`, ...imports, ""].join("\n");
+  return [`/* ${HEADER} */`, ...imports, renderDarkVariant(variants), ""].join("\n");
 }
 
 export function renderTs(variants) {

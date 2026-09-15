@@ -7,6 +7,7 @@ import {
   BUILT_IN_THEME_DEFINITIONS,
   defineTheme,
   ThemeProvider,
+  useTheme,
 } from "@elabs-ai/components-tokens";
 
 import { ThemeSwitcher } from "./theme-switcher";
@@ -375,6 +376,50 @@ describe("ThemeSwitcher — theme families (ADR 0036)", () => {
     await openMenu();
     await userEvent.click(screen.getByRole("menuitemradio", { name: "Ocean" }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-dark");
+  });
+
+  it("checks the right family when a second same-scheme variant is active", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const oceanDeep = defineTheme({
+      value: "ocean-deep",
+      label: "Ocean deep",
+      dark: true,
+      family: "ocean",
+    });
+    render(
+      <ThemeProvider themes={[...REGISTRY, oceanDeep]} defaultTheme="ocean-deep">
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    const menu = await openMenu();
+    expect(within(menu).getByRole("menuitemradio", { name: "Ocean" })).toBeChecked();
+    expect(within(menu).getByRole("menuitemradio", { name: "Default" })).not.toBeChecked();
+    warn.mockRestore();
+  });
+
+  it("forgets a remembered mode once another control changes the theme", async () => {
+    function ExternalLight() {
+      const { setTheme } = useTheme();
+      return (
+        <button type="button" onClick={() => setTheme("light")}>
+          External light
+        </button>
+      );
+    }
+    render(
+      <ThemeProvider themes={REGISTRY} defaultTheme="light">
+        <ThemeSwitcher />
+        <ExternalLight />
+      </ThemeProvider>,
+    );
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Dark" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await userEvent.click(screen.getByRole("button", { name: "External light" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await openMenu();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Ocean" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("ocean-light");
   });
 
   it("forced dropdown mode keeps the flat list even with families", async () => {
