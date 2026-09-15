@@ -7,7 +7,7 @@
  * become GENERATOR-OWNED and stale-gated, so they can't drift (gap C5).
  *
  * Single source → generate → gate, the same contract as `brand-ui context`
- * (context.mjs) / `pnpm inventory` / `pnpm llms`. EVERYTHING is deterministic
+ * (context.mjs) / `pnpm gen`. EVERYTHING is deterministic
  * (stable order, no timestamps) so the gate diffs only real content changes.
  *
  * Marker taxonomy — named regions, family:

@@ -118,10 +118,10 @@ originally named these `--chart-stagger-dot` / `--chart-stagger-bar` /
 `--chart-enter` / `--chart-enter-slow` (no `t-` prefix). `--chart-*` is
 already a real **per-theme** prefix (`--chart-1`…`--chart-12`,
 `--chart-background`, …), so the unprefixed names failed
-`pnpm theme-parity:check` (missing from every `[data-theme="…"]` block) —
+the `theme-parity` rule (missing from every `[data-theme="…"]` block) —
 these are `:root`-only timing machinery, not a per-theme color semantic. They
 were renamed to `--t-chart-*` to land in the `ROOT_ONLY_RE` allowlist in
-`scripts/check-theme-parity.mjs`, the same exemption `--t-fast`/`--t-base`
+`scripts/check/rules/theme-parity.mjs`, the same exemption `--t-fast`/`--t-base`
 already use. Not multiplied through `--motion-factor` — the chart primitives
 own their reduced-motion path in JS rather than through the CSS gate (a
 `motion.rect`/`motion.path` never reads `--motion-factor`), so the token stays

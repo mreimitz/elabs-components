@@ -20,7 +20,7 @@ packages: ["@elabs-ai/components-ui", "@elabs-ai/components-ai"]
 # Playbook — AI assistant
 
 Chat-first surface rendering rich agent output: streaming markdown,
-reasoning, tool calls, sources. Template source: `templates/ai-assistant.tsx` (generated from this Storybook story by `pnpm gen:templates`).
+reasoning, tool calls, sources. Template source: `templates/ai-assistant.tsx` (generated from this Storybook story by `pnpm gen`).
 
 **Boundary first (D5):** brand-ui renders the conversation; it never owns the
 model call. Your app brings the runtime (`useChat` from the Vercel AI SDK, or
@@ -123,7 +123,7 @@ tool-state badges (`ToolHeader state`) · markdown + code highlighting
 ## Common mistakes
 
 - Importing the AI SDK runtime inside a shared component — runtime stays in
-  the app (`pnpm ai:types-only` gates this in-repo).
+  the app (`pnpm check --rule ai-sdk-types-only` gates this in-repo).
 - Re-implementing the composer as a controlled `<textarea>` + button.
 - Rendering one text blob when the runtime gives you `parts` — you lose
   reasoning/tools/sources.

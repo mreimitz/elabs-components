@@ -72,8 +72,8 @@ names below link to their npm page.
 | [`@elabs-ai/components-marketing`](https://www.npmjs.com/package/@elabs-ai/components-marketing) | Hero, feature grid, stats band, CTA, logo strip — for the page in front of the product                                             |
 | [`@elabs-ai/components-cli`](https://www.npmjs.com/package/@elabs-ai/components-cli)             | The `brand-ui` CLI and MCP server: project context, component search, real props, static audit, app scaffolding, migration tooling |
 
-Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a gate
-(`pnpm dep-direction:check`) fails any change that points an edge sideways or upward.
+Dependencies flow one way — `tokens` → `ui`/`icons` → everything else — and a rule
+(`pnpm check --rule dep-direction`) fails any change that points an edge sideways or upward.
 
 > The **Packages** panel on this repository's GitHub sidebar stays empty by design. It
 > only lists GitHub Packages (`npm.pkg.github.com`), a different registry that would
@@ -300,7 +300,7 @@ Setup, branch style, the component workflow, testing expectations and the pull-r
 checklist are in [`CONTRIBUTING.md`](CONTRIBUTING.md). In short: components use semantic
 tokens, compose with `forwardRef` + `className` + `cva`, lean on Radix for interactive
 behaviour, ship a co-located story and test, export their types, work in both themes,
-and pass the gate battery before they are considered done.
+and pass `pnpm check` before they are considered done.
 
 ## Attribution
 
@@ -320,8 +320,9 @@ Published and public, and still actively developed:
 - **MIT licensed** ([`LICENSE`](LICENSE)). Several dependencies listed in
   [`ATTRIBUTION.md`](ATTRIBUTION.md) oblige their own notices to travel with the code —
   that file is generated from the repository, so it cannot drift from what ships.
-- **CI runs on every push and pull request.** The gate battery lives in one reusable
-  workflow; a release publishes only against a green verdict for the exact commit it
-  tags, and never re-runs the battery to get it.
+- **CI runs on every push and pull request.** One workflow runs typecheck, lint,
+  format, the `pnpm check` rules and their self-tests, tests, build, generated-file
+  freshness, a consumer install check and the Storybook tests in both themes; releases go
+  through Changesets.
 - **The API is not frozen.** Breaking changes go out as majors and are recorded in
   [`CHANGELOG.md`](CHANGELOG.md).

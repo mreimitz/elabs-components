@@ -19,7 +19,7 @@ packages: ["@elabs-ai/components-ui", "@elabs-ai/components-data"]
 # Playbook — Settings / admin portal
 
 Multi-section settings: sectioned nav, forms per section, guarded
-destructive actions. Template source: `templates/settings.tsx` (generated from this Storybook story by `pnpm gen:templates`).
+destructive actions. Template source: `templates/settings.tsx` (generated from this Storybook story by `pnpm gen`).
 
 ## Building blocks
 

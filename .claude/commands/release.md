@@ -15,7 +15,7 @@ publishes. Never run `pnpm publish` or `changeset publish` yourself.
 Report a green/red table, then stop:
 
 1. `git status` — nothing unexpected staged; no secrets, `.env` or machine-specific paths.
-2. `pnpm check:changed` and `pnpm gates` (includes `version-sync:check`).
+2. `pnpm check:changed` and `pnpm check` (includes the version-sync rule).
 3. `pnpm changeset status` — which packages a merge would release, at which bump.
 4. `pnpm css-assets:check --require-dist` after `pnpm build:packages`, and
    **`pnpm consumer:check`** (packs + installs the tarballs into a throwaway app — release-blocking).

@@ -72,13 +72,13 @@ is GENERATED into this region by `pnpm gen` — edit the decisions there, not he
 <!-- prettier-ignore -->
 | # | Decision | The short answer | Detail rule |
 | --- | --- | --- | --- |
-| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](../.claude/rules/decisions.md) |
-| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](../.claude/rules/ai.md) |
+| **D1** | Which paradigm? | **Build-with** components (you/the agent write the code) — the default, ~99%. Generative-UI is rare. | [`decisions.md`](.claude/rules/decisions.md) |
+| **D2** | Rendering agent output | A **conversation** → AI SDK `UIMessage` + `@elabs-ai/components-ai`. An **agent-designed surface** → A2UI (WP-11). | [`ai.md`](.claude/rules/ai.md) |
 | **D3** | Which package | `@elabs-ai/components-*`: app UI → ui · data → data · chat → ai · canvas → `@elabs-ai/components-flow` · in-chat agent workspace graph → `@elabs-ai/components-ai` · KPIs → charts · landing → marketing · code → editor · files → viewer · shell → terminal · process mining → process · tokens → tokens · icons → icons · icon rail → `ContextRail` (ui), chat drill-down → `ContextPanel` (ai) | `skills/brand-ui/SKILL.md` (generated table) |
-| **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](../.claude/rules/registry.md) |
-| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](../.claude/rules/decisions.md) |
-| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai.md`](../.claude/rules/ai.md) · [`conventions.md`](../.claude/rules/conventions.md) |
-| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| **D4** | Import vs copy-own | Stable shared primitives → **import** `@elabs-ai/components-*`. Prototype-specific blocks → **copy-own** (registry). | [`registry.md`](.claude/rules/registry.md) |
+| **D5** | Scope boundary (what brand-ui ISN'T) | brand-ui is a **presentation layer**, not an SDK/runtime. It renders models; it never owns model calls. | [`decisions.md`](.claude/rules/decisions.md) |
+| **D6** | Dependency & import discipline | `ai` (Vercel AI SDK) is **types-only, peer, never runtime**. Semantic tokens only; one-way dep graph. | [`ai.md`](.claude/rules/ai.md) · [`conventions.md`](.claude/rules/conventions.md) |
+| **D7** | Maintainer decisions | New component → dedupe-gate → right package (D3) → built to rules → **auto-registered** (gate, not memory). | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 <!-- brand-ui:gen:decisions:end -->
 
@@ -141,15 +141,15 @@ Package-specific rules are path-scoped: `ai.md`, `charts.md`, `data.md`,
 
 ```bash
 pnpm check:changed   # typecheck + lint + test scoped to your diff vs origin/main
-pnpm gates           # the per-change gate battery, parallel, every failure reported
-pnpm gates:selftests # every gate's own self-test
+pnpm check          # every repo convention rule in one runner (--rule <id>, --list)
+pnpm check:test     # rule fixtures + every scripts/**/*.test.mjs
 pnpm format:check    # or fix with `pnpm format`
 pnpm --filter @elabs-ai/components-docs test-storybook  # if a component/story changed
 ```
 
-The full gate catalogue (what each one asserts, escape hatches) lives in
-[`docs/GATES.md`](docs/GATES.md). `pnpm gates:all` adds the slow `consumer:check`; run
-the full battery once before opening a PR, not per commit — CI runs it on every push.
+The full rule catalogue (what each one asserts, escape hatches) lives in
+[`docs/GATES.md`](docs/GATES.md); `pnpm check --list` prints it. CI (`ci.yml`) runs the
+whole pipeline on every push, so don't re-run everything per commit.
 
 **Honest completion:** never report "done"/"validated" for a path you did not run —
 lead with what you did NOT verify. Confirm components render in both themes (light,

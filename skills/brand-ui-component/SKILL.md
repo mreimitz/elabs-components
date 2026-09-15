@@ -6,9 +6,8 @@ argument-hint: "<package> <Name> [purpose]"
 allowed-tools:
   - Bash(pnpm brand-ui *)
   - Bash(pnpm --filter *)
-  - Bash(pnpm agent-docs)
-  - Bash(pnpm manifest)
   - Bash(pnpm gen)
+  - Bash(pnpm gen:check)
 ---
 
 # brand-ui-component (maintainer)
@@ -58,9 +57,8 @@ Co-locate `name.tsx`, `index.ts`, `name.stories.tsx` (with `tags: ["autodocs"]`)
 
 - `pnpm --filter @elabs-ai/components-<pkg> typecheck && pnpm --filter @elabs-ai/components-<pkg> lint && pnpm --filter @elabs-ai/components-<pkg> test` must pass (three separate invocations — pnpm chains only the first script).
 - Verify it renders in both themes (Storybook).
-- Run `pnpm manifest` then `pnpm gen` so the new component reaches the manifest
-  and the generated doc regions (`pnpm agent-docs` refreshes every generated
-  surface at once).
+- Run `pnpm gen` so the new component reaches the manifest and every generated
+  doc surface at once (`pnpm gen:check` confirms nothing is stale).
 - Audit it: `pnpm brand-ui audit packages/<pkg>/src/components/<name>` and, for
   visual/contrast, the `brand-ui-audit` skill.
 

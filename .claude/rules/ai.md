@@ -26,9 +26,9 @@ streaming|error"`; empty (no text/attachments) never submits. ADR 0022: running 
   graph; author-built diagrams use flow's `CanvasShell` (ADR 0018).
 - Never re-export a wrapped renderer's security-default prop (#36): a `...props` wrapper
   around Streamdown must `Omit<>` sanitizer-override keys AND strip them at runtime
-  (`stripSanitizerOverrides`). Gate `pnpm sanitizer-passthrough:check`.
-- Microcopy (ADR 0017): `useLocale()` → `t("ai.<area>.<key>")`, never a literal; gate
-  `pnpm microcopy:check`.
+  (`stripSanitizerOverrides`). `pnpm check --rule sanitizer-passthrough`.
+- Microcopy (ADR 0017): `useLocale()` → `t("ai.<area>.<key>")`, never a literal; checked by
+  `pnpm check --rule microcopy,ai-microcopy-a11y`.
 
 ## Terminal (`@elabs-ai/components-terminal`)
 
@@ -37,7 +37,7 @@ React + token CLI look-alike — never a terminal emulator.
 
 - ONE frame per console (ADR 0033): frame owns radius/shadow/border/ground; a region
   (transcript, banner, composer, status bar) is padding + content only.
-- `terminal` (`[tokens, icons, ui]` in `check-dep-direction.mjs`) and `ai` never import each
+- `terminal` (`[tokens, icons, ui]` in the `dep-direction` rule's `ALLOWED`) and `ai` never import each
   other — shared code promotes UP to `@elabs-ai/components-ui/src/lib/*`, never sideways.
 - Colour: `--terminal-*`/`--terminal-ansi-*` only, no hex/raw palette
   (`no-raw-color.test.ts`). `text-<tone>-text` fails on the terminal ground — use

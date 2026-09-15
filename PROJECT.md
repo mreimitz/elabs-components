@@ -80,8 +80,8 @@ reasoning behind each major choice.
 - **Next:** DataTable saved views + server-side data; React Flow minimap +
   grouping; chat streaming helpers; more registry blocks/templates.
 - **Shipped:** internal package releases — every distributable package publishes
-  to GitHub Packages in lockstep from a version tag (`docs/RELEASING.md`,
-  ADR 0016). `pnpm version:set` is the single writer of the lockstep version;
+  in lockstep via Changesets (`pnpm changeset`, `docs/RELEASING.md`); the
+  `fixed` group in `.changeset/config.json` keeps versions lockstep;
   deprecation and support policy is `docs/DEPRECATION.md`.
 - **Later:** visual regression tests in Storybook; per-brand theme packs;
   optional RTL support.

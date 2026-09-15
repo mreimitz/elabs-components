@@ -16,7 +16,7 @@ recipe is `docs/CONSUMING.md` §5.1.
 
 **Default path — a downloadable family** (ADR 0036): `pnpm theme:new <slug>
 --label "<Label>" --hue <0-360> [--only light|dark]` scaffolds `themes/<slug>/`
-from the reference themes. Tune the values, then `pnpm community-themes:check`
+from the reference themes. Tune the values, then `pnpm check --rule community-themes`
 (every token, AA ink pairs, `theme.ts` agrees with the CSS) and `pnpm gen`
 (Storybook's Theme/Mode toolbar picks it up). Add a row to `themes/README.md`.
 Stop here unless the theme should SHIP from `@elabs-ai/components-tokens`.
@@ -33,8 +33,8 @@ Built-in path (rare) — steps:
    - Declare `color-scheme: light|dark` — it is load-bearing, not decoration:
      `resolveThemeIsDark()` reads it to swap Monaco/basemap/Sonner assets.
    - **Any NEW `--token` you introduce must be scaffolded into ALL theme
-     blocks**, not just this one — the theme-token-parity gate
-     (`pnpm theme-parity:check`, #89) fails otherwise.
+     blocks**, not just this one — the `theme-parity` rule
+     (`pnpm check --rule theme-parity`, #89) fails otherwise.
 2. In `packages/tokens/src/theme-types.ts`, add `<name>` to `BUILT_IN_THEMES`
    and a `BUILT_IN_THEME_META["<name>"]` entry (label, `dark` flag, description).
 3. Wire the new file into the package surface — a stylesheet nobody can import
@@ -46,9 +46,9 @@ dist/themes`) — nothing to add, but confirm it still does.
    - the DTCG round-trip: `pnpm --filter @elabs-ai/components-tokens tokens:extract`
      derives the mode list from `BUILT_IN_THEMES` and writes
      `tokens/$themes.json` + `tokens/themes/<name>.tokens.json`. Then
-     `pnpm tokens:check` must report the new stylesheet as in sync.
+     `pnpm check` (tokens freshness) must report the new stylesheet as in sync.
    - the exported contract: `pnpm --filter @elabs-ai/components-tokens tokens:names`
-     if you added a token name (`pnpm token-contract:check` gates freshness).
+     if you added a token name (`pnpm check` gates its freshness).
    - import it where the reference themes are actually wanted:
      `apps/docs/.storybook/preview.css`, `fixtures/consumer-smoke/src/index.css`,
      and the scaffold CSS in `packages/cli/lib/engine.mjs`.
@@ -61,8 +61,8 @@ dist/themes`) — nothing to add, but confirm it still does.
 5. Verify: switch to the theme in the playground/Storybook and confirm contrast,
    focus rings, and that no component breaks. Run
    `pnpm --filter @elabs-ai/components-tokens typecheck && pnpm --filter @elabs-ai/components-tokens lint && pnpm --filter @elabs-ai/components-tokens test`, then
-   `pnpm theme-parity:check && pnpm tokens:check`.
-   **Read the COUNTS these gates print, not just their exit code** — a theme
+   `pnpm check`.
+   **Read the COUNTS the rules print, not just their exit code** — a theme
    parser that silently reads fewer blocks passes green.
 
 Do NOT hardcode the theme's colors anywhere except its own theme stylesheet.

@@ -83,7 +83,7 @@ private GitHub Packages dependency (`pnpm add -D @elabs-ai/components-cli`, see
 ## Ground truth, no drift
 
 `brand-ui.manifest.json` is generated from the package barrels + `themes.css`
-tokens + the registry. Regenerate it in `build` (or `pnpm manifest`) so the
+tokens + the registry. Regenerate it in `build` (or `pnpm gen`) so the
 `brand-ui` skill's knowledge of components/props/tokens can never lag the code —
 the "read the package, don't trust memory" guarantee.
 
@@ -128,7 +128,7 @@ skills/                       # canonical skills (source of truth)
 .mcp.json                     # Storybook MCP (auto-adopted as the plugin's MCP config)
 packages/cli/                 # @elabs-ai/components-cli — the engine (info/search/docs/manifest/audit + scaffold/scan/map/codemod)
 brand-ui.manifest.json        # generated ground truth
-scripts/check-plugin.mjs      # plugin-manifest gate (pnpm plugin:check)
+scripts/check/rules/plugin-manifest.mjs  # plugin-manifest rule (pnpm check --rule plugin-manifest)
 scripts/build-skills.mjs      # optional multi-harness mirror
 ```
 

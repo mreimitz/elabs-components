@@ -28,7 +28,7 @@ The index below is GENERATED from each playbook's own YAML front matter
    `brand-ui search <what you are building>` (it matches playbooks by intent and
    keywords), or the `brand-ui-new-app` skill for a guided pick.
 2. **Start from the generated template source** (`templates/<archetype>.tsx`) —
-   the full composition, derived from its Storybook story by `pnpm gen:templates`
+   the full composition, derived from its Storybook story by `pnpm gen`
    (single source of truth, so it never drifts from what Storybook renders).
 3. **Follow the playbook's wiring order** to swap the placeholder data for yours.
 4. Decisions the playbook doesn't list as **yours** are already made —
@@ -58,7 +58,7 @@ packages: ["@elabs-ai/components-ui", "…"]
 ---
 ```
 
-Then run `pnpm agent-docs`. That folds it into `brand-ui.manifest.json`, the
+Then run `pnpm gen`. That folds it into `brand-ui.manifest.json`, the
 generated agent context, `brand-ui search`, the `brand-ui` MCP `search` tool, and
 the table above — no other manual edit. `pnpm gen:check` fails CI if the
 regeneration was skipped.

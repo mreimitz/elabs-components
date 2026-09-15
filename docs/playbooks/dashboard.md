@@ -8,7 +8,7 @@ packages: ["@elabs-ai/components-ui", "@elabs-ai/components-charts", "@elabs-ai/
 # Playbook — Dashboard
 
 Metrics-first overview screen: KPI tiles on top, charts in the middle,
-a records table below. Template source: `templates/dashboard.tsx` (generated from this Storybook story by `pnpm gen:templates`).
+a records table below. Template source: `templates/dashboard.tsx` (generated from this Storybook story by `pnpm gen`).
 
 ## Building blocks
 

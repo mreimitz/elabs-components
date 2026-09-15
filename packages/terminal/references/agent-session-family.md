@@ -6,7 +6,7 @@ something else. See [`README.md`](./README.md) for the license, the capture meth
 limits of this reading.
 
 Divergences are not omissions. The fidelity axis is settled in
-`.claude/rules/terminal-components.md`: reproduce the _grammar_ at high fidelity, reproduce the
+`docs/rules-history/terminal-components.md`: reproduce the _grammar_ at high fidelity, reproduce the
 _mechanics_ as web. Where a row below says "we do X instead", that is the rule being applied, not a
 shortcut.
 
@@ -59,7 +59,7 @@ announcement is a separate `sr-only` node that changes only at meaningful transi
 One divergence is an **interpretation**, not a transcription, and is called out as such because a
 later reader could otherwise take it for a captured fact. Upstream swaps the spinner for the solid
 diamond when **a tool is actively producing output**; that is what the capture shows. This component
-has no `activeTool` prop and deliberately does not gain one — `loading-states.md` allows exactly two
+has no `activeTool` prop and deliberately does not gain one — `conventions.md` (Loading & streaming states) allows exactly two
 not-ready names and forbids minting a third — so the diamond is driven by `isStreaming`, whose
 canonical meaning ("partial content is arriving incrementally") is the same condition seen from the
 caller's side. The mapping is sound under the rule, but it is a mapping: the capture says _tool
@@ -188,7 +188,7 @@ for an oversight:
 - **The deny-reason field carries an explicit app ink.** It is a `Textarea` with its own opaque
   `bg-background`, so it is an app box inside the console rather than a patch of console ground,
   and it must not inherit `text-terminal-foreground`. Axe measured 1.2:1 before the override. The
-  general form of this is in `.claude/rules/terminal-components.md` § "Colour comes from the
+  general form of this is in `docs/rules-history/terminal-components.md` § "Colour comes from the
   terminal token group".
 
 ## `TerminalComposer`
@@ -250,7 +250,7 @@ legend names.
 - **A hosted `ui` component keeps its own ground.** `KeyboardShortcuts` is calibrated for the app
   surface, so the story wraps it in a `bg-card text-card-foreground` island inside the overlay
   rather than letting it inherit the console ink — the nested-app-box case in
-  `.claude/rules/terminal-components.md` § "Colour comes from the terminal token group".
+  `docs/rules-history/terminal-components.md` § "Colour comes from the terminal token group".
 
 ## `TerminalSlashMenu`
 
@@ -318,7 +318,7 @@ sibling's contract; a real empty state as a sibling (never a child) of the listb
   was never covered by that guarantee. Fix: the active row's description upgrades to
   `text-terminal-foreground`; resting rows keep `text-terminal-muted`. jsdom computed
   no contrast at all, so every unit test passed straight over this — exactly the
-  failure mode `.claude/rules/terminal-components.md` names for this package.
+  failure mode `docs/rules-history/terminal-components.md` names for this package.
 - **The active row's second, non-colour channel is a reserved-width `❯` marker**,
   mirroring `TerminalPermission`'s already-reviewed `ACTIVE_OPTION_GLYPH` pattern —
   genuine presence/absence in a fixed-width slot, `aria-hidden` since

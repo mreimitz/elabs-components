@@ -8,7 +8,7 @@
  * caller and its ranking is reproducible from the manifest alone.
  *
  * WHERE THE DATA COMES FROM: `dataShapes` / `avoidWhen` are NOT authored here or
- * anywhere in `@elabs-ai/components-cli` — they are generated at `pnpm manifest`
+ * anywhere in `@elabs-ai/components-cli` — they are generated at `pnpm gen`
  * time from each chart container's own `@dataShape` / `@avoidWhen` JSDoc tags
  * (`extractChartDataShapes` in `./core.mjs`), merged into that component's
  * `intent` entry. This module only READS `manifest.packages[pkg].intent[Name]

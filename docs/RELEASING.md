@@ -28,8 +28,8 @@ changesets it opens or updates **"Release: version packages"**, produced by
    and `SERVER_INFO.version` in `packages/cli/lib/mcp.mjs`;
 3. `pnpm install --lockfile-only`.
 
-`pnpm version-sync:check` (in the gate battery) fails when those sites drift from the packages.
-Review the PR like any other: CI runs the battery on it, including `pnpm consumer:check`
+`pnpm check` (its version-sync rule) fails when those sites drift from the packages.
+Review the PR like any other: CI runs the full pipeline on it, including `pnpm consumer:check`
 (packs every package, installs the tarballs into a throwaway Vite app and builds it).
 
 ## 3. Merge → publish
@@ -70,7 +70,7 @@ Published versions are immutable: roll back by **deprecate + patch forward**.
   Not rehearsed; needs `npm login` with publish rights on `@elabs-ai`.
 
 - **Bad plugin pointer** — `.claude-plugin/marketplace.json` is served live from `main`:
-  `git revert` the Version PR's merge, `pnpm version-sync:check`, push.
+  `git revert` the Version PR's merge, `pnpm check`, push.
 
 ## See also
 

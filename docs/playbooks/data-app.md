@@ -21,7 +21,7 @@ packages: ["@elabs-ai/components-ui", "@elabs-ai/components-data"]
 # Playbook — Data app / admin console
 
 Tool-first table surface for browsing and operating on records: search,
-facets, column control, row + bulk actions. Template source: `templates/data-app.tsx` (generated from this Storybook story by `pnpm gen:templates`).
+facets, column control, row + bulk actions. Template source: `templates/data-app.tsx` (generated from this Storybook story by `pnpm gen`).
 
 ## Building blocks
 

@@ -102,7 +102,7 @@ export function collectBarrelExports(barrel, repoRoot) {
  * used to be flattened to bare name strings (`.map((e) => e.name)`), which is
  * exactly what made `flat()` unable to surface them (#86): with no `module` to
  * attribute a row to, there was nothing to push. This IS a manifest-shape
- * change; `pnpm manifest` regenerates `brand-ui.manifest.json` to match.
+ * change; `pnpm gen` regenerates `brand-ui.manifest.json` to match.
  */
 function bucketExports(all) {
   return {
@@ -437,7 +437,7 @@ function loadRegistry(repoRoot) {
 /**
  * The full-screen archetype templates (dashboard, settings, …). The single
  * source of truth is the Storybook stories (packages/<pkg>/src/templates-<name>
- * .stories.tsx); `pnpm gen:templates` derives both the consumer source under
+ * .stories.tsx); `pnpm gen` derives both the consumer source under
  * `docs/playbooks/templates/<name>.tsx` AND the `index.json` read here, so the
  * manifest (shipped in the plugin AND the agent kit) is the single discovery
  * surface for templates. Absent index → empty array (graceful; gen ran before
@@ -469,7 +469,7 @@ function loadTemplates(repoRoot) {
 // dashboard.md. The playbook's own YAML front matter is the source of truth; this
 // reader folds it into the manifest so `search`, `context` and the MCP server all
 // answer from one place. Adding docs/playbooks/<a>.md + front matter is the ONLY
-// manual step; `pnpm playbooks:check` fails when the manifest wasn't regenerated.
+// manual step; `pnpm gen:check` fails when the manifest wasn't regenerated.
 
 /**
  * Parse a leading `--- … ---` YAML front-matter block. Deliberately a dependency-free
@@ -897,7 +897,7 @@ export function extractPropTable(src, name) {
     // alias's RHS on its own terms; on any parse hazard (no depth-0 `;`
     // found — e.g. truncated/malformed input), gracefully bail to the
     // pre-#77 object-literal-only parse rather than risk a wrong answer or a
-    // throw (this runs during `pnpm manifest`, invoked by the pre-commit
+    // throw (this runs during `pnpm gen`, invoked by the pre-commit
     // hook — it must stay total).
     const aliasResult = extractTypeAliasPropTable(src, decl);
     if (aliasResult) return aliasResult;
@@ -1242,8 +1242,8 @@ function collectProps(repoRoot, components) {
  * tags are read from the docblock immediately preceding `name`'s own
  * declaration and nowhere else.
  *
- * `pnpm manifest:check` is what makes this "keep them honest": delete a tag from
- * the source and the manifest entry loses it on the next `pnpm manifest` — there
+ * `pnpm gen:check` is what makes this "keep them honest": delete a tag from
+ * the source and the manifest entry loses it on the next `pnpm gen` — there
  * is nowhere else the value could come from.
  *
  * @param {string} src   the file's text
@@ -1509,7 +1509,7 @@ export function generateManifest(repoRoot, opts = {}) {
     playbooks: loadPlaybooks(repoRoot),
     // The agent-output contract (how an agent structures output for the @elabs-ai/components-ai
     // GenUI components to render it). Path-keyed, cross-package; authored sidecar
-    // (lib/agent-output.mjs), gate-verified against source (`agent-output:check`).
+    // (lib/agent-output.mjs), gate-verified against source (the `agent-output-contract` rule in `pnpm check`).
     agentOutput: collectAgentOutput(),
     packages,
   };
@@ -1561,7 +1561,7 @@ export function writeManifest(repoRoot, manifest) {
   const file = join(repoRoot, "brand-ui.manifest.json");
   // Idempotent `generatedAt`: if the regenerated manifest differs from the file
   // on disk ONLY by its timestamp, keep the existing timestamp so the CI
-  // stale-gate (`pnpm manifest && git diff --exit-code`) and the pre-commit
+  // stale-gate (`pnpm gen:check`) and the pre-commit
   // regeneration never flap on an unchanged repo. The manifest is the only
   // generated artifact excluded from Prettier (.prettierignore) so this raw
   // serialization is also its committed format — no formatter churn. (WP-10 #85.)

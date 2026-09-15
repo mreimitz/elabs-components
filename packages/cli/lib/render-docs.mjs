@@ -14,7 +14,7 @@
  *   - no environment-dependent output.
  *
  * The stale-gate for each surface is "regenerate, compare to disk, fail on diff"
- * — the same contract as `scripts/check-manifest.mjs`.
+ * — the same contract as `pnpm gen:check`.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -159,9 +159,9 @@ function cell(s) {
 export function renderInventory(manifest) {
   const lines = [];
   lines.push("<!-- GENERATED FILE — do not edit by hand.");
-  lines.push("     Source: brand-ui.manifest.json (via `pnpm inventory`).");
+  lines.push("     Source: brand-ui.manifest.json (via `pnpm gen`).");
   lines.push(
-    "     Regenerate after any component/token change; the inventory:check gate fails on drift. -->",
+    "     Regenerate after any component/token change; `pnpm gen:check` fails on drift. -->",
   );
   lines.push("");
   lines.push("# brand-ui component inventory");
@@ -519,7 +519,12 @@ export function renderDecisionSummary(repoRoot) {
       "renderDecisionSummary: could not find the DECISIONS:SUMMARY:START/END region in docs/DECISIONS.md",
     );
   }
-  const body = src.slice(startMatch.index + startMatch[0].length, endIdx).trim();
+  // docs/DECISIONS.md links rules as `../.claude/rules/…`; every target (CLAUDE.md, AGENTS.md)
+  // lives at the repo root, so drop the leading `../` or the links resolve outside the repo.
+  const body = src
+    .slice(startMatch.index + startMatch[0].length, endIdx)
+    .trim()
+    .replaceAll("](../", "](");
   const note =
     "<!-- Generated from the DECISIONS:SUMMARY region of `docs/DECISIONS.md` — edit decisions there, not here. -->";
   return `${note}\n\n${body}`;
@@ -614,7 +619,7 @@ export function renderAgentOutputGuidance(manifest) {
   );
   lines.push("");
   if (!ao || !ao.paths) {
-    lines.push("_No agent-output contract in the manifest — run `pnpm manifest`._");
+    lines.push("_No agent-output contract in the manifest — run `pnpm gen`._");
     return lines.join("\n");
   }
   const { conversation: conv, jsxPreview: jsx, a2ui } = ao.paths;
