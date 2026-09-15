@@ -289,8 +289,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
         paletteExplicit: palette !== undefined,
         seed,
         measureLabel,
+        labelThreshold,
       }),
-    [nodes, links, size.w, size.h, layout, nodeSize, palette, seed, measureLabel],
+    [nodes, links, size.w, size.h, layout, nodeSize, palette, seed, measureLabel, labelThreshold],
   );
 
   // ── Emphasis + tooltip (ONE piece of state; the blur itself is CSS) ───────

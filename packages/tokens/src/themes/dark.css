@@ -260,9 +260,9 @@
   --chart-marker-border: var(--border);
   --chart-marker-badge-background: var(--primary);
   --chart-marker-badge-foreground: var(--primary-foreground);
-  --chart-ring-background: var(--background);
+  --chart-ring-background: var(--chart-grid);
   --chart-segment-background: var(--muted);
-  --chart-segment-line: var(--border);
+  --chart-segment-line: var(--chart-grid);
   --chart-tooltip-background: var(--popover);
   --chart-tooltip-foreground: var(--popover-foreground);
   --chart-tooltip-muted: var(--muted-foreground);

@@ -74,6 +74,12 @@ export interface NetworkNodeLayout extends NetworkNodeDatum {
    * never reaches AT (see `computeNetworkLayout`'s gutter degrade).
    */
   displayLabel?: string;
+  /**
+   * `circular` only — `true` when this label's box would overlap the label of a
+   * heavier node on the ring, so it is not painted. The accessible name is
+   * unaffected (it is built from `label`).
+   */
+  labelCollides?: boolean;
 }
 
 /** A link after layout: endpoints resolved, path built. */

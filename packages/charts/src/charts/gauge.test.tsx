@@ -65,6 +65,16 @@ describe("Gauge", () => {
     expect(getByText("0 ticks to go")).toBeInTheDocument();
   });
 
+  it("paints track notches in the track ink, never the card colour they sit on", () => {
+    const { container } = render(
+      <Gauge centerValue={32} height={200} totalNotches={10} value={32} width={300} />,
+    );
+    const fills = Array.from(container.querySelectorAll("path")).map((p) => p.getAttribute("fill"));
+    // totalNotches=10, value=32 → 3 active notches drawn over 10 track notches.
+    expect(fills.filter((f) => f === "var(--chart-ring-background)")).toHaveLength(10);
+    expect(fills).not.toContain("var(--chart-background)");
+  });
+
   it("renders both milestones and a caption together", () => {
     const { container, getByText } = render(
       <Gauge

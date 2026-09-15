@@ -166,9 +166,15 @@ export function layoutWaffle({
   const counts = computeUnitCounts(data, unit);
   const safeColumns = Math.max(1, columns);
   const rows = Math.max(1, Math.ceil(total / safeColumns));
-  const cellWidth = width / safeColumns;
-  const cellHeight = height / rows;
-  const size = Math.min(cellWidth, cellHeight) * 0.35;
+  // Square cells, centred: a box whose shape differs from the grid's (a short,
+  // wide AutoChart slot) keeps round-spaced dots instead of stretching the
+  // grid into thin columns.
+  const cell = Math.min(width / safeColumns, height / rows);
+  const cellWidth = cell;
+  const cellHeight = cell;
+  const offsetX = (width - cell * safeColumns) / 2;
+  const offsetY = (height - cell * rows) / 2;
+  const size = cell * 0.35;
 
   const drawable = Math.min(
     total,
@@ -183,8 +189,8 @@ export function layoutWaffle({
       marks.push({
         seriesIndex,
         positionInGroup: p,
-        x: (column + 0.5) * cellWidth,
-        y: (row + 0.5) * cellHeight,
+        x: offsetX + (column + 0.5) * cellWidth,
+        y: offsetY + (row + 0.5) * cellHeight,
         size,
         delayMs: unitMarkDelayMs(column, seriesIndex),
       });

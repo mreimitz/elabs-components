@@ -135,6 +135,42 @@ describe("TreemapChart", () => {
     ).toThrow(/value 999, but its children sum to 30/);
   });
 
+  it("ellipsises a leaf label that is wider than its tile, never letting it clip", () => {
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 320,
+      height: 320,
+      left: 0,
+      right: 560,
+      toJSON: () => ({}),
+      top: 0,
+      width: 560,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+    const { container } = render(
+      <TreemapChart
+        data={{
+          name: "Work",
+          children: [
+            { name: "Wide", value: 90 },
+            { name: "Considerably long name", value: 10 },
+          ],
+        }}
+        depth={1}
+        labelMinArea={0}
+      />,
+    );
+    spy.mockRestore();
+    const labels = Array.from(
+      container.querySelectorAll('[data-slot="treemap-leaf-label"]'),
+      (el) => el.textContent ?? "",
+    );
+    expect(labels).toContain("Wide");
+    // The 10% sliver (~56px) cannot hold the full name — it is shortened, not clipped.
+    const long = labels.find((text) => text.startsWith("Con"));
+    expect(long?.endsWith("…")).toBe(true);
+  });
+
   it("renders no group-zoom controls when drilldown is off (static chart)", () => {
     const { container } = render(
       <div style={{ width: 640, height: 400 }}>

@@ -1060,13 +1060,16 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
             })}
           </div>
 
-          {/* Grid lines — rendered above segments so they're visible */}
+          {/* Grid lines — rendered above segments so they're visible. DOM order
+              alone is not enough: each segment carries `zIndex: 1` (10 while
+              hovered), so this layer needs its own stacking level. */}
           {gridEnabled && showGridLines && (
             <svg
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 h-full w-full"
               preserveAspectRatio="none"
               role="presentation"
+              style={{ zIndex: 5 }}
               viewBox={`0 0 ${W} ${H}`}
             >
               {Array.from({ length: n - 1 }, (_, i) => {
@@ -1114,6 +1117,9 @@ const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(function Fu
               className="pointer-events-none absolute inset-0 h-full w-full"
               preserveAspectRatio="none"
               role="presentation"
+              // Above every segment, hovered ones included (zIndex 10), and
+              // below the hover overlays (20) — otherwise the fills cover it.
+              style={{ zIndex: 15 }}
               viewBox={`0 0 ${W} ${H}`}
             >
               {Array.from({ length: n - 1 }, (_, i) => {

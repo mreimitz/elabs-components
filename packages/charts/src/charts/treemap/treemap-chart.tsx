@@ -26,6 +26,8 @@ import {
 } from "../chart-datapoint-layer";
 import { useChartValueFormatter } from "../chart-formatters";
 import type { ChartValueFormat } from "../value-format";
+import { CATEGORY_AXIS_ELLIPSIS, ellipsize } from "../category-axis-plan";
+import { useTextMeasurerOf } from "../use-text-measurer";
 import { HaloText } from "../../marks/halo-text";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
@@ -297,6 +299,25 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   }, [activeLayout.leaves, datapointsEnabled]);
   useRegisterDatapointTargets("leaves", leafTargets);
 
+  // A tile's minimum size says nothing about its NAME: "Release" in a 44px
+  // sliver clipped to "Releas" at the next tile's edge. Measure the label in its
+  // own type role and ellipsise it to the tile, or drop it when not even one
+  // character fits.
+  const { measure: measureLeafLabel } = useTextMeasurerOf(internalRef, {
+    className: "text-chart-value",
+  });
+  const { measure: measureGroupLabel } = useTextMeasurerOf(internalRef, {
+    className: "text-chart-source uppercase",
+  });
+  const fitLabel = (
+    text: string,
+    boxWidth: number,
+    measureText: (text: string) => number,
+  ): string | null => {
+    const { display } = ellipsize(text, boxWidth - LABEL_PADDING_X * 2, measureText);
+    return display === CATEGORY_AXIS_ELLIPSIS ? null : display;
+  };
+
   const prefersReducedMotion = useReducedMotion();
   const transition = prefersReducedMotion
     ? { duration: 0 }
@@ -331,8 +352,11 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
               activeLayout.groups.map((group) => {
                 const box = rectStyle(group);
                 const bandWidth = box.width;
-                const showLabel =
-                  bandWidth >= MIN_LABEL_WIDTH && group.bandHeight >= MIN_LABEL_HEIGHT;
+                // Canvas measuring ignores CSS `uppercase`, so measure the cased text.
+                const groupLabel =
+                  bandWidth >= MIN_LABEL_WIDTH && group.bandHeight >= MIN_LABEL_HEIGHT
+                    ? fitLabel(group.name.toUpperCase(), bandWidth, measureGroupLabel)
+                    : null;
                 return (
                   <g data-slot="treemap-group" key={group.id}>
                     <motion.rect
@@ -341,7 +365,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                       initial={false}
                       transition={transition}
                     />
-                    {showLabel && (
+                    {groupLabel !== null && (
                       <HaloText
                         className="text-chart-source uppercase"
                         data-slot="treemap-group-label"
@@ -350,7 +374,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                         x={box.x + LABEL_PADDING_X}
                         y={box.y + group.bandHeight / 2}
                       >
-                        {group.name}
+                        {groupLabel}
                       </HaloText>
                     )}
                   </g>
@@ -359,10 +383,12 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
             {activeLayout.leaves.map((leaf) => {
               const box = rectStyle(leaf);
               const area = box.width * box.height;
-              const showLabel =
+              const leafLabel =
                 area >= labelMinArea &&
                 box.width >= MIN_LABEL_WIDTH &&
-                box.height >= MIN_LABEL_HEIGHT;
+                box.height >= MIN_LABEL_HEIGHT
+                  ? fitLabel(leaf.name, box.width, measureLeafLabel)
+                  : null;
               const isActive = datapointsEnabled;
               return (
                 <g data-slot="treemap-leaf" key={leaf.id}>
@@ -387,7 +413,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                     onMouseMove={(event) => handleLeafMove(leaf, event)}
                     transition={transition}
                   />
-                  {showLabel && (
+                  {leafLabel !== null && (
                     <HaloText
                       className="text-chart-value"
                       data-slot="treemap-leaf-label"
@@ -396,7 +422,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
                       x={box.x + LABEL_PADDING_X}
                       y={box.y + box.height / 2}
                     >
-                      {leaf.name}
+                      {leafLabel}
                     </HaloText>
                   )}
                 </g>

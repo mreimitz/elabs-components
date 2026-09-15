@@ -370,8 +370,8 @@
   },
   "chart-ring-background": {
     "$type": "color",
-    "$value": "var(--background)",
-    "$description": "Chart ring/gauge background (alias)."
+    "$value": "var(--chart-grid)",
+    "$description": "Chart ring/gauge track — the hairline furniture ink (alias of --chart-grid), never a surface colour."
   },
   "chart-segment-background": {
     "$type": "color",
@@ -380,8 +380,8 @@
   },
   "chart-segment-line": {
     "$type": "color",
-    "$value": "var(--border)",
-    "$description": "Chart segment divider (alias)."
+    "$value": "var(--chart-grid)",
+    "$description": "Chart segment divider — the hairline furniture ink (alias of --chart-grid)."
   },
   "chart-tooltip-background": {
     "$type": "color",

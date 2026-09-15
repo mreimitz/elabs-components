@@ -56,7 +56,13 @@ interface AnimatedNodeProps {
   onMouseLeave: () => void;
   name: string;
   value: number;
-  isLeftSide: boolean;
+  /**
+   * Where the labels sit: beside the node (`left`/`right`, the outer columns
+   * and any middle column whose gutter fits the name) or centred `above` it —
+   * a middle column's gutter is shared with the ribbons and the next column's
+   * nodes, so a name that does not fit there would be painted over.
+   */
+  labelPlacement: SankeyLabelPlacement;
   /** Overall label gate — `SankeyNodeProps.showLabels` (unchanged meaning: false = no labels). */
   showLabels: boolean;
   /** Per-node label policy (#276): is there room for a NAME label at this slot's pitch? */
@@ -66,6 +72,21 @@ interface AnimatedNodeProps {
   /** Measured label line height (px) — the vertical gap between the name and value line. */
   lineHeightPx: number;
 }
+
+export type SankeyLabelPlacement = "left" | "right" | "above";
+
+/** Gap between a node's edge and its side label (px). */
+const LABEL_SIDE_GAP = 12;
+/** Gap between a node's top and an `above` label's baseline block (px). */
+const LABEL_ABOVE_GAP = 6;
+/**
+ * The name label paints at 13px while the shared measurer probes the 12px
+ * `text-meta` rung — scale the measured width up so the fit test never
+ * under-reserves.
+ */
+const NAME_WIDTH_SCALE = 13 / 12;
+/** Minimum horizontal breathing room between two neighbouring labels (px). */
+const LABEL_COLLISION_PAD = 6;
 
 function AnimatedNode({
   x,
@@ -83,7 +104,7 @@ function AnimatedNode({
   onMouseLeave,
   name,
   value,
-  isLeftSide,
+  labelPlacement,
   showLabels,
   nameVisible,
   valueVisible,
@@ -99,8 +120,20 @@ function AnimatedNode({
   const nodeEnter = transitionWithDelay(enterTransition, staggerDelaySec);
   const nameEnter = transitionWithDelay(enterTransition, nameLabelDelaySec);
   const valueEnter = transitionWithDelay(enterTransition, valueLabelDelaySec);
-  const nameLabelX = isLeftSide ? x - 12 : x + width + 12;
-  const valueLabelX = isLeftSide ? x - 12 : x + width + 12;
+  const isLeftSide = labelPlacement === "left";
+  const isAbove = labelPlacement === "above";
+  const labelX = isAbove
+    ? x + width / 2
+    : isLeftSide
+      ? x - LABEL_SIDE_GAP
+      : x + width + LABEL_SIDE_GAP;
+  const labelInitialX = isAbove ? labelX : isLeftSide ? x + 8 : x + width - 8;
+  const textAnchor = isAbove ? "middle" : isLeftSide ? "end" : "start";
+  // Beside: name on the node's centre line, value one line below. Above: the
+  // value hugs the node top and the name stacks one line over it (name alone
+  // when the value was dropped for lack of room).
+  const valueY = isAbove ? y - LABEL_ABOVE_GAP - lineHeightPx / 2 : y + height / 2 + lineHeightPx;
+  const nameY = isAbove ? (valueVisible ? valueY - lineHeightPx : valueY) : y + height / 2;
   const nodeOpacity = isFaded ? fadedOpacity : 1;
   // The value label used to sit at a permanent 0.6 alpha with no halo — the
   // combination that fails contrast (#276). HaloText's stroke does the
@@ -127,32 +160,32 @@ function AnimatedNode({
       />
       {showLabels && nameVisible && (
         <MotionHaloText
-          animate={{ opacity: nameOpacity, x: nameLabelX }}
+          animate={{ opacity: nameOpacity, x: labelX }}
           className="font-medium text-[13px]"
           data-slot="sankey-node-name"
           dy="0.35em"
           fill="var(--chart-label)"
-          initial={{ opacity: 0, x: isLeftSide ? x + 8 : x + width - 8 }}
+          initial={{ opacity: 0, x: labelInitialX }}
           key={`name-${index}-${revealEpoch}`}
-          textAnchor={isLeftSide ? "end" : "start"}
+          textAnchor={textAnchor}
           transition={nameEnter}
-          y={y + height / 2}
+          y={nameY}
         >
           {name}
         </MotionHaloText>
       )}
       {showLabels && valueVisible && (
         <MotionHaloText
-          animate={{ opacity: valueOpacity, x: valueLabelX }}
+          animate={{ opacity: valueOpacity, x: labelX }}
           className="text-[11px]"
           data-slot="sankey-node-value"
           dy="0.35em"
           fill="var(--chart-foreground-muted)"
-          initial={{ opacity: 0, x: isLeftSide ? x + 8 : x + width - 8 }}
+          initial={{ opacity: 0, x: labelInitialX }}
           key={`value-${index}-${revealEpoch}`}
-          textAnchor={isLeftSide ? "end" : "start"}
+          textAnchor={textAnchor}
           transition={valueEnter}
-          y={y + height / 2 + lineHeightPx}
+          y={valueY}
         >
           {intFmt(value)} sessions
         </MotionHaloText>
@@ -195,6 +228,39 @@ function computeNodePitches(
   return pitches;
 }
 
+/**
+ * Layout columns (sorted `x0`/`x1`) and, per node, the free space directly
+ * ABOVE it in its own column — the room an `above` label has before it runs
+ * into the node over it (or past the plot's top margin).
+ */
+function computeColumns(
+  nodes: SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum>[],
+  topMargin: number,
+): {
+  columns: { x0: number; x1: number }[];
+  clearanceAbove: Map<number, number>;
+} {
+  const byColumn = new Map<number, { index: number; y0: number; y1: number; x1: number }[]>();
+  nodes.forEach((node, index) => {
+    const x0 = node.x0 ?? 0;
+    const column = byColumn.get(x0) ?? [];
+    column.push({ index, y0: node.y0 ?? 0, y1: node.y1 ?? 0, x1: node.x1 ?? x0 });
+    byColumn.set(x0, column);
+  });
+  const clearanceAbove = new Map<number, number>();
+  for (const column of byColumn.values()) {
+    column.sort((a, b) => a.y0 - b.y0);
+    column.forEach((entry, i) => {
+      const prev = column[i - 1];
+      clearanceAbove.set(entry.index, prev ? entry.y0 - prev.y1 : entry.y0 + topMargin);
+    });
+  }
+  const columns = [...byColumn.entries()]
+    .map(([x0, entries]) => ({ x0, x1: Math.max(...entries.map((e) => e.x1)) }))
+    .sort((a, b) => a.x0 - b.x0);
+  return { columns, clearanceAbove };
+}
+
 export function SankeyNode({
   fill,
   lineCap = 4,
@@ -222,7 +288,7 @@ export function SankeyNode({
   // The label font as it actually resolves in this chart's inheritance context
   // (theme/density/webfont) — replaces the old hard-coded `+ 16` value-label
   // offset and drives the pitch-aware visibility policy below (#276).
-  const { lineHeightPx } = useTextMeasurerOf(containerRef);
+  const { lineHeightPx, measure } = useTextMeasurerOf(containerRef);
 
   // Default colors using CSS variables
   const defaultColors = useMemo(
@@ -285,6 +351,103 @@ export function SankeyNode({
   const innerWidth = width - margin.left - margin.right;
 
   const nodePitches = useMemo(() => computeNodePitches(nodes), [nodes]);
+  const { columns, clearanceAbove } = useMemo(
+    () => computeColumns(nodes, margin.top),
+    [nodes, margin.top],
+  );
+
+  // One label plan per node, resolved together so neighbours can yield to
+  // each other: placement (side or above), then which lines have room.
+  const labelPlans = useMemo(() => {
+    const valueText = (v: number) => `${intFmt(v)} sessions`;
+    const plans = nodes.map((node, index) => {
+      const nodeX = node.x0 ?? 0;
+      const nodeWidth = (node.x1 ?? 0) - nodeX;
+      const isLeftSide = nodeX < innerWidth / 2;
+
+      // A node's shown value is what flows through it: its inflow, or its
+      // outflow when nothing flows in (a first-column node without
+      // `category: "source"` used to read "0 sessions").
+      let inflow = 0;
+      let outflow = 0;
+      for (const l of links) {
+        if (getNodeIndex(l.source as NodeOrIndex) === index) outflow += l.value;
+        if (getNodeIndex(l.target as NodeOrIndex) === index) inflow += l.value;
+      }
+      const displayValue = node.category === "source" || inflow === 0 ? outflow : inflow;
+
+      // Middle columns share their side gutter with ribbons and the next
+      // column's nodes: a label wider than that gutter would be painted over,
+      // so it moves above the node instead. Outer columns keep the margin.
+      // The wider of the two lines decides (a value can outrun a short name).
+      const labelWidth = Math.max(
+        measure(node.name) * NAME_WIDTH_SCALE,
+        measure(valueText(displayValue)),
+      );
+      const columnIndex = columns.findIndex((c) => c.x0 === nodeX);
+      const isMiddleColumn = columnIndex > 0 && columnIndex < columns.length - 1;
+      let labelPlacement: SankeyLabelPlacement = isLeftSide ? "left" : "right";
+      if (isMiddleColumn) {
+        const neighbour = columns[isLeftSide ? columnIndex - 1 : columnIndex + 1];
+        const gutter = neighbour
+          ? isLeftSide
+            ? nodeX - neighbour.x1
+            : neighbour.x0 - (nodeX + nodeWidth)
+          : Number.POSITIVE_INFINITY;
+        if (labelWidth + LABEL_SIDE_GAP * 2 > gutter) {
+          labelPlacement = "above";
+        }
+      }
+
+      // Pitch-aware label policy (#276): mirrors NetworkChart's
+      // `labelThreshold`/`isLabelVisible` concept — a value that needs two
+      // measured lines of clearance drops first, a name that needs only one
+      // drops last, so a dense column degrades to name-only before going
+      // fully unlabelled rather than overprinting. An `above` label measures
+      // the free space over the node instead of the centre-to-centre pitch.
+      const pitch =
+        labelPlacement === "above"
+          ? (clearanceAbove.get(index) ?? Number.POSITIVE_INFINITY) - LABEL_ABOVE_GAP
+          : (nodePitches.get(index) ?? Number.POSITIVE_INFINITY);
+      return {
+        labelPlacement,
+        nameVisible: pitch >= lineHeightPx,
+        valueVisible: pitch >= lineHeightPx * 2,
+        displayValue,
+        centerX: nodeX + nodeWidth / 2,
+        top: node.y0 ?? 0,
+        nameWidth: measure(node.name) * NAME_WIDTH_SCALE,
+        labelWidth,
+      };
+    });
+
+    // Two `above` labels in neighbouring columns can still collide with each
+    // other: drop both value lines first, then the later name if still needed.
+    const overlaps = (a: (typeof plans)[number], b: (typeof plans)[number], wide: boolean) => {
+      const aw = wide ? a.labelWidth : a.nameWidth;
+      const bw = wide ? b.labelWidth : b.nameWidth;
+      const horizontal = Math.abs(a.centerX - b.centerX) < (aw + bw) / 2 + LABEL_COLLISION_PAD;
+      const vertical = Math.abs(a.top - b.top) < lineHeightPx * 2 + LABEL_ABOVE_GAP;
+      return horizontal && vertical;
+    };
+    for (let i = 0; i < plans.length; i++) {
+      for (let j = i + 1; j < plans.length; j++) {
+        const a = plans[i];
+        const b = plans[j];
+        if (!a || !b || a.labelPlacement !== "above" || b.labelPlacement !== "above") continue;
+        if (a.valueVisible || b.valueVisible) {
+          if (overlaps(a, b, true)) {
+            a.valueVisible = false;
+            b.valueVisible = false;
+          }
+        }
+        if (a.nameVisible && b.nameVisible && overlaps(a, b, false)) {
+          b.nameVisible = false;
+        }
+      }
+    }
+    return plans;
+  }, [nodes, links, innerWidth, columns, clearanceAbove, nodePitches, measure, lineHeightPx]);
 
   return (
     <g className="sankey-nodes">
@@ -306,27 +469,12 @@ export function SankeyNode({
 
         const isConnected = isNodeConnected(index);
         const isFaded = isAnyHovered && !isConnected;
-        const isLeftSide = nodeX < innerWidth / 2;
-
-        // Pitch-aware label policy (#276): mirrors NetworkChart's
-        // `labelThreshold`/`isLabelVisible` concept — a value that needs two
-        // measured lines of clearance drops first, a name that needs only one
-        // drops last, so a dense column degrades to name-only before going
-        // fully unlabelled rather than overprinting.
-        const pitch = nodePitches.get(index) ?? Number.POSITIVE_INFINITY;
-        const nameVisible = pitch >= lineHeightPx;
-        const valueVisible = pitch >= lineHeightPx * 2;
-
-        let displayValue = 0;
-        for (const l of links) {
-          const sIdx = getNodeIndex(l.source as NodeOrIndex);
-          const tIdx = getNodeIndex(l.target as NodeOrIndex);
-          if (node.category === "source" && sIdx === index) {
-            displayValue += l.value;
-          } else if (node.category !== "source" && tIdx === index) {
-            displayValue += l.value;
-          }
-        }
+        const { labelPlacement, nameVisible, valueVisible, displayValue } = labelPlans[index] ?? {
+          labelPlacement: "right" as const,
+          nameVisible: false,
+          valueVisible: false,
+          displayValue: 0,
+        };
 
         const handleMouseEnter = () => {
           setHoveredNodeIndex(index);
@@ -359,7 +507,7 @@ export function SankeyNode({
             height={nodeHeight}
             index={index}
             isFaded={isFaded}
-            isLeftSide={isLeftSide}
+            labelPlacement={labelPlacement}
             key={`node-${node.name}`}
             lineHeightPx={lineHeightPx}
             name={node.name}

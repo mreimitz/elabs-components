@@ -73,6 +73,7 @@ import {
 } from "./chart-datapoint-layer";
 import { ChartTooltipBox } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
+import { estimateTextWidth } from "./use-text-measurer";
 
 // ── Public data shape ────────────────────────────────────────────────────────
 
@@ -129,6 +130,8 @@ const PILL_HEIGHT = 16;
 const PILL_CHAR_WIDTH = 6.5;
 const PILL_PADDING_X = 8;
 const MIN_PILL_WIDTH = 24;
+/** Approximate px size of the `text-chart-value` rung, for reserving label room in the pure layout. */
+const LABEL_FONT_SIZE_ESTIMATE = 13; // the rung is 12px; one px more covers its heavier weight
 /** The root belongs to no branch, so `palette: "categorical"` still needs a neutral shade for it. */
 const TREE_ROOT_COLOR = "var(--chart-mono-4)";
 /** The one link stroke colour, whatever the palette — links are furniture, not data (like the treemap band). */
@@ -259,9 +262,13 @@ export function computeTreeLayout(
     minCross = maxCross = minGrowth = maxGrowth = 0;
   }
 
+  // `"tb"` puts nothing above the root (its label hangs below it), so the
+  // leading growth margin only needs the cross margin's breathing room; the
+  // freed height goes to the leaf labels at the bottom.
+  const leadingGrowthMargin = orientation === "tb" ? MARGIN_CROSS : MARGIN_GROWTH;
   const toScreen = (n: { x: number; y: number }): [number, number] => {
     const cross = n.x - minCross + MARGIN_CROSS;
-    const growth = n.y - minGrowth + MARGIN_GROWTH;
+    const growth = n.y - minGrowth + leadingGrowthMargin;
     return orientation === "lr" ? [growth, cross] : [cross, growth];
   };
 
@@ -337,7 +344,21 @@ export function computeTreeLayout(
   });
 
   const crossExtent = maxCross - minCross + MARGIN_CROSS * 2;
-  const growthExtent = maxGrowth - minGrowth + MARGIN_GROWTH * 2;
+  // `"tb"` leaf labels run DOWN from each leaf (see `labelOffset`), so the
+  // bottom margin grows to fit the longest one instead of clipping it.
+  const trailingGrowthMargin =
+    orientation === "tb"
+      ? Math.max(
+          MARGIN_GROWTH,
+          ...nodes
+            .filter((n) => n.isLeaf && !n.isCollapsed)
+            .map(
+              (n) =>
+                nodeRadius + LABEL_GAP + estimateTextWidth(n.name, LABEL_FONT_SIZE_ESTIMATE) + 8,
+            ),
+        )
+      : MARGIN_GROWTH;
+  const growthExtent = maxGrowth - minGrowth + leadingGrowthMargin + trailingGrowthMargin;
   const width = orientation === "lr" ? growthExtent : crossExtent;
   const height = orientation === "lr" ? crossExtent : growthExtent;
 
@@ -357,13 +378,20 @@ interface LabelOffset {
   dy: number;
   textAnchor: "start" | "middle" | "end";
   dominantBaseline: "middle" | "auto" | "hanging";
+  /** Degrees to rotate the label about its anchor point (0 = horizontal). */
+  rotate: number;
 }
 
 /**
  * A leaf's label sits BEFORE the node (the side facing back toward the root —
  * "left" in `"lr"`); a branch's label sits AFTER it (the side facing its own
- * children — "right" in `"lr"`), per the Finding. `"tb"` rotates the same
- * before/after convention onto the vertical growth axis.
+ * children — "right" in `"lr"`), per the Finding.
+ *
+ * `"tb"` cannot mirror that: leaves are only `SIBLING_GAP` apart horizontally,
+ * so centred horizontal leaf labels overprint each other ("Onboarding" became
+ * "Onboa"). A `"tb"` leaf label instead runs vertically DOWN from the leaf,
+ * into the bottom margin nothing else occupies; branches keep a centred label
+ * under the node (their siblings are a whole subtree apart).
  */
 function labelOffset(
   orientation: TreeOrientation,
@@ -373,12 +401,12 @@ function labelOffset(
   const gap = nodeRadius + LABEL_GAP;
   if (orientation === "lr") {
     return isLeaf
-      ? { dx: -gap, dy: 0, textAnchor: "end", dominantBaseline: "middle" }
-      : { dx: gap, dy: 0, textAnchor: "start", dominantBaseline: "middle" };
+      ? { dx: -gap, dy: 0, textAnchor: "end", dominantBaseline: "middle", rotate: 0 }
+      : { dx: gap, dy: 0, textAnchor: "start", dominantBaseline: "middle", rotate: 0 };
   }
   return isLeaf
-    ? { dx: 0, dy: -gap, textAnchor: "middle", dominantBaseline: "auto" }
-    : { dx: 0, dy: gap, textAnchor: "middle", dominantBaseline: "hanging" };
+    ? { dx: 0, dy: gap, textAnchor: "start", dominantBaseline: "middle", rotate: 90 }
+    : { dx: 0, dy: gap, textAnchor: "middle", dominantBaseline: "hanging", rotate: 0 };
 }
 
 function pillWidth(label: string): number {
@@ -585,6 +613,11 @@ const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function TreeCh
                   data-slot="tree-node-label"
                   dominantBaseline={offset.dominantBaseline}
                   textAnchor={offset.textAnchor}
+                  transform={
+                    offset.rotate
+                      ? `rotate(${offset.rotate} ${node.x + offset.dx} ${node.y + offset.dy})`
+                      : undefined
+                  }
                   x={node.x + offset.dx}
                   y={node.y + offset.dy}
                 >

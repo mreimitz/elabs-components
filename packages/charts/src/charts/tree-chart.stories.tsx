@@ -124,7 +124,7 @@ export const TopToBottom: Story = {
     accessibleLabel: "Engineering org chart, top to bottom",
   },
   render: (args) => (
-    <div className="h-[360px] w-[560px]">
+    <div className="h-[400px] w-[560px]">
       <TreeChart {...args} />
     </div>
   ),

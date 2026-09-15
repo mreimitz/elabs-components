@@ -297,7 +297,7 @@
   },
   "chart-ring-background": {
     "$type": "color",
-    "$value": "var(--background)"
+    "$value": "var(--chart-grid)"
   },
   "chart-segment-background": {
     "$type": "color",
@@ -305,7 +305,7 @@
   },
   "chart-segment-line": {
     "$type": "color",
-    "$value": "var(--border)"
+    "$value": "var(--chart-grid)"
   },
   "chart-tooltip-background": {
     "$type": "color",

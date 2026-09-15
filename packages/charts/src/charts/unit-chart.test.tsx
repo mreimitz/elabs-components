@@ -97,6 +97,17 @@ describe("UnitChart", () => {
     }
   });
 
+  it("keeps the caption and legend OUTSIDE the plot box the SVG covers", () => {
+    stubMeasurement(280, 280);
+    const { container } = render(<UnitChart data={sources} layout="waffle" />);
+    const plot = container.querySelector('[data-slot="unit-chart-plot"]');
+    expect(plot?.querySelector("svg")).toBeInTheDocument();
+    // The footer arithmetic and legend flow BELOW the plot, never inside it.
+    expect(plot?.textContent ?? "").not.toContain("41 + 35 + 12 + 12 = 100");
+    expect(plot?.textContent ?? "").not.toContain("Search");
+    expect(container.textContent).toContain("41 + 35 + 12 + 12 = 100");
+  });
+
   it("accepts a forwarded ref", () => {
     const ref = { current: null as HTMLDivElement | null };
     render(<UnitChart data={sources} layout="waffle" ref={ref} />);

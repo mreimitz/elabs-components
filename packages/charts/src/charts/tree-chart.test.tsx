@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { computeTreeLayout, TreeChart, type TreeNode } from "./tree-chart";
+import { estimateTextWidth } from "./use-text-measurer";
 
 const orgChart: TreeNode = {
   name: "Engineering",
@@ -96,10 +97,22 @@ describe("computeTreeLayout", () => {
     // tb: depth advances along y (growth), not x (cross).
     expect(tbChild.y).toBeGreaterThan(tbRoot.y);
 
-    // The overall bounding box rotates with it: lr is wider than tall for a
-    // tree with more depth than breadth-per-level, tb is the transpose.
-    expect(lr.width).toBe(tb.height);
+    // The cross extent rotates with it exactly. The growth extent does not:
+    // tb trims the empty margin above the root and sizes the bottom margin to
+    // its vertical leaf labels, so it is only ever shorter than lr's width.
     expect(lr.height).toBe(tb.width);
+    expect(tb.height).toBeLessThanOrEqual(lr.width);
+  });
+
+  it("tb leaf labels run down from the leaf and the layout reserves room for the longest", () => {
+    const longName = "A very long leaf label name";
+    const tb = computeTreeLayout(
+      { name: "Root", children: [{ name: "Short" }, { name: longName }] },
+      { orientation: "tb", palette: "mono", nodeRadius: 3.5 },
+    );
+    const leaf = tb.nodes.find((n) => n.name === longName)!;
+    // Room below the deepest leaf covers the label's estimated run.
+    expect(tb.height - leaf.y).toBeGreaterThan(estimateTextWidth(longName, 12));
   });
 
   it("never shrinks level spacing — depth-to-depth pixel gap is fixed regardless of tree size", () => {

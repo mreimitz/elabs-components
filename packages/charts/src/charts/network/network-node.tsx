@@ -90,7 +90,12 @@ export const NetworkNode = memo(function NetworkNode({
   );
 });
 
-/** Every node of the chart, in input order. Reads the provider. */
+/**
+ * Every node of the chart, in input order, then every label in a layer above
+ * ALL of them. Drawing a label inside its own node's group let every later
+ * node paint over it ("Node 4" hidden under satellites in a dense cloud).
+ * Reads the provider.
+ */
 export function NetworkNodes() {
   const { layout, litIds, labelThreshold, dragId, dragOffset } = useNetworkChart();
   return (
@@ -100,11 +105,42 @@ export function NetworkNodes() {
           dimmed={isNodeDimmed(node.id, litIds)}
           dragging={dragId === node.id}
           key={node.id}
-          labelled={isLabelVisible(node, labelThreshold)}
+          labelled={false}
           node={node}
           offset={dragId === node.id ? dragOffset : undefined}
         />
       ))}
+      <g data-slot="network-node-labels" pointerEvents="none">
+        {layout.nodes.map((node) => {
+          if (!isLabelVisible(node, labelThreshold) || node.labelCollides) return null;
+          const dragging = dragId === node.id;
+          const offset = dragging ? dragOffset : undefined;
+          const anchorSign = node.labelAnchor === "start" ? 1 : -1;
+          return (
+            <g
+              className={cn(
+                dragging
+                  ? "transition-none"
+                  : "transition-[opacity,transform] duration-base ease-entrance motion-reduce:transition-none",
+                isNodeDimmed(node.id, litIds) && NETWORK_NODE_DIM_CLASS,
+              )}
+              key={node.id}
+              transform={`translate(${node.x + (offset?.x ?? 0)},${node.y + (offset?.y ?? 0)})`}
+            >
+              <HaloText
+                className="text-chart-source"
+                data-slot="network-node-label"
+                dominantBaseline="middle"
+                textAnchor={node.labelAnchor}
+                x={anchorSign * (node.r + NETWORK_LABEL_GAP)}
+                y={0}
+              >
+                {node.displayLabel ?? node.label ?? node.id}
+              </HaloText>
+            </g>
+          );
+        })}
+      </g>
     </g>
   );
 }

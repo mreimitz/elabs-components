@@ -585,6 +585,32 @@ describe("computeNetworkLayout", () => {
     expect(result.nodes.map((n) => n.r)).toEqual([5, 5, 5, 5]);
   });
 
+  it("hides the lighter of two overlapping ring labels, and none when they fit", () => {
+    const crowded = Array.from({ length: 60 }, (_, i) => ({
+      id: `n${i}`,
+      label: `Person ${i}`,
+      value: i === 0 ? 50 : 1,
+    }));
+    const measureLabel = (text: string) => text.length * 7;
+    const result = computeNetworkLayout(crowded, [], {
+      ...box,
+      layout: "circular",
+      nodeSize: 4,
+      measureLabel,
+    });
+    const hidden = result.nodes.filter((n) => n.labelCollides);
+    expect(hidden.length).toBeGreaterThan(0);
+    // The heaviest node is placed first and always keeps its label.
+    expect(result.nodes[0]?.labelCollides).toBeUndefined();
+
+    const sparse = computeNetworkLayout(NODES, LINKS, {
+      ...box,
+      layout: "circular",
+      measureLabel,
+    });
+    expect(sparse.nodes.some((n) => n.labelCollides)).toBe(false);
+  });
+
   it("gives an arc layout two columns and side-aware labels", () => {
     const result = computeNetworkLayout(NODES, LINKS, { ...box, layout: "arc" });
     expect(result.nodes.map((n) => n.side)).toEqual(["left", "left", "right", "right"]);

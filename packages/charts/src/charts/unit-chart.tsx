@@ -194,6 +194,9 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
   forwardedRef,
 ) {
   const internalRef = useRef<HTMLDivElement | null>(null);
+  // The PLOT box is measured, not the root: the footer + legend flow below it,
+  // so the absolutely-positioned SVG never paints over them.
+  const plotRef = useRef<HTMLDivElement | null>(null);
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
       internalRef.current = node;
@@ -234,14 +237,14 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
 
   const [sz, setSz] = useState({ w: 0, h: 0 });
   const measure = useCallback(() => {
-    if (!internalRef.current) return;
-    const { width: w, height: h } = internalRef.current.getBoundingClientRect();
+    if (!plotRef.current) return;
+    const { width: w, height: h } = plotRef.current.getBoundingClientRect();
     if (w > 0 && h > 0) setSz({ w, h });
   }, []);
   useEffect(() => {
     measure();
     const ro = new ResizeObserver(measure);
-    if (internalRef.current) ro.observe(internalRef.current);
+    if (plotRef.current) ro.observe(plotRef.current);
     return () => ro.disconnect();
   }, [measure]);
 
@@ -335,20 +338,11 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
     <div
       aria-describedby={ariaDescribedby}
       aria-label={ariaLabel}
-      className={cn("relative w-full select-none overflow-visible", className)}
+      className={cn("relative flex w-full select-none flex-col overflow-visible", className)}
       data-slot="unit-chart"
       ref={ref}
       role={role}
-      style={{
-        aspectRatio:
-          layout === "waffle"
-            ? `${columns} / ${Math.max(1, Math.ceil(total / Math.max(1, columns)))}`
-            : layout === "field"
-              ? "1 / 1"
-              : undefined,
-        height: layout === "rows" ? rowsHeight : undefined,
-        ...style,
-      }}
+      style={style}
       tabIndex={tabIndex}
       {...rest}
     >
@@ -360,142 +354,163 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         aria-label={unitLabel ? `${unitLabel}. ${summary}` : summary}
       />
 
-      {layout === "rows" && sz.w > 0 && rowsGeom && (
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-          preserveAspectRatio="none"
-          viewBox={`0 0 ${Math.max(sz.w, 1)} ${rowsHeight}`}
-        >
-          {rowsGeom.rows.map((row) => {
-            const d = displayData[row.seriesIndex];
-            if (!d) return null;
-            const tickWidth = Math.max(sz.w - ROW_LABEL_WIDTH - ROW_VALUE_WIDTH, 1);
-            const step = row.count > 0 ? Math.min(6, Math.max(1.5, tickWidth / row.count)) : 3;
-            return (
-              <g key={row.seriesIndex}>
-                <text
-                  dominantBaseline="middle"
-                  fill="var(--chart-foreground-muted)"
-                  fontSize={12}
-                  x={0}
-                  y={row.y}
-                >
-                  {d.label}
-                </text>
-                <UnitStack
-                  direction="right"
-                  jitter={false}
-                  kind="tick"
-                  length={ROW_HEIGHT * 0.55}
-                  markEvery={10}
-                  n={row.count}
-                  seed={row.seriesIndex}
-                  step={step}
-                  stroke={colors[row.seriesIndex] ?? "var(--chart-1)"}
-                  x={ROW_LABEL_WIDTH}
-                  y={row.y}
-                />
-                <text
-                  dominantBaseline="middle"
-                  fill="var(--chart-foreground)"
-                  fontSize={13}
-                  fontWeight={800}
-                  textAnchor="end"
-                  x={sz.w}
-                  y={row.y}
-                >
-                  {intFmt(d.value)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      )}
-
-      {layout !== "rows" && sz.w > 0 && sz.h > 0 && (
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full overflow-visible"
-          preserveAspectRatio="xMidYMid meet"
-          viewBox={`0 0 ${sz.w} ${sz.h}`}
-        >
-          {waffleGeom &&
-            displayData.map((_, seriesIndex) => (
-              <g key={seriesIndex} {...seriesGroupProps(seriesIndex)}>
-                {waffleGeom.marks
-                  .filter((m) => m.seriesIndex === seriesIndex)
-                  .map((m) =>
-                    markElement(mark, m, colors[seriesIndex] ?? "var(--chart-1)", mounted),
-                  )}
-              </g>
-            ))}
-          {fieldGeom &&
-            fieldGeom.clusters.map((cluster) => {
-              const d = displayData[cluster.seriesIndex];
+      <div
+        // Column flex: with no height from outside the plot takes its aspect
+        // ratio; with one (AutoChart's `style={{ height }}`), it shrinks to the
+        // room the caption and legend leave instead of overflowing them.
+        className={cn(
+          "relative w-full overflow-visible",
+          layout === "rows" ? "shrink-0" : "min-h-0 shrink",
+        )}
+        data-slot="unit-chart-plot"
+        ref={plotRef}
+        style={{
+          aspectRatio:
+            layout === "waffle"
+              ? `${columns} / ${Math.max(1, Math.ceil(total / Math.max(1, columns)))}`
+              : layout === "field"
+                ? "1 / 1"
+                : undefined,
+          height: layout === "rows" ? rowsHeight : undefined,
+        }}
+      >
+        {layout === "rows" && sz.w > 0 && rowsGeom && (
+          <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            preserveAspectRatio="none"
+            viewBox={`0 0 ${Math.max(sz.w, 1)} ${rowsHeight}`}
+          >
+            {rowsGeom.rows.map((row) => {
+              const d = displayData[row.seriesIndex];
               if (!d) return null;
-              const labelAngle =
-                fieldGeom.clusters.length <= 1
-                  ? -Math.PI / 2
-                  : (2 * Math.PI * cluster.seriesIndex) / fieldGeom.clusters.length - Math.PI / 2;
-              const anchorR = Math.min(sz.w, sz.h) * 0.44;
-              const anchorX = sz.w / 2 + anchorR * Math.cos(labelAngle);
-              const anchorY = sz.h / 2 + anchorR * Math.sin(labelAngle);
-              const rightSide = Math.cos(labelAngle) >= 0;
+              const tickWidth = Math.max(sz.w - ROW_LABEL_WIDTH - ROW_VALUE_WIDTH, 1);
+              const step = row.count > 0 ? Math.min(6, Math.max(1.5, tickWidth / row.count)) : 3;
               return (
-                <g key={cluster.seriesIndex} {...seriesGroupProps(cluster.seriesIndex)}>
-                  {fieldGeom.clusters.length > 1 && (
-                    <Leader
-                      dash="1 3"
-                      from={[cluster.cx, cluster.cy]}
-                      kind="curve"
-                      to={[anchorX, anchorY]}
-                    />
-                  )}
-                  {fieldGeom.marks
-                    .filter((m) => m.seriesIndex === cluster.seriesIndex)
-                    .map((m) =>
-                      markElement(
-                        mark,
-                        m,
-                        colors[cluster.seriesIndex] ?? "var(--chart-1)",
-                        mounted,
-                      ),
-                    )}
+                <g key={row.seriesIndex}>
+                  <text
+                    dominantBaseline="middle"
+                    fill="var(--chart-foreground-muted)"
+                    fontSize={12}
+                    x={0}
+                    y={row.y}
+                  >
+                    {d.label}
+                  </text>
+                  <UnitStack
+                    direction="right"
+                    jitter={false}
+                    kind="tick"
+                    length={ROW_HEIGHT * 0.55}
+                    markEvery={10}
+                    n={row.count}
+                    seed={row.seriesIndex}
+                    step={step}
+                    stroke={colors[row.seriesIndex] ?? "var(--chart-1)"}
+                    x={ROW_LABEL_WIDTH}
+                    y={row.y}
+                  />
                   <text
                     dominantBaseline="middle"
                     fill="var(--chart-foreground)"
-                    fontSize={12}
-                    fontWeight={600}
-                    textAnchor={rightSide ? "start" : "end"}
-                    x={anchorX}
-                    y={anchorY}
+                    fontSize={13}
+                    fontWeight={800}
+                    textAnchor="end"
+                    x={sz.w}
+                    y={row.y}
                   >
-                    {d.label}
+                    {intFmt(d.value)}
                   </text>
                 </g>
               );
             })}
-        </svg>
-      )}
+          </svg>
+        )}
 
-      {hoveredRect && (
-        <ChartTooltipBox
-          containerHeight={layout === "rows" ? rowsHeight : sz.h}
-          containerRef={internalRef}
-          containerWidth={sz.w}
-          visible
-          x={hoveredRect.x + hoveredRect.width / 2}
-          y={hoveredRect.y + hoveredRect.height / 2}
-        >
-          <ChartTooltipContent rows={tooltipRows} />
-        </ChartTooltipBox>
-      )}
+        {layout !== "rows" && sz.w > 0 && sz.h > 0 && (
+          <svg
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full overflow-visible"
+            preserveAspectRatio="xMidYMid meet"
+            viewBox={`0 0 ${sz.w} ${sz.h}`}
+          >
+            {waffleGeom &&
+              displayData.map((_, seriesIndex) => (
+                <g key={seriesIndex} {...seriesGroupProps(seriesIndex)}>
+                  {waffleGeom.marks
+                    .filter((m) => m.seriesIndex === seriesIndex)
+                    .map((m) =>
+                      markElement(mark, m, colors[seriesIndex] ?? "var(--chart-1)", mounted),
+                    )}
+                </g>
+              ))}
+            {fieldGeom &&
+              fieldGeom.clusters.map((cluster) => {
+                const d = displayData[cluster.seriesIndex];
+                if (!d) return null;
+                const labelAngle =
+                  fieldGeom.clusters.length <= 1
+                    ? -Math.PI / 2
+                    : (2 * Math.PI * cluster.seriesIndex) / fieldGeom.clusters.length - Math.PI / 2;
+                const anchorR = Math.min(sz.w, sz.h) * 0.44;
+                const anchorX = sz.w / 2 + anchorR * Math.cos(labelAngle);
+                const anchorY = sz.h / 2 + anchorR * Math.sin(labelAngle);
+                const rightSide = Math.cos(labelAngle) >= 0;
+                return (
+                  <g key={cluster.seriesIndex} {...seriesGroupProps(cluster.seriesIndex)}>
+                    {fieldGeom.clusters.length > 1 && (
+                      <Leader
+                        dash="1 3"
+                        from={[cluster.cx, cluster.cy]}
+                        kind="curve"
+                        to={[anchorX, anchorY]}
+                      />
+                    )}
+                    {fieldGeom.marks
+                      .filter((m) => m.seriesIndex === cluster.seriesIndex)
+                      .map((m) =>
+                        markElement(
+                          mark,
+                          m,
+                          colors[cluster.seriesIndex] ?? "var(--chart-1)",
+                          mounted,
+                        ),
+                      )}
+                    <text
+                      dominantBaseline="middle"
+                      fill="var(--chart-foreground)"
+                      fontSize={12}
+                      fontWeight={600}
+                      textAnchor={rightSide ? "start" : "end"}
+                      x={anchorX}
+                      y={anchorY}
+                    >
+                      {d.label}
+                    </text>
+                  </g>
+                );
+              })}
+          </svg>
+        )}
 
-      <ChartDatapointLayer />
+        {hoveredRect && (
+          <ChartTooltipBox
+            containerHeight={layout === "rows" ? rowsHeight : sz.h}
+            containerRef={plotRef}
+            containerWidth={sz.w}
+            visible
+            x={hoveredRect.x + hoveredRect.width / 2}
+            y={hoveredRect.y + hoveredRect.height / 2}
+          >
+            <ChartTooltipContent rows={tooltipRows} />
+          </ChartTooltipBox>
+        )}
+
+        <ChartDatapointLayer />
+      </div>
 
       {layout !== "rows" && (unitLabel || showArithmetic) && (
-        <div className="mt-2 space-y-0.5 text-center">
+        <div className="mt-2 shrink-0 space-y-0.5 text-center">
           {unitLabel && <p className="text-chart-label text-caption">{unitLabel}</p>}
           {showArithmetic && (
             <p className="text-chart-foreground-muted text-caption tabular-nums">
@@ -505,7 +520,7 @@ const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function UnitCh
         </div>
       )}
 
-      {layout === "waffle" && <ChartLegend className="mt-3" items={legendItems} />}
+      {layout === "waffle" && <ChartLegend className="mt-3 shrink-0" items={legendItems} />}
     </div>
   );
 });

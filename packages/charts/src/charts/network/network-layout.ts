@@ -39,6 +39,10 @@ export const NETWORK_PADDING = 16;
 export const NETWORK_DEFAULT_MAX_NODES = 200;
 /** Gap between a node's edge and its label. */
 export const NETWORK_LABEL_GAP = 5;
+/** `circular` only — the most of the chart's short side a label gutter may take, per edge. */
+const CIRCULAR_LABEL_GUTTER_MAX_FRACTION = 0.2;
+/** `circular` only — the label box height the collision pass reserves (one line of the label rung). */
+const NETWORK_LABEL_BOX_HEIGHT = 14;
 /**
  * `arc` only. Past this fraction of the chart width, a per-side label gutter
  * stops being reserved room and starts being most of the chart — scale both
@@ -74,11 +78,16 @@ export interface NetworkLayoutOptions {
   /** `circular` only — how far a chord bends toward the ring's centre. */
   curveness?: number;
   /**
-   * `arc` only — the px width of a label string, in the label's actual font.
-   * Omitted → every label gutter stays `0`, reproducing today's node-radius-only
-   * columns exactly (`NetworkChart` passes `useTextMeasurerOf`'s `measure`).
+   * `arc` and `circular` — the px width of a label string, in the label's actual
+   * font. Omitted → every label gutter stays `0`, reproducing node-radius-only
+   * geometry exactly (`NetworkChart` passes `useTextMeasurerOf`'s `measure`).
    */
   measureLabel?: (text: string) => number;
+  /**
+   * `circular` only — the caller's `labelThreshold`, so the ring reserves room
+   * for the labels that will actually be drawn (every label when omitted).
+   */
+  labelThreshold?: number;
 }
 
 export interface NetworkLayoutResult {
@@ -280,6 +289,40 @@ export function danglingLinks(
 }
 
 /**
+ * `circular` — neighbours near the top and bottom of a ring sit almost level,
+ * so their horizontal labels stack onto each other ("Person 35" over
+ * "Person 34"). Greedy by weight: the heaviest node keeps its label, and a
+ * lighter label whose box overlaps one already kept is marked `labelCollides`.
+ */
+function markCollidingLabels(
+  nodes: NetworkNodeLayout[],
+  measureLabel: (text: string) => number,
+  labelThreshold: number | undefined,
+): void {
+  const kept: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  const order = nodes
+    .filter((node) => isLabelVisible(node, labelThreshold))
+    .sort((a, b) => b.weight - a.weight || a.index - b.index);
+  for (const node of order) {
+    const width = measureLabel(node.displayLabel ?? node.label ?? node.id);
+    const inner = node.r + NETWORK_LABEL_GAP;
+    const x0 = node.labelAnchor === "start" ? node.x + inner : node.x - inner - width;
+    const box = {
+      x0,
+      x1: x0 + width,
+      y0: node.y - NETWORK_LABEL_BOX_HEIGHT / 2,
+      y1: node.y + NETWORK_LABEL_BOX_HEIGHT / 2,
+    };
+    const hit = kept.some((k) => box.x0 < k.x1 && box.x1 > k.x0 && box.y0 < k.y1 && box.y1 > k.y0);
+    if (hit) {
+      node.labelCollides = true;
+    } else {
+      kept.push(box);
+    }
+  }
+}
+
+/**
  * Turn a graph into positioned nodes and drawn links.
  *
  * Pure and synchronous for all three layouts — `force` included; see
@@ -301,6 +344,7 @@ export function computeNetworkLayout(
     seed,
     curveness = DEFAULT_CIRCULAR_CURVENESS,
     measureLabel,
+    labelThreshold,
   } = options;
 
   const groups: string[] = [];
@@ -332,9 +376,25 @@ export function computeNetworkLayout(
     layout === "arc" && sides
       ? computeArcLabelGutter(nodes, sides, radii, width, padding, measureLabel)
       : { gutter: undefined, displayLabels: nodes.map(() => undefined) };
+  // `circular` labels point radially outward past the ring, so the ring gives
+  // up room for the longest drawn label instead of letting the chart edge clip
+  // it ("Person 50" → "on 50"). Capped so a long label cannot collapse the ring.
+  const circularPadding =
+    layout === "circular" && measureLabel
+      ? padding +
+        Math.min(
+          Math.min(width, height) * CIRCULAR_LABEL_GUTTER_MAX_FRACTION,
+          nodes.reduce((max, node, i) => {
+            const weight = weights[i] ?? 0;
+            if (labelThreshold !== undefined && weight < labelThreshold) return max;
+            const text = node.label ?? node.id;
+            return Math.max(max, measureLabel(text) + NETWORK_LABEL_GAP);
+          }, 0),
+        )
+      : padding;
   const positions =
     layout === "circular"
-      ? circularPositions(nodes.length, { width, height, padding })
+      ? circularPositions(nodes.length, { width, height, padding: circularPadding })
       : layout === "arc"
         ? arcPositions(sides as NonNullable<typeof sides>, { width, height, padding, labelGutter })
         : computeForcePositions(
@@ -346,7 +406,7 @@ export function computeNetworkLayout(
   const centre =
     layout === "circular"
       ? (() => {
-          const ring = circularRing({ width, height, padding });
+          const ring = circularRing({ width, height, padding: circularPadding });
           return { x: ring.cx, y: ring.cy };
         })()
       : { x: width / 2, y: height / 2 };
@@ -368,6 +428,10 @@ export function computeNetworkLayout(
       displayLabel: displayLabels[i],
     };
   });
+
+  if (layout === "circular" && measureLabel) {
+    markCollidingLabels(laidOutNodes, measureLabel, labelThreshold);
+  }
 
   const indexById = new Map(laidOutNodes.map((n) => [n.id, n.index]));
   const maxLinkValue = links.reduce(
