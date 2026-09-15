@@ -180,7 +180,9 @@ export const WithThemeFamilies: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Theme" }));
     await userEvent.click(await body.findByRole("menuitemradio", { name: "Ocean" }));
     await waitFor(() => expect(root).toHaveAttribute("data-theme", "ocean-light"));
-    await userEvent.click(canvas.getByRole("button", { name: "Theme" }));
+    // The closing menu keeps the canvas aria-hidden until it unmounts; reopen only after.
+    await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
+    await userEvent.click(await canvas.findByRole("button", { name: "Theme" }));
     await userEvent.click(await body.findByRole("menuitemradio", { name: "Dark" }));
     await waitFor(() => expect(root).toHaveAttribute("data-theme", "ocean-dark"));
     await waitFor(() => expect(body.queryByRole("menu")).not.toBeInTheDocument());
